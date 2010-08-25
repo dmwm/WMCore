@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool 
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.12 2009/06/24 21:00:23 sryu Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: WorkQueue.py,v 1.13 2009/06/24 22:11:47 sryu Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import time
 # pylint: disable-msg=W0104,W0622
@@ -62,10 +62,12 @@ class _WQElement(WorkQueueBase):
         """
         existingTransaction = self.beginTransaction()
         self._insertWMSpec()
+        print self.primaryBlock
         if self.primaryBlock: 
             self._insertBlock()
         self._insertWorkQueueElement()
         self.commitTransaction(existingTransaction)
+        print "create work queue element"
 
     def _insertWMSpec(self):
         """
@@ -466,8 +468,8 @@ class WorkQueue(WorkQueueBase):
             blocks = unit.blocks
             jobs = unit.jobs
             
-            #print "----- %s" % primaryBlock
-            ele = _WQElement(spec, jobs, primaryBlock, blocks)
+            print "----- %s" % primaryBlock
+            ele = _WQElement(spec, jobs, None, primaryBlock, blocks)
             ele.create()
             # only update in database 
             #self.elements.append(ele)

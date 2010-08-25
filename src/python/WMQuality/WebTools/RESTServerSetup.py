@@ -25,6 +25,7 @@ class DefaultConfig(Configuration):
         
         active = self.UnitTests.views.section_('active')
         active.section_('rest')
+        active.rest.application = 'UnitTestRESTApp'
         active.rest.object = 'WMCore.WebTools.RESTApi'
         active.rest.templates = '/tmp'
         active.rest.section_('database')
@@ -76,8 +77,10 @@ def configureServer(restModel='WMCore.WebTools.RESTModel', das=False, config=Non
         dummycfg = config
     else:
         dummycfg = DefaultConfig(restModel)
-        if das:
-            dummycfg.setFormatter('WMCore.WebTools.DASRESTFormatter')
+    dummycfg.setModel(restModel)
+    
+    if das:
+        dummycfg.setFormatter('WMCore.WebTools.DASRESTFormatter')
     rt = Root(dummycfg)
     return rt
 

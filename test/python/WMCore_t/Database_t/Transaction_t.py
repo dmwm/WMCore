@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.3 2008/11/13 16:05:39 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Transaction_t.py,v 1.4 2009/06/11 18:32:24 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import commands
 import logging
@@ -17,6 +17,7 @@ import unittest
 
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
+from WMCore.WMFactory import WMFactory
 
 from WMQuality.TestInit import TestInit
 
@@ -26,17 +27,26 @@ class TransactionTest(unittest.TestCase):
     _teardown = False
 
     def setUp(self):
-        if not TransactionTest._setup:
-            self.tearDown()
+        if not self._setup:
+            #self.tearDown()
             self.testInit = TestInit(__file__)
             self.testInit.setLogging()
             self.testInit.setDatabaseConnection()
-            TransactionTest._setup = True
+            self._setup = True
         
             #add in Oracle
             self.create = {}
             self.create['MySQL'] = "create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB;"
             self.create['SQLite'] = "create table test (bind1 varchar(20), bind2 varchar(20))"
+            self.create['Oracle'] = "create table test (bind1 varchar(20), bind2 varchar(20))"
+
+            self.destroy = {}
+            self.destroy['MySQL']  = "drop table test ENGINE=InnoDB"
+            self.destroy['Oracle'] = "drop table test"
+            self.destroy['SQLite'] = "drop table test"
+
+            myThread = threading.currentThread()
+            myThread.dialect = os.getenv('DIALECT')
         
             self.insert = "insert into test (bind1, bind2) values (:bind1, :bind2)"
             self.insert_binds = [ {'bind1':'value1a', 'bind2': 'value2a'},
@@ -49,16 +59,25 @@ class TransactionTest(unittest.TestCase):
         Delete the databases
         """
         myThread = threading.currentThread()
-        if TransactionTest._teardown :
-            # call the script we use for cleaning:
-            print('Clear database')
-            self.testInit.clearDatabase()
-        TransactionTest._teardown = False
+
+        if self._teardown:
+            return
+
+
+    
+        # call the script we use for cleaning:
+        print('Clear database')
+        self.testInit.clearDatabase()
+        myThread.transaction.begin()
+        myThread.transaction.processData(self.destroy[myThread.dialect])
+        myThread.transaction.commit()
+            
+        self._teardown = False
 
 
     def testGoodTransaction(self):
         print('testGoodTransaction')
-        TransactionTest._teardown = True
+        #self._teardown = True
         myThread = threading.currentThread()
         myThread.transaction.begin()
         myThread.transaction.processData(self.create[myThread.dialect])
@@ -76,7 +95,7 @@ class TransactionTest(unittest.TestCase):
             
     def testBadTransaction(self):
         print('testBadTransaction')
-        TransactionTest._teardown = True
+        #self._teardown = True
         myThread = threading.currentThread()
         myThread.transaction.begin()
         myThread.transaction.processData(self.create[myThread.dialect])
@@ -93,7 +112,10 @@ class TransactionTest(unittest.TestCase):
             
         assert len(result2) == 1
         l = len(result2[0].fetchall())
-        assert l == 0, "roll back failed, %s records" % l
+        self.assertEqual(l,0)
+
+        return
+        #"roll back failed, %s records" % l
 
     def testLostConnection(self):
         """
@@ -101,7 +123,7 @@ class TransactionTest(unittest.TestCase):
         before committing.
         """
         print('testLostTransaction')
-        TransactionTest._teardown = True
+        #self._teardown = True
         myThread = threading.currentThread()
         myThread.transaction.begin()
         myThread.transaction.processData(self.create[myThread.dialect])
@@ -120,10 +142,12 @@ class TransactionTest(unittest.TestCase):
         myThread.transaction.begin()
        
         result1 = myThread.transaction.processData(self.select)
+        #print result1[0].fetchall()
 
         # check if the right amount of entries have been made. 
-        assert len(result1) == 1
-        assert len(result1[0].fetchall()) == 33
+        self.assertEqual(len(result1), 1)
+        self.assertEqual(len(result1[0].fetchall()), 33)
+
         myThread.transaction.commit()
         # check if buffer is empty
         assert len(myThread.transaction.sqlBuffer) == 0

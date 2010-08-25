@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.23 2009/08/24 15:00:56 sryu Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: WorkQueue.py,v 1.24 2009/08/24 16:33:14 sryu Exp $"
+__version__ = "$Revision: 1.24 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -62,8 +62,9 @@ class WorkQueue(WorkQueueBase):
         Persist a block to the database
         """
         self._insertWMSpec(wmspec)
-        if primaryBlock['NumFiles'] != 0: #TODO: change this
-            self._insertBlock(primaryBlock, parentBlocks)
+        #still need to insert fack block for production job
+        #if primaryBlock['NumFiles'] != 0: #TODO: change this
+        self._insertBlock(primaryBlock, parentBlocks)
 
         wqAction = self.daofactory(classname = "WorkQueueElement.New")
         parentFlag = parentBlocks and 1 or 0

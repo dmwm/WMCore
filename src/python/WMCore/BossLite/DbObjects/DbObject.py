@@ -5,13 +5,8 @@ _DbObject_
 Base class for all objects in the database
 """
 
-__version__ = "$Id: DbObject.py,v 1.7 2010/05/03 15:40:28 spigafi Exp $"
-__revision__ = "$Revision: 1.7 $"
-
-
-#import logging
-#import traceback
-#import threading
+__version__ = "$Id: DbObject.py,v 1.8 2010/05/10 12:44:37 spigafi Exp $"
+__revision__ = "$Revision: 1.8 $"
 
 class DbObject(object):
     """
@@ -36,7 +31,7 @@ class DbObject(object):
 
     ##########################################################################
  
-    def __init__(self, parameters = {}):
+    def __init__(self, parameters = None):
         """
         initialize a DbObject instance
         """
@@ -54,6 +49,9 @@ class DbObject(object):
         # get job fields
         fields = self.__class__.mapping.keys()
 
+        if not parameters :
+            parameters = {}
+            
         # assign parameters
         for key in parameters.keys():
 
@@ -77,8 +75,6 @@ class DbObject(object):
         # add private data
         self.privateData = self.__class__.private
 
-
-
     ##########################################################################
 
     def __getitem__(self, field):
@@ -97,7 +93,7 @@ class DbObject(object):
         # not there
         raise self.exception("Unknown field %s in %s object" % \
                              (field, self.className))
-
+    
     ##########################################################################
 
     def __setitem__(self, field, value):
@@ -185,7 +181,7 @@ class DbObject(object):
 
     ##########################################################################
 
-    def exists(self, db):
+    def exists(self, db, noDB = False):
         """
         check if the object exists inside the database
         """
@@ -193,6 +189,7 @@ class DbObject(object):
         raise NotImplementedError
 
     ##########################################################################
+    
     def __str__(self):
         """
         return a printed representation of the task
@@ -213,3 +210,29 @@ class DbObject(object):
         # return it
         return string
 
+    
+class DbObjectDBFormatter(object):
+    """
+    DbObjectDBFormatter
+    """
+    
+    def __init__(self):
+        """
+        __init__
+        """
+
+    def preFormat(self, res):
+        """
+        Before save the object inside the DB, it formats the data to store
+        correctly the information
+        """
+        
+        raise NotImplementedError
+    
+    def postFormat(self, res):
+        """
+        After a DB extraction, it formats the data before save the information 
+        inside the Python object
+        """
+        
+        raise NotImplementedError

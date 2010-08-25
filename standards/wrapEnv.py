@@ -44,6 +44,10 @@ if ( not (requestedDB in buildslave.conf) ):
 else:
     os.environ['DATABASE'] = buildslave.conf[requestedDB]
 
+
+# hack to keep dbsapi from complaining
+os.environ['USER'] = "buildbotslave"
+
 commandLine = sys.argv[3:]
 
 # actually run

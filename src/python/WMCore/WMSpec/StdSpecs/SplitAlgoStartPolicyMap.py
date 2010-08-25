@@ -12,7 +12,7 @@ SplitAlgoToArgMap = {"FileBased" : "files_per_job",
 #if the spliting Algo is not known (other than above)
 #TODO: this shouldn't be needed when Lumibased is supported,
 # remove default value.
-DefaultSliceType = "NumOfFiles"
+DefaultSliceType = "NumberOfFiles"
 DefaultSliceSize = 1
 
 def getSliceType(splitAlgo):

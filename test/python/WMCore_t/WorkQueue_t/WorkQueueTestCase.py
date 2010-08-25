@@ -4,8 +4,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: WorkQueueTestCase.py,v 1.5 2009/10/13 23:06:08 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WorkQueueTestCase.py,v 1.6 2009/11/05 16:54:01 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import logging
@@ -42,4 +42,4 @@ class WorkQueueTestCase(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-        selt.testInit.clearDatabase()
+        self.testInit.clearDatabase()

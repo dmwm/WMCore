@@ -7,8 +7,8 @@ Extension for a normal ConfigSection to provide a Tree structure
 of ConfigSections
 
 """
-__revision__ = "$Id: ConfigSectionTree.py,v 1.7 2010/04/09 20:34:12 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ConfigSectionTree.py,v 1.8 2010/06/21 19:01:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import types
 
@@ -58,7 +58,13 @@ def listChildNodes(topNode):
         result.extend(listNodes(getattr(topNode.tree.children, child)))
     return result
 
+def listFirstGenChildNodes(topNode):
+    """
+    _listFirstGenChildNodes_
 
+    Return a list of the first generator child nodes.
+    """
+    return topNode.tree.childNames
 
 def nodeMap(node):
     """
@@ -174,6 +180,14 @@ def nodeChildIterator(node):
     for i in listChildNodes(node):
         yield getNode(node, i)
     
+def firstGenNodeChildIterator(node):
+    """
+    _firstGenNodeChildIterator_
+
+    Iterator over all the first generation child nodes.
+    """
+    for i in listFirstGenChildNodes(node):
+        yield getNode(node, i)
 
 def format(value):
     """
@@ -278,6 +292,14 @@ class TreeHelper:
         for i in listChildNodes(self.data):
             yield getNode(self.data, i)
 
+    def firstGenNodeChildIterator(self):
+        """
+        _fristGenNodeChildIterator_
+
+        Iterate over all the first generation child nodes.
+        """
+        for i in listFirstGenChildNodes(self.data):
+            yield getNode(self.data, i)        
 
     def pythoniseDict(self, **options):
         """

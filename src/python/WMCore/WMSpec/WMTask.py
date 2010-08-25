@@ -12,8 +12,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.34 2010/05/17 20:45:24 mnorman Exp $"
-__revision__ = "$Revision: 1.34 $"
+__version__ = "$Id: WMTask.py,v 1.35 2010/06/21 19:01:31 sfoulkes Exp $"
+__revision__ = "$Revision: 1.35 $"
 
 import os
 import os.path
@@ -92,10 +92,11 @@ class WMTaskHelper(TreeHelper):
 
     def childTaskIterator(self):
         """
-        iterate over child tasks, not including the top one
-        
+        _childTaskIterator_
+
+        Iterate over all the first generation child tasks.
         """
-        for x in self.nodeChildIterator():
+        for x in self.firstGenNodeChildIterator():
             yield WMTaskHelper(x)
     
     

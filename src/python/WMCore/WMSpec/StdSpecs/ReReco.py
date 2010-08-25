@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.32 2010/06/21 16:21:22 mnorman Exp $"
-__revision__ = "$Revision: 1.32 $"
+__version__ = "$Id: ReReco.py,v 1.33 2010/06/21 19:01:31 sfoulkes Exp $"
+__revision__ = "$Revision: 1.33 $"
 
 import subprocess
 
@@ -343,9 +343,6 @@ class ReRecoWorkloadFactory(object):
         self.skimJobSplitAlgo = arguments.get("SkimJobSplitAlgo", 'TwoFileBased')
         self.skimJobSplitArgs = arguments.get("SkimJobSplitArgs", {'files_per_job': 1})
 
-        # Derived parameters.
-        #self.workloadName = workloadName or "ReReco-%s" % self.processingVersion
-        #DO do: it seems it doesn't break current code - but examin that.
         self.workloadName = workloadName
         (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = \
                                    self.inputDataset[1:].split("/")
@@ -392,7 +389,6 @@ class ReRecoWorkloadFactory(object):
                                  configDoc = skimConfigDoc, splitAlgo = self.skimJobSplitAlgo,
                                  splitArgs = self.skimJobSplitArgs)
         self.addLogCollectTask(skimTask, taskName = "skimLogCollect")
-
 
         skimOutputModules = self.getOutputModuleInfo(self.skimConfig,
                                                      self.scenario, "promptReco",

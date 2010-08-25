@@ -8,8 +8,8 @@ Module dealing with Configuration file in python format
 
 """
 
-__revision__ = "$Id: Configuration.py,v 1.10 2009/09/04 16:10:26 evansde Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Configuration.py,v 1.11 2009/09/04 18:46:01 evansde Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import os
 import imp
@@ -41,7 +41,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if type(value) in types.StringType:
+    if type(value) == types.StringType:
         value = "\'%s\'" % value
     return str(value)
 

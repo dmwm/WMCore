@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.41 2009/04/28 22:32:27 sryu Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: Fileset.py,v 1.42 2009/04/29 16:33:51 mnorman Exp $"
+__version__ = "$Revision: 1.42 $"
 
 from sets import Set
 
@@ -99,7 +99,7 @@ class Fileset(WMBSBase, WMFileset):
         createAction.execute(self.name, self.open, conn = self.getWriteDBConn(),
                              transaction = self.existingTransaction())
         self.commit()
-        self.load()
+        self.loadData()
         self.commitIfNew()
         
         return

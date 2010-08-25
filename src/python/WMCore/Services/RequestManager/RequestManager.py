@@ -103,7 +103,7 @@ class RequestManager(Service):
     def putWorkQueue(self, requestName, prodAgentUrl = None):
         args = {}
 
-        callname = 'workqueue/%s/%s' % (requestName, str(prodAgentUrl))
+        callname = 'workQueue/%s/%s' % (requestName, str(prodAgentUrl))
         return self._getResult(callname, args = args, verb = "PUT")
 
     def putTeam(self, team):

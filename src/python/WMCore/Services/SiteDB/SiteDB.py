@@ -6,8 +6,8 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.13 2010/03/08 23:16:49 sryu Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: SiteDB.py,v 1.14 2010/03/22 12:24:56 swakef Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from WMCore.Services.SSLService import SSLService
 import urllib
@@ -168,3 +168,23 @@ class SiteDBJSON(SSLService):
                 pass
 
         return theList
+
+
+    def phEDExNodetocmsName(self, node):
+        """
+        Convert PhEDEx node name to cms site
+        """
+        # api doesn't work at the moment - so reverse engineer
+        # first strip special endings and check with cmsNametoPhEDExNode
+        # if this fails (to my knowledge no node does fail) do a full lookup
+        name = node.replace('_MSS',
+                            '').replace('_Buffer',
+                                        '').replace('_Export', '')
+
+        if node in self.cmsNametoPhEDExNode(name):
+            return name
+
+        # As far as i can tell there is no way to get a full listing, would
+        # need to call CMSNametoPhEDExNode?cms_name= but can't find a way to do
+        # that. So simply raise an error
+        raise ValueError, "Unable to find CMS name for \'%s\'" % node

@@ -5,8 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.11 2009/05/09 12:05:27 sryu Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Workflow_t.py,v 1.12 2009/08/17 14:30:19 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
 import os
@@ -178,6 +178,7 @@ class WorkflowTest(unittest.TestCase):
         assert (testWorkflowA.id == testWorkflowB.id) and \
                (testWorkflowA.name == testWorkflowB.name) and \
                (testWorkflowA.spec == testWorkflowB.spec) and \
+               (testWorkflowA.task == testWorkflowB.task) and \
                (testWorkflowA.owner == testWorkflowB.owner), \
                "ERROR: Workflow.LoadFromName Failed"
         
@@ -190,6 +191,7 @@ class WorkflowTest(unittest.TestCase):
         assert (testWorkflowA.id == testWorkflowC.id) and \
                (testWorkflowA.name == testWorkflowC.name) and \
                (testWorkflowA.spec == testWorkflowC.spec) and \
+               (testWorkflowA.task == testWorkflowC.task) and \
                (testWorkflowA.owner == testWorkflowC.owner), \
                "ERROR: Workflow.LoadFromID Failed"
         
@@ -202,6 +204,7 @@ class WorkflowTest(unittest.TestCase):
         assert (testWorkflowA.id == testWorkflowD.id) and \
                (testWorkflowA.name == testWorkflowD.name) and \
                (testWorkflowA.spec == testWorkflowD.spec) and \
+               (testWorkflowA.task == testWorkflowD.task) and \
                (testWorkflowA.owner == testWorkflowD.owner), \
                "ERROR: Workflow.LoadFromSpecOwner Failed"
 

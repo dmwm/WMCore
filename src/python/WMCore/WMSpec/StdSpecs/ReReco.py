@@ -14,6 +14,45 @@ from WMCore.Services.Requests import JSONRequests
 
 from WMCore.Cache.ConfigCache import WMConfigCache
 
+
+def getTestArguments():
+    """
+    _getTestArguments_
+
+    This should be where the default REQUIRED arguments go
+    This serves as documentation for what is currently required 
+    by the standard ReReco workload in importable format.
+
+    NOTE: These are test values.  If used in real workflows they
+    will cause everything to crash/die/break, and we will be forced
+    to hunt you down and kill you.
+    """
+
+    arguments = {
+        "CmsPath": "/uscmst1/prod/sw/cms",
+        "AcquisitionEra": "WMAgentCommissioning10",
+        "Requestor": "sfoulkes@fnal.gov",
+        "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
+        "CMSSWVersion": "CMSSW_3_5_8_patch3",
+        "ScramArch": "slc5_ia32_gcc434",
+        "ProcessingVersion": "v2scf",
+        "SkimInput": "output",
+        "GlobalTag": "GR10_P_v4::All",
+        
+        "ProcessingConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8",
+        "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1",
+        
+        "CouchUrl": "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984",
+        "CouchDBName": "wmagent_config_cache",
+        "Scenario": ""
+        
+        #     "Scenario": "cosmics",
+        #     "ProcessingConfig": "",
+        #     "SkimConfig": ""
+        }
+
+    return arguments
+
 class ReRecoWorkloadFactory():
     """
     _ReRecoWorkloadFactory_

@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.46 2010/02/15 21:15:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: Root.py,v 1.47 2010/02/16 16:24:59 metson Exp $"
+__version__ = "$Revision: 1.47 $"
 
 # CherryPy
 import cherrypy
@@ -160,15 +160,16 @@ class Root(WMObject, Harness):
         for k in dict.keys():
             component.__setattr__(k, dict[k])
 
-        if not type(component.database) == str:
-            print component.database.listSections_()
-            if len(component.database.listSections_()) == 0:
-                if len(self.coreDatabase.listSections_()) > 0:
-                    component.database.connectUrl = self.coreDatabase.connectUrl
-                    if hasattr(self.coreDatabase, "socket"):
-                        component.database.socket = self.coreDatabase.socket
+        if component.dictionary_().has_key('database'):
+            if not type(component.database) == str:
+                print component.database.listSections_()
+                if len(component.database.listSections_()) == 0:
+                    if len(self.coreDatabase.listSections_()) > 0:
+                        component.database.connectUrl = self.coreDatabase.connectUrl
+                        if hasattr(self.coreDatabase, "socket"):
+                            component.database.socket = self.coreDatabase.socket
 
-        print component.database
+            print component.database
 
         # component now contains the full configuration (global + view)  
         # use this throughout 

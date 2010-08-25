@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.16 2010/02/01 22:51:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: WMInit.py,v 1.17 2010/02/02 16:55:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -16,6 +16,7 @@ import threading
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
+
 class WMInit:
 
     def __init__(self):
@@ -43,7 +44,7 @@ class WMInit:
             myThread.logger = logging.getLogger()
 
 
-    def setDatabaseConnection(self, dbConfig, dialect = None, socketLoc = None, flavor = 'ProdAgent'):
+    def setDatabaseConnection(self, dbConfig, dialect = None, socketLoc = None):
         """
         Sets the default connection parameters, without having to worry
         much on what attributes need to be set. This is esepcially 
@@ -54,48 +55,38 @@ class WMInit:
         projects. External project formats that are supported can activated 
         it by setting the flavor flag.
         """
-
-        # check if connection string is  a string, if not it might be a dictionary.
-        if not type(dbConfig) == str and flavor == 'ProdAgent':
-            # modify db params to new WMCore conventions
-            wmDbConf = {}
-            wmDbConf['dialect'] =  dbConfig['dbType'].lower()
-            dialect  =  dbConfig['dbType']
-            wmDbConf['user'] = dbConfig['user']
-            wmDbConf['password'] = dbConfig['passwd']
-            wmDbConf['database'] = dbConfig['dbName']
-            wmDbConf['host'] = dbConfig['host']
-            
-            if dbConfig['portNr']:
-                wmDbConf['port'] = dbConfig['portNr']
-            if dbConfig['socketFileLocation']:
-                wmDbConf['unix_socket'] = dbConfig['socketFileLocation']
-
-        # note: setLogging needs to have been set prior to calling this!
         myThread = threading.currentThread()
+        if hasattr(myThread, "dialect"):
+            if myThread.dialect != None:
+                # Database is already initialized, we'll create a new
+                # transaction and move on.
+                if myThread.transaction != None:
+                    myThread.transaction.commit()
+
+                myThread.transaction = Transaction(myThread.dbi)
+                myThread.transaction.commit()
+                return
+
+        options = {}            
         if dialect.lower() == 'mysql':
             dialect = 'MySQL'
+            if socketLoc != None:
+                options['unix_socket'] = socketLoc            
         elif dialect.lower() == 'oracle':
             dialect = 'Oracle'
         elif dialect.lower() == 'sqlite':
             dialect = 'SQLite'
         
         myThread.dialect = dialect
-
-        options = {}
-        if not type(dbConfig) == str:
-            myThread.dbFactory = DBFactory(myThread.logger, dburl = None, options = wmDbConf)
-        else:
-            if myThread.dialect == 'MySQL':
-                if socketLoc != None:
-                    options['unix_socket'] = socketLoc
-            myThread.dbFactory = DBFactory(myThread.logger, dbConfig, options)
-
+        myThread.dbFactory = DBFactory(myThread.logger, dbConfig, options)
         myThread.dbi = myThread.dbFactory.connect()
+
+        # The transaction object will begin a transaction as soon as it is
+        # initialized.  I'd rather have the user handle that, so we'll commit
+        # it here.
         myThread.transaction = Transaction(myThread.dbi)
-        myThread.transaction.commit()
-
-
+        myThread.transaction.commit()                
+        return
 
     def setSchema(self, modules = [], params = None):
         """

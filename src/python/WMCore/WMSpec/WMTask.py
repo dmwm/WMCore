@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.11 2009/09/10 15:40:20 evansde Exp $"
-__revision__ = "$Revision: 1.11 $"
+__version__ = "$Id: WMTask.py,v 1.12 2009/09/17 15:15:31 evansde Exp $"
+__revision__ = "$Revision: 1.12 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -297,6 +297,69 @@ class WMTaskHelper(TreeHelper):
 
         return
 
+    def addInputDataset(self, **options):
+        """
+        _addInputDataset_
+
+        Add details of an input dataset to this Task.
+        This dataset will be used as input for the first step
+        in the task
+
+        options should contain at least:
+
+        - primary - primary dataset name
+        - processed - processed dataset name
+        - tier - data tier name
+
+        optional args:
+
+        - analysis - analysis dataset path extension
+        - dbsurl - dbs url if not global
+        - block_whitelist - list of whitelisted fileblocks
+        - block_blacklist - list of blacklisted fileblocks
+
+        """
+        self.data.input.section_("dataset")
+        self.data.input.dataset.section_("blocks")
+        self.data.input.dataset.blocks.whitelist = []
+        self.data.input.dataset.blocks.blacklist = []
+
+        primary = options.get("primary", None)
+        processed = options.get("processed", None)
+        tier = options.get("tier", None)
+
+        if primary == None or processed == None or tier == None:
+            msg = "Primary, Processed and Tier must be set"
+            raise RuntimeError, msg
+
+        self.data.input.dataset.primary = primary
+        self.data.input.dataset.processed = processed
+        self.data.input.dataset.tier = tier
+
+
+        for opt, arg in options.items():
+            # already handled/checked
+            if opt in ['primary', 'processed', 'tier']: continue
+            # blocks
+            if opt == 'block_blacklist':
+                self.data.input.dataset.blocks.blacklist = arg
+                continue
+            if opt == 'block_whitelist':
+                self.data.input.dataset.blocks.whitelist = arg
+                continue
+            # all other options
+            setattr(self.data.input.dataset, opt, arg)
+
+        return
+
+    def inputDataset(self):
+        """
+        _inputDataset_
+
+        Get the input.dataset structure from this task
+
+        """
+        return getattr(self.data.input, "dataset", None)
 
 
 class WMTask(ConfigSectionTree):

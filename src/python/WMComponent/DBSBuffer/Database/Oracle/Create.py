@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for Oracle.
 """
 
-__revision__ = "$Id: Create.py,v 1.12 2009/09/22 19:49:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Create.py,v 1.13 2009/09/23 16:41:23 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import threading
 
@@ -175,9 +175,10 @@ class Create(DBCreator):
 
         self.create["10dbsbuffer_block"] = \
           """CREATE TABLE dbsbuffer_block (
-          id        INTEGER,
-          blockname VARCHAR(250) NOT NULL,
-          location  INTEGER      NOT NULL,
+          id          INTEGER,
+          blockname   VARCHAR(250) NOT NULL,
+          location    INTEGER      NOT NULL,
+          open_status INTEGER      NOT NULL,
           is_in_phedex INTEGER DEFAULT 0) %s""" % tablespaceTable
 
         self.create["10dbsbuffer_block_seq"] = \

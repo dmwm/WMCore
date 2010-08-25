@@ -5,8 +5,8 @@ _JobAccountant_
 Poll WMBS for complete jobs and process their framework job reports.
 """
 
-__revision__ = "$Id: JobAccountant.py,v 1.3 2009/10/14 19:18:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobAccountant.py,v 1.4 2009/10/15 15:06:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import time
 import threading
@@ -48,10 +48,12 @@ class JobAccountant(Harness):
         _pollForJobs_
 
         Poll WMBS for jobs in the "Complete" state and then pass them to the
-        ThreadPool so that they can be processed.
+        ThreadPool so that they can be processed.  This will block until all
+        jobs have been processed.
         """
         completeJobs = self.getJobsAction.execute(state = "complete")
         self.processPool.enqueue(completeJobs)
+        self.processPool.dequeue(len(completeJobs))
         return
 
     def startComponent(self):

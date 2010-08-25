@@ -5,7 +5,7 @@ CouchDB instance, and is not going to work in an automated way just yet - we'll
 need to add Couch as an external, include it in start up scripts etc.
 """
 
-from WMCore.Database.CMSCouch import CouchServer, Database
+from WMCore.Database.CMSCouch import CouchServer
 import random
 
 # Make an instance of the server
@@ -110,7 +110,8 @@ doc['colour'] = 'white'
 # CouchDB is schemaless and duck typed, I can add a new field without breaking
 # existing functionality 
 doc['reason'] = 'white with fright!'
-db.commit(doc)
+# Commit the update and add a timestamp
+db.commit(doc, timestamp=True)
 
 print 'doc after the update: %s' % db.document(doc['_id'])
 

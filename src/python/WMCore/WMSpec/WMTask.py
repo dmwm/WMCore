@@ -12,8 +12,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.36 2010/07/01 15:16:58 mnorman Exp $"
-__revision__ = "$Revision: 1.36 $"
+__version__ = "$Id: WMTask.py,v 1.37 2010/07/16 15:19:27 swakef Exp $"
+__revision__ = "$Revision: 1.37 $"
 
 import os
 import os.path
@@ -543,7 +543,7 @@ class WMTaskHelper(TreeHelper):
 
         if hasattr(self.data.input, 'dataset'):
             ds = getattr(self.data.input, 'dataset')
-            return '%s/%s/%s' % (ds.primary, ds.processed, ds.tier)
+            return '/%s/%s/%s' % (ds.primary, ds.processed, ds.tier)
         return None
     
     def siteWhitelist(self):

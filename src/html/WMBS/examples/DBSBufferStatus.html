@@ -28,10 +28,26 @@
 <body class="yui-skin-sam">
 <div id="dbsbufferStatus"></div>
 <script type="text/javascript">
-//enableDebug()
+enableDebug()
+var dataFormatter = function(elCell, oRecord, oColumn, oData) {
+        
+		if (oData > 1000000000000) {
+			size = oData / 1000000000000;
+			unit = "TB"
+		} else if (oData > 1000000000) {
+            size = oData / 1000000000;
+            unit = "GB"
+        } else {
+            size = oData / 1000000;
+            unit = "MB"
+        }
+        config = {decimalPlaces: 2, suffix: " " + unit};
+        elCell.innerHTML = YAHOO.util.Number.format(size, config);
+    };
+	
 var dataSchema = {
         fields: [{key: "path", label: "dataset path"}, {key: "app_name"}, 
-		         {key: "app_ver"}, {key: "filesize"}, {key: "events"}]
+		         {key: "app_ver"}, {key: "filesize", formatter: dataFormatter}, {key: "events"}]
         };
 
 var dataUrl = "/wmbs/dbsbufferstatus"

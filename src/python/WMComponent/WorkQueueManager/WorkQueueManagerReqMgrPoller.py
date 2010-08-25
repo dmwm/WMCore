@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.6 2010/05/14 18:56:45 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.7 2010/05/27 15:54:28 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import re
 import os
@@ -61,6 +61,10 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                         try:
                             self.reqMgr.postAssignment(reqName)
                         except Exception, ex:
+                            # added for debuging but should be removed since remote call 
+                            # doesn't make send to trace the stack.
+                            #import traceback
+                            #self.wq.logger.error("Something Wrong %s" % traceback.format_exc())
                             self.wq.logger.error("Unable to update ReqMgr state: %s" % str(ex))
                             self.wq.logger.error('Request "%s" not queued' % reqName)
                             raise

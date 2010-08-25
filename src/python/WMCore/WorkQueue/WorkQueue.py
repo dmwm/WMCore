@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.64 2010/02/09 14:00:42 swakef Exp $"
-__version__ = "$Revision: 1.64 $"
+__revision__ = "$Id: WorkQueue.py,v 1.65 2010/02/09 15:09:04 swakef Exp $"
+__version__ = "$Revision: 1.65 $"
 
 
 import uuid
@@ -206,7 +206,6 @@ class WorkQueue(WorkQueueBase):
             try:
                 #TODO: Add a timeout thats shorter than normal
                 if self.pullWork(unmatched):
-                    #self.updateLocationInfo()
                     matches, _ = self._match(siteJobs)
             except RuntimeError, ex:
                 msg = "Error contacting parent queue %s: %s"
@@ -345,44 +344,13 @@ class WorkQueue(WorkQueueBase):
         """
         wmspec = WMWorkloadHelper()
         wmspec.load(wmspecUrl)
-        totalUnits = []
-        # split each top level task into constituent work elements
-        # Do all processing on units before dumping to the databse at the end
-        #TODO: This can leave orphan files behind - remove them on exception
-        for topLevelTask in wmspec.taskIterator():
-            dbs_url = topLevelTask.dbsUrl()
-            wmspec = getWorkloadFromTask(topLevelTask)
 
-            if dbs_url and not self.dbsHelpers.has_key(dbs_url):
-                self.dbsHelpers[dbs_url] = DBSReader(dbs_url)
-
-            policy = startPolicy(wmspec.startPolicy(),
-                                 self.params['SplittingMapping'])
-            
-            units = policy(wmspec, topLevelTask, self.dbsHelpers)
-            for unit in units:
-                wmspec = unit['WMSpec']
-                unique = uuid.uuid4().hex[:10] # hopefully random enough
-                new_url = os.path.join(self.params['CacheDir'],
-                                           "%s.spec" % unique)
-                if os.path.exists(new_url):
-                    raise RuntimeError, "spec file %s exists" % new_url
-                wmspec.setSpecUrl(new_url)
-                wmspec.save(new_url)
-                self.logger.info("Queuing %s unit(s): wf: %s for task: %s" % (
-                         len(units), wmspec.name(), topLevelTask.name()))
-            totalUnits.extend(units)
+        totalUnits = self._splitWork(wmspec, parentQueueId)
 
         # Do database stuff in one quick loop
         trans = self.beginTransaction()
         for unit in totalUnits:
-            primaryBlock = unit['Data']
-            blocks = unit['ParentData']
-            jobs = unit['Jobs']
-            wmspec = unit['WMSpec']
-            self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
-                                                 blocks, parentQueueId,
-                                                 wmspec.taskIterator().next())
+            self._insertWorkQueueElement(unit)
         self.commitTransaction(trans)
         return len(totalUnits)
 
@@ -530,7 +498,7 @@ class WorkQueue(WorkQueueBase):
 
         If resources passed in get work for them, if not get from wmbs.
         """
-        amount = 0
+        totalUnits = []
         if self.parent_queue:
             if not resources:
                 from WMCore.DAOFactory import DAOFactory
@@ -551,12 +519,17 @@ class WorkQueue(WorkQueueBase):
                 work = self.parent_queue.getWork(resources,
                                                  self.params['QueueURL'])
                 if work:
-                    trans = self.beginTransaction()
                     for element in work:
-                        amount += self.queueWork(element['url'],
-                                                 element['element_id'])
+                        wmspec = WMWorkloadHelper()
+                        wmspec.load(element['url'])
+                        totalUnits.extend(self._splitWork(wmspec,
+                                                         element['element_id']))
+
+                    trans = self.beginTransaction()
+                    for unit in totalUnits:
+                        self._insertWorkQueueElement(unit)
                     self.commitTransaction(trans)
-        return amount
+        return len(totalUnits)
 
     def updateParent(self, full = False):
         """
@@ -618,11 +591,49 @@ class WorkQueue(WorkQueueBase):
     # //  Internal methods
     #//
 
-    def _insertWorkQueueElement(self, wmspec, nJobs, primaryInput,
-                                parentInputs, parentQueueId, task):
+    def _splitWork(self, wmspec, parentQueueId = None):
+        """
+        Split work into WorkQeueueElements
+        """
+        #TODO: This can leave orphan files behind - remove them on exception
+        totalUnits = []
+        # split each top level task into constituent work elements
+        for topLevelTask in wmspec.taskIterator():
+            dbs_url = topLevelTask.dbsUrl()
+            wmspec = getWorkloadFromTask(topLevelTask)
+
+            if dbs_url and not self.dbsHelpers.has_key(dbs_url):
+                self.dbsHelpers[dbs_url] = DBSReader(dbs_url)
+
+            policy = startPolicy(wmspec.startPolicy(),
+                                 self.params['SplittingMapping'])
+            units = policy(wmspec, topLevelTask, self.dbsHelpers)
+            for unit in units:
+                unit['ParentQueueId'] = parentQueueId
+                wmspec = unit['WMSpec']
+                unique = uuid.uuid4().hex[:10] # hopefully random enough
+                new_url = os.path.join(self.params['CacheDir'],
+                                           "%s.spec" % unique)
+                if os.path.exists(new_url):
+                    raise RuntimeError, "spec file %s exists" % new_url
+                wmspec.setSpecUrl(new_url)
+                wmspec.save(new_url)
+                self.logger.info("Queuing %s unit(s): wf: %s for task: %s" % (
+                                len(units), wmspec.name(), topLevelTask.name()))
+            totalUnits.extend(units)
+        return totalUnits
+
+    def _insertWorkQueueElement(self, unit):
         """
         Persist a block to the database
         """
+        primaryInput = unit['Data']
+        parentInputs = unit['ParentData']
+        nJobs = unit['Jobs']
+        wmspec = unit['WMSpec']
+        task = wmspec.taskIterator().next()        
+        parentQueueId = unit['ParentQueueId']
+
         self._insertWMSpec(wmspec)
         self._insertWMTask(wmspec.name(), task)
 

@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.19 2010/01/12 19:59:57 evansde Exp $"
-__revision__ = "$Revision: 1.19 $"
+__version__ = "$Id: WMTask.py,v 1.20 2010/01/26 19:22:48 evansde Exp $"
+__revision__ = "$Revision: 1.20 $"
 
 import os
 
@@ -370,6 +370,8 @@ class WMTaskHelper(TreeHelper):
         - dbsurl - dbs url if not global
         - block_whitelist - list of whitelisted fileblocks
         - block_blacklist - list of blacklisted fileblocks
+        - run_whitelist - list of whitelist runs
+        - run_blacklist - list of blacklist runs
         - totalevents - total events in dataset
 
         """
@@ -377,6 +379,11 @@ class WMTaskHelper(TreeHelper):
         self.data.input.dataset.section_("blocks")
         self.data.input.dataset.blocks.whitelist = []
         self.data.input.dataset.blocks.blacklist = []
+        self.data.input.dataset.section_("runs")
+        self.data.input.dataset.runs.section_("whitelist")
+        self.data.input.dataset.runs.section_("blacklist")
+        
+        
 
         primary = options.get("primary", None)
         processed = options.get("processed", None)
@@ -403,6 +410,11 @@ class WMTaskHelper(TreeHelper):
                 continue
             if opt == 'dbsurl':
                 self.data.input.dataset.dbsurl = arg
+            if opt == "runs_whitelist":
+                [ self.data.input.runs.whitelist.section_(str(i)) for i in arg ]
+            if opt == "runs_blacklist":
+                [ self.data.input.runs.blacklist.section_(str(i)) for i in arg ]
+            
             # all other options
 
             setattr(self.data.input.dataset, opt, arg)

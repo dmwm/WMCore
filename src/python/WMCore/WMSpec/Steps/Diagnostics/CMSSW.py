@@ -8,6 +8,7 @@ Diagnostic implementation for a CMSSW job
 """
 
 import os
+import logging
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 
 class Exit127(DiagnosticHandler):
@@ -21,6 +22,23 @@ class Exit126(DiagnosticHandler):
         msg = "Executable permissions not executable"
         executor.report.addError(executor.step._internal_name,
                                  50111, "ExecutableBadPermissions", msg)
+
+class Exit60515(DiagnosticHandler):
+    def __call__(self, errCode, executor, **args):
+        """
+        Added for Steve to handle SCRAM script failure
+
+        Must fail job (since SCRAM didn't run)
+
+        """
+        msg = "SCRAM scripts failed to run!"
+        executor.report.addError(executor.step._internal_name,
+                                 60515, "SCRAMScriptFailure", msg)
+
+        # Then mark the job as failed
+        if executor.report.report.status == 0:
+            executor.report.report.status = 1
+        
 
 
 class CMSRunHandler(DiagnosticHandler):
@@ -113,6 +131,7 @@ class CMSSW(Diagnostic):
 
     def __init__(self):
         Diagnostic.__init__(self)
+        self.handlers[60515] = Exit60515()
         self.handlers[126] = Exit126()
         self.handlers[127] = Exit127()
         self.handlers[65]  = CMSRunHandler(8001, "CMSExeption")

@@ -1,38 +1,40 @@
 #!/usr/bin/env python
 '''
     _WMConfigCache_
-    
+
     A simple API for adding/retrieving configurations
-    
+
 '''
 
 
 import WMCore.Database.CMSCouch as CMSCouch
-#import WMCore.Database.CMSCouch.Document as Document
 import urllib
 import md5
-__revision__ = "$Id: ConfigCache.py,v 1.10 2009/07/20 23:31:00 meloam Exp $"
-__version__ = "$Revision: 1.10 $"
+
+import PSetTweaks.PSetTweak as TweakAPI
+
+__revision__ = "$Id: ConfigCache.py,v 1.11 2009/08/28 15:58:13 evansde Exp $"
+__version__ = "$Revision: 1.11 $"
 
 class WMConfigCache:
-    ''' 
-        __WMConfigCache__
-        
-        API for add/retrieving configuration files to/from a CouchDB instance
-        
     '''
-    
+        __WMConfigCache__
+
+        API for add/retrieving configuration files to/from a CouchDB instance
+
+    '''
+
     def pullConfig(self, url, dbname, docid, revision = None):
         ''' pulls a document from another WMConfigCache to this one '''
 
         # get the document
         remoteCache = WMConfigCache(dbname, url)
         document = remoteCache.getDocumentByDocID(docid, revision)
-        
+
         # add the document to the database
         del document[u'_rev']
         (newid, newrev) = self.database.commit( document )
-        
+
         # now we have the document, get the attachments
         for attachmentName in document[u'_attachments'].keys():
             attachmentValue = remoteCache.database.getAttachment(newid,
@@ -41,7 +43,7 @@ class WMConfigCache:
                                                              attachmentValue,
                                                              attachmentName)
         return (newid, newrev)
-    
+
     def deleteConfig(self, docid):
         '''
             deletes a configuration with a specified docid from the database
@@ -49,7 +51,7 @@ class WMConfigCache:
         document = self.database.document(docid)
         self.database.queueDelete(document)
         self.database.commit()
-        
+
     def addConfig(self, newConfig ):
         '''
             injects a configuration into the cache, returning a tuple with the
@@ -71,21 +73,21 @@ class WMConfigCache:
             commitInfo = self.database.commitOne( document )
             if (commitInfo[u'ok'] != True):
                 raise RuntimeError
-            
-            retval2 = self.database.addAttachment( commitInfo[u'id'], 
-                                         commitInfo[u'rev'], 
+
+            retval2 = self.database.addAttachment( commitInfo[u'id'],
+                                         commitInfo[u'rev'],
                                          configString,
                                          'pickled_script')
             return ( retval2['id'],
                      retval2['rev'])
-            
+
         elif (len(viewresult[u'rows']) == 1):
             # the config we want is here
             return (viewresult[u'rows'][0][u'value'][u'_id'],
                     viewresult[u'rows'][0][u'value'][u'_rev'])
         else:
             raise IndexError, "More than one record has the same MD5"
-            
+
     def addOriginalConfig(self, docid, rev, configPath):
         ''' Adds the human-readable script to the given id
             Makes it easy to see what you're doing since
@@ -93,19 +95,19 @@ class WMConfigCache:
         '''
         configString = urllib.urlopen( configPath ).read(-1)
         retval = self.database.addAttachment( docid,
-                                         rev, 
+                                         rev,
                                          configString,
                                          'original_script')
         return ( retval['id'],
                  retval['rev'])
-        
-    
+
+
     def getOriginalConfigByDocID(self, docid):
         '''retrieves a configuration by the docid'''
         return self.database.getAttachment( docid, 'original_script' )
 
-        
-    
+
+
     def getOriginalConfigByHash(self, dochash):
         '''retrieves a configuration by the pset_hash'''
         searchResult = self.searchByHash(dochash)[u'rows']
@@ -115,28 +117,44 @@ class WMConfigCache:
                                          'original_script')
         else:
             raise IndexError("Too many/few search results (%s) for hash %s" %
-                                ( len(searchResult), dochash) ) 
-            
-    def addTweakFile(self, docid, rev, configPath):
+                                ( len(searchResult), dochash) )
+
+    def addTweakFile(self, docid, rev, configPath, tweakDict = {"process":{}}):
         ''' Adds the human-readable script to the given id
             Makes it easy to see what you're doing since
             the pickled version isn't legible
         '''
         configString = urllib.urlopen( configPath ).read(-1)
         retval = self.database.addAttachment( docid,
-                                         rev, 
+                                         rev,
                                          configString,
                                          'tweak_file')
+        d = self.getDocumentByDocID(docid)
+        d.update({"pset_tweak_details" : tweakDict})
+        commitInfo = self.database.commitOne( d )
+
         return ( retval['id'],
                  retval['rev'])
-        
-    
+
+    def getTweak(self, docid):
+        """
+        _getTweak_
+
+        retrieve the tweak JSON structure and return it as a PSetTweak
+        instance
+
+        """
+        d = self.getDocumentByDocID(docid)
+        return TweakAPI.makeTweakFromJSON(d['pset_tweak_details'])
+
+
+
     def getTweakFileByDocID(self, docid):
         '''retrieves a configuration by the docid'''
         return self.database.getAttachment( docid, 'tweak_file' )
 
-        
-    
+
+
     def getTweakFileByHash(self, dochash):
         '''retrieves a configuration by the pset_hash'''
         searchResult = self.searchByHash(dochash)[u'rows']
@@ -146,17 +164,17 @@ class WMConfigCache:
                                          'tweak_file')
         else:
             raise IndexError("Too many/few search results (%s) for hash %s" %
-                                ( len(searchResult), dochash) )           
-    
+                                ( len(searchResult), dochash) )
+
     def getDocumentByDocID(self, docid, revid=None):
         '''retrieves a document by its id'''
         return self.database.get("/%s/%s" % (self.dbname, docid), revid)
-    
-               
+
+
     def getConfigByDocID(self, docid):
         '''retrieves a configuration by the docid'''
         return self.database.getAttachment( docid,'pickled_script' )
-     
+
 
     def getConfigByHash(self, dochash):
         '''retrieves a configuration by the pset_hash'''
@@ -166,8 +184,8 @@ class WMConfigCache:
             return self.getConfigByDocID(searchResult[0]['id'])
         else:
             raise IndexError("Too many/few search results (%s) for hash %s" %
-                                ( len(searchResult), dochash) )    
-    
+                                ( len(searchResult), dochash) )
+
     def getConfigByMD5(self, md5hash):
         '''retrieves a configuration by the md5_hash'''
         searchResult = self.searchByMD5(md5hash)[u'rows']
@@ -176,14 +194,14 @@ class WMConfigCache:
             return self.getConfigByDocID(searchResult[0]['id'])
         else:
             raise IndexError("Too many/few search results (%s) for MD5 %s" %
-                                ( len(searchResult), md5hash) )    
-    
+                                ( len(searchResult), md5hash) )
+
     def wrapView(self, viewdata):
         '''converts the view return values into Document objects'''
         for row in viewdata[u'rows']:
             row = CMSCouch.Document(None,row)
         return viewdata
-    
+
     def searchByMD5(self, md5hash):
         '''performs the view for md5 hashes'''
         return self.wrapView( \
@@ -193,51 +211,131 @@ class WMConfigCache:
         '''performs the view for pset_hashes'''
         return self.wrapView( \
                     self.database.loadView( 'documents','by_psethash' , {},\
-                                            [dochash] ))    
+                                            [dochash] ))
     def modifyHash(self, docid, newhash):
         '''changes the hash in an existing document'''
         ourdoc = self.database.document(docid)
         ourdoc[u'pset_hash'] = newhash
         return self.database.commit(ourdoc)
-    
+
+    def tweakRandomSeeds(self, docId):
+        """get random seeds view output for doc id"""
+        result = \
+            self.database.loadView('tweaks', 'randomseeds', {}, [docId])
+
+        if len(result['rows']) == 0:
+            return []
+        return result['rows'][0]['value']
+
+    def tweakOutputModules(self, docId):
+        """get output module info for doc ID"""
+        result = \
+               self.database.loadView('tweaks', 'outputmodules', {}, [docId])
+        print result
+
+
     def __init__(self, dbname2 = 'config_cache', dburl = None):
         """ attempts to connect to DB, creates if nonexistant
-            TODO: add support for different database URLs 
-        """  
+            TODO: add support for different database URLs
+        """
         self.dbname = dbname2
         self.couch = CMSCouch.CouchServer(dburl)
         if self.dbname not in self.couch.listDatabases():
             self.createDatabase()
         self.database = self.couch.connectDatabase(self.dbname)
-    
+
     def createDatabase(self):
         ''' initializes a non-existant database'''
         database = self.couch.createDatabase(self.dbname)
         hashViewDoc = database.createDesignDoc('documents')
-        hashViewDoc['views'] = {'by_md5hash': 
-                    { "map": \
-                     """function(doc) {
-                        if (doc.md5_hash) {
-                        emit(doc.md5_hash,{'_id': doc._id, '_rev': doc._rev});
-                        } 
-                        }
-                     """ },\
-                     'by_psethash': 
-                    { "map": \
-                     """function(doc) {
-                        if (doc.pset_hash) {
-                        emit(doc.pset_hash,{'_id': doc._id, '_rev': doc._rev});
-                        } 
-                        }
-                     """ }}
+        hashViewDoc['views'] = {
+            'by_md5hash':
+            { "map": \
+              """function(doc) {
+              if (doc.md5_hash) {
+              emit(doc.md5_hash,{'_id': doc._id, '_rev': doc._rev});
+              }
+              }
+              """ },\
+            'by_psethash':
+            { "map": \
+              """function(doc) {
+              if (doc.pset_hash) {
+              emit(doc.pset_hash,{'_id': doc._id, '_rev': doc._rev});
+              }
+              }
+              """ },
+            }
         database.queue( hashViewDoc )
         database.commit()
+
+        tweakViews = database.createDesignDoc('tweaks')
+        tweakViews['views'] ={
+            "process" : {
+            "map": \
+            """
+            function(doc) {
+              if (doc.pset_tweak_details){
+                 if (doc.pset_tweak_details.process){
+                    emit(doc._id, doc.pset_tweak_details.process);
+                 }
+              }
+            }
+            """
+            },
+            "randomseeds" :{
+            "map":\
+            """
+            function(doc) {
+              if (doc.pset_tweak_details){
+                 if (doc.pset_tweak_details.process){
+                    var rands = doc.pset_tweak_details.process.RandomNumberGeneratorService;
+                    var results = Array();
+                    for (var i in rands){
+                       if (rands[i].initialSeed){
+                          results.push("process.RandomNumberGenerator." + i)
+                       }
+                    }
+                    emit(doc._id, results);
+                 }
+               }
+            }
+            """
+            },
+            "outputmodules" :{
+            "map" :\
+            """
+            function(doc) {
+              if (doc.pset_tweak_details){
+                  if (doc.pset_tweak_details.process){
+                       var process = doc.pset_tweak_details.process;
+                       var results = Array();
+                       for (var i in process){
+                           var module = process[i];
+                           if (module.dataset){
+                               results.push(module);
+                           }
+                       }
+
+                       emit(doc._id, results);
+                  }
+               }
+            }
+            """
+            },
+
+            }
+
+
+        database.queue( tweakViews )
+        database.commit()
         return database
+
     def deleteDatabase(self):
         '''deletes an existing database (be careful!)'''
         self.couch.deleteDatabase(self.dbname)
-        
 
- 
 
-    
+
+
+

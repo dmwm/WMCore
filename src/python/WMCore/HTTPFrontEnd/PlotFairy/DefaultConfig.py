@@ -2,7 +2,7 @@ from WMCore.Configuration import Configuration
 from WMCore.WebTools.DefaultConfig import config
 from os import environ, path
 import sys
-
+import WMCore.WMInit
 #docconfig = config
 
 # We have the document application config in doconfig, now start again...
@@ -39,7 +39,7 @@ active.section_('controllers')
 active.controllers = config.WebtoolsDocs.views.active.controllers
 active.section_('plotfairy')
 active.plotfairy.object = 'WMCore.WebTools.RESTApi'
-active.plotfairy.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+active.plotfairy.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
 # Bit of a hack here we don't have a database so the baseclass throws
 # an AssertionError - passing in an empty sqlite one is harmless here.
 active.plotfairy.database = 'sqlite://'

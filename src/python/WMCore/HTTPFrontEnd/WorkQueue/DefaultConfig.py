@@ -1,5 +1,6 @@
 from WMCore.Configuration import Configuration
-from os import environ
+from os import environ, path
+import WMCore.WMInit
 
 config = Configuration()
 
@@ -9,7 +10,7 @@ config.Webtools.port = 8080
 config.Webtools.host = "hostname.fnal.gov"
 config.component_('WorkQueueService')
 
-config.WorkQueueService.templates = environ['WTBASE'] + '/templates/WMCore/WebTools'
+config.WorkQueueService.templates = path.join( WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
 config.WorkQueueService.admin = 'your@email.com'
 config.WorkQueueService.title = 'WorkQueue Data Service'
 config.WorkQueueService.description = 'Provide WorkQueue related service call'
@@ -20,7 +21,7 @@ active = config.WorkQueueService.views.section_('active')
 workqueue = active.section_('workqueue')
 # The class to load for this view/page
 workqueue.object = 'WMCore.WebTools.RESTApi'
-workqueue.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+workqueue.templates = path.join( WMCore.WMInit.getWMBASE(),  'src/templates/WMCore/WebTools/')
 workqueue.database = 'mysql://username@hostname.fnal.gov:3306/TestDB'
 #only needs to specify when mysql db is used
 #if it is not specified gets the value from environment variable. (DBSOCK)

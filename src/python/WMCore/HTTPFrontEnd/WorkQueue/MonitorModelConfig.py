@@ -12,13 +12,14 @@ stand-along REST application ; may be removed later.
 
 """
 
-__revision__ = "$Id: MonitorModelConfig.py,v 1.2 2010/02/06 01:16:29 maxa Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: MonitorModelConfig.py,v 1.3 2010/02/08 14:26:33 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 import os
 from WMCore.Configuration import Configuration
-
+import WMCore.WMInit
+from os import path
 
 config = Configuration()
 config.component_("Webtools")
@@ -30,7 +31,7 @@ config.component_("WorkQueueMonitor")
 config.WorkQueueMonitor.title = "REST Monitoring for WorkQueue"
 config.WorkQueueMonitor.description = "REST Monitoring for WorkQueue"
 config.WorkQueueMonitor.admin = "your@email.com"
-config.WorkQueueMonitor.templates = os.environ["WTBASE"] + "/templates/WMCore/WebTools/"
+config.WorkQueueMonitor.templates = path.join( WMCore.WMInit.getWMBASE(), "src/templates/WMCore/WebTools/")
 
 config.WorkQueueMonitor.section_("views")
 # these are all the active pages that Root.py should instantiate
@@ -46,7 +47,7 @@ workqueuemonitor.database = os.environ["DATABASE"] or sqliteDbUrl
 # DatabasePage from DBSOCK env. variable, optionally set explicitly:
 # workqueuemonitor.dbsocket = os.environ["DBSOCK"]
 
-workqueuemonitor.templates = os.environ["WTBASE"] + "/templates/WMCore/WebTools/"
+workqueuemonitor.templates = path.join( WMCore.WMInit.getWMBASE(), "/templates/WMCore/WebTools/")
 workqueuemonitor.section_("model")
 workqueuemonitor.model.object = "WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService"
 

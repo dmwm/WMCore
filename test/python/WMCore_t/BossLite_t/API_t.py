@@ -4,8 +4,8 @@ _API_t_
 
 """
 
-__revision__ = "$Id: API_t.py,v 1.14 2010/05/31 09:44:03 spigafi Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: API_t.py,v 1.15 2010/06/03 11:26:33 spigafi Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import os
@@ -514,7 +514,7 @@ class APITest(unittest.TestCase):
                                 'jobId': 5 } )
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, 
-                                      runningAttrs = {'closed' : 'N'} )
+                                      runningAttrs = {'closed' : 'Y'} )
         self.assertNotEqual(job.runningJob, None) 
         task.addJob(job)
         
@@ -525,8 +525,9 @@ class APITest(unittest.TestCase):
         self.assertEqual(result[0]['name'], 'Spartacus')  
         
         result = testAPI.loadSubmitted()
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]['name'], 'The Mentalist') 
+        self.assertEqual(len(result), 4)
+        for x in result : 
+            self.assertNotEqual(x['name'], 'The Mentalist') 
         
         result = testAPI.loadEnded()
         self.assertEqual(len(result), 1)

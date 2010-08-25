@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.37 2010/07/12 15:14:14 sfoulkes Exp $"
-__revision__ = "$Revision: 1.37 $"
+__version__ = "$Id: ReReco.py,v 1.38 2010/07/13 14:51:58 sfoulkes Exp $"
+__revision__ = "$Revision: 1.38 $"
 
 import subprocess
 
@@ -334,12 +334,12 @@ class ReRecoWorkloadFactory(object):
         
         # Optional arguments.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.blockBlackList = arguments.get("BlockBlackList", [])
-        self.blockWhiteList = arguments.get("BlockWhiteList", [])
-        self.runBlackList = arguments.get("RunBlackList", [])
-        self.runWhiteList = arguments.get("RunWhiteList", [])
-        self.siteBlackList = arguments.get("SiteBlackList", [])
-        self.siteWhiteList = arguments.get("SiteWhiteList", [])
+        self.blockBlackList = arguments.get("BlockBlacklist", [])
+        self.blockWhiteList = arguments.get("BlockWhitelist", [])
+        self.runBlackList = arguments.get("RunBlacklist", [])
+        self.runWhiteList = arguments.get("RunWhitelist", [])
+        self.siteBlackList = arguments.get("SiteBlacklist", [])
+        self.siteWhiteList = arguments.get("SiteWhitelist", [])
         self.unmergedLFNBase = arguments.get("UnmergedLFNBase", "/store/temp/WMAgent/unmerged")
         self.mergedLFNBase = arguments.get("MergedLFNBase", "/store/temp/WMAgent/merged")
         self.minMergeSize = arguments.get("MinMergeSize", 500000000)

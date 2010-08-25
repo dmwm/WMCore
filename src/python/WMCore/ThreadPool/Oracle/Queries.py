@@ -8,9 +8,9 @@ This module implements the Oracle backend for the persistent threadpool.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.2 2009/05/15 15:53:09 mnorman Exp $"
+    "$Id: Queries.py,v 1.3 2009/06/16 14:41:06 mnorman Exp $"
 __version__ = \
-    "$Revision: 1.2 $"
+    "$Revision: 1.3 $"
 __author__ = \
     "mnorman@fnal.gov"
 
@@ -27,6 +27,32 @@ class Queries(MySQLQueries):
     This module implements the Oracle backend for the persistent threadpool.
     
     """
+
+
+    def selectWork(self, args, pooltable = 'tp_threadpool'):
+        """
+        Select work that is not yet being processed.
+        """
+        # this query takes place in a locked section so 
+        # we do not have to worry about multiple slaves
+        # getting the same work.
+        result = ''
+        if pooltable in ['tp_threadpool', 'tp_threadpool_buffer_in', \
+            'tp_threadpool_buffer_out']:
+            sqlStr = """
+SELECT min(id) FROM %s WHERE component = :component AND
+thread_pool_id = :thread_pool_id AND state='queued' 
+        """ % (pooltable)
+            result = self.execute(sqlStr, args)
+        else:
+            sqlStr = """
+SELECT min(id) FROM %s WHERE state='queued' 
+        """ % (pooltable)
+            result = self.execute(sqlStr, {})
+
+        return self.formatOne(result)
+
+
 
     def updateWorkStatus(self, args, pooltable = 'tp_threadpool'):
         """
@@ -73,7 +99,7 @@ INSERT INTO %s(event,component,payload,thread_pool_id) SELECT event,component,pa
 INSERT INTO %s(event,payload) SELECT event,payload FROM %s
             """ % (target, source)
             sqlStr2 = """ DELETE FROM %s """ % (source)
-        
+
         self.execute(sqlStr1, {})
         self.execute(sqlStr2, {})
 
@@ -112,6 +138,8 @@ DELETE FROM %s ORDER BY id WHERE ROWNUM < %s
             """ % (source )
             self.execute(sqlStr1, {})
             self.execute(sqlStr2, {})
+
+        return
 
 
 
@@ -155,6 +183,49 @@ FOR EACH ROW
         self.execute(trgStr, {})
 
         return
+
+
+    def insertWork(self, args, pooltable = 'tp_threadpool'):
+        """
+        Inserts work into the database in case no thread can be found.
+        """
+
+        # differentiate between onequeu and multi queue
+        if pooltable in ['tp_threadpool', 'tp_threadpool_buffer_in', \
+            'tp_threadpool_buffer_out']:
+            sqlStr = """
+INSERT INTO %s(event,component,payload,thread_pool_id)
+VALUES(:event,:component,:payload,:thread_pool_id)
+        """  % (pooltable)
+            self.execute(sqlStr, args)
+        else:
+            sqlStr = """
+INSERT INTO %s(event,payload)
+VALUES(:event,:payload)
+        """  % (pooltable)
+            self.execute(sqlStr, {'event':args['event'], \
+                'payload':args['payload']})
+
+        return
+
+
+
+    def execute(self, sqlStr, args):
+        """
+        __execute__
+        Executes the queries by getting the current transaction
+        and dbinterface object that is stored in the reserved words of
+        the thread it operates in.
+        """
+        #FIXME: we use this method in all kinds of places perhaps upgrade
+        #FIXME: this method?
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        result = myThread.dbi.processData(sqlStr, args)
+        myThread.transaction.commit()
+
+        return result
+        
 
 
 

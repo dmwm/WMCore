@@ -5,8 +5,8 @@ _Report_t_
 Unit tests for the Report class.
 """
 
-__revision__ = "$Id: Report_t.py,v 1.2 2010/03/31 20:36:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Report_t.py,v 1.3 2010/04/09 20:24:36 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import os
@@ -275,6 +275,51 @@ class ReportTest(unittest.TestCase):
 
         # Verify storage statistcs.
 
+        return
+
+    @requiresPython26
+    def testErrorReporting(self):
+        """
+        _testErrorReporting_
+
+        """
+        cmsException = \
+"""cms::Exception caught in cmsRun
+---- EventProcessorFailure BEGIN
+EventProcessingStopped
+---- ScheduleExecutionFailure BEGIN
+ProcessingStopped
+---- NoRecord BEGIN
+No "CastorDbRecord" record found in the EventSetup.
+ Please add an ESSource or ESProducer that delivers such a record.
+cms::Exception going through module CastorRawToDigi/castorDigis run: 121849 lumi: 1 event: 23
+---- NoRecord END
+Exception going through path raw2digi_step
+---- ScheduleExecutionFailure END
+an exception occurred during current event processing
+cms::Exception caught in EventProcessor and rethrown
+---- EventProcessorFailure END"""
+
+        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                               "test/python/WMCore_t/FwkJobReport_t/CMSSWFailReport.xml")
+
+        myReport = Report("cmsRun1")
+        myReport.parse(xmlPath)
+
+        assert hasattr(myReport.data.cmsRun1, "errors"), \
+               "Error: Error section missing."
+        assert getattr(myReport.data.cmsRun1.errors, "errorCount") == 1, \
+               "Error: Error count is wrong."
+        assert hasattr(myReport.data.cmsRun1.errors, "error0"), \
+               "Error: Error0 section is missing."
+        assert myReport.data.cmsRun1.errors.error0.type == "CMSException", \
+               "Error: Wrong error type."
+        assert myReport.data.cmsRun1.errors.error0.exitCode == "8001", \
+               "Error: Wrong exit code."
+        assert myReport.data.cmsRun1.errors.error0.details == cmsException, \
+               "Error: Error details are wrong:\n|%s|\n|%s|" % (myReport.data.cmsRun1.errors.error0.details,
+                                                               cmsException)
+        
         return
         
 if __name__ == "__main__":

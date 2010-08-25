@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.19 $"
-__revision__ = "$Id: Report.py,v 1.19 2010/04/09 15:57:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: Report.py,v 1.20 2010/04/09 20:24:38 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -334,19 +334,17 @@ class Report:
         if self.retrieveStep(stepName) == None:
             self.addStep(stepName)
 
-        errorType = str(errorType)
-
         stepSection = self.retrieveStep(stepName)
-        stepSection.errors.section_(errorType)
-        errSection = getattr(stepSection.errors, errorType)
-        errorCount = getattr(errSection, "errorCount", 0)
 
+        errorCount = getattr(stepSection.errors, "errorCount", 0)
         errEntry = "error%s" % errorCount
-        errSection.section_(errEntry)
-        errDetails = getattr(errSection, errEntry)
-        errDetails.exitStatus = exitCode
-        errDetails.description = errorDetails
-        setattr(errSection, "errorCount", errorCount +1)
+        stepSection.errors.section_(errEntry)
+        errDetails = getattr(stepSection.errors, errEntry)
+        errDetails.exitCode = exitCode
+        errDetails.type = str(errorType)
+        errDetails.details = errorDetails
+        
+        setattr(stepSection.errors, "errorCount", errorCount +1)
         return
 
 

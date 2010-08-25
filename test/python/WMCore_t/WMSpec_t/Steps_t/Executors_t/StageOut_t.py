@@ -38,7 +38,7 @@ from WMCore.FwkJobReport.ReportEmu          import ReportEmu
 from nose.plugins.attrib import attr
 
 #
-class StageOutTest():
+class StageOutTest:
         
     def setUp(self):
         self.testInit = TestInit(__file__)

@@ -62,7 +62,8 @@ class TaskSpace:
 
             except ImportError, ex:
                 # TODO: Dedicated exception class
-                msg = "Unable to import StepSpace from %s" % modName
+                msg = "Unable to import StepSpace from %s:\n" % modName
+                msg += str(ex)
                 raise RuntimeError, msg
 
 

@@ -11,7 +11,7 @@ of pileup files in the job sandbox for the dataset.
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 import WMCore.WMSpec.WMStep as WMStep
 
-
+from WMCore.Services.DBS.DBSReader import DBSReader
 
 class PileupFetcher(FetcherInterface):
     """
@@ -34,5 +34,14 @@ class PileupFetcher(FetcherInterface):
         looked up on arrival at a site within the runtime environment
 
         """
+        #1. Pull Pileup datasets from task
+        #2. For each PU dataset
+        #3.    Call dbsReader.listFileBlocks
+        #4.    For each block:
+        #5.         Call dbsreader.listFileBlockLocation(block)
+        #6.         Call dbsreader.lfnsInBlock(block)
+        #7.    Save Block/Location : LFN mapping in file in sandbox
+        #8.    Record location of file in sandbox
+        #         Save as python module to make it easy to load in job
         #TODO: Implement this
         raise NotImplementedError, "Mail Evans and tell him to write this"

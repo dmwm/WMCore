@@ -4,8 +4,8 @@
 
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.10 2009/09/28 18:41:46 evansde Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: SandboxCreator.py,v 1.11 2009/10/19 18:44:59 evansde Exp $"
+__version__ = "$Revision: 1.11 $"
 import os
 import re
 import tarfile
@@ -13,6 +13,7 @@ import tempfile
 import WMCore.WMSpec.WMStep as WMStep
 import urllib
 import WMCore
+import PSetTweaks
 from WMCore.WMSpec.Steps.StepFactory import getFetcher
 
 class SandboxCreator:
@@ -110,7 +111,8 @@ class SandboxCreator:
             # hopefully messing with this magic isn't a recipie for disaster
             wmcorePath = WMCore.__path__[0]
             archive.add(wmcorePath, '/WMCore/')
-
+            psetTweaksPath = PSetTweaks.__path__[0]
+            archive.add(psetTweaksPath, '/PSetTweaks')
         archive.close()
         pythonHandle.close()
 

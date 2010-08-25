@@ -5,12 +5,13 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.4 2009/06/18 20:05:27 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: CMSSW.py,v 1.5 2009/10/19 18:43:51 evansde Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
-import WMCore.Cache.ConfigCache as ConfigCache
 import WMCore.WMException as WMException
+from WMCore.WMSpec.WMStep import WMStepHelper
+
 import tempfile
 import subprocess
 import os
@@ -34,13 +35,17 @@ class CMSSW(Executor):
         """
         if (emulator != None):
             return emulator.emulatePre( step )
-        
-        cache        = ConfigCache.WMConfigCache('testdb2')
-        handle       = open(step.application.command.configuration, 'w')
-        configHash   = step.application.command.configurationHash
-        configString = cache.getConfigByHash( configHash )
-        handle.write( configString )
-        handle.close() 
+        helper = WMStepHelper(step)
+        stepName = helper.name()
+        if hasattr(step.application.configuration, 'configCacheUrl'):
+            # means we have a configuration & tweak in the sandbox
+            psetFile = step.application.command.configuration
+            psetTweak = step.application.command.psetTweak
+            stepSpace = self.stepSpace(stepName)
+            stepSpace.getFromSandbox(psetFile)
+            stepSpace.getFromSandbox(psetTweak)
+
+
         print "Steps.Executors.CMSSW.pre called"
         return None
 
@@ -53,7 +58,7 @@ class CMSSW(Executor):
         """
         if (emulator != None):
             return emulator.emulate( step )
-            
+
 
         # write the wrapper script to a temporary location
         # I don't pass it directly through os.system because I don't
@@ -66,7 +71,7 @@ class CMSSW(Executor):
         cmsswCommand   = step.application.command.executable
         cmsswConfig    = step.application.command.configuration
         cmsswArguments = step.application.command.arguments
-        
+
         (handle, configPath) = tempfile.mkstemp('.sh')
         os.write( handle, configBlob )
         os.close( handle )
@@ -85,8 +90,8 @@ class CMSSW(Executor):
                                                          subprocess.PIPE )
         # open the output files
         stdoutHandle = open( step.output.stdout , 'w')
-        stderrHandle = open( step.output.stderr , 'w') 
-        
+        stderrHandle = open( step.output.stderr , 'w')
+
         # loop and collect the data
         while (1):
             (rdready, wrready, errready) = select.select([spawnedChild.stdout,
@@ -97,18 +102,18 @@ class CMSSW(Executor):
             if stderrHandle in rdready:
                 ourbuffer = spawnedChild.stderr.read(-1)
                 stderrHandle.write(buffer)
-            
+
             # see if the process is still running
             spawnedChild.poll()
             if (spawnedChild.returncode != None):
                 break
             # give the process some time to fill a buffer
             select.select([], [], [], .1)
-        
+
         spawnedChild.wait()
         # the spawned CMSSW shell has returned, let's interpret return calls
-        # I'm avoiding the codes from 
-        # https://twiki.cern.ch/twiki/bin/view/CMS/JobExitCodes      
+        # I'm avoiding the codes from
+        # https://twiki.cern.ch/twiki/bin/view/CMS/JobExitCodes
         # 70 we called the script with too few arguments
         # 71 scram project failure
         # 72 chdir failure
@@ -124,16 +129,16 @@ class CMSSW(Executor):
                               ,None,argsDump)
         elif (spawnedChild.returncode == 72):
             raise WMException("Failed to chdir to the cmssw directory"
-                              ,None,argsDump)    
+                              ,None,argsDump)
         elif (spawnedChild.returncode == 73):
             raise WMException("Failed to execute the scram runtime"
                               ,None,argsDump)
         elif (spawnedChild.returncode != 0):
-            raise WMException("Unknown error in cmsRun. Code: %i" 
+            raise WMException("Unknown error in cmsRun. Code: %i"
                                 % spawnedChild.returncode, None, argsDump)
         step.section_("execution")
         step.execution.exitStatus = spawnedChild.returncode
-        
+
         print "Steps.Executors.CMSSW.execute called"
 
 
@@ -147,7 +152,7 @@ class CMSSW(Executor):
         print "Steps.Executors.CMSSW.post called"
         if (emulator != None):
             return emulator.emulatePost( step )
-        
+
         return None
 
 configBlob = """#!/bin/bash

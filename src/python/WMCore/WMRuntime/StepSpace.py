@@ -5,6 +5,9 @@ _StepSpace_
 Frontend module for setting up StepSpace areas within a job.
 
 """
+import os
+import inspect
+from WMCore.WMRuntime.Sandbox import Sandbox
 
 class StepSpace:
     """
@@ -17,6 +20,37 @@ class StepSpace:
     """
     def __init__(self, **args):
         self.taskSpace = None
-        pass
+        self.args = args
+        self.stepName = args.get("StepName", None)
+        self.initmodule = inspect.getsourcefile(args.get("Locator", None))
+        self.directory  = os.path.dirname(self.initmodule)
+        self.sandbox = Sandbox(self.stepName)
+
+    def sandboxFiles(self):
+        """
+        _sandboxFiles_
+
+        Get details of sandbox files for this step from the
+        WMSandbox
+
+        """
+        return self.sandbox.listFiles()
+
+
+    def getFromSandbox(self, filename, target = None):
+        """
+        _getFromSandbox_
+
+        Copy a file from the Sandbox area to the Step runtime area.
+        Will have same basename as in sandbox unless a target name
+        is provided
+
+        """
+        sbox = self.sandbox.getFile(filename)
+        if target == None:
+            target = filename
+        destination = os.path.join(self.directory, target)
+        os.system("/bin/cp %s %s" % (sbox, destination))
+        return
 
 

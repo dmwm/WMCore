@@ -7,6 +7,7 @@ Interface definition for a step executor
 
 """
 
+import sys
 
 class Executor:
     """
@@ -15,7 +16,7 @@ class Executor:
     Define API for a step during execution
 
     """
-    
+
     def __init__(self):
         pass
 
@@ -70,3 +71,33 @@ class Executor:
         step.section_("execution")
         step.execution.exitStatus = details.get("ExitStatus", None)
 
+
+    def stepSpace(self, stepName):
+        """
+        _stepSpace_
+
+        Util to get the runtime step space.
+        This imports dynamic runtime libraries so be careful how
+        you use it
+
+        """
+        modName = "WMTaskSpace"
+        if modName in sys.modules.keys():
+            taskspace = sys.modules[modName]
+        else:
+            try:
+                taskspace = __import__(modName, globals(), locals(), ['taskSpace'], -1)
+
+            except ImportError, ex:
+                msg = "Unable to load WMTaskSpace module:\n"
+                msg += str(ex)
+                #TODO: Generic ExecutionException...
+                raise RuntimeError, msg
+
+        try:
+            stepSpace = taskspace.taskSpace.stepSpace(stepName)
+        except Exception, ex:
+            msg = "Error retrieving stepSpace from TaskSpace:\n"
+            msg += str(ex)
+            raise RuntimeError, msg
+        return stepSpace

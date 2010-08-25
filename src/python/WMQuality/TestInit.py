@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.34 2010/02/08 19:45:48 meloam Exp $"
+    "$Id: TestInit.py,v 1.35 2010/02/08 19:53:54 meloam Exp $"
 __version__ = \
-    "$Revision: 1.34 $"
+    "$Revision: 1.35 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -36,10 +36,14 @@ def deleteDatabaseAfterEveryTest( areYouSerious ):
     """ this method handles whether or not TestInit will be vicious
         to databases
     """
+    # python is idiotic for its scoping system
+    global trashDatabases
     if (areYouSerious == "I'm Serious"):
+        print "We are going to trash databases after every test"
         trashDatabases = True
     else:
         #"I'm glad you weren't serious"
+        print "We are not going to trash databases after every test"
         trashDatabases = False
         
 class TestInit:

@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.12 2010/03/11 19:22:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.13 2010/03/31 21:32:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import unittest
 import os
@@ -63,6 +63,11 @@ class WMBSMergeBySize(unittest.TestCase):
         """
         _stuffWMBS_
 
+        Insert some dummy jobs, jobgroups, filesets, files and subscriptions
+        into WMBS to test job creation.  Three completed job groups each
+        containing several files are injected.  Another incomplete job group is
+        also injected.  Also files are added to the "Mergeable" subscription as
+        well as to the output fileset for their jobgroups.
         """
         changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
 

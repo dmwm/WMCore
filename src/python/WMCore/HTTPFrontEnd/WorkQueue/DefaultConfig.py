@@ -21,14 +21,14 @@ workqueue = active.section_('workqueue')
 # The class to load for this view/page
 workqueue.object = 'WMCore.WebTools.RESTApi'
 workqueue.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
-workqueue.database = 'mysql://user@cmssrv188.fnal.gov:3307/TestDB'
+workqueue.database = 'mysql://sryu@cmssrv18.fnal.gov:3307/TestDB_sryu'
 #only needs to specify when mysql db is used
 #if it is not specified gets the value from environment variable. (DBSOCK)
-workqueue.dbsocket = '/yoursocketpath/mysql.sock'
+#workqueue.dbsocket = '/var//mysql.sock'
 workqueue.section_('model')
 workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
 workqueue.section_('formatter')
 workqueue.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
 workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
-#TODO: find the way to get this from WorkQueueManager Config -should be the same value
+
 workqueue.queueParams = {}

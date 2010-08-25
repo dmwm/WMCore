@@ -336,11 +336,12 @@ class SchedulerARC(SchedulerInterface):
         xrsl = '&'
         xrsl += '(executable="%s")' % job['executable']
 
-        # The comma separated list of input files contains '\"':s and '\':s
-        # that should be removed -- otherwise the list will be split into
+        # An argument-string may contain '\"':s and '\':s
+        # that should be removed -- otherwise it will be split into
         # several arguments by the shell, which is WRONG!
-        args = job['arguments'].replace('\\"', '').replace('\\', '')
-        xrsl += '(arguments=%s)' % args
+        if job['arguments']:
+            args = job['arguments'].replace('\\"', '').replace('\\', '')
+            xrsl += '(arguments=%s)' % args
 
         xrsl += '(jobName="%s")' % job['name']
         xrsl += '(stdout="%s")' % job['standardOutput']

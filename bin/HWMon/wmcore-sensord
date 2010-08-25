@@ -1,0 +1,794 @@
+#!/usr/bin/env python
+
+"""
+wmcore-sensord
+
+deamon for WMComponent, Service, Resource and Disk.
+"""
+
+import time
+import os
+import sys
+import getopt
+import subprocess
+import string
+import copy
+import time
+import smtplib
+import signal
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEBase import MIMEBase
+from email.MIMEText import MIMEText
+from email.Utils import COMMASPACE, formatdate
+from email import Encoders
+from datetime import datetime
+from WMCore.Agent.Daemon.Details import Details
+from WMCore.Configuration import loadConfigurationFile
+
+########################
+### Helper functions ###
+########################
+
+def findIOStat():
+    """
+    Finds active 'iostat' process running for target.
+    """
+    
+    global target
+    
+    tpids = os.popen("ps -C iostat wwho pid,cmd | grep '%s'" % target).read()
+    if len(str(tpids)) != 0:
+        pid = str(tpids).split()[0]
+        logDebug("findIOStat: %s" % pid)
+        return int(pid)
+    else:    
+        logDebug("findIOStat: None")
+        return None
+        
+def findSar():
+    """
+    Finds active 'sar' process running for target.
+    """
+    
+    global WMCOMPONENT, SERVICE, RESOURCE
+    global targetType, target, shell
+    
+    print "findSar, type:", TYPES[targetType]
+    
+    if targetType in (WMCOMPONENT, SERVICE):
+        pattern = getPid()
+    
+    if targetType == RESOURCE:
+        if target not in shell['sensor']['RESOURCE']:
+            logDebug("findSar: None")
+            return None
+        else:
+            pattern = "\\" + shell['sensor']['RESOURCE'][target][1]
+    
+    tpids = os.popen("ps -C sar wwho pid,cmd | grep '%s'" % pattern).read()
+    
+    print "tpids:", tpids
+    
+    if len(str(tpids)) != 0:
+        pid = str(tpids).split()[0]
+        logDebug("findSar: %s" % pid)
+        print "findSar: %s" % pid
+        return int(pid)
+    else:
+        logDebug("findSar: None")
+        print "findSar: None"
+        return None
+
+def wmComponentPid():
+    """
+    Finds running WMComponent pid.
+    """
+    
+    global config, target
+    
+    daemonXml = os.path.abspath("%s/Components/%s/Daemon.xml" % (config.General.workDir, target))
+    logDebug("daemonXml=%s" % daemonXml)
+   
+    if not os.path.isfile(daemonXml):
+        logWarning("Daemon.XML file was not found, assumed that WMComponent is not running.")
+        logDebug("wmComponentPid: None")
+        return None
+
+    daemon = Details(daemonXml)
+    if daemon.isAlive():
+        logDebug("wmComponentPid: %s" % daemon['ProcessID'])
+        return daemon['ProcessID']
+    else:
+        logDebug("wmComponentPid: None")
+        return None
+
+def servicePid():
+    """
+    Finds running service pid.
+    """
+    
+    global target
+    
+    if target == "mySQL":
+        tpids = os.popen("ps -C %s wwho pid" % servicesList['mySQL']).read()
+        if len(str(tpids)) != 0:
+            pid = str(tpids).split()[0]
+            logDebug("servicePid: %s" % pid)
+            return int(pid)
+
+    if target == "GridFTP":
+        tpids = os.popen("ps -C %s wwho pgid,pid" % servicesList['GridFTP']).readlines()
+        for ipid in tpids:
+            if len(str(tpids)) != 0:
+                pgid, pid = str(ipid).split()[0:2]
+                if pid == pgid:
+                    logDebug("servicePid: %s" % pid.rstrip())
+                    return int(pid.rstrip())
+      
+    logDebug("servicePid: None")              
+    return None
+    
+def log(msg, code = "INFO"):
+    """
+    General log handler for target.
+    """
+    
+    global target, sensorsPath
+    
+    logFileName = "%s-stat.log" % target
+    path = "%s/%s" % (sensorsPath, logFileName)
+    logFile = open(path, "a")
+    logFile.writelines("%s;%s;%s\n" % (int(time.time()), code, msg))
+    logFile.close()
+
+def logInfo(msg):
+    """
+    Log handler for target (INFO type messages).
+    """
+    
+    log(msg, "INFO")
+
+def logError(msg):
+    """
+    Log handler for target (ERROR type messages).
+    """
+    
+    print "ERROR:", msg
+    log(msg, "ERROR")
+    sys.exit(1)
+
+def logWarning(msg):
+    """
+    Log handler for target (WARNING type messages).
+    """
+    
+    print "WARNING:", msg
+    log(msg, "WARNING")
+    
+def logDebug(msg):
+    """
+    Log handler for target (DEBUG type messages).
+    """
+    
+    if debugMode == True:
+        log(msg, "DEBUG")
+    
+def error(msg):
+    """
+    Handler for errors. 
+    """
+    
+    print "ERROR:", msg
+    sys.exit(1)
+    
+def warning(msg):
+    """
+    Handler for warnings.
+    """
+    
+    print "WARNING:", msg
+
+def killSar(pattern):
+    """
+    Finds 'sar' process for specific pattern and terminates it.
+    """
+    
+    logDebug("killSar(pattern='%s')" % pattern)
+    # TODO: Change all os.system --> subprocess.popen To Mask errors, like kill goes nuts if not params passed
+    os.system("pid_list=$(pid=`ps -C sar wwho pid,cmd | grep -i '%s' | awk '{ print $1 }'`; ps ho pid --ppid $pid; echo $pid);echo $pid_list | xargs kill -9" % pattern)
+
+def killIOStat(pattern):
+    """
+    Finds 'iostat' process for specific pattern and terminates it.
+    """
+    
+    logDebug("killIOStat(patter='%s')" % pattern)
+    os.system("ps -C iostat wwho pid,cmd | grep -i '%s' | awk '{ print $1 }' | xargs kill -9" % pattern)
+
+def stopSar():
+    """
+    Terminates 'sar' process depending on target's type.
+    """
+
+    global WMCOMPONENT, SERVICE, RESOURCE, TYPES
+    global target, targetType, shell
+
+    logDebug("Stopping sensor for %s %s" % (TYPES[targetType], target))
+
+    if targetType in (WMCOMPONENT, SERVICE):
+        pid = getPid()
+        if pid != None:
+            killSar(pid)
+
+    if targetType == RESOURCE:
+        killSar("\\" + shell['sensor']['RESOURCE'][target][1])
+
+def stopIOStat():
+    """
+    Terminates 'iostat' process depending on target's type.
+    """    
+    
+    global target
+    
+    logDebug("Stopping sensor for %s %s" % (TYPES[targetType], target))
+    
+    killIOStat(target)
+
+def startSar():
+    """
+    Launches 'sar' process depending on target's type.
+    """
+    
+    global WMCOMPONENT, SERVICE, RESOURCE, TYPES
+    global target, targetType, sensorsPath, shell, config
+    
+    sar = os.popen("which sar 2>/dev/null").readline().strip()
+    if len(sar) == 0:
+        logError("'sar' utility is not installed on this machine. Please, install the SYSSTAT package.")
+        
+    logDebug("Starting sensor for %s %s" % (TYPES[targetType], target))
+        
+    sensorFile = "%s/%s-stat.dat" % (sensorsPath, target)
+    logDebug("sensorFile=%s" % sensorFile)
+    
+    sarP = None
+    awkP = None
+    grepP = None
+    
+    if targetType in (WMCOMPONENT, SERVICE):
+        pid = getPid()
+        if pid == None:
+            logDebug("startSar: False")
+            return False
+        
+        sensorOUT = open(sensorFile, "a") 
+        tmpSensor = copy.deepcopy(shell['sensor'][TYPES[targetType]])
+        
+        if targetType == SERVICE:
+            tmpSensor.insert(1, servicesSensorType[target])
+        else:
+            try:
+                tmpSensor.insert(1, ['-x', '-X'][config.component_(target).monitorChilds])
+            except AttributeError:
+                tmpSensor.insert(1, '-x')
+        
+        tmpSensor.insert(2, str(pid))
+        logDebug("Execute: %s" % string.join(tmpSensor))
+        sarP = subprocess.Popen(tmpSensor, bufsize=1, stdout=subprocess.PIPE)
+        del tmpSensor
+        logDebug("Execute: %s" % string.join(shell['select'][TYPES[targetType]]))
+        awkP = subprocess.Popen(shell['select'][TYPES[targetType]], bufsize=1, stdin=sarP.stdout, stdout=sensorOUT)
+    
+    if targetType == RESOURCE: 
+        sensorOUT = open(sensorFile, "a")
+        logDebug("Execute: %s" % string.join(shell['sensor']['RESOURCE'][target]))
+        sarP = subprocess.Popen(shell['sensor']['RESOURCE'][target], bufsize=1, stdout=subprocess.PIPE)
+        logDebug("Execute: %s" % string.join(shell['filter']['RESOURCE'][target]))
+        grepP = subprocess.Popen(shell['filter']['RESOURCE'][target], bufsize=1, stdin=sarP.stdout, stdout=subprocess.PIPE)
+        logDebug("Execute: %s" % string.join(shell['select']['RESOURCE'][target]))
+        awkP = subprocess.Popen(shell['select']['RESOURCE'][target], bufsize=1, stdin=grepP.stdout, stdout=sensorOUT)
+    
+    logDebug("Waiting for 3 seconds.")
+    time.sleep(3)
+    awkP.poll()
+    
+    if awkP.returncode is None:
+        logDebug("startSar: True")
+        return True
+    else:
+        logDebug("startSar: False")
+        return False
+    
+def startIOStat():
+    """
+    Launches 'iostat' process depending on target's type.
+    """
+    
+    global TYPES
+    global target, targetType, sensorsPath, shell
+    
+    iostat = os.popen("which sar 2>/dev/null").readline().strip()
+    if len(iostat) == 0:
+        logError("'iostat' utility is not installed on this machine. Please, install the SYSSTAT package.")
+    
+    logDebug("Starting sensor for %s %s" % (TYPES[targetType], target))
+        
+    tmpSensor = copy.deepcopy(shell['sensor'][TYPES[targetType]])
+    tmpSensor.insert(2, target)
+    
+    sensorFile = "%s/%s-stat.dat" % (sensorsPath, target)
+    logDebug("sensorFile=%s" % sensorFile)
+    sensorOUT = open(sensorFile, "a")
+
+    logDebug("Execute: %s" % string.join(tmpSensor))
+    ioStatP = subprocess.Popen(tmpSensor, bufsize=1, stdout=subprocess.PIPE)
+    del tmpSensor
+    
+    logDebug("Execute: %s" % string.join(shell['select'][TYPES[targetType]]))
+    awkP = subprocess.Popen(shell['select'][TYPES[targetType]], bufsize=1, stdin=ioStatP.stdout, stdout=sensorOUT)
+    
+    logDebug("Waiting for 3 seconds.")
+    time.sleep(3)
+    awkP.poll()
+    
+    if awkP.returncode == None:
+        logDebug("startIOStat: True")
+        return True
+    else:
+        logDebug("startIOStat: False")
+        return False
+
+def sendMail(to, subject, text, files=[]):
+    """
+    Sends e-mail (attachments allowed).
+    """
+    
+    global config
+    
+    logDebug("Making letter (to='%s', from='%s', date='%s', subject='%s')" 
+             % (config.HWMon.Mail.GetterMail, config.HWMon.Mail.SenderMail, formatdate(localtime=True), subject))
+             
+    msg = MIMEMultipart()
+    msg['From'] = config.HWMon.Mail.SenderMail
+    msg['To'] = config.HWMon.Mail.GetterMail
+    msg['Date'] = formatdate(localtime=True)
+    msg['Subject'] = subject
+    
+    msg.attach(MIMEText(text))
+    
+    for file in files:
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(open(file, "rb").read())
+        Encoders.encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment; filename="%s"' 
+                        % os.path.basename(file))
+                        
+        logDebug("Adding file to letter: %s" % file)
+        msg.attach(part)
+        
+    logDebug("Connecting to SMTP server (hostname='%s', port='%s')." 
+             % (config.HWMon.Mail.SMTPServer, config.HWMon.Mail.SMTPPort))
+    try:
+        smtp = smtplib.SMTP(config.HWMon.Mail.SMTPServer, config.HWMon.Mail.SMTPPort)
+    except:
+        logWarning("Exception: %s" % str(sys.exc_info()[1]))
+        return
+    
+    if (len(config.HWMon.Mail.Username) != 0):
+        try:
+            logDebug("Trying to login to SMTP server (username='%s', password='%s')"
+                     % (config.HWMon.Mail.Username, config.HWMon.Mai.Password))
+            smtp.login(config.HWMon.Mail.Username, config.HWMon.Mail.Passowrd)
+        except:
+            logWarning("Exception: %s" % str(sys.exc_info()[1]))
+            smtp.quit()
+            return
+    
+    try:
+        logDebug("Sending e-mail via SMTP server")
+        smtp.sendmail(config.HWMon.Mail.SenderMail, config.HWMon.Mail.GetterMail, msg.as_string())
+    except:
+        logWarning("Exception: %s" % str(sys.exc_info()[1]))
+
+    logDebug("Terminating SMTP server connection.")
+    smtp.quit()
+
+def getLastTimeBackUp():
+    """
+    Gets datetime object when the last backup was done for target.
+    """
+    
+    global sensorsBackUpPath, target
+    
+    if not os.path.isdir(sensorsBackUpPath):
+        logWarning("Missing sensors back up folder. Creating one.")
+        os.system("mkdir -p %s" % sensorsBackUpPath)
+        
+    lastBackUp = os.popen("ls -1 %s | grep '^%s-[0-9]\{4\}.bz2$' | sort -r" % (sensorsBackUpPath, target)).readline()
+    logDebug("lastBackUp=%s" % lastBackUp[:-1])
+    
+    if len(lastBackUp) == 0:
+        # This means, that there should be a message written before going to routine (OK)
+        sensorLog = open("%s/%s-stat.log" % (sensorsPath, target), "r").readline()
+        logDebug("sensorLog=%s" % sensorLog[:-1])
+        logDebug("getLastTimeBackUp: %s" % datetime.fromtimestamp(int(sensorLog.split(";")[0])))
+        return datetime.fromtimestamp(int(sensorLog.split(";")[0]))
+    else:
+        # This means that all backups should be never modified (OK)
+        statinfo = os.stat("%s/%s" % (sensorsBackUpPath, lastBackUp[:-1]))
+        logDebug("getLastTimeBackUp: %s" % statinfo.st_mtime)
+        return datetime.fromtimestamp(statinfo.st_mtime)
+
+def doBackUp():
+    """
+    Back ups all sensors raw data and logs for target.
+    """
+    
+    global lastBackUpTime, target, sensorsPath, sensorsBackUpPath
+    
+    logDebug("Making backup for %s %s" % (TYPES[targetType], target))
+    logDebug("Stopping sensor for %s %s" % (TYPES[targetType], target))
+    stopDaemon()
+    time.sleep(3)
+    if getSensor() == None:
+        oldDir = os.getcwd()
+        os.chdir(sensorsPath)
+        targetBackUp = "%s-%s.bz2" % (target, str(int(time.time()))) # str(time.localtime().tm_year)
+        os.system("tar -cjf %(targetBackUp)s %(target)s-stat.log %(target)s-stat.dat" 
+                  % {'targetBackUp': targetBackUp, 'target': target})
+        
+        if not os.path.isfile("%s/%s" % (sensorsPath, targetBackUp)):
+            return False
+            
+        os.system("mv %(sensorsPath)s/%(targetBackUp)s %(sensorsBackUpPath)s/%(targetBackUp)s"
+                  % {'sensorsPath': sensorsPath, 'sensorsBackUpPath': sensorsBackUpPath, 'targetBackUp': targetBackUp})
+        
+        os.system("rm %(target)s-stat.log %(target)s-stat.dat" % {'target': target})
+        
+        os.chdir(oldDir)
+        logDebug("Starting sensor for %s %s" % (TYPES[targetType], target))
+        startDaemon()
+        lastBackUpTime = datetime.today()
+        logDebug("doBackUp: True")
+        return True
+    else:
+        logDebug("doBackUp: False")
+        return False
+        
+def routineCnS():
+    """
+    Routine for WMComponents and Services.
+    """
+    
+    global downMinutes
+    
+    logDebug("Starting routine: routineCnS")
+    
+    targetPid  = None
+    runningPid = None
+    sPid       = None
+    tPid       = None
+    
+    while True:
+        # ---- 
+        while True:
+            logDebug("Sleeping for 60 seconds.")
+            time.sleep(20) # check every minute
+            
+            logDebug("Starting 60 seconds check.")
+            runningPid = getPid()
+            print "checkC"
+            print "targetPid:", targetPid
+            print "runningPid:", runningPid
+            logDebug("runningPid=%s" % str(runningPid))
+            if runningPid == None:
+                if targetPid != None:
+                    logDebug("Killing sensor for targetPid (%s)." % str(targetPid))
+                    print "- kill for changed wmcomponent -"
+                    #stopDaemon() # kill daemon
+                    killDaemon(targetPid)
+                    targetPid = None
+            elif runningPid != targetPid:
+                logDebug("runningPid (%s) does not match targetPid (%s)" % (str(runningPid), str(targetPid)))
+                if targetPid != None:
+                    #stopDaemon() # kill daemon
+                    print "- kill me -"
+                    killDaemon(targetPid)
+                print "runA"
+                break
+            
+            print "checkA"
+            print "getSensor:", getSensor()
+            sPid = getSensor()
+
+            if sPid == None:
+                break
+            elif sPid != tPid:
+                stopDaemon()
+                break
+                       
+            maintainance()
+        # ----
+        if startDaemon() == False:
+            logWarning("Can not launch sensor!")
+            downMinutes += 1
+        else:
+            print "-start-"
+            tPid = getSensor()
+            targetPid = runningPid
+            downMinutes = 0
+
+def routineRnD():
+    """
+    Routine for Resources and Disks.
+    """
+    
+    global DISK, TYPES
+    global downMinutes, target, targetType
+    
+    logDebug("Starting routine: routineRnD")
+    
+    targetPid = None
+    runningPid = None
+    
+    while True:
+        # ---
+        while True:
+            logDebug("Sleeping for 60 seconds.")
+            time.sleep(10)
+            
+            print "getSensor:", getSensor()
+            runningPid = getSensor()
+        
+            if runningPid == None:
+                break
+            elif runningPid != targetPid:
+                if targetType == DISK:
+                    pid = getPid()
+                    print" ------------->>>> Pid;", pid
+                    killSar(pid)
+                else:
+                    stopDaemon()
+                break
+    
+            maintainance()
+        # ---
+        if startDaemon() == False:
+            logWarning("Can not launch sensor!")
+            downMinutes += 1
+        else:
+             downMinutes = 0 
+             targetPid = getSensor() 
+              
+def maintainance():
+    """
+    Maitainance operations.
+    """
+        
+    global TYPES
+    global config, targetType, target, lastBackUpTime
+    
+    if config.HWMon.Failures.Status == True and downMinutes == config.HWMon.Failures.Time:
+        logWarning("Sensor is down for %s minutes. Sendinng e-mail." % config.HWMon.Failures.Time)
+        msg = "Information for " + config.HWMon.Mail.GetterMail + "\n\n"
+        msg += "Sensor for " + TYPES[targetType] + " " + target + " is down for " + str(config.HWMon.Failures.Time) + " min.\n"
+        msg += "Required sys admin attention."
+        sendMail(config.HWMon.Mail.GetterMail, "Sensor Failure (%s, %s, %s min.)" % (TYPES[targetType], target, str(config.HWMon.Failures.Time)), msg)
+        
+    if config.HWMon.Backup.Status == True and (datetime.today() - lastBackUpTime).seconds >= config.HWMon.Backup.Time * 2592000:
+        logInfo("Making back, %s days passed since last backup (%s)"
+                % ((datetime.today() - lastBackUpTime).days, lastBackUpTime))
+        doBackUp()
+
+def handlerSIGTERM(signum, frame):
+    """
+    Handler for SIGTERM signal.
+    """
+    
+    stopDaemon()
+    sys.exit(0)
+
+##########################
+### Global definitions ###
+##########################
+
+WMCOMPONENT = 0
+SERVICE     = 1
+RESOURCE    = 2
+DISK        = 3
+
+TYPES = ['WMCOMPONENT', 'SERVICE', 'RESOURCE', 'DISK']
+
+pid = {
+    WMCOMPONENT : wmComponentPid,
+    SERVICE     : servicePid,
+    RESOURCE    : None,             # not used
+    DISK        : None              # not used
+}
+
+startSensor = {
+    WMCOMPONENT : startSar,
+    SERVICE     : startSar,
+    RESOURCE    : startSar,
+    DISK        : startIOStat
+}
+
+stopSensor = {
+    WMCOMPONENT : stopSar,
+    SERVICE     : stopSar,
+    RESOURCE    : stopSar,
+    DISK        : stopSar
+}
+
+findSensor = {
+    WMCOMPONENT : findSar,
+    SERVICE     : findSar,
+    RESOURCE    : findSar,
+    DISK        : findIOStat
+}
+
+killSensor = {
+    WMCOMPONENT : killSar,
+    SERVICE     : killSar,
+    RESOURCE    : killSar,
+    DISK        : killIOStat
+}
+
+shell = {}
+
+shell['sensor'] = {}    # sar/iostat
+shell['select'] = {}    # awk
+shell['filter'] = {}    # grep
+
+shell['sensor']['RESOURCE'] = {}
+shell['select']['RESOURCE'] = {}
+shell['filter']['RESOURCE'] = {}
+
+shell['filter']['WMCOMPONENT'] = None
+shell['filter']['SERVICE'] = None
+shell['filter']['DISK'] = None
+shell['filter']['RESOURCE']['CPU'] = ['grep', '--line-buffered', 'all']
+shell['filter']['RESOURCE']['MEM'] = ['grep', '--line-buffered', '-v', 'kbmemfree\|Linux|^$']
+shell['filter']['RESOURCE']['SWAP'] = ['grep', '--line-buffered', '-v', 'pswpin\|Linux|^$']
+shell['filter']['RESOURCE']['LOAD'] = ['grep', '--line-buffered', '-v', 'ldavg\|Linux|^$']
+
+shell['select']['WMCOMPONENT'] = ['awk', 'NR>3 { print strftime("%s")";"$6";"$7; fflush() }']
+shell['select']['SERVICE'] = ['awk', 'NR>3 { print strftime("%s")";"$6";"$7; fflush() }']
+shell['select']['DISK'] = ['awk', '(NR - 1) % 3 == 0 && NR != 1 { print strftime("%s")";"$3";"$4";"$5";"$6 fflush() }']
+shell['select']['RESOURCE']['CPU'] = ['awk', 'NR>3 { print strftime("%s")";"$4";"$5";"$6";"$7";"$8; fflush() }']
+shell['select']['RESOURCE']['MEM'] = ['awk', 'NR>3 { print strftime("%s")";"$6";"$7";"($4-$6-$7)";"$10; fflush() }']
+shell['select']['RESOURCE']['SWAP'] = ['awk', 'NR>3 { print strftime("%s")";"$3";"$4; fflush() }']
+shell['select']['RESOURCE']['LOAD'] = ['awk', 'NR>3 { print strftime("%s")";"$5";"$6";"$7; fflush() }']
+
+shell['sensor']['WMCOMPONENT'] = ['sar', str(60), str(0)]          # 2nd item must be WMCOMPONENT pid (inserted then needed, does not effect this list) 1st SensorTYpe
+shell['sensor']['SERVICE'] = ['sar', str(60), str(0)]              # 2nd item must be SERVICE pid (inserted then needed, does not effect this list) 1st sensorType
+shell['sensor']['DISK'] = ['iostat', '-dk', str(60)]                     # 2nd item must be DISK name (inserted then needed, does not effect this list)
+shell['sensor']['RESOURCE']['CPU'] = ['sar', '-u', str(60), str(0)]
+shell['sensor']['RESOURCE']['MEM'] = ['sar', '-r', str(60), str(0)]
+shell['sensor']['RESOURCE']['SWAP'] = ['sar', '-W', str(60), str(0)]
+shell['sensor']['RESOURCE']['LOAD'] = ['sar', '-q', str(60), str(0)]
+
+servicesList = {
+    'GridFTP' : 'globus-gridftp-server',
+    'mySQL'   : 'mysqld'
+}
+
+servicesSensorType = {
+    'GridFTP' : '-X',
+    'mySQL'   : '-x'
+}
+
+resourcesList = ['CPU', 'MEM', 'SWAP', 'LOAD']
+
+#################
+### Main part ###
+#################
+
+valid = ['config=', 'wmcomponent=', 'service=', 
+         'resource=', 'disk=', 'debug']
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "", valid)
+except getopt.GetoptError, ex:
+    error(str(ex))
+
+configFile        = None            # Configuration file name
+target            = None            # Target name (MEM, CPU, hda, ErrorHandler, mySQL, etc.)
+targetType        = None            # Target type (RESOURCE, SERVICE, etc.)
+sensorsPath       = None            # Path to 'sensors' directory
+config            = None            # Configuration object file
+debugMode         = False           # Debug Mode On/Off
+downMinutes       = 0               # Minutes passed while sensor/WMComponent/service is down
+lastBackUpTime    = None            # Datetime object of last backup
+sensorsBackUpPath = None            # Path to 'sensors_backup' directory
+
+for opt, arg in opts:
+    if opt == "--config":
+        configFile = arg
+    if opt == "--wmcomponent":
+        target = arg
+        targetType = WMCOMPONENT
+    if opt == "--service":
+        target = arg
+        targetType = SERVICE
+    if opt == "--resource":
+        target = arg
+        targetType = RESOURCE
+    if opt == "--disk":
+        target = arg
+        targetType = DISK
+    if opt == "--debug":
+        debugMode = True
+
+# Checking crucial variables
+
+if configFile == None:
+    error("No configuration file set! Configuration file must be passed via '--config=' option.")
+
+if target == "" or targetType == None:
+    error("No target was set! Must be passed target name, via '--wmcomponent=', '--service=', '--resource=' or '--disk' options.")
+
+# Loading configuration file
+
+try:
+    config = loadConfigurationFile(configFile)
+except ImportError, ex:
+    error("Can no load configuration file! Please, check configuration file (" + os.path.abspath(configFile) + ")")
+
+# Checking for 'HWMon' section in configuration file
+
+if "HWMon" not in config.listComponents_():
+    error("No 'HWMon' section found in WMCore configuration file! Please, check your configuration file.")
+    
+# Checking for 'sensors' directory
+
+sensorsPath = config.HTTPFrontEnd.ComponentDir + "/sensors"
+if not os.path.isdir(sensorsPath):
+    warning("Sensors folder is missing in HTTPFrontEnd ComponentDir! Created sensors folder.")
+    os.system("mkdir -p %s" % sensorsPath)
+
+# Checking of availability depending on type
+
+if targetType == WMCOMPONENT:
+    wmComponentsList = config.listComponents_()
+    if target not in wmComponentsList:
+        error("WMComponent '%s' is not defined in configuration file." % target)
+elif targetType == SERVICE:
+    if target not in servicesList:
+        error("Service '%s' is not supported." % target)
+elif targetType == RESOURCE:
+    if target not in resourcesList:
+        error("Resource '%s' is not supported." % target)
+elif targetType == DISK:
+    disks = os.popen('ls -1 /dev/?d[a-z]').readlines()
+    disks = map(lambda x: x.split('/')[2].rstrip(), disks)
+    if target not in disks:
+        error("No such '%s' hard-drive on this machine." % target)
+
+# type was confirmed and we can use log* functions
+logInfo("wmcore-sensord: Sensor daemon for %s %s" % (TYPES[targetType], target))
+logDebug("target=%s" % target)
+logDebug("targetType=%s" % TYPES[targetType])
+
+sensorsBackUpPath = config.HTTPFrontEnd.ComponentDir + "/sensors_backup"
+lastBackUpTime    = getLastTimeBackUp()
+
+# Defining simple global functions
+
+getSensor   = findSensor[targetType]
+killDaemon  = killSensor[targetType]
+startDaemon = startSensor[targetType]
+stopDaemon  = stopSensor[targetType]
+getPid      = pid[targetType]
+
+# Take control of SIGTERM handling
+
+signal.signal(signal.SIGTERM, handlerSIGTERM)
+
+logInfo("wmcore-sensord is ready to start sensor.")
+if targetType in (WMCOMPONENT, SERVICE):
+    routineCnS()
+elif targetType in (RESOURCE, DISK):
+    routineRnD()
+
+

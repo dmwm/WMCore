@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.42 2010/06/24 14:55:42 sryu Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: Harness.py,v 1.43 2010/06/24 19:30:37 sryu Exp $"
+__version__ = "$Revision: 1.43 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -48,7 +48,7 @@ class Harness:
     components
     """
 
-    def __init__(self, config, compName):
+    def __init__(self, config, compName = None):
         """
         init
    

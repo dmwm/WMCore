@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.18 2009/07/23 21:10:40 meloam Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: ChangeState.py,v 1.19 2009/08/03 15:49:57 meloam Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -55,9 +55,17 @@ class ChangeState(WMObject):
         return jobs
 
     def getCouchByHeadID(self, id):
-        return self.database.loadView('jobs','get_by_head_couch_id',{},[id])
+        if (type(id) == type([])):
+            return self.database.loadView('jobs','get_by_head_couch_id',{},id)
+        else:            
+            return self.database.loadView('jobs','get_by_head_couch_id',{},[id])
+        
     def getCouchByJobID(self, id):
-        return self.database.loadView('jobs','get_by_job_id',{},[id])
+        if (type(id) == type([])):
+            return self.database.loadView('jobs','get_by_job_id',{},id)
+        else:            
+            return self.database.loadView('jobs','get_by_job_id',{},[id])
+        
     def getCouchByJobIDAndState(self, ids, state):
         keylist = []
         for oneid in ids:

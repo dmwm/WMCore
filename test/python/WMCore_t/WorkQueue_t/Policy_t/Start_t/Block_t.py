@@ -3,8 +3,8 @@
     WorkQueue.Policy.Start.Block tests
 """
 
-__revision__ = "$Id: Block_t.py,v 1.9 2010/07/14 16:27:09 swakef Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Block_t.py,v 1.10 2010/07/19 10:50:33 swakef Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import shutil
@@ -102,8 +102,35 @@ class BlockTestCase(unittest.TestCase):
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Data'], rerecoArgs2['BlockWhitelist'][0])
 
-        # TODO: Run blacklist
-        pass
+        # Run Whitelist
+        rerecoArgs3 = {'RunWhitelist' : [1]}
+        rerecoArgs3.update(rerecoArgs)
+        blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
+                                                     rerecoArgs3)
+        task = blacklistBlockWorkload.taskIterator().next()
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        self.assertEqual(len(units), 1)
+        self.assertEqual(units[0]['Data'], dataset + '#1')
+
+        # Run Blacklist
+        rerecoArgs3 = {'RunBlacklist' : [2, 3]}
+        rerecoArgs3.update(rerecoArgs)
+        blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
+                                                    rerecoArgs3)
+        task = blacklistBlockWorkload.taskIterator().next()
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        self.assertEqual(len(units), 1)
+        self.assertEqual(units[0]['Data'], dataset + '#1')
+
+        # Run Mixed Whitelist
+        rerecoArgs3 = {'RunBlacklist' : [1], 'RunWhitelist' : [3]}
+        rerecoArgs3.update(rerecoArgs)
+        blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
+                                                     rerecoArgs3)
+        task = blacklistBlockWorkload.taskIterator().next()
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        self.assertEqual(len(units), 1)
+        self.assertEqual(units[0]['Data'], dataset + '#2')
 
 if __name__ == '__main__':
     unittest.main()

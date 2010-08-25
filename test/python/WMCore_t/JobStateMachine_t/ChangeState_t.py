@@ -5,6 +5,8 @@ import sys
 import os
 import logging
 import threading
+import time
+import urllib
 
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
@@ -19,9 +21,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
-import time
-import urllib
-
+from WMCore.FwkJobReport.Report import Report
 
 class TestChangeState(unittest.TestCase):
 
@@ -229,6 +229,35 @@ class TestChangeState(unittest.TestCase):
                 hosts = self.change.getAttachment(job['couch_record'],'hosts')
                 self.assertEquals(hostTest, hosts)
                 self.assertRaises(CMSCouch.CouchNotFoundError, self.change.getAttachment, job['couch_record'], 'passwd')
+
+    def testJobSerialization(self):
+        """
+        _testJobSerialization_
+
+        Verify that serialization of a job works when adding a FWJR.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testJobA = Job(name = "TestJobA")
+        testJobA.create(testJobGroupA)
+
+        self.change.propagate([testJobA], 'created', 'new')
+        myReport = Report()
+        myReport.unpersist("Report.pkl")
+        testJobA["fwjr"] = myReport
+
+        self.change.propagate([testJobA], 'executing', 'created')        
+        return
 
 if __name__ == "__main__":
     unittest.main()

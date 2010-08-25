@@ -4,8 +4,8 @@
 
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.16 2010/04/09 20:40:09 sryu Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: SandboxCreator.py,v 1.17 2010/05/21 19:12:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 import os
 import re
 import tarfile
@@ -68,7 +68,7 @@ class SandboxCreator:
         self._makePathonPackage(path)
         
         # Create path to sandbox
-        archivePath = os.path.join(buildItHere, "%s-Sandbox.tar.bz2" % workloadName)
+        archivePath = os.path.join(buildItHere, "%s/%s-Sandbox.tar.bz2" % (workloadName, workloadName))
         # Add sandbox path to workload
         workload.setSandbox(archivePath)
         

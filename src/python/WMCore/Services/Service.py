@@ -35,19 +35,18 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.24 2009/08/06 12:58:06 metson Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Service.py,v 1.25 2009/08/06 17:00:23 metson Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import datetime
 import os
 import urllib
-from urlparse import urljoin
+from urlparse import urlparse
 import time
 import socket
-from urlparse import urlparse
 from WMCore.Services.Requests import Requests
 
-class Service(Requests):
+class Service(dict):
     def __init__(self, dict={}):
         #The following should read the configuration class
         for a in ['logger', 'endpoint']:
@@ -60,10 +59,10 @@ class Service(Requests):
         try:
             #Only works on python 2.5 or above
             self.setdefault("basepath", endpoint.path)
-            Requests.__init__(self, endpoint.netloc)
+            self.setdefault("requests", Requests(endpoint.netloc))
         except:
             self.setdefault("basepath", endpoint[2])
-            Requests.__init__(self, endpoint[1])
+            self.setdefault("requests", Requests(endpoint[1]))
                     
          #set up defaults
         self.setdefault("inputdata", {})
@@ -80,9 +79,10 @@ class Service(Requests):
         
         self['logger'].debug("""Service initialised (%s):
 \t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours)""" %
-                  (self, self["host"], self["basepath"], self["accept_type"], self["cachepath"], 
+                  (self, self["requests"]["host"], self["basepath"],
+                   self["accept_type"], self["cachepath"], 
                    self["cacheduration"]))
-
+       
     def cacheFileName(self, cachefile, inputdata={}):
         """
         Calculate the cache filename for a given query.
@@ -145,14 +145,14 @@ class Service(Requests):
         # Set the timeout
         deftimeout = socket.getdefaulttimeout()
         socket.setdefaulttimeout(self['timeout'])
+        
         try:
             # Get the data
             if not inputdata:
                 inputdata = self["inputdata"]
+            url = self["basepath"] + str(url)
             
-            url = urljoin(self["basepath"], str(url))
-
-            data, status, reason = self.makeRequest(uri=url, 
+            data, status, reason = self["requests"].makeRequest(uri=url, 
                                                     verb=self["method"],
                                                     data=inputdata)
             # Don't need to prepend the cachepath, the methods calling getData

@@ -6,14 +6,14 @@ An AuthorisedService is the same as a Service but sends a cert/key with the url
 opener to access secured resources.
 """
 
-__revision__ = "$Id: AuthorisedService.py,v 1.10 2009/07/16 21:57:26 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: AuthorisedService.py,v 1.11 2009/08/06 17:00:23 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import datetime, os, urllib, time
 
 from WMCore.WMException import WMException
 from WMCore.Services.Service import Service
-from WMCore.Services.Requests import SecureRequests as Requests
+from WMCore.Services.Requests import SecureRequests
 
 class AuthorisedService(Service):
     """
@@ -26,6 +26,8 @@ class AuthorisedService(Service):
     def __init__(self, dict={}):
         try:
             Service.__init__(self, dict)
+            self["requests"] = SecureRequests(self["requests"]["host"])
+             
         except WMException, ex:
             msg = str(ex)
             self["logger"].exception(msg)

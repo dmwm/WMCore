@@ -6,8 +6,8 @@ An AuthorisedService is the same as a Service but sends a cert/key with the url
 opener to access secured resources.
 """
 
-__revision__ = "$Id: AuthorisedService.py,v 1.11 2009/08/06 17:00:23 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: AuthorisedService.py,v 1.12 2009/08/06 17:02:35 metson Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import datetime, os, urllib, time
 
@@ -19,8 +19,6 @@ class AuthorisedService(Service):
     """
     _AuthorisedService_
     
-    (Warning: Order of inheritance is important since both has parent have 
-     the same method (_getURLOpener))
     TODO: better exception handling - make clear what exception is thrown
     """
     def __init__(self, dict={}):

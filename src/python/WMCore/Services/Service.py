@@ -24,7 +24,7 @@ forceCache, clearCache calls. By default the cache lasts 30 minutes.
 Calling refreshCache/forceRefresh will return an open file object, the cache
 file. Once done with it you should close the object.
 
-The service has a default timeout to recieve a response from the remote service 
+The service has a default timeout to receive a response from the remote service 
 of 30 seconds. Over ride this by passing in a timeout via the configuration 
 dict, set to None if you want to turn off the timeout.
 
@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.25 2009/08/06 17:00:23 metson Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: Service.py,v 1.26 2009/08/06 17:02:35 metson Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import datetime
 import os
@@ -52,7 +52,7 @@ class Service(dict):
         for a in ['logger', 'endpoint']:
             assert a in dict.keys(), "Can't have a service without a %s" % a
 
-        # Inherit from Resource
+        # Instantiate a Request
         # then split the endpoint into netloc and basepath
         endpoint = urlparse(dict['endpoint'])
         
@@ -64,7 +64,7 @@ class Service(dict):
             self.setdefault("basepath", endpoint[2])
             self.setdefault("requests", Requests(endpoint[1]))
                     
-         #set up defaults
+        #set up defaults
         self.setdefault("inputdata", {})
         self.setdefault("cachepath", '/tmp')
         self.setdefault("cacheduration", 0.5)
@@ -150,6 +150,7 @@ class Service(dict):
             # Get the data
             if not inputdata:
                 inputdata = self["inputdata"]
+            #prepend the basepath
             url = self["basepath"] + str(url)
             
             data, status, reason = self["requests"].makeRequest(uri=url, 

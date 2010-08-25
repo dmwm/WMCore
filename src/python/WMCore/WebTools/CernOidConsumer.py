@@ -4,28 +4,33 @@ import cherrypy
 import openid
 from openid.consumer import consumer, discover
 from openid.cryptutil import randomString # To generate session IDs
+from openid.store import filestore
 import cgi # To use escape()
-import CernOidDefaultHandler # default handler for login/etc pages
+# default handler for login/etc pages
+from WMCore.WebTools.CernOidDefaultHandler import CernOidDefaultHandler
 
 # Define session states
 UNKNOWN = 0        # Does not know about the authentication state
 PROCESSING = 1     # Waiting for the oid server response about the auth
 AUTHENTICATED = 2  # User authenticated correctly
 
+DEFAULT_SESSION_NAME = 'CernOpenIdTool'
 #-----------------------------------------------------------------------------
 # A class to transparently transform a cherrypy-based web app into an OpenID
 # consumer, thus allowing it to use CERN auth/authorization facilities
 class CernOidConsumer(cherrypy.Tool):
-    def __init__(self, store, base_path='/auth',
-                 session_name=DEFAULT_SESSION_NAME):
-        self.store = store
-        self.session_name = session_name
-        self.base_path = base_path + '/'
-        self.login_path = '%s/login' % base_path
-        self.failed_path = '%s/failure' % base_path
-        self.cancel_path = '%s/cancelled' % base_path
-        self.error_path = '%s/error' % base_path
-        self.logout_path = '%s/logout' % base_path
+    def __init__(self, config):
+        self.config = config
+        if self.config.store == 'filestore':
+            self.store = filestore.FileOpenIDStore(self.config.store_path)
+        
+        self.session_name = self.config.session_name
+        self.base_path = '/' # base_path + '/'
+        self.login_path = '%s/login' % self.base_path
+        self.failed_path = '%s/failure' % self.base_path
+        self.cancel_path = '%s/cancelled' % self.base_path
+        self.error_path = '%s/error' % self.base_path
+        self.logout_path = '%s/logout' % self.base_path
         self.defhandler = CernOidDefaultHandler(self.session_name)
 
         # Defines the hook point for cherrypy
@@ -200,28 +205,3 @@ class CernOidConsumer(cherrypy.Tool):
             cherrypy.request.handler = self.defhandler.error
         else:
             pass # don't know how to handle it at all
-
-                
-#-----------------------------------------------------------------------------
-
-# Sessions are required to Cern OpenID tool
-#cherrypy.config.update({'tools.sessions.on': True})
-
-# Reads and parses the input
-from WMCore.Configuration import loadConfigurationFile
-cfg=loadConfigurationFile('DefaultConfig.py')
-
-# Instantiates the file store for the openid consumer
-mystore = None
-if cfg.CernOpenID.store == 'filestore':
-    from openid.store import filestore
-    mystore = filestore.FileOpenIDStore(cfg.CernOpenID.store_path)
-elif cfg.CernOpenID.store == 'whatelse':
-    #mystore = ...
-    pass
-else:
-    # error! invalid store type
-    pass
-
-# Register it as a cherrypy tool
-cherrypy.tools.cernoid = CernOidConsumer(mystore,session_name=cfg.CernOpenID.default_session_name)

@@ -6,8 +6,8 @@ DBSUpload test TestDBSUpload module and the harness
 
 """
 
-__revision__ = "$Id: DBSUploadPoller_t.py,v 1.18 2010/02/10 22:31:48 meloam Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: DBSUploadPoller_t.py,v 1.19 2010/02/10 22:52:38 meloam Exp $"
+__version__ = "$Revision: 1.19 $"
 
 
 import os
@@ -211,6 +211,7 @@ class DBSUploadTest(unittest.TestCase):
         This may do everything itself.  It's hard to say
 
         """
+        raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
 
         #return
 

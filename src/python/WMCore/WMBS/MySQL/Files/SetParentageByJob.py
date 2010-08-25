@@ -5,8 +5,10 @@ MySQL implementation of File.SetParentageByJob
 Make the parentage link between a file and all the inputs of a given job
 """
 
-__revision__ = "$Id: SetParentageByJob.py,v 1.2 2010/03/08 16:31:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SetParentageByJob.py,v 1.3 2010/03/09 18:31:04 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
+
+import logging
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -15,6 +17,7 @@ class SetParentageByJob(DBFormatter):
     Make the parentage link between a file and all the inputs of a given job
     """
 
+
     sql = """INSERT INTO wmbs_file_parent (child, parent)
              SELECT DISTINCT wmbs_file_details.id, wmbs_job_assoc.file
              FROM wmbs_file_details, wmbs_job_assoc
@@ -22,9 +25,14 @@ class SetParentageByJob(DBFormatter):
              AND wmbs_file_details.id = :child
     """
     
-    def execute(self, jobID = None, child=0, conn = None, transaction = False):
+    
+    def execute(self, binds, conn = None, transaction = False):
+        """
+        Expect binds of form {'jobid', 'child'}
 
-        result = self.dbi.processData(self.sql, {'child': child, 'jobid': jobID}, 
+        """
+
+        result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
 
-        return self.format(result)
+        return 

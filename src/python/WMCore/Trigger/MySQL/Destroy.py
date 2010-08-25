@@ -8,8 +8,8 @@ Class for destroying MysQL specific schema for the trigger
 
 """
 
-__revision__ = "$Id: Destroy.py,v 1.2 2008/09/26 14:48:04 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Destroy.py,v 1.3 2009/07/24 17:53:54 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import threading
@@ -30,3 +30,5 @@ class Destroy(DBCreator):
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         self.create = {}
         self.constraints = {}
+        self.create['a_tr_trigger'] = """DROP TABLE tr_trigger"""
+        self.create['b_tr_trigger'] = """DROP TABLE tr_action"""

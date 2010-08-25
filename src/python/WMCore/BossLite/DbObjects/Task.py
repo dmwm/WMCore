@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.3 2010/03/30 15:19:05 mnorman Exp $"
-__revision__ = "$Revision: 1.3 $"
+__version__ = "$Id: Task.py,v 1.4 2010/04/15 20:52:41 mnorman Exp $"
+__revision__ = "$Revision: 1.4 $"
 
 import os.path
 import threading
@@ -197,6 +197,26 @@ class Task(DbObject):
 
         return
 
+
+    ###################################################################
+
+    def update(self, deep = True):
+        """
+        update task object from database (with all jobs)
+        """
+
+        status = 0
+
+        self.save()
+
+        if deep:
+            for job in self.jobs:
+                job.update(deep)
+                status += 1
+
+        # return number of entries updated
+        return status
+
     ########################################################################
     #  This is where I stopped doing anything
     ########################################################################
@@ -374,41 +394,41 @@ class Task(DbObject):
 
    ##########################################################################
 
-    def update(self, db, deep = True):
-        """
-        update task object from database (with all jobs)
-        """
-
-        # verify if the object exists in database
-        if not self.existsInDataBase:
-
-            # no, use save instead of update
-            return self.save(db)
-
-        # verify data is complete
-        if not self.valid(['id']):
-            raise TaskError("The following task instance cannot be updated," + \
-                     " since it is not completely specified: %s" % self)
-
-        # update task object in database
-        try:
-            status = db.update(self)
-
-            # update all jobs
-            if deep:
-                for job in self.jobs:
-                    status += job.update(db, deep)
-
-        # database error
-        except DbError, msg:
-            raise TaskError(str(msg))
-
-        # job error
-        except JobError, msg:
-            raise TaskError(str(msg))
-
-        # return number of entries updated
-        return status
+#    def update(self, db, deep = True):
+#        """
+#        update task object from database (with all jobs)
+#        """
+#
+#        # verify if the object exists in database
+#        if not self.existsInDataBase:
+#
+#            # no, use save instead of update
+#            return self.save(db)
+#
+#        # verify data is complete
+#        if not self.valid(['id']):
+#            raise TaskError("The following task instance cannot be updated," + \
+#                     " since it is not completely specified: %s" % self)
+#
+#        # update task object in database
+#        try:
+#            status = db.update(self)
+#
+#            # update all jobs
+#            if deep:
+#                for job in self.jobs:
+#                    status += job.update(db, deep)
+#
+#        # database error
+#        except DbError, msg:
+#            raise TaskError(str(msg))
+#
+#        # job error
+#        except JobError, msg:
+#            raise TaskError(str(msg))
+#
+#        # return number of entries updated
+#        return status
 
    ##########################################################################
 

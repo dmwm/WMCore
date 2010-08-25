@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.2 2010/03/30 15:31:33 mnorman Exp $"
-__revision__ = "$Revision: 1.2 $"
+__version__ = "$Id: Job.py,v 1.3 2010/04/15 20:52:51 mnorman Exp $"
+__revision__ = "$Revision: 1.3 $"
 
 
 # imports
@@ -306,10 +306,29 @@ class Job(DbObject):
         self.data['submissionNumber'] += 1
         parameters = {'jobId': self.data['jobId'],
                       'taskId': self.data['taskId'],
-                      'submission': self.data['submission']}
+                      'submission': self.data['submissionNumber']}
         self.runningJob = RunningJob(parameters = parameters)
 
         return
+
+
+
+    ###########################################################################
+
+    def update(self, db, deep = True):
+        """
+        update job information in database
+        """
+        status = 0
+        
+        self.save()
+
+        if deep and self.runningJob:
+            self.updateRunningInstance()
+            status += 1
+
+        # return number of entries updated.
+        return status
 
 ###############################################################################
     # ACHTUNG!
@@ -380,44 +399,44 @@ class Job(DbObject):
 
     ##########################################################################
 
-    def update(self, db, deep = True):
-        """
-        update job information in database
-        """
-
-        # verify if the object exists in database
-        if not self.existsInDataBase:
-
-            # no, use save instead of update
-            return self.save(db)
-
-        # verify data is complete
-        if not self.valid(['jobId', 'taskId']):
-            raise JobError("The following job instance cannot be updated," + \
-                     " since it is not completely specified: %s" % self)
-
-        # update it on database
-        try:
-            status = db.update(self)
-
-            # update running job if associated
-            if deep and self.runningJob is not None:
-                if self.data['submissionNumber'] != \
-                       self.runningJob['submission']:
-                    raise JobError(
-                        "Running instance of job %s.%s with invalid " \
-                        + " submission number: %s instead of %s " \
-                        % ( self.data['jobId'], self.data['taskId'], \
-                            self.runningJob['submission'], \
-                            self.data['submissionNumber'] ) )
-                status += self.runningJob.update(db)
-
-        # database error
-        except DbError, msg:
-            raise JobError(str(msg))
-
-        # return number of entries updated.
-        return status
+    #def update(self, db, deep = True):
+    #    """
+    #    update job information in database
+    #    """
+    #
+    #    # verify if the object exists in database
+    #    if not self.existsInDataBase:
+    #
+    #        # no, use save instead of update
+    #        return self.save(db)
+    #
+    #    # verify data is complete
+    #    if not self.valid(['jobId', 'taskId']):
+    #        raise JobError("The following job instance cannot be updated," + \
+    #                 " since it is not completely specified: %s" % self)
+    #
+    #    # update it on database
+    #    try:
+    #        status = db.update(self)
+    #
+    #        # update running job if associated
+    #        if deep and self.runningJob is not None:
+    #            if self.data['submissionNumber'] != \
+    #                   self.runningJob['submission']:
+    #                raise JobError(
+    #                    "Running instance of job %s.%s with invalid " \
+    #                    + " submission number: %s instead of %s " \
+    #                    % ( self.data['jobId'], self.data['taskId'], \
+    #                        self.runningJob['submission'], \
+    #                        self.data['submissionNumber'] ) )
+    #            status += self.runningJob.update(db)
+    #
+    #    # database error
+    #    except DbError, msg:
+    #        raise JobError(str(msg))
+    #
+    #    # return number of entries updated.
+    #    return status
 
 
 

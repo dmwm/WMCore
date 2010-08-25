@@ -7,8 +7,8 @@ Inherit from CreateWorkQueue, and add Oracle specific substitutions (e.g.
 use trigger and sequence to mimic auto increment in MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.6 2009/09/03 15:44:17 swakef Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Create.py,v 1.7 2009/11/12 16:43:32 swakef Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -18,6 +18,7 @@ class Create(CreateWorkQueueBase):
     """
     sequenceTables = ["wq_wmspec",
                       "wq_data",
+                      "wq_queues",
                       "wq_element",
                       "wq_site"]
     seqStartNum = 40

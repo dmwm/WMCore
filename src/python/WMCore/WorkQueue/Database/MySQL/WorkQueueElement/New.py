@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.7 2009/09/07 14:41:26 swakef Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: New.py,v 1.8 2009/11/12 16:43:31 swakef Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
@@ -23,10 +23,11 @@ class New(DBFormatter):
           """
     sql_no_input = """INSERT INTO wq_element (wmspec_id, num_jobs, priority,
                          parent_flag, status, subscription_id, insert_time,
-                         parent_queue_id)
+                         parent_queue_id, update_time)
                  VALUES ((SELECT id FROM wq_wmspec WHERE name = :wmSpecName),
                          :numJobs, :priority, :parentFlag, :available,
-                         :subscription, :insertTime, :parentQueueId)
+                         :subscription, :insertTime, :parentQueueId,
+                         :insertTime)
           """
 
     def execute(self, wmSpecName, input, numJobs, priority,

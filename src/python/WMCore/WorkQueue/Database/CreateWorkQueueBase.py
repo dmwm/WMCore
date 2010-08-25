@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.17 2009/09/14 19:49:11 sryu Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.18 2009/11/12 16:43:31 swakef Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import threading
 
@@ -22,10 +22,11 @@ class CreateWorkQueueBase(DBCreator):
     """
     requiredTables = ["01wq_wmspec",
                       "02wq_data",
-                      "03wq_element",
-                      "04wq_data_parentage",
-                      "05wq_site",
-                      "06wq_data_site_assoc"
+                      "03wq_queues",
+                      "04wq_element",
+                      "05wq_data_parentage",
+                      "06wq_site",
+                      "07wq_data_site_assoc"
                       ]
 
 
@@ -62,30 +63,40 @@ class CreateWorkQueueBase(DBCreator):
              UNIQUE (name)
              )"""
 
-        self.create["03wq_element"] = \
+        self.create["03wq_queues"] = \
+          """CREATE TABLE wq_queues (
+             id               INTEGER    NOT NULL,
+             url              VARCHAR(255) NOT NULL,
+             PRIMARY KEY (id),
+             UNIQUE(url)
+             )"""
+
+        self.create["04wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL,
              wmspec_id        INTEGER    NOT NULL,
              input_id         INTEGER,
              parent_queue_id  INTEGER,
+             child_queue      INTEGER,
              num_jobs         INTEGER    NOT NULL,
              priority         INTEGER    NOT NULL,
              parent_flag      INTEGER    DEFAULT 0,
              status           INTEGER    DEFAULT 0,
              subscription_id  INTEGER    NOT NULL,
              insert_time      INTEGER    NOT NULL,
+             update_time      INTEGER    NOT NULL,
              PRIMARY KEY (id),
              UNIQUE (wmspec_id, subscription_id)
              ) """
 
-        self.create["04wq_data_parentage"] = \
+        self.create["05wq_data_parentage"] = \
           """CREATE TABLE wq_data_parentage (
              child        INTEGER    NOT NULL,
              parent       INTEGER    NOT NULL,
              PRIMARY KEY (child, parent)
              )"""
 
-        self.create["05wq_site"] = \
+        self.create["06wq_site"] = \
           """CREATE TABLE wq_site (
              id          INTEGER      NOT NULL,
              name        VARCHAR(255) NOT NULL,
@@ -94,7 +105,7 @@ class CreateWorkQueueBase(DBCreator):
 
         #-- oracle doesn have BOOL needs some other datatype --
         #-- online BOOL DEFAULT FALSE, -- for when we track staging
-        self.create["06wq_data_site_assoc"] = \
+        self.create["07wq_data_site_assoc"] = \
           """CREATE TABLE wq_data_site_assoc (
              data_id     INTEGER    NOT NULL,
              site_id      INTEGER    NOT NULL,
@@ -131,6 +142,10 @@ class CreateWorkQueueBase(DBCreator):
         self.constraints["FK_wq_element_sub"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_sub
                  FOREIGN KEY(subscription_id) REFERENCES wmbs_subscription(id)"""
+
+        self.constraints["FK_wq_element_child"] = \
+              """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_child
+                 FOREIGN KEY(child_queue) REFERENCES wq_queues.id"""
 
 
     def execute(self, conn = None, transaction = None):

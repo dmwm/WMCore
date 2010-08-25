@@ -6,7 +6,16 @@ Implementations for the various database backends.
 
 """
 __all__ = []
-__revision__ = "$Id: __init__.py,v 1.2 2009/08/18 23:18:17 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: __init__.py,v 1.3 2009/11/12 16:43:31 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
-States = {'Available' : 0, 'Acquired' : 1, 'Done' : 2, 'Failed' : 3}
+States = {'Available' : 1,
+          'Negotiating' : 2,
+          'Acquired' : 3,
+          'Done' : 4,
+          'Failed' : 5,
+          'Canceled' : 6}
+
+# fill with index mapping for reverse lookup
+for x, y in States.items():
+    States[y] = x

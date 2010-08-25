@@ -3,18 +3,21 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.16 2009/10/13 22:42:56 meloam Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.17 2009/11/12 16:43:33 swakef Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import unittest
-import pickle
 import os
 
-from WMCore.WorkQueue.WorkQueue import WorkQueue
+from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMTask import makeWMTask
 
 from WorkQueueTestCase import WorkQueueTestCase
+
+# NOTE: All queues point to the same database backend
+# Thus total element counts etc count elements in all queues
+
 
 def createSpec(name, path, dataset = None,
                blacklist = None, whitelist = None):
@@ -123,16 +126,16 @@ class MockPhedexService:
         self.locations = {'/fake/test/RAW#1' : ['SiteA'],
                 '/fake/test/RAW#2' : ['SiteA', 'SiteB']}
 
-    def blockreplicas(self, **args):
+    def getReplicaInfoForBlocks(self, **args):
         """
         Where are blocks located
         """
         #blocks = [ {'bytes' : bytes, 'files' : files, 'name' : name      ]
         data = {"phedex":{"request_timestamp":1254762796.13538,
                           "block" : [{"files":"5", "name": '/fake/test/RAW#1',
-                                      'replica' : ['SiteA']},
+                                      'replica' : [{'se':'SiteA'}]},
                                      {"files":"10", "name": '/fake/test/RAW#2',
-                                      'replica' : ['SiteA', 'SiteB']},
+                                      'replica' : [{'se':'SiteA'}, {'se':'SiteB'}]},
                                     ]
                           }
         }
@@ -221,22 +224,26 @@ class WorkQueueTest(WorkQueueTestCase):
                    self.whitelistSpecFile, dataset,
                    whitelist = ['SiteB'])
 
-        self.globalQueue = WorkQueue(SplitByBlock = False, # Global queue
-                                     PopulateFilesets = False,
-                                     CacheDir = None)
-        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
-                            PopulateFilesets = False,
-                            ParentQueue = self.globalQueue,
-                            CacheDir = None)
+        #self.globalQueue = WorkQueue(SplitByBlock = False, # Global queue
+        #                             PopulateFilesets = False,
+        #                             CacheDir = None)
+        self.globalQueue = globalQueue(CacheDir = None, NegotiationTimeout = 0)
+#        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
+#                            PopulateFilesets = False,
+#                            ParentQueue = self.globalQueue,
+#                            CacheDir = None)
         # ignore mid queue as it causes database duplication's
-        self.localQueue = WorkQueue(SplitByBlock = True, # local queue
-                            ParentQueue = self.globalQueue,
-                            CacheDir = None)
+#        self.localQueue = WorkQueue(SplitByBlock = True, # local queue
+#                            ParentQueue = self.globalQueue,
+#                            CacheDir = None)
+        self.localQueue = localQueue(ParentQueue = self.globalQueue,
+                                     CacheDir = None,
+                                     ReportInterval = 0,
+                                     QueueURL = "local.example.com")
         # standalone queue for unit tests
         self.queue = WorkQueue(CacheDir = None)
         mockDBS = MockDBSReader('http://example.com')
-        for queue in (self.queue, self.localQueue,
-                      self.midQueue, self.globalQueue):
+        for queue in (self.queue, self.localQueue, self.globalQueue):
             queue.dbsHelpers['http://example.com'] = mockDBS
             queue.phedexService = MockPhedexService()
 
@@ -249,11 +256,6 @@ class WorkQueueTest(WorkQueueTestCase):
                   self.blacklistSpecFile, self.whitelistSpecFile):
             try:
                 os.unlink(f)
-            except OSError:
-                pass
-        for dir in ('global', 'mid', 'local'):
-            try:
-                os.rmdir(dir)
             except OSError:
                 pass
 
@@ -389,24 +391,21 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(work), 2)
 
 
-    def testGlobalQueue(self):
-        """
-        Global Queue
-        """
-        pass
-
     def testQueueChaining(self):
         """
-        Chain WorkQueues, pull work down and report status
+        Chain WorkQueues, pull work down and verify splitting
         """
-        # NOTE: All queues point to the same backend (i.e. same database table)
-        # Thus total element counts etc need to be adjusted for the other queues
         self.assertEqual(0, len(self.globalQueue))
         # check no work in local queue
         self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
         # Add work to top most queue
         self.globalQueue.queueWork(self.processingSpecFile)
         self.assertEqual(1, len(self.globalQueue))
+
+        # check work isn't passed down to site without subscription
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 0)
+
+        # put at correct site
         self.globalQueue.updateLocationInfo()
 
         # check work isn't passed down to the wrong agent
@@ -415,15 +414,93 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(1, len(self.globalQueue))
 
         # pull work down to the lowest queue
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 2)
+        self.assertEqual(len(self.localQueue), 2)
+        # parent state should be negotiating till we verify we have it
+        self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
+
         # check work passed down to lower queue where it was acquired
         # work should have expanded and parent element marked as acquired
+        #import pdb; pdb.set_trace()
+        self.assertEqual(len(self.localQueue.getWork({'SiteA' : 1000})), 0)
+        # releasing on block so need to update locations
+        self.localQueue.updateLocationInfo()
         work = self.localQueue.getWork({'SiteA' : 1000})
         self.assertEqual(0, len(self.localQueue))
         self.assertEqual(2, len(work))
 
         # mark work done & check this passes upto the top level
-        self.localQueue.setStatus('Done', *([str(x['id']) for x in work]))
+        self.localQueue.setStatus('Done',
+                                  [str(x['subscription_id']) for x in work])
+
+
+    def testQueueChainingNegotiationFailures(self):
+        """Chain workQueues and verify status updates, negotiation failues etc"""
+        # verify that negotiation failures are removed
+        #self.globalQueue.flushNegotiationFailures()
+        #self.assertEqual(len(self.globalQueue.status('Negotiating')), 0)
+        #self.localQueue.updateParent()
         # TODO: Check status of element in global queue
+        self.assertEqual(0, len(self.globalQueue))
+        self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
+
+        # Add work to top most queue
+        self.globalQueue.queueWork(self.processingSpecFile)
+        self.assertEqual(1, len(self.globalQueue))
+        self.globalQueue.updateLocationInfo()
+        # pull to local queue
+        self.globalQueue.updateLocationInfo()
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 2)
+
+        # check that global reset's status if acquired status not verified
+        self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
+        self.assertEqual(len(self.localQueue.status('Available')), 2)
+        self.assertEqual(self.globalQueue.flushNegotiationFailures(), 1)
+        self.assertEqual(len(self.globalQueue.status('Available')), 3)
+        # If original queue re-connects it will confirm work acquired
+        # change queue name so it appears that a negotiation failure occurred
+        # and 2 queues were allocated the work - ensure the loser is canceled
+        myname = self.localQueue.params['QueueURL']
+        self.localQueue.params['QueueURL'] = 'local2.example.com'
+        self.localQueue.updateParent() # parent will fail children here
+        self.localQueue.params['QueueURL'] = myname
+        self.assertEqual(len(self.globalQueue.status('Available')), 1)
+        self.assertEqual(len(self.globalQueue.status('Canceled')), 2)
+
+
+    def testQueueChainingStatusUpdates(self):
+        """Chain workQueues, pass work down and verify lifecycle"""
+        self.assertEqual(0, len(self.globalQueue))
+        self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
+
+        # Add work to top most queue
+        self.globalQueue.queueWork(self.processingSpecFile)
+        self.assertEqual(1, len(self.globalQueue))
+        self.globalQueue.updateLocationInfo()
+
+        # pull to local queue
+        self.globalQueue.updateLocationInfo()
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 2)
+        # Tell parent local has acquired
+        self.assertEqual(self.localQueue.lastReportToParent, 0)
+        before = self.localQueue.lastFullReportToParent
+        self.localQueue.updateParent()
+        self.assertNotEqual(before, self.localQueue.lastFullReportToParent)
+
+        # run work
+        self.globalQueue.updateLocationInfo()
+        work = self.localQueue.getWork({'SiteA' : 1000})
+        self.assertEqual(len(work), 2)
+
+        # resend info
+        before = self.localQueue.lastReportToParent
+        self.localQueue.updateParent()
+        self.assertNotEqual(before, self.localQueue.lastReportToParent)
+
+        # finish work locally and propagate to global
+        self.localQueue.doneWork(*[str(x['subscription_id']) for x in work])
+        self.localQueue.updateParent()
+        self.assertEqual(len(self.globalQueue.status('Done')), 3)
 
 
 if __name__ == "__main__":

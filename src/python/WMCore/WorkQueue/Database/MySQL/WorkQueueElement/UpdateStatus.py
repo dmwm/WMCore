@@ -5,24 +5,44 @@ MySQL implementation of WorkQueueElement.UpdateStatus
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateStatus.py,v 1.3 2009/08/18 23:18:15 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: UpdateStatus.py,v 1.4 2009/11/12 16:43:31 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WorkQueue.Database import States
+import time
 
 class UpdateStatus(DBFormatter):
-    sql = """UPDATE wq_element SET status = :status
-              WHERE subscription_id = :subscription
-          """
+    sql1 = """UPDATE wq_element SET status = :status, update_time = :now"""
+    sql2 = """, child_queue = (SELECT id FROM wq_queues WHERE url = :queue)"""
+    sql3 = """ WHERE %s = :id"""
 
-    def execute(self, status, subscriptions, conn = None, transaction = False):
+    queue_insert_sql = """INSERT IGNORE INTO wq_queues (url) VALUES (:queue)"""
+
+    def execute(self, status, ids, id_type = 'subscription_id',
+                child_queue = None,
+                conn = None, transaction = False):
         if status not in States:
             raise RuntimeError, "Invalid state: %s" % status
+        if id_type not in ('subscription_id', 'parent_queue_id', 'id'):
+            raise RuntimeError, "Invalid id_type: %s" % id_type
 
+        now = int(time.time())
         binds = [{"status": States[status],
-                  "subscription" : x} for x in subscriptions]
-        result = self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)
+                  "now" : now,
+                  'id' : x} for x in ids]
+
+        sql = self.sql1
+        if child_queue:
+            self.dbi.processData(self.queue_insert_sql,
+                                 {'queue' : child_queue},
+                                 conn = conn,
+                                 transaction = transaction)
+            [ x.__setitem__('queue', child_queue) for x in binds]
+            sql += self.sql2
+        sql += self.sql3 % id_type
+
+        result = self.dbi.processData(sql, binds, conn = conn,
+                                      transaction = transaction)
         return result[0].rowcount

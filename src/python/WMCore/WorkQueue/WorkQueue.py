@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.32 2009/10/12 15:07:50 swakef Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: WorkQueue.py,v 1.33 2009/11/12 16:43:30 swakef Exp $"
+__version__ = "$Revision: 1.33 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -18,13 +18,11 @@ try:
 except NameError:
     from sets import Set as set
 # pylint: enable-msg = W0104, W0622
-try:
-    from collections import defaultdict    #python2.6 doesn't work fully yet
-except (NameError, ImportError):
-    pass
+
 import time
 import os
 from urllib import urlopen
+from collections import defaultdict
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
@@ -36,12 +34,37 @@ from WMCore.WorkQueue.WorkSpecParser import WorkSpecParser
 from WMCore.WMBS.Subscription import Subscription as WMBSSubscription
 from WMCore.WMBS.File import File as WMBSFile
 
+# used to work out which status's are more important
+from WMCore.WorkQueue.Database import States
 
-
-#TODO: Black/White list not taken into account
 #TODO: Scale test
 #TODO: Handle multiple dbs instances
-#TODO: Warning dataset level global queues don't take account of location
+#TODO: Major WARNING: When work is passed to a lower queue the work boundary is not correctly set
+#      Thus if a high level queue splits work; elements (and hence events) will be duplicated!
+#TODO: Decide whether to move/refactor db functions
+#TODO: Transaction handling
+#TODO: What about sending messages to component to handle almost live status updates
+
+
+#  //
+# // Convenience constructor functions
+#//
+def globalQueue(**kwargs):
+    """Convenience method to create a WorkQueue suitable for use globally
+    """
+    defaults = {'SplitByBlock' : False,
+                'PopulateFilesets' : False}
+    defaults.update(kwargs)
+    return WorkQueue(**defaults)
+
+def localQueue(**kwargs):
+    """Convenience method to create a WorkQueue suitable for use locally
+    """
+    defaults = {'TrackLocationOrSubscription' : 'location'}
+    defaults.update(kwargs)
+    return WorkQueue(**defaults)
+
+
 
 class WorkQueue(WorkQueueBase):
     """
@@ -57,7 +80,11 @@ class WorkQueue(WorkQueueBase):
         self.wmSpecs = {}
         self.elements = {}
         self.dbsHelpers = {}
+        self.remote_queues = {}
         self.lastLocationUpdate = 0
+        self.lastReportToParent = 0
+        self.lastFullReportToParent = 0
+        self.parent_queue = None
         self.params = params
         self.params.setdefault('ParentQueue', None) # Get more work from here
         self.params.setdefault('QueueDepth', 100) # when less than this locally
@@ -65,19 +92,23 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('ItemWeight', 0.01) # Queuing time weighted avg
         self.params.setdefault('FullLocationRefreshInterval', 3600)
         self.params.setdefault('TrackLocationOrSubscription', 'subscription')
-        self.params.setdefault('ReleaseIncompleteBlocks', True)
+        self.params.setdefault('ReleaseIncompleteBlocks', False)
         self.params.setdefault('ReleaseRequireSubscribed', True)
         self.params.setdefault('PhEDExEndpoint', None)
         self.params.setdefault('PopulateFilesets', True)
         self.params.setdefault('CacheDir', os.path.join(os.getcwd(),
                                                         'wf_cache'))
+        self.params.setdefault('NegotiationTimeout', 3600)
+        self.params.setdefault('QueueURL', None) # url this queue is visible on
+        self.params.setdefault('FullReportInterval', 3600)
+        self.params.setdefault('ReportInterval', 300)
 
         assert(self.params['TrackLocationOrSubscription'] in ('subscription',
                                                               'location'))
         # Can only release blocks on location
         if self.params['TrackLocationOrSubscription'] == 'location':
-            assert(self.params['SplitByBlock'],
-                   'Only blocks can be released on location')
+            if not self.params['SplitByBlock']:
+                raise RuntimeError, 'Only blocks can be released on location'
 
         phedexArgs = {}
         if self.params.get('PhEDExEndpoint'):
@@ -90,12 +121,372 @@ class WorkQueue(WorkQueueBase):
             except OSError:
                 pass
 
+        if self.params['ParentQueue'] is not None and not self.params['QueueURL']:
+            raise RuntimeError, "ParentQueue defined but not QueueURL"
+        if self.params['ParentQueue'] is not None:
+            self.parent_queue = self._get_remote_queue(self.params['ParentQueue'])
+
+
+
+
+
+
+    #  //
+    # // External API
+    #//
 
     def __len__(self):
-        items = self.daofactory(classname = "WorkQueueElement.GetElements")
-        return len(items.execute(conn = self.getDBConn(),
-                             transaction = self.existingTransaction()))
+        """Returns number of Available elements in queue"""
+        items = self.daofactory(classname = "WorkQueueElement.CountElements")
+        return items.execute('Available', conn = self.getDBConn(),
+                                 transaction = self.existingTransaction())
 
+    def setStatus(self, status, ids, id_type = 'subscription_id', source = None):
+        """
+        _setStatus_, throws an exception if no elements are updated
+
+        @param source - where a status update came from (remote queue)
+                      - already knows the status so don't send it
+        """
+        updateAction = self.daofactory(classname =
+                                       "WorkQueueElement.UpdateStatus")
+        affected = updateAction.execute(status, ids, id_type, source,
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+        if not affected:
+            raise RuntimeError, "Status not changed: No matching elements"
+
+        #TODO: Do we need to message parents/children here?
+        # Would be quicker than waiting for the next status updates
+        # but would need listening services and firewall holes etc.
+
+
+    def setPriority(self, newpriority, *workflowNames):
+        """
+        Update priority for a workflow, throw exception if no elements affected
+        """
+        updateAction = self.daofactory(classname = "WorkQueueElement.UpdatePriority")
+        affected = updateAction.execute(newpriority, workflowNames,
+                             conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
+        if not affected:
+            raise RuntimeError, "Priority not changed: No matching elements"
+
+
+    def getWork(self, siteJobs, pullingQueue = None):
+        """
+        _getWork_
+        siteJob is dict format of {site: estimateJobSlot}
+        """
+        results = []
+        blockLoader = self.daofactory(classname = "Data.LoadByID")
+        parentBlockLoader = \
+                    self.daofactory(classname = "Data.GetParentsByChildID")
+        matchAction = self.daofactory(classname = "WorkQueueElement.GetWork")
+        matches = matchAction.execute(siteJobs, self.params['ItemWeight'],
+                                       conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
+        for match in matches:
+
+            sub = WMBSSubscription(id = match['subscription_id'])
+            sub.load()
+            sub['workflow'].load()
+
+            if match['input_id'] and self.params['PopulateFilesets']:
+                dbs = self.dbsHelpers.values()[0] #FIXME!!!
+                block = blockLoader.execute(match['input_id'],
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+
+                if match['parent_flag']:
+                    dbsBlock = dbs.getFileBlockWithParents(block["name"])[block['name']]
+                else:
+                    dbsBlock = dbs.getFileBlock(block["name"])[block['name']]
+
+                # TODO: parent fileset
+                fileset = sub["fileset"]
+                for dbsFile in dbsBlock['Files']:
+                    wmbsFile = WMBSFile(lfn = dbsFile["LogicalFileName"],
+                            size = dbsFile["FileSize"],
+                            events = dbsFile["NumberOfEvents"],
+                            cksum = dbsFile["Checksum"],
+                            parents = dbsFile["ParentList"],
+                            locations = set(dbsBlock['StorageElements']))
+                    fileset.addFile(wmbsFile)
+                fileset.commit()
+            results.append(sub)
+
+        if results:
+            # Use Negotiating state to handshake between queue's
+            status = pullingQueue and 'Negotiating' or 'Acquired'
+            self.setStatus(status,
+                           ([str(x['id']) for x in results]),
+                           'subscription_id', pullingQueue)
+        # ensue database commit here
+        return [{'subscription_id' : x['id'],
+                 'workflow' : x['workflow'].spec} for x in results]
+
+
+    def doneWork(self, *subscriptions):
+        """
+        _doneWork_
+
+        this is called by JSM
+        update the WorkQueue status table
+        """
+        self.setStatus('Done', subscriptions)
+
+
+    def failWork(self, *subscriptions):
+        """Mark work as failed"""
+        self.setStatus('Failed', subscriptions)
+
+
+    def cancelWork(self, *subscriptions):
+        """Mark work as canceled"""
+        self.setStatus('Canceled', subscriptions)
+
+
+    def queueWork(self, wmspecUrl, parentQueueId = None):
+        """
+        Take and queue work from a WMSpec
+        """
+
+        if self.params['CacheDir']:
+            inp = urlopen(wmspecUrl).read()
+            tmp = os.path.join(self.params['CacheDir'],
+                               os.path.split(wmspecUrl)[1])
+            with open(tmp, 'w') as out:
+                out.write(inp)
+            wmspecUrl = tmp
+
+        wmspec = WMWorkloadHelper()
+        wmspec.load(wmspecUrl)
+        dbs_url = wmspec.taskIterator().next().dbsUrl()
+
+        specSplitter = WorkSpecParser(wmspec)
+
+        if dbs_url and not self.dbsHelpers.has_key(dbs_url):
+            self.dbsHelpers[dbs_url] = DBSReader(dbs_url)
+
+        units = specSplitter.split(split = self.params['SplitByBlock'],
+                           dbs_pool = self.dbsHelpers)
+
+        #TODO: Look at db transactions - try to minimize time active
+        #TODO: change to only create a transaction if none active
+        self.beginTransaction()
+
+        for primaryBlock, blocks, jobs in units:
+            wmbsHelper = WMBSHelper(wmspec, primaryBlock)
+            sub = wmbsHelper.createSubscription()
+
+            self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
+                                         blocks, sub['id'], parentQueueId)
+
+        self.commitTransaction(self.existingTransaction())
+        return len(units)
+
+
+    def status(self, status = None, subs = None, before = None, after = None,
+               dictKey = None):
+        """Return status of elements
+           if given only return elements updated since the given time
+        """
+        action = self.daofactory(classname = "WorkQueueElement.GetElements")
+        items = action.execute(since = after,
+                              before = before,
+                              status = status,
+                              subs = None,
+                              conn = self.getDBConn(),
+                              transaction = self.existingTransaction())
+        # if dictKey given format as a dict with the appropriate key
+        if dictKey:
+            tmp = {}
+            for item in items:
+                if item.get(dictKey) is None:
+                    continue #TODO: Check this is correct - only needed for testing so far
+                if tmp.get(item[dictKey]) is not None:  #if tmp.has_key(item[dictKey]):
+                    # combine status's or we could send all and combine on server
+                    status = States[item['status']]
+                    curr_status = States[tmp[item[dictKey]]['status']]
+                    item = status > curr_status and item or tmp[item[dictKey]]
+                tmp[item[dictKey]] = item
+            items = tmp
+        return items
+
+
+    def synchronize(self, child_url, child_report):
+        """
+        Take status from child queue and update ourselves
+        """
+        my_details = self.status(subs = child_report.keys(),
+                                 dictKey = "subscription_id")
+        #store elements we need to update grouped by status(reduce connections)
+        to_update = defaultdict(set)
+        # may need to change child status - i.e. if canceled in parent
+        child_update = defaultdict(set) # need to be set as have many children
+
+        for item_id, item in child_report.items():
+            # This queue doesn't know about the work - ignore
+            if not my_details.has_key(item_id):
+                continue
+            my_item = my_details[item_id]
+
+            # New in child equates to Acquired in parent
+            if item['status'] == 'Available':
+                item['status'] = 'Acquired'
+
+            # Negotiation failure - Another queue has the work
+            if my_item['child_url'] != child_url:
+                child_update['Canceled'].add(my_item['id'])
+                continue
+
+            # if status's the same no need to update anything
+            if item['status'] == my_item['status']:
+                continue
+            # From here on either this queue or the child needs to be updated
+
+            # if parent in final state (manual intervention?) force child to same state
+            if my_item['status'] in ('Done', 'Failed', 'Canceled'):
+                # force child to same state
+                child_update[my_item['status']].add(my_item['id'])
+                continue
+
+            to_update[item['status']].add(my_item['id'])
+
+        # start transaction
+        for status, items in to_update.items():
+            self.setStatus(status, items, source = child_url)
+        # commit
+
+        # return to the child queue the elements that it needs to update
+        return child_update
+
+
+    def flushNegotiationFailures(self):
+        """
+        Check for any elements that have been Negotiating for too long,
+        and reset them to allow them to be acquired again.
+        """
+        items = self.daofactory(classname = "WorkQueueElement.GetExpiredElements")
+        items = items.execute(conn = self.getDBConn(),
+                              status = 'Negotiating',
+                              interval = self.params['NegotiationTimeout'],
+                              transaction = self.existingTransaction())
+        if items:
+            # log negotiation failures and setStatus to available
+            #import pdb; pdb.set_trace()
+            self.setStatus('Available', [x['subscription_id'] for x in items])
+        return len(items)
+
+
+
+
+
+
+    #  //
+    # // Methods that call out to remote services
+    #//
+
+    def updateLocationInfo(self):
+        """
+        Update locations for elements
+        """
+        #self.beginTransaction()
+        #get blocks and dbsurls (for no assume global!)
+        blocksAction = self.daofactory(classname = "Data.GetActiveData")
+        mappingAct = self.daofactory(classname = "Site.UpdateDataSiteMapping")
+        blocks = blocksAction.execute(conn = self.getDBConn(),
+                                      transaction = self.existingTransaction())
+        if not blocks:
+            return
+
+        fullResync = time.time() > self.lastLocationUpdate + \
+                                self.params['FullLocationRefreshInterval']
+
+        mapping = self._getLocations([x['name'] for x in blocks], fullResync)
+        uniqueLocations = set(sum(mapping.values(), []))
+
+        if uniqueLocations:
+            siteAction = self.daofactory(classname = "Site.New")
+            siteAction.execute(tuple(uniqueLocations), conn = self.getDBConn(),
+                           transaction = self.existingTransaction())
+
+        mappingAct.execute(mapping, fullResync, conn = self.getDBConn(),
+                           transaction = self.existingTransaction())
+        #self.commitTransaction(self.existingTransaction())
+
+
+    def pullWork(self, resources):
+        """
+        Pull work from another WorkQueue to be processed
+        """
+        # Should this use job count instead
+        # monitor queue depth (jobs) per site?
+        if not self.parent_queue or \
+                                len(self) > self.params['QueueDepth']:
+            return 0
+
+        work = self.parent_queue.getWork(resources, self.params['QueueURL'])
+
+        # start a transaction here (if one doesn'st exist)
+        amount = 0
+        for element in work:
+            amount += self.queueWork(element['workflow'],
+                                    parentQueueId = element['subscription_id'])
+        return amount
+
+
+    def updateParent(self, full = False):
+        """
+        Report status of elements to the parent queue
+
+        Either report status's as provided or get all elements
+        """
+        if self.parent_queue is None:
+            return
+
+        # check whether we need to do a full report
+        # get list of parent_id, status and send to ParentQueue
+        now = time.time()
+        if not full:
+            full = self.lastFullReportToParent + \
+                            self.params['FullReportInterval'] < now
+        if full:
+            since = None
+        else:
+            since = self.lastReportToParent
+
+        # get status in form of parent_id, id, status, last_updated
+        items = self.status(after = since, dictKey = "parent_queue_id")
+        if items:
+            try:
+                # send to remote queue
+                # check that we don't have an error from incompatible states
+                # i.e. canceled in parent - if so cancel here...
+                result = self.parent_queue.synchronize(self.params['QueueURL'],
+                                                       items)
+            except RuntimeError:
+                # log a failure to communicate
+                return #(or re-throw???)
+            else:
+                # start transaction
+                # some of our element status's may be overriden by the parent
+                # e.g. if request is canceled at top level
+                for status, items in result.items():
+                    self.setStatus(status, items, id_type = 'parent_queue_id')
+                # commit
+
+        if full:
+            self.lastFullReportToParent = now
+        else:
+            self.lastReportToParent = now
+
+
+
+    #  //
+    # //  Internal methods
+    #//
 
     def _insertWorkQueueElement(self, wmspec, nJobs, primaryInput,
                                 parentInputs, subscription, parentQueueId):
@@ -138,7 +529,7 @@ class WorkQueue(WorkQueueBase):
             Internal function to insert an input
             """
             dataAction.execute(data, conn = self.getDBConn(),
-                                transaction = self.existingTransaction())
+                               transaction = self.existingTransaction())
 
         dataAction = self.daofactory(classname = "Data.New")
         dataParentageAct = self.daofactory(classname = "Data.AddParent")
@@ -172,70 +563,6 @@ class WorkQueue(WorkQueueBase):
         return elements
 
 
-    def setStatus(self, status, *subscriptions):
-        """
-        _setStatus_, throws an exception if no elements are updated
-        """
-        #subscriptions = [str(x['id']) for x in subscriptions]
-        updateAction = self.daofactory(classname =
-                                       "WorkQueueElement.UpdateStatus")
-        affected = updateAction.execute(status, subscriptions,
-                             conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
-        if not affected:
-            raise RuntimeError, "Status not changed: No matching elements"
-
-        if self.params['ParentQueue'] and status in ('Done', 'Failed'):
-            # get parent id's
-            parentAction = self.daofactory(classname =
-                                       "WorkQueueElement.GetParentId")
-            affected = parentAction.execute(subscriptions,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
-            self.params['ParentQueue'].setStatus(status, *([x['parent_queue_id'] for x in affected]))
-
-
-    def setPriority(self, newpriority, *workflowNames):
-        """
-        Update priority for a workflow, throw exception if no elements affected
-        """
-        updateAction = self.daofactory(classname = "WorkQueueElement.UpdatePriority")
-        affected = updateAction.execute(newpriority, workflowNames,
-                             conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
-        if not affected:
-            raise RuntimeError, "Priority not changed: No matching elements"
-
-
-    def updateLocationInfo(self):
-        """
-        Update locations for elements
-        """
-        #self.beginTransaction()
-        #get blocks and dbsurls (for no assume global!)
-        blocksAction = self.daofactory(classname = "Data.GetActiveData")
-        mappingAct = self.daofactory(classname = "Site.UpdateDataSiteMapping")
-        blocks = blocksAction.execute(conn = self.getDBConn(),
-                                      transaction = self.existingTransaction())
-        if not blocks:
-            return
-
-        fullResync = time.time() > self.lastLocationUpdate + \
-                                self.params['FullLocationRefreshInterval']
-
-        mapping = self._getLocations([x['name'] for x in blocks], fullResync)
-        uniqueLocations = set(sum(mapping.values(), []))
-
-        if uniqueLocations:
-            siteAction = self.daofactory(classname = "Site.New")
-            siteAction.execute(tuple(uniqueLocations), conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
-
-        mappingAct.execute(mapping, fullResync, conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
-        #self.commitTransaction(self.existingTransaction())
-
-
     def _getLocations(self, dataNames, fullRefresh):
         """
         Return mapping of item to location as given by phedex
@@ -252,10 +579,14 @@ class WorkQueue(WorkQueueBase):
                 args['subscribed'] = 'y'
             if not fullRefresh:
                 args['update_since'] = self.lastLocationUpdate
-            response = self.phedexService.blockreplicas(**args)['phedex']
+            response = self.phedexService.getReplicaInfoForBlocks(**args)['phedex']
             self.lastLocationUpdate = response['request_timestamp']
-            result = defaultdict(list)
-            [ result[block['name']].append(ses['se']) for ses in block['replica'] for block in response['block'] ]
+            #result = defaultdict(list)
+            #[ result[block['name']].append(ses['se']) for ses in block['replica'] for block in response['block'] ]
+            result = {}
+            for block in response['block']:
+                result.setdefault(block['name'], [])
+                result[block['name']].extend([se['se'] for se in block['replica']])
             return result
         else:
             raise RuntimeError, "invalid selection"
@@ -316,170 +647,17 @@ class WorkQueue(WorkQueueBase):
 
         return result
 
-    def getWork(self, siteJobs):
+
+    def _get_remote_queue(self, queue):
         """
-        _getWork_
-        siteJob is dict format of {site: estimateJobSlot}
-        
-        JobCreator calls this method, it will 
-        1. match jobs with work queue element
-        2. create the subscription for it if it is not already exist. 
-           (currently set to have one subscription per a workload)
-           (associate the subscription to workload - currently following naming convention,
-            so it can retrieved by workflow name - but might needs association table)
-        3. fill up the fileset with files in the subscription 
-           when if it is processing jobs. if it is production jobs (MC) fileset will be empty
-        4. TODO: close the fileset if the last workqueue element of the workload is processed. 
-        5. update the workqueue status to ('Acquired') might need finer status change 
-           if it fails to create wmbs files partially
-        6. return list of subscription (or not)
-           it can be only tracked only subscription (workload) level job done
-           or
-           return workquue element list:
-           if we want to track partial level of success. But requires JobCreate map workqueue element
-           to each jobgroup. also doneWork parameter should be list of workqueue element not list 
-           of subscription
+        Get an object to talk to a remote queue
         """
-
-        # Probably should move somewhere that doesn't block the client
-        self.pullWork(siteJobs)
-        self.updateLocationInfo()
-
-        results = []
-        blockLoader = self.daofactory(classname = "Data.LoadByID")
-        parentBlockLoader = \
-                    self.daofactory(classname = "Data.GetParentsByChildID")
-        matches = self.match(siteJobs)
-        for match in matches:
-
-            sub = WMBSSubscription(id = match['subscription_id'])
-            sub.load()
-            sub['workflow'].load()
-
-            if match['input_id'] and self.params['PopulateFilesets']:
-                dbs = self.dbsHelpers.values()[0] #FIXME!!!
-                block = blockLoader.execute(match['input_id'],
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
-
-                if match['parent_flag']:
-                    dbsBlock = dbs.getFileBlockWithParents(block["name"])[block['name']]
-                else:
-                    dbsBlock = dbs.getFileBlock(block["name"])[block['name']]
-
-                # TODO: parent fileset
-                # should this be moved into gotWork()
-                fileset = sub["fileset"]
-                for dbsFile in dbsBlock['Files']:
-                    wmbsFile = WMBSFile(lfn = dbsFile["LogicalFileName"],
-                            size = dbsFile["FileSize"],
-                            events = dbsFile["NumberOfEvents"],
-                            cksum = dbsFile["Checksum"],
-                            parents = dbsFile["ParentList"],
-                            locations = set(dbsBlock['StorageElements']))
-                    fileset.addFile(wmbsFile)
-                fileset.commit()
-            results.append(sub)
-        if results:
-            self.setStatus('Acquired', *([str(x['id']) for x in results]))
-        return results
-
-
-#    def gotWork(self, *subscriptions):
-#        """
-#        _gotWork_
-#
-#        this is called by JSM
-#        update the WorkQueue status table and remove from further consideration
-#        """
-#        self.setStatus('Acquired', *subscriptions)
-
-
-    def doneWork(self, *subscriptions):
-        """
-        _doneWork_
-
-        this is called by JSM
-        update the WorkQueue status table
-        """
-        self.setStatus('Done', *subscriptions)
-
-
-    def queueWork(self, wmspecUrl, parentQueueId = None):
-        """
-        Take and queue work from a WMSpec
-        """
-
-        if self.params['CacheDir']:
-            inp = urlopen(wmspecUrl).read()
-            tmp = os.path.join(self.params['CacheDir'],
-                               os.path.split(wmspecUrl)[1])
-            out = open(tmp, 'w')
-            out.write(inp)
-            out.close()
-            wmspecUrl = tmp
-
-        wmspec = WMWorkloadHelper()
-        wmspec.load(wmspecUrl)
-        dbs_url = wmspec.taskIterator().next().dbsUrl()
-
-        specSplitter = WorkSpecParser(wmspec)
-
-        if dbs_url and not self.dbsHelpers.has_key(dbs_url):
-            self.dbsHelpers[dbs_url] = DBSReader(dbs_url)
-
-        units = specSplitter.split(split = self.params['SplitByBlock'],
-                           dbs_pool = self.dbsHelpers)
-
-        #TODO: Look at db transactions - try to minimize time active
-        self.beginTransaction()
-
-        for primaryBlock, blocks, jobs in units:
-            wmbsHelper = WMBSHelper(wmspec, primaryBlock)
-            sub = wmbsHelper.createSubscription()
-
-            self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
-                                         blocks, sub['id'], parentQueueId)
-
-        self.commitTransaction(self.existingTransaction())
-
-
-#        for topLevelTask in wmspec.taskIterator():
-#            specPaser = WorkSpecParser(topLevelTask)
-#            dbsUrl = topLevelTask.dbsUrl()
-#            if dbsUrl and not self.dbsHelpers.has_key(dbsUrl):
-#                self.dbsHelpers[dbsUrl] = DBSReader(dbsUrl)
-#
-#            units = specPaser.split(split = self.params['SplitByBlock'],
-#                                    dbs_pool = self.dbsHelpers)
-#
-#            #TODO: Look at db transactions - try to minimize time active
-#            self.beginTransaction()
-#
-#            for primaryBlock, blocks, jobs in units:
-#                wmbsHelper = WMBSHelper(topLevelTask, primaryBlock)
-#                sub = wmbsHelper.createSubscription()
-#
-#                self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
-#                                             blocks, sub['id'], parentQueueId)
-#
-#            self.commitTransaction(self.existingTransaction())
-
-
-    def pullWork(self, resources):
-        """
-        Pull work from another WorkQueue to be processed
-        """
-        # Should this use job count instead
-        # monitor queue depth (jobs) per site?
-        if not self.params['ParentQueue'] or \
-                                        len(self) > self.params['QueueDepth']:
-            return
-
-        work = self.params['ParentQueue'].getWork(resources)
-        for element in work:
-            self.queueWork(element['workflow'].spec,
-                           parentQueueId = element['id'])
-        if work:
-            self.params['ParentQueue'].setStatus('Acquired',
-                                                 *([x['id'] for x in work]))
+        # tests generally get the queue object passed in direct
+        if isinstance(queue, WorkQueue):
+            return queue
+        try:
+            return self.remote_queues[queue]
+        except KeyError:
+            #TODO: instantiate REST connector here, add to dict
+            #self.remote_queues[url]
+            pass

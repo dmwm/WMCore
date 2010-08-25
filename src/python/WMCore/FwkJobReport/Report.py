@@ -7,8 +7,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.31 $"
-__revision__ = "$Id: Report.py,v 1.31 2010/07/13 22:11:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: Report.py,v 1.32 2010/07/30 14:15:44 mnorman Exp $"
 
 import cPickle
 import logging
@@ -406,7 +406,9 @@ class Report:
         details of the error as a string
         """
         if self.retrieveStep(stepName) == None:
-            self.addStep(stepName)
+            # Create a step and set it to failed
+            # Assumption: Adding an error fails a step
+            self.addStep(stepName, status = 1)
 
         stepSection = self.retrieveStep(stepName)
 
@@ -455,7 +457,7 @@ class Report:
         return
 
 
-    def addStep(self, reportname):
+    def addStep(self, reportname, status = 1):
         """
         _addStep_
         
@@ -476,7 +478,7 @@ class Report:
         self.report.id = None
         self.report.task = None
         self.report.workload = None
-        self.report.status = 0
+        self.report.status = status
         self.report.outputModules = []
         
         # structure

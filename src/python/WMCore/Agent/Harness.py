@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.20 2009/02/27 22:18:02 fvlingen Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: Harness.py,v 1.21 2009/08/12 19:43:10 sryu Exp $"
+__version__ = "$Revision: 1.21 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -155,8 +155,12 @@ class Harness:
             if not hasattr(coreSect, "dialect"):
                 raise WMException(WMEXCEPTION['WMCORE-5'],'WMCORE-5')
             logging.info(">>>Determining Dialect: "+coreSect.dialect)
-            if coreSect.dialect == 'mysql':
+            if coreSect.dialect.lower() == 'mysql':
                 myThread.dialect = 'MySQL'
+            elif coreSect.dialect.lower() == 'oracle':
+                myThread.dialect = 'Oracle'
+            elif coreSect.dialect.lower() == 'sqlite':
+                myThread.dialect = 'SQLite' 
             logging.info(">>>Initializing MsgService Factory")
             WMFactory("msgService", "WMCore.MsgService."+ \
                 myThread.dialect)

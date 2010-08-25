@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: DashboardInterface_t.py,v 1.1 2010/05/17 20:36:43 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DashboardInterface_t.py,v 1.2 2010/05/17 20:59:15 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 import threading
@@ -85,16 +85,6 @@ class DashboardInterfaceTest(unittest.TestCase):
 
         rereco = workload.getTask("ReReco")
 
-        # Set monitoring
-        monitoring  = rereco.data.section_('watchdog')
-        monitoring.monitors = ['DashboardMonitor']
-        monitoring.section_('DashboardMonitor')
-        monitoring.DashboardMonitor.connectionURL  = "dummy.cern.ch:99999/CMS"
-        monitoring.DashboardMonitor.password       = "ThisIsTheWorld'sStupidestPassword"
-        monitoring.DashboardMonitor.softTimeOut    = 30000
-        monitoring.DashboardMonitor.hardTimeOut    = 60000
-        monitoring.DashboardMonitor.destinationHost = "cms-pamon.cern.ch"
-        monitoring.DashboardMonitor.destinationPort = 8884
 
         return workload
 
@@ -209,7 +199,6 @@ class DashboardInterfaceTest(unittest.TestCase):
         dbInfo.jobEnd()
         self.assertFalse(dbInfo.get('JobFinished', None) == None,
                          'Did not assign finish time in jobEnd()')
-
 
         return
 

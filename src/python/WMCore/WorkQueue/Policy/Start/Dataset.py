@@ -4,8 +4,8 @@ WorkQueue splitting by dataset
 
 """
 __all__ = []
-__revision__ = "$Id: Dataset.py,v 1.13 2010/07/21 14:36:33 swakef Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Dataset.py,v 1.14 2010/07/22 12:00:19 swakef Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from math import ceil
@@ -28,10 +28,10 @@ class Dataset(StartPolicyInterface):
         dataset = dbs.getDatasetInfo(datasetPath)
 
         # apply input dataset restrictions
-        blockWhiteList = inputDataset.blocks.whitelist
-        blockBlackList = inputDataset.blocks.blacklist
-        runWhiteList = inputDataset.runs.whitelist.dictionary_()
-        runBlackList = inputDataset.runs.blacklist.dictionary_()
+        blockWhiteList = self.initialTask.inputBlockWhitelist()
+        blockBlackList = self.initialTask.inputBlockBlacklist()
+        runWhiteList = self.initialTask.inputRunWhitelist()
+        runBlackList = self.initialTask.inputRunBlacklist()
         if blockWhiteList or blockBlackList or runWhiteList or runBlackList:
             blocks = self.validBlocks(self.initialTask, self.dbs())
             if not blocks:
@@ -71,17 +71,13 @@ class Dataset(StartPolicyInterface):
 
     def validBlocks(self, task, dbs):
         """Return blocks that pass the input data restriction"""
-        dbs = self.dbs()
-        inputDataset = task.inputDataset()
         datasetPath = task.getInputDatasetPath()
         validBlocks = []
 
-        blockWhiteList = inputDataset.blocks.whitelist
-        blockBlackList = inputDataset.blocks.blacklist
-        runWhiteList = [int(x) for x in \
-                        inputDataset.runs.whitelist.dictionary_().keys()]
-        runBlackList = [int(x) for x in \
-                        inputDataset.runs.blacklist.dictionary_().keys()]
+        blockWhiteList = task.inputBlockWhitelist()
+        blockBlackList = task.inputBlockBlacklist()
+        runWhiteList = task.inputRunWhitelist()
+        runBlackList = task.inputRunBlacklist()
 
         for block in dbs.getFileBlocksInfo(datasetPath):
 

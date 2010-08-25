@@ -4,8 +4,8 @@ WorkQueue splitting by block
 
 """
 __all__ = []
-__revision__ = "$Id: Block.py,v 1.15 2010/07/21 13:54:57 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Block.py,v 1.16 2010/07/22 12:00:19 swakef Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from copy import deepcopy
@@ -42,8 +42,6 @@ class Block(StartPolicyInterface):
 
     def validBlocks(self, task, dbs):
         """Return blocks that pass the input data restriction"""
-        dbs = self.dbs()
-        inputDataset = task.inputDataset()
         datasetPath = task.getInputDatasetPath()
         validBlocks = []
 

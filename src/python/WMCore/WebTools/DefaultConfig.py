@@ -8,7 +8,7 @@
 # This includes committing configuration files to appropriate locations in CVS.
 #
 from WMCore.Configuration import Configuration
-import WMCore.WMInit
+from WMCore.WMBase import getWMBASE
 import os.path
 from os import environ
 
@@ -27,7 +27,7 @@ config.Webtools.application = 'WebtoolsDocs'
 # This is the config for the application
 config.component_('WebtoolsDocs')
 # Define the default location for templates for the app
-config.WebtoolsDocs.templates = os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools')
+config.WebtoolsDocs.templates = os.path.join(getWMBASE(), '/src/templates/WMCore/WebTools')
 config.WebtoolsDocs.admin = 'your@email.com'
 config.WebtoolsDocs.title = 'CMS WMCore/WebTools Documentation'
 config.WebtoolsDocs.description = 'Documentation on the WMCORE/WebTools'
@@ -83,10 +83,6 @@ active.securedocumentation.object = 'WMCore.WebTools.SecureDocumentation'
 
 # These are pages in "maintenance mode" - to be completed
 maint = config.WebtoolsDocs.views.section_('maintenance')
-
-active.section_('masthead')
-active.masthead.object = 'WMCore.WebTools.Masthead'
-active.masthead.templates = os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools/Masthead')
 
 # This is how you would configure a RESTful service
 # You need to install py2-sqlalchemy to be able to use it. Put it on the

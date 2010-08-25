@@ -9,6 +9,7 @@ import logging
 import unittest
 import time
 #PyLinter and coverage aren't standard, but aren't strictly necessary
+# you should get them though
 can_lint = False
 can_coverage = False
 can_nose = False

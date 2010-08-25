@@ -19,8 +19,10 @@ if __name__ == '__main__':
     task.build(os.getcwd())
     task.execute(job)
 
-    task.combineLogs(jobLocation = os.getcwd(),
-                     logLocation = "Report.pkl")
+    task.completeTask(jobLocation = os.getcwd(),
+                      logLocation = "Report.pkl",
+                      wmbsJob = job,
+                      dashboardExport = True)
 
     if monitor.isAlive():
         monitor.shutdown()

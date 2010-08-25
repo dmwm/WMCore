@@ -1,24 +1,25 @@
 h1, h2, h3, p{
 	font-weight:400;
 	color:#1A1A1A;
-	padding: 10px;
 }
 
 pre{
-		padding: 10px;
+		padding: 0.5em;
 }
 
 h1, h2{
 	text-transform: capitalize;
 	font-family:georgia,serif;
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
 }
 
 h1{
-	font-size:30px;
+	font-size:2.5em;
 }
 
 h2{
-	font-size:22px;
+	font-size:2em;
 }
 
 h3, p, li, dt, dd, fieldset, legend, label{
@@ -26,25 +27,26 @@ h3, p, li, dt, dd, fieldset, legend, label{
 }
 
 h3{
-	font-size:22px;
+	font-size:2em;
 }
 
 dt{
-	font-size:22px;
+	font-size:1.5em;
 }
 
 p, li{
-	font-size:16px;
+	font-size:1em;
 }
 
 ol, li, dt, dd {
-	margin-left: 10px;
 	list-style-type: disc;
 	list-style-position: inside;
 }
-
+ol, li, dt {
+	margin-left: 0.5em;
+}
 .small{
-	font-size:11px;
+	font-size:0.75em;
 }
 
 i{
@@ -61,17 +63,18 @@ hr {
 	height: 1px;
 	width: 75%;
 	border: 0;
+    margin: 1em;
 }
 body {
         background-color:  #D3D3D3;
-        padding: 10px;
+        padding: 1em;
 }
 
 table {
         background-color:  #FFFFFF;
-        padding: 5px;
+        padding: 0.5em;
 }
 
 body, table {
-        margin: 10px;
+        margin: 1em;
 }

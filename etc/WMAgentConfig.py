@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.7 2010/04/06 18:10:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.8 2010/04/06 20:24:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import os
 import WMCore.WMInit
@@ -23,7 +23,7 @@ config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 
 config.section_("General")
-config.General.workDir = "/storage/local/data1/wmagent2/work"
+config.General.workDir = "/storage/local/data1/wmagent/work"
 
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = "cmssrv52.fnal.gov:5984"
@@ -32,7 +32,7 @@ config.JobStateMachine.default_retries = 5
 
 config.section_("CoreDatabase")
 config.CoreDatabase.socket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
-config.CoreDatabase.connectUrl = "mysql://sfoulkes:@localhost/WMAgentDB2_sfoulkes"
+config.CoreDatabase.connectUrl = "mysql://sfoulkes:@localhost/WMAgentDB_sfoulkes"
 
 config.component_('WorkQueueManager')
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
@@ -41,9 +41,9 @@ config.WorkQueueManager.level = 'LocalQueue'
 config.WorkQueueManager.logLevel = 'INFO'
 config.WorkQueueManager.serviceUrl = 'cmssrv52.fnal.gov:8570'
 config.WorkQueueManager.pollInterval = 10
-config.WorkQueueManager.queueParams = {'PopulateFilesets' : True,
-                                       'ParentQueue':'http://%s/workqueue/' % config.WorkQueueManager.serviceUrl,
-                                       'QueueURL': "/storage/local/data1/workqueue/workWorkQueueManager"}
+config.WorkQueueManager.queueParams = {"PopulateFilesets": True,
+                                       "ParentQueue": "http://%s/workqueue/" % config.WorkQueueManager.serviceUrl,
+                                       "QueueURL": "/storage/local/data1/workqueue/workWorkQueueManager"}
 
 config.component_("DBSUpload")
 config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"
@@ -166,3 +166,23 @@ config.WorkQueueService.views.active.workqueue.section_('formatter')
 config.WorkQueueService.views.active.workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
 config.WorkQueueService.views.active.workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
 config.WorkQueueService.views.active.workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
+
+config.webapp_("WMBSMonitoring")
+config.WMBSMonitoring.componentDir = config.General.workDir + "/WMBSMonitoring"
+config.WMBSMonitoring.server.host = "cmssrv52.fnal.gov"
+config.WMBSMonitoring.server.port = 8087
+config.WMBSMonitoring.templates = WMCore.WMInit.getWMBASE() + '/src/templates/WMCore/WebTools'
+config.WMBSMonitoring.admin = "sfoulkes@fnal.gov"
+config.WMBSMonitoring.title = "WMBS Monitoring"
+config.WMBSMonitoring.description = "Monitoring of a WMBS instance"
+config.WMBSMonitoring.instance = "ReReco WMAGENT"
+config.WMBSMonitoring.couchURL = "http://cmssrv52:5984/_utils/document.html?wmagent_commissioning/"
+config.WMBSMonitoring.section_('views')
+config.WMBSMonitoring.views.section_('active')
+config.WMBSMonitoring.views.active.section_('wmbs')
+config.WMBSMonitoring.views.active.wmbs.section_('model')
+config.WMBSMonitoring.views.active.wmbs.section_('formatter')
+config.WMBSMonitoring.views.active.wmbs.object = 'WMCore.WebTools.RESTApi'
+config.WMBSMonitoring.views.active.wmbs.templates = WMCore.WMInit.getWMBASE() + '/src/templates/WMCore/WebTools/'
+config.WMBSMonitoring.views.active.wmbs.model.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
+config.WMBSMonitoring.views.active.wmbs.formatter.object = 'WMCore.WebTools.DASRESTFormatter'

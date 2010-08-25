@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.10 2010/05/24 12:26:58 spigafi Exp $"
-__revision__ = "$Revision: 1.10 $"
+__version__ = "$Id: BossLiteAPI.py,v 1.11 2010/05/25 12:25:24 spigafi Exp $"
+__revision__ = "$Revision: 1.11 $"
 
 #import logging
 import copy
@@ -14,7 +14,7 @@ import copy
 from WMCore.BossLite.DbObjects.Job        import Job
 from WMCore.BossLite.DbObjects.Task       import Task
 from WMCore.BossLite.DbObjects.RunningJob import RunningJob
-#from WMCore.BossLite.Common.Exceptions    import TaskError, JobError, DbError
+from WMCore.BossLite.Common.Exceptions    import TaskError, JobError
 
 # database engine
 from WMCore.BossLite.DbObjects.BossLiteDBWM    import BossLiteDBWM
@@ -94,24 +94,8 @@ class BossLiteAPI(object):
         """
         register task related informations in the db
         """
-
-        # save task
-        # Is this try/except necessary? Yes
-         
-        try :
-            task.save(self.db)
-        except Exception :
-            
-            #if str(err).find( 'column name is not unique') == -1 and \
-            #       str(err).find( 'Duplicate entry') == -1 and \
-            #       task['id'] is not None :
-            #    self.removeTask( task )
-            #    task = None
-            
-            # Raise... what???
-            raise
-
-        return task
+        
+        return task.save(self.db)
 
     
     def loadTask( self, taskId, jobRange='all' ) :
@@ -164,8 +148,9 @@ class BossLiteAPI(object):
         """
         
         if not type(binds) == dict :
-            # 'binds' must be a dictionary!
-            raise Exception
+            msg = "BossLiteAPI.loadTasksByAttr: "
+            msg += "binds must be a dictionary."
+            raise TaskError(msg)
         
         tasks = []
         
@@ -188,8 +173,7 @@ class BossLiteAPI(object):
         """
         remove task, jobs and their running instances from db
         """
-
-        # remove task
+        
         task.remove(self.db)
 
         return
@@ -204,13 +188,11 @@ class BossLiteAPI(object):
         retrieve job information from db using task and job id
         """
 
-        # creating job
         jobAttributes = { 'taskId' : taskId, "jobId" : jobId}
         job = Job(parameters = jobAttributes)
 
-        # load job from db
         job.load(self.db, deep)
-
+        
         return job
 
     
@@ -220,8 +202,10 @@ class BossLiteAPI(object):
         """
         
         if not type(binds) == dict :
-            # 'binds' must be a dictionary!
-            raise Exception
+            msg = "BossLiteAPI.loadJobsByAttr: "
+            msg += "binds must be a dictionary."
+            raise JobError(msg)
+        
         
         jobs = []
         
@@ -268,19 +252,22 @@ class BossLiteAPI(object):
 
         # operation validity checks -- are necessary?
         if len( task.jobs ) != 1 :
-            raise Exception( "ERROR: too many jobs loaded %s" % \
-                                 len( task.jobs ))
+            msg = "BossLiteAPI.getTaskFromJob: "
+            msg += "error, too many jobs loaded %s" % \
+                                 len( task.jobs )
+            raise TaskError(msg)
+        
         if id( task.jobs[0] ) != id( job ) :
-            raise Exception( "Fatal ERROR: mismatching job" )
-
-        # return task
+            msg = "BossLiteAPI.getTaskFromJob: "
+            msg += "fatal error, mismatching job."
+            raise TaskError(msg)
+        
         return task
     
     
     def removeJob( self, job ):
         """
         remove job and its running instances from db
-        NOT SQLite safe --> why??
         """
         
         return job.remove(self.db)
@@ -308,14 +295,13 @@ class BossLiteAPI(object):
             if type(runningAttrs) == dict:
                 job.runningJob.data.update(runningAttrs)
         
-        # return this?
         return job.runningJob
     
 
     def getNewRunningInstance( self, job, runningAttrs = None ) :
         """
         create a new RunningInstance
-        """
+        """     
 
         job.newRunningInstance(self.db)
         
@@ -329,11 +315,10 @@ class BossLiteAPI(object):
         """
         update runningInstances of a task in the DB
         """
-
-        # update
+        
         for job in task.jobs:
 
-            # update only loaded instances!
+            # update only loaded acrive instances
             if job.runningJob is not None:
                 job.updateRunningInstance(self.db)
 
@@ -361,46 +346,44 @@ class BossLiteAPI(object):
         
         return jobList
     
-
-    def loadCreated( self  ) :
+    
+    def loadCreated( self, limit = None ) :
         """
-        retrieve information from db for jobs created but not submitted using:
-        - it takes the highest submission number for each job
+        retrieve information from db for jobs created but not submitted
         """
         
-        return self.loadJobsByRunningAttr(binds = {'status'  : 'W'})
+        return self.loadJobsByRunningAttr(binds = {'status' : 'W'}, 
+                                                        limit = limit )
     
     
-    def loadSubmitted( self ) :
+    def loadSubmitted( self, limit = None ) :
         """
-        retrieve information from db for jobs submitted using:
-        - it takes the highest submission number for each job
-        """
-
-        return self.loadJobsByRunningAttr(binds = {'closed' : 'N'})
-    
-    
-    def loadEnded( self ) :
-        """
-        retrieve information from db for jobs successfully using:
-        - it takes the highest submission number for each job
+        retrieve information from db for jobs submitted
         """
 
-        return self.loadJobsByRunningAttr(binds = {'status' : 'SD'})
+        return self.loadJobsByRunningAttr(binds = {'closed' : 'N'}, 
+                                                        limit = limit )
     
     
-    def loadFailed( self ) :
+    def loadEnded( self, limit = None ) :
         """
-        retrieve information from db for jobs aborted/killed using:
-        - range of tasks
-        - range of jobs inside a task
-
-        Takes the highest submission number for each job
+        retrieve information from db for jobs successfully
         """
-
+        
+        return self.loadJobsByRunningAttr(binds = {'status' : 'SD'}, 
+                                                        limit = limit )
+    
+    
+    def loadFailed( self, limit = None ) :
+        """
+        retrieve information from db for jobs aborted/killed
+        """
+        
         jobList = []
-        jobList.extend(self.loadJobsByRunningAttr(binds = {'status' : 'A'} ))
-        jobList.extend(self.loadJobsByRunningAttr(binds = {'status' : 'K'} ))
+        jobList.extend(self.loadJobsByRunningAttr(binds = {'status' : 'A'},
+                                                                limit = limit))
+        jobList.extend(self.loadJobsByRunningAttr(binds = {'status' : 'K'},
+                                                                limit = limit))
         
         return jobList
     

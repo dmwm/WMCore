@@ -55,10 +55,6 @@ class StageOutTest(unittest.TestCase):
         executor.execute( self.realstep.data, None,**testOverrides)
         self.assert_( os.path.exists(lfn) )
         os.remove(lfn)
-            
-    def testName(self):
-        pass
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

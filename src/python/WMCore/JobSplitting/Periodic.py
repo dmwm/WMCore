@@ -7,8 +7,8 @@ created unless the previous job has been completed.  This algorithm will create
 one final job containing all files once the input fileset has been closed.
 """
 
-__revision__ = "$Id: Periodic.py,v 1.2 2009/08/10 16:10:22 sfoulkes Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: Periodic.py,v 1.3 2009/08/10 21:01:27 sfoulkes Exp $"
+__version__  = "$Revision: 1.3 $"
 
 import time
 import threading
@@ -26,7 +26,7 @@ class Periodic(JobFactory):
     create one final job containing all files once the input fileset has been
     closed.
     """
-    def outstandingJobs(self, jobPeriod):
+    def outstandingJobs(self, jobPeriod, inputOpen):
         """
         _outstandingJobs_
 
@@ -46,6 +46,9 @@ class Periodic(JobFactory):
 
             # If the query results multiple states they will all have the same
             # state_time.
+            if not inputOpen:
+                return False
+            
             stateTime = int(results[0]["state_time"])
             if stateTime + jobPeriod > time.time():
                 return True
@@ -60,12 +63,12 @@ class Periodic(JobFactory):
         Do some periodic job splitting.
         """
         jobPeriod = int(kwargs.get("job_period", 60))
-
-        if self.outstandingJobs(jobPeriod):
-            return []
-        
+       
         fileset = self.subscription.getFileset()
         fileset.load()
+
+        if self.outstandingJobs(jobPeriod, fileset.open):
+            return []
 
         if not fileset.open:
             availableFiles = self.subscription.availableFiles()

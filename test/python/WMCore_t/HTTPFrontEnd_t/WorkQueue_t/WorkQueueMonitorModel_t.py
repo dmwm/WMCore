@@ -10,8 +10,8 @@ https://twiki.cern.ch/twiki/bin/view/CMS/RESTModelUnitTest
 
 
 
-__revision__ = "$Id: WorkQueueMonitorModel_t.py,v 1.1 2010/01/26 15:19:17 maxa Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueueMonitorModel_t.py,v 1.2 2010/01/26 17:17:11 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 import os
@@ -37,8 +37,7 @@ class WorkQueueMonitorModelTest(RESTBaseUnitTest):
         
         # if module "WorkQueueMonitoringModel" needs database access, set:
         self.schemaModules = ["WMCore.WorkQueue.Database"]
-        
-        dbUrl = os.environ["DATABASE"] or "'sqlite:////tmp/resttest.db"
+        dbUrl = os.environ["DATABASE"] or "sqlite:////tmp/resttest.db"
         self.config.setDBUrl(dbUrl)        
         self.urlbase = self.config.getServerUrl()
         
@@ -73,7 +72,6 @@ class WorkQueueMonitorModelTest(RESTBaseUnitTest):
         print "testMyAPI()"
         # this call fails
         # AttributeError: 'module' object has no attribute 'Database'
-        self.testInit.initializeSchema(["WMCore.WorkQueue.Database"])
         # test not accepted type should return 406 error, in fact getting 404, then OK
         url = self.urlbase + 'testApi/'
         methodTest('GET', url,  accept='text/json', output={'code':404})

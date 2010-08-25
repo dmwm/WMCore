@@ -7,12 +7,10 @@ Created by Dave Evans on 2010-07-14.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-import sys
-import os
 from WMCore.GroupUser.CouchObject import CouchObject
 import WMCore.GroupUser.Decorators as Decorators 
 from WMCore.GroupUser.Group import Group
-import unittest
+
 
 
 class User(CouchObject):
@@ -96,72 +94,4 @@ def makeUser(groupname, username, couchUrl = None, couchDatabase = None):
     
 
 
-from WMCore.Database.CMSCouch import Document
 
-class UserTest(unittest.TestCase):
-    """Test Case for User"""
-    def setUp(self):
-        self.database = "groupuser"
-        self.url = "127.0.0.1:5984"
-    
-    def testA(self):
-        """instantiate & jsonise"""
-
-        u1 = User(name = "evansde77")
-        g1 = Group(name = "DMWM", administrators = ["evansde77", "drsm79"])
-        g1.setCouch(self.url, self.database)
-        g1.connect()
-        u1. setGroup(g1)
-        
-        u1.create()
-        
-        u2 = User(name = "evansde77")
-        u2.setCouch(self.url, self.database)
-        u2.get()
-        
-        u1.drop()
-        g1.drop()
-        
-        
-    def testB(self):
-        """test owning some sample documents"""
-        
-        u1 = User(name = "evansde77")
-        g1 = Group(name = "DMWM", administrators = ["evansde77", "drsm79"])
-        g1.setCouch(self.url, self.database)
-        g1.connect()
-        u1.setGroup(g1)
-        u1.create()
-
-        doc1 = Document()
-        doc1['test-data'] = {"key1" : "value1"}
-        doc2 = Document()
-        doc2['test-data'] = {"key2" : "value2"} 
-        id1 = g1.couch.commitOne(doc1)[0]
-        id2 = g1.couch.commitOne(doc2)[0]
-        doc1['_id'] = id1[u'id']
-        doc1['_rev'] = id1[u'rev']
-        doc2['_id'] = id2[u'id']
-        doc2['_rev'] = id2[u'rev']        
-
-        u1.ownThis(doc1)
-        u1.ownThis(doc2)
-
-        self.failUnless(doc1.has_key("owner"))
-        self.failUnless(doc2.has_key("owner"))
-        self.failUnless(doc1['owner'].has_key('user'))
-        self.failUnless(doc1['owner'].has_key('group'))
-        self.failUnless(doc1['owner']['user'] == u1['name'])
-        self.failUnless(doc1['owner']['group'] == u1['group'])
-        self.failUnless(doc2['owner'].has_key('user'))
-        self.failUnless(doc2['owner'].has_key('group'))
-        self.failUnless(doc2['owner']['user'] == u1['name'])
-        self.failUnless(doc2['owner']['group'] == u1['group'])
-        
-                
-        #g1.couch.delete_doc(id1[u'id'])
-        #g1.couch.delete_doc(id2[u'id'])    
-        
-        
-if __name__ == '__main__':
-    unittest.main()

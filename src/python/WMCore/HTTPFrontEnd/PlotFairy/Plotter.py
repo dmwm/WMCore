@@ -65,11 +65,11 @@ class Plotter(RESTModel):
         if 'url' in input.keys():
             match = URL_REGEX.match(input['url'])
             assert match != None, "`%s' is not a valid URL" % input['url'] 
-            host = match.group(3)
+            host = match.group(1) + '://' + match.group(3)
             if match.group(4):
                 host += match.group(4)
             uri = match.group(5)
-            result,status,reason = JSONRequests(host).get(uri)
+            result,status,reason,fromcache = JSONRequests(host).get(uri)
             valid_data.update(result)
 
         if 'data' in input.keys():

@@ -18,7 +18,7 @@ class ProcessPoolTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         return
 
-    def testProcessPool(self):
+    def testA_ProcessPool(self):
         """
         _testProcessPool_
 
@@ -30,6 +30,7 @@ class ProcessPoolTest(unittest.TestCase):
                                   totalSlaves = 1,
                                   componentDir = config.General.workDir,
                                   config = config,
+                                  namespace = "WMCore_t",
                                   slaveInit = {})
                                  
         processPool.enqueue(["One", "Two", "Three"])
@@ -46,7 +47,7 @@ class ProcessPoolTest(unittest.TestCase):
                
         return
 
-    def testProcessPoolStress(self):
+    def testB_ProcessPoolStress(self):
         """
         _testProcessPoolStress_
 
@@ -57,6 +58,7 @@ class ProcessPoolTest(unittest.TestCase):
         processPool = ProcessPool("ProcessPool_t.ProcessPoolTestWorker",
                                   totalSlaves = 1,
                                   componentDir = config.General.workDir,
+                                  namespace = "WMCore_t",
                                   config = config,
                                   slaveInit = {})
 
@@ -73,6 +75,37 @@ class ProcessPoolTest(unittest.TestCase):
                    "Error: Wrong number of results returned."
 
         return
+
+
+    def testC_MultiPool(self):
+        """
+        _testMultiPool_
+
+        Run a test with multiple workers
+        """
+
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
+                
+        processPool = ProcessPool("ProcessPool_t.ProcessPoolTestWorker",
+                                  totalSlaves = 3,
+                                  componentDir = config.General.workDir,
+                                  namespace = "WMCore_t",
+                                  config = config,
+                                  slaveInit = {})
+
+        for i in range(100):
+            input = []
+            while i > 0:
+                input.append("COMMAND%s" % i)
+                i -= 1
+
+            processPool.enqueue(input)
+            result =  processPool.dequeue(len(input))
+        
+            assert len(result) == len(input), \
+                   "Error: Wrong number of results returned."
+        
 
 if __name__ == "__main__":
     unittest.main()

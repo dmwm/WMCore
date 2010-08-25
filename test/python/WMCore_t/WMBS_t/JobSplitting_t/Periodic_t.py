@@ -5,8 +5,8 @@ _Periodic_t_
 Periodic job splitting test.
 """
 
-__revision__ = "$Id: Periodic_t.py,v 1.6 2009/12/16 18:40:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Periodic_t.py,v 1.7 2010/03/31 20:06:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import os
@@ -191,18 +191,12 @@ class PeriodicTest(unittest.TestCase):
         changeStateDAO.execute([wmbsJob])
 
         # Verify that when the input fileset is closed and all periodic jobs
-        # are complete a job will be generated even if the period has not yet
-        # expired.
+        # are complete a job will not be generated.
         self.injectFile()
         jobGroups = jobFactory(job_period = 99999999999)
 
-        assert len(jobGroups) == 1, \
+        assert len(jobGroups) == 0, \
                "ERROR: Wrong number of job groups returned: %s" % len(jobGroups)
-
-        assert len(jobGroups[0].jobs) == 1, \
-               "ERROR: Jobgroup has wrong number of jobs: %s" % len(jobGroups[0].jobs)
-
-        self.verifyFiles(jobGroups[0].jobs.pop())
 
         # Verify that after the final job is complete no more jobs are generated.
         wmbsJob["state"] = "cleanout"

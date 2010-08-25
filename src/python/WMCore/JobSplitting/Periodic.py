@@ -4,15 +4,13 @@ _Periodic_
 
 Periodically create jobs to process all files in a fileset.  A job will not be
 created until the previous job has been completed and new data has arrived.
-This algorithm will create one final job containing all files once the input
-fileset has been closed.
 
 Note that the period here refers to the amount of time between the end of a job
 and the creation of a new job.
 """
 
-__revision__ = "$Id: Periodic.py,v 1.7 2009/11/13 15:02:08 sfoulkes Exp $"
-__version__  = "$Revision: 1.7 $"
+__revision__ = "$Id: Periodic.py,v 1.8 2010/03/31 20:06:06 sfoulkes Exp $"
+__version__  = "$Revision: 1.8 $"
 
 import time
 import threading
@@ -27,13 +25,12 @@ class Periodic(JobFactory):
 
     Periodically create jobs to process all files in a fileset.  A job will not
     be created until the previous job has been completed and new data has
-    arrived. This algorithm will create one final job containing all files once
-    the input fileset has been closed.
+    arrived. 
 
     Note that the period here refers to the amount of time between the end of a
     job and the creation of a new job.
     """
-    def outstandingJobs(self, jobPeriod, inputOpen):
+    def outstandingJobs(self, jobPeriod):
         """
         _outstandingJobs_
 
@@ -54,13 +51,6 @@ class Periodic(JobFactory):
                     myThread.logger.debug("Periodic: Outstanding jobs, returning...")
                     return True
 
-            # If the fileset is closed we don't care about the period.  No new
-            # files will be showing up and we want to send out the final job as
-            # soon as possible.
-            if not inputOpen:
-                myThread.logger.debug("Periodic: fileset closed, returning...")
-                return False
-            
             stateTime = int(results[0]["state_time"])
             if stateTime + jobPeriod > time.time():
                 myThread.logger.debug("Periodic: %s seconds remaining." % \
@@ -81,7 +71,13 @@ class Periodic(JobFactory):
         fileset = self.subscription.getFileset()
         fileset.load()
 
-        if self.outstandingJobs(jobPeriod, fileset.open):
+        if not fileset.open:
+            fileset.loadData()
+            allFiles = fileset.getFiles()            
+            self.subscription.completeFiles(allFiles)
+            return []
+
+        if self.outstandingJobs(jobPeriod):
             return []
 
         availableFiles = self.subscription.availableFiles()

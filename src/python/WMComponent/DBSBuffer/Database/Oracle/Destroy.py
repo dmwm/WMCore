@@ -5,8 +5,8 @@ _Destroy_
 Implementation of DBSBuffer.Destroy for Oracle
 """
 
-__revision__ = "$Id: Destroy.py,v 1.2 2009/08/12 17:24:51 meloam Exp $"
-__version__ = "$Revision: 1.2 $s"
+__revision__ = "$Id: Destroy.py,v 1.3 2009/08/12 22:37:37 meloam Exp $"
+__version__ = "$Revision: 1.3 $s"
 
 import threading
 
@@ -23,6 +23,7 @@ class Destroy(DBCreator):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         
+        self.delete["10dbsbuffer_block"] = "DROP TABLE dbsbuffer_block"
         self.delete["08dbsbuffer_dataset"] = "DROP TABLE dbsbuffer_dataset" 
         self.delete["07dbsbuffer_algo"] = "DROP TABLE dbsbuffer_algo"
         self.delete["06dbsbuffer_algo_dataset_assoc"] = "DROP TABLE dbsbuffer_algo_dataset_assoc"

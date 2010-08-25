@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.13 2009/12/30 21:52:34 sryu Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: REST_t.py,v 1.14 2009/12/31 14:15:52 sryu Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import unittest
 import json
@@ -32,6 +32,16 @@ class RESTTest(unittest.TestCase):
         self.dasFlag = None
         self.restModel = None
     
+    @serverSetup
+    def testUnsupportedFormat(self):
+        
+        for method in ['GET']:
+            data, code, type, response = makeRequest('/rest/ping/', 
+                                                   {}, 
+                                                   method, 'text/das')
+            assert code == 406, \
+                'Got a return code != 406 (got %s) (data %s)' % (code, data)
+                
     @serverSetup
     def testGoodEcho(self):
         
@@ -96,7 +106,13 @@ class RESTTest(unittest.TestCase):
 
     @serverSetup
     def testBadPing(self):
-
+       
+        #data, code, type, response = makeRequest('/wrong/',
+        #                                  type='GET', accept='text/json')
+        #assert code == 405, 'Got a return code != 405 (got %s), message: %s' % (code, data)
+        data, code, type, response = makeRequest('/rest/wrong/',
+                                          type='GET', accept='text/json')
+        assert code == 405, 'Got a return code != 405 (got %s), message: %s' % (code, data)
         data, code, type, response = makeRequest('/rest/ping/wrong/',
                                           type='GET', accept='text/json')
         assert code == 400, 'Got a return code != 400 (got %s), message: %s' % (code, data)

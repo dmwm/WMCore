@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.26 2010/07/14 18:35:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Fileset_t.py,v 1.27 2010/08/05 20:17:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import unittest
 import logging
@@ -815,7 +815,68 @@ class FilesetTest(unittest.TestCase):
 
         assert len(goldenFilesets) == 0, \
                "Error: Filesets are missing"
-        return        
+        return
+
+    def testFilesetClosing4(self):
+        """
+        _testFilesetClosing4_
+
+        Verify that fileset closing works correctly when a workflow completly
+        fails out and does not produce any files.
+        """
+        testOutputFileset1 = Fileset(name = "TestOutputFileset1")
+        testOutputFileset1.create()
+        testOutputFileset2 = Fileset(name = "TestOutputFileset2")
+        testOutputFileset2.create()
+        testOutputFileset3 = Fileset(name = "TestOutputFileset3")
+        testOutputFileset3.create()
+
+        testOutputFileset1.markOpen(False)
+        testOutputFileset2.markOpen(True)
+        testOutputFileset3.markOpen(True)
+        
+        testInputFileset = Fileset(name = "TestInputFileset")
+        testInputFileset.create()
+        testInputFileset.markOpen(False)
+
+        testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
+                                 name = "wf001", task = "sometask")
+        testWorkflow1.create()
+        testWorkflow1.addOutput("out1", testOutputFileset1)
+
+        testWorkflow2 = Workflow(spec = "spec2.xml", owner = "Steve",
+                                 name = "wf002", task = "sometask")
+        testWorkflow2.create()
+        testWorkflow2.addOutput("out2", testOutputFileset2)
+
+        testWorkflow3 = Workflow(spec = "spec3.xml", owner = "Steve",
+                                 name = "wf003", task = "sometask")
+        testWorkflow3.create()
+        testWorkflow3.addOutput("out3", testOutputFileset3)
+
+        testSubscription1 = Subscription(fileset = testInputFileset,
+                                         workflow = testWorkflow1)
+        testSubscription1.create()
+        testSubscription2 = Subscription(fileset = testOutputFileset1,
+                                         workflow = testWorkflow2)
+        testSubscription2.create()
+        testSubscription3 = Subscription(fileset = testOutputFileset2,
+                                         workflow = testWorkflow3)
+        testSubscription3.create()        
+
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        closableFilesetDAO = daoFactory(classname = "Fileset.ListClosable")
+        closableFilesets = closableFilesetDAO.execute()
+
+        assert len(closableFilesets) == 1, \
+               "Error: Wrong number of closable filesets"
+
+        assert closableFilesets[0] == testOutputFileset2.id, \
+               "Error: Wrong fileset is marked as closable."
+
+        return            
 
     def testBulkAddDAO(self):
         """
@@ -885,7 +946,6 @@ class FilesetTest(unittest.TestCase):
                "ERROR: Fileset is missing files"
 
         return
-
 
     def testAddBulkByLFN(self):
         """
@@ -984,11 +1044,10 @@ class FilesetTest(unittest.TestCase):
     def testListFilesetByTask(self):
         """
         _testListFilesetByTask_
+
         Verify that Fileset.ListFilesetByTask DAO correct turns
-        the list of fileset by task
+        the list of fileset by task.
         """
-
-
         testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Hassen",
                                  name = "wf001", task = "sometask")
         testWorkflow1.create()
@@ -1011,7 +1070,6 @@ class FilesetTest(unittest.TestCase):
                "ERROR: the fileset  should be TestFileset1."
 
         return
-        
-        
+                
 if __name__ == "__main__":
         unittest.main()

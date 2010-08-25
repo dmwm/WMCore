@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.30 2009/06/08 20:19:05 valya Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Page.py,v 1.31 2009/07/28 20:33:52 sryu Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import urllib
 import cherrypy
@@ -54,6 +54,8 @@ class Page(WMObject):
             self.log(msg, logging.INFO)
 
     def log(self, msg, severity):
+        if type(msg) != str:
+            msg = str(msg)
         if  msg:
             cplog(msg, context=self.config.application,
                     severity=severity, traceback=False)

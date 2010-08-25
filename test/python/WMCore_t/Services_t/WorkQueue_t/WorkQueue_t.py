@@ -28,7 +28,8 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
         self.config = DefaultConfig('WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
         self.config.setDBUrl('sqlite:////home/sryu/resttest.db')
         self.schemaModules = ["WMCore.WorkQueue.Database"]
-        
+        wqConfig = self.config.getModelConfig()
+        wqConfig.queueParams = {}
         
     def setUp(self):
         """
@@ -55,6 +56,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
                                 % data['wmspec_name']
          
     def testSynchronize(self):
+        self.globalQueue.queueWork(createProcessingSpec())
         wqApi = WorkQueue(self.params)
         childUrl = "http://test.url"
         childResources = [{'ParentQueueId' : 1, 'Status' : 'Available'}]
@@ -66,6 +68,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
         
     def testStatusChange(self):
         
+        self.globalQueue.queueWork(createProcessingSpec())
         wqApi = WorkQueue(self.params)
 
         print wqApi.gotWork([1])

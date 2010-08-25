@@ -5,8 +5,8 @@
 The actual jobArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobArchiverPoller.py,v 1.10 2010/04/23 18:48:46 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: JobArchiverPoller.py,v 1.11 2010/05/03 14:00:46 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 import logging
@@ -77,7 +77,7 @@ class JobArchiverPoller(BaseWorkerThread):
 
     
 
-    def algorithm(self, parameters):
+    def algorithm(self, parameters = None):
         """
 	Performs the archiveJobs method, looking for each type of failure
 	And deal with it as desired.
@@ -138,14 +138,23 @@ class JobArchiverPoller(BaseWorkerThread):
         jobList.extend(jobList1)
         jobList.extend(jobList2)
 
-        #logging.error("Found jobs to be finished")
-        #logging.error(jobList)
+        if len(jobList) == 0:
+            # Then nothing is ready
+            return []
+
+        binds = []
+        for jobID in jobList:
+            binds.append({"jobid": jobID})
+
+        loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
+        results = loadAction.execute(jobID = binds)
 
         doneList = []
-        
-        for jobID in jobList:
-            tmpJob = Job(id = jobID)
-            tmpJob.load()
+
+        for entry in results:
+            # One job per entry
+            tmpJob = Job(id = entry['id'])
+            tmpJob.update(entry)
             doneList.append(tmpJob)
 
 
@@ -174,13 +183,15 @@ class JobArchiverPoller(BaseWorkerThread):
         tars up the contents and sends them off
         """
 
-        cacheDir = job.getCache()
+        cacheDir = job['cache_dir']
 
         if not cacheDir or not os.path.isdir(cacheDir):
             logging.error("Could not find jobCacheDir %s" % (cacheDir))
             return
 
-        if os.listdir(cacheDir) == []:
+        cacheDirList = os.listdir(cacheDir)
+
+        if cacheDirList == []:
             os.rmdir(cacheDir)
             return
 
@@ -194,16 +205,13 @@ class JobArchiverPoller(BaseWorkerThread):
         # Otherwise we have something in there
         tarName = 'Job_%i.tar' % (job['id'])
 
-        tarball = tarfile.open(name = os.path.join(cacheDir, tarName),
+        tarball = tarfile.open(name = os.path.join(logDir, tarName),
                                mode = 'w')
-        for fileName in os.listdir(cacheDir):
+        for fileName in cacheDirList:
             tarball.add(name = os.path.join(cacheDir, fileName),
                         arcname = 'Job_%i/%s' %(job['id'], fileName))
         tarball.close()
 
-
-        shutil.move('%s/%s' % (cacheDir, tarName), \
-                    '%s/%s' % (logDir, tarName))
 
         shutil.rmtree('%s' % (cacheDir))
 

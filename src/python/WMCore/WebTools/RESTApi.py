@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.26 2009/09/25 20:12:46 sryu Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: RESTApi.py,v 1.27 2009/10/06 21:01:23 metson Exp $"
+__version__ = "$Revision: 1.27 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml, make_rfc_timestamp
@@ -113,7 +113,7 @@ class RESTApi(WebAPI):
         
         However is data contains constraint for expiration it should have dict
         format of  {'data': data (any data content user API provide),
-                    'expire': expriration time}  
+                    'expire': expiration time}  
         """
         
         acchdr = request.headers.elements('Accept')
@@ -124,8 +124,6 @@ class RESTApi(WebAPI):
 
         if type(data) == dict and 'expire' in data.keys():
             response.headers['Expires'] = make_rfc_timestamp(data['expire'])
-            #Assumes there is data key word
-            data = data['data']
         else:
             response.headers['Expires'] = make_rfc_timestamp(5*60)
             

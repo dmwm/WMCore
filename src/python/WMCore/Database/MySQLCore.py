@@ -1,3 +1,5 @@
+import copy
+
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.Dialects import MySQLDialect
 from WMCore.Database.ResultSet import ResultSet
@@ -45,6 +47,7 @@ class MySQLInterface(DBInterface):
         origBind = origBindsList[0]
 
         bindVarPositionList = []
+        updatedSQL = copy.copy(origSQL)
         for bindName in origBind.keys():
             searchPosition = 0
 
@@ -56,7 +59,7 @@ class MySQLInterface(DBInterface):
                 bindVarPositionList.append((bindName, bindPosition))
                 searchPosition = bindPosition + 1
 
-            origSQL = origSQL.replace(":%s" % bindName, "%s")
+            updatedSQL = updatedSQL.replace(":%s" % bindName, "%s")
 
         bindVarPositionList.sort(bindVarCompare)
 
@@ -68,7 +71,7 @@ class MySQLInterface(DBInterface):
 
             mySQLBindVarsList.append(tuple(mySQLBindVars))
 
-        return (origSQL, mySQLBindVarsList)
+        return (updatedSQL, mySQLBindVarsList)
 
     def executebinds(self, s = None, b = None, connection = None):
         """

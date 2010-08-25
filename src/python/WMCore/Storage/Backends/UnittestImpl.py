@@ -6,7 +6,8 @@ Couple of test implementations for unittests
 
 """
 
-
+import os
+import os.path
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl

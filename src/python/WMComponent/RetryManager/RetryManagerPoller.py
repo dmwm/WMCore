@@ -4,8 +4,8 @@
 The actual retry algorithm(s)
 """
 __all__ = []
-__revision__ = "$Id: RetryManagerPoller.py,v 1.6 2010/04/02 13:03:15 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: RetryManagerPoller.py,v 1.7 2010/04/09 18:44:30 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 import logging
@@ -53,27 +53,13 @@ class RetryManagerPoller(BaseWorkerThread):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
 
-        # Create a factory to load plugins
-        self.pluginFactory = WMFactory("plugins",
-                                       self.config.RetryManager.pluginPath)
+        pluginPath = getattr(self.config.RetryManager, "pluginPath",
+                             "WMComponent.RetryManager.PlugIns")
+        self.pluginFactory = WMFactory("plugins", pluginPath)
         
         self.changeState = ChangeState(self.config)
-
-        
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
-
         return
-
-
-    
-    
-    def setup(self, parameters):
-        """
-        Currently does nothing
-        """
-
-        return
-    
 
     def terminate(self, params):
         """
@@ -138,30 +124,15 @@ class RetryManagerPoller(BaseWorkerThread):
 
         Selects which retry algorithm to use
         """
-
         result = []
 
         if len(jobList) == 0:
             return result
-
         
         pluginName = self.config.RetryManager.pluginName
         if pluginName == '' or pluginName == None:
             pluginName = 'RetryAlgo'
         plugin = '%s%s' % (jobType.capitalize(), pluginName)
-        name = '%s.%s' % (self.config.RetryManager.pluginPath, plugin)
-        path = os.path.join(self.config.RetryManager.WMCoreBase,
-                            'src/python',
-                            name.replace('.','/')) + '.py'
-
-        if not os.path.isfile(path):
-            # Then we don't have the plugin
-            msg = "WARNING!  RetryManager is set to use Non-Existant Plugin %s!" \
-                  % (pluginName)
-            logging.error(msg)
-            raise Exception (msg)
-            
-
 
         loadedClass = self.pluginFactory.loadObject(classname = plugin)
         loadedClass.setup(config = self.config)
@@ -169,34 +140,7 @@ class RetryManagerPoller(BaseWorkerThread):
             if loadedClass.isReady(job):
                 result.append(job)
 
-
-        else:
-            logging.error('Could find no module.  Am using default RetryAlgo')
-            for job in jobList:
-                if self.defaultRetryAlgo(job, jobType):
-                    result.append(job)
-
         return result
-
-    def defaultRetryAlgo(self, job, jobType):
-        """
-        _defaultRetryAlgo_
-
-        This is the default way to tell whether jobs have satisfied cooldown; they have waited for a certain
-        amount of time
-        """
-
-        cooloffTime = self.config.RetryManager.coolOffTime.get(jobType, None)
-        if not cooloffTime:
-            logging.error('Unknown cooloffTime for type %s: passing' %(jobType))
-            return
-
-        currentTime = timestamp()
-        if currentTime - job['state_time'] > cooloffTime:
-            return True
-        else:
-            return False
-
 
     def doRetries(self):
         """
@@ -217,8 +161,3 @@ class RetryManagerPoller(BaseWorkerThread):
         jobs = self.getJobs.execute(state = 'jobcooloff')
         logging.debug("Found %s jobs in jobcooloff" % len(jobs))
         self.processRetries(jobs, 'job')
-
-
-
-
-

@@ -1,34 +1,41 @@
 import unittest
-import os
-import tempfile
 import sys
-
-from WMCore.Configuration import Configuration, saveConfigurationFile
 
 class EmulatorUnitTestBase(unittest.TestCase):
     
+    reloaded = False
+    emulatorModules = {
+         "PhEDEx" : ("WMCore.Services.PhEDEx.PhEDEx",
+                     "WMQuality.Emulators.PhEDExClient.PhEDEx"),
+         "DBS"    : ("WMCore.Services.DBS.DBSReader",
+                     "WMQuality.Emulators.DBSClient.DBSReader"),
+         "RequestManager" : ("WMCore.Services.RequestManager.RequestManager",
+                              "WMQuality.Emulators.RequestManagerClient.RequestManager"),
+         "SiteDB" : ("WMCore.Services.SiteDB.SiteDB",
+                     "WMQuality.Emulators.SiteDBClient.SiteDB")
+         }
+    
     def setUp(self):
-        fd, self.configFile = tempfile.mkstemp(".py", "Emulator_Config",)
-        os.environ["EMULATOR_CONFIG"] = self.configFile
-        self.setEmulator()
-        self._emulatorCofig()
+        if not EmulatorUnitTestBase.reloaded:
+            self.setEmulator()
+            self._reloadModule("PhEDEx", self.phedexFlag)
+            self._reloadModule("DBS", self.dbsFlag)
+            self._reloadModule("RequestManager", self.requestMgrFlag)
+            self._reloadModule("SiteDB", self.siteDBFlag)
+            EmulatorUnitTestBase.reloaded = True
+            
+    def _reloadModule(self, key, flag):
         
-    def tearDown(self):
-        os.remove(self.configFile)
-        print "file deleted: %s" % self.configFile
+        if flag:
+            i = 1
+        else:
+            i = 0
         
-    def _emulatorCofig(self):
-        
-        config = Configuration()
-        config.section_("Emulator")
-        config.Emulator.PhEDEx = self.phedexFlag
-        config.Emulator.DBSReader = self.dbsFlag
-        config.Emulator.RequestMgr = self.requestMgrFlag
-        config.Emulator.SiteDB = self.siteDBFlag
-        saveConfigurationFile(config, self.configFile)
-        print "create config file:%s, PhEDEx: %s, DBS: %s, RequestManager: %s, SiteDB %s with flag" \
-               % (self.configFile, self.phedexFlag, self.dbsFlag, self.requestMgrFlag, self.siteDBFlag)
-               
+        try:
+            reload(sys.modules[EmulatorUnitTestBase.emulatorModules[key][i]])
+        except KeyError:
+            __import__(EmulatorUnitTestBase.emulatorModules[key][i])
+            
     def setEmulator(self):
         """
         overwrite this in the child class if diffent setting is needed.

@@ -14,21 +14,18 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.52 2009/10/19 16:35:31 sfoulkes Exp $"
-__version__ = "$Revision: 1.52 $"
+__revision__ = "$Id: Subscription.py,v 1.53 2009/12/15 15:20:47 mnorman Exp $"
+__version__ = "$Revision: 1.53 $"
 
-from sets import Set
 import logging
-
 
 from WMCore.WMBS.Fileset  import Fileset
 from WMCore.WMBS.File     import File
 from WMCore.WMBS.Workflow import Workflow
-#from WMCore.WMBS.JobGroup import JobGroup as WMBSJobGroup
-#from WMCore.WMBS.Job      import Job      as WMBSJob
 from WMCore.WMBS.WMBSBase import WMBSBase
 
 from WMCore.DataStructs.Subscription import Subscription as WMSubscription
+from WMCore.DataStructs.Fileset      import Fileset      as WMFileset
 
 class Subscription(WMBSBase, WMSubscription):
     def __init__(self, fileset = None, workflow = None, id = -1,
@@ -178,7 +175,7 @@ class Subscription(WMBSBase, WMSubscription):
         existingTransaction = self.beginTransaction()
         
         status = status.title()
-        files  = Set()
+        files  = set()
         action = self.daofactory(classname = "Subscriptions.Get%sFiles" % status)
         fileList = action.execute(self["id"], conn = self.getDBConn(),
                                   transaction = self.existingTransaction())
@@ -216,6 +213,8 @@ class Subscription(WMBSBase, WMSubscription):
 
         if not files:
             files = self.filesOfStatus("Available")
+        elif type(files) == type(Fileset()) or type(files) == type(WMFileset()):
+            pass
         else:
             files = self.makelist(files)
 
@@ -232,8 +231,11 @@ class Subscription(WMBSBase, WMSubscription):
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
             
-            
-        self.commitTransaction(existingTransaction)
+        try:
+            self.commitTransaction(existingTransaction)
+        except Exception, ex:
+            print "Found exception %s" %(ex)
+            logging.error("Exception found in commiting acquireFiles transaction: %s" %(ex))
         return
     
     def completeFiles(self, files):
@@ -379,7 +381,7 @@ class Subscription(WMBSBase, WMSubscription):
         to do with the subscription that is NOT in use by any other piece.  It should check for all
         the proper ownerships through a sequence of DAO calls that will take forever.
 
-        Nothing except the jobArchiver should be calling this.
+        Nothing except the taskArchiver should be calling this.
         """
 
         self.loadData()

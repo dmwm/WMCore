@@ -1,7 +1,7 @@
 class ConfigDBMapInterface(object):
     """
-    Interface for convertiong the configuration to 
-    db url string and option dictionary
+    Interface for converting the configuration to 
+    db url string and option dictionary for DBFactory parameters
     
     the implementation of this class should create db url string.
     and option for DBFactory creation.

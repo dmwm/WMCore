@@ -18,7 +18,7 @@ class WorkQueueService(ServiceInterface):
     def register(self):
         
         #TODO workqueue can be a logcal queue as well get the right config.
-        self.wq = globalQueue(logger=self.model, dbi=self.model.dbi, **self.model.config.queueParams)
+        self.wq = WorkQueue(logger=self.model, dbi=self.model.dbi, **self.model.config.queueParams)
         #only support get for now
         self.model.addMethod('POST', 'getwork', self.wq.getWork, args=["siteJobs", "pullingQueueUrl"])
         self.model.addMethod('POST', 'status', self.wq.status, args=["status", "before", "after", 

@@ -6,8 +6,8 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.13 2010/05/07 22:12:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: LogArchive.py,v 1.14 2010/05/24 19:40:58 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import os
 import os.path
@@ -180,8 +180,8 @@ class LogArchive(Executor):
 
         year, month, day = reqTime[:3]
 
-        LFN = "/store/unmerged/logs/prod/%s/%s/%s/%s/%s/%s-%s" % \
-              (year, month, day, self.report.data.workload,
+        LFN = "/store/unmerged/logs/prod/%s/%s/%s%s/%s/%s-%s" % \
+              (year, month, day, self.task.getPathName(),
                lfnGroup(self.job), self.job["name"], tarName)
 
         return LFN

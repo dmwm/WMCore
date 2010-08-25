@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: API_t.py,v 1.7 2010/05/17 13:07:43 spigafi Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: API_t.py,v 1.8 2010/05/17 19:12:56 spigafi Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import threading
@@ -246,14 +246,14 @@ class APITest(unittest.TestCase):
         return
     
     
-"""
+
     def testD_APIRunningJobMethods(self):
 
         testAPI = BossLiteAPI()
         db = BossLiteDBWM()
         
         # First create a job
-        task = Task(db)
+        task = Task()
         task.create(db)
         job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
         job.create(db)
@@ -291,10 +291,10 @@ class APITest(unittest.TestCase):
         #self.assertEqual(job2.runningJob['storage'], None)
         #self.assertEqual(job2.runningJob['service'], 'IdesOfMarch')
         
-
-        # Now see if we get a new one with a new job
+        
         job3 = Job(parameters = {'name': 'Trajan', 'jobId': 102, 'taskId': task.exists(db)})
         job3.create(db)
+        
         testAPI.getRunningInstance(job = job3, runningAttrs = {'storage': 'Ravenna'})
         
         self.assertEqual(job3.runningJob['jobId'], 102)
@@ -304,25 +304,23 @@ class APITest(unittest.TestCase):
         self.assertEqual(job3.runningJob['storage'], 'Ravenna')
 
         # Now test if we can load by attribute
-        # "loadJobsByRunningAttr" calls directly "Job.LoadByRunningJobAttr" DAO... is this the
-        # right approach? Cross-check with original implementation...
-        jobList = testAPI.loadJobsByRunningAttr(attribute = 'status', value = 'Dead')
+        jobList = testAPI.loadJobsByRunningAttr( attribute = 'status', 
+                                                 value = 'Dead' )
         
         self.assertEqual(len(jobList), 1)
         
         job4 = jobList[0]
-        job4['submissionNumber'] = 1
+        job4['submissionNumber'] = 1 # need to ckeck...
         testAPI.getRunningInstance(job = job4)
         
         self.assertEqual(job4.runningJob['jobId'], 101)
         self.assertEqual(job4.runningJob['submission'], 1)
         self.assertEqual(job4.runningJob['status'], 'Dead')
         self.assertEqual(job4.runningJob['statusReason'], 'WentToTheForum')
-        self.assertEqual(job4.runningJob['storage'], None)
-        self.assertEqual(job4.runningJob['service'], 'IdesOfMarch')
+        # self.assertEqual(job4.runningJob['storage'], None)
+        # self.assertEqual(job4.runningJob['service'], 'IdesOfMarch')
         
         return
-"""
     
 """
     def testE_APICombinedMethods(self):

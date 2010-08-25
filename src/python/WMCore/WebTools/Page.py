@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.43 2010/04/26 21:58:19 sryu Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: Page.py,v 1.44 2010/05/05 19:12:40 afaq Exp $"
+__version__ = "$Revision: 1.44 $"
 
 import urllib
 import cherrypy
@@ -216,7 +216,8 @@ def exposejson (func):
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
-            Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
+            raise 
+	    #Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
 #        return data
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -233,7 +234,8 @@ def exposejsonthunker (func):
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
-            Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
+            raise 
+	    #Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
 #        return data
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -259,7 +261,8 @@ def exposedasjson (func):
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
-            Exception("Failed to json-ify obj '%s' type '%s'" % (data, type(data)))
+            raise 
+	    #Exception("Failed to json-ify obj '%s' type '%s'" % (data, type(data)))
 
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__

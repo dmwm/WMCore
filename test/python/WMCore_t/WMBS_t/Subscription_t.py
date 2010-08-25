@@ -255,13 +255,16 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
         testWorkflow.create()
+        dummyWorkflow = Workflow(spec = "spec1.xml", owner = "Simon",
+                                name = "wf002")
+        dummyWorkflow.create()        
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20)
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))                         
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))                         
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))                         
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -277,6 +280,11 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
+
+        failSubscription = Subscription(fileset = testFileset,
+                                        workflow = dummyWorkflow)
+        failSubscription.create()        
+        failSubscription.failFiles(failSubscription.filesOfStatus("AvailableFiles"))
 
         testSubscription.failFiles([testFileA, testFileC])
         failedFiles = testSubscription.filesOfStatus(status = "FailedFiles")
@@ -371,14 +379,17 @@ class SubscriptionTest(unittest.TestCase):
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
-        testWorkflow.create()
+        testWorkflow.create()  
+        dummyWorkflow = Workflow(spec = "spec2.xml", owner = "Simon",
+                                name = "wf003")
+        dummyWorkflow.create()      
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20)
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))                         
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))                         
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -394,6 +405,12 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
+
+        completeSubscription = Subscription(fileset = testFileset,
+                                            workflow = dummyWorkflow)
+        completeSubscription.create()
+        completeSubscription.completeFiles(completeSubscription.filesOfStatus("AvailableFiles"))
+
         testSubscription.completeFiles([testFileA, testFileC])
         completedFiles = testSubscription.filesOfStatus(status = "CompletedFiles")
 
@@ -426,12 +443,12 @@ class SubscriptionTest(unittest.TestCase):
                                 name = "wf001")
         testWorkflow.create()
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20)
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))                         
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))                         
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))                         
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -510,6 +527,11 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
+
+        acquireSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        acquireSubscription.create()        
+        acquireSubscription.acquireFiles()
 
         testSubscription.acquireFiles([testFileA, testFileC])
         acquiredFiles = testSubscription.filesOfStatus(status = "AcquiredFiles")

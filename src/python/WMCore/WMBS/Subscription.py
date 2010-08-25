@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0231
+#pylint: disable-msg=W0231, W0221
+# W0221: When we overwrite the DS Subscription, we sometimes add
+#   new variables.  It's inevitable.
 """
 _Subscription_
 
@@ -14,8 +16,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.65 2010/04/07 20:29:49 mnorman Exp $"
-__version__ = "$Revision: 1.65 $"
+__revision__ = "$Id: Subscription.py,v 1.66 2010/05/13 16:22:55 mnorman Exp $"
+__version__ = "$Revision: 1.66 $"
 
 import logging
 
@@ -30,6 +32,11 @@ from WMCore.DataStructs.Fileset      import Fileset      as WMFileset
 from WMCore.Services.UUID import makeUUID
 
 class Subscription(WMBSBase, WMSubscription):
+    """
+    WMBS Subscription
+
+    WMBS object for executing a task or similar chunk of work
+    """
     def __init__(self, fileset = None, workflow = None, id = -1,
                  whitelist = None, blacklist = None, split_algo = "FileBased",
                  type = "Processing"):
@@ -244,8 +251,9 @@ class Subscription(WMBSBase, WMSubscription):
         try:
             self.commitTransaction(existingTransaction)
         except Exception, ex:
-            print "Found exception %s" %(ex)
-            logging.error("Exception found in commiting acquireFiles transaction: %s" %(ex))
+            print "Found exception %s" % (ex)
+            logging.error("Exception found in commiting " \
+                          + "acquireFiles transaction: %s" % (ex))
         return
     
     def completeFiles(self, files):
@@ -364,9 +372,11 @@ class Subscription(WMBSBase, WMSubscription):
 
         """
 
-        jobLocate  = self.daofactory(classname = "Subscriptions.GetNumberOfJobsPerSite")
+        jobLocate = self.daofactory(classname = "Subscriptions.GetNumberOfJobsPerSite")
 
-        result = jobLocate.execute(location = location, subscription = self['id'], state = state).values()[0]
+        result = jobLocate.execute(location = location,
+                                   subscription = self['id'],
+                                   state = state).values()[0]
 
         return result
  
@@ -378,7 +388,7 @@ class Subscription(WMBSBase, WMSubscription):
         """
         action = self.daofactory( classname = "Subscriptions.GetJobGroups" )
         return action.execute(self['id'], conn = self.getDBConn(),
-                                          transaction = self.existingTransaction())
+                              transaction = self.existingTransaction())
 
     def getAllJobGroups(self):
         """
@@ -388,7 +398,7 @@ class Subscription(WMBSBase, WMSubscription):
         """
         action = self.daofactory( classname = "Subscriptions.GetAllJobGroups" )
         return action.execute(self['id'], conn = self.getDBConn(),
-                                          transaction = self.existingTransaction())
+                              transaction = self.existingTransaction())
 
     def deleteEverything(self):
         """
@@ -422,9 +432,9 @@ class Subscription(WMBSBase, WMSubscription):
         # Get output filesets from the workflow
         self['workflow'].load()
         for entry in self['workflow'].outputMap:
-            id = self['workflow'].outputMap[entry]["output_fileset"].id
-            if not id in filesets:
-                filesets.append(id)
+            wid = self['workflow'].outputMap[entry]["output_fileset"].id
+            if not wid in filesets:
+                filesets.append(wid)
 
 
         # Do the input fileset LAST!
@@ -454,7 +464,8 @@ class Subscription(WMBSBase, WMSubscription):
             fileset.loadData()
             action = self.daofactory(classname = "Fileset.DeleteCheck")
             action.execute(fileid = fileset.id, subid = self["id"],
-                           conn = self.getDBConn(), transaction = self.existingTransaction())
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction())
             if not fileset.exists():
                 # If we got rid of the fileset
                 # If we did not delete the fileset, all files are still in use
@@ -462,18 +473,19 @@ class Subscription(WMBSBase, WMSubscription):
 
                 parent = self.daofactory(classname = "Files.DeleteParentCheck")
                 action = self.daofactory(classname = "Files.DeleteCheck")
-                for file in fileset.files:
-                    parent.execute(file = file['id'], fileset = fileset.id,
+                for f in fileset.files:
+                    parent.execute(file = f['id'], fileset = fileset.id,
                                    conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
-                    action.execute(file = file['id'], fileset = fileset.id,
+                    action.execute(file = f['id'], fileset = fileset.id,
                                    conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
 
         #Next Workflow
         action = self.daofactory(classname = "Workflow.DeleteCheck")
         action.execute(workid = self["workflow"].id, subid = self["id"],
-                       conn = self.getDBConn(), transaction = self.existingTransaction())
+                       conn = self.getDBConn(),
+                       transaction = self.existingTransaction())
 
         self.delete()
         self.commitTransaction(existingTransaction)
@@ -489,9 +501,9 @@ class Subscription(WMBSBase, WMSubscription):
         if type(files) != list:
             files = [files] 
         
-        action = self.daofactory( classname = "Subscriptions.GetCompletedByFileList" )
+        action = self.daofactory(classname = "Subscriptions.GetCompletedByFileList")
         fileIDs =  action.execute(self['id'], files, conn = self.getDBConn(),
-                                          transaction = self.existingTransaction())
+                                  transaction = self.existingTransaction())
         
         for f in files:
             if f['id'] not in fileIDs:
@@ -582,8 +594,8 @@ class Subscription(WMBSBase, WMSubscription):
         for job in jobList:
             job['id'] = result[job['name']]
             fileDict[job['id']] = []
-            for file in job['input_files']:
-                fileDict[job['id']].append(file['id'])
+            for f in job['input_files']:
+                fileDict[job['id']].append(f['id'])
 
 
         maskAction = self.daofactory(classname = "Masks.New")

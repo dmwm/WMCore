@@ -7,9 +7,10 @@ normal file based splitting except that the input files will also have their
 parentage information loaded so that the parents can be included in the job.
 """
 
-__revision__ = "$Id: TwoFileBased.py,v 1.3 2009/07/22 20:36:35 sfoulkes Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: TwoFileBased.py,v 1.4 2009/07/30 18:37:07 sfoulkes Exp $"
+__version__  = "$Revision: 1.4 $"
 
+import logging
 from sets import Set
 
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -25,7 +26,7 @@ class TwoFileBased(JobFactory):
         maximum of "files_per_job".  If the "files_per_job" parameters is not
         passed in jobs will process a maximum of 10 files.
         """
-        filesPerJob = kwargs.get("files_per_job", 10)
+        filesPerJob = int(kwargs.get("files_per_job", 10))
         filesInJob = 0
         jobs = []
 

@@ -7,8 +7,8 @@ a set of jobs based on event counts.  Each jobgroup returned will only
 contain jobs for a single file.
 """
 
-__revision__ = "$Id: FileAndEventBased.py,v 1.9 2009/07/22 16:24:54 sfoulkes Exp $"
-__version__  = "$Revision: 1.9 $"
+__revision__ = "$Id: FileAndEventBased.py,v 1.10 2009/07/30 18:37:07 sfoulkes Exp $"
+__version__  = "$Revision: 1.10 $"
 
 from sets import Set
 
@@ -33,7 +33,8 @@ class FileAndEventBased(JobFactory):
         #  //
         # // get the event total
         #//
-        eventsPerJob = kwargs.get("events_per_job", 5000)
+        eventsPerJob = int(kwargs.get("events_per_job", 5000))
+
         try:
             selectionAlgorithm = kwargs['selection_algorithm']
         except KeyError, e:

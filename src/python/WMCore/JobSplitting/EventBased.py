@@ -6,8 +6,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: EventBased.py,v 1.10 2009/07/22 16:24:54 sfoulkes Exp $"
-__version__  = "$Revision: 1.10 $"
+__revision__ = "$Id: EventBased.py,v 1.11 2009/07/30 18:37:07 sfoulkes Exp $"
+__version__  = "$Revision: 1.11 $"
 
 from sets import Set
 
@@ -41,7 +41,7 @@ class EventBased(JobFactory):
         #  //
         # // get the event total
         #//
-        eventsPerJob = kwargs['events_per_job']
+        eventsPerJob = int(kwargs['events_per_job'])
         carryOver = 0
 
         baseName = makeUUID()

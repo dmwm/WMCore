@@ -4,8 +4,8 @@ _TwoFileAndEventBased_
 
 """
 
-__revision__ = "$Id: TwoFileAndEventBased.py,v 1.2 2009/07/22 16:24:54 sfoulkes Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: TwoFileAndEventBased.py,v 1.3 2009/07/30 18:37:07 sfoulkes Exp $"
+__version__  = "$Revision: 1.3 $"
 
 from sets import Set
 
@@ -30,7 +30,8 @@ class TwoFileAndEventBased(JobFactory):
         #  //
         # // get the event total
         #//
-        eventsPerJob = kwargs.get("events_per_job", 5000)
+        eventsPerJob = int(kwargs.get("events_per_job", 5000))
+        
         try:
             selectionAlgorithm = kwargs['selection_algorithm']
         except KeyError, e:
@@ -53,7 +54,6 @@ class TwoFileAndEventBased(JobFactory):
                 self.subscription.acquireFiles(f)
                 jobGroup.add(currentJob)
                 jobGroup.commit()
-                jobGroup.recordAcquire()                
                 continue
 
             currentEvent = 0

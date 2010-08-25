@@ -6,8 +6,8 @@ Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
 
-__revision__ = "$Id: WMBSMergeBySize.py,v 1.2 2009/04/09 16:41:58 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WMBSMergeBySize.py,v 1.3 2009/07/30 18:37:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 
@@ -198,9 +198,9 @@ class WMBSMergeBySize(JobFactory):
           min_merge_size - The minimum size of merged files
           max_merge_events - The maximum number of events in a merge file
         """
-        self.maxMergeSize = kwargs.get("max_merge_size", 1000000000)
-        self.minMergeSize = kwargs.get("min_merge_size", 1048576)
-        self.maxMergeEvents = kwargs.get("max_merge_events", 50000)
+        self.maxMergeSize = int(kwargs.get("max_merge_size", 1000000000))
+        self.minMergeSize = int(kwargs.get("min_merge_size", 1048576))
+        self.maxMergeEvents = int(kwargs.get("max_merge_events", 50000))
         self.jobs = []
 
         self.jobInstance = jobInstance

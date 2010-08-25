@@ -6,29 +6,18 @@ Util class to provide stage out functionality as an interface object.
 
 Based of RuntimeStageOut.StageOutManager, that should probably eventually
 use this class as a basic API
-
 """
 
 import os
 
-#from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
+from WMCore.WMException import WMException
 
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.Storage.DeleteMgr import DeleteMgr
 from WMCore.Storage.Registry import retrieveStageOutImpl
+
 import WMCore.Storage.Backends
-
-
-class StageOutSuccess(Exception):
-    """
-    _StageOutSuccess_
-
-    Exception used to escape stage out loop when stage out is successful
-    """
-    pass
-
-
 
 class StageOutMgr:
     """
@@ -39,9 +28,11 @@ class StageOutMgr:
 
     """
     def __init__(self, **overrideParams):
+        print "StageOutMgr::__init__()"
         self.override = False
         self.overrideConf = overrideParams
         if overrideParams != {}:
+            print "StageOutMgr::__init__(): Override: %s" % overrideParams
             self.override = True
 
         self.substituteGUID = True
@@ -73,7 +64,7 @@ class StageOutMgr:
 
         self.failed = {}
         self.completedFiles = {}
-
+        return
 
     def initialiseSiteConf(self):
         """
@@ -89,7 +80,7 @@ class StageOutMgr:
             msg += "From site config file.\n"
             msg += "Unable to perform StageOut operation"
             raise StageOutInitError( msg)
-        msg = "Local Stage Out Implementation to be used is:"
+        msg = "Local Stage Out Implementation to be used is: "
         msg += "%s\n" % implName
 
         seName = self.siteCfg.localStageOut.get("se-name", None)
@@ -173,61 +164,58 @@ class StageOutMgr:
         Use call to invoke transfers
 
         """
+        lastException = None
 
+        print "==>Working on file: %s" % fileToStage['LFN']
+        lfn = fileToStage['LFN']
 
-        try:
-            print "==>Working on file: %s" % fileToStage['LFN']
-            lfn = fileToStage['LFN']
+        #  //
+        # // No override => use local-stage-out from site conf
+        #//  invoke for all files and check failures/successes
+        if not self.override:
+            print "===> Attempting Local Stage Out."
+            try:
+                pfn = self.localStageOut(lfn, fileToStage['PFN'])
+                fileToStage['PFN'] = pfn
+                fileToStage['SEName'] = self.siteCfg.localStageOut['se-name']
+                fileToStage['StageOutCommand'] = self.siteCfg.localStageOut['command']
+                self.completedFiles[fileToStage['LFN']] = fileToStage
 
-            #  //
-            # // No override => use local-stage-out from site conf
-            #//  invoke for all files and check failures/successes
-            if not self.override:
-                print "===> Attempting Local Stage Out."
-                try:
-                    pfn = self.localStageOut(lfn, fileToStage['PFN'])
-                    fileToStage['PFN'] = pfn
-                    fileToStage['SEName'] = self.siteCfg.localStageOut['se-name']
-                    fileToStage['StageOutCommand'] = self.siteCfg.localStageOut['command']
-                    self.completedFiles[fileToStage['LFN']] = fileToStage
-                    raise StageOutSuccess
-                except StageOutFailure, ex:
-                    msg = "===> Local Stage Out Failure for file:\n"
-                    msg += "======>  %s\n" % fileToStage['LFN']
-                    msg += str(ex)
-                    # go to fallback
-                    pass
-            #  //
-            # // Still here => failure, start using the fallback stage outs
-            #//  If override is set, then that will be the only fallback available
-            print "===> Attempting %s Fallback Stage Outs" % len(self.fallbacks)
-            for fallback in self.fallbacks:
-                try:
-                    pfn = self.fallbackStageOut(lfn, fileToStage['PFN'],
-                                                fallback)
-                    fileToStage['PFN'] = pfn
-                    fileToStage['SEName'] = fallback['se-name']
-                    fileToStage['StageOutCommand'] = fallback['command']
-                    print "attempting fallback"
-                    self.completedFiles[fileToStage['LFN']] = fileToStage
-                    if self.failed.has_key(lfn):
-                        del self.failed[lfn]
-                    raise StageOutSuccess
-                except StageOutFailure, ex:
-                    continue
+                print "===> Stage Out Successful: %s" % fileToStage
+                return fileToStage
+            except WMException, ex:
+                lastException = ex
+                print "===> Local Stage Out Failure for file:"
+                print "======>  %s\n" % fileToStage['LFN']
+            except Exception, ex:
+                lastException = StateOutFailure("Error during local stage out",
+                                                error = str(ex))
+                print "===> Local Stage Out Failure for file:\n"
+                print "======>  %s\n" % fileToStage['LFN']                
 
-        except StageOutSuccess:
-            msg = "===> Stage Out Successful:\n"
-            msg += "====> LFN: %s\n" % fileToStage['LFN']
-            msg += "====> PFN: %s\n" % fileToStage['PFN']
-            msg += "====> SE:  %s\n" % fileToStage['SEName']
-            print msg
-            return fileToStage
-        msg = "Unable to stage out file:\n"
-        msg += fileToStage['LFN']
-        raise StageOutFailure(msg, **fileToStage)
+        #  //
+        # // Still here => failure, start using the fallback stage outs
+        #//  If override is set, then that will be the only fallback available
+        print "===> Attempting %s Fallback Stage Outs" % len(self.fallbacks)
+        for fallback in self.fallbacks:
+            try:
+                pfn = self.fallbackStageOut(lfn, fileToStage['PFN'],
+                                            fallback)
+                fileToStage['PFN'] = pfn
+                fileToStage['SEName'] = fallback['se-name']
+                fileToStage['StageOutCommand'] = fallback['command']
+                print "attempting fallback"
+                self.completedFiles[fileToStage['LFN']] = fileToStage
+                if self.failed.has_key(lfn):
+                    del self.failed[lfn]
 
+                print "===> Stage Out Successful: %s" % fileToStage
+                return fileToStage                        
+            except Exception, ex:
+                lastException = ex
+                continue
 
+        raise lastException
 
     def fallbackStageOut(self, lfn, localPfn, fbParams):
         """

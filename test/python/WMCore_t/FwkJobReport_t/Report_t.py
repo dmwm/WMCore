@@ -5,12 +5,13 @@ _Report_t_
 Unit tests for the Report class.
 """
 
-__revision__ = "$Id: Report_t.py,v 1.6 2010/06/16 18:22:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Report_t.py,v 1.7 2010/08/11 16:56:17 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import os
 import xml.dom.minidom
+import time
 
 import WMCore.WMInit
 
@@ -342,6 +343,33 @@ cms::Exception caught in EventProcessor and rethrown
                 "Error: missing section: %s" % jsonReportSection
                 
         return
+
+
+    def testTimeSetting(self):
+        """
+        _testTimeSetting_
+
+        Can we set the times correctly?
+        """
+
+        
+
+        stepName = 'cmsRun1'
+        timeDiff = 0.01
+        myReport = Report(stepName)
+        localTime = time.time()
+        myReport.setStepStartTime(stepName)
+        myReport.setStepStopTime(stepName)
+        repTime = myReport.getTimes(stepName)
+
+        self.assertTrue(repTime['startTime'] - localTime < timeDiff)
+        self.assertTrue(repTime['stopTime'] - localTime < timeDiff)
+
+        return
+
+
+        
+        
     
 if __name__ == "__main__":
     unittest.main()

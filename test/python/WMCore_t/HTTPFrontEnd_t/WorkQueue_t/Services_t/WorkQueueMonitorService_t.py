@@ -14,8 +14,8 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.2 2010/03/16 16:58:10 maxa Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.3 2010/03/19 15:06:45 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 
@@ -37,12 +37,6 @@ from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMQuality.Emulators.EmulatorUnitTestBase import EmulatorUnitTestBase
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
-from WMCore_t.Services_t.WorkQueue_t.WorkQueuePopulator import createProductionSpec
-from WMCore_t.Services_t.WorkQueue_t.WorkQueuePopulator import getGlobalQueue
-from WMCore_t.Services_t.WorkQueue_t.WorkQueuePopulator import createProcessingSpec
-from WMCore_t.WMSpec_t.samples.BasicProductionWorkload import workload as BasicProductionWorkload
-from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workload as Tier1ReRecoWorkload
-
 
 
 class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):    
@@ -75,7 +69,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
       
         self.params = {}
         self.params['endpoint'] = self.config.getServerUrl()        
-        self.globalQueue = getGlobalQueue(dbi = self.testInit.getDBInterface(),
+        self.globalQueue = globalQueue(dbi = self.testInit.getDBInterface(),
                                           CacheDir = 'global',
                                           NegotiationTimeout = 0,
                                           QueueURL = self.config.getServerUrl())
@@ -155,7 +149,8 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         print 80 * '#'
         print "test: %s" % testName
 
-        self.globalQueue.queueWork(createProductionSpec())
+        specName = "ProductionSpec1"
+        self.globalQueue.queueWork(self.specGenerator.createProductionSpec(specName, "file"))
         
         # when using json encoding use application/json
         contentType = "application/json"

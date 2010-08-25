@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.4 2009/06/24 20:58:08 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.5 2009/06/24 22:09:52 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import pickle
@@ -49,10 +49,12 @@ class MockDBSReader:
         self.blocks = {'/fake/test/RAW': [{'Name' : '/fake/test/RAW#1',
                                     'NumEvents' : 500,
                                     'NumFiles' : 5,
+                                    'Size' : 100000,
                                     'Parents' : ()},
                                     {'Name' : '/fake/test/RAW#2',
                                     'NumEvents' : 1000,
                                     'NumFiles' : 10,
+                                    'Size' : 300000,
                                     'Parents' : ()}
                                     ]}
         self.locations = {'/fake/test/RAW#1' : ['SiteA'],
@@ -105,7 +107,7 @@ class WorkQueueTest(WorkQueueTestCase):
                 pass
 
 
-    def testProduction(self):
+    def atestProduction(self):
         """
         Create and enqueue a production WMSpec.
         

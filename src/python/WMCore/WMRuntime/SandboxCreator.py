@@ -4,8 +4,8 @@
 
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.14 2010/02/20 18:46:54 evansde Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: SandboxCreator.py,v 1.15 2010/04/05 18:58:50 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 import os
 import re
 import tarfile
@@ -92,10 +92,16 @@ class SandboxCreator:
         initHandle.write("# dummy file for now")
         initHandle.close()
 
+        # Create path to sandbox
+        archivePath = os.path.join(buildItHere, "%s-Sandbox.tar.bz2" % taskName)
+
+        # Add sandbox path to workload
+        setattr(task.data.input, 'sandbox', archivePath)
+
         # pickle up the workload for storage in the sandbox
         workload.save(path + "/WMWorkload.pkl")
 
-        archivePath = os.path.join(buildItHere, "%s-Sandbox.tar.bz2" % taskName)
+
 
         # now, tar everything up and put it somewhere special
         #(archiveHandle,archivePath) = tempfile.mkstemp('.tar.bz2','sbox',

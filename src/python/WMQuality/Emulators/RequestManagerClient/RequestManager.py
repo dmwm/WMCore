@@ -24,7 +24,7 @@ class RequestManager(object):
     
         
         
-    def postAssignment(self, requestName, prodAgentUrl=None):
+    def putWorkQueue(self, requestName, prodAgentUrl=None):
         # do not thing or return success of fail massage 
         return 
     

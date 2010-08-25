@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: job_DAOFactory_t.py,v 1.2 2008/12/26 15:06:40 afaq Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: job_DAOFactory_t.py,v 1.3 2009/03/20 13:26:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest, logging, os, commands, random, datetime
 from sets import Set
@@ -174,7 +174,7 @@ class JobBusinessObjectTestCase(BaseJobsTestCase):
                 assert len(job.listLFNs()) == size, "Job has a different number of files (%s) than expected (%s)" % (len(job.listLFNs()), size)
                 assert job.id == j + 1, "Job id is not what is expected"
             job = Job(subscription = sub, files = sub.acquireFiles(size=size), logger=testlogger, dbfactory = dbi)
-            assert len(job.file_set) == 0, "11th job has files"
+            assert len(job.getFiles()) == 0, "11th job has files"
             print "files available %s, files acquired %s" % (len(sub.availableFiles()),len(sub.acquiredFiles()))
 
     def testFileManip(self):

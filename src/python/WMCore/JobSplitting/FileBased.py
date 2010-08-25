@@ -6,27 +6,14 @@ File based splitting algorithm that will chop a fileset into
 a set of jobs based on file boundaries
 """
 
-__revision__ = "$Id: FileBased.py,v 1.26 2010/05/03 14:35:25 mnorman Exp $"
-__version__  = "$Revision: 1.26 $"
+__revision__ = "$Id: FileBased.py,v 1.27 2010/07/13 14:32:45 sfoulkes Exp $"
+__version__  = "$Revision: 1.27 $"
 
 import threading
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 
 class FileBased(JobFactory):
-    """
-    Split jobs by number of files.
-    """
-
-    #def getJobName(self, baseName = None, length=None):
-    #    """
-    #    Create standard job name
-    #
-    #    """
-    #    if not baseName:
-    #        baseName = makeUUID()
-    #    return '%s-%s' % (baseName, str(length))
-    
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_

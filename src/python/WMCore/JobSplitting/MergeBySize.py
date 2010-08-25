@@ -7,8 +7,8 @@ based on the size of the files
 
 """
 
-__revision__ = "$Id: MergeBySize.py,v 1.6 2009/10/09 20:22:20 ewv Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: MergeBySize.py,v 1.7 2010/07/13 14:32:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
@@ -37,8 +37,8 @@ class MergeBySize(JobFactory):
         """
         fileset = list(self.subscription.availableFiles())
 
-        mergeSize = kwargs['merge_size']
-        overflow  = kwargs.get('all_files', False)
+        mergeSize = int(kwargs['merge_size'])
+        overflow  = bool(kwargs.get('all_files', False))
         fileset.sort()
 
         accumSize = 0

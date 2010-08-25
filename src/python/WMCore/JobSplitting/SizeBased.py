@@ -7,8 +7,8 @@ or a a set of files for each job.
 
 """
 
-__revision__ = "$Id: SizeBased.py,v 1.7 2010/03/31 21:35:30 sfoulkes Exp $"
-__version__  = "$Revision: 1.7 $"
+__revision__ = "$Id: SizeBased.py,v 1.8 2010/07/13 14:32:46 sfoulkes Exp $"
+__version__  = "$Revision: 1.8 $"
 
 import logging
 
@@ -27,7 +27,7 @@ class SizeBased(JobFactory):
         kwargs can take:
         size_per_job 
         """
-        sizePerJob = kwargs.get("size_per_job", 1000)
+        sizePerJob = int(kwargs.get("size_per_job", 1000))
         locationDict = self.sortByLocation()
 
         for location in locationDict.keys():

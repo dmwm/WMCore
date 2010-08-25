@@ -10,8 +10,8 @@ creation and/or tracking.
 If file spans a run will need to create a mask for that file.
 """
 
-__revision__ = "$Id: RunBased.py,v 1.21 2010/01/29 16:26:08 mnorman Exp $"
-__version__  = "$Revision: 1.21 $"
+__revision__ = "$Id: RunBased.py,v 1.22 2010/07/13 14:32:46 sfoulkes Exp $"
+__version__  = "$Revision: 1.22 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset
@@ -28,8 +28,8 @@ class RunBased(JobFactory):
         kwargs can take:
         files_per_job - e.g. 20 - Number of files per each split job
         """
-        filesPerJob = kwargs.get("files_per_job", 300)
-        requireRunClosed = kwargs.get("require_run_closed", False)
+        filesPerJob = int(kwargs.get("files_per_job", 300))
+        requireRunClosed = bool(kwargs.get("require_run_closed", False))
 
         #baseName = makeUUID()
                 

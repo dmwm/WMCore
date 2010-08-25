@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.21 2009/03/24 22:03:37 sryu Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: File_t.py,v 1.22 2009/04/14 19:56:36 sryu Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import unittest
 import logging
@@ -489,6 +489,7 @@ class FileTest(unittest.TestCase):
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileA.setLocation(["se1.fnal.gov", "se1.cern.ch"])
+        testFileA.setLocation(se = "se1.fnal.gov", immediateSave = True)
         testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
                               immediateSave = False)
 

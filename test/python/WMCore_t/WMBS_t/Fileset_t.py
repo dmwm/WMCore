@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.17 2009/10/13 23:00:06 meloam Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Fileset_t.py,v 1.18 2009/10/14 13:38:33 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import unittest
 import logging
@@ -26,7 +26,6 @@ from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
 class FilesetTest(unittest.TestCase):
-
     
     def setUp(self):
         """
@@ -35,8 +34,6 @@ class FilesetTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.
         """
-
-        
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -580,6 +577,75 @@ class FilesetTest(unittest.TestCase):
 
         assert len(goldenFilesets) == 0, \
                "Error: Filesets are missing"
+        return
+
+    def testBulkAddDAO(self):
+        """
+        _testBulkAddDAO_
+
+        Verify that the Fileset.BulkAdd DAO correct adds files to multiple
+        filesets.
+        """
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
+                         events = 20, cksum = 3)
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
+                         events = 20, cksum = 3)
+        testFileB.addRun(Run( 1, *[45]))
+        testFileB.create()
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
+                         events = 20, cksum = 3)
+        testFileC.addRun(Run( 1, *[45]))
+        testFileC.create()
+
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
+                         events = 20, cksum = 3)
+        testFileD.addRun(Run( 1, *[45]))
+        testFileD.create()        
+
+        testFilesetA = Fileset(name = "TestFilesetA")
+        testFilesetA.create()
+        testFilesetB = Fileset(name = "TestFilesetB")
+        testFilesetB.create()        
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        binds = [{"fileid": testFileA["id"], "fileset": testFilesetA.id},
+                 {"fileid": testFileB["id"], "fileset": testFilesetA.id},
+                 {"fileid": testFileC["id"], "fileset": testFilesetA.id},
+                 {"fileid": testFileB["id"], "fileset": testFilesetB.id},
+                 {"fileid": testFileC["id"], "fileset": testFilesetB.id},
+                 {"fileid": testFileD["id"], "fileset": testFilesetB.id}]
+
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        bulkAddAction = daoFactory(classname = "Fileset.BulkAdd")
+        bulkAddAction.execute(binds = binds)
+
+        testFilesetA.loadData()
+        testFilesetB.loadData()
+
+        goldenFiles = [testFileA, testFileB, testFileC]
+        for filesetFile in testFilesetA.files:
+            assert filesetFile in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+
+        goldenFiles = [testFileB, testFileC, testFileD]
+        for filesetFile in testFilesetB.files:
+            assert filesetFile in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+
         return
         
 if __name__ == "__main__":

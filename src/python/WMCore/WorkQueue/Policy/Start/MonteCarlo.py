@@ -4,11 +4,11 @@ WorkQueue splitting by block
 
 """
 __all__ = []
-__revision__ = "$Id: MonteCarlo.py,v 1.3 2009/12/10 16:30:43 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: MonteCarlo.py,v 1.4 2009/12/15 17:16:36 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
-from copy import deepcopy
+#from copy import deepcopy
 from math import ceil
 
 class MonteCarlo(StartPolicyInterface):
@@ -27,11 +27,12 @@ class MonteCarlo(StartPolicyInterface):
             if total < current:
                 current = total
             # copy spec file restricting events
-            spec = deepcopy(self.wmspec)
-            spec.taskIterator().next().addProduction(totalevents = current)
+            #spec = deepcopy(self.wmspec)
+            #spec = self.wmspec
+            #spec.taskIterator().next().addProduction(totalevents = current)
             self.newQueueElement(Data = None,
                                  ParentData = [],
-                                 WMSpec = spec,
+                                 WMSpec = self.wmspec,
                                  Jobs = ceil(current /
                                                 float(self.args['SliceSize'])))
             total -= current

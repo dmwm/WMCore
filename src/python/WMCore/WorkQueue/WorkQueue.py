@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.43 2009/12/14 13:50:27 swakef Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: WorkQueue.py,v 1.44 2009/12/15 17:15:40 sryu Exp $"
+__version__ = "$Revision: 1.44 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -298,7 +298,7 @@ class WorkQueue(WorkQueueBase):
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
 
-            return sub
+        return sub
 
     def doneWork(self, *subscriptions):
         """
@@ -364,26 +364,28 @@ class WorkQueue(WorkQueueBase):
             policy = startPolicy(wmspec.startPolicy(),
                                  self.params['SplittingMapping'])
 
-            units.extend(policy(wmspec, self.dbsHelpers))
+            #units.extend(policy(wmspec, topLevelTask, self.dbsHelpers))
+            units = policy(wmspec, topLevelTask, self.dbsHelpers)
 
-        trans = self.beginTransaction()
-        for unit in units:
-            primaryBlock = unit['Data']
-            blocks = unit['ParentData']
-            jobs = unit['Jobs']
-            wmspec = unit['WMSpec']
-            unique = uuid.uuid4().hex[:10] # hopefully random enough
-            new_url = os.path.join(self.params['CacheDir'],
-                                   "%s.spec" % unique)
-            if os.path.exists(new_url):
-                raise RuntimeErorr, "spec file %s exists" % new_url
-            wmspec.setSpecUrl(new_url) #TODO: look at making this a web accessible url
-            wmspec.save(new_url)
-
-            self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
-                                         blocks, parentQueueId,
-                                         topLevelTask)
-        self.commitTransaction(trans)
+            trans = self.beginTransaction()
+            for unit in units:
+                primaryBlock = unit['Data']
+                blocks = unit['ParentData']
+                jobs = unit['Jobs']
+#TODO: not sure this process is needed: Stuart can look over this
+#                wmspec = unit['WMSpec']
+#                unique = uuid.uuid4().hex[:10] # hopefully random enough
+#                new_url = os.path.join(self.params['CacheDir'],
+#                                       "%s.spec" % unique)
+#                if os.path.exists(new_url):
+#                    raise RuntimeError, "spec file %s exists" % new_url
+#                wmspec.setSpecUrl(new_url) #TODO: look at making this a web accessible url
+#                wmspec.save(new_url)
+    
+                self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
+                                             blocks, parentQueueId,
+                                             topLevelTask)
+            self.commitTransaction(trans)
         return len(units)
 
 
@@ -499,7 +501,7 @@ class WorkQueue(WorkQueueBase):
 
         fullResync = time.time() > self.lastLocationUpdate + \
                                 self.params['FullLocationRefreshInterval']
-
+        
         mapping = self._getLocations([x['name'] for x in blocks], fullResync)
 
         if not mapping:
@@ -756,9 +758,11 @@ class WorkQueue(WorkQueueBase):
         for item in dataNames:
             if item.find('#') != -1:
                 args['block'].append(item)
+                print 777777777
+                print args
             else:
                 args['dataset'].append(item)
-
+                
         response = self.phedexService.subscriptions(**args)['phedex']
         self.lastLocationUpdate = response['request_timestamp']
         result = {}
@@ -786,7 +790,7 @@ class WorkQueue(WorkQueueBase):
                 # have work for some blocks in this dataset
                 if dset.has_key('subscription'):
                     # work for block and have dataset level subscription
-                    subs = [x['node'] for x in dset['subscription']]
+                    subs = [x['node'] for x in dset['subscription']]                    
                     for block in dset['block']:
                         if block['name'] in args['block']:
                             result[block['name']] = [x['node'] for x in block['subscription']]

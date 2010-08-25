@@ -114,19 +114,21 @@ class testRepeatCalls(RESTBaseUnitTest):
     def initialize(self):
         self.config = DefaultConfig()
         self.config.UnitTests.templates = getWMBASE() + '/src/templates/WMCore/WebTools'
+        self.config.Webtools.section_('server')
+        self.config.Webtools.server.socket_timeout = 1
         self.urlbase = self.config.getServerUrl()
         
     def test10Calls(self):
         fail_count = 0
         req = Requests.Requests(self.urlbase)
         
-        for i in range(0, 10):
+        for i in range(0, 5):
+            time.sleep(i)
             print 'test %s starting at %s' % (i, time.time())
             try:
                 result = req.get('/', incoming_headers={'Cache-Control':'no-cache'})
                 self.assertEqual(False, result[3])
                 self.assertEqual(200, result[1])
-                time.sleep(i*5)
             except HTTPException, he:
                 print 'test %s raised a %s error' % (i, he.status)
                 fail_count += 1

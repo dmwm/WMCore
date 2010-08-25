@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.14 2010/05/30 14:41:21 spigafi Exp $"
-__revision__ = "$Revision: 1.14 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.15 2010/06/09 18:44:36 spigafi Exp $"
+__revision__ = "$Revision: 1.15 $"
 
 import threading
 
@@ -28,8 +28,8 @@ def dbTransaction(func):
         Decorator for db transaction
         """
         
-        self.existingTransaction = self.engine.beginTransaction()
         try:
+            self.existingTransaction = self.engine.beginTransaction()
             res = func(self, *args, **kwargs)
             self.engine.commitTransaction(self.existingTransaction)
         except Exception, ex:
@@ -147,7 +147,6 @@ class BossLiteDBWM(BossLiteDBInterface):
         return
     
     
-    @dbTransaction
     def objLoad(self, obj, classname = None):
         """
         Retrieve from the db all the information of a specific object. 

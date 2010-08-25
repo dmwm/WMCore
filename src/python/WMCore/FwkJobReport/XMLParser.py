@@ -5,9 +5,10 @@ _XMLParser_
 Read the raw XML output from the cmsRun executable. 
 """
 
-__version__ = "$Revision: 1.8 $"
-__revision__ = "$Id: XMLParser.py,v 1.8 2010/04/14 19:23:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: XMLParser.py,v 1.9 2010/06/09 21:51:33 evansde Exp $"
 
+import os
 import xml.parsers.expat
 
 from WMCore.FwkJobReport import Report
@@ -238,12 +239,16 @@ def branchHandler():
 
     Create a list containing all the branch names as use the
     addBranchNamesToFile method to add them to the fileSection.
+
+    Nulled out, we dont need these anyways...
+    
     """
     while True:
         fileSection, node = (yield)
-        branches = [ subnode.text for subnode in node.children
-                     if subnode.name == "Branch" ]
-        Report.addBranchNamesToFile(fileSection, branches)
+        pass
+        #branches = [ subnode.text for subnode in node.children
+        #             if subnode.name == "Branch" ]
+        #Report.addBranchNamesToFile(fileSection, branches)
 
 @coroutine
 def inputAssocHandler():
@@ -391,4 +396,31 @@ def xmlToJobReport(reportInstance, xmlFile):
         )
 
     return
+childrenMatching = lambda node, nname: [x for x in node.children if x.name == nname]
+
+def multiXmlToJobReport(reportInstance, multiReportFile, directory = None):
+    """
+    _multiXmlToJobReport_
+
+    Util for reading a top level job report from a multi threaded CMSSW job report
+
+    the multi report file is expected to contain a list of entries like:
+
+    <ChildProcessFiles>
+      <ChildProcessFile>FrameworkJobReport_0.xml</ChildProcessFile>
+      <ChildProcessFile>FrameworkJobReport_1.xml</ChildProcessFile>
+      <ChildProcessFile>FrameworkJobReport_2.xml</ChildProcessFile>
+    </ChildProcessFiles>
+
+    """
+    # read XML, build node structure
+    jobRepNode = xmlFileToNode(multiReportFile)
+    for repNode in childrenMatching(jobRepNode, "FrameworkJobReport"):
+        for childProcFiles in childrenMatching(repNode, "ChildProcessFiles"):
+            for childRep in childrenMatching(childProcFiles, "ChildProcessFile"):
+                fileName =  childRep.text
+                if directory != None:
+                    fileName = "%s/%s" % (directory, fileName)
+                if os.path.exists(fileName):
+                    xmlToJobReport(reportInstance, fileName)
 

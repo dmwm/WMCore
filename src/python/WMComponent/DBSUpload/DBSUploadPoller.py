@@ -4,8 +4,8 @@
 The DBSUpload algorithm
 """
 __all__ = []
-__revision__ = "$Id: DBSUploadPoller.py,v 1.5 2009/09/02 16:16:10 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.6 2009/09/02 20:11:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -50,8 +50,6 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         Initialise class members
         """
-        myThread = threading.currentThread()
-        myThread.dialect = os.getenv('DIALECT')
         BaseWorkerThread.__init__(self)
         self.config     = config
         self.dbsurl     = self.config.DBSUpload.dbsurl

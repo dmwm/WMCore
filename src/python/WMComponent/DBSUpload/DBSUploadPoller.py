@@ -3,8 +3,8 @@
 The DBSUpload algorithm
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.9 2009/09/03 18:52:38 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.10 2009/09/23 16:40:29 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 import logging
@@ -17,7 +17,8 @@ import inspect
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
-from WMCore.WMFactory import WMFactory
+from WMCore.WMFactory  import WMFactory
+from WMCore.DAOFactory import DAOFactory
 
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Fileset import Fileset
@@ -66,6 +67,8 @@ class DBSUploadPoller(BaseWorkerThread):
 
         bufferFactory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
         self.addToBuffer=bufferFactory.loadObject("AddToBuffer")
+        
+        
 
         logging.info("DBSURL %s"%self.dbsurl)
         args = { "url" : self.dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" : self.dbsversion }
@@ -94,6 +97,12 @@ class DBSUploadPoller(BaseWorkerThread):
         logging.debug('Have retrieved %i datasets from DBSBuffer' %(len(datasets)))
 
         myThread = threading.currentThread()
+
+        bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
+
+        setBlock      = bufferFactory(classname = "DBSBufferFiles.SetBlock")
 
         #Now check them
         file_ids = []
@@ -159,7 +168,11 @@ class DBSUploadPoller(BaseWorkerThread):
                     locations = []
                     for loc in info:
                         locations.append(loc['Name'])
-                    dbinterface.setBlockStatus(block['Name'], locations)
+                    dbinterface.setBlockStatus(block['Name'], locations, block['OpenForWriting'])
+                    if "files" in block.keys():
+                        for file in block["files"]:
+                            setBlock.execute(lfn = file, blockName = block['Name'])
+
 
                 #Update the file status, and then recount UnMigrated Files
             	dbinterface.updateFilesStatus(file_ids)

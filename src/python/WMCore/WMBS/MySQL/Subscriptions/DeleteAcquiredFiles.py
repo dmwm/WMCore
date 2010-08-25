@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_AcquireFiles_
+_DeleteAcquireFiles_
 
 MySQL implementation of Subscription.DeleteAcquiredFiles
 
@@ -8,8 +8,8 @@ Remove a (list of) file(s) from the aquired state, either due to a state change
 (e.g file has become completed/failed) or as a clean up/resubmission.
 """
 __all__ = []
-__revision__ = "$Id: DeleteAcquiredFiles.py,v 1.3 2008/11/24 21:46:59 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DeleteAcquiredFiles.py,v 1.4 2009/04/08 18:54:29 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

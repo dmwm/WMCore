@@ -5,8 +5,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.9 2010/04/27 17:42:57 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.10 2010/04/28 16:33:41 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 import logging
@@ -86,81 +86,82 @@ class JobCreatorWorker:
 
         myThread = threading.currentThread()
 
-        subscriptionID = parameters.get('subscription')
+        for entry in parameters:
+            subscriptionID = entry.get('subscription')
 
-        if subscriptionID == -1:
-            return subscriptionID
+            if subscriptionID == -1:
+                return subscriptionID
+            
+            myThread.transaction.commit()
+            
+            myThread.transaction.begin()
+            
+            logging.info("About to call subscription %i" %subscriptionID)
+            
+            wmbsSubscription = Subscription(id = subscriptionID)
+            wmbsSubscription.load()
+            wmbsSubscription["workflow"].load()
+            workflow         = wmbsSubscription["workflow"]
+            wmWorkload       = self.retrieveWMSpec(wmbsSubscription)
 
-        myThread.transaction.commit()
+            logging.info("Retrieved WMBS info")
 
-        myThread.transaction.begin()
-
-        logging.info("About to call subscription %i" %subscriptionID)
-
-        wmbsSubscription = Subscription(id = subscriptionID)
-        wmbsSubscription.load()
-        wmbsSubscription["workflow"].load()
-        workflow         = wmbsSubscription["workflow"]
-        wmWorkload       = self.retrieveWMSpec(wmbsSubscription)
-
-        logging.info("Retrieved WMBS info")
-
-        if not workflow.task or not wmWorkload:
-            wmTask = None
-            seederList = []
-        else:
-            wmTask = wmWorkload.getTaskByPath(workflow.task)
-            if hasattr(wmTask.data, 'seeders'):
-                manager    = SeederManager(wmTask)
-                seederList = manager.getSeederList()
-            else:
+            if not workflow.task or not wmWorkload:
+                wmTask = None
                 seederList = []
+            else:
+                wmTask = wmWorkload.getTaskByPath(workflow.task)
+                if hasattr(wmTask.data, 'seeders'):
+                    manager    = SeederManager(wmTask)
+                    seederList = manager.getSeederList()
+                else:
+                    seederList = []
 
-        logging.info("About to enter JobFactory")
+            logging.info("About to enter JobFactory")
 
-        #My hope is that the job factory is smart enough only to split un-split jobs
-        wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS", \
-                                              subscription = wmbsSubscription, generators=seederList)
-        splitParams = self.retrieveJobSplitParams(wmWorkload, workflow.task)
-        logging.debug("Split Params: %s" % splitParams)
-        wmbsJobGroups = wmbsJobFactory(**splitParams)
-        logging.debug("Job Groups %s" % wmbsJobGroups)
-        logging.info("Have jobGroups")
-
-        # Now we get to find out what job they are.
-        countJobs = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
-        jobNumber = countJobs.execute(workflow = workflow.id)
-
-        myThread.transaction.commit()
-
-        for wmbsJobGroup in wmbsJobGroups:
-            self.createJobGroup(wmbsJobGroup)
-            #Create a directory
-            self.createWorkArea.processJobs(jobGroupID = wmbsJobGroup.exists(), \
-                                            startDir = self.jobCacheDir)
-
-            for job in wmbsJobGroup.jobs:
-                jobNumber += 1
-                #We better save the whole job
-                #First, add the necessary components
-                if wmTask:
-                    #If we managed to load the task, so the url should be valid
-                    job['spec']    = workflow.spec
-                    job['sandbox'] = wmTask.data.input.sandbox
-                    job['task']    = wmTask.getPathName()
-                job['counter']  = jobNumber
-                cacheDir = job.getCache()
-                job['cache_dir'] = cacheDir
-                output = open(os.path.join(cacheDir, 'job.pkl'),'w')
-                cPickle.dump(job, output)
-                output.close()
+            # My hope is that the job factory is smart enough only to split un-split jobs
+            wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS", \
+                                                  subscription = wmbsSubscription, generators=seederList)
+            splitParams = self.retrieveJobSplitParams(wmWorkload, workflow.task)
+            logging.debug("Split Params: %s" % splitParams)
+            wmbsJobGroups = wmbsJobFactory(**splitParams)
+            logging.debug("Job Groups %s" % wmbsJobGroups)
+            logging.info("Have jobGroups")
+            
+            # Now we get to find out what job they are.
+            countJobs = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
+            jobNumber = countJobs.execute(workflow = workflow.id)
+            
+            myThread.transaction.commit()
+            
+            for wmbsJobGroup in wmbsJobGroups:
+                self.createJobGroup(wmbsJobGroup)
+                # Create a directory
+                self.createWorkArea.processJobs(jobGroupID = wmbsJobGroup.exists(), \
+                                                startDir = self.jobCacheDir)
+                
+                for job in wmbsJobGroup.jobs:
+                    jobNumber += 1
+                    # We better save the whole job
+                    # First, add the necessary components
+                    if wmTask:
+                        # If we managed to load the task, so the url should be valid
+                        job['spec']    = workflow.spec
+                        job['sandbox'] = wmTask.data.input.sandbox
+                        job['task']    = wmTask.getPathName()
+                    job['counter']  = jobNumber
+                    cacheDir = job.getCache()
+                    job['cache_dir'] = cacheDir
+                    output = open(os.path.join(cacheDir, 'job.pkl'),'w')
+                    cPickle.dump(job, output)
+                    output.close()
                 
 
-            logging.info("Finished call for jobGroup %i" %(wmbsJobGroup.exists()))
+                logging.info("Finished call for jobGroup %i" %(wmbsJobGroup.exists()))
 
         #print "Finished JobCreatorWorker.__call__"
 
-        return subscriptionID
+        return parameters
 
 
 

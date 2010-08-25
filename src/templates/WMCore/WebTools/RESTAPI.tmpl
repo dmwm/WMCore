@@ -15,18 +15,17 @@
 		    	</td>
 			  </tr>
 			</table>
-			<p>$methods
 			<table width=700 cellspacing=12>
 				<tr>
 			    <td>
 				    <dl>
 				      #try
 				        #for verb in $methods
-				        <h2>Methods available for $verb
+				        <h2>Methods available for $verb</h2>
 					    #for m in $methods[$verb]
 					    <dt>$m: </dt>
 					    <dd>
-					    $methods[$m]['call'].__doc__
+					    $methods[$verb][$m]['call'].__doc__
 					    #if 'args' in $methods[$verb][$m].keys
 					    <p>Arguments:</p>
 					    #for a in $methods[$verb][$m]['args']
@@ -34,11 +33,11 @@
 					    #end for
 					    #end if
 					    <p class="small">
-                            #try					    
-                            version $methods[$verb][$m]['version'] <a href='xml/$m'>xml</a> <a href='json/$m'>json</a> <a href='das/$m'>das</a>
-					    	#except
+                            #if 'version' in $methods[$verb][$m].keys					    
+                            version $methods[$verb][$m]['version'] | <a href='xml/$m'>xml</a> <a href='json/$m'>json</a> <a href='das/$m'>das</a>
+					    	#else
 					    	<a href='xml/$m'>xml</a> <a href='json/$m'>json</a> <a href='das/$m'>das</a>
-					    	#end try
+					    	#end if
 					    </p>
 					    </dd>
 					    <hr/>

@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.29 2009/06/26 08:59:40 metson Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: CMSCouch.py,v 1.30 2009/07/02 16:49:02 meloam Exp $"
+__version__ = "$Revision: 1.30 $"
 
 try:
     # Python 2.6
@@ -151,48 +151,39 @@ class Requests:
         """
         return self.makeRequest(uri, data, 'DELETE', encoder, decoder)
 
-    def makeRequest(self, uri=None, data=None, request='GET',
+    def makeRequest(self, uri=None, data=None, type='GET',
                      encode=None, decode=None):
         """
         Make a request to the remote database. for a give URI. The type of
         request will determine the action take by the server (be careful with
         DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
         """
-        # I didn't use encode parameter in httpRequest, instead it uses
-        # data type to decide to encode it via json or not
-        status, data = httpRequest(self.url, uri, data, request)
-        if  status - 400 >= 0:
-            print "HTTP request status", status
-        if  (decode == False):
+        headers = {"Content-type": 
+                    'application/x-www-form-urlencoded', #self.accept_type,
+                    "Accept": self.accept_type}
+        encoded_data = ''
+            
+        if type != 'GET' and data:
+            if (encode == False):
+                encoded_data = data
+            else:
+                encoded_data = self.encode(data)
+            headers["Content-length"] = len(encoded_data)
+        else:
+            #encode the data as a get string
+            if  not data:
+                data = {}
+            uri = "%s?%s" % (uri, urllib.urlencode(data))
+        self.conn.connect()
+        self.conn.request(type, uri, encoded_data, headers)
+        response = self.conn.getresponse()
+
+        data = response.read()
+        self.conn.close()
+        if (decode == False):
             return data
         else:
             return self.decode(data)
-
-#        headers = {"Content-type": 
-#                    'application/x-www-form-urlencoded', #self.accept_type,
-#                    "Accept": self.accept_type}
-#        encoded_data = ''
-#            
-#        if request != 'GET' and data:
-#            if (encode == False):
-#                encoded_data = data
-#            else:
-#                encoded_data = self.encode(data)
-#            headers["Content-length"] = len(encoded_data)
-#        else:
-#            if  not data:
-#                data = {}
-#            uri = "%s?%s" % (uri, urllib.urlencode(data, doseq=True))
-#        self.conn.connect()
-#        self.conn.request(request, uri, encoded_data, headers)
-#        response = self.conn.getresponse()
-
-#        data = response.read()
-#        self.conn.close()
-#        if (decode == False):
-#            return data
-#        else:
-#            return self.decode(data)
 
     def encode(self, data):
         """
@@ -452,3 +443,6 @@ class CouchServer(CouchDBRequests):
 
     def __str__(self):
         return self.listDatabases().__str__()
+    
+    def __init__(self, dbname, dburl='localhost:5984'):
+        CouchDBRequests.__init__(self, dburl)

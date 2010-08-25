@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.14 2009/08/16 08:21:34 metson Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: RESTApi.py,v 1.15 2009/08/16 08:29:25 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml
@@ -92,7 +92,7 @@ class RESTApi(WebAPI):
         if len(args) == 0 and len(kwargs) == 0:
             self.debug('returning REST documentation')
             return self.templatepage('RESTAPI', methods = self.model.methods, 
-                                 application = self.config.application)
+                                 webapp = self.config.application)
     
         data = self.methods['handler']['call'](request.method, args, kwargs)
         return self.formatResponse(data)

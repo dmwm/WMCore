@@ -51,7 +51,7 @@ class WebAPI(DatabasePage):
         Return the auto-generated documentation for the API
         """
         return self.templatepage('API', methods = self.methods, 
-                                 application = self.config.application)
+                                 webapp = self.config.application)
     
     @expose
     def default(self, *args, **kwargs):

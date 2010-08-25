@@ -11,10 +11,11 @@
 			<table width=700 cellspacing=12>
 				<tr>
 			    <td>
-						<h1>$application API</h1><p>Auto generated API doc page</p>
+						<h1>$webapp RESTful API</h1><p>Auto generated API doc page</p>
 		    	</td>
 			  </tr>
 			</table>
+			<p>$methods
 			<table width=700 cellspacing=12>
 				<tr>
 			    <td>
@@ -26,7 +27,7 @@
 					    <dt>$m: </dt>
 					    <dd>
 					    $methods[$m]['call'].__doc__
-					    #if len($methods[$verb][$m]['args']) > 0
+					    #if 'args' in $methods[$verb][$m].keys
 					    <p>Arguments:</p>
 					    #for a in $methods[$verb][$m]['args']
 					    <li class="flat">$a</li>

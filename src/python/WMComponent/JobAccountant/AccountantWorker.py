@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.15 2010/02/26 22:25:14 mnorman Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.16 2010/03/05 18:54:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import os
 import threading
@@ -365,7 +365,6 @@ class AccountantWorker:
 
         Add a file that was produced in a job to WMBS.  
         """
-
         fwjrFile["first_event"] = jobMask["FirstEvent"]
         fwjrFile["last_event"]  = jobMask["LastEvent"]
 
@@ -391,15 +390,6 @@ class AccountantWorker:
                                        conn = self.transaction.conn,
                                        transaction = True)
 
-        #for inputFile in inputFiles:
-        #    if inputFile["lfn"] not in wmbsFile.getParentLFNs():
-        #        try:
-        #            wmbsFile.addParent(inputFile["lfn"])
-        #        except Exception, ex:
-        #            msg = str(ex)
-        #            logging.error("Exception in adding parents\n%s" %(msg))
-        #            return None, None, None
-
         if fwjrFile["merged"]:
             self.addFileToDBS(fwjrFile)
 
@@ -413,8 +403,6 @@ class AccountantWorker:
         WMBS.
         """
         wmbsJob = Job(id = jobID)
-        #wmbsJob.loadData()
-        #jobFiles = wmbsJob.getFiles()
         wmbsJob.load()
         wmbsJob["outcome"] = "success"
         wmbsJob.getMask()
@@ -425,9 +413,6 @@ class AccountantWorker:
         outputMap = self.getOutputMapAction.execute(jobID = jobID,
                                                     conn = self.transaction.conn,
                                                     transaction = True)
-
-        #wmbsJobGroup = JobGroup(id = wmbsJob["jobgroup"])
-        #wmbsJobGroup.load()
 
         jobType = self.getJobTypeAction.execute(jobID = jobID,
                                                 conn = self.transaction.conn,
@@ -470,10 +455,10 @@ class AccountantWorker:
                                                 conn = self.transaction.conn,
                                                 transaction = True)
 
-        wmbsJob.completeInputFiles()
         # Only save once job is done, and we're sure we made it through okay
         wmbsJob.save()
         self.stateChanger.propagate([wmbsJob], "success", "complete")
+        wmbsJob.completeInputFiles()
 
         for mergedOutputFile in mergedOutputFiles:
             self.setupDBSFileParentage(mergedOutputFile)

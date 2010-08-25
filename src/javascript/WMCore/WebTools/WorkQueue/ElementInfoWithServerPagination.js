@@ -1,7 +1,7 @@
 var elementTable = function(divID) {
         
     var formatUrl = function(elCell, oRecord, oColumn, sData) { 
-            elCell.innerHTML = "<a href='" + sData + "/workqueuemonitor' target='_blank'>" + sData + "</a>"; 
+            elCell.innerHTML = "<a href='" + sData + "monitor' target='_blank'>" + sData + "</a>"; 
         };
         
     var dateFormatter = function(elCell, oRecord, oColumn, oData) {
@@ -28,14 +28,14 @@ var elementTable = function(divID) {
         }
      };
 
-    var dataUrl = "/workqueue/elementsinfowithlimit?";
+    var dataUrl = "/workqueue/elementsinfowithlimit";
     var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
     //overwrite default JSARRAY type to JSON
     dataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;    
 
     var tableConfig = WMCore.WebTools.createDefaultTableConfig("id");
 	tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 10});
-    tableConfig.initialRequest = "startIndex=0&results=10";
+    tableConfig.initialRequest = "?startIndex=0&results=10";
     tableConfig.dynamicData =  true;
 	
     var dataTable = WMCore.WebTools.createDataTable(divID, dataSource, 

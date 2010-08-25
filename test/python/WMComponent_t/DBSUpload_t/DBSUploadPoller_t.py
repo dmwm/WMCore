@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.1 $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "mnorman@fnal.gov"
 
 import commands
@@ -29,7 +29,7 @@ from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.UUID import makeUUID
-
+from WMCore.WMException import WMException
 from WMCore.DataStructs.Run import Run
 
 from DBSAPI.dbsApi import DbsApi
@@ -39,6 +39,10 @@ from DBSAPI.dbsApi import DbsApi
 class DBSUploadTest(unittest.TestCase):
     """
     TestCase for DBSUpload module 
+    
+    Note:
+      This fails if you use the in-memory syntax for sqlite 
+      i.e. (DATABASE = sqlite://)
     """
 
     _setup_done = False
@@ -61,13 +65,12 @@ class DBSUploadTest(unittest.TestCase):
         #if (os.getenv("DIALECT").lower() != 'sqlite'):
         #    print "About to tear down"
         #    self.tearDown()
-        self.testInit.setSchema(customModules = ["WMCore.ThreadPool"],
+        try:
+            self.testInit.setSchema(customModules = ["WMCore.ThreadPool","WMCore.MsgService","WMComponent.DBSBuffer.Database"],
                                 useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.MsgService"],
-                                useDefault = False)
-        self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
-                                useDefault = False)
-
+        except WMException, e:
+            self.tearDown()
+            raise
 
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
@@ -98,8 +101,8 @@ class DBSUploadTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         
-        if self._teardown:
-            return
+#        if self._teardown:
+#            return
 
         factory2 = WMFactory("MsgService", "WMCore.MsgService")
         destroy2 = factory2.loadObject(myThread.dialect + ".Destroy")
@@ -176,6 +179,9 @@ class DBSUploadTest(unittest.TestCase):
         else:
             config.CoreDatabase.name = os.getenv("DATABASE")
         if not os.getenv("DATABASE") == None:
+            if os.getenv("DATABASE") == 'sqlite://':
+                raise RuntimeError,\
+                    "These tests will not work using in-memory SQLITE"
             config.CoreDatabase.connectUrl = os.getenv("DATABASE")
             myThread.database = os.getenv("DATABASE")
 
@@ -274,18 +280,8 @@ class DBSUploadTest(unittest.TestCase):
         testDBSUpload = DBSUpload(config)
         testDBSUpload.prepareToStart()
 
-        time.sleep(20)
-
         #self.addSecondBatch()
-
-        time.sleep(30)
-
-        print "Killing"
         myThread.workerThreadManager.terminateWorkers()
-
-        time.sleep(20)
-
-
         datasets=dbinterface.findUploadableDatasets()
 
         file_ids = []

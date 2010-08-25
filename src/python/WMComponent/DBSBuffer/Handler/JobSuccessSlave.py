@@ -4,8 +4,8 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccessSlave.py,v 1.1 2009/05/15 16:53:14 mnorman Exp $"
-__version__ = "$$"
+__revision__ = "$Id: JobSuccessSlave.py,v 1.2 2009/06/10 16:29:16 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "mnorman@fnal.gov"
 
 from WMCore.Agent.BaseHandler import BaseHandler
@@ -24,6 +24,7 @@ import string
 import logging
 import exceptions
 import time
+import threading
 
 from ProdCommon.FwkJobRep.ReportParser import readJobReport
 
@@ -62,6 +63,11 @@ class JobSuccessSlave(ThreadSlave):
         # as we defined a threadpool we can enqueue our item
         # and move to the next.
 
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+
+
         payload = parameters #I think this is correct; it's all that I've got to go on
         jobReports = self.readJobReportInfo(payload)
         factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
@@ -74,6 +80,7 @@ class JobSuccessSlave(ThreadSlave):
                 for dataset in aFile.dataset:
                     addToBuffer.addAlgo(dataset)
                     addToBuffer.addDataset(dataset, algoInDBS=0)
+                    addToBuffer.updateDSFileCount(dataset)
                     #Lets see if ALGO info is present in the dataset
                     #### Lets fake test it
                     #pset=aFile['PSetHash']="ABCDEFGHIJKL12345676"
@@ -88,6 +95,10 @@ class JobSuccessSlave(ThreadSlave):
                                         dataset['DataTier']
 		addToBuffer.addFile(aFile, datasetPath)
 
+        myThread.transaction.commit()
+
         return
+
+
         
 

@@ -9,8 +9,8 @@ objects into DBS, and the massive interface that runs the
 DBSUploader
 """
 
-__revision__ = "$Id: DBSInterface.py,v 1.3 2010/06/04 19:12:12 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DBSInterface.py,v 1.4 2010/06/16 18:55:52 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import logging
 import time
@@ -565,8 +565,9 @@ class DBSInterface:
                 flag = True
 
             finBlock = self.insertFilesAndCloseBlocks(block = block, close = flag)
-            self.migrateClosedBlocks(blocks = blocks)
             affectedBlocks.append(finBlock)
+
+        self.migrateClosedBlocks(blocks = affectedBlocks)
 
 
         return affectedBlocks
@@ -705,8 +706,8 @@ class DBSInterface:
 
 
         for block in blocks:
-            if block['open'] != 'Pending':
-                #logging.error("Attempt to migrate open block!")
+            if block.get('OpenForWriting', 1) != '0':
+                # logging.error("Attempt to migrate open block!")
                 # Block is not done
                 # Ignore this, because we send all blocks here
                 continue

@@ -4,8 +4,8 @@ WorkQueue SplitPolicyInterface
 
 """
 __all__ = []
-__revision__ = "$Id: StartPolicyInterface.py,v 1.1 2009/12/02 13:52:43 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: StartPolicyInterface.py,v 1.2 2009/12/10 16:30:43 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
@@ -35,7 +35,8 @@ class StartPolicyInterface(PolicyInterface):
         self.wmspec = wmspec
         self.initialTask = wmspec.taskIterator().next()
         self.splitParams = self.wmspec.data.policies.start
-        self.dbs_pool.update(dbs_pool)
+        if dbs_pool:
+            self.dbs_pool.update(dbs_pool)
         self.split()
         return self.workQueueElements
 

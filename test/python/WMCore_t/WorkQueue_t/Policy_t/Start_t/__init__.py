@@ -4,7 +4,6 @@ WorkQueue_t.Policy_t.Start_t
 
 """
 
-__all__ = []
 
-__revision__ = "$Id: __init__.py,v 1.1 2009/12/02 20:34:56 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: __init__.py,v 1.2 2009/12/10 16:30:44 swakef Exp $"
+__version__ = "$Revision: 1.2 $"

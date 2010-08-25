@@ -8,7 +8,7 @@ from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.DAOFactory import DAOFactory
 
 #TODO: needs to point to the global workqueue if it can make it for the both
-from WMCore.WorkQueue.WorkQueue import WorkQueue
+from WMCore.WorkQueue.WorkQueue import globalQueue
 
 class WorkQueueRESTModel(RESTModel):
     """
@@ -18,14 +18,14 @@ class WorkQueueRESTModel(RESTModel):
     def __init__(self, config = {}):
         RESTModel.__init__(self, config)
         
-        wq = WorkQueue(type='global')
+        self.wq = globalQueue(logger=self, dbi=self.dbi)
         #only support get for now
-        #self.methods = {d'GET':{}}
-        self.addService('GET', 'getwork', wq.getWork)
-        self.addService('PUT', 'gotwork', wq.gotWork)
-        self.addService('PUT', 'failwork', wq.failWork)
-        self.addService('PUT', 'successwork', wq.successWork)
-        self.addService('DELETE', 'deletework', wq.deleteWork)
+        self.methods = {'GET':{}, 'POST':{}, 'PUT':{}, 'DELETE':{}}
+        self.addService('POST', 'getwork', self.getWork, args=[])
+        self.addService('PUT', 'gotwork', self.wq.gotWork, args=["parentElementID"])
+        self.addService('PUT', 'failwork', self.wq.failWork, args=["parentElementID"])
+        self.addService('PUT', 'successwork', self.wq.successWork, args=["parentElementID"])
+        self.addService('DELETE', 'deletework', self.wq.deleteWork, args=["parentElementID"])
         
     def addService(self, verb, methodKey, func, args=[], validation=[], version=1):
         """
@@ -37,10 +37,14 @@ class WorkQueueRESTModel(RESTModel):
                                          'validation': [],
                                          'version': version}
         
+    def validateArgs(self, input):
+        return input
+        
 
-        
-        
-        
-        
+    def getWork(self, **kwargs):    
+        pqUrl = kwargs.pop("PullingQueueUrl", None)
+        pqUrl = None
+        result = self.wq.getWork(kwargs, pqUrl)
+        return result
         
         

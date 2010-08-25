@@ -52,10 +52,11 @@ config.SecurityModule.store_path = '/tmp/security-store'
 config.SecurityModule.session_name = 'SecurityModule'
 config.SecurityModule.oid_server = 'http://localhost:8400/'
 config.SecurityModule.handler = 'WMCore.WebTools.OidDefaultHandler'
-default = config.SecurityModule.section_('default')
-default.role = ['Admin']
-default.group = ['CMS']
-default.site = ['T2_BR_UERJ']
+# I could secure all the pages in the web app to these settings like so
+#default = config.SecurityModule.section_('default')
+#default.role = ['Admin']
+#default.group = ['CMS']
+#default.site = ['T2_BR_UERJ']
 
 # The section name is also the location the class will be located
 # e.g. http://localhost:8080/documentation

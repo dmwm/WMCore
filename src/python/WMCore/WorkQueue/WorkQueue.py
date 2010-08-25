@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.55 2010/01/26 18:24:19 swakef Exp $"
-__version__ = "$Revision: 1.55 $"
+__revision__ = "$Id: WorkQueue.py,v 1.56 2010/01/27 11:47:29 swakef Exp $"
+__version__ = "$Revision: 1.56 $"
 
 
 import uuid
@@ -354,27 +354,27 @@ class WorkQueue(WorkQueueBase):
             policy = startPolicy(wmspec.startPolicy(),
                                  self.params['SplittingMapping'])
 
-            units = policy(wmspec, topLevelTask, self.dbsHelpers)
+            units.extend(policy(wmspec, topLevelTask, self.dbsHelpers))
 
-            trans = self.beginTransaction()
-            for unit in units:
-                primaryBlock = unit['Data']
-                blocks = unit['ParentData']
-                jobs = unit['Jobs']
+        trans = self.beginTransaction()
+        for unit in units:
+            primaryBlock = unit['Data']
+            blocks = unit['ParentData']
+            jobs = unit['Jobs']
 
-                wmspec = unit['WMSpec']
-                unique = uuid.uuid4().hex[:10] # hopefully random enough
-                new_url = os.path.join(self.params['CacheDir'],
+            wmspec = unit['WMSpec']
+            unique = uuid.uuid4().hex[:10] # hopefully random enough
+            new_url = os.path.join(self.params['CacheDir'],
                                        "%s.spec" % unique)
-                if os.path.exists(new_url):
-                    raise RuntimeError, "spec file %s exists" % new_url
-                wmspec.setSpecUrl(new_url) #TODO: look at making this a web accessible url
-                wmspec.save(new_url)
+            if os.path.exists(new_url):
+                raise RuntimeError, "spec file %s exists" % new_url
+            wmspec.setSpecUrl(new_url) #TODO: look at making this a web accessible url
+            wmspec.save(new_url)
 
-                self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
+            self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
                                              blocks, parentQueueId,
                                              topLevelTask)
-            self.commitTransaction(trans)
+        self.commitTransaction(trans)
         self.logger.info("Queued %s unit(s) for %s" % (len(units),
                                                        wmspec.name()))
         return len(units)

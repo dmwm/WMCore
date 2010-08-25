@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.11 2010/05/03 14:04:14 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.12 2010/05/03 16:44:06 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import threading
 
@@ -105,6 +105,7 @@ class ExecuteMaster:
 
         # Okay, we're done, set the job to successful
         executor.report.setStepStatus(stepName = executor.stepName, status = 0)
+        executor.saveReport()
 
     def toStepDirectory(self, step):
         """

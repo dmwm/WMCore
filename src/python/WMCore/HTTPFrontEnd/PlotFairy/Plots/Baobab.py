@@ -1,3 +1,4 @@
+import math
 from matplotlib.pyplot import figure
 import matplotlib.cm as cm
 from matplotlib.patches import Rectangle

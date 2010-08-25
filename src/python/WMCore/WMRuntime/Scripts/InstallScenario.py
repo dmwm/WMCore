@@ -10,26 +10,10 @@ Runtime script that installs the scenario based configuration PSet into the job
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 
 
+from PSetTweaks.WMTweak import makeTweak, makeJobTweak, applyTweak
 
 applyPromptReco = lambda s, a: s.promptReco(a['globalTag'], a['writeTiers'])
-
-#def applyPromptReco(scenarioInst, **args):
-#    """
-#    _applyPromptReco_
-#
-#    Apply the promptReco call with the arguments provided
-#
-#    """
-#    return scenarioInst.promptReco(args['globalTag'], args['writeTiers'])
-
-def applySkimming(scenarioInst, **args):
-    """
-    _applySkimming_
-
-    Apply the skimming call with the arguments provided
-
-    """
-    print "skimming(%s)" % args
+applySkimming = lambda s, a: s.skimming(a['skims'])
 
 
 class InstallScenario(ScriptInterface):
@@ -88,6 +72,16 @@ class InstallScenario(ScriptInterface):
             msg += str(ex)
             print msg
             return 50203
+
+        # apply task PSet Tweaks
+        # TODO: Implement this
+
+
+        # apply per job PSet Tweaks
+        jobTweak = makeJobTweak(self.job)
+        applyTweak(process, jobTweak)
+        
+
 
         configFile = self.step.data.application.command.configuration
         workingDir = self.stepSpace.location

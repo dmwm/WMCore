@@ -25,9 +25,3 @@ class SiteDBJSON(object):
                             '').replace('_Buffer',
                                         '').replace('_Export', '')
         return name                                
-            
-    def phEDExNodetoCE(self, node):
-        """
-        TODO needs to create facke mapping
-        """
-        return "" 

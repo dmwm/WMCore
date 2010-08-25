@@ -6,8 +6,8 @@ If a subscription's fileset is closed, make a job that will run over any availab
 files
 """
 
-__revision__ = "$Id: EndOfRun.py,v 1.7 2010/05/07 14:37:27 mnorman Exp $"
-__version__  = "$Revision: 1.7 $"
+__revision__ = "$Id: EndOfRun.py,v 1.8 2010/05/24 15:48:06 sfoulkes Exp $"
+__version__  = "$Revision: 1.8 $"
 
 import logging
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -69,7 +69,6 @@ class EndOfRun(JobFactory):
                     self.newJob(name = '%s-endofrun-%i' %(baseName, jobCount))
                     filesInJob = 0
                     jobCount += 1
-                f.loadData(parentage = 1)
                 self.currentJob.addFile(f)
                 filesInJob += 1
 

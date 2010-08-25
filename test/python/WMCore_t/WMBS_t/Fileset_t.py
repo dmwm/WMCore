@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.14 2009/05/08 16:01:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Fileset_t.py,v 1.15 2009/05/09 11:43:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import logging
@@ -559,18 +559,18 @@ class FilesetTest(unittest.TestCase):
         testFilesetClosed.commit()
 
         testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
-                                 name = "wf001")
+                                 name = "wf001", task = "sometask")
         testWorkflow1.create()
         testWorkflow1.addOutput("out1", testOutputFileset1)
         testWorkflow1.addOutput("out2", testOutputFileset2)
 
         testWorkflow2 = Workflow(spec = "spec2.xml", owner = "Steve",
-                                 name = "wf002")
+                                 name = "wf002", task = "sometask")
         testWorkflow2.create()
         testWorkflow2.addOutput("out3", testOutputFileset3)
 
         testWorkflow3 = Workflow(spec = "spec4.xml", owner = "Steve",
-                                 name = "wf004")
+                                 name = "wf004", task = "sometask")
         testWorkflow3.create()
         testWorkflow3.addOutput("out4", testOutputFileset4)
 

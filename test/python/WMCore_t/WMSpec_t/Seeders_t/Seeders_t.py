@@ -132,19 +132,16 @@ class SeederTest(unittest.TestCase):
         _testWMTask_
         
         Test whether or not we can read the seeder parameters out of a WMTask.
+        Also tests RandomSeeder and RunAndLumiSeeder
         """
 
         task1 = makeWMTask("task1")
 
-        task1.data.section_("seeders")
-        task1.data.seeders.section_("RandomSeeder")
-        task1.data.seeders.section_("RunAndLumiSeeder")
-        task1.data.seeders.RandomSeeder.section_("generator")
-        task1.data.seeders.RandomSeeder.section_("evtgenproducer")
-        task1.data.seeders.RandomSeeder.generator.initialSeed      = None 
-        task1.data.seeders.RandomSeeder.evtgenproducer.initialSeed = None
-        task1.data.seeders.RandomSeeder.MAXINT                     = 100000
-        task1.data.seeders.RunAndLumiSeeder.lumi_per_run           = 5
+        randomDict = {"generator.initialSeed": None, "evtgenproducer.initialSeed": None, "MAXINT": None}
+        lumiDict   = {"lumi_per_run": 5}
+
+        task1.addSeeder("RandomSeeder", randomDict)
+        task1.addSeeder("RunAndLumiSeeder", lumiDict)
 
         manager = SeederManager(task = task1)
 
@@ -180,13 +177,8 @@ class SeederTest(unittest.TestCase):
 
         task1 = makeWMTask("task1")
 
-        task1.data.section_("seeders")
-        task1.data.seeders.section_("PresetSeeder")
-        task1.data.seeders.PresetSeeder.section_("generator")
-        task1.data.seeders.PresetSeeder.section_("evtgenproducer")
-        task1.data.seeders.PresetSeeder.generator.initialSeed                  = 1001 
-        task1.data.seeders.PresetSeeder.evtgenproducer.initialSeed             = 1001
-
+        seederDict = {"generator.initialSeed": 1001, "evtgenproducer.initialSeed": 1001}
+        task1.addSeeder("PresetSeeder", seederDict)
 
         manager = SeederManager(task = task1)
 

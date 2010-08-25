@@ -18,7 +18,17 @@ def formatEx(excepInst):
 
     
 
-class DBSWriterError(ProdException):
+class DataMgmtError(ProdException):
+    """
+    _DataMgmtError_
+
+    General Exception from DataMgmt Interface
+
+    """
+    def __init__(self, message, errorNo = 1000 , **data):
+        ProdException.__init__(self, message, errorNo, **data)
+        
+class DBSWriterError(DataMgmtError):
     """
     _DBSWriterError_
 
@@ -30,7 +40,7 @@ class DBSWriterError(ProdException):
 
 
 
-class DBSReaderError(ProdException):
+class DBSReaderError(DataMgmtError):
     """
     _DBSReaderError_
 

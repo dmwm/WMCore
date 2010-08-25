@@ -94,9 +94,6 @@ class Baobab(Plot):
         for i,h in enumerate(height):
             if h<1:
                 colours[i] = '#cccccc'
-            
-    
-        font = FontProperties()
     
         max_height = max(bottom)
     
@@ -119,7 +116,7 @@ class Baobab(Plot):
             
                 line = Line2D((lx,lx),(0.75,ly),linewidth=1,linestyle='-.',zorder=-2,color='blue')
                 axes.add_line(line)
-                axes.text(lx,ly,SIFormatter(i*use_bar_location,unit),horizontalalignment='center',verticalalignment='center',zorder=-1,color='blue')
+                axes.text(lx,ly,self.siformat(i*use_bar_location,unit),horizontalalignment='center',verticalalignment='center',zorder=-1,color='blue')
     
     
         bars = axes.bar(left=left[1:],height=height[1:],width=width[1:],bottom=bottom[1:],color=colours[1:])
@@ -149,7 +146,7 @@ class Baobab(Plot):
                 else:
                     axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=fontsize(n))
     
-            axes.text(0,0,SIFormatter(data_root['value'],unit),horizontalalignment='center',verticalalignment='center',weight='bold')
+            axes.text(0,0,self.siformat(data_root['value'],unit),horizontalalignment='center',verticalalignment='center',weight='bold')
     
         return fig
     

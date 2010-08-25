@@ -6,8 +6,8 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-__revision__ = "$Id: DBFormatter.py,v 1.17 2009/03/20 14:39:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: DBFormatter.py,v 1.18 2009/05/12 16:10:00 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 import datetime
 import time
 
@@ -78,7 +78,11 @@ class DBFormatter(WMObject):
                 entry = {}
                 for index in xrange(0,len(descriptions)):
                     # WARNING: Oracle returns table names in CAP!
-                    entry[str(descriptions[index].lower())] = str(i[index])
+                    if type(i[index]) == unicode:
+                        entry[str(descriptions[index].lower())] = str(i[index])
+                    else:
+                        entry[str(descriptions[index].lower())] = i[index]
+
                 dictOut.append(entry) 
 
             r.close()

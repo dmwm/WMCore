@@ -10,8 +10,12 @@ from WMCore.WebTools.Page import exposedasplist
 from WMCore.WebTools.RESTFormatter import RESTFormatter
 
 class DASRESTFormatter(RESTFormatter):
+    def __init__(self, config):
+        RESTFormatter.__init__(self, config)
+        self.supporttypes.update({'text/json+das':self.dasjson})
+
     @exposedasjson
-    def json(self, data):
+    def dasjson(self, data):
         return data
 
     @exposedasxml

@@ -6,9 +6,10 @@ import os.path
 import inspect
 import imp
 import unittest
+import getopt
 
 #This class should build a unittest out of a python module in the local directory
-#It's weakness is a dependence on grep due to my inability to trace inheritance properly
+
 
 class Inspect:
     """
@@ -19,33 +20,46 @@ class Inspect:
         #Define random variables
         self.overwrite  = False
         self.writeSetUp = True
+        self.filename   = None
 
         
         if len(sys.argv) < 2:
             self.Usage()
         self.moduleName = sys.argv[-1]
-        for i in sys.argv:
-            if i == '-overwrite':
-                self.overwrite = True
-            if i == '-nosetup' or i == '-n':
-                self.writeSetUp = False
-            if i == '-h' or i == '-help' or i == '--help':
-                self.Usage()
         self.GetDefaultDir()
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], "nhf:",["help","nosetup","overwrite","file="])
+            for opt, arg in opts:
+                if opt in ('--overwrite'):
+                    self.overwrite = True
+                elif opt in ('--nosetup', '-n'):
+                    self.writeSetUp = False
+                elif opt in ('--help', '-h'):
+                    self.Usage()
+                elif opt in ('--file', '-f'):
+                    self.filename = arg
+                    print 'Using filename ' + self.filename
+        except getopt.GetoptError:
+            self.Usage()
+        
+            
         return
 
     def Usage(self, errno = 1):
         usageString = """
 Correct usage for this function (-h for help)
-python2.4 Inspect.py <-overwrite> <-n/-nosetup> <modulename>
+python2.4 Inspect.py <--overwrite> <-n/--nosetup> <-f/--file> <modulename>
 
 Where:
 \t<modulename>:  This is actually the name of the module, not the file (i.e. File instead of File.py)
-\t<-overwrite>:  Allows generated unittest to overwrite current file with <modulename>_t.py name
-\t<-n/-nosetup>: Does not write standard setUp, tearDown functions (which use WMBS format)
+\t<--overwrite>:  Allows generated unittest to overwrite current file with <modulename>_t.py name
+\t<-n/--nosetup>: Does not write standard setUp, tearDown functions (which use WMBS format)
+\t<-f/--file>:    Writes the testfile out to a standard file
         """
         print usageString
         sys.exit(errno)
+
+        return
 
     def GetDefaultDir(self):
         """
@@ -122,21 +136,10 @@ Where:
                     continue
                 newMem = getattr(newClass, memName)
                 if inspect.ismethod(newMem):
-                    if inspect.getsourcefile(newMem):
-                        listOfMembers.append(self.Capital(memName))
+                    if inspect.getsourcefile(newMem) == modRes[1]:
+                        #There is no doubt a better way to transfer the class name
+                        listOfMembers.append(self.Capital(iter_class+'_._'+memName))
 
-
-#                if str(memName).find('__') < 0:
-#                    cmd = 'grep -e \"def '+str(memName)+'\" '+str(modRes[1])
-#                    out = os.popen(cmd)
-#                    res = out.readlines()
-#                    out.close()
-#                    classRes = getattr(newClass, memName)
-#                    if res != ['a'] and hasattr(classRes, '__class__'):
-#                        #print inspect.getsourcelines(classRes)
-#                        #print classRes.__class__
-#                        #print inspect.getsource(classRes)
-#                        listOfMembers.append(memName)
 
         return listOfMembers
 
@@ -154,7 +157,6 @@ Where:
                 print "ABORT: Will not overwrite files in standard mode."
                 sys.exit(101)
                 
-
         self.WriteHeader()
         self.WriteSetUpTearDown()
 
@@ -163,7 +165,9 @@ Where:
 
         file = open(filename, 'a')
 
-        for member in listOfMembers:
+        for mem in listOfMembers:
+            className = mem.split('_._')[0]
+            member    = mem.split('_._')[1]
             string = """
     def test""" + str(member) + """(self):"""
             endstring = """
@@ -173,7 +177,7 @@ Where:
 
 
             """
-            docstring = '\n\t\"\"\"\n\tThis is the test class for function %s from module %s\n\t\"\"\"'%(str(member), str(self.moduleName))
+            docstring = '\n\t\"\"\"\n\tThis is the test class for function %s of class %s from module %s\n\t\"\"\"'%(str(member), str(className), str(self.moduleName))
             file.write(string+docstring+endstring)
 
 
@@ -245,30 +249,30 @@ from WMCore.WMFactory import WMFactory
         if self._setup:
             return
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__, os.getenv(\"DIALECT\"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+        self.testInit.setSchema(customModules = [\"WMCore.WMBS\"],
                                 useDefault = False)
 
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package = "WMCore.WMBS",
+        daofactory = DAOFactory(package = \"WMCore.WMBS\",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
 
-        locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(sename = "se1.cern.ch")
-        locationAction.execute(sename = "se1.fnal.gov")        
+        locationAction = daofactory(classname = \"Locations.New\")
+        locationAction.execute(sename = \"se1.cern.ch\")
+        locationAction.execute(sename = \"se1.fnal.gov\")        
         
         self._setup = True
 
 
     def tearDown(self):        
-        "\"\"
+        \"\"\"
         _tearDown_
         
         Drop all the WMBS tables.
-        "\"\"
+        \"\"\"
         myThread = threading.currentThread()
         
         if self._teardown:
@@ -279,28 +283,45 @@ from WMCore.WMFactory import WMFactory
         
         myThread.transaction.begin()
 
-        factory = WMFactory("WMBS", "WMCore.WMBS")        
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        factory = WMFactory(\"WMBS\", \"WMCore.WMBS\")        
+        destroy = factory.loadObject(myThread.dialect + \".Destroy\")
         destroyworked = destroy.execute(conn = myThread.transaction.conn)
 
         if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
+            raise Exception(\"Could not complete WMBS tear down.\")
         
         myThread.transaction.commit()    
         self._teardown = True
 
         """
 
-
-
-        #print setUpString
-
+        file = open(self.GetFilename(), 'a')
         if self.writeSetUp:
-             file = open(self.GetFilename(), 'a')
-             file.write(setUpString)
-             file.close()
+           file.write(setUpString)
+        else:
+           file.write("""
+    def setUp(self):
+        \"\"\"
+        _setUp_
 
+        Generic setup function
+        \"\"\"
+        if self._setup:
+            return
 
+    def tearDown(self):        
+        \"\"\"
+        _tearDown_
+        
+        Generic teardown function
+        \"\"\"
+        myThread = threading.currentThread()
+        
+        if self._teardown:
+            return
+                      """)
+        file.close()
+           
         return
 
     def WriteClose(self):
@@ -325,7 +346,26 @@ if __name__ == \"__main__\":
         it's consistent across functions
         """
 
+        if self.filename != None:
+            return self.filename
+
         outstring = str(self.moduleName)+'_t.py'
+        newdir    = 'WMCORE/test/python/'
+        basedir   = ''
+
+        currentdir = os.getcwd()
+        if currentdir.find('WMCORE/src/python') == -1:
+            return outstring
+        else:
+            workdir = currentdir.split('WMCORE/src/python')[1]
+            basedir = currentdir.split('WMCORE/src/python')[0]
+            for dir in workdir.split('/'):
+                if dir == '':
+                    continue
+                newdir = newdir + dir+'_t/'
+            return basedir + newdir+outstring
+
+
 
         return outstring
 

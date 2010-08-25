@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.20 2009/03/23 13:20:16 sfoulkes Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: File_t.py,v 1.21 2009/03/24 22:03:37 sryu Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import unittest
 import logging
@@ -23,7 +23,6 @@ from WMCore.WMBS.File import File
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUID import makeUUID
 
 class FileTest(unittest.TestCase):
     _setup = False
@@ -681,33 +680,6 @@ class FileTest(unittest.TestCase):
         assert testFileD.getDescendants(level=3, type='lfn') == level4, \
               "ERROR: level 3 desc test failed"
 
-    def testLotsOfAncestors(self):
-        """
-        _testLotsOfAncestors_
-
-        Create a file with 15 parents with each parent having 100 parents to
-        verify that the query to return grandparents works correctly.
-        """
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                        cksum = 1, locations = "se1.fnal.gov")
-        testFileA.create()
-
-        for i in xrange(15):
-            testParent = File(lfn = makeUUID(), size = 1024, events = 10,
-                              cksum = 1, locations = "se1.fnal.gov")
-            testParent.create()
-            testFileA.addParent(testParent["lfn"])
-
-            for i in xrange(100):
-                testGParent = File(lfn = makeUUID(), size = 1024, events = 10,
-                                   cksum = 1, locations = "se1.fnal.gov")
-                testGParent.create()
-                testParent.addParent(testGParent["lfn"])                
-
-        assert len(testFileA.getAncestors(level = 2, type = "lfn")) == 1500, \
-               "ERROR: Incorrect grand parents returned"
-        
-        return
 
 if __name__ == "__main__":
     unittest.main() 

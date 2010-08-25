@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.1 2009/06/05 17:04:33 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.2 2009/06/10 21:05:10 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 
@@ -25,9 +25,9 @@ class CreateWorkQueueBase(DBCreator):
     requiredTables = ["01wq_wmspec",
                       "02wq_site",
                       "03wq_block",
-                      "04wq_block_site_assoc",
-                      "05wq_block_parentage",
-                      "06wq_element",
+                      "04wq_element",
+                      "05wq_block_site_assoc",
+                      "06wq_block_parentage",
                       "07wq_element_subs_assoc"
                       ]
     
@@ -70,22 +70,8 @@ class CreateWorkQueueBase(DBCreator):
              num_event      INTEGER      NOT NULL,
              PRIMARY KEY(id)
              )"""
-          
-        self.create["04wq_block_site_assoc"] = \
-          """CREATE TABLE wq_block_site_assoc (
-             block_id     INTEGER    NOT NULL,
-             site_id      INTEGER    NOT NULL,
-             PRIMARY KEY (block_id, site_id)
-             )"""
-        
-        self.create["05wq_block_parentage"] = \
-          """CREATE TABLE wq_block_parentage (
-             child        INTEGER    NOT NULL,
-             parent       INTEGER    NOT NULL,
-             PRIMARY KEY (child, parent)
-             )"""
-        
-        self.create["06wq_element"] = \
+             
+        self.create["04wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL,
              wmspec_id        INTEGER    NOT NULL,
@@ -97,6 +83,21 @@ class CreateWorkQueueBase(DBCreator):
              PRIMARY KEY (id),
              UNIQUE (wmspec_id, block_id)
              ) """
+               
+        self.create["05wq_block_site_assoc"] = \
+          """CREATE TABLE wq_block_site_assoc (
+             block_id     INTEGER    NOT NULL,
+             site_id      INTEGER    NOT NULL,
+             PRIMARY KEY (block_id, site_id)
+             )"""
+        
+        self.create["06wq_block_parentage"] = \
+          """CREATE TABLE wq_block_parentage (
+             child        INTEGER    NOT NULL,
+             parent       INTEGER    NOT NULL,
+             PRIMARY KEY (child, parent)
+             )"""
+        
         # oracle doesn't allow foreign key has null value.
         # so create another table 
         self.create["07wq_element_subs_assoc"] = \

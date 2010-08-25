@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.8 2009/04/10 15:43:03 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Create.py,v 1.9 2009/04/27 21:12:43 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
@@ -228,6 +228,7 @@ class Create(CreateWMBSBase):
              name        VARCHAR(255),
              last_update INTEGER not null,
              submission_time INTEGER,
+             completion_time INTEGER,
              constraint fk_job_jobgroup
                  FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                    ON DELETE CASCADE,

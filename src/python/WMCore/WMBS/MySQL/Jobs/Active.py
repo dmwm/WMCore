@@ -6,8 +6,8 @@ MySQL implementation of Jobs.Active
 """
 
 __all__ = []
-__revision__ = "$Id: Active.py,v 1.9 2009/04/23 16:50:57 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Active.py,v 1.10 2009/04/27 21:12:12 sryu Exp $"
+__version__ = "$Revision: 1.10 $"
 import time
 
 from WMCore.Database.DBFormatter import DBFormatter
@@ -24,7 +24,7 @@ class Active(DBFormatter):
         binds = {"job": job}
         self.dbi.processData(self.insertSQL, binds, conn = conn,
                              transaction = transaction)
-        binds["time"] = time.time()
+        binds["time"] = int(time.time())
         self.dbi.processData(self.updateSQL, binds, conn = conn,
                              transaction = transaction)         
         return 

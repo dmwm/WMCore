@@ -12,3 +12,4 @@ class Failed(FailedJobsMySQL):
                      SELECT :job, (SELECT jobgroup FROM wmbs_job WHERE id = :job)
                        WHERE NOT EXISTS
                          (SELECT job FROM wmbs_group_job_failed WHERE job = :job)"""
+    updateSQL = FailedJobsMySQL.updateSQL

@@ -11,4 +11,5 @@ class Complete(CompleteJobsMySQL):
     insertSQL = """INSERT INTO wmbs_group_job_complete (job, jobgroup)
                      SELECT :job, (SELECT jobgroup FROM wmbs_job WHERE id = :job)
                        WHERE NOT EXISTS
-                         (SELECT job FROM wmbs_group_job_complete WHERE job = :job)"""    
+                         (SELECT job FROM wmbs_group_job_complete WHERE job = :job)""" 
+    updateSQL = CompleteJobsMySQL.updateSQL  

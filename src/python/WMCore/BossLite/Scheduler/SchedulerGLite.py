@@ -3,13 +3,15 @@
 gLite CLI interaction class through JSON formatted output
 """
 
-__revision__ = "$Id: SchedulerGLite.py,v 1.1 2010/05/18 14:32:06 spigafi Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SchedulerGLite.py,v 1.2 2010/06/01 15:51:07 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "filippo.spiga@cern.ch"
 
 import os
 import tempfile
 import re
+
+import WMCore.WMInit
 
 from WMCore.BossLite.Scheduler.SchedulerInterface import SchedulerInterface
 from WMCore.BossLite.Common.Exceptions import SchedulerError
@@ -131,13 +133,11 @@ class SchedulerGLite(SchedulerInterface) :
             self.proxyString = ''
             self.hackEnv = hackTheEnv('env')
             
-        # this section requires an improvement....    
-        if os.environ.get('CRABDIR') :
-            self.commandQueryPath = os.environ.get('CRABDIR') + \
-                                    '/external/ProdCommon/BossLite/Scheduler/'
-        elif os.environ.get('PRODCOMMON_ROOT') :
-            self.commandQueryPath = os.environ.get('PRODCOMMON_ROOT') + \
-                                        '/lib/ProdCommon/BossLite/Scheduler/'
+        # Retrieve the location of GLiteStatusQuery.py ...
+        wmcoreBasedir = WMCore.WMInit.getWMBASE()    
+        if wmcoreBasedir  :
+            self.commandQueryPath = wmcoreBasedir + \
+                                    '/lib/WMCore/BossLite/Scheduler/'
         else :
             # Impossible to locate GLiteQueryStatus.py ...
             raise SchedulerError('Impossible to locate GLiteQueryStatus.py ')      

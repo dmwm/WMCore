@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.12 2010/01/05 18:15:01 swakef Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: WMWorkload.py,v 1.13 2010/01/26 22:19:13 evansde Exp $"
+__version__ = "$Revision: 1.13 $"
 
 
 
@@ -313,6 +313,12 @@ class WMWorkload(ConfigSection):
         self.policies.start.policyName = None
         self.policies.end.policyName = None
 
+        #  //
+        # // properties of the Workload and all tasks there-in
+        #//
+        self.section_("properties")
+        self.properties.acquisitionEra = None
+        
 
         #  //
         # // tasks

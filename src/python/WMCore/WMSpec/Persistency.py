@@ -9,10 +9,10 @@ Placeholder for ideas at present....
 
 """
 
-__revision__ = "$Id: Persistency.py,v 1.8 2010/03/05 15:52:08 swakef Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Persistency.py,v 1.9 2010/04/07 16:24:11 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
-import pickle
+import cPickle
 from urllib2 import urlopen, Request
 from urlparse import urlparse
 
@@ -45,12 +45,12 @@ class PersistencyHelper:
         handle = open(filename, 'w')
         extension = filename.split(".")[-1].lower()
         if extension == "pkl":
-            pickle.dump(self.data, handle)
+            cPickle.dump(self.data, handle)
         #elif extension == 'json':
         #    JsonWrapper.dump(JSONThunker().thunk(self.data), 
         #                     handle)
         else:
-            pickle.dump(self.data, handle)
+            cPickle.dump(self.data, handle)
             #handle.write(str(self.data))
             
         handle.close()
@@ -74,11 +74,11 @@ class PersistencyHelper:
         handle = urlopen(Request(filename, headers = {"Accept" : "*/*"}))
         extension = filename.split(".")[-1].lower()
         if extension == "pkl":
-            self.data = pickle.load(handle)
+            self.data = cPickle.load(handle)
         #elif extension == 'json':
         #    self.data = JSONThunker().unthunk(JsonWrapper.load(handle))  
         else:
-            self.data = pickle.load(handle)
+            self.data = cPickle.load(handle)
             #self.data = handle.read()
         handle.close()
         return

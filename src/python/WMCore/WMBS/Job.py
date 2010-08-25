@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.45 2010/02/15 22:39:20 mnorman Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: Job.py,v 1.46 2010/02/16 16:38:04 mnorman Exp $"
+__version__ = "$Revision: 1.46 $"
 
 import datetime
 
@@ -421,5 +421,8 @@ class Job(WMBSBase, WMJob):
         job["task"]        = self["task"]
         #job["input_files"] = self["input_files"]
         job["sandbox"]     = self["sandbox"]
+
+        for file in self['input_files']:
+            job['input_files'].append(file.returnDataStructsFile())
 
         return job

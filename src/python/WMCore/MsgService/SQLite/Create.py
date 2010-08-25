@@ -1,16 +1,12 @@
-#!/usr/bin/python
-#pylint: disable-msg=E1103
-
+#!/usr/bin/env python
 """
 _Create_
 
 Class for creating SQLite specific schema for persistent messages.
-
 """
 
-__revision__ = ""
-__version__ = ""
-__author__ = "mnorman@fnal.gov"
+__revision__ = "$Id: Create.py,v 1.2 2009/07/02 16:55:16 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading
@@ -40,14 +36,10 @@ Fields:
  name     message name
         """
         logging.debug(msg)
-#Lines disabled because sql claims that AUTOCOMMIT is enabled by default
-# and doesn't give a good way to disable it
-#        self.create['taa'] = """      
-#SET AUTOCOMMIT = 0; """
-        #self.create['taa'] = """      """
+
         self.create['00ta_ms_type'] = """      CREATE TABLE ms_type
         (
-             typeid INTEGER PRIMARY KEY,
+             typeid INTEGER PRIMARY KEY AUTOINCREMENT,
              name varchar(255) NOT NULL default '',
              UNIQUE (name)
         )
@@ -65,7 +57,7 @@ pid      process id in host name
         logging.debug(msg)
         self.create['01tb_ms_process'] = """
 CREATE TABLE ms_process (
-   procid INTEGER PRIMARY KEY,
+   procid INTEGER PRIMARY KEY AUTOINCREMENT,
    name varchar(255) NOT NULL default '',
    host varchar(255) NOT NULL default '',
    pid int(11) NOT NULL default '0',
@@ -88,7 +80,7 @@ Fields:
         logging.debug(msg)
         self.create['02tc_ms_history'] = """
 CREATE TABLE ms_history (
-    messageid INTEGER PRIMARY KEY,
+    messageid INTEGER PRIMARY KEY AUTOINCREMENT,
     type int(11) NOT NULL default '0',
     source int(11) NOT NULL default '0',
     dest int(11) NOT NULL default '0',
@@ -105,7 +97,7 @@ CREATE TABLE ms_history (
         
         self.create['03tca_ms_history_buffer'] = """
 CREATE TABLE ms_history_buffer (
-    messageid int(11) PRIMARY KEY NOT NULL,
+    messageid INTEGER PRIMARY KEY AUTOINCREMENT,
     type int(11) NOT NULL default '0',
     source int(11) NOT NULL default '0',
     dest int(11) NOT NULL default '0',
@@ -120,7 +112,7 @@ CREATE TABLE ms_history_buffer (
 """
         self.create['04td_ms_history_priority'] = """
 CREATE TABLE ms_history_priority (
-   messageid int(11) PRIMARY KEY NOT NULL,
+   messageid INTEGER PRIMARY KEY AUTOINCREMENT,
    type int(11) NOT NULL default '0',
    source int(11) NOT NULL default '0',
    dest int(11) NOT NULL default '0',
@@ -135,7 +127,7 @@ CREATE TABLE ms_history_priority (
 """
         self.create['05tda_ms_history_priority_buffer'] = """
 CREATE TABLE ms_history_priority_buffer (
-   messageid int(11) PRIMARY KEY NOT NULL,
+   messageid INTEGER PRIMARY KEY AUTOINCREMENT,
    type int(11) NOT NULL default '0',
    source int(11) NOT NULL default '0',
    dest int(11) NOT NULL default '0',
@@ -164,7 +156,7 @@ Fields:
         logging.debug(msg)
         self.create['06te_ms_message'] = """
 CREATE TABLE ms_message (
-   messageid int(11) PRIMARY KEY NOT NULL,
+   messageid INTEGER PRIMARY KEY AUTOINCREMENT,
    type int(11) NOT NULL default '0',
    source int(11) NOT NULL default '0',
    dest int(11) NOT NULL default '0',
@@ -184,7 +176,7 @@ to prevent inserting messages one, by one in the message queu.
         logging.debug(msg)
         self.create['07tf_ms_message_buffer_in'] = """
 CREATE TABLE ms_message_buffer_in (
-   messageid int(11) PRIMARY KEY NOT NULL,
+   messageid INTEGER PRIMARY KEY AUTOINCREMENT,
    type int(11) NOT NULL default '0',
    source int(11) NOT NULL default '0',
    dest int(11) NOT NULL default '0',
@@ -203,27 +195,10 @@ ms_message_buffer_out: an output buffer for the message queue
 to prevent removing message one by one, out of a potential large queue.
 """
         logging.debug(msg)
-        #Done because SQLite doesn't support ENUM
-        self.create['08tg_ms_message_buffer_out_enum'] = """
-CREATE TABLE ms_message_buffer_out_enum (
-        value varchar(20)       PRIMARY KEY  NOT NULL
-        )"""
-
-        self.create['08tg_ms_message_buffer_out_enum_insert1'] = """
-INSERT INTO ms_message_buffer_out_enum VALUES('wait')
-"""
-        
-        self.create['08tg_ms_message_buffer_out_enum_insert2'] = """
-INSERT INTO ms_message_buffer_out_enum VALUES('processing')
-"""
-
-        self.create['08tg_ms_message_buffer_out_enum_insert3'] = """
-INSERT INTO ms_message_buffer_out_enum VALUES('finished')
-"""
         
         self.create['09tg_ms_message_buffer_out'] = """ 
 CREATE TABLE ms_message_buffer_out (
-   messageid int(11) PRIMARY KEY NOT NULL,
+   messageid INTEGER PRIMARY KEY AUTOINCREMENT,
    type int(11) NOT NULL default '0',
    source int(11) NOT NULL default '0',
    dest int(11) NOT NULL default '0',
@@ -232,7 +207,6 @@ CREATE TABLE ms_message_buffer_out (
    delay varchar(50) NOT NULL default '00:00:00',
    state varchar(20) NOT NULL default 'wait',
 
-   FOREIGN KEY(state) references ms_message_buffer_out_enum(value),
    FOREIGN KEY(type) references ms_type(typeid),
    FOREIGN KEY(source) references ms_process(procid),
    FOREIGN KEY(dest) references ms_process(procid)
@@ -246,7 +220,7 @@ looking at the other messages.
         logging.debug(msg)
         self.create['10th_ms_priorty_message'] = """
 CREATE TABLE ms_priority_message (
-   messageid int(11) PRIMARY KEY NOT NULL,
+   messageid INTEGER PRIMARY KEY AUTOINCREMENT,
    type int(11) NOT NULL default '0',
    source int(11) NOT NULL default '0',
    dest int(11) NOT NULL default '0',
@@ -261,7 +235,7 @@ CREATE TABLE ms_priority_message (
 """
         self.create['11ti_ms_priority_message_buffer_in'] = """
 CREATE TABLE ms_priority_message_buffer_in (
-   messageid int(11) PRIMARY KEY NOT NULL,
+   messageid INTEGER PRIMARY KEY AUTOINCREMENT,
    type int(11) NOT NULL default '0',
    source int(11) NOT NULL default '0',
    dest int(11) NOT NULL default '0',
@@ -276,7 +250,7 @@ CREATE TABLE ms_priority_message_buffer_in (
 """
         self.create['12tj_ms_priority_message_buffer_out'] = """
 CREATE TABLE ms_priority_message_buffer_out (
-   messageid int(11) PRIMARY KEY NOT NULL,
+   messageid INTEGER PRIMARY KEY AUTOINCREMENT,
    type int(11) NOT NULL default '0',
    source int(11) NOT NULL default '0',
    dest int(11) NOT NULL default '0',
@@ -285,7 +259,6 @@ CREATE TABLE ms_priority_message_buffer_out (
    delay varchar(50) NOT NULL default '00:00:00',
    state varchar(20) NOT NULL default 'wait',
 
-   FOREIGN KEY(state) references ms_message_buffer_out_enum(value),
    FOREIGN KEY(type) references ms_type(typeid),
    FOREIGN KEY(source) references ms_process(procid),
    FOREIGN KEY(dest) references ms_process(procid)
@@ -304,7 +277,7 @@ Fields:
         logging.debug(msg)
         self.create['13tk_ms_subscription'] = """
 CREATE TABLE ms_subscription (
-   subid INTEGER PRIMARY KEY,
+   subid INTEGER PRIMARY KEY AUTOINCREMENT,
    procid int(11) NOT NULL default '0',
    typeid int(11) NOT NULL default '0',
    UNIQUE (procid,typeid),
@@ -314,7 +287,7 @@ CREATE TABLE ms_subscription (
 """
         self.create['14tl_ms_subscription_priority'] = """
 CREATE TABLE ms_subscription_priority (
-   subid INTEGER PRIMARY KEY,
+   subid INTEGER PRIMARY KEY AUTOINCREMENT,
    procid int(11) NOT NULL default '0',
    typeid int(11) NOT NULL default '0',
    UNIQUE (procid,typeid),
@@ -326,53 +299,22 @@ CREATE TABLE ms_subscription_priority (
 CREATE TABLE ms_available (
   procid int(11) NOT NULL,
   status varchar(20) NOT NULL default 'not_there',	
-  UNIQUE (procid),
-  FOREIGN KEY(procid) references ms_process(procid),
-  FOREIGN KEY(status) references ms_there_notthere_enum(value)
-   ) 
+  UNIQUE (procid)
+  FOREIGN KEY(procid) references ms_process(procid))
 """
-        self.create['15tm_ms__available_enum'] = """
-CREATE TABLE ms_there_notthere_enum (
-        value varchar(20)       PRIMARY KEY  NOT NULL
-        )"""
-
-        self.create['15tm_ms__available_enum_insert1'] = """
-INSERT INTO ms_there_notthere_enum VALUES('there')
-"""
-        
-        self.create['15tm_ms__available_enum_insert2'] = """
-INSERT INTO ms_there_notthere_enum VALUES('not_there')
-"""
-
         
         self.create['16tn_ms_available_priority'] = """
 CREATE TABLE ms_available_priority (
   procid int(11) NOT NULL,
   status varchar(20) NOT NULL default 'not_there',	
   UNIQUE (procid),
-  FOREIGN KEY(procid) references ms_process(procid),
-  FOREIGN KEY(status) references ms_there_notthere_enum(value)
-   ) 
+  FOREIGN KEY(procid) references ms_process(procid))
 """
 
-        self.create['17to_ms_checkbuffer_enum'] = """
-CREATE TABLE ms_checking_notchecking_enum (
-        value varchar(20)       PRIMARY KEY  NOT NULL
-        )"""
-
-        self.create['17to_ms_checkbuffer_enum_insert1'] = """
-INSERT INTO ms_checking_notchecking_enum VALUES('checking')
-"""
-        
-        self.create['17to_ms_checkbuffer_enum_insert2'] = """
-INSERT INTO ms_checking_notchecking_enum VALUES('not_checking')
-"""
-        
         self.create['17to_ms_checkbuffer'] = """
 CREATE TABLE ms_check_buffer (
   buffer varchar(100) NOT NULL,
   status varchar(20) NOT NULL default 'not_checking',
-  FOREIGN KEY(status) references ms_checking_notchecking_enum(value),
    UNIQUE (buffer)
    ) 
 """
@@ -384,7 +326,6 @@ CREATE TABLE ms_check_buffer (
 #It's trigger time!
 #SQLite doesn't appear to support the "on update CURRENT_TIMESTAMP" value for time
 #Also doesn't enforce FOREIGN KEY constraints.
-#Also doesn't support ENUM
 #Have to do triggers for all of them
 
 
@@ -974,26 +915,6 @@ CREATE TRIGGER TR_ms_priority_message_buffer_out_destu BEFORE UPDATE ON ms_prior
                 WHERE (SELECT procid FROM ms_process WHERE procid = NEW.dest) IS NULL;
              END;"""
 
-        self.create['30TR_tj_ms_priority_message_buffer_out_status'] = """
-CREATE TRIGGER TR_ms_priority_message_buffer_out_status BEFORE INSERT ON ms_priority_message_buffer_out
-       FOR EACH ROW
-             BEGIN
-                SELECT RAISE(ROLLBACK, 'insert on table ms_priority_message_buffer_out has invalid status')
-                WHERE (SELECT value FROM ms_message_buffer_out_enum WHERE procid = NEW.state) IS NULL;
-             END;"""
-
-        self.create['30TR_tj_ms_priority_message_buffer_out_statusu'] = """
-CREATE TRIGGER TR_ms_priority_message_buffer_out_statusu BEFORE UPDATE ON ms_priority_message_buffer_out
-       FOR EACH ROW
-             BEGIN
-                SELECT RAISE(ROLLBACK, 'insert on table ms_priority_message_buffer_out has invalid status')
-                WHERE (SELECT value FROM ms_message_buffer_out_enum WHERE procid = NEW.state) IS NULL;
-             END;"""
-
-
-
-        
-
         #ms_subscription
 
         self.create['31TR_tk_ms_subscription_typeid'] = """
@@ -1069,15 +990,6 @@ CREATE TRIGGER TR_ms_subscription_priority_procidu BEFORE UPDATE ON ms_subscript
 
         
 
-        #ms_available_status
-        
-        self.create['33TR_tm_ms_available_status'] = """
-CREATE TRIGGER TR_ms_available_type BEFORE INSERT ON ms_available
-       FOR EACH ROW
-             BEGIN
-                SELECT RAISE(ROLLBACK, 'insert on table ms_available has invalid status')
-                WHERE (SELECT value FROM ms_there_notthere_enum WHERE value = NEW.status) IS NULL;
-             END;"""
 
         self.create['33TR_tm_ms_available_procid'] = """
 CREATE TRIGGER TR_ms_available_source BEFORE INSERT ON ms_available
@@ -1085,14 +997,6 @@ CREATE TRIGGER TR_ms_available_source BEFORE INSERT ON ms_available
              BEGIN
                 SELECT RAISE(ROLLBACK, 'insert on table ms_available has procid not in ms_process')
                 WHERE (SELECT procid FROM ms_process WHERE procid = NEW.procid) IS NULL;
-             END;"""
-
-        self.create['33TR_tm_ms_available_statusu'] = """
-CREATE TRIGGER TR_ms_available_typeu BEFORE UPDATE ON ms_available
-       FOR EACH ROW
-             BEGIN
-                SELECT RAISE(ROLLBACK, 'insert on table ms_available has invalid status')
-                WHERE (SELECT value FROM ms_there_notthere_enum WHERE value = NEW.status) IS NULL;
              END;"""
 
         self.create['33TR_tm_ms_available_procidu'] = """
@@ -1109,28 +1013,12 @@ CREATE TRIGGER TR_ms_available_sourceu BEFORE UPDATE ON ms_available
 
         #ms_available_priority_status
 
-        self.create['34TR_tn_ms_available_priority_status'] = """
-CREATE TRIGGER TR_ms_available_priority_type BEFORE INSERT ON ms_available_priority
-       FOR EACH ROW
-             BEGIN
-                SELECT RAISE(ROLLBACK, 'insert on table ms_available_priority has invalid status')
-                WHERE (SELECT value FROM ms_there_notthere_enum WHERE value = NEW.status) IS NULL;
-             END;"""
-
         self.create['34TR_tn_ms_available_priority_procid'] = """
 CREATE TRIGGER TR_ms_available_priority_source BEFORE INSERT ON ms_available_priority
        FOR EACH ROW
              BEGIN
                 SELECT RAISE(ROLLBACK, 'insert on table ms_available_priority has procid not in ms_process')
                 WHERE (SELECT procid FROM ms_process WHERE procid = NEW.procid) IS NULL;
-             END;"""
-
-        self.create['34TR_tn_ms_available_priority_statusu'] = """
-CREATE TRIGGER TR_ms_available_priority_typeu BEFORE UPDATE ON ms_available_priority
-       FOR EACH ROW
-             BEGIN
-                SELECT RAISE(ROLLBACK, 'insert on table ms_available_priority has invalid status')
-                WHERE (SELECT value FROM ms_there_notthere_enum WHERE value = NEW.status) IS NULL;
              END;"""
 
         self.create['34TR_tn_ms_available_priority_procidu'] = """
@@ -1140,26 +1028,3 @@ CREATE TRIGGER TR_ms_available_priority_sourceu BEFORE UPDATE ON ms_available_pr
                 SELECT RAISE(ROLLBACK, 'insert on table ms_available_priority has procid not in ms_process')
                 WHERE (SELECT procid FROM ms_process WHERE procid = NEW.procid) IS NULL;
              END;"""
-
-
-
-        #ms_check_buffer_status
-
-
-        self.create['35TR_to_ms_check_buffer_status'] = """
-CREATE TRIGGER TR_ms_check_buffer_status BEFORE INSERT ON ms_check_buffer
-       FOR EACH ROW
-             BEGIN
-                SELECT RAISE(ROLLBACK, 'insert on table ms_check_buffer has invalid status')
-                WHERE (SELECT value FROM ms_checking_notchecking_enum WHERE value = NEW.status) IS NULL;
-             END;"""
-
-        self.create['35TR_to_ms_check_buffer_statusu'] = """
-CREATE TRIGGER TR_ms_check_buffer_statusu BEFORE UPDATE ON ms_check_buffer
-       FOR EACH ROW
-             BEGIN
-                SELECT RAISE(ROLLBACK, 'insert on table ms_check_buffer has invalid status')
-                WHERE (SELECT value FROM ms_checking_notchecking_enum WHERE value = NEW.status) IS NULL;
-             END;"""
-
- 

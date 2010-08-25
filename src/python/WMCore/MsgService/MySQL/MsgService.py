@@ -34,9 +34,9 @@ messages after it is handled.
 """
 
 __revision__ = \
-    "$Id: MsgService.py,v 1.10 2009/02/27 22:18:02 fvlingen Exp $"
+    "$Id: MsgService.py,v 1.11 2009/07/02 16:55:16 sfoulkes Exp $"
 __version__ = \
-    "$Revision: 1.10 $"
+    "$Revision: 1.11 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -136,9 +136,10 @@ class MsgService:
         # get process data
         currentPid = os.getpid()
         currentHost = socket.gethostname()
-      
+
         # check if process name is in database
         result = self.query.checkName(args = {'name' : name})
+
         # process was registered before
         if result != {}:
             # if pid and host are the same, get id and return
@@ -835,7 +836,8 @@ class MsgService:
         else:
             tableNames = ['ms_message_'+componentName, \
                           'ms_message_'+componentName+'_buffer_in', \
-                          'ms_message_'+componentName+'_buffer_out'] 
-        for tableName in tableNames: 
-            pending += self.query.tableSize(args = tableName)
+                          'ms_message_'+componentName+'_buffer_out']
+
+        for tableName in tableNames:
+            pending += self.query.tableSize(args = tableName)            
         return pending

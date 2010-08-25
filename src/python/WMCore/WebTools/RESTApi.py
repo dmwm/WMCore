@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.8 2009/06/08 19:05:21 valya Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: RESTApi.py,v 1.9 2009/07/24 13:43:50 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml
@@ -52,21 +52,9 @@ class RESTApi(WebAPI):
         self.__doc__ = self.model.__doc__
         
         WebAPI.__init__(self, config)
-        self.methods.update({'GET':{'args':[],
-                                 'call':self.model.handle_get,
-                                 'version': 1},
-                            'POST':{'args':[],
-                                 'call':self.model.handle_post,
-                                 'version': 1},
-                            'PUT':{'args':[],
-                                 'call':self.model.handle_put,
-                                 'version': 1},
-                            'DELETE':{'args':[],
-                                 'call':self.model.handle_delete,
+        self.methods.update({'handler':{'args':[],
+                                 'call':self.model.handler,
                                  'version': 1}})
-                            #'UPDATE':{'args':[],
-                            #     'call':self.model.handle_update,
-                            #     'version': 1}
                             
         # TODO: implement HEAD & TRACE
         self.supporttypes  = ['application/xml', 'application/atom+xml',
@@ -87,6 +75,7 @@ class RESTApi(WebAPI):
         Return the auto-generated documentation for the API
         """
         return self.buildResponse(args, kwargs)
+    
     @expose
     def default(self, *args, **kwargs):
         """
@@ -100,17 +89,12 @@ class RESTApi(WebAPI):
         data (e.g. serialise to XML, JSON, RSS/ATOM) or return the documentation
         if no method is specified.
         """
-        try:
-            assert request.method in self.methods.keys()
-        except:
-            return self.formatResponse("Unsupported method %s" % request.method)
-        
         if len(args) == 0 and len(kwargs) == 0:
             self.debug('returning REST documentation')
             return self.templatepage('API', methods = self.methods, 
                                  application = self.config.application)
-        
-        data = self.methods[request.method]['call'](args, kwargs)
+    
+        data = self.methods['handler']['call'](request.method, args, kwargs)
         return self.formatResponse(data)
     
     def formatResponse(self, data):
@@ -119,16 +103,16 @@ class RESTApi(WebAPI):
         
         if datatype in ('text/json', 'text/x-json', 'application/json'):
             # Serialise to json
-            return self.formatter.json(data)
+            data = self.formatter.json(data)
         elif datatype == 'application/xml':
             # Serialise to xml
             try:
-                return self.formatter.plist(data)
+                data = self.formatter.plist(data)
             except:
-                return self.formatter.xml(data)
+                data = self.formatter.xml(data)
         elif datatype == 'application/atom+xml':
             # Serialise to atom
-            return self.formatter.atom(data)
+            data = self.formatter.atom(data)
 
         # TODO: Add other specific content types
         response.headers['Content-Length'] = len(data)

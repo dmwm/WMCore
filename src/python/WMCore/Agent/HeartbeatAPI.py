@@ -4,8 +4,8 @@ _HartbeatAPI_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: HeartbeatAPI.py,v 1.2 2010/06/23 18:09:59 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: HeartbeatAPI.py,v 1.3 2010/06/28 21:25:19 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import os
@@ -39,21 +39,21 @@ class HeartbeatAPI(WMConnectionBase):
                              conn = self.getDBConn(),
                              transaction = self.existingTransaction())
         
-    def updateWorkerHeartbeat(self, workerName, state = "Start"):
+    def updateWorkerHeartbeat(self, workerName, state = "Start", pid = None):
         
         existAction = self.daofactory(classname = "ExistWorker")
-        componentID = existAction.execute(self.componentName, workerName, state,
+        componentID = existAction.execute(self.componentName, workerName, 
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
         if not componentID:
             print componentID
             action = self.daofactory(classname = "InsertWorker")
-            action.execute(self.componentName, workerName, state,
+            action.execute(self.componentName, workerName, state, pid,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
         else:
             action = self.daofactory(classname = "UpdateWorker")
-            action.execute(componentID, workerName, state,
+            action.execute(componentID, workerName, state, pid,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
     

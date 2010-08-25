@@ -7,21 +7,22 @@ So far we use simplejson (json) and cjson, other modules can be
 added in addition.
 """
 
-__revision__ = "$Id: __init__.py,v 1.1 2009/12/15 19:08:14 valya Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: __init__.py,v 1.2 2009/12/16 14:22:15 valya Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "Valentin Kuznetsov"
 __all__ = ['loads', 'dumps']
 
+_module = "json"
+
 try:
     import cjson
+    _module = "cjson"
 except:
     pass
 try:
     import json # python 2.6 and later
 except:
     import simplejson as json # python 2.5 and earlier
-
-_module = "json"
 
 def loads(idict, **kwargs):
     """

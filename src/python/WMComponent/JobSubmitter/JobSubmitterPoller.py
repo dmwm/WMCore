@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.44 2010/08/11 18:50:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.45 2010/08/11 19:33:26 mnorman Exp $"
+__version__ = "$Revision: 1.45 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -390,7 +390,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     while len(self.cachedJobs[emptySite[0]][taskType][workflow]) > 0:
                         cachedJob = self.cachedJobs[emptySite[0]][taskType][workflow].pop()
 
-                        if cachedJob not in jobsToPrune:
+                        if cachedJob not in jobsToPrune.get(workflow, set()):
                             cachedJobWorkflow = workflow
                             break
                         else:
@@ -412,7 +412,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 if not cachedJob:
                     # We didn't find a job, bail out.
                     continue
-
+                
                 self.cachedJobIDs.remove(cachedJob[0])
 
                 if not jobsToPrune.has_key(cachedJobWorkflow):

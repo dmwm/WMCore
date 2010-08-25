@@ -4,8 +4,8 @@
 The DBSUpload algorithm
 """
 __all__ = []
-__revision__ = "$Id: DBSUploadPoller.py,v 1.3 2009/08/12 22:28:18 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.4 2009/08/12 22:33:18 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -46,7 +46,7 @@ class DBSUploadPoller(BaseWorkerThread):
     """
 
 
-    def __init__(self, config):
+    def __init__(self, config, dbsconfig = None):
         """
         Initialise class members
         """
@@ -57,6 +57,9 @@ class DBSUploadPoller(BaseWorkerThread):
         self.dbsurl     = self.config.DBSUpload.dbsurl
         self.dbsversion = self.config.DBSUpload.dbsversion
         self.uploadFileMax = 10
+
+        if dbsconfig == None:
+            self.dbsconfig = config
     
     def setup(self, parameters):
         """
@@ -74,6 +77,7 @@ class DBSUploadPoller(BaseWorkerThread):
         args = { "url" : self.dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" : self.dbsversion }
         self.dbsapi = DbsApi(args)
         self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version=self.dbsversion)
+        self.dbsreader = DBSReader(self.dbsurl, level='ERROR', user='NORMAL', version=self.dbsversion)
 
 
 
@@ -140,15 +144,21 @@ class DBSUploadPoller(BaseWorkerThread):
                 file['locations'] = locations
                 files.append(file)
                 logging.info('I have prepared the file %s for uploading to DBS' %(an_id))
-    
-                #Now that you have the files, insert them as a list
-                if len(files) > 0:
-                	self.dbswriter.insertFilesForDBSBuffer(files = files, procDataset = dict(dataset), \
-                                                           algos = algos, jobType = "NotMerge", insertDetectorData = False)
-                    #Update the file status, and then recount UnMigrated Files
-                	dbinterface.updateFilesStatus(file_ids)
-    
-                #print "Done"
+
+            #Now that you have the files, insert them as a list
+            if len(files) > 0:
+            	affectedBlocks = self.dbswriter.insertFilesForDBSBuffer(files = files, procDataset = dict(dataset), \
+                                                       algos = algos, jobType = "NotMerge", insertDetectorData = False)
+                for block in affectedBlocks:
+                    info = block['StorageElementList']
+                    locations = []
+                    for loc in info:
+                        locations.append(loc['Name'])
+                    dbinterface.setBlockStatus(block['Name'], locations)
+
+                #Update the file status, and then recount UnMigrated Files
+            	dbinterface.updateFilesStatus(file_ids)
+            
 
         return
 
@@ -171,4 +181,6 @@ class DBSUploadPoller(BaseWorkerThread):
         except:
             myThread.transaction.rollback()
             raise
+
+
 

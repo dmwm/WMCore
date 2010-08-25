@@ -8,8 +8,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.40 2010/05/13 16:36:42 mnorman Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: ChangeState.py,v 1.41 2010/06/09 19:13:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.41 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
@@ -53,12 +53,12 @@ class ChangeState(WMObject, WMConnectionBase):
             if self.dbname not in self.couchdb.listDatabases():
                 self.createDatabase()
 
-            logging.error("About to connect to couch")
             self.database = self.couchdb.connectDatabase(couchDbName)
-            logging.error("Connected to couch")
         except Exception, ex:
             logging.error("Error connecting to couch: %s" % str(ex))
 
+        self.getCouchDAO = self.daoFactory("Jobs.GetCouchID")
+        self.setCouchDAO = self.daoFactory("Jobs.SetCouchID")
         return
 
     def propagate(self, jobs, newstate, oldstate):
@@ -87,37 +87,6 @@ class ChangeState(WMObject, WMConnectionBase):
 
         return jobs
     
-    def addAttachment(self, name, jobid, url):
-        """
-            addAttachment(name, jobid, url)
-        enqueues an attachment to be stuck onto the couchrecord at the
-        next recordInCouch() call
-        """
-        if (not jobid in self.attachmentList):
-            self.attachmentList[jobid] = {}
-        self.attachmentList[jobid][name] = url
-        return
-    
-    def getAttachment(self, couchID, name):
-        """
-            getAttachment(couchID, name)
-        returns an attachment with the given name in the couch record
-        identified by couchID
-        """
-        results = None
-        if not self.database:
-            # Then we never established a couchDB
-            logging.error("Attempted to getAttachment() " \
-                          + "without valid couch database")
-            return results
-        
-        try:
-            results = self.database.getAttachment(couchID, name)
-        except Exception, ex:
-            logging.error("Error retrieving attachment: %s" % str(ex))
-            
-        return results 
-    
     def check(self, newstate, oldstate):
         """
         check that the transition is allowed. return a tuple of the transition
@@ -135,82 +104,64 @@ class ChangeState(WMObject, WMConnectionBase):
         """
         _recordInCouch_
         
-        Record a state transition in couch.  Each job will have it's own
-        document and the transitions will be stored as a list of dicts with each
-        dict having the following keys:
-          oldstate
-          newstate
-          timestamp
         """
-
         if not self.database:
-            # Then we have no database to record in
-            # Abort the couch part, keep the JSM part
-            logging.error("Attempted to record job with invalid couchDB")
             return
         
-        transDict = {"oldstate": oldstate, "newstate": newstate,
-                     "timestamp": int(time.time())}
-
-        getCouchDAO = self.daoFactory("Jobs.GetCouchID")
-        setCouchDAO = self.daoFactory("Jobs.SetCouchID")
-
-        jobIDNoCouch = []
+        jobMap = {}
+        jobIDsToCheck = []
         for job in jobs:
-            job["state"] = newstate
+            jobMap[job["id"]] = job
             if job["couch_record"] == None:
-                jobIDNoCouch.append(job['id'])
-        couchRecordList = getCouchDAO.execute(jobID = jobIDNoCouch,
-                                              conn = self.getDBConn(),
-                                              transaction = self.existingTransaction())
-        for job in jobs:
-            for record in couchRecordList:
-                if job['id'] == record['jobid']:
-                    job["couch_record"] = record['couch_record']
-                    break
-        uuID          = None
+                jobIDsToCheck.append(job["id"])
+
+        couchIDs = self.getCouchDAO.execute(jobID = jobIDsToCheck,
+                                            conn = self.getDBConn(),
+                                            transaction = self.existingTransaction())
+
+        for couchID in couchIDs:
+            jobMap[couchID["jobid"]]["couch_record"] = couchID["couch_record"]
+
+        timestamp = int(time.time())
         newJobCounter = 0
-
+        baseUUID = makeUUID()
         couchRecordsToUpdate = []
-                
-        for job in jobs:
-            doc = None
-            couchRecord = job.get('couch_record', None)
-            
-            if job["couch_record"] == None:
-                doc = job
-                if not uuID:
-                    uuID = makeUUID()
-                doc["_id"] = '%s_%i' % (uuID, newJobCounter)
+        
+        for jobID in jobMap:
+            job = jobMap[jobID]
+            couchDocID = job.get("couch_record", None)
+
+            transitionDocument = {"jobid": job["id"],
+                                  "oldstate": job["state"],
+                                  "newstate": newstate,
+                                  "timestamp": timestamp,
+                                  "type": "state"}
+            self.database.queue(transitionDocument)
+
+            if couchDocID == None:
+                jobDocument = {}
+                jobDocument["_id"] = "%s_%s" % (baseUUID, newJobCounter)
+                jobDocument["id"] = job["id"]
+                jobDocument["input_files"] = job["input_files"]
+                jobDocument["jobgroup"] = job["jobgroup"]
+                jobDocument["mask"] = job["mask"]
+                jobDocument["name"] = job["name"]
+
+                couchRecordsToUpdate.append({"jobid": job["id"],
+                                             "couchid": jobDocument["_id"]})                
+                self.database.queue(jobDocument)
                 newJobCounter += 1
-                job["couch_record"] = doc["_id"]
-                doc["state_changes"] = []
-                doc["fwkjrs"] = []
-                couchRecordsToUpdate.append({'jobid': job['id'],
-                                             'couchid': doc['_id']})
-                couchRecord = doc["_id"]
-
-            else:
-                couchRecord = job["couch_record"]
-
-            if doc == None:
-                doc = self.database.document(couchRecord)
-                doc["retry_count"] = job["retry_count"]
-                doc["outcome"] = job["outcome"]
-                doc["state"] = job["state"]
-
-            doc["state_changes"].append(transDict)
-
-            if job["fwjr"] != None:
-                doc["fwkjrs"].append(job["fwjr"].__to_json__(None))
-                del job["fwjr"]
-
-            self.database.queue(doc)
+            elif job.get("fwjr", None):
+                fwjrDocument = {"jobid": job["id"],
+                                "retrycount": job["retry_count"],
+                                "fwjr": job["fwjr"].__to_json__(None),
+                                "type": "fwjr"}
+                self.database.queue(fwjrDocument)
 
         if len(couchRecordsToUpdate) > 0:
-            setCouchDAO.execute(bulkList = couchRecordsToUpdate,
-                                conn = self.getDBConn(),
-                                transaction = self.existingTransaction())
+            self.setCouchDAO.execute(bulkList = couchRecordsToUpdate,
+                                     conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
             
         self.database.commit()
         return

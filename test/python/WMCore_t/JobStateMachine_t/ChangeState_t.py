@@ -110,35 +110,6 @@ class TestChangeState(unittest.TestCase):
 
         testJobADoc = self.change.database.document(testJobA["couch_record"])
         testJobBDoc = self.change.database.document(testJobB["couch_record"])        
-
-        assert testJobADoc.has_key("state_changes"), \
-               "Error: Job couch doc doesn't have a state change attribute."
-        assert testJobBDoc.has_key("state_changes"), \
-               "Error: Job couch doc doesn't have a state change attribute."        
-
-        assert len(testJobADoc["state_changes"]) == 3, \
-               "Error: Job has wrong number of state changes: %s" % \
-               len(testJobADoc["state_changes"])
-        assert len(testJobBDoc["state_changes"]) == 3, \
-               "Error: Job has wrong number of state changes: %s" % \
-               len(testJobBDoc["state_changes"])
-
-        assert testJobADoc["state_changes"][0]["newstate"] == "new" and \
-               testJobADoc["state_changes"][0]["oldstate"] == "none" and \
-               testJobADoc["state_changes"][1]["newstate"] == "created" and \
-               testJobADoc["state_changes"][1]["oldstate"] == "new" and \
-               testJobADoc["state_changes"][2]["newstate"] == "executing" and \
-               testJobADoc["state_changes"][2]["oldstate"] == "created", \
-               "Error: Job is missing state transitions: %s" % testJobADoc["state_changes"]
-
-        assert testJobBDoc["state_changes"][0]["newstate"] == "new" and \
-               testJobBDoc["state_changes"][0]["oldstate"] == "none" and \
-               testJobBDoc["state_changes"][1]["newstate"] == "created" and \
-               testJobBDoc["state_changes"][1]["oldstate"] == "new" and \
-               testJobBDoc["state_changes"][2]["newstate"] == "executing" and \
-               testJobBDoc["state_changes"][2]["oldstate"] == "created", \
-               "Error: Job is missing state transitions: %s" % testJobADoc["state_changes"]
-        
         return
 
     def testPersist(self):
@@ -183,52 +154,6 @@ class TestChangeState(unittest.TestCase):
                "Error: Jobs didn't change state correctly."
         
         return
-
-    def testAddAttachment(self):
-        """
-        _testAddAttachment_
-
-        """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
-        testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-
-        testJobGroupA = JobGroup(subscription = testSubscription)
-        testJobGroupA.create()
-
-        testJobA = Job(name = "TestJobA")
-        testJobA.create(testJobGroupA)
-        testJobB = Job(name = "TestJobB")
-        testJobB.create(testJobGroupA)
-        testJobC = Job(name = "TestJobC")
-        testJobC.create(testJobGroupA)
-        
-        self.change.addAttachment('hosts', testJobA['id'], '/etc/hosts')
-        self.change.addAttachment('hosts', testJobC['id'], '/etc/hosts')
-        self.change.addAttachment('passwd', testJobA['id'], '/etc/passwd')
-        self.change.addAttachment('passwd', testJobB['id'], '/etc/passwd')
-        jobs = self.change.propagate([testJobA,testJobB,testJobC], 'created', 'new')
-        hostTest = urllib.urlopen( '/etc/hosts' ).read(-1)
-        passwdTest = urllib.urlopen( '/etc/passwd' ).read(-1)
-        for job in jobs:
-            if job['id'] == testJobA['id']:
-                hosts = self.change.getAttachment(job['couch_record'],'hosts')
-                passwd = self.change.getAttachment(job['couch_record'],'passwd')
-                self.assertEquals(hostTest, hosts)
-                self.assertEquals(passwdTest, passwd)
-            if job['id'] == testJobB['id']:
-                passwd = self.change.getAttachment(job['couch_record'],'passwd')
-                self.assertEquals(passwdTest, passwd)
-                self.assertRaises(CMSCouch.CouchNotFoundError, self.change.getAttachment, job['couch_record'], 'hosts')
-            if job['id'] == testJobC['id']:
-                hosts = self.change.getAttachment(job['couch_record'],'hosts')
-                self.assertEquals(hostTest, hosts)
-                self.assertRaises(CMSCouch.CouchNotFoundError, self.change.getAttachment, job['couch_record'], 'passwd')
 
     def testJobSerialization(self):
         """

@@ -25,10 +25,12 @@ class Plotter(RESTModel):
         
         self.methods['POST'] = {'plot': {'version':1,
                                          'call':self.plot,
-                                         'args': ['type', 'data', 'url']}}
+                                         'args': ['type', 'data', 'url'],
+                                         'expires': 300}}
         self.methods['GET'] = {'plot': {'version':1,
                                          'call':self.plot,
-                                         'args': ['type', 'data', 'url']}}
+                                         'args': ['type', 'data', 'url'],
+                                         'expires': 300}}
         self.plot_types = {'bar': self.bar, 
                            'pie':self.pie, 
                            'scatter':self.scatter}
@@ -124,7 +126,7 @@ class Plotter(RESTModel):
 
         if [True for x in media if x in images]:
             # make an image/pdf
-            return self.plot_types[input['type']](input)
+            return {'figure': self.plot_types[input['type']](input)}
         else:
             # return the validated data
             return input

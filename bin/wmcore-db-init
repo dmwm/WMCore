@@ -5,8 +5,8 @@ Commands for initializing the proper database tables
 or cleaning the database.
 """
 
-__revision__ = "$Id: wmcore-db-init,v 1.2 2009/08/26 20:38:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: wmcore-db-init,v 1.3 2009/09/02 20:12:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -92,22 +92,23 @@ def connectionTest(config):
     """
     print 'checking default database connection'
 
-    if config.CoreDatabase.dialect == "oracle":
+    if config.CoreDatabase.dialect.lower() == "oracle":
         databaseStr = "oracle://%s:%s@%s" % (config.CoreDatabase.masterUser,
                                              config.CoreDatabase.masterPasswd,
                                              config.CoreDatabase.hostname)
+        socketLoc = None
     else:
         databaseStr = "%s://%s:%s@%s/%s" % (config.CoreDatabase.dialect,
                                             config.CoreDatabase.masterUser,
                                             config.CoreDatabase.masterPasswd,
                                             config.CoreDatabase.hostname,
                                             config.CoreDatabase.name)
-        
+        socketLoc = config.CoreDatabase.socket
     try:
        wmInit.setLogging('wmcoreD', 'wmcoreD', logExists = False, logLevel = logging.DEBUG)
        wmInit.setDatabaseConnection(dbConfig = databaseStr,
                                     dialect = config.CoreDatabase.dialect,
-                                    socketLoc = config.CoreDatabase.socket)
+                                    socketLoc = socketLoc)
     except Exception, ex:
         msg = "Unable to make connection to using \n"
         msg += "parameters provided in %s\n" % databaseStr 

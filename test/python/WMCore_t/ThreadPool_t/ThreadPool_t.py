@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.10 2009/10/13 23:00:07 meloam Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.11 2010/01/14 05:44:41 meloam Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 import threading
@@ -95,12 +95,17 @@ class ThreadPoolTest(unittest.TestCase):
         # acts as a dispatcher and is a shortlived action: dispatch to thread
         # or queue and tell agent harness it is finished.
         finished = False
+        timeout = 60 # secs
+        currenttime = 0
         while not finished: 
             print('waiting for threads to finishs. Work left:')
             for j in xrange(0, ThreadPoolTest._nrOfPools):
                 print('pool_'+str(j)+ ':' + str(threadPools[j].callQueue))
             time.sleep(1)
             finished = True
+            currenttime += 1
+            if (timeout == currenttime):
+                raise RuntimeError
             for j in xrange(0, ThreadPoolTest._nrOfPools):
                 if (len(threadPools[j].resultsQueue) < ThreadPoolTest._nrOfThreads*10):
                     finished = False

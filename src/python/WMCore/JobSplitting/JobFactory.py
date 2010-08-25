@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.17 2009/10/29 09:58:18 sfoulkes Exp $"
-__version__  = "$Revision: 1.17 $"
+__revision__ = "$Id: JobFactory.py,v 1.18 2009/10/29 13:31:13 sfoulkes Exp $"
+__version__  = "$Revision: 1.18 $"
 
 
 import logging
@@ -110,6 +110,7 @@ class JobFactory(WMObject):
 
         for jobGroup in self.jobGroups:
             for job in jobGroup.jobs:
+                self.subscription.acquireFiles(job["input_files"])
                 job.save()
 
         return

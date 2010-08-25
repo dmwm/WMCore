@@ -5,8 +5,8 @@ _LumiBased_t
 Test lumi based splitting.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.7 2009/12/16 18:55:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: LumiBased_t.py,v 1.8 2010/04/07 15:40:29 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import os
 import threading
@@ -46,6 +46,7 @@ class LumiBasedTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        #self.testInit.clearDatabase(modules = ['WMCore.WMBS'])
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         
@@ -56,6 +57,7 @@ class LumiBasedTest(unittest.TestCase):
 
         locationAction = daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "somese.cern.ch")
+        locationAction.execute(siteName = "otherse.cern.ch")
 
         
         self.multipleFileFileset = Fileset(name = "TestFileset1")
@@ -92,6 +94,20 @@ class LumiBasedTest(unittest.TestCase):
             newFile.create()
             self.singleLumiFileset.addFile(newFile)
         self.singleLumiFileset.commit()
+
+        self.multiSiteFileset = Fileset(name = "TestFileset5")
+        self.multiSiteFileset.create()
+        for i in range(5):
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile.addRun(Run(1, *[45]))
+            newFile.create()
+            self.multiSiteFileset.addFile(newFile)
+        for i in range(5):
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "otherse.cern.ch")
+            newFile.addRun(Run(1, *[45]))
+            newFile.create()
+            self.multiSiteFileset.addFile(newFile)
+        self.multiSiteFileset.commit()
             
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "mnorman", name = "wf001", task="Test")
@@ -112,11 +128,17 @@ class LumiBasedTest(unittest.TestCase):
                                                       workflow = testWorkflow,
                                                       split_algo = "LumiBased",
                                                       type = "Processing")
+        self.multiSiteSubscription     = Subscription(fileset = self.multiSiteFileset,
+                                                      workflow = testWorkflow,
+                                                      split_algo = "LumiBased",
+                                                      type = "Processing")
+
 
         self.multipleFileSubscription.create()
         self.singleFileSubscription.create()
         self.multipleLumiSubscription.create()
         self.singleLumiSubscription.create()
+        self.multiSiteSubscription.create()
 
 
         return
@@ -277,9 +299,34 @@ class LumiBasedTest(unittest.TestCase):
 
         
         return
-        
 
 
+
+    def testMultiSite(self):
+        """
+        _testMultiSite_
+
+        Test lumiBased when there are files from two seperate groups of sites
+        """
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multiSiteSubscription)
+
+        jobGroupList = jobFactory(lumis_per_job = 2)
+
+        self.assertEqual(len(jobGroupList), 2)
+
+        jobGroup1 = jobGroupList[0]
+        jobGroup2 = jobGroupList[1]
+        self.assertEqual(len(jobGroup1.jobs[0]['input_files'].files), 5)
+        self.assertEqual(len(jobGroup2.jobs[0]['input_files'].files), 5)
+        for file in jobGroup1.jobs[0]['input_files'].files:
+            self.assertEqual(file['locations'], set(['somese.cern.ch']))
+        for file in jobGroup2.jobs[0]['input_files'].files:
+            self.assertEqual(file['locations'], set(['otherse.cern.ch']))
+
+
+        return
 
 
 

@@ -5,8 +5,8 @@ _PhEDExInjectorPoller_
 Poll the DBSBuffer database and inject files as they are created.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.13 2009/12/10 19:54:31 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.14 2010/04/01 19:46:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import threading
 import logging
@@ -14,8 +14,8 @@ import logging
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from WMCore.Services.Requests import JSONRequests
-from WMCore.Services.Requests import SSLJSONRequests
 
 from WMCore.DAOFactory import DAOFactory
 
@@ -35,6 +35,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         self.config = config
         self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
         self.dbsUrl = config.DBSUpload.globalDBSUrl 
+        self.subscribeMSS = getattr(config.PhEDExInjector, "subscribeMSS", False)
 
         # This will be used to map SE names which are stored in the DBSBuffer to
         # PhEDEx node names.  The first key will be the "kind" which consists
@@ -57,6 +58,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         self.getUninjected = daofactory(classname = "GetUninjectedFiles")
         self.getMigrated = daofactory(classname = "GetMigratedBlocks")
+        self.getUnsubscribed = daofactory(classname = "GetUnsubscribedDatasets")
+        self.markSubscribed = daofactory(classname = "MarkDatasetSubscribed")
 
         daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                 logger = self.logger,
@@ -186,7 +189,37 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
 
         return
-        
+
+    def subscribeDatasets(self):
+        """
+        _subscribeDatasets_
+
+        Search DBSBuffer for datasets that have not yet been subscribed to mass
+        storage and create subscriptions for them.
+        """
+        if not self.seMap.has_key("MSS"):
+            return
+
+        myThread = threading.currentThread()
+        unsubscribedDatasets = self.getUnsubscribedDatasets.execute(conn = myThread.transaction.conn,
+                                                                    transaction = True)
+
+        for unsubscribedDataset in unsubscribedDatasets:
+            datasetPath = unsubscribedDataset["path"]
+            seName = unsubscribedDataset["se_name"]
+
+            if not self.seMap["MSS"].has_key(seName):
+                logging.error("No MSS node for SE: %s" % seName)
+                continue
+
+            newSubscription = PhEDExSubscription(datasetPath, seName, "DataOps",
+                                                 custodial = "y", requestOnly = "n")
+            self.phedex.subscribe(self.dbsUrl, newSubscription)
+            self.markSubscribed(datasetPath, conn = myThread.transaction.conn,
+                                transaction = True)
+
+        return
+    
     def algorithm(self, parameters):
         """
         _algorithm_
@@ -199,6 +232,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         self.injectFiles()
         self.closeBlocks()
+
+        if self.subscribeMSS:
+            self.subscribeDatasets()
 
         myThread.transaction.commit()
         return

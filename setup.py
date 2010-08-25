@@ -31,7 +31,7 @@ except:
     pass
 
 if can_nose:
-    class NoseCommand(Command):
+    class TestCommand(Command):
         user_options = [ ]
 
         def initialize_options(self):
@@ -264,173 +264,6 @@ def lint_files(files, reports=False):
 
     return results, lntr.linter.config.evaluation
 
-
-
-MODULE_EXTENSIONS = set('.py'.split())
-## bad bad bad global variable, FIXME
-all_test_suites = []
-
-
-def get_test_suites(path):
-    """:return: Iterable of suites for the packages/modules
-    present under :param:`path`.
-    """
-    logging.info('Base path: %s', path)
-    suites = []
-    os.path.walk(path, unit_test_extractor, (path, suites))
-    logging.info('Got suites: %s', all_test_suites)
-    return all_test_suites
-
-import re
-def listFiles(dir):
-    fileList = []
-    basedir = dir
-    for item in os.listdir(dir):
-        if os.path.isfile(os.path.join(basedir,item)):
-            fileList.append(os.path.join(basedir,item))
-        elif os.path.isdir(os.path.join(basedir,item)):
-            fileList.extend(listFiles(os.path.join(basedir,item)))
-    
-    return fileList
-
-
-import pprint
-
-def runUnitTests():
-    # runs all the unittests, returning the testresults object
-    testfiles = []
-    # Add the test and src directory to the python path
-    mydir = os.getcwd()
-    # todo: not portable
-    testspypath = '/'.join([mydir, 'test/python/'])
-    srcpypath = '/'.join([mydir, 'src/python/']) 
-    sys.path.append(testspypath)
-    sys.path.append(srcpypath)
-    logging.basicConfig(level=logging.DEBUG)
-    path = os.path.abspath(os.path.dirname(sys.argv[0]))
-    files = listFiles(path)
-    test = re.compile("_t\.py$", re.IGNORECASE)          
-    files = filter(test.search, files)                     
-    filenameToModuleName = lambda f: os.path.splitext(f)[0]
-    moduleNames = map(filenameToModuleName, files)         
-    stripBeginning = lambda f: f[ len(path) + len('/test/python/'): ]
-    moduleNames2 = map( stripBeginning, moduleNames )
-    replaceSlashes = lambda f: f.replace('/','.')
-    moduleNames3 = map( replaceSlashes, moduleNames2 )
-    modules  = []
-    loadFail = []
-    for oneModule in moduleNames3:
-        try:
-            __import__(oneModule)
-            modules.append(sys.modules[oneModule])
-        except Exception, e:
-            sys.stderr.write("ERROR: Can't load test case %s - %s\n" % (oneModule, e))
-            loadFail.append(oneModule)    
-
-    load = unittest.defaultTestLoader.loadTestsFromModule  
-    globalSuite = unittest.TestSuite(map(load, modules))    
-#  #  logging.basicConfig(level=logging.WARN)
-#    package_path = os.path.dirname(mydir + '/test/python/')
-#    print "path: %s " % package_path
-#    suites = get_test_suites(package_path)
-#    testCaseCount = 0
-#    totallySuite = unittest.TestSuite()
-#    totallySuite.addTests(suites)
-#    print suites     
-    result = unittest.TextTestRunner(verbosity=2).run(globalSuite)
-
-    #sys.stdout = sys.__stdout__
-    #sys.stderr = sys.__stderr__
-    
-    print sys.path
-    return (result, loadFail, globalSuite.countTestCases())
-
-def get_relative_path():
-    return os.path.dirname(os.path.abspath(os.path.join(os.getcwd(), sys.argv[0])))
-
-
-class TestCommand(Command):
-    description = "Handle setup.py test with this class - walk through the " + \
-    "directory structure building up a list of tests, then build a test " + \
-    " suite and execute it."
-    """
-    TODO: Pull database URL's from environment, and skip tests where database 
-    URL is not present (e.g. for a slave without Oracle connection)
-    
-    TODO: need to build a separate test runner for each test file, python is
-          keeping the test objects around, which is keeping it from destroying
-          filehandles, which is causing us to bomb out of a lot more tests than
-          necessary. Or, people could learn to close their files themselves.
-          either-or.
-    """
-    user_options = [ ]
-
-    def initialize_options(self):
-        self._dir = get_relative_path()
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        '''
-        Finds all the tests modules in test/python/WMCore_t, and runs them.
-        '''
-        testfiles = [ ]
-        
-        # attempt to perform coverage tests, even if they weren't asked for
-        #   it doesn't cost (much), and by caching the results, a later
-        #   coverage test run doesn't have to run through all the unittests
-        #   just generate the coverage report
-        files = generate_filelist()
-        coverageEnabled = True;
-        try:
-            cov = coverage.coverage(branch = True, data_file="wmcore-coverage.dat" )
-            cov.start()
-            print "Caching code coverage statstics"
-        except:
-            coverageEnabled = False
-        
-        ## FIXME: make this more portable
-        if 'WMCOREBASE' not in os.environ:
-            os.environ['WMCOREBASE'] = get_relative_path()
-        
-        result, failedTestFiles, totalTests = runUnitTests()
-        
-        if coverageEnabled:
-            cov.stop()
-            cov.save()
-            
-
-        if not result.wasSuccessful():
-            sys.stderr.write("\nTests unsuccessful. There were %s failures and %s errors\n"\
-                      % (len(result.failures), len(result.errors)))
-            #print "Failurelist:\n%s" % "\n".join(map(lambda x: \
-             #                                           "FAILURE: %s\n%s" % (x[0],x[1] ), result.failures))
-            #print "Errorlist:\n%s" % "\n".join(map(lambda x: \
-             #                                           "ERROR:   %s\n%s" % (x[0],x[1] ), result.errors))
-            
-        if len(failedTestFiles):
-            sys.stderr.write("The following tests failed to load: \n===============\n%s" %\
-                    "\n".join(failedTestFiles))    
-        sys.stderr.write("\n------------------------------------")
-        sys.stderr.write("\ntest results")
-        sys.stderr.write("\n------------------------------------")
-        sys.stderr.write("\nStats: %s successful, %s failures, %s errors, %s didn't run" %\
-                (totalTests - len(result.failures) - len(result.errors),\
-                 len(result.failures),
-                 len(result.errors),
-                 len(failedTestFiles)))
-                
-        if (not result.wasSuccessful()) or len(result.errors):
-            sys.stderr.write("\nFAILED: setup.py test\n") 
-            sys.exit(1)
-        else:
-            sys.stderr.write("\nPASS: setup.py test\n")
-            sys.exit(0)
-           
-
-        
-            
 class CleanCommand(Command):
     description = "Clean up (delete) compiled files"
     user_options = [ ]
@@ -776,14 +609,13 @@ package_dir = {'WMCore': 'src/python/WMCore',
 setup (name = 'wmcore',
        version = '1.0',
        maintainer_email = 'hn-cms-wmDevelopment@cern.ch',
-       cmdclass = {#'test': TestCommand, 
-                   'clean': CleanCommand, 
+       cmdclass = {'clean': CleanCommand, 
                    'lint': LintCommand,
                    'report': ReportCommand,
                    'coverage': CoverageCommand ,
                    'missing': DumbCoverageCommand,
                    'env': EnvCommand,
-                   'test' : NoseCommand },
+                   'test' : TestCommand },
        package_dir = package_dir,
        packages = getPackages(package_dir.values()),)
 

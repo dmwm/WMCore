@@ -117,10 +117,14 @@ class testRepeatCalls(RESTBaseUnitTest):
         self.config.Webtools.section_('server')
         self.config.Webtools.server.socket_timeout = 1
         self.urlbase = self.config.getServerUrl()
-        
+        self.cache_path = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.cache_path, ignore_errors = True)
+                
     def test10Calls(self):
         fail_count = 0
-        req = Requests.Requests(self.urlbase)
+        req = Requests.Requests(self.urlbase, {'req_cache_path': self.cache_path})
         
         for i in range(0, 5):
             time.sleep(i)
@@ -143,7 +147,7 @@ class testRepeatCalls(RESTBaseUnitTest):
         """Connections succeed after server down"""
         import socket
         self.rt.stop()
-        req = Requests.Requests(self.urlbase)
+        req = Requests.Requests(self.urlbase, {'req_cache_path': self.cache_path})
         headers = {'Cache-Control':'no-cache'}
         self.assertRaises(socket.error, req.get, '/', incoming_headers=headers)
 

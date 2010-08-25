@@ -27,8 +27,11 @@ class ServiceTest(unittest.TestCase):
         logger_name = 'Service%s' % testname.replace('test', '', 1)
         
         self.logger = logging.getLogger(logger_name)
+        
+        self.cache_path = tempfile.mkdtemp()
         dict = {'logger': self.logger, 
-                'cachepath' : tempfile.mkdtemp(),
+                'cachepath' : self.cache_path,
+                'req_cache_path': '%s/requests' % self.cache_path,
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi'}
         
         self.myService = Service(dict)
@@ -39,7 +42,7 @@ class ServiceTest(unittest.TestCase):
 
     def tearDown(self):
         testname = self.id().split('.')[-1]
-        shutil.rmtree(self.myService['cachepath'], ignore_errors = True)
+        shutil.rmtree(self.cache_path, ignore_errors = True)
 
         if self._exc_info()[0] == None:
             self.logger.info('test "%s" passed' % testname)
@@ -76,7 +79,8 @@ class ServiceTest(unittest.TestCase):
     def testCachePath(self):
         dict = {'logger': self.logger, 
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
-                'cachepath': '/my/path'}
+                'cachepath' : self.cache_path,
+                'req_cache_path': '%s/requests' % self.cache_path}
         service = Service(dict)
         # We append hostname to the cachepath, so that we can talk to two
         # services on different hosts
@@ -86,14 +90,18 @@ class ServiceTest(unittest.TestCase):
     def testCacheDuration(self):
         dict = {'logger': self.logger, 
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
-                'cacheduration': 100}
+                'cacheduration': 100,
+                'cachepath' : self.cache_path,
+                'req_cache_path': '%s/requests' % self.cache_path}
         service = Service(dict)
         self.assertEqual( service['cacheduration'] ,  dict['cacheduration'] )
         
     def testNoCacheDuration(self):
         dict = {'logger': self.logger, 
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
-                'cacheduration': None}
+                'cacheduration': None,
+                'cachepath' : self.cache_path,
+                'req_cache_path': '%s/requests' % self.cache_path}
         service = Service(dict)
         self.assertEqual( service['cacheduration'] ,  dict['cacheduration'] )
         
@@ -102,7 +110,8 @@ class ServiceTest(unittest.TestCase):
                 'endpoint':'http://cmssw.cvs.cern.ch/',
                 'cacheduration': None,
                 'timeout': 10,
-                'cachepath' : self.myService['cachepath']}
+                'cachepath' : self.cache_path,
+                'req_cache_path': '%s/requests' % self.cache_path}
         service = Service(dict)
         deftimeout = socket.getdefaulttimeout()
         service.getData('/tmp/socketresettest', '/cgi-bin/cmssw.cgi')
@@ -116,7 +125,8 @@ class ServiceTest(unittest.TestCase):
                 'maxcachereuse': 0.001,
                 'timeout': 10,
                 'usestalecache': True,
-                'cachepath' : self.myService['cachepath']}
+                'cachepath' : self.cache_path,
+                'req_cache_path': '%s/requests' % self.cache_path}
         service = Service(dict)
         cache = 'stalecachetest'
         

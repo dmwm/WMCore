@@ -1,41 +1,42 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101, E1103
+#E1101 doesn't allow you to define config sections using .section_()
+#E1103 doesn't recognize objects attached to the thread
 """
 _AccountantWorker_
 
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.9 2009/11/10 15:31:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.10 2009/11/17 18:48:01 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import os
-import time
 import threading
 import logging
-import simplejson
-import sys
 
 from WMCore.Agent.Configuration import Configuration
-from WMQuality.TestInit import TestInit
 
 from WMCore.FwkJobReport.ReportParser import readJobReport
+from WMCore.FwkJobReport.FwkJobReport import FwkJobReport
 
 from WMCore.DAOFactory import DAOFactory
-from WMCore.Database.Transaction import Transaction
 
 from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.File import File
-from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.WMBS.Workflow import Workflow
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.JobStateMachine import DefaultConfig
 
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
 class AccountantWorker:
+    """
+    Class that actually does the work of parsing FWJRs for the Accountant
+    Run through ProcessPool
+    """
+    
     def __init__(self, **kwargs):
         """
         __init__
@@ -66,7 +67,7 @@ class AccountantWorker:
                                         config.JobStateMachine.couchDBName)
         return
 
-    def loadJobReport(self, jobReportPath):
+    def loadJobReport(self, parameters):
         """
         _loadJobReport_
 
@@ -76,21 +77,23 @@ class AccountantWorker:
         """
         # The jobReportPath may be prefixed with "file://" which needs to be
         # removed so it doesn't confuse the FwkJobReport() parser.
+
+        jobReportPath = parameters['fwjr_path']
         jobReportPath = jobReportPath.replace("file://","")
 
         if not os.path.exists(jobReportPath):
             logging.error("Bad FwkJobReport Path: %s" % jobReportPath)
-            return None
+            return self.createMissingFWKJR(parameters, 99999, 'Cannot find file in jobReport path')
 
         if os.path.getsize(jobReportPath) == 0:
             logging.error("Empty FwkJobReport: %s" % jobReportPath)
-            return None
+            return self.createMissingFWKJR(parameters, 99998, 'jobReport of size 0')
 
         try:
             jobReports = readJobReport(jobReportPath)
         except Exception, msg:
             logging.error("Cannot load %s: %s" % (jobReportPath, msg))
-            return None
+            return self.createMissingFWKJR(parameters, 99997, 'Cannot load jobReport')
 
         # The readJobReport() function will return a list of job reports,
         # but the accountant currently only supports jobs that return a single
@@ -112,10 +115,12 @@ class AccountantWorker:
 
         self.transaction.begin()
 
-        fwkJobReport = self.loadJobReport(parameters["fwjr_path"])
+        fwkJobReport = self.loadJobReport(parameters)
         jobSuccess = None
 
         if fwkJobReport == None or fwkJobReport.status != "Success":
+            if fwkJobReport == None:
+                fwkJobReport = self.createMissingFWKJR(parameters)
             logging.error("I have a bad jobReport for %i" %(parameters['id']))
             self.handleFailed(jobID = parameters["id"],
                               fwkJobReport = fwkJobReport)
@@ -123,6 +128,9 @@ class AccountantWorker:
         else:
             self.handleSuccessful(jobID = parameters["id"],
                                   fwkJobReport = fwkJobReport)
+            logging.error("This is a FWJR dummy!")
+            logging.error(fwkJobReport.__class__)
+            logging.error(fwkJobReport)
             jobSuccess = True
 
         self.transaction.commit()
@@ -311,4 +319,19 @@ class AccountantWorker:
         wmbsJob["fwjr"] = fwkJobReport
         self.stateChanger.propagate([wmbsJob], "jobfailed", "complete")
         return
+
+
+    def createMissingFWKJR(self, parameters, errorCode = 999, errorDescription = 'Failure of unknown type'):
+        """
+        _createMissingFWJR_
+        
+        Create a missing FWJR if the report can't be found by the code in the path location
+        """
+
+        report = FwkJobReport()
+        report.addError(errorCode, errorDescription)
+        report.status = 'Failed'
+        report.name   = parameters['id']
+
+        return report
 

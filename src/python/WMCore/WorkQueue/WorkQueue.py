@@ -45,6 +45,7 @@ class _WQElement(WMObject):
         Take list of current conditions and return the best match,
           or None if no match found
         """
+        #TODO: Match against conditions dict, and return updated dict with taken resources removed
         if not _online:
             return None
         #For now just return first matching requirement 
@@ -109,12 +110,13 @@ class WorkQueue(WMObject):
 
     def match(self, conditions):
         """
-        Loop over internal queue, matching WQElements to resources available
+        Loop over internal queue in priority order, 
+          matching WQElements to resources available
         """
         results = []
         self.reorderList()
         for element in self.elements:
-            #Act of matching returns the matched requirement
+            #Act of matching returns the remaining match attributes 
             matched = element.match(conditions)
             if matched:
                 results.append(element)
@@ -153,24 +155,22 @@ class WorkQueue(WMObject):
         _getWork_
         siteJob is dict format of {site: estimateJobSlot}
         """
-        # udate the location information in WorkQueue
+        # update the location information in WorkQueue
         # if this is too much overhead use separate component
         self.uplateLocationInfo()
-        subList = []
-        for site in siteJobs.key():
-            # might just return one  block
-            blocks = self.getTopPriorityBlocks(site, siteJobs[site])
-            # create fileset workflow and subscription
-            #generate fileset name from multiple blocks
-            #generate workflow name from multiple blocks
-            filesetName = "Fileset"
-            workflowName = "Workflow"
-            wmbsHelper = WMBSHelper(self.wmSpec)
-            subscription = wmbsHelper.createSubscription(fileName=workflowName,
-                                                    workflowName=workflowName)
-            subList.append(subscription)
-                
-        return subList
+        subscriptions = []
+        #for site in siteJobs.key():
+        # might just return one  block
+        blocks = self.match(siteJobs)
+        # create fileset workflow and subscription
+        #generate fileset name from multiple blocks
+        #generate workflow name from multiple blocks
+        filesetName = "Fileset"
+        workflowName = "Workflow"
+        wmbsHelper = WMBSHelper(self.wmSpec)
+        subscriptions = wmbsHelper.createSubscription(fileName=workflowName,
+                                                workflowName=workflowName)
+        return subscriptions
     
     def gotWork(self, subscription):
         """
@@ -197,5 +197,18 @@ class WorkQueue(WMObject):
             return True
         except:
             return False
-        
 
+
+    def queueWork(self, wmspec):
+        """
+        Take and queue work from a WMSpec
+        """
+        spec = workSpecParser(wmspec)
+        for name, blocks, jobs in spec:
+            self.addElement(specUrl = wmspec,
+                            primaryBlock = name,
+                            parentBlocks = [],
+                            priority = workSpecParser.priority(),
+                            whitelist = workSpecParser.whitelist(),
+                            blacklist = workSpecParser.blacklist()
+                            )

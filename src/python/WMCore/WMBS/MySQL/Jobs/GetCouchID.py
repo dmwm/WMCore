@@ -5,8 +5,8 @@ _GetCouchID_
 MySQL implementation of Jobs.GetCouchID
 """
 
-__revision__ = "$Id: GetCouchID.py,v 1.1 2009/09/16 20:17:05 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetCouchID.py,v 1.2 2009/10/15 20:41:27 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -16,7 +16,9 @@ class GetCouchID(DBFormatter):
 
     Given a job ID retrieve the couch document ID.
     """
-    sql = "SELECT couch_record FROM wmbs_job WHERE id = :jobid"
+    sql     = "SELECT couch_record FROM wmbs_job WHERE id = :jobid"
+
+    bulkSQL = """SELECT couch_record AS couch_record, id AS jobid FROM wmbs_job WHERE id = :jobid"""
 
     def format(self, results):
         """
@@ -37,7 +39,20 @@ class GetCouchID(DBFormatter):
 
         Execute the SQL for the given job ID and then format and return
         the result.
-        """        
+        """
+        if type(jobID) == list:
+            if len(jobID) == 0:
+                return {}
+            binds = []
+            for entry in jobID:
+                binds.append({'jobid': entry})
+
+            result = self.dbi.processData(self.bulkSQL, binds, conn = conn,
+                                          transaction = transaction)
+
+            return self.formatDict(result)
+            
+        
         result = self.dbi.processData(self.sql, {"jobid": jobID}, conn = conn,
                                       transaction = transaction)
         

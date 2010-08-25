@@ -35,17 +35,19 @@ class Builder:
 
     """
     def __init__(self):
+        self.taskName = None
         self.stepName = None
         self.stepDir = None
         self.taskSpaceInitMod = None
 
-    def __call__(self, step, workingDirectory, **args):
+    def __call__(self, step, taskName, workingDirectory, **args):
         """
         _operator(step)_
 
 
         """
         self.stepName = nodeName(step)
+        self.taskName = taskName
         self.coreBuild(step, workingDirectory)
         self.build(step, workingDirectory, **args)
 
@@ -69,6 +71,7 @@ class Builder:
 
         handle = open(self.taskSpaceInitMod, 'w')
         handle.write(taskSpaceInit)
+        handle.write("""args["TaskName"] = "%s"\n""" % self.taskName)        
         handle.write("""args["StepName"] = "%s"\n""" % self.stepName)
         handle.write("""args["Locator"] = _Locator\n""")
         handle.write("""stepSpace = establishStepSpace(**args)\n""")

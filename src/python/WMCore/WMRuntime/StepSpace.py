@@ -24,7 +24,7 @@ class StepSpace:
         self.stepName = args.get("StepName", None)
         self.initmodule = inspect.getsourcefile(args.get("Locator", None))
         self.location  = os.path.dirname(self.initmodule)
-        self.sandbox = Sandbox(self.stepName)
+        self.sandbox = Sandbox(args["TaskName"], self.stepName)
 
     def sandboxFiles(self):
         """

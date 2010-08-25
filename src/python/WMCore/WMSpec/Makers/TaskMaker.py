@@ -7,8 +7,8 @@ and then for each task do the jobs necessary for the task
 to start as a proper job.
 
 """
-__revision__ = "$Id: TaskMaker.py,v 1.5 2010/04/09 20:34:11 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: TaskMaker.py,v 1.6 2010/04/12 16:50:56 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 
 
@@ -131,28 +131,11 @@ class TaskMaker:
                 if not self.skipSubscription:
                     subscribeInfo = self.subscribeWMBS(task)
         
-        sandboxInfo   = self.createSandbox(self.workload)
+        sandboxCreator = SandboxCreator()
+        sandboxCreator.makeSandbox(self.workdir, self.workload)        
         logging.info('Done processing workload %s' %(self.workload.name()))
 
         return True
-
-
-
-    def createSandbox(self, task):
-        """
-        Create a sandbox for each task once the subscription has been finished
-
-        """
-
-        myThread = threading.currentThread()
-
-        sandboxCreator = SandboxCreator()
-        sandboxCreator.makeSandbox(self.workdir, self.workload, task)
-
-        #setattr(task.data.input, 'sandbox', "%s/%s/%s/WMSandbox" % (self.workdir, self.workload.name(), task.name()))
-        setattr(task.data.input, 'sandbox', "%s/%s-Sandbox.tar.bz2" % (self.workdir, task.name()))
-
-        return
 
     def createWorkflow(self, task):
         """

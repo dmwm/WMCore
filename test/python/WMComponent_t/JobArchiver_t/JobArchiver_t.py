@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: JobArchiver_t.py,v 1.5 2010/02/04 15:52:06 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: JobArchiver_t.py,v 1.6 2010/03/11 21:59:43 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import os
 import logging
@@ -16,7 +16,7 @@ import shutil
 
 from subprocess import Popen, PIPE
 
-from WMCore.Agent.Configuration import loadConfigurationFile
+from WMCore.Agent.Configuration import loadConfigurationFile, Configuration
 
 
 
@@ -89,19 +89,27 @@ class JobArchiverTest(unittest.TestCase):
 
         General config file
         """
-        config = self.testInit.getConfiguration()
+        config = Configuration()
 
+        #First the general stuff
         config.section_("General")
-        config.General.workDir = "."
+        config.General.workDir = os.getenv("TESTDIR", os.getcwd())
+
+        #Now the CoreDatabase information
+        #This should be the dialect, dburl, etc
+        config.section_("CoreDatabase")
+        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+        config.CoreDatabase.socket     = os.getenv("DBSOCK")
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl    = os.getenv("COUCHURL", "cmssrv48.fnal.gov:5984")
-        #config.JobStateMachine.couchDBName = "job_accountant_t"
 
         config.component_("JobArchiver")
-        config.JobArchiver.pollInterval  = 60
-        config.JobArchiver.logLevel      = 'INFO'
-        config.JobArchiver.logDir        = os.path.join(self.testDir, 'logs')
+        config.JobArchiver.pollInterval          = 60
+        config.JobArchiver.logLevel              = 'INFO'
+        config.JobArchiver.logDir                = os.path.join(self.testDir, 'logs')
+        config.JobArchiver.componentDir          = os.getcwd()
+        config.JobArchiver.numberOfJobsToCluster = 1000
 
         return config        
         
@@ -158,8 +166,6 @@ class JobArchiverTest(unittest.TestCase):
         Otherwise does nothing.
         """
 
-        return
-
         myThread = threading.currentThread()
 
         config = self.getConfig()
@@ -207,10 +213,8 @@ class JobArchiverTest(unittest.TestCase):
         if not os.path.isdir(cacheDir):
             os.mkdir(cacheDir)
 
-        if not os.path.isdir(config.JobArchiver.logDir):
-            os.mkdir(config.JobArchiver.logDir)
-
-        print "Should be about to make job caches"
+        if os.path.isdir(config.JobArchiver.logDir):
+            shutil.rmtree(config.JobArchiver.logDir)
 
         for job in testJobGroup.jobs:
             myThread.transaction.begin()
@@ -246,10 +250,11 @@ class JobArchiverTest(unittest.TestCase):
         for job in testJobGroup.jobs:
             self.assertEqual(job["name"] in dirList, False)
 
-        logList = os.listdir(config.JobArchiver.logDir)
+        logList = os.listdir(os.path.join(config.JobArchiver.logDir, 'JobCluster_0'))
         for job in testJobGroup.jobs:
-            self.assertEqual('Job_%s.tar' %(job['name']) in logList, True, 'Could not find transferred tarball for job %s' %(job['name']))
-            pipe = Popen(['tar', '-xvf', '%s/Job_%s.tar' %(config.JobArchiver.logDir, job['name'])], stdout = PIPE, stderr = PIPE, shell = False)
+            self.assertEqual('Job_%i.tar' %(job['id']) in logList, True, 'Could not find transferred tarball for job %i' %(job['id']))
+            pipe = Popen(['tar', '-xvf', '%s/%s/Job_%i.tar' %(config.JobArchiver.logDir, 'JobCluster_0', job['id'])],
+                         stdout = PIPE, stderr = PIPE, shell = False)
             pipe.wait()
             filename = '%s/%s/%s.out' %(cacheDir[1:], job['name'], job['name'])
             self.assertEqual(os.path.isfile(filename), True, 'Could not find file %s' %(filename))

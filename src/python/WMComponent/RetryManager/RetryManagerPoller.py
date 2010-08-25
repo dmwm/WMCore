@@ -4,8 +4,8 @@
 The actual retry algorithm(s)
 """
 __all__ = []
-__revision__ = "$Id: RetryManagerPoller.py,v 1.2 2009/07/30 19:24:54 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: RetryManagerPoller.py,v 1.3 2009/10/15 20:25:01 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -52,6 +52,10 @@ class RetryManagerPoller(BaseWorkerThread):
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
 
         return
+
+    def terminate(self,params):
+        logging.debug("terminating. doing one more pass before we die")
+        self.algorithm(params)
 
 
     def algorithm(self, parameters):

@@ -4,9 +4,8 @@
 The actual error handler algorithm
 """
 __all__ = []
-__revision__ = "$Id: ErrorHandlerPoller.py,v 1.3 2009/07/28 21:27:38 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
-__author__ = "anzar@fnal.gov"
+__revision__ = "$Id: ErrorHandlerPoller.py,v 1.4 2009/10/15 20:24:27 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 import logging
@@ -48,6 +47,10 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.changeState = ChangeState(self.config)
 
         self.maxRetries = self.config.ErrorHandler.maxRetries
+
+    def terminate(self,params):
+        logging.debug("terminating. doing one more pass before we die")
+        self.algorithm(params)
 
 
     def processRetries(self, jobs, type):

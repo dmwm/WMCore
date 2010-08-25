@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.6 2009/12/21 16:05:20 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: StageOut.py,v 1.7 2010/02/10 17:39:30 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import inspect
 import os
@@ -18,7 +18,9 @@ import signal
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.FwkJobReport.Report             import Report
+
 import WMCore.Storage.StageOutMgr as StageOutMgr
+        
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
 
 class StageOut(Executor):
@@ -78,7 +80,7 @@ class StageOut(Executor):
                 continue
             stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
             logging.info("Beginning report processing for step %s" %(step))
-            reportLocation = os.path.join(stepLocation, 'Report1.pkl')
+            reportLocation = os.path.join(stepLocation, 'Report.pkl')
             if os.path.isfile(reportLocation):
                 #First, get everything from a file and 'unpersist' it
                 stepReport = Report(step)

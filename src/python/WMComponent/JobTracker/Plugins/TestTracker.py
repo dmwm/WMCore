@@ -3,8 +3,8 @@
 #Basic model for a tracker plugin
 #Should do nothing
 
-__revision__ = "$Id: TestTracker.py,v 1.1 2009/10/02 21:31:43 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TestTracker.py,v 1.2 2009/11/06 20:36:56 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 import logging
@@ -33,7 +33,6 @@ class TestTracker(TrackerPlugin):
 
     def __call__(self, jobDict):
 
-        
         self.getClassAds()
         trackDict = self.track(jobDict)
 
@@ -41,7 +40,7 @@ class TestTracker(TrackerPlugin):
 
     def getClassAds(self):
 
-        constraint = "\"ProdAgent_JobID =!= UNDEFINED\""
+        constraint = "\"WMAgent_JobID =!= UNDEFINED\""
 
 
         command = "condor_q -xml -constraint %s  " % constraint
@@ -69,8 +68,10 @@ class TestTracker(TrackerPlugin):
         classAds = {}
         #Format classAds
         #Use ProdAgent_JobID for now
-        for add in classAdsRaw:
-            classAds[add['ProdAgent_JobID']] = add
+        for ad in classAdsRaw:
+            if not 'WMAgent_JobID' in ad.keys():
+                continue
+            classAds[int(ad['WMAgent_JobID'])] = ad
         self.classAds = classAds
         logging.info("Retrieved %s Classads" % len(self.classAds))
 
@@ -108,28 +109,28 @@ class TestTracker(TrackerPlugin):
         
         for job in jobDict:
             #Jobs should be of the format {'name': name, 'location': location}
-            if not job['name'] in self.classAds.keys():
-                trackDict[job['name']] = {'Status': 'NA', 'StatusTime': -1, 'StatusReason': -1}
-            elif self.classAds[job['name']]['JobStatus'] == 5:
+            if not job['id'] in self.classAds.keys():
+                trackDict[job['id']] = {'Status': 'NA', 'StatusTime': -1, 'StatusReason': -1}
+            elif self.classAds[job['id']]['JobStatus'] == 5:
                 #Job is Held
-                trackDict[job['name']] = {'Status': 'Held', 'StatusTime': self.classAds[job['name']]['ServerTime'] \
-                                          - self.classAds[job['name']]['EnteredCurrentStatus'], \
-                                          'StatusReason': self.classAds[job['name']]['HoldReason']}
-            elif self.classAds[job['name']]['JobStatus'] == 1:
+                trackDict[job['id']] = {'Status': 'Held', 'StatusTime': self.classAds[job['id']]['ServerTime'] \
+                                        - self.classAds[job['name']]['EnteredCurrentStatus'], \
+                                        'StatusReason': self.classAds[job['name']]['HoldReason']}
+            elif self.classAds[job['id']]['JobStatus'] == 1:
                 #Job is Idle
-                trackDict[job['name']] = {'Status': 'Idle', 'StatusTime': self.classAds[job['name']]['ServerTime'] \
-                                          - self.classAds[job['name']]['EnteredCurrentStatus'], \
-                                          'StatusReason': self.classAds[job['name']]['LastRejMatchReason']}
-            elif self.classAds[job['name']]['JobStatus'] == 2:
+                trackDict[job['id']] = {'Status': 'Idle', 'StatusTime': self.classAds[job['id']]['ServerTime'] \
+                                        - self.classAds[job['name']]['EnteredCurrentStatus'], \
+                                        'StatusReason': self.classAds[job['name']]['LastRejMatchReason']}
+            elif self.classAds[job['id']]['JobStatus'] == 2:
                 #Job is Running
-                trackDict[job['name']] = {'Status': 'Running', 'StatusTime': self.classAds[job['name']]['ServerTime'] \
-                                          - self.classAds[job['name']]['EnteredCurrentStatus'], \
-                                          'StatusReason': -1}
+                trackDict[job['id']] = {'Status': 'Running', 'StatusTime': self.classAds[job['id']]['ServerTime'] \
+                                        - self.classAds[job['name']]['EnteredCurrentStatus'], \
+                                        'StatusReason': -1}
             else:
                 #Job is in some strange state
-                trackDict[job['name']] = {'Status': 'Unknown', 'StatusTime': self.classAds[job['name']]['ServerTime'] \
-                                          - self.classAds[job['name']]['EnteredCurrentStatus'], \
-                                          'StatusReason': self.classAds[job['name']]['JobStatus'] }
+                trackDict[job['id']] = {'Status': 'Unknown', 'StatusTime': self.classAds[job['id']]['ServerTime'] \
+                                        - self.classAds[job['name']]['EnteredCurrentStatus'], \
+                                        'StatusReason': self.classAds[job['name']]['JobStatus'] }
 
 
         return trackDict

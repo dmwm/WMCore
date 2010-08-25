@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.1 2009/10/02 21:28:45 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.2 2009/11/06 20:36:56 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import logging
@@ -95,6 +95,8 @@ class JobTrackerPoller(BaseWorkerThread):
         Finds a list of running jobs and the sites that they're running at, and passes that off to tracking.
         """
 
+        print "In JobTrackerPoller.trackJobs"
+
         jobListAction = self.daoFactory(classname = "Jobs.GetAllJobs")
         jobList       = jobListAction.execute(state = "Executing")
 
@@ -104,13 +106,14 @@ class JobTrackerPoller(BaseWorkerThread):
         jobDictList = []
         for job in jobList:
             jobDictList.append({'jobid': job})
-        
+
         locListAction = self.daoFactory(classname = "Jobs.GetLocation")
         locDict = locListAction.execute(id = jobDictList)
-        
+
         trackDict = self.getInfo(locDict)
 
         passedJobs, failedJobs = self.parseJobs(trackDict)
+
         self.failJobs(failedJobs)
         self.passJobs(passedJobs)
 
@@ -174,8 +177,8 @@ class JobTrackerPoller(BaseWorkerThread):
 
         #Mark 'em as failed
         listOfJobs = []
-        for jobName in failedJobs:
-            job = Job(name = jobName)
+        for jobID in failedJobs:
+            job = Job(id = jobID)
             job.load()
             listOfJobs.append(job)
 
@@ -194,17 +197,25 @@ class JobTrackerPoller(BaseWorkerThread):
         if len(passedJobs) == 0:
             return
 
+        myThread = threading.currentThread()
+
         #Get their stuff?
         #I've got no idea how we want to do this.
         
         #Mark 'em as complete
         listOfJobs = []
-        for jobName in passedJobs:
-            job = Job(name = jobName)
+        for jobID in passedJobs:
+            job = Job(id = jobID)
             job.load()
             listOfJobs.append(job)
 
-        self.changeState.propagate(listOfJobs, 'complete', 'executing')        
+        myThread.transaction.begin()
+        self.changeState.propagate(listOfJobs, 'complete', 'executing')
+        myThread.transaction.commit()
+
+        return
+                
+    
 
 
     def loadTracker(self, trackerName = None):

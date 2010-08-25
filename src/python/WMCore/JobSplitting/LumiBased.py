@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.19 2010/06/23 15:28:39 mnorman Exp $"
-__version__  = "$Revision: 1.19 $"
+__revision__ = "$Id: LumiBased.py,v 1.20 2010/06/30 14:11:45 mnorman Exp $"
+__version__  = "$Revision: 1.20 $"
 
 import operator
 
@@ -50,6 +50,7 @@ class LumiBased(JobFactory):
                 for run in f['runs']:
                     run.lumis.sort()
                 f['lowestRun'] = f['runs'][0]
+                #f['lowestRun'] = list(sorted(f['runs']))[0]
                 newlist.append(f)
             locationDict[key] = sorted(newlist, key=operator.itemgetter('lowestRun'))
 
@@ -152,9 +153,9 @@ class LumiBased(JobFactory):
             for f in locationDict[location]:
 
                 if self.currentJob and not lumisInJob == lumisPerJob:
-                        # Add a new file to the job
-                        # When starting a new file
-                        self.currentJob.addFile(f)
+                        # Because merging can't handle multiple files in a job
+                        # We have to start a new job when we get a new lumi
+                        lumisInJob = lumisPerJob  # Do this so it auto-closes
 
                 for run in f['runs']:
                     
@@ -190,6 +191,9 @@ class LumiBased(JobFactory):
 
 
         return
+
+
+
 
     
 

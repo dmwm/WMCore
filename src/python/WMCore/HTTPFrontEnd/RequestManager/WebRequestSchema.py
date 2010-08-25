@@ -130,7 +130,7 @@ class WebRequestSchema(TemplatedPage):
             if splitAlgo == "FileBased":
                  d = {'files_per_job' : filesPerJob }
             elif splitAlgo == "LumiBased":
-                 d = {'lumis_per_job' : lumisPerJob, 'split_files_between_jobs':splitFilesBetweenJob}
+                 d = {'lumis_per_job' : lumisPerJob, 'split_files_between_job':splitFilesBetweenJob}
             elif splitAlgo == "EventBased":        
                  d = {'events_per_job': eventsPerJob}
             else:

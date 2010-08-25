@@ -46,7 +46,8 @@ class RequestManager(Service):
                     filename = dict['cachepath'] + '/jsonparser.log',
                     filemode = 'w')
             dict['logger'] = logging.getLogger('RequestMgrParser')
-            dict['accept_type'] = 'text/json'
+
+        dict['accept_type'] = 'text/json'
 
         Service.__init__(self, dict)
 

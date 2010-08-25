@@ -21,8 +21,7 @@ StatusList = [
     "epic-FAILED",
     "completed",
     "aborted",
-    "rejected",
-
+    "rejected"
     ]
 
 NextStatus = {

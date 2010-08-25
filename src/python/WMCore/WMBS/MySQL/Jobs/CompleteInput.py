@@ -5,8 +5,8 @@ _CompleteInput_
 MySQL implementation of Jobs.Complete
 """
 
-__revision__ = "$Id: CompleteInput.py,v 1.4 2010/03/23 20:11:05 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: CompleteInput.py,v 1.5 2010/04/28 16:28:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -18,87 +18,32 @@ class CompleteInput(DBFormatter):
     run over the files have been complete successfully.  This will also remove
     entries from the acquired and failed tables.
     """
+    fileSelect = """SELECT job_files.subscriptionid, job_files.fileid,
+                           COUNT(wmbs_job_assoc.job) AS total, SUM(wmbs_job.outcome) AS success FROM
+                      (SELECT wmbs_jobgroup.subscription AS subscriptionid,
+                              wmbs_job_assoc.file AS fileid FROM wmbs_job_assoc
+                         INNER JOIN wmbs_job ON
+                           wmbs_job_assoc.job = wmbs_job.id
+                         INNER JOIN wmbs_jobgroup ON
+                           wmbs_job.jobgroup = wmbs_jobgroup.id
+                       WHERE wmbs_job.id = :jobid) job_files
+                      INNER JOIN wmbs_job_assoc ON
+                        job_files.fileid = wmbs_job_assoc.file
+                      INNER JOIN wmbs_job ON
+                        wmbs_job_assoc.job = wmbs_job.id
+                      INNER JOIN wmbs_jobgroup ON
+                        wmbs_job.jobgroup = wmbs_jobgroup.id
+                    WHERE wmbs_jobgroup.subscription = job_files.subscriptionid    
+                    GROUP BY job_files.subscriptionid, job_files.fileid"""    
+
     acquiredDelete = """DELETE FROM wmbs_sub_files_acquired
-                          WHERE subscription =
-                            (SELECT wmbs_subscription.id FROM wmbs_subscription
-                               INNER JOIN wmbs_jobgroup ON
-                                 wmbs_subscription.id = wmbs_jobgroup.subscription
-                               INNER JOIN wmbs_job ON
-                                 wmbs_jobgroup.id = wmbs_job.jobgroup
-                             WHERE wmbs_job.id = :jobid) AND file IN
-                               (SELECT file FROM
-                                  (SELECT wmbs_job_assoc.file AS file, wmbs_jobgroup.subscription AS subscription,
-                                          COUNT(*) AS total_jobs, SUM(wmbs_job.outcome) AS successful_jobs
-                                          FROM wmbs_job_assoc
-                                     INNER JOIN
-                                       (SELECT file FROM wmbs_job_assoc WHERE job = :jobid) job_input ON
-                                       wmbs_job_assoc.file = job_input.file
-                                     INNER JOIN wmbs_job ON
-                                       wmbs_job_assoc.job = wmbs_job.id
-                                     INNER JOIN wmbs_jobgroup ON
-                                       wmbs_job.jobgroup = wmbs_jobgroup.id
-                                   WHERE wmbs_jobgroup.subscription =
-                                     (SELECT subscription FROM wmbs_jobgroup
-                                        INNER JOIN wmbs_job ON
-                                          wmbs_jobgroup.id = wmbs_job.jobgroup
-                                      WHERE wmbs_job.id = :jobid)
-                                   GROUP BY wmbs_job_assoc.file, wmbs_jobgroup.subscription) file_table
-                                WHERE total_jobs = successful_jobs)"""
+                        WHERE subscription = :subid AND file = :fileid"""
 
     failedDelete = """DELETE FROM wmbs_sub_files_failed
-                          WHERE subscription =
-                            (SELECT wmbs_subscription.id FROM wmbs_subscription
-                               INNER JOIN wmbs_jobgroup ON
-                                 wmbs_subscription.id = wmbs_jobgroup.subscription
-                               INNER JOIN wmbs_job ON
-                                 wmbs_jobgroup.id = wmbs_job.jobgroup
-                             WHERE wmbs_job.id = :jobid) AND file IN
-                               (SELECT file FROM
-                                  (SELECT wmbs_job_assoc.file AS file, wmbs_jobgroup.subscription AS subscription,
-                                          COUNT(*) AS total_jobs, SUM(wmbs_job.outcome) AS successful_jobs
-                                          FROM wmbs_job_assoc
-                                     INNER JOIN
-                                       (SELECT file FROM wmbs_job_assoc WHERE job = :jobid) job_input ON
-                                       wmbs_job_assoc.file = job_input.file
-                                     INNER JOIN wmbs_job ON
-                                       wmbs_job_assoc.job = wmbs_job.id
-                                     INNER JOIN wmbs_jobgroup ON
-                                       wmbs_job.jobgroup = wmbs_jobgroup.id
-                                   WHERE wmbs_jobgroup.subscription =
-                                     (SELECT subscription FROM wmbs_jobgroup
-                                        INNER JOIN wmbs_job ON
-                                          wmbs_jobgroup.id = wmbs_job.jobgroup
-                                      WHERE wmbs_job.id = :jobid)
-                                   GROUP BY wmbs_job_assoc.file, wmbs_jobgroup.subscription) file_table
-                                WHERE total_jobs = successful_jobs)"""
-                                 
+                      WHERE subscription = :subid AND file = :fileid"""    
+
     sql = """INSERT INTO wmbs_sub_files_complete (file, subscription)
-               SELECT file, subscription FROM
-                 (SELECT wmbs_job_assoc.file AS file, wmbs_jobgroup.subscription AS subscription,
-                         COUNT(*) AS total_jobs, SUM(wmbs_job.outcome) AS successful_jobs
-                         FROM wmbs_job_assoc
-                    INNER JOIN
-                      (SELECT file FROM wmbs_job_assoc WHERE job = :jobid) job_input ON
-                      wmbs_job_assoc.file = job_input.file
-                    INNER JOIN wmbs_job ON
-                      wmbs_job_assoc.job = wmbs_job.id
-                    INNER JOIN wmbs_jobgroup ON
-                      wmbs_job.jobgroup = wmbs_jobgroup.id
-                  WHERE wmbs_jobgroup.subscription =
-                    (SELECT subscription FROM wmbs_jobgroup
-                       INNER JOIN wmbs_job ON
-                         wmbs_jobgroup.id = wmbs_job.jobgroup
-                     WHERE wmbs_job.id = :jobid)
-                  GROUP BY wmbs_job_assoc.file, wmbs_jobgroup.subscription) file_table
-               WHERE total_jobs = successful_jobs AND NOT EXISTS
-                 (SELECT file FROM wmbs_sub_files_complete
-                    WHERE subscription =
-                      (SELECT subscription FROM wmbs_jobgroup
-                         INNER JOIN wmbs_job ON
-                           wmbs_jobgroup.id = wmbs_job.jobgroup
-                       WHERE wmbs_job.id = :jobid) AND file IN
-                      (SELECT file FROM wmbs_job_assoc
-                       WHERE job = :jobid))"""
+               VALUES (:fileid, :subid)"""
     
     def execute(self, id, conn = None, transaction = False):
         if type(id) == list:
@@ -107,7 +52,20 @@ class CompleteInput(DBFormatter):
                 binds.append({"jobid": singleID})
         else:
             binds = {"jobid": id}
-            
+
+        result = self.dbi.processData(self.fileSelect, binds, conn = conn,
+                                      transaction = transaction)
+        possibleDeletes = self.formatDict(result)
+
+        binds = []
+        for possibleDelete in possibleDeletes:
+            if possibleDelete["total"] == possibleDelete["success"]:
+                binds.append({"fileid": possibleDelete["fileid"],
+                              "subid": possibleDelete["subscriptionid"]})
+
+        if len(binds) == 0:
+            return
+        
         self.dbi.processData(self.acquiredDelete, binds, conn = conn,
                              transaction = transaction)
         self.dbi.processData(self.failedDelete, binds, conn = conn,

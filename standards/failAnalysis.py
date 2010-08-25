@@ -4,7 +4,7 @@ import xml.dom.minidom
 import time
 import subprocess
 import urllib
-
+from WMCore.Database.CMSCouch import CouchServer
 try:
     import json
 except:
@@ -13,9 +13,10 @@ except:
 sys.path.append( os.path.realpath(os.path.join(os.getcwd(), "..",".." )) )
 import buildslaveconfig as buildslave
 
-couchURL = buildslave.conf['failTarget']
+url = buildslave.conf['failTarget'].strip('/').strip('buildbot-couch')
 
-
+couch = CouchServer(url)
+database = couch.connectDatabase('buildbot-couch')
 # what the slave does to us
 #                f.addStep(ShellCommand(command=['python','standards/wrapEnv.py','python26',
 #                                                'sqlite','python2.6','standards/failAnalysis.py',
@@ -46,8 +47,6 @@ handle.close()
 if len(xunit.getElementsByTagName('testsuite')) > 1:
     raise RuntimeError, "More than one test suite? need to handle this"
 longRunning = []
-
-documentsForCouch = { 'docs': [] }
 
 for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('testcase'):
     if case.hasAttribute('time'):
@@ -80,25 +79,9 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
                 "step": "notsure",
                 "reason": traceback
             }
-        documentsForCouch['docs'].append(myData)
+        database.queue(myData)
         
-curlcall = subprocess.Popen( [ 'curl', '-X', 'POST', couchURL, '-H', 'Content-Type: application/json',
-             '-d', urllib.quote(json.dumps(documentsForCouch, separators=(',',':')))],
-             stdout = sys.stdout,
-             stderr = sys.stderr)
-curlcall.communicate()
-        
-                
-        # what metson wants
-#{
-#    "test_name": test_name, 
-#    "builder": builder, 
-#    "timestamp": timestamp, 
-#    "bld_id": build_id, 
-#    "step": step,
-#    "reason": reason
-#}
-        #print message
+database.commit()
 
 longRunning.reverse()
 print "These are the longest-running tests:"

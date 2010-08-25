@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.39 2010/07/14 14:21:02 swakef Exp $"
-__revision__ = "$Revision: 1.39 $"
+__version__ = "$Id: ReReco.py,v 1.40 2010/07/14 16:28:51 mnorman Exp $"
+__revision__ = "$Revision: 1.40 $"
 
 import subprocess
 
@@ -43,7 +43,7 @@ def getTestArguments():
         "AcquisitionEra": "WMAgentCommissioning10",
         "Requestor": "sfoulkes@fnal.gov",
         "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
-        "CMSSWVersion": "CMSSW_3_5_8_patch3",
+        "CMSSWVersion": "CMSSW_3_5_8",
         "ScramArch": "slc5_ia32_gcc434",
         "ProcessingVersion": "v2scf",
         "SkimInput": "output",
@@ -182,8 +182,9 @@ class ReRecoWorkloadFactory(object):
             procTask.setInputReference(inputStep, outputModule = inputModule)
 
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
+        procTaskStageHelper = procTaskStageOut.getTypeHelper()
         procTaskCmsswHelper.setGlobalTag(self.globalTag)
-        procTaskCmsswHelper.setMinMergeSize(self.minMergeSize)
+        procTaskStageHelper.setMinMergeSize(self.minMergeSize)
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
         if configDoc != None:

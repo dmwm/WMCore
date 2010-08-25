@@ -10,8 +10,8 @@ class DefaultConfig(Configuration):
         self.component_('Webtools')
         self.Webtools.application = 'UnitTests'
         self.Webtools.log_screen = False
-        self.Webtools.access_file = '/dev/null'
-        self.Webtools.error_file = '/dev/null'
+        self.Webtools.access_file = '/home/sryu/log_access'
+        self.Webtools.error_file = '/home/sryu/log_error'
         self.Webtools.port = 8080
         self.Webtools.host = "localhost"
         self.component_('UnitTests')
@@ -60,6 +60,10 @@ class DefaultConfig(Configuration):
         
     def setFormatter(self, formatter):
         self.UnitTests.views.active.rest.formatter.object = formatter
+        
+    def getModelConfig(self):
+        return self.UnitTests.views.active.rest
+        
 
 def configureServer(restModel='WMCore.WebTools.RESTModel', das=False, config=None):
     """

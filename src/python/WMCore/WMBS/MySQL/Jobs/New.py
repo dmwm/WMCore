@@ -6,8 +6,8 @@ MySQL implementation of Jobs.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.11 2009/09/10 16:12:57 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: New.py,v 1.12 2009/09/10 16:47:28 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import time
 
@@ -15,10 +15,10 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class New(DBFormatter):
     sql = """INSERT INTO wmbs_job (jobgroup, name, state, state_time, 
-                                   couch_record, location) VALUES 
+                                   couch_record, cache_dir, location) VALUES 
               (:jobgroup, :name,
                (SELECT id FROM wmbs_job_state WHERE name = 'new'),
-               :state_time, :couch_record, 
+               :state_time, :couch_record, :cache_dir, 
                (SELECT id FROM wmbs_location WHERE site_name = :location))"""
 
     getIDsql = """SELECT id as id, name as name FROM wmbs_job WHERE name= :name AND jobgroup= :jobgroup"""
@@ -32,6 +32,7 @@ class New(DBFormatter):
             tmpDict["name"]         = job.get("name")
             tmpDict["couch_record"] = job.get("couch_record", None)
             tmpDict["location"]     = job.get("location", None)
+            tmpDict["cache_dir"]    = job.get("cache_dir", None)
             tmpDict["state_time"]   = int(time.time())
             binds.append(tmpDict)
 
@@ -45,7 +46,7 @@ class New(DBFormatter):
 
         return result
     
-    def execute(self, jobgroup = None, name = None, couch_record = None, location = None, 
+    def execute(self, jobgroup = None, name = None, couch_record = None, location = None, cache_dir = None,
                 conn = None, transaction = False, jobList = None):
 
         #Adding jobList enters bulk mode
@@ -68,7 +69,7 @@ class New(DBFormatter):
         elif jobgroup and name:
             binds = {"jobgroup": jobgroup, "name": name, 
                      "couch_record": couch_record, "state_time": int(time.time()),
-                     "location": location}
+                     "location": location, "cache_dir": cache_dir}
 
             self.dbi.processData(self.sql, binds, conn = conn,
                                  transaction = transaction)            

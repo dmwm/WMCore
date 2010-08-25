@@ -266,11 +266,11 @@ class ReqMgrRESTModel(RESTModel):
     def putAssignment(self, team, requestName):
         self.initThread()
         # see if it's already assigned
-        requestNamesAndIDs = ListRequests.listRequestsByTeam(team)
+        requestNamesAndIDs = ListRequests.listRequestsByTeam(urllib.unquote(team))
         if requestName in requestNamesAndIDs.keys():
             cherrypy.response.status = 400
             return "Already assigned to this team"
-        return ChangeState.assignRequest(requestName, team)
+        return ChangeState.assignRequest(requestName, urllib.unquote(team))
 
     def putUser(self, userName, email, dnName=None):
         """ Needs to be passed an e-mail address, maybe dnName """
@@ -294,7 +294,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def putTeam(self, team):
         self.initThread()
-        return ProdManagement.addTeam(team)
+        return ProdManagement.addTeam(urllib.unquote(team))
 
     def putMessage(self, request):
         self.initThread()

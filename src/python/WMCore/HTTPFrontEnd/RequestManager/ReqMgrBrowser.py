@@ -269,7 +269,7 @@ class ReqMgrBrowser(TemplatedPage):
         for team, value in kwargs.iteritems():
            if value != None and team != 'requestName':
                #ChangeState.assignRequest(kwargs['requestName'], team) 
-               self.jsonSender.put('/reqMgr/assignment/%s/%s' % (team, kwargs['requestName']) )
+               self.jsonSender.put('/reqMgr/assignment/%s/%s' % (urllib.quote(team), kwargs['requestName']) )
         raise cherrypy.HTTPRedirect('.')
     assignToTeams.exposed = True
 

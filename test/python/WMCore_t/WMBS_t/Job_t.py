@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.41 2010/04/26 20:34:11 mnorman Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: Job_t.py,v 1.42 2010/06/28 19:03:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.42 $"
 
 import unittest
 import logging
@@ -26,8 +26,7 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
-from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.JobStateMachine import DefaultConfig
+
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUID import makeUUID
 
@@ -562,9 +561,9 @@ class JobTest(unittest.TestCase):
         testJobA = Job(name = "TestJobA")
         testJobA.create(group = testJobGroup)
 
-        stateChanger = ChangeState(DefaultConfig.config,
-                                   "job_t_jsm_database")
-        stateChanger.propagate([testJobA], "created", "new")
+        changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
+        testJobA["state"] = "created"
+        changeStateAction.execute([testJobA])
 
         result = newestStateDAO.execute(subscription = testSubscription["id"])
 
@@ -581,7 +580,8 @@ class JobTest(unittest.TestCase):
         # the DAO as their state changes happened within the same second.
         time.sleep(5)
 
-        stateChanger.propagate([testJobB], "createfailed", "new")
+        testJobB["state"] = "createfailed"
+        changeStateAction.execute([testJobB])
 
         result = newestStateDAO.execute(subscription = testSubscription["id"])
 

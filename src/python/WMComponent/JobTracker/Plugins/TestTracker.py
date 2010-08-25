@@ -3,8 +3,8 @@
 #Basic model for a tracker plugin
 #Should do nothing
 
-__revision__ = "$Id: TestTracker.py,v 1.3 2009/11/17 17:39:14 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TestTracker.py,v 1.4 2009/12/02 20:21:41 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 import logging
@@ -92,14 +92,40 @@ class TestTracker(TrackerPlugin):
         Kill a list of jobs based on the WMBS job names
 
         """
+
+        foundJobsToKill = False
+        
         #Should already HAVE the ClassAds
-        #self.getClassAds()
         command = "condor_rm"
+        commandList = []
         for name in killList:
+            if not name in self.classAds.keys():
+                continue
+            commandList.append('%s -constraint \"WMAgent_JobID == %i\"' % (command, name))
             command = '%s %s' % (command, str(self.classAds[name]['ClusterId']))
+            foundJobsToKill = True
+
+        #It's possible you didn't find any jobs, or were passed none.  If so, do nothing
+        if not foundJobsToKill:
+            return None
+        
         
         #Now kill 'em
         logging.debug("condor_rm command: '%s'"%command)
+        sout    = os.popen(command)
+        content = sout.read()
+
+        return content
+
+    def purge(self):
+        """
+        Purge everything in the condor_schedd
+        If you're wondering whether or not to use this, DON'T USE IT!
+
+        """
+
+        command = "condor_rm -all"
+
         sout    = os.popen(command)
         content = sout.read()
 

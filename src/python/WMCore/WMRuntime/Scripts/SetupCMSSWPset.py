@@ -6,7 +6,7 @@ Create a CMSSW PSet suitable for running a WMAgent job.
 """
 
 import types
-import os
+import socket
 
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 
@@ -223,7 +223,7 @@ class SetupCMSSWPset(ScriptInterface):
             applyTweak(self.process, outTweak)
             
         # revlimiter for testing
-        # self.process.maxEvents.input = 2
+        #self.process.maxEvents.input = 2
         
         # accept an overridden TFC from the step
         if hasattr(step.application,'overrideCatalog'):
@@ -233,10 +233,10 @@ class SetupCMSSWPset(ScriptInterface):
 
         # If we're running on a FNAL worker node override the TFC so we can
         # test lustre.
-        hostname = os.environ.get("HOSTNAME", "NOTFNAL")
+        hostname = socket.gethostname()
         if hostname.startswith("cmswn") and hostname.endswith("fnal.gov"):
             self.process.source.overrideCatalog = \
-                cms.untracked.string("trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage-test.xml?protocol=dcap")            
+                cms.untracked.string("trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage-test.xml?protocol=direct")            
         
         self.process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
         self.process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")

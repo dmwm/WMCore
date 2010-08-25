@@ -3,8 +3,8 @@
 The DBSUpload algorithm
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.12 2009/09/25 21:53:27 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.13 2009/11/24 16:45:34 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import threading
 import logging
@@ -73,7 +73,9 @@ class DBSUploadPoller(BaseWorkerThread):
         logging.info("DBSURL %s"%self.dbsurl)
         args = { "url" : self.dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" : self.dbsversion }
         self.dbsapi = DbsApi(args)
-        self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version=self.dbsversion)
+        self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version=self.dbsversion, \
+                                   globalDBSUrl  = self.config.DBSUpload.globalDBSUrl, \
+                                   globalVersion =  self.config.DBSUpload.globalDBSVer)
         self.dbsreader = DBSReader(self.dbsurl, level='ERROR', user='NORMAL', version=self.dbsversion)
 
 
@@ -200,5 +202,5 @@ class DBSUploadPoller(BaseWorkerThread):
             self.uploadDatasets()
             #myThread.transaction.commit()
         except:
-            myThread.transaction.rollback()
+            #myThread.transaction.rollback()
             raise

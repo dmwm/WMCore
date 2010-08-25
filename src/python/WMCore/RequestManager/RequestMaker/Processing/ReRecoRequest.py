@@ -71,7 +71,7 @@ class ReRecoSchema(RequestSchema):
     def validate(self):
         RequestSchema.validate(self)
         if self['InputDataset'].count('/') != 3:
-            raise RuntimeError, "Need three slashes in InputDataset "+dataset
+            raise RuntimeError, "Need three slashes in InputDataset "+self['InputDataset']
 
 
 registerRequestType("ReReco", ReRecoRequest, ReRecoSchema)

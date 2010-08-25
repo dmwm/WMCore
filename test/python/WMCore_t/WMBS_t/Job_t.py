@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.27 2009/10/13 20:10:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: Job_t.py,v 1.28 2009/10/13 20:53:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import unittest
 import logging
@@ -111,7 +111,8 @@ class JobTest(unittest.TestCase):
         testWMBSFileset.create()
         
         testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
+                                        workflow = testWorkflow,
+                                        type = "Merge")
         testSubscription.create()
 
         testJobGroup = JobGroup(subscription = testSubscription)
@@ -621,24 +622,20 @@ class JobTest(unittest.TestCase):
         """
         _testJobCacheDir_
         
-        Check retrieval of the jobCache directory
+        Check retrieval of the jobCache directory.
         """
-
         testJobA = self.createTestJob()
-
         value = testJobA.getCache()
 
         self.assertEqual(value, None)
 
         testJobA.setCache('UnderTheDeepBlueSea')
-
         value = testJobA.getCache()
 
         self.assertEqual(value, 'UnderTheDeepBlueSea')
 
         return
-        
-    
+   
     def testGetOutputParentLFNs(self):
         """
         _testGetOutputParentLFNs_
@@ -860,6 +857,130 @@ class JobTest(unittest.TestCase):
                "Error: test sub has wrong number of failed files: %s" % failFiles        
         
         return
+
+    def testCompleteJobInput(self):
+        """
+        _testCompleteJobInput_
+
+        Verify the correct output of the CompleteInput DAO.  This should mark
+        the input for a job as complete once all the jobs that run over a
+        particular file have complete successfully.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task="Test")
+        bogusWorkflow = Workflow(spec = "spec1.xml", owner = "Steve",
+                                name = "wf002", task="Test")
+        testWorkflow.create()
+        bogusWorkflow.create()
+
+        testFileset = WMBSFileset(name = "TestFileset")
+        bogusFileset = WMBSFileset(name = "BogusFileset")
+        testFileset.create()
+        bogusFileset.create()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        bogusSubscription = Subscription(fileset = bogusFileset,
+                                         workflow = bogusWorkflow)
+        testSubscription.create()
+        bogusSubscription.create()
+
+        testFileA = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileB = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileA.create()
+        testFileB.create()
+                         
+        testFileset.addFile([testFileA, testFileB])
+        bogusFileset.addFile([testFileA, testFileB])        
+        testFileset.commit()
+        bogusFileset.commit()
+
+        testSubscription.acquireFiles([testFileA, testFileB])
+        bogusSubscription.acquireFiles([testFileA, testFileB])
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        bogusJobGroup = JobGroup(subscription = bogusSubscription)
+        testJobGroup.create()
+        bogusJobGroup.create()
+
+        testJobA = Job(name = "TestJobA", files = [testFileA])
+        testJobB = Job(name = "TestJobB", files = [testFileA])
+        testJobC = Job(name = "TestJobC", files = [testFileB])        
+        bogusJob = Job(name = "BogusJob", files = [testFileA, testFileB])
+        testJobA.create(group = testJobGroup)
+        testJobB.create(group = testJobGroup)
+        testJobC.create(group = testJobGroup)
+        bogusJob.create(group = bogusJobGroup)
+
+        testJobA["outcome"] = "success"
+        testJobB["outcome"] = "failure"
+        testJobC["outcome"] = "success"
+        testJobA.save()
+        testJobB.save()
+        testJobC.save()
+
+        completeInputAction = self.daoFactory(classname = "Jobs.CompleteInput")
+        completeInputAction.execute(jobID = testJobA["id"])
+
+        compFiles = len(testSubscription.filesOfStatus("Completed"))
+        assert compFiles == 0, \
+               "Error: test sub has wrong number of complete files: %s" % compFiles
+
+        testJobB["outcome"] = "success"
+        testJobB.save()
+
+        completeInputAction.execute(jobID = testJobB["id"])        
+
+        availFiles = len(testSubscription.filesOfStatus("Available"))
+        assert availFiles == 0, \
+               "Error: test sub has wrong number of available files: %s" % availFiles
+
+        acqFiles = len(testSubscription.filesOfStatus("Acquired"))
+        assert acqFiles == 1, \
+               "Error: test sub has wrong number of acquired files: %s" % acqFiles
+
+        compFiles = len(testSubscription.filesOfStatus("Completed"))
+        assert compFiles == 1, \
+               "Error: test sub has wrong number of complete files: %s" % compFiles
+
+        failFiles = len(testSubscription.filesOfStatus("Failed"))
+        assert failFiles == 0, \
+               "Error: test sub has wrong number of failed files: %s" % failFiles
+
+        availFiles = len(bogusSubscription.filesOfStatus("Available"))
+        assert availFiles == 0, \
+               "Error: test sub has wrong number of available files: %s" % availFiles
+
+        acqFiles = len(bogusSubscription.filesOfStatus("Acquired"))
+        assert acqFiles == 2, \
+               "Error: test sub has wrong number of acquired files: %s" % acqFiles
+
+        compFiles = len(bogusSubscription.filesOfStatus("Completed"))
+        assert compFiles == 0, \
+               "Error: test sub has wrong number of complete files: %s" % compFiles
+
+        failFiles = len(bogusSubscription.filesOfStatus("Failed"))
+        assert failFiles == 0, \
+               "Error: test sub has wrong number of failed files: %s" % failFiles        
+        
+        return
+
+    def testJobTypeDAO(self):
+        """
+        _testJobTypeDAO_
+
+        Verify that the Jobs.GetType DAO returns the correct job type.  The
+        job type is retrieved from the subscription type.
+        """
+        testJob = self.createTestJob()
+
+        jobTypeAction = self.daoFactory(classname = "Jobs.GetType")
+        jobType = jobTypeAction.execute(jobID = testJob["id"])
+
+        assert jobType == "Merge", \
+               "Error: GetJobType DAO returned the wrong job type."
+
+        return        
 
 if __name__ == "__main__":
     unittest.main() 

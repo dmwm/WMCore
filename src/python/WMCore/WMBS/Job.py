@@ -14,10 +14,11 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.31 2009/08/21 10:04:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: Job.py,v 1.32 2009/08/26 16:32:37 sfoulkes Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import datetime
+import simplejson
 from sets import Set
 
 from WMCore.DataStructs.Job import Job as WMJob
@@ -258,3 +259,45 @@ class Job(WMBSBase, WMJob):
                                     transaction = self.existingTransaction)
 
         return parentLFNs
+
+    def __to_json__(self, thunker):
+        """
+        __to_json__
+
+        Do some json serialization.
+        """
+        def buildFileDict(wmbsFile):
+            fileDict = {"last_event": wmbsFile["last_event"],
+                        "first_event": wmbsFile["first_event"],
+                        "lfn": wmbsFile["lfn"],
+                        "locations": list(wmbsFile["locations"]),
+                        "id": wmbsFile["id"],
+                        "cksum": wmbsFile["cksum"],
+                        "events": wmbsFile["events"],
+                        "merged": wmbsFile["merged"],
+                        "size": wmbsFile["size"],
+                        "runs": [],
+                        "parents": []}
+
+            for parent in wmbsFile["parents"]:
+                fileDict["parents"].append(buildFileDict(parent))
+
+            for run in wmbsFile["runs"]:
+                runDict = {"run_number": run.run,
+                           "lumis": run.lumis}
+                fileDict["runs"].append(runDict)
+                        
+            return fileDict
+
+        jobDict = {"name": self["name"], "state_time": self["state_time"],
+                   "couch_record": self["couch_record"], "mask": self["mask"],
+                   "attachments": self["attachments"],
+                   "retry_count": self["retry_count"], "state": self["state"],
+                   "jobgroup": self["jobgroup"],
+                   "outcome": self["outcome"], "id": self["id"],
+                   "input_files": []}
+
+        for inputFile in self["input_files"]:
+            jobDict["input_files"].append(buildFileDict(inputFile))
+
+        return simplejson.dumps(jobDict)

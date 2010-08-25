@@ -1,27 +1,18 @@
 #!/usr/bin/env python
 """
-DBS Buffer handler for JobSuccess event
+Default handler for Job Success events.
 """
 __all__ = []
+__revision__ = "$Id: JobSuccess.py,v 1.15 2009/05/15 16:54:51 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
-__revision__ = "$Id: JobSuccess.py,v 1.14 2009/01/14 22:07:25 afaq Exp $"
-__version__ = "$Revision: 1.14 $"
-__author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool
-from WMCore.Agent.Configuration import loadConfigurationFile
 
-#from WMComponent.DBSBuffer.Database.Interface.addToBuffer import AddToBuffer
-from WMCore.WMFactory import WMFactory
-
-#import cPickle
-import os
-import string
-import logging
 import exceptions
+import threading
 
-from ProdCommon.FwkJobRep.ReportParser import readJobReport
 
 #TODO: InvalidJobReport will come from DBSInterface or elsewhere
 class InvalidJobReport(exceptions.Exception):
@@ -40,7 +31,7 @@ class InvalidJobReport(exceptions.Exception):
 
 class JobSuccess(BaseHandler):
     """
-    Default handler for create failures.
+    Default handler for Job Success Events.
     """
 
     def __init__(self, component):
@@ -48,65 +39,19 @@ class JobSuccess(BaseHandler):
         # define a slave threadpool (this is optional
         # and depends on the developer deciding how he/she
         # wants to implement certain logic.
+        self.threadpool = ThreadPool(\
+            "WMComponent.DBSBuffer.Handler.JobSuccessSlave", \
+            self.component, 'JobSuccess', \
+            1)
+        myThread = threading.currentThread()
+        myThread.msgService.purgeMessages()
 
-        #print "I am not sure about thread pools here"
-
-        #self.threadpool = ThreadPool(\
-        #    "WMComponent.DBSBuffer.Handler.DefaultRunSlave", \
-        #    self.component, 'JobSuccess', \
-        #    self.component.config.DBSBuffer.maxThreads)
-
-        # this we overload from the base handler
-
-    def readJobReportInfo(self,jobReportFile):
-        """
-        _readJobReportInfo_
-
-        Read the info from jobReport file
-
-        """
-
-        jobReportFile=string.replace(jobReportFile,'file://','')
-        if not os.path.exists(jobReportFile):
-            logging.error("JobReport Not Found: %s" %jobReportFile)
-            raise InvalidJobReport(jobReportFile)
-        try:
-            jobreports=readJobReport(jobReportFile)
-        except:
-            logging.debug("Invalid JobReport File: %s" %jobReportFile)
-            raise InvalidJobReport(jobReportFile)
-
-        return jobreports
-
-
+     # this we overload from the base handler
     def __call__(self, event, payload):
         """
         Handles the event with payload, by sending it to the threadpool.
         """
         # as we defined a threadpool we can enqueue our item
         # and move to the next.
-        jobReports = self.readJobReportInfo(payload)
-        factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
-        addToBuffer=factory.loadObject("AddToBuffer")
-
-        for aFJR in jobReports:
-            for aFile in aFJR.files:
-                # This shouldn't be required any more
-                # Dataset is being added with workflow spec
-                for dataset in aFile.dataset:
-                    addToBuffer.addAlgo(dataset)                    
-                    addToBuffer.addDataset(dataset, algoInDBS=0)
-                    #Lets see if ALGO info is present in the dataset
-                    #### Lets fake test it
-                    #pset=aFile['PSetHash']="ABCDEFGHIJKL12345676"
-                    #print "FAKING PSetHash in file <<<<<<<<<"
-                    if aFile.has_key('PSetHash') and aFile['PSetHash'] != None:
-                       #Pass in the dataset, that contains all info about Algo
-                       # 
-                       addToBuffer.updateAlgo(dataset, pset)
-		dataset=aFile.dataset[0]
-		datasetPath='/'+dataset['PrimaryDataset']+'/'+ \
-                                        dataset['ProcessedDataset']+'/'+ \
-                                        dataset['DataTier']
-		addToBuffer.addFile(aFile, datasetPath) 
-
+        print "Thread with payload " + str(payload) + " is enqueued"
+        self.threadpool.enqueue(event, payload)

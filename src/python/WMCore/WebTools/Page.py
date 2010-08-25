@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.41 2010/04/16 20:46:32 sryu Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: Page.py,v 1.42 2010/04/26 19:45:27 sryu Exp $"
+__version__ = "$Revision: 1.42 $"
 
 import urllib
 import cherrypy
@@ -120,10 +120,21 @@ class SecuredPage(Page):
             self.debug("No cert found in a browser")
         return userdn
 
+def _setCherryPyHeaders(data, contentType, expires):
+    
+    cherrypy.response.headers['Content-Type'] = contentType
+    if data:
+        cherrypy.response.headers['Content-Length'] = len(data)
+    else:
+        cherrypy.response.headers['Content-Length'] = 0
+    cherrypy.lib.caching.expires(secs=expires, force = True)
+    #TODO: find a better way to generate Etag
+    cherrypy.response.headers['ETag'] = data.__str__().__hash__()
+
 def exposeatom (func):
-    def wrapper (self, *args, **kwds):
-        data = func (self, *args, **kwds)
-        cherrypy.response.headers['Content-Type'] = "application/atom+xml"
+    def wrapper (self, data, expires, contentType = "application/atom+xml"):
+        data = func (self, data)
+        _setCherryPyHeaders(data, contentType, expires)
         return self.templatepage('Atom', data = data,
                                  config = self.config,
                                  path = request.path_info)
@@ -133,9 +144,9 @@ def exposeatom (func):
     return wrapper
 
 def exposexml (func):
-    def wrapper (self, *args, **kwds):
-        data = func (self, *args, **kwds)
-        cherrypy.response.headers['Content-Type'] = "application/xml"
+    def wrapper (self, data, expires, contentType = "application/xml"):
+        data = func (self, data)
+        _setCherryPyHeaders(data, contentType, expires)
         return self.templatepage('XML', data = data,
                                  config = self.config,
                                  path = request.path_info)
@@ -149,12 +160,12 @@ def exposedasplist (func):
     Return data in XML plist format, 
     see http://docs.python.org/library/plistlib.html#module-plistlib
     """
-    def wrapper (self, *args, **kwds):
+    def wrapper (self, data, expires, contentType = "application/xml"):
         import plistlib
-        data_struct = runDas(self, func, *args, **kwds)
+        data_struct = runDas(self, func, data, expires)
         plist_str = plistlib.writePlistToString(data_struct)
         cherrypy.response.headers['ETag'] = data_struct['results'].__str__().__hash__()
-        cherrypy.response.headers['Content-Type'] = "application/xml"
+        _setCherryPyHeaders(plist_str, contentType, expires)
         return plist_str
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -171,8 +182,8 @@ def exposedasxml (func):
     result in an update in a cache
     TODO: "inherit" from the exposexml
     """
-    def wrapper (self, *args, **kwds):
-        das = runDas(self, func, *args, **kwds)
+    def wrapper (self, data, expires, contentType = "application/xml"):
+        das = runDas(self, func, data, expires)
         header = "<?xml version='1.0' standalone='yes'?>"
         keys = das.keys()
         keys.remove('results')
@@ -180,9 +191,8 @@ def exposedasxml (func):
         for key in keys:
             string = '%s %s="%s"' % (string, key, das[key])
         header = "%s\n<das %s>" % (header, string)
-
-        cherrypy.response.headers['Content-Type'] = "application/xml"
         xmldata = header + das['results'].__str__() + "</das>"
+        _setCherryPyHeaders(xmldata, contentType, expires)
         return xmldata
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -191,9 +201,10 @@ def exposedasxml (func):
 
 
 def exposetext (func):
-    def wrapper (self, *args, **kwds):
-        data = func (self, *args, **kwds)
-        cherrypy.response.headers['Content-Type'] = "text/plain"
+    def wrapper (self, data, expires, contentType = "text/plain"):
+        data = func (self, data)
+        data = str(data)
+        _setCherryPyHeaders(data, contentType, expires)
         return data
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -201,13 +212,13 @@ def exposetext (func):
     return wrapper
 
 def exposejson (func):
-    def wrapper (self, *args, **kwds):
+    def wrapper (self, data, expires, contentType = "application/json"):
         encoder = JSONEncoder()
-        data = func (self, *args, **kwds)
-        cherrypy.response.headers['Content-Type'] = "application/json"
+        data = func (self, data)
         try:
 #            jsondata = encoder.iterencode(data)
             jsondata = encoder.encode(data)
+            _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
             Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
@@ -218,14 +229,14 @@ def exposejson (func):
     return wrapper
 
 def exposejsonthunker (func):
-    def wrapper (self, *args, **kwds):
+    def wrapper (self, data, expires, contentType = "application/json+thunk"):
         thunker = JSONThunker()
         encoder = JSONEncoder()
-        data = func (self, *args, **kwds)
-        cherrypy.response.headers['Content-Type'] = "application/json+thunk"
+        data = func (self, data)
         try:
             data = thunker.thunk(data)
             jsondata = encoder.encode(data)
+            _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
             Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
@@ -245,14 +256,14 @@ def exposedasjson (func):
     result in an update in a cache
     TODO: "inherit" from the exposejson
     """
-    def wrapper (self, *args, **kwds):
+    def wrapper (self, data, expires, contentType = "application/json"):
         encoder = JSONEncoder()
-        data = runDas(self, func, *args, **kwds)
+        data = runDas(self, func, data, expires)
         
-        cherrypy.response.headers['Content-Type'] = "application/json"
         try:
 #            jsondata = encoder.iterencode(data)
             jsondata = encoder.encode(data)
+            _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
             Exception("Failed to json-ify obj '%s' type '%s'" % (data, type(data)))
@@ -263,9 +274,9 @@ def exposedasjson (func):
     return wrapper
 
 def exposejs (func):
-    def wrapper (self, *args, **kwds):
-        data = func (self, *args, **kwds)
-        cherrypy.response.headers['Content-Type'] = "application/javascript"
+    def wrapper (self, data, expires, contentType = "application/javascript"):
+        data = func (self, data)
+        _setCherryPyHeaders(data, contentType, expires)
         return data
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -273,22 +284,21 @@ def exposejs (func):
     return wrapper
 
 def exposecss (func):
-    def wrapper (self, *args, **kwds):
-        data = func (self, *args, **kwds)
-        cherrypy.response.headers['Content-Type'] = "text/css"
+    def wrapper (self, data, expires, contentType = "text/css"):
+        data = func (self, data)
+        _setCherryPyHeaders(data, contentType, expires)
         return data
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
 
-def runDas(self, func, *args, **kwds):
+def runDas(self, func, data, expires):
     """
     Run a query and produce a dictionary for DAS formatting
     """
     start_time = time.time()
-    expires = kwds.pop('expires', DEFAULT_EXPIRE)
-    results    = func(self, *args, **kwds)
+    results    = func(self, data)
     call_time  = time.time() - start_time
     res_expire = make_timestamp(expires)
     if  type(results) is types.ListType:

@@ -4,8 +4,8 @@ _DASRESTFormatter_
 
 A REST formatter that appends the DAS headers to the result data
 """
-__revision__ = "$Id: DASRESTFormatter.py,v 1.7 2010/02/08 12:25:12 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: DASRESTFormatter.py,v 1.8 2010/04/26 19:45:27 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 # expires is used by the decorator to set the expires header
 # pylint: disable-msg=W0613
@@ -15,8 +15,6 @@ __version__ = "$Revision: 1.7 $"
 from WMCore.WebTools.Page import exposedasjson, exposedasxml
 from WMCore.WebTools.Page import exposedasplist
 from WMCore.WebTools.RESTFormatter import RESTFormatter
-from WMCore.WebTools.Page import DEFAULT_EXPIRE
-
 
 class DASRESTFormatter(RESTFormatter):
     """
@@ -30,16 +28,16 @@ class DASRESTFormatter(RESTFormatter):
         self.supporttypes.update(mimes)
 
     @exposedasjson
-    def dasjson(self, data, expires=DEFAULT_EXPIRE):
+    def dasjson(self, data):
         "Return DAS compliant json"
         return data
     
     @exposedasxml
-    def xml(self, data, expires=DEFAULT_EXPIRE):
+    def xml(self, data):
         "Return DAS compliant xml"
         return data
     
     @exposedasplist
-    def plist(self, data, expires=DEFAULT_EXPIRE):
+    def plist(self, data):
         "Return DAS compliant plist xml"
         return data

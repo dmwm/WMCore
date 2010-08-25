@@ -6,8 +6,8 @@ Rest Model abstract implementation
 TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.59 2010/04/26 14:27:27 sryu Exp $"
-__version__ = "$Revision: 1.59 $"
+__revision__ = "$Id: RESTModel.py,v 1.60 2010/04/26 19:45:27 sryu Exp $"
+__version__ = "$Revision: 1.60 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -122,7 +122,7 @@ class RESTModel(WebAPI):
         if 'expires' in self.methods[verb][method].keys():
             return data, self.methods[verb][method]['expires']
         else:
-            return data, False
+            return data, DEFAULT_EXPIRE
                 
     def addDAO(self, verb, methodKey, daoStr, args=[], 
                validation=[], version=1, daoFactory = None,

@@ -19,11 +19,10 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.36 2010/04/22 19:58:51 sryu Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: RESTApi.py,v 1.37 2010/04/26 19:45:27 sryu Exp $"
+__version__ = "$Revision: 1.37 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
-from WMCore.WebTools.Page import make_rfc_timestamp
 from WMCore.WMFactory import WMFactory
 from cherrypy import expose, request, response, HTTPError
 from cherrypy.lib.cptools import accept
@@ -114,7 +113,7 @@ class RESTApi(WebAPI):
                                         'message': str(e)},
                                         format=kwargs.get('return_type', None))
     
-    def formatResponse(self, data, expires=False, format=None):
+    def formatResponse(self, data, expires=0, format=None):
         """
         
         data format can be anything API provides, but it will make sense 
@@ -129,18 +128,6 @@ class RESTApi(WebAPI):
             datatype = '*/*'
         else:
             datatype = accept(self.supporttypes)
-
-        if expires:
-            response.headers['Expires'] = make_rfc_timestamp(expires)
-        else:
-            #TODO: pick up the default expires from config
-            response.headers['Expires'] = make_rfc_timestamp(5*60)
             
-        data = self.formatter.format(data, datatype, expires)
-        response.headers['ETag'] = data.__str__().__hash__()
-        response.headers['Content-Type'] = datatype
-        if  data:
-            response.headers['Content-Length'] = len(data)
-        else:
-            response.headers['Content-Length'] = 0
-        return data
+        return self.formatter.format(data, datatype, expires)
+        

@@ -299,9 +299,9 @@ class PhEDEx(Service):
                 if dset['subscription']:
                     # dataset level subscription
                     if dset['name'] == item.split('#')[0]:
-                        nodes = [x['node'] for x in dset['subscription']
+                        seNames = [x['se'] for x in dset['subscription']
                                  if x['suspended'] == 'n']
-                        result[item].update(nodes)
+                        result[item].update(seNames)
                         break
 
             #if we have a block we must check for block level subscription also
@@ -312,9 +312,9 @@ class PhEDEx(Service):
                 for dset in response['dataset']:
                     for block in dset['block']:
                         if block['name'] == item:
-                            nodes = [x['node'] for x in block['subscription']
+                            seNames = [x['se'] for x in block['subscription']
                                      if x['suspended'] == 'n']
-                            result[item].update(nodes)
+                            result[item].update(seNames)
                             break
         return result
 

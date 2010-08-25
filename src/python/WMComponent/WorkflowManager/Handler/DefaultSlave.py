@@ -5,8 +5,8 @@ Default slave, handles loading of shared DB code
 
 __all__ = []
 __revision__ = \
-    "$Id: DefaultSlave.py,v 1.3 2009/02/05 23:21:43 jacksonj Exp $"
-__version__ = "$Revision: 1.3 $"
+    "$Id: DefaultSlave.py,v 1.4 2009/11/06 11:43:28 riahi Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 import pickle
@@ -41,6 +41,9 @@ class DefaultSlave(ThreadSlave):
 
     def __call__(self, parameters):
         """
-        Unpickle event payload
+        Unpickle event payload if it is pickled
         """
-        self.messageArgs = pickle.loads(parameters['payload'])
+        try:
+            self.messageArgs = pickle.loads(parameters['payload'])
+        except:
+            self.messageArgs = parameters['payload']

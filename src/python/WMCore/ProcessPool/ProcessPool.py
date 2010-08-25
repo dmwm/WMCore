@@ -10,6 +10,7 @@ import logging
 import os
 import threading
 import sys
+import traceback
 
 from logging.handlers import RotatingFileHandler
 
@@ -239,16 +240,26 @@ if __name__ == "__main__":
             input = {}
             for key in unicodeInput.keys():
                 input[str(key)] = unicodeInput[key]
-        except Exception, e:
+        except Exception, ex:
             break
 
-        #Run one piece of work
-        #Wait for output
-        output = slaveClass(parameters = input)
+        try:
+            output = slaveClass(parameters = input)
+        except Exception, ex:
+            crashMessage = "Slave process crashed with exception: " + str(ex)
+            crashMessage += "\nStacktrace:\n"
 
+            stackTrace = traceback.format_tb(sys.exc_info()[2], None)
+            for stackFrame in stackTrace:
+                crashMessage += stackFrame
+                
+            logging.error(crashMessage)
+            sys.exit(1)
+            
         if output != None:
             encodedOutput = jsonHandler.encode(output)
             sys.stdout.write("%s\n" % encodedOutput)
             sys.stdout.flush()
 
     logging.info("Process with PID %s finished" %(os.getpid()))
+    sys.exit(0)

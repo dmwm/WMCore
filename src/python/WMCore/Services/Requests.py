@@ -1,3 +1,14 @@
+#!/usr/bin/python
+"""
+_Requests_
+
+A set of classes to handle making http and https requests to a remote server and
+deserialising the response.
+"""
+
+__revision__ = "$Id: Requests.py,v 1.26 2009/12/02 10:16:09 metson Exp $"
+__version__ = "$Revision: 1.26 $"
+
 try:
     # Python 2.6
     import json

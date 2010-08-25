@@ -12,8 +12,8 @@ on the subset of jobs assigned to them.
 
 """
 
-__revision__ = "$Id: JobStatusWork.py,v 1.3 2010/06/10 16:16:18 mcinquil Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobStatusWork.py,v 1.4 2010/07/26 14:28:12 mcinquil Exp $"
+__version__ = "$Revision: 1.4 $"
 
 #import threading
 #from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
@@ -171,15 +171,17 @@ class JobStatusWork:
         while loop :
             ## TODO: improve exception handling
             try :
+                #binds = { \
+                #         'taskId': taskId, \
+                #         'status' :'C' \
+                #         }
+                binds = { \
+                         'taskId': taskId \
+                        }
                 task = bossSession.loadTask(taskId) #, deep = False)
-                logging.info("Loaded task %s"%str(taskId))
-                selectedJobs = bossSession.loadJobsByRunningAttr( \
-                                            binds = { \
-                                                      'taskId': taskId, \
-                                                       'status' :'C' \
-                                                    } \
-                                                                )
-                logging.info("Loaded jobs")
+                logging.info("Loaded task with id %s."%str(taskId))
+                selectedJobs = bossSession.loadJobsByRunningAttr( binds )
+                logging.info("Loaded %s jobs."%str(len(selectedJobs)))
                 #task.jobs = selectedJobs
 
                 #task = bossSession.load(

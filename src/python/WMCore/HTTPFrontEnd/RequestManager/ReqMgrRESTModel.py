@@ -354,7 +354,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def deleteTeam(self, team):
         self.initThread()
-        ProdManagement.removeTeam(team)
+        ProdManagement.removeTeam(urllib.unquote(team))
 
     
 

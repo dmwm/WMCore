@@ -12,14 +12,15 @@ to pass arbitrary objects if needed through the parameters
 attribute.
 """
 
-__revision__ = "$Id: ThreadSlave.py,v 1.6 2008/09/30 18:25:38 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ThreadSlave.py,v 1.7 2009/07/27 20:32:01 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
 import cPickle
 import logging
 import threading
+import os
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
@@ -94,9 +95,11 @@ class ThreadSlave:
         # to here:
         myThread.dbFactory = self.dbFactory
 
-        if self.component.config.CoreDatabase.dialect == 'mysql': 
-            myThread.dialect = 'MySQL'
-
+        if self.component.config.CoreDatabase.dialect:
+            myThread.dialect = self.component.config.CoreDatabase.dialect
+        else:
+            myThread.dialect = os.getenv("DIALECT")
+        
         #TODO: remove as much as possible logging statements or make them debug
         myThread.logger = logging.getLogger()
 
@@ -120,8 +123,8 @@ class ThreadSlave:
         myThread.msgService = factory.loadObject("MsgService")
         myThread.msgService.procid = self.procid
         logging.info("THREAD: Instantiating trigger service for thread")
-        WMFactory("trigger", "WMCore.Trigger")
-        myThread.trigger = myThread.factory['trigger'].loadObject("Trigger")
+        threadFactory = WMFactory("trigger", "WMCore.Trigger." + myThread.dialect)
+        myThread.trigger = threadFactory.loadObject("Trigger")
         # TODO: add trigger instantiation.
         logging.info("THREAD constructor finished")
 

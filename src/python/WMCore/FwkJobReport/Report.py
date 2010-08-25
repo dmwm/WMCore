@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.20 $"
-__revision__ = "$Id: Report.py,v 1.20 2010/04/09 20:24:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: Report.py,v 1.21 2010/04/12 20:36:15 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -627,6 +627,19 @@ class Report:
             listOfFiles.append(file)
 
         return listOfFiles
+
+    def stepSuccessful(self, stepName):
+        """
+        _stepSuccessful_
+
+        Determine wether or not a step was successful.
+        """
+        stepReport = self.retrieveStep(step = stepName)
+
+        if int(getattr(stepReport, "status", 1)) == 0:
+            return True
+
+        return False
 
     def getAllFileRefsFromStep(self, step):
         """

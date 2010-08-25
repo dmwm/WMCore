@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.13 2010/04/08 21:08:21 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: StageOut.py,v 1.14 2010/04/12 20:36:13 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import os
 import os.path
@@ -101,6 +101,10 @@ class StageOut(Executor):
             stepReport.unpersist(reportLocation)
             taskID = getattr(stepReport.data, 'id', None)
 
+            # Don't stage out files from bad steps.
+            if not stepReport.stepSuccessful(step):
+                continue
+            
             # Okay, time to start using stuff
             # Now I'm a bit confused about this; each report should ONLY
             # Have the results of that particular step in it,

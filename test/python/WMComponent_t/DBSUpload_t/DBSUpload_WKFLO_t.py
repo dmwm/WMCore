@@ -5,7 +5,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.1 $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -45,12 +45,23 @@ class DBSUploadTest(unittest.TestCase):
 
             	myThread = threading.currentThread()
             	myThread.logger = logging.getLogger('DBSUploadTest')
-            	myThread.dialect = 'MySQL'
+
+                if not os.getenv("DIALECT") == None:
+                    myThread.dialect = os.getenv("DIALECT")
+                else:
+                    myThread.dialect = 'MySQL'
+
+            	#options = {}
+            	#options['unix_socket'] = os.getenv("DBSOCK")
+            	#dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
+                #	options)
 
             	options = {}
-            	options['unix_socket'] = os.getenv("DBSOCK")
+                if not os.getenv("DBSOCK") == None:
+                    options['unix_socket'] = os.getenv("DBSOCK")
             	dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
                 	options)
+
 
 
             	myThread.dbi = dbFactory.connect()
@@ -95,15 +106,33 @@ class DBSUploadTest(unittest.TestCase):
         config.Agent.agentName = "DBS Upload"
 
         config.section_("General")
-        config.General.workDir = os.getenv("TESTDIR")
+        #config.General.workDir = os.getenv("TESTDIR")
+
+        if not os.getenv("TESTDIR") == None:
+            config.General.workDir = os.getenv("TESTDIR")
+        else:
+            config.General.workDir = os.getcwd()
         
         config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = 'mysql' 
+        if not os.getenv("DIALECT") == None:
+            config.CoreDatabase.dialect = os.getenv("DIALECT").lower()
         #config.CoreDatabase.socket = os.getenv("DBSOCK")
-        config.CoreDatabase.user = os.getenv("DBUSER")
+        if not os.getenv("DBUSER") == None:
+            config.CoreDatabase.user = os.getenv("DBUSER")
+        else:
+            config.CoreDatabase.user = os.getenv("USER")
+        if not os.getenv("DBHOST") == None:
+            config.CoreDatabase.hostname = os.getenv("DBHOST")
+        else:
+            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
         config.CoreDatabase.passwd = os.getenv("DBPASS")
-        config.CoreDatabase.hostname = os.getenv("DBHOST")
-        config.CoreDatabase.name = os.getenv("DBNAME")
+        if not os.getenv("DBNAME") == None:
+            config.CoreDatabase.name = os.getenv("DBNAME")
+        else:
+            config.CoreDatabase.name = os.getenv("DATABASE")
+        if not os.getenv("DATABASE") == None:
+            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+
 
         testDBSUpload = DBSUpload(config)
         
@@ -120,14 +149,15 @@ class DBSUploadTest(unittest.TestCase):
         #testDBSUpload.handleMessage('NewWorkflow', \
         #                            'C:\\WORK\\FJR\\RepackMerge-Run58733-RAW-BarrelMuon-Merge-Workflow.xml')
 
-        wkflo_path='/uscms/home/anzar/work/FJR/forAnzar/Run68141'
+        #wkflo_path = '/uscms/home/anzar/work/FJR/forAnzar/Run68141'
+        wkflo_path = '/uscms/home/anzar/work/FJR/forAnzar/Run67838/'
         for wkflo in os.listdir(wkflo_path):
-                if wkflo.endswith('.xml'):
+                if wkflo.endswith('.xml') and wkflo.find('workflow') != -1:
                         testDBSUpload.handleMessage('NewWorkflow', wkflo_path+'/'+wkflo)
 
-        for i in xrange(0, DBSUploadTest._maxMessage):
-            testDBSUpload.handleMessage('NewWorkflow', \
-                'YourMessageHere'+str(i))
+        #for i in xrange(0, DBSUploadTest._maxMessage):
+        #    testDBSUpload.handleMessage('NewWorkflow', \
+        #        'YourMessageHere'+str(i))
 
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\

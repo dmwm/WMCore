@@ -3,8 +3,8 @@
 The actual JobStatus process scheduling algorithm
 """
 __all__ = []
-__revision__ = "$Id: StatusScheduling.py,v 1.2 2010/05/18 07:31:01 mcinquil Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: StatusScheduling.py,v 1.3 2010/06/09 20:28:48 mcinquil Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import logging
@@ -13,7 +13,7 @@ from sets import Set
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
-from WMCore.DAOFactory                     import DAOFactory
+#from WMCore.DAOFactory                     import DAOFactory
 from WMCore.ProcessPool.ProcessPool        import ProcessPool
 
 from WMCore.BossLite.DbObjects.StatusDB    import StatusDB
@@ -31,25 +31,24 @@ class StatusScheduling(BaseWorkerThread):
 
         self.config = config
         #self.config.JobStatusLite.maxJobsCommit
-        #self.config.JobStatusLite.maxJobQuery
         #self.config.JobStatusLite.processes
         #self.config.JobStatusLite.taskLimit
 
-        myThread = threading.currentThread()
+        self.myThread = threading.currentThread()
 
         #self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-        #                             logger = myThread.logger,
-        #                             dbinterface = myThread.dbi)
+        #                             logger = self.myThread.logger,
+        #                             dbinterface = self.myThread.dbi)
 
         configDict = {'jobtype': "cmssw"}
 
 
         self.processPool = ProcessPool( \
-                           "JobStatusLite.StatusWorker", \
-                           config.JobStatusLite.processes, \
-                           componentDir = self.config.JobStatusLite.componentDir, \
-                           config = self.config, slaveInit = configDict \
-                         )
+                      "JobStatusLite.StatusWorker", \
+                      config.JobStatusLite.processes, \
+                      componentDir = self.config.JobStatusLite.componentDir, \
+                      config = self.config, slaveInit = configDict \
+                    )
 
         self.groupsUnderProcessing = Set([])
     
@@ -73,15 +72,13 @@ class StatusScheduling(BaseWorkerThread):
         """
         pool threads
         """
-        myThread = threading.currentThread()
-
         # Process new jobs
         JobStatusWork.addNewJobs(self.config.JobStatusLite.maxJobsCommit)
 
-        db = StatusDB()
+        statdb = StatusDB()
 
         # apply policy
-        groupstemp = self.applyPolicy(db)
+        groupstemp = self.applypolicy(statdb)
         groups = []
         import time
         for i in groupstemp:
@@ -107,9 +104,9 @@ class StatusScheduling(BaseWorkerThread):
 
         return
 
-    def applyPolicy(self, tdb):
+    def applypolicy(self, tdb):
         """
-        __applyPolicy__
+        __applypolicy__
 
         apply policy.
         """
@@ -121,11 +118,11 @@ class StatusScheduling(BaseWorkerThread):
         grlist = ",".join(["%s" % k for k in self.groupsUnderProcessing])
 
         # get information about tasks associated to these groups
-        jobPerTask = tdb.getUnprocessedJobs( grlist )
+        jobpertask = tdb.getUnprocessedJobs( grlist )
 
         # process all groups
         grid = 0
-        while jobPerTask != [] :
+        while jobpertask != [] :
 
             grid = grid + 1
             ntasks = 0
@@ -137,33 +134,34 @@ class StatusScheduling(BaseWorkerThread):
 
             # build group information
             groups[grid] = ''
-            jobsReached = 0
+            jobsreached = 0
 
             logging.debug('filling group ' + str(grid) + ' with largest tasks')
 
             # fill group with the largest tasks
-            while jobPerTask != [] and ntasks < self.config.JobStatusLite.taskLimit:
+            while jobpertask != [] and \
+                  ntasks < self.config.JobStatusLite.taskLimit:
                 try:
 
-                    task, jobs = jobPerTask[0]
+                    task, jobs = jobpertask[0]
 
                     # stop when there are enough jobs
-                    totreached = jobsReached + int(jobs)
+                    totreached = jobsreached + int(jobs)
                     if totreached > self.config.JobStatusLite.maxJobQuery \
-                           and jobsReached != 0:
+                           and jobsreached != 0:
                         break
 
                     # add task to group
                     groups[grid] += str(task) + ','
-                    jobsReached += int(jobs)
-                    jobPerTask.pop(0)
+                    jobsreached += int(jobs)
+                    jobpertask.pop(0)
 
                     # stop when there are too much tasks
                     ntasks += 1
 
                 # go to next task
                 except IndexError, ex:
-                    jobPerTask.pop(0)
+                    jobpertask.pop(0)
                     logging.info("\n\n" + str(ex) + "\n\n")
                     continue
 
@@ -171,33 +169,33 @@ class StatusScheduling(BaseWorkerThread):
                           ' with the smallest tasks')
 
             # fill group with the smallest tasks
-            while jobPerTask != [] and ntasks < 30 :
+            while jobpertask != [] and ntasks < 30 :
                 try:
-                    task, jobs = jobPerTask[0]
+                    task, jobs = jobpertask[0]
 
                     # stop when there are enough jobs
-                    totreached = jobsReached + int(jobs)
+                    totreached = jobsreached + int(jobs)
                     if totreached > self.config.JobStatusLite.maxJobQuery:
                         break
 
                     # add task to group
                     groups[grid] += task + ','
-                    jobsReached += int(jobs)
-                    jobPerTask.pop()
+                    jobsreached += int(jobs)
+                    jobpertask.pop()
 
                     # stop when there are too much tasks
                     ntasks += 1
 
                 # go to next task
                 except IndexError:
-                    jobPerTask.pop()
+                    jobpertask.pop()
                     continue
 
             logging.info("group " + str(grid) + " filled with tasks " \
                           + groups[grid] + " and total jobs " \
-                          + str(jobsReached))
+                          + str(jobsreached))
 
-        del jobPerTask[:]
+        del jobpertask[:]
         # process all groups
         for group, tasks in groups.iteritems():
 

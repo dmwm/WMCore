@@ -3,19 +3,23 @@
 The actual JobStatusLite poller algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobStatusPoller.py,v 1.1 2010/05/13 15:55:47 mcinquil Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobStatusPoller.py,v 1.2 2010/06/09 20:28:48 mcinquil Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import logging
-import traceback
+import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
-from WMCore.WMBS.Job          import Job
-from WMCore.DAOFactory        import DAOFactory
-#from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
+#from WMCore.DAOFactory        import DAOFactory
+from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
 from WMCore.BossLite.DbObjects.StatusDB import StatusDB
+
+from WMCore.BossLite.DbObjects.Job         import Job
+from WMCore.BossLite.DbObjects.Task        import Task
+from WMCore.BossLite.DbObjects.RunningJob  import RunningJob
+
 #from WMCore.BossLite.API.TrackingAPI      import TrackingAPI
 
 
@@ -33,11 +37,12 @@ class JobStatusPoller(BaseWorkerThread):
         self.config = config
         #self.config.JobStatusLite.maxJobQuery 
 
-        myThread = threading.currentThread()
+        self.myThread = threading.currentThread()
+        logging.info("Thread: [%s]" %str(self.myThread ))
 
         #self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-        #                             logger = myThread.logger,
-        #                             dbinterface = myThread.dbi)
+        #                             logger = self.myThread.logger,
+        #                             dbinterface = self.myThread.dbi)
 
         self.newAttrs = { 'processStatus' : 'not_handled',
                           'closed' : 'N' }
@@ -47,6 +52,9 @@ class JobStatusPoller(BaseWorkerThread):
                              'status' : 'K', 'closed' : 'N' }
         self.finishedAttrs = { 'processStatus' : 'handled',
                                'status' : 'SD', 'closed' : 'N' }
+
+        self.counters = ['pending', 'submitted', 'waiting', 'ready', \
+                         'scheduled', 'running', 'cleared', 'created', 'other']
 
     
     def setup(self, parameters):
@@ -70,75 +78,85 @@ class JobStatusPoller(BaseWorkerThread):
 	Performs the archiveJobs method, looking for each type of failure
 	And deal with it as desired.
         """
-        myThread = threading.currentThread()
+        logging.debug("Thread [%s]"%str(self.myThread))
 
-        # temporary comment
-        bliteapi = None #BossLiteAPI()
+        bliteapi = BossLiteAPI()
         trackdb  = StatusDB()
-
-        # temporary comment
-        #if bliteapi is None:
-        #    raise Exception("No valid instance of BossLiteAPI!")
-
-        if trackdb is None:
-            raise Exception("No valid instance of StatusDB")
 
         try:
             #myThread.transaction.begin()
-            logging.debug(str(myThread))
-            
             self.getStatistic(trackdb)
-
-            # temporary comments
-#            logging.info( 'Load Finished Jobs' )
-#            self.pollJobs( \
-#                           trackdb, \
-#                           bliteapi, \
-#                           self.config.JobStatusLite.maxJobQuery, \
-#                           self.finishedAttrs, \
-#                           'output_requested' \
-#                         )
-
-            # get jobs and handle them
-#            logging.info( 'Load Failed Jobs' )
-#            self.pollJobs(  \
-#                           trackdb, \
-#                           bliteapi, \
-#                           self.config.JobStatusLite.maxJobQuery, \
-#                           self.failedAttrs, \
-#                           'failed' \
-#                         )
-#            logging.info( 'Load Killed Jobs' )
-#            self.pollJobs(  \
-#                           trackdb, \
-#                           bliteapi, \
-#                           self.config.JobStatusLite.maxJobQuery, \
-#                           self.killedAttrs, \
-#                           'failed'
-#                         )
-
-            # notify new jobs
-#            logging.info( 'Load New Jobs' )
-#            self.pollJobs( \
-#                           trackdb, \
-#                           bliteapi, \
-#                           self.config.JobStatusLite.maxJobQuery, \
-#                           self.newAttrs, \
-#                           'handled', \
-#                           ['C', 'S'] \
-#                         )
-
             #myThread.transaction.commit()
         except Exception, ex:
             #myThread.transaction.rollback()
-            logging.info(str(ex))
-            logging.info( str(traceback.format_exc()) )
-            #raise
+            logging.error("Problem showing statistics: '%s'."%str(ex))
+
+        try:
+            logging.info( 'Load Finished Jobs' )
+            #myThread.transaction.begin()
+            self.pollJobs( \
+                           bliteapi, \
+                           self.config.JobStatusLite.maxJobQuery, \
+                           self.finishedAttrs, \
+                           'output_requested', \
+                           []
+                         )
+            #myThread.transaction.commit()
+        except Exception, ex: 
+            #myThread.transaction.rollback()
+            logging.error("Problem processing finished jobs: '%s'."%str(ex))
+
+        try:
+            # get jobs and handle them
+            logging.info( 'Load Failed Jobs' )
+            #myThread.transaction.begin()
+            self.pollJobs(  \
+                           bliteapi, \
+                           self.config.JobStatusLite.maxJobQuery, \
+                           self.failedAttrs, \
+                           'failed', \
+                           []
+                         )
+            #myThread.transaction.commit()
+        except Exception, ex:
+            #myThread.transaction.rollback()
+            logging.error("Problem processing failed jobs: '%s'."%str(ex))
+
+        try:
+            logging.info( 'Load Killed Jobs' )
+            #myThread.transaction.begin()
+            self.pollJobs(  \
+                           bliteapi, \
+                           self.config.JobStatusLite.maxJobQuery, \
+                           self.killedAttrs, \
+                           'failed', \
+                           []
+                         )
+            #myThread.transaction.commit()
+        except Exception, ex:
+            #myThread.transaction.rollback()
+            logging.error("Problem processing killed jobs: '%s'."%str(ex))
+
+        try:
+            logging.info( 'Load New Jobs' )
+            #myThread.transaction.begin()
+            self.pollJobs( \
+                           bliteapi, \
+                           self.config.JobStatusLite.maxJobQuery, \
+                           self.newAttrs, \
+                           'handled', [] ) #, \
+#                           ['C', 'S'] \
+#                         )
+            #myThread.transaction.commit()
+        except Exception, ex:
+            #myThread.transaction.rollback()
+            logging.error("Problem processing new jobs: '%s'."%str(ex))
 
         return
 
-    def pollJobs(self, trackdb, bliteapi, jobslimit, runningAttrs, \
-                       processStatus, skipStatus = None ):
+
+    def pollJobs(self, bliteapi, jobslimit, runningAttrs, \
+                       processStatus, skipStatus ):
         """
         __pollJobs__
 
@@ -146,7 +164,7 @@ class JobStatusPoller(BaseWorkerThread):
 
         """
 
-        offset  = 0
+        offset  = -1
         loop    = True
         newjobs = []
 
@@ -155,10 +173,23 @@ class JobStatusPoller(BaseWorkerThread):
             logging.debug("Max jobs to be loaded %s:%s " % \
                          (str( offset ), str( offset + jobslimit) ) )
 
-            #newjobs = bliteapi.loadJobsByRunningAttr(
-            #    runningAttrs=runningAttrs, \
-            #    limit=jobslimit, offset=offset
-            #    )
+            #logging.info(str(runningAttrs))
+            #logging.info(str([offset,jobslimit]))
+
+            try:
+                #self.myThread.transaction.begin()
+                newjobs = bliteapi.loadJobsByRunningAttr( \
+                           binds = runningAttrs, \
+                           limit = [offset, jobslimit] \
+                          )
+                #self.myThread.transaction.commit()
+            except Exception, ex:
+                #self.myThread.transaction.rollback()
+                logging.error(
+                  "Failed handling %s loaded jobs, waiting next round: %s"
+                  % ( processStatus, str( ex ) ) )
+                logging.error(str(ex))
+                continue
 
             logging.info("Polled jobs : " + str( len(newjobs) ) )
 
@@ -167,22 +198,46 @@ class JobStatusPoller(BaseWorkerThread):
                 loop = False
                 break
             else :
-                offset += jobslimit
+                offset = self.getMaxId(newjobs)
 
             try:
-                trackdb.processBulkUpdate( newjobs, processStatus, \
-                                           skipStatus )
-                logging.info( "Changed status to %s for %s loaded jobs" \
-                              % ( processStatus, str( len(newjobs) ) ) )
-
-            except Exception, err:
+                missingrunjob = []
+                #self.myThread.transaction.begin()
+                for jj in newjobs:
+                    logging.info("Modifying job [%s] with running job [%s]" \
+                                 %(str(jj.data['id']),str(jj.runningJob['id'])))
+                    if jj.runningJob is None:
+                        missingrunjob.append(jj)
+                    elif jj.runningJob['status'] not in skipStatus:
+                        jj.runningJob['processStatus'] = processStatus
+                        jj.runningJob['outputRequestTime'] = int(time.time())
+                        jj.runningJob.save(bliteapi.db)
+                #self.myThread.transaction.commit()
+            except Exception, ex:
+                #self.myThread.transaction.rollback()
                 logging.error(
-                    "Failed handling %s loaded jobs, waiting next round: %s" \
-                    % ( processStatus, str( err ) ) )
+                  "Failed handling %s loaded jobs, waiting next round: %s"
+                  % ( processStatus, str( ex ) ) )
+                logging.error(str(ex))
                 continue
 
-            del newjobs[:]
+            logging.info( "Changed status to %s for %s loaded jobs" \
+                              % ( processStatus, str( len(newjobs) ) ) )
 
+            del newjobs[:]
+        del newjobs[:]
+
+    def getMaxId(self, joblist):
+        """
+        _getMaxId_
+
+        Return the max if from a list of bosslite jobs
+        """
+        maxid = 0
+        for job in joblist:
+            if job.data['id'] > maxid:
+                maxid = job.data['id']
+        return maxid
 
     def getStatistic(self, trackdb):
         """
@@ -191,13 +246,15 @@ class JobStatusPoller(BaseWorkerThread):
         Poll the bliteDB for a summary of the job status
 
         """
-
         # summary of the jobs in the DB
-        result = trackdb.getJobsStatistic()
-        #track_api = TrackingAPI()
-        #result = track_api.getJobsStatistic()
-        self.counters = ['pending', 'submitted', 'waiting', 'ready', \
-                         'scheduled', 'running', 'cleared', 'created', 'other']
+        result = None
+        try:
+            #self.myThread.transaction.begin()
+            result = trackdb.getJobsStatistic()
+            #self.myThread.transaction.commit()
+        except Exception, ex:
+            #self.myThread.transaction.rollback()
+            logging.error("Problem processing statistic: '%s'."%str(ex))
 
         if result is not None:
 

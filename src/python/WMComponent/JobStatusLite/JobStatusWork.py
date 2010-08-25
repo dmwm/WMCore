@@ -12,8 +12,8 @@ on the subset of jobs assigned to them.
 
 """
 
-__revision__ = "$Id: JobStatusWork.py,v 1.1 2010/05/13 15:55:48 mcinquil Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobStatusWork.py,v 1.2 2010/06/09 20:28:48 mcinquil Exp $"
+__version__ = "$Revision: 1.2 $"
 
 #import threading
 #from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
@@ -32,11 +32,11 @@ import traceback
 import logging
 
 # Import API
-try:
-    from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
-    from WMCore.BossLite.API.BossLiteAPISched  import BossLiteAPISched
-except:
-    logging.error("Problem importing BossLiteAPI. Simulating status check.")
+#try:
+from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
+from WMCore.BossLite.API.BossLiteAPISched  import BossLiteAPISched
+#except:
+#    logging.error("Problem importing BossLiteAPI. Simulating status check.")
 
 from WMCore.BossLite.DbObjects.StatusDB import StatusDB
 #from WMCore.BossLite.API.TrackingAPI      import TrackingAPI
@@ -165,28 +165,39 @@ class JobStatusWork:
         loop = True
         runningAttrs = {'processStatus': '%handled',
                         'closed' : 'N'}
-        jobsToPoll = cls.params['jobsToPoll']
+        #jobsToPoll = cls.params['jobsToPoll']
 
         # perform query
         while loop :
             ## TODO: improve exception handling
             try :
-                task = bossSession.load(
-                    taskId, runningAttrs=runningAttrs, \
-                    strict=False, \
-                    limit=jobsToPoll, offset=offset )
+                task = bossSession.loadTask(taskId) #, deep = False)
+                logging.info("Loaded task %s"%str(taskId))
+                selectedJobs = bossSession.loadJobsByRunningAttr( \
+                                            binds = { \
+                                                      'taskId': taskId, \
+                                                       'status' :'C' \
+                                                    } \
+                                                                )
+                logging.info("Loaded jobs")
+                #task.jobs = selectedJobs
 
-                if task.jobs == [] :
-                    loop = False
-                    break
-                else:
-                    offset += jobsToPoll
+                #task = bossSession.load(
+                #    taskId, runningAttrs=runningAttrs, \
+                #    strict=False, \
+                #    limit=jobsToPoll, offset=offset )
+
+                #if task.jobs == [] :
+                #    loop = False
+                #    break
+                #else:
+                #    offset += jobsToPoll
 
                 if task['user_proxy'] is None :
                     task['user_proxy'] = ''
 
                 # Scheduler session
-                schedulerConfig = { 'timeout' : len( task.jobs ) * 30 }
+                schedulerConfig = { 'timeout' : len( task.jobs ) * 30, 'name': 'SchedulerGLite', 'user_proxy': task['user_proxy'] }
                 
                 schedSession = BossLiteAPISched( \
                                                  bossSession, \
@@ -212,5 +223,6 @@ class JobStatusWork:
                     "Failed to retrieve status for jobs of task %s : %s" \
                     %(str(taskId), str( e ) ) )
                 logging.error( traceback.format_exc() )
-                offset += int(cls.params['jobsToPoll'])
+                loop = False
+                #offset += int(cls.params['jobsToPoll'])
 

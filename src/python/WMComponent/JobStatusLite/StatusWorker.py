@@ -3,8 +3,8 @@
 The JobStatus subprocess worker for the status check/update
 """
 __all__ = []
-__revision__ = "$Id: StatusWorker.py,v 1.2 2010/05/18 07:31:01 mcinquil Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: StatusWorker.py,v 1.3 2010/06/09 20:28:48 mcinquil Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import logging
@@ -55,11 +55,11 @@ class StatusWorker:
             from WMCore.BossLite.API.BossLiteAPISched  import BossLiteAPISched
             JobStatusWork.doWork(group)
         except ImportError, ie:
-            logging.error("Problem importing BossLiteAPI. Simulating status check.")
+            logging.error("Problem importing BossLiteAPI(Sched). " + \
+                          "Simulating status check.")
             sleepmax = 3
             sleepspl = 0.1
             sleeptot = 0
-
             while(sleeptot < sleepmax):
                 time.sleep(sleepspl)
                 sleeptot += sleepspl

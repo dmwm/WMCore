@@ -4,10 +4,8 @@
 Defines default config values for JobStatusLite specific parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.1 2010/05/13 15:55:46 mcinquil Exp $"
-__version__ = "$Revision: 1.1 $"
-
-import os
+__revision__ = "$Id: DefaultConfig.py,v 1.2 2010/06/09 20:28:48 mcinquil Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Agent.Configuration import Configuration
 

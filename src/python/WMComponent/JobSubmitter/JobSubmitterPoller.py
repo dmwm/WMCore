@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.14 2010/03/03 16:42:57 mnorman Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.15 2010/03/03 19:24:15 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -181,6 +181,10 @@ class JobSubmitterPoller(BaseWorkerThread):
                 job.load()
                 job['type']     = jobType
                 job["location"] = self.findSiteForJob(job)
+                if not job['location']:
+                    # Then all sites are full for this round
+                    # Ignore this job until later
+                    continue
                 job['custom']['location'] = job['location']    #Necessary for JSON
                 # Take care of accounting for the job
                 #self.sites[job['location']][jobType]['task_running_jobs'] += 1

@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.53 2009/09/29 15:34:08 mnorman Exp $"
-__version__ = "$Revision: 1.53 $"
+__revision__ = "$Id: File.py,v 1.54 2009/10/22 18:41:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.54 $"
 
 from sets import Set
 
@@ -367,7 +367,7 @@ class File(WMBSBase, WMFile):
         # Add new locations if required
         if len(self["newlocations"]) > 0:
             addAction = self.daofactory(classname = "Files.SetLocation")
-            addAction.execute(file = self["lfn"], location = self["newlocations"],
+            addAction.execute(file = self["id"], location = self["newlocations"],
                               conn = self.getDBConn(),
                               transaction = self.existingTransaction())
 

@@ -47,12 +47,17 @@ config.TQComp.ComponentDir = '/tmp/TQ-test/TQComp'
 # Where to download specs and sandboxes from
 config.TQComp.downloadBaseUrl = 'http://glitece.ciemat.es:20030'
 
-# Root dir for all specs and sandboxes on disk (PA directory)
+# Where to upload job reports to (uncomment to change default)
+#config.TQComp.uploadBaseUrl = config.TQComp.downloadBaseUrl
+
+# Root dir for all specs/sandboxes/reports on disk (PA directory)
 # TODO: This should be set at some point by a joint PA+TQ installation
 config.TQComp.specBasePath = \
-         "/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator"
+         "/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/"
 config.TQComp.sandboxBasePath = \
-         "/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator"
+         "/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/"
+config.TQComp.reportBasePath = \
+         "/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/"
 
 # Message handlers could be added as well
 # (but there are none at this time)

@@ -5,8 +5,8 @@ _TQListener_
 
 """
 
-__revision__ = "$Id: TQListener.py,v 1.1 2009/04/24 09:59:15 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TQListener.py,v 1.2 2009/04/30 09:00:23 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import os
@@ -79,7 +79,8 @@ class TQListener(object):
                    "dbFactory": self.dbFactory,
                    "dialect": self.dialect,
                    "sandboxBasePath": self.myconfig.TQComp.sandboxBasePath,
-                   "specBasePath": self.myconfig.TQComp.specBasePath
+                   "specBasePath": self.myconfig.TQComp.specBasePath,
+                   "reportBasePath": self.myconfig.TQComp.reportBasePath
                  }
        
         self.httpTree = HttpTree(params)

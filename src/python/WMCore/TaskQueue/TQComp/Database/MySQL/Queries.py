@@ -9,9 +9,9 @@ This module implements the mysql backend for the TQComp
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.1 2009/04/27 08:21:20 delgadop Exp $"
+    "$Id: Queries.py,v 1.2 2009/04/30 09:00:23 delgadop Exp $"
 __version__ = \
-    "$Revision: 1.1 $"
+    "$Revision: 1.2 $"
 __author__ = \
     "delgadop@cern.ch"
 
@@ -89,24 +89,28 @@ class Queries(DBFormatter):
 
 
 
-   def getTasksWithFilter(self, filter, limit = None):
+   def getTasksWithFilter(self, filter, fields = None, limit = None):
        """
        Returns all tasks that match the specified filter. Filter must be
        a dict containing valid fields as keys and the corresponding values
-       to match. The optional argument limit can be used to limit the maximum
-       number of records returned.
+       to match. The optional argument fields may contain a list of 
+       fields to return. Otherwise, all are returned. The optional argument 
+       limit can be used to limit the maximum number of records returned.
        """
        
        filterStr = limitStr = ""
+       fieldsStr = '*'
 
-       if limit:
-           limitStr = "LIMIT %s" % (limit)
        if filter:
            filterStr = "WHERE %s" % reduce(commas, map(bindWhere, filter))
+       if fields:
+           fieldsStr = "%s" % (reduce(commas, fields))
+       if limit:
+           limitStr = "LIMIT %s" % (limit)
 
        sqlStr = """
-       SELECT * FROM tq_tasks %s %s
-       """ % (filterStr, limitStr)
+       SELECT %s FROM tq_tasks %s %s
+       """ % (fieldsStr, filterStr, limitStr)
 
        result = self.execute(sqlStr, filter)
        return self.format(result)

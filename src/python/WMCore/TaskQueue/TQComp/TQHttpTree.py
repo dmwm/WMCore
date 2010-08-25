@@ -10,17 +10,18 @@ messages and act on them according to configuration (see the 'RemoteMsg'
 module documentation).
 """
 
-__revision__ = "$Id: TQHttpTree.py,v 1.1 2009/04/24 09:59:15 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TQHttpTree.py,v 1.2 2009/04/30 09:00:23 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import threading
 
 import logging
+import sys
 from cherrypy import expose, request
 from cherrypy.lib.static import serve_file
 from CommonUtil import undojson
-from Constants import sandboxUrlDir, specUrlDir
+from Constants import sandboxUrlDir, specUrlDir, reportUrlDir
 
 from WMCore.Database.Transaction import Transaction
 
@@ -34,10 +35,13 @@ class HttpTree(object):
  
         The required params are as follow:
           handlerMap, formatter, dbFactory, dialect,
-          sandboxBasePath, specBasePath
-        """ 
+          sandboxBasePath, specBasePath, reportBasePath
+        """
+        # TODO:
         required = ("handlerMap", "formatter", "dbFactory", "dialect", \
-                    "sandboxBasePath", "specBasePath")
+                    "sandboxBasePath", "specBasePath", "reportBasePath")
+#        required = ("handlerMap", "formatter", "dbFactory", "dialect", \
+#                    "sandboxBasePath", "specBasePath")
 
         for param in required:
             if not param in params:
@@ -86,18 +90,68 @@ class HttpTree(object):
        """
 
 
+    @expose 
+    def upload(self, *params):
+        self.mylogger.debug("Received upload request with params as follows")
+
+        # TODO: Delete next line
+#        self.params['reportBasePath'] = '/pool/TaskQueue/playground/reports'
+        if params[0] == reportUrlDir:
+            subpath = ""
+            for p in params[1:]:
+                self.mylogger.debug("Param: %s" % p)
+                subpath = subpath + '/' + p
+            path = self.params['reportBasePath'] + subpath
+            try:
+                # Note: The parent dirs must be created beforehand by TQ
+                # e.g. when job was enqueued, or when it's assigned to a pilot
+                # Or: they are already there (by job creator or someone else)
+                all = request.body.read()
+                exists = False
+                # If the file exists (can be opened), we raise an error
+                try:
+                   open(path)
+                   exists = True
+                except:
+                   pass
+                if exists:
+                   raise Exception("Destination file exists. Can't overwrite!")
+                f2 = open(path, 'wb')
+                f2.write(all)
+                f2.close()
+                data = {'msgType':'FileStored', \
+                        'payload': {'Path': subpath, 'Length': len(all)}}
+                return self.params['formatter'].format({'msg': data})
+            except:
+                type, val, tb = sys.exc_info()
+                messg = "Problem storing file %s: %s - %s" % (path, type, val)
+                data = {'msgType': 'Error', \
+                        'payload': {'Error': messg}}
+                return self.params['formatter'].format({'msg': data})
+
+           
+
     @expose
     def static(self, *params):
 #        self.mylogger.debug("Asked for %s" % params[0])
         if params[0] == sandboxUrlDir:
-            localfile = self.params['sandboxBasePath']+'/'+params[1]
-            self.mylogger.debug("Serving %s" % localfile)
-            return serve_file(localfile)
+            subpath = ""
+            for p in params[1:]:
+                self.mylogger.debug("Param: %s" % p)
+                subpath = subpath + '/' + p
+            path = self.params['sandboxBasePath'] + subpath
+            self.mylogger.debug("Serving %s" % subpath)
+            self.mylogger.debug("Really serving %s" % path)
+            return serve_file(path)
         if params[0] == specUrlDir:
-            self.mylogger.debug("Serving %s" % params[1])
-            localfile = self.params['specBasePath']+'/'+params[1]
-            self.mylogger.debug("Really serving %s" % localfile)
-            return serve_file(localfile)
+            subpath = ""
+            for p in params[1:]:
+                self.mylogger.debug("Param: %s" % p)
+                subpath = subpath + '/' + p
+            path = self.params['specBasePath'] + subpath
+            self.mylogger.debug("Serving %s" % subpath)
+            self.mylogger.debug("Really serving %s" % path)
+            return serve_file(path)
        
     
     @expose 

@@ -5,32 +5,55 @@
 ======
 tqtalk
 ======
-Sends messages and receives responses from the TaskQueue
---------------------------------------------------------
+Sends messages/stores files and receives responses from the Task Queue
+----------------------------------------------------------------------
 
-You need to provide the endpoint of the TQ's Listener.
+Normal operation is to send messages to the Task Queue. If 
+the --put option is used, however, a store operation of 
+the specified file is performed.
 
-First argument should be a valid message type.
+You always need to provide the endpoint of the TQ's 
+Listener. In principle, only host and port.
 
-Second argument should be a python expression that will
-become the payload of the message (normally a dict with
-some expected attributes). The specified expression will
-be evaluated as python. Notice that this means that 
-strings should be quoted twice (as indicated by the 
-examples below).
+The arguments for messages are as follows:
+
+  First argument should be a valid message type.
+
+  Second argument should be a python expression that will
+  become the payload of the message (normally a dict with
+  some expected attributes). The specified expression will
+  be evaluated as python. Notice that this means that 
+  strings should be quoted twice (as indicated by the 
+  examples below).
+
+For PUT operations, only the file to store is required 
+as argument. But another option, --dest, must be included.
+The value of this option must be the destination path
+for the file in the server (if ended in '/', the basename
+of the local file to upload will be appended. This path
+should have been indicated by the TQ previously.
 
 
 SYNOPSIS
 ========
 tqtalk -e <endpoint> <msgType> <payload-expr>
 
+tqtalk -e <endpoint> --put --dest </some/path/file> <file>
+
 tqtalk [-u | -h]
 
 
 OPTIONS
 =======
--v, --verbose   Print of extra informative messages in the run
-                of the command. 
+-e, --endpoint  Endpoint of the TQ listener to post to (compulsory).
+                For the --put
+
+-p, --put       Store specified file on server (rather than default
+                behaviour of sending a message).
+
+-d, --dest      Destination path on the server for the uploaded file.
+
+-v, --verbose   Print extra informative messages.
 
 -u, --usage   Usage information is displayed.
 
@@ -56,6 +79,13 @@ ciemat.es:20030/static/sandbox//Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar
 "SpecUrl": "http://glitece.ciemat.es:20030/static/spec//Test-QCDpt_0_15-IDEAL_
 V9_TestPA01-8-JobSpec.xml", "TaskId": 10}}}
 
+
+$> tqtalk -e glitece:20030/reports/Test-QCDpt_0_15-IDEAL_V9/ --put /tmp/myfile.tgz
+
+File uploaded
+Response:
+{"msg": {"msgType": "FileStored", "payload": {"Dir": "/Test-QCDpt_0_15-IDEAL_V9", 
+"File": "myfile.tgz"}}
 """
 
 ####   IMPORTS   ####
@@ -64,9 +94,25 @@ from traceback import extract_tb
 import getopt
 from TQComp.CommonUtil import dojson, doencode
 import urllib2
+import httplib
 
 
 ####   CONSTANTS   ####
+
+
+####   CLASSES     ####
+class Error:
+    # indicates an HTTP error
+    def __init__(self, url, errcode, errmsg, headers):
+        self.url = url
+        self.errcode = errcode
+        self.errmsg = errmsg
+        self.headers = headers
+    def __repr__(self):
+        return (
+            "<Error for %s: %s %s>" %
+            (self.url, self.errcode, self.errmsg)
+            )
 
 
 ####   FUNCTIONS   ####
@@ -112,10 +158,10 @@ def main():
     """
  
     # Options
-    longoptions=["help", "usage", "verbose", "endpoint="]
+    longoptions=["help", "usage", "verbose", "endpoint=", "put", "dest="]
     try:
         # For options with args, just add ':' after the option letter here
-        optlist, args = getopt.getopt(sys.argv[1:], 'huve:', longoptions)
+        optlist, args = getopt.getopt(sys.argv[1:], 'huve:pd:', longoptions)
     except getopt.GetoptError, inst:
         err ("Bad usage: %s" % inst)
         usage()
@@ -123,6 +169,9 @@ def main():
     
     verb = False
     endpoint = None
+    put = False
+    dest = None
+    fileType = None
     for opt, val in optlist:
         if opt in ("-h", "--help"):
             help()
@@ -134,52 +183,112 @@ def main():
             verb = True
         elif opt in ("-e","--endpoint"):
             endpoint = val
+        elif opt in ("-p","--put"):
+            put = True
+        elif opt in ("-d","--dest"):
+            dest = val
  
-    # Endpoing 
+    # Endpoint 
     if not endpoint:
         err("You need to provide and endpoint!")
         usage()
         return 2
             
     # Args           
-    if(len(args)<2):
-        err("Not enough input arguments!")
-        usage()
-        return 2
+    if not put:
+        if len(args) < 2:
+            err("Not enough input arguments!")
+            usage()
+            return 2
+    else:
+        if not dest:
+            err("For PUT operations, the --dest option is compulsory!")
+            usage()
+            return 2
   
  
     #### REAL MAIN ####
+
+    if not put:
  
-    baseurl = "http://%s/msg" % (endpoint)
-    if verb:
-        print "-- Base URL: %s" % baseurl
-    
-    try:
+        baseurl = "http://%s/msg" % (endpoint)
         if verb:
-            print "-- Payload: %s" % args[1]
-        expr = eval(args[1])
-        if verb:
-            print "-- Evaluated: %s" % expr
-        expr = dojson(expr)
-        if verb:
-            print "-- Json: %r" % expr
+            print "-- Base URL: %s" % baseurl
+        
+        try:
+            if verb:
+                print "-- Payload: %s" % args[1]
+            expr = eval(args[1])
+            if verb:
+                print "-- Evaluated: %s" % expr
+            expr = dojson(expr)
+            if verb:
+                print "-- Json: %r" % expr
 
-        postargs = doencode((("msgType", "%s" % args[0]), ("payload",expr)))
-        if verb:
-            print "-- Encoded: %r" % postargs
-            
-        conn = urllib2.urlopen(baseurl, postargs)
-        all  = conn.readlines()
-        conn.close()
-        print "\nMessage sent"
-        print "Response:"
-        for line in all:
-            print line
+            postargs = doencode((("msgType", "%s" % args[0]), ("payload",expr)))
+            if verb:
+                print "-- Encoded: %r" % postargs
+                
+            conn = urllib2.urlopen(baseurl, postargs)
+            all  = conn.readlines()
+            conn.close()
+            print "\nMessage sent"
+            print "Response:"
+            for line in all:
+                print line
 
-    except:
-        type, val, tb = sys.exc_info()
-        err("Error with arg %s: %s - %s. Trace: %s" % \
-           (args[1], type, val, extract_tb(tb, limit=5)))
+        except:
+            type, val, tb = sys.exc_info()
+            err("Error with arg %s: %s - %s. Trace: %s" % \
+               (args[1], type, val, extract_tb(tb, limit=5)))
+
+    else:
+        try:
+            if not dest.endswith('/'):
+                path = dest
+            else:
+                basefile = args[0].split('/')[-1]
+                path = dest + basefile
+
+            if verb:
+                print "-- Dest path: %s" % path
+
+            http = httplib.HTTP(endpoint)
+            USER_AGENT = 'tqtalk'
+
+            f = open(args[0])
+            data = f.read()
+            f.close()
+
+            # write header
+            http.putrequest("PUT", path)
+            http.putheader("User-Agent", USER_AGENT)
+            http.putheader("Host", endpoint.split(':')[0])
+            if fileType:
+                http.putheader("Content-Type", filteType)
+            else:
+                http.putheader("Content-Type", "application/octet-stream")
+            http.putheader("Content-Length", str(len(data)))
+            http.endheaders()
+
+            # write body
+            http.send(data)
+
+            # get response
+            errcode, errmsg, headers = http.getreply()
+
+            if errcode != 200:
+                raise Error(endpoint+path, errcode, errmsg, headers)
+
+            file = http.getfile()
+            lines = file.readlines()
+            for line in lines:
+                    print line
+
+        except:
+            type, val, tb = sys.exc_info()
+            err("Error when uploading %s: %s - %s. Trace: %s" % \
+               (args[0], type, val, extract_tb(tb, limit=5)))
 
  
     # Exit successfully

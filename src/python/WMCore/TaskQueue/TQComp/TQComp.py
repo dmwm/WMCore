@@ -4,8 +4,8 @@
 Main component of the Task Queue
 """
 
-__revision__ = "$Id: TQComp.py,v 1.1 2009/04/24 09:59:15 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TQComp.py,v 1.2 2009/04/30 09:00:22 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import os
@@ -36,12 +36,13 @@ class TQComp(Harness):
         Constructor. Passes config to its parent WMCore.Agent.Harness.
         It also checks that some required configuration options are 
         present:
-          downloadBaseUrl, sandboxBasePath, specBasePath
+          downloadBaseUrl, sandboxBasePath, specBasePath, reportBasePath
         """
         Harness.__init__(self, config)
         print (config)
         
-        required = ["downloadBaseUrl", "sandboxBasePath", "specBasePath"]
+        required = ["downloadBaseUrl", "sandboxBasePath", \
+                    "specBasePath", "reportBasePath" ]
         for param in required:
             if not hasattr(self.config.TQComp, param):
                 messg = "%s required in TQComp configuration" % param
@@ -95,7 +96,12 @@ class TQComp(Harness):
         self.listener.setHandler('getTask', \
            'TQComp.ListenerHandler.GetTaskHandler', params)
            
-        params = None
+        params = {}
+        if hasattr(self.config.TQComp, 'uploadBaseUrl'):
+            params['uploadBaseUrl'] = self.config.TQComp.uploadBaseUrl
+        else:
+            params['uploadBaseUrl'] = self.config.TQComp.downloadBaseUrl
+        params['specBasePath'] = self.config.TQComp.specBasePath
         self.listener.setHandler('taskEnd', \
            'TQComp.ListenerHandler.TaskEndHandler', params)
         self.listener.startHttpServer()

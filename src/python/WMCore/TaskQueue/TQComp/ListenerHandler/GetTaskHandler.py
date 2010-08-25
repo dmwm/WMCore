@@ -3,8 +3,8 @@
 Base handler for getTask.
 """
 __all__ = []
-__revision__ = "$Id: GetTaskHandler.py,v 1.1 2009/04/27 07:52:27 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetTaskHandler.py,v 1.2 2009/04/30 09:00:23 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 #from WMCore.Agent.BaseHandler import BaseHandler
 #from WMCore.ThreadPool.ThreadPool import ThreadPool

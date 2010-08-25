@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.54 2010/04/15 15:09:31 metson Exp $"
-__version__ = "$Revision: 1.54 $"
+__revision__ = "$Id: CMSCouch.py,v 1.55 2010/04/21 11:11:36 metson Exp $"
+__version__ = "$Revision: 1.55 $"
 
 try:
     # Python 2.6
@@ -358,7 +358,14 @@ class CouchServer(CouchDBRequests):
 
     def __str__(self):
         return self.listDatabases().__str__()
-
+    
+    def replicate(self, source, destination, continuous=False, create_target=False):
+        #TODO: how to protect from missing http://?
+        self.post('/_replicate', 
+                  data={"source":source,
+                        "target":destination, 
+                        "continuous":continuous,
+                        "create_target":create_target})
 
 # define some standard couch error classes
 # from:

@@ -224,12 +224,7 @@ def loadConfig(configPath, workloadSandbox):
     loadedConfig = imp.load_module(cfgBaseName, modPath[0],
                                    modPath[1], modPath[2])
 
-    pickledConfigName = os.path.join(os.getcwd(), workloadSandbox, "pickledConfig.pkl")
-    pickledConfigHandle = open(pickledConfigName, "w")
-    pickle.dump(loadedConfig.process, pickledConfigHandle)
-    pickledConfigHandle.close()
-
-    return (loadedConfig, pickledConfigName)
+    return loadedConfig
 
 def outputModulesFromConfig(configHandle):
     """
@@ -240,8 +235,8 @@ def outputModulesFromConfig(configHandle):
     for outputModuleName in configHandle.process.outputModules.keys():
         outputModule = getattr(configHandle.process, outputModuleName)
         if hasattr(outputModule, "dataset"):
-            outputModules[outputModuleName] = {"dataTier": str(getattr(outputModule.dataset, "dataTier", None)),
-                                               "filterName": str(getattr(outputModule.dataset, "filterName", None))}
+            outputModules[outputModuleName] = {"dataTier": str(getattr(outputModule.dataset, "dataTier", None).value()),
+                                               "filterName": str(getattr(outputModule.dataset, "filterName", None).value())}
 
     return outputModules
 
@@ -350,12 +345,11 @@ if __name__ == "__main__":
 
     print "Loading config..."
     setupCMSSWEnv("CMSSW_3_5_8_patch3")
-    (configHandle, pickledConfig) = loadConfig(processingConfig, workloadSandbox)
+    configHandle = loadConfig(processingConfig, workloadSandbox)
 
     print "Adding config to cache..."
     myConfigCache = WMConfigCache(dbname2 = configCacheDBName, dburl = couchUrl)    
-    (configDoc, revision) = myConfigCache.addConfig(pickledConfig)
-    (configDoc, revision) = myConfigCache.addOriginalConfig(configDoc, revision, processingConfig)
+    (configDoc, revision) = myConfigCache.addConfig(processingConfig)
     
     outputModuleInfo = outputModulesFromConfig(configHandle)
 

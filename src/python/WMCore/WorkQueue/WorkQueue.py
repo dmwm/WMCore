@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.78 2010/02/26 15:28:46 swakef Exp $"
-__version__ = "$Revision: 1.78 $"
+__revision__ = "$Id: WorkQueue.py,v 1.79 2010/02/26 17:51:42 swakef Exp $"
+__version__ = "$Revision: 1.79 $"
 
 
 import time
@@ -553,9 +553,13 @@ class WorkQueue(WorkQueueBase):
         elements = self.status(after = since, dictKey = "ParentQueueId")
 
         # apply end policy to elements grouped by parent
-        items = tuple(endPolicy(group,
-                           self.params['EndPolicySettings']) for \
-                                                    group in elements.values())
+        items = [dict(endPolicy(group,
+                           self.params['EndPolicySettings'])) for \
+                                                    group in elements.values()]
+        for i in items:
+            i.remove('Elements')
+            i.remove('WMSpec')
+
         if items:
             self.logger.debug("Update parent queue with: %s" % str(items))
             try:
@@ -568,6 +572,7 @@ class WorkQueue(WorkQueueBase):
                 # log a failure to communicate
                 msg = "Unable to send update to parent queue, error: %s"
                 self.logger.warning(msg % str(ex))
+                result = {}
 
             # some of our element status's may be overriden by the parent
             # e.g. if request is canceled at top level

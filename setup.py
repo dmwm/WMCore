@@ -3,8 +3,8 @@ from distutils.core import setup, Command
 from unittest import TextTestRunner, TestLoader, TestSuite
 from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
-import os
-
+import os, sys
+from pylint import lint
 try:
     from pylint import lint
 except:
@@ -39,9 +39,9 @@ class TestCommand(Command):
         # Add the test and src directory to the python path
         testspypath = '/'.join([self._dir, 'test/python/'])
         srcpypath = '/'.join([self._dir, 'src/python/']) 
-        oldpypath = os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = ':'.join([oldpypath, testspypath, srcpypath])
-        print os.environ['PYTHONPATH']
+        sys.path.append(testspypath)
+        sys.path.append(srcpypath)
+        
         # Walk the directory tree
         for dirpath, dirnames, filenames in os.walk('./test/python/WMCore_t'):
             # skipping CVS directories and their contents
@@ -65,9 +65,6 @@ class TestCommand(Command):
         
         t = TextTestRunner(verbosity = 1)
         t.run(testsuite)
-        
-        # Reset the python path
-        os.environ['PYTHONPATH'] = oldpypath
         
 class CleanCommand(Command):
     """
@@ -115,8 +112,7 @@ class LintCommand(Command):
         files = [ ]
         
         srcpypath = '/'.join([self._dir, 'src/python/'])
-        oldpypath = os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = ':'.join([oldpypath, srcpypath])
+        sys.path.append(srcpypath) 
         
         # Walk the directory tree
         for dirpath, dirnames, filenames in os.walk('./src/python/'):
@@ -139,9 +135,7 @@ class LintCommand(Command):
         # Could run a global test as:
         #input = ['--rcfile=standards/.pylintrc']
         #input.extend(files)
-        #lint.Run(input)
-        
-        os.environ['PYTHONPATH'] = oldpypath          
+        #lint.Run(input)        
                     
 def getPackages(package_dirs = []):
     packages = []

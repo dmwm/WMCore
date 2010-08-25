@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.29 2009/06/08 19:05:21 valya Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: Page.py,v 1.30 2009/06/08 20:19:05 valya Exp $"
+__version__ = "$Revision: 1.30 $"
 
-import md5
 import urllib
 import cherrypy
 from cherrypy import log as cplog
@@ -15,6 +14,14 @@ try:
 except:
     # Prior python 2.6 json comes from simplejson
     from simplejson import JSONEncoder
+
+try:
+    # with python 2.5
+    import hashlib
+except:
+    # prior python 2.5
+    import md5
+
 import logging, os, types
 import time
 from datetime import datetime, timedelta
@@ -303,7 +310,12 @@ def runDas(self, func, *args, **kwds):
         res_version = row['version']
     else:
         res_version = 'unknown'
-    keyhash = md5.new()
+    try:
+        keyhash = hashlib.md5()
+    except:
+        # prior python 2.5
+        keyhash = md5.new()
+
     keyhash.update(str(results))
     res_checksum = keyhash.hexdigest()
     dasdata = {'application':'%s.%s' % (self.config.application, func.__name__),

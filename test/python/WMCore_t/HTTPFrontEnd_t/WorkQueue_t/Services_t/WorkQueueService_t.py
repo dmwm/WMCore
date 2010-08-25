@@ -4,7 +4,7 @@ Unittest file for WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueService.py
 """
 
 __revision__ = "$Id"
-__version__ = "$Revision: 1.8 $"
+__version__ = "$Revision: 1.1 $"
 
 
 import os
@@ -131,7 +131,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         
         testName = inspect.stack()[0][3]
         inpt = { "elementIDs": [1] }        
-        data, exp = self._tester(testName, "GET", 200, "status/", inpt)
+        data, exp = self._tester(testName, "POST", 200, "status/", inpt)
 
         self.assertEqual(len(data), 1, "only 1 element needs to be back, got %s" % len(data))
         self.assertEqual(data[0]["Id"], 1, "expected Id 1, got %s" % data[0]["Id"])
@@ -146,7 +146,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         testName = inspect.stack()[0][3]
         inpt = { "name" : "some-non-existing-name" }
         # raises HTTPError in the cherrypy application
-        data, exp = self._tester(testName, "POST", 404, "wf/", inpt)
+        data, exp = self._tester(testName, "GET", 404, "wf/", inpt)
         #print data
         
         # no workflow appear to the in the directory, don't know what else to test

@@ -14,8 +14,8 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.7 2010/03/10 12:58:19 maxa Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.1 2010/03/11 18:07:49 sryu Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 

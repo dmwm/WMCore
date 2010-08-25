@@ -18,11 +18,11 @@ class ReqMgrBrowser(TemplatedPage):
         self.templatedir = __file__.rsplit('/', 1)[0]
         print self.templatedir
         self.urlPrefix = 'http://%s/download/?filepath=' % config.reqMgrHost
-        self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'RequestPriority', 'RequestStatus', 'Complete', 'Success']
+        self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'ReqMgrRequestBasePriority', 'RequestStatus', 'Complete', 'Success']
         self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged', 'Complete':'percentComplete', 'Success' : 'percentSuccess'}
         self.linkedFields = {'RequestName':'requestDetails'}
         self.adminMode = True
-        self.adminFields = {'RequestStatus':'statusMenu', 'RequestPriority':'priorityMenu'}
+        self.adminFields = {'RequestStatus':'statusMenu', 'ReqMgrRequestBasePriority':'priorityMenu'}
         self.requests = []
         configCacheUrl = config.configCacheUrl
         self.configCache = WMConfigCache('reqmgr', configCacheUrl)
@@ -31,6 +31,7 @@ class ReqMgrBrowser(TemplatedPage):
 
     def index(self):
         requests = self.getRequests()
+        print str(requests)
         tableBody = self.drawRequests(requests)
         return self.templatepage("ReqMgrBrowser", fields=self.fields, tableBody=tableBody)
     index.exposed = True
@@ -53,6 +54,7 @@ class ReqMgrBrowser(TemplatedPage):
     def requestDetails(self, requestName):
         result = ""
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
+        print str(request)
          # Pull in the workload
         helper = WMWorkloadHelper()
         pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
@@ -74,7 +76,7 @@ class ReqMgrBrowser(TemplatedPage):
         self.addHtmlLinks(d)
         assignments= self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0]
         adminHtml = self.statusMenu(requestName, request['RequestStatus']) \
-                  + self.priorityMenu(requestName, request['RequestPriority'])
+                  + ' Priority ' + self.priorityMenu(requestName, request['ReqMgrRequestBasePriority'])
         return self.templatepage("Request", requestSchema=d,
                                 workloadDir = self.workloadDir, 
                                 docId=docId, assignments=assignments,
@@ -166,6 +168,7 @@ class ReqMgrBrowser(TemplatedPage):
         html = defaultField + '&nbsp<SELECT NAME="%s:status"> <OPTION></OPTION>' % requestName
         for field in RequestStatus.NextStatus[defaultField]:
 	    html += '<OPTION>%s</OPTION>' % field
+        html += '</SELECT>'
         return html
 
     def priorityMenu(self, requestName, defaultPriority):
@@ -238,10 +241,10 @@ class ReqMgrBrowser(TemplatedPage):
             urd += 'priority='+priority
             message += ' priority='+priority
         self.jsonSender.put(urd)
-        if status.startswith("assigned"):
+        if status == "assigned":
            # make a page to choose teams
            return self.assign(requestName)
-        return message + '<br>'
+        return message + ' <A HREF=requestDetails/%s>Details</A><BR>' % requestName
 
     def assign(self, requestName):
         allTeams = self.jsonSender.get('/reqMgr/team')[0]
@@ -255,6 +258,7 @@ class ReqMgrBrowser(TemplatedPage):
         html = '<form action="assignToTeams" method="POST">'
         # pass the request name along silently
         html += '<input type="HIDDEN" name="requestName" value="%s">'  % requestName
+        html += 'Assign this request to teams<BR>'
         for team in allTeams:
             checked = ""
             if team in assignments:

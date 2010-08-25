@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.1 2010/04/09 19:58:20 mnorman Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: BossLiteAPI.py,v 1.2 2010/04/15 20:53:11 mnorman Exp $"
+__revision__ = "$Revision: 1.2 $"
 __author__ = "Giuseppe.Codispoti@bo.infn.it"
 
 import logging
@@ -399,6 +399,104 @@ class BossLiteAPI(WMConnectionBase):
     ##########################################################################
 
 
+    def updateRunningInstances( self, task, notSkipClosed=True ) :
+        """
+        update runningInstances of a task in the DB
+        """
+
+        # update
+        for job in task.jobs:
+
+            # update only loaded instances!
+            if job.runningJob is not None:
+                job.updateRunningInstance()
+
+        return
+
+    ############################################################################
+
+
+
+    def archive(self, obj ):
+        """
+        Close running jobs?  Works for either task or job
+        """
+
+        # the object passed is a Job
+        if type(obj) == Job :
+            obj.runningJob['closed'] = 'Y'
+
+        # the object passed is a Task
+        elif type(obj) == Task :
+            for job in obj.jobs:
+                job.runningJob['closed'] = 'Y'
+
+        # update object
+        obj.update()
+
+
+
+    ############################################################################
+        
+    def getTaskFromJob( self, job):
+        """
+        retrieve Task object from Job object and perform association
+        """
+
+        # creating task
+        task = self.loadTask(taskId = job['taskId'], jobRange = None)
+
+        # perform association
+        task.appendJob(job)
+
+        # operation validity checks
+        if len( task.jobs ) != 1 :
+            raise DbError( "ERROR: too many jobs loaded %s" % \
+                                 len( task.jobs ))
+        if id( task.jobs[0] ) != id( job ) :
+            raise DbError( "Fatal ERROR: mismatching job" )
+
+        # return task
+        return task
+
+
+
+    ############################################################################
+
+    def load( self, task, jobRange="all"):
+        """
+        This is a crippled version of the original load function
+
+        """
+
+
+        task.load()
+
+        if jobRange == None:
+            return task
+        else:
+            task.loadJobs()
+            for job in task.jobs:
+                job.getRunningInstance()
+
+
+        return task
+
+
+    #def loadLastJobByName( self, jobName ) :
+    #    """
+    #    retrieve job information from db for jobs with name 'name'
+    #
+    #    Really?  Name is unique, so all you have to do with a given name
+    #    is just retrieve the job.
+    #
+    #    Thus I'm not implementing it at this time.
+    #    """
+    #
+    #    self.loadJobByName(jobName = jobName)
+
+        
+
 
     ######################################################################
     # And this is where I stopped working
@@ -463,23 +561,23 @@ class BossLiteAPI(WMConnectionBase):
 
 
     ##########################################################################
-    def updateRunningInstances( self, task, notSkipClosed=True ) :
-        """
-        update runningInstances of a task in the DB
-        """
-
-        # db connect
-        if self.db is None :
-            self.connect()
-
-        # update
-        for job in task.jobs:
-
-            # update only loaded instances!
-            if job.runningJob is not None:
-                job.updateRunningInstance(self.db, notSkipClosed)
-
-        self.bossLiteDB.commit()
+    #def updateRunningInstances( self, task, notSkipClosed=True ) :
+    #    """
+    #    update runningInstances of a task in the DB
+    #    """
+    #
+    #    # db connect
+    #    if self.db is None :
+    #        self.connect()
+    #
+    #    # update
+    #    for job in task.jobs:
+    #
+    #        # update only loaded instances!
+    #        if job.runningJob is not None:
+    #            job.updateRunningInstance(self.db, notSkipClosed)
+    #
+    #    self.bossLiteDB.commit()
 
 
     ##########################################################################
@@ -781,7 +879,7 @@ class BossLiteAPI(WMConnectionBase):
 
 
     ##########################################################################
-    def load( self, task, jobRange="all", jobAttributes=None, runningAttrs=None, strict=True, limit=None, offset=None ) :
+    def load_old( self, task, jobRange="all", jobAttributes=None, runningAttrs=None, strict=True, limit=None, offset=None ) :
         """
         retrieve information from db for:
         - jobRange can be of the form:
@@ -1045,34 +1143,40 @@ class BossLiteAPI(WMConnectionBase):
 
 
     ##########################################################################
-    def loadLastJobByName( self, jobName ) :
-        """
-        retrieve job information from db for jobs with name 'name'
-        """
+    #  What is this supposed to do?
+    #  name is a unique variable in the job table.  You can't select by jid given a jobName!
+    #    -mnorman
+    ##########################################################################
 
-        jobList = self.loadJobsByRunningAttr(
-            jobAttributes={ 'name' : jobName } )
-
-        if jobList is None or jobList == [] :
-            return None
-
-        jid = 0
-        retJob = None
-        for job in jobList :
-            if job['id'] > jid :
-                retJob = job
-            
-        for job in jobList :
-            if job['id'] != retJob['id'] and job.runningJob['closed'] == 'N' \
-                   and job.runningJob['processStatus'] == 'processed' :
-                logging.warning(
-                    "WARNING: previous job %s.%s.%s not closed. Forcing closed='Y'" \
-                    % (job['taskId'], job['jobId'], job['submissionNumber'])
-                    )
-                job.runningJob['closed'] = 'Y'
-                self.updateDB(job.runningJob)
-
-        return retJob
+    
+    #def loadLastJobByName( self, jobName ) :
+    #    """
+    #    retrieve job information from db for jobs with name 'name'
+    #    """
+    #
+    #    jobList = self.loadJobsByRunningAttr(
+    #        jobAttributes={ 'name' : jobName } )
+    #
+    #    if jobList is None or jobList == [] :
+    #        return None
+    #
+    #    jid = 0
+    #    retJob = None
+    #    for job in jobList :
+    #        if job['id'] > jid :
+    #            retJob = job
+    #        
+    #    for job in jobList :
+    #        if job['id'] != retJob['id'] and job.runningJob['closed'] == 'N' \
+    #               and job.runningJob['processStatus'] == 'processed' :
+    #            logging.warning(
+    #                "WARNING: previous job %s.%s.%s not closed. Forcing closed='Y'" \
+    #                % (job['taskId'], job['jobId'], job['submissionNumber'])
+    #                )
+    #            job.runningJob['closed'] = 'Y'
+    #            self.updateDB(job.runningJob)
+    #
+    #    return retJob
 
     ##########################################################################
     #ef loadCreated( self, attributes = None, limit=None, offset=None ) :
@@ -1214,30 +1318,30 @@ class BossLiteAPI(WMConnectionBase):
 
 
     ##########################################################################
-    def getTaskFromJob( self, job):
-        """
-        retrieve Task object from Job object and perform association
-        """
-
-        # db connect
-        if self.db is None :
-            self.connect()
-
-        # creating task
-        task = self.loadTask(job['taskId'], None)
-
-        # perform association
-        task.appendJob( job )
-
-        # operation validity checks
-        if len( task.jobs ) != 1 :
-            raise DbError( "ERROR: too many jobs loaded %s" % \
-                                 len( task.jobs ))
-        if id( task.jobs[0] ) != id( job ) :
-            raise DbError( "Fatal ERROR: mismatching job" )
-
-        # return task
-        return task
+    #def getTaskFromJob( self, job):
+    #    """
+    #    retrieve Task object from Job object and perform association
+    #    """
+    #
+    #    # db connect
+    #    if self.db is None :
+    #        self.connect()
+    #
+    #    # creating task
+    #    task = self.loadTask(job['taskId'], None)
+    #
+    #    # perform association
+    #    task.appendJob( job )
+    #
+    #    # operation validity checks
+    #    if len( task.jobs ) != 1 :
+    #        raise DbError( "ERROR: too many jobs loaded %s" % \
+    #                             len( task.jobs ))
+    #    if id( task.jobs[0] ) != id( job ) :
+    #        raise DbError( "Fatal ERROR: mismatching job" )
+    #
+    #    # return task
+    #    return task
 
 
     ##########################################################################
@@ -1281,29 +1385,29 @@ class BossLiteAPI(WMConnectionBase):
 
 
     ##########################################################################
-    def archive( self, obj ):
-        """
-        set a flag/index to closed
-        """
-
-        # db connect
-        if self.db is None :
-            self.connect()
-
-        # the object passed is a Job
-        if type(obj) == Job :
-            obj.runningJob['closed'] = 'Y'
-            # obj.closeRunningInstance( self.db )
-
-        # the object passed is a Task
-        elif type(obj) == Task :
-            for job in obj.jobs:
-                job.runningJob['closed'] = 'Y'
-                # job.closeRunningInstance( self.db )
-
-        # update object
-        obj.update(self.db)
-        self.bossLiteDB.commit()
+    #def archive( self, obj ):
+    #    """
+    #    set a flag/index to closed
+    #    """
+    #
+    #    # db connect
+    #    if self.db is None :
+    #        self.connect()
+    #
+    #    # the object passed is a Job
+    #    if type(obj) == Job :
+    #        obj.runningJob['closed'] = 'Y'
+    #        # obj.closeRunningInstance( self.db )
+    #
+    #    # the object passed is a Task
+    #    elif type(obj) == Task :
+    #        for job in obj.jobs:
+    #            job.runningJob['closed'] = 'Y'
+    #            # job.closeRunningInstance( self.db )
+    #
+    #    # update object
+    #    obj.update(self.db)
+    #    self.bossLiteDB.commit()
 
 
     ##########################################################################

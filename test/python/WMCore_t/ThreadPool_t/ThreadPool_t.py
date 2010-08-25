@@ -7,12 +7,13 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.6 2008/12/18 14:53:17 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.7 2009/07/17 15:57:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import threading
 import time
+import os
 
 from WMCore.ThreadPool.ThreadPool import ThreadPool
 
@@ -40,10 +41,10 @@ class ThreadPoolTest(unittest.TestCase):
         if not ThreadPoolTest._setup: 
             # initialization necessary for proper style.
             myThread = threading.currentThread()
-            myThread.dialect = None
+            myThread.dialect = os.getenv("DIALECT")
             myThread.transaction = None
 
-            self.testInit = TestInit(__file__)
+            self.testInit = TestInit(__file__, os.getenv("DIALECT"))
             self.testInit.setLogging()
             self.testInit.setDatabaseConnection()
             self.testInit.setSchema()
@@ -75,6 +76,7 @@ class ThreadPoolTest(unittest.TestCase):
         config = self.testInit.getConfiguration()
         # normally assigned by the harness of the test component.
         config.Agent.componentName = "TestComponent"
+        config.CoreDatabase.dialect = os.getenv("DIALECT")
 
         component.config = config
 
@@ -83,6 +85,7 @@ class ThreadPoolTest(unittest.TestCase):
             threadPool = ThreadPool("WMCore.ThreadPool.ThreadSlave", \
                 component, 'MyPool_'+str(i), ThreadPoolTest._nrOfThreads)
             threadPools.append(threadPool)
+
         # this is how you would use the threadpool. The threadpool retrieves
         # events/payloads from the message service. If a thread is available
         # it is dispatched, otherwise it is stored in the trheadpool.
@@ -98,10 +101,11 @@ class ThreadPoolTest(unittest.TestCase):
             for j in xrange(0, ThreadPoolTest._nrOfPools):
                 threadPools[j].enqueue(event, \
                     {'event' : event, 'payload' : payload})
+
         # this commit you want to be in the agent harness, so the message is
         # actual removed from the msgService. we can do this as the threadpool
         # acts as a dispatcher and is a shortlived action: dispatch to thread
-        # or queu and tell agent harness it is finished.
+        # or queue and tell agent harness it is finished.
         finished = False
         while not finished: 
             print('waiting for threads to finishs. Work left:')

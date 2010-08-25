@@ -3,6 +3,7 @@ from WMCore.Cache.ConfigCache import WMConfigCache
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from PSetTweaks.PSetTweak import PSetHolder, PSetTweak
 from WMCore.Services.Requests import JSONRequests
+import WMCore.HTTPFrontEnd.RequestManager.Sites
 #from WMCore.Agent.Harness import Harness
 import cherrypy
 import logging
@@ -16,7 +17,6 @@ class ReqMgrBrowser(TemplatedPage):
         TemplatedPage.__init__(self, config)
         # Take a guess
         self.templatedir = __file__.rsplit('/', 1)[0]
-        print self.templatedir
         self.urlPrefix = '%s/download/?filepath=' % config.reqMgrHost
         self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'ReqMgrRequestBasePriority', 'ReqMgrRequestorBasePriority', 'ReqMgrGroupBasePriority', 'RequestStatus', 'Complete', 'Success']
         self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged', 'Complete':'percentComplete', 'Success' : 'percentSuccess'}
@@ -28,6 +28,8 @@ class ReqMgrBrowser(TemplatedPage):
         self.configCache = WMConfigCache('reqmgr', configCacheUrl)
         self.workloadDir = config.workloadCache
         self.jsonSender = JSONRequests(config.reqMgrHost)
+        self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
+
 
     def index(self):
         requests = self.getRequests()
@@ -54,11 +56,7 @@ class ReqMgrBrowser(TemplatedPage):
     def requestDetails(self, requestName):
         result = ""
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
-        print str(request)
-         # Pull in the workload
-        helper = WMWorkloadHelper()
-        pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
-        helper.load(pfn)
+        helper = self.getWorkloadFromRequest(request)
         docId = None
         try:
             # Header consists of links to orig. config, tweakfile,
@@ -175,7 +173,6 @@ class ReqMgrBrowser(TemplatedPage):
         return '%s &nbsp<input type="text" size=2 name="%s:priority">' % (defaultPriority, requestName)
 
     def percentWritten(self, request):
-        print request
         maxPercent = 0
         for update in request["RequestUpdates"]:
             if update.has_key("events_written") and request["RequestSizeEvents"] != 0:
@@ -216,7 +213,6 @@ class ReqMgrBrowser(TemplatedPage):
 
 
     def doAdmin(self, **kwargs):
-        print "DOADMIN"
         # format of kwargs is {'requestname:status' : 'approved', 'requestname:priority' : '2'}
         message = ""
         for k,v in kwargs.iteritems():
@@ -246,40 +242,53 @@ class ReqMgrBrowser(TemplatedPage):
         self.jsonSender.put(urd)
         if status == "assigned":
            # make a page to choose teams
-           return self.assign(requestName)
+           return self.assignmentPage(requestName)
         return message + self.detailsBackLink(requestName)
 
-    def assign(self, requestName):
-        allTeams = self.jsonSender.get('/reqMgr/team')[0]
+    def assignmentPage(self, requestName):
+        teams = self.jsonSender.get('/reqMgr/team')[0]
         # get assignments
-        response = self.jsonSender.get('/reqMgr/assignment?request=%s' % requestName)
+        assignments = self.jsonSender.get('/reqMgr/assignment?request=%s' % requestName)[0]
         # might be a list, or a dict team:priority
-        assignments = response[0]
         if isinstance(assignments, dict):
             assignments = assignments.keys()
-
-        html = '<form action="assignToTeams" method="POST">'
-        # pass the request name along silently
-        html += '<input type="HIDDEN" name="requestName" value="%s">'  % requestName
-        html += 'Assign this request to teams<BR>'
-        for team in allTeams:
-            checked = ""
-            if team in assignments:
-                checked = "CHECKED"
-            html += '<input type="checkbox" name="%s" %s/>%s<br/> ' % (team, checked, team)
-        html += '<input type="submit"/></form>'
-        return html
-    assign.exposed = True
+        return self.templatepage("Assign", requestName=requestName, teams=teams, 
+                   assignments=assignments, sites=self.sites)
+    assignmentPage.exposed = True
     
-    def assignToTeams(self, *args, **kwargs):
+    def handleAssignmentPage(self, *args, **kwargs):
         """ handles some checkboxes """
-        # TODO More than one???
-        for team, value in kwargs.iteritems():
-           if value != None and team != 'requestName':
-               #ChangeState.assignRequest(kwargs['requestName'], team)
-               self.jsonSender.put('/reqMgr/assignment/%s/%s' % (urllib.quote(team), kwargs['requestName']) )
-        raise cherrypy.HTTPRedirect('.')
-    assignToTeams.exposed = True
+        result = ""
+        requestName = kwargs["requestName"]
+        helper = self.getWorkloadFromName(requestName)
+        for key, value in kwargs.iteritems():
+           if key == "siteWhitelist":
+               result += "Site Whitelist changed to " + str(value) + "<BR>"
+               helper.setSiteWhitelist(value)
+           elif key == "siteBlacklist":
+               result += "Site Blacklist changed to " + str(value) + "<BR>"
+               helper.setSiteBlacklist(value)
+           elif key == "requestName":
+               pass
+           elif value != None:
+               #ChangeState.assignRequest(kwargs['requestName'], team) 
+               self.jsonSender.put('/reqMgr/assignment/%s/%s' % (urllib.quote(key), requestName))
+               result += "Assigned " + requestName + " to " + key  + "<BR>"
+        result += self.detailsBackLink(requestName)
+        return result
+    handleAssignmentPage.exposed = True
+
+
+    def getWorkloadFromName(self, requestName):
+        request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
+        return self.getWorkloadFromRequest(request)
+
+    def getWorkloadFromRequest(self, request):
+         # Pull in the workload
+        helper = WMWorkloadHelper()
+        pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
+        helper.load(pfn)
+        return helper
 
     def modifyWorkload(self, requestName, workload, requestType, runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None):
         if workload == None or not os.path.exists(workload):
@@ -288,26 +297,26 @@ class ReqMgrBrowser(TemplatedPage):
         helper.load(workload)
         schema = helper.data.request.schema
         message = ""
-        inputTask = helper.getTask(requestType).data.input.dataset
+        #inputTask = helper.getTask(requestType).data.input.dataset
         if runWhitelist != "" and runWhitelist != None:
            l = eval("[%s]"%runWhitelist)
            schema.RunWhitelist = l
-           inputTask.runs.whitelist = l
+           helper.setRunWhitelist(l)
            message += 'Changed runWhiteList to ' + str(l)
         if runBlacklist != "" and runBlacklist != None:
            l = eval("[%s]"%runBlacklist)
            schema.RunBlacklist = l
-           inputTask.runs.blacklist = l
+           helper.setRunBlacklist(l)
            message += 'Changed runBlackList to ' + str(l)
         if blockWhitelist != "" and blockWhitelist != None:
            l = eval("[%s]"%blockWhitelist)
            schema.BlockWhitelist = l
-           inputTask.blocks.whitelist = l
+           helper.setBlockWhitelist(l)
            message += 'Changed blockWhiteList to ' + str(l)
         if blockBlacklist != "" and blockBlacklist != None:
            l = eval("[%s]"%blockBlacklist)
            schema.BlockBlacklist = l
-           inputTask.blocks.blacklist = l
+           helper.setBlockBlacklist(l)
            message += 'Changed blockBlackList to ' + str(l)
         helper.save(workload)
         return message + self.detailsBackLink(requestName)

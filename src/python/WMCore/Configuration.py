@@ -8,8 +8,8 @@ Module dealing with Configuration file in python format
 
 """
 
-__revision__ = "$Id: Configuration.py,v 1.12 2009/11/04 16:56:27 hufnagel Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Configuration.py,v 1.13 2010/02/15 20:34:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import os
 import imp
@@ -319,6 +319,7 @@ class Configuration(object):
     def __init__(self):
         object.__init__(self)
         self._internal_components = []
+        self._internal_webapps = []
         self._internal_sections = []
 
     def __add__(self, otherConfig):
@@ -360,6 +361,14 @@ class Configuration(object):
         comps = self._internal_components
         return comps
 
+    def listWebapps_(self):
+        """
+        _listWebapps_
+
+        Retrieve a list of webapps from the webapps configuration section.
+        """
+        return self._internal_webapps
+
     def listSections_(self):
         """
         _listSections_
@@ -398,12 +407,25 @@ class Configuration(object):
         compSection = self.section_(componentName)
         if componentName not in self._internal_components:
             self._internal_components.append(componentName)
-            compSection.ComponentDir = None
+            compSection.componentDir = None
 
         return compSection
 
+    def webapp_(self, webappName):
+        """
+        _webapp_
 
+        Get the config for the named webapp, add it if not present.  This will
+        return a ConfigSection with default fields for the webapp added to it.
+        """
+        webappSection = self.section_(webappName)
+        if webappName not in self._internal_webapps:
+            self._internal_webapps.append(webappName)
+            webappSection.section_("server")
+            webappSection.section_("database")
+            webappSection.section_("security")
 
+        return webappSection
 
     def pythonise_(self, **options):
         """
@@ -420,10 +442,13 @@ class Configuration(object):
         result = "from WMCore.Configuration import Configuration\n"
         result += "config = Configuration()\n"
         for sectionName in self._internal_sections:
-            if sectionName not in self._internal_components:
-                result += "config.section_(\'%s\')\n" % sectionName
-            else:
+            if sectionName in self._internal_components:
                 result += "config.component_(\'%s\')\n" % sectionName
+            elif sectionName in self._internal_webapps:
+                result += "config.webapp_(\'%s\')\n" % sectionName
+            else:
+                result += "config.section_(\'%s\')\n" % sectionName                
+
 
             sectionRef = getattr(self, sectionName)
             for sectionAttr in sectionRef.pythonise_(

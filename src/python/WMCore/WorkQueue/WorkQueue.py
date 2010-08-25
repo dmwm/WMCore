@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.116 2010/06/11 16:36:10 sryu Exp $"
-__version__ = "$Revision: 1.116 $"
+__revision__ = "$Id: WorkQueue.py,v 1.117 2010/06/11 19:38:36 sryu Exp $"
+__version__ = "$Revision: 1.117 $"
 
 
 import time
@@ -52,9 +52,9 @@ def globalQueue(logger = None, dbi = None, **kwargs):
                 'PopulateFilesets' : False,
                 'SplittingMapping' : {'DatasetBlock' : 
                                         {'name': 'Dataset', 
-                                         'args': {'Multiplier': 1000}
-                                        }
-                                      }
+                                         'args': {}}
+                                      },
+                 'JobSlotMultiplier': 1000
                 }
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
@@ -111,14 +111,18 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('SplittingMapping', {})
         self.params['SplittingMapping'].setdefault('DatasetBlock', 
                                                    {'name': 'Block', 
-                                                    'args': {'Multiplier': 10}
-                                                   }
+                                                    'args': {}}
                                                   )
         self.params['SplittingMapping'].setdefault('MonteCarlo', 
                                                    {'name': 'MonteCarlo', 
-                                                    'args':{}
-                                                   }
-                                                  )
+                                                    'args':{}}
+                                                   )
+        
+        # define how many more works to retrieve from the queue
+        # i.e. if JobSlotMultiplier is set to 1000 it will pull down 
+        # 1000 times more jobs than available slot
+        self.params['JobSlotMultiplier'] = 10
+        
         self.params.setdefault('EndPolicySettings', {})
 
         assert(self.params['TrackLocationOrSubscription'] in ('subscription',
@@ -227,6 +231,9 @@ class WorkQueue(WorkQueueBase):
         """
         results = []
         subResults = []
+        for k, v in siteJobs.items():
+            siteJobs[k] = self.params['JobSlotMultiplier'] * v
+            
         matches, unmatched = self._match(siteJobs)
 
         # if talking to a child and have resources left get work from parent

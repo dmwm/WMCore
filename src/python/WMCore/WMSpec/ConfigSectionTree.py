@@ -7,8 +7,8 @@ Extension for a normal ConfigSection to provide a Tree structure
 of ConfigSections
 
 """
-__revision__ = "$Id: ConfigSectionTree.py,v 1.5 2009/08/17 20:59:28 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ConfigSectionTree.py,v 1.6 2010/02/26 19:34:18 evansde Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import types
 
@@ -47,6 +47,16 @@ def listNodes(topNode):
         result.extend(listNodes(getattr(topNode.tree.children, child)))
     return result
 
+def listChildNodes(topNode):
+    """
+    _listChildNodes_
+    
+    ListNodes but without including the top node
+    """
+    result = []
+    for child in topNode.tree.childNames:
+        result.extend(listNodes(getattr(topNode.tree.children, child)))
+    return result
 
 
 
@@ -155,6 +165,16 @@ def nodeIterator(node):
     for i in listNodes(node):
         yield getNode(node, i)
 
+def nodeChildIterator(node):
+    """
+    _nodeChildeIterator_
+    
+    iterate over all nodes in order, except for the top node passed to this method
+    """
+    for i in listChildNodes(node):
+        yield getNode(node, i)
+    
+
 def format(value):
     """
     _format_
@@ -249,6 +269,12 @@ class TreeHelper:
         generator for processing all subnodes in execution order
         """
         for i in listNodes(self.data):
+            yield getNode(self.data, i)
+    def nodeChildIterator(self):
+        """
+        generator for processing all subnodes in execution order
+        """
+        for i in listChildNodes(self.data):
             yield getNode(self.data, i)
 
 

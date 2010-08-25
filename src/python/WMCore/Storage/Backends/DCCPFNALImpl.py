@@ -5,14 +5,14 @@ _DCCPFNALImpl_
 Implementation of StageOutImpl interface for DCCPFNAL
 
 """
+
 import os
 import commands
-from StageOut.Registry import registerStageOutImpl
-from StageOut.StageOutImpl import StageOutImpl
 
+from WMCore.Storage.Registry import registerStageOutImpl
+from WMCore.Storage.StageOutImpl import StageOutImpl
 
 _CheckExitCodeOption = True
-
 
 def pnfsPfn(pfn):
     """

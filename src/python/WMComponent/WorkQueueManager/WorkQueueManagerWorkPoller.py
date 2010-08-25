@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 """
-pullWork poller
+_WorkQueueManagerPoller_
+
+Pull work out of the work queue.
 """
-__all__ = []
-__revision__ = "$Id: WorkQueueManagerWorkPoller.py,v 1.3 2010/05/07 19:56:23 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
 
+__revision__ = "$Id: WorkQueueManagerWorkPoller.py,v 1.4 2010/05/12 19:22:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
+import socket
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-
 
 class WorkQueueManagerWorkPoller(BaseWorkerThread):
     """
@@ -31,7 +32,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         try:
             if self.retrieveCondition():
                 work = self.queue.pullWork()
-                # force update
+
                 self.queue.logger.info("Done Pulling work")        
                 try:
                     self.queue.logger.info("Updating Parents status")        
@@ -40,7 +41,9 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
                     import traceback
                     self.queue.logger.error("Unable to update Parent Status: %s\n%s" 
                                     % (str(ex), traceback.format_exc()))
-                    
+        except socket.error, (value, message):
+            self.queue.logger.error("Error %s opening connection to work queue: %s" % (value, message))
+            return
         except StandardError, ex:
             import traceback
             self.queue.logger.error("Unable to pull work from parent Error: %s\n%s" 

@@ -17,7 +17,8 @@ from WMCore.WMFactory import WMFactory
 from WMCore.WMInit import WMInit
 
 class ProcessPool:
-    def __init__(self, slaveClassName, totalSlaves, componentDir, config):
+    def __init__(self, slaveClassName, totalSlaves, componentDir,
+                 config, slaveInit = None):
         """
         __init__
 
@@ -25,8 +26,12 @@ class ProcessPool:
         inside the WMComponent namespace.  For examples, the JobAccountant would
         pass in "JobAccountant.AccountantWorker" to run the AccountantWorker
         class.  All log files will be stored in the component directory that is
-        passed in.  Each slave will have its own log file.  The config is used
-        to get database connection parameters.
+        passed in.  Each slave will have its own log file.
+
+        Note that the config is only used to determine database connection
+        parameters.  It is not passed to the slave class.  The slaveInit
+        parameter will be serialized and passed to the slave class's
+        constructor.
         """
         self.enqueueIndex = 0
         self.dequeueIndex = 0
@@ -35,7 +40,7 @@ class ProcessPool:
         self.jsonEncoder = simplejson.JSONEncoder()
 
         self.workers = []
-        slaveArgs = ["python", __file__, slaveClassName]
+        slaveArgs = ["python2.4", __file__, slaveClassName]
         if hasattr(config.CoreDatabase, "socket"):
             socket = config.CoreDatabase.socket
         else:
@@ -46,10 +51,22 @@ class ProcessPool:
                     "socket": socket,
                     "componentDir": componentDir}
         encodedDBConfig = self.jsonEncoder.encode(dbConfig)
+
+        if slaveInit == None:
+            encodedSlaveInit = None
+        else:
+            encodedSlaveInit = self.jsonEncoder.encode(slaveInit)
+            
         while totalSlaves > 0:
             slaveProcess = subprocess.Popen(slaveArgs, stdin = subprocess.PIPE,
                                             stdout = subprocess.PIPE)
             slaveProcess.stdin.write("%s\n" % encodedDBConfig)
+
+            if encodedSlaveInit == None:
+                slaveProcess.stdin.write("\n")
+            else:
+                slaveProcess.stdin.write("%s\n" % encodedSlaveInit)
+                
             slaveProcess.stdin.flush()
             self.workers.append(slaveProcess)
             totalSlaves -= 1
@@ -155,12 +172,18 @@ if __name__ == "__main__":
     encodedConfig = sys.stdin.readline()
     config = jsonDecoder.decode(encodedConfig)
 
+    encodedSlaveInit = sys.stdin.readline()
+    if encodedSlaveInit != "\n":
+        slaveInit = jsonDecoder.decode(encodedSlaveInit)
+    else:
+        slaveInit = None
+        
     wmInit = WMInit()
     setupLogging(config["componentDir"])
     setupDB(config, wmInit)
 
     wmFactory = WMFactory(name = "slaveFactory", namespace = "WMComponent")
-    slaveClass = wmFactory.loadObject(classname = slaveClassName)
+    slaveClass = wmFactory.loadObject(classname = slaveClassName, args = slaveInit)
 
     while(True):
         encodedInput = sys.stdin.readline()

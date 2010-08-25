@@ -1,20 +1,19 @@
 #!/usr/bin/env python
 """
-_DeleteFile_
+_Delete_
 
-Oracle implementation of DeleteFile
-
+Oracle implementation of Delete
 """
-__all__ = []
-__revision__ = "$Id: Delete.py,v 1.1 2009/05/15 16:47:41 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles import Delete as MySQLDelete
+__revision__ = "$Id: Delete.py,v 1.2 2009/07/14 19:13:57 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
+
+from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.Delete import Delete as MySQLDelete
 
 class Delete(MySQLDelete):
     """
-    _DeleteFile_
+    _Delete_
     
-    Oracle implementation of DeleteFile
-    
+    Oracle implementation of Delete
     """
+    pass

@@ -12,6 +12,7 @@ class SecureDocumentation(TemplatedPage):
     def index(self):
         templates = listdir(self.templatedir)
         index = "<h1>Secure Documentation</h1>"
+        index += "Hello %s!\n" % cherrypy.session['SecurityModule']['fullname']
         index += "You are logged in using <a href='%s'>%s</a>\n" % \
                 (cherrypy.session['SecurityModule']['openid_url'],
                  cherrypy.session['SecurityModule']['openid_url'])

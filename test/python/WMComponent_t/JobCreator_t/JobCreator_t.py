@@ -5,8 +5,8 @@
 # W0201: Don't much around with __init__
 # E1103: Use thread members
 
-__revision__ = "$Id: JobCreator_t.py,v 1.21 2010/06/14 21:03:18 mnorman Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: JobCreator_t.py,v 1.22 2010/06/30 18:59:17 mnorman Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import unittest
 import random
@@ -36,6 +36,7 @@ from WMComponent.JobCreator.JobCreatorWorker import JobCreatorWorker
 from WMCore.Services.UUID import makeUUID
 
 from WMCore.ResourceControl.ResourceControl  import ResourceControl
+from WMCore.Agent.HeartbeatAPI               import HeartbeatAPI
 
 #Workload stuff
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
@@ -66,7 +67,8 @@ class JobCreatorTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ['WMCore.WMBS', 
                                                  'WMCore.MsgService',
                                                  'WMCore.ThreadPool',
-                                                 'WMCore.ResourceControl'], useDefault = False)
+                                                 'WMCore.ResourceControl',
+                                                 'WMCore.Agent.Database'], useDefault = False)
                                                  #'WMCore.WorkQueue.Database'], useDefault = False)
 
         myThread = threading.currentThread()
@@ -98,6 +100,11 @@ class JobCreatorTest(unittest.TestCase):
         self.testDir = self.testInit.generateWorkDir()
         self.cwd = os.getcwd()
 
+        # Set heartbeat
+        self.componentName = 'JobCreator'
+        self.heartbeatAPI  = HeartbeatAPI(self.componentName)
+        self.heartbeatAPI.registerComponent()
+
         return
 
 
@@ -115,7 +122,8 @@ class JobCreatorTest(unittest.TestCase):
 
         #self.testInit.clearDatabase(modules = ['WMCore.ThreadPool'])
         self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService',
-                                               'WMCore.ThreadPool', 'WMCore.ResourceControl'])
+                                               'WMCore.ThreadPool', 'WMCore.ResourceControl',
+                                               'WMCore.Agent.Database'])
                                                #'WMCore.WorkQueue.Database'])
         #self.testInit.clearDatabase()
         
@@ -209,6 +217,9 @@ class JobCreatorTest(unittest.TestCase):
         #First the general stuff
         config.section_("General")
         config.General.workDir = os.getenv("TESTDIR", os.getcwd())
+
+        config.section_("Agent")
+        config.Agent.componentName   = self.componentName
 
         #Now the CoreDatabase information
         #This should be the dialect, dburl, etc

@@ -1,79 +1,90 @@
 #!/usr/bin/env python
+"""
+_ResourceControl_
 
+Library from manipulating and querying the resource control database.
+"""
 
-__revision__ = "$Id: ResourceControl.py,v 1.1 2009/10/05 19:59:20 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ResourceControl.py,v 1.2 2010/02/09 17:57:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
-import logging
-import os
-import threading
-
-from WMCore.WMFactory  import WMFactory
 from WMCore.DAOFactory import DAOFactory
+from WMCore.WMConnectionBase import WMConnectionBase
 
-
-class ResourceControl:
+class ResourceControl(WMConnectionBase):
     """
     Wrapper Object
     """
-
     def __init__(self):
-        myThread = threading.currentThread()
-        self.daofactory = DAOFactory(package = "WMCore.ResourceControl", logger = myThread.logger, dbinterface = myThread.dbi)
-
-
-    def getThresholds(self, siteNames):
-        """
-        Wrapper for the getThreshold SQL calls
-        """
-        myThread  = threading.currentThread()
-        #siteNames = list(siteNames)
-
-
-        myThread.transaction.begin()
-        
-        action = self.daofactory(classname="GetThresholds")
-        result = action.execute(siteName = siteNames, conn = None, transaction = myThread.transaction)
-
-        myThread.transaction.commit()
-
-
-        return result
-
-    def insertThreshold(self, thresholdName = None, thresholdValue = None, siteNames = None, bulkList = None):
-        """
-        Wrapper for the insertThreshold SQL calls
-        """
-        myThread  = threading.currentThread()
-        #siteNames = list(siteNames)
-
-
-        myThread.transaction.begin()
-        
-        action = self.daofactory(classname="InsertThreshold")
-        result = action.execute(siteName = siteNames, thresholdValue = thresholdValue, thresholdName = thresholdName, \
-                                bulkList = bulkList, conn = None, transaction = myThread.transaction)
-
-        myThread.transaction.commit()
-
-
-        return result
-
-
-    def insertSite(self, siteName, seName, ceName = None):
-        """
-        Wrapper for creating new sites
-        """
-
-        myThread = threading.currentThread()
-        
-        myThread.transaction.begin()
-        
-        action = self.daofactory(classname="InsertSite")
-        result = action.execute(siteName = siteName, seName = seName, ceName = ceName, \
-                                conn = None, transaction = myThread.transaction)
-
-        myThread.transaction.commit()
-
+        WMConnectionBase.__init__(self, daoPackage = "WMCore.ResourceControl")
+        self.wmbsDAOFactory = DAOFactory(package = "WMCore.WMBS",
+                                         logger = self.logger,
+                                         dbinterface = self.dbi)
         return
-    
+
+    def insertSite(self, siteName, jobSlots = 0, seName = None, ceName = None):
+        """
+        _insertSite_
+
+        Insert a site into WMBS.  The site must be inserted before any
+        thresholds can be added.
+        """
+        insertAction = self.wmbsDAOFactory(classname = "Locations.New")
+        insertAction.execute(siteName = siteName, jobSlots = jobSlots,
+                             seName = seName, ceName = ceName,
+                             conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
+        return
+
+    def insertThreshold(self, siteName, taskType, minSlots, maxSlots):
+        """
+        _insertThreshold_
+
+        Insert a threshold into the Resource Control database.  If the threshold
+        already exists it will be updated.
+        """
+        existingTransaction = self.beginTransaction()
+        
+        subTypeAction = self.wmbsDAOFactory(classname = "Subscriptions.InsertType")
+        subTypeAction.execute(subType = taskType, conn = self.getDBConn(),
+                              transaction = self.existingTransaction())
+        insertAction = self.daofactory(classname = "InsertThreshold")
+        insertAction.execute(siteName = siteName, taskType = taskType,
+                             minSlots = minSlots, maxSlots = maxSlots,
+                             conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
+        return
+
+    def listThresholdsForSubmit(self):
+        """
+        _listThresholdsForSubmit_
+
+        Retrieve a list of job threshold information as well as information on
+        the number of jobs running for all the known sites.  This information is
+        returned in the form of a three level dictionary.  The first level is
+        keyed by the site name while the second is keyed by the task type.  The
+        final level has the following keys:
+          total_slots - Total number of slots available at the site
+          task_running_jobs - Number of jobs for this task running at the site
+          total_running_jobs - Total jobs running at the site
+          min_slots - Minimum number of job slots for this task at the site
+          max_slots - Maximum number of job slots for this task at the site
+        """
+        listAction = self.daofactory(classname = "ListThresholdsForSubmit")
+        return listAction.execute(conn = self.getDBConn(),
+                                  transaction = self.existingTransaction())
+
+    def listThresholdsForCreate(self):
+        """
+        _listThresholdsForCreate_
+
+        This will return a two level dictionary with the first level being
+        keyed by site name.  The second level will have the following keys:
+          total_slots - Total number of slots available at the site
+          running_jobs - Total number of jobs running at the site
+        """
+        listAction = self.daofactory(classname = "ListThresholdsForCreate")
+        return listAction.execute(conn = self.getDBConn(),
+                                  transaction = self.existingTransaction())        

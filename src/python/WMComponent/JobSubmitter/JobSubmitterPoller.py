@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.16 2010/04/07 15:08:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.17 2010/05/04 19:06:51 mnorman Exp $"
+__version__ = "$Revision: 1.17 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -172,6 +172,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             for jobID in jobList:
                 job = Job(id = jobID)
                 job.load()
+                job.getMask()
                 job['type']     = jobType
                 job["location"] = self.findSiteForJob(job)
                 if not job['location']:
@@ -354,6 +355,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
 
         failList = []
+        jList2   = []
 
         for job in jobList:
             if not os.path.isdir(job['cache_dir']):
@@ -366,10 +368,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                 continue
             fileHandle = open(jobPickle, "r")
             loadedJob  = cPickle.load(fileHandle)
-            for key in loadedJob.keys():
-                if loadedJob[key]:
-                    job[key] = loadedJob[key]
-            if not 'sandbox' in job.keys() or not 'task' in job.keys():
+            jList2.append(loadedJob)
+            if not 'sandbox' in loadedJob.keys() or not 'task' in loadedJob.keys():
                 # You know what?  Just fail the job
                 failList.append(job)
                 continue
@@ -385,11 +385,11 @@ class JobSubmitterPoller(BaseWorkerThread):
                 #wmWorkload.load(job['spec'])
                 #job['sandbox'] = task.data.input.sandbox
 
-        for job in jobList:
+        for job in jList2:
             if job in failList:
-                jobList.remove(job)
+                jList2.remove(job)
 
-        return jobList
+        return jList2
 
     def terminate(self, params):
         """

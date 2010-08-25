@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.1 2010/03/30 10:27:18 mnorman Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: Task.py,v 1.2 2010/03/30 13:27:57 mnorman Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 import os.path
 import threading
@@ -124,7 +124,9 @@ class Task(DbObject):
         if self.exists():
             existingTransaction = self.beginTransaction()
             action = self.daofactory(classname = "Task.Save")
-            action.execute(binds = self.data)
+            action.execute(binds = self.data,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction)
             self.commitTransaction(existingTransaction)
         else:
             self.create()
@@ -140,7 +142,9 @@ class Task(DbObject):
         """
         existingTransaction = self.beginTransaction()
         action = self.daofactory(classname = "Task.New")
-        action.execute(binds = self.data)
+        action.execute(binds = self.data,
+                       conn = self.getDBConn(),
+                       transaction = self.existingTransaction)
         self.commitTransaction(existingTransaction)
 
         return
@@ -155,10 +159,14 @@ class Task(DbObject):
         existingTransaction = self.beginTransaction()
         if self.data['id'] > 0:
             action = self.daofactory(classname = "Task.LoadByID")
-            result = action.execute(id = self.data['id'])
+            result = action.execute(id = self.data['id'],
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction)
         elif self.data['name']:
             action = self.daofactory(classname = "Task.LoadByName")
-            result = action.execute(name = self.data['name'])
+            result = action.execute(name = self.data['name'],
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction)
         else:
             # Then you're screwed
             self.commitTransaction(existingTransaction)

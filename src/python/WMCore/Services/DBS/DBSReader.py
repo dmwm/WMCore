@@ -167,7 +167,16 @@ class DBSReader:
             msg = "Error in DBSReader.listDatasetSummary(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-
+        # summary returns
+        # 'number_of_files', 'number_of_events', 'number_of_blocks', 'total_size', 'path'
+        # map that to syncronize with other dbs key
+        for k, v in summary.items():
+            if k == 'number_of_files':
+                summary['NumberOfFiles'] = v
+            if k == 'number_of_events':
+                summary['NumberOfEvents'] = v
+            #if k == 'number_of_blocks':
+            #    summary['NumberOfBlocks'] = v    
         return summary
 
     def getFileBlocksInfo(self, dataset, onlyClosedBlocks = False):

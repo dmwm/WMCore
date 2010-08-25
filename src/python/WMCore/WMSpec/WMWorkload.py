@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.22 2010/04/20 18:28:33 sryu Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: WMWorkload.py,v 1.23 2010/07/19 20:56:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import logging
 
@@ -340,6 +340,47 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.tasks.tasklist.remove(taskName)
         return
 
+    def setSiteWhiteList(self, siteWhiteList):
+        """
+        _setSiteWhiteList_
+
+        """
+        pass
+
+    def setSiteBlackList(self, siteBlackList):
+        """
+        _setSiteBlackList_
+
+        """
+        pass
+
+    def setBlockWhiteList(self, blockWhiteList):
+        """
+        _setBlockWhiteList_
+
+        """
+        pass
+
+    def setBlockBlackList(self, blockBlackList):
+        """
+        _setBlockBlackList_
+
+        """
+        pass
+
+    def setRunWhiteList(self, runWhiteList):
+        """
+        _setRunWhiteList_
+
+        """
+        pass
+
+    def setRunBlackList(self, runBlackList):
+        """
+        _setRunBlackList_
+
+        """
+        pass
 
 class WMWorkload(ConfigSection):
     """

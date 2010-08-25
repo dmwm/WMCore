@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.5 2009/06/24 21:00:24 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.6 2009/06/25 16:02:21 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 
@@ -145,10 +145,10 @@ class CreateWorkQueueBase(DBCreator):
         
         #TODO: need to find the better way to handle this        
         #block magic string for no block (production work)  
-        self.inserts["80wq_block_insert"]=\
-                """INSERT INTO wq_block (name, block_size, num_files, num_events) 
-                   VALUES ('NoBlock', 0, 0, 0)
-                """
+#        self.inserts["80wq_block_insert"]=\
+#                """INSERT INTO wq_block (name, block_size, num_files, num_events) 
+#                   VALUES ('NoBlock', 0, 0, 0)
+#                """
     def execute(self, conn = None, transaction = None):
         """
         _execute_

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.129 2010/07/30 20:13:16 sryu Exp $"
-__version__ = "$Revision: 1.129 $"
+__revision__ = "$Id: WorkQueue.py,v 1.130 2010/08/02 15:56:35 swakef Exp $"
+__version__ = "$Revision: 1.130 $"
 
 
 import time
@@ -500,7 +500,7 @@ class WorkQueue(WorkQueueBase):
     def status(self, status = None, before = None, after = None, elementIDs = None,
                dictKey = None, syncWithWMBS = False, reqMgrUpdateNeeded = False):
         """Return status of elements
-           if given only return elements updated since the given time
+           Note: optional parameters are AND'ed together
         """
         action = self.daofactory(classname = "WorkQueueElement.GetElements")
         items = action.execute(since = after,

@@ -3,8 +3,8 @@
 RetryManager test for module and the harness
 """
 
-__revision__ = "$Id: RetryManager_t.py,v 1.7 2010/02/05 16:52:31 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: RetryManager_t.py,v 1.8 2010/04/02 13:05:27 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import os
 import threading
@@ -78,17 +78,19 @@ class RetryManagerTest(unittest.TestCase):
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
 
         config.component_("RetryManager")
-        config.RetryManager.logLevel = 'DEBUG'
-        config.RetryManager.namespace = 'WMComponent.RetryManager.RetryManager'
-        config.RetryManager.maxRetries = 10
+        config.RetryManager.logLevel     = 'DEBUG'
+        config.RetryManager.namespace    = 'WMComponent.RetryManager.RetryManager'
+        config.RetryManager.maxRetries   = 10
         config.RetryManager.pollInterval = 10
         # These are the cooloff times for the RetryManager, the times it waits
         # Before attempting resubmission
         config.RetryManager.coolOffTime  = {'create': 120, 'submit': 120, 'job': 120}
         # Path to plugin directory
-        config.RetryManager.pluginPath = 'WMComponent.RetryManager.PlugIns'
-        config.RetryManager.pluginName = ''
-        config.RetryManager.WMCoreBase = WMCore.WMInit.getWMBASE()
+        config.RetryManager.pluginPath   = 'WMComponent.RetryManager.PlugIns'
+        config.RetryManager.pluginName   = ''
+        config.RetryManager.WMCoreBase   = WMCore.WMInit.getWMBASE()
+        config.RetryManager.componentDir = os.path.join(os.getcwd(), 'Components')
+
 
         # JobStateMachine
         config.component_('JobStateMachine')

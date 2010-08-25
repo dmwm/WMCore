@@ -158,10 +158,7 @@ class XMLInjectionSpec:
 
     def getDataset(self, datasetName, isOpen = "y", isTransient = "n" ):
         """
-        _getFileblock_
-
-        Add a new fileblock with name provided if not present, if it exists,
-        return it
+        _getDataset_
 
         """
         if self.datasetPaths.has_key(datasetName):

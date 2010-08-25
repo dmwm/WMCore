@@ -8,7 +8,7 @@ import urllib
 import os
 from httplib import HTTPConnection
 from httplib import HTTPSConnection
-
+from sets import Set
 from WMCore.WMException import WMException
 
 class Requests(dict):
@@ -106,6 +106,29 @@ class Requests(dict):
         """
         return HTTPConnection(self['host'])
 
+class JSONSetEncoder(json.JSONEncoder):
+    """
+    Subclass of the json stuff to handle sets
+    """
+    def default(self, toEncode):
+        if (type(toEncode) == type(Set())):
+            tempDict = {'_hack_to_encode_a_set_in_json':True}
+            counter = 0
+            for item in toEncode:
+                tempDict[counter] = item
+                ++counter
+            return tempDict
+        else:
+            return json.JSONEencoder(toEncode)
+                
+def JSONDecodeSetCallback(toDecode):
+    if '_hack_to_encode_a_set_in_json' in toDecode:
+        del toDecode['_hack_to_encode_a_set_in_json']
+        return Set(toDecode.values())
+    else:
+        return toDecode
+
+
 class JSONRequests(Requests):
     """
     Example implementation of Requests that encodes data to/from JSON.
@@ -118,14 +141,17 @@ class JSONRequests(Requests):
         """
         encode data as json
         """
-        return json.dumps(data)
+        encoder = JSONSetEncoder()
+        return encoder.encode(data)
+    
 
     def decode(self, data):
         """
         decode the data to python from json
         """
         if data:
-            return json.loads(data)
+            decoder = json.JSONDecoder(object_hook = JSONDecodeSetCallback)
+            return decoder.decode(data)
         else:
             return {}      
         

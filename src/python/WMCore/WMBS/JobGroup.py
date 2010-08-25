@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.23 2009/02/12 20:58:11 sryu Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: JobGroup.py,v 1.24 2009/03/20 14:32:30 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -172,9 +172,13 @@ class JobGroup(WMBSBase, WMJobGroup):
         If type is JobList return list of Job object with only id field is 
         filled
         """
+        self.beginTransaction()
+        
         jobAction = self.daofactory(classname = "JobGroup.LoadJobs")
         jobIDs = jobAction.execute(self.id, conn = self.getReadDBConn(),
                                    transaction = self.existingTransaction())
+
+        self.commitIfNew()
         
         if type == "JobList":
             jobList = []
@@ -218,10 +222,16 @@ class JobGroup(WMBSBase, WMJobGroup):
         """
         if jobs == None:
             jobs = self.getJobIDs(type = "JobList")
-                
-        for job in jobs: 
-            self.subscription.acquireFiles(job.getFileIDs(type = "dict"))
 
+        self.beginTransaction()
+        for job in jobs:
+            job.changeStatus("Active")
+            inputFiles = job.getFiles()
+
+            if len(inputFiles) > 0:
+                self.subscription.acquireFiles(inputFiles)
+
+        self.commitIfNew()
         return True
     
     def recordComplete(self, jobs = None):
@@ -238,10 +248,16 @@ class JobGroup(WMBSBase, WMJobGroup):
         """
         if jobs == None:
             jobs = self.getJobIDs(type = "JobList")
-                
-        for job in jobs:
-            self.subscription.completeFiles(job.getFileIDs(type = "dict"))
 
+        self.beginTransaction()
+        for job in jobs:
+            job.changeStatus("Complete")            
+            inputFiles = job.getFiles()
+
+            if len(inputFiles) > 0:
+                self.subscription.completeFiles(inputFiles)
+
+        self.commitIfNew()
         return True
     
     def recordFail(self, jobs = None):
@@ -258,10 +274,16 @@ class JobGroup(WMBSBase, WMJobGroup):
         """
         if jobs == None:
             jobs = self.getJobIDs(type = "JobList")
-            
-        for job in jobs: 
-            self.subscription.failFiles(job.getFileIDs(type = "dict"))
 
+        self.beginTransaction()
+        for job in jobs:
+            job.changeStatus("Failed")            
+            inputFiles = job.getFiles()
+
+            if len(inputFiles) > 0:
+                self.subscription.failFiles(inputFiles)
+
+        self.commitIfNew()
         return True
     
     def status(self, detail = False):

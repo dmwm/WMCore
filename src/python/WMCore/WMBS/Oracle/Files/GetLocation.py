@@ -9,8 +9,10 @@ class GetLocation(GetLocationFileMySQL):
     _GetLocation_
     
     Oracle specific: file is reserved word
+
     """
-    
-    sql = sql = """select se_name from wmbs_location 
-                   where id in (select location from wmbs_file_location 
-                   where fileid in (select id from wmbs_file_details where lfn=:lfn))"""
+    sql = """SELECT wmbs_location.se_name
+             FROM wmbs_file_location
+             INNER JOIN wmbs_location ON
+               wmbs_location.id = wmbs_file_location.location
+             WHERE wmbs_file_location.fileid = (SELECT id FROM wmbs_file_details WHERE lfn = :lfn)"""

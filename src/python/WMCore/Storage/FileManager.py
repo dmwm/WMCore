@@ -39,7 +39,7 @@ class FileManager:
                       
     plugin implementations require:
     newPfn =  pluginImplementation.doTransfer( lfn, pfn, stageOut, seName, command, options, protocol  )
-    pluginImplementation.doDelete( lfn, pfn, seName, command, options, protocol  )
+    pluginImplementation.doDelete(pfn, seName, command, options, protocol  )
     
     Which make one attempt to perform the action and raises if it doesn't succeed. It is the plugins
     responsibility to verify that things are complete.

@@ -5,8 +5,8 @@ _TrivialFileCatalog_t_
 Test the parsing of the TFC.
 """
 
-__revision__ = "$Id: TrivialFileCatalog_t.py,v 1.2 2010/07/12 16:04:37 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TrivialFileCatalog_t.py,v 1.3 2010/07/12 16:06:56 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import unittest
@@ -69,7 +69,9 @@ class TrivialFileCatalogTest(unittest.TestCase):
         tfc_file = phedex.cacheFileName('tfc', inputdata={'node': site})
         tfc = readTFC(tfc_file)
         
-        print tfc.matchLFN('srmv2', '/store/user/metson/file')
+        pfn = tfc.matchLFN('srmv2', '/store/user/metson/file')
+        
+        assert pfn.startswith('srm')
     
 if __name__ == "__main__":
     unittest.main()

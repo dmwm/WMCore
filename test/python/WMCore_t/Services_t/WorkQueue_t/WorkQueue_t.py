@@ -16,7 +16,7 @@ from WorkQueuePopulator import createProductionSpec, createProcessingSpec, getGl
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
-class WorkQueueServiceTest(RESTBaseUnitTest):
+class WorkQueueTest(RESTBaseUnitTest):
     """
     Test WorkQueue Service client
     It will start WorkQueue RESTService

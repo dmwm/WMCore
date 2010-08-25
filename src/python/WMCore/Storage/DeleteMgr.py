@@ -54,6 +54,7 @@ class DeleteMgr:
         self.numberOfRetries = 3
         self.retryPauseTime  = 600
         self.seName          = None
+        self.fallbacks       = []
 
         #  //
         # // If override isnt None, we dont need SiteCfg, if it is
@@ -149,7 +150,6 @@ class DeleteMgr:
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
         print msg
-        self.fallbacks = []
         self.fallbacks.append(overrideParams)
         self.seName = overrideParams['se-name']
         return

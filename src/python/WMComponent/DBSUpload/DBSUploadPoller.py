@@ -26,8 +26,8 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.26 2010/05/26 19:26:10 mnorman Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.27 2010/06/04 19:11:29 mnorman Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import threading
 import logging
@@ -35,6 +35,7 @@ import time
 import traceback
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.ProcessPool.ProcessPool        import ProcessPool
 
 from WMCore.WMFactory  import WMFactory
 from WMCore.DAOFactory import DAOFactory
@@ -94,7 +95,38 @@ def sortByDAS(incoming):
     return output
 
 
+def createConfigForJSON(config):
+    """
+    Turn a config object into a dictionary of dictionaries
 
+    """
+
+    final = {}
+    for sectionName in config.listSections_():
+        section = getattr(config, sectionName)
+        if hasattr(section, 'dictionary_'):
+            # Create a dictionary key for it
+            final[sectionName] = createDictionaryFromConfig(section)
+
+
+    return final
+
+
+def createDictionaryFromConfig(configSection):
+    """
+    Recursively create dictionaries from config
+
+    """
+
+
+    final = configSection.dictionary_()
+
+    for key in final.keys():
+        if hasattr(final[key], 'dictionary_'):
+            # Then we can turn it into a dictionary
+            final[key] = createDictionaryFromConfig(final[key])
+
+    return final
 
 
 class DBSUploadPoller(BaseWorkerThread):
@@ -116,7 +148,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # This is slightly dangerous, but DBSUpload depends
         # on DBSInterface anyway
-        self.DBSBlockTimeout = self.config.DBSInterface.DBSBlockMaxTime
+        self.dbsBlockTimeout = self.config.DBSInterface.DBSBlockMaxTime
 
         self.bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                         logger = myThread.logger,
@@ -126,16 +158,21 @@ class DBSUploadPoller(BaseWorkerThread):
                             "WMComponent.DBSUpload.Database.Interface")
         self.dbinterface = factory.loadObject("UploadToDBS")
 
-        bufferFactory = WMFactory("dbsBuffer",
-                                  "WMComponent.DBSBuffer.Database.Interface")
-        self.addToBuffer = bufferFactory.loadObject("AddToBuffer")
-
-
         self.dbsInterface = DBSInterface(config = config)
 
         if dbsconfig == None:
             self.dbsconfig = config
-    
+
+        configDict = createConfigForJSON(config)
+
+        self.processPool = ProcessPool("DBSUpload.DBSUploadWorker",
+                                       totalSlaves = self.config.DBSUpload.workerThreads,
+                                       componentDir = self.config.DBSUpload.componentDir,
+                                       config = self.config,
+                                       slaveInit = configDict)
+
+
+
     def setup(self, parameters):
         """
         Do nothing
@@ -150,101 +187,18 @@ class DBSUploadPoller(BaseWorkerThread):
 
         """
         dbinterface = self.dbinterface
-        addToBuffer = self.addToBuffer
 
         myThread = threading.currentThread()
 
+        # Grab all the Dataset-Algo combindations
+        dasList = dbinterface.findUploadableDAS()
 
-        # Get DAOs
-        setBlock  = self.bufferFactory(classname = "DBSBufferFiles.SetBlock")
+        if len(dasList) > 0:
+            # Then send off some work
 
-        # Get all files that need to be uploaded
-        unsortedFileList = dbinterface.findUploadableFiles()
-        fileList = sortByDAS(incoming = unsortedFileList)
-        logging.debug('Have retrieved %i files to be uploaded from DBSBuffer' \
-                      % (len(fileList)))
-
-
-
-        for datasetAlgo in fileList.keys():
-            # Now we process each datasetAlgo, with all its files.
-
-            algo    = createAlgoFromInfo(info = fileList[datasetAlgo][0])
-            dataset = createDatasetFromInfo(info = fileList[datasetAlgo][0])
-
-
+            self.processPool.enqueue(work = dasList)
             
-            # Create a new transaction once per datasetAlgo
-            myThread.transaction.begin()
-
-            # Get the files
-            files    = []
-            fileLFNs = []
-            files = addToBuffer.loadDBSBufferFilesBulk(fileObjs = fileList[datasetAlgo])
-            fileLFNs.extend([f['lfn'] for f in files])
-            
-
-            try:
-                # Do all actual useful operations inside
-                # a single try/error loop
-                # This includes all of DBS
-                
-                # Do all DBS Operations
-                affectedBlocks = self.dbsInterface.runDBSBuffer(algo = algo,
-                                                                dataset = dataset,
-                                                                files = files)
-
-                if not algo['InDBS']:
-                    # List the algo as uploaded
-                    addToBuffer.updateAlgo(algo, 1)
-                if not dataset['DASInDBS']:
-                    # List the datasetAlgo as uploaded
-                    dbinterface.setDatasetAlgo(datasetAlgoInfo = \
-                                               {'DAS_ID': datasetAlgo},
-                                               inDBS = 1)
-                for block in affectedBlocks:
-                    info = block['StorageElementList']
-                    locations = []
-                    for loc in info:
-                        locations.append(loc['Name'])
-                    self.dbinterface.setBlockStatus(block['Name'], locations,
-                                                    block['OpenForWriting'],
-                                                    int(block['CreationDate']))
-                    
-                    blockFileList = []
-                    for f in block.get('insertedFiles', []):
-                        blockFileList.append(f['LogicalFileName'])
-                        setBlock.execute(lfn = blockFileList,
-                                         blockName = block['Name'],
-                                         conn = myThread.transaction.conn,
-                                         transaction = myThread.transaction)
-
-                # Update the file status, and then recount UnMigrated Files
-                dbinterface.updateFilesStatus(fileLFNs, "InDBS")
-
-                # Commit transaction and finish
-                myThread.transaction.commit()
-
-
-            
-
-            except DBSInterfaceError, ex:
-                msg =  'Error in DBS Interface\n'
-                msg += str(ex)
-                msg += str(traceback.format_exc())
-                logging.error(msg)
-                myThread.transaction.rollback()
-                raise Exception(msg)
-            except Exception, ex:
-                msg =  'Error in committing files to DBS\n'
-                msg += str(ex)
-                msg += str(traceback.format_exc())
-                logging.error(msg)
-                myThread.transaction.rollback()
-                raise Exception(msg)
-
-
-
+            self.processPool.dequeue(totalItems = len(dasList))
 
         # And we're done with putting stuff in.
         # Check to see if any blocks have timed out
@@ -260,7 +214,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
             for buffBlock in blocks:
                 if time.time() - buffBlock['create_time'] \
-                       > self.DBSBlockTimeout:
+                       > self.dbsBlockTimeout:
                     # Then we have to load a block
                     blocksToClose.append(buffBlock['blockname'])
 
@@ -271,8 +225,7 @@ class DBSUploadPoller(BaseWorkerThread):
             for block in doneBlocks:
                 # Now close 'em in DBSBuffer
                 dbinterface.setBlockStatus(block['Name'], locations = None,
-                                           openStatus = 0,
-                                           time = block['CreationDate'])
+                                           openStatus = 0)
 
 
             myThread.transaction.commit()
@@ -291,11 +244,14 @@ class DBSUploadPoller(BaseWorkerThread):
             myThread.transaction.rollback()
             raise Exception(msg)
 
-
-
-
         return
-        
+
+
+
+
+
+
+
 
     def terminate(self, params):
         """

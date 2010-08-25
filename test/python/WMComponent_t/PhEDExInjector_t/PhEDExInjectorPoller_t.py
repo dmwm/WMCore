@@ -7,8 +7,8 @@ and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
 back down and verify that everything is complete.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.6 2009/12/02 17:52:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.7 2009/12/10 19:53:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 import time
@@ -88,8 +88,10 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         We'll inject files with the location set as an SE name as well as a
         PhEDEx node name as well.
         """
+        checksums = {"adler32": "1234", "cksum": "5678"}
         testFileA = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
-                                  cksum = 1234, locations = Set(["srm.cern.ch"]))
+                                  checksums = checksums,
+                                  locations = Set(["srm.cern.ch"]))
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -98,7 +100,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         testFileA.create()
 
         testFileB = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
-                                  cksum = 1234, locations = Set(["srm.cern.ch"]))
+                                  checksums = checksums,
+                                  locations = Set(["srm.cern.ch"]))
         testFileB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -107,7 +110,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         testFileB.create()
 
         testFileC = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
-                                  cksum = 1234, locations = Set(["srm.cern.ch"]))
+                                  checksums = checksums,
+                                  locations = Set(["srm.cern.ch"]))
         testFileC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -120,7 +124,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         self.testFilesA.append(testFileC)        
 
         testFileD = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
-                                  cksum = 1234, locations = Set(["srm.cern.ch"]))
+                                  checksums = checksums,
+                                  locations = Set(["srm.cern.ch"]))
         testFileD.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -129,7 +134,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         testFileD.create()
 
         testFileE = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
-                                  cksum = 1234, locations = Set(["srm.cern.ch"]))
+                                  checksums = checksums,
+                                  locations = Set(["srm.cern.ch"]))
         testFileE.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -148,8 +154,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         self.blockAName = "/Cosmics/CRUZET09-PromptReco-v1/RAW#" + makeUUID()
         self.blockBName = "/Cosmics/CRUZET09-PromptReco-v1/RECO#" + makeUUID()
-        createBlock.execute(block = self.blockAName, locations = ["srm.cern.ch"])
-        createBlock.execute(block = self.blockBName, locations = ["srm.cern.ch"])
+        createBlock.execute(block = self.blockAName, locations = ["srm.cern.ch"], open_status = 1)
+        createBlock.execute(block = self.blockBName, locations = ["srm.cern.ch"], open_status = 1)
 
         bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                    logger = myThread.logger,

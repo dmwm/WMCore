@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.17 2010/05/21 19:04:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.18 2010/06/16 14:22:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import threading
 import traceback
@@ -97,7 +97,6 @@ class ExecuteMaster:
         preOutcome = executionObject.pre()
         if preOutcome != None:
             print "Pre Executor Task Change: %s" % preOutcome
-            print "TODO: Implement Me!!!"
             executor.saveReport()
             self.toTaskDirectory()
         try:
@@ -111,7 +110,6 @@ class ExecuteMaster:
         postOutcome = executionObject.post()
         if postOutcome != None:
             print "Pre Executor Task Change: %s" % preOutcome
-            print "TODO: Implement Me!!!"
             executor.saveReport()
             self.toTaskDirectory()
         self.toTaskDirectory()

@@ -3,8 +3,8 @@
 #Basic model for a tracker plugin
 #Should do nothing
 
-__revision__ = "$Id: CondorTracker.py,v 1.3 2010/06/08 21:47:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: CondorTracker.py,v 1.4 2010/06/23 23:04:53 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 import logging
@@ -61,12 +61,21 @@ class CondorTracker(TrackerPlugin):
 
 
         jobInfo = {}
-
-        command = ['condor_q', '-constraint', 'WMAgent_JobID =!= UNDEFINED',
-                   '-constraint', 'WMAgent_AgentName =?= "%s"' % (self.config.Agent.agentName),
-                   '-format', '(JobStatus:\%s)  ', 'JobStatus',
-                   '-format', '(stateTime:\%s)  ', 'EnteredCurrentStatus',
-                   '-format', '(WMAgentID:\%d):::',  'WMAgent_JobID']
+        if hasattr(self.config.JobTracker, 'CondorPoolHost'):
+            command = ['condor_q', '-pool', self.config.JobTracker.CondorPoolHost,
+                       '-constraint', 'WMAgent_JobID =!= UNDEFINED',
+                       '-constraint', 'WMAgent_AgentName =?= "%s"' % (self.config.Agent.agentName),
+                       '-format', '(JobStatus:\%s)  ', 'JobStatus',
+                       '-format', '(stateTime:\%s)  ', 'EnteredCurrentStatus',
+                       '-format', '(WMAgentID:\%d):::',  'WMAgent_JobID']
+        else:
+            command = ['condor_q', '-constraint', 'WMAgent_JobID =!= UNDEFINED',
+                       '-constraint', 'WMAgent_AgentName =?= "%s"' % (self.config.Agent.agentName),
+                       '-format', '(JobStatus:\%s)  ', 'JobStatus',
+                       '-format', '(stateTime:\%s)  ', 'EnteredCurrentStatus',
+                       '-format', '(WMAgentID:\%d):::',  'WMAgent_JobID']
+        logging.debug("Attempting to call condor_q to track jobs")
+        logging.debug("Command: %s" % command)           
         pipe = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)
         stdout, stderr = pipe.communicate()
         classAdsRaw = stdout.split(':::')

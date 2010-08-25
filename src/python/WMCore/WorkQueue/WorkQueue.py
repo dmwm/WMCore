@@ -186,6 +186,8 @@ class WorkQueue(WorkQueueBase):
         """
         try:
             iter(ids)
+            if type(ids) in types.StringTypes:
+                raise TypeError
         except TypeError:
             ids = [ids]
 
@@ -457,7 +459,8 @@ class WorkQueue(WorkQueueBase):
         """
         pass
 
-    def queueWork(self, wmspecUrl, parentQueueId = None, team = None):
+    def queueWork(self, wmspecUrl, parentQueueId = None,
+                  team = None, request = None):
         """
         Take and queue work from a WMSpec
         """
@@ -469,7 +472,7 @@ class WorkQueue(WorkQueueBase):
         # Do database stuff in one quick loop
         with self.transactionContext():
             for unit in totalUnits:
-                self._insertWorkQueueElement(unit, teamName = team)
+                self._insertWorkQueueElement(unit, request, team)
 
         return len(totalUnits)
 

@@ -594,6 +594,33 @@ class WorkQueueTest(WorkQueueTestCase):
                          if x['ChildQueueUrl'] == self.localQueue2.params['QueueURL']]
         self.assertEqual(len(work_at_local2), 1)
 
-        
+
+    def testCancelWork(self):
+        """Cancel work"""
+        self.queue.queueWork(self.processingSpec.specUrl())
+        elements = len(self.queue)
+        self.queue.updateLocationInfo()
+        work = self.queue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
+        self.assertEqual(len(self.queue), 0)
+        self.assertEqual(len(self.queue.status(status='Acquired')), elements)
+        ids = [x['element_id'] for x in work]
+        canceled = self.queue.cancelWork(ids)
+        self.assertEqual(sorted(canceled), sorted(ids))
+        self.assertEqual(len(self.queue), 0)
+        self.assertEqual(len(self.queue.status(status='Canceled')), elements)
+
+        # now cancel a request
+        self.queue.queueWork(self.spec.specUrl(), request = 'Request-1')
+        elements = len(self.queue)
+        work = self.queue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
+        self.assertEqual(len(self.queue), 0)
+        self.assertEqual(len(self.queue.status(status='Acquired')), elements)
+        ids = [x['element_id'] for x in work]
+        canceled = self.queue.cancelWork('Request-1', id_type = 'request_name')
+        self.assertEqual(canceled, 'Request-1')
+        self.assertEqual(len(self.queue), 0)
+        self.assertEqual(len(self.queue.status(status='Canceled',
+                                               elementIDs = ids)), elements)
+
 if __name__ == "__main__":
     unittest.main()

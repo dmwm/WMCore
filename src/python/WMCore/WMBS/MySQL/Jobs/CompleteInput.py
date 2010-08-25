@@ -5,8 +5,8 @@ _CompleteInput_
 MySQL implementation of Jobs.Complete
 """
 
-__revision__ = "$Id: CompleteInput.py,v 1.1 2009/10/13 20:52:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CompleteInput.py,v 1.2 2009/10/14 20:29:46 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -14,6 +14,9 @@ class CompleteInput(DBFormatter):
     """
     _CompleteInput_
 
+    Mark the input files for a job as complete if and only if all the jobs that
+    run over the files have been complete successfully.  This will also remove
+    entries from the acquired and failed tables.
     """
     acquiredDelete = """DELETE FROM wmbs_sub_files_acquired
                           WHERE subscription =
@@ -39,7 +42,7 @@ class CompleteInput(DBFormatter):
                                         INNER JOIN wmbs_job ON
                                           wmbs_jobgroup.id = wmbs_job.jobgroup
                                       WHERE wmbs_job.id = :jobid)
-                                   GROUP BY wmbs_job_assoc.file, wmbs_jobgroup.subscription)
+                                   GROUP BY wmbs_job_assoc.file, wmbs_jobgroup.subscription) file_table
                                 WHERE total_jobs = successful_jobs)"""
 
     failedDelete = """DELETE FROM wmbs_sub_files_failed
@@ -66,7 +69,7 @@ class CompleteInput(DBFormatter):
                                         INNER JOIN wmbs_job ON
                                           wmbs_jobgroup.id = wmbs_job.jobgroup
                                       WHERE wmbs_job.id = :jobid)
-                                   GROUP BY wmbs_job_assoc.file, wmbs_jobgroup.subscription)
+                                   GROUP BY wmbs_job_assoc.file, wmbs_jobgroup.subscription) file_table
                                 WHERE total_jobs = successful_jobs)"""
                                  
     sql = """INSERT INTO wmbs_sub_files_complete (file, subscription)
@@ -86,7 +89,7 @@ class CompleteInput(DBFormatter):
                        INNER JOIN wmbs_job ON
                          wmbs_jobgroup.id = wmbs_job.jobgroup
                      WHERE wmbs_job.id = :jobid)
-                  GROUP BY wmbs_job_assoc.file, wmbs_jobgroup.subscription)
+                  GROUP BY wmbs_job_assoc.file, wmbs_jobgroup.subscription) file_table
                WHERE total_jobs = successful_jobs AND NOT EXISTS
                  (SELECT file FROM wmbs_sub_files_complete
                     WHERE subscription =

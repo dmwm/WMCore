@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.43 2010/04/20 14:47:32 sryu Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: Service.py,v 1.44 2010/05/24 17:35:30 metson Exp $"
+__version__ = "$Revision: 1.44 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -137,7 +137,7 @@ class Service(dict):
                 hash += value.__hash__()
         return hash
     
-    def cacheFileName(self, cachefile, verb, inputdata = {}):
+    def cacheFileName(self, cachefile, verb='GET', inputdata = {}):
         """
         Calculate the cache filename for a given query.
         """
@@ -152,7 +152,7 @@ class Service(dict):
         return cachefile
 
     def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True, 
-                     encoder = True, decoder= True, verb = None, contentType = None):
+                     encoder = True, decoder= True, verb = 'GET', contentType = None):
         """
         See if the cache has expired. If it has make a new request to the 
         service for the input data. Return the cachefile as an open file object.  
@@ -161,17 +161,19 @@ class Service(dict):
         
         t = datetime.datetime.now() - datetime.timedelta(hours = self['cacheduration'])
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
-
+        
+        
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self['logger'].debug("%s expired, refreshing cache" % cachefile)
             self.getData(cachefile, url, inputdata, encoder, decoder, verb, contentType)
+
         if openfile:
             return open(cachefile, 'r')
         else:
             return cachefile
 
     def forceRefresh(self, cachefile, url='', inputdata = {}, encoder = True, 
-                     decoder = True, verb = None, contentType = None):
+                     decoder = True, verb = 'GET', contentType = None):
         """
         Make a new request to the service for the input data, regardless of the 
         cache statue. Return the cachefile as an open file object.  
@@ -184,7 +186,7 @@ class Service(dict):
         self.getData(cachefile, url, inputdata, encoder, decoder, verb, contentType)
         return open(cachefile, 'r')
 
-    def clearCache(self, cachefile, inputdata = {}, verb = None):
+    def clearCache(self, cachefile, inputdata = {}, verb = 'GET'):
         """
         Delete the cache file.
         """
@@ -197,7 +199,7 @@ class Service(dict):
             return
 
     def getData(self, cachefile, url, inputdata = {}, encoder = True, decoder = True, 
-                verb = None, contentType = None):
+                verb = 'GET', contentType = None):
         """
         Takes the already generated *full* path to cachefile and the url of the 
         resource. Don't need to call self.cacheFileName(cachefile, verb, inputdata)
@@ -223,20 +225,55 @@ class Service(dict):
                                                     decoder = decoder,
                                                     contentType = contentType)
             
-            # Don't need to prepend the cachepath, the methods calling getData
-            # have done that for us 
+            # Don't need to prepend the cachepath, the methods calling 
+            # getData have done that for us 
             f = open(cachefile, 'w')
             f.write(str(data))
             f.close()
+        except HTTPException, he:
+            if not os.path.exists(cachefile):
+                msg = 'The cachefile %s does not exist and the service at %s is'
+                msg += ' unavailable - it returned %s because %s'
+                msg = msg % (cachefile, he.url, he.status, he.reason)
+                self['logger'].warning(msg)
+                raise he
+            else:
+                cache_age = os.path.getmtime(cachefile)
+                t = datetime.datetime.now() - datetime.timedelta(hours = 5 * self.get('cacheduration', 1))
+                cache_dead = cache_age < time.mktime(t.timetuple())
+                if self.get('usestalecache', False) and not cache_dead:
+                    # If usestalecache is set the previous version of the cache file 
+                    # should be returned, with a suitable message in the log
+                    self['logger'].warning('Returning stale cache data')
+                    self['logger'].info('%s returned %s because %s' % (he.url, 
+                                                                       he.status,
+                                                                       he.reason))
+                    self['logger'].info('cache file (%s) was created on %s' % (
+                                                                        cachefile,
+                                                                        cache_age))
+                else:
+                    if cache_dead:
+                        msg = 'The cachefile %s is dead (5 times older than cache '
+                        msg += 'duration), and the service at %s is unavailable - '
+                        msg += 'it returned %s because %s'
+                        msg = msg % (cachefile, he.url, he.status, he.reason)
+                        self['logger'].warning(msg)
+                    elif self.get('usestalecache', False) == False:
+                        msg = 'The cachefile %s is stale and the service at %s is'
+                        msg += ' unavailable - it returned %s because %s'
+                        msg = msg % (cachefile, he.url, he.status, he.reason)
+                        self['logger'].warning(msg)
+                    raise he
+                
         finally:
             # Reset the timeout to it's original value
             socket.setdefaulttimeout(deftimeout)
             
-    def _verbCheck(self, verb):
-        if verb in self.supportVerbList:
-            return verb
-        elif self['method'] in self.supportVerbList:
-            return self['method']
+    def _verbCheck(self, verb='GET'):
+        if verb.upper() in self.supportVerbList:
+            return verb.upper()
+        elif self['method'].upper() in self.supportVerbList:
+            return self['method'].upper()
         else:
             raise TypeError, 'verb parameter needs to be set'
         

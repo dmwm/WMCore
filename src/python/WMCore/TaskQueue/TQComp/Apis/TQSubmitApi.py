@@ -7,13 +7,13 @@ from TQComp.Apis.TQApi.
 """
 
 __all__ = []
-__revision__ = "$Id: TQSubmitApi.py,v 1.4 2009/09/29 12:23:02 delgadop Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TQSubmitApi.py,v 1.5 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import logging
 import threading
 import time
-import xml.dom.minidom
+import xml.dom.minidom as dom
 
 from TQComp.Apis.TQApi import TQApi
 from TQComp.Apis.TQApiData import validateTask
@@ -47,6 +47,24 @@ class TQSubmitApi(TQApi):
         TQApi.__init__(self, logger, tqRef, dbIface)
 
 
+    def insertTask(self, task):
+        """
+        Insert a task in the queue.
+        The 'task' must be a dict as defined in TQComp.Apis.TQApiData.Task.
+        """
+
+#        self.logger.debug('Inserting task: %s, %s, %s, %s' %\
+#                     (spec, sandbox, wkflow, type))
+
+        # This may raise a ValueError exception if not compliant
+        validateTask(task)
+            
+        # Insert job and its characteristics into the database
+        self.transaction.begin()
+        self.queries.addTask(task)
+        self.transaction.commit()
+
+
     def insertTaskBulk(self, taskList):
         """
         Insert a bunch of tasks.
@@ -71,9 +89,13 @@ class TQSubmitApi(TQApi):
         self.transaction.commit()
 
     
-    def insertTask(self, task):
+
+    def insertTaskDeps(self, task):
         """
-        Insert a task in the queue.
+        Insert a task in the queue previous analysis of its dependencies
+        (as expressed in its spec file), and possible modification of its
+        'reqs' field as a result of it.
+
         The 'task' must be a dict as defined in TQComp.Apis.TQApiData.Task.
         """
 
@@ -82,6 +104,20 @@ class TQSubmitApi(TQApi):
 
         # This may raise a ValueError exception if not compliant
         validateTask(task)
+
+        # Inspect deps
+        inputFiles = self.__parseInputFiles(task['spec'])
+        if inputFiles:
+            for file in inputFiles:
+            # For each file we include a dependency that is significant only 
+            # for 10 seconds (after that, it is just: 'and True') but is still
+            # counted in the ranking (more points for this task if the pilot
+            # holds the file). 
+            # We might change this when we make out our mind about how we want
+            # data dependencies to work (if we want it to be like this, we'd 
+            # be probably better off by having a configurable ranking 
+            #expression, instead using QTIME's trick).
+                task['reqs'] += " and (('%s' in cache) or (QTIME()>10))" % (file)
             
         # Insert job and its characteristics into the database
         self.transaction.begin()
@@ -89,6 +125,38 @@ class TQSubmitApi(TQApi):
         self.transaction.commit()
 
 
+    def insertTaskBulkDeps(self, taskList):
+        """
+        Insert a bunch of tasks in the queue previous analysis of its 
+        dependencies (as expressed in its spec file), and possible modification
+        of its 'reqs' field as a result of it.
+        
+        The 'taskList' must be a list of dicts as defined in
+        TQComp.Apis.TQApiData.Task.
+        """
+        where = 0
+        todel = []
+        for task in taskList:
+            try:
+                validateTask(task)
+                # Inspect deps
+                inputFiles = self.__parseInputFiles(task['spec'])
+                if inputFiles:
+                    for file in inputFiles:
+                        task['reqs'] += " and (('%s' in cache) or (QTIME()>10))" % (file)
+            except ValueError, inst:
+                self.logger.warning('%s' % inst)
+                todel.insert(0,where)
+            where += 1
+
+        for i in todel:
+            taskList.pop(i)
+           
+        self.transaction.begin()
+        self.queries.addTasksBulk(taskList)
+        self.transaction.commit()
+
+    
     def removeOneTask(self, taskid):
         """
         Remove a task from the queue.
@@ -165,10 +233,42 @@ not set. Doing nothing.")
         
         self.transaction.begin()
         # TODO: for each running task, prepare a message for its pilot, so that
-        #       it is told to kill the real job (on reply of next hbeat message
+        #       it is told to kill the real job (on reply of next hbeat message)
         self.queries.updateTasks(taskIds, ['state'], [taskStates['Killed']])
         self.queries.archiveTasksById(taskIds)
         self.queries.removeTasksById(taskIds)
         self.transaction.commit()
+
+
+    def __parseInputFiles(self, xmlFile):
+        """
+        Utility to parse the specified XML file looking for InputFile elements
+        under CMSSWConfig/Source. It returns a list of the textual values of the 
+        composing File elements. If the InputFile element is not found, None is 
+        returned. If it is found, but empty, an empty list is returned.
+        """
+        files = []
+        xmldoc = dom.parse(xmlFile)  
+
+        anchor = xmldoc
+        # The following would make a stricter (but slower and less flexible) 
+        # element chain verification (worth it?)
+#        try:
+#            anchor = anchor.getElementsByTagName('CMSSWConfig')[0]
+#            anchor = anchor.getElementsByTagName('Source')[0]
+#        except Exception, inst:
+#            messg = "Parsing invalid job spec file (%s): %s " % (xmlFile, inst)
+#            self.logger.warning(messg)
+#            return None
+
+        try:
+            anchor = anchor.getElementsByTagName('InputFiles')[0]
+        except:
+            return None
+            
+        for elem in anchor.getElementsByTagName('File'):
+            files.append(elem.childNodes[0].nodeValue.strip())
+
+        return files
 
 

@@ -5,8 +5,8 @@ _TaskQueueTracker_
 Tracker for TaskQueue submissions.
 """
 
-__revision__ = "$Id: TaskQueueTracker.py,v 1.2 2009/09/29 12:23:04 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TaskQueueTracker.py,v 1.3 2009/12/16 18:09:06 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import os
@@ -105,17 +105,25 @@ class TaskQueueTracker(TrackerPlugin):
             if jobState == taskStates["Queued"]:
                 logging.debug("Job %s is pending" % (subId))
                 continue
+            #KH: 
+            elif jobState == taskStates["Done"]:
+                logging.debug("Job %s is completed" % (subId)) 
+                self.TrackerDB.jobComplete(subId)
+                toRemove.append(subId)
 
-            # If running or completed already, forward to running handler
-            elif (jobState == taskStates["Running"]) or \
-                   (jobState == taskStates["Done"]):
+            # If running , forward to running handler
+            elif (jobState == taskStates["Running"]):
                 logging.debug("Job %s is running" % (subId))
                 self.TrackerDB.jobRunning(subId)
+            #KH:ends
 
             # Failed 
             elif jobState == taskStates["Failed"]:
                 logging.debug("Job %s failed" % (subId))
-                self.TrackerDB.jobFailed(subId)
+                # Real job failed, but the job was run OK and FWJR was generated, so for CondorTracker
+                # it was completed (it will then see the failure in the FWJR)
+#                self.TrackerDB.jobFailed(subId)
+                self.TrackerDB.jobComplete(subId)
                 toRemove.append(subId)
                 
             # No more states left!
@@ -185,7 +193,10 @@ class TaskQueueTracker(TrackerPlugin):
             # Failed 
             elif jobState == taskStates["Failed"]:
                 logging.debug("Job %s failed" % (runId))
-                self.TrackerDB.jobFailed(runId)
+                # Real job failed, but the job was run OK and FWJR was generated, so for CondorTracker
+                # it was completed (it will then see the failure in the FWJR)
+#                self.TrackerDB.jobFailed(runId)
+                self.TrackerDB.jobComplete(runId)
                 toRemove.append(runId)
             
             # No more states left!

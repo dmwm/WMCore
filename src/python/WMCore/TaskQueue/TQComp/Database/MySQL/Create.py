@@ -8,8 +8,8 @@ Class for creating MySQL specific schema for the error handler.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.6 2009/09/29 14:25:41 delgadop Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Create.py,v 1.7 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "delgadop@cern.ch"
 
 import threading
@@ -42,15 +42,15 @@ class Create(DBCreator):
 SET AUTOCOMMIT = 0; """
 # Lists tasks in the queue
 #    `id` int unsigned NOT NULL AUTO_INCREMENT,
-        self.create['tq_tasks'] = """      
+        self.create['10tq_tasks'] = """      
 CREATE TABLE `tq_tasks` (
     `id` varchar(255) NOT NULL,
-    `spec` varchar(255),
-    `sandbox` varchar(255),
+    `spec` varchar(511),
+    `sandbox` varchar(511),
     `wkflow` varchar(255),
     `type` varchar(255),
-    `reqs` varchar(510),
-    `req_se` varchar(510),
+    `reqs` varchar(16383)
+    `req_se` varchar(1023),
     `pilot` int unsigned,
     `state` tinyint unsigned NOT NULL default 0,
     `creat_time` timestamp default CURRENT_TIMESTAMP,
@@ -63,12 +63,12 @@ CREATE TABLE `tq_tasks` (
 # TODO: Might have a site field as a reference to a new tq_sites table?
 # (if we need to keep more info about sites...)
 #    `site` varchar(255),
-        self.create['tq_pilots'] = """      
+        self.create['05tq_pilots'] = """      
 CREATE TABLE `tq_pilots` (
     `id` int unsigned NOT NULL AUTO_INCREMENT,
     `host` varchar(255),
     `se` varchar(255),
-    `cachedir` varchar(255),
+    `cachedir` varchar(511),
     `ttl` int unsigned,
     `ttl_time` timestamp default 0,
     `last_heartbeat` timestamp default CURRENT_TIMESTAMP,
@@ -97,7 +97,7 @@ CREATE TABLE `tq_pilots` (
 # Links hosts and the data stored in their cache
 # The field 'se' acts as a site contrain (there might be hosts
 # with same name at different sites, but not within the same one)
-        self.create['tq_hostdata'] = """
+        self.create['50tq_hostdata'] = """
 CREATE TABLE `tq_hostdata` (
     `id` int unsigned NOT NULL AUTO_INCREMENT,
     `host` varchar(255) NOT NULL,
@@ -111,20 +111,20 @@ CREATE TABLE `tq_hostdata` (
 
 # TODO: This will go away when we move to cache per host
 # Links pilots and the data stored in their cache
-        self.create['tq_pilotdata'] = """
+        self.create['50tq_pilotdata'] = """
 CREATE TABLE `tq_pilotdata` (
     `id` int unsigned NOT NULL AUTO_INCREMENT,
-    `pilot` varchar(255) NOT NULL,
+    `pilot` int unsigned NOT NULL,
     `data` varchar(255) NOT NULL,
     PRIMARY KEY `id` (`id`),
-    CONSTRAINT `fk_data` FOREIGN KEY (`data`) REFERENCES `tq_data`(`guid`),
-    CONSTRAINT `fk_pilot` FOREIGN KEY (`pilot`) REFERENCES `tq_pilots`(`id`),
+    CONSTRAINT `fk_pd_data` FOREIGN KEY (`data`) REFERENCES `tq_data`(`guid`),
+    CONSTRAINT `fk_pd_pilot` FOREIGN KEY (`pilot`) REFERENCES `tq_pilots`(`id`),
     CONSTRAINT `uniq_pilotdata` UNIQUE (`pilot`, `data`) 
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """
 
 # Lists existing pieces of data (type, size, etc.)
-        self.create['tq_data'] = """      
+        self.create['15tq_data'] = """      
 CREATE TABLE `tq_data` (
     `guid` varchar(255) NOT NULL,
     `type` tinyint unsigned NOT NULL default 0,
@@ -143,7 +143,7 @@ CREATE TABLE `tq_data` (
 ###################################################
 
 # Logs events from a pilot (we may not have a log report for it)
-        self.create['tq_pilot_log'] = """      
+        self.create['30tq_pilot_log'] = """      
 CREATE TABLE `tq_pilot_log` (
     `id` int unsigned NOT NULL AUTO_INCREMENT,
     `pilot_id` int unsigned NOT NULL,
@@ -157,15 +157,15 @@ CREATE TABLE `tq_pilot_log` (
 """
 
 # Tasks archival for post-mortem inspection
-        self.create['tq_tasks_archive'] = """      
+        self.create['30tq_tasks_archive'] = """      
 CREATE TABLE `tq_tasks_archive` (
     `id` varchar(255) NOT NULL,
-    `spec` varchar(255),
-    `sandbox` varchar(255),
+    `spec` varchar(511),
+    `sandbox` varchar(511),
     `wkflow` varchar(255),
     `type` varchar(255),
-    `reqs` varchar(510),
-    `req_se` varchar(510),
+    `reqs` varchar(16383),
+    `req_se` varchar(1023),
     `pilot` int unsigned,
     `state` tinyint unsigned NOT NULL default 0,
     `creat_time` timestamp default CURRENT_TIMESTAMP,
@@ -175,12 +175,12 @@ CREATE TABLE `tq_tasks_archive` (
 """
 
 # Pilots archival for post-mortem inspection
-        self.create['tq_pilots_archive'] = """      
+        self.create['30tq_pilots_archive'] = """      
 CREATE TABLE `tq_pilots_archive` (
     `id` int unsigned NOT NULL,
     `host` varchar(255),
     `se` varchar(255),
-    `cachedir` varchar(255),
+    `cachedir` varchar(511),
     `ttl` int unsigned,
     `ttl_time` timestamp default 0,
     `last_heartbeat` timestamp default CURRENT_TIMESTAMP,

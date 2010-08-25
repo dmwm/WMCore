@@ -9,8 +9,8 @@ at configuration time as matcherPlugin. Otherwise, the default one in this modul
 is used.
 """
 
-__revision__ = "$Id: FlexPyMatchmaker.py,v 1.4 2009/09/29 12:23:02 delgadop Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: FlexPyMatchmaker.py,v 1.5 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 
@@ -68,6 +68,7 @@ class FlexPyMatchmaker(object):
 #            print "QTIME:", time.time() - time.mktime(task['creat_time'].timetuple())
             return time.time() - time.mktime(task['creat_time'].timetuple())
         vars = pilot
+#        self.logger.debug("vars: %s" % vars)
         vars['QTIME'] = calc_qtime
         # We eliminate the builtins to reduce eval's risk
         myglobals={'__builtins__': None}
@@ -76,8 +77,11 @@ class FlexPyMatchmaker(object):
         matches = []
         t0 = time.time()
         for task in tasks:
-#            self.logger.debug("Task: %s, Eval: %s\n" % \
+#            if task['reqs']:
+#                self.logger.debug("Task: %s, Eval: %s\n" % \
 #                              (task, eval(task['reqs'], myglobals, vars)))
+#            else:
+#                self.logger.debug("Task: %s, reqs=None. Matching\n" %task)
             try:
                 if (not task['reqs']) or (eval(task['reqs'], myglobals, vars)):
                     matches.append(task)
@@ -125,7 +129,8 @@ class FlexPyMatchmaker(object):
           return 0
         ranks.sort(compfunc)
 #        self.logger.debug("Ranks for matching tasks: %s" % ranks)
-        ranks.reverse()
+# No need to reverse (the comp function does it fine already)
+#        ranks.reverse()
         if not limit: 
             limit = len(ranks)
         else:

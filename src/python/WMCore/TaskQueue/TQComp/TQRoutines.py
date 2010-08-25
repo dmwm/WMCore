@@ -3,8 +3,8 @@
 Function library for use of different handlers dealing with pilots.
 """
 __all__ = []
-__revision__ = "$Id: TQRoutines.py,v 1.3 2009/09/29 14:25:41 delgadop Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TQRoutines.py,v 1.4 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from traceback import extract_tb
 import sys

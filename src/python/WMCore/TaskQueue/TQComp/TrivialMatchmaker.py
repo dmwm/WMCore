@@ -9,8 +9,8 @@ pilot requesting a task it just returns the first available task in the queue
 a reference example and not meant to be used in production.
 """
 
-__revision__ = "$Id: TrivialMatchmaker.py,v 1.2 2009/09/29 12:23:02 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TrivialMatchmaker.py,v 1.3 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 
@@ -39,9 +39,9 @@ class TrivialMatchmaker(object):
         self.queries = params["queries"]
         
 
-    def matchTask(self, pilot):
+    def matchTask(self, pilot, limit = None):
         """
-        Returns the ID of the best matching task, or None if there is no
+        Returns a list of the best matching tasks, or None if there is no
         task available.
         """
 #        return self.queries.getTaskAtState(taskStates['Queued'])

@@ -6,8 +6,8 @@ TaskQueue Submitter implementation. It gets jobs and enqueues them into the TQ.
 
 """
 
-__revision__ = "$Id: TaskQueueSubmitter.py,v 1.2 2009/09/29 12:23:04 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TaskQueueSubmitter.py,v 1.3 2009/12/16 18:09:06 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import os
@@ -179,7 +179,8 @@ class TaskQueueSubmitter(BulkSubmitterInterface):
         ####  TASK LIST INSERTION  ####
             
         try:
-            self.tqApi.insertTaskBulk(self.taskList)
+#            self.tqApi.insertTaskBulk(self.taskList)
+            self.tqApi.insertTaskBulkDeps(self.taskList)
             logging.info("tasks inserted")
         except Exception, ex:
             logging.error(">>> Error when inserting: str(ex)")

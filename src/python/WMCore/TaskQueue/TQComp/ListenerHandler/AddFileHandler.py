@@ -3,8 +3,8 @@
 Base handler for addFile.
 """
 __all__ = []
-__revision__ = "$Id: AddFileHandler.py,v 1.5 2009/09/29 14:25:42 delgadop Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: AddFileHandler.py,v 1.6 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -65,6 +65,7 @@ class AddFileHandler(object):
                     fields = {'Error': "addFile message requires \
 '%s' field in payload" % param}
 #                    myThread.transaction.rollback()
+                    self.logger.warning(str(fields))
                     return {'msgType': result, 'payload': fields}
 
 
@@ -83,6 +84,7 @@ class AddFileHandler(object):
             except:
                 messg = "Malformed fileList. Each file requires:"
                 messg += "'fileGuid', 'fileSize', 'fileType'"
+                self.logger.warning(messg)
                 return {'msgType': 'Error', 'payload': {'Error': messg}}
 
             try:

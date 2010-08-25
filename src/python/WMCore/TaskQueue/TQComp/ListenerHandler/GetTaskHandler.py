@@ -3,8 +3,8 @@
 Base handler for getTask.
 """
 __all__ = []
-__revision__ = "$Id: GetTaskHandler.py,v 1.7 2009/09/29 14:25:42 delgadop Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: GetTaskHandler.py,v 1.8 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.8 $"
 
 #from WMCore.Agent.BaseHandler import BaseHandler
 #from WMCore.ThreadPool.ThreadPool import ThreadPool
@@ -118,7 +118,10 @@ class GetTaskHandler(object):
 # TODO: This will go away when we move to cache per host
 #       Instead we get the commented code below
                 if not 'cache' in payload:
-                   payload['cache'] = self.queries.getCacheAtPilot(pilotId)
+                   lists = self.queries.getCacheAtPilot(pilotId)
+                   # lists is a list of lists, we need a simple list of elements
+                   payload['cache'] = map(lambda x: x[0], lists)
+                   self.logger.debug('Pilot with cache: %s' % (payload['cache']))
 
 #                if not 'cache' in payload:
 #                   payload['cache'] = self.queries.getCacheAtHost(\
@@ -161,6 +164,7 @@ class GetTaskHandler(object):
                 taskSpecFile = t['spec']
                 taskSandbox = t['sandbox']
                 taskWkflow = t['wkflow']
+                taskWkflowType = t['type']
 #                    messg = "taskId, taskSpecFile, taskSandbox:"
 #                    messg += " %s, %s, %s" %(taskId,taskSpecFile,taskSandbox)
 #                    self.logger.debug(messg)
@@ -221,7 +225,8 @@ class GetTaskHandler(object):
             fields['taskId'] = taskId
             fields['sandboxUrl'] = self.__buildSandboxUrl(taskSandbox)
             fields['specUrl'] = self.__buildSpecUrl(taskSpecFile)
-            fields['workflowType'] = taskWkflow
+            fields['workflowType'] = taskWkflowType
+            fields['workflowName'] = taskWkflow
             # (By now) store report in the same dir as spec (like PA)
             reportUrl = self.__buildReportUrl(taskSpecFile)
             fields['reportUrl'] = reportUrl 

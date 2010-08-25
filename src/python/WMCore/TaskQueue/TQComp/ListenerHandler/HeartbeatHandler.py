@@ -3,8 +3,8 @@
 Base handler for heartbeat.
 """
 __all__ = []
-__revision__ = "$Id: HeartbeatHandler.py,v 1.5 2009/09/29 14:25:42 delgadop Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: HeartbeatHandler.py,v 1.6 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMFactory import WMFactory
 

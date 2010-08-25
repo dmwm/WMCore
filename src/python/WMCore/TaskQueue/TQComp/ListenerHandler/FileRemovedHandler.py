@@ -3,8 +3,8 @@
 Base handler for fileRemoved.
 """
 __all__ = []
-__revision__ = "$Id: FileRemovedHandler.py,v 1.6 2009/09/29 14:25:42 delgadop Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: FileRemovedHandler.py,v 1.7 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.WMFactory import WMFactory
 

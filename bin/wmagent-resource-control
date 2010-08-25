@@ -40,7 +40,7 @@ def createOptionParser():
 
     return myOptParser
 
-def printThresholds(resourceControl):
+def printThresholds(resourceControl, desiredSiteName):
     """
     _printThresholds_
 
@@ -51,6 +51,8 @@ def printThresholds(resourceControl):
     thresholds = myResourceControl.listThresholdsForSubmit()
 
     for siteName in thresholds.keys():
+        if desiredSiteName and desiredSiteName != siteName:
+            continue
         siteThresholds = thresholds[siteName]
 
         siteSlots = siteThresholds[siteThresholds.keys()[0]]["total_slots"]
@@ -134,7 +136,7 @@ connectToDB()
 myResourceControl = ResourceControl()
 
 if options.printThresholds:
-    printThresholds(myResourceControl)
+    printThresholds(myResourceControl, options.siteName)
     sys.exit(0)
 else:
     if options.siteName == None:

@@ -7,10 +7,9 @@ and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
 back down and verify that everything is complete.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.3 2009/09/24 20:40:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.4 2009/10/13 21:59:17 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
-import logging
 import threading
 import time
 import os
@@ -48,7 +47,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         self.phedexURL = "https://cmsweb.cern.ch/phedex/datasvc/json/tbedi/"
         self.dbsURL = "http://cmssrv49.fnal.gov:8989/DBS/servlet/DBSServlet"
         
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
 
@@ -75,18 +74,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         Delete the database.
         """
-        myThread = threading.currentThread()
+        self.testInit.clearDatabase()
         
-        factory = WMFactory("DBSBuffer", "WMComponent.DBSBuffer.Database")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete DBSBuffer tear down.")
-        myThread.transaction.commit()
-        
-        return
-
     def stuffDatabase(self):
         """
         _stuffDatabase_
@@ -187,7 +176,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         Create a config for the PhEDExInjector with paths to the test DBS and
         PhEDEx instances.
         """
-        config = Configuration()
+        config = self.testInit.getConfiguration
         config.component_("DBSUpload")
         config.DBSUpload.dbsurl = self.dbsURL
 

@@ -16,7 +16,8 @@ from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 from PSetTweaks.WMTweak import makeTweak, makeJobTweak
 from PSetTweaks.WMTweak import makeOutputTweak, applyTweak
 
-applyPromptReco = lambda s, a: s.promptReco(a['globalTag'], [], a['writeTiers'])
+applyPromptReco = lambda s, a: s.promptReco(a['globalTag'], a['writeTiers'])
+applyAlcaSkim = lambda s, a: s.alcaSkim(a['skims'])
 applySkimming = lambda s, a: s.skimming(a['skims'])
 
 
@@ -43,7 +44,8 @@ class InstallScenario(ScriptInterface):
 
         funcMap = {
             "promptReco": applyPromptReco,
-            "skimming"  : applySkimming,
+            "alcaSkim": applyAlcaSkim,
+            "skimming": applySkimming
             }
 
         if funcName == "merge":
@@ -88,6 +90,14 @@ class InstallScenario(ScriptInterface):
             mod = cmsswStep.getOutputModule(om)
             outTweak = makeOutputTweak(mod, self.job)
             applyTweak(process, outTweak)
+
+        if funcName == "alcaSkim":
+            process.GlobalTag.globaltag = "GR09_R_34X_V5::All"
+
+        # revlimiter for testing
+        if hasattr(process, "maxEvents"):
+            if hasattr(process.maxEvents, "input"):
+                process.maxEvents.input = 2
 
         configFile = self.step.data.application.command.configuration
         workingDir = self.stepSpace.location

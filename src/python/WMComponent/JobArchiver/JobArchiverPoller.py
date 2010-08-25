@@ -5,8 +5,8 @@
 The actual jobArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobArchiverPoller.py,v 1.11 2010/05/03 14:00:46 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: JobArchiverPoller.py,v 1.12 2010/05/07 22:00:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import threading
 import logging
@@ -150,6 +150,9 @@ class JobArchiverPoller(BaseWorkerThread):
         results = loadAction.execute(jobID = binds)
 
         doneList = []
+
+        if type(results) != list:
+            results = [results]
 
         for entry in results:
             # One job per entry

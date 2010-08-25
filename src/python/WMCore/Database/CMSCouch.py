@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.53 2010/04/14 18:34:15 metson Exp $"
-__version__ = "$Revision: 1.53 $"
+__revision__ = "$Id: CMSCouch.py,v 1.54 2010/04/15 15:09:31 metson Exp $"
+__version__ = "$Revision: 1.54 $"
 
 try:
     # Python 2.6
@@ -167,26 +167,18 @@ class Database(CouchDBRequests):
     
     def commitOne(self, doc, returndocs=False, timestamp = False, viewlist=[]):
         """
-            Helper function for when you know you only want to insert one doc
-            additionally keeps from having to rewrite ConfigCache to handle the
-            new commit function's semantics
-        
+        Helper function for when you know you only want to insert one doc
+        additionally keeps from having to rewrite ConfigCache to handle the
+        new commit function's semantics
         """
-        tmpqueue = self._queue
-        self._queue = []
-        try:
-            data = self.commit(doc,returndocs,timestamp,viewlist)
-        except:
-            self._queue = tmpqueue
-            raise
-        else:
-            # if we made it out okay, put a flag there
-            data[0][u'ok'] = True
-            # and restore the old queue
-            self._queue = tmpqueue
+        uri  = '/%s/_bulk_docs/' % self.name
+        if timestamp:
+            self.timestamp(doc)
             
-        return data[0]
-        
+        data = {'docs': [doc]}
+        retval = self.post(uri , data)
+        return retval
+
     def commit(self, doc=None, returndocs = False, timestamp = False, viewlist=[]):
         """
         Add doc and/or the contents of self._queue to the database. If returndocs
@@ -194,6 +186,8 @@ class Database(CouchDBRequests):
         timestamp is true timestamp all documents with a date formatted like:
         2009/01/30 18:04:11 - this will be the timestamp of when the commit was
         called, it will not override an existing timestamp field.
+        
+        TODO: restore support for returndocs and viewlist
         
         Returns a list of good documents
             throws an exception otherwise
@@ -220,7 +214,7 @@ class Database(CouchDBRequests):
 
     def delete_doc(self, id):
         """
-        Delete a document identified by id
+        Immediately delete a document identified by id
         """
         doc = self.document(id)
         doc.delete()

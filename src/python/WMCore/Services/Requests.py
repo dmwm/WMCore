@@ -75,10 +75,11 @@ class Requests(dict):
             #encode the data as a get string
             if not data:
                 data = {}
-            uri = "%s?%s" % (uri, self.encode(data))
+            else:
+                uri = "%s?%s" % (uri, self.encode(data))
         self['conn'].connect()
         self['conn'].request(type, uri, encoded_data, headers)
-        response = self['conn'].getresponse()
+        response = self['conn'].getresponse() 
         data = response.read()
         self['conn'].close()
         

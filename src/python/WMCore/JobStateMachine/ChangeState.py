@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.13 2009/07/21 19:31:18 meloam Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: ChangeState.py,v 1.14 2009/07/21 20:41:16 meloam Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -46,20 +46,11 @@ class ChangeState(WMObject):
         """
         # 1. Is the state transition allowed?
         self.check(newstate, oldstate)
-        # 2. Are the jobs actually in the old state we're claiming?
-        # FIXME race conditions?
-#        for job in jobs:
-#            realstate = job.getState()
-#            assert job.getState() == oldstate ,\
-#                    "Job id %s in state %s, not %s" %\
-#                    (job['id'], realstate, oldstate)
-                    
+        # 2. Make the state transition
+        self.persist(jobs, newstate, oldstate)
         # 3. Document the state transition
         jobs = self.recordInCouch(jobs, newstate, oldstate)
-        # 4. Make the state transition
-        self.persist(jobs, newstate, oldstate)
-        # TODO: decide if I should update the doc created in step 2 after
-        # completing step 3.
+
 
     def getCouchByParentID(self, id):
         return self.database.loadView('jobs','get_by_parent_couch_id',{},[id])

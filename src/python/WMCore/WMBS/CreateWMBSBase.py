@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.28 2009/05/11 14:47:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.29 2009/05/11 15:01:15 metson Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import threading
 
@@ -13,8 +13,9 @@ from WMCore.Database.DBCreator import DBCreator
 
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
+from WMCore.JobStateMachine.ChangeState import Transitions
 
-class CreateWMBSBase(DBCreator):    
+class CreateWMBSBase(DBCreator):
     def __init__(self, logger = None, dbi = None):
         """
         _init_
@@ -27,9 +28,9 @@ class CreateWMBSBase(DBCreator):
             logger = myThread.logger
         if dbi == None:
             dbi = myThread.dbi
-            
+
         DBCreator.__init__(self, logger, dbi)
-                
+
         self.requiredTables = ["01wmbs_fileset",
                                "02wmbs_file_details",
                                "03wmbs_fileset_files",
@@ -49,7 +50,7 @@ class CreateWMBSBase(DBCreator):
                                "15wmbs_job",
                                "16wmbs_job_assoc",
                                "17wmbs_job_mask"]
-        
+
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
              id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
@@ -57,7 +58,7 @@ class CreateWMBSBase(DBCreator):
              open        INT(1)       NOT NULL DEFAULT 0,
              last_update INTEGER      NOT NULL,
              UNIQUE (name))"""
-        
+
         self.create["02wmbs_file_details"] = \
           """CREATE TABLE wmbs_file_details (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
@@ -68,7 +69,7 @@ class CreateWMBSBase(DBCreator):
              first_event  INTEGER,
              last_event   INTEGER,
              UNIQUE (lfn))"""
-        
+
         self.create["03wmbs_fileset_files"] = \
           """CREATE TABLE wmbs_fileset_files (
              file        INTEGER   NOT NULL,
@@ -83,8 +84,8 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY (child)  references wmbs_file_details(id)
                ON DELETE CASCADE,
              FOREIGN KEY (parent) references wmbs_file_details(id),
-             UNIQUE(child, parent))"""  
-        
+             UNIQUE(child, parent))"""
+
         self.create["05wmbs_file_runlumi_map"] = \
           """CREATE TABLE wmbs_file_runlumi_map (
              file    INTEGER NOT NULL,
@@ -92,14 +93,14 @@ class CreateWMBSBase(DBCreator):
              lumi    INTEGER NOT NULL,
              FOREIGN KEY (file) references wmbs_file_details(id)
                ON DELETE CASCADE)"""
-        
+
         self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
              id        INTEGER      PRIMARY KEY AUTO_INCREMENT,
              site_name VARCHAR(255) NOT NULL,
              job_slots INTEGER,
              UNIQUE(site_name))"""
-             
+
         self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (
              file     INTEGER NOT NULL,
@@ -109,7 +110,7 @@ class CreateWMBSBase(DBCreator):
                ON DELETE CASCADE,
              FOREIGN KEY(location) REFERENCES wmbs_location(id)
                ON DELETE CASCADE)"""
-        
+
         self.create["08wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
@@ -142,8 +143,8 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY(type)     REFERENCES wmbs_subs_type(id)
                ON DELETE CASCADE
              FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
-               ON DELETE CASCADE)""" 
-               
+               ON DELETE CASCADE)"""
+
         self.create["09wmbs_subscription_location"] = \
           """CREATE TABLE wmbs_subscription_location (
              subscription     INTEGER      NOT NULL,
@@ -152,7 +153,7 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY(subscription)  REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY(location)     REFERENCES wmbs_location(id)
-               ON DELETE CASCADE)""" 
+               ON DELETE CASCADE)"""
 
         self.create["10wmbs_sub_files_acquired"] = \
           """CREATE TABLE wmbs_sub_files_acquired (
@@ -237,12 +238,9 @@ class CreateWMBSBase(DBCreator):
               FOREIGN KEY (job)       REFERENCES wmbs_job(id)
                 ON DELETE CASCADE)"""
 
-        self.jobStates = ["new", "created", "createfailed", "createcooloff", 
-                          "executing", "submitfailed", "submitcooloff", 
-                          "complete", "jobfailed", "jobcooloff", "sitecooloff",
-                          "success", "exhausted", "closeOut", "cleanout"]
-        
-        for jobState in self.jobStates:
+        # The transitions class holds all states and allowed transitions, use
+        # that to populate the wmbs_job_state table
+        for jobState in Transitions().states():
             jobStateQuery = "INSERT INTO wmbs_job_state (name) VALUES ('%s')" % \
                 (jobState)
             self.inserts["job_state_%s" % jobState] = jobStateQuery
@@ -250,7 +248,7 @@ class CreateWMBSBase(DBCreator):
     def execute(self, conn = None, transaction = None):
         """
         _execute_
-        
+
         Check to make sure that all required tables have been defined.  If
         everything is in place have the DBCreator make everything.
         """
@@ -258,7 +256,7 @@ class CreateWMBSBase(DBCreator):
             if requiredTable not in self.create.keys():
                 raise WMException("The table '%s' is not defined." % \
                                   requiredTable, "WMCORE-2")
-                   
+
         try:
             DBCreator.execute(self, conn, transaction)
             return True

@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.1 2009/06/23 13:14:43 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.2 2009/07/14 15:27:47 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import logging
@@ -101,6 +101,10 @@ class FileTest(unittest.TestCase):
         called before and after creation and after deletion.
         """
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksum=1111)
+        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                     appFam = "RECO", psetHash = "GIBBERISH",
+                                     configContent = "MOREGIBBERISH")
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
 
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
@@ -120,7 +124,7 @@ class FileTest(unittest.TestCase):
     def testCreateTransaction(self):
         """
         _testCreateTransaction_
-
+        
         Begin a transaction and then create a file in the database.  Afterwards,
         rollback the transaction.  Use the File class's exists() method to
         to verify that the file doesn't exist before it was created, exists
@@ -130,150 +134,116 @@ class FileTest(unittest.TestCase):
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
-        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksum=1111)
-
+        testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
+                                 events = 10, cksum=1111)
+        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
-
         testFile.addRun(Run(1, *[45]))
         testFile.create()
-
+        
         assert testFile.exists() > 0, \
                "ERROR: File does not exist after it was created"
-
+        
         myThread.transaction.rollback()
 
         assert testFile.exists() == False, \
                "ERROR: File exists after transaction was rolled back."
         return    
-
+     
     def testDeleteTransaction(self):
         """
         _testDeleteTransaction_
-
+        
         Create a file and commit it to the database.  Start a new transaction
         and delete the file.  Rollback the transaction after the file has been
         deleted.  Use the file class's exists() method to verify that the file
         does not exist after it has been deleted but does exist after the
         transaction is rolled back.
         """
-        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksum=1111)
-
+        testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
+                                 events = 10, cksum=1111)
+        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
-
+        
         testFile.addRun(Run(1, *[45]))
         testFile.create()
-
+        
         assert testFile.exists() > 0, \
                "ERROR: File does not exist after it was created"
-
+        
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
         testFile.delete()
-
+        
         assert testFile.exists() == False, \
                "ERROR: File exists after it has been deleted"
-
+        
         myThread.transaction.rollback()
-
+        
         assert testFile.exists() > 0, \
                "ERROR: File does not exist after transaction was rolled back."
         return
 
-    def testGetInfo(self):
-        """
-        _testGetInfo_
-
-        Test the getInfo() method of the File class to make sure that it
-        returns the correct information.
-        """
-        testFileParent = File(lfn = "/this/is/a/parent/lfn", size = 1024,
-                              events = 20, cksum=1111)
-        testFileParent.addRun(Run(1, *[45]))
-        testFileParent.create()
-
-        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksum=222)
-        testFile.addRun(Run(1, *[45]))
-        testFile.addRun(Run(2, *[46, 47]))
-        testFile.addRun(Run(2, *[47, 48]))
-        testFile.create()
-        testFile.setLocation(se = "se1.fnal.gov", immediateSave = False)
-        testFile.setLocation(se = "se1.cern.ch", immediateSave = False)
-        testFile.addParent("/this/is/a/parent/lfn")
-
-        info = testFile.getInfo()
-        assert info[0] == testFile["lfn"], \
-               "ERROR: File returned wrong LFN"
-        
-        assert info[1] == testFile["id"], \
-               "ERROR: File returned wrong ID"
-        
-        assert info[2] == testFile["size"], \
-               "ERROR: File returned wrong size"
-        
-        assert info[3] == testFile["events"], \
-               "ERROR: File returned wrong events"
-        
-        assert info[4] == testFile["cksum"], \
-               "ERROR: File returned wrong cksum"
-        
-        assert len(info[5]) == 2, \
-		      "ERROR: File returned wrong runs"
-        
-        assert info[5] == [Run(1, *[45]), Run(2, *[46, 47, 48])], \
-               "Error: Run hasn't been combined correctly"
-               
-        assert len(info[6]) == 2, \
-               "ERROR: File returned wrong locations"
-
-        for testLocation in info[6]:
-            assert testLocation in ["se1.fnal.gov", "se1.cern.ch"], \
-                   "ERROR: File returned wrong locations"
-
-        assert len(info[7]) == 1, \
-               "ERROR: File returned wrong parents"
-
-        assert info[7][0] == testFileParent, \
-               "ERROR: File returned wrong parents"
-
-        testFile.delete()
-        testFileParent.delete()
-        return
-        
     def testGetParentLFNs(self):
         """
         _testGetParentLFNs_
-
+        
         Create three files and set them to be parents of a fourth file.  Check
         to make sure that getParentLFNs() on the child file returns the correct
         LFNs.
         """
-        testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                               events = 20, cksum = 1)
+        testFileParentA = DBSBufferFile(lfn = "/this/is/a/parent/lfnA", size = 1024,
+                                        events = 20, cksum = 1)
+        testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                     appFam = "RECO", psetHash = "GIBBERISH",
+                                     configContent = "MOREGIBBERISH")
+        testFileParentA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileParentA.addRun(Run(1, *[45]))
-        testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                               events = 20, cksum = 2)
+        
+        testFileParentB = DBSBufferFile(lfn = "/this/is/a/parent/lfnB", size = 1024,
+                                        events = 20, cksum = 2)
+        testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                     appFam = "RECO", psetHash = "GIBBERISH",
+                                     configContent = "MOREGIBBERISH")
+        testFileParentB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
         testFileParentB.addRun(Run(1, *[45]))
-        testFileParentC = File(lfn = "/this/is/a/parent/lfnC", size = 1024,
-                               events = 20, cksum = 3)
+        
+        testFileParentC = DBSBufferFile(lfn = "/this/is/a/parent/lfnC", size = 1024,
+                                        events = 20, cksum = 3)
+        testFileParentC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                     appFam = "RECO", psetHash = "GIBBERISH",
+                                     configContent = "MOREGIBBERISH")
+        testFileParentC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
         testFileParentC.addRun(Run( 1, *[45]))
-
+        
         testFileParentA.create()
         testFileParentB.create()
         testFileParentC.create()
-
-        testFile = File(lfn = "/this/is/a/lfn", size = 1024,
-                               events = 10, cksum = 1)
+        
+        testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
+                                 events = 10, cksum = 1)
+        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFile.addRun(Run( 1, *[45]))
         testFile.create()
-
+        
         testFile.addParent(testFileParentA["lfn"])
         testFile.addParent(testFileParentB["lfn"])
         testFile.addParent(testFileParentC["lfn"])
-
+        
         parentLFNs = testFile.getParentLFNs()
         
         assert len(parentLFNs) == 3, \
@@ -296,17 +266,21 @@ class FileTest(unittest.TestCase):
     def testLoad(self):
         """
         _testLoad_
-
+        
         Test the loading of file meta data using the ID of a file and the
         LFN of a file.
         """
-        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksum = 1, first_event = 2, last_event = 3)
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                                  cksum = 1)
+        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.create()
                                                         
-        testFileB = File(lfn = testFileA["lfn"])
+        testFileB = DBSBufferFile(lfn = testFileA["lfn"])
         testFileB.load()
-        testFileC = File(id = testFileA["id"])
+        testFileC = DBSBufferFile(id = testFileA["id"])
         testFileC.load()
 
         assert testFileA == testFileB, \
@@ -315,112 +289,75 @@ class FileTest(unittest.TestCase):
         assert testFileA == testFileC, \
                "ERROR: File load by ID didn't work"
 
-        assert type(testFileB["id"]) == int, \
+        assert type(testFileB["id"]) == int or type(testFileB["id"]) == long, \
                "ERROR: File id is not an integer type."
-        assert type(testFileB["size"]) == int, \
+        assert type(testFileB["size"]) == int or type(testFileB["size"]) == long, \
                "ERROR: File size is not an integer type."
-        assert type(testFileB["events"]) == int, \
+        assert type(testFileB["events"]) == int or type(testFileB["events"]) == long, \
                "ERROR: File events is not an integer type."
-        assert type(testFileB["cksum"]) == int, \
+        assert type(testFileB["cksum"]) == int or type(testFileB["cksum"]) == long, \
                "ERROR: File cksum is not an integer type."
-        assert type(testFileB["first_event"]) == int, \
-               "ERROR: File first_event is not an integer type."
-        assert type(testFileB["last_event"]) == int, \
-               "ERROR: File last_event is not an integer type."
         
-        assert type(testFileC["id"]) == int, \
+        assert type(testFileC["id"]) == int or type(testFileC["id"]) == long, \
                "ERROR: File id is not an integer type."
-        assert type(testFileC["size"]) == int, \
+        assert type(testFileC["size"]) == int or type(testFileC["size"]) == long, \
                "ERROR: File size is not an integer type."
-        assert type(testFileC["events"]) == int, \
+        assert type(testFileC["events"]) == int or type(testFileC["events"]) == long, \
                "ERROR: File events is not an integer type."
-        assert type(testFileC["cksum"]) == int, \
+        assert type(testFileC["cksum"]) == int or type(testFileC["cksum"]) == long, \
                "ERROR: File cksum is not an integer type."
-        assert type(testFileC["first_event"]) == int, \
-               "ERROR: File first_event is not an integer type."
-        assert type(testFileC["last_event"]) == int, \
-               "ERROR: File last_event is not an integer type."
 
         testFileA.delete()
         return
 
-    def testLoadData(self):
-        """
-        _testLoadData_
-
-        Test the loading of all data from a file, including run/lumi
-        associations, location information and parentage information.
-        """
-        testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                              events = 20, cksum = 1)
-        testFileParentA.addRun(Run( 1, *[45]))
-        testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                              events = 20, cksum = 1)
-        testFileParentB.addRun(Run( 1, *[45]))
-        testFileParentA.create()
-        testFileParentB.create()
-
-        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksum = 1)
-        testFileA.addRun(Run( 1, *[45]))
-        testFileA.create()
-        testFileA.setLocation(se = "se1.fnal.gov", immediateSave = False)
-        testFileA.setLocation(se = "se1.cern.ch", immediateSave = False)
-        testFileA.addParent("/this/is/a/parent/lfnA")
-        testFileA.addParent("/this/is/a/parent/lfnB")
-        testFileA.updateLocations()
-                                                        
-        testFileB = File(lfn = testFileA["lfn"])
-        testFileB.loadData(parentage = 1)
-        testFileC = File(id = testFileA["id"])
-        testFileC.loadData(parentage = 1)
-
-        assert testFileA == testFileB, \
-               "ERROR: File load by LFN didn't work"
-
-        assert testFileA == testFileC, \
-               "ERROR: File load by ID didn't work"
-
-        testFileA.delete()
-        testFileParentA.delete()
-        testFileParentB.delete()
-        return    
-
     def testAddChild(self):
         """
         _testAddChild_
-
+        
         Add a child to some parent files and make sure that all the parentage
         information is loaded/stored correctly from the database.
         """
-        testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                              events = 20, cksum = 1)
+        testFileParentA = DBSBufferFile(lfn = "/this/is/a/parent/lfnA", size = 1024,
+                                        events = 20, cksum = 1)
+        testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                     appFam = "RECO", psetHash = "GIBBERISH",
+                                     configContent = "MOREGIBBERISH")
+        testFileParentA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        
         testFileParentA.addRun(Run( 1, *[45]))
-        testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                              events = 20, cksum = 1)
+        testFileParentB = DBSBufferFile(lfn = "/this/is/a/parent/lfnB", size = 1024,
+                                        events = 20, cksum = 1)
+        testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                     appFam = "RECO", psetHash = "GIBBERISH",
+                                     configContent = "MOREGIBBERISH")
+        testFileParentB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
         testFileParentB.addRun(Run( 1, *[45]))
         testFileParentA.create()
         testFileParentB.create()
-
-        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                         cksum = 1)
+        
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                                  cksum = 1)
+        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
-
+        
         testFileParentA.addChild("/this/is/a/lfn")
         testFileParentB.addChild("/this/is/a/lfn")
-
-        testFileB = File(id = testFileA["id"])
-        testFileB.loadData(parentage = 1)
-
+        
+        testFileB = DBSBufferFile(id = testFileA["id"])
+        testFileB.load(parentage = 1)
+        
         goldenFiles = [testFileParentA, testFileParentB]
         for parentFile in testFileB["parents"]:
             assert parentFile in goldenFiles, \
                    "ERROR: Unknown parent file"
             goldenFiles.remove(parentFile)
-
+            
         assert len(goldenFiles) == 0, \
-              "ERROR: Some parents are missing"
+               "ERROR: Some parents are missing"
         return
 
     def testAddChildTransaction(self):
@@ -432,17 +369,30 @@ class FileTest(unittest.TestCase):
         addition of one of the childs and then verify that it does in fact only
         have one parent.
         """
-        testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
+        testFileParentA = DBSBufferFile(lfn = "/this/is/a/parent/lfnA", size = 1024,
                               events = 20, cksum = 1)
+        testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                     appFam = "RECO", psetHash = "GIBBERISH",
+                                     configContent = "MOREGIBBERISH")
+        testFileParentA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
         testFileParentA.addRun(Run( 1, *[45]))
-        testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
+        
+        testFileParentB = DBSBufferFile(lfn = "/this/is/a/parent/lfnB", size = 1024,
                               events = 20, cksum = 1)
+        testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                     appFam = "RECO", psetHash = "GIBBERISH",
+                                     configContent = "MOREGIBBERISH")
+        testFileParentB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
         testFileParentB.addRun(Run( 1, *[45]))
         testFileParentA.create()
         testFileParentB.create()
 
-        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                          cksum = 1)
+        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
@@ -453,8 +403,8 @@ class FileTest(unittest.TestCase):
         
         testFileParentB.addChild("/this/is/a/lfn")
 
-        testFileB = File(id = testFileA["id"])
-        testFileB.loadData(parentage = 1)
+        testFileB = DBSBufferFile(id = testFileA["id"])
+        testFileB.load(parentage = 1)
 
         goldenFiles = [testFileParentA, testFileParentB]
         for parentFile in testFileB["parents"]:
@@ -466,7 +416,7 @@ class FileTest(unittest.TestCase):
               "ERROR: Some parents are missing"
 
         myThread.transaction.rollback()
-        testFileB.loadData(parentage = 1)
+        testFileB.load(parentage = 1)
 
         goldenFiles = [testFileParentA]
         for parentFile in testFileB["parents"]:
@@ -486,17 +436,22 @@ class FileTest(unittest.TestCase):
         Create a file and add a couple locations.  Load the file from the
         database to make sure that the locations were set correctly.
         """
-        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                         cksum = 1)
+        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
+        
         testFileA.setLocation(["se1.fnal.gov", "se1.cern.ch"])
         testFileA.setLocation(se = "se1.fnal.gov", immediateSave = True)
         testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
                               immediateSave = False)
 
-        testFileB = File(id = testFileA["id"])
-        testFileB.loadData()
+        testFileB = DBSBufferFile(id = testFileA["id"])
+        testFileB.load()
 
         goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
 
@@ -518,10 +473,15 @@ class FileTest(unittest.TestCase):
         locations are correct.  Rollback the database transaction and once
         again reload the file.  Verify that the original locations are back.
         """
-        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksum = 1)
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                                  cksum = 1)
+        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
+        
         testFileA.setLocation(["se1.fnal.gov"])
 
         myThread = threading.currentThread()
@@ -531,8 +491,8 @@ class FileTest(unittest.TestCase):
         testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
                               immediateSave = False)
 
-        testFileB = File(id = testFileA["id"])
-        testFileB.loadData()
+        testFileB = DBSBufferFile(id = testFileA["id"])
+        testFileB.load()
 
         goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
 
@@ -545,7 +505,7 @@ class FileTest(unittest.TestCase):
               "ERROR: Some locations are missing"
 
         myThread.transaction.rollback()
-        testFileB.loadData()
+        testFileB.load()
 
         goldenLocations = ["se1.fnal.gov"]
 
@@ -567,18 +527,26 @@ class FileTest(unittest.TestCase):
         sure that the class behaves well when the location is passed in as a
         single string instead of a set.
         """
-        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksum = 1, locations = Set(["se1.fnal.gov"]))
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                                  cksum = 1, locations = Set(["se1.fnal.gov"]))
+        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
-        testFileB = File(lfn = "/this/is/a/lfn2", size = 1024, events = 10,
-                        cksum = 1, locations = "se1.fnal.gov")
+        testFileB = DBSBufferFile(lfn = "/this/is/a/lfn2", size = 1024, events = 10,
+                                  cksum = 1, locations = "se1.fnal.gov")
+        testFileB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+        testFileB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()        
 
-        testFileC = File(id = testFileA["id"])
-        testFileC.loadData()
+        testFileC = DBSBufferFile(id = testFileA["id"])
+        testFileC.load()
 
         goldenLocations = ["se1.fnal.gov"]
         for location in testFileC["locations"]:
@@ -589,8 +557,8 @@ class FileTest(unittest.TestCase):
         assert len(goldenLocations) == 0, \
               "ERROR: Some locations are missing"
 
-        testFileC = File(id = testFileB["id"])
-        testFileC.loadData()
+        testFileC = DBSBufferFile(id = testFileB["id"])
+        testFileC.load()
 
         goldenLocations = ["se1.fnal.gov"]
         for location in testFileC["locations"]:
@@ -608,8 +576,13 @@ class FileTest(unittest.TestCase):
 
         Test the ability to add run and lumi information to a file.
         """
-        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksum = 1, locations = "se1.fnal.gov")
+        testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                                 cksum = 1, locations = "se1.fnal.gov")
+        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        
         testFile.create()
         runSet = Set()
         runSet.add(Run( 1, *[45]))
@@ -619,70 +592,5 @@ class FileTest(unittest.TestCase):
         assert (runSet - testFile["runs"]) == Set(), \
             "Error: addRunSet is not updating set correctly"
     
-    def testGetAncestorLFNs(self):
-        """
-        _testGenAncestorLFNs_
-
-        Create a series of files that have several generations if parentage
-        information.  Verify that the parentage information is reported
-        correctly.
-        """
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                        cksum = 1, locations = "se1.fnal.gov")
-        testFileA.create()
-        
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                        cksum = 1, locations = "se1.fnal.gov")
-        testFileB.create()
-        
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
-                        cksum = 1, locations = "se1.fnal.gov")
-        testFileC.create()
-        
-        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10,
-                        cksum = 1, locations = "se1.fnal.gov")
-        testFileD.create()
-        
-        testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 10,
-                        cksum = 1, locations = "se1.fnal.gov")
-        testFileE.create()
-        
-        testFileE = File(lfn = "/this/is/a/lfnF", size = 1024, events = 10,
-                        cksum = 1, locations = "se1.fnal.gov")
-        testFileE.create()
-        
-        testFileA.addParent(lfn = "/this/is/a/lfnB")
-        testFileA.addParent(lfn = "/this/is/a/lfnC")
-        testFileB.addParent(lfn = "/this/is/a/lfnD")
-        testFileC.addParent(lfn = "/this/is/a/lfnD")
-        testFileD.addParent(lfn = "/this/is/a/lfnE")
-        testFileD.addParent(lfn = "/this/is/a/lfnF")
-        
-        level1 = ["/this/is/a/lfnB", "/this/is/a/lfnC"]
-        level2 = ["/this/is/a/lfnD"]
-        level3 = ["/this/is/a/lfnE", "/this/is/a/lfnF"]
-        level4 = level5 = []
-        
-        decs2 = ["/this/is/a/lfnA"]
-        
-        assert testFileA.getAncestors(level=1, type='lfn') == level1, \
-              "ERROR: level 1 test failed"
-        assert testFileA.getAncestors(level=2, type='lfn') == level2, \
-              "ERROR: level 2 test failed"
-        assert testFileA.getAncestors(level=3, type='lfn') == level3, \
-              "ERROR: level 3 test failed"
-        assert testFileA.getAncestors(level=4, type='lfn') == level4, \
-              "ERROR: level 4 test failed"
-        assert testFileA.getAncestors(level=5, type='lfn') == level5, \
-              "ERROR: level 5 test failed"
-        
-        assert testFileD.getDescendants(level=1, type='lfn') == level1, \
-              "ERROR: level 1 desc test failed"
-        assert testFileD.getDescendants(level=2, type='lfn') == decs2, \
-              "ERROR: level 2 desc test failed"
-        assert testFileD.getDescendants(level=3, type='lfn') == level4, \
-              "ERROR: level 3 desc test failed"
-
-
 if __name__ == "__main__":
     unittest.main() 

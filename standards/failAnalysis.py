@@ -24,9 +24,9 @@ couchURL = buildslave.conf['failTarget']
 #                                                x['db']],
 #                                                description="Analyzing fail", descriptionDone="Fail Being Analyzed"))
 
-#(myname, xmlfile, buildername, buildnumber, revision, db ) = sys.argv()
+(myname, xmlfile, buildername, buildnumber, revision, db ) = sys.argv()
 timestamp = time.time()
-(myname, xmlfile, buildername, buildnumber, revision, db ) = ('dum', '../nosetests.xml',1,2,3,4)
+#(myname, xmlfile, buildername, buildnumber, revision, db ) = ('dum', '../nosetests.xml',1,2,3,4)
 # what metson wants
 #{
 #    "test_name": test_name, 

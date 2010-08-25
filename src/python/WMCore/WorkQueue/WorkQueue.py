@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.59 2010/01/27 17:40:43 sryu Exp $"
-__version__ = "$Revision: 1.59 $"
+__revision__ = "$Id: WorkQueue.py,v 1.60 2010/02/03 17:10:04 swakef Exp $"
+__version__ = "$Revision: 1.60 $"
 
 
 import uuid
@@ -83,7 +83,6 @@ class WorkQueue(WorkQueueBase):
         self.params = params
         self.params.setdefault('ParentQueue', None) # Get more work from here
         self.params.setdefault('QueueDepth', 2) # when less than this locally
-        self.params.setdefault('SplitByBlock', True)
         self.params.setdefault('ItemWeight', 0.01) # Queuing time weighted avg
         self.params.setdefault('FullLocationRefreshInterval', 3600)
         self.params.setdefault('TrackLocationOrSubscription', 'subscription')
@@ -107,7 +106,7 @@ class WorkQueue(WorkQueueBase):
                                                               'location'))
         # Can only release blocks on location
         if self.params['TrackLocationOrSubscription'] == 'location':
-            if not self.params['SplitByBlock']:
+            if self.params['SplittingMapping']['DatasetBlock'][0] != 'Block':
                 raise RuntimeError, 'Only blocks can be released on location'
 
         phedexArgs = {}

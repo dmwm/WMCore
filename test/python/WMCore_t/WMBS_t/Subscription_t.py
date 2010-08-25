@@ -1265,12 +1265,17 @@ class SubscriptionTest(unittest.TestCase):
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
                          locations = set(["goodse.cern.ch"]))
         testFileD.addRun(Run(2, *[48]))
-         
+
+        testFile1 = File(lfn = "/this/is/a/lfn1", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]), merged = False)
+        testFile1.addRun(Run(2, *[48]))
+
         testFileA.create()
         testFileB.create()
         testFileC.create()
         testFileD.create()
-
+        testFile1.create()
+        testFileA.addChild(testFile1['lfn'])
 
         
         testFileset = Fileset(name = "TestFileset")
@@ -1311,6 +1316,8 @@ class SubscriptionTest(unittest.TestCase):
 
         testJobGroupA.add(testJobA)
         testJobGroupA.add(testJobB)
+        testJobGroupA.output.addFile(testFile1)
+        testJobGroupA.output.commit()
 
         testJobGroupA.commit()
         testSubscription.save()

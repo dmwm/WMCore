@@ -42,6 +42,7 @@ else:
 commandLine = sys.argv[3:]
 
 # actually run
+print "Commandline: %s" % commandLine
 os.execvp( commandLine[0], commandLine[0:] )
 
         

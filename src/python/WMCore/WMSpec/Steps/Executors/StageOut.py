@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.19 2010/05/11 16:01:59 mnorman Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: StageOut.py,v 1.20 2010/05/11 16:07:41 mnorman Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import os
 import os.path
@@ -204,6 +204,7 @@ class StageOut(Executor):
 
         Digs up unmerged LFN out of WMStep outputModule and 
         changes the current file to match.
+        Requires a mergedLFNBase in the WMSpec output module
         """
 
         # First get the output module
@@ -234,6 +235,7 @@ class StageOut(Executor):
         oldBase = getattr(outputMod, 'lfnBase', None)
 
         if not lfnBase:
+            # Then we don't have a base to change it to
             logging.error("Direct to Merge failed due to no mergedLFNBase in %s" %(outputName))
             return file
 
@@ -245,4 +247,5 @@ class StageOut(Executor):
         setattr(file, 'lfn', newLFN)
         setattr(file, 'merged', True)
 
+        # Return the file
         return file

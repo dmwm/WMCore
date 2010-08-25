@@ -93,7 +93,7 @@ def runUnitTests():
         
         for oneTest in loadedTests:
             try:
-                print "--AddTest %s" % oneTest.id()
+                print "--AddTest %s" % oneTest
                 testsuite.addTest( oneTest )
             except Exception, e:
                 print "AddTestFail: %s Exception %s" % (oneTest, e)

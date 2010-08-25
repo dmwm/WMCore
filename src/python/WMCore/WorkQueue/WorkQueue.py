@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.105 2010/05/12 16:35:13 sryu Exp $"
-__version__ = "$Revision: 1.105 $"
+__revision__ = "$Id: WorkQueue.py,v 1.106 2010/05/12 19:16:20 sryu Exp $"
+__version__ = "$Revision: 1.106 $"
 
 
 import time
@@ -35,6 +35,7 @@ from WMCore.WMBS.File import File as WMBSFile
 
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 #TODO: Scale test
 #TODO: Handle multiple dbs instances
 #TODO: Decide whether to move/refactor db functions
@@ -228,20 +229,27 @@ class WorkQueue(WorkQueueBase):
                 msg = "Error contacting parent queue %s: %s"
                 self.logger.error(msg % (pullingQueueUrl, str(ex)))
         wmSpecInfoAction = self.daofactory(classname = "WMSpec.GetWMSpecInfo")
-
+        
+        wmSpecCache = {}
         for match in matches:
-            
             wmSpecInfo = wmSpecInfoAction.execute(match['wmtask_id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
+            
             blockName, dbsBlock = None, None
             if self.params['PopulateFilesets']:
+                if not wmSpecCache.has_key(wmSpecInfo['id']):
+                        wmSpec = WMWorkloadHelper()
+                        # the url should be url from cache 
+                        # (check whether that is updated correctly in DB)
+                        wmSpec.load(wmSpecInfo['url'])    
+                        wmSpecCache[wmSpecInfo['id']] = wmSpec
                 
                 if match['input_id']:
-                    self.logger.info("Adding Production work")
+                    self.logger.info("Adding Processing work")
                     blockName, dbsBlock = self._getDBSBlock(match)
                 else:
-                    self.logger.info("Adding Processing work")
+                    self.logger.info("Adding Production work")
                 
                 status = 'Acquired'
             else:
@@ -249,12 +257,12 @@ class WorkQueue(WorkQueueBase):
         
             #make one transaction      
             with self.transactionContext():
-                if self.params['PopulateFilesets']:
-                    self._wmbsPreparation(match, wmSpecInfo, 
-                                          blockName, dbsBlock)
+                if self.params['PopulateFilesets']:    
+                    self._wmbsPreparation(match, wmSpecCache[wmSpecInfo['id']],
+                                          wmSpecInfo, blockName, dbsBlock)
                         
                 self.setStatus(status, match['id'], 'id', pullingQueueUrl)
-                self.logger.debug("Upated status for %s '%s'" % 
+                self.logger.info("Updated status for %s '%s'" % 
                                   (match['id'], status))       
                 
             wmSpecInfo['element_id'] = match['id']
@@ -279,7 +287,7 @@ class WorkQueue(WorkQueueBase):
         return block['name'], dbsBlockDict[block['name']]
 
 
-    def _wmbsPreparation(self, match, wmSpecInfo, blockName, dbsBlock):
+    def _wmbsPreparation(self, match, wmSpec, wmSpecInfo, blockName, dbsBlock):
         """
         """
         self.logger.info("Adding WMBS subscription")
@@ -291,12 +299,16 @@ class WorkQueue(WorkQueueBase):
         blacklist = bAction.execute(match['id'], conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
 
-        self.logger.info("Adding Production work")
-        wmbsHelper = WMBSHelper(wmSpecInfo['wmspec_name'], wmSpecInfo['url'],
+        #Warning: wmSpec.specUrl might not be same as wmSpecInfo['url']
+        #as well as wmSpec.getOwner() != wmSpecInfo['owner']
+        #Need to clean up
+        wmbsHelper = WMBSHelper(wmSpec, wmSpecInfo['url'],
                                 wmSpecInfo['owner'], wmSpecInfo['wmtask_name'],
                                 wmSpecInfo['wmtask_type'],
                                 whitelist, blacklist, blockName)
         sub = wmbsHelper.createSubscription()
+        
+        self.logger.info("Created top level Subscription %s" % sub['id'])
         
         if dbsBlock != None:
             wmbsHelper.addFiles(dbsBlock)

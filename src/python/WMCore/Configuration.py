@@ -8,8 +8,8 @@ Module dealing with Configuration file in python format
 
 """
 
-__revision__ = "$Id: Configuration.py,v 1.15 2010/02/18 15:36:56 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Configuration.py,v 1.16 2010/04/07 14:00:05 valya Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import os
 import imp
@@ -493,7 +493,10 @@ def loadConfigurationFile(filename):
 
     cfgBaseName = os.path.basename(filename).replace(".py", "")
     cfgDirName = os.path.dirname(filename)
-    modPath = imp.find_module(cfgBaseName, [cfgDirName])
+    if  not cfgDirName:
+        modPath = imp.find_module(cfgBaseName)
+    else:
+        modPath = imp.find_module(cfgBaseName, [cfgDirName])
     try:
         modRef = imp.load_module(cfgBaseName, modPath[0],
                                  modPath[1], modPath[2])

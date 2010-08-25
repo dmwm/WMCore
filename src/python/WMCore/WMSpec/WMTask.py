@@ -10,13 +10,13 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.1 2009/02/05 17:10:28 evansde Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: WMTask.py,v 1.2 2009/05/08 13:12:05 evansde Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
 from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
-
+import WMCore.WMSpec.Steps.StepFactory as StepFactory
 
 
 class WMTaskHelper(TreeHelper):
@@ -73,6 +73,34 @@ class WMTaskHelper(TreeHelper):
             return None
         topStep = self.steps()
         return topStep.getStep(stepName)
+
+    def makeStep(self, stepName):
+        """
+        _makeStep_
+
+        create a new WMStep instance, install it as the top step and
+        return the reference to the new step wrapped in a StepHelper
+
+        """
+        newStep = WMStep(stepName)
+        self.setStep(newStep)
+        return WMStepHelper(newStep)
+
+
+    def applyTemplates(self):
+        """
+        _applyTemplates_
+
+        For each step, load the appropriate template and install the default structure
+
+        TODO: Exception handling
+
+        """
+        for step in self.steps().nodeIterator():
+            stepType = step.stepType
+            template = StepFactory.getStepTemplate(stepType)
+            template.install(step)
+
 
 
 class WMTask(ConfigSectionTree):

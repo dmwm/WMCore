@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.1 2009/02/16 20:01:47 evansde Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMWorkload.py,v 1.2 2009/05/08 13:12:05 evansde Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 
@@ -98,6 +98,7 @@ class WMWorkloadHelper(PersistencyHelper):
             raise RuntimeError, msg
         task = WMTask(taskName)
         helper = WMTaskHelper(task)
+        helper.setTopOfTree()
         self.addTask(helper)
         return helper
 
@@ -136,3 +137,11 @@ class WMWorkload(ConfigSection):
 
 
 
+def newWorkload(workloadName):
+    """
+    _newWorkload_
+
+    Util method to create a new WMWorkload and wrap it in a helper
+
+    """
+    return WMWorkloadHelper(WMWorkload(workloadName))

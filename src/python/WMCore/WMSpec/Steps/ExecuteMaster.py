@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.1 2009/05/07 17:53:18 evansde Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.2 2009/05/08 13:12:06 evansde Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 class ExecuteMaster:
@@ -22,3 +22,4 @@ class ExecuteMaster:
     """
     def __init__(self, emulator = None):
         self.emulator = emulator
+

@@ -1476,6 +1476,79 @@ class SubscriptionTest(unittest.TestCase):
         return
         
 
+    def testFilesOfStatusByLimit(self):
+        """
+        _testAvailableFiles_
+
+        Create a subscription and mark a couple files as failed, complete and
+        acquired.  Test to make sure that the remainder of the files show up
+        as available.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task='Test')
+        testWorkflow.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]))
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]))
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]))
+        testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]))
+        testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]))
+        testFileA.create()
+        testFileB.create()
+        testFileC.create()
+        testFileD.create()
+        testFileE.create()
+        testFileF.create()        
+        
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)
+        testFileset.addFile(testFileD)
+        testFileset.addFile(testFileE)
+        testFileset.addFile(testFileF)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+        
+        availableFiles = testSubscription.filesOfStatus("Available")
+        self.assertEquals(len(availableFiles), 6)
+        availableFiles = testSubscription.filesOfStatus("Available", 0)
+        self.assertEquals(len(availableFiles), 6)
+        availableFiles = testSubscription.filesOfStatus("Available", 3)
+        self.assertEquals(len(availableFiles), 3)
+        availableFiles = testSubscription.filesOfStatus("Available", 7)
+        self.assertEquals(len(availableFiles), 6)
+        
+        
+#        testSubscription.acquireFiles([testFileA])
+#        testSubscription.completeFiles([testFileB])
+#        testSubscription.failFiles([testFileC])
+#        availableFiles = testSubscription.availableFiles()
+
+
+        testSubscription.delete()
+        testWorkflow.delete()
+        testFileset.delete()
+        testFileA.delete()
+        testFileB.delete()
+        testFileC.delete()
+        testFileD.delete()
+        testFileE.delete()
+        testFileF.delete()        
+        return
+
 
 if __name__ == "__main__":
     unittest.main()

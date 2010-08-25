@@ -8,8 +8,14 @@ Return array of items with parents before children
 
 Caveats:
   - Only one parent per item
-  - Items declaring each other as parents will cause an exception
+  - Parent may be an individual object or a list/tuple with one item only
+  - Items declaring each other as parents are unsorteable
 """
+
+try:
+    set
+except NameError:
+    from sets import Set as set
 
 
 class _SearchOp:
@@ -101,16 +107,29 @@ class TreeSort:
     """
 
     def __init__(self, nameGetter, parentGetter, objects):
-        self.roots = {}
-        self.init(nameGetter, parentGetter, objects)
-        
-        
-    def init(self, nameGetter, parentGetter, inputs):
         """
         Take a list of objects and init the tree
         name/parentGetter are functions such that:
         nameGetter(object) -> object name
         parentGetter(object) -> object parents
+        """
+        def __safeParentGetter(item):
+            """
+            Parentage may or may not be in list form - if not 
+              convert to tuple for uniformity
+            """
+            parents = parentGetter(item)
+            if hasattr(parents, '__iter__'):
+                return parents
+            return (parents,)
+
+        self.roots = {}
+        self.init(nameGetter, __safeParentGetter, objects)
+        
+        
+    def init(self, nameGetter, parentGetter, inputs):
+        """
+        Really do the init here
         """
         remainders = []
         allNames = [ nameGetter(x) for x in inputs ]

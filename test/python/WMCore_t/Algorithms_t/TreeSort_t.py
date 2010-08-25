@@ -1,10 +1,10 @@
-#!/usr/bin/env python2.4
+#!/usr/bin/env python
 """
 
 """
 
-__revision__ = "$Id: TreeSort_t.py,v 1.1 2009/04/24 21:36:01 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TreeSort_t.py,v 1.2 2009/05/04 21:38:35 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 from WMCore.Algorithms.TreeSort import TreeSort
@@ -44,8 +44,26 @@ class TreeSortTest(unittest.TestCase):
                   {'parents': ['Node1'], 'name': 'Node4'}]
         results = TreeSort(_name, _parents, items).sort()
         self.assertEqual(results, answer)
-        
-        
+
+
+    def testParentageNonList(self):
+        """
+        Case where parents are not given in a collection
+        """
+        items = [
+                 {'name' : 'Node4', 'Parent' : 'Node1'},
+                 {'name' : 'Node1', 'Parent' : None},
+                 {'name' : 'Node3', 'Parent' : 'Node2'},
+                 {'name' : 'Node2', 'Parent' : 'Node1'}] 
+        answer = [{'Parent': None, 'name': 'Node1'},
+                  {'Parent': 'Node1', 'name': 'Node2'},
+                  {'Parent': 'Node2', 'name': 'Node3'},
+                  {'Parent': 'Node1', 'name': 'Node4'}]
+        parent = lambda x: x['Parent']
+        results = TreeSort(_name, parent, items).sort()
+        self.assertEqual(results, answer)
+
+
     def testMultipleParents(self):
         """
         Input item has multiple parents - not supported
@@ -80,9 +98,10 @@ class TreeSortTest(unittest.TestCase):
         Input cannot be sorted with this algorithm
         """
         items = [ 
-                 {'name' : 'Node1', 'parents' : ['Node2']},
-                 {'name' : 'Node2', 'parents' : ['Node1']}] 
-        self.assertRaises(RuntimeError, TreeSort, _name, _parents, items)
+                 {'name' : 'Node1', 'Parents' : ['Node2']},
+                 {'name' : 'Node2', 'Parents' : ['Node1']}] 
+        parents= lambda x:x['Parents']
+        self.assertRaises(RuntimeError, TreeSort, _name, parents, items)
         
 
     def runTest(self):
@@ -91,6 +110,7 @@ class TreeSortTest(unittest.TestCase):
         self.testMultipleParents()
         self.testExternalParent()
         self.testUnsorteable()
+        self.testParentageNonList()
 
 if __name__ == "__main__":
     unittest.main()

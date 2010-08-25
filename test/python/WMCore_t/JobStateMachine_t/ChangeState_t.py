@@ -92,6 +92,7 @@ class TestChangeState(unittest.TestCase):
                                 name = "wf001", task = "Test")
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
@@ -151,6 +152,7 @@ class TestChangeState(unittest.TestCase):
                                 name = "wf001", task = "Test")
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
@@ -192,6 +194,7 @@ class TestChangeState(unittest.TestCase):
                                 name = "wf001", task = "Test")
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
         testSubscription.create()

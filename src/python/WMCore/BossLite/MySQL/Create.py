@@ -4,8 +4,8 @@ _Create_
 Base class for creating the BossLite database.
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2010/05/06 16:45:24 mcinquil Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2010/05/11 22:31:26 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 
@@ -63,30 +63,31 @@ class Create(DBCreator):
 """
 
         self.create["02bl_job"] = \
-                                """CREATE TABLE bl_job
-                                  (
-                                    id INT auto_increment,
-                                    task_id INT NOT NULL,
-                                    job_id INT NOT NULL,
-                                    name VARCHAR(255),
-                                    executable TEXT,
-                                    events INT,
-                                    arguments TEXT,
-                                    stdin TEXT,
-                                    stdout TEXT,
-                                    stderr TEXT,
-                                    input_files TEXT,
-                                    output_files TEXT,
-                                    dls_destination TEXT,
-                                    submission_number INT default 0,
-                                    closed CHAR default 'N',
-                                    PRIMARY KEY(id),
-                                    INDEX sub_n (submission_number),
-                                    UNIQUE(job_id, task_id),
-                                    FOREIGN KEY(task_id) references bl_task(id) ON DELETE CASCADE
-                                  )
-                                ENGINE = InnoDB DEFAULT CHARSET=latin1;
-                                """
+"""CREATE TABLE bl_job
+  (
+    id INT auto_increment,
+    task_id INT NOT NULL,
+    job_id INT NOT NULL,
+    name VARCHAR(255),
+    executable TEXT,
+    events INT,
+    arguments TEXT,
+    stdin TEXT,
+    stdout TEXT,
+    stderr TEXT,
+    input_files TEXT,
+    output_files TEXT,
+    dls_destination TEXT,
+    submission_number INT default 0,
+    closed CHAR default 'N',
+    PRIMARY KEY(id),
+    INDEX sub_n (submission_number),
+    UNIQUE(name),
+    UNIQUE(job_id, task_id),
+    FOREIGN KEY(task_id) references bl_task(id) ON DELETE CASCADE
+  )
+ENGINE = InnoDB DEFAULT CHARSET=latin1;
+"""
                                 
         self.create["03bl_runningjob"] = \
 """CREATE TABLE bl_runningjob
@@ -105,7 +106,6 @@ class Create(DBCreator):
     status VARCHAR(255),
     status_reason TEXT,
     destination TEXT, 
-    creation_timestamp TIMESTAMP,
     lb_timestamp TIMESTAMP,
     submission_time TIMESTAMP,
     scheduled_at_site TIMESTAMP,

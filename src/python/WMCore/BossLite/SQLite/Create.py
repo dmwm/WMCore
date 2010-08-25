@@ -95,7 +95,6 @@ class Create(MySQLCreate):
     status                  VARCHAR(255),
     status_reason           TEXT,
     destination             TEXT, 
-    creation_timestamp      TIMESTAMP,
     lb_timestamp            TIMESTAMP,
     submission_time         TIMESTAMP,
     scheduled_at_site       TIMESTAMP,

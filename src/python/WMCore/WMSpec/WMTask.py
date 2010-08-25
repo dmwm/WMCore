@@ -10,9 +10,10 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.17 2009/10/15 16:07:43 evansde Exp $"
-__revision__ = "$Revision: 1.17 $"
+__version__ = "$Id: WMTask.py,v 1.18 2009/12/11 16:32:30 mnorman Exp $"
+__revision__ = "$Revision: 1.18 $"
 
+import os
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
 from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
@@ -212,6 +213,29 @@ class WMTaskHelper(TreeHelper):
         master(self)
         return
 
+    def setupEnvironment(self):
+        """
+        _setupEnvironment_
+        
+        I don't know if this should go here.
+        Setup the environment variables mandated in the WMTask
+        """
+        
+        if not hasattr(self.data, 'environment'):
+            #No environment to setup, pass
+            return
+
+        envDict = self.data.environment.dictionary_()
+        
+        for key in envDict.keys():
+            if str(envDict[key].__class__) == "<class 'WMCore.Configuration.ConfigSection'>":
+                #At this point we do not support the setting of sub-sections for environment variables
+                continue
+            else:
+                os.environ[key] = envDict[key]
+
+        return
+
     def execute(self, wmbsJob, emulator = None):
         """
         _execute_
@@ -219,6 +243,7 @@ class WMTaskHelper(TreeHelper):
         Invoke execution of the steps using an optional Emulator
 
         """
+        self.setupEnvironment()
         master = ExecuteMaster(emulator)
         master(self, wmbsJob)
         return

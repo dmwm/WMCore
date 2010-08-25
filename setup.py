@@ -7,6 +7,7 @@ from ConfigParser import ConfigParser, NoOptionError
 import os, sys, os.path
 import logging
 import unittest
+import time
 #PyLinter and coverage aren't standard, but aren't strictly necessary
 can_lint = False
 can_coverage = False
@@ -33,18 +34,29 @@ except:
 if can_nose:
     class TestCommand(Command):
         """Runs our test suite"""
-        
-        user_options = [ ]
+        # WARNING WARNING WARNING
+        # if you set this to true, I will really delete your database
+        #  after every test
+        # WARNING WARNING WARNING
+        user_options = [('reallyDeleteMyDatabaseAfterEveryTest=', 
+                         None, 
+                         'If you set this I WILL DELETE YOUR DATABASE AFTER EVERY TEST. DO NOT RUN ON A PRODUCTION SYSTEM')]
 
         def initialize_options(self):
+            self.reallyDeleteMyDatabaseAfterEveryTest = False
             pass
         
         def finalize_options(self):
             pass
     
         def run(self):
-            print "committed at abour 14:11"
-            sys.stdout.flush()
+            if self.reallyDeleteMyDatabaseAfterEveryTest:
+                print "#### WE ARE DELETING YOUR DATABASE. 3 SECONDS TO CANCEL ####"
+                sys.stdout.flush()
+                import WMQuality.TestInit
+                WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
+                time.sleep(3)
+                
             retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python'])
             if retval:
                 sys.exit( 0 ) 

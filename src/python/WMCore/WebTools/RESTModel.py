@@ -4,8 +4,8 @@
 Rest Model abstract implementation
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.42 2009/12/29 12:42:43 metson Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: RESTModel.py,v 1.43 2010/01/04 17:04:10 sryu Exp $"
+__version__ = "$Revision: 1.43 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -47,7 +47,39 @@ class RESTModel(WebAPI):
         Echo back the arguments sent to the call 
         """ 
         return {'args': args, 'kwargs': kwargs}
-   
+    
+    def classifyHTTPError(self, verb, args, kwargs):
+        
+        # Checks whether verb is supported, if not return 501 error
+        if verb not in self.methods.keys():
+            data = {"message": "Unsupported VERB: %s" % verb,
+                    "args": args,
+                    "kwargs": kwargs}
+            self.debug(str(data))
+            raise HTTPError(501, data)
+        method = args[0]
+        
+        flag = True
+        for v in self.methods.keys():
+            if method in self.methods[v].keys():
+                flag = False
+                break
+        if flag:         
+            data = {"message": "Unsupported method for %s: %s" % (verb, method),
+                    "args": args,
+                    "kwargs": kwargs}
+            self.debug(str(data))
+            raise HTTPError(404, data)
+        
+        # Checks whether method exist but used wrong verb, if not 
+        # send 404 error 
+        if method not in self.methods[verb].keys():
+            data = {"message": "Unsupported method for the verb %s: %s" % (verb, method),
+                    "args": args,
+                    "kwargs": kwargs}
+            self.debug(str(data))
+            raise HTTPError(405, data)
+            
     def handler(self, verb, args=[], kwargs={}):
         """
         Call the appropriate method from self.methods for a given VERB. args are
@@ -58,36 +90,21 @@ class RESTModel(WebAPI):
         can be identified.
         """
         verb = verb.upper()
-        if verb in self.methods.keys():
-            method = args[0]
-            if method in self.methods[verb].keys():
-                try:
-                    data = self.methods[verb][method]['call'](*args[1:], **kwargs)
-                except TypeError, e:
-                    #TODO: check with Simon this might not what he wants
-                    raise HTTPError(400, str(e))
-                except HTTPError, he:
-                    raise he
-                except Exception, e:
-                    raise HTTPError(500, {type(e): str(e)})
-                if 'expires' in self.methods[verb][method].keys():
-                    return data, self.methods[verb][method]['expires']
-                else:
-                    return data, False
-            else:
-                data = {"message": "Unsupported method for %s: %s" % (verb, method),
-                    "args": args,
-                    "kwargs": kwargs}
-                self.debug(str(data))
-                raise HTTPError(405, data)
-        else:
-            data = {"message": "Unsupported VERB: %s" % verb,
-                    "args": args,
-                    "kwargs": kwargs}
-            self.debug(str(data))
-            response.status = 501
-            raise HTTPError(501, data)
         
+        self.classifyHTTPError(verb, args, kwargs)
+        try:
+            method = args[0]
+            data = self.methods[verb][method]['call'](*args[1:], **kwargs)
+        # in case sanitise_input is not called with in the method, if args doesn't
+        # match throws the 400 error
+        except TypeError, e:
+            raise HTTPError(400, str(e))
+       
+        if 'expires' in self.methods[verb][method].keys():
+            return data, self.methods[verb][method]['expires']
+        else:
+            return data, False
+                
     def addDAO(self, verb, methodKey, daoStr, args=[], validation=[], version=1):
         """
         add dao in self.methods and wrap it with sanitise_input. Assumes that a 
@@ -175,5 +192,14 @@ class RESTModel(WebAPI):
         # Run the validation functions, these should raise exceptions. If the  
         # exception is an HTTPError re-raise it, else raise a 400 HTTPError.
         for fnc in validators:
-            result.update(fnc(input))
+            try:
+                filteredInput = fnc(input)
+            # if validate function raises HTTPError just forward the error
+            except HTTPError, he:
+                raise he
+            # For other errors wrap into 400 error, assuming the validation functions
+            # are tested and working properly.
+            except Exception, e:
+                raise HTTPError(400, {type(e): str(e)})
+            result.update(filteredInput)
         return result

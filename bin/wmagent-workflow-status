@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+"""
+wmagent-workflow-status
+
+"""
+
+import sys
+import os
+import threading
+
+from optparse import OptionParser
+
+from WMCore.WMInit import WMInit
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.DAOFactory import DAOFactory
+
+def connectToDB():
+    """
+    _connectToDB_
+
+    Connect to the database specified in the WMAgent config.
+    """
+    if not os.environ.has_key("WMAGENT_CONFIG"):
+        print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
+        sys.exit(1)
+
+    wmAgentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
+        
+    if not hasattr(wmAgentConfig, "CoreDatabase"):
+        print "Your config is missing the CoreDatabase section."
+
+    socketLoc = getattr(wmAgentConfig.CoreDatabase, "socket", None)
+    connectUrl = getattr(wmAgentConfig.CoreDatabase, "connectUrl", None)
+    (dialect, junk) = connectUrl.split(":", 1)
+
+    myWMInit = WMInit()
+    myWMInit.setDatabaseConnection(dbConfig = connectUrl, dialect = dialect,
+                                   socketLoc = socketLoc)
+    return
+
+connectToDB()
+myThread = threading.currentThread()
+myDAOFactory = DAOFactory(package = "WMCore.WMBS",
+                          dbinterface = myThread.dbi)
+statusDao = myDAOFactory("Workflow.Status")
+result = statusDao.execute()
+
+workflowInfo = {}
+for row in result:
+    if not workflowInfo.has_key(row["owner"]):
+        workflowInfo[row["owner"]] = {}
+    if not workflowInfo[row["owner"]].has_key(row["task"]):
+        workflowInfo[row["owner"]][row["task"]] = {"pending": 0, "running": 0, "complete": 0, "successful": 0}
+
+    if row["name"] in ["complete", "success", "exhausted", "cleanout"]:
+        workflowInfo[row["owner"]][row["task"]]["complete"] += int(row["jobs"])
+    elif row["name"] in ["created"]:
+        workflowInfo[row["owner"]][row["task"]]["pending"] += int(row["jobs"])        
+    else:
+        workflowInfo[row["owner"]][row["task"]]["running"] += int(row["jobs"])
+
+    workflowInfo[row["owner"]][row["task"]]["successful"] += int(row["success"])        
+
+for owner in workflowInfo.keys():
+    print "\n%s:" % owner
+
+    for task in workflowInfo[owner].keys():
+        print "  %s:" % task
+        print "    %s pending, %s running, %s complete (%s successful)" % (workflowInfo[owner][task]["pending"],
+                                                                           workflowInfo[owner][task]["running"],
+                                                                           workflowInfo[owner][task]["complete"],
+                                                                           workflowInfo[owner][task]["successful"])                                                                           

@@ -6,8 +6,8 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.1 2009/12/11 16:35:35 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LogArchive.py,v 1.2 2009/12/21 16:04:49 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import inspect
 import os
@@ -16,11 +16,20 @@ import logging
 import re
 import tarfile
 import time
+import signal
 
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.FwkJobReport.Report             import Report
 import WMCore.Storage.StageOutMgr as StageOutMgr
+
+
+class Alarm(Exception):
+    pass
+
+def alarmHandler(signum, frame):
+    raise Alarm
+
 
 class LogArchive(Executor):
     """
@@ -54,6 +63,9 @@ class LogArchive(Executor):
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
 
+        #Wait fifteen minutes for stageOut
+        waitTime = overrides.get('waitTime', 900)
+
         matchFiles = [
             ".log$",
             "^FrameworkJobReport.xml$",
@@ -65,18 +77,17 @@ class LogArchive(Executor):
         manager = StageOutMgr.StageOutMgr(**overrides)
         manager.numberOfRetries = self.step.retryCount
         manager.retryPauseTime  = self.step.retryDelay
-
         #Now we need to find all the reports
         logFilesForTransfer = []
         #Look in the taskSpace first
         logFilesForTransfer.extend(self.findFilesInDirectory(self.stepSpace.taskSpace.location, matchFiles))
         #Now check the step spaces
-        for step in self.stepSpace.taskSpace.stepSpaces():
-            if step == self.stepName:
-                #Don't try to parse yourself, it never works
-                continue
-            stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
-            logFilesForTransfer.extend(self.findFilesInDirectory(stepLocation, matchFiles))
+        #for step in self.stepSpace.taskSpace.stepSpaces():
+        #    if step == self.stepName:
+        #        #Don't try to parse yourself, it never works
+        #        continue
+        #    stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
+        #    logFilesForTransfer.extend(self.findFilesInDirectory(stepLocation, matchFiles))
 
         #What if it's empty?
         if len(logFilesForTransfer) == 0:
@@ -85,7 +96,8 @@ class LogArchive(Executor):
             return logFilesForTransfer
 
         #Now that we've gone through all the steps, we have to tar it out
-        tarBallLocation = os.path.join(self.stepSpace.location, 'logTarball.tar.gz')
+        tarName         = 'logArchive.tar.gz'
+        tarBallLocation = os.path.join(self.stepSpace.location, tarName)
         tarBall         = tarfile.open(tarBallLocation, 'w:gz')
         for file in logFilesForTransfer:
             tarBall.add(file)
@@ -97,14 +109,22 @@ class LogArchive(Executor):
             'SEName' : None,
             'GUID' : None
             }
-        manager(fileInfo)
 
-        print fileInfo
+        signal.signal(signal.SIGALRM, alarmHandler)
+        signal.alarm(waitTime)
+        try:
+            manager(fileInfo)
+        except Alarm:
+            msg = "Indefinite hang during stageOut of logArchive"
+            logging.error(msg)
+        signal.alarm(0)
+
+        #print fileInfo
         #Now tag things
         self.step.output.outputPFN = fileInfo['PFN']
         self.step.output.SEName    = fileInfo['SEName']
         self.step.output.LFN       = fileInfo['LFN']
-        print self.step.output
+        #print self.step.output
 
 
 

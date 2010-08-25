@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.11 2010/02/26 15:35:33 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.12 2010/03/02 21:09:25 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -117,6 +117,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         Actually runs the code
         """
         logging.debug("Running JSM.JobSubmitter")
+
+        myThread = threading.currentThread()
         
         try:
             #startTime = time.clock()

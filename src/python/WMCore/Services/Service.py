@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.23 2009/08/03 15:57:03 meloam Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Service.py,v 1.24 2009/08/06 12:58:06 metson Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import datetime
 import os
@@ -57,10 +57,14 @@ class Service(Requests):
         # then split the endpoint into netloc and basepath
         endpoint = urlparse(dict['endpoint'])
         
-        #Only works on python 2.5 or above
-        self.setdefault("basepath", endpoint.path)
-        Requests.__init__(self, endpoint.netloc)
-        
+        try:
+            #Only works on python 2.5 or above
+            self.setdefault("basepath", endpoint.path)
+            Requests.__init__(self, endpoint.netloc)
+        except:
+            self.setdefault("basepath", endpoint[2])
+            Requests.__init__(self, endpoint[1])
+                    
          #set up defaults
         self.setdefault("inputdata", {})
         self.setdefault("cachepath", '/tmp')

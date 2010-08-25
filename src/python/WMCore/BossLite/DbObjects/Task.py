@@ -4,15 +4,15 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.2 2010/03/30 13:27:57 mnorman Exp $"
-__revision__ = "$Revision: 1.2 $"
+__version__ = "$Id: Task.py,v 1.3 2010/03/30 15:19:05 mnorman Exp $"
+__revision__ = "$Revision: 1.3 $"
 
 import os.path
 import threading
 
 from WMCore.Services.UUID import makeUUID
 
-from WMCore.BossLite.DbObjects.DbObject import DbObject
+from WMCore.BossLite.DbObjects.DbObject import DbObject, dbTransaction
 from WMCore.BossLite.DbObjects.Job      import Job
 from WMCore.BossLite.Common.Exceptions  import TaskError, JobError, DbError
 
@@ -88,7 +88,7 @@ class Task(DbObject):
 
     ##########################################################################
 
-
+    @dbTransaction
     def exists(self, noDB = False):
         """
         If the job exists, return ID
@@ -96,12 +96,10 @@ class Task(DbObject):
         """
 
         if not noDB:
-            existingTransaction = self.beginTransaction()
             action = self.daofactory(classname = 'Task.Exists')
             id = action.execute(name = self.data['name'],
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
-            self.commitTransaction(existingTransaction)
             if id:
                 self.data['id'] = id
         else:
@@ -116,18 +114,17 @@ class Task(DbObject):
 
     ####################################################################
 
+    @dbTransaction
     def save(self):
         """
         Save the task if there is new information in it.
         """
 
         if self.exists():
-            existingTransaction = self.beginTransaction()
             action = self.daofactory(classname = "Task.Save")
             action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
-            self.commitTransaction(existingTransaction)
         else:
             self.create()
 
@@ -135,28 +132,25 @@ class Task(DbObject):
 
     #########################################################################
 
-
+    @dbTransaction
     def create(self):
         """
         Create a new task in the database
         """
-        existingTransaction = self.beginTransaction()
         action = self.daofactory(classname = "Task.New")
         action.execute(binds = self.data,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction)
-        self.commitTransaction(existingTransaction)
 
         return
 
     ###########################################################################
 
-
+    @dbTransaction
     def load(self):
         """
         Load a task
         """
-        existingTransaction = self.beginTransaction()
         if self.data['id'] > 0:
             action = self.daofactory(classname = "Task.LoadByID")
             result = action.execute(id = self.data['id'],
@@ -169,10 +163,7 @@ class Task(DbObject):
                                     transaction = self.existingTransaction)
         else:
             # Then you're screwed
-            self.commitTransaction(existingTransaction)
             return
-
-        self.commitTransaction(existingTransaction)
 
         if result == []:
             # Then we have nothing
@@ -185,6 +176,7 @@ class Task(DbObject):
 
     ###################################################################
 
+    @dbTransaction
     def loadJobs(self):
         """
         Load jobs from the database
@@ -193,7 +185,6 @@ class Task(DbObject):
         if self.data['id'] < 0:
             self.exists()
 
-        existingTransaction = self.beginTransaction()
         action = self.daofactory(classname = 'Task.GetJobs')
         jobList = action.execute(id = self.data['id'],
                                  conn = self.getDBConn(),
@@ -204,7 +195,6 @@ class Task(DbObject):
             tmp.data.update(job)
             self.jobs.append(tmp)
 
-        self.commitTransaction(existingTransaction)
         return
 
     ########################################################################

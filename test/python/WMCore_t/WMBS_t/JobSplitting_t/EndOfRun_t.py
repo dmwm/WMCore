@@ -5,8 +5,8 @@ _EndOfRun_t_
 End of run splitting test
 """
 
-__revision__ = "$Id: EndOfRun_t.py,v 1.4 2009/12/16 18:55:37 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: EndOfRun_t.py,v 1.5 2010/05/07 14:20:09 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import os
@@ -55,7 +55,7 @@ class EndOfRunTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "somese.cern.ch")
+        locationAction.execute(siteName = 's1', seName = "somese.cern.ch")
 
         
         self.multipleFileFileset = Fileset(name = "TestFileset1")
@@ -152,7 +152,8 @@ class EndOfRunTest(unittest.TestCase):
         since the subscriptions are open, we shouldn't get any jobs back
         """
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.singleFileSubscription)
         jobGroups = jobFactory()
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
@@ -173,12 +174,13 @@ class EndOfRunTest(unittest.TestCase):
     def testClosed(self):
         """
         _testClosed_
-        since the subscriptions are closed and none of the files ahve been
+        since the subscriptions are closed and none of the files have been
         acquired, all of the files should show up
         """
         splitter = SplitterFactory()
         self.singleFileSubscription.getFileset().markOpen(False)
-        jobFactory = splitter(self.singleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.singleFileSubscription)
         jobGroups = jobFactory()
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
@@ -229,7 +231,8 @@ class EndOfRunTest(unittest.TestCase):
         splitter = SplitterFactory()
         self.singleFileSubscription.acquireFiles(
                            self.singleFileSubscription.availableFiles())
-        jobFactory = splitter(self.singleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.singleFileSubscription)
         jobGroups = jobFactory()
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
@@ -261,7 +264,8 @@ class EndOfRunTest(unittest.TestCase):
         self.multipleFileSubscription.getFileset().markOpen(False)
         self.singleFileSubscription.acquireFiles(
                            [self.singleFileSubscription.availableFiles().pop()])
-        jobFactory = splitter(self.singleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.singleFileSubscription)
         jobGroups = jobFactory()
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
@@ -270,7 +274,8 @@ class EndOfRunTest(unittest.TestCase):
         self.multipleFileSubscription.getFileset().markOpen(False)
         self.multipleFileSubscription.acquireFiles(
                            [self.multipleFileSubscription.availableFiles().pop()])
-        jobFactory = splitter(package = "WMCore.WMBS", subscription =self.multipleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription =self.multipleFileSubscription)
         jobGroups = jobFactory()
         self.assertEquals(len(jobGroups),1, "Should have gotten one jobGroup")
         self.assertEquals(len(jobGroups[0].jobs), 1, \

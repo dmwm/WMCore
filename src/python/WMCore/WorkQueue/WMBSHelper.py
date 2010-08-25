@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.16 2010/03/15 18:53:48 sryu Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.17 2010/03/30 17:40:28 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
@@ -57,7 +57,7 @@ class WMBSHelper:
         subs = Subscription(fileset = fileset, workflow = workflow,
                             split_algo = task.jobSplittingAlgorithm(),
                             type = task.taskType())
-        
+        subs.create()
         if self.topLevelSubscription == None:
             self.topLevelSubscription = subs
         

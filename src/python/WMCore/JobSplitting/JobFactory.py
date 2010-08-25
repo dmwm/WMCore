@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.13 2009/08/05 19:47:32 mnorman Exp $"
-__version__  = "$Revision: 1.13 $"
+__revision__ = "$Id: JobFactory.py,v 1.14 2009/09/10 18:58:58 mnorman Exp $"
+__version__  = "$Revision: 1.14 $"
 
 
 import logging
 import threading
+
 from sets import Set
 from sets import ImmutableSet
 from WMCore.DataStructs.WMObject import WMObject
@@ -24,6 +25,7 @@ class JobFactory(WMObject):
     def __init__(self, package='WMCore.DataStructs', subscription=None):
         self.package = package
         self.subscription = subscription
+        self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
 
     def __call__(self, jobtype='Job', grouptype='JobGroup', *args, **kwargs):
         """
@@ -69,9 +71,8 @@ class JobFactory(WMObject):
         fileset = self.subscription.availableFiles()
 
         for file in fileset:
-            if hasattr(file, 'loadData'):
-                file.loadData()
             locSet = ImmutableSet(file['locations'])
+                    
             if locSet in fileDict.keys():
                 fileDict[locSet].append(file)
             else:

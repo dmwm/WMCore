@@ -1,6 +1,10 @@
 from WMCore.Services.Requests import JSONRequests
 import unittest
-import simplejson as json
+try:
+    import json
+except:
+    import simplejson
+    json = simplejson
 import WMCore.RequestManager.RequestMaker.WMWorkloadCache as WMWorkloadCache
 from httplib import HTTPException
 import urllib

@@ -21,6 +21,8 @@ sys.path.insert(0,'../../..')
 sys.path.insert(0,'../..')
 sys.path.insert(0,'..')
 
+
+print "this is ridiculous"
 print sys.path
 import buildslave
 

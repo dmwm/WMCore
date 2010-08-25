@@ -26,32 +26,32 @@ class Requests(dict):
         self.setdefault("host", url)
         self.setdefault("conn", self._getURLOpener())
 
-    def get(self, uri=None, data={}, encode = True, decode=True, type=None):
+    def get(self, uri=None, data={}, encode = True, decode=True, contentType=None):
         """
         GET some data
         """
-        return self.makeRequest(uri, data, 'GET', encode, decode, type)
+        return self.makeRequest(uri, data, 'GET', encode, decode, contentType)
 
-    def post(self, uri=None, data={}, encode = True, decode=True, type=None):
+    def post(self, uri=None, data={}, encode = True, decode=True, contentType=None):
         """
         POST some data
         """
-        return self.makeRequest(uri, data, 'POST', encode, decode, type)
+        return self.makeRequest(uri, data, 'POST', encode, decode, contentType)
 
-    def put(self, uri=None, data={}, encode = True, decode=True, type=None):
+    def put(self, uri=None, data={}, encode = True, decode=True, contentType=None):
         """
         PUT some data
         """
-        return self.makeRequest(uri, data, 'PUT', encode, decode, type)
+        return self.makeRequest(uri, data, 'PUT', encode, decode, contentType)
        
-    def delete(self, uri=None, data={}, encode = True, decode=True, type=None):
+    def delete(self, uri=None, data={}, encode = True, decode=True, contentType=None):
         """
         DELETE some data
         """
-        return self.makeRequest(uri, data, 'DELETE', encode, decode, type)
+        return self.makeRequest(uri, data, 'DELETE', encode, decode, contentType)
 
     def makeRequest(self, uri=None, data={}, verb='GET',
-                     encoder=True, decoder=True, type=None):
+                     encoder=True, decoder=True, contentType=None):
         """
         Make a request to the remote database. for a give URI. The type of
         request will determine the action take by the server (be careful with
@@ -67,8 +67,8 @@ class Requests(dict):
         
         """
         # $client/$client_version (CMS) $http_lib/$http_lib_version $os/$os_version ($arch)
-        if type:
-            headers = {"Content-type": type,
+        if contentType:
+            headers = {"Content-type": contentType,
                    "User-agent": "WMCore.Services.Requests/v001",
                    "Accept": self['accept_type']}
         else:

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.42 2009/12/11 15:38:08 swakef Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: WorkQueue.py,v 1.43 2009/12/14 13:50:27 swakef Exp $"
+__version__ = "$Revision: 1.43 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -501,6 +501,10 @@ class WorkQueue(WorkQueueBase):
                                 self.params['FullLocationRefreshInterval']
 
         mapping = self._getLocations([x['name'] for x in blocks], fullResync)
+
+        if not mapping:
+            return
+
         uniqueLocations = set(sum(mapping.values(), []))
 
         if uniqueLocations:
@@ -629,6 +633,7 @@ class WorkQueue(WorkQueueBase):
     def _insertWMSpec(self, wmSpec):
         """
         """
+        #FIXME: Doesn't work - results in differing elements having the same spec url!!!!
         existsAction = self.daofactory(classname = "WMSpec.Exists")
         exists = existsAction.execute(wmSpec.name(), conn = self.getDBConn(),
                              transaction = self.existingTransaction())
@@ -636,7 +641,8 @@ class WorkQueue(WorkQueueBase):
         if not exists:
             wmSpecAction = self.daofactory(classname = "WMSpec.New")
             #TODO: need a unique value (name?) for first parameter
-            wmSpecAction.execute(wmSpec.name(), wmSpec.specUrl(), wmSpec.owner(),
+            owner = str(wmSpec.owner()) or self.params['QueueURL'] or "WorkQueue"
+            wmSpecAction.execute(wmSpec.name(), wmSpec.specUrl(), owner,
                                  conn = self.getDBConn(),
                                  transaction = self.existingTransaction())
 

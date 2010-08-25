@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.43 2010/06/10 18:41:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: ChangeState.py,v 1.44 2010/06/10 20:28:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.44 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
@@ -61,15 +61,13 @@ class ChangeState(WMObject, WMConnectionBase):
                                   "Unknown")
         else:
             self.dbname = couchDbName
-        
+
         try:
-            self.database = None
-            self.couchdb = None
             self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
             if self.dbname not in self.couchdb.listDatabases():
                 self.createDatabase()
 
-            self.database = self.couchdb.connectDatabase(couchDbName)
+            self.database = self.couchdb.connectDatabase(self.dbname)
         except Exception, ex:
             logging.error("Error connecting to couch: %s" % str(ex))
 

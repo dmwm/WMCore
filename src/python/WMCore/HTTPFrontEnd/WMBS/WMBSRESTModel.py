@@ -6,7 +6,6 @@ Rest Model for WMBS Monitoring.
 
 from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMBS.MySQL.Jobs.Monitoring import JobsByState
 
 class WMBSRESTModel(RESTModel):
     """
@@ -18,7 +17,7 @@ class WMBSRESTModel(RESTModel):
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = self,
                                      dbinterface = self.dbi)
-        self.methods = {'GET':{'jobs':{'dao': JobsByState(self, self.dbi),
+        self.methods = {'GET':{'jobs':{'dao': 'JobsByState',
                                        'call': self.sanitise,
                                        'version': 1}}}
 
@@ -34,5 +33,6 @@ class WMBSRESTModel(RESTModel):
         server, and even then I don't know how you'd do it without changing code
         and disrupting the service.
         """
-        return self.methods[verb][args[0]]['dao'].execute()
+        dao = self.daofactory(classname=self.methods[verb][args[0]]['dao'])
+        return dao.execute()
         

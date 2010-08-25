@@ -4,8 +4,8 @@
 # W0142: Some people like ** magic
 # R0201: Test methods CANNOT be functions
 
-__revision__ = "$Id: Subscription_t.py,v 1.57 2010/05/24 15:40:05 mnorman Exp $"
-__version__ = "$Revision: 1.57 $"
+__revision__ = "$Id: Subscription_t.py,v 1.58 2010/06/01 21:26:32 riahi Exp $"
+__version__ = "$Revision: 1.58 $"
 
 
 import unittest
@@ -1606,6 +1606,130 @@ class SubscriptionTest(unittest.TestCase):
         testFileD.delete()
         testFileE.delete()
         testFileF.delete()        
+        return
+
+    def testJobs(self):
+        """
+        _testJobs_
+
+        Test the Subscription.AllJob DAO turns the correct number of job
+        """
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Hassen",
+                                name = "wf001", task = "Test")
+        testWorkflow.create() 
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testJobA = Job(name = "TestJobA")
+        testJobB = Job(name = "TestJobB")
+
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+        testJobGroupA.commit()
+
+        myThread   = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        getAllJobs = daoFactory(classname = "Subscriptions.Jobs")
+        result = getAllJobs.execute(subscription=testSubscription["id"])
+
+        assert len(result) == 2, \
+               "Error: Wrong number of jobs."
+
+        testJobC = Job(name = "TestJobC")
+        testJobGroupA.add(testJobC)
+        testJobGroupA.commit()
+
+        result = getAllJobs.execute(subscription=testSubscription["id"])
+
+        assert len(result) == 3, \
+               "Error: Wrong number of jobs."
+
+        return
+
+
+
+    def testSucceededJobs(self):
+        """
+        _testSucceededJobs_
+
+        Test the Subscriptions.SucceededJobs DAO turns the correct
+        number of succeeded job
+        """
+        myThread   = threading.currentThread()
+        daoFactory = DAOFactory(package = "WMCore.WMBS", \
+                                     logger = myThread.logger, \
+                                     dbinterface = myThread.dbi)
+        changeJobState = daoFactory(classname = "Jobs.ChangeState")
+        getSucceededJobs = daoFactory(classname = "Subscriptions.SucceededJobs")
+
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Hassen",
+                                name = "wf001", task = "Test")
+
+        testWorkflow.create()
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testJobA = Job(name = "TestJobA")
+        testJobA.create(testJobGroupA)
+        testJobA.changeState("success")
+        changeJobState.execute(jobs = [testJobA])
+        testJobA["outcome"] = "success"
+        testJobA.save()
+
+        testJobB = Job(name = "TestJobB")
+        testJobB.create(testJobGroupA)
+        testJobB.changeState("success")
+        changeJobState.execute(jobs = [testJobB])
+        testJobB["outcome"] = "success"
+        testJobB.save()
+
+        testJobC = Job(name = "TestJobC")
+        testJobC.create(testJobGroupA)
+        testJobC.changeState("jobfailed")
+        changeJobState.execute(jobs = [testJobC])
+        testJobC["outcome"] = "jobfailed"
+        testJobC.save()
+
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+        testJobGroupA.add(testJobC)
+        testJobGroupA.commit()
+
+        result = getSucceededJobs.execute(subscription=testSubscription["id"])
+
+        assert len(result) == 2, \
+               "Error: Wrong number of jobs."
+
+        testJobD = Job(name = "TestJobD")
+        testJobD.create(testJobGroupA)
+        testJobD.changeState("success")
+        changeJobState.execute(jobs = [testJobD])
+        testJobD["outcome"] = "success"
+        testJobD.save()
+
+        testJobGroupA.add(testJobD)
+        testJobGroupA.commit()
+
+        result = getSucceededJobs.execute(subscription=testSubscription["id"])
+
+        assert len(result) == 3, \
+               "Error: Wrong number of jobs."
+
         return
 
 

@@ -110,6 +110,21 @@ def get_test_suites(path):
     logging.info('Got suites: %s', all_test_suites)
     return all_test_suites
 
+import re
+def listFiles(dir):
+    fileList = []
+    basedir = dir
+    for item in os.listdir(dir):
+        if os.path.isfile(os.path.join(basedir,item)):
+            fileList.append(os.path.join(basedir,item))
+        elif os.path.isdir(os.path.join(basedir,item)):
+            fileList.extend(listFiles(os.path.join(basedir,item)))
+    
+    print "--Returning %s" % fileList         
+    return fileList
+
+
+import pprint
 
 def runUnitTests():
     # runs all the unittests, returning the testresults object
@@ -122,22 +137,48 @@ def runUnitTests():
     sys.path.append(testspypath)
     sys.path.append(srcpypath)
     logging.basicConfig(level=logging.DEBUG)
-    
-  #  logging.basicConfig(level=logging.WARN)
-    package_path = os.path.dirname(mydir + '/test/python/')
-    print "path: %s " % package_path
-    suites = get_test_suites(package_path)
-    testCaseCount = 0
-    totallySuite = unittest.TestSuite()
-    totallySuite.addTests(suites)
-    print suites     
-    result = unittest.TextTestRunner(verbosity=2).run(totallySuite)
+    path = os.path.abspath(os.path.dirname(sys.argv[0]))
+    print "the path is %s" % path   
+    files = listFiles(path)
+    test = re.compile("_t\.py$", re.IGNORECASE)          
+    files = filter(test.search, files)                     
+    filenameToModuleName = lambda f: os.path.splitext(f)[0]
+    moduleNames = map(filenameToModuleName, files)         
+    stripBeginning = lambda f: f[ len(path) + len('/test/python/'): ]
+    moduleNames2 = map( stripBeginning, moduleNames )
+    replaceSlashes = lambda f: f.replace('/','.')
+    moduleNames3 = map( replaceSlashes, moduleNames2 )
+    print "\n\n\n\n\n\n"
+    print "importing %s" % moduleNames3
+    print "as"
+    modules = []
+    for oneModule in moduleNames3:
+        try:
+            modules.append(__import__(oneModule, globals(), locals()))   
+        except ImportError, e:
+            print "ERROR: Can't load %s - %s" % (oneModule, e)    
+        else:
+            print "Loaded %s" % oneModule
+            print "--Module is %s" % modules[-1]     
+    print "modules is %s" % modules               
+    load = unittest.defaultTestLoader.loadTestsFromModule  
+    globalSuite = unittest.TestSuite(map(load, modules))    
+#  #  logging.basicConfig(level=logging.WARN)
+#    package_path = os.path.dirname(mydir + '/test/python/')
+#    print "path: %s " % package_path
+#    suites = get_test_suites(package_path)
+#    testCaseCount = 0
+#    totallySuite = unittest.TestSuite()
+#    totallySuite.addTests(suites)
+#    print suites     
+    pprint.pprint( globalSuite )
+    result = unittest.TextTestRunner(verbosity=2).run(globalSuite)
 
     #sys.stdout = sys.__stdout__
     #sys.stderr = sys.__stderr__
     
     print sys.path
-    return (result, [], totallySuite.countTestCases())
+    return (result, [], globalSuite.countTestCases())
 
 
 class TestCommand(Command):

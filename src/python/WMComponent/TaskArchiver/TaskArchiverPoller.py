@@ -3,8 +3,8 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: TaskArchiverPoller.py,v 1.5 2010/03/31 16:50:50 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: TaskArchiverPoller.py,v 1.6 2010/05/12 19:14:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 import logging
@@ -123,22 +123,19 @@ class TaskArchiverPoller(BaseWorkerThread):
         Tells the workQueue component that a particular subscription,
         or set of subscriptions, is done.  Receives confirmation
         """
-
         subIDs = []
-
-        #In the future, this will talk to the workQueue
-        #Right now it doesn't because I'm not sure how to do it
         
         for sub in subList:
             subIDs.append(sub['id'])        
         
-        #TODO: needs proper handling on this
         try:
             self.workQueue.doneWork(subIDs, id_type = "subscription_id")
             return subList
-        except:
-            return []
+        except Exception, ex:
+            logging.error("Error talking to workqueue: %s" % str(ex))
+            logging.error("Tried to complete the following: %s" % subIDs)
 
+        return []
 
     def killSubscriptions(self, doneList):
         """

@@ -2,8 +2,8 @@
 """
 Test case for SiteDB
 """
-__revision__ = "$Id: SiteDB_t.py,v 1.5 2009/02/03 19:55:36 ewv Exp $"
-__version__  = "$Revision: 1.5 $"
+__revision__ = "$Id: SiteDB_t.py,v 1.6 2009/03/31 14:52:02 metson Exp $"
+__version__  = "$Revision: 1.6 $"
 __author__   = "ewv@fnal.gov"
 
 import unittest
@@ -44,10 +44,18 @@ class SiteDBTest(unittest.TestCase):
         """
         Tests CmsNametoCE
         """
-        target = ['cclcgceli04.in2p3.fr', 'cclcgceli03.in2p3.fr',
-                  'w-ce02.grid.sinica.edu.tw', 'w-ce01.grid.sinica.edu.tw',
-                  'lcgce02.gridpp.rl.ac.uk', 'lcg00125.grid.sinica.edu.tw']
+        target = ['cclcgceli03.in2p3.fr', 'ce-2-fzk.gridka.de', 
+                  'ce-1-fzk.gridka.de', 'cclcgceli04.in2p3.fr', 
+                  'ce-4-fzk.gridka.de', 'ce-3-fzk.gridka.de', 'ce06.pic.es', 
+                  'ce-5-fzk.gridka.de', 'ce07.pic.es', 
+                  'w-ce01.grid.sinica.edu.tw', 'ce04-lcg.cr.cnaf.infn.it', 
+                  'lcg00125.grid.sinica.edu.tw', 'w-ce02.grid.sinica.edu.tw', 
+                  'ce05-lcg.cr.cnaf.infn.it ', 'ce06-lcg.cr.cnaf.infn.it', 
+                  'cmsosgce4.fnal.gov', 'lcgce02.gridpp.rl.ac.uk', 
+                  'cmsosgce.fnal.gov', 'cmsosgce2.fnal.gov']
+
         results = self.mySiteDB.cmsNametoCE("T1")
+        
         self.failUnless(results == target)
 
 
@@ -56,7 +64,7 @@ class SiteDBTest(unittest.TestCase):
         Tests the JSON parser directly
         """
         cmsName = "cmsgrid02.hep.wisc.edu"
-        results = self.mySiteDB.parser.getJSON("CEtoCMSName",
+        results = self.mySiteDB.getJSON("CEtoCMSName",
                                   file="CEtoCMSName",
                                   name=cmsName)
         self.failUnless(results['0']['name'] == "T2_US_Wisconsin")

@@ -79,6 +79,13 @@ class CleanCommand(Command):
                 pass
             
 class LintCommand(Command):
+    """
+    Lint all files in the src tree
+    
+    TODO: better format the test results, get some global result, make output 
+    more buildbot friendly.    
+    """
+    
     user_options = [ ]
     
     def initialize_options(self):

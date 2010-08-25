@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.115 2010/06/11 10:08:43 swakef Exp $"
-__version__ = "$Revision: 1.115 $"
+__revision__ = "$Id: WorkQueue.py,v 1.116 2010/06/11 16:36:10 sryu Exp $"
+__version__ = "$Revision: 1.116 $"
 
 
 import time
@@ -50,7 +50,11 @@ def globalQueue(logger = None, dbi = None, **kwargs):
     """
     defaults = {'SplitByBlock' : False,
                 'PopulateFilesets' : False,
-                'SplittingMapping' : {'DatasetBlock' : ('Dataset', {})}
+                'SplittingMapping' : {'DatasetBlock' : 
+                                        {'name': 'Dataset', 
+                                         'args': {'Multiplier': 1000}
+                                        }
+                                      }
                 }
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
@@ -105,15 +109,23 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('ReportInterval', 300)
 
         self.params.setdefault('SplittingMapping', {})
-        self.params['SplittingMapping'].setdefault('DatasetBlock', ('Block', {}))
-        self.params['SplittingMapping'].setdefault('MonteCarlo', ('MonteCarlo', {}))
+        self.params['SplittingMapping'].setdefault('DatasetBlock', 
+                                                   {'name': 'Block', 
+                                                    'args': {'Multiplier': 10}
+                                                   }
+                                                  )
+        self.params['SplittingMapping'].setdefault('MonteCarlo', 
+                                                   {'name': 'MonteCarlo', 
+                                                    'args':{}
+                                                   }
+                                                  )
         self.params.setdefault('EndPolicySettings', {})
 
         assert(self.params['TrackLocationOrSubscription'] in ('subscription',
                                                               'location'))
         # Can only release blocks on location
         if self.params['TrackLocationOrSubscription'] == 'location':
-            if self.params['SplittingMapping']['DatasetBlock'][0] != 'Block':
+            if self.params['SplittingMapping']['DatasetBlock']['name'] != 'Block':
                 raise RuntimeError, 'Only blocks can be released on location'
 
         phedexArgs = {}
@@ -681,9 +693,11 @@ class WorkQueue(WorkQueueBase):
 
             if dbs_url and not self.dbsHelpers.has_key(dbs_url):
                 self.dbsHelpers[dbs_url] = DBSReader(dbs_url)
-
-            policy = startPolicy(wmspec.startPolicy(),
-                                 self.params['SplittingMapping'])
+                
+            policyName = wmspec.startPolicy()
+            # update policy parameter
+            self.params['SplittingMapping'][policyName].update(args = wmspec.startPolicyParameters())
+            policy = startPolicy(policyName, self.params['SplittingMapping'])
             units = policy(wmspec, topLevelTask, self.dbsHelpers)
             for unit in units:
                 unit['ParentQueueId'] = parentQueueId

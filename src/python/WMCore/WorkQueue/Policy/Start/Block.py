@@ -4,8 +4,8 @@ WorkQueue splitting by block
 
 """
 __all__ = []
-__revision__ = "$Id: Block.py,v 1.9 2010/03/24 16:20:22 sryu Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Block.py,v 1.10 2010/06/11 16:34:07 sryu Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from copy import deepcopy
@@ -16,8 +16,8 @@ class Block(StartPolicyInterface):
     def __init__(self, **args):
         StartPolicyInterface.__init__(self, **args)
         self.args.setdefault('SliceType', 'NumberOfFiles')
-        self.args.setdefault('SliceSize', 10)
-
+        self.args.setdefault('SliceSize', 1)
+        self.args.setdefault('Multiplier', 10)
 
     def split(self):
         """Apply policy to spec"""
@@ -38,7 +38,10 @@ class Block(StartPolicyInterface):
             self.newQueueElement(Data = block['Name'],
                                  ParentData = parents,
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
-                                                float(self.args['SliceSize'])))
+                                             float(self.args['SliceSize'])/
+                                             float(self.args['Multiplier'])
+                                            )
+                                 )
                                  #Jobs = block[self.args['SliceType']])
 
 

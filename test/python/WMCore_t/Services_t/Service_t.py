@@ -131,6 +131,20 @@ class ServiceTest(unittest.TestCase):
         self.assertRaises(HTTPException, service.refreshCache, cache, '/lies')
         
         service.cacheFileName(cache)
-        
+
+    def testCacheFileName(self):
+        """Hash url + data to get cache file name"""
+        hashes = {}
+        inputdata = [{}, {'fred' : 'fred'},
+                     {'fred' : 'fred', 'carl' : [1, 2]},
+                     {'fred' : 'fred', 'carl' : ["1", "2"]},
+                     {'fred' : 'fred', 'carl' : ["1", "2"], 'jim' : {}}
+                     ]
+        for data in inputdata:
+            thishash = self.myService.cacheFileName('bob', inputdata = data)
+            self.assert_(thishash not in hashes)
+            hashes[thishash] = None
+
+
 if __name__ == '__main__':
     unittest.main()

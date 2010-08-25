@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.53 2010/07/12 16:19:04 metson Exp $"
-__version__ = "$Revision: 1.53 $"
+__revision__ = "$Id: Service.py,v 1.54 2010/07/15 11:09:20 swakef Exp $"
+__version__ = "$Revision: 1.54 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -130,7 +130,7 @@ class Service(dict):
         return hash     
     
     def _makeHashFromList(self, inputList, hash):
-        hash = ''
+        hash = 0
         for value in inputList:
             if type(value) == dict:
                 hash += self._makeHash(value, hash)

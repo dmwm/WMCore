@@ -23,17 +23,45 @@ from DBSAPI.dbsApi import DbsApi
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
 arguments = {
-    "OutputTiers" : ["RECO", "ALCARECO"],
-    "AcquisitionEra" : "WMAgentCommissioining10b",
-    #"GlobalTag" :"GR09_R_34X_V5::All",
-    "GlobalTag" : "GR10_P_V4::All",
-    "LFNCategory" : "/store/temp/WMAgent",
-    "TemporaryLFNCategory": "/store/temp/WMAgent/unmerged",
-    "ProcessingVersion" : "v1",
-    "Scenario" : "cosmics",
-    "CMSSWVersion" : "CMSSW_3_5_6",
-    "InputDatasets" : "/MinimumBias/Commissioning10-v4/RAW",
-    "Emulate" : False,
+    "acquisitionEra": "WMAgentCommissioning10",
+    "owner": "sfoulkes@fnal.gov",
+    "inputDataset": "/MinimumBias/Commissioning10-v4/RAW",
+    "frameworkVersion": "CMSSW_3_5_8_patch3",
+    "scramArch": "slc5_ia32_gcc434",
+    "processingVersion": "v2scf",
+    "skimInput": "output",
+    "globalTag": "GR10_P_v4::All",
+
+    "processingOutputModules": {"output": {"dataTier": "RECO", "filterName": ""},
+                                "ALCARECOStreamTkAlMinBias": {"dataTier": "ALCARECO", "filterName": "TkAlMinBias"},
+                                "ALCARECOStreamSiStripCalZeroBias": {"dataTier": "ALCARECO", "filterName": "SiStripCalZeroBias"},
+                                "ALCARECOStreamTkAlMuonIsolated": {"dataTier": "ALCARECO", "filterName": "TkAlMuonIsolated"},
+                                "ALCARECOStreamMuAlCalIsolatedMu": {"dataTier": "ALCARECO", "filterName": "MuAlCalIsolatedMu"},
+                                "ALCARECOStreamSiStripCalMinBias": {"dataTier": "ALCARECO", "filterName": "SiStripCalMinBias"},
+                                "ALCARECOStreamHcalCalIsoTrk": {"dataTier": "ALCARECO", "filterName": "HcalCalIsoTrk"},
+                                "ALCARECOStreamHcalCalDijets": {"dataTier": "ALCARECO", "filterName": "HcalCalDijets"},
+                                "ALCARECOStreamEcalCalElectron": {"dataTier": "ALCARECO", "filterName": "EcalCalElectron"},
+                                "ALCARECOStreamMuAlOverlaps": {"dataTier": "ALCARECO", "filterName": "MuAlOverlaps"}},
+
+    "skimOutputModules": {"fakeSkimOut1": {"dataTier": "AOD", "filterName": "PreScaleThingy5"},
+                          "fakeSkimOut2": {"dataTier": "AOD", "filterName": "PreScaleThingy1"},
+                          "fakeSkimOut3": {"dataTier": "AOD", "filterName": "PreScaleThingy10"},
+                          "fakeSkimOut4": {"dataTier": "AOD", "filterName": "PreScaleThingy50"},
+                          "fakeSkimOut5": {"dataTier": "FEVT", "filterName": "PreScaleThingy200"}},
+    
+    "processingConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8",
+    "skimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1",
+    
+    "couchUrl": "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984",
+    "couchDBName": "wmagent_config_cache",
+    "scenario": ""
+#     "scenario": "cosmics",
+#     "processingOutputModules": {"outputRECORECO": {"dataTier": "RECO", "filterName": ""},
+#                                 "outputALCARECOALCARECO": {"dataTier": "ALCARECO", "filterName": ""}},
+#     "skimOutputModules": {},
+#     "processingConfig": "",
+#     "skimConfig": ""
+    
     }
 
 if not os.environ.has_key("WMAGENT_CONFIG"):

@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.31 2010/06/18 19:39:50 sfoulkes Exp $"
-__revision__ = "$Revision: 1.31 $"
+__version__ = "$Id: ReReco.py,v 1.32 2010/06/21 16:21:22 mnorman Exp $"
+__revision__ = "$Revision: 1.32 $"
 
 import subprocess
 
@@ -187,14 +187,14 @@ class ReRecoWorkloadFactory(object):
         
         return procTask
 
-    def addLogCollectTask(self, parentTask):
+    def addLogCollectTask(self, parentTask, taskName = "LogCollect"):
         """
         _addLogCollecTask_
         
         Create a LogCollect task for log archives that are produced by the
         parent task.
         """
-        logCollectTask = parentTask.addTask("LogCollect")
+        logCollectTask = parentTask.addTask(taskName)
         self.addDashboardMonitoring(logCollectTask)        
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
@@ -254,7 +254,7 @@ class ReRecoWorkloadFactory(object):
         mergeTaskStageOut.setStepType("StageOut")
         mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
         mergeTaskLogArch.setStepType("LogArchive")
-        self.addLogCollectTask(mergeTask)        
+        self.addLogCollectTask(mergeTask, taskName = "%sMergeLogCollect" % parentOutputModule)        
         mergeTask.addGenerator("BasicNaming")
         mergeTask.addGenerator("BasicCounter")
         mergeTask.setTaskType("Merge")  
@@ -391,7 +391,8 @@ class ReRecoWorkloadFactory(object):
                                  couchUrl = self.couchUrl, couchDBName = self.couchDBName,
                                  configDoc = skimConfigDoc, splitAlgo = self.skimJobSplitAlgo,
                                  splitArgs = self.skimJobSplitArgs)
-        self.addLogCollectTask(skimTask)
+        self.addLogCollectTask(skimTask, taskName = "skimLogCollect")
+
 
         skimOutputModules = self.getOutputModuleInfo(self.skimConfig,
                                                      self.scenario, "promptReco",

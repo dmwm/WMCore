@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.73 2010/02/12 18:00:51 swakef Exp $"
-__version__ = "$Revision: 1.73 $"
+__revision__ = "$Id: WorkQueue.py,v 1.74 2010/02/23 17:14:56 swakef Exp $"
+__version__ = "$Revision: 1.74 $"
 
 
 import time
@@ -493,7 +493,7 @@ class WorkQueue(WorkQueueBase):
                            transaction = self.existingTransaction())
         self.commitTransaction(trans)
 
-    def pullWork(self, resources):
+    def pullWork(self, resources = None):
         """
         Pull work from another WorkQueue to be processed
 
@@ -503,7 +503,7 @@ class WorkQueue(WorkQueueBase):
         if self.parent_queue:
             if not resources:
                 from WMCore.ResourceControl.ResourceControl import ResourceControl
-                rc_sites = ResourceControl.listThresholdsForCreate()
+                rc_sites = ResourceControl().listThresholdsForCreate()
                 # get more work than we have slots - QueueDepth param
                 sites = {}
                 [sites.__setitem__(name,

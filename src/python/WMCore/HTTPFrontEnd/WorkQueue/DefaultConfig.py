@@ -28,7 +28,7 @@ workqueue.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore
 workqueue.section_('model')
 workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
 workqueue.section_('formatter')
-workqueue.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
+workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
 workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
 
 # take queueParams from WorkQueueManager - specify here to override

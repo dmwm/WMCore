@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.13 2009/12/04 16:20:57 swakef Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: GetWork.py,v 1.14 2010/02/23 17:14:56 swakef Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import random
 import time
@@ -48,6 +48,8 @@ class GetWork(DBFormatter):
         binds = [{'available' : States['Available'], 'weight' : weight,
                   "site" : site, "jobs" : jobs, "current_time": int(time.time())} \
                                     for site, jobs in resources.iteritems()]
+        if not binds:
+            return {}, {}
         results = self.dbi.processData(self.sql, binds, conn = conn,
                          transaction = transaction)
         results = self.formatDict(results)

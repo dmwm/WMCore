@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.17 2010/05/10 12:45:06 spigafi Exp $"
-__revision__ = "$Revision: 1.17 $"
+__version__ = "$Id: Task.py,v 1.18 2010/05/24 09:45:04 spigafi Exp $"
+__revision__ = "$Revision: 1.18 $"
 
 import os.path
 
@@ -55,17 +55,12 @@ class Task(DbObject):
                  'outfileBasename' : None,
                  'commonRequirements' : None
               }
-
-    # database properties
-    tableName = "bl_task"
-    tableIndex = ["id"]
-
+    
     # exception class
     exception = TaskError
-
-    ##########################################################################
-
-    def __init__(self, parameters = {}):
+    
+    
+    def __init__(self, parameters = None):
         """
         initialize a Task instance
         """
@@ -87,10 +82,10 @@ class Task(DbObject):
         
         # object not in database
         self.existsInDataBase = False
-
-
-    ##########################################################################
-
+        
+        return
+    
+    
     def exists(self, db, noDB = False):
         """
         If the task exists, return ID
@@ -98,11 +93,11 @@ class Task(DbObject):
         """
         
         if not noDB:
-            
             tmpId = db.objExists(self)
             
             if tmpId:
                 self.data['id'] = tmpId
+            
         else:
             if self.data['id'] < 0:
                 return False
@@ -110,10 +105,8 @@ class Task(DbObject):
                 tmpId = self.data['id']
         
         return tmpId
-
-
-    ####################################################################
-
+    
+    
     def save(self, db, deep = True):
         """
         Save the task if there is new information in it.  
@@ -122,7 +115,6 @@ class Task(DbObject):
         status = 0
         
         if self.existsInDataBase : 
-            
             db.objSave(self)
             
         else:
@@ -132,13 +124,12 @@ class Task(DbObject):
             for job in self.jobs:
                 job['taskId'] = self.data['id']
                 job.save(db)
-                job.existsInDataBase = True
+                # job.existsInDataBase = True # is this assignement necessary?
                 status += 1
         
         return status
-
-    #########################################################################
-
+    
+    
     def create(self, db):
         """
         Create a new task in the database      
@@ -150,8 +141,9 @@ class Task(DbObject):
         if self.exists(db) : 
             self.existsInDataBase = True
         
-    ###########################################################################
-
+        return
+    
+    
     def load(self, db, deep = True):
         """
         Load a task     
@@ -182,10 +174,9 @@ class Task(DbObject):
         self.existsInDataBase = True
         
         return
-
-    ###################################################################
-
-    def loadJobs(self, db):
+    
+    
+    def loadJobs(self, db, deep = True):
         """
         Load jobs from the database
         """
@@ -200,7 +191,10 @@ class Task(DbObject):
         for job in jobList:
             tmp = Job()
             tmp.data.update(job)
-            tmp.getRunningInstance(db)
+            
+            if deep : 
+                tmp.getRunningInstance(db)
+            
             tmp.existsInDataBase = True
             
             self.jobs.append(tmp)
@@ -210,10 +204,8 @@ class Task(DbObject):
             self.jobLoaded += 1
             
         return self.jobLoaded
-
-
-    ###################################################################
-
+    
+    
     def update(self, db, deep = True):
         """
         update task object from database (with all jobs)       
@@ -221,9 +213,8 @@ class Task(DbObject):
         
         # return number of entries updated
         return self.save(db, deep)
-
-    ##########################################################################
-
+    
+    
     def remove(self, db):
         """
         remove task object from database (with all jobs)
@@ -242,10 +233,8 @@ class Task(DbObject):
 
         # return number of entries removed
         return 1
-
     
-    ########################################################################
-
+    
     def appendJob(self, job):
         """
         append a job into the task
@@ -272,8 +261,9 @@ class Task(DbObject):
         self.jobIndex.insert( pos, job['jobId'] )
         self.jobs.insert( pos, job )
 
-    ##########################################################################
-
+        return
+    
+    
     def appendJobs(self, listOfJobs):
         """
         append jobs into the task
@@ -281,9 +271,10 @@ class Task(DbObject):
 
         for job in listOfJobs:
             self.appendJob(job)
-
-    ##########################################################################
-
+        
+        return
+    
+    
     def addJob(self, job):
         """
         insert a job into the task
@@ -300,9 +291,10 @@ class Task(DbObject):
         # insert job
         self.jobIndex.append( job['jobId'] )
         self.jobs.append(job)
-
-    ##########################################################################
-
+        
+        return
+    
+    
     def addJobs(self, listOfJobs):
         """
         insert jobs into the task
@@ -310,9 +302,10 @@ class Task(DbObject):
 
         for job in listOfJobs:
             self.addJob(job)
-
-    ##########################################################################
-
+        
+        return
+    
+    
     def getJob(self, jobId):
         """
         return the job with matching jobId
@@ -322,21 +315,20 @@ class Task(DbObject):
             return self.jobs[ self.jobIndex.index( long(jobId ) ) ]
         except ValueError:
             return None
-
-    ##########################################################################
-
+    
+    
     def getJobs(self):
         """
         return the list of jobs in task
         """
 
         return self.jobs
-
-    ##########################################################################
+    
     
     def updateInternalData(self):
         """
         update private information on it and on its jobs
+        --> Is this method necessary?  
         """
         
         # update job status and private information
@@ -354,13 +346,15 @@ class Task(DbObject):
                 for ifile in job['inputFiles']
                 if ifile != '']
         
-        
-   ##########################################################################
-
+        return
+    
+    
     def joinPath(self, path, name):
         """
         joining files with base directory
+        --> Is this method necessary? 
         """
+        
         if path is None or path == '' :
             return name
 
@@ -368,7 +362,7 @@ class Task(DbObject):
             return name
 
         return os.path.join(path, name)
-
+    
 
 class TaskDBFormatter(DbObjectDBFormatter):
     """

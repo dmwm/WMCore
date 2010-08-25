@@ -6,8 +6,8 @@ Unit tests for the DBInterface class
 
 """
 
-__revision__ = "$Id: DBCore_t.py,v 1.3 2009/10/13 23:06:09 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DBCore_t.py,v 1.4 2010/02/02 20:41:36 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import commands
 import unittest
@@ -24,104 +24,27 @@ from WMCore.Database.DBCore import DBInterface
 
 class DBCoreTest(unittest.TestCase):
     def setUp(self):
-        "make a logger instance and create tables"
-        
-        logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename='%s.log' % __file__.replace('.py',''),
-                    filemode='w')
-        
-        self.logger = logging.getLogger('DBCoreTest')
-        
-        #self.sqlitedb = 'transaction_test.lite'
-        #self.mysqldb = 'transaction_test'
-        
-        #Here's where my code starts
-        #Because I have nothing else to use, I use the WMBS module to set the schema
-        #Which means that everything depends on that.
-        #I might want to remove that dependency later.
-        # -mnorman
-
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                     useDefault = False)
 
-        myThread = threading.currentThread()
-
-        self.mydialect = os.getenv("DIALECT")
-        self.mydb      = os.getenv("DATABASE")
-
-        self.db          = DBFactory(self.logger, self.mydb).connect()
-
-        #Because of the shoddy way in which I'm removing the test tables,
-        #This is a bool that gets triggered whenever a test table is created
-        #And removed whenever it gets wiped.
-        #I should rethink this.
-        self.remove_test = False
-
-        #Adding an sqlalchemy engine to allow DBCore initialization
-        options = {}
-        self.engine = create_engine(self.mydb, 
-                               #echo_pool=True,
-                               convert_unicode=True, 
-                               encoding='utf-8',
-                               strategy='threadlocal',
-                               connect_args = options)
-        self.dia = self.engine.dialect
-        self.lock = threading.Condition()
-
-
+        return
             
     def tearDown(self):
         """
         Delete the databases
         """
-
-        #Tear down functionality lifted from WMBS
-        # -mnorman
-
-        myThread = threading.currentThread()
-
-        myThread.transaction.begin()
-
-        factory = WMFactory("WMBS", "WMCore.WMBS")        
-        destroy = factory.loadObject(self.mydialect + ".Destroy")
-        if self.remove_test:
-            destroy.create["test"] = "DROP TABLE test"
-        #myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-
-        myThread.transaction.commit()
-        self.remove_test = False
-
-        
-
-
-
-
-    #base and assistance functions
-
-        
-
-
-    #Testing functions
-
-    #We test the majority of the functionality of DBCore through processData(), which
-    #handles both execute() and executeMany()
-
+        self.testInit.clearDatabase()
+        return
 
     def testConnection(self):
         """
         Test class for the connection functions for DBCore
         
         """
-
+        assert False
         #This function tests for two things:
         # a) Did it actually manage to get one of the tables from the dataset?
         # b) Was the table blank?
@@ -161,7 +84,7 @@ class DBCoreTest(unittest.TestCase):
         Test class for DBCore.buildbinds()
 
         """
-
+        assert False
         #This class may become obselete soon.  There is a TODO stuck onto DBCore.buildbinds()
         #This just checks to see that the sequence properly packages the first value is set
         #So that it sets the key seqname to the proper name in the files list
@@ -201,7 +124,7 @@ class DBCoreTest(unittest.TestCase):
         Test whether we can create and delete a table with processData()
 
         """
-
+        assert False
         #Putting this in a seperate function allows tearDown to delete the test table
         #in other lines of code, removing the problem of adding the test table multiple times
         #should an error occur
@@ -244,7 +167,7 @@ class DBCoreTest(unittest.TestCase):
         Test function for DBCore.processData
 
         """
-
+        assert False
         # We have opted to put the main testing functions in here
         # This test creates a test table, inserts and selects elements
         # from that table, inserts and selects elements from a dictionary
@@ -372,7 +295,7 @@ class DBCoreTest(unittest.TestCase):
         Test for inserting and selecting with large numbers of binds using processData()
 
         """
-
+        assert False
         print "testProcessDataMultiple"
                 
 

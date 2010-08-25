@@ -24,18 +24,23 @@ reg.refreshCache()
 
 This will push the configuration up to the Registration service
 '''
-from WMCore.Services.Service import Service #Service as
-from WMCore.Services.Requests import JSONRequests
+from WMCore.Services.Service import Service 
+from WMCore.Services.Requests import BasicAuthJSONRequests
 import datetime
 import logging
+from httplib import HTTPException
 
-class Registration(JSONRequests, Service):
+class Registration(Service):
     def __init__(self, dict):
         defaultdict = {'endpoint': "https://cmsweb.cern.ch/registration/",
                        'cacheduration': 1,
                        'cachepath': '/tmp'}
         defaultdict.update(dict)
         defaultdict["method"] = 'PUT'
+        defaultdict["content_type"] = "application/json"
+        defaultdict['requests'] = BasicAuthJSONRequests
+        defaultdict['req_cache_path'] = defaultdict['cachepath']
+        
         if 'logger' not in defaultdict.keys():
             logging.basicConfig(level = logging.DEBUG,
                     format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
@@ -45,10 +50,41 @@ class Registration(JSONRequests, Service):
             defaultdict['logger'] = logging.getLogger('RegService')
 
         Service.__init__(self, defaultdict)
-        JSONRequests.__init__(self, defaultdict['endpoint'])
+        # Set correct internal state
+        cache = 'regsvc'
+        url = '/regsvc/%s' % self['inputdata']['url'].__hash__()
+        try:
+            data = Service.forceRefresh(self, cache, url, 
+                                    verb = 'GET', decoder=False).read()
+            # Decode the data from json
+            data = self['requests'].decode(data)
+            # Update internal state to get the revision
+            self['inputdata']['_rev'] = data['_rev']
+            print data['_rev']
 
-    def refreshCache(self):
+        except HTTPException, he:
+            # If the document is not found (404) we can refresh the cache to 
+            # create it. Other statuses should be raised for handling higher up
+            if he.status == 404:
+                self.refreshCache()
+            else:
+                raise he
+                
+        
+    def refreshCache(self, inputdata = {}):
+        # It's possible that the data has changed, for instance a change in admin
+        self['inputdata'].update(inputdata)
+        # But we want to set the timestamp explicitly
         self['inputdata']['timestamp'] = str(datetime.datetime.now())
-        return Service.refreshCache(self,
-                                       'regsvc',
-                                       self['inputdata']['url'].__hash__())
+        
+        cache = 'regsvc'
+        url = '/regsvc/%s' % self['inputdata']['url'].__hash__()
+        # Talk to the RegSvc, read the data but don't decode the response
+        data = Service.refreshCache(self, cache, url, 
+                                    verb = 'PUT', decoder=False).read()
+        
+        # Decode the data from json
+        data = self['requests'].decode(data)
+        # Update internal state to get the revision
+        self['inputdata']['_rev'] = data['rev']
+

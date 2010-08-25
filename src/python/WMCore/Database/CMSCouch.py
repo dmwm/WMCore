@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.36 2009/07/02 23:31:55 meloam Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: CMSCouch.py,v 1.37 2009/07/09 21:49:42 meloam Exp $"
+__version__ = "$Revision: 1.37 $"
 
 try:
     # Python 2.6
@@ -434,7 +434,7 @@ class CouchServer(CouchDBRequests):
         """
         db = urllib.quote_plus(db)
         self.put("/%s" % db)
-        return self.connectDatabase(db)
+        return Database(db, self.url)
 
     def deleteDatabase(self, db):
         return self.delete("/%s" % db)

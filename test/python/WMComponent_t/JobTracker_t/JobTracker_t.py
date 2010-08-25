@@ -4,8 +4,8 @@
 JobTracker test 
 """
 
-__revision__ = "$Id: JobTracker_t.py,v 1.7 2010/06/02 19:53:28 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: JobTracker_t.py,v 1.8 2010/06/03 21:31:33 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import os
 import os.path
@@ -63,6 +63,7 @@ def createJDL(id, directory, jobCE):
     jdl.append("initialdir = %s\n" % directory)
     jdl.append("globusscheduler = %s\n" % (jobCE))
     jdl.append("+WMAgent_JobID = %s\n" % id)
+    jdl.append("+WMAgent_AgentName = testAgent\n")
     jdl.append("Queue 1")
 
 
@@ -171,6 +172,9 @@ class JobTrackerTest(unittest.TestCase):
         """
                        
         config = Configuration()
+
+        config.section_("Agent")
+        config.Agent.agentName  = 'testAgent'
 
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
@@ -343,6 +347,7 @@ class JobTrackerTest(unittest.TestCase):
             pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
                                     stderr = subprocess.PIPE, shell = False)
 
+        time.sleep(1)
 
         # All jobs should be running
         nRunning = getCondorRunningJobs(self.user)
@@ -405,7 +410,7 @@ class JobTrackerTest(unittest.TestCase):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
 
-        nJobs  = 5000
+        nJobs  = 500
         jobCE  = 'cmsosgce.fnal.gov/jobmanager-condor'
 
         # Create directories

@@ -12,8 +12,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.33 2010/05/25 20:59:28 mnorman Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.34 2010/06/03 14:27:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.34 $"
 
 import os
 import threading
@@ -137,6 +137,14 @@ class AccountantWorker:
         """
         # The jobReportPath may be prefixed with "file://" which needs to be
         # removed so it doesn't confuse the FwkJobReport() parser.
+        if not parameters.has_key("fwjr_path"):
+            logging.error("Bad FwkJobReport Path: %s" % jobReportPath)
+            return self.createMissingFWKJR(parameters, 99999, "FWJR path is empty")
+
+        if parameters["fwjr_path"] == None:
+            logging.error("Bad FwkJobReport Path: %s" % jobReportPath)
+            return self.createMissingFWKJR(parameters, 99999, "FWJR path is empty")
+            
         jobReportPath = parameters['fwjr_path']
         jobReportPath = jobReportPath.replace("file://","")
 

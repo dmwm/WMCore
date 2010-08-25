@@ -26,3 +26,4 @@ class StageOut(Emulator):
         step.section_("emulation")
         step.emulation.emulatedBy = str(self.__class__.__name__)
 
+        print "Emulating StageOut Step"

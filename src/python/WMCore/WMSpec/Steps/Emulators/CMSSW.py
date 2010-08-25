@@ -25,3 +25,4 @@ class CMSSW(Emulator):
         step.section_("emulation")
         step.emulation.emulatedBy = str(self.__class__.__name__)
 
+        print "Emulating CMSSW Step"

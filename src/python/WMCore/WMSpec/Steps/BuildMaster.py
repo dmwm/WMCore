@@ -7,10 +7,11 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: BuildMaster.py,v 1.2 2009/05/08 14:54:46 evansde Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: BuildMaster.py,v 1.3 2009/05/08 16:22:35 evansde Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
+import WMCore.WMSpec.Steps.StepFactory as StepFactory
 
 class BuildMaster:
     """
@@ -27,12 +28,15 @@ class BuildMaster:
 
         Invoke the builder on the task provided
 
+        TODO: Build top level directory
+        TODO: Exception handling
+
         """
-
-
-
+        #
+        #if not os.path.exists(self.workingDir):
+        #   os.makedirs(self
         for step in task.steps().nodeIterator():
             stepType = step.stepType
-            template = StepFactory.getStepBuilder(stepType)
-            template.build(step)
+            builder = StepFactory.getStepBuilder(stepType)
+            builder.build(step, self.workDir)
 

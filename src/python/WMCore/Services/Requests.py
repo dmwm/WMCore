@@ -8,8 +8,8 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set. 
 """
 
-__revision__ = "$Id: Requests.py,v 1.36 2010/07/29 11:15:37 metson Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: Requests.py,v 1.37 2010/07/29 13:39:38 metson Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import urllib
 from urlparse import urlunparse
@@ -113,9 +113,6 @@ class Requests(dict):
         #And now overwrite any headers that have been passed into the call:
         headers.update(incoming_headers)
         
-        #And now overwrite any headers that have been passed into the call:
-        headers.update(incoming_headers)
-
         # httpib2 requires absolute url
         uri = self['host'] + uri
 

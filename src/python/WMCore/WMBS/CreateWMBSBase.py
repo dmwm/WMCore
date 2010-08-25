@@ -110,6 +110,7 @@ class CreateWMBSBase(DBCreator):
              se_name   VARCHAR(255),
              ce_name   VARCHAR(255),
              job_slots INTEGER,
+             plugin    VARCHAR(255),
              UNIQUE(site_name))"""
 
         self.create["07wmbs_file_location"] = \

@@ -6,8 +6,8 @@ Query the database to determine how many jobs are running so that we can
 determine whether or not to task for more work.  
 """
 
-__revision__ = "$Id: ListThresholdsForCreate.py,v 1.2 2010/02/11 21:53:50 sfoulkes Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: ListThresholdsForCreate.py,v 1.3 2010/06/16 19:28:15 sryu Exp $"
+__version__  = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -70,9 +70,28 @@ class ListThresholdsForCreate(DBFormatter):
 
         return results
     
-    def execute(self, conn = None, transaction = False):
+    def formatTable(self, formattedResults):
+        """
+        _format_
+
+        Combine together the total we received from the assigned and unassigned
+        queries into a single datastructure.
+        """
+        results = []
+        for k, v in formattedResults.items():
+            item = {}
+            item['site'] = k
+            item.update(v)
+            results.append(item)
+        return results
+    
+    def execute(self, conn = None, transaction = False, tableFormat = False):
         assignedResults = self.dbi.processData(self.assignedSQL, conn = conn,
                                                transaction = transaction)
         unassignedResults = self.dbi.processData(self.unassignedSQL, conn = conn,
-                                                 transaction = transaction)        
-        return self.format(assignedResults, unassignedResults)
+                                                 transaction = transaction)
+        results = self.format(assignedResults, unassignedResults)
+        if tableFormat:
+            return self.formatTable(results)
+        else:
+            return results

@@ -6,8 +6,8 @@ Query WMBS and ResourceControl to determine how many jobs are still running so
 that we can schedule jobs that have just been created.
 """
 
-__revision__ = "$Id: ListThresholdsForSubmit.py,v 1.1 2010/02/09 18:01:23 sfoulkes Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: ListThresholdsForSubmit.py,v 1.2 2010/06/16 19:28:15 sryu Exp $"
+__version__  = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -72,6 +72,32 @@ class ListThresholdsForSubmit(DBFormatter):
 
         return formattedResults
     
-    def execute(self, conn = None, transaction = False):
+    def formatTable(self, formattedResults):
+        """
+        _format_
+
+        Combine together the total we received from the assigned and unassigned
+        queries into a single datastructure.
+        """
+        results = []
+        for k, v in formattedResults.items():
+            item = {}
+            item['site'] = k
+            item['data'] = []
+            for ck, cv in v.items():
+                childItem = {}
+                childItem['type'] = ck
+                childItem.update(cv)
+                item['data'].append(childItem)
+            results.append(item)
+        return {'results': results}
+    
+    def execute(self, conn = None, transaction = False, tableFormat = False):
         results = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
-        return self.format(results)
+        results = self.format(results)
+
+        if tableFormat:
+            return self.formatTable(results)
+        else:
+            return results
+        

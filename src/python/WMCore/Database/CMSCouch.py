@@ -1,14 +1,12 @@
 #!/usr/bin/env python
-
-
 """
 _CMSCouch_
 
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.45 2009/08/11 19:24:53 meloam Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: CMSCouch.py,v 1.46 2009/09/14 20:10:56 sfoulkes Exp $"
+__version__ = "$Revision: 1.46 $"
 
 try:
     # Python 2.6
@@ -16,73 +14,12 @@ try:
 except:
     # Prior to 2.6 requires simplejson
     import simplejson as json
+
 import urllib
-from httplib import HTTPConnection, BadStatusLine
-import time
+from httplib import BadStatusLine
 import datetime
-import thread
 import threading
-import traceback
-import types
-from WMCore.Services.Requests import JSONRequests
-
-def httpRequest(url, path, data, method='POST', viewlist=[]):
-    """
-    Make a request to the remote database. for a given URI. The type of
-    request will determine the action taken by the server (be careful with
-    DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
-    """
-    headers = {'Content-type': 'application/x-www-form-urlencoded',
-                'Accept': 'text/plain'}
-    encoded_data = ''
-    if method != 'GET' and data:
-        if  type(data) is types.StringType:
-            encoded_data = data
-        else:
-            encoded_data = json.dumps(data)
-        headers["Content-length"] = len(encoded_data)
-    else:
-        #encode the data as a get string
-        if  not data:
-            data = {}
-        path = "%s?%s" % (path, urllib.urlencode(data, doseq=True))
-    conn = HTTPConnection(url)
-#    httplib.HTTPConnection.debuglevel = 1
-    conn.request(method, path, encoded_data, headers)
-    response = conn.getresponse()
-    status = response.status
-    data = response.read()
-    conn.close()
-    for view in viewlist:
-        conn = HTTPConnection(url)
-        conn.request('GET', "%s?limit=1" % view)
-        res  = conn.getresponse()
-        conn.close()
-    return status, data
-
-class HttpRequestThread(threading.Thread):
-    def __init__(self, url, path, data, method):
-        threading.Thread.__init__(self)
-        self.url = url
-        self.path = path
-        self.data = data
-        self.method = method
-        self.retry = False
-
-    def run(self):
-        """
-        Request data to/from couch. If necessary made a few retries.
-        This method calls httpRequest and can be used in thread.
-        """
-        # TODO: think about failed request, how we can ensure
-        # that all data will be injected properly
-        status, data = httpRequest(self.url, self.path , self.data, self.method)
-#        if  status - 400 >= 0 and not self.retry: 
-            # trigger all cases with HTTP response 400 and above
-            # try one more time
-#            time.sleep(1)
-#            self.retry = True
-#            return self.run()
+from WMCore.Services.Requests import BasicAuthJSONRequests
 
 class Document(dict):
     """
@@ -98,13 +35,13 @@ class Document(dict):
         self['_deleted'] = True
     
     
-class CouchDBRequests(JSONRequests):
+class CouchDBRequests(BasicAuthJSONRequests):
     """
     CouchDB has two non-standard HTTP calls, implement them here for
     completeness, and talks to the CouchDB port
     """
     def __init__(self, url = 'localhost:5984'):
-        JSONRequests.__init__(self, url)
+        BasicAuthJSONRequests.__init__(self, url)
         self.accept_type = "application/json"
         
     def move(self, uri=None, data=None):
@@ -126,7 +63,7 @@ class CouchDBRequests(JSONRequests):
         compatibility).
         """
         try:
-            result, status, reason = JSONRequests.makeRequest(
+            result, status, reason = BasicAuthJSONRequests.makeRequest(
                                         self, uri, data, type, encode, decode, contentType)
         except BadStatusLine,e:
             print "BadStatusLine failure: %s" % e
@@ -168,9 +105,9 @@ class Database(CouchDBRequests):
     """
     def __init__(self, dbname = 'database', 
                   url = 'localhost:5984', size = 1000):
+        CouchDBRequests.__init__(self, url)
         self._queue = []
         self.name = urllib.quote_plus(dbname)
-        JSONRequests.__init__(self, url)
         self._queue_size = size
         self.threads = []
 
@@ -224,8 +161,6 @@ class Database(CouchDBRequests):
         except:
             self._queue = tmpqueue
             raise
-#        finally:
-#            self._queue = tmpqueue
         else:
             # if we made it out okay, put a flag there
             data[0][u'ok'] = True
@@ -255,25 +190,6 @@ class Database(CouchDBRequests):
         retval = self.post(uri , data)
         self._queue = []
         return retval
-
-#           ##############3
-#           # currently nonfunctional threading code?
-#
-#            thr  = HttpRequestThread(self.url, uri, data, 'POST')
-#            thr.start() 
-#            if  len(self._queue) < self._queue_size:
-                # no more outstanding request, wait for all threads to finish
-#                for ith in self.threads:
-#                    ith.join()
-#            else:
-                # add thread to pool
-#                self.threads.append(thr)
-
-            # TODO: how to deal with threads, should we wait???
-            # if we will wait for all request then we should use thr.join()
-#            result = self.post('/%s/_bulk_docs/' % self.name, 
-#                                 {'docs': self._queue})
-
 
     def document(self, id):
         """

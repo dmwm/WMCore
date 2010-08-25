@@ -7,6 +7,7 @@ except:
 import urllib
 import os
 import sys
+import base64
 from httplib import HTTPConnection
 from httplib import HTTPSConnection
 from sets import Set
@@ -28,6 +29,9 @@ class Requests(dict):
         self.setdefault("content_type", 'application/x-www-form-urlencoded')
         self.setdefault("host", url)
         self.setdefault("conn", self._getURLOpener())
+
+        self.additionalHeaders = {}
+        return
 
     def get(self, uri=None, data={}, encode = True, decode=True, contentType=None):
         """
@@ -80,6 +84,8 @@ class Requests(dict):
                    "Accept": self['accept_type']}
         encoded_data = ''
         
+        for key in self.additionalHeaders.keys():
+            headers[key] = self.additionalHeaders[key]
         
         # If you're posting an attachment, the data might not be a dict
         #   please test against ConfigCache_t if you're unsure.
@@ -484,7 +490,28 @@ class JSONRequests(Requests):
             return thunked
         else:
             return {}      
-        
+
+class BasicAuthJSONRequests(JSONRequests):
+    """
+    _BasicAuthJSONRequests_
+
+    Support basic HTTP auth for JSON requests.  The username and password must
+    be embedded into the url in the following form:
+        username:password@hostname
+    """
+    def __init__(self, url = "localhost:8080"):
+        if url.find("@") == -1:
+            JSONRequests.__init__(self, url)
+            return
+
+        (auth, hostname) = url.split("@", 2)
+
+        JSONRequests.__init__(self, hostname)
+        self.additionalHeaders["Authorization"] = \
+            "Basic " + base64.encodestring(auth).strip()
+
+        return
+
 class SSLRequests(Requests):
     """
     Implementation of Requests using HTTPS to send requests to a given URL, 

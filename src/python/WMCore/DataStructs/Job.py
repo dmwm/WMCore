@@ -7,8 +7,8 @@ Data object that describes a job
 """
 
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.27 2009/10/08 13:35:20 evansde Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: Job.py,v 1.28 2009/10/29 09:58:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.28 $"
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.JobGroup import JobGroup
@@ -54,8 +54,13 @@ class Job(WMObject, dict):
     task = property(lambda self: self['task'],
                     lambda self, x: self.__setitem__('task',x))
 
+    def save(self):
+        """
+        _save_
 
-
+        Bogus method to make this look more like the WMBS JOB.
+        """
+        return
 
     def getFiles(self, type = "list"):
         """

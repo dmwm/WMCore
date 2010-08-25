@@ -6,8 +6,8 @@ A set of classes to handle making http and https requests to a remote server and
 deserialising the response.
 """
 
-__revision__ = "$Id: Requests.py,v 1.28 2009/12/21 18:23:20 spiga Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: Requests.py,v 1.29 2010/01/09 09:17:08 metson Exp $"
+__version__ = "$Revision: 1.29 $"
 
 try:
     # Python 2.6
@@ -30,16 +30,21 @@ class Requests(dict):
     Generic class for sending different types of HTTP Request to a given URL
     """
 
-    def __init__(self, url = 'localhost'):
+    def __init__(self, url = 'localhost', dict={}):
         """
         url should really be host - TODO fix that when have sufficient code 
         coverage
         """
+        #set up defaults
         self.setdefault("accept_type", 'text/html')
         self.setdefault("content_type", 'application/x-www-form-urlencoded')
         self.setdefault("host", url)
+        
+        # then update with the incoming dict
+        self.update(dict)
+        
+        # and then get the URL opener
         self.setdefault("conn", self._getURLOpener())
-
         self.additionalHeaders = {}
         return
 

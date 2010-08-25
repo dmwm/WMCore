@@ -6,8 +6,8 @@ Create new block in dbsbuffer_block
 Update file to reflect block information
 
                                                                                                                                                                                                                                                                                                                                                                                                           """
-__revision__ = "$Id: SetBlockStatus.py,v 1.5 2009/09/03 19:00:37 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: SetBlockStatus.py,v 1.6 2009/09/22 19:49:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -27,7 +27,7 @@ class SetBlockStatus(DBFormatter):
     """
 
 
-    def __init__(self):
+    def __init__(self, logger = None, dbi = None):
         myThread = threading.currentThread()
         DBFormatter.__init__(self, myThread.logger, myThread.dbi)
 

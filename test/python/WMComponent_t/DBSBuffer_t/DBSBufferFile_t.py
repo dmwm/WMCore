@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.2 2009/07/14 15:27:47 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.3 2009/09/22 19:49:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import logging
@@ -55,11 +55,11 @@ class FileTest(unittest.TestCase):
                                 useDefault = False)
 
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
 
-        locationAction = daofactory(classname = "DBSBufferFiles.AddLocation")
+        locationAction = self.daoFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")        
         
@@ -591,6 +591,39 @@ class FileTest(unittest.TestCase):
         
         assert (runSet - testFile["runs"]) == Set(), \
             "Error: addRunSet is not updating set correctly"
+
+    def testSetBlock(self):
+        """
+        _testSetBlock_
+
+        Verify that the [Set|Get]Block DAOs work correctly.
+        """
+        myThread = threading.currentThread()
+        uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
+
+        createAction = uploadFactory(classname = "SetBlockStatus")
+        createAction.execute(block = "someblockname", locations = ["se1.cern.ch"])
+
+        setBlockAction = self.daoFactory(classname = "DBSBufferFiles.SetBlock")
+        getBlockAction = self.daoFactory(classname = "DBSBufferFiles.GetBlock")        
+
+        testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                                 cksum = 1, locations = "se1.fnal.gov")
+        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        
+        testFile.create()
+
+        setBlockAction.execute(lfn = testFile["lfn"], blockName = "someblockname")
+        blockName = getBlockAction.execute(lfn = testFile["lfn"])
+
+        assert blockName[0][0] == "someblockname", \
+               "Error: Incorrect block returned: %s" % blockname[0][0]
+        return
     
 if __name__ == "__main__":
     unittest.main() 

@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for SQLite
 """
 
-__revision__ = "$Id: Create.py,v 1.7 2009/08/13 22:57:12 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Create.py,v 1.8 2009/09/22 19:49:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import logging
 import threading
@@ -66,6 +66,7 @@ class Create(DBCreator):
              events       INTEGER,
              cksum        BIGINT UNSIGNED,
              dataset_algo INTEGER NOT NULL,
+             block_id     INTEGER,
 	     status       varchar(20),
              LastModificationDate  BIGINT)"""
         

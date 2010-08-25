@@ -5,8 +5,8 @@ _DBSBufferFile_
 A simple object representing a file in WMBS
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.3 2009/08/17 18:37:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DBSBufferFile.py,v 1.4 2009/09/22 19:49:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 
@@ -339,6 +339,21 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         self["runs"].clear()
         [self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
+
+        self.commitTransaction(existingTransaction)
+        return
+
+    def setBlock(self, blockName):
+        """
+        _setBlock_
+
+        Associate this file with a block in DBS/PhEDEx.
+        """
+        existingTransaction = self.beginTransaction()
+        
+        blockAction = self.daofactory(classname = "DBSBufferFiles.SetBlock")
+        blockAction.execute(self["lfn"], blockName, conn = self.getDBConn(), 
+                              transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
         return

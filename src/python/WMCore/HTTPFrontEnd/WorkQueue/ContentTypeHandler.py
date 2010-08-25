@@ -19,11 +19,10 @@ class ContentTypeHandler:
     def jsonHandler(self, args, kwargs):
         
         from WMCore.Wrappers import JsonWrapper
-        print "&&&&&&&&&& ------"
         params = request.body.read()
-        print params
-        kw = JsonWrapper.loads(params)
-        kwargs.update(kw)
+        if params:
+            kw = JsonWrapper.loads(params)
+            kwargs.update(kw)
         return args, kwargs
     
     def jsonThunkerHandler(self, args, kwargs):

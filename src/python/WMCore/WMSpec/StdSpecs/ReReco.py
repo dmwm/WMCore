@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.34 2010/06/29 19:47:39 sfoulkes Exp $"
-__revision__ = "$Revision: 1.34 $"
+__version__ = "$Id: ReReco.py,v 1.35 2010/06/29 21:39:13 sfoulkes Exp $"
+__revision__ = "$Revision: 1.35 $"
 
 import subprocess
 
@@ -158,7 +158,7 @@ class ReRecoWorkloadFactory(object):
         procTask.applyTemplates()
 
         splitArgs["siteBlackList"] = self.siteBlackList
-        splitArgs["siteWhiteList"] = self.siteWhileList
+        splitArgs["siteWhiteList"] = self.siteWhiteList
         
         procTask.setSplittingAlgorithm(splitAlgo, **splitArgs)
         procTask.addGenerator("BasicNaming")

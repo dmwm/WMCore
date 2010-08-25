@@ -91,7 +91,8 @@ simple_quality_map = {
 		[1.0,.9,.8,.7,.6,.5,.4,.3,.2,.1]
 	]
 }
-
+print "<html>\n<body>"
+print "<h1>Example plots</h1>"
 print "<table>"
 print "<tr>"
 print "<td>"
@@ -118,3 +119,4 @@ print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?
 print "</td>"
 print "</tr>"
 print "</table>"
+print "</body>\n</html>"

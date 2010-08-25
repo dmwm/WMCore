@@ -10,7 +10,7 @@ class ContentTypeHandler:
                               "text/json+thunker": self.jsonThunkerHandler,}
         
     def convertToParam(self, args, kwargs):
-        func = self.supportedType.get(request.headers["Content-Type"])
+        func = self.supportedType.get(request.headers.setdefault("Content-Type", "text/json"))
         if func == None:
             return args, kwargs
         else:

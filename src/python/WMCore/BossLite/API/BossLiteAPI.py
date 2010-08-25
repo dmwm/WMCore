@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.6 2010/05/17 13:04:06 spigafi Exp $"
-__revision__ = "$Revision: 1.6 $"
+__version__ = "$Id: BossLiteAPI.py,v 1.7 2010/05/17 19:11:09 spigafi Exp $"
+__revision__ = "$Revision: 1.7 $"
 
 import logging
 import copy
@@ -222,8 +222,8 @@ class BossLiteAPI(object):
         
         result = self.db.objAdvancedLoad(obj = Job(), binds = binds)
         
-        # if not type(result) == list :
-        #    result = [result]
+        if not type(result) == list :
+            result = [result]
         
         for x in result : 
             tmp = Job()
@@ -277,14 +277,15 @@ class BossLiteAPI(object):
         return job.remove(self.db)
     
 
-    ############################################################################
+    ##########################################################################
+    # Methods for RunningJob
+    ##########################################################################
 
     def getRunningInstance( self, job, runningAttrs = None ) :
         """
         retrieve RunningInstance where existing or create it
         """
-
-        """
+        
         # check whether the running instance is still loaded
         if job.runningJob is not None :
             return
@@ -297,16 +298,14 @@ class BossLiteAPI(object):
             job.newRunningInstance(self.db)
             if type(runningAttrs) == dict:
                 job.runningJob.data.update(runningAttrs)
-        """
-           
-        return NotImplementedError
+        
+        # return this?
+        return job.runningJob
     
 
     def getNewRunningInstance( self, job, runningAttrs = None ) :
         """
         create a new RunningInstance
-        
-        why a "get" method updates the fileds????
         """
 
         job.newRunningInstance(self.db)
@@ -314,17 +313,33 @@ class BossLiteAPI(object):
         if type(runningAttrs) == dict:
             job.runningJob.data.update(runningAttrs)
 
+        return job.runningJob
+    
+    
+    def updateRunningInstances( self, task, notSkipClosed=True ) :
+        """
+        update runningInstances of a task in the DB
+        """
+
+        # update
+        for job in task.jobs:
+
+            # update only loaded instances!
+            if job.runningJob is not None:
+                job.updateRunningInstance(self.db)
+
         return
     
+    ##########################################################################
+    # Methods for Combined Job-RunningJob
+    ##########################################################################
 
     def loadJobsByRunningAttr( self, attribute, value) :
         """
         retrieve job information from db for job
         whose running instance match attributes
-        
-        --> need a check!
         """
-        
+    
         jobList = []
         binds   = []
 
@@ -334,62 +349,45 @@ class BossLiteAPI(object):
         else:
             binds = value
 
-        action = self.daofactory(classname = "Job.LoadByRunningJobAttr")
-        result = action.execute(column = attribute,
-                                value = binds,
-                                conn = self.getDBConn(),
-                                transaction = self.existingTransaction)
 
-        for entry in result:
+        results  = self.db.jobLoadByRunningAttr(attribute = attribute, binds = binds)
+        
+        for entry in results:
             job = Job()
             job.data.update(entry)
             jobList.append(job)
         
         return jobList
-
     
-    ############################################################################
 
-    def loadCreated( self, attributes = None, limit=None, offset=None  ) :
+    def loadCreated( self  ) :
         """
         retrieve information from db for jobs created but not submitted using:
-    
-        Takes the highest submission number for each job
+        - it takes the highest submission number for each job
         """
 
         return self.loadJobsByRunningAttr(attribute = 'status', value = 'W')
-
-
-
-    ##########################################################################
     
-    def loadSubmitted( self, attributes = None, limit=None, offset=None  ) :
+    
+    def loadSubmitted( self ) :
         """
         retrieve information from db for jobs submitted using:
-
-        Takes the highest submission number for each job
+        - it takes the highest submission number for each job
         """
 
         return self.loadJobsByRunningAttr(attribute = 'closed', value = 'N')
-
-
-
-    ##########################################################################
     
-    def loadEnded( self, attributes = None, limit=None, offset=None ) :
+    
+    def loadEnded( self ) :
         """
         retrieve information from db for jobs successfully using:
-
-        Takes the highest submission number for each job
+        - it takes the highest submission number for each job
         """
 
         return self.loadJobsByRunningAttr(attribute = 'status', value = 'SD')
-
-
-    ##########################################################################
-
-
-    def loadFailed( self, attributes = None, limit=None, offset=None ) :
+    
+    
+    def loadFailed( self ) :
         """
         retrieve information from db for jobs aborted/killed using:
         - range of tasks
@@ -403,104 +401,18 @@ class BossLiteAPI(object):
                                                   value = 'A'))
         jobList.extend(self.loadJobsByRunningAttr(attribute = 'status',
                                                   value = 'K'))
-
-
+        
         return jobList
 
 
-    ##########################################################################
-
-
-    def updateRunningInstances( self, task, notSkipClosed=True ) :
-        """
-        update runningInstances of a task in the DB
-        """
-
-        # update
-        for job in task.jobs:
-
-            # update only loaded instances!
-            if job.runningJob is not None:
-                job.updateRunningInstance()
-
-        return
-
-
-    ############################################################################
-
-    def load( self, task, jobRange="all"):
-        """
-        This is a crippled version of the original load function
-
-        """
-
-
-        task.load()
-
-        if jobRange == None:
-            return task
-        else:
-            task.loadJobs()
-            for job in task.jobs:
-                job.getRunningInstance()
-
-
-        return task
-
-
-    #def loadLastJobByName( self, jobName ) :
-    #    """
-    #    retrieve job information from db for jobs with name 'name'
-    #
-    #    Really?  Name is unique, so all you have to do with a given name
-    #    is just retrieve the job.
-    #
-    #    Thus I'm not implementing it at this time.
-    #    """
-    #
-    #    self.loadJobByName(jobName = jobName)
-
-        
-
-
-    ######################################################################
-    # And this is where I stopped working
-    #   -mnorman
-    ######################################################################
-
-    ##########################################################################
-    def connect ( self ) :
-        """
-        recreate a session and db access
-        """
-
-        # open Db and create a db access
-        #self.bossLiteDB.connect()
-        #self.db = TrackingDB(self.bossLiteDB)
-
-
-    ##########################################################################
-    def updateDB( self, obj ) :
-        """
-        update any object table in the DB
-        works for tasks, jobs, runningJobs
-        """
-
-        # db connect
-        if self.db is None :
-            self.connect()
-
-        # update
-        obj.update(self.db)
-        self.bossLiteDB.commit()
-
-    ##########################################################################
     def loadJobsByTimestamp( self, more, less, runningAttrs=None, jobAttributes=None) :
         """
         retrieve job information from db for job
         whose running instance match attributes
         """
 
+        return NotImplementedError
+    
         # db connect
         if self.db is None :
             self.connect()
@@ -536,6 +448,9 @@ class BossLiteAPI(object):
 
 
     ##########################################################################
+    # Missing Methods
+    ##########################################################################
+    
     def loadJobDistinct( self, taskId, distinctAttr, jobAttributes=None ):
         """
         retrieve job templates with distinct job attribute
@@ -557,8 +472,7 @@ class BossLiteAPI(object):
 
         return jobList
 
-
-    ##########################################################################
+    
     def loadRunJobDistinct( self, taskId, distinctAttr, jobAttributes=None ):
         """
         retrieve job templates with distinct job attribute
@@ -580,7 +494,6 @@ class BossLiteAPI(object):
 
         return jobList
 
-    ##########################################################################
     ## DanieleS.
     def loadJobDist( self, taskId, value ) :
         """
@@ -620,7 +533,7 @@ class BossLiteAPI(object):
         return jobList
 
     ##########################################################################
-    # Serialize Task in XML and viceversa
+    # Serialize Task in XML and vice-versa
     ##########################################################################
 
     def deserialize( self, xmlFilePath ) :
@@ -722,7 +635,7 @@ class BossLiteAPI(object):
     
     def declare( self, xml, proxyFile=None ) :
         """
-        register job related informations in the db
+        put a description here
         """
 
         taskInfo, jobInfos, rjAttrs = self.deserialize( xml )
@@ -754,4 +667,16 @@ class BossLiteAPI(object):
 
         # all done
         return task
-
+    
+    
+    ##########################################################################
+    # Methods for general DbObject
+    ##########################################################################
+    
+    def updateDB( self, obj ) :
+        """
+        Update any object table in the DB. It works for tasks, jobs, runningJobs
+        """
+        
+        self.db.objUpdate(self.db)
+        

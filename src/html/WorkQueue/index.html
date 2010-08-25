@@ -115,8 +115,10 @@ body {
 <div id="bottom1"></div>
 <div id="left1">
     <div id="workqueuetree"></div>
-	<span class="title">Status</span>
+	<span class="title">Workload Status</span>
 	<div id="statuschart" class="chart"></div>
+	<span class="title">Job Status</span>
+    <div id="jobchart" class="chart"></div>
 </div>
 
 </div>
@@ -227,6 +229,44 @@ var tree;
 	        expressInstall: "assets/expressinstall.swf"
 	    });
     };
+	
+	var jobChart = function() {
+        YAHOO.widget.Chart.SWFURL = "http://yui.yahooapis.com/2.8.1/build/charts/assets/charts.swf";
+        //--- data
+    
+        var dataSchema = {
+            fields: [{key: "status"}, {key: "jobs"}]
+            };
+
+        var dataUrl = "/workqueue/jobstatusstat"
+
+        var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+    
+        //--- chart
+
+        var mychart = new YAHOO.widget.PieChart( "jobchart", dataSource,
+        {
+            dataField: "jobs",
+            categoryField: "status",
+            style:
+            {
+                padding: 20,
+                legend:
+                {
+                    display: "right",
+                    padding: 10,
+                    spacing: 5,
+                    font:
+                    {
+                        family: "Arial",
+                        size: 12
+                    }
+                }
+            },
+            //only needed for flash player express install
+            expressInstall: "assets/expressinstall.swf"
+        });
+    };
     
     var workloadTable = function() {
         var formatUrl = function(elCell, oRecord, oColumn, sData) { 
@@ -245,8 +285,9 @@ var tree;
                 };
         
         var dataSchema = {
-                fields: [{key: "id"}, {key: "spec_name"}, {key: "task_name"}, 
-                         {key: "owner"}, {key: "done", label: "progress", formatter: progressFormatter}]
+                fields: [{key: "spec_id"}, {key: "spec_name"}, 
+                         {key: "owner"}, {key: "total", label: "Total Elements"}, 
+						 {key: "done", label: "progress", formatter: progressFormatter}]
                 };
         
         var dataUrl = "/workqueue/workloadprogress";
@@ -254,6 +295,9 @@ var tree;
         var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema);
         tableConfig = WMCore.WebTools.defaultTableConfig;
         tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 5});
+		tableConfig.sortedBy ={
+            key: "spec_id", dir:YAHOO.widget.DataTable.CLASS_ASC
+        }
 		
 		var dataTable = WMCore.WebTools.createDataTable("workloadprogress", dataSource, 
                                      WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
@@ -385,6 +429,7 @@ var tree;
         layout.on('render', function() {
             YAHOO.util.Event.onContentReady("menubar", initTopMenu);
 			YAHOO.util.Event.onContentReady("statuschart", statusChart);
+			YAHOO.util.Event.onContentReady("jobchart", jobChart);
             YAHOO.util.Event.onContentReady("elements", elementTable);
             YAHOO.util.Event.onContentReady("workloadprogress", workloadTable);
             YAHOO.util.Event.onContentReady("workqueuetree", workQueueTree);         

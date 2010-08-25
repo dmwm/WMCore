@@ -4,8 +4,8 @@
 RetryManager test for module and the harness
 """
 
-__revision__ = "$Id: RetryManager_t.py,v 1.3 2009/10/13 23:06:13 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: RetryManager_t.py,v 1.4 2010/02/02 20:42:19 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "mnorman@fnal.gov"
 
 import os
@@ -31,6 +31,8 @@ from WMCore.WMBS.JobGroup     import JobGroup
 from WMCore.DataStructs.Run   import Run
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
+
+from WMCore.Agent.Configuration import Configuration
 
 class RetryManagerTest(unittest.TestCase):
     """
@@ -59,6 +61,8 @@ class RetryManagerTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
 
+        self.testDir = self.testInit.generateWorkDir()
+
 
         self.nJobs = 10
 
@@ -68,13 +72,54 @@ class RetryManagerTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
 
+        self.testInit.delWorkDir()
+
 
 
     def getConfig(self, configPath=os.path.join(os.getenv('WMCOREBASE'), \
                                                 'src/python/WMComponent/RetryManager/DefaultConfig.py')):
 
-        config = self.testInit.getConfiguration(configPath)
-       
+        config = Configuration()
+
+        # First the general stuff
+        config.section_("General")
+        config.General.workDir = os.getenv("TESTDIR", self.testDir)
+
+        # Now the CoreDatabase information
+        # This should be the dialect, dburl, etc
+
+        config.section_("CoreDatabase")
+        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+        config.CoreDatabase.socket     = os.getenv("DBSOCK")
+
+
+        config.component_("JobAccountant")
+        #The log level of the component. 
+        config.JobAccountant.logLevel = 'INFO'
+        config.JobAccountant.pollInterval = 10
+
+
+        config.component_("RetryManager")
+        config.RetryManager.logLevel = 'DEBUG'
+        config.RetryManager.namespace = 'WMComponent.RetryManager.RetryManager'
+        config.RetryManager.maxRetries = 10
+        config.RetryManager.pollInterval = 10
+        # These are the cooloff times for the RetryManager, the times it waits
+        # Before attempting resubmission
+        config.RetryManager.coolOffTime  = {'create': 120, 'submit': 120, 'job': 120}
+        # Path to plugin directory
+        config.RetryManager.pluginPath = 'WMComponent.RetryManager.PlugIns'
+        config.RetryManager.pluginName = ''
+        config.RetryManager.WMCoreBase = os.getenv('WMCOREBASE')
+
+
+        # JobStateMachine
+        config.component_('JobStateMachine')
+        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'mnorman:theworst@cmssrv52.fnal.gov:5984')
+        config.JobStateMachine.default_retries = 1
+        config.JobStateMachine.couchDBName     = "mnorman_test"
+
+
         return config
 
 

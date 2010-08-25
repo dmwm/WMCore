@@ -5,14 +5,15 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.16 2009/07/21 21:28:17 meloam Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: ChangeState.py,v 1.17 2009/07/23 20:24:41 meloam Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.JobStateMachine.Transitions import Transitions
+from WMCore.Services.UUID import makeUUID 
 from sets import Set
 import threading
 
@@ -53,8 +54,8 @@ class ChangeState(WMObject):
 
         return jobs
 
-    def getCouchByParentID(self, id):
-        return self.database.loadView('jobs','get_by_parent_couch_id',{},[id])
+    def getCouchByHeadID(self, id):
+        return self.database.loadView('jobs','get_by_head_couch_id',{},[id])
     def getCouchByJobID(self, id):
         return self.database.loadView('jobs','get_by_job_id',{},[id])
 
@@ -74,15 +75,29 @@ class ChangeState(WMObject):
         Write a document for the job to CouchDB for each state transition for
         each job. Do this as a bulk operation.
         TODO: handle attachments
+        couch_head - the first state transition
+        couch_parent - the state transition before thisone
+        couch_record - the document describing this state transition        
         """
+        
         for job in jobs:
+            newCouchID = makeUUID()
             doc = {'type': 'state change'}
+            doc['_id'] = newCouchID
             doc['old_state'] = oldstate
             doc['new_state'] = newstate
+            if not 'couch_head' in job:
+                job['couch_head'] = newCouchID
+            doc['couch_head'] = job['couch_head']
+            
             if 'couch_record' in job:
-                doc['parent'] = job['couch_record']
+                doc['couch_parent'] = job['couch_record']
+                job['couch_parent'] = job['couch_record']
+            
+            job['couch_record'] = newCouchID
             doc['job'] = job
             self.database.queue(doc, timestamp=True)
+            
         goodresult = self.database.commit()
         
         assert len(jobs) == len(goodresult), \
@@ -99,10 +114,10 @@ class ChangeState(WMObject):
         ''' initializes a non-existant database'''
         database = self.couchdb.createDatabase(self.dbname)
         hashViewDoc = database.createDesignDoc('jobs')
-        hashViewDoc['views'] = {'get_by_parent_couch_id': {"map": \
+        hashViewDoc['views'] = {'get_by_head_couch_id': {"map": \
                               """function(doc) {
-                                    if (doc.parent) {
-                                      emit(doc.parent, doc);
+                                    if (doc.couch_head) {
+                                      emit(doc.couch_head, doc);
                                     } else {
                                       emit(doc._id, doc);
                                     }

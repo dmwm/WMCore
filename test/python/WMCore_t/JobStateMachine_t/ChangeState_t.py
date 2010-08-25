@@ -227,9 +227,9 @@ class TestChangeState(unittest.TestCase):
         jsm = self.change.recordInCouch( jsm , "closeout", "success")
         jsm2 = self.change.recordInCouch( jsm , "cleanout", "closeout")
         
-        our_records1 = self.change.getCouchByParentID(jsm1[0]['couch_record'])
+        our_records1 = self.change.getCouchByHeadID(jsm1[0]['couch_head'])
         self.assertEquals(len(our_records1['rows']), 7)
-        our_records2 = self.change.getCouchByParentID(jsm2[0]['couch_record'])
+        our_records2 = self.change.getCouchByHeadID(jsm2[0]['couch_head'])
         self.assertEquals(len(our_records2['rows']), 7)
         our_records3 = self.change.getCouchByJobID(1)
         self.assertEquals(len(our_records3['rows']), 7)

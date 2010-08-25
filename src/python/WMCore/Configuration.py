@@ -8,8 +8,8 @@ Module dealing with Configuration file in python format
 
 """
 
-__revision__ = "$Id: Configuration.py,v 1.8 2009/08/17 14:42:23 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Configuration.py,v 1.9 2009/08/17 16:39:04 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 import imp
@@ -60,7 +60,7 @@ def formatNative(value):
     if type(value) == types.DictType:
         return dict
     else:
-        format(value)
+        return format(value)
     
 
 class ConfigSection(object):
@@ -290,36 +290,6 @@ class ConfigSection(object):
         """
         comps = self._internal_settings
         return list(comps)
-
-
-
-    def pythoniseDict_(self, **options):
-        """
-        convert self into dict of python format strings with
-        values in value position
-
-        """
-        prefix     = options.get('prefix',   None)
-        sections   = options.get('sections',   False)
-
-        if prefix != None:
-            myName = "%s.%s" % (prefix, self._internal_name)
-        else:
-            myName = self._internal_name
-
-        result = {}
-
-        for attr in self._internal_settings:
-            if attr in self._internal_children:
-                if sections:
-                    result["%s.section_(\'%s\')" % (myName, attr)] = '_Section_'
-                result.update(getattr(self, attr).pythoniseDict_(prefix = myName))
-                continue
-
-            #This is potentially dangerous, because it adds lists, dicts.
-            result["%s.%s" %(myName, attr)] = formatNative(getattr(self, attr))
-
-        return result
 
 
 

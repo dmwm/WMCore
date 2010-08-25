@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.47 2009/09/28 20:21:46 mnorman Exp $"
-__version__ = "$Revision: 1.47 $"
+__revision__ = "$Id: Subscription.py,v 1.48 2009/09/29 15:42:30 mnorman Exp $"
+__version__ = "$Revision: 1.48 $"
 
 from sets import Set
 import logging
@@ -218,6 +218,7 @@ class Subscription(WMBSBase, WMSubscription):
             files = self.makelist(files)
 
         if len(files) == 0:
+            self.commitTransaction(existingTransaction)
             return
 
         deleteAction.execute(subscription = self["id"],
@@ -383,6 +384,8 @@ class Subscription(WMBSBase, WMSubscription):
 
         jobGroups = self.getJobGroups()
 
+        existingTransaction = self.beginTransaction()
+
         #First, jobs
         deleteAction = self.daofactory(classname = "Jobs.Delete")
         for job in self.getJobs():
@@ -395,25 +398,33 @@ class Subscription(WMBSBase, WMSubscription):
             deleteAction.execute(id = jobGroupID, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
+        self.commitTransaction(existingTransaction)
+
 
 
 
         #Next Fileset
+        existingTransaction = self.beginTransaction()
         filesetID = self["fileset"].id
         action = self.daofactory(classname = "Fileset.DeleteCheck")
         action.execute(fileid = self["fileset"].id, subid = self["id"])
+        self.commitTransaction(existingTransaction)
 
         #If we got rid of the fileset
         #If we did not delete the fileset, all files are still in use
+        existingTransaction = self.beginTransaction()
         if not self["fileset"].exists():
             #Now get rid of unused files
             action = self.daofactory(classname = "Files.DeleteCheck")
             for file in self["fileset"].files:
                 action.execute(file = file['id'], fileset = filesetID)
+        self.commitTransaction(existingTransaction)
 
         #Next Workflow
+        existingTransaction = self.beginTransaction()
         action = self.daofactory(classname = "Workflow.DeleteCheck")
         action.execute(workid = self["workflow"].id, subid = self["id"])
+        self.commitTransaction(existingTransaction)
 
         #And last
         self.delete()

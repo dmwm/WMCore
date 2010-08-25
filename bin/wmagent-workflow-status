@@ -31,6 +31,9 @@ def createOptionParser():
     myOptParser.add_option("-f", "--fail", dest = "printFailed",
                            action = "store_true",
                            help = "Print out a list of failed jobs for each workflow.")
+    myOptParser.add_option("-r", "--retried", dest = "printRetried",
+                           action = "store_true",
+                           help = "Print out a list of jobs that have failed at least once and are being retried.")
     
     return myOptParser
                                             
@@ -101,9 +104,9 @@ def displayWorkflowStatus():
 
     return
 
-def getFailedJobs():
+def displayFailedJobs():
     """
-    _getFailedJobs_
+    _displayFailedJobs_
 
     Query WMBS for information about failed jobs and format the data so that it
     is easily printed.
@@ -124,19 +127,47 @@ def getFailedJobs():
 
         jobInfo[result["owner"]][result["task"]].append(result["id"])
 
-    return jobInfo
-
-def displayFailedJobs():
-    """
-    _displayFailedJobs_
-
-    Print out the workflow name and IDs of the jobs that have failed.
-    """
     print "Failed job IDs per workflow:"
     print ""
-    
-    jobInfo = getFailedJobs()
 
+    printJobInfo(jobInfo)
+    return
+
+def displayRetriedJobs():
+    """
+    _displayRetriedJobs_
+
+    Query WMBS for information about retried jobs and format the data so that it
+    is easily printed.
+    """
+    myThread = threading.currentThread()
+    myDAOFactory = DAOFactory(package = "WMCore.WMBS",
+                              dbinterface = myThread.dbi)
+    failDao = myDAOFactory("Workflow.FailedJobs")
+    results = failDao.execute()
+
+    # owner, task, jobId
+    jobInfo = {}
+    for result in results:
+        if not jobInfo.has_key(result["owner"]):
+            jobInfo[result["owner"]] = {}
+        if not jobInfo[result["owner"]].has_key(result["task"]):
+            jobInfo[result["owner"]][result["task"]] = []
+
+        jobInfo[result["owner"]][result["task"]].append(result["id"])
+
+    print "Retried job IDs per workflow:"
+    print ""
+
+    printJobInfo(jobInfo)
+    return
+
+def printJobInfo(jobInfo):
+    """
+    _printJobInfo_
+
+    Print out job and owner information.
+    """
     for owner in jobInfo.keys():
         print "%s:" % owner
         for task in jobInfo[owner].keys():
@@ -177,5 +208,7 @@ if options.printOverview == True:
     displayWorkflowStatus()
 elif options.printFailed == True:
     displayFailedJobs()
+elif options.printRetried == True:
+    displayRetriedJobs()
 else:
     myOptParser.print_help()

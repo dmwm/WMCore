@@ -16,11 +16,7 @@ except ImportError:
 class WorkQueue(Service):
 
     """
-    API for dealing with retrieving information from PhEDEx DataService
-    """
-
-    """
-    API for dealing with retrieving information from PhEDEx DataService
+    API for dealing with retrieving information from WorkQueue DataService
     """
 
     def __init__(self, dict = {}, responseType = "json", secure = False):
@@ -35,7 +31,7 @@ class WorkQueue(Service):
         if dict.has_key('cachepath'):
             pass
         elif os.getenv('WORKQUEUE_CACHE_DIR'):
-            dict['cachepath'] = os.getenv('TIER0_MONITOR_CACHE_DIR') + '/.workqueue_cache'
+            dict['cachepath'] = os.getenv('WORKQUEUE_CACHE_DIR') + '/.workqueue_cache'
         elif os.getenv('HOME'):
             dict['cachepath'] = os.getenv('HOME') + '/.workqueue_cache'
         else:

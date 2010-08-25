@@ -3,7 +3,7 @@
 """
 wmcore-sensord
 
-deamon for WMComponent, Service, Resource and Disk.
+daemon for WMComponent, Service, Resource and Disk.
 """
 
 import time

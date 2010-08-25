@@ -6,8 +6,8 @@ Unit tests for  daemon creation
 
 """
 
-__revision__ = "$Id: Daemon_t.py,v 1.9 2010/02/04 22:52:12 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Daemon_t.py,v 1.10 2010/02/05 14:16:13 meloam Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -61,7 +61,7 @@ class DaemonTest(unittest.TestCase):
         """
         __testSubscribe__
 
-        Test deamon creation
+        Test daemon creation
         """
         # keep the parent alive
         self.pid = createDaemon(self.tempDir, True)
@@ -79,7 +79,7 @@ class DaemonTest(unittest.TestCase):
                     print('Daemon killed')
                 else:
                     while True:
-                        logging.debug('I am a deamon (wait 10 seconds)')
+                        logging.debug('I am a daemon (wait 10 seconds)')
                         time.sleep(1)
             except:
                 pass

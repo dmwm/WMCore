@@ -28,7 +28,7 @@ from xml.dom.minidom import Document, Element
 # File mode creation mask of the daemon.
 UMASK = 0
 
-def deamonize(stdout= '/dev/null', stderr= None, stdin= '/dev/null', \
+def daemonize(stdout= '/dev/null', stderr= None, stdin= '/dev/null', \
               workdir= None, startmsg = 'started with pid %s', \
               keepParent = False ):
     '''
@@ -174,8 +174,8 @@ information on that.
 """
         print(mess % pidfile)
         sys.exit(1)
-#    return deamonize(stdout = '/tmp/daemon.log', workdir = workdir,startmsg = startmsg, keepParent = keepParent)
-    return deamonize(workdir = workdir,startmsg = startmsg, keepParent = keepParent)
+#    return daemonize(stdout = '/tmp/daemon.log', workdir = workdir,startmsg = startmsg, keepParent = keepParent)
+    return daemonize(workdir = workdir,startmsg = startmsg, keepParent = keepParent)
  
 if __name__ == "__main__":
     parent_id = createDeamon('/tmp', keepParent = False)

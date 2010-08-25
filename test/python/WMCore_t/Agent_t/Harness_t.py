@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.14 2010/02/04 19:26:28 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Harness_t.py,v 1.15 2010/02/05 14:16:12 meloam Exp $"
+__version__ = "$Revision: 1.15 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -97,7 +97,7 @@ class HarnessTest(unittest.TestCase):
         config.component_("TestComponent")
         config.TestComponent.logLevel = 'INFO'
         config.section_("General")
-        # try starting a component as a deamon:
+        # try starting a component as a daemon:
         config.TestComponent.componentDir = os.path.join( \
                     self.tempDir, "Components/TestComponent1")
         os.makedirs( config.TestComponent.componentDir )
@@ -122,7 +122,7 @@ class HarnessTest(unittest.TestCase):
         config.TestComponent.logLevel = 'INFO'
         config.section_("General")
         self.tempDir = self.testInit.generateWorkDir(config)
-        # try starting a component as a deamon:
+        # try starting a component as a daemon:
         config.TestComponent.componentDir = os.path.join( \
                     self.tempDir, "Components/TestComponent2")
         os.makedirs( config.TestComponent.componentDir )

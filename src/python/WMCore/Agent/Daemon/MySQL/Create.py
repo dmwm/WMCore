@@ -5,11 +5,11 @@
 _Create_
 
 Class for creating MySQL specific schema for 
-keeping track of deamonized processes
+keeping track of daemonized processes
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2008/10/07 13:54:04 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2010/02/05 14:16:12 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -34,7 +34,7 @@ class Create(DBCreator):
         self.create['taa'] = """      
 SET AUTOCOMMIT = 0; """
         self.create['ta_daemon_reg'] = """      
-CREATE TABLE `deamon_registry` (
+CREATE TABLE `daemon_registry` (
     `componentName`     varchar(100) NOT NULL,
     `processid`        int(11) NOT NULL,
     `parentProcessId`  int(11) NOT NULL,

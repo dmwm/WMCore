@@ -15,7 +15,7 @@ wmcore-new-config --roots=src/python/WMComponent/ErrorHandler/,src/python/WMComp
 # loads default tables and tables from a specific module. The backend is automatically selected based on the config file.
 wmcore-db-init --config=WMCoreConfig.py --create --modules=WMComponent.DBSBuffer.Database 
 
-# start the deamons from components defined in the config file:
+# start the daemons from components defined in the config file:
 wmcoreD --start --config=WMCoreConfig.py
 
 # prints status of components
@@ -29,8 +29,8 @@ wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
 
-__revision__ = "$Id: wmcoreD,v 1.8 2010/01/22 19:35:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: wmcoreD,v 1.9 2010/02/05 14:16:13 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt

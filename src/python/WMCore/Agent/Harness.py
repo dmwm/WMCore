@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Harness class that wraps standard functionality used in all deamon 
+Harness class that wraps standard functionality used in all daemon 
 components including:
 
 (1) Instantiating message service, trigger and other database classes
@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.27 2010/01/22 17:44:31 sfoulkes Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: Harness.py,v 1.28 2010/02/05 14:16:13 meloam Exp $"
+__version__ = "$Revision: 1.28 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -42,7 +42,7 @@ from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
 
 class Harness:
     """
-    Harness class that wraps standard functionality used in all deamon 
+    Harness class that wraps standard functionality used in all daemon 
     components
     """
 
@@ -432,13 +432,13 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
     def startDeamon(self, keepParent = False):
         """
         Same result as start component, except that the comopnent
-        is started as a deamon, after which you can close your xterm
+        is started as a daemon, after which you can close your xterm
         and the process will still run.
  
         The keepParent option enables us to keep the parent process
         which is used during testing,
         """
-        msg = "Starting %s as a deamon " % (self.config.Agent.componentName)
+        msg = "Starting %s as a daemon " % (self.config.Agent.componentName)
         print(msg)
         compName = self.__class__.__name__
         compSect = getattr(self.config, compName, None) 
@@ -463,7 +463,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
 
         Start up the component, performs initialization an waits 
         for messages. Calling this method results in the application
-        running in the xterm (not in deamon mode)
+        running in the xterm (not in daemon mode)
  
         """
         myThread = threading.currentThread()

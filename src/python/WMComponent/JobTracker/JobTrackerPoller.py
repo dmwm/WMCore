@@ -3,21 +3,17 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.2 2009/11/06 20:36:56 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.3 2009/11/17 17:39:55 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import logging
-import re
-from sets import Set
+import os
+import os.path
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Fileset      import Fileset
-from WMCore.WMBS.Workflow     import Workflow
 from WMCore.WMBS.Job          import Job
-from WMCore.WMFactory         import WMFactory
 from WMCore.DAOFactory        import DAOFactory
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
@@ -63,7 +59,12 @@ class JobTrackerPoller(BaseWorkerThread):
 
 
 
-    def terminate(self,params):
+    def terminate(self, params):
+        """
+        _terminate_
+
+        Terminate the function after one more run.
+        """
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
         return
@@ -92,7 +93,8 @@ class JobTrackerPoller(BaseWorkerThread):
         """
         _trackJobs_
 
-        Finds a list of running jobs and the sites that they're running at, and passes that off to tracking.
+        Finds a list of running jobs and the sites that they're running at,
+        and passes that off to tracking.
         """
 
         print "In JobTrackerPoller.trackJobs"
@@ -125,7 +127,8 @@ class JobTrackerPoller(BaseWorkerThread):
         """
         _getInfo_
 
-        Gets info on the individual jobs.  jobDict should be of form [{'id': id, 'site_name': site_name}]
+        Gets info on the individual jobs.  jobDict should be
+        of form [{'id': id, 'site_name': site_name}]
         
         """
         trackerDict = self.trackerInst(jobDict)
@@ -139,7 +142,8 @@ class JobTrackerPoller(BaseWorkerThread):
         This parses the information that comes back from the tracker plugin
         The tracker plugin should report information in the following form.
         trackDict = {'jobName': {jobInfo}}
-        jobInfo = {'Status': string, 'StatusTime': int since entering status, 'StatusReason': string}
+        jobInfo = {'Status': string, 'StatusTime': int since entering status,
+        'StatusReason': string}
         """
 
         passedJobs = []
@@ -181,6 +185,7 @@ class JobTrackerPoller(BaseWorkerThread):
             job = Job(id = jobID)
             job.load()
             listOfJobs.append(job)
+            job.setFWJRPath(os.path.join(job.getCache(), 'FrameworkJobReport.xml'))
 
         self.changeState.propagate(listOfJobs, 'jobfailed', 'executing')
 
@@ -208,6 +213,8 @@ class JobTrackerPoller(BaseWorkerThread):
             job = Job(id = jobID)
             job.load()
             listOfJobs.append(job)
+            job.setFWJRPath(os.path.join(job.getCache(), \
+                                         'FrameworkJobReport.xml'))
 
         myThread.transaction.begin()
         self.changeState.propagate(listOfJobs, 'complete', 'executing')
@@ -232,12 +239,13 @@ class JobTrackerPoller(BaseWorkerThread):
         pluginPath = pluginDir + '.' + trackerName
 
         try:
-            module      = __import__(pluginPath, globals(), locals(), [trackerName])
+            module      = __import__(pluginPath, globals(), \
+                                     locals(), [trackerName])
             instance    = getattr(module, trackerName)
             loadedClass = instance(self.config)
             #print loadedClass.__class__
         except Exception, ex:
-            msg = "Failed in attempting to import tracker plugin in JobTracker with msg = \n%s" %(ex)
+            msg = "Failed in attempting to import tracker plugin in JobTracker with msg = \n%s" % (ex)
             raise Exception(msg)
         
 

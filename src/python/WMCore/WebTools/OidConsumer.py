@@ -102,7 +102,7 @@ class OidConsumer(cherrypy.Tool):
         return False
 
     def verify(self):
-        current_url = cherrypy.request.script_name
+        current_url = cherrypy.request.script_name or '/'
         # Do not verify auth URLs like the page that requests the user login
         if cherrypy.request.path_info.startswith(self.base_path):
             return

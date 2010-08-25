@@ -123,7 +123,8 @@ class TaskSpace:
             space = sys.modules[modName]
         else:
             try:
-                space = __import__(modName, globals(), locals(), ['stepSpace'], -1)
+                #space = __import__(modName, globals(), locals(), ['stepSpace'], -1)
+                space = __import__(modName, globals(), locals(), ['stepSpace'])
 
             except ImportError, ex:
                 # TODO: Dedicated exception class

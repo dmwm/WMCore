@@ -23,7 +23,8 @@ class Sandbox:
     def __init__(self, stepName):
         self.moduleName = "WMSandbox.%s" % stepName
         self.module = __import__(self.moduleName,
-                                 globals(), locals(), [stepName], -1)
+                                 globals(), locals(), [stepName])
+                                 #globals(), locals(), [stepName], -1)
         self.directory = os.path.dirname(inspect.getsourcefile(self.module))
 
 

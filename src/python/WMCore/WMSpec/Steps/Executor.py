@@ -30,7 +30,8 @@ def getStepSpace(stepName):
         taskspace = sys.modules[modName]
     else:
         try:
-            taskspace = __import__(modName, globals(), locals(), ['taskSpace'], -1)
+            #taskspace = __import__(modName, globals(), locals(), ['taskSpace'], -1)
+            taskspace = __import__(modName, globals(), locals(), ['taskSpace'])
             
         except ImportError, ex:
             msg = "Unable to load WMTaskSpace module:\n"

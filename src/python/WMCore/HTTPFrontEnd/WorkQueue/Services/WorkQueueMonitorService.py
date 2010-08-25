@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.17 2010/05/20 21:16:20 sryu Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.18 2010/06/03 15:48:49 sryu Exp $"
 __version__ = "$Revision"
 
 
@@ -50,9 +50,6 @@ class WorkQueueMonitorService(ServiceInterface):
         # from WorkQueueService
         self.wq = WorkQueue(logger = self.model, dbi = self.model.dbi, **self.model.config.queueParams)
         
-        self.model.addMethod("GET", "status", self.wq.status,
-                             args = ["status", "before", "after", "elementIDs", "dictKey"])
-        
         # DAO stuff
         # RESTModel.addDAO() see COMP/T0/src/python/T0/DAS/Tier0RESTModel.py
         # (within WMCore no addDAO() example except for WebTools_t/DummyRESTModel.py ...)
@@ -60,39 +57,55 @@ class WorkQueueMonitorService(ServiceInterface):
         self.model.daofactory = DAOFactory(package = "WMCore.WorkQueue.Database",
                                            logger = self.model,
                                            dbinterface = self.model.dbi)
-        # WorkQueue.status signature:
-        # status(self, status = None, before = None, after = None, elementIDs = None, dictKey = None)
-        self.model.addDAO("GET", "elementsinfo", "Monitor.ElementsInfo")
-        self.model.addDAO("GET", "elementsinfowithlimit", "Monitor.ElementsInfoWithLimit",
+        
+        #############################
+        ##  Element related view   ##
+        #############################
+        self.model.addDAO("GET", "elementsinfo", "Monitor.Elements.ElementsInfo")
+        self.model.addDAO("GET", "elementsinfowithlimit", "Monitor.Elements.ElementsInfoWithLimit",
                           args = ["startIndex", "results"], validation = [self.validateInt])
         
-        self.model.addDAO("GET", "workloadprogress", "Monitor.WorkloadsWithProgress")
-        self.model.addDAO("GET", "taskprogress", "Monitor.TasksWithProgress")
+        self.model.addDAO("POST", "elementsbystate", "Monitor.Elements.ElementsByState",
+                           args = ["status"], validation = [self.validateState])
+        self.model.addDAO("POST", "elementsbyid", "Monitor.Elements.ElementsById",
+                           args = ["id"], validation = [self.validateId])
         
-        self.model.addDAO("GET", "statusstat", "Monitor.StatusStatistics")
+        #############################
+        ##  Workload related view  ##
+        #############################
+        # overview of wm workload status (that is wmspec - getting data from wq_wmspec table)
+        self.model.addDAO("GET", "workloads", "Monitor.Workloads.Workloads")
+        self.model.addDAO("GET", "workloadprogress", "Monitor.Workloads.WorkloadsWithProgress")
+        
+        
+        self.model.addDAO("POST", "workloadsbyid", "Monitor.Workloads.WorkloadsById",
+                          args = ["id"], validation = [self.validateId])
+        self.model.addDAO("POST", "workloadsbyname", "Monitor.Workloads.WorkloadsByName",
+                          args = ["name"])
+        self.model.addDAO("POST", "workloadsbyowner", "Monitor.Workloads.WorkloadsByOwner",
+                          args = ["owner"])
+        
+        
+        #############################
+        ##  Summary  related view  ##
+        #############################
+        self.model.addDAO("GET", "statusstat", "Monitor.Summary.StatusStatistics")
         
         # workloadID can be either workload id number or wildcard (*) 
-        self.model.addDAO("GET", "statusstatbyworkload", "Monitor.StatusStatByWorkload",
+        self.model.addDAO("GET", "statusstatbyworkload", "Monitor.Summary.StatusStatByWorkload",
                           args = ['workloadID'])
-        self.model.addDAO("GET", "jobstatusstat", "Monitor.JobStatusStat")
+        self.model.addDAO("GET", "jobstatusstat", "Monitor.Summary.JobStatusStat")
         
-        self.model.addDAO("GET", "elements", "Monitor.Elements")
+        
+        ###############################################
+        ## To do:  Revisit this usage  related view  ##
+        ###############################################
+        
+        self.model.addDAO("GET", "taskprogress", "Monitor.TasksWithProgress")
         self.model.addDAO("GET", "sites", "Monitor.Sites")
         self.model.addDAO("GET", "data", "Monitor.Data")
         self.model.addDAO("GET", "datasitemap", "Monitor.DataSiteMap")
-        self.model.addDAO("POST", "elementsbystate", "Monitor.ElementsByState",
-                           args = ["status"], validation = [self.validateState])
-        self.model.addDAO("POST", "elementsbyid", "Monitor.ElementsById",
-                           args = ["id"], validation = [self.validateId])
         
-        # overview of wm workload status (that is wmspec - getting data from wq_wmspec table)
-        self.model.addDAO("GET", "workloads", "Monitor.Workloads")
-        self.model.addDAO("POST", "workloadsbyid", "Monitor.WorkloadsById",
-                          args = ["id"], validation = [self.validateId])
-        self.model.addDAO("POST", "workloadsbyname", "Monitor.WorkloadsByName",
-                          args = ["name"])
-        self.model.addDAO("POST", "workloadsbyowner", "Monitor.WorkloadsByOwner",
-                          args = ["owner"])
         
         logging.info("%s initialised." % self._myClass)        
         

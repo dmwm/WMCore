@@ -37,6 +37,16 @@ class StageOutStepHelper(CoreHelper):
         self.data.retryDelay = 0
 
 
+    def setMinMergeSize(self, minMergeSize):
+        """
+        _setMinMergeSize_
+
+        Set the mininum size for promoting a file to merged status.
+        """
+        self.data.output.minMergeSize = minMergeSize
+        return
+
+
 class StageOut(Template):
     """
     _StageOut_

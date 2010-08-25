@@ -11,8 +11,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.28 2010/04/22 21:26:41 sfoulkes Exp $"
-__revision__ = "$Revision: 1.28 $"
+__version__ = "$Id: WMTask.py,v 1.29 2010/05/07 22:12:54 sfoulkes Exp $"
+__revision__ = "$Revision: 1.29 $"
 
 import os
 
@@ -238,6 +238,18 @@ class WMTaskHelper(TreeHelper):
         helper = template.helper(step.data)
         return helper
 
+    def getOutputModulesForTask(self):
+        """
+        _getOutputModulesForTask_
+
+        Retrieve all the output modules in the given task.
+        """
+        outputModules = []
+        for stepName in self.listAllStepNames():
+            outputModules.append(self.getOutputModulesForStep(stepName))
+
+        return outputModules
+    
     def getOutputModulesForStep(self, stepName):
         """
         _getOutputModulesForStep_

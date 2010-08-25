@@ -52,7 +52,8 @@ class PhEDEx(Service):
 
         Service.__init__(self, dict)
 
-    def _getResult(self, callname, file = 'result', clearCache = True, args = None):
+    def _getResult(self, callname, file = 'result', clearCache = True, 
+                   args = None, verb="GET"):
         """
         _getResult_
 
@@ -65,9 +66,14 @@ class PhEDEx(Service):
         if clearCache:
             self.clearCache(file, args)
         try:
+            orignalVerb = self["method"]
+            
+            self["method"] = verb     
             f = self.refreshCache(file, callname, args)
             result = f.read()
             f.close()
+            self["method"] = orignalVerb
+            
         except IOError, ex:
             raise RuntimeError("URL not available: %s" % callname)
 
@@ -77,7 +83,8 @@ class PhEDEx(Service):
 
         return result
 
-    def injectBlocks(self, dbsUrl, node, datasetPath = None, verbose = 0, strict = 1, *blockNames):
+    def injectBlocks(self, dbsUrl, node, datasetPath = None, 
+                     verbose = 0, strict = 1, *blockNames):
 
         """
         _injectBlocksToPhedex_
@@ -96,12 +103,12 @@ class PhEDEx(Service):
         args['node'] = node
 
         xml = PhEDExXMLDrop.makePhEDExDrop(dbsUrl, datasetPath, *blockNames)
-
+        
         args['data'] = xml
         args['verbose'] = verbose
         args['strict'] = strict
 
-        return self._getResult(callname, args = args)
+        return self._getResult(callname, args = args, verb="POST")
 
 
     def subscribe(self, dbsUrl, subscription):

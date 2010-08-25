@@ -16,10 +16,17 @@ from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Job import Job
 
-from WMComponent.JobCreator.JobCreator import JobCreator
+from WMCore.Agent.Configuration             import loadConfigurationFile
+from WMComponent.JobCreator.JobCreator      import JobCreator
 
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
+
+from WMCore.WMSpec.WMTask                   import WMTask, WMTaskHelper
+from WMCore.ResourceControl.ResourceControl import ResourceControl
+
 
 class JobCreatorTest(unittest.TestCase):
     """
@@ -42,9 +49,12 @@ class JobCreatorTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        #self.tearDown()
         self.testInit.setSchema(customModules = ['WMCore.WMBS', 
                                                  'WMCore.MsgService',
-                                                 'WMCore.ThreadPool'], useDefault = False)
+                                                 'WMCore.ThreadPool',
+                                                 'WMCore.ResourceControl'], useDefault = False)
+
 
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -52,12 +62,24 @@ class JobCreatorTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         
         locationAction = daofactory(classname = "Locations.New")
-
         for site in self.sites:
             locationAction.execute(siteName = site)
 
+
+
+        #Create sites in resourceControl
+        resourceControl = ResourceControl()
+        for site in self.sites:
+            resourceControl.insertSite(siteName = site, seName = site, ceName = site)
+            resourceControl.insertThreshold(thresholdName = 'processingThreshold', \
+                                            thresholdValue = 1000, siteNames = site)
+
+        self._setup = True
+        self._teardown = False
+
         self.testDir = self.testInit.generateWorkDir()
         self.cwd = os.getcwd()
+
 
         return
 
@@ -71,7 +93,21 @@ class JobCreatorTest(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
+
+        
+        myThread = threading.currentThread()
+        
         self.testInit.clearDatabase()
+        
+        time.sleep(2)
+
+        os.popen3('rm -r test/*')
+        
+        self._teardown = True
+
+        return
+
+
 
 
 
@@ -125,13 +161,18 @@ class JobCreatorTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
+        print workloadSpec
         if not workloadSpec:
+            print "Should never be assigning workloadSpec"
             workloadSpec = "TestSingleWorkload/TestHugeTask"
 
 
-        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
-                                name = "wf001", task="Merge")
+        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman", name = "wf001", task="Merge")
         testWorkflow.create()
+
+        print "Have created workflow"
+        print testWorkflow
+        print testWorkflow.spec
 
         for i in range(0, nSubs):
 
@@ -239,7 +280,8 @@ class JobCreatorTest(unittest.TestCase):
             testFileset = Fileset(name = "TestFileset"+nameStr)
             testFileset.create()
 
-            for j in range(0,2000):
+            print "About to go through one iteration of job creation"
+            for j in range(0,5000):
                 #pick a random site
                 site = self.sites[0]
                 testFile = File(lfn = "/multLfn"+nameStr+str(j), size = 1024, events = 10)
@@ -290,6 +332,8 @@ class JobCreatorTest(unittest.TestCase):
 
         testJobCreator = JobCreator(config)
         testJobCreator.prepareToStart()
+
+        time.sleep(30)
 
         print "Killing"
         myThread.workerThreadManager.terminateWorkers()
@@ -387,6 +431,8 @@ class JobCreatorTest(unittest.TestCase):
         wmTask     = wmWorkload.getTask("Merge")
         #print wmTask.data
 
+        print "Starting testC"
+
         wmTask.data.section_("seeders")
         wmTask.data.seeders.section_("RandomSeeder")
         wmTask.data.seeders.section_("RunAndLumiSeeder")
@@ -405,7 +451,7 @@ class JobCreatorTest(unittest.TestCase):
 
         nSubs = 5
 
-        self.createSingleSiteCollection("first", nSubs, os.getcwd() + "/basicWorkloadUpdated.pcl")
+        self.createSingleSiteCollection(instance = "first", nSubs = nSubs, workloadSpec = os.path.join(os.getcwd(), "basicWorkloadUpdated.pcl"))
 
         config = self.getConfig()
 
@@ -418,6 +464,8 @@ class JobCreatorTest(unittest.TestCase):
 
         print "Killing"
         myThread.workerThreadManager.terminateWorkers()
+
+        print myThread.dbi.processData('SELECT spec FROM wmbs_workflow')[0].fetchall()
 
         
         result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')
@@ -448,6 +496,9 @@ class JobCreatorTest(unittest.TestCase):
         This is not well tested, since I don't know which location it will end up in.
 
         """
+
+        #return
+
 
         print "Starting testD"
         print os.getcwd()
@@ -538,12 +589,24 @@ class JobCreatorTest(unittest.TestCase):
         myThread.workerThreadManager.terminateWorkers()
         stopTime = time.clock()
 
+        #time.sleep(90)
+
         print "Time taken: "
         print stopTime - startTime
 
+        dirs = os.listdir('test/BasicProduction/Merge')
+
+        self.assertEqual(len(dirs), (nSubs*500)/500)
+        
+        for dir in dirs:
+            self.assertEqual(len(os.listdir('test/BasicProduction/Merge/%s' %(dir))), 500)
+
+
         result = myThread.dbi.processData('SELECT id FROM wmbs_job')
 
-        self.assertEqual(len(result[0].fetchall()), nSubs * 200)
+        self.assertEqual(len(result[0].fetchall()), nSubs * 500)
+
+        
 
         return
 

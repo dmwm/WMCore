@@ -5,8 +5,8 @@ Defines default config values for JobSubmitter specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.2 2009/10/28 20:26:32 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.3 2009/11/17 16:54:13 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -33,9 +33,11 @@ config.JobSubmitter.pluginName    = 'TestPlugin'
 config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
 config.JobSubmitter.submitDir     = os.path.join(os.getcwd(), 'submit')
 config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
+config.JobSubmitter.submitScript  = os.path.join(os.getcwd(), 'submit.sh')
 config.JobSubmitter.componentDir  = os.path.join(os.getcwd(), 'Components')
-config.JobSubmitter.workerThreads = 4
+config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
+config.JobSubmitter.inputFile     = os.path.join(os.getcwd(), 'FrameworkJobReport-4540.xml')
 
 jsm = config.component_('JobStateMachine')
 

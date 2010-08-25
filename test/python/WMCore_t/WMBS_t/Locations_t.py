@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.11 2009/12/16 18:55:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Locations_t.py,v 1.12 2010/02/15 17:31:57 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import os
 import unittest
@@ -152,6 +152,39 @@ class LocationsTest(unittest.TestCase):
             self.assertEqual(location[2], 1868)
 
         return
+
+
+
+    def testGetSiteInfo(self):
+        """
+        _testGetSiteInfo_
+        
+        Test our ability to retrieve ce, se names, etc.
+        """
+
+        myThread = threading.currentThread()        
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+
+        locationNew = daoFactory(classname = "Locations.New")
+
+        locationNew.execute(siteName = "Satsuma", ceName = "Satsuma", seName = "Satsuma", jobSlots = 10)
+        locationNew.execute(siteName = "Choshu", ceName = "Choshu", seName = "Choshu", jobSlots = 10)
+        locationNew.execute(siteName = "Tosa", ceName = "Tosa", seName = "Choshu", jobSlots = 10)
+
+
+        locationInfo = daoFactory(classname = "Locations.GetSiteInfo")
+
+        result = locationInfo.execute(siteName = "Choshu")
+
+        self.assertEqual(result[0]['ce_name'], 'Choshu')
+        self.assertEqual(result[0]['se_name'], 'Choshu')
+        self.assertEqual(result[0]['site_name'], 'Choshu')
+        self.assertEqual(result[0]['job_slots'], 10)
+
+        return
+        
 
         
         

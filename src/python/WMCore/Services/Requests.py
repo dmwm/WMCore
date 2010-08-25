@@ -160,8 +160,7 @@ class SecureRequests(Requests):
         elif os.environ.has_key('X509_HOST_CERT'):
             cert = os.environ['X509_HOST_CERT']
             key = os.environ['X509_HOST_KEY']
-            print cert
-            print key
+    
         # Second preference to User Proxy, very common
         elif os.environ.has_key('X509_USER_PROXY'):
             cert = os.environ['X509_USER_PROXY']

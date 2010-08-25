@@ -50,6 +50,7 @@ class SubscriptionTest(unittest.TestCase):
         
         locationAction = self.daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "goodse.cern.ch")
+        locationAction.execute(siteName = "testse.cern.ch")
         locationAction.execute(siteName = "badse.cern.ch")
         
         return
@@ -703,10 +704,13 @@ class SubscriptionTest(unittest.TestCase):
 
         goldenFiles = [testFileA, testFileB, testFileC, testFileD, testFileE,
                        testFileF]
+
         for availableFile in availableFiles:
             assert availableFile in goldenFiles, \
                    "ERROR: Unknown available file"
             goldenFiles.remove(availableFile)
+
+
 
         assert len(goldenFiles) == 0, \
                "ERROR: Missing available files after rollback."
@@ -1243,6 +1247,60 @@ class SubscriptionTest(unittest.TestCase):
         fourthResult = testSubscription.getJobGroups()
         self.assertFalse(fourthResult, \
                             "Should be no jobgroups, found %s" % (fourthResult,))
+
+
+    def testDeleteEverything(self):
+        """
+        _testDeleteEverything_
+        
+        Tests the delete function that should delete all component of a subscription
+        """
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileA.addRun(Run(1, *[45]))
+                                 
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))                         
+        testFileB.addRun(Run(1, *[45]))
+        
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileC.addRun(Run(2, *[48]))
+         
+        testFileA.create()
+        testFileB.create()
+        testFileC.create()
+        
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testFileset2 = Fileset(name = "TestFileset2")
+        testFileset2.create()
+        
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+        testSubscription2 = Subscription(fileset = testFileset2,
+                                         workflow = testWorkflow)
+        testSubscription2.create()
+
+        testSubscription.deleteEverything()
+
+        self.assertEqual(testSubscription.exists(), False)
+        self.assertEqual(testWorkflow.exists(), 1)
+        self.assertEqual(testFileset.exists(),  False)
+        self.assertEqual(testFileset2.exists(), 2)
+    
 
 if __name__ == "__main__":
     unittest.main()

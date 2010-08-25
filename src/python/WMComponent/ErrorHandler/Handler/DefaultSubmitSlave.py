@@ -5,8 +5,8 @@ Slave used for default run failure handler.
 
 __all__ = []
 __revision__ = \
-    "$Id: DefaultSubmitSlave.py,v 1.2 2008/09/30 18:25:38 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+    "$Id: DefaultSubmitSlave.py,v 1.3 2009/05/11 14:59:45 afaq Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import threading
@@ -30,4 +30,19 @@ class DefaultSubmitSlave(DefaultSlave):
         # messages that might have been published, will not be send.
         myThread.msgService.finish()
 
-        time.sleep(sleepTime) 
+        time.sleep(sleepTime)
+
+        # Discover the jobs that failed in submit step (with status 'submitfailed')
+        jobs = listSubmitFailed.execute()
+        # Retries < max retry count
+        for ajob in jobs:
+                # Retries < max retry count
+                if ajob['retry_count'] < ajob['retry_amx']:
+                        #SIMON's CODE SHOULD PUT the job in "exhausted" state
+                # Check if Retries >= max retry count
+                if ajob['retry_count'] >= ajob['retry_max']:
+                        #SIMON's CODE SHOULD PUT the job in "retrycooloff" state
+        myThread.msgService.finish()
+
+        time.sleep(sleepTime)
+ 

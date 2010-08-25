@@ -12,7 +12,7 @@ import logging
 from IMProv.IMProvNode import IMProvNode
 from IMProv.IMProvDoc import IMProvDoc
 
-from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
+from WMCore.Services.DBS.DBSReader import DBSReader
 
 
 class XMLFileblock(list):

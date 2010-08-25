@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.15 2010/05/03 15:40:28 spigafi Exp $"
-__revision__ = "$Revision: 1.15 $"
+__version__ = "$Id: Task.py,v 1.16 2010/05/03 20:36:28 spigafi Exp $"
+__revision__ = "$Revision: 1.16 $"
 
 import os.path
 # import threading # seems unused
@@ -191,13 +191,12 @@ class Task(DbObject):
         Load jobs from the database
         """
         
+        # this check could be improved...
         if self.data['id'] < 0:
             self.exists(db)
         
-        
         jobList = db.objLoad(self, classname = 'Task.GetJobs') 
-        
-        
+           
         # update the jobs information
         for job in jobList:
             tmp = Job()
@@ -231,7 +230,8 @@ class Task(DbObject):
         remove task object from database (with all jobs)
         """
         
-        if not self.exists(db):
+        if not self.existsInDataBase :
+            # could this message be changed?
             raise TaskError("The following task instance cannot be removed" + \
                       " since it is not in the database: %s" % self)
         

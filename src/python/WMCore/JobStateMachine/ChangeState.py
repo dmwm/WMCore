@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.6 2009/07/02 19:21:26 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ChangeState.py,v 1.7 2009/07/02 21:57:27 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -63,7 +63,7 @@ class ChangeState(WMObject):
                                      dbinterface = self.dbi)
 
         server = CouchServer(self.config.JobStateMachine.couchurl)
-        self.couchdb = server.connectDatabase('JSM/JobHistory')
+        self.couchdb = server.connectDatabase('jsm_job_history')
 
     def propagate(self, jobs, newstate, oldstate):
         """
@@ -99,21 +99,22 @@ class ChangeState(WMObject):
         TODO: handle attachments
         """
         for job in jobs:
+            print "job is %s" % job
             doc = {'type': 'state change'}
-            doc['oldstate'] = oldstate
-            doc['newstate'] = newstate
-            if job['couch_record']:
+            doc['old_state'] = oldstate
+            doc['new_state'] = newstate
+            if 'couch_record' in job:
                 doc['parent'] = job['couch_record']
             doc['job'] = job
             self.couchdb.queue(doc, True)
-        result = self.couchdb.commit()
-        assert len(jobs) == len(result), \
+        goodresult, badresult = self.couchdb.commitQueued()
+        assert len(jobs) == len(goodresult), \
                     "Got less than I was expecting from CouchDB"
         if oldstate == 'none':
             def function(item1, item2):
                 item1['couch_record'] = item2['id']
                 return item1
-            jobs = map(function, jobs, result)
+            jobs = map(function, jobs, goodresult)
         return jobs
 
 

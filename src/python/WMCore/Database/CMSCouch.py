@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.33 2009/07/02 21:03:30 meloam Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: CMSCouch.py,v 1.34 2009/07/02 21:57:28 meloam Exp $"
+__version__ = "$Revision: 1.34 $"
 
 try:
     # Python 2.6
@@ -151,6 +151,7 @@ class Requests:
         request will determine the action take by the server (be careful with
         DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
         """
+        #raise RuntimeError, "url is %s" % self.url
         status, data = httpRequest(self.url, uri, data, request)
         if  (decode == False):
             return data
@@ -259,25 +260,40 @@ class Database(CouchDBRequests):
         doc['_deleted'] = True
         self.queue(doc)
 
-    def commit(self, doc=None, returndocs = False, timestamp = False, viewlist=[]):
+    def commitQueued(self, doc=None, returndocs = False, timestamp = False, viewlist=[]):
         """
         Add doc and/or the contents of self._queue to the database. If returndocs
         is true, return document objects representing what has been committed. If
         timestamp is true timestamp all documents with a date formatted like:
         2009/01/30 18:04:11 - this will be the timestamp of when the commit was
         called, it will not override an existing timestamp field.
-        TODO: implement returndocs
+        
+        Returns a tuple:
+            (list of good documents, list of errored documents)
         """
-        result = ()
-        if len(self._queue) > 0:
+        if (len(self._queue) > 0) or doc:
             if doc:
                 self.queue(doc)
             if timestamp:
                 self._queue = self.timestamp(self._queue)
-            # commit in thread to avoid blocking others
+            
             uri  = '/%s/_bulk_docs/' % self.name
             data = {'docs': list(self._queue)}
-            status, data = httpRequest(self.url, uri , data, 'POST', viewlist)
+                        
+            result = self.post(uri, data)
+            # now we need to check if there were conflicts with the updates
+            # we attempted
+            erroredDocs = []
+            goodDocs    = []
+            for row in result:
+                if 'error' in row:
+                    erroredDocs.append(row)
+                else:
+                    row['ok'] = True
+                    goodDocs.append(row)
+                
+            return goodDocs, erroredDocs   
+            
 #            thr  = HttpRequestThread(self.url, uri, data, 'POST')
 #            thr.start() 
 #            if  len(self._queue) < self._queue_size:
@@ -292,17 +308,21 @@ class Database(CouchDBRequests):
             # if we will wait for all request then we should use thr.join()
 #            result = self.post('/%s/_bulk_docs/' % self.name, 
 #                                 {'docs': self._queue})
-            self._queue = []
-            return result
-        elif doc:
-            if timestamp:
-                doc = self.timestamp(doc)
-            if  '_id' in doc.keys():
-                return self.put('/%s/%s' % (self.name,
-                                            urllib.quote_plus(doc['_id'])),
-                                            doc)
-            else:
-                return self.post('/%s' % self.name, doc)
+        else:
+            raise RuntimeError, "No documents were provided to commit"
+        
+    def commit(self, doc=None, returndocs = False, timestamp = False, viewlist=[]):
+        if not doc:
+            raise RuntimeError, "No document provided to commit"
+        
+        if timestamp:
+            doc = self.timestamp(doc)
+        if  '_id' in doc.keys():
+            return self.put('/%s/%s' % (self.name,
+                                        urllib.quote_plus(doc['_id'])),
+                                        doc)
+        else:
+            return self.post('/%s' % self.name, doc)
 
     def document(self, id):
         """
@@ -395,8 +415,9 @@ class CouchServer(CouchDBRequests):
     More info http://wiki.apache.org/couchdb/HTTP_database_API
     """
     
-    def __init__(self, dbname, dburl='localhost:5984'):
+    def __init__(self, dburl='localhost:5984'):
         CouchDBRequests.__init__(self, dburl)
+        self.url = dburl
 
     def listDatabases(self):
         return self.get('/_all_dbs')

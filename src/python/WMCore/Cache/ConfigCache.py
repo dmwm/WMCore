@@ -10,8 +10,8 @@
 import WMCore.Database.CMSCouch as CMSCouch
 import urllib
 import md5
-__revision__ = "$Id: ConfigCache.py,v 1.4 2009/06/09 20:45:12 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ConfigCache.py,v 1.5 2009/07/02 21:57:28 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 
 class WMConfigCache:
     ''' 
@@ -47,7 +47,7 @@ class WMConfigCache:
         '''
         document = self.database.document(docid)
         self.database.queueDelete(document)
-        self.database.commit()
+        self.database.commitQueued()
         
     def addConfig(self, newConfig ):
         '''
@@ -148,6 +148,7 @@ class WMConfigCache:
     
     def wrapView(self, viewdata):
         '''converts the view return values into Document objects'''
+        print viewdata
         for row in viewdata[u'rows']:
             row = CMSCouch.makeDocument(row)
         return viewdata
@@ -173,7 +174,7 @@ class WMConfigCache:
             TODO: add support for different database URLs 
         """  
         self.dbname = dbname2
-        self.couch = CMSCouch.CouchServer(dbname2, dburl)
+        self.couch = CMSCouch.CouchServer(dburl)
         if self.dbname not in self.couch.listDatabases():
             self.createDatabase()
         self.database = self.couch.connectDatabase(self.dbname)
@@ -199,7 +200,7 @@ class WMConfigCache:
                         }
                      """ }}
         database.queue( hashViewDoc )
-        database.commit()
+        database.commitQueued()
         return database
     def deleteDatabase(self):
         '''deletes an existing database (be careful!)'''

@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.21 2009/10/14 19:28:27 meloam Exp $"
+    "$Id: TestInit.py,v 1.22 2009/10/19 19:55:30 sfoulkes Exp $"
 __version__ = \
-    "$Revision: 1.21 $"
+    "$Revision: 1.22 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -110,27 +110,24 @@ class TestInit:
         if useDefault is set to False, it will not instantiate the
         schemas in the defaultModules array.
         """
-        try:
-            defaultModules = ["WMCore.MsgService", "WMCore.ThreadPool", \
-                              "WMCore.Trigger"]
-            if not useDefault:
-                defaultModules = []
+        defaultModules = ["WMCore.MsgService", "WMCore.ThreadPool", \
+                          "WMCore.Trigger"]
+        if not useDefault:
+            defaultModules = []
 
-            # filter out unique modules
-            modules = {}
-            for module in (defaultModules + customModules):
-                modules[module] = 'done'
-            self.init.setSchema(modules.keys(), params = params)
+        # filter out unique modules
+        modules = {}
+        for module in (defaultModules + customModules):
+            modules[module] = 'done'
+        self.init.setSchema(modules.keys(), params = params)
             
-            # store the list of modules we've added to the DB
-            modules = {}
-            for module in (defaultModules + customModules + self.currModules):
-                modules[module] = 'done'
-            self.currModules = modules.keys()
-            
-        except:
-            self.init.clearDatabase()
-        
+        # store the list of modules we've added to the DB
+        modules = {}
+        for module in (defaultModules + customModules + self.currModules):
+            modules[module] = 'done'
+
+        self.currModules = modules.keys()
+        return
 
     def initializeSchema(self, modules = []):
         """

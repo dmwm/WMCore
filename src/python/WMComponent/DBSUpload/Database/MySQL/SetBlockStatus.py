@@ -6,8 +6,8 @@ Create new block in dbsbuffer_block
 Update file to reflect block information
 """
 
-__revision__ = "$Id: SetBlockStatus.py,v 1.10 2009/12/16 17:45:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: SetBlockStatus.py,v 1.11 2010/02/20 21:11:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 import exceptions
@@ -47,8 +47,6 @@ class SetBlockStatus(DBFormatter):
         """
         bindVars = []
 
-        locations = list(set(locations))
-
         
         #It gets a bit weird here.
         #Basically, the DBSAPI has preset the OpenForWriting status in a block to be a string 1 or 0
@@ -72,6 +70,7 @@ class SetBlockStatus(DBFormatter):
 
         if res1 == []:
             sql = self.sql
+            locations = list(set(locations))            
             for location in locations:
                 bindVars.append({"block": block, "location": location, "status": status, "time": time})
         else:

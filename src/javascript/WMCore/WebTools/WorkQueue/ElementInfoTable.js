@@ -1,7 +1,7 @@
 var elementTable = function(divID) {
         
     var formatUrl = function(elCell, oRecord, oColumn, sData) { 
-            elCell.innerHTML = "<a href='" + sData + "monitor' target='_blank'>" + sData + "</a>"; 
+            elCell.innerHTML = "<a href='" + sData + "monitor' target='_blank'>" + sData.split('/')[2] + "</a>"; 
         };
         
 	var dateFormatter = function(elCell, oRecord, oColumn, oData) {

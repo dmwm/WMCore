@@ -77,7 +77,10 @@ class RequestMakerInterface:
     def loadRequestSchema(self, workload, requestSchema):
         schema = workload.request.section_('schema')
         for key, value in requestSchema.iteritems():
-            setattr(schema, key, value)
+            try:
+                setattr(schema, key, value)
+            except Exception, ex:
+                continue
         schema.timeStamp = int(time.time())
         schema = workload.request.schema
 

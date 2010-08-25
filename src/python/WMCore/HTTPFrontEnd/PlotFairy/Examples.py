@@ -10,6 +10,12 @@ except:
 WORDS = [w.strip().replace("'","") for w in open('/usr/share/dict/words').readlines()]
 rbool = lambda: random.random()>0.5    
 
+def random_legend():
+    return random.choice(['left','right','top','bottom','topleft','topright','bottomleft','bottomright']+['null']*4)
+
+def random_sort():
+    return random.choice(['label','label_reverse','value','value_reverse']+['null']*2)
+
 def random_colour():
     return '#%02x%02x%02x'%(random.randint(0,255),random.randint(0,255),random.randint(0,255))
     
@@ -69,7 +75,7 @@ def random_quality_map(x=10,y=5):
             'title':random.choice(WORDS),
             'colour0':random_colour(),
             'colour1':random_colour(),
-            'xaxis':{'label':random.choice(WORDS),'min':random.randint(0,256),'width':random.randint(0,16),'bins':x},
+            'xaxis':{'label':random.choice(WORDS),'min':random.randint(0,256),'width':random.randint(1,16),'bins':x},
             'yaxis':{'label':random.choice(WORDS),'labels':[random.choice(WORDS) for i in range(y)]},
             'data':[[random.random() for i in range(x)] for j in range(y)],
             }
@@ -80,15 +86,18 @@ def random_scatter(x=10):
             'xaxis':{'label':random.choice(WORDS),'format':random.choice(('num','time','binary','si','hex'))},
             'yaxis':{'label':random.choice(WORDS),'format':random.choice(('num','time','binary','si','hex'))},
             'draw_lines':rbool(),
-            'series':[{'label':random.choice(WORDS),'colour':random_colour(),'x':random_data(x),'y':random_data(x),'marker':random.choice('*v^<>*o.')} for i in range(random.randint(1,5))]
+            'series':[{'label':random.choice(WORDS),'colour':random_colour(),'x':random_data(x),'y':random_data(x),'marker':random.choice('*v^<>*o.')} for i in range(random.randint(1,5))],
+            'legend':random_legend(),
+            'sort':random_sort()
     }
     
 def random_bar(x=10):
     return {
             'title':random.choice(WORDS),
-            'xaxis':{'label':random.choice(WORDS),'format':random.choice(('num','time','binary','si','hex')),'min':random.randint(0,256),'width':random.randint(0,16),'bins':x},
+            'xaxis':{'label':random.choice(WORDS),'format':random.choice(('num','time','binary','si','hex')),'min':random.randint(0,256),'width':random.randint(1,16),'bins':x},
             'yaxis':{'label':random.choice(WORDS),'format':random.choice(('num','time','binary','si','hex')),'log':rbool(),'logbase':random.randint(2,10)},
-            'series':random_series(length=x)
+            'series':random_series(length=x),
+            'legend':random_legend(),'sort':random_sort()
             }
     
 def random_pie():
@@ -96,7 +105,8 @@ def random_pie():
             'title':random.choice(WORDS),
             'series':random_labelled_series(),
             'shadow':rbool(),
-            'percentage':rbool()
+            'percentage':rbool(),
+            'sort':random_sort()
             }
 
 def random_sparkline():
@@ -105,7 +115,8 @@ def random_sparkline():
             'overlay':rbool(),
             'linewidth':random.random()*3,
             'text_fraction':random.random()*0.5,
-            'series':random_series(length=20)
+            'series':random_series(length=20),
+            'sort':random_sort()
             }    
 def random_wave():
     return {
@@ -115,14 +126,16 @@ def random_wave():
             'truncate_text':random.randint(1,50),
             'labelled':rbool(),
             'text_span_bins':random.randint(3,10),
-            'xaxis':{'label':random.choice(WORDS)}
+            'xaxis':{'label':random.choice(WORDS)},
+            'sort':random_sort()
             }
 def random_cumulative(x=10):
     return {
             'title':random.choice(WORDS),
-            'xaxis':{'label':random.choice(WORDS),'format':random.choice(('num','time','binary','si','hex')),'min':random.randint(0,256),'width':random.randint(0,16),'bins':x},
+            'xaxis':{'label':random.choice(WORDS),'format':random.choice(('num','time','binary','si','hex')),'min':random.randint(0,256),'width':random.randint(1,16),'bins':x},
             'yaxis':{'label':random.choice(WORDS),'format':random.choice(('num','time','binary','si','hex')),'log':rbool(),'logbase':random.randint(2,10)},
-            'series':random_series(length=x+1)
+            'series':random_series(length=x+1),
+            'legend':random_legend(),'sort':random_sort()
             }
 
 plots = {
@@ -143,7 +156,7 @@ for t,f in plots.items():
     for i in range(3):
         d = f()
         print "<tr>"
-        print "<td><h2>%s-%s</h2><br><pre>"%(t,i)
+        print "<td><h2><a href='http://localhost:8010/plotfairy/doc/?type=%s'>%s-%s</a></h2><br><pre>"%(t,t,i)
         print json.dumps(d,sort_keys=True,indent=4)
         print "</pre></td><td>"
         print "<img src='http://localhost:8010/plotfairy/plot/?type=%s&data=%s'>"%(t,urllib.quote(json.dumps(d,ensure_ascii=True)))

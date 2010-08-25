@@ -3,7 +3,7 @@ from Validators import *
 from Plot import Plot
 
 
-class LabelledBar(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XAutoLabelledAxisMixin,YNumericAxisMixin,LabelledSeriesMixin):
+class LabelledBar(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XAutoLabelledAxisMixin,YNumericAxisMixin,LabelledSeriesMixin,WatermarkMixin,LegendMixin):
     '''
     Draw a bar chart with labelled bins.
     

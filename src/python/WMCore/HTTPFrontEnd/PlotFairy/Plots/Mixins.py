@@ -471,7 +471,8 @@ class BinnedNumericSeriesMixin(Mixin):
                                                                                             StringBase('label',None,default='',doc_user="Series label."),
                                                                                             ListElementBase('values',(int,float),allow_missing=False,doc_user="List of series values."),
                                                                                             ColourBase('colour',default=None,doc_user="Series colour. Will be selected from colourmap if unspecified.")
-                                                                                            ]),allow_missing=False)]
+                                                                                            ]),allow_missing=False),
+                            StringBase('sort',options=('label','label_reverse','value','value_reverse'),default=None,doc_user="How to sort the series. Also applies to the legend, if any.")]
         self.__datamode = kwargs.get('BinnedNumericSeries_DataMode','bin')
         self.__logmode = kwargs.get('BinnedNumericSeries_LogMode','clean')
         self.__logsrc = kwargs.get('BinnedNumericSeries_LogSrc','log_y')
@@ -490,6 +491,15 @@ class BinnedNumericSeriesMixin(Mixin):
             xbins += 1
             
         log_enabled = self.props.get(self.__logsrc,False)
+        
+        if self.props.sort=='label':
+            self.props.series = sorted(self.props.series,key=lambda x:x['label'])
+        elif self.props.sort=='label_reverse':
+            self.props.series = sorted(self.props.series,key=lambda x:x['label'],reverse=True)
+        elif self.props.sort=='value':
+            self.props.series = sorted(self.props.series,key=lambda x:sum(x['values']))
+        elif self.props.sort=='value_reverse':
+            self.props.series = sorted(self.props.series,key=lambda x:sum(x['values']),reverse=True)
         
         for i,series in enumerate(self.props.series):
             if series['colour']==None:
@@ -517,6 +527,7 @@ class BinnedNumericSeriesMixin(Mixin):
                 series['logmax_round'] = 0
             series['min'] = min(series['values'])
             series['max'] = max(series['values'])
+            series['integral'] = sum(series['values'])
             
 class LabelledSeriesMixin(Mixin):
     def __init__(self,*args,**kwargs):
@@ -525,13 +536,23 @@ class LabelledSeriesMixin(Mixin):
                                                                                             FloatBase('value',allow_missing=False,doc_user="Item value."),
                                                                                             ColourBase('colour',default=None,doc_user="Item colour. Set from colourmap if unspecified."),
                                                                                             ElementBase('explode',(int,float),default=0,doc_user="Proportion of radius to explode data.")
-                                                                                            ]),allow_missing=False)]
+                                                                                            ]),allow_missing=False),
+                            StringBase('sort',options=('label','label_reverse','value','value_reverse'),default=None,doc_user="How to sort the series. Also applies to the legend, if any.")]
         super(LabelledSeriesMixin,self).__init__(*args,**kwargs)
     def data(self,*args,**kwargs):
         cmap = self.props.colourmap
         for i,series in enumerate(self.props.series):
+            series['integral']=series['value']
             if series['colour']==None:
                 series['colour']=cmap(float(i)/len(self.props.series))
+        if self.props.sort=='label':
+            self.props.series = sorted(self.props.series,key=lambda x:x['label'])
+        elif self.props.sort=='label_reverse':
+            self.props.series = sorted(self.props.series,key=lambda x:x['label'],reverse=True)
+        elif self.props.sort=='value':
+            self.props.series = sorted(self.props.series,key=lambda x:x['integral'])
+        elif self.props.sort=='value_reverse':
+            self.props.series = sorted(self.props.series,key=lambda x:x['integral'],reverse=True)
         #super(LabelledSeriesMixin,self).data(*args,**kwargs)
 
 class LabelledSeries2DMixin(Mixin):
@@ -541,7 +562,9 @@ class LabelledSeries2DMixin(Mixin):
                                                                                             ListElementBase('x',(int,float),allow_missing=False,doc_user="Series x-values."),
                                                                                             ListElementBase('y',(int,float),allow_missing=False,doc_user="Series y-values."),
                                                                                             MarkerBase('marker'),ColourBase('colour',default=None,doc_user="Marker to use for series data points.")
-                                                                                            ]),allow_missing=False,doc_user="Series x and y value lists must be the same length.")]
+                                                                                            ]),allow_missing=False,doc_user="Series x and y value lists must be the same length."),
+                            StringBase('sort',options=('label','label_reverse','value','value_reverse'),default=None,doc_user="How to sort the series. Also applies to the legend, if any.")
+                            ]
         super(LabelledSeries2DMixin,self).__init__(*args,**kwargs)
     def data(self,*args,**kwargs):
         cmap = self.props.colourmap
@@ -553,7 +576,16 @@ class LabelledSeries2DMixin(Mixin):
                     series['y'] += [0.]*(len(series['x'])-len(series['y']))
                 else:
                     series['x'] += [0.]*(len(series['y'])-len(series['x']))    
-                
+            series['integral'] = sum([x*y for x,y in zip(series['x'],series['y'])])
+        if self.props.sort=='label':
+            self.props.series = sorted(self.props.series,key=lambda x:x['label'])
+        elif self.props.sort=='label_reverse':
+            self.props.series = sorted(self.props.series,key=lambda x:x['label'],reverse=True)
+        elif self.props.sort=='value':
+            self.props.series = sorted(self.props.series,key=lambda x:x['integral'])
+        elif self.props.sort=='value_reverse':
+            self.props.series = sorted(self.props.series,key=lambda x:x['integral'],reverse=True)
+            
         
 class ArrayMixin(Mixin):
     def __init__(self,*args,**kwargs):
@@ -615,3 +647,46 @@ class WatermarkMixin(Mixin):
             except:
                 pass
                 
+class LegendMixin(Mixin):
+    def __init__(self,*args,**kwargs):
+        self.validators += [StringBase('legend',options=('top','bottom','left','right','topleft','topright','bottomleft','bottomright'),default=None,doc_user="Location of legend to display."),
+                            IntBase('legend_maxitems',min=0,default=-1,doc_user="Maximum items to show in legend, or -1."),
+                            ElementBase('legend_value',bool,default=False,doc_user="Whether to append items with their integral."), 
+                            ]
+        super(LegendMixin,self).__init__(*args,**kwargs)
+    def postdata(self):
+        axes = self.figure.gca()
+        if self.props.legend==None:
+            return
+        loc = {
+                'top':9,
+                'left':6,
+                'bottom':8,
+                'right':7,
+                'topleft':2,
+                'topright':1,
+                'bottomleft':3,
+                'bottomright':4
+            }.get(self.props.legend,-1)
+        if loc!=-1:
+            if hasattr(self.props,'legend_items'):
+                items = self.props.legend_items
+                sort = self.props.get('sort',None)
+                if sort=='label':
+                    items = sorted(items,key=lambda x: x['label'])
+                elif sort=='label_reverse':
+                    items = sorted(items,key=lambda x: x['label'],reverse=True)
+                elif sort=='value':
+                    items = sorted(items,key=lambda x: x['value'])
+                elif sort=='value_reverse':
+                    items = sorted(items,key=lambda x: x['value'],reverse=True)
+                if self.props.legend_maxitems>0:
+                    items = items[:self.props.legend_maxitems]
+                if self.props.legend_value:
+                    formatter = SIFormatter()
+                    for item in items:
+                        item['label'] = '%s [%s]'%(item['label'],formatter(item['value']))
+                axes.legend([item['artist'] for item in items],[item['label'] for item in items],loc=loc)
+            else:
+                axes.legend(loc=loc)
+            

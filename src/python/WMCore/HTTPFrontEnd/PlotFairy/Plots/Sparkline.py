@@ -75,8 +75,8 @@ class Sparkline(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,BinnedNumericSeri
                     label = series['label']
                     if len(label)>0:
                         text_size = min(font_size(label,text_pixels),font_size('',text_height))
-                        print 'text_size',text_size
-                        print 'text_right',text_right,'text_mid',text_mid[i]
+                        #print 'text_size',text_size
+                        #print 'text_right',text_right,'text_mid',text_mid[i]
                         self.figure.text(text_right,text_mid[i],label,color=series['colour'],ha='right',va='center',fontsize=text_size)
                 
                 

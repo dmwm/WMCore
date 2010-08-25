@@ -8,7 +8,7 @@ def makeRequest(url, values=None, type='GET', accept="text/plain",
                 contentType = None):
     headers = {}
     contentType = contentType or "application/x-www-form-urlencoded"
-    headers = {"Content-type": contentType,
+    headers = {"content-type": contentType,
                "Accept": accept}
     data = None
     if type == 'GET' and values:
@@ -27,6 +27,17 @@ def makeRequest(url, values=None, type='GET', accept="text/plain",
         
     if type != 'POST' and data != None:
         uri = '%s?%s' % (uri, data)
+        
+    # need to specify Content-length for POST method
+    # TODO: this function needs refactoring - too verb-related branching
+    if type == "POST":
+        if data:
+            print "POST method, data: '%s' len: '%s'" % (data, len(data))
+            headers.update({"content-length": len(data)})
+        else:
+            print "POST method, data: '%s'" % data
+            headers.update({"content-length" : 0})
+        
     conn = HTTPConnection(parser.netloc)
     conn.connect()
     conn.request(type, uri, data, headers)

@@ -6,12 +6,12 @@ Helper class that other objects should inherit from
 
 """
 __all__ = []
-__revision__ = "$Id: WMObject.py,v 1.7 2009/08/24 16:03:25 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WMObject.py,v 1.8 2009/08/31 16:43:44 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from sets import Set
 
-class WMObject:
+class WMObject(object):
     """
     Helper class that other objects should inherit from
     """

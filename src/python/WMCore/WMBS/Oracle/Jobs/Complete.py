@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 """
 _Complete_
-Oracle implementation of Jobs.Complete
 
-move file into wmbs_group_job_acquired
+Oracle implementation of Jobs.Complete
 """
 
 __all__ = []
-__revision__ = "$Id: Complete.py,v 1.4 2009/01/12 19:26:04 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Complete.py,v 1.5 2009/03/20 14:29:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WMBS.MySQL.Jobs.Complete import Complete as CompleteJobMySQL
 
 class Complete(CompleteJobMySQL):
-    sql = CompleteJobMySQL.sql
+    insertSQL = CompleteJobMySQL.insertSQL

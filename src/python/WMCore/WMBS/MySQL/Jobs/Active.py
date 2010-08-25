@@ -1,22 +1,23 @@
 #!/usr/bin/env python
 """
 _Active_
-MySQL implementation of Jobs.Active
 
-move file into wmbs_group_job_acquired
+MySQL implementation of Jobs.Active
 """
+
 __all__ = []
-__revision__ = "$Id: Active.py,v 1.6 2009/01/27 16:47:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Active.py,v 1.7 2009/03/20 14:29:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Active(DBFormatter):
-    sql = """insert into wmbs_group_job_acquired (job, jobgroup) VALUES
-             (:job, (select jobgroup from wmbs_job where id = :job))"""
+    insertSQL = """INSERT INTO wmbs_group_job_acquired (job, jobgroup)
+                     SELECT :job, (SELECT jobgroup FROM wmbs_job WHERE id = :job)
+                       FROM dual WHERE NOT EXISTS
+                         (SELECT job FROM wmbs_group_job_acquired WHERE job = :job)"""    
     
-    def execute(self, job=0, conn = None, transaction = False):
-        binds = self.getBinds(job=job)
-        self.dbi.processData(self.sql, binds, conn = conn,
+    def execute(self, job, conn = None, transaction = False):
+        self.dbi.processData(self.insertSQL, {"job": job}, conn = conn,
                              transaction = transaction)        
         return 

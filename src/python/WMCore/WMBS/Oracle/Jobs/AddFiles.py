@@ -15,4 +15,4 @@ class AddFiles(AddFilesJobMySQL):
     sql = """INSERT INTO wmbs_job_assoc (job, fileid)
                SELECT :jobid, :fileid FROM dual WHERE NOT EXISTS
                  (SELECT * FROM wmbs_job_assoc
-                  WHERE job = :jobid AND file = :fileid)"""    
+                  WHERE job = :jobid AND fileid = :fileid)"""    

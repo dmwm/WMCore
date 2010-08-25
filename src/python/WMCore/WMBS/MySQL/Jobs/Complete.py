@@ -1,25 +1,30 @@
 #!/usr/bin/env python
 """
 _Complete_
-MySQL implementation of Jobs.Complete
 
-move file into wmbs_group_job_complete
+MySQL implementation of Jobs.Complete
 """
+
 __all__ = []
-__revision__ = "$Id: Complete.py,v 1.6 2009/02/10 19:32:16 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Complete.py,v 1.7 2009/03/20 14:29:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import time
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Complete(DBFormatter):
-    sql = ["""insert into wmbs_group_job_complete (job, jobgroup) VALUES
-             (:job, (select jobgroup from wmbs_job where id = :job))""",
-           " update wmbs_job set completion_time = %d where id = :job " 
-           % time.time()]
+    insertSQL = """INSERT INTO wmbs_group_job_complete (job, jobgroup)
+                     SELECT :job, (SELECT jobgroup FROM wmbs_job WHERE id = :job)
+                       FROM dual WHERE NOT EXISTS
+                         (SELECT job FROM wmbs_group_job_complete WHERE job = :job)"""
     
-    def execute(self, job=0, conn = None, transaction = False):
-        binds = self.getBinds(job = job) * 2
-        self.dbi.processData(self.sql, binds, conn = conn,
+    updateSQL = "UPDATE wmbs_job SET completion_time = %s WHERE id = :job" % int(time.time())
+    
+    def execute(self, job, conn = None, transaction = False):
+        binds = {"job": job}
+        self.dbi.processData(self.insertSQL, binds, conn = conn,
                              transaction = transaction)
+        self.dbi.processData(self.updateSQL, binds, conn = conn,
+                             transaction = transaction)        
         return

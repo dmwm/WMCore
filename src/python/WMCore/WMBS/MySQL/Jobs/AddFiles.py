@@ -5,8 +5,8 @@ MySQL implementation of Jobs.AddFiles
 """
 
 __all__ = []
-__revision__ = "$Id: AddFiles.py,v 1.8 2009/03/18 19:57:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: AddFiles.py,v 1.9 2009/03/20 14:29:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -18,6 +18,6 @@ class AddFiles(DBFormatter):
     
     def execute(self, id = None, file = None, conn = None, transaction = False):
         binds = self.getBinds(jobid = id, fileid = file)
-        result = self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)        
-        return self.format(result)
+        self.dbi.processData(self.sql, binds, conn = conn,
+                             transaction = transaction)
+        return

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool 
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.18 2009/07/06 20:24:26 sryu Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: WorkQueue.py,v 1.19 2009/07/17 14:30:31 swakef Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import time
 # pylint: disable-msg=W0104,W0622
@@ -52,7 +52,7 @@ class _WQElement(WorkQueueBase):
         self.priority = self.wmSpec.priority
         self.nJobs = nJobs
         #TODO: need to set it NONE
-        self.insertTime = insertTime 
+        self.insertTime = insertTime or int(time.time())
         self.status = status
         self.subscription = None
             
@@ -510,7 +510,7 @@ class WorkQueue(WorkQueueBase):
         wqElements = []
         for ele in elements:
             wqEle = self._getWQElement(ele["wmspec_id"], ele["block_id"], 
-                       ele["num_jobs"], ele["insert_time"], ele["status"])
+                       ele["num_jobs"], ele["insert_time"])
             wqElements.append(wqEle)
         self.updateLocationInfo(wqElements)
         return wqElements

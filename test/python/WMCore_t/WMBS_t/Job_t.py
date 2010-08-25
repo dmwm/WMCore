@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.32 2009/10/14 16:45:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: Job_t.py,v 1.33 2009/10/26 16:53:38 sryu Exp $"
+__version__ = "$Revision: 1.33 $"
 
 import unittest
 import logging
@@ -797,8 +797,7 @@ class JobTest(unittest.TestCase):
         testJob.create(group = testJobGroup)
         bogusJob.create(group = bogusJobGroup)
         
-        failInputAction = self.daoFactory(classname = "Jobs.FailInput")
-        failInputAction.execute(jobID = testJob["id"])
+        testJob.failInputFiles()
 
         availFiles = len(testSubscription.filesOfStatus("Available"))
         assert availFiles == 0, \
@@ -895,18 +894,17 @@ class JobTest(unittest.TestCase):
         testJobB.save()
         testJobC.save()
 
-        completeInputAction = self.daoFactory(classname = "Jobs.CompleteInput")
-        completeInputAction.execute(jobID = testJobA["id"])
-
+        testJobA.completeInputFiles()
+        
         compFiles = len(testSubscription.filesOfStatus("Completed"))
         assert compFiles == 0, \
                "Error: test sub has wrong number of complete files: %s" % compFiles
 
         testJobB["outcome"] = "success"
         testJobB.save()
-
-        completeInputAction.execute(jobID = testJobB["id"])        
-
+        
+        testJobB.completeInputFiles()
+        
         availFiles = len(testSubscription.filesOfStatus("Available"))
         assert availFiles == 0, \
                "Error: test sub has wrong number of available files: %s" % availFiles

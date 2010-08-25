@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.13 2010/01/19 20:19:01 spiga Exp $"
-__version__  = "$Revision: 1.13 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.14 2010/05/19 16:24:33 spiga Exp $"
+__version__  = "$Revision: 1.14 $"
 __author__   = "ewv@fnal.gov"
 
 import types
@@ -239,6 +239,7 @@ class SEBlackWhiteListParser(BlackWhiteListParser):
     """
 
     def __init__(self, whiteList=None, blackList=None,  logger=None, dict={}):
+        if logger: dict['logger']=logger
         self.siteDBAPI = SiteDBJSON(dict)
         super(SEBlackWhiteListParser, self).__init__(whiteList, blackList, logger, self.siteDBAPI.cmsNametoSE, dict)
 
@@ -251,5 +252,6 @@ class CEBlackWhiteListParser(BlackWhiteListParser):
     """
 
     def __init__(self, whiteList=None, blackList=None,  logger=None, dict={}):
+        if logger: dict['logger']=logger
         self.siteDBAPI = SiteDBJSON(dict)
         super(CEBlackWhiteListParser, self).__init__(whiteList, blackList, logger, self.siteDBAPI.cmsNametoCE, dict)

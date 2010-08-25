@@ -4,15 +4,15 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.10 2010/03/02 15:01:32 mnorman Exp $"
-__version__  = "$Revision: 1.10 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.11 2010/03/22 14:28:20 sryu Exp $"
+__version__  = "$Revision: 1.11 $"
 
 import threading
 import logging
 import os
 import os.path
 import traceback
-#import time
+import time
 #import cProfile, pstats
 
 
@@ -30,7 +30,7 @@ from WMCore.ResourceControl.ResourceControl             import ResourceControl
 from WMCore.JobStateMachine.ChangeState                 import ChangeState
 from WMCore.WMSpec.Makers.Interface.CreateWorkArea      import CreateWorkArea
 from WMCore.ProcessPool.ProcessPool                     import ProcessPool
-
+from WMCore.WorkQueue.WorkQueue                         import localQueue
 
 
 
@@ -99,7 +99,9 @@ init jobCreator
                        'askWorkQueue': 0, 'pollSubList': 0, 'pollSubJG': 0, 
                        'pollSubSplit': 0, 'baggage': 0, 'createWorkArea': 0}
 
-
+        if self.config.JobCreator.useWorkQueue:
+            self.workQueue = localQueue(self.config.JobCreater.WorkQueueParam)
+        
         return
 
     def blank(self):
@@ -168,9 +170,8 @@ init jobCreator
 
         self.pollJobs()
         self.pollSubscriptions()
-        self.askWorkQueue()
-
-
+        if self.config.JobCreator.useWorkQueue:
+            self.askWorkQueue()
         return
 
 
@@ -247,10 +248,7 @@ init jobCreator
 
         """
 
-        if not self.config.JobCreator.useWorkQueue:
-            return
-
-        #startTime = time.clock()
+        startTime = time.clock()
 
         workQueueDict = {}
 
@@ -267,10 +265,9 @@ init jobCreator
                 freeSlots = 0
             workQueueDict[location] = freeSlots
 
+        self.workQueue.getWork(workQueueDict)
 
-        #workQueue.getWork(workQueueDict)
-
-        #self.timing['askWorkQueue'] += (time.clock() - startTime)
+        self.timing['askWorkQueue'] += (time.clock() - startTime)
         return
 
         

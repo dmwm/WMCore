@@ -7,8 +7,8 @@ Base class for formatters that create tables.
 
 """
 
-__revision__ = "$Id: DBCreator.py,v 1.5 2008/10/13 12:43:46 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: DBCreator.py,v 1.6 2009/07/16 14:18:13 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -37,6 +37,7 @@ class DBCreator(DBFormatter):
         """
         DBFormatter.__init__(self, logger, dbinterface)
         self.create = {}
+        self.delete = {}
         self.constraints = {}
         self.inserts = {}
         self.indexes = {}
@@ -71,7 +72,31 @@ class DBCreator(DBFormatter):
             
             keys = self.constraints.keys()
             self.logger.debug( keys )
-
+            
+        # delete tables
+        tableKeys = self.delete.keys()
+        tableKeys.sort()
+        
+        didFail = False
+        exceptionList = []
+        for i in tableKeys:
+            self.logger.debug( i )
+            try:
+                self.dbi.processData(self.delete[i], 
+                                     conn = conn, 
+                                     transaction = transaction)
+            except Exception, e:
+                didFail = True
+                exceptionList.append([i,e])
+            pass
+        
+        if didFail: 
+            msg = WMEXCEPTION['WMCore-2'] + '\n\n'
+            for badquery in exceptionList:
+                msg += str(self.create[badquery[0]]) +'\n\n' +str(badquery[1])
+            self.logger.debug( msg )
+            raise WMException(msg,'WMCore-2')
+        
         for i in self.constraints.keys():
             self.logger.debug( i )
             try:

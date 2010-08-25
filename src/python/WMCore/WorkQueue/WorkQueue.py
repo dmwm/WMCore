@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.100 2010/04/15 16:04:13 sryu Exp $"
-__version__ = "$Revision: 1.100 $"
+__revision__ = "$Id: WorkQueue.py,v 1.101 2010/04/19 18:46:13 sryu Exp $"
+__version__ = "$Revision: 1.101 $"
 
 
 import time
@@ -787,10 +787,21 @@ class WorkQueue(WorkQueueBase):
                 result[block['name']].extend(nodes)
         else:
             raise RuntimeError, "invalid selection"
-		
-		# convert PhEDEx node name to CMS site name
-        [result.__setitem__(data, map(self.SiteDB.phEDExNodetocmsName,
-                                       result[data])) for data in result]
+
+        # convert PhEDEx node name to CMS site name
+        for data in result:
+            sites = []
+            for nodeName in result[data]:
+                try:
+                    siteName = self.SiteDB.phEDExNodetocmsName(nodeName)
+                except ValueError, e:
+                    msg = """%s: Error is ignored 
+                            for missing site match: investigate""" % str(e) 
+                    self.logger.error(msg)
+                else:
+                    sites.append(siteName)     
+            result.__setitem__(data, sites)
+            
         return result, fullRefresh
 
 

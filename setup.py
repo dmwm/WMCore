@@ -90,8 +90,8 @@ def unit_test_extractor(tup, path, filenames):
                 module_suites = unittest.defaultTestLoader.loadTestsFromModule(module)
                 logging.info('Got suites: %s', module_suites)
                 all_test_suites.append(module_suites)
-            except ImportError, e:
-                logging.fatal(e)
+            except Exception, e:
+                logging.fatal("Couldn't load test %s: Exception: %s" % (module_name,e))
                 
             #suites += module_suites
         #except Exception, e:

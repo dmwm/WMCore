@@ -58,6 +58,26 @@ class CMSSWStepHelper(CoreHelper):
         return getattr(self.data.output.modules, name, None)
 
 
+    def setConfigCache(self, url, document, dbName = "config_cache"):
+        """
+        _setConfigCache_
+
+        Set the information required to retrieve a configuration from
+        the config cache.
+
+        url - base URL for the config cache instance
+        document - GUID for the config document
+        dbName - optional, name of the db instance in the couch server
+
+        """
+        self.data.application.configuration.configCacheUrl = url
+        self.data.application.configuration.configId = document
+        self.data.application.configuration.cacheName = dbName
+        docUrl = "%s/%s/%s" % (url, dbName, document)
+        self.data.application.configuration.configUrl = docUrl
+        self.data.application.configuration.retrieveConfigUrl = \
+                                        "%s/pickled_script" % docUrl
+
 
 
 class CMSSW(Template):

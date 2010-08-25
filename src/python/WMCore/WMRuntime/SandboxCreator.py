@@ -4,8 +4,8 @@
 
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.17 2010/05/21 19:12:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: SandboxCreator.py,v 1.18 2010/07/05 00:32:52 meloam Exp $"
+__version__ = "$Revision: 1.18 $"
 import os
 import re
 import tarfile
@@ -120,7 +120,7 @@ class SandboxCreator:
             # package up the WMCore distribution
             # hopefully messing with this magic isn't a recipie for disaster
             wmcorePath = WMCore.__path__[0]
-            archive.add(wmcorePath, '/WMCore/')
+            archive.add(wmcorePath, '/WMCore/', exclude = removePycFiles)
             psetTweaksPath = PSetTweaks.__path__[0]
             archive.add(psetTweaksPath, '/PSetTweaks')
         archive.close()
@@ -130,5 +130,6 @@ class SandboxCreator:
 
         return archivePath
 
-
+def removePycFiles(fileName):
+    return (fileName[-4:] == '.pyc')
 

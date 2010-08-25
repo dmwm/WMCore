@@ -6,7 +6,7 @@ class RequestManager(object):
         print "Using RequestManager Emulator ..."
         self.specGenerator = WMSpecGenerator()
         self.count = 0
-        self.maxWmSpec = 1
+        self.maxWmSpec = 2
     
     def getAssignment(self, teamName=None, request=None):
         if self.count < self.maxWmSpec:
@@ -16,7 +16,7 @@ class RequestManager(object):
             specUrl =self.specGenerator.createProcessingSpec(specName, "file")
         
             #specName = "ReRecoTest_v%sEmulator" % self.count
-            #specUrl =self.specGenerator.create ReRecoSpec(specName, "file")
+            #specUrl =self.specGenerator.createReRecoSpec(specName, "file")
             self.count += 1
             return {specName:specUrl}
         else:
@@ -27,3 +27,12 @@ class RequestManager(object):
     def postAssignment(self, requestName, prodAgentUrl=None):
         # do not thing or return success of fail massage 
         return 
+    
+    def reportRequestProgress(self, requestName, **args):
+        # do not thing or return success of fail massage 
+        return
+    
+    def reportRequestStatus(self, requestName, status):
+        # do not thing or return success of fail massage 
+        return
+    

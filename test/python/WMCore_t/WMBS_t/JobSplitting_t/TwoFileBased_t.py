@@ -5,8 +5,8 @@ _TwoFileBased_t_
 File based splitting test with parentage.
 """
 
-__revision__ = "$Id: TwoFileBased_t.py,v 1.2 2010/06/28 14:48:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TwoFileBased_t.py,v 1.3 2010/06/28 18:55:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import os
@@ -112,24 +112,8 @@ class TwoFileBasedTest(unittest.TestCase):
 
         Clear out WMBS.
         """
-        myThread = threading.currentThread()
-
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-            
-        myThread.transaction.begin()
-            
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-            
-        myThread.transaction.commit()
+        self.testInit.clearDatabase()
         return
-
-
 
     def createLargeFileBlock(self):
         """
@@ -279,20 +263,12 @@ class TwoFileBasedTest(unittest.TestCase):
         
         return
 
-
-
     def testFileParentage(self):
         """
         _testFileParentage_
 
-        
         Test whether we get file parentage correctly
         """
-
-        myThread = threading.currentThread()
-
-        myThread.transaction.begin()
-
         # Create base name
         baseName = makeUUID()
 
@@ -316,10 +292,8 @@ class TwoFileBasedTest(unittest.TestCase):
                            merged = False)
             newFile.create()
             newFile.addParent('%s_first_0' % (baseName))
-            #newFile.addParent('%s_first_1' % (baseName))
             testFileset2.addFile(newFile)
         testFileset2.commit()
-
 
         testFileset3 = Fileset(name = "TestParents3")
         testFileset3.create()
@@ -349,17 +323,11 @@ class TwoFileBasedTest(unittest.TestCase):
                                 name = "wf002", task="Test" )
         testWorkflow.create()
 
-
-
         testSubscription = Subscription(fileset = testFileset4,
                                         workflow = testWorkflow,
                                         split_algo = "TwoFileBased",
                                         type = "Processing")
         testSubscription.create()
-
-        myThread.transaction.commit()
-
-
 
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
@@ -379,14 +347,7 @@ class TwoFileBasedTest(unittest.TestCase):
 
                 fileList.append(file)
         self.assertEqual(len(fileList), 10)
-
-
-
         return
-
-        
-
-
 
 if __name__ == '__main__':
     unittest.main()

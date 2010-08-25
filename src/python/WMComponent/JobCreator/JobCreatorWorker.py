@@ -5,8 +5,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.6 2010/03/03 16:33:28 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.7 2010/03/30 19:22:30 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 import logging
@@ -122,8 +122,9 @@ class JobCreatorWorker:
         wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS", \
                                               subscription = wmbsSubscription, generators=seederList)
         splitParams = self.retrieveJobSplitParams(wmWorkload, workflow.task)
+        logging.debug("Split Params: %s" % splitParams)
         wmbsJobGroups = wmbsJobFactory(**splitParams)
-
+        logging.debug("Job Groups %s" % wmbsJobGroups)
         logging.info("Have jobGroups")
 
         myThread.transaction.commit()

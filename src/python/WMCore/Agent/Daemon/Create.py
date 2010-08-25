@@ -28,7 +28,7 @@ from xml.dom.minidom import Document, Element
 # File mode creation mask of the daemon.
 UMASK = 0
 
-def daemonize(stdout= '/dev/null', stderr= None, stdin= '/dev/null', \
+def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
               workdir= None, startmsg = 'started with pid %s', \
               keepParent = False ):
     '''
@@ -41,7 +41,6 @@ def daemonize(stdout= '/dev/null', stderr= None, stdin= '/dev/null', \
         if it shares a file with stdout then interleaved output
         may not appear in the order that you expect.
     '''
-    raise RuntimeError, "some user of Daemonize is using it wrong, temporary exception to find out who"
     # Do first fork.
     try:
         pid = os.fork()
@@ -174,7 +173,7 @@ information on that.
 """
         print(mess % pidfile)
         sys.exit(1)
-#    return daemonize(stdout = '/tmp/daemon.log', workdir = workdir,startmsg = startmsg, keepParent = keepParent)
+
     return daemonize(workdir = workdir,startmsg = startmsg, keepParent = keepParent)
  
 if __name__ == "__main__":

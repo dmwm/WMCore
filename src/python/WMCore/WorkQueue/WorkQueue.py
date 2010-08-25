@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.50 2009/12/17 16:03:11 sryu Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: WorkQueue.py,v 1.51 2009/12/17 16:51:08 sryu Exp $"
+__version__ = "$Revision: 1.51 $"
 
 # pylint: disable-msg = W0104, W0622
 # pylint: enable-msg = W0104, W0622
@@ -379,7 +379,7 @@ class WorkQueue(WorkQueueBase):
         return len(units)
 
 
-    def status(self, status = None, subs = None, before = None, after = None,
+    def status(self, status = None, before = None, after = None, elementIDs=None, 
                dictKey = None):
         """Return status of elements
            if given only return elements updated since the given time
@@ -388,7 +388,7 @@ class WorkQueue(WorkQueueBase):
         items = action.execute(since = after,
                               before = before,
                               status = status,
-                              subs = None,
+                              elementIDs = elementIDs,
                               conn = self.getDBConn(),
                               transaction = self.existingTransaction())
         # if dictKey given format as a dict with the appropriate key
@@ -404,7 +404,7 @@ class WorkQueue(WorkQueueBase):
         """
         Take status from child queue and update ourselves
         """
-        my_details = self.status(subs = [x['ParentQueueId'] for x in child_report],
+        my_details = self.status(elementIDs = [x['ParentQueueId'] for x in child_report],
                                  dictKey = "Id")
         #store elements we need to update grouped by status(reduce connections)
         to_update = defaultdict(set)

@@ -68,17 +68,23 @@ class DummyRESTModel(RESTModel):
         self.addDAO('GET', 'data2', 'DummyDAO2', ['num'])
         
     def list(self, *args, **kwargs):
+        """ if sanitise needed to be called method signater of callee should be 
+            (*args, **kwargs) """
         input = self.sanitise_input(args, kwargs, method = 'list')
         return input
 
     def list1(self):
+        """ test no argument case, return 'No argument' string """
         return 'No argument'
     
     def list2(self, num0, num1, num2):
-        input = self.sanitise_input(num0, num1, num2, method = 'list2')
-        return input
+        """ test multiple argment string return the dictionary of key: value pair of 
+            the arguments """
+             
+        return {'num0': num0, 'num1': num1, 'num2': num2}
     
     def list3(self, *args, **kwargs):
+        """ test sanitise without any validation specified """
         input = self.sanitise_input(args, kwargs, method = 'list3')
         return input
     

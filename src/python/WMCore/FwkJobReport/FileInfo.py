@@ -7,8 +7,8 @@ Contains information about a single file as a dictionary
 
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: FileInfo.py,v 1.1 2008/10/08 15:34:15 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FileInfo.py,v 1.2 2009/08/21 13:44:41 evansde Exp $"
 __author__ = "evansde@fnal.gov"
 __all__ = []
 
@@ -80,7 +80,26 @@ class FileInfo(dict):
         #//  checksum alg was used.
         self.checksums = {}
 
+    def json(self):
+        """
+        _json_
 
+        return nested dictionary representation of this file to assist
+        with usage in json structures
+
+        """
+        result = dict()
+        result.update(self)
+        result['runs'] = self.runs
+        result['checksums'] = self.checksums
+        result['input_files'] = [ x['LFN'] for x in self.inputFiles]
+        if len(self.dataset) == 0:
+            dataset = {}
+        else:
+            dataset = self.dataset[0]
+        result['dataset'] = dataset
+
+        return result
 
     def addInputFile(self, pfn, lfn):
         """
@@ -271,7 +290,7 @@ class FileInfo(dict):
         cksumQ = IMProvQuery("/%s/Checksum" % queryBase)
         for cksum in cksumQ(improvNode):
             algo = cksum.attrs.get('Algorithm', None)
-            if algo == None: 
+            if algo == None:
                 continue
             self.addChecksum(str(algo), str(cksum.chardata))
 

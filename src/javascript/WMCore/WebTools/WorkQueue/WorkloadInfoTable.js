@@ -25,7 +25,7 @@ var workloadTable = function(divID) {
     var dataUrl = "/workqueue/workloadprogress";
     
     var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema);
-    tableConfig = WMCore.WebTools.defaultTableConfig;
+    var tableConfig = WMCore.WebTools.defaultTableConfig;
     tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 5});
     tableConfig.sortedBy ={
         key: "spec_id", dir:YAHOO.widget.DataTable.CLASS_ASC

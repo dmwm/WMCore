@@ -3,7 +3,6 @@
  * 
  */
 
-
 WMCore.WebTools.createDataSource = function (dataUrl, dataSchema) {
 	
 	//var myDataSource = new YAHOO.util.DataSource(dataUrl);
@@ -38,22 +37,15 @@ WMCore.WebTools.defaultTableConfig = {
     // Set up initial sort state
     sortedBy: {
         key: "id", dir:YAHOO.widget.DataTable.CLASS_ASC
-	}//,
-	
-	//initialRequest: "startIndex=0&results=25", // Initial request for first page of data 
-	
-    // Sorting and pagination will be routed to the server via generateRequest
-    //dynamicData: true
+	}
 };
 
 
 WMCore.WebTools.createDataTable = function (container, dataSource, columnDefs, 
                                             tableConfig, pollingCycle) {
 	 
-	myColumnDefs = columnDefs
-
     var myDataTable = new YAHOO.widget.DataTable(container,
-            myColumnDefs, dataSource, tableConfig);
+            columnDefs, dataSource, tableConfig);
     
 	 // Set up polling
     var myCallback = {
@@ -64,13 +56,7 @@ WMCore.WebTools.createDataTable = function (container, dataSource, columnDefs,
          scope: myDataTable
     };
 
-    /*
-    myDataTable.handleDataReturnPayload = function(oRequest, oResponse, oPayload) {
-        oPayload.totalRecords = oResponse.meta.totalRecords;
-        return oPayload;
-    }
-	*/	
-	dataSource.setInterval(pollingCycle, null, myCallback);
+    dataSource.setInterval(pollingCycle, null, myCallback);
 	 
 	return myDataTable;
 };

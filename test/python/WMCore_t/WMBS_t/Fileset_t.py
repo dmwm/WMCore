@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.24 2010/06/01 17:26:55 riahi Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Fileset_t.py,v 1.25 2010/06/17 19:39:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import unittest
 import logging
@@ -16,6 +16,8 @@ import threading
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
 
@@ -510,6 +512,7 @@ class FilesetTest(unittest.TestCase):
         fileset is closable if:
           - All of the subscriptions that feed it has completed processing all
             files in their input fileset
+          _ All of the jobs for feeder subscriptions have completed  
           - The fileset that feeds the subscription is closed
         """
         testOutputFileset1 = Fileset(name = "TestOutputFileset1")
@@ -569,10 +572,28 @@ class FilesetTest(unittest.TestCase):
                                          workflow = testWorkflow3)
         testSubscription3.create()        
 
+        testJobGroup = JobGroup(subscription = testSubscription1)
+        testJobGroup.create()
+
+        testJob = Job(name = "TestJob1")
+        testJob.create(testJobGroup)
+        testJob["state"] = "executing"
+
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
+
+        changeStateDAO = daoFactory(classname = "Jobs.ChangeState")
+        changeStateDAO.execute(jobs = [testJob])
+
         closableFilesetDAO = daoFactory(classname = "Fileset.ListClosable")
+        closableFilesets = closableFilesetDAO.execute()
+
+        assert len(closableFilesets) == 0, \
+               "Error: There should be no closable filesets."
+
+        testJob["state"] = "cleanout"
+        changeStateDAO.execute(jobs = [testJob])
         closableFilesets = closableFilesetDAO.execute()
 
         goldenFilesets = ["TestOutputFileset1", "TestOutputFileset2"]

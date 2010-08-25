@@ -5,8 +5,8 @@ _ListClosable_
 Oracle implementation of Fileset.ListClosable
 """
 
-__revision__ = "$Id: ListClosable.py,v 1.3 2010/04/14 16:01:12 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: ListClosable.py,v 1.4 2010/06/17 19:39:30 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMBS.MySQL.Fileset.ListClosable import ListClosable as ListFilesetClosableMySQL
 
@@ -29,9 +29,18 @@ class ListClosable(ListFilesetClosableMySQL):
                   LEFT OUTER JOIN (SELECT subscription, COUNT(fileid) AS total_files
                               FROM wmbs_sub_files_failed GROUP BY subscription) files_failed ON
                     wmbs_parent_subscription.id = files_failed.subscription
+                  LEFT OUTER JOIN (SELECT subscription, COUNT(wmbs_job.id) AS running_count
+                              FROM wmbs_jobgroup
+                              LEFT OUTER JOIN wmbs_job ON
+                                wmbs_jobgroup.id = wmbs_job.jobgroup
+                              LEFT OUTER JOIN wmbs_job_state ON
+                                wmbs_job.state = wmbs_job_state.id
+                              WHERE wmbs_job_state.name != 'cleanout'
+                              GROUP BY subscription) running_jobs ON
+                    wmbs_parent_subscription.id = running_jobs.subscription                              
                   INNER JOIN wmbs_fileset wmbs_parent_fileset ON
                     wmbs_parent_subscription.fileset = wmbs_parent_fileset.id
-                WHERE wmbs_fileset.open = 1
+                WHERE wmbs_fileset.open = 1 AND COALESCE(running_jobs.running_count, 0) = 0
                 GROUP BY wmbs_fileset.id) closeable_filesets
              WHERE closeable_filesets.open_parent_filesets = 0 AND
                    closeable_filesets.total_input_files =

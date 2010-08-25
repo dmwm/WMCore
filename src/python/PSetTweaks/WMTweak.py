@@ -288,6 +288,113 @@ def applyTweak(process, tweak):
         setParameter(process, param, value)
 
 
+childParameters = lambda p, x: [ i for i in  x._internal_settings if i not in x._internal_children]
+childSections = lambda s : [ getattr(s, x) for x in s._internal_children ]
+
+
+class ConfigSectionDecomposer:
+    """
+    _ConfigSectionDecomposer_
+
+    Util to collapse a ConfigSection to a dict of . delimited param: values
+    where the params contain the section structure.
+
+    May turn out to be generally useful for ConfigSections
+    
+    """
+    def __init__(self):
+        self.configSects = []
+        self.parameters = {}
+        self.queue = []
+
+
+    def __call__(self, configSect):
+        """
+        _operator(configSect)_
+
+        recursively traverse all parameters in this and all child
+        PSets
+
+        """
+        self.queue.append(configSect._internal_name)
+        csectPath = ".".join(self.queue)
+        self.configSects.append(csectPath)
+        params = childParameters(csectPath, configSect)
+        for par in params:
+            paramName = ".".join([csectPath, par])
+            paramVal = getattr(configSect, par)
+            self.parameters[paramName] = paramVal
+        
+        
+        map(self, childSections(configSect))
+        self.queue.pop(-1)
+
+
+def decomposeConfigSection(csect):
+    """
+    _decomposeConfigSection_
+
+    Util to convert a config section into a . delimited dict of
+    parameters mapped to values
+
+    """
+    decomposer = ConfigSectionDecomposer()
+    decomposer(csect)
+
+    return decomposer.parameters
+
+
+
+def makeJobTweak(job):
+    """
+    _makeJobTweak_
+
+    Convert information from a WMBS Job object into a PSetTweak
+    that can be used to modify a CMSSW process
+
+    """
+    result = PSetTweak()
+
+    # input files
+    inpFiles = [f['lfn'] for f in job['input_files'] ]
+    result.addParameter("process.source.fileNames", inpFiles)
+
+    mask =  job['mask']
+
+    # event limits
+    maxEvents = mask.getMaxEvents()
+    if maxEvents == None: maxEvents = -1
+    result.addParameter("process.maxEvents.input", maxEvents)
+
+    firstEvent = mask['FirstEvent']
+    if firstEvent != None:
+        result.addParameter("process.source.firstEvent", firstEvent)
+
+    # lumi limits
+    firstLumi = mask['FirstLumi']
+    if firstLumi != None:
+        result.addParameter("process.source.firstLuminosityBlock", firstLumi)
+
+    
+
+    # run limits
+    firstRun = mask['FirstRun']
+    if firstRun != None:
+        result.addParameter("process.source.firstRun", firstRun)
+
+    # install any settings from the per job baggage
+    baggage = job.getBaggage()
+    procSection = getattr(baggage, "process", None)
+    if procSection == None:
+        return result
+
+    baggageParams = decomposeConfigSection(procSection)
+    for k,v in baggageParams.items():
+        result.addParameter(k,v)
+
+
+    return result
+
 
 
 

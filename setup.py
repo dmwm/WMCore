@@ -88,7 +88,7 @@ def runUnitTests():
     result = t.run(testsuite)
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
-    return (result, failedTestFiles)
+    return (result, failedTestFiles, testsuite.countTestCases())
 
 
 class TestCommand(Command):
@@ -132,12 +132,13 @@ class TestCommand(Command):
         except:
             coverageEnabled = False
         
-        result, failedTestFiles = runUnitTests()
+        result, failedTestFiles, totalTests = runUnitTests()
         
         if coverageEnabled:
             cov.stop()
             cov.save()
             
+
         if not result.wasSuccessful():
             print "Tests unsuccessful. There were %s failures and %s errors"\
                       % (len(result.failures), len(result.errors))
@@ -145,23 +146,25 @@ class TestCommand(Command):
                                                         "FAILURE: %s\n%s" % (x[0],x[1] ), result.failures))
             print "Errorlist:\n%s" % "\n".join(map(lambda x: \
                                                         "ERROR:   %s\n%s" % (x[0],x[1] ), result.errors))
-            if len(failedTestFiles):
-                print "The following tests failed to load: \n===============\n%s" %\
-                    "\n".join(failedTestFiles)
-             #"".join(' ', [result.failures[0],result.failures[1]]))
-            #print "Errorlist:\n%s" % result.errors #"".join(' ', [result.errors[0],result.errors[1]]))
-            print "Tests unsuccessful. There were %s failures and %s errors"\
-                      % (len(result.failures), len(result.errors))
+            
+        if len(failedTestFiles):
+            print "The following tests failed to load: \n===============\n%s" %\
+                    "\n".join(failedTestFiles)    
+        print "------------------------------------"
+        print "test results"
+        print "------------------------------------"
+        print "Stats: %s successful, %s failures, %s errors, %s didn't run" %\
+                (totalTests - len(result.failures) - len(result.errors),\
+                 len(result.failures),
+                 len(result.errors),
+                 len(failedTestFiles))
+        if result.wasSuccessful():
             print "FAILED: setup.py test" 
             sys.exit(1)
         else:
-            print "Tests successful"
-            if len(failedTestFiles):
-                print "The following tests failed to load: \n===============\n%s" %\
-                        "\n".join(failedTestFiles)
-            print "PASSED: setup.py test"
+            print "PASS: setup.py test"
             sys.exit(0)
-        
+           
 
         
             

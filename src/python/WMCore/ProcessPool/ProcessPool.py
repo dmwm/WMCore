@@ -124,10 +124,11 @@ class ProcessPool:
         """
         workPerWorker = len(work) / len(self.workers)
 
-        while(len(work) > workPerWorker):
-            workForWorker = work[0:workPerWorker]
-            work = work[:workPerWorker]
-            
+        workIndex = 0
+        while(len(work) > workIndex):
+            workForWorker = work[workIndex : workIndex + workPerWorker]
+            workIndex += workPerWorker
+
             encodedWork = self.jsonHandler.encode(workForWorker)
 
             worker = self.workers[self.enqueueIndex]
@@ -135,8 +136,8 @@ class ProcessPool:
             worker.stdin.write("%s\n" % encodedWork)
             worker.stdin.flush()
 
-        if len(work) > 0:
-            encodedWork = self.jsonHandler.encode(work)
+        if len(work) > workIndex:
+            encodedWork = self.jsonHandler.encode(work[workIndex:])
 
             worker = self.workers[self.enqueueIndex]
             self.enqueueIndex = (self.enqueueIndex + 1) % len(self.workers)

@@ -14,7 +14,7 @@ UNKNOWN = 0        # Does not know about the authentication state
 PROCESSING = 1     # Waiting for the oid server response about the auth
 AUTHENTICATED = 2  # User authenticated correctly
 
-DEFAULT_SESSION_NAME = 'CernOpenIdTool'
+DEFAULT_SESSION_NAME = 'SecurityModule'
 #-----------------------------------------------------------------------------
 # A class to transparently transform a cherrypy-based web app into an OpenID
 # consumer, thus allowing it to use CERN auth/authorization facilities
@@ -26,13 +26,13 @@ class CernOidConsumer(cherrypy.Tool):
         
         self.session_name = self.config.session_name
 
-        self.base_path = cherrypy.url()
+        self.base_path = '%s/%s' % (cherrypy.url(), self.config.mount_point)
         self.login_path = '%s/login' % self.base_path
         self.failed_path = '%s/failure' % self.base_path
         self.cancel_path = '%s/cancelled' % self.base_path
         self.error_path = '%s/error' % self.base_path
         self.logout_path = '%s/logout' % self.base_path
-        self.defhandler = CernOidDefaultHandler(self.session_name)
+        self.defhandler = CernOidDefaultHandler(config)
 
         # Defines the hook point for cherrypy
         self._name = None

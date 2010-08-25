@@ -6,8 +6,8 @@ A set of classes to handle making http and https requests to a remote server and
 deserialising the response.
 """
 
-__revision__ = "$Id: Requests.py,v 1.27 2009/12/15 14:07:33 spiga Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: Requests.py,v 1.28 2009/12/21 18:23:20 spiga Exp $"
+__version__ = "$Revision: 1.28 $"
 
 try:
     # Python 2.6
@@ -580,7 +580,7 @@ class SecureRequests(Requests):
             key = os.environ['X509_HOST_KEY']
     
         # Second preference to User Proxy, very common
-        elif os.environ.has_key('X509_USER_PROXY'):
+        elif os.path.exists( os.environ['X509_USER_PROXY']):
             cert = os.environ['X509_USER_PROXY']
             key = cert
     

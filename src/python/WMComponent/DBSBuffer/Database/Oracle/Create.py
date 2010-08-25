@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for Oracle.
 """
 
-__revision__ = "$Id: Create.py,v 1.10 2009/08/26 20:03:19 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Create.py,v 1.11 2009/08/31 18:47:37 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 
@@ -23,15 +23,14 @@ class Create(DBCreator):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
 
-        if params.has_key("tablespace_table"):
-            tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
-        else:
-            tablespaceTable = ""
+        tablespaceTable = ""
+        tablespaceIndex = ""
 
-        if params.has_key("tablespace_index"):
-            tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
-        else:
-            tablespaceIndex = ""
+        if params:
+            if params.has_key("tablespace_table"):
+                tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
+            if params.has_key("tablespace_index"):
+                tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
             
         self.create["01dbsbuffer_dataset"] = \
           """CREATE TABLE dbsbuffer_dataset

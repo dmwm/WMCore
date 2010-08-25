@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.24 2009/08/11 14:58:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: ChangeState.py,v 1.25 2009/08/13 18:25:05 sfoulkes Exp $"
+__version__ = "$Revision: 1.25 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -178,29 +178,45 @@ class ChangeState(WMObject, WMConnectionBase):
         ''' initializes a non-existant database'''
         database = self.couchdb.createDatabase(self.dbname)
         hashViewDoc = database.createDesignDoc('jobs')
-        hashViewDoc['views'] = {'get_by_head_couch_id': {"map": \
-                              """function(doc) {
-                                    if (doc.couch_head) {
-                                      emit(doc.couch_head, doc);
-                                    } else {
-                                      emit(doc._id, doc);
-                                    }
-                                 } 
-                     """ },
-                             'get_by_job_id': {"map": \
-                              """function(doc) {
-                                    if (doc.job) {
-                                      if (doc.job.id) {
-                                        emit(doc.job.id, doc);
-                                      }
-                                    }
-                                  }""" },
-                              'get_by_job_id_and_state': {"map":\
-                        """function(doc) {
-  if ( (doc.job)  && (doc.type) && (doc.new_state) && (doc.job.id)) {
-    emit([doc.job.id,doc.new_state],doc);
-  }
-}"""}}
+        hashViewDoc["views"] = { \
+          "get_by_head_couch_id":
+             {"map": """function(doc) {
+                          if (doc.couch_head) {
+                            emit(doc.couch_head, doc);
+                            }
+                          else {
+                            emit(doc._id, doc);
+                            }
+                          }"""},
+          "get_by_job_id":
+             {"map": """function(doc) {
+                          if (doc.job) {
+                            if (doc.job.id) {
+                              emit(doc.job.id, doc);
+                              }
+                            }
+                          }""" },
+          "get_by_job_id_and_state":
+             {"map": """function(doc) {
+                          if ((doc.job)  && (doc.type) && (doc.new_state) && (doc.job.id)) {
+                            emit([doc.job.id,doc.new_state], doc);
+                            }
+                          }""" },
+           "TransitionByName":
+              {"map": """function(doc) {
+                           if (doc.job) {
+                             emit(doc.job.name, [doc.new_state, doc.old_state, doc.timestamp]);
+                             }
+                           }""" },
+           "ExecutingByName":
+              {"map": """function(doc) {
+                           if (doc.job) {
+                             if (doc.new_state == 'executing') {
+                               emit(doc.job.name, doc.timestamp);
+                               }
+                             }
+                          }""" }  
+          }
      
         database.queue( hashViewDoc )
         database.commit()

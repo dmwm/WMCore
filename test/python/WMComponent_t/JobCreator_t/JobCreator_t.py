@@ -17,6 +17,7 @@ import logging
 import cProfile
 import pstats
 import cPickle
+import shutil
 
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
@@ -41,7 +42,10 @@ from WMCore.Agent.HeartbeatAPI               import HeartbeatAPI
 #Workload stuff
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
+from WMCore_t.WMSpec_t.TestSpec     import testWorkload
+
 from nose.plugins.attrib import attr
+
 
 class JobCreatorTest(unittest.TestCase):
     """
@@ -149,12 +153,14 @@ class JobCreatorTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         testWorkflow = Workflow(spec = workflowURL, owner = "mnorman",
-                                name = name, task="/Tier1ReReco/ReReco")
+                                name = name, task="/TestWorkload/ReReco")
         testWorkflow.create()
 
         for sub in range(nSubs):
 
             nameStr = '%s-%i' % (name, sub)
+
+            myThread.transaction.begin()
 
             testFileset = Fileset(name = nameStr)
             testFileset.create()
@@ -174,24 +180,22 @@ class JobCreatorTest(unittest.TestCase):
                                             split_algo = "FileBased")
             testSubscription.create()
 
+            myThread.transaction.commit()
+
 
         return
 
 
 
-    def createWorkload(self, workloadName = 'Test'):
+    def createWorkload(self, workloadName = 'Test', emulator = True):
         """
-        _createWorkload_
+        _createTestWorkload_
 
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        arguments = getTestArguments()
-
-        workload = rerecoWorkload("Tier1ReReco", arguments)
+        workload = testWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
-        rereco.setInputBlockWhitelist(blockWhitelist = self.sites)
-        rereco.setInputBlockBlacklist(blockBlacklist = [])
 
         
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
@@ -243,7 +247,7 @@ class JobCreatorTest(unittest.TestCase):
         config.JobCreator.pollInterval              = 10
         config.JobCreator.jobCacheDir               = self.testDir
         config.JobCreator.defaultJobType            = 'processing' #Type of jobs that we run, used for resource control
-        config.JobCreator.workerThreads             = 2
+        config.JobCreator.workerThreads             = 4
         config.JobCreator.componentDir              = os.path.join(os.getcwd(), 'Components')
         config.JobCreator.useWorkQueue              = True
         config.JobCreator.WorkQueueParams           = {'emulateDBSReader': True}
@@ -271,7 +275,7 @@ class JobCreatorTest(unittest.TestCase):
         Just test that everything works...more or less
         """
 
-        return
+        #return
 
         myThread = threading.currentThread()
 
@@ -280,10 +284,10 @@ class JobCreatorTest(unittest.TestCase):
         name         = makeUUID()
         nSubs        = 5
         nFiles       = 10
-        workloadName = 'Tier1ReReco'
+        workloadName = 'TestWorkload'
 
         workload = self.createWorkload(workloadName = workloadName)
-        workloadPath = os.path.join(self.testDir, 'workloadTest', 'Tier1ReReco', 'WMSandbox', 'WMWorkload.pkl')
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
 
         self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
 
@@ -295,7 +299,11 @@ class JobCreatorTest(unittest.TestCase):
 
         # First, can we run once without everything crashing?
         testJobCreator.algorithm()
-        time.sleep(1)
+
+
+        #if os.path.exists('TestDir'):
+        #    shutil.rmtree('TestDir')
+        #shutil.copytree(self.testDir, 'TestDir')
 
 
         getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
@@ -310,7 +318,7 @@ class JobCreatorTest(unittest.TestCase):
 
 
         # Find the test directory
-        testDirectory = os.path.join(self.testDir, 'Tier1ReReco', 'ReReco')
+        testDirectory = os.path.join(self.testDir, 'TestWorkload', 'ReReco')
         # It should have at least one jobGroup
         self.assertTrue('JobCollection_1_0' in os.listdir(testDirectory))
         # But no more then twenty
@@ -329,7 +337,7 @@ class JobCreatorTest(unittest.TestCase):
 
         self.assertEqual(job['workflow'], name)
         self.assertEqual(len(job['input_files']), 1)
-        self.assertEqual(os.path.basename(job['sandbox']), 'Tier1ReReco-Sandbox.tar.bz2')
+        self.assertEqual(os.path.basename(job['sandbox']), 'TestWorkload-Sandbox.tar.bz2')
 
 
         return
@@ -345,18 +353,18 @@ class JobCreatorTest(unittest.TestCase):
 
         """
 
-        #return
+        return
 
         myThread = threading.currentThread()
 
         name         = makeUUID()
         nSubs        = 5
-        nFiles       = 1000
-        workloadName = 'Tier1ReReco'
+        nFiles       = 1500
+        workloadName = 'TestWorkload'
 
 
         workload = self.createWorkload(workloadName = workloadName)
-        workloadPath = os.path.join(self.testDir, 'workloadTest', 'Tier1ReReco', 'WMSandbox', 'WMWorkload.pkl')
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
 
         self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
 
@@ -364,6 +372,14 @@ class JobCreatorTest(unittest.TestCase):
 
         testJobCreator = JobCreatorPoller(config = config)
         cProfile.runctx("testJobCreator.algorithm()", globals(), locals(), filename = "testStats.stat")
+
+
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+
+        time.sleep(10)
+        
+        self.assertEqual(len(result), nSubs*nFiles)
 
         p = pstats.Stats('testStats.stat')
         p.sort_stats('cumulative')
@@ -384,32 +400,32 @@ class JobCreatorTest(unittest.TestCase):
 
         name         = makeUUID()
         nSubs        = 5
-        nFiles       = 1000
-        workloadName = 'Tier1ReReco'
-
-
+        nFiles       = 500
+        workloadName = 'TestWorkload'
+        
+        
         workload = self.createWorkload(workloadName = workloadName)
-        workloadPath = os.path.join(self.testDir, 'workloadTest', 'Tier1ReReco', 'WMSandbox', 'WMWorkload.pkl')
-
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
+        
         self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
-
+        
         config = self.getConfig()
-
+        
         configDict = {"couchURL": config.JobStateMachine.couchurl,
                       "defaultRetries": config.JobStateMachine.default_retries,
                       "couchDBName": config.JobStateMachine.couchDBName,
                       'jobCacheDir': config.JobCreator.jobCacheDir,
                       'defaultJobType': config.JobCreator.defaultJobType}
-
+        
         input = [{"subscription": 1}, {"subscription": 2}, {"subscription": 3}, {"subscription": 4}, {"subscription": 5}]
-
+        
         testJobCreator = JobCreatorWorker(**configDict)
         cProfile.runctx("testJobCreator(parameters = input)", globals(), locals(), filename = "workStats.stat")
 
 
-        #p = pstats.Stats('workStats.stat')
-        #p.sort_stats('cumulative')
-        #p.print_stats(.2)
+        p = pstats.Stats('workStats.stat')
+        p.sort_stats('cumulative')
+        p.print_stats(.2)
 
         return
 
@@ -433,7 +449,7 @@ class JobCreatorTest(unittest.TestCase):
         workloadName = 'Tier1ReReco'
 
         workload = self.createWorkload(workloadName = workloadName)
-        workloadPath = os.path.join(self.testDir, 'workloadTest', 'Tier1ReReco', 'WMSandbox', 'WMWorkload.pkl')
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
 
         self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
 

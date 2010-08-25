@@ -20,7 +20,7 @@ class RunCommandThing:
 class DCCPFNALImplTest(unittest.TestCase):
     
     def setUp(self):
-        self.commandPrepend = os.path.join(getWMBASE(),'src','python','WMCore','Storage','Plugins','DDCPFNAL','wrapenv.sh')
+        self.commandPrepend = os.path.join(getWMBASE(),'src','python','WMCore','Storage','Plugins','DCCPFNAL','wrapenv.sh')
         self.runMocker  = mox.MockObject(RunCommandThing)
         self.copyMocker = mox.MockObject(ourFallbackPlugin)
         def runCommandStub(command):

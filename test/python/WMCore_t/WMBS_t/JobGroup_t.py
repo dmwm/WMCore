@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.22 2009/10/13 22:42:54 meloam Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.23 2009/10/13 23:00:06 meloam Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import unittest
 import logging
@@ -32,10 +32,7 @@ from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
 
 class JobGroupTest(unittest.TestCase):
-    _setup = False
-    _teardown = False
 
-    
     def setUp(self):
         """
         _setUp_
@@ -43,12 +40,10 @@ class JobGroupTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.
         """
-        if self._setup:
-            return
 
         myThread = threading.currentThread()
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
@@ -63,9 +58,7 @@ class JobGroupTest(unittest.TestCase):
         locationAction.execute(siteName = "goodse.cern.ch")
         locationAction.execute(siteName = "malpaquet")
         locationAction.execute(siteName = "badse.cern.ch")
-        
-        self._setup = True
-        return
+    
                
     def tearDown(self):        
         """
@@ -73,20 +66,7 @@ class JobGroupTest(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-        myThread = threading.currentThread()
-        
-        if self._teardown:
-            return
-        
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
-            
-        self._teardown = True
+        self.testInit.clearDatabase()
     
     def createTestJobGroup(self, commitFlag = True):
         """

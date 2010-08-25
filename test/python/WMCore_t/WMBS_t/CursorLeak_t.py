@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: CursorLeak_t.py,v 1.3 2009/10/13 22:42:55 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: CursorLeak_t.py,v 1.4 2009/10/13 23:00:06 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import logging
@@ -26,10 +26,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUID import makeUUID
 
 class CursorLeakTest(unittest.TestCase):
-    _setup = False
-    _teardown = False
 
-    
     def setUp(self):
         """
         _setUp_
@@ -37,10 +34,9 @@ class CursorLeakTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also add some dummy locations.
         """
-        if self._setup:
-            return
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
@@ -55,7 +51,6 @@ class CursorLeakTest(unittest.TestCase):
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")        
         
-        self._setup = True
         return
           
     def tearDown(self):        
@@ -64,25 +59,7 @@ class CursorLeakTest(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-        myThread = threading.currentThread()
-        
-        if self._teardown:
-            return
-
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-        
-        myThread.transaction.begin()
-
-        factory = WMFactory("WMBS", "WMCore.WMBS")        
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        
-        myThread.transaction.commit()    
-        self._teardown = True
+        self.testInit.clearDatabase()
             
     def testCursor(self):
         """

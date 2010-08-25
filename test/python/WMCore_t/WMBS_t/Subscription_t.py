@@ -19,8 +19,6 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.JobStateMachine import DefaultConfig
 
 class SubscriptionTest(unittest.TestCase):
-    _setup = False
-    _teardown = False
 
     
     def setUp(self):
@@ -54,16 +52,7 @@ class SubscriptionTest(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-        myThread = threading.currentThread()
-        
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
-        
+        self.testInit.clearDatabase()
         
     def createSubscriptionWithFileABC(self):
         """

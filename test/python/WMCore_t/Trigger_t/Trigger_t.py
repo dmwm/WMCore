@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: Trigger_t.py,v 1.6 2009/10/13 22:42:58 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Trigger_t.py,v 1.7 2009/10/13 23:00:07 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import os
@@ -27,9 +27,6 @@ class TriggerTest(unittest.TestCase):
     etc..
     
     """
-
-    _setup = False
-    _teardown = False
     # values for testing various sizes
     _triggers = 2
     _jobspecs = 5
@@ -38,40 +35,25 @@ class TriggerTest(unittest.TestCase):
     def setUp(self):
         "make a logger instance "
        
-        if not TriggerTest._setup: 
-            # initialization necessary for proper style.
-            myThread = threading.currentThread()
-            myThread.dialect = None
-            myThread.transaction = None
+        # initialization necessary for proper style.
+        myThread = threading.currentThread()
+        myThread.dialect = None
+        myThread.transaction = None
 
 
-            self.testInit = TestInit(__file__, os.getenv("DIALECT"))
-            self.testInit.setLogging()
-            self.testInit.setDatabaseConnection()
-            self.testInit.setSchema(customModules = ['WMCore.Trigger'], \
-                useDefault = False)
-            TriggerTest._setup = True
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ['WMCore.Trigger'], \
+            useDefault = False)
 
     def tearDown(self):
         """
         Database deletion 
         """
-        myThread = threading.currentThread()
-        if TriggerTest._teardown and myThread.dialect == 'MySQL':
-            # call the script we use for cleaning:
-            self.testInit.clearDatabase()
-
-        if TriggerTest._teardown and myThread.dialect == 'Oracle':
-            factory = WMFactory("trigger", "WMCore.Trigger")
-            destroy = factory.loadObject(myThread.dialect+".Destroy")
-            myThread.transaction.begin()
-            destroyworked = destroy.execute(conn = myThread.transaction.conn)
-            if not destroyworked:
-                raise Exception("MsgService tables could not be destroyed")
-            myThread.transaction.commit()
+        self.testInit.clearDatabase()
 
 
-        TriggerTest._teardown = False
 
     def testB(self):
         """
@@ -79,7 +61,6 @@ class TriggerTest(unittest.TestCase):
 
         Test subscription of a component.
         """
-        print('testB')
         factory = WMFactory("trigger", "WMCore.Trigger")
 
         # perpare trigger name tables if working in multi queue

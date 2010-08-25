@@ -7,8 +7,8 @@ Unittest for TaskMaker class
 """
 
 
-__revision__ = "$Id: TaskMaker_t.py,v 1.1 2009/06/12 21:22:01 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TaskMaker_t.py,v 1.2 2009/10/13 23:00:07 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import os.path
@@ -31,8 +31,6 @@ class TaskMakerTest(unittest.TestCase):
     TaskMaker test class
 
     """
-    _setup = False
-    _teardown = False
 
     def setUp(self):
 

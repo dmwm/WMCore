@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.9 2009/10/13 22:42:58 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.10 2009/10/13 23:00:07 meloam Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import threading
@@ -30,71 +30,33 @@ class ThreadPoolTest(unittest.TestCase):
     Unit tests for threadpool
     
     """
-
-    _setup = False
-    _teardown = False
     _nrOfThreads = 10
     _nrOfPools = 5
 
     def setUp(self):
         "make a logger instance and create tables"
        
-        if not ThreadPoolTest._setup: 
-            # initialization necessary for proper style.
-            myThread = threading.currentThread()
-            myThread.dialect = os.getenv("DIALECT")
-            myThread.transaction = None
-
-            self.testInit = TestInit(__file__, os.getenv("DIALECT"))
-            self.testInit.setLogging()
-            self.testInit.setDatabaseConnection()
-            #self.tearDown()
-            self.testInit.setSchema()
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema()
 
 
-            ThreadPoolTest._setup = True
 
     def tearDown(self):
         """
         Deletion of database
         """
         # FIXME: this might not work if your not using socket.
-        myThread = threading.currentThread()
 
-        factory = WMFactory("WMBS", "WMCore.ThreadPool")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete ThreadPool tear down.")
-        myThread.transaction.commit()
+        self.testInit.clearDatabase()
         
-        
-        factory = WMFactory("WMBS", "WMCore.MsgService")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete MsgService tear down.")
-        myThread.transaction.commit()
-        
-        factory = WMFactory("Trigger", "WMCore.Trigger")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete Trigger tear down.")
-        myThread.transaction.commit()
-
-        ThreadPoolTest._teardown = False
-               
     def testA(self):
         """
         __testSubscribe__
 
         Test subscription of a component.
         """
-        ThreadPoolTest._teardown = True
         myThread = threading.currentThread()
         # create a 'fake' component that contains a arg dictionary.
         component = Dummy()

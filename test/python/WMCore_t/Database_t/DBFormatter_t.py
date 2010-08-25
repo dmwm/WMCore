@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-__revision__ = "$Id: DBFormatter_t.py,v 1.7 2009/10/13 22:42:59 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: DBFormatter_t.py,v 1.8 2009/10/13 23:00:08 meloam Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import commands
 import logging
@@ -28,48 +28,37 @@ class DBFormatterTest(unittest.TestCase):
     
     """
 
-    _setup = False
-    _teardown = False
-
     def setUp(self):
         "make a logger instance and create tables"
      
-        if not DBFormatterTest._setup:
-            self.testInit = TestInit(__file__)
-            self.testInit.setLogging()
-            self.testInit.setDatabaseConnection()
-            self.testInit.setSchema()
 
-            myThread = threading.currentThread()
-            if os.getenv("DIALECT") == 'MySQL':
-                myThread.create = """
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema()
+
+        myThread = threading.currentThread()
+        if os.getenv("DIALECT") == 'MySQL':
+            myThread.create = """
 create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB """
-            if os.getenv("DIALECT") == 'SQLite':
-                myThread.create = """
-                    create table test (bind1 varchar(20), bind2 varchar(20))"""
-                
-            myThread.insert = """
+        if os.getenv("DIALECT") == 'SQLite':
+            myThread.create = """
+                create table test (bind1 varchar(20), bind2 varchar(20))"""
+            
+        myThread.insert = """
 insert into test (bind1, bind2) values (:bind1, :bind2) """
-            myThread.insert_binds = \
-              [ {'bind1':'value1a', 'bind2': 'value2a'},\
-                {'bind1':'value1b', 'bind2': 'value2b'},\
-                {'bind1':'value1c', 'bind2': 'value2d'} ]
-            myThread.select = "select * from test"
-            DBFormatterTest._setup = True
+        myThread.insert_binds = \
+          [ {'bind1':'value1a', 'bind2': 'value2a'},\
+            {'bind1':'value1b', 'bind2': 'value2b'},\
+            {'bind1':'value1c', 'bind2': 'value2d'} ]
+        myThread.select = "select * from test"
             
     def tearDown(self):
         """
         Delete the databases
         """
-        myThread = threading.currentThread()
-        if DBFormatterTest._teardown and myThread.dialect == 'MySQL':
-            # call the script we use for cleaning:
-            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
-            result = commands.getstatusoutput(command)
-            for entry in result:
-                print(str(entry))
+        self.testInit.clearDatabase()
 
-        DBFormatterTest._teardown = False
 
     def testAPrepare(self):
         """

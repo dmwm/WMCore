@@ -5,8 +5,8 @@
 Rest test module
 """
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: Rest_t.py,v 1.4 2009/10/13 22:42:56 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Rest_t.py,v 1.5 2009/10/13 23:00:06 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import logging
 import threading
@@ -90,28 +90,22 @@ class RestTest(unittest.TestCase):
     """
     TestCase for RestServer and RestClient module 
     """
-
-    _setup_done = False
-    _teardown = False
-
     def setUp(self):
         """
         code to execute to in preparation for the test
         """
-        if not RestTest._setup_done:
-            logging.basicConfig(level=logging.NOTSET,
-                format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                datefmt='%m-%d %H:%M',
-                filename='%s.log' % __file__,
-                filemode='w')
-            myThread = threading.currentThread()
-            myThread.logger = logging.getLogger('RestTest')
-            RestTest._setup_done = True
+        logging.basicConfig(level=logging.NOTSET,
+            format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+            datefmt='%m-%d %H:%M',
+            filename='%s.log' % __file__,
+            filemode='w')
+        myThread = threading.currentThread()
+        myThread.logger = logging.getLogger('RestTest')
 
     def tearDown(self):
         """code to execute to clean up after tests """
-        self._teardown = True
-
+        pass
+    
     def testA(self):
         """
         Mimics start-up of RestServer in one thread and

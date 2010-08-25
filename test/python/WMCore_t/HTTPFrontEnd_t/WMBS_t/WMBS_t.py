@@ -22,9 +22,6 @@ from WMCore.Services.Requests import Requests, JSONRequests
 import urllib
 
 class WMBSServiceTest(unittest.TestCase):
-    _setup = False
-    _teardown = False
-
     
     def setUp(self):
         """

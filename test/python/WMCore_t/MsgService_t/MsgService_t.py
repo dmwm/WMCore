@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.9 2009/10/13 22:42:56 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: MsgService_t.py,v 1.10 2009/10/13 23:00:06 meloam Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import commands
 import unittest
@@ -32,9 +32,6 @@ class MsgServiceTest(unittest.TestCase):
     etc..
     
     """
-
-    _setup = False
-    _teardown = False
     # max number of messages for initial tests.
     _maxMsg = 10
     # buffersize used by message service to test message moving.
@@ -48,22 +45,17 @@ class MsgServiceTest(unittest.TestCase):
     def setUp(self):
         "make a logger instance and create tables"
        
-        if not MsgServiceTest._setup:
-            self.testInit = TestInit(__file__, os.getenv("DIALECT"))
-            self.testInit.setLogging()
-            self.testInit.setDatabaseConnection()
-            self.testInit.setSchema()
-            MsgServiceTest._setup = True
+        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema()
+
 
     def tearDown(self):
         """
         Deletion of the databases 
         """
-        #myThread = threading.currentThread()
-        #if MsgServiceTest._teardown :
-        #    # call the script we use for cleaning:
-        #    self.testInit.clearDatabase()
-        #MsgServiceTest._teardown = False
+        self.testInit.clearDatabase()
 
                
     def testA(self):

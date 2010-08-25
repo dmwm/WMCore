@@ -3,8 +3,8 @@
 Test WMFactory module
 """
 
-__revision__ = "$Id: WMFactory_t.py,v 1.4 2009/10/13 22:42:58 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WMFactory_t.py,v 1.5 2009/10/13 23:00:08 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -21,20 +21,15 @@ class WMFactoryTest(unittest.TestCase):
     TestCase for Registry module 
     """
 
-    _setup_done = False
     _log_level = 'debug'
     # for now set the relative path
     _repository = 'WMCore_t.WMFactory_t'
     
 
     def setUp(self):
-        
-        
-        if not WMFactoryTest._setup_done:
-            self.testInit = TestInit(__file__)
-            self.testInit.setLogging()
-            logging.debug("loading repositories")
-            WMFactoryTest._setup_done = True
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        logging.debug("loading repositories")
 
     def testRegistry(self):
         logging.debug("Initialize registry")

@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.29 2009/10/13 22:42:55 meloam Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: Job_t.py,v 1.30 2009/10/13 23:00:06 meloam Exp $"
+__version__ = "$Revision: 1.30 $"
 
 import unittest
 import logging
@@ -36,8 +36,6 @@ from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
 
 class JobTest(unittest.TestCase):
-    _setup = False
-    _teardown = False
 
 
     
@@ -48,8 +46,7 @@ class JobTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.
         """
-        if self._setup:
-            return
+
 
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
@@ -66,7 +63,6 @@ class JobTest(unittest.TestCase):
         locationNew.execute(siteName = "test.site.ch", jobSlots = 300)
         locationNew.execute(siteName = "test2.site.ch", jobSlots = 300)
 
-        self._setup = True
         return
           
     def tearDown(self):
@@ -75,20 +71,7 @@ class JobTest(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-        myThread = threading.currentThread()
-        
-        if self._teardown:
-            return
-        
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
-            
-        self._teardown = True
+        self.testInit.clearDatabase()
         
     def createTestJob(self):
         """

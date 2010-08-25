@@ -28,7 +28,7 @@ from sets import Set
 #Needed for TestInit
 from WMQuality.TestInit import TestInit
 
-__revision__ = "$Id: WMBSBase.py,v 1.19 2009/10/13 22:42:57 meloam Exp $"
+__revision__ = "$Id: WMBSBase.py,v 1.20 2009/10/13 23:00:07 meloam Exp $"
 __version__ = "$Reivison: $"
 
 class WMBSBase(Performance):
@@ -42,9 +42,6 @@ class WMBSBase(Performance):
 
 
     """
-
-    _setup = False
-    _teardown = False
 
     def genFileObjects(self, number = 0, name = 'Test'):
         """
@@ -306,12 +303,10 @@ class WMBSBase(Performance):
 
         """
 
-        if self._setup:
-            return
 
         self.config_path = 'test.ini'
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
@@ -359,7 +354,6 @@ class WMBSBase(Performance):
             self.testtimes      = 1
 
 
-        self._setup = True
         return
 
     def tearDown(self):
@@ -369,23 +363,9 @@ class WMBSBase(Performance):
         """
         myThread = threading.currentThread()
         
-        if self._teardown:
-            return
 
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-        
-        myThread.transaction.begin()
 
-        factory = WMFactory("WMBS", "WMCore.WMBS")        
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        
-        myThread.transaction.commit()    
-        self._teardown = True
+        self.testInit.clearDatabase()
         
         #Post-Testing report        
         if self.totaltime != 0:

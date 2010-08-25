@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.27 2009/10/13 22:42:55 meloam Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: File_t.py,v 1.28 2009/10/13 23:00:06 meloam Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import unittest
 import logging
@@ -25,8 +25,6 @@ from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
 
 class FileTest(unittest.TestCase):
-    _setup = False
-    _teardown = False
 
     def setUp(self):
         """
@@ -35,8 +33,6 @@ class FileTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also add some dummy locations.
         """
-        if self._setup:
-            return
 
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
@@ -53,7 +49,6 @@ class FileTest(unittest.TestCase):
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")        
         
-        self._setup = True
         return
           
     def tearDown(self):        
@@ -62,25 +57,7 @@ class FileTest(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-        myThread = threading.currentThread()
-        
-        if self._teardown:
-            return
-
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-        
-        myThread.transaction.begin()
-
-        factory = WMFactory("WMBS", "WMCore.WMBS")        
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        
-        myThread.transaction.commit()    
-        self._teardown = True
+        self.testInit.clearDatabase()
             
     def testCreateDeleteExists(self):
         """

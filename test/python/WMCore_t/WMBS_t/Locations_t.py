@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.8 2009/10/13 22:42:54 meloam Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Locations_t.py,v 1.9 2009/10/13 23:00:06 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 import unittest
@@ -17,8 +17,6 @@ from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
 class LocationsTest(unittest.TestCase):
-    _setup = False
-    _teardown = False
 
     
     def setUp(self):
@@ -28,17 +26,15 @@ class LocationsTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.
         """
-        if self._setup:
-            return
+
         
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         
-        self._setup = True
-        return
+
                                                                 
     def tearDown(self):
         """
@@ -46,21 +42,7 @@ class LocationsTest(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-        myThread = threading.currentThread()
-        
-        if self._teardown:
-            return
-        
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
-        
-        self._teardown = True
-        return                                                                                
+        self.testInit.clearDatabase()                                                                    
 
     def testCreateDeleteList(self):
         """

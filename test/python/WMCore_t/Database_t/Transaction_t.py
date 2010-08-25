@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.5 2009/10/13 22:42:59 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Transaction_t.py,v 1.6 2009/10/13 23:00:08 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import commands
 import logging
@@ -23,36 +23,32 @@ from WMQuality.TestInit import TestInit
 
 class TransactionTest(unittest.TestCase):
 
-    _setup = False
-    _teardown = False
 
     def setUp(self):
-        if not self._setup:
-            #self.tearDown()
-            self.testInit = TestInit(__file__)
-            self.testInit.setLogging()
-            self.testInit.setDatabaseConnection()
-            self._setup = True
-        
-            #add in Oracle
-            self.create = {}
-            self.create['MySQL'] = "create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB;"
-            self.create['SQLite'] = "create table test (bind1 varchar(20), bind2 varchar(20))"
-            self.create['Oracle'] = "create table test (bind1 varchar(20), bind2 varchar(20))"
+        #self.tearDown()
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+    
+        #add in Oracle
+        self.create = {}
+        self.create['MySQL'] = "create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB;"
+        self.create['SQLite'] = "create table test (bind1 varchar(20), bind2 varchar(20))"
+        self.create['Oracle'] = "create table test (bind1 varchar(20), bind2 varchar(20))"
 
-            self.destroy = {}
-            self.destroy['MySQL']  = "drop table test ENGINE=InnoDB"
-            self.destroy['Oracle'] = "drop table test"
-            self.destroy['SQLite'] = "drop table test"
+        self.destroy = {}
+        self.destroy['MySQL']  = "drop table test ENGINE=InnoDB"
+        self.destroy['Oracle'] = "drop table test"
+        self.destroy['SQLite'] = "drop table test"
 
-            myThread = threading.currentThread()
-            myThread.dialect = os.getenv('DIALECT')
-        
-            self.insert = "insert into test (bind1, bind2) values (:bind1, :bind2)"
-            self.insert_binds = [ {'bind1':'value1a', 'bind2': 'value2a'},
-                  {'bind1':'value1b', 'bind2': 'value2b'},
-                  {'bind1':'value1c', 'bind2': 'value2d'} ]
-            self.select = "select * from test"
+        myThread = threading.currentThread()
+        myThread.dialect = os.getenv('DIALECT')
+    
+        self.insert = "insert into test (bind1, bind2) values (:bind1, :bind2)"
+        self.insert_binds = [ {'bind1':'value1a', 'bind2': 'value2a'},
+              {'bind1':'value1b', 'bind2': 'value2b'},
+              {'bind1':'value1c', 'bind2': 'value2d'} ]
+        self.select = "select * from test"
             
     def tearDown(self):
         """
@@ -60,8 +56,6 @@ class TransactionTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
 
-        if self._teardown:
-            return
 
 
     
@@ -72,7 +66,6 @@ class TransactionTest(unittest.TestCase):
         myThread.transaction.processData(self.destroy[myThread.dialect])
         myThread.transaction.commit()
             
-        self._teardown = False
 
 
     def testGoodTransaction(self):

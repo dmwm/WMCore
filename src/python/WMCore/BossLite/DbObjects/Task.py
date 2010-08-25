@@ -4,11 +4,12 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.4 2010/04/15 20:52:41 mnorman Exp $"
-__revision__ = "$Revision: 1.4 $"
+__version__ = "$Id: Task.py,v 1.5 2010/04/19 18:00:41 mnorman Exp $"
+__revision__ = "$Revision: 1.5 $"
 
 import os.path
 import threading
+import logging
 
 from WMCore.Services.UUID import makeUUID
 
@@ -152,13 +153,15 @@ class Task(DbObject):
         Load a task
         """
         if self.data['id'] > 0:
-            action = self.daofactory(classname = "Task.LoadByID")
-            result = action.execute(id = self.data['id'],
+            action = self.daofactory(classname = "Task.SelectTask")
+            result = action.execute(value = self.data['id'],
+                                    column = 'id',
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction)
         elif self.data['name']:
-            action = self.daofactory(classname = "Task.LoadByName")
-            result = action.execute(name = self.data['name'],
+            action = self.daofactory(classname = "Task.SelectTask")
+            result = action.execute(value = self.data['name'],
+                                    column = 'name',
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction)
         else:
@@ -168,6 +171,7 @@ class Task(DbObject):
         if result == []:
             # Then we have nothing
             logging.error('Attempted to load non-existant task with parameters:\n %s' %(self.data))
+            return
 
         # If we're calling this internally, we only care about the first task
         self.data.update(result[0])
@@ -217,9 +221,43 @@ class Task(DbObject):
         # return number of entries updated
         return status
 
+    ##########################################################################
+
+    @dbTransaction
+    def remove(self):
+        """
+        remove task object from database (with all jobs)
+        """
+        action = self.daofactory(classname = 'Task.Delete')
+
+        # verify data is complete
+        if not self.valid(['id']):
+            # We can delete by name without an ID
+            action.execute(column = 'name',
+                           value = self.data['name'],
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction)
+        else:
+            action.execute(column = 'id',
+                           value = self.data['id'],
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction)
+        # update status
+        self.existsInDataBase = False
+
+        # return number of entries removed
+        return 1
+
+    
+
     ########################################################################
     #  This is where I stopped doing anything
     ########################################################################
+
+
+
+
+
 
 
 
@@ -366,31 +404,31 @@ class Task(DbObject):
 
     ##########################################################################
 
-    def remove(self, db):
-        """
-        remove task object from database (with all jobs)
-        """
-
-        # verify data is complete
-        if not self.valid(['id']):
-            raise TaskError("The following task instance cannot be removed" + \
-                      " since it is not completely specified: %s" % self)
-
-        # remove from database
-        try:
-            status = db.delete(self)
-            if status < 1:
-                raise TaskError("Cannot remove task %s" % str(self))
-
-        # database error
-        except DbError, msg:
-            raise TaskError(str(msg))
-
-        # update status
-        self.existsInDataBase = False
-
-        # return number of entries removed
-        return status
+    #def remove(self, db):
+    #    """
+    #    remove task object from database (with all jobs)
+    #    """
+    #
+    #    # verify data is complete
+    #    if not self.valid(['id']):
+    #        raise TaskError("The following task instance cannot be removed" + \
+    #                  " since it is not completely specified: %s" % self)
+    #
+    #    # remove from database
+    #    try:
+    #        status = db.delete(self)
+    #        if status < 1:
+    #            raise TaskError("Cannot remove task %s" % str(self))
+    #
+    #    # database error
+    #    except DbError, msg:
+    #        raise TaskError(str(msg))
+    #
+    #    # update status
+    #    self.existsInDataBase = False
+    #
+    #    # return number of entries removed
+    #    return status
 
    ##########################################################################
 

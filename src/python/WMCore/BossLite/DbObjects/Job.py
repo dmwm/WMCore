@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.3 2010/04/15 20:52:51 mnorman Exp $"
-__revision__ = "$Revision: 1.3 $"
+__version__ = "$Id: Job.py,v 1.4 2010/04/19 18:00:41 mnorman Exp $"
+__revision__ = "$Revision: 1.4 $"
 
 
 # imports
@@ -181,29 +181,28 @@ class Job(DbObject):
 
         if self.data['id'] > 0:
             # Then load by ID
-            action = self.daofactory(classname = "Job.LoadByID")
-            result = action.execute(id = self.data['id'],
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction)
+            value = self.data['id']
+            column = 'id'
+
         elif self.data['jobId'] > 0:
             # Then use jobID
-            action = self.daofactory(classname = "Job.LoadByJobID")
-            result = action.execute(jobId = self.data['jobId'],
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction)
-
+            value = self.data['jobId']
+            column = 'job_id'
 
         elif self.data['name']:
             # Then use name
-            action = self.daofactory(classname = "Job.LoadByName")
-            result = action.execute(name = self.data['name'],
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction)
+            value = self.data['name']
+            column = 'name'
 
         else:
             # We have no identifiers.  We're screwed
             return
 
+        action = self.daofactory(classname = "Job.SelectJob")
+        result = action.execute(value = value,
+                                column = column,
+                                conn = self.getDBConn(),
+                                transaction = self.existingTransaction)
 
 
         if result == []:
@@ -330,6 +329,51 @@ class Job(DbObject):
         # return number of entries updated.
         return status
 
+    ###########################################################################
+
+    @dbTransaction
+    def remove(self):
+        """
+        remove job object from database
+        """
+
+        action = self.daofactory(classname = "Job.Delete")
+
+        # verify data is complete
+        if self.valid(['id']):
+            value  = self.data['id']
+            column = 'id'
+
+        elif self.valid(['name']):
+            value  = self.data['name']
+            column = 'name'
+
+        # TODO: Find some way to do job_id:task_id
+        elif self.valid(['jobId']):
+            value  = self.data['jobId']
+            column = 'job_id'
+
+        else:
+           raise JobError("The following job instance cannot be removed," + \
+                     " since it is not completely specified: %s" % self) 
+
+        action.execute(value = value,
+                       column = column,
+                       conn = self.getDBConn(),
+                       transaction = self.existingTransaction)
+        
+        # update status
+        self.existsInDataBase = False
+
+        # return number of entries removed
+        return 1
+
+
+
+
+
+
+
 ###############################################################################
     # ACHTUNG!
     # This is where I stopped doing anything
@@ -371,31 +415,31 @@ class Job(DbObject):
 
     ##########################################################################
 
-    def remove(self, db):
-        """
-        remove job object from database
-        """
-
-        # verify data is complete
-        if not self.valid(['jobId', 'taskId']):
-            raise JobError("The following job instance cannot be removed," + \
-                     " since it is not completely specified: %s" % self)
-
-        # remove from database
-        try:
-            status = db.delete(self)
-            if status < 1:
-                raise JobError("Cannot remove job %s" % self)
-
-        # database error
-        except DbError, msg:
-            raise JobError(str(msg))
-
-        # update status
-        self.existsInDataBase = False
-
-        # return number of entries removed
-        return status
+    #def remove(self, db):
+    #    """
+    #    remove job object from database
+    #    """
+    #
+    #    # verify data is complete
+    #    if not self.valid(['jobId', 'taskId']):
+    #        raise JobError("The following job instance cannot be removed," + \
+    #                 " since it is not completely specified: %s" % self)
+    #
+    #    # remove from database
+    #    try:
+    #        status = db.delete(self)
+    #        if status < 1:
+    #            raise JobError("Cannot remove job %s" % self)
+    #
+    #    # database error
+    #    except DbError, msg:
+    #        raise JobError(str(msg))
+    #
+    #    # update status
+    #    self.existsInDataBase = False
+    #
+    #    # return number of entries removed
+    #    return status
 
     ##########################################################################
 

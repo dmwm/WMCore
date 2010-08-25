@@ -5,8 +5,8 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.2 2010/03/30 15:31:53 mnorman Exp $"
-__revision__ = "$Revision: 1.2 $"
+__version__ = "$Id: RunningJob.py,v 1.3 2010/04/19 18:00:41 mnorman Exp $"
+__revision__ = "$Revision: 1.3 $"
 
 # imports
 import time
@@ -217,6 +217,32 @@ class RunningJob(DbObject):
 
 
 
+    ##############################################################
+
+    @dbTransaction
+    def remove(self):
+        """
+        remove job object from database
+        """
+        if not self.exists():
+            logging.error("Cannot remove non-existant runningJob %s" %(self.data))
+            return 0
+
+        action = self.daofactory(classname = "RunningJob.Delete")
+        result = action.execute(value = self.data['id'],
+                                column = 'id',
+                                conn = self.getDBConn(),
+                                transaction = self.existingTransaction)
+
+
+        # update status
+        self.existsInDataBase = False
+
+        # return number of entries removed
+        return 1
+
+
+
     ###################################################################
     #  This is where I stopped doing work
     ###################################################################
@@ -262,31 +288,31 @@ class RunningJob(DbObject):
 
     ##########################################################################
 
-    def remove(self, db):
-        """
-        remove job object from database
-        """
-
-        # verify data is complete
-        if not self.valid(['submission', 'jobId']):
-            raise JobError("The following job instance cannot be removed," + \
-                     " since it is not completely specified: %s" % self)
-
-        # remove from database
-        try:
-            status = db.delete(self)
-            if status < 1:
-                raise JobError("Cannot remove running job %s" % str(self))
-
-        # database error
-        except DbError, msg:
-            raise JobError(str(msg))
-
-        # update status
-        self.existsInDataBase = False
-
-        # return number of entries removed
-        return status
+    #def remove(self, db):
+    #    """
+    #    remove job object from database
+    #    """
+    #
+    #    # verify data is complete
+    #    if not self.valid(['submission', 'jobId']):
+    #        raise JobError("The following job instance cannot be removed," + \
+    #                 " since it is not completely specified: %s" % self)
+    #
+    #    # remove from database
+    #    try:
+    #        status = db.delete(self)
+    #        if status < 1:
+    #            raise JobError("Cannot remove running job %s" % str(self))
+    #
+    #    # database error
+    #    except DbError, msg:
+    #        raise JobError(str(msg))
+    #
+    #    # update status
+    #    self.existsInDataBase = False
+    #
+    #    # return number of entries removed
+    #    return status
 
     ##########################################################################
 

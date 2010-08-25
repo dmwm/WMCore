@@ -3,8 +3,8 @@
 The DBSUpload algorithm
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.10 2009/09/23 16:40:29 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.11 2009/09/25 14:46:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 import logging
@@ -105,7 +105,7 @@ class DBSUploadPoller(BaseWorkerThread):
         setBlock      = bufferFactory(classname = "DBSBufferFiles.SetBlock")
 
         #Now check them
-        file_ids = []
+        fileLFNs = []
         for dataset in datasets:
             #If we're here, then we have a dataset that needs to be uploaded.
             #First task, are the algos registered?
@@ -138,7 +138,7 @@ class DBSUploadPoller(BaseWorkerThread):
             addToBuffer.addDataset(dataset, 1)
 
             #Once the registration is done, you need to upload the individual files
-            file_ids.extend(dbinterface.findUploadableFiles(dataset, self.uploadFileMax))
+            file_ids = dbinterface.findUploadableFiles(dataset, self.uploadFileMax)
             logging.debug('Have retrieved %i files from dataset %s' %(len(file_ids), str(dataset['ID'])))
             
     	    files=[]
@@ -147,6 +147,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 logging.debug('Beginning to process file %s for dataset %s' %(str(an_id), str(dataset['ID'])))
                 file = DBSBufferFile(id=an_id['ID'])
                 file.load(parentage=1)
+                fileLFNs.append(file["lfn"])
                 #Now really stupid stuff has to happen.
                 initSet = file['locations']
                 locations = Set()
@@ -175,7 +176,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
 
                 #Update the file status, and then recount UnMigrated Files
-            	dbinterface.updateFilesStatus(file_ids)
+            	dbinterface.updateFilesStatus(fileLFNs, "InDBS")
             
 
         return

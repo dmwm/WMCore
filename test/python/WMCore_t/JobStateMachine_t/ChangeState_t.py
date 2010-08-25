@@ -11,6 +11,8 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
 from WMCore.JobStateMachine import DefaultConfig
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.Workflow import Workflow
 import WMCore.Database.CMSCouch as CMSCouch
 import time
 # Framework for this code written automatically by Inspect.py
@@ -37,6 +39,7 @@ class TestChangeState(unittest.TestCase):
         try:
             self.testInit.setSchema(customModules = ["WMCore.ThreadPool"], useDefault = False)
         except:
+            print "Warning: something bad happened when trying to do testinit.SetSchema"
             factory = WMFactory("Threadpool", "WMCore.ThreadPool")
             destroy = factory.loadObject(myThread.dialect + ".Destroy")
             destroyworked = destroy.execute(conn = myThread.transaction.conn)
@@ -88,17 +91,96 @@ class TestChangeState(unittest.TestCase):
     	"""
     	This is the test class for function Persist from module ChangeState
     	"""
-        return
+        (testSubscription, testFileset, testWorkflow, testFileA,\
+            testFileB, testFileC) = self.createSubscriptionWithFileABC()
+        
+
+        self.assertFalse(testSubscription.exists() , \
+               "ERROR: Subscription exists before it was created")
+
+        testSubscription.create()
+        
+        assert testSubscription.exists() >= 0, \
+               "ERROR: Subscription does not exist after it was created"
+               
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run(10, *[12312]))
+
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(10, *[12312]))
+        testFileA.create()
+        testFileB.create()
+
+        testJobA = Job(name = "TestJobA")
+        testJobA.addFile(testFileA)
+        
+        testJobB = Job(name = "TestJobB")
+        testJobB.addFile(testFileB)
+        
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+        testJobGroupA.commit()
+        
+        self.change.persist([testJobA, testJobB], 'new', 'none')
 
 
     def testPropagate(self):
-    	"""
+        """
     	This is the test class for function Propagate from module ChangeState
     	"""
         return
 
 
+    def createSubscriptionWithFileABC(self):
+        """
+        _createSubscriptionWithFileABC_
 
+        Create a subscription where the input fileset has three files.  Also
+        create a second subscription that has acquired two of the files.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+        testWorkflow2 = Workflow(spec = "specBOGUS.xml", owner = "Simon",
+                                name = "wfBOGUS", task = "Test")
+        testWorkflow2.create()        
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileA.addRun(Run(1, *[45]))
+                                 
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))                         
+        testFileB.addRun(Run(1, *[45]))
+        
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileC.addRun(Run(2, *[48]))
+         
+        testFileA.create()
+        testFileB.create()
+        testFileC.create()
+        
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription2 = Subscription(fileset = testFileset,
+                                         workflow = testWorkflow2)
+        testSubscription2.create()
+        testSubscription2.acquireFiles([testFileA, testFileB])
+        
+        return (testSubscription, testFileset, testWorkflow, testFileA,
+                testFileB, testFileC)
 
     def testRecordOneInCouch(self):
         """

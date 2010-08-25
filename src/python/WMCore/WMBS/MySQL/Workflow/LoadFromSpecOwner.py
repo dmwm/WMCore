@@ -6,13 +6,13 @@ MySQL implementation of Workflow.LoadFromSpecOwner
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromSpecOwner.py,v 1.4 2009/01/16 22:38:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: LoadFromSpecOwner.py,v 1.5 2009/08/13 21:44:35 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
     
 class LoadFromSpecOwner(DBFormatter):
-    sql = """SELECT id, spec, name, owner FROM wmbs_workflow
+    sql = """SELECT id, spec, name, owner, task FROM wmbs_workflow
              WHERE spec = :spec and owner = :owner"""
 
     def formatDict(self, result):

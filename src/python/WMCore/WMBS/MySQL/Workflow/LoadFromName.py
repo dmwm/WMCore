@@ -6,11 +6,11 @@ MySQL implementation of Workflow.LoadFromName
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromName.py,v 1.2 2009/01/14 16:41:50 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LoadFromName.py,v 1.3 2009/08/13 21:44:35 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.MySQL.Workflow.LoadFromID import LoadFromID
 
 class LoadFromName(LoadFromID):
-    sql = """SELECT id, spec, name, owner FROM wmbs_workflow
+    sql = """SELECT id, spec, name, owner, task FROM wmbs_workflow
              WHERE name = :workflow"""

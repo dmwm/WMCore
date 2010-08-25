@@ -6,13 +6,13 @@ MySQL implementation of Workflow.LoadFromID
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromID.py,v 1.4 2009/01/16 22:38:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: LoadFromID.py,v 1.5 2009/08/13 21:44:35 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadFromID(DBFormatter):
-    sql = "SELECT id, spec, name, owner FROM wmbs_workflow WHERE id = :workflow"
+    sql = "SELECT id, spec, name, owner, task FROM wmbs_workflow WHERE id = :workflow"
 
     def formatDict(self, result):
         """

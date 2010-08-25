@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.16 2010/03/05 18:54:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.17 2010/03/09 18:52:48 mnorman Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import os
 import threading
@@ -23,6 +23,10 @@ from WMCore.WMBS.JobGroup import JobGroup
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+
+
+
+
 
 
 class AccountantWorker:
@@ -47,16 +51,24 @@ class AccountantWorker:
                                         dbinterface = myThread.dbi)        
 
         self.getOutputMapAction = self.daoFactory(classname = "Jobs.GetOutputMap")
-        self.bulkAddToFilesetAction = self.daoFactory(classname = "Fileset.BulkAdd")
+        self.bulkAddToFilesetAction = self.daoFactory(classname = "Fileset.BulkAddByLFN")
         self.bulkParentageAction = self.daoFactory(classname = "Files.AddBulkParentage")
         self.getJobTypeAction = self.daoFactory(classname = "Jobs.GetType")
         self.getParentInfoAction = self.daoFactory(classname = "Files.GetParentInfo")
         self.getMergedChildrenAction = self.daoFactory(classname = "Files.GetMergedChildren")
         self.setParentageByJob       = self.daoFactory(classname = "Files.SetParentageByJob")
+        self.setFileRunLumi          = self.daoFactory(classname="Files.AddRunLumi")
+        self.setFileLocation         = self.daoFactory(classname="Files.SetLocation")
+        self.setFileAddChecksum      = self.daoFactory(classname="Files.AddChecksum")
 
         self.dbsStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
         self.dbsParentStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetParentStatus")
         self.dbsChildrenAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetChildren")
+        self.dbsCreateFiles    = self.dbsDaoFactory(classname = "DBSBufferFiles.Add")
+        self.dbsSetLocation    = self.dbsDaoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
+        self.dbsInsertLocation = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
+        self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
+        self.dbsSetRunLumi     = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
 
         config = Configuration()
         config.section_("JobStateMachine")
@@ -64,6 +76,13 @@ class AccountantWorker:
         config.JobStateMachine.couchDBName = kwargs["couchDBName"]
 
         self.stateChanger = ChangeState(config)
+
+        # Hold data for later commital
+        self.dbsFilesToCreate = []
+        self.wmbsFilesToBuild = []
+        self.fileLocation     = None
+
+        
         return
 
     def loadJobReport(self, parameters):
@@ -141,7 +160,8 @@ class AccountantWorker:
             jobSuccess = False
         else:
             self.handleSuccessful(jobID = parameters["id"],
-                                  fwkJobReport = fwkJobReport)
+                                  fwkJobReport = fwkJobReport,
+                                  fwkJobReportPath = parameters['fwjr_path'])
             jobSuccess = True
 
         self.transaction.commit()
@@ -200,8 +220,11 @@ class AccountantWorker:
             newRun.extend(run.lumis)
             dbsFile.addRun(newRun)
 
-        dbsFile.create()
-        dbsFile.setLocation(se = list(jobReportFile["locations"])[0])
+
+        self.dbsFilesToCreate.append(dbsFile)
+
+        #dbsFile.create()
+        #dbsFile.setLocation(se = list(jobReportFile["locations"])[0])
         return
 
     def fixupDBSFileStatus(self, redneckChildren):
@@ -211,8 +234,8 @@ class AccountantWorker:
         Fixup file status in DBS for redneck children.  Given a list of redneck
         children this method will determine if the redneck parents for the given
         child have been merged and update the file status in DBS accordingly.
-        If a redneck child has it's status changed from "WaitingForParents" to
-        "NOTUPLOADED" all of it's redneck children will be checked as well to
+        If a redneck child has it's status changed from 'WaitingForParents' to
+        'NOTUPLOADED' all of it's redneck children will be checked as well to
         determine if their status can be updated.
         """
         while len(redneckChildren) > 0:
@@ -352,6 +375,7 @@ class AccountantWorker:
                         redneckChildren.add(child)
 
         if len(newParents) > 0:
+
             dbsFile = DBSBufferFile(lfn = outputFile["lfn"])
             dbsFile.load()
             dbsFile.addParents(list(newParents))
@@ -384,18 +408,16 @@ class AccountantWorker:
         else:
             seName = fwjrFile["locations"]
 
-        wmbsFile = File()
-        wmbsFile.loadFromDataStructsFile(file = fwjrFile)
-        self.setParentageByJob.execute(jobID = jobID, child = wmbsFile['id'],
-                                       conn = self.transaction.conn,
-                                       transaction = True)
+        wmbsFile = self.createFileFromDataStructsFile(file = fwjrFile)
+        
+        
 
         if fwjrFile["merged"]:
             self.addFileToDBS(fwjrFile)
 
-        return (wmbsFile, fwjrFile["ModuleLabel"], fwjrFile["merged"])
+        return wmbsFile
 
-    def handleSuccessful(self, jobID, fwkJobReport):
+    def handleSuccessful(self, jobID, fwkJobReport, fwkJobReportPath = None):
         """
         _handleSuccessful_
 
@@ -408,7 +430,7 @@ class AccountantWorker:
         wmbsJob.getMask()
         outputID = wmbsJob.loadOutputID()
 
-        wmbsJob["fwjr"] = fwkJobReport
+        wmbsJob["fwjr"] = fwkJobReportPath
 
         outputMap = self.getOutputMapAction.execute(jobID = jobID,
                                                     conn = self.transaction.conn,
@@ -419,7 +441,6 @@ class AccountantWorker:
                                                 transaction = True)
 
         filesetAssoc = []
-        outputFiles = {}
         mergedOutputFiles = []
         fileList = fwkJobReport.getAllFiles()
         if not fileList:
@@ -431,29 +452,44 @@ class AccountantWorker:
             return
 
         for fwjrFile in fileList:
-            (wmbsFile, moduleLabel, merged) = \
-                     self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"], jobID = jobID)
+            wmbsFile    = self.addFileToWMBS(jobType,
+                                             fwjrFile,
+                                             wmbsJob["mask"],
+                                             jobID = jobID)
+            merged      = wmbsFile['merged']
+            moduleLabel = fwjrFile["ModuleLabel"]
             if not wmbsFile and not moduleLabel:
                 # Something got screwed up in addFileToWMBS.  Send job to FAIL
                 self.transaction.rollback()
                 self.transaction.begin()
                 self.handleFailed(jobID = jobID, fwkJobReport = fwkJobReport)
                 return
-            outputFiles[moduleLabel] = wmbsFile
 
             if merged:
                 mergedOutputFiles.append(wmbsFile)
 
-            filesetAssoc.append({"fileid": wmbsFile["id"], "fileset": outputID})
-            outputFileset = self.outputFilesetsForJob(outputMap, wmbsFile["merged"], moduleLabel)
+            filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputID})
+            outputFileset = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
             if outputFileset != None:
-                filesetAssoc.append({"fileid": wmbsFile["id"], "fileset": outputFileset})
+                filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
 
+
+        # Do what we can with WMBS files
+        wmbsFiles = self.handleWMBSFiles(jobID = jobID)
+        
 
         if len(filesetAssoc) > 0:
             self.bulkAddToFilesetAction.execute(binds = filesetAssoc,
                                                 conn = self.transaction.conn,
                                                 transaction = True)
+
+
+
+        # Create DBSBufferFiles
+        self.createFilesInDBSBuffer(jobLocation = list(fileList[0]['locations'])[0])
+
+        wmbsJob.completeInputFiles()
+
 
         # Only save once job is done, and we're sure we made it through okay
         wmbsJob.save()
@@ -500,3 +536,169 @@ class AccountantWorker:
         report.addError("cmsRun1", 84, errorCode, errorDescription)
         report.data.cmsRun1.status = "Failed"
         return report
+
+
+
+    def createFilesInDBSBuffer(self, jobLocation):
+        """
+        _createFilesInDBSBuffer_
+
+        It does the actual job of creating things in DBSBuffer
+        WARNING: This assumes all files in a job have the same final location
+        """
+
+        if len(self.dbsFilesToCreate) == 0:
+            # Whoops, nothing to do!
+            return
+
+
+        dbsFileTuples = []
+        dbsLocations  = []
+        dbsFileLoc    = []
+        dbsCksumBinds = []
+        runLumiBinds  = []
+        selfChecksums = None
+        for dbsFile in self.dbsFilesToCreate:
+            # Append a tuple in the format specified by DBSBufferFiles.Add
+            # Also run insertDatasetAlgo
+
+            lfn           = dbsFile['lfn']
+            selfChecksums = dbsFile['checksums']
+            
+            dbsFileTuples.append((lfn, dbsFile['size'],
+                                  dbsFile['events'], dbsFile.insertDatasetAlgo(),
+                                  dbsFile['status']))
+            
+            dbsFileLoc.append({'lfn': lfn, 'sename' : jobLocation})
+            runLumiBinds.append({'lfn': lfn, 'runs': dbsFile['runs']})
+
+            if selfChecksums:
+                # If we have checksums we have to create a bind
+                # For each different checksum
+                for entry in selfChecksums.keys():
+                    dbsCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
+                                          'cktype' : entry})
+
+
+        self.dbsInsertLocation.execute(siteName = jobLocation,
+                                       conn = self.transaction.conn,
+                                       transaction = True)
+
+        self.dbsCreateFiles.execute(files = dbsFileTuples,
+                                    conn = self.transaction.conn,
+                                    transaction = True)
+
+        self.dbsSetLocation.execute(binds = dbsFileLoc,
+                                    conn = self.transaction.conn,
+                                    transaction = True)
+
+        self.dbsSetChecksum.execute(bulkList = dbsCksumBinds,
+                                    conn = self.transaction.conn,
+                                    transaction = True)
+
+        self.dbsSetRunLumi.execute(file = runLumiBinds,
+                                   conn = self.transaction.conn,
+                                   transaction = True)
+
+        # Now that we've created those files, clear the list
+        self.dbsFilesToCreate = []
+
+        return
+
+
+    def handleWMBSFiles(self, jobID):
+        """
+        _handleWMBSFiles_
+
+        Do what can be done in bulk in bulk
+        """
+        parentageBinds = []
+        runLumiBinds   = []
+        fileCksumBinds = []
+        fileIDs        = []
+        for wmbsFile in self.wmbsFilesToBuild:
+            fileID        = wmbsFile['id']
+            selfChecksums = wmbsFile['checksums']
+            parentageBinds.append({'child': fileID, 'jobid': jobID})
+            runLumiBinds.append({'lfn': wmbsFile['lfn'], 'runs': wmbsFile['runs']})
+            fileIDs.append(fileID)
+
+            if selfChecksums:
+                # If we have checksums we have to create a bind
+                # For each different checksum
+                for entry in selfChecksums.keys():
+                    fileCksumBinds.append({'fileid': fileID, 'cksum' : selfChecksums[entry],
+                                           'cktype' : entry})
+
+        
+        self.setParentageByJob.execute(binds = parentageBinds,
+                                       conn = self.transaction.conn,
+                                       transaction = True)
+
+        self.setFileRunLumi.execute(file = runLumiBinds,
+                                    conn = self.transaction.conn,
+                                    transaction = True)
+
+        self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
+                                        conn = self.transaction.conn,
+                                        transaction = True)
+        if self.fileLocation:
+            self.setFileLocation.execute(file = fileIDs,
+                                         location = self.fileLocation,
+                                         conn = self.transaction.conn,
+                                         transaction = True)
+
+
+        # Clear out finished files
+        self.wmbsFilesToBuild = []
+
+        return
+
+
+
+    def createFileFromDataStructsFile(self, file):
+        """
+        _createFileFromDataStructsFile_
+
+        This function will create a WMBS File given a DataStructs file
+        """
+        wmbsFile = File()
+        wmbsFile.update(file)
+
+
+        if type(file["locations"]) == set:
+            s = file["locations"].copy()
+            seName = s.pop()
+        elif type(file["locations"]) == list:
+            seName = file["locations"][0]
+        else:
+            seName = file["locations"]
+
+        wmbsFile.setLocation(se = seName, immediateSave = False)
+        self.fileLocation = seName
+
+        # THIS IS DANGEROUS
+        existingTransaction = wmbsFile.beginTransaction()
+
+        addAction = wmbsFile.daofactory(classname = "Files.Add")
+        addAction.execute(files = wmbsFile["lfn"], size = wmbsFile["size"],
+                          events = wmbsFile["events"],
+                          first_event = wmbsFile["first_event"],
+                          last_event = wmbsFile["last_event"],
+                          merged = wmbsFile["merged"],
+                          conn = wmbsFile.getDBConn(),
+                          transaction = wmbsFile.existingTransaction())
+
+        wmbsFile.exists()
+
+        wmbsFile.commitTransaction(existingTransaction)
+
+
+
+        #wmbsFile.updateLocations(noExists = True)
+
+        self.wmbsFilesToBuild.append(wmbsFile)
+
+
+        return wmbsFile
+    

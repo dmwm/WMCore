@@ -67,9 +67,9 @@ class DCCPFNALImpl(StageOutImplV2):
             such as temporary connection failures. Anything else will be handled as an unexpected
             error and skip retrying with this plugin
         """
-        # munge filenames
-        if stageOut:
-            targetPFN = self.createSourceName(protocol, targetPFN)
+        targetPFN = self.createSourceName(protocol, targetPFN)
+        sourcePFN = self.createSourceName(protocol, sourcePFN)
+
         
         # make directories
         self.createOutputDirectory(os.path.dirname(targetPFN))

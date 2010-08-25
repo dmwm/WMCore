@@ -7,8 +7,8 @@ normal file based splitting except that the input files will also have their
 parentage information loaded so that the parents can be included in the job.
 """
 
-__revision__ = "$Id: TwoFileBased.py,v 1.7 2009/10/29 13:43:28 sfoulkes Exp $"
-__version__  = "$Revision: 1.7 $"
+__revision__ = "$Id: TwoFileBased.py,v 1.8 2009/11/06 22:10:57 sfoulkes Exp $"
+__version__  = "$Revision: 1.8 $"
 
 import logging
 from sets import Set
@@ -27,8 +27,7 @@ class TwoFileBased(JobFactory):
         """
         filesPerJob = int(kwargs.get("files_per_job", 10))
         filesInJob = 0
-        jobGroups = []
-        jobGroup = None
+        totalJobs = 0
 
         baseName = makeUUID()
 
@@ -36,7 +35,8 @@ class TwoFileBased(JobFactory):
             availableFile.loadData(parentage = 1)
             if filesInJob == 0 or filesInJob == filesPerJob:
                 self.newGroup()
-                self.newJob(name = "%s-%s" % (baseName, len(jobGroups) + 1))
+                self.newJob(name = "%s-%s" % (baseName, totalJobs))
+                totalJobs += 1
                 filesInJob = 0
 
             filesInJob += 1

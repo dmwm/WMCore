@@ -133,7 +133,7 @@ class LintCommand(Command):
                         try:
                             lint.Run(['--rcfile=standards/.pylintrc', 
                                       '--output-format=parseable', 
-                                      '-r n',
+                                      '--reports=n',
                                       filepath])
                         except SystemExit:
                             pass

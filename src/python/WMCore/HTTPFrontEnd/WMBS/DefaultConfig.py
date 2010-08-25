@@ -29,3 +29,10 @@ wmbs.section_('model')
 wmbs.model.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
 wmbs.section_('formatter')
 wmbs.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
+
+wmbsmonitor = active.section_('wmbsmonitor')
+# The class to load for this view/page
+wmbsmonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
+wmbsmonitor.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
+wmbsmonitor.javascript = path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/')
+wmbsmonitor.html = path.join(WMCore.WMInit.getWMBASE(), 'src/html/')

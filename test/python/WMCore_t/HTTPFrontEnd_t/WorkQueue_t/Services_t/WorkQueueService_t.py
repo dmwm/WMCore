@@ -4,7 +4,7 @@ Unittest file for WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueService.py
 """
 
 __revision__ = "$Id"
-__version__ = "$Revision: 1.8 $"
+__version__ = "$Revision: 1.9 $"
 
 
 #setup emulator for test, this needs to be at top of the file
@@ -45,9 +45,10 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
     def initialize(self):
         self.config = DefaultConfig('WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
         # set up database
-        dbUrl = os.environ.get("DATABASE", None) or "sqlite:////tmp/resttest.db"
+        dbUrl = os.environ.get("DATABASE", None)
         self.config.setDBUrl(dbUrl)
-                
+        socket = os.environ.get("DBSOCK", None)
+        self.config.setDBSocket(socket)        
         # mysql example
         #self.config.setDBUrl('mysql://username@host.fnal.gov:3306/TestDB')
         self.urlbase = self.config.getServerUrl()

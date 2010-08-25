@@ -6,10 +6,10 @@ Oracle implementation of Files.Exists
 """
 
 __all__ = []
-__revision__ = "$Id: ExistsByID.py,v 1.1 2009/02/16 16:06:08 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ExistsByID.py,v 1.2 2009/04/29 23:17:47 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.MySQL.Files.ExistsByID import ExistsByID as ExistsByIDJobMySQL
+from WMCore.WMBS.MySQL.Files.ExistsByID import ExistsByID as ExistsByIDMySQL
 
-class ExistsByID(ExistsByIDJobMySQL):
-    sql = ExistsByIDJobMySQL.sql
+class ExistsByID(ExistsByIDMySQL):
+    sql = ExistsByIDMySQL.sql

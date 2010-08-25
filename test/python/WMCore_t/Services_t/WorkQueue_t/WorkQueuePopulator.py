@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueuePopulator.py,v 1.1 2010/01/20 22:06:38 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueuePopulator.py,v 1.2 2010/02/03 20:03:04 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import os
@@ -23,10 +23,6 @@ from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workingDir
 shutil.rmtree(workingDir, ignore_errors = True)
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
-
-testInit = TestInit(__file__)
-testInit.setLogging() # logLevel = logging.SQLDEBUG
-testInit.setDatabaseConnection()
 
 specFile = os.path.join(os.getcwd(), 'testworkflow.spec')
 processingSpecFile = os.path.join(os.getcwd(), 'testProcessing.spec')

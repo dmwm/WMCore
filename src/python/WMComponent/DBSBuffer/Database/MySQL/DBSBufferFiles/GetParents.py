@@ -29,8 +29,6 @@ class GetParents(DBFormatter):
     def execute(self, files=None, conn = None, transaction = False):
         binds = self.getBinds(files)
         
-        self.logger.debug('File.GetParents binds: %s' % binds)
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
-        self.logger.debug('File.GetParents result: %s' % result)
         return self.format(result)

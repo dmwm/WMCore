@@ -5,8 +5,8 @@ MySQL implementation of File.Heritage
 Make the parentage link between two file id's
 """
 __all__ = []
-__revision__ = "$Id: Heritage.py,v 1.1 2009/01/12 23:02:39 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Heritage.py,v 1.2 2009/07/13 19:49:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -25,13 +25,9 @@ class Heritage(DBFormatter):
                               'parent': p})
         return binds
     
-    def format(self, result):
-        return True
-    
     def execute(self, parent=0, child=0, conn = None, transaction = False):
         binds = self.getBinds(parent, child)
         
-        self.logger.debug('File.Heritage binds: %s' % binds)
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
-        return self.format(result)
+        return

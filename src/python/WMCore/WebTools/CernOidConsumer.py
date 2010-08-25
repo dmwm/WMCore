@@ -107,8 +107,8 @@ class CernOidConsumer(cherrypy.Tool):
             # ...so instead we asser that the url to be used is the one configured
             if openid_url:
                 assert openid_url == self.oidserver
-        except:
-            msg = 'Error in discovery: wrong OpenID server '
+        except AssertionError, ae:
+            msg = 'Wrong OpenID server '
             msg += 'You are attempting to authenticate with %s. ' % openid_url
             msg += 'This is an invalid OpenID URL. You want %s.' % self.oidserver
             session = self.get_session()
@@ -136,6 +136,7 @@ class CernOidConsumer(cherrypy.Tool):
             oidrequest = oidconsumer.begin(openid_url)
         except discover.DiscoveryFailure, exc:
             msg = 'Error in discovery: %s' % cgi.escape(str(exc[0]))
+            msg += 'auth_url:%s server: %s' % (openid_url, self.oidserver)
             msg += 'Check that you correctly provided the OpenID server in '
             msg += 'your OpenID URL.'
             cherrypy.session[self.session_name]['info'] = msg

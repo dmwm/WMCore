@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.10 2009/02/27 22:19:22 fvlingen Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Harness_t.py,v 1.11 2009/09/30 23:36:51 meloam Exp $"
+__version__ = "$Revision: 1.11 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -14,6 +14,8 @@ import os
 import threading
 import time
 import unittest
+import shutil
+import tempfile
 
 from WMCore_t.Agent_t.TestComponent import TestComponent
 
@@ -29,119 +31,38 @@ class HarnessTest(unittest.TestCase):
     """
     TestCase for TestComponent module 
     """
-
-    _setup_done = False
-    _teardown = False
-    _log_level = 'debug'
-
+    tempDir = None
     def setUp(self):
         """
         setup for test.
         """
-        if not HarnessTest._setup_done:
-            self.testInit = TestInit(__file__)
-            self.testInit.setLogging()
-            self.testInit.setDatabaseConnection()
-            self.testInit.setSchema()
-            HarnessTest._setup_done = True
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema() 
+        self.tempDir = tempfile.mkdtemp()
 
     def tearDown(self):
         """
         Delete database 
         """
-        myThread = threading.currentThread()
-        if HarnessTest._teardown and myThread.dialect == 'MySQL':
-            command = 'mysql -u root --socket='\
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "drop database ' \
-            + os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
-
-            command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
-            + os.getenv('SQLCREATE') + '"'
-            commands.getstatusoutput(command)
-
-            command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "create database ' \
-            +os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
-        HarnessTest._teardown = False
-
-    def setConfig(self):
-        config = Configuration()
-        config.Agent.contact = "fvlingen@caltech.edu"
-        config.Agent.teamName = "Lakers"
-        config.Agent.agentName = "Lebron James"
-
-        config.section_("General")
-        config.General.workDir = os.getenv("TESTDIR")
-
-        config.component_("TestComponent")
-        config.TestComponent.logLevel = 'INFO'
-
-        config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = 'mysql' 
-        config.CoreDatabase.socket = os.getenv("DBSOCK")
-        config.CoreDatabase.user = os.getenv("DBUSER")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        config.CoreDatabase.hostname = os.getenv("DBHOST")
-        config.CoreDatabase.name = os.getenv("DBNAME")
-        return config
-
-
-    def testA(self):
-        """
-        Mimics creation of component and handles come messages.
-        """
-        # we want to read this from a file for the actual components.
-        config = self.setConfig()
-        testComponent = TestComponent(config)
-        testComponent.prepareToStart()
-
-        testComponent.handleMessage('LogState','')
-        testComponent.handleMessage('TestMessage1','TestMessag1Payload')
-        testComponent.handleMessage('TestMessage2','TestMessag2Payload')
-        testComponent.handleMessage('TestMessage3','TestMessag3Payload')
-        testComponent.handleMessage('TestMessage4','TestMessag4Payload')
-        testComponent.handleMessage('Logging.DEBUG','')
-        testComponent.handleMessage('Logging.WARNING','')
-        testComponent.handleMessage('Logging.CRITICAL','')
-        testComponent.handleMessage('Logging.ERROR','')
-        testComponent.handleMessage('Logging.INFO','')
-        testComponent.handleMessage('Logging.SQLDEBUG','')
-        testComponent.handleMessage('TestComponent:Logging.DEBUG','')
-        testComponent.handleMessage('TestComponent:Logging.WARNING','')
-        testComponent.handleMessage('TestComponent:Logging.CRITICAL','')
-        testComponent.handleMessage('TestComponent:Logging.ERROR','')
-        testComponent.handleMessage('TestComponent:Logging.INFO','')
-        testComponent.handleMessage('TestComponent:Logging.SQLDEBUG','')
-        # test a non existing message (to generate an error)
-        errorMsg = ''
-        try:
-            testComponent.handleMessage('NonExistingMessageType','')
-        except Exception,ex:
-            errorMsg = str(ex)
-        assert errorMsg.startswith('Message NonExistingMessageType with payload')
-
-        HarnessTest._setup_done = False
-        HarnessTest._teardown = True
+        self.testInit.clearDatabase()
+        shutil.rmtree( self.tempDir, True )
 
     def testB(self):
 
-        config = self.setConfig()
+        config = self.testInit.getConfiguration()
+        config.component_("TestComponent")
+        config.TestComponent.logLevel = 'INFO'
+        config.section_("General")
+        config.TestComponent.componentDir = os.path.join( \
+        self.tempDir, "Components/TestComponent1")
+        config.General.workDir = config.TestComponent.componentDir
+        os.makedirs( config.TestComponent.componentDir )
+        config.General.workDir = os.getenv( self.tempDir )
         # as this is a test we build the string from our global environment
         # parameters normally you put this straight into the DefaultConfig.py file:
-
-        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        # make the other parameters none, to ensure we testing the right connection:
-        config.CoreDatabase.socket = os.getenv("DBSOCK")
-        config.CoreDatabase.user = None
-        config.CoreDatabase.passwd = None
-        config.CoreDatabase.hostname = None
-        config.CoreDatabase.name = None
-
+        # testInit.getConfiguration returns from the environment variable by default
         testComponent = TestComponent(config)
         testComponent.prepareToStart()
 
@@ -170,13 +91,16 @@ class HarnessTest(unittest.TestCase):
             errorMsg = str(ex)
         assert errorMsg.startswith('Message NonExistingMessageType with payload')
 
-        HarnessTest._setup_done = False
-        HarnessTest._teardown = True
-
     def testC(self):
-        config = self.setConfig()
+        config = self.testInit.getConfiguration()
+        config.component_("TestComponent")
+        config.TestComponent.logLevel = 'INFO'
+        config.section_("General")
         # try starting a component as a deamon:
-        config.TestComponent.componentDir = os.path.join(config.General.workDir, "Components/TestComponent1")
+        config.TestComponent.componentDir = os.path.join( \
+                    self.tempDir, "Components/TestComponent1")
+        config.General.workDir = config.TestComponent.componentDir
+        os.makedirs( config.TestComponent.componentDir )
         testComponent = TestComponent(config)
         # we set the parent to true as we are testing
         testComponent.startDeamon(keepParent = True)
@@ -189,13 +113,18 @@ class HarnessTest(unittest.TestCase):
         details.killWithPrejudice()
         print('Daemon killed')
 
-        HarnessTest._setup_done = False
-        HarnessTest._teardown = True
+
 
     def testD(self):
-        config = self.setConfig()
+        config = self.testInit.getConfiguration()
+        config.component_("TestComponent")
+        config.TestComponent.logLevel = 'INFO'
+        config.section_("General")
+        config.General.workDir = os.getenv( self.tempDir )
         # try starting a component as a deamon:
-        config.TestComponent.componentDir = os.path.join(config.General.workDir, "Components/TestComponent2")
+        config.TestComponent.componentDir = os.path.join( \
+                    self.tempDir, "Components/TestComponent2")
+        os.makedirs( config.TestComponent.componentDir )
         testComponent = TestComponent(config)
         # we set the parent to true as we are testing
         testComponent.startDeamon(keepParent = True)
@@ -225,18 +154,6 @@ class HarnessTest(unittest.TestCase):
             print('Component has not received stop message')
             time.sleep(2)
         print('Daemon shutdown gracefully')
-
-        HarnessTest._teardown = True
-
-    def runTest(self):
-        """
-        Tests the harness.
-        """
-
-        self.testA()
-        self.testB()
-        self.testC()
-        self.testD()
 
 if __name__ == '__main__':
     unittest.main()

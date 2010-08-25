@@ -5,13 +5,14 @@ _FileBased_t_
 File based splitting test.
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.4 2009/08/05 19:40:16 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: FileBased_t.py,v 1.5 2009/09/10 18:59:30 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from sets import Set
 import unittest
 import os
 import threading
+import hotshot, hotshot.stats
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
@@ -135,7 +136,34 @@ class FileBasedTest(unittest.TestCase):
             raise Exception("Could not complete WMBS tear down.")
             
         myThread.transaction.commit()
-        return            
+        return
+
+    def createLargeFileBlock(self):
+        """
+        _createLargeFileBlock_
+        
+        Creates a large group of files for testing
+        """
+        testFileset = Fileset(name = "TestFilesetX")
+        testFileset.create()
+        for i in range(1000):
+            newFile = File(makeUUID(), size = 1000, events = 100,
+                           locations = Set(["somese.cern.ch"]))
+            newFile.create()
+            testFileset.addFile(newFile)
+        testFileset.commit()
+            
+        testWorkflow = Workflow(spec = "spec.xml", owner = "mnorman",
+                                name = "wf003", task="Test" )
+        testWorkflow.create()
+
+        largeSubscription = Subscription(fileset = testFileset,
+                                                   workflow = testWorkflow,
+                                                   split_algo = "FileBased",
+                                                   type = "Processing")
+        largeSubscription.create()
+
+        return largeSubscription
 
     def testExactFiles(self):
         """
@@ -256,6 +284,40 @@ class FileBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups[1].jobs[0].getFiles()), 5)
 
         
+        return
+
+    def testTiming(self):
+        """
+        _testTiming_
+
+        This is based off of test2FileSplit, but built for timing
+        """
+
+        #return
+        
+        myThread = threading.currentThread()
+
+        profiler = hotshot.Profile('hotshot.stats')
+
+        subscript = self.createLargeFileBlock()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = subscript)
+
+        jobGroups = profiler.runcall(jobFactory, files_per_job = 2)
+
+        profiler.close()
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 500)
+
+        stats = hotshot.stats.load("hotshot.stats")
+        stats.strip_dirs()
+        stats.sort_stats('time', 'calls')
+        stats.print_stats(40)
+
+
+
         return
 
 if __name__ == '__main__':

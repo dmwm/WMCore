@@ -1,48 +1,15 @@
 #!/usr/bin/env python
-
 """
-Oracle implementation of AddLocation, Adds a Location to database if it doesn't exists already
+_AddLocation_
+
+Oracle implementation of DBSBufferFiles.AddLocation
 """
 
+__revision__ = "$Id: AddLocation.py,v 1.3 2009/10/13 19:40:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
-#Someone should check this!
-#It's been modified for Oracle by taking out the lfn marker
-
-__revision__ = "$Id: AddLocation.py,v 1.2 2009/07/14 19:14:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
-
-from WMCore.Database.DBFormatter import DBFormatter
-from sets import Set
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.AddLocation import AddLocation as MySQLAddLocation
+from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.AddLocation \
+     import AddLocation as MySQLAddLocation
 
 class AddLocation(MySQLAddLocation):
-
-    sql = """insert into dbsbuffer_location(se_name) values (:location)""" 
-
-    def getBinds(self, location = None):
-
-        if type(location) == type('string'):
-            return self.dbi.buildbinds(self.dbi.makelist(location), 'location')
-
-        elif isinstance(location, (list, Set, set)):
-            binds = []
-            for l in location:
-                #This line has been changed
-                binds.extend(self.dbi.buildbinds(self.dbi.makelist(l), 'location'))
-            return binds
-        else:
-            raise Exception, "Type of location argument is not allowed: %s" \
-                                % type(location)
-
-    def execute(self, siteName, conn = None, transaction = None):
-        binds = self.getBinds(siteName)
-	try:
-	        result = self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)
-        except Exception, ex:
-            if ex.__str__().find("unique") != -1 :
-                return
-            else:
-                raise ex
-        return
-
+    pass

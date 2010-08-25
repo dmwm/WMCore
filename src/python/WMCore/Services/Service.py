@@ -2,8 +2,11 @@
 """
 _Service_
 
-A Service talks to some http accessible service that provides information. It
-has a cache path (defaults to /tmp), cache duration, an endpoint (the url the 
+A Service talks to some http(s) accessible service that provides information and
+caches the result of these queries. The cache will be refreshed if the file is 
+older than a timeout set in the instance of Service. 
+
+It has a cache path (defaults to /tmp), cache duration, an endpoint (the url the 
 service exists on) a logger and an accept type (json, xml etc) and method 
 (GET/POST). 
 
@@ -24,10 +27,13 @@ timeout.
 
 If you just want to retrieve the data without caching use the Requests class
 directly.
+
+TODO: support etags, respect server expires (e.g. update self['cacheduration'] 
+to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.18 2009/07/15 11:19:42 metson Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Service.py,v 1.19 2009/07/15 11:23:36 metson Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import datetime
 import os

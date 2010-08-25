@@ -5,21 +5,19 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.54 2010/08/13 15:56:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.54 $"
+__revision__ = "$Id: ChangeState.py,v 1.55 2010/08/13 16:37:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.55 $"
 
-from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Services.UUID import makeUUID
 from WMCore.WMConnectionBase import WMConnectionBase
 
-import threading
 import time
 import logging
 
-stateTransitionsByJobID = {"map": \
+StateTransitionsByJobID = {"map": \
 """
 function(doc) {
   if (doc['type'] == 'state') {
@@ -31,7 +29,7 @@ function(doc) {
   }
 """}
 
-fwjrsByJobID = {"map": \
+FwjrsByJobID = {"map": \
 """
 function(doc) {
   if (doc['type'] == 'fwjr') {
@@ -40,7 +38,7 @@ function(doc) {
   }
 """}  
 
-jobsByJobID = {"map": \
+JobsByJobID = {"map": \
 """
 function(doc) {
   if (doc['type'] == 'job') {
@@ -143,8 +141,6 @@ class ChangeState(WMObject, WMConnectionBase):
             jobMap[couchID["jobid"]]["couch_record"] = couchID["couch_record"]
 
         timestamp = int(time.time())
-        newJobCounter = 0
-        baseUUID = makeUUID()
         couchRecordsToUpdate = []
         
         for jobID in jobMap.keys():
@@ -168,7 +164,8 @@ class ChangeState(WMObject, WMConnectionBase):
             else:
                 transitionDocument["location"] = "Agent"
                 
-            self.database.queue(transitionDocument, viewlist = ["jobDump/jobsByJobID"])
+            self.database.queue(transitionDocument,
+                                viewlist = ["jobDump/jobsByJobID"])
 
             if couchDocID == None:
                 jobDocument = {}
@@ -212,13 +209,13 @@ class ChangeState(WMObject, WMConnectionBase):
                 couchRecordsToUpdate.append({"jobid": job["id"],
                                              "couchid": jobDocument["_id"]})                
                 self.database.queue(jobDocument, viewlist = ["jobDump/jobsByJobID"])
-                newJobCounter += 1
             elif job.get("fwjr", None):
                 fwjrDocument = {"jobid": job["id"],
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),
                                 "type": "fwjr"}
-                self.database.queue(fwjrDocument, viewlist = ["jobDump/jobsByJobID"])
+                self.database.queue(fwjrDocument,
+                                    viewlist = ["jobDump/jobsByJobID"])
 
         if len(couchRecordsToUpdate) > 0:
             self.setCouchDAO.execute(bulkList = couchRecordsToUpdate,
@@ -232,13 +229,15 @@ class ChangeState(WMObject, WMConnectionBase):
         """
         _createDatabase_
 
+        Create the couch database and install the views.
         """
         database = self.couchdb.createDatabase(self.dbname)
         
         hashViewDoc = database.createDesignDoc("JobDump")
-        hashViewDoc["views"] = {"stateTransitionsByJobID": stateTransitionsByJobID,
-                                "fwjrsByJobID": fwjrsByJobID,
-                                "jobsByJobID": jobsByJobID}
+        viewDict = {"stateTransitionsByJobID": StateTransitionsByJobID,
+                    "fwjrsByJobID": FwjrsByJobID,
+                    "jobsByJobID": JobsByJobID}
+        hashViewDoc["views"] = viewDict
      
         database.queue(hashViewDoc)
         database.commit()

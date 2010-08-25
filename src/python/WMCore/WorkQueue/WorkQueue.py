@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool 
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.15 2009/06/25 16:48:26 sryu Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: WorkQueue.py,v 1.16 2009/06/26 21:10:36 sryu Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import time
 # pylint: disable-msg=W0104,W0622
@@ -226,6 +226,11 @@ class _WQElement(WorkQueueBase):
         """
         Change status to that given
         """
+        existingTransaction = self.beginTransaction()
+        statusAction = self.daofactory(classname = "WorkQueueElement.UpdateStatus")
+        statusAction.execute(status, conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
+        self.commitTransaction(existingTransaction)
         self.status = status
         
             
@@ -251,7 +256,19 @@ class _WQElement(WorkQueueBase):
             # deleted 
             block["Locations"] = locations    
 
-
+    def listFilesInElement(self, dbsHelper):
+        """
+        get list of files from dbs for this element (block + parent blocks)
+        TODO: need to find how the parents block will be handled. 
+        (put in the same fileset?)
+        """
+        primaryFiles = dbsHelper.listFilesInBlock(self.primaryBlock["Name"])
+        parentFiles = []
+        for block in self.parentBlocks:
+            parentFiles.extend(dbsHelper.listFilesInBlock(block["Name"]))
+        
+        return primaryFiles, parentFiles
+    
 class WorkQueue(WorkQueueBase):
     """
     _WorkQueue_
@@ -385,7 +402,7 @@ class WorkQueue(WorkQueueBase):
             #print element.primaryBlock
             dbs = self.dbsHelpers[element.wmSpec.dbs_url]
             element.updateLocations(dbs)
-
+    
 
     def getWork(self, siteJobs):
         """
@@ -396,15 +413,27 @@ class WorkQueue(WorkQueueBase):
         self.load()
         
         results = []
-        subscriptions = []
         #for site in siteJobs.key():
         # might just return one  block
         wqElementList = self.match(siteJobs)
         for wqElement in wqElementList:
             wmbsHelper = WMBSHelper(wqElement.wmSpec)
+            #TODO: task maker will handle creating the subscription
+            #It will be already available by now - wqElement.wmSpec.subscriptionID?
             subscription = wmbsHelper.createSubscription()
+            #TODO: also fill up the files in the fileset
+            #      find out how to handle parent files
+            #dbs = self.dbsHelpers[wqElement.wmSpec.dbs_url]
+            #files, pfile = wqElement.listFilesInElement(dbs)
+            #wmbsHelper.createFilesAndAssociateToFileset(files)
+            
+            #TODO: probably need to pass element id list as well if it needs track
+            # fine grained status
+            # also check if it is the last element in the given spec close the fileset.           
             results.append(subscription)
             wqElement.subscription = subscription
+            #TODO: probably need to update the status here since this is not REST call.
+            # gotWork function won't be necessary 
 
         return results
 

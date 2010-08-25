@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: RESTFormat_t.py,v 1.7 2010/01/22 17:50:44 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: RESTFormat_t.py,v 1.8 2010/01/26 17:51:06 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import json
@@ -61,14 +61,15 @@ class RESTFormatTest(RESTBaseUnitTest):
                          output={'code':200, 'data':"{'a': '%', 'b': 'b'}"})
         
        
-        # fix this
-        url = self.urlbase +'list3'
-        data = jsonwrapper.dumps(input)
-        methodTest('POST', url, accept=type, input=data,
-                         contentType="text/json",
-                         output={'code':200, 'data':"{'a': '%', 'b': 'b'}"}
-                         )
-       
+        # This is not supported: commented out for now in case it will get supported later
+        # auto parameter parsing on certain content type
+#        url = self.urlbase +'list3'
+#        data = jsonwrapper.dumps(input)
+#        methodTest('POST', url, accept=type, input=data,
+#                         contentType="text/json",
+#                         output={'code':200, 'data':"{'a': '%', 'b': 'b'}"}
+#                         )
+#       
         
         input={'a':'%', 'b':'b'}
         url = self.urlbase +'list3'  

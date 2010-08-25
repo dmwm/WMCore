@@ -5,8 +5,8 @@ _ReqMgr.RequestDB.MySQL_
 MySQL Compatibility layer for Request Manager DB
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2010/07/20 22:57:06 rpw Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Create.py,v 1.4 2010/07/21 19:36:49 rpw Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 
@@ -439,7 +439,7 @@ class Create(DBCreator):
 
         request_id NUMBER(11) NOT NULL,
         update_time TIMESTAMP,
-        message CLOB NOT NULL,
+        message VARCHAR2(1000) NOT NULL,
 
         FOREIGN KEY(request_id) references
             reqmgr_request(request_id)

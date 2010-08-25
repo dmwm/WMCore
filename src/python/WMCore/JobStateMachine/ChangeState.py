@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.20 2009/08/03 17:02:43 meloam Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: ChangeState.py,v 1.21 2009/08/03 17:55:55 meloam Exp $"
+__version__ = "$Revision: 1.21 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -14,6 +14,7 @@ from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Services.UUID import makeUUID
+
 import base64
 import urllib
 from sets import Set
@@ -67,6 +68,14 @@ class ChangeState(WMObject):
             self.attachmentList[jobid] = {}
         self.attachmentList[jobid][name] = url
         return
+    
+    def getAttachment(self, couchID, name):
+        """
+            getAttachment(couchID, name)
+        returns an attachment with the given name in the couch record
+        identified by couchID
+        """
+        return self.database.getAttachment(couchID, name)
     
     
     def getCouchByHeadID(self, id):

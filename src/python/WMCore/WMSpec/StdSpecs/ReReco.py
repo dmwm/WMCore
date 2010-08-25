@@ -195,7 +195,7 @@ def rerecoWorkload(workloadName, arguments):
         mergeRecoLogArch.setStepType("LogArchive")
 
         mergeReco.applyTemplates()
-        mergeReco.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)  
+        mergeReco.setSplittingAlgorithm("MergeBySize", merge_size = 2000000)  
         mergeReco.addGenerator("BasicNaming")
         mergeReco.addGenerator("BasicCounter")
         mergeReco.setTaskType("Merge")
@@ -235,7 +235,7 @@ def rerecoWorkload(workloadName, arguments):
         mergeAlca.addGenerator("BasicCounter")
         mergeAlca.setTaskType("Merge")  
         mergeAlca.applyTemplates()
-        mergeAlca.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)  
+        mergeAlca.setSplittingAlgorithm("MergeBySize", merge_size = 2000000)  
 
         mergeAlcaCmsswHelper = mergeAlcaCmssw.getTypeHelper()
         mergeAlcaCmsswHelper.cmsswSetup(
@@ -276,7 +276,7 @@ def rerecoWorkload(workloadName, arguments):
         mergeAod.addGenerator("BasicCounter")
         mergeAod.setTaskType("Merge")
         mergeAod.applyTemplates()
-        mergeAod.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)  
+        mergeAod.setSplittingAlgorithm("MergeBySize", merge_size = 2000000)  
 
         mergeAodCmsswHelper = mergeAodCmssw.getTypeHelper()
         mergeAodCmsswHelper.cmsswSetup(

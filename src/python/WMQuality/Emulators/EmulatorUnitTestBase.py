@@ -26,8 +26,8 @@ class EmulatorUnitTestBase(unittest.TestCase):
         config.Emulator.RequestMgr = self.requestMgrFlag
         config.Emulator.SiteDB = self.siteDBFlag
         saveConfigurationFile(config, self.configFile)
-        print "create config file:%s, PhEDEx: %s, DBS: %s, RequestManager: %s, with flag" \
-               % (self.configFile, self.phedexFlag, self.dbsFlag, self.requestMgrFlag)
+        print "create config file:%s, PhEDEx: %s, DBS: %s, RequestManager: %s, SiteDB %s with flag" \
+               % (self.configFile, self.phedexFlag, self.dbsFlag, self.requestMgrFlag, self.siteDBFlag)
                
     def setEmulator(self):
         """

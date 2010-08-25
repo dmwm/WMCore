@@ -55,7 +55,7 @@ class MySQLInterface(DBInterface):
         """
         if origBindsList == None:
             return origSQL, None
-        
+
         origBindsList = self.makelist(origBindsList)
         origBind = origBindsList[0]
 
@@ -75,7 +75,8 @@ class MySQLInterface(DBInterface):
             searchPosition = 0
 
             while True:
-                bindPosition = origSQL.find(":%s" % bindName, searchPosition)
+                bindPosition = origSQL.lower().find(":%s" % bindName.lower(),
+                                                    searchPosition)
                 if bindPosition == -1:
                     break
 
@@ -84,7 +85,17 @@ class MySQLInterface(DBInterface):
                     bindVarPositionList.append((bindName, bindPosition))
                 searchPosition = bindPosition + 1
 
-            updatedSQL = updatedSQL.replace(":%s" % bindName, "%s")
+            searchPosition = 0
+            while True:
+                bindPosition = updatedSQL.lower().find(":%s" % bindName.lower(),
+                                                       searchPosition)
+
+                if bindPosition == -1:
+                    break
+
+                left = updatedSQL[0:bindPosition]
+                right = updatedSQL[bindPosition + len(bindName) + 1:]
+                updatedSQL = left + "%s" + right
 
         bindVarPositionList.sort(bindVarCompare)
 

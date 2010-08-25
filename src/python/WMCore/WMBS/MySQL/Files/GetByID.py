@@ -20,6 +20,7 @@ class GetByID(DBFormatter):
         formattedResult["cksum"] = int(formattedResult["cksum"])
         formattedResult["first_event"] = int(formattedResult["first_event"])
         formattedResult["last_event"] = int(formattedResult["last_event"])
+        formattedResult["merged"] = bool(int(formattedResult["merged"]))
 
         if "size" in formattedResult.keys():
             formattedResult["size"] = int(formattedResult["size"])

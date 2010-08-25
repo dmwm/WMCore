@@ -16,6 +16,7 @@ class GetByLFN(DBFormatter):
         """
         formattedResult = DBFormatter.formatDict(self, result)[0]
         formattedResult["id"] = int(formattedResult["id"])
+        formattedResult["merged"] = bool(int(formattedResult["merged"]))
 
         if formattedResult["events"] != None:
             formattedResult["events"] = int(formattedResult["events"])

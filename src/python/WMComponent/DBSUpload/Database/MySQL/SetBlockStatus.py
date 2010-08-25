@@ -6,22 +6,31 @@ Create new block in dbsbuffer_block
 Update file to reflect block information
 
                                                                                                                                                                                                                                                                                                                                                                                                           """
-__revision__ = "$Id: SetBlockStatus.py,v 1.3 2009/09/03 16:55:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SetBlockStatus.py,v 1.4 2009/09/03 18:56:18 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
 import exceptions
 
+from sets import Set
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 
 class SetBlockStatus(DBFormatter):
-    sql = """INSERT INTO dbsbuffer_block (blockname, location) 
-               SELECT :block, id AS location FROM dbsbuffer_location
-               WHERE se_name = :location AND NOT EXISTS
-                 (SELECT * FROM dbsbuffer_block WHERE blockname = :block AND
-                    location = (SELECT id FROM dbsbuffer_location WHERE se_name = :location))"""
+<<<<<<< SetBlockStatus.py
+    sql = """INSERT INTO dbsbuffer_block (blockname, location)
+               SELECT :block, (SELECT id FROM dbsbuffer_location WHERE se_name = :location) FROM DUAL
+               WHERE NOT EXISTS (SELECT blockname FROM dbsbuffer_block WHERE blockname = :block
+               and location = (SELECT id FROM dbsbuffer_location WHERE se_name = :location))
+    """
+
+
+    def __init__(self):
+        myThread = threading.currentThread()
+        DBFormatter.__init__(self, myThread.logger, myThread.dbi)
+
 
     def execute(self, block, locations = None, conn = None, transaction = False):
         """
@@ -31,6 +40,8 @@ class SetBlockStatus(DBFormatter):
         table.
         """
         bindVars = []
+
+        locations = list(Set(locations))
 
         for location in locations:
             bindVars.append({"block": block, "location": location})

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.107 2010/05/12 19:43:56 sryu Exp $"
-__version__ = "$Revision: 1.107 $"
+__revision__ = "$Id: WorkQueue.py,v 1.108 2010/05/12 20:06:08 sryu Exp $"
+__version__ = "$Revision: 1.108 $"
 
 
 import time
@@ -340,7 +340,7 @@ class WorkQueue(WorkQueueBase):
                 self.logger.info("""Done Update: Only some subscription is 
                                     updated Might be the child subscriptions""")
                 return elemntIDs
-            else
+            else:
                 raise
         return elementIDs
 
@@ -353,7 +353,7 @@ class WorkQueue(WorkQueueBase):
                 self.logger.info("""Fail update: Only some subscription is 
                                     updated Might be the child subscriptions""")
                 return elemntIDs
-            else
+            else:
                 raise
         return elementIDs
 
@@ -366,7 +366,7 @@ class WorkQueue(WorkQueueBase):
                 self.logger.info("""Cancel update: Only some subscription is 
                                     updated Might be the child subscriptions""")
                 return elemntIDs
-            else
+            else:
                 raise
         return elementIDs
 

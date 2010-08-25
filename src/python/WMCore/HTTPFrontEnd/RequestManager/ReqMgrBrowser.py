@@ -49,10 +49,12 @@ class ReqMgrBrowser(TemplatedPage):
     search.exposed = True
         
     def getRequests(self):
+        self.jsonSender["conn"].connections = {}
         return self.jsonSender.get("/reqMgr/request")[0]
         
     def requestDetails(self, requestName):
         result = ""
+        self.jsonSender["conn"].connections = {}
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
         print str(request)
          # Pull in the workload
@@ -74,6 +76,7 @@ class ReqMgrBrowser(TemplatedPage):
         d = helper.data.request.schema.dictionary_()
         d['RequestWorkflow'] = request['RequestWorkflow']
         self.addHtmlLinks(d)
+        self.jsonSender["conn"].connections = {}        
         assignments= self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0]
         adminHtml = self.statusMenu(requestName, request['RequestStatus']) \
                   + ' Priority ' + self.priorityMenu(requestName, request['ReqMgrRequestBasePriority'])
@@ -118,6 +121,7 @@ class ReqMgrBrowser(TemplatedPage):
         print d
 
     def remakeWorkload(self, requestName):
+        self.jsonSender["conn"].connections = {}        
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
         # Should really get by RequestType
         workloadMaker = WorkloadMaker(requestName)
@@ -133,6 +137,7 @@ class ReqMgrBrowser(TemplatedPage):
         result = ""
         for request in requests:
             # see if this is slower
+            self.jsonSender["conn"].connections = {}            
             request = self.jsonSender.get("/reqMgr/request/"+request["RequestName"])[0]
             result += self.drawRequest(request)
         return result;
@@ -243,6 +248,7 @@ class ReqMgrBrowser(TemplatedPage):
                 urd += '&'
             urd += 'priority='+priority
             message += ' priority='+priority
+        self.jsonSender["conn"].connections = {}            
         self.jsonSender.put(urd)
         if status == "assigned":
            # make a page to choose teams
@@ -250,8 +256,10 @@ class ReqMgrBrowser(TemplatedPage):
         return message + self.detailsBackLink(requestName)
 
     def assign(self, requestName):
+        self.jsonSender["conn"].connections = {}        
         allTeams = self.jsonSender.get('/reqMgr/team')[0]
         # get assignments
+        self.jsonSender["conn"].connections = {}        
         response = self.jsonSender.get('/reqMgr/assignment?request=%s' % requestName)
         # might be a list, or a dict team:priority
         assignments = response[0]
@@ -276,7 +284,8 @@ class ReqMgrBrowser(TemplatedPage):
         # TODO More than one???
         for team, value in kwargs.iteritems():
            if value != None and team != 'requestName':
-               #ChangeState.assignRequest(kwargs['requestName'], team) 
+               #ChangeState.assignRequest(kwargs['requestName'], team)
+               self.jsonSender["conn"].connections = {}               
                self.jsonSender.put('/reqMgr/assignment/%s/%s' % (urllib.quote(team), kwargs['requestName']) )
         raise cherrypy.HTTPRedirect('.')
     assignToTeams.exposed = True

@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.26 2009/04/29 23:21:56 sryu Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: JobGroup.py,v 1.27 2009/04/29 23:23:29 sryu Exp $"
+__version__ = "$Revision: 1.27 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -311,7 +311,7 @@ class JobGroup(WMBSBase, WMJobGroup):
         else:
             output = False
         self.myThread.transaction.commit()
-        self.commitIfNew()
+        #self.commitIfNew()
         return output
     
     def recordFail(self, job):
@@ -328,7 +328,7 @@ class JobGroup(WMBSBase, WMJobGroup):
         """
         job.changeStatus("Failed")            
         status = self._recordFileStatusUponCompletion()
-        self.commitIfNew()
+        self.myThread.transaction.commit()
         return status
     
     def status(self, detail = False):

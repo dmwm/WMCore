@@ -198,12 +198,15 @@ class DBSWriter:
         args = { "url" : url, "level" : 'ERROR'}
         args.update(contact)
         try:
-         self.dbs = DbsApi(args)
+         self.dbs           = DbsApi(args)
+         self.args          = args
+         self.version       = args.get('version', None)
+         self.globalDBSUrl  = args.get('globalDBSUrl', None)
+         self.globalVersion = args.get('globalVersion', None)
         except DbsException, ex:
             msg = "Error in DBSWriterError with DbsApi\n"
             msg += "%s\n" % formatEx(ex)
             raise DBSWriterError(msg)
-        print args
         self.reader = DBSReader(**args)
         
     def createDatasets(self, workflowSpec):
@@ -570,6 +573,7 @@ class DBSWriter:
         return False
 
         """
+
         #  //
         # // Check that the block exists, and is open before we close it
         #//
@@ -595,7 +599,7 @@ class DBSWriter:
         #  //
         # // We have an open block, sum number of files and file sizes
         #//
-        
+
         fileCount = float(blockInstance.get('NumberOfFiles', 0))
         totalSize = float(blockInstance.get('BlockSize', 0))
         
@@ -626,6 +630,16 @@ class DBSWriter:
             self.dbs.closeBlock(
                 DBSWriterObjects.createDBSFileBlock(fileblockName)
                 )
+            if self.globalDBSUrl:
+                self.dbs.migrateDatasetContents(self.args['url'], 
+                                                self.globalDBSUrl,
+                                                fileblockName.split("#")[0], 
+                                                fileblockName,
+                                                self.version,
+                                                self.globalVersion
+                                                )
+            else:
+                logging.error("Should've migrated block %s, but didn't" % (fileBlockName))
         return closeBlock
     
         

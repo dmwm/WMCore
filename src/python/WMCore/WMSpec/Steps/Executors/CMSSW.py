@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.7 2009/11/17 15:04:25 evansde Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: CMSSW.py,v 1.8 2009/11/19 11:59:58 evansde Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMException import WMException
@@ -34,25 +34,26 @@ class CMSSW(Executor):
     """
 
 
-    def pre(self, step, emulator = None):
+    def pre(self, emulator = None):
         """
         _pre_
 
-        Pre execution checks
+        Pre execution work.
+
+        Determine where the configuration is coming and add the appropriate
+        tools to get it
 
         """
         if (emulator != None):
-            return emulator.emulatePre( step )
-        stepName = getStepName(step)
-        stepSpace = self.stepSpace(stepName)
+            return emulator.emulatePre( self.step )
 
-        if hasattr(step.application.configuration, 'configCacheUrl'):
+        if hasattr(self.step.application.configuration, 'configCacheUrl'):
             # means we have a configuration & tweak in the sandbox
-            psetFile = step.application.command.configuration
-            psetTweak = step.application.command.psetTweak
-            stepSpace.getFromSandbox(psetFile)
-            stepSpace.getFromSandbox(psetTweak)
-            step.runtime.scramPreScripts.append(
+            psetFile = self.step.application.command.configuration
+            psetTweak = self.step.application.command.psetTweak
+            self.stepSpace.getFromSandbox(psetFile)
+            self.stepSpace.getFromSandbox(psetTweak)
+            self.step.runtime.scramPreScripts.append(
                 "WMCore.WMRuntime.Scripts.InstallPSetTweak")
 
 
@@ -61,28 +62,20 @@ class CMSSW(Executor):
         return None
 
 
-    def execute(self, step, wmbsJob, emulator = None):
+
+    def execute(self, emulator = None):
         """
         _execute_
 
 
         """
 
-        stepName = getStepName(step)
-        stepModule = "WMTaskSpace.%s" % stepName
+
+        stepModule = "WMTaskSpace.%s" % self.stepName
         if (emulator != None):
-            return emulator.emulate( step )
+            return emulator.emulate( self.step, self.job )
 
 
-        stepSpace = self.stepSpace(stepName)
-        task = stepSpace.getWMTask()
-
-        # initialise the framework job report
-        self.report = Report(stepName)
-        self.report.data.id = "%s/%s" % (task.getPathName(), stepName)
-        self.report.data.task = task.name()
-        self.report.data.workload = stepSpace.taskSpace.workloadName()
-        self.report.data.id = wmbsJob['id']
 
 
 
@@ -90,13 +83,13 @@ class CMSSW(Executor):
         # I don't pass it directly through os.system because I don't
         # trust that there won't be shell-escape shenanigans with
         # arbitrary input files
-        scramCommand   = step.application.setup.scramCommand
-        scramProject   = step.application.setup.scramProject
-        cmsswVersion   = step.application.setup.cmsswVersion
-        jobReportXML   = step.output.jobReport
-        cmsswCommand   = step.application.command.executable
-        cmsswConfig    = step.application.command.configuration
-        cmsswArguments = step.application.command.arguments
+        scramCommand   = self.step.application.setup.scramCommand
+        scramProject   = self.step.application.setup.scramProject
+        cmsswVersion   = self.step.application.setup.cmsswVersion
+        jobReportXML   = self.step.output.jobReport
+        cmsswCommand   = self.step.application.command.executable
+        cmsswConfig    = self.step.application.command.configuration
+        cmsswArguments = self.step.application.command.arguments
 
         #
         # scram bootstrap
@@ -104,8 +97,8 @@ class CMSSW(Executor):
         scram = Scram(
             command = scramCommand,
             version = cmsswVersion,
-            initialisation = step.application.setup.softwareEnvironment,
-            directory = step.builder.workingDir
+            initialisation = self.step.application.setup.softwareEnvironment,
+            directory = self.step.builder.workingDir
             )
 
         projectOutcome = scram.project()
@@ -123,10 +116,10 @@ class CMSSW(Executor):
         #
         # pre scripts
         #
-        for script in step.runtime.preScripts:
+        for script in self.step.runtime.preScripts:
             # TODO: Exception handling and error handling & logging
             scriptProcess = subprocess.Popen(
-                ["/bin/bash"], shell=True, cwd=step.builder.workingDir,
+                ["/bin/bash"], shell=True, cwd=self.step.builder.workingDir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 stdin=subprocess.PIPE,
@@ -145,7 +138,7 @@ class CMSSW(Executor):
         #
         # pre scripts with scram
         #
-        for script in step.runtime.scramPreScripts:
+        for script in self.step.runtime.scramPreScripts:
             "invoke scripts with scram()"
             invokeCommand = "%s -m WMCore.WMRuntime.ScriptInvoke %s %s \n" % (
                 sys.executable,
@@ -156,7 +149,7 @@ class CMSSW(Executor):
             retCode = scram(invokeCommand)
             print scram.stdout, scram.stderr, retCode
 
-        configPath = "%s/%s-main.sh" % (step.builder.workingDir, helper.name())
+        configPath = "%s/%s-main.sh" % (self.step.builder.workingDir, helper.name())
         handle = open(configPath, 'w')
         handle.write(configBlob)
         handle.close()
@@ -174,8 +167,8 @@ class CMSSW(Executor):
         spawnedChild = subprocess.Popen( args, 0, None, None, subprocess.PIPE,
                                                          subprocess.PIPE )
         # open the output files
-        stdoutHandle = open( step.output.stdout , 'w')
-        stderrHandle = open( step.output.stderr , 'w')
+        stdoutHandle = open( self.step.output.stdout , 'w')
+        stderrHandle = open( self.step.output.stderr , 'w')
 
         # loop and collect the data
         while (1):
@@ -220,13 +213,12 @@ class CMSSW(Executor):
                               ,None,**argsDump)
         elif (spawnedChild.returncode != 0):
             raise WMException("Unknown error in cmsRun. Code: %i" % spawnedChild.returncode, None, **argsDump)
-        step.section_("execution")
+
         step.execution.exitStatus = spawnedChild.returncode
-        step.execution.executionReport = "FrameworkJobReport.pcl"
         return
 
 
-    def post(self, step, emulator = None):
+    def post(self, emulator = None):
         """
         _post_
 
@@ -235,7 +227,7 @@ class CMSSW(Executor):
         """
         print "Steps.Executors.CMSSW.post called"
         if (emulator != None):
-            return emulator.emulatePost( step )
+            return emulator.emulatePost( self.step )
 
         return None
 

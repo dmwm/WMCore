@@ -81,6 +81,20 @@ class CMSSWStepHelper(CoreHelper):
 
 
 
+    def setDataProcessingConfig(self, scenarioName, functionName, **args):
+        """
+        _setDataProcessingConfig_
+
+        Set a configuration library to be used from the CMSSW Release
+        DataProcessing package.
+
+        """
+        self.data.application.configuration.scenario = scenarioName
+        self.data.application.configuration.function = functionName
+        self.data.application.configuration.section_('arguments')
+        [ setattr(self.data.application.configuration.arguments, k, v)
+          for k, v in args.items() ]
+        return
 
 
 

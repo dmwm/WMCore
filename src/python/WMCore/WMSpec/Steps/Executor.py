@@ -9,6 +9,11 @@ Interface definition for a step executor
 
 import sys
 
+from WMCore.FwkJobReport.Report import Report
+from WMCore.WMSpec.WMStep import WMStepHelper
+
+getStepName = lambda step: WMStepHelper(step).name()
+
 class Executor:
     """
     _Executor_
@@ -17,10 +22,53 @@ class Executor:
 
     """
 
-    def __init__(self):
-        pass
 
-    def pre(self, step):
+    def __init__(self):
+        self.report = None
+
+
+
+
+    def initialise(self, step, job):
+        """
+        _initialise_
+
+
+        Initialise the executor attributes
+
+        """
+        self.step = step
+        self.job = job
+        self.stepName = getStepName(self.step)
+        self.stepSpace = self.getStepSpace(self.stepName)
+        self.task = self.stepSpace.getWMTask()
+        self.report = Report(self.stepName)
+        self.report.data.task = self.task.name()
+        self.report.data.workload = self.stepSpace.taskSpace.workloadName()
+        self.report.data.id = job['id']
+
+        self.step.section_("execution")
+        self.step.execution.exitStatus = 0
+        self.step.execution.reportLocation = "%s/Report.pkl" % (
+            self.stepSpace.location,
+            )
+
+        return
+
+
+    def saveReport(self):
+        """
+        _saveReport_
+
+        Save the job report
+
+        """
+        self.report.persist(self.step.execution.reportLocation)
+        return
+
+
+
+    def pre(self, emulator = None):
         """
         _pre_
 
@@ -33,7 +81,7 @@ class Executor:
         """
         return None
 
-    def execute(self, step, wmbsJob, emulator = None):
+    def execute(self, emulator = None):
         """
         _execute_
 
@@ -47,7 +95,7 @@ class Executor:
         raise NotImplementedError, msg
 
 
-    def post(self, step):
+    def post(self, emulator = None):
         """
         _post_
 
@@ -61,20 +109,11 @@ class Executor:
         return None
 
 
-    def installOutcome(self, step, **details):
+
+
+    def getStepSpace(self, stepName):
         """
-        _installOutcome_
-
-        Add details on the outcome of the execution to the Step
-
-        """
-        step.section_("execution")
-        step.execution.exitStatus = details.get("ExitStatus", None)
-
-
-    def stepSpace(self, stepName):
-        """
-        _stepSpace_
+        _getStepSpace_
 
         Util to get the runtime step space.
         This imports dynamic runtime libraries so be careful how

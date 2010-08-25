@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.4 2009/10/19 20:32:03 evansde Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.5 2009/11/19 11:59:58 evansde Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WMSpec.WMStep import WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -56,25 +56,32 @@ class ExecuteMaster:
 
         Invoke the Executor for the step provided
 
-        TODO: Fork subprocess
         TODO: Add Monitoring thread & setup
         TODO: Exception Handling
         TODO: pre/post outcome can change the next execution task, need to
               ensure that this happens
 
+        TODO: Pass in emulators
+
         """
         self.toStepDirectory(step)
-        preOutcome = executor.pre(step)
+        executor.initialise(step, job)
+        preOutcome = executor.pre()
         if preOutcome != None:
             print "Pre Executor Task Change: %s" % preOutcome
             print "TODO: Implement Me!!!"
+            executor.saveReport()
             self.toTaskDirectory()
-        executor.execute(step, job)
+        #try:
+        executor.execute()
+        #finally:
+        executor.saveReport()
 
-        postOutcome = executor.post(step)
+        postOutcome = executor.post()
         if postOutcome != None:
             print "Pre Executor Task Change: %s" % preOutcome
             print "TODO: Implement Me!!!"
+            executor.saveReport()
             self.toTaskDirectory()
         self.toTaskDirectory()
 

@@ -15,7 +15,7 @@ from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
 
 
 arguments = {
-    "OutputTiers" : ['RECO', 'ALCA', 'AOD'],
+    "OutputTiers" : ['RECO', 'ALCARECO', 'AOD'],
     "AcquisitionEra" : "Teatime09",
     "GlobalTag" :"GR09_P_V7::All",
     "LFNCategory" : "/store/data",
@@ -125,11 +125,11 @@ mergeAlca = workload.getTaskByPath("/Tier1ReReco/ReReco/MergeAlca")
 mergeAod  = workload.getTaskByPath("/Tier1ReReco/ReReco/MergeAod")
 
 if 'RECO' in arguments['OutputTiers']:
-    mergeRecoSubs = testMergeSubscription( rerecoCmsswHelper.getOutputModule("outputRECO"), mergeReco)
+    mergeRecoSubs = testMergeSubscription( rerecoCmsswHelper.getOutputModule("outputRECORECO"), mergeReco)
 if 'AOD' in arguments['OutputTiers']:
-    mergeAodSubs = testMergeSubscription( rerecoCmsswHelper.getOutputModule("outputAOD"), mergeAod)
-if 'ALCA' in arguments['OutputTiers']:
-    mergeAlcaSubs = testMergeSubscription( rerecoCmsswHelper.getOutputModule("outputALCA"), mergeAlca)
+    mergeAodSubs = testMergeSubscription( rerecoCmsswHelper.getOutputModule("outputAODRECO"), mergeAod)
+if 'ALCARECO' in arguments['OutputTiers']:
+    mergeAlcaSubs = testMergeSubscription( rerecoCmsswHelper.getOutputModule("outputALCARECORECO"), mergeAlca)
 
 
 def testSubscription():
@@ -241,7 +241,7 @@ if __name__ == '__main__':
         mrgAodPkg = makeMergeJobs(mergeAod, mergeAodSubs)
         saveMergeAodPkg = "%s/MergeAodJobPackage.pkl" % workingDir
         mrgAodPkg.save(saveMergeAodPkg)
-    if 'ALCA' in arguments['OutputTiers']:
+    if 'ALCARECO' in arguments['OutputTiers']:
         mrgAlcaPkg = makeMergeJobs(mergeAlca, mergeAlcaSubs)
         saveMergeAlcaPkg = "%s/MergeAlcaJobPackage.pkl" % workingDir
         mrgAlcaPkg.save(saveMergeAlcaPkg)

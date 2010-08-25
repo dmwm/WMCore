@@ -103,9 +103,9 @@ class WebRequestSchema(TemplatedPage):
             siteWhitelist = []
         if siteBlacklist == None:
             siteBlacklist = []
-        if isinstance(siteWhitelist, str):
+        if not isinstance(siteWhitelist, list):
             siteWhitelist = [siteWhitelist]
-        if isinstance(siteBlacklist, str):
+        if not isinstance(siteBlacklist, list):
             siteBlacklist = [siteBlacklist]
         schema["SiteWhitelist"] = siteWhitelist
         schema["SiteBlacklist"] = siteBlacklist
@@ -113,7 +113,7 @@ class WebRequestSchema(TemplatedPage):
         schema['ProcessingVersion'] = processingVersion
         schema["CouchUrl"] = self.couchUrl
         schema["CouchDBName"] = self.couchDBName
-
+        print "SCHEMA " + str(schema)
 
         schema["SkimConfig"] = skimConfig
         if minMergeSize != None:  

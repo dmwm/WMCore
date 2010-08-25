@@ -58,47 +58,6 @@ MODULE_EXTENSIONS = set('.py'.split())
 ## bad bad bad global variable, FIXME
 all_test_suites = []
 
-def unit_test_extractor(tup, path, filenames):
-    package_path, suites = tup
-    logging.debug('Path: %s', path)
-    logging.debug('Filenames: %s', filenames)
-    relpath = path[ len(package_path) + 1: ]
-    #relpath = os.path.relpath(path, package_path)
-    #print "relpath is %s for path %s and package_path %s" % (relpath, path, package_path)
-    relpath_pieces = relpath.split(os.sep)
-    #print "pieces as %s" % relpath_pieces
-    if relpath_pieces[0] == '.': # Base directory.
-        relpath_pieces.pop(0) # Otherwise, screws up module name.
-#elif not any(os.path.exists(os.path.join(path, '__init__' + ext))
-#        for ext in MODULE_EXTENSIONS):
-#    return # Not a package directory and not the base directory, reject.
-
-    logging.info('Base: %s', '.'.join(relpath_pieces))
-    for filename in filenames:
-        # try:
-            #logging.debug("BIGLOOP")
-            base, ext = os.path.splitext(filename)
-            if ext not in MODULE_EXTENSIONS: # Not a Python module.
-                continue
-            logging.info('Module: %s', base)
-            module_name = '.'.join(relpath_pieces + [base])
-            logging.debug("Got %s from %s and %s" % (module_name, relpath_pieces, base))
-            logging.info('Importing from %s', module_name)
-            
-            try:
-                module = __import__(module_name)
-                module_suites = unittest.defaultTestLoader.loadTestsFromModule(module)
-                logging.info('Got suites: %s', module_suites)
-                all_test_suites.append(module_suites)
-            except ImportError, e:
-                logging.fatal("Couldn't load test %s: Exception: %s" % (module_name,e))
-                
-            #suites += module_suites
-        #except Exception, e:
-        #    print("LoadFail: %s %s" % (filename, e))
-
-
-
 
 def get_test_suites(path):
     """:return: Iterable of suites for the packages/modules
@@ -120,7 +79,6 @@ def listFiles(dir):
         elif os.path.isdir(os.path.join(basedir,item)):
             fileList.extend(listFiles(os.path.join(basedir,item)))
     
-    print "--Returning %s" % fileList         
     return fileList
 
 
@@ -147,18 +105,16 @@ def runUnitTests():
     moduleNames2 = map( stripBeginning, moduleNames )
     replaceSlashes = lambda f: f.replace('/','.')
     moduleNames3 = map( replaceSlashes, moduleNames2 )
-    modules = []
+    modules  = []
+    loadFail = []
     for oneModule in moduleNames3:
         try:
             __import__(oneModule)
             modules.append(sys.modules[oneModule])
         except Exception, e:
-            print "ERROR: Can't load %s - %s" % (oneModule, e)    
-        else:
-            print "Loaded %s" % oneModule
-            print "--Module is %s" % modules[-1]   
-            pprint.pprint( modules[-1] )  
-    print "modules is %s" % modules               
+            print "ERROR: Can't load %s - %s" % (oneModule, e)
+            loadFail.append(oneModule)    
+
     load = unittest.defaultTestLoader.loadTestsFromModule  
     globalSuite = unittest.TestSuite(map(load, modules))    
 #  #  logging.basicConfig(level=logging.WARN)
@@ -169,7 +125,6 @@ def runUnitTests():
 #    totallySuite = unittest.TestSuite()
 #    totallySuite.addTests(suites)
 #    print suites     
-    pprint.pprint( globalSuite )
     result = unittest.TextTestRunner(verbosity=2).run(globalSuite)
 
     #sys.stdout = sys.__stdout__

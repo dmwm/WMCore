@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.10 2009/07/02 14:25:55 meloam Exp $"
+    "$Id: TestInit.py,v 1.11 2009/07/08 19:02:42 meloam Exp $"
 __version__ = \
-    "$Revision: 1.10 $"
+    "$Revision: 1.11 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -83,6 +83,7 @@ class TestInit:
         modules = {}
         for module in (defaultModules + customModules):
             modules[module] = 'done'
+        self.init.setSchema(modules.keys())
 
     def initializeSchema(self, modules = []):
         """

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.134 2010/08/05 15:30:10 sryu Exp $"
-__version__ = "$Revision: 1.134 $"
+__revision__ = "$Id: WorkQueue.py,v 1.135 2010/08/06 21:05:35 sryu Exp $"
+__version__ = "$Revision: 1.135 $"
 
 
 import time
@@ -292,22 +292,22 @@ class WorkQueue(WorkQueueBase):
             except RuntimeError, ex:
                 msg = "Error contacting parent queue %s: %s"
                 self.logger.error(msg % (self.params['ParentQueue'], str(ex)))
-        wmSpecInfoAction = self.daofactory(classname = "WMSpec.GetWMSpecInfo")
+        wmspecInfoAction = self.daofactory(classname = "WMSpec.GetWMSpecInfo")
         
-        wmSpecCache = {}
+        wmspecCache = {}
         for match in matches:
-            wmSpecInfo = wmSpecInfoAction.execute(match['wmtask_id'],
+            wmspecInfo = wmspecInfoAction.execute(match['wmtask_id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
             
             blockName, dbsBlock = None, None
             if self.params['PopulateFilesets']:
-                if not wmSpecCache.has_key(wmSpecInfo['id']):
-                        wmSpec = WMWorkloadHelper()
+                if not wmspecCache.has_key(wmspecInfo['id']):
+                        wmspec = WMWorkloadHelper()
                         # the url should be url from cache 
                         # (check whether that is updated correctly in DB)
-                        wmSpec.load(wmSpecInfo['url'])    
-                        wmSpecCache[wmSpecInfo['id']] = wmSpec
+                        wmspec.load(wmspecInfo['url'])    
+                        wmspecCache[wmspecInfo['id']] = wmspec
                 
                 if match['input_id']:
                     self.logger.info("Adding Processing work")
@@ -324,27 +324,27 @@ class WorkQueue(WorkQueueBase):
                     data = dataLoader.execute(match['input_id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
-                    wmSpecInfo['data'] = data['name']
+                    wmspecInfo['data'] = data['name']
         
             #make one transaction      
             with self.transactionContext():
                 if self.params['PopulateFilesets']:    
                     subscription = self._wmbsPreparation(match, 
-                                          wmSpecCache[wmSpecInfo['id']],
-                                          wmSpecInfo, blockName, dbsBlock)
+                                          wmspecCache[wmspecInfo['id']],
+                                          wmspecInfo, blockName, dbsBlock)
                     # subscription object can be added since this call will be
                     # made in local queue (doen't have worry about jsonizing the
                     # result for remote call (over http))
-                    wmSpecInfo["subscription"] = subscription    
+                    wmspecInfo["subscription"] = subscription    
                 
                 self.setStatus(status, match['id'], 'id', pullingQueueUrl)
                 self.logger.info("Updated status for %s '%s'" % 
                                   (match['id'], status))       
                 
-            wmSpecInfo['element_id'] = match['id']
-            wmSpecInfo['team_name'] = match.get('team_name')
-            wmSpecInfo['request_name'] = match.get('request_name')
-            results.append(wmSpecInfo)
+            wmspecInfo['element_id'] = match['id']
+            wmspecInfo['team_name'] = match.get('team_name')
+            wmspecInfo['request_name'] = match.get('request_name')
+            results.append(wmspecInfo)
 
         return results
     
@@ -365,7 +365,7 @@ class WorkQueue(WorkQueueBase):
         return block['name'], dbsBlockDict[block['name']]
 
 
-    def _wmbsPreparation(self, match, wmSpec, wmSpecInfo, blockName, dbsBlock):
+    def _wmbsPreparation(self, match, wmspec, wmspecInfo, blockName, dbsBlock):
         """
         """
         self.logger.info("Adding WMBS subscription")
@@ -377,12 +377,12 @@ class WorkQueue(WorkQueueBase):
         blacklist = bAction.execute(match['id'], conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
 
-        #Warning: wmSpec.specUrl might not be same as wmSpecInfo['url']
-        #as well as wmSpec.getOwner() != wmSpecInfo['owner']
+        #Warning: wmspec.specUrl might not be same as wmspecInfo['url']
+        #as well as wmspec.getOwner() != wmspecInfo['owner']
         #Need to clean up
-        wmbsHelper = WMBSHelper(wmSpec, wmSpecInfo['url'],
-                                wmSpecInfo['owner'], wmSpecInfo['wmtask_name'],
-                                wmSpecInfo['wmtask_type'],
+        wmbsHelper = WMBSHelper(wmspec, wmspecInfo['url'],
+                                wmspecInfo['owner'], wmspecInfo['wmtask_name'],
+                                wmspecInfo['wmtask_type'],
                                 whitelist, blacklist, blockName)
         sub = wmbsHelper.createSubscription()
         
@@ -828,7 +828,19 @@ class WorkQueue(WorkQueueBase):
         wmspec = unit['WMSpec']
         task = unit["Task"]
         parentQueueId = unit['ParentQueueId']
-
+        
+        if primaryInput:
+            #prevent to instert
+            existsAction = self.daofactory(classname = 
+                                           "WorkQueueElement.Exists")
+            exists = existsAction.execute(wmspec.name(), task.name(), 
+                                          primaryInput,
+                                          conn = self.getDBConn(),
+                                          transaction = self.existingTransaction())
+            if exists:
+                self.logger.error("Try to insert the same element : id %s" % exists)
+                return
+            
         self._insertWMSpec(wmspec)
         self._insertWMTask(wmspec.name(), task)
 
@@ -854,41 +866,47 @@ class WorkQueue(WorkQueueBase):
 
         return elementID
 
-    def _insertWMSpec(self, wmSpec):
+    def _insertWMSpec(self, wmspec):
         """
         """
         existsAction = self.daofactory(classname = "WMSpec.Exists")
-        exists = existsAction.execute(wmSpec.name(), conn = self.getDBConn(),
+        exists = existsAction.execute(wmspec.name(), conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
         if not exists:
             
             if self.params['PopulateFilesets']:
                 sandboxCreator = SandboxCreator()
-                sandboxCreator.makeSandbox(self.params['CacheDir'], wmSpec)
+                sandboxCreator.makeSandbox(self.params['CacheDir'], wmspec)
             else:
-                #TODO: This might not be needed if the getWorkReturns json of wmSpec
+                #TODO: This might not be needed if the getWorkReturns json of wmspec
                 #Also if we need local cache need to clean up sometime
-                localCache = os.path.join(self.params['CacheDir'], "%s.pkl" % wmSpec.name())
-                wmSpec.setSpecUrl(localCache)
-                wmSpec.save(localCache)
+                localCache = os.path.join(self.params['CacheDir'], "%s.pkl" % wmspec.name())
+                wmspec.setSpecUrl(localCache)
+                wmspec.save(localCache)
 
-            wmSpecAction = self.daofactory(classname = "WMSpec.New")
-            owner = "/".join([str(x) for x in wmSpec.getOwner().values()])
-            wmSpecAction.execute(wmSpec.name(), wmSpec.specUrl(), owner,
+            wmspecAction = self.daofactory(classname = "WMSpec.New")
+            owner = "/".join([str(x) for x in wmspec.getOwner().values()])
+            wmspecAction.execute(wmspec.name(), wmspec.specUrl(), owner,
                                  conn = self.getDBConn(),
                                  transaction = self.existingTransaction())
         
         return exists
 
-    def _insertWMTask(self, wmSpecName, task):
+    def _insertWMTask(self, wmspecName, task):
         """
         """
-        taskAction = self.daofactory(classname = "WMSpec.AddTask")
+        existsAction = self.daofactory(classname = "WMSpec.ExistsTask")
+        exists = existsAction.execute(wmspecName, task.name(), 
+                                      conn = self.getDBConn(),
+                                      transaction = self.existingTransaction())
 
-        taskAction.execute(wmSpecName, task.name(), task.dbsUrl(), task.taskType(),
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
+        if not exists:            
+            taskAction = self.daofactory(classname = "WMSpec.AddTask")
+            taskAction.execute(wmspecName, task.name(), task.dbsUrl(), task.taskType(),
+                               conn = self.getDBConn(),
+                               transaction = self.existingTransaction())
+        return exists
 
     def _insertWhiteList(self, elementID, whitelist):
         """
@@ -916,9 +934,15 @@ class WorkQueue(WorkQueueBase):
             """
             Internal function to insert an input
             """
-            dataAction.execute(data, conn = self.getDBConn(),
+            exists = existsAction.execute(data, 
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+            if not exists:
+                dataAction.execute(data, conn = self.getDBConn(),
                                transaction = self.existingTransaction())
-
+        
+        
+        existsAction = self.daofactory(classname = "Data.Exists")
         dataAction = self.daofactory(classname = "Data.New")
         dataParentageAct = self.daofactory(classname = "Data.AddParent")
 

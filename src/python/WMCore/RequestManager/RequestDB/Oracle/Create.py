@@ -5,8 +5,8 @@ _ReqMgr.RequestDB.MySQL_
 MySQL Compatibility layer for Request Manager DB
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2010/07/02 14:40:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2010/07/20 22:57:06 rpw Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 
@@ -484,10 +484,11 @@ class Create(DBCreator):
         )
         """
 
-        for typeName in TypesList[:-1]:
+        for typeName in TypesList:
             sql = "INSERT INTO reqmgr_request_type (type_name) VALUES ('%s')" % typeName
             self.inserts["reqtype" + typeName] = sql
 
-        for status in StatusList[:-1]:
+        for status in StatusList:
             sql = "INSERT INTO reqmgr_request_status (status_name) VALUES('%s')" % status
+            print sql
             self.inserts["reqstatus" + status] = sql

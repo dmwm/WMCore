@@ -4,13 +4,23 @@ WorkQueue SplitPolicyInterface
 
 """
 __all__ = []
-__revision__ = "$Id: StartPolicyInterface.py,v 1.7 2010/07/28 15:24:29 swakef Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: StartPolicyInterface.py,v 1.8 2010/08/13 20:37:23 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
+from WMCore.WMException import WMException
 
-from copy import deepcopy
+class EmptyWorkExcpetion(WMException):
+    """
+    Dummy exception class when spliting doesn't generate 
+    any workqueue element
+
+    TODO: Do something useful
+
+    """
+
+    pass
 
 class StartPolicyInterface(PolicyInterface):
     """Interface for start policies"""
@@ -44,7 +54,13 @@ class StartPolicyInterface(PolicyInterface):
             self.dbs_pool.update(dbs_pool)
         self.data = data
         self.split()
-
+        
+        if len(self.workQueueElements) == 0:
+            msg = """ No element is created from
+                      wmspec: %s
+                      task: %s
+                      data: %s """ (wmspec.name(), task.name(), data)
+            raise EmptyWorkExcpetion(msg)
         return self.workQueueElements
 
     def dbs(self):

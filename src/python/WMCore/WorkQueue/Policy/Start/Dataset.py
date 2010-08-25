@@ -4,8 +4,8 @@ WorkQueue splitting by dataset
 
 """
 __all__ = []
-__revision__ = "$Id: Dataset.py,v 1.15 2010/07/28 15:24:29 swakef Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Dataset.py,v 1.16 2010/08/13 20:37:23 sryu Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from math import ceil
@@ -60,6 +60,7 @@ class Dataset(StartPolicyInterface):
 
         if not work:
             work = dataset[self.args['SliceType']]
+            
         self.newQueueElement(Data = dataset['path'],
                              ParentData = parents,
                              Jobs = ceil(float(work) /

@@ -1,95 +1,154 @@
 #!/usr/bin/env python
-# encoding: utf-8
 """
-ReReco.py
+_ReReco_
 
-Created by Dave Evans on 2010-02-10.
-Copyright (c) 2010 Fermilab. All rights reserved.
-
-
-Standard Workload creator for ReReco processing
-
+Standard ReReco workflow.
 """
 
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 
-parseDataset = lambda x : { "Primary" : x.split("/")[1], 
-                            "Processed": x.split("/")[2],
-                            "Tier" : x.split("/")[3]}
-
-def outputModule(key):
-    """
-    Provide an easy way to change output module names
-
-    """
-    d =  {"RECO": "outputRECORECO",
-          "AOD":"outputAODRECO",
-          "ALCARECO": "outputALCARECOALCARECO"}
-
-    return d.get(key, None)
-
-
-def addMonitoring(task):
-    """
-    _addMonitoring_
-    
-    Add some task monitoring
-    """
-
-    monitoring  = task.data.section_('watchdog')
-    monitoring.monitors = ['DashboardMonitor']
-    monitoring.section_('DashboardMonitor')
-    monitoring.DashboardMonitor.softTimeOut    = 300000
-    monitoring.DashboardMonitor.hardTimeOut    = 600000
-    monitoring.DashboardMonitor.destinationHost = "cms-pamon.cern.ch"
-    monitoring.DashboardMonitor.destinationPort = 8884
-
-
-    return task
+from WMCore.Cache.ConfigCache import WMConfigCache
 
 class ReRecoWorkloadFactory():
     """
-    _rerecoWorkload_
-    
-    Standard way of building a ReReco workload.
-    
-    arguments is a dictionary containing the same set of keys as RequestSchema for a ReReco request
-    
+    _ReRecoWorkloadFactory_
+
     """
-    def addOutputModule(self, parentTask, dataTier):
+    def addDashboardMonitoring(self, task):
+        """
+        _addDashboardMonitoring_
+        
+        Add dashboard monitoring for the given task.
+        """
+        monitoring = task.data.section_("watchdog")
+        monitoring.monitors = ["DashboardMonitor"]
+        monitoring.section_("DashboardMonitor")
+        monitoring.DashboardMonitor.softTimeOut = 300000
+        monitoring.DashboardMonitor.hardTimeOut = 600000
+        monitoring.DashboardMonitor.destinationHost = "cms-pamon.cern.ch"
+        monitoring.DashboardMonitor.destinationPort = 8884
+        return task
+
+    def createWorkload(self):
+        """
+        _createWorkload_
+        
+        """
+        workload = newWorkload(self.workloadName)
+        workload.setOwner(self.owner)
+        workload.setStartPolicy("DatasetBlock")
+        workload.setEndPolicy("SingleShot")
+        workload.data.properties.acquisitionEra = self.acquisitionEra        
+        return workload
+
+    def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
+                            inputModule = None, scenarioName = None,
+                            scenarioFunc = None, scenarioArgs = None, couchUrl = None,
+                            couchDBName = None, configDoc = None):
+        """
+        _setupProcessingTask_
+        
+        """
+        self.addDashboardMonitoring(procTask)
+        procTaskCmssw = procTask.makeStep("cmsRun1")
+        procTaskCmssw.setStepType("CMSSW")
+        procTaskStageOut = procTaskCmssw.addStep("stageOut1")
+        procTaskStageOut.setStepType("StageOut")
+        procTaskLogArch = procTaskCmssw.addStep("logArch1")
+        procTaskLogArch.setStepType("LogArchive")
+        procTask.applyTemplates()
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.addGenerator("BasicNaming")
+        procTask.addGenerator("BasicCounter")
+        procTask.setTaskType(taskType)
+        
+        if inputDataset != None:
+            (primary, processed, tier) = self.inputDataset[1:].split("/")
+            procTask.addInputDataset(primary = primary, processed = processed,
+                                     tier = tier, dbsurl = self.dbsUrl,
+                                     block_blacklist = self.blockBlackList,
+                                     block_whitelist = self.blockWhiteList,
+                                     run_blacklist = self.runBlackList,
+                                     run_whitelist = self.runWhiteList)
+            procTask.data.constraints.sites.whitelist = self.siteWhiteList
+            procTask.data.constraints.sites.blacklist = self.siteBlackList
+        else:
+            procTask.setInputReference(inputStep, outputModule = inputModule)
+
+        procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
+        procTaskCmsswHelper.setGlobalTag(self.globalTag)
+        procTaskCmsswHelper.setMinMergeSize(self.minMergeSize)
+        procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                       scramArch = self.scramArch)
+        if configDoc != None:
+            procTaskCmsswHelper.setConfigCache(couchUrl, configDoc, couchDBName)
+        else:
+            procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
+                                                        **scenarioArgs)
+        
+        return procTask
+
+    def addLogCollectTask(self, parentTask):
+        """
+        _addLogCollecTask_
+        
+        Create a LogCollect task for log archives that are produced by the
+        parent task.
+        """
+        logCollectTask = parentTask.addTask("LogCollect")
+        self.addDashboardMonitoring(logCollectTask)        
+        logCollectStep = logCollectTask.makeStep("logCollect1")
+        logCollectStep.setStepType("LogCollect")
+        logCollectTask.applyTemplates()
+        logCollectTask.setSplittingAlgorithm("EndOfRun", files_per_job = 500)
+        logCollectTask.addGenerator("BasicNaming")
+        logCollectTask.addGenerator("BasicCounter")
+        logCollectTask.setTaskType("LogCollect")
+    
+        parentTaskLogArch = parentTask.getStep("logArch1")
+        logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")
+        return
+
+    def addOutputModule(self, parentTask, outputModuleName, dataTier, filterName):
         """
         _addOutputModule_
-
+        
         Add an output module and merge task for files produced by the parent
         task.
         """
-        lfnBase = "%s/%s/%s" % (self.unmergedLfnBase, dataTier, self.processedDatasetName)
-        mergedLFNBase = "%s/%s/%s" % (self.commonLfnBase, dataTier, self.processedDatasetName)
+        if filterName != None and filterName != "":
+            processedDatasetName = "%s-%s-%s" % (self.acquisitionEra, filterName,
+                                                 self.processingVersion)
+        else:
+            processedDatasetName = "%s-%s" % (self.acquisitionEra,
+                                              self.processingVersion)
+        
+        unmergedLFN = "%s/%s/%s" % (self.unmergedLFNBase, dataTier,
+                                    processedDatasetName)
+        mergedLFN = "%s/%s/%s" % (self.mergedLFNBase, dataTier,
+                                  processedDatasetName)
         cmsswStep = parentTask.getStep("cmsRun1")
         cmsswStepHelper = cmsswStep.getTypeHelper()
-        cmsswStepHelper.addOutputModule(outputModule(dataTier),
+        cmsswStepHelper.addOutputModule(outputModuleName,
                                         primaryDataset = self.inputPrimaryDataset,
-                                        processedDataset = self.unmergedDatasetName,
+                                        processedDataset = processedDatasetName,
                                         dataTier = dataTier,
-                                        lfnBase = lfnBase,
-                                        mergedLFNBase = mergedLFNBase)
-        self.addMergeTask(parentTask, dataTier)
-        return
+                                        lfnBase = unmergedLFN,
+                                        mergedLFNBase = mergedLFN)
+        return self.addMergeTask(parentTask, outputModuleName, dataTier, processedDatasetName)
 
-    def addMergeTask(self, parentTask, dataTier):
+    def addMergeTask(self, parentTask, parentOutputModule, dataTier, processedDatasetName):
         """
         _addMergeTask_
-
+    
         Create a merge task for files produced by the parent task.
         """
-        mergeTask = parentTask.addTask("Merge%s" % dataTier.capitalize())
+        mergeTask = parentTask.addTask("Merge%s" % parentOutputModule)
+        self.addDashboardMonitoring(mergeTask)        
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
-
-
-        mergeTask = addMonitoring(mergeTask)
         
         mergeTaskStageOut = mergeTaskCmssw.addStep("stageOut1")
         mergeTaskStageOut.setStepType("StageOut")
@@ -100,73 +159,44 @@ class ReRecoWorkloadFactory():
         mergeTask.setTaskType("Merge")  
         mergeTask.applyTemplates()
         mergeTask.setSplittingAlgorithm("WMBSMergeBySize",
-                                        max_merge_size = 4294967296,
-                                        min_merge_size = 500000000)
-
+                                        max_merge_size = self.maxMergeSize,
+                                        min_merge_size = self.minMergeSize,
+                                        max_merge_events = self.maxMergeEvents)
+    
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
-        mergeTaskCmsswHelper.cmsswSetup(self.cmsswVersion,
-                                        softwareEnvironment = self.softwareInitCommand,
-                                        scramArch = self.scramArchitecture)
+        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                        scramArch = self.scramArch)
+        mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
 
-        mergeTaskCmsswHelper.setDataProcessingConfig(self.scenario, "merge")
-        lfnBase = "%s/%s/%s" % (self.commonLfnBase, dataTier, self.processedDatasetName)
+        mergedLFN = "%s/%s/%s" % (self.mergedLFNBase, dataTier, processedDatasetName)    
         mergeTaskCmsswHelper.addOutputModule("Merged",
                                              primaryDataset = self.inputPrimaryDataset,
-                                             processedDataset = self.processedDatasetName,
+                                             processedDataset = processedDatasetName,
                                              dataTier = dataTier,
-                                             lfnBase = lfnBase)
+                                             lfnBase = mergedLFN)
+    
         parentTaskCmssw = parentTask.getStep("cmsRun1")
-        mergeTask.setInputReference(parentTaskCmssw, outputModule = outputModule(dataTier))
+        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModule)
+        self.addCleanupTask(mergeTask, parentOutputModule)
+        return mergeTask
 
-        if self.emulationMode:
-            mergeTaskStageOutHelper = mergeTaskStageOut.getTypeHelper()
-            mergeTaskLogArchHelper  = mergeTaskLogArch.getTypeHelper()
-            mergeTaskCmsswHelper.data.emulator.emulatorName = "CMSSW"
-            mergeTaskStageOutHelper.data.emulator.emulatorName = "StageOut"
-            mergeTaskLogArchHelper.data.emulator.emulatorName = "LogArchive"
-
-        self.addCleanupTask(mergeTask, dataTier)
-        return
-
-    def addCleanupTask(self, parentTask, dataTier):
+    def addCleanupTask(self, parentTask, parentOutputModuleName):
         """
         _addCleanupTask_
-
+        
         Create a cleanup task to delete files produces by the parent task.
         """
-        cleanupTask = parentTask.addTask("CleanupUnmerged%s" % dataTier.capitalize())
+        cleanupTask = parentTask.addTask("CleanupUnmerged%s" % parentOutputModuleName)
+        self.addDashboardMonitoring(cleanupTask)        
         cleanupTask.setTaskType("Cleanup")
 
-        cleanupTask = addMonitoring(task = cleanupTask)
-
         parentTaskCmssw = parentTask.getStep("cmsRun1")
-        cleanupTask.setInputReference(parentTaskCmssw, outputModule = outputModule(dataTier))
+        cleanupTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
         cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
        
-        cleanupStep = cleanupTask.makeStep("cleanupUnmerged%s" % dataTier.capitalize())
+        cleanupStep = cleanupTask.makeStep("cleanupUnmerged%s" % parentOutputModuleName)
         cleanupStep.setStepType("DeleteFiles")
         cleanupTask.applyTemplates()
-        return
-
-    def addLogCollectTask(self, parentTask):
-        """
-        _addLogCollecTask_
-
-        Create a LogCollect task for log archives that are produced by the
-        parent task.
-        """
-        logCollectTask = parentTask.addTask("LogCollect")
-        logCollectTask = addMonitoring(logCollectTask)
-        logCollectStep = logCollectTask.makeStep("logCollect1")
-        logCollectStep.setStepType("LogCollect")
-        logCollectTask.applyTemplates()
-        logCollectTask.setSplittingAlgorithm("EndOfRun", files_per_job = 500)
-        logCollectTask.addGenerator("BasicNaming")
-        logCollectTask.addGenerator("BasicCounter")
-        logCollectTask.setTaskType("LogCollect")
-
-        parentTaskLogArch = parentTask.getStep("logArch1")
-        logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")        
         return
 
     def __call__(self, workloadName, arguments):
@@ -175,123 +205,84 @@ class ReRecoWorkloadFactory():
 
         Create a ReReco workload with the given parameters.
         """
-        #  //
-        # // Processing controls
-        #//  TODO: Address defaults etc/exception handling
-        writeDataTiers = arguments.get("OutputTiers", ['RECO', 'ALCARECO'])
-        owner = arguments.get("Owner", "DataOps")
-        acquisitionEra = arguments.get("AcquisitionEra", "Teatime09")
-        globalTagSetting = arguments.get("GlobalTag","GR09_P_V7::All")
-        lfnCategory = arguments.get("LFNCategory","/store/data")
-        processingVersion = arguments.get("ProcessingVersion", "v99")
-        self.scenario = arguments.get("Scenario", "cosmics")
-        self.cmsswVersion = arguments.get("CMSSWVersion", "CMSSW_3_3_5_patch3")
-        self.scramArchitecture = arguments.get("ScramArch", "slc5_ia32_gcc434")
-    
-        #  //
-        # // Input Data selection
-        #//
-        datasetElements = parseDataset(arguments['InputDatasets'])
-        self.inputPrimaryDataset = datasetElements['Primary']
-        inputProcessedDataset = datasetElements['Processed']
-        inputDataTier = datasetElements['Tier']
+        # Required parameters.
+        self.acquisitionEra = arguments["acquisitionEra"]
+        self.owner = arguments["owner"]
+        self.inputDataset = arguments["inputDataset"]
+        self.frameworkVersion = arguments["frameworkVersion"]
+        self.scramArch = arguments["scramArch"]
+        self.processingVersion = arguments["processingVersion"]
+        self.skimInput = arguments["skimInput"]
+        self.globalTag = arguments["globalTag"]        
+        self.processingOutputModules = arguments["processingOutputModules"]
+        self.skimOutputModules = arguments["skimOutputModules"]
 
-        siteWhitelist = arguments.get("SiteWhitelist", [])
-        siteBlacklist = arguments.get("SiteBlacklist", [])
-        blockBlacklist = arguments.get("BlockBlacklist", [])
-        blockWhitelist = arguments.get("BlockWhitelist", [])    
-        runWhitelist = arguments.get("RunWhitelist", [])
-        runBlacklist = arguments.get("RunBlacklist", [])    
-    
-        #  //
-        # // Enabling Emulation from the Request allows some nice diagnostic tests
-        #//
-        self.emulationMode = arguments.get("Emulate", False)
-    
-        #  //
-        # // likely to be ~stable
-        #//
-        dbsUrl = arguments.get("DBSURL","http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" )
-        self.softwareInitCommand = arguments.get("SoftwareInitCommand", " . /uscmst1/prod/sw/cms/shrc prod")
-        tempLfnCategory =  arguments.get("TemporaryLFNCategory", "/store/unmerged")
-    
-        #  //
-        # // Set up the basic workload task and step structure
-        #//
-        workload = newWorkload(workloadName)
-        workload.setOwner(owner)
-        workload.setStartPolicy('DatasetBlock')
-        workload.setEndPolicy('SingleShot')
-        workload.data.properties.acquisitionEra = acquisitionEra
+        # Required parameters that can be empty.
+        self.processingConfig = arguments["processingConfig"]
+        self.skimConfig = arguments["skimConfig"]
+        self.scenario = arguments["scenario"]
+        self.couchUrl = arguments.get("couchUrl", "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984")
+        self.couchDBName = arguments.get("couchDBName", "wmagent_config_cache")        
+        
+        # Optional arguments.
+        self.dbsUrl = arguments.get("dbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+        self.blockBlackList = arguments.get("blockBlackList", [])
+        self.blockWhiteList = arguments.get("blockWhiteList", [])
+        self.runBlackList = arguments.get("runBlackList", [])
+        self.runWhiteList = arguments.get("runWhiteList", [])
+        self.siteBlackList = arguments.get("siteBlackList", [])
+        self.siteWhiteList = arguments.get("siteWhiteList", [])
+        self.unmergedLFNBase = arguments.get("unmergedLFNBase", "/store/temp/WMAgent/unmerged")
+        self.mergedLFNBase = arguments.get("mergedLFNBase", "/store/temp/WMAgent/merged")
+        self.minMergeSize = arguments.get("minMergeSize", 500000000)
+        self.maxMergeSize = arguments.get("maxMergeSize", 4294967296)
+        self.maxMergeEvents = arguments.get("maxMergeEvents", 100000)
+        self.emulation = arguments.get("emulation", False)
 
-        #  //
-        # // set up the production task
-        #//
-        rerecoTask = workload.newTask("ReReco")
-        rerecoTask = addMonitoring(task = rerecoTask)
-        rerecoTaskCmssw = rerecoTask.makeStep("cmsRun1")
-        rerecoTaskCmssw.setStepType("CMSSW")
-        rerecoTaskStageOut = rerecoTaskCmssw.addStep("stageOut1")
-        rerecoTaskStageOut.setStepType("StageOut")
-        rerecoTaskLogArch = rerecoTaskCmssw.addStep("logArch1")
-        rerecoTaskLogArch.setStepType("LogArchive")
-        rerecoTask.applyTemplates()
-        rerecoTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
-        rerecoTask.addGenerator("BasicNaming")
-        rerecoTask.addGenerator("BasicCounter")
-        rerecoTask.setTaskType("Processing")
-        
-        #  //
-        # // rereco cmssw step
-        #//
-        #
-        # TODO: Anywhere helper.data is accessed means we need a method added to the
-        # type based helper class to provide a clear API.
-        rerecoTaskCmsswHelper = rerecoTaskCmssw.getTypeHelper()
-        rerecoTask.addInputDataset(
-            primary = self.inputPrimaryDataset,
-            processed = inputProcessedDataset,
-            tier = inputDataTier,
-            dbsurl = dbsUrl,
-            block_blacklist = blockBlacklist,
-            block_whitelist = blockWhitelist,
-            run_blacklist = runBlacklist,
-            run_whitelist = runWhitelist
-            )
+        # Derived parameters.
+        self.workloadName = "ReReco-%s" % self.processingVersion
+        (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = \
+                                   self.inputDataset[1:].split("/")
 
-        rerecoTask.data.constraints.sites.whitelist = siteWhitelist
-        rerecoTask.data.constraints.sites.blacklist = siteBlacklist
-        
-        rerecoTaskCmsswHelper.cmsswSetup(
-            self.cmsswVersion,
-            softwareEnvironment = self.softwareInitCommand ,
-            scramArch = self.scramArchitecture
-            )
-        
-        rerecoTaskCmsswHelper.setDataProcessingConfig(
-            self.scenario, "promptReco", globalTag = globalTagSetting,
-            writeTiers = writeDataTiers)
-        
-        self.processedDatasetName = "rereco_%s_%s" % (globalTagSetting.replace("::","_"), processingVersion)
-        self.unmergedDatasetName = "%s" % self.processedDatasetName
-        self.commonLfnBase = lfnCategory
-        self.commonLfnBase += "/%s" % acquisitionEra
-        self.commonLfnBase += "/%s" % self.inputPrimaryDataset
-        self.unmergedLfnBase = tempLfnCategory
-        self.unmergedLfnBase += "/%s" % acquisitionEra
-        self.unmergedLfnBase += "/%s" % self.inputPrimaryDataset
-        
-        if self.emulationMode:
-            rerecoStageOutHelper = rerecoTaskStageOut.getTypeHelper()
-            rerecoLogArchHelper  = rerecoTaskLogArch.getTypeHelper()
-            rerecoTaskCmsswHelper.data.emulator.emulatorName = "CMSSW"
-            rerecoStageOutHelper.data.emulator.emulatorName = "StageOut"
-            rerecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
-            
-        self.addLogCollectTask(rerecoTask)        
+        procConfigDoc = None
+        skimConfigDoc = None
+        if self.couchUrl != None and self.couchDBName != None:
+            myConfigCache = WMConfigCache(dbname2 = self.couchDBName, dburl = self.couchUrl)
+            if self.processingConfig != "":
+                (procConfigDoc, rev) = myConfigCache.addConfig(self.processingConfig)
+            if self.skimConfig != "":
+                (skimConfigDoc, rev) = myConfigCache.addConfig(self.skimConfig)
 
-        for dataTierName in writeDataTiers:
-            self.addOutputModule(rerecoTask, dataTierName)
+        workload = self.createWorkload()
+        procTask = workload.newTask("ReReco")
+
+        self.setupProcessingTask(procTask, "Processing", self.inputDataset,
+                                 scenarioName = self.scenario, scenarioFunc = "promptReco",
+                                 scenarioArgs = {"globalTag": self.globalTag, "writeTiers": ["RECO", "ALCARECO"]}, 
+                                 couchUrl = self.couchUrl, couchDBName = self.couchDBName,
+                                 configDoc = procConfigDoc) 
+        self.addLogCollectTask(procTask)
+
+        procOutput = {}
+        for (outputModuleName, datasetInfo) in self.processingOutputModules.iteritems():
+            mergeTask = self.addOutputModule(procTask, outputModuleName, datasetInfo["dataTier"],
+                                             datasetInfo["filterName"])
+            procOutput[outputModuleName] = mergeTask
+
+        if skimConfigDoc == None:
+            return workload
+
+        parentMergeTask = procOutput[self.skimInput]
+        skimTask = parentMergeTask.addTask("Skims")
+        parentCmsswStep = parentMergeTask.getStep("cmsRun1")
+        self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = "Merged",
+                                 couchUrl = self.couchUrl, couchDBName = self.couchDBName,
+                                 configDoc = skimConfigDoc)
+        #addLogCollectTask(skimTask)
+
+        for (outputModuleName, datasetInfo) in self.skimOutputModules.iteritems():
+            self.addOutputModule(skimTask, outputModuleName, datasetInfo["dataTier"],
+                                 datasetInfo["filterName"])
             
         return workload
 
@@ -304,4 +295,3 @@ def rerecoWorkload(workloadName, arguments):
     """
     myReRecoFactory = ReRecoWorkloadFactory()
     return myReRecoFactory(workloadName, arguments)
-

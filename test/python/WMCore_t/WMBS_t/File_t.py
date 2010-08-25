@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.35 2009/12/16 17:45:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: File_t.py,v 1.36 2009/12/17 22:34:14 sfoulkes Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import unittest
 import logging
@@ -48,9 +48,6 @@ class FileTest(unittest.TestCase):
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")
 
-        #cktypeAction = daofactory(classname = "Files.AddCKType")
-        #cktypeAction.execute(cktype = 'cksum')
-        
         return
           
     def tearDown(self):        
@@ -60,6 +57,7 @@ class FileTest(unittest.TestCase):
         Drop all the WMBS tables.
         """
         self.testInit.clearDatabase()
+        return
             
     def testCreateDeleteExists(self):
         """
@@ -688,8 +686,6 @@ class FileTest(unittest.TestCase):
 
         return
 
-
-
     def testGetBulkLocations(self):
         """
         _testGetBulkLocations_
@@ -697,7 +693,6 @@ class FileTest(unittest.TestCase):
         Checks to see whether the code that we have will enable us to get the locations
         of all files at once
         """
-
         myThread = threading.currentThread()
 
         daoFactory = DAOFactory(package = "WMCore.WMBS", logger = logging, dbinterface = myThread.dbi)
@@ -741,11 +736,104 @@ class FileTest(unittest.TestCase):
         for f in files:
             self.assertEqual(location[f.exists()], list(f['locations']))
 
-
         return
 
+    def testBulkParentage(self):
+        """
+        _testBulkParentage_
 
+        Add a child to some parent files and make sure that all the parentage
+        information is loaded/stored correctly from the database.
+        """
+        testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
+                              events = 20, cksum = 1)
+        testFileParentA.addRun(Run( 1, *[45]))
+        testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
+                              events = 20, cksum = 1)
+        testFileParentB.addRun(Run( 1, *[45]))
+        testFileParentA.create()
+        testFileParentB.create()
 
+        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                         cksum = 1)
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+
+        testFileParentA.addChild("/this/is/a/lfn")
+        testFileParentB.addChild("/this/is/a/lfn")
+
+        testFileB = File(id = testFileA["id"])
+        testFileB.loadData(parentage = 1)
+
+        goldenFiles = [testFileParentA, testFileParentB]
+        for parentFile in testFileB["parents"]:
+            assert parentFile in goldenFiles, \
+                   "ERROR: Unknown parent file"
+            goldenFiles.remove(parentFile)
+
+        assert len(goldenFiles) == 0, \
+              "ERROR: Some parents are missing"
+        return
+
+    def testBulkParentage(self):
+        """
+        _testBulkParentage_
+
+        Verify that the bulk parentage dao correctly sets file parentage.
+        """
+        testFileChildA = File(lfn = "/this/is/a/child/lfnA", size = 1024,
+                              events = 20, checksums = {'cksum': 1})
+        testFileChildB = File(lfn = "/this/is/a/child/lfnB", size = 1024,
+                              events = 20, checksums = {'cksum': 1})
+        testFileChildA.create()
+        testFileChildB.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
+                         checksums = {'cksum':1})
+        testFileA.create()
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
+                         checksums = {'cksum':1})
+        testFileB.create()
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
+                         checksums = {'cksum':1})
+        testFileC.create()
+
+        parentage = [{"child": testFileChildA["id"], "parent": testFileA["id"]},
+                     {"child": testFileChildA["id"], "parent": testFileB["id"]},
+                     {"child": testFileChildA["id"], "parent": testFileC["id"]},
+                     {"child": testFileChildB["id"], "parent": testFileA["id"]},
+                     {"child": testFileChildB["id"], "parent": testFileB["id"]}]
+
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)        
+        bulkParentageAction = daofactory(classname = "Files.AddBulkParentage")
+        bulkParentageAction.execute(parentage)
+        
+        testFileD = File(id = testFileChildA["id"])
+        testFileD.loadData(parentage = 1)
+        testFileE = File(id = testFileChildB["id"])
+        testFileE.loadData(parentage = 1)        
+
+        goldenFiles = [testFileA, testFileB, testFileC]
+        for parentFile in testFileD["parents"]:
+            assert parentFile in goldenFiles, \
+                   "ERROR: Unknown parent file"
+            goldenFiles.remove(parentFile)
+
+        assert len(goldenFiles) == 0, \
+              "ERROR: Some parents are missing"
+
+        goldenFiles = [testFileA, testFileB]
+        for parentFile in testFileE["parents"]:
+            assert parentFile in goldenFiles, \
+                   "ERROR: Unknown parent file"
+            goldenFiles.remove(parentFile)
+
+        assert len(goldenFiles) == 0, \
+              "ERROR: Some parents are missing"        
+        return
 
 if __name__ == "__main__":
     unittest.main() 

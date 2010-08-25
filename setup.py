@@ -44,6 +44,7 @@ if can_nose:
     
         def run(self):
             print "committed at abour 14:11"
+            sys.stdout.flush()
             retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python'])
             if retval:
                 sys.exit( 0 ) 

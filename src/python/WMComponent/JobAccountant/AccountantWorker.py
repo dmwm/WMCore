@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.6 2009/11/02 20:11:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.7 2009/11/06 22:12:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 import time
@@ -108,6 +108,8 @@ class AccountantWorker:
         Handle a completed job.  The parameters dictionary will contain the job
         ID and the path to the framework job report.
         """
+        logging.info("Handling %s" % parameters["fwjr_path"])
+
         self.transaction.begin()
 
         fwkJobReport = self.loadJobReport(parameters["fwjr_path"])

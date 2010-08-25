@@ -8,6 +8,7 @@ A REST formatter that appends the DAS headers to the result data
 from WMCore.WebTools.Page import exposedasjson, exposedasxml
 from WMCore.WebTools.Page import exposedasplist
 from WMCore.WebTools.RESTFormatter import RESTFormatter
+from WMCore.WebTools.Page import DEFAULT_EXPIRE
 
 class DASRESTFormatter(RESTFormatter):
     def __init__(self, config):
@@ -15,13 +16,13 @@ class DASRESTFormatter(RESTFormatter):
         self.supporttypes.update({'text/json+das':self.dasjson})
 
     @exposedasjson
-    def dasjson(self, data):
+    def dasjson(self, data, expires=DEFAULT_EXPIRE):
         return data
 
     @exposedasxml
-    def xml(self, data):
+    def xml(self, data, expires=DEFAULT_EXPIRE):
         return data
 
     @exposedasplist
-    def plist(self, data):
+    def plist(self, data, expires=DEFAULT_EXPIRE):
         return data

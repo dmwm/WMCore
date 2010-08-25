@@ -6,8 +6,13 @@ A basic REST formatter.
 
 Could add YAML via http://pyyaml.org/
 """
-from WMCore.WebTools.Page import TemplatedPage, exposejson, exposexml, exposeatom
+from WMCore.WebTools.Page import TemplatedPage
+from WMCore.WebTools.Page import exposejson, exposexml, exposeatom
+from WMCore.WebTools.Page import DEFAULT_EXPIRE
 from cherrypy import response, HTTPError
+
+
+
 class RESTFormatter(TemplatedPage):
     def __init__(self, config):
         TemplatedPage.__init__(self, config)
@@ -21,20 +26,20 @@ class RESTFormatter(TemplatedPage):
                    '*/*': str}
     
     @exposejson
-    def json(self, data):
+    def json(self, data, expires=DEFAULT_EXPIRE):
         return data
 
     @exposexml
-    def xml(self, data):
+    def xml(self, data, expires=DEFAULT_EXPIRE):
         return data
 
     @exposeatom
-    def atom(self, data):
+    def atom(self, data, expires=DEFAULT_EXPIRE):
         return data
     
-    def format(self, data, datatype):
+    def format(self, data, datatype, expires=DEFAULT_EXPIRE):
         try:
-            return self.supporttypes[datatype](data)
+            return self.supporttypes[datatype](data, expires=expires)
         except HTTPError, h:
             response.status = h[0]
             return self.supporttypes[datatype]({'exception': h[0],

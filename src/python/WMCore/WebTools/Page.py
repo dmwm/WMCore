@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.36 2009/12/22 20:03:21 valya Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: Page.py,v 1.37 2009/12/23 22:30:36 metson Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import urllib
 import cherrypy
@@ -33,6 +33,8 @@ from WMCore.WMFactory import WMFactory
 from wsgiref.handlers import format_date_time
 from datetime import datetime, timedelta
 from time import mktime
+
+DEFAULT_EXPIRE = 5*60
 
 class Page(WMObject):
     """
@@ -182,6 +184,7 @@ def exposedasxml (func):
     wrapper.exposed = True
     return wrapper
 
+
 def exposetext (func):
     def wrapper (self, *args, **kwds):
         data = func (self, *args, **kwds)
@@ -222,6 +225,7 @@ def exposedasjson (func):
     def wrapper (self, *args, **kwds):
         encoder = JSONEncoder()
         data = runDas(self, func, *args, **kwds)
+        
         cherrypy.response.headers['Content-Type'] = "application/json"
         try:
 #            jsondata = encoder.iterencode(data)
@@ -260,8 +264,10 @@ def runDas(self, func, *args, **kwds):
     Run a query and produce a dictionary for DAS formatting
     """
     start_time = time.time()
+    expires = kwds.pop('expires', DEFAULT_EXPIRE)
     results    = func(self, *args, **kwds)
     call_time  = time.time() - start_time
+    res_expire = make_timestamp(expires)
     if  type(results) is types.ListType:
         if len(results) > 0:
             row = results[0]
@@ -271,10 +277,6 @@ def runDas(self, func, *args, **kwds):
         row = results
     if  type(row) is types.StringType:
         row = '"%s"' % row
-    if  type(row) is types.DictType and row.has_key('expire'):
-        res_expire = make_timestamp(row['expire'])
-    else:
-        res_expire = make_timestamp(60*5) # 5 minutes
     try:
         factory = WMFactory('webtools_factory')
         object  = factory.loadObject(self.config.model.object, self.config)

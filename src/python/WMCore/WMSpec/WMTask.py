@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.8 2009/06/12 21:42:07 mnorman Exp $"
-__revision__ = "$Revision: 1.8 $"
+__version__ = "$Id: WMTask.py,v 1.9 2009/06/22 19:49:18 evansde Exp $"
+__revision__ = "$Revision: 1.9 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -203,6 +203,37 @@ class WMTaskHelper(TreeHelper):
         """
         return self.data.input
 
+    def setSplittingAlgorithm(self, algoName, **params):
+        """
+        _setSplittingAlgorithm_
+
+        Set the splitting algorithm name and arguments
+
+        """
+        # Could consider checking values against the JobSplitting package
+        # here...
+        setattr(self.data.input.splitting, "algorithm", algoName)
+        [ setattr(self.data.input.splitting, key, val)
+          for key, val in params.items() ]
+
+    def jobSplittingAlgorithm(self):
+        """
+        _jobSplittingAlgorithm_
+
+        Get the job Splitting algo name
+
+        """
+        return getattr(self.data.input.splitting, "algorithm", None)
+
+    def jobSplittingParameters(self):
+        """
+        _jobSplittingParameters_
+
+        get the parameters to pass to the job splitting algo
+
+        """
+        datadict = getattr(self.data.input, "splitting")
+        return datadict.dictionary_()
 
 class WMTask(ConfigSectionTree):
     """
@@ -222,6 +253,8 @@ class WMTask(ConfigSectionTree):
         self.section_("pythonLibs")
         self.section_("constraints")
         self.section_("input")
+        self.input.section_("splitting")
+        self.input.splitting.algorithm = None
         self.constraints.section_("sites")
         self.constraints.sites.whitelist = []
         self.constraints.sites.blacklist = []

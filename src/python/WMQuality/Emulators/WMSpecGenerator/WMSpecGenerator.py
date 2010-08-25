@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WMSpecGenerator.py,v 1.4 2010/03/05 22:36:25 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WMSpecGenerator.py,v 1.5 2010/03/19 15:32:29 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import os
@@ -13,6 +13,7 @@ import shutil
 from WMCore.WMSpec.StdSpecs import ReReco
 from Samples.BasicProductionWorkload import createWorkload as BasicProductionWorkload
 from Samples.BasicProcessingWorkload import createWorkload as BasicProcessingWorkload
+from Samples import ReRecoParams
 #from Samples.MultiTaskProcessingWorkload import createWorkload as MultiTaskProcessingWorkload
 #from Samples.MultiTaskProductionWorkload import createWorkload as MultiTaskProductionWorkload
 
@@ -54,7 +55,7 @@ class WMSpecGenerator(object):
         return self._selectReturnType(spec, returnType)    
     
     def createReRecoSpec(self, specName, returnType="spec"):
-        spec = ReReco.rerecoWorkload(specName, {'InputDatasets' : '/Fake/Test/ReReco'}) 
+        spec = ReReco.rerecoWorkload(specName, ReRecoParams.MinBiasWithoutEmulator) 
         return self._selectReturnType(spec, returnType)    
     
     def createRandomProductionSpecs(self, size=10):

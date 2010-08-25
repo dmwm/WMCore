@@ -7,8 +7,8 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.12 $"
-__author__ = "mnorman@fnal.gov"
+__version__ = "$Revision: 1.13 $"
+
 
 import os
 import threading
@@ -24,6 +24,8 @@ from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.UUID import makeUUID
 from WMCore.DataStructs.Run import Run
+
+from WMCore.Services.DBS.DBSReader import DBSReader
 
 from DBSAPI.dbsApi import DbsApi
 
@@ -65,7 +67,7 @@ class DBSUploadTest(unittest.TestCase):
         locationAction = self.bufferFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")
-        locationAction.execute(siteName = "malpaquet") 
+        #locationAction.execute(siteName = "malpaquet") 
 
 
     def tearDown(self):
@@ -134,10 +136,9 @@ class DBSUploadTest(unittest.TestCase):
         testFile.setDatasetPath("/%s/%s/RECO" %(name, name))
         testFile.addRun(Run( 1, *[45]))
         testFile.create()
-        
-        testFile.addParent(testFileParentA["lfn"])
-        testFile.addParent(testFileParentB["lfn"])
-        testFile.addParent(testFileParentC["lfn"])
+
+        testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"]])
+        #testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"], testFileParentC["lfn"]] )
 
         return
 
@@ -192,11 +193,9 @@ class DBSUploadTest(unittest.TestCase):
                 testFile.setDatasetPath("/%s/%s/RECO" %(name, name))
                 testFile.addRun(Run( 1, *[45]))
                 testFile.create()
-        
-                testFile.addParent(testFileParentA["lfn"])
-                testFile.addParent(testFileParentB["lfn"])
-                testFile.addParent(testFileParentC["lfn"])
 
+                testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"], testFileParentC["lfn"]] )
+        
                 testFiles.append(testFile)
 
         return
@@ -209,6 +208,8 @@ class DBSUploadTest(unittest.TestCase):
         This may do everything itself.  It's hard to say
 
         """
+
+        #return
 
         myThread = threading.currentThread()
 
@@ -317,6 +318,7 @@ class DBSUploadTest(unittest.TestCase):
 
 
     def testLargeUpload(self):
+        #return
         myThread = threading.currentThread()
 
         factory     = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
@@ -433,9 +435,11 @@ class DBSUploadTest(unittest.TestCase):
         blockCount = countDAO.execute()
         assert blockCount == 0, \
                "Error: Blocks in buffer before test started."
+
+        config = self.createConfig()
         
-        poller = DBSUploadPoller(self.createConfig())
-        poller.DBSMaxFiles = 100
+        poller = DBSUploadPoller(config)
+        poller.DBSMaxFiles = 2
         poller.DBSMaxSize = 1000000000000
         poller.setup(parameters = None)
 
@@ -444,8 +448,24 @@ class DBSUploadTest(unittest.TestCase):
             poller.algorithm(parameters = None)
             blockCount = countDAO.execute()
 
-            assert blockCount == 1, \
-                   "Error: Wrong number of blocks in buffer: %s" % blockCount
+            print "Have %i block" % (blockCount)
+
+            #assert blockCount == 1, \
+            #       "Error: Wrong number of blocks in buffer: %s" % blockCount
+
+
+        args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer }
+        dbsReader = DBSReader(url = config.DBSUpload.globalDBSUrl, level='ERROR', user='NORMAL', version=config.DBSUpload.globalDBSVer)
+
+        primaries = dbsReader.listPrimaryDatasets()
+        self.assertEqual(randomDataset in primaries, True, 'Could not find dataset %s' %(randomDataset))
+        processed = dbsReader.listProcessedDatasets(primary = randomDataset)
+        self.assertEqual(randomDataset in processed, True, 'Could not find dataset %s' %(randomDataset))
+        #self.assertEqual(processed not None, True)
+        #print dbsReader.getDatasetInfo(randomDataset)
+        datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
+        self.assertEqual(len(datasetFiles), 38)
+        
 
         return
 

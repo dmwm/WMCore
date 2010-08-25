@@ -5,8 +5,8 @@ _addToBuffer_
 APIs related to adding file to DBS Buffer
 
 """
-__version__ = "$Revision: 1.12 $"
-__revision__ = "$Id: AddToBuffer.py,v 1.12 2009/07/20 18:17:29 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: AddToBuffer.py,v 1.13 2009/09/03 15:18:15 sfoulkes Exp $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -18,14 +18,6 @@ from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 from WMCore.DataStructs.Run import Run
 
 class AddToBuffer:
-
-    def __init__(self, logger=None, dbfactory = None):
-        
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-
-        myThread.dialect = os.getenv("DIALECT")
-    
     def addFile(self, file, dataset=0):
 
         myThread = threading.currentThread()

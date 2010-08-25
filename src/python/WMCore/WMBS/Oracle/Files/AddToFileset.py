@@ -1,17 +1,19 @@
+#!/usr/bin/env python
 """
-Oracle implementation of AddFileToFileset
+_AddToFileset_
+
+Oracle implementation of Files.AddFileToFileset
 """
+
 from WMCore.WMBS.MySQL.Files.AddToFileset import AddToFileset as AddFileToFilesetMySQL
 
 class AddToFileset(AddFileToFilesetMySQL):
-    """
-    _AddToFileset_
-    
-    overwirtes MySQL Files.AddToFilesetByID.sql to use in oracle.
-    
-    """
-    
-    sql = """insert into wmbs_fileset_files 
-            (fileid, fileset, insert_time) 
-            values ((select id from wmbs_file_details where lfn = :lfn),
-            (select id from wmbs_fileset where name = :fileset), :insert_time)"""
+    sql = """INSERT INTO wmbs_fileset_files (fileid, fileset, insert_time)
+               SELECT wmbs_file_details.id, :fileset, :insert_time
+               FROM wmbs_file_details
+               WHERE wmbs_file_details.lfn = :lfn
+               AND NOT EXISTS (SELECT fileid FROM wmbs_fileset_files wff2 WHERE
+                                wff2.fileid = wmbs_file_details.id
+                                AND wff2.fileset = :fileset)
+    """    
+

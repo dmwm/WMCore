@@ -7,8 +7,8 @@ a set of jobs based on event counts.  Each jobgroup returned will only
 contain jobs for a single file.
 """
 
-__revision__ = "$Id: FileAndEventBased.py,v 1.4 2009/03/24 12:18:14 sfoulkes Exp $"
-__version__  = "$Revision: 1.4 $"
+__revision__ = "$Id: FileAndEventBased.py,v 1.5 2009/04/05 21:08:45 gowdy Exp $"
+__version__  = "$Revision: 1.5 $"
 
 from sets import Set
 
@@ -34,9 +34,17 @@ class FileAndEventBased(JobFactory):
         # // get the event total
         #//
         eventsPerJob = kwargs['events_per_job']
+        try:
+            selectionAlgorithm = kwargs['selection_algorithm']
+        except KeyError, e:
+            selectionAlgorithm = None
         carryOver = 0
 
         for f in fileset:
+            if selectionAlgorithm:
+                if not selectionAlgorithm( f ):
+                    self.subscription.completeFiles( [ f ] )
+                    continue
             jobGroup = groupInstance(subscription = self.subscription)
             jobGroups.append(jobGroup)
             eventsInFile = f['events']

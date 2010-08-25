@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.12 2009/12/16 17:45:43 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.13 2010/01/13 19:51:44 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import unittest
 import os
@@ -549,7 +549,6 @@ class DBSBufferFileTest(unittest.TestCase):
 
         Verify that the [Set|Get]Block DAOs work correctly.
         """
-        
         myThread = threading.currentThread()
         uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
                                    logger = myThread.logger,
@@ -607,12 +606,7 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileC.create()                
 
-        myThread = threading.currentThread()
-        dbsBufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
-                                      logger = myThread.logger,
-                                      dbinterface = myThread.dbi)
-
-        countAction = dbsBufferFactory(classname = "CountFiles")
+        countAction = self.daoFactory(classname = "CountFiles")
 
         assert countAction.execute() == 3, \
                "Error: Wrong number of files counted in DBS Buffer."
@@ -659,6 +653,99 @@ class DBSBufferFileTest(unittest.TestCase):
                "Error: missing LFNs..."
 
         return
+
+    def testGetChildrenDAO(self):
+        """
+        _testGetChildrenDAO_
+
+        Verify that the GetChildren DAO correctly returns the LFNs of a file's
+        children.
+        """
+        testFileChildA = DBSBufferFile(lfn = "/this/is/a/child/lfnA", size = 1024,
+                                        events = 20)
+        testFileChildA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                    appFam = "RECO", psetHash = "GIBBERISH",
+                                    configContent = "MOREGIBBERISH")
+        testFileChildA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileChildB = DBSBufferFile(lfn = "/this/is/a/child/lfnB", size = 1024,
+                                        events = 20)
+        testFileChildB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                    appFam = "RECO", psetHash = "GIBBERISH",
+                                    configContent = "MOREGIBBERISH")
+        testFileChildB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileChildC = DBSBufferFile(lfn = "/this/is/a/child/lfnC", size = 1024,
+                                        events = 20)
+        testFileChildC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                    appFam = "RECO", psetHash = "GIBBERISH",
+                                    configContent = "MOREGIBBERISH")
+        testFileChildC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        
+        testFileChildA.create()
+        testFileChildB.create()
+        testFileChildC.create()
+
+        testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
+                                 events = 10)
+        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFile.create()
+
+        testFileChildA.addParents([testFile["lfn"]])
+        testFileChildB.addParents([testFile["lfn"]])
+        testFileChildC.addParents([testFile["lfn"]])        
+
+        getChildrenAction = self.daoFactory(classname = "DBSBufferFiles.GetChildren")
+        childLFNs = getChildrenAction.execute(testFile["lfn"])
+        
+        assert len(childLFNs) == 3, \
+               "ERROR: Parent does not have the right amount of children."
+
+        goldenLFNs = ["/this/is/a/child/lfnA",
+                      "/this/is/a/child/lfnB",
+                      "/this/is/a/child/lfnC"]
+        for childLFN in childLFNs:
+            assert childLFN in goldenLFNs, \
+                   "ERROR: Unknown child lfn"
+            goldenLFNs.remove(childLFN)
+                   
+        return
+
+    def testGetParentStatusDAO(self):
+        """
+        _testGetParentStatusDAO_
+
+        Verify that the GetParentStatus DAO correctly returns the status of a
+        file's children.
+        """
+        testFileChild = DBSBufferFile(lfn = "/this/is/a/child/lfnA", size = 1024,
+                                        events = 20)
+        testFileChild.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                    appFam = "RECO", psetHash = "GIBBERISH",
+                                    configContent = "MOREGIBBERISH")
+        testFileChild.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileChild.create()
+
+        testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
+                                 events = 10)
+        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFile.create()
+
+        testFileChild.addParents([testFile["lfn"]])
+
+        getStatusAction = self.daoFactory(classname = "DBSBufferFiles.GetParentStatus")
+        parentStatus = getStatusAction.execute(testFileChild["lfn"])
+
+        assert len(parentStatus) == 1, \
+               "ERROR: Wrong number of statuses returned."
+        assert parentStatus[0] == "NOTUPLOADED", \
+               "ERROR: Wrong status returned."
+
+        return    
         
 if __name__ == "__main__":
     unittest.main()

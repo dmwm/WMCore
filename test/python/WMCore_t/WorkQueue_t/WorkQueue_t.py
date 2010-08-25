@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.46 2010/08/09 17:22:27 swakef Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.47 2010/08/18 13:11:32 swakef Exp $"
+__version__ = "$Revision: 1.47 $"
 
 import unittest
 import os
@@ -45,6 +45,14 @@ class TestReRecoFactory(ReRecoWorkloadFactory):
     def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
                             scenarioArgs):
         return {}
+
+    #TODO: Remove this when each queue can be isolated (i.e. separate db's)
+    def setReRecoPolicy(self, workload, splitAlgo, splitAgrs):
+        """Force DatasetBlock till test cases can handle multiple queues
+           with Block splitting at global level"""
+        ReRecoWorkloadFactory.setReRecoPolicy(self, workload,
+                                              splitAlgo, splitAgrs)
+        workload.setStartPolicy("DatasetBlock")
 
 class WorkQueueTest(WorkQueueTestCase):
     """

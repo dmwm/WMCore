@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.9 2010/03/19 20:58:58 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: StageOut.py,v 1.10 2010/03/22 15:05:35 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import os
 import os.path
@@ -132,6 +132,7 @@ class StageOut(Executor):
                                 filesTransferred.append(fileForTransfer)
                                 file.StageOutCommand = fileForTransfer['StageOutCommand']
                                 file.SEName          = fileForTransfer['SEName']
+                                file.location        = fileForTransfer['SEName']
                                 file.OutputPFN       = fileForTransfer['PFN']
                             except Alarm:
                                 msg = "Indefinite hang during stageOut of logArchive"

@@ -18,6 +18,7 @@ from WMCore.Storage.DeleteMgr import DeleteMgr
 from WMCore.Storage.Registry import retrieveStageOutImpl
 
 import WMCore.Storage.Backends
+import WMCore.Storage.Plugins
 
 class StageOutMgr:
     """

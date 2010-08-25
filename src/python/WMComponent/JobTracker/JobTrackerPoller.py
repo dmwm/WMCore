@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.9 2010/05/03 19:47:15 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.10 2010/05/28 16:32:47 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 import logging
@@ -15,6 +15,7 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.WMBS.Job          import Job
 from WMCore.DAOFactory        import DAOFactory
+from WMCore.WMFactory         import WMFactory
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
@@ -45,8 +46,12 @@ class JobTrackerPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+
+        # Create a factory to load plugins
+        self.pluginFactory = WMFactory("plugins",
+                                       self.config.JobTracker.pluginDir)
     
-    def setup(self, parameters):
+    def setup(self, parameters = None):
         """
         Load DB objects required for queries
         """
@@ -59,7 +64,7 @@ class JobTrackerPoller(BaseWorkerThread):
 
 
 
-    def terminate(self, params):
+    def terminate(self, params = None):
         """
         _terminate_
 
@@ -72,7 +77,7 @@ class JobTrackerPoller(BaseWorkerThread):
 
     
 
-    def algorithm(self, parameters):
+    def algorithm(self, parameters = None):
         """
 	Performs the archiveJobs method, looking for each type of failure
 	And deal with it as desired.
@@ -156,6 +161,7 @@ class JobTrackerPoller(BaseWorkerThread):
         passedJobs = []
         failedJobs = []
 
+
         for job in trackDict.keys():
             if trackDict[job]['Status'] == 'Running' and trackDict[job]['StatusTime'] > self.runTimeLimit:
                 failedJobs.append(job)
@@ -166,8 +172,9 @@ class JobTrackerPoller(BaseWorkerThread):
             elif trackDict[job]['Status'] == 'Unknown' and trackDict[job]['StatusTime'] > self.unknTimeLimit:
                 failedJobs.append(job)
             elif trackDict[job]['Status'] == 'NA':
-                #Well, then we're not sure what happened to it.  Pass this on to the JobAccountant on
-                #the assumption that it finished
+                # Well, then we're not sure what happened to it.
+                # Pass this on to the JobAccountant on
+                # the assumption that it finished
                 passedJobs.append(job)
 
 
@@ -182,7 +189,7 @@ class JobTrackerPoller(BaseWorkerThread):
         """
         if len(failedJobs) == 0:
             return
-        
+
         #Kill them on the system
         self.trackerInst.kill(failedJobs)
 
@@ -227,7 +234,7 @@ class JobTrackerPoller(BaseWorkerThread):
             #logging.error("Job %i has finished on site" %(jobID))
 
         myThread.transaction.begin()
-        logging.error("Propagating jobs in jobTracker")
+        logging.info("Propagating jobs in jobTracker")
         #logging.error(listOfJobs)
         self.changeState.propagate(listOfJobs, 'complete', 'executing')
         myThread.transaction.commit()
@@ -246,20 +253,9 @@ class JobTrackerPoller(BaseWorkerThread):
         if not trackerName:
             trackerName = self.config.JobTracker.trackerName
 
-        pluginDir  = self.config.JobTracker.pluginDir
 
-        pluginPath = pluginDir + '.' + trackerName
-
-        try:
-            module      = __import__(pluginPath, globals(), \
-                                     locals(), [trackerName])
-            instance    = getattr(module, trackerName)
-            loadedClass = instance(self.config)
-            #print loadedClass.__class__
-        except Exception, ex:
-            msg = "Failed in attempting to import tracker plugin in JobTracker with msg = \n%s" % (ex)
-            raise Exception(msg)
-        
+        loadedClass = self.pluginFactory.loadObject(classname = trackerName,
+                                                    args = self.config)
 
         return loadedClass
 

@@ -5,8 +5,8 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.4 2009/11/06 19:50:04 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.5 2010/01/22 22:14:12 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -23,13 +23,14 @@ config.JobCreator.logLevel = 'INFO'
 
 # maximum number of threads we want to deal
 # with messages per pool.
-config.JobCreator.maxThreads       = 1
-config.JobCreator.UpdateFromSiteDB = True
-config.JobCreator.pollInterval     = 10
-config.JobCreator.jobCacheDir      = os.path.join(os.getcwd(), 'test')
-config.JobCreator.defaultJobType   = 'processing' #Type of jobs that we run, used for resource control
-config.JobCreator.workerThreads    = 2
-config.JobCreator.componentDir     = os.getcwd()
+config.JobCreator.maxThreads                = 1
+config.JobCreator.UpdateFromResourceControl = True
+config.JobCreator.pollInterval              = 10
+config.JobCreator.jobCacheDir               = os.path.join(os.getcwd(), 'test')
+config.JobCreator.defaultJobType            = 'processing' #Type of jobs that we run, used for resource control
+config.JobCreator.workerThreads             = 2
+config.JobCreator.componentDir              = os.getcwd()
+config.JobCreator.useWorkQueue              = False
 
 #We now call the JobMaker from here
 config.component_('JobMaker')

@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.5 2009/05/12 11:28:22 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: RESTModel.py,v 1.6 2009/07/16 08:08:35 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 
@@ -18,7 +18,7 @@ class RESTModel(WebAPI):
                "args": args,
                "kwargs": kwargs}
        self.debug(str(data))
-       return data
+       raise cherrypy.HTTPError(405)
 
    def handle_post(self, args=[], kwargs={}):
        """Example of handle_post implementation"""
@@ -26,7 +26,7 @@ class RESTModel(WebAPI):
                "args": args,
                "kwargs": kwargs}
        self.debug(str(data))
-       return data
+       raise cherrypy.HTTPError(405)
 
    def handle_put(self, args=[], kwargs={}):
        """Example of handle_put implementation"""
@@ -34,7 +34,7 @@ class RESTModel(WebAPI):
                "args": args,
                "kwargs": kwargs}
        self.debug(str(data))
-       return data
+       raise cherrypy.HTTPError(405)
 
    def handle_delete(self, args=[], kwargs={}):
        """Example of handle_delete implementation"""
@@ -42,4 +42,4 @@ class RESTModel(WebAPI):
                "args": args,
                "kwargs": kwargs}
        self.debug(str(data))
-       return data
+       raise cherrypy.HTTPError(405)

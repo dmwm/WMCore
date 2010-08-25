@@ -5,9 +5,6 @@ _FixedDelay_t_
 Fixed delay job splitting.
 """
 
-
-
-
 import unittest
 import os
 import threading
@@ -121,23 +118,24 @@ class FixedDelayTest(unittest.TestCase):
     def testNone(self):
         """
         _testNone_
-        since the subscriptions are open, we shouldn't get any jobs back
+
+        Since the subscriptions are open, we shouldn't get any jobs back
         """
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
-        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
+        jobGroups = jobFactory(trigger_time = int(time.time())*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
         jobFactory = splitter(self.multipleFileSubscription)
-        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
+        jobGroups = jobFactory(trigger_time = int(time.time())*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
         jobFactory = splitter(self.multipleLumiSubscription)
-        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
+        jobGroups = jobFactory(trigger_time = int(time.time())*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
 
         jobFactory = splitter(self.singleLumiSubscription)
-        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
+        jobGroups = jobFactory(trigger_time = int(time.time())*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
         return
@@ -145,7 +143,8 @@ class FixedDelayTest(unittest.TestCase):
     def testClosed(self):
         """
         _testClosed_
-        since the subscriptions are closed and none of the files ahve been
+
+        Since the subscriptions are closed and none of the files have been
         acquired, all of the files should show up
         """
         splitter = SplitterFactory()

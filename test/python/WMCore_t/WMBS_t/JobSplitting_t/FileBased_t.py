@@ -5,8 +5,8 @@ _FileBased_t_
 File based splitting test.
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.2 2009/05/09 12:05:29 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FileBased_t.py,v 1.3 2009/07/01 17:56:31 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 import unittest
@@ -58,7 +58,8 @@ class FileBasedTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(sename = "somese.cern.ch")
+        locationAction.execute("somese.cern.ch")
+        locationAction.execute("otherse.cern.ch")
         
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
@@ -77,6 +78,21 @@ class FileBasedTest(unittest.TestCase):
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
 
+
+        self.multipleSiteFileset = Fileset(name = "TestFileset3")
+        self.multipleSiteFileset.create()
+        for i in range(5):
+            newFile = File(makeUUID(), size = 1000, events = 100,
+                           locations = Set(["somese.cern.ch"]))
+            newFile.create()
+            self.multipleSiteFileset.addFile(newFile)
+        for i in range(5):
+            newFile = File(makeUUID(), size = 1000, events = 100,
+                           locations = Set(["otherse.cern.ch"]))
+            newFile.create()
+            self.multipleSiteFileset.addFile(newFile)
+        self.multipleSiteFileset.commit()
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task="Test" )
         testWorkflow.create()
@@ -90,6 +106,12 @@ class FileBasedTest(unittest.TestCase):
                                                    split_algo = "FileBased",
                                                    type = "Processing")
         self.singleFileSubscription.create()
+
+        self.multipleSiteSubscription = Subscription(fileset = self.multipleSiteFileset,
+                                                     workflow = testWorkflow,
+                                                     split_algo = "FileBased",
+                                                     type = "Processing")
+        self.multipleSiteSubscription.create()
         return
     
     def tearDown(self):
@@ -128,17 +150,12 @@ class FileBasedTest(unittest.TestCase):
 
         jobGroups = jobFactory(files_per_job = 1)
 
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
 
-        assert len(jobGroups[0].jobs) == 1, \
-               "ERROR: JobFactory didn't create a single job."
-
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 1)
         job = jobGroups[0].jobs.pop()
+        self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
 
-        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
-               "ERROR: Job contains unknown files."
-        
         return
 
     def testMoreFiles(self):
@@ -153,19 +170,15 @@ class FileBasedTest(unittest.TestCase):
                               subscription = self.singleFileSubscription)
         
         jobGroups = jobFactory(files_per_job = 10)
-        
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
 
-        assert len(jobGroups[0].jobs) == 1, \
-               "ERROR: JobFactory didn't create a single job."
-
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 1)
         job = jobGroups[0].jobs.pop()
+        self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
 
-        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
-               "ERROR: Job contains unknown files."
-        
         return
+        
+
 
     def test2FileSplit(self):
         """
@@ -179,24 +192,17 @@ class FileBasedTest(unittest.TestCase):
                               subscription = self.multipleFileSubscription)
         
         jobGroups = jobFactory(files_per_job = 2)
-        
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
 
-        assert len(jobGroups[0].jobs) == 5, \
-               "ERROR: JobFactory didn't create five jobs."
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 5)
 
-        fileSet = Set()
+        fileList = []
         for job in jobGroups[0].jobs:
-            assert len(job.getFiles(type = "set")) == 2, \
-                   "ERROR: Job contains incorrect number of files."
-
+            self.assertEqual(len(job.getFiles()), 2)
             for file in job.getFiles(type = "lfn"):
-                fileSet.add(file)
-
-        assert len(fileSet) == 10, \
-               "ERROR: Not all files assinged to job."
-
+                fileList.append(file)
+        self.assertEqual(len(fileList), 10)
+        
         return
 
     def test3FileSplit(self):
@@ -211,25 +217,46 @@ class FileBasedTest(unittest.TestCase):
                               subscription = self.multipleFileSubscription)
         
         jobGroups = jobFactory(files_per_job = 3)
-        
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
 
-        assert len(jobGroups[0].jobs) == 4, \
-               "ERROR: JobFactory didn't create four jobs."
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 4)
 
-        fileSet = Set()
+        fileList = []
         for job in jobGroups[0].jobs:
-            assert len(job.getFiles(type = "set")) in [3, 1], \
-                   "ERROR: Job contains incorrect number of files."
-
+            assert len(job.getFiles()) in [3, 1], "ERROR: Job contains incorrect number of files"
             for file in job.getFiles(type = "lfn"):
-                fileSet.add(file)
+                fileList.append(file)
+        self.assertEqual(len(fileList), 10)
+        
+        return
 
-        assert len(fileSet) == 10, \
-               "ERROR: Not all files assinged to job."
 
-        return    
+    def testLocationSplit(self):
+
+        """
+
+        _testLocationSplit_
+
+        This should test whether or not the FileBased algorithm understands that files at seperate sites
+        cannot be in the same jobGroup (this is the current standard).
+        
+        """
+
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleSiteSubscription)
+        
+        jobGroups = jobFactory(files_per_job = 10)
+
+        self.assertEqual(len(jobGroups), 2)
+        self.assertEqual(len(jobGroups[0].jobs), 1)
+
+        fileList = []
+        self.assertEqual(len(jobGroups[1].jobs[0].getFiles()), 5)
+
+        
+        return
 
 if __name__ == '__main__':
     unittest.main()

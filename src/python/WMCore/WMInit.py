@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.13 2009/12/15 14:16:45 spiga Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: WMInit.py,v 1.14 2010/02/01 21:34:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -54,7 +54,11 @@ class WMInit:
         projects. External project formats that are supported can activated 
         it by setting the flavor flag.
         """
-
+        myThread = threading.currentThread()
+        if hasattr(myThread, "dbFactory") and myThread.dbFactory != None:
+            # Database is already initializated
+            return
+                                
         # check if connection string is  a string, if not it might be a dictionary.
         if not type(dbConfig) == str and flavor == 'ProdAgent':
             # modify db params to new WMCore conventions
@@ -72,7 +76,6 @@ class WMInit:
                 wmDbConf['unix_socket'] = dbConfig['socketFileLocation']
 
         # note: setLogging needs to have been set prior to calling this!
-        myThread = threading.currentThread()
         if dialect.lower() == 'mysql':
             dialect = 'MySQL'
         elif dialect.lower() == 'oracle':

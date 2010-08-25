@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.10 2009/12/01 15:39:57 sryu Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: GetWork.py,v 1.11 2009/12/02 13:52:43 swakef Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import random
 import time
@@ -40,7 +40,8 @@ class GetWork(DBFormatter):
                                                   FROM wq_element_site_validation
                                                   WHERE valid = 1)))
             ORDER BY (we.priority +
-                    :weight * (:current_time - we.insert_time)) DESC
+                    :weight * (:current_time - we.insert_time)) DESC,
+                    we.num_jobs -- take large elements first
             """
 
     def execute(self, resources, weight, conn = None, transaction = False):

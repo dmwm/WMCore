@@ -5,22 +5,45 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetElements.py,v 1.8 2009/11/30 20:13:33 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: GetElements.py,v 1.9 2009/12/02 13:52:43 swakef Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WorkQueue.Database import States
+from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement as WQE
+
 
 class GetElements(DBFormatter):
-    sql = """SELECT we.id, we.status, we.wmtask_id, we.input_id, we.num_jobs,
+    sql = """SELECT we.id, we.status,  we.wmtask_id, we.input_id, we.num_jobs,
                     we.priority, we.parent_flag, we.insert_time,
                     we.update_time, we.subscription_id, we.parent_queue_id,
-                    wq.url child_url
+                    wq.url child_url, ww.url spec_url
                 FROM wq_element we
                 LEFT JOIN wq_queues wq ON we.child_queue = wq.id
+				LEFT JOIN wq_wmtask wt ON we.wmtask_id = wt.id
+                LEFT JOIN wq_wmspec ww ON wt.wmspec_id = ww.id
           """
-#                ORDER BY priority ASC
+
+    def formatWQE(self, data):
+        """
+        Take data and return as list of WorkQueueElements
+        """
+        result = []
+        for item in data:
+            result.append(WQE(Id = item['id'],
+                              Status = States[item['status']],
+                              Jobs = item['num_jobs'],
+                              InsertTime = item['insert_time'],
+                              UpdateTime = item['update_time'],
+                              ChildQueueUrl = item['child_url'],
+                              ParentQueueId = item['parent_queue_id'],
+                              Priority = item['priority'],
+                              SubscriptionId = item['subscription_id'],
+                              WMSpecUrl = item['spec_url']))
+        return result
+
+
     def execute(self, status = None,
                 since = None, before = None, subs = None,
                 conn = None, transaction = False):
@@ -49,7 +72,4 @@ class GetElements(DBFormatter):
             sep = "AND"
         result = self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
-        result = self.formatDict(result)
-        # replace status id's with human readable strings
-        [x.__setitem__('status', States[x['status']]) for x in result]
-        return result
+        return self.formatWQE(self.formatDict(result))

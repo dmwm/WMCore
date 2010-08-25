@@ -6,16 +6,13 @@ Implementations for the various database backends.
 
 """
 __all__ = []
-__revision__ = "$Id: __init__.py,v 1.3 2009/11/12 16:43:31 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: __init__.py,v 1.4 2009/12/02 13:52:44 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
-States = {'Available' : 1,
-          'Negotiating' : 2,
-          'Acquired' : 3,
-          'Done' : 4,
-          'Failed' : 5,
-          'Canceled' : 6}
+from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
 
-# fill with index mapping for reverse lookup
-for x, y in States.items():
-    States[y] = x
+States = {}
+for state, state_id in enumerate(STATES):
+    States[state] = state_id
+    # fill with index mapping for reverse lookup
+    States[state_id] = state

@@ -5,8 +5,8 @@ _addToBuffer_
 APIs related to adding file to DBS Buffer
 
 """
-__version__ = "$Revision: 1.16 $"
-__revision__ = "$Id: AddToBuffer.py,v 1.16 2010/02/24 21:27:21 mnorman Exp $"
+__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: AddToBuffer.py,v 1.17 2010/05/14 18:55:21 mnorman Exp $"
 
 
 import logging
@@ -124,4 +124,61 @@ class AddToBuffer(WMConnectionBase):
                       psetHash = algo["PSetHash"], conn = self.getDBConn(), transaction=self.existingTransaction())
         self.commitTransaction(existingTransaction)
         return
+
+
+    def loadDBSBufferFilesBulk(self, fileObjs):
+        """
+        _loadDBSBufferFilesBulk_
+        
+        Yes, this is a stupid place to put it.
+        No, there's not better place.
+        """
+
+
+        myThread = threading.currentThread()
+
+        dbsFiles = []
+
+        existingTransaction = self.beginTransaction()
+
+        factory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                             logger = myThread.logger,
+                             dbinterface = myThread.dbi)
+
+        binds = []
+        for f in fileObjs:
+            binds.append(f['ID'])
+
+
+        loadFiles = factory(classname = "DBSBufferFiles.LoadBulkFilesByID")
+        results = loadFiles.execute(files = binds, conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+
+        
+        for entry in results:
+            # Add loaded information
+            dbsfile = DBSBufferFile(id=entry['id'])
+            dbsfile.update(entry)
+            dbsFiles.append(dbsfile)
+
+        for dbsfile in dbsFiles:
+            if 'runInfo' in dbsfile.keys():
+                # Then we have to replace it with a real run
+                for r in dbsfile['runInfo'].keys():
+                    run = Run(runNumber = r)
+                    run.extend(dbsfile['runInfo'][r])
+                    dbsfile.addRun(run)
+                del dbsfile['runInfo']
+            if 'parentLFNs' in dbsfile.keys():
+                # Then we have some parents
+                for lfn in dbsfile['parentLFNs']:
+                    newFile = DBSBufferFile(lfn = lfn)
+                    dbsfile['parents'].add(newFile)
+                del dbsfile['parentLFNs']
+        
+
+
+        self.commitTransaction(existingTransaction)
     
+
+        return dbsFiles

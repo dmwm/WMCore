@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.18 2009/05/11 14:47:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Job_t.py,v 1.19 2009/05/12 16:16:25 sfoulkes Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import unittest
 import logging
@@ -338,6 +338,12 @@ class JobTest(unittest.TestCase):
 
         assert type(testJobC["jobgroup"]) == int, \
                "ERROR: Job group id is not an int."        
+
+        assert type(testJobB["retry_count"]) == int, \
+               "ERROR: retry_count is not an int."
+
+        assert type(testJobC["retry_count"]) == int, \
+               "ERROR: retry_count is not an int."
 
         assert (testJobA["id"] == testJobB["id"]) and \
                (testJobA["name"] == testJobB["name"]) and \

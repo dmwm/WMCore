@@ -4,6 +4,8 @@ _DASRESTFormatter_
 
 A REST formatter that appends the DAS headers to the result data
 """
+__revision__ = "$Id: DASRESTFormatter.py,v 1.5 2009/12/27 11:43:10 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WebTools.Page import exposedasjson, exposedasxml
 from WMCore.WebTools.Page import exposedasplist

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.27 2010/05/03 15:58:01 mnorman Exp $"
-__version__  = "$Revision: 1.27 $"
+__revision__ = "$Id: JobFactory.py,v 1.28 2010/05/07 14:46:41 mnorman Exp $"
+__version__  = "$Revision: 1.28 $"
 
 
 import logging
@@ -11,6 +11,7 @@ import threading
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Fileset  import Fileset
 from WMCore.DataStructs.File     import File
+from WMCore.Services.UUID        import makeUUID
 
 class JobFactory(WMObject):
     """
@@ -25,14 +26,15 @@ class JobFactory(WMObject):
                  subscription=None,
                  generators=[]):
         self.package = package
-        self.subscription = subscription
-        self.generators = generators
-        self.jobInstance = None
+        self.subscription  = subscription
+        self.generators    = generators
+        self.jobInstance   = None
         self.groupInstance = None
-        self.jobGroups = []
-        self.currentGroup = None
-        self.currentJob = None
-        self.nJobs  = 0
+        self.jobGroups     = []
+        self.currentGroup  = None
+        self.currentJob    = None
+        self.nJobs         = 0
+        self.baseUUID      = None
         self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
 
 
@@ -53,6 +55,8 @@ class JobFactory(WMObject):
         # Every time we restart, re-zero the jobs
         self.nJobs = 0
 
+        # Create a new name
+        self.baseUUID = makeUUID()
 
         module = "%s.%s" % (self.package, jobtype)
         module = __import__(module, globals(), locals(), [jobtype])#, -1)
@@ -176,8 +180,9 @@ class JobFactory(WMObject):
         if not length:
             length = self.nJobs
 
-        name = '%s-%s-%i' % (self.subscription.taskName(),
-                             self.subscription.workflowName(),
-                             length)
+        name = '%s-%s-%s-%i' % (self.subscription.taskName(),
+                                self.subscription.workflowName(),
+                                self.baseUUID,
+                                length)
 
         return name

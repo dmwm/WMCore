@@ -11,8 +11,8 @@ import WMCore.Database.CMSCouch as CMSCouch
 #import WMCore.Database.CMSCouch.Document as Document
 import urllib
 import md5
-__revision__ = "$Id: ConfigCache.py,v 1.9 2009/07/13 19:05:45 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: ConfigCache.py,v 1.10 2009/07/20 23:31:00 meloam Exp $"
+__version__ = "$Revision: 1.10 $"
 
 class WMConfigCache:
     ''' 
@@ -187,13 +187,13 @@ class WMConfigCache:
     def searchByMD5(self, md5hash):
         '''performs the view for md5 hashes'''
         return self.wrapView( \
-                    self.database.loadView( 'documents','by_md5hash' , \
-                                            {'key': md5hash } ))
+                    self.database.loadView( 'documents','by_md5hash' , {}, \
+                                            [md5hash] ))
     def searchByHash(self, dochash):
         '''performs the view for pset_hashes'''
         return self.wrapView( \
-                    self.database.loadView( 'documents','by_psethash' , \
-                                            {'key': dochash } ))    
+                    self.database.loadView( 'documents','by_psethash' , {},\
+                                            [dochash] ))    
     def modifyHash(self, docid, newhash):
         '''changes the hash in an existing document'''
         ourdoc = self.database.document(docid)

@@ -63,9 +63,10 @@ class HTTPFrontEnd(Harness):
         Start up the cherrypy service for this component
 
         """
-        cherrypy.config.update({'environment': 'production',
+        cherrypy.config.update({#'environment': 'production',
                                 'log.error_file': self.config.HTTPFrontEnd.HTTPLogfile,
-                                'log.screen': True})
+                                'log.screen': True,
+                                'engine.autoreload_on': True})
         cherrypy.config.update({
         "global" : {
         "server.socket_host" :  self.config.HTTPFrontEnd.Host,
@@ -79,7 +80,7 @@ class HTTPFrontEnd(Harness):
         
         root = Root(self.config)
         root.loadPages()
-        cherrypy.tree.mount(root)
+        root.makeIndex()
         cherrypy.server.quickstart()
         cherrypy.engine.start()
 

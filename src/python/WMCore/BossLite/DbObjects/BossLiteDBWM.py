@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.5 2010/05/09 20:00:32 spigafi Exp $"
-__revision__ = "$Revision: 1.5 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.6 2010/05/12 09:53:01 spigafi Exp $"
+__revision__ = "$Revision: 1.6 $"
 
 from copy import deepcopy
 import threading
@@ -496,7 +496,10 @@ class BossLiteDBWM(BossLiteDBInterface):
             # check for lists
             elif type(template.defaults[key]) == list:
                 try :
-                    obj[key] = evalCustomList(value)
+                    # TO CHECK
+                    obj[key] = strToList(value)
+                    # OLD VERSION 
+                    #obj[key] = evalCustomList(value)
                 except SyntaxError:
                     obj[key] = [ value ]
  
@@ -580,7 +583,10 @@ class BossLiteDBWM(BossLiteDBInterface):
                 # check for lists
                 elif type(template.defaults[key]) == list:
                     try :
-                        obj[key] = evalCustomList(value)
+                        # TO CHECK
+                        obj[key] = strToList(value)
+                        # OLD VERSION
+                        # obj[key] = evalCustomList(value)
                     except SyntaxError:
                         obj[key] = [ value ]
 
@@ -666,7 +672,10 @@ class BossLiteDBWM(BossLiteDBInterface):
                 # check for lists
                 elif type(template.defaults[key]) == list:
                     try :
-                        obj[key] = evalCustomList(value)
+                        # TO CHECK
+                        obj[key] = strToList(value)
+                        # OLD VERSION
+                        #obj[key] = evalCustomList(value)
                     except SyntaxError:
                         obj[key] = [ value ]
 
@@ -694,28 +703,25 @@ class BossLiteDBWM(BossLiteDBInterface):
         """
 
         if type(obj) == Task :
-            # Task DAO
             action = self.engine.daofactory(classname = 'Task.Exists')
-            tmpId = action.execute(name = obj.data['name'],
-                           conn = self.engine.getDBConn(),
-                           transaction = self.existingTransaction)
-        
+            binds = {'name': obj.data['name']}
+            
         elif type(obj) == Job :
             action = self.engine.daofactory(classname = "Job.Exists")
-            tmpId = action.execute(name = obj.data['name'],
-                                   conn = self.engine.getDBConn(),
-                                   transaction = self.existingTransaction)
-        
+            binds = {'name': obj.data['name']}
+            
         elif type(obj) == RunningJob :
             action = self.engine.daofactory(classname = "RunningJob.Exists")
-            tmpId = action.execute(submission = obj.data['submission'],
-                                jobID = obj.data['jobId'], 
-                                taskID = obj.data['taskId'],
-                                conn = self.engine.getDBConn(),
-                                transaction = self.existingTransaction )
-        
+            binds = {'jobId': obj.data['jobId'], 
+                     'taskId': obj.data['taskId'], 
+                     'submission': obj.data['submission'] }
+            
         else :
             raise NotImplementedError
+        
+        tmpId = action.execute(binds = binds,
+                               conn = self.engine.getDBConn(),
+                               transaction = self.existingTransaction)
         
         return tmpId
         
@@ -878,41 +884,39 @@ class BossLiteDBWM(BossLiteDBInterface):
         """
 
         if type(obj) == Task :
-            
             action = self.engine.daofactory(classname = 'Task.Delete')
             
             # verify data is complete
             if not obj.valid(['id']):
-                column = 'name'
-                value = obj.data['name']
+                binds = {'name' : obj.data['name'] }
             else :
-                column = 'id'
-                value = obj.data['id']
+                binds = {'id' : obj.data['id'] }
         
         elif type(obj) == Job :
-            
             action = self.engine.daofactory(classname = "Job.Delete")
             
             # verify data is complete
             if not obj.valid(['id']):
-                column = 'name'
-                value = obj.data['name']
+                binds = {'name' : obj.data['name'] }
             else :
-                column = 'id'
-                value = obj.data['id']
-        
-        elif type(obj) == RunningJob :
+                binds = {'id' : obj.data['id'] }
             
+        elif type(obj) == RunningJob :
             action = self.engine.daofactory(classname = "RunningJob.Delete")
             
-            value = obj.data['id']
-            column = 'id'
-        
+            # verify data is complete
+            if not obj.valid(['id']):
+                # in this specific case I use the real db field name
+                binds = {'job_id' : obj.data['jobId'], 
+                         'task_id' : obj.data['taskId'], 
+                        ' submission' : obj.data['submission'] }
+            else :
+                binds = {'id' : obj.data['id'] }
+            
         else :
             raise NotImplementedError      
         
-        action.execute(value = value,
-                       column = column,
+        action.execute(binds = binds,
                        conn = self.engine.getDBConn(),
                        transaction = self.existingTransaction)  
         

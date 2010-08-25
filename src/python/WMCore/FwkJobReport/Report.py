@@ -5,8 +5,8 @@ _Report_
 Job Report object
 """
 
-__version__ = "$Revision: 1.10 $"
-__revision__ = "$Id: Report.py,v 1.10 2010/03/09 20:34:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Report.py,v 1.11 2010/03/12 20:19:29 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -79,7 +79,8 @@ class Report:
         except Exception, ex:
             msg = "Error reading XML job report file, possibly corrupt XML File:\n"
             msg += "Details: %s" % str(ex)
-            self.addError(50115, "MissingJobReport", msg)
+            print msg
+            self.addError("UnknownStep", 50115, "MissingJobReport", msg)
 
     def json(self):
         """
@@ -146,7 +147,7 @@ class Report:
         return outMod
 
 
-    def addOutputFile(self, outputModule, file):
+    def addOutputFile(self, outputModule, file = {}):
         """
         _addFile_
 
@@ -178,24 +179,28 @@ class Report:
         keyList = file.keys()
         
         fileRef.section_("runs")
-        for run in file["runs"]:
-            setattr(fileRef.runs, str(run.run), run.lumis)
-        keyList.remove('runs')
-        
-        setattr(fileRef, 'parents', list(file['parents']))
-        keyList.remove('parents')
+        if file.has_key("runs"):
+            for run in file["runs"]:
+                setattr(fileRef.runs, str(run.run), run.lumis)
+            keyList.remove('runs')
 
-        fileRef.location = list(file["locations"])
-        keyList.remove('locations')
+        if file.has_key("parents"):
+            setattr(fileRef, 'parents', list(file['parents']))
+            keyList.remove('parents')
+
+        if file.has_key("locations"):
+            fileRef.location = list(file["locations"])
+            keyList.remove('locations')
 
         # Now add the dataset
         # Assume one dataset per output module
         if outMod.dataset.listSections_() == []:
             # Then we haven't entered a dataset yet
-            for entry in file['dataset']:
-                setattr(outMod.dataset, entry, file['dataset'].get(entry, None))
+            if file.has_key("dataset"):
+                for entry in file['dataset']:
+                    setattr(outMod.dataset, entry, file['dataset'].get(entry, None))
 
-        keyList.remove("dataset")
+                keyList.remove("dataset")
 
         # All right, the rest should be JSONalizable python primitives
         for entry in keyList:

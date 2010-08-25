@@ -3,8 +3,8 @@
 Unit tests for json wrapper.
 """
 
-__revision__ = "$Id: JsonWrapper_t.py,v 1.1 2010/01/27 18:43:32 meloam Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JsonWrapper_t.py,v 1.2 2010/01/27 18:45:03 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 __test = False
 try:
@@ -14,7 +14,11 @@ except:
     print "No cjson module is found, skip the test"
 
 import unittest
-import json
+try:
+    import simplejson as json
+except:
+    import json
+
 import os
 import WMCore.Wrappers.jsonwrapper as json_wrap
 

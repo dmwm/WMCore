@@ -11,8 +11,8 @@ import WMCore.Database.CMSCouch as CMSCouch
 #import WMCore.Database.CMSCouch.Document as Document
 import urllib
 import md5
-__revision__ = "$Id: ConfigCache.py,v 1.8 2009/07/13 18:59:12 meloam Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: ConfigCache.py,v 1.9 2009/07/13 19:05:45 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 
 class WMConfigCache:
     ''' 
@@ -180,8 +180,6 @@ class WMConfigCache:
     
     def wrapView(self, viewdata):
         '''converts the view return values into Document objects'''
-        print viewdata
-        print viewdata.__class__
         for row in viewdata[u'rows']:
             row = CMSCouch.Document(None,row)
         return viewdata

@@ -82,20 +82,50 @@ class TestCommand(Command):
                             testmodpath.append(file.replace('.py',''))
                             testfiles.append('.'.join(testmodpath))
                             
+        oldstdout = sys.stdout
+        oldstderr = sys.stderr
+
+        sys.stdout = None
+        
         testsuite = TestSuite()
+        failedTestFiles = []
         for test in testfiles:
             try:
                 testsuite.addTest(TestLoader().loadTestsFromName(test))
             except Exception, e:
-                print "Could not load %s test - fix it!\n %s" % (test, e)
-        print "Running %s tests" % testsuite.countTestCases()
+                failedTestFiles.append(test)
+                #print "Could not load %s test - fix it!\n %s" % (test, e)
+        #print "Running %s tests" % testsuite.countTestCases()
         
         t = TextTestRunner(verbosity = 1)
         result = t.run(testsuite)
+        sys.stdout = oldstdout
+        sys.stderr = oldstderr
         if not result.wasSuccessful():
-            sys.exit("Tests unsuccessful. There were %s failures and %s errors"\
-                      % (len(result.failures), len(result.errors)))
+            print "Tests unsuccessful. There were %s failures and %s errors"\
+                      % (len(result.failures), len(result.errors))
+            print "Failurelist:\n%s" % "\n".join(map(lambda x: \
+                                                        "FAILURE: %s\n%s" % (x[0],x[1] ), result.failures))
+            print "Errorlist:\n%s" % "\n".join(map(lambda x: \
+                                                        "ERROR:   %s\n%s" % (x[0],x[1] ), result.errors))
+            if len(failedTestFiles):
+                print "The following tests failed to load: \n===============\n%s" %\
+                    "\n".join(failedTestFiles)
+             #"".join(' ', [result.failures[0],result.failures[1]]))
+            #print "Errorlist:\n%s" % result.errors #"".join(' ', [result.errors[0],result.errors[1]]))
+            print "FAILED: setup.py test" 
+            sys.exit(1)
+        else:
+            print "Tests successful"
+            if len(failedTestFiles):
+                print "The following tests failed to load: \n===============\n%s" %\
+                        "\n".join(failedTestFiles)
+            print "PASSED: setup.py test"
+            sys.exit(0)
         
+
+        
+            
 class CleanCommand(Command):
     """
     Clean up (delete) compiled files

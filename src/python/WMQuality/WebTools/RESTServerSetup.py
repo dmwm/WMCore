@@ -14,7 +14,7 @@ class DefaultConfig(Configuration):
         self.Webtools.log_screen = False
         self.Webtools.access_file = '/tmp/webtools/log_access'
         self.Webtools.error_file = '/tmp/webtools/log_error'
-        self.Webtools.port = 8080
+        self.Webtools.port = 8888
         self.Webtools.host = "localhost"
         self.component_('UnitTests')
         self.UnitTests.title = 'CMS WMCore/WebTools Unit Tests'
@@ -27,7 +27,8 @@ class DefaultConfig(Configuration):
         active.section_('rest')
         active.rest.object = 'WMCore.WebTools.RESTApi'
         active.rest.templates = '/tmp'
-        active.rest.database = 'sqlite://'
+        active.rest.section_('database')
+        active.rest.database.connectUrl = 'sqlite://'
         #active.rest.database = 'sqlite:////tmp/resttest.db'
         active.rest.section_('model')
         active.rest.model.object = model or 'WMCore.WebTools.RESTModel'
@@ -39,16 +40,16 @@ class DefaultConfig(Configuration):
         return "http://%s:%s/rest/" % (self.Webtools.host, self.Webtools.port)
                                      
     def getDBUrl(self):
-        return self.UnitTests.views.active.rest.database
+        return self.UnitTests.views.active.rest.database.connectUrl
     
     def getDBSocket(self):
-        return self.UnitTests.views.active.rest.dbsocket
+        return self.UnitTests.views.active.rest.database.socket
     
     def setDBUrl(self, dbUrl):
-        self.UnitTests.views.active.rest.database = dbUrl 
+        self.UnitTests.views.active.rest.database.connectUrl = dbUrl 
     
     def setDBSocket(self, socket):
-        self.UnitTests.views.active.rest.dbsocket = socket 
+        self.UnitTests.views.active.rest.database.socket = socket 
         
     def setModel(self, model):
         self.UnitTests.views.active.rest.model.object = model

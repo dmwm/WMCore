@@ -56,15 +56,18 @@ class Plotter(RESTModel):
             input['data'] = json.loads(urllib.unquote(input['data']))
             
         if not 'height' in input['data'].keys():
-            input['data']['height'] = 600
+            input['data']['height'] = 600.
         else:
-            input['data']['height'] = int(input['data']['height'])
+            input['data']['height'] = float(input['data']['height'])
             
         if not 'width' in input['data'].keys():
-            input['data']['width'] = 800
+            input['data']['width'] = 800.
         else:
-            input['data']['width'] = int(input['data']['width'])
-            
+            input['data']['width'] = float(input['data']['width'])
+        if input['data'].has_key('series'):
+            for s in input['data']['series']:
+                if s.has_key('colour'):
+                    s['colour'] = '#%s' % s['colour']     
         assert 'type' in input.keys(), \
                 "no type provided - what kind of plot do you want? " +\
                 "Choose one of %s" % self.plot_types.keys()

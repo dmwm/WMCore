@@ -17,6 +17,7 @@ from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 #//
 def createWorkload(name="BasicProduction"):
     workload = newWorkload(name)
+    workload.setOwner("DMWMTest")
     workload.setStartPolicy('MonteCarlo')
     workload.setEndPolicy('SingleShot')
     

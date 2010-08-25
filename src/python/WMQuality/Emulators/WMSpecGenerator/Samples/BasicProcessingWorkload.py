@@ -12,6 +12,7 @@ from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 #//
 def createWorkload(name="BasicProcessing"):
     workload = newWorkload(name)
+    workload.setOwner("DMWMTest")
     workload.setStartPolicy('DatasetBlock')
     workload.setEndPolicy('SingleShot')
     

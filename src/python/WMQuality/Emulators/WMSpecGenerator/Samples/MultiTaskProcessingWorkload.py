@@ -16,6 +16,7 @@ from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 #//
 def createWorkload(name="MultiTaskProcessing"):
     workload = newWorkload("MultiTaskReReco")
+    workload.setOwner("DMWMTest")
     workload.setStartPolicy('DatasetBlock')
     workload.setEndPolicy('SingleShot')
     

@@ -1,4 +1,5 @@
 MinBiasWithoutEmulator = {
+    "Owner" : "DWMWTest",                         
     "OutputTiers" : ["RECO", "ALCA", "AOD"],
     "AcquisitionEra" : "WMAgentCommissioining10",
     "GlobalTag" :"GR09_R_34X_V5::All",

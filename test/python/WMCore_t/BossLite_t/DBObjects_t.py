@@ -3,10 +3,11 @@
 import unittest
 import threading
 import string
+import time
+import logging
 
 # Import key features
 from WMQuality.TestInit import TestInit
-
 
 # Import BossLite Objects
 from WMCore.BossLite.DbObjects.Job         import Job
@@ -14,15 +15,13 @@ from WMCore.BossLite.DbObjects.Task        import Task
 from WMCore.BossLite.DbObjects.RunningJob  import RunningJob
 
 from WMCore.BossLite.DbObjects.BossLiteDBWM  import BossLiteDBWM
+from WMCore.BossLite.Common.Exceptions  import DbError
 
 class DBObjectsTest(unittest.TestCase):
     
     def setUp(self):
         """
         _setUp_
-
-        Setup the database and logging connection.  Try to create all of the
-        WMBS tables.  Also, create some dummy locations.
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
@@ -35,7 +34,6 @@ class DBObjectsTest(unittest.TestCase):
     def tearDown(self):
         """
         Tear down database
-
         """
 
         self.testInit.clearDatabase()
@@ -430,7 +428,6 @@ class DBObjectsTest(unittest.TestCase):
         self.assertNotEqual(loadedJob.runningJob['wrapperReturnCode'], "-1")
         self.assertNotEqual(loadedJob.runningJob['closed'], "Y")
         
-        
         return
     
 
@@ -459,6 +456,99 @@ class DBObjectsTest(unittest.TestCase):
             self.assertTrue( (string.find(msg, "since it is not in the database")) != -1 )
         
         return
+
+    
+class DBObjectsPerformance(unittest.TestCase):
+    
+    def setUp(self):
+        """
+        _setUp_
+        """
+        
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        #self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
+        self.testInit.setSchema(customModules = ["WMCore.BossLite"],
+                                useDefault = False)
+
+
+    def tearDown(self):
+        """
+        Tear down database
+        """
+
+        self.testInit.clearDatabase()
+
+        return
+    
+    def testA_fullObjects(self):
+        """
+        Performance test, do not abuse!
+        """
+        
+        numtask = 1 
+        numjob  = 10
+        
+        db = BossLiteDBWM()
+        log = logging.getLogger( "DBObjectsPerformance" )
+
+        start_time = time.time()
+
+        for t in xrange(numtask):
+            try:
+                task = Task()
+                task.data['name'] = 'task_%s'%str(t)
+                task.create(db)
+                tmpId = task['id']
+                # self.assertEqual(tmpId, task.exists(db))
+                
+                for j in xrange(numjob):
+                    parameters = {'name': '%s_job_%s'%(str(t),str(j)), 
+                                  'jobId': j, 
+                                  'taskId': tmpId }
+                    job = Job()
+                    job.data['submissionNumber'] = 1
+                    job.data['closed'] = 'N'
+                    
+                    parameters = {'jobId': job.data['jobId'], 
+                                  'taskId': tmpId, 
+                                  'submission': 1 }
+                    runJob = RunningJob(parameters)
+                    runJob.data['state'] = 'Commodus'
+                    runJob.data['closed'] = 'N'
+                    runJob.data['process_status'] = 'not_handled'
+                    
+                    job.setRunningInstance(runJob)
+                    task.addJob(job)
+                task.save(db)
+            except DbError, ex:
+                # useless...
+                print str(ex)
+                print "task_" +str(t)
+        
+        end_time = time.time()
+        
+        log.info("task = %4d, jobs/task = %4d," + \
+                    "runJobs/Job = %4d, Time = %08f" % (numtask, 
+                                    numjob, 1, (end_time-start_time)) )
+        
+        return
     
 if __name__ == "__main__":
-    unittest.main()
+    # Log performance timing...
+    LOG_FILENAME = './DBObjects_performance.txt'
+    logging.basicConfig(filename=LOG_FILENAME)
+    logging.getLogger( "DBObjectsPerformance" ).setLevel( logging.INFO )
+    
+    # -> suite1: check if objects and relations between objects     
+    #            matching all the requirements (the default)
+    # -> suite2: run a simple benchmark measuring the time to
+    #            save into the db a complete set of objects
+    suite1 = unittest.TestLoader().loadTestsFromTestCase(DBObjectsTest)
+    suite2 = unittest.TestLoader().loadTestsFromTestCase(DBObjectsPerformance)
+    alltests = unittest.TestSuite([suite1, suite2])
+
+    # run the unit-test
+    unittest.TextTestRunner(verbosity=3).run(suite1)
+    

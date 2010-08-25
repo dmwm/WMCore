@@ -24,4 +24,4 @@ wmbs.database = 'mysql://metson@localhost/wmbs'
 wmbs.section_('model')
 wmbs.model.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
 wmbs.section_('formatter')
-wmbs.formatter.object = 'WMCore.WebTools.RESTFormatter'
+wmbs.formatter.object = 'WMCore.WebTools.DASRESTFormatter'

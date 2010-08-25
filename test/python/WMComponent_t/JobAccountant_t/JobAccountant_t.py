@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.29 2010/04/29 16:03:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.30 2010/05/24 19:32:44 mnorman Exp $"
+__version__ = "$Revision: 1.30 $"
 
 import logging
 import os.path
@@ -16,6 +16,8 @@ import time
 import copy
 import random
 import tempfile
+import pdb
+import gc
 #import cProfile, pstats
 
 import WMCore.WMInit
@@ -81,6 +83,11 @@ class JobAccountantTest(unittest.TestCase):
                                            logger = myThread.logger,
                                            dbinterface = myThread.dbi)
         self.countDBSFilesAction = self.dbsbufferFactory(classname = "CountFiles")
+
+        dbsLocationAction = self.dbsbufferFactory(classname = "DBSBufferFiles.AddLocation")
+        dbsLocationAction.execute(siteName = "cmssrm.fnal.gov")
+        dbsLocationAction.execute(siteName = "srm.cern.ch")
+        dbsLocationAction.execute(siteName = "srm-cms.cern.ch")
 
         self.testDir = self.testInit.generateWorkDir()
         
@@ -477,6 +484,8 @@ class JobAccountantTest(unittest.TestCase):
         dictionary would contain keys for each of the files produced by the
         job.  Each value would be a list of the parent LFNs.
         """
+        myThread = threading.currentThread()
+        
         for fwkJobReportFile in fwkJobReportFiles:
             if fwkJobReportFile["merged"] != True and subType != "Merge":
                 continue
@@ -995,7 +1004,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testSubscription.create()
 
         self.jobs = []
-        for i in range(100):
+        for i in range(500):
             testJobGroup = JobGroup(subscription = self.testSubscription)
             testJobGroup.create()
 
@@ -1012,7 +1021,7 @@ class JobAccountantTest(unittest.TestCase):
             testJob.associateFiles()
 
             fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                    "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                    "test/python/WMComponent_t/JobAccountant_t/testLoad",
                                     "LoadTest%02d.pkl" % i)
             
             self.jobs.append((testJob["id"], fwjrPath))
@@ -1027,6 +1036,9 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using one worker process.
         """
+
+        return
+
         print("  Filling DB...")
 
         self.setupDBForLoadTest()
@@ -1054,6 +1066,172 @@ class JobAccountantTest(unittest.TestCase):
                                          jobReport.getAllFilesFromStep("cmsRun1"))
 
         return
+
+
+    def testTwoProcessLoadTest(self):
+        """
+        _testTwoProcessLoadTest_
+        
+        Run the load test using two worker processes.
+        """
+
+        return
+
+        print("  Filling DB...")
+        
+        self.setupDBForLoadTest()
+        config = self.createConfig(workerThreads = 2)
+        
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        
+        print("  Running accountant...")
+        
+        startTime = time.time()
+        accountant.algorithm()
+        endTime = time.time()
+        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+
+        #gc.collect()
+        #pdb.set_trace()
+        
+        for (jobID, fwjrPath) in self.jobs:
+            print("  Validating %s, %s" % (jobID, fwjrPath))
+            jobReport = Report()
+            jobReport.unpersist(fwjrPath)
+            
+            self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
+            self.verifyJobSuccess(jobID)
+            self.verifyDBSBufferContents("Processing",
+                                         ["/some/lfn/for/job/%s" % jobID],
+                                         jobReport.getAllFilesFromStep("cmsRun1"))
+
+        return    
+
+
+#     def testFourProcessLoadTest(self):
+#         """
+#         WMComponent.JobAccountant_t.JobAccountant_t:testFourProcessLoadTest()        
+
+#         Run the load test using four workers processes.
+#         """
+#         logging.debug("Four process load test:")
+#         logging.debug("  Filling DB...")
+
+#         self.setupDBForLoadTest()
+#         config = self.createConfig(workerThreads = 4)
+
+#         accountant = JobAccountantPoller(config)
+#         accountant.setup()
+
+#         logging.debug("  Running accountant...")
+
+#         startTime = time.time()
+#         accountant.algorithm()
+#         endTime = time.time()
+#         logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+
+#         for (jobID, fwjrPath) in self.jobs:
+#             logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
+#             jobReports = readJobReport(fwjrPath)
+
+#             # There are some job reports missing, so we'll just ignore the
+#             # reports that don't parse correctly.  There are other unit tests
+#             # that verify that the accountant handles this case correctly.
+#             if len(jobReports) == 0:
+#                 continue
+            
+#             self.verifyFileMetaData(jobID, jobReports[0].files)
+#             self.verifyJobSuccess(jobID)
+#             self.verifyDBSBufferContents("Processing",
+#                                          ["/some/lfn/for/job/%s" % jobID],
+#                                          jobReports[0].files)
+
+#         return
+
+#     def testEightProcessLoadTest(self):
+#         """
+#         WMComponent.JobAccountant_t.JobAccountant_t:testEightProcessLoadTest()
+
+#         Run the load test using eight workers processes.
+#         """
+
+#         logging.debug("Eight process load test:")
+#         logging.debug("  Filling DB...")
+
+#         self.setupDBForLoadTest()
+#         config = self.createConfig(workerThreads = 8)
+
+#         accountant = JobAccountantPoller(config)
+#         accountant.setup()
+
+#         logging.debug("  Running accountant...")
+
+#         startTime = time.time()
+#         accountant.algorithm()
+#         endTime = time.time()
+#         logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+
+#         for (jobID, fwjrPath) in self.jobs:
+#             logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
+#             jobReports = readJobReport(fwjrPath)myWorker.__call__(
+
+#             # There are some job reports missing, so we'll just ignore the
+#             # reports that don't parse correctly.  There are other unit tests
+#             # that verify that the accountant handles this case correctly.
+#             if len(jobReports) == 0:
+#                 continue
+            
+#             self.verifyFileMetaData(jobID, jobReports[0].files)
+#             self.verifyJobSuccess(jobID)
+#             self.verifyDBSBufferContents("Processing",
+#                                          ["/some/lfn/for/job/%s" % jobID],
+#                                          jobReports[0].files)
+
+#         return
+
+#     def testSixteenProcessLoadTest(self):
+#         """
+#         WMComponent.JobAccountant_t.JobAccountant_t:testSixteenProcessLoadTest()
+
+#         Run the load test using sixteen workers processes.
+#         """
+
+#         logging.debug("Sixteen process load test:")
+#         logging.debug("  Filling DB...")
+
+#         self.setupDBForLoadTest()
+#         config = self.createConfig(workerThreads = 16)
+
+#         accountant = JobAccountantPoller(config)
+#         accountant.setup()
+
+#         logging.debug("  Running accountant...")
+
+#         startTime = time.time()
+#         accountant.algorithm()
+#         endTime = time.time()
+#         logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+
+#         for (jobID, fwjrPath) in self.jobs:
+#             logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
+#             jobReports = readJobReport(fwjrPath)
+
+#             # There are some job reports missing, so we'll just ignore the
+#             # reports that don't parse correctly.  There are other unit tests
+#             # that verify that the accountant handles this case correctly.
+#             if len(jobReports) == 0:
+#                 continue
+            
+#             self.verifyFileMetaData(jobID, jobReports[0].files)
+#             self.verifyJobSuccess(jobID)
+#             self.verifyDBSBufferContents("Processing",
+#                                          ["/some/lfn/for/job/%s" % jobID],
+#                                          jobReports[0].files)
+
+#         return
+
+
 
     def setupDBFor4GMerge(self):
         """

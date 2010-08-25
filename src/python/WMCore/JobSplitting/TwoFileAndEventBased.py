@@ -4,8 +4,8 @@ _TwoFileAndEventBased_
 
 """
 
-__revision__ = "$Id: TwoFileAndEventBased.py,v 1.6 2009/12/15 14:07:09 spiga Exp $"
-__version__  = "$Revision: 1.6 $"
+__revision__ = "$Id: TwoFileAndEventBased.py,v 1.7 2010/05/05 19:14:57 sfoulkes Exp $"
+__version__  = "$Revision: 1.7 $"
 
 
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -53,6 +53,6 @@ class TwoFileAndEventBased(JobFactory):
             currentEvent = 0
             while currentEvent < eventsInFile:
                 self.newJob(name = makeUUID())
-                currentJob.addFile(f)
-                currentJob.mask.setMaxAndSkipEvents(eventsPerJob, currentEvent)
+                self.currentJob.addFile(f)
+                self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
                 currentEvent += eventsPerJob

@@ -30,7 +30,6 @@ class RequestManager(Service):
             #TODO needs to change proper default location
             dict['endpoint'] = "%scmssrv49.fnal.gov:8585/reqMgr/" % \
                                 ((secure and "https://" or "http://"))
-        logging.error("ENDPOINT: %s" dict["endpoint"])
         if dict.has_key('cachepath'):
             pass
         elif os.getenv('REQUESTMGR_CACHE_DIR'):

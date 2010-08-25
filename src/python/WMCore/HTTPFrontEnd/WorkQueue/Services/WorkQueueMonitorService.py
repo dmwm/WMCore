@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.10 2010/03/24 19:41:47 sryu Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.11 2010/03/25 16:36:44 maxa Exp $"
 __version__ = "$Revision"
 
 
@@ -63,14 +63,18 @@ class WorkQueueMonitorService(ServiceInterface):
         # WorkQueue.status signature:
         # status(self, status = None, before = None, after = None, elementIDs = None, dictKey = None)
         
-        self.model.addDAO("GET",  "elements", "Monitor.Elements")
-        self.model.addDAO("GET",  "sites", "Monitor.Sites")
-        self.model.addDAO("GET",  "data", "Monitor.Data")
-        self.model.addDAO("GET",  "datasitemap", "Monitor.DataSiteMap")
+        self.model.addDAO("GET", "elements", "Monitor.Elements")
+        self.model.addDAO("GET", "sites", "Monitor.Sites")
+        self.model.addDAO("GET", "data", "Monitor.Data")
+        self.model.addDAO("GET", "datasitemap", "Monitor.DataSiteMap")
         self.model.addDAO("POST", "elementsbystate", "Monitor.ElementsByState",
                            args = ["status"], validation = [self.validateState])
         self.model.addDAO("POST", "elementsbyid", "Monitor.ElementsById",
                            args = ["id"], validation = [self.validateId])
+        
+        # overview of wm workload status (e.g. wmspec - getting data from wq_wmspec table)
+        self.model.addDAO("GET", "workloads", "Monitor.Workloads")
+        
         
         logging.info("%s initialised." % self._myClass)        
         

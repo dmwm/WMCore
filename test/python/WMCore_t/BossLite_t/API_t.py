@@ -4,12 +4,13 @@ _API_t_
 
 """
 
-__revision__ = "$Id: API_t.py,v 1.16 2010/06/07 11:35:34 spigafi Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: API_t.py,v 1.17 2010/06/28 18:38:54 spigafi Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import unittest
 import os
 import tempfile
+import time
         
 # Import key features
 from WMQuality.TestInit import TestInit
@@ -264,82 +265,94 @@ class APITest(unittest.TestCase):
         job1 = Job(parameters = { 'standardError' : 'hostname.err',
                                  'standardOutput' : 'hostname.out' } )
         task.addJob(job1)
+        
         testAPI.updateDB(job1)
-        tmp = testAPI.getNewRunningInstance(job = job1, runningAttrs = { 
+        tmp = testAPI.getNewRunningInstance(job = task.jobs[0], runningAttrs = { 
                                             'processStatus' :  'not_handled',
                                             'service' : 'vattelapesca',
                                             'status' : 'W' } )
         
-        self.assertEqual(job1.runningJob['status'], 'W')
-        self.assertEqual(job1.runningJob['submission'], 1)
-        self.assertEqual(job1.runningJob['submission'], 
+        self.assertEqual(task.jobs[0].runningJob['status'], 'W')
+        self.assertEqual(task.jobs[0].runningJob['submission'], 1)
+        self.assertEqual(task.jobs[0].runningJob['submission'], 
                                     job1['submissionNumber'])
         
-        # testAPI.saveTask(task)
-        testAPI.updateDB(task)
+        testAPI.saveTask(task)
+        #testAPI.updateDB(task)
         
         job2 = Job(parameters = { 'standardError' : 'date.err',
                                  'standardOutput' : 'date.out' } )
         task.addJob(job2)
         testAPI.updateDB(job2)
-        tmp = testAPI.getNewRunningInstance(job = job2, runningAttrs = { 
+        
+        tmp = testAPI.getNewRunningInstance(job = task.jobs[1], runningAttrs = { 
                                             'processStatus' :  'handled',
                                             'service' : 'cippirimerlo',
                                             'status' : 'F' } )
-        tmp = testAPI.getNewRunningInstance(job = job2, runningAttrs = { 
+        
+        self.assertEqual(task.jobs[1].runningJob['status'], 'F')
+        
+        tmp = testAPI.getNewRunningInstance(job = task.jobs[1], runningAttrs = { 
                                             'processStatus' :  'not_handled',
                                             'service' : 'cippirimerlo',
                                             'status' : 'D' } )
-        tmp = testAPI.getNewRunningInstance(job = job2, runningAttrs = { 
+        
+        self.assertEqual(task.jobs[1].runningJob['status'], 'D')
+        
+        tmp = testAPI.getNewRunningInstance(job = task.jobs[1], runningAttrs = { 
                                             'processStatus' :  'not_handled',
                                             'service' : 'cippirimerlo',
-                                            'status' : 'T' } ) 
+                                            'status' : 'T' } )
         
-        self.assertEqual(job2.runningJob['status'], 'T')
-        self.assertEqual(job2.runningJob['submission'], 3)
-        self.assertEqual(job2.runningJob['submission'], 
+        self.assertEqual(task.jobs[1].runningJob['status'], 'T') 
+        
+        self.assertEqual(task.jobs[1].runningJob['status'], 'T')
+        self.assertEqual(task.jobs[1].runningJob['submission'], 3)
+        self.assertEqual(task.jobs[1].runningJob['submission'], 
                                     job2['submissionNumber'])
         
-        # testAPI.saveTask(task)
-        testAPI.updateDB(task)
+        testAPI.saveTask(task)
+        #testAPI.updateDB(task)
         
         job3 = Job(parameters = { 'standardError' : 'top.err',
                                  'standardOutput' : 'top.out' } )
         task.addJob(job3)
         testAPI.updateDB(job3)
-        tmp = testAPI.getNewRunningInstance(job = job3, runningAttrs = { 
+        tmp = testAPI.getNewRunningInstance(job = task.jobs[2], runningAttrs = { 
                                             'processStatus' :  'in_progress',
                                             'service' : 'cacao',
                                             'status' : 'T' } ) 
         
-        self.assertEqual(job3.runningJob['status'], 'T')
-        self.assertEqual(job3.runningJob['submission'], 1)
-        self.assertEqual(job3.runningJob['submission'], 
+        self.assertEqual(task.jobs[2].runningJob['status'], 'T')
+        self.assertEqual(task.jobs[2].runningJob['submission'], 1)
+        self.assertEqual(task.jobs[2].runningJob['submission'], 
                                     job3['submissionNumber'])
           
-        # testAPI.saveTask(task)
-        testAPI.updateDB(task)
+        testAPI.saveTask(task)
+        #testAPI.updateDB(task)
         
         job4 = Job(parameters = { 'standardError' : 'uname.err',
                                  'standardOutput' : 'uname.out' } )
         task.addJob(job4)
         testAPI.updateDB(job4)
-        tmp = testAPI.getNewRunningInstance(job = job4, runningAttrs = { 
+        
+        tmp = testAPI.getNewRunningInstance(job = task.jobs[3], runningAttrs = { 
                                             'processStatus' :  'handled',
                                             'service' : 'ramato',
                                             'status' : 'F' } )
-        tmp = testAPI.getNewRunningInstance(job = job4, runningAttrs = { 
+        
+        tmp = testAPI.getNewRunningInstance(job = task.jobs[3], runningAttrs = { 
                                             'processStatus' :  'not_handled',
                                             'service' : 'ramato',
                                             'status' : 'S' } )   
         
-        self.assertEqual(job4.runningJob['status'], 'S')
-        self.assertEqual(job4.runningJob['submission'], 2)
-        self.assertEqual(job4.runningJob['submission'], 
+        self.assertEqual(task.jobs[3].runningJob['status'], 'S')
+        self.assertEqual(task.jobs[3].runningJob['submission'], 2)
+        self.assertEqual(task.jobs[3].runningJob['submission'], 
                                     job4['submissionNumber'])
         
-        # testAPI.saveTask(task)
-        testAPI.updateDB(task)
+        testAPI.saveTask(task)
+        #testAPI.updateDB(task)
         
         loadedTask = testAPI.loadTask(taskId = task['id'])
         
@@ -371,6 +384,7 @@ class APITest(unittest.TestCase):
                             binds = {'status': 'T'} )
         
         self.assertEqual(len(jobList), 2)
+        
         tmpJ = ['top.out', 'date.out']
         self.assertTrue(jobList[0]['standardOutput'] in tmpJ )
         self.assertTrue(jobList[1]['standardOutput'] in tmpJ )
@@ -578,7 +592,102 @@ class APITest(unittest.TestCase):
         # print loadedTask.jobIndex
         
         return
-    
+
+
+    def testH_ByTimestamp(self):
+
+        testAPI = BossLiteAPI()
+
+        # Initial time offsets
+        tmp = int(time.time())
+        timeA = tmp - 30*60
+        timeB = tmp - 10*60
+        timeZ = tmp
+
+        # First create a job
+        task = Task()
+        task.save(testAPI.db)
+        
+        tmp = task.exists(testAPI.db)
+        job = Job(parameters = {'name': 'Spartacus', 
+                                'taskId': tmp, 
+                                'jobId': 1} )
+        self.assertEqual(job.runningJob, None)   
+        testAPI.getNewRunningInstance(job = job, 
+            runningAttrs = {'outputRequestTime' : timeA - 30*60,
+                            'outputEnqueueTime' : timeB } )
+        self.assertNotEqual(job.runningJob, None)  
+        # print job.runningJob
+        task.addJob(job)
+        
+        job = Job(parameters = {'name': 'Fringe', 
+                                'taskId': tmp, 
+                                'jobId': 2 } )
+        self.assertEqual(job.runningJob, None)   
+        testAPI.getNewRunningInstance(job = job, 
+            runningAttrs = {'outputRequestTime' : timeA - 50*60,
+                            'outputEnqueueTime' : timeB - 90*60 })
+        self.assertNotEqual(job.runningJob, None)  
+        task.addJob(job)
+        
+        job = Job(parameters = {'name': 'Stargate Universe', 
+                                'taskId': tmp, 
+                                'jobId': 3 } )
+        self.assertEqual(job.runningJob, None)   
+        testAPI.getNewRunningInstance(job = job, 
+            runningAttrs = {'outputRequestTime' : timeA ,
+                            'outputEnqueueTime' : timeB -30*60 } )
+        self.assertNotEqual(job.runningJob, None) 
+        task.addJob(job)
+        
+        job = Job(parameters = {'name': 'Caprica', 
+                                'taskId': tmp, 
+                                'jobId': 4 } )
+        self.assertEqual(job.runningJob, None)   
+        testAPI.getNewRunningInstance(job = job, 
+            runningAttrs = {'outputRequestTime' : timeA - 80*60 ,
+                            'outputEnqueueTime' : timeB - 110*60} )
+        self.assertNotEqual(job.runningJob, None) 
+        task.addJob(job)
+        
+        job = Job(parameters = {'name': 'The Mentalist', 
+                                'taskId': tmp, 
+                                'jobId': 5 } )
+        self.assertEqual(job.runningJob, None)   
+        testAPI.getNewRunningInstance(job = job, 
+            runningAttrs = {'outputRequestTime' : timeA - 130*60,
+                            'outputEnqueueTime' : timeB - 110*60 })
+        self.assertNotEqual(job.runningJob, None) 
+        task.addJob(job)
+        
+        task.save(testAPI.db)
+        
+        
+        now = int(time.time())
+        
+        time_binds = {'outputRequestTime' : [timeZ, now ] }
+        jobList = testAPI.loadJobsByTimestamp( time_binds = time_binds, 
+                                                    standard_binds = {})
+        # According to time_binds I expect 0 jobs
+        self.assertEqual(len(jobList), 0)
+        
+        
+        time_binds = {'outputEnqueueTime' : [timeB, now ] }
+        jobList = testAPI.loadJobsByTimestamp( time_binds = time_binds, 
+                                                    standard_binds = {})
+        # According to time_binds I expect 1 jobs
+        self.assertEqual(len(jobList), 1)
+        
+        
+        time_binds = {'outputRequestTime' : [timeZ - 50*60, now ],
+                      'outputEnqueueTime' : [timeB, now ] }
+        jobList = testAPI.loadJobsByTimestamp( time_binds = time_binds, 
+                                                    standard_binds = {})
+        # According to time_binds I expect 0 jobs
+        self.assertEqual(len(jobList), 0)
+        
+        return
+      
     
 if __name__ == "__main__":
     APIsuite = unittest.TestLoader().loadTestsFromTestCase(APITest)

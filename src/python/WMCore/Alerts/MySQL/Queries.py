@@ -5,10 +5,11 @@ _Queries_
 Queries for the alert system for the MySQL database.
 """
 
-__revision__ = "$Id: Queries.py,v 1.1 2008/10/22 21:31:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Queries.py,v 1.2 2009/07/10 21:45:34 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
+import time
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -21,25 +22,30 @@ class Queries(DBFormatter):
     def __init__(self):
         myThread = threading.currentThread()
         DBFormatter.__init__(self, myThread.logger, myThread.dbi)
+        
+    def execute(self, sql, binds, conn = None, transaction = False):
+        """
+        A simple select with no binds/arguments is the default
+        """
+        result = self.dbi.processData(sql, binds, 
+                         conn = conn, transaction = transaction)
+        return self.format(result)
 
-    def publishAlert(self, severity, component, message):
+    def publishAlert(self, severity, component, message, conn = None, transaction = False):
         """
         _publishAlert_
 
         Publish a new alert with a given severity, component and message.
         """
-        sqlQuery = """INSERT INTO alert_current (SEVERITY, COMPONENT, MESSAGE)
-                      VALUES (:p_1, :p_2, :p_3)"""
-        bindVars = {"p_1": severity, "p_2": component, "p_3": message}
+        sqlQuery = """INSERT INTO alert_current (SEVERITY, COMPONENT, MESSAGE, TIME)
+                      VALUES (:p_1, :p_2, :p_3, :p_4)"""
+        bindVars = {"p_1": severity, "p_2": component, "p_3": message, "p_4": int(time.time())}
         
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-        myThread.transaction.processData(sqlQuery, bindVars)
-        myThread.transaction.commit()
-
+        self.execute(sqlQuery, bindVars, conn, transaction)
+    
         return
 
-    def ackAlert(self, alertID):
+    def ackAlert(self, alertID, conn = None, transaction = False):
         """
         _ackAlert_
 
@@ -47,19 +53,16 @@ class Queries(DBFormatter):
         add it to the history table.
         """
         insertQuery = """INSERT INTO alert_history (SEVERITY, COMPONENT,
-                         MESSAGE, GENERATIONTIME) VALUES (SELECT SEVERITY,
-                         COMPONENT, MESSAGE, TIME FROM alert_current
+                         MESSAGE, GENERATIONTIME, HISTORYTIME) VALUES (SELECT SEVERITY,
+                         COMPONENT, MESSAGE, TIME, :p_2 FROM alert_current
                          WHERE ID = :p_1)"""
         deleteQuery = "DELETE FROM alert_current WHERE ID = :p_1"
-        bindVars = {"p_1": alertID}
+        bindVars = {"p_1": alertID, "p_2": time.time()}
+        
+        self.execute(insertQuery, bindVars)
+        self.execute(deleteQuery, bindVars)
 
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-        myThread.transaction.processData(insertQuery, bindVars)
-        myThread.transaction.processData(deleteQuery, bindVars)        
-        myThread.transaction.commit()        
-
-    def listCurrentAlerts(self):
+    def listCurrentAlerts(self, conn = None, transaction = False):
         """
         _listCurrentAlerts_
 
@@ -70,16 +73,19 @@ class Queries(DBFormatter):
         sqlQuery = """SELECT ID, SEVERITY, COMPONENT, MESSAGE, TIME
                       FROM alert_current"""
 
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-        resultProxy = myThread.transaction.processData(sqlQuery)
-        myThread.transaction.commit()
+        results = self.execute(sqlQuery, {}, conn, transaction)
 
-        return self.format(resultProxy)
+        return results
 
-    def listPastAlerts(self, max = 10):
+    def listPastAlerts(self, max = 10, conn = None, transaction = False):
         """
         _listPastAlerts_
 
         """
-        pass
+        sqlQuery = """SELECT ID, SEVERITY, COMPONENT, MESSAGE, GENERATIONTIME,
+                          HISTORYTIME
+                      FROM alert_history ORDER BY GENERATIONTIME DESC LIMIT %d""" % max
+
+        results = self.execute(sqlQuery, {}, conn, transaction)
+
+        return results

@@ -6,8 +6,8 @@ Create the "alert_current" and "alert_history" tables for the alert
 system in a MySQL database.
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2009/07/10 21:45:34 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.1 2009/07/10 21:45:34 sryu Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import threading
 
@@ -34,19 +34,19 @@ class Create(DBCreator):
 
         self.create["alert_current"] = \
           """CREATE TABLE alert_current (
-             id        INTEGER      NOT NULL AUTO_INCREMENT,
+             id        INTEGER      PRIMARY KEY AUTOINCREMENT,
              severity  VARCHAR(30)  NOT NULL,
              component VARCHAR(30)  NOT NULL,
              message   VARCHAR(900) NOT NULL,
-             time      INTEGER      NOT NULL,
-             PRIMARY KEY (id))"""
+             time      INTEGER      NOT NULL
+             )"""
 
         self.create["alert_history"] = \
           """CREATE TABLE alert_history (
-             id             INTEGER      NOT NULL AUTO_INCREMENT,
+             id             INTEGER      PRIMARY KEY AUTOINCREMENT,
              severity       VARCHAR(30)  NOT NULL,
              component      VARCHAR(30)  NOT NULL,
              message        VARCHAR(900) NOT NULL,
              generationtime INTEGER      NOT NULL,
-             historytime    INTEGER      NOT NULL,
-             PRIMARY KEY (id))"""
+             historytime    INTEGER      NOT NULL
+             )"""

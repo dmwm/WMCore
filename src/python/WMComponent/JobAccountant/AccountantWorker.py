@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.22 2010/04/07 19:08:49 mnorman Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.23 2010/04/08 16:19:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import os
 import threading
@@ -358,12 +358,9 @@ class AccountantWorker:
         This is meant to be called recursively
         """
         myThread = threading.currentThread()
-        logging.error("In findDBSParents")
         parentsInfo = self.getParentInfoAction.execute([lfn],
                                                        conn = self.transaction.conn,
                                                        transaction = True)
-        logging.error(parentsInfo)
-
         newParents = set()
         for parentInfo in parentsInfo:
 
@@ -374,9 +371,7 @@ class AccountantWorker:
                 newParents.add(parentInfo["lfn"])
 
             elif parentInfo['gpmerged'] == None:
-                logging.error('Have no grandparent')
                 continue
-
 
             # Handle the files that result from merge jobs that aren't redneck
             # children.  We have to setup parentage and then check on whether or
@@ -388,11 +383,8 @@ class AccountantWorker:
             # If that didn't work, we've reached the great-grandparents
             # And we have to work via recursion
             else:
-                logging.error("I couldn't find a parent; going to search at gp level")
                 parentSet = self.findDBSParents(lfn = parentInfo['gplfn'])
                 for parent in parentSet:
-                    logging.error("Adding parent via recursion")
-                    logging.error(parent)
                     newParents.add(parent)
 
         return newParents
@@ -413,7 +405,6 @@ class AccountantWorker:
             dbsFile.load()
             dbsFile.addParents(list(newParents))
 
-        #self.fixupDBSFileStatus(redneckChildren)
         return
 
     def addFileToWMBS(self, jobType, fwjrFile, jobMask, jobID = None):
@@ -680,8 +671,6 @@ class AccountantWorker:
 
         return
 
-
-
     def createFileFromDataStructsFile(self, file, jobID):
         """
         _createFileFromDataStructsFile_
@@ -692,39 +681,15 @@ class AccountantWorker:
         wmbsFile.update(file)
 
         if type(file["locations"]) == set:
-            s = file["locations"].copy()
-            seName = s.pop()
+            seName = list(file["locations"])[0]
         elif type(file["locations"]) == list:
             seName = file["locations"][0]
         else:
             seName = file["locations"]
 
+        wmbsFile["locations"] = set()
         wmbsFile.setLocation(se = seName, immediateSave = False)
-
-        # THIS IS DANGEROUS
-        #existingTransaction = wmbsFile.beginTransaction()
-        #
-        #addAction = wmbsFile.daofactory(classname = "Files.Add")
-        #addAction.execute(files = wmbsFile["lfn"], size = wmbsFile["size"],
-        #                  events = wmbsFile["events"],
-        #                  first_event = wmbsFile["first_event"],
-        #                  last_event = wmbsFile["last_event"],
-        #                  merged = wmbsFile["merged"],
-        #                  conn = wmbsFile.getDBConn(),
-        #                  transaction = wmbsFile.existingTransaction())
-        #
-        #wmbsFile.exists()
-        #
-        #wmbsFile.commitTransaction(existingTransaction)
-
-
-
-        #wmbsFile.updateLocations(noExists = True)
-
         wmbsFile['jid'] = jobID
-
         self.wmbsFilesToBuild.append(wmbsFile)
 
-
         return wmbsFile
-    

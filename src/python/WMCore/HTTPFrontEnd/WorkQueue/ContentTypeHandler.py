@@ -35,5 +35,5 @@ class ContentTypeHandler:
     def jsonThunkerHandler(self, args, kwargs):
         
         args, kwargs = self.jsonHandler(args, kwargs)
-        kwargs = JSONThunker.unthunk(kwargs)
+        kwargs = JSONThunker().unthunk(kwargs)
         return args, kwargs

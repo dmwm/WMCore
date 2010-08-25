@@ -6,8 +6,8 @@ Read the raw XML output from the cmsRun executable
 
 """
 
-__version__ = "$Revision: 1.4 $"
-__revision__ = "$Id: XMLParser.py,v 1.4 2010/02/10 17:10:55 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: XMLParser.py,v 1.5 2010/03/12 20:24:03 sfoulkes Exp $"
 __author__ = "evansde"
 
 
@@ -240,10 +240,10 @@ def inputAssocHandler():
             [ data.__setitem__(subnode.name, subnode.text)
               for subnode in inputnode.children]
             filelabel = "file%s" % fileCount
-            filedata.inputs.section_(filelabel)
-            entry = getattr(filedata.inputs, filelabel)
-            [ setattr(entry, k, v) for k,v in data.items() ]
-            fileCount +=1
+            #filedata.inputs.section_(filelabel)
+            #entry = getattr(filedata.inputs, filelabel)
+            #[ setattr(entry, k, v) for k,v in data.items() ]
+            #fileCount +=1
 
 
 @coroutine

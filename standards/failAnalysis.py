@@ -47,7 +47,7 @@ if len(xunit.getElementsByTagName('testsuite')) > 1:
     raise RuntimeError, "More than one test suite? need to handle this"
 longRunning = []
 
-
+documentsForCouch = { 'docs': [] }
 
 for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('testcase'):
     if case.hasAttribute('time'):
@@ -80,11 +80,13 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
                 "step": "notsure",
                 "reason": traceback
             }
-        curlcall = subprocess.Popen( [ 'curl', '-X', 'POST', couchURL, '-H', 'Content-Type: application/json',
-                     '-d', urllib.quote(json.dumps(myData, separators=(',',':')))],
-                     stdout = sys.stdout,
-                     stderr = sys.stderr)
-        curlcall.communicate()
+        documentsForCouch['docs'].append(myData)
+        
+curlcall = subprocess.Popen( [ 'curl', '-X', 'POST', couchURL, '-H', 'Content-Type: application/json',
+             '-d', urllib.quote(json.dumps(documentsForCouch, separators=(',',':')))],
+             stdout = sys.stdout,
+             stderr = sys.stderr)
+curlcall.communicate()
         
                 
         # what metson wants

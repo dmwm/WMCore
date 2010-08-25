@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: REST_t.py,v 1.5 2009/12/23 22:34:46 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: REST_t.py,v 1.6 2009/12/23 22:54:51 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import os
@@ -207,13 +207,13 @@ class RESTTest(unittest.TestCase):
         cherrypy.log.error_log.setLevel(logging.WARNING)
         cherrypy.log.access_log.setLevel(logging.WARNING)
         data, code, type, response = self.makeRequest('/rest/ping', 
-                                          type='GET', accept='text/json')
+                                          type='GET', accept='text/json+das')
         assert code == 200, 'Got a return code != 200 (got %s), message: %s' % (code, data)
-        assert type == 'text/json'
+        assert type == 'text/json+das'
         expires = response.getheader('Expires')
         timestp = make_rfc_timestamp(3600)
         dict = json.loads(data) 
-        response_expires = format_date_time(dict['response_expires'])
+        response_expires = format_date_time(float(dict['response_expires']))
         assert expires == timestp, 'Expires header incorrect (%s)' % expires
         assert response_expires == timestp, 'Expires DAS header incorrect (%s)' % response_expires
         assert response_expires == expires, 'Expires DAS header incorrect (%s)' % response_expires

@@ -6,8 +6,8 @@ Oracle implementation of Masks.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.4 2009/09/09 21:06:59 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: New.py,v 1.5 2010/07/13 16:45:19 hufnagel Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WMBS.MySQL.Masks.New import New as NewMasksMySQL
 
@@ -21,7 +21,13 @@ class New(NewMasksMySQL):
                 mask = 'Y'
             else:
                 mask = 'N'
-            binds.append({'jobid': job['id'], 'inclusivemask': mask})
+            binds.append({'jobid': job['id'], 'inclusivemask': mask,
+                          'firstevent': job['mask']['FirstEvent'],
+                          'lastevent':  job['mask']['LastEvent'],
+                          'firstrun':   job['mask']['FirstRun'],
+                          'lastrun':    job['mask']['LastRun'],
+                          'firstlumi':  job['mask']['FirstLumi'],
+                          'lastlumi':   job['mask']['LastLumi'],})
 
         return binds
     
@@ -39,7 +45,7 @@ class New(NewMasksMySQL):
             else:
                 binds = self.getBinds(jobid = jobid, inclusivemask = 'N')
             
-            result = self.dbi.processData(self.sql, binds, conn = conn,
+            result = self.dbi.processData(self.plainsql, binds, conn = conn,
                                           transaction = transaction)
             return self.format(result)
 

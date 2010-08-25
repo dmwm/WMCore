@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.135 2010/08/06 21:05:35 sryu Exp $"
-__version__ = "$Revision: 1.135 $"
+__revision__ = "$Id: WorkQueue.py,v 1.136 2010/08/09 16:58:20 sryu Exp $"
+__version__ = "$Revision: 1.136 $"
 
 
 import time
@@ -828,18 +828,6 @@ class WorkQueue(WorkQueueBase):
         wmspec = unit['WMSpec']
         task = unit["Task"]
         parentQueueId = unit['ParentQueueId']
-        
-        if primaryInput:
-            #prevent to instert
-            existsAction = self.daofactory(classname = 
-                                           "WorkQueueElement.Exists")
-            exists = existsAction.execute(wmspec.name(), task.name(), 
-                                          primaryInput,
-                                          conn = self.getDBConn(),
-                                          transaction = self.existingTransaction())
-            if exists:
-                self.logger.error("Try to insert the same element : id %s" % exists)
-                return
             
         self._insertWMSpec(wmspec)
         self._insertWMTask(wmspec.name(), task)

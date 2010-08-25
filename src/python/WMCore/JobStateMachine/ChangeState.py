@@ -5,19 +5,48 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.2 2009/05/08 17:11:44 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ChangeState.py,v 1.3 2009/05/11 11:58:25 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
-from WMCore.Database.CMSCouch import CouchServer, Database
+from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject
+from sets import Set
+
+class Transitions(dict):
+    def __init__(self):
+        self.setdefault('none', ['new'])
+        self.setdefault('new', ['created', 'createfailed'])
+        self.setdefault('created', ['executing', 'submitfailed'])
+        self.setdefault('executing', ['complete'])
+        self.setdefault('complete', ['jobfailed', 'success'])
+        self.setdefault('createfailed', ['createcooloff', 'exhausted'])
+        self.setdefault('submitfailed', ['submitcooloff', 'exhausted'])
+        self.setdefault('jobfailed', ['jobcooloff', 'exhausted'])
+        self.setdefault('createcooloff', ['new'])
+        self.setdefault('submitcooloff', ['created'])
+        self.setdefault('jobcooloff', ['created'])
+        self.setdefault('success', ['closeout'])
+        self.setdefault('exhausted', ['closeout'])
+        self.setdefault('closeout', ['cleanout'])
+
+    def states(self):
+        """
+        Return a list of all known states, derive it in case we add new final
+        states other than cleanout.
+        """
+        knownstates = Set(self.keys())
+        for possiblestates in self.values():
+            for i in possiblestates:
+                knownstates.add(i)
+        return list(knownstates)
 
 class ChangeState(WMObject):
     def __init__(self, config={}):
         WMObject.__init__(self, config)
-        server = CouchServer()
-        self.db = server.connectDatabase(self.config.JobStateMachine.couchurl)
+        server = CouchServer(self.config.JobStateMachine.couchurl)
+        self.db = server.connectDatabase('JSM/JobHistory')
 
     def propagate(self, jobs, newstate, oldstate):
         """
@@ -39,22 +68,8 @@ class ChangeState(WMObject):
         check that the transition is allowed. return a tuple of the transition
         if it is allowed, throw up an exception if not.
         """
-        transitions = {}
-        transitions['none'] = ['new']
-        transitions['new'] = ['created', 'createfailed']
-        transitions['created'] = ['executing', 'submitfailed']
-        transitions['executing'] = ['complete']
-        transitions['complete'] = ['jobfailed', 'success']
-        transitions['createfailed'] = ['createcooloff', 'exhausted']
-        transitions['submitfailed'] = ['submitcooloff', 'exhausted']
-        transitions['jobfailed'] = ['jobcooloff', 'exhausted']
-        transitions['createcooloff'] = ['new']
-        transitions['submitcooloff'] = ['created']
-        transitions['jobcooloff'] = ['created']
-        transitions['success'] = ['closeout']
-        transitions['exhausted'] = ['closeout']
-        transitions['closeout'] = ['cleanout']
 
+        transitions = Transitions()
         assert newstate in transitions[oldstate], \
                             "Illegal state transition requested"
 

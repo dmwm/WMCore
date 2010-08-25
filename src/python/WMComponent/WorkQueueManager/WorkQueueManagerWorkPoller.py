@@ -5,8 +5,8 @@ _WorkQueueManagerPoller_
 Pull work out of the work queue.
 """
 
-__revision__ = "$Id: WorkQueueManagerWorkPoller.py,v 1.6 2010/05/14 18:56:45 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WorkQueueManagerWorkPoller.py,v 1.7 2010/07/02 19:53:18 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import socket
 
@@ -33,8 +33,10 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         try:
             if self.retrieveCondition():
                 work = self.queue.pullWork()
-
-                self.queue.logger.info("Done Pulling work")        
+                self.queue.logger.info("Done Pulling work") 
+                if work:
+                    self.queue.logger.info("There is new work, update location info") 
+                    self.queue.updateLocationInfo()       
                 try:
                     self.queue.logger.info("Updating Parents status")        
                     self.queue.updateParent()

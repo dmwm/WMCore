@@ -9,8 +9,8 @@ Not in the Framework XML
 
 """
 
-__version__ = "$Revision: 1.5 $"
-__revision__ = "$Id: FileInfo.py,v 1.5 2010/03/19 15:29:59 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: FileInfo.py,v 1.6 2010/03/22 15:06:14 mnorman Exp $"
 
 
 
@@ -136,7 +136,7 @@ class FileInfo:
         primaryDataset   = output.primaryDataset
         processedDataset = output.processedDataset
         dataTier         = output.dataTier
-        datasetPath      = '%s/%s/%s' %(primaryDataset,
+        datasetPath      = '/%s/%s/%s' %(primaryDataset,
                                         processedDataset,
                                         dataTier)
 
@@ -182,4 +182,14 @@ class FileInfo:
         return fileReport
 
 
+    def getSEName(self):
+        """
+        Using SiteLocalConfig, get the SEName
+
+        """
+
+        from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
+
+
+        self.siteCfg = loadSiteLocalConfig()
 

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.138 2010/08/13 20:37:56 sryu Exp $"
-__version__ = "$Revision: 1.138 $"
+__revision__ = "$Id: WorkQueue.py,v 1.139 2010/08/16 18:40:23 mnorman Exp $"
+__version__ = "$Revision: 1.139 $"
 
 
 import time
@@ -23,7 +23,7 @@ except (NameError, ImportError):
 
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 
-from WMCore.Services.DBS.DBSReader import DBSReader
+
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
@@ -36,7 +36,11 @@ from WMCore.WMBS.File import File as WMBSFile
 
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+
+from WMCore.Services.DBS.DBSReader import DBSReader
+
 #TODO: Scale test
 #TODO: Decide whether to move/refactor db functions
 #TODO: Transaction handling
@@ -77,7 +81,7 @@ class WorkQueue(WorkQueueBase):
     and injector
     """
     def __init__(self, logger = None, dbi = None, **params):
-            
+
         WorkQueueBase.__init__(self, logger, dbi)
         self.dbsHelpers = {}
         self.remote_queues = {}
@@ -384,12 +388,13 @@ class WorkQueue(WorkQueueBase):
                                 wmspecInfo['owner'], wmspecInfo['wmtask_name'],
                                 wmspecInfo['wmtask_type'],
                                 whitelist, blacklist, blockName)
-        sub = wmbsHelper.createSubscription()
+
+
+        
+        sub = wmbsHelper.createSubscriptionAndAddFiles(dbsBlock = dbsBlock)
         
         self.logger.info("Created top level Subscription %s" % sub['id'])
         
-        if dbsBlock != None:
-            wmbsHelper.addFiles(dbsBlock)
         #else:
             # add MC fake files for each subscription.
             # this is needed for JobCreator trigger: commented out for now.

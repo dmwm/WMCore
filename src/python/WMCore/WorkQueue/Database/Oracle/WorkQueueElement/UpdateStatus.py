@@ -5,8 +5,8 @@ Oracle implementation of WorkQueueElement.UpdateStatus
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateStatus.py,v 1.7 2010/02/08 19:05:46 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: UpdateStatus.py,v 1.8 2010/05/05 14:36:25 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.WorkQueue.Database.MySQL.WorkQueueElement.UpdateStatus \
      import UpdateStatus as UpdateStatusMySQL
@@ -17,9 +17,3 @@ class UpdateStatus(UpdateStatusMySQL):
                             SELECT (:queue) FROM DUAL WHERE NOT EXISTS 
                             (SELECT * FROM wq_queues WHERE url = :queue)"""
     
-    def execute(self, status, ids, id_type = 'id',
-                child_queue = None,
-                conn = None, transaction = False):
-        UpdateStatusMySQL.execute(self, status, ids, id_type, child_queue, 
-                                  conn, transaction)
-        return True

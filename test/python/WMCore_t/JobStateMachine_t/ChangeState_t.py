@@ -39,7 +39,7 @@ class TestChangeState(unittest.TestCase):
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-    
+
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -136,6 +136,9 @@ class TestChangeState(unittest.TestCase):
         """
         	This is the test class for function Propagate from module ChangeState
         	"""
+
+        myThread = threading.currentThread()
+        
         (testSubscription, testFileset, testWorkflow, testFileA,\
             testFileB, testFileC) = self.createSubscriptionWithFileABC()
         
@@ -157,7 +160,27 @@ class TestChangeState(unittest.TestCase):
         testJobC.create(testJobGroupA)
         testJobD = Job(name = "TestJobD")
         testJobD.create(testJobGroupA)
+
         self.change.propagate([testJobA,testJobB,testJobC,testJobD], 'created', 'new')
+        result = myThread.dbi.processData("SELECT state FROM wmbs_job WHERE id = 1")[0].fetchall()[0].values()[0]
+        self.assertEqual(result, 3)
+
+        self.change.propagate([testJobA,testJobB,testJobC], 'executing', 'created')
+        result = myThread.dbi.processData("SELECT state FROM wmbs_job WHERE id = 1")[0].fetchall()[0].values()[0]
+        self.assertEqual(result, 15)
+    
+        self.change.propagate([testJobD], 'submitfailed', 'created')
+        result = myThread.dbi.processData("SELECT state FROM wmbs_job WHERE id = 4")[0].fetchall()[0].values()[0]
+        self.assertEqual(result, 13)
+
+        self.change.propagate([testJobA,testJobB, testJobC], 'complete', 'executing')
+        result = myThread.dbi.processData("SELECT state FROM wmbs_job WHERE id = 1")[0].fetchall()[0].values()[0]
+        self.assertEqual(result, 2)
+
+        self.change.propagate([testJobC], 'jobfailed', 'complete')
+        result = myThread.dbi.processData("SELECT state FROM wmbs_job WHERE id = 3")[0].fetchall()[0].values()[0]
+        self.assertEqual(result, 8)
+        
         return
 
 
@@ -213,6 +236,7 @@ class TestChangeState(unittest.TestCase):
         """
         	This is the test class for function RecordInCouch from module ChangeState
         	"""
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task="Test")
         testWorkflow.create()
@@ -258,7 +282,7 @@ class TestChangeState(unittest.TestCase):
         jsm = self.change.recordInCouch( jsm , "success", "complete")
         jsm = self.change.recordInCouch( jsm , "closeout", "success")
         jsm2 = self.change.recordInCouch( jsm , "cleanout", "closeout")
-        
+
         our_records1 = self.change.getCouchByHeadID(jsm1[0]['couch_head'])
         self.assertEquals(len(our_records1['rows']), 7)
         our_records2 = self.change.getCouchByHeadID(jsm2[0]['couch_head'])
@@ -285,6 +309,7 @@ class TestChangeState(unittest.TestCase):
 
 
     def testAddAttachment(self):
+
         (testSubscription, testFileset, testWorkflow, testFileA,\
             testFileB, testFileC) = self.createSubscriptionWithFileABC()
         
@@ -340,6 +365,7 @@ class TestChangeState(unittest.TestCase):
                 self.assertRaises(CMSCouch.CouchNotFoundError, self.change.getAttachment, job['couch_record'], 'passwd')
 
 
+
     def testStates(self):
     	"""
     	This is the test class for function States from module ChangeState
@@ -348,7 +374,5 @@ class TestChangeState(unittest.TestCase):
 
 
 
-
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

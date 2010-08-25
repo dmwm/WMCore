@@ -5,10 +5,10 @@ _Report_
 Job Report object
 """
 
-__version__ = "$Revision: 1.8 $"
-__revision__ = "$Id: Report.py,v 1.8 2010/02/25 22:43:36 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Report.py,v 1.9 2010/03/01 19:27:13 mnorman Exp $"
 
-import pickle
+import cPickle
 import logging
 
 from WMCore.Configuration import ConfigSection
@@ -106,7 +106,7 @@ class Report:
 
         """
         handle = open(filename, 'w')
-        pickle.dump(self.data, handle)
+        cPickle.dump(self.data, handle)
         handle.close()
         return
 
@@ -119,7 +119,7 @@ class Report:
         """
 
         handle = open(filename, 'r')
-        self.data = pickle.load(handle)
+        self.data = cPickle.load(handle)
         handle.close()
         return
 
@@ -159,6 +159,7 @@ class Report:
             print "ERROR"
             return None
 
+
         # Now load the output module and create the file object
         outMod = getattr(self.report.output, outputModule, None)
         if outMod == None:
@@ -177,14 +178,15 @@ class Report:
         keyList = file.keys()
         
         fileRef.section_("runs")
-        for runNumber in file["runs"].keys():
-            setattr(fileRef.runs, str(runNumber), file["runs"][runNumber])
+        for run in file["runs"]:
+            setattr(fileRef.runs, str(run.run), run.lumis)
         keyList.remove('runs')
         
         setattr(fileRef, 'parents', list(file['parents']))
         keyList.remove('parents')
 
-        fileRef.location = file["location"]
+        fileRef.location = list(file["locations"])
+        keyList.remove('locations')
 
         # Now add the dataset
         # Assume one dataset per output module

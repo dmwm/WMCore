@@ -6,18 +6,19 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: FileBased.py,v 1.12 2009/07/31 16:05:26 sfoulkes Exp $"
-__version__  = "$Revision: 1.12 $"
+__revision__ = "$Id: FileBased.py,v 1.13 2009/08/05 19:47:32 mnorman Exp $"
+__version__  = "$Revision: 1.13 $"
 
 from sets import Set
+from sets import ImmutableSet
 import logging
 import threading
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
 
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.File    import File
+from WMCore.DataStructs.Fileset import Fileset
+from WMCore.DataStructs.File    import File
 
 class FileBased(JobFactory):
     """
@@ -35,112 +36,53 @@ class FileBased(JobFactory):
 
         myThread = threading.currentThread()
         
-        filesPerJob = int(kwargs.get("files_per_job", 10))
-        filesInJob = 0
-        jobs = []
-        
-
-        baseName = makeUUID()
-
-        self.subscription.loadData()
-        
-        fileset = self.subscription.availableFiles()
-
-
-        locationDict = {}
-        jobDict      = {}
-        fileDict     = {}
+        filesPerJob  = int(kwargs.get("files_per_job", 10))
+        filesInJob   = 0
+        jobs         = []
+        listOfFiles  = []
         jobGroupList = []
+        baseName     = makeUUID()
 
+        #Get a dictionary of sites, files
+        locationDict = self.sortByLocation()
 
-        #Count files
-
-        #Now things get complicated
-        #For every file, we want every location, and to somehow associate them
-        for file in fileset:
-            file.loadData()
-            locations = file.getLocations()
-            #logging.info(file)
-            for location in locations:
-                #Find and enter all new locations
-                if not location in locationDict.keys():
-                    #logging.info('Added a new site %s' %(location))
-                    locationDict[location] = []
-                    fileDict[location]     = []
-                    jobDict[location]      = []
-                locationDict[location].append(file["id"])
-
-
-        #Assign files
-
-        #This attaches file IDs to the location they have with the most other files.
-        #It's a stupid sorting algorithm, but it works.
-        for availableFile in fileset:
-            locations = availableFile.getLocations()
-            if len(locations) == 0:
-                logging.error("No location for file %s" %(availableFile["id"]))
-                continue
-            if len(locations) > 1:
-                temp_location = None
-                for location in locations:
-                    if temp_location == None:
-                        temp_location = location
-                    else:
-                        if len(locationDict[location]) > len(locationDict[temp_location]):
-                            temp_location = location
-                fileDict[temp_location].append(availableFile["id"])
-            else:
-                fileDict[locations[0]].append(availableFile["id"])
-
-
-
-
-        #Create jobs
-        listOfFiles = []
-        
-        #Once we have the files sorted into a dict, we can then group them into jobs
-        for location in fileDict.keys():
-            #We skip locations with no jobs assigned to them
-            if len(fileDict[location]) == 0:
-                continue
-
-            #Setup variables
+        for location in locationDict.keys():
+            #Now we have all the files in a certain location
+            fileList   = locationDict[location]
             filesInJob = 0
-            
-            for file in fileDict[location]:
+            jobs       = []
+            if len(fileList) == 0:
+                continue
+            for file in fileList:
                 if filesInJob == 0 or filesInJob == filesPerJob:
-                    job = jobInstance(name = "%s-%s-%s" % (baseName, location, len(jobDict[location]) + 1))
+                    job = jobInstance(name = "%s-%s-%s" % (baseName, str(location), len(jobs) + 1))
                     job["location"] = location
-                    jobDict[location].append(job)
+                    jobs.append(job)
                     filesInJob = 0
 
                     
                 filesInJob += 1
                 job.addFile(file)
-                listOfFiles.append(File(id = file))
-                
+                listOfFiles.append(file)
 
-            logging.info('I have %i jobs for location %s' %(len(jobDict[location]), location))
 
+            logging.info('I have %i jobs for location %s' %(len(jobs), location))
+            
             jobGroup = groupInstance(subscription = self.subscription)
-            jobGroup.add(jobDict[location])
-            #This depends on the newer WMBS implementation of jobGroup
+            jobGroup.add(jobs)
 
             jobGroup.commit()
-            #jobGroup.create()
-            jobGroup.setSite(location)
-            logging.info('I have committed a jobGroup with id %i' %(jobGroup.id))
+            #jobGroup.setSite(location)
+            #logging.info('I have committed a jobGroup with id %i' %(jobGroup.id))
 
 
-            #Add the new jobGroup to the list
             jobGroupList.append(jobGroup)
-            
-
-        #if len(jobGroupList) == 0:
-        #    return []
-
 
         #We need here to acquire all the files we have assigned to jobs
         self.subscription.acquireFiles(files = listOfFiles)
 
         return jobGroupList
+        
+        
+
+ 

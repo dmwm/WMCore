@@ -1,6 +1,17 @@
+#!/usr/bin/env python
+
+
+__revision__ = "$Id: JobFactory.py,v 1.13 2009/08/05 19:47:32 mnorman Exp $"
+__version__  = "$Revision: 1.13 $"
+
+
 import logging
+import threading
 from sets import Set
+from sets import ImmutableSet
 from WMCore.DataStructs.WMObject import WMObject
+from WMCore.DataStructs.Fileset  import Fileset
+from WMCore.DataStructs.File     import File
 
 class JobFactory(WMObject):
     """
@@ -43,3 +54,28 @@ class JobFactory(WMObject):
         The algorithm must return a list of job groups.
         """
         pass
+
+
+    def sortByLocation(self):
+        """
+        _sortByLocation_
+        
+        Sorts the files in the job by location and passes back a dictionary of files, with each key corresponding
+        to a set of locations
+        """
+
+        fileDict = {}
+
+        fileset = self.subscription.availableFiles()
+
+        for file in fileset:
+            if hasattr(file, 'loadData'):
+                file.loadData()
+            locSet = ImmutableSet(file['locations'])
+            if locSet in fileDict.keys():
+                fileDict[locSet].append(file)
+            else:
+                fileDict[locSet] = [file]
+
+        return fileDict
+            

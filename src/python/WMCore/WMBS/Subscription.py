@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.40 2009/05/26 15:47:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: Subscription.py,v 1.41 2009/07/09 21:33:29 mnorman Exp $"
+__version__ = "$Revision: 1.41 $"
 
 from sets import Set
 import logging
@@ -122,10 +122,13 @@ class Subscription(WMBSBase, WMSubscription):
         self["id"] = result["id"]
         self["split_algo"] = result["split_algo"]
 
+
+
         # Only load the fileset and workflow if they haven't been loaded
         # already.  
         if self["fileset"].id < 0:
             self["fileset"] = Fileset(id = result["fileset"])
+
         if self["workflow"].id < 0:
             self["workflow"] = Workflow(id = result["workflow"])
             
@@ -202,15 +205,19 @@ class Subscription(WMBSBase, WMSubscription):
         action = self.daofactory(classname = "Subscriptions.AcquireFiles")
         if files:
             files = self.makelist(files)
+
+            
+
             deleteAction.execute(subscription = self["id"],
                                  file = [x["id"] for x in files],
                                  conn = self.getDBConn(),
                                  transaction = self.existingTransaction())
-        
+            
             action.execute(self['id'], [x['id'] for x in files],
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
             
+
             self.commitTransaction(existingTransaction)
             return files
         
@@ -347,3 +354,18 @@ class Subscription(WMBSBase, WMSubscription):
 
         self.commitTransaction(existingTransaction)
         return files 
+
+
+    def getNumberOfJobsPerSite(self, location, state):
+        """
+        _getNumberOfJobsPerSite_
+        
+        Access the number of jobs at a site in a given status for a given subscription
+
+        """
+
+        jobLocate  = self.daofactory(classname = "Subscriptions.GetNumberOfJobsPerSite")
+
+        result = jobLocate.execute(location = location, subscription = self['id'], state = state).values()[0]
+
+        return result

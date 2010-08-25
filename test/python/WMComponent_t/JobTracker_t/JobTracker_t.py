@@ -4,21 +4,17 @@
 JobTracker test 
 """
 
-__revision__ = "$Id: JobTracker_t.py,v 1.1 2009/10/02 21:23:59 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobTracker_t.py,v 1.2 2009/10/13 21:56:04 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import logging
 import threading
 import unittest
-import time
 
-
-from WMCore.Agent.Configuration import loadConfigurationFile
 
 from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
-from WMCore.WMFactory     import WMFactory
 from WMCore.Services.UUID import makeUUID
 
 from WMCore.WMBS.File         import File
@@ -48,7 +44,7 @@ class JobTrackerTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.tearDown()
@@ -70,79 +66,17 @@ class JobTrackerTest(unittest.TestCase):
         """
         Database deletion
         """
-        myThread = threading.currentThread()
-
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
-
-        factory = WMFactory("MsgService", "WMCore.MsgService")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete MsgService tear down.")
-        myThread.transaction.commit()
-
-        factory = WMFactory("ThreadPool", "WMCore.ThreadPool")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete ThreadPool tear down.")
-        myThread.transaction.commit()
-        
+        self.testInit.clearDatabase()
         
 
     def getConfig(self, configPath=os.path.join(os.getenv('WMCOREBASE'), \
                                                 'src/python/WMComponent/JobTracker/DefaultConfig.py')):
 
 
-        if os.path.isfile(configPath):
-            # read the default config first.
-            config = loadConfigurationFile(configPath)
-        else:
-            config = Configuration()
-            config.component_("JobTracker")
-            #The log level of the component. 
-            config.JobAccountant.logLevel = 'INFO'
-            config.JobAccountant.pollInterval = 10
-
-        myThread = threading.currentThread()
-
-        config.section_("General")
-        
-        config.General.workDir = os.getcwd()
-        
-        config.section_("CoreDatabase")
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT")
-            myThread.dialect = os.getenv('DIALECT')
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-            myThread.database = os.getenv("DATABASE")
-
-
-
+        config = self.testInit.getConfiguration( configPath )
+        self.testInit.generateWorkDir(config)
         return config
-
+    
 
 
     def createTestJobGroup(self):

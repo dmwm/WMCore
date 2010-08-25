@@ -3,8 +3,8 @@
 The actual jobArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobArchiverPoller.py,v 1.6 2010/03/03 22:49:24 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JobArchiverPoller.py,v 1.7 2010/03/11 22:00:14 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 import logging
@@ -178,11 +178,17 @@ class JobArchiverPoller(BaseWorkerThread):
             os.rmdir(cacheDir)
             return
 
+        # Now we need to set up a final destination
+        jobFolder = 'JobCluster_%i' %(int(job['id']/self.config.JobArchiver.numberOfJobsToCluster))
+        logDir = os.path.join(self.config.JobArchiver.logDir, jobFolder)
+        if not os.path.exists(logDir):
+            os.makedirs(logDir)
+
         #Otherwise we have something in there
-        tarName = 'Job_%s.tar' % (job['name'])
+        tarName = 'Job_%i.tar' % (job['id'])
         tarString = ["tar"]
         tarString.append("-cvf")
-        tarString.append('%s/%s' % (cacheDir, tarName))
+        tarString.append(os.path.join(cacheDir, tarName))
         for fileName in os.listdir(cacheDir):
             tarString.append('%s' % (os.path.join(cacheDir, fileName)))
 
@@ -191,7 +197,7 @@ class JobArchiverPoller(BaseWorkerThread):
         pipe.wait()
 
         shutil.move('%s/%s' % (cacheDir, tarName), \
-                    '%s/%s' % (self.config.JobArchiver.logDir, tarName))
+                    '%s/%s' % (logDir, tarName))
 
         shutil.rmtree('%s' % (cacheDir))
 

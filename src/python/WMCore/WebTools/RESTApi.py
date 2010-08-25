@@ -19,20 +19,14 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.35 2010/02/04 22:21:04 meloam Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: RESTApi.py,v 1.36 2010/04/22 19:58:51 sryu Exp $"
+__version__ = "$Revision: 1.36 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
-from WMCore.WebTools.Page import Page, exposejson, exposexml, make_rfc_timestamp
+from WMCore.WebTools.Page import make_rfc_timestamp
 from WMCore.WMFactory import WMFactory
 from cherrypy import expose, request, response, HTTPError
 from cherrypy.lib.cptools import accept
-try:
-    # Python 2.6
-    import json
-except:
-    # Prior to 2.6 requires simplejson
-    import simplejson as json
 
 class RESTApi(WebAPI):
     """

@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.17 2010/07/20 13:42:34 swakef Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.18 2010/07/26 13:10:09 swakef Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import re
 import os
@@ -33,6 +33,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
 	    """
         self.wq.logger.info("Contacting Request manager for more work")
         work = 0
+        workLoads = []
         try:
             workLoads = self.retrieveWorkLoadFromReqMgr()
         except Exception, ex:
@@ -42,7 +43,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         if workLoads:
             self.wq.logger.debug(workLoads)
             #TODO: Same functionality as WorkQueue.pullWork() - combine
-            for reqName, workLoadUrl in workLoads.items():
+            for team, reqName, workLoadUrl in workLoads:
                 try:
                     self.wq.logger.info("Processing request %s" % reqName)
                     wmspec = WMWorkloadHelper()
@@ -52,7 +53,8 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     # Process each request in a transaction - isolate bad req's
                     with self.wq.transactionContext():
                         for unit in units:
-                            self.wq._insertWorkQueueElement(unit, requestName = reqName)
+                            self.wq._insertWorkQueueElement(unit, reqName,
+                                                            team)
                         try:
                             self.reqMgr.putWorkQueue(reqName, 
                                             self.config.get('monitorURL', 'NoMonitor'))
@@ -87,11 +89,11 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         retrieveWorkLoad
         retrieve list of url for workloads.
         """
-        #requestName = "TestRequest"
-        #requestName = 'rpw_100122_145356'
-        #wmAgentUrl = "ralleymonkey.com"
-        result = self.reqMgr.getAssignment(self.config.get('teamName', ''))
-        return result
+        results = []
+        for team in self.wq.params['Teams']:
+            temp = self.reqMgr.getAssignment(team)
+            results.extend([(team, y, z) for y, z in temp.items()])
+        return results
 
     # Reuse this when bulk updates supported
 #    def sendConfirmationToReqMgr(self, requestNames):

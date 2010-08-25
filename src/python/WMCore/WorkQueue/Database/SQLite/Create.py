@@ -5,8 +5,8 @@ Implementation of CreateWorkQueue for SQLite.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.12 2010/07/20 13:42:35 swakef Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Create.py,v 1.13 2010/07/26 13:10:10 swakef Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -37,6 +37,7 @@ class Create(CreateWorkQueueBase):
              parent_flag      INTEGER    DEFAULT 0,
              status           INTEGER    DEFAULT 0 REFERENCES wq_element_status(id),
              subscription_id  INTEGER,
+             team_name        VARCHAR(255),
              events_written   INTEGER    DEFAULT 0,
              files_processed  INTEGER    DEFAULT 0,
              percent_complete INTEGER    DEFAULT 0,

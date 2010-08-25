@@ -4,8 +4,8 @@ WorkQueueElement
 A dictionary based object meant to represent a WorkQueue element
 """
 
-__revision__ = "$Id: WorkQueueElement.py,v 1.4 2010/06/18 15:12:51 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WorkQueueElement.py,v 1.5 2010/07/26 13:10:09 swakef Exp $"
+__version__ = "$Revision: 1.5 $"
 
 STATES = ('Available', 'Negotiating', 'Acquired',
             'Done', 'Failed', 'Canceled')
@@ -41,6 +41,7 @@ class WorkQueueElement(dict):
         self.setdefault('PercentComplete', 0)
         self.setdefault('PercentSuccess', 0)
         self.setdefault('RequestName', None)
+        self.setdefault('TeamName', None)
 
     def inEndState(self):
         """Have we finished processing"""

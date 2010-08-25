@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: WorkQueueManager_t.py,v 1.4 2010/07/20 13:42:36 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WorkQueueManager_t.py,v 1.5 2010/07/26 13:10:11 swakef Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import logging
@@ -15,6 +15,7 @@ import time
 import shutil
 import WMCore.WMInit
 from subprocess import Popen, PIPE
+import types
 
 from WMCore.Agent.Configuration import loadConfigurationFile
 
@@ -119,7 +120,8 @@ class WorkQueueManagerTest(unittest.TestCase):
         globalQ = globalQueue(CacheDir = self.workDir,
                            NegotiationTimeout = 0,
                            QueueURL = 'global.example.com',
-                           DBSReaders = dbsHelpers)
+                           DBSReaders = dbsHelpers,
+                           Teams = ["The A-Team", "some other bloke"])
         globalQ.phedexService = MockPhedexService(dataset)
         return globalQ
 
@@ -142,7 +144,8 @@ class WorkQueueManagerTest(unittest.TestCase):
                 self.status= {}
 
             def getAssignment(self, team):
-                if not self.count:
+                assert(type(team) in types.StringTypes)
+                if not self.count and team == 'The A-Team':
                     self.count += 1
                     return {str(self.count) : self.spec.specUrl()}
                 else:
@@ -163,8 +166,10 @@ class WorkQueueManagerTest(unittest.TestCase):
         reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
 
         # 1st run should pull a request
+        self.assertEqual(len(globalQ), 0)
         reqPoller.algorithm({})
         self.assertEqual(len(globalQ), 1)
+
         # local queue acquires and runs
         work = globalQ.getWork({'SiteA' : 10000, 'SiteB' : 10000})
         globalQ.setStatus('Acquired', 1)

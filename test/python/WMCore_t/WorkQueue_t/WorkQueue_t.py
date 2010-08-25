@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.39 2010/07/20 13:42:36 swakef Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.40 2010/07/26 13:10:11 swakef Exp $"
+__version__ = "$Revision: 1.40 $"
 
 import unittest
 import os
@@ -444,6 +444,39 @@ class WorkQueueTest(WorkQueueTestCase):
             os.unlink(specfile)
         except OSError:
             pass
+
+
+    def testTeams(self):
+        """
+        Team behaviour
+        """
+        specfile = self.spec.specUrl()
+        self.globalQueue.queueWork(specfile, team = 'The A-Team')
+        self.assertEqual(10, len(self.globalQueue))
+        slots = {'SiteA' : 1000, 'SiteB' : 1000}
+
+        # Can't get work for wrong team
+        self.assertEqual([], self.globalQueue.getWork(slots, team = 'other'))
+        # now do chain
+        self.localQueue.params['Teams'] = ['other']
+        self.assertEqual(self.localQueue.pullWork(slots), 0)
+        # and with correct team name
+        self.localQueue.params['Teams'] = ['The A-Team']
+        self.assertEqual(self.localQueue.pullWork(slots), 100)
+        # when work leaves the queue in the agent it doesn't care about teams
+        self.assertEqual(len(self.localQueue.getWork(slots)), 100)
+        self.localQueue.updateParent()
+        self.assertEqual(0, len(self.globalQueue))
+
+        # with multiple teams
+        self.globalQueue.queueWork(specfile, team = 'The B-Team')
+        self.globalQueue.queueWork(specfile, team = 'The C-Team')
+        self.localQueue.params['Teams'] = ['The B-Team', 'The C-Team']
+        self.localQueue.updateParent()
+        self.assertEqual(self.localQueue.pullWork(slots), 200)
+        self.localQueue.updateParent()
+        self.assertEqual(len(self.localQueue.getWork(slots)), 200)
+
 
 
 if __name__ == "__main__":

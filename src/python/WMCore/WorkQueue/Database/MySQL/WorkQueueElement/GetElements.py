@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetElements.py,v 1.13 2010/07/20 13:42:35 swakef Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: GetElements.py,v 1.14 2010/07/26 13:10:10 swakef Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
@@ -20,7 +20,7 @@ class GetElements(DBFormatter):
                     we.update_time, we.subscription_id, we.parent_queue_id,
                     we.events_written, we.files_processed, we.percent_complete,
                     we.percent_success, wq.url child_url, ww.url spec_url,
-                    we.request_name
+                    we.request_name, we.team_name
                 FROM wq_element we
                 LEFT JOIN wq_queues wq ON we.child_queue = wq.id
 				LEFT JOIN wq_wmtask wt ON we.wmtask_id = wt.id
@@ -48,7 +48,8 @@ class GetElements(DBFormatter):
                               FilesProcessed = item['files_processed'],
                               PercentComplete = item['percent_complete'],
                               PercentSuccess = item['percent_success'],
-                              RequestName = item['request_name']))
+                              RequestName = item['request_name'],
+                              TeamName = item['team_name']))
         return result
 
 

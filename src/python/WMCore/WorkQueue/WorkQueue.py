@@ -9,12 +9,13 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.122 2010/07/20 13:42:36 swakef Exp $"
-__version__ = "$Revision: 1.122 $"
+__revision__ = "$Id: WorkQueue.py,v 1.123 2010/07/26 13:10:11 swakef Exp $"
+__version__ = "$Revision: 1.123 $"
 
 
 import time
 import os
+import types
 try:
     from collections import defaultdict
 except (NameError, ImportError):
@@ -107,6 +108,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('QueueURL', None) # url this queue is visible on
         self.params.setdefault('FullReportInterval', 3600)
         self.params.setdefault('ReportInterval', 300)
+        self.params.setdefault('Teams', [''])
 
         self.params.setdefault('SplittingMapping', {})
         self.params['SplittingMapping'].setdefault('DatasetBlock',
@@ -159,14 +161,16 @@ class WorkQueue(WorkQueueBase):
         self.dbsHelpers.update(self.params.get('DBSReaders', {}))
         if not self.dbsHelpers.has_key(self.params["GlobalDBS"]):
             self.dbsHelpers[self.params["GlobalDBS"]] = DBSReader(self.params["GlobalDBS"])
-		
+
         self.SiteDB = SiteDB()
-        
+
+        if self.params['Teams'] in types.StringTypes:
+            self.params['Teams'] = self.params['Teams'].split(',')
         #only import WMBSHelper when it needed
 #        if self.params['PopulateFilesets']:
 #            from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 #            from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-                    
+
     #  //
     # // External API
     #//
@@ -236,7 +240,7 @@ class WorkQueue(WorkQueueBase):
         if not affected:
             raise RuntimeError, "ReqMgr status not changed: No matching elements"
 
-    def getWork(self, siteJobs, pullingQueueUrl = None):
+    def getWork(self, siteJobs, pullingQueueUrl = None, team = None):
         """ 
         _getWork_
         siteJob is dict format of {site: estimateJobSlot}
@@ -265,7 +269,7 @@ class WorkQueue(WorkQueueBase):
         for k, v in siteJobs.items():
             siteJobs[k] = self.params['JobSlotMultiplier'] * v
             
-        matches, unmatched = self._match(siteJobs)
+        matches, unmatched = self._match(siteJobs, team)
 
         # if talking to a child and have resources left get work from parent
         if pullingQueueUrl and unmatched and self.params['ParentQueue']:
@@ -273,7 +277,7 @@ class WorkQueue(WorkQueueBase):
             try:
                 #TODO: Add a timeout thats shorter than normal
                 if self.pullWork(unmatched):
-                    matches, _ = self._match(siteJobs)
+                    matches, _ = self._match(siteJobs, team)
             except RuntimeError, ex:
                 msg = "Error contacting parent queue %s: %s"
                 self.logger.error(msg % (self.params['ParentQueue'], str(ex)))
@@ -315,6 +319,8 @@ class WorkQueue(WorkQueueBase):
                                   (match['id'], status))       
                 
             wmSpecInfo['element_id'] = match['id']
+            wmSpecInfo['team_name'] = match.get('team_name')
+            wmSpecInfo['request_name'] = match.get('request_name')
             results.append(wmSpecInfo)
 
         return results
@@ -442,7 +448,7 @@ class WorkQueue(WorkQueueBase):
         """
         pass
 
-    def queueWork(self, wmspecUrl, parentQueueId = None):
+    def queueWork(self, wmspecUrl, parentQueueId = None, team = None):
         """
         Take and queue work from a WMSpec
         """
@@ -454,7 +460,7 @@ class WorkQueue(WorkQueueBase):
         # Do database stuff in one quick loop
         with self.transactionContext():
             for unit in totalUnits:
-                self._insertWorkQueueElement(unit)
+                self._insertWorkQueueElement(unit, teamName = team)
 
         return len(totalUnits)
 
@@ -625,34 +631,40 @@ class WorkQueue(WorkQueueBase):
 
         If resources passed in get work for them, if not get from wmbs.
         """
-        totalUnits = []
+        counter = 0
         if self.parent_queue:
-            if not resources:
-                from WMCore.ResourceControl.ResourceControl import ResourceControl
-                rc_sites = ResourceControl().listThresholdsForCreate()
-                # get more work than we have slots - QueueDepth param
-                sites = {}
-                [sites.__setitem__(name,
-                    self.params['QueueDepth'] * slots['total_slots'] * self.params['JobSlotMultiplier']) 
-                    for name, slots in rc_sites.items() if slots['total_slots'] > 0]
-                self.logger.info("Pull work for sites %s" % str(sites))
-                _, resources = self._match(sites)
+            for team in self.params['Teams']:
+                totalUnits = []
+                if not resources:
+                    from WMCore.ResourceControl.ResourceControl import ResourceControl
+                    rc_sites = ResourceControl().listThresholdsForCreate()
+                    # get more work than we have slots - QueueDepth param
+                    sites = {}
+                    [sites.__setitem__(name,
+                        self.params['QueueDepth'] * slots['total_slots'] * self.params['JobSlotMultiplier'])
+                        for name, slots in rc_sites.items() if slots['total_slots'] > 0]
+                    self.logger.info("Pull work for sites %s" % str(sites))
+                    _, resources = self._match(sites)
 
-            # if we have sites with no queued work try and get some
-            if resources:
-                work = self.parent_queue.getWork(resources,
-                                                 self.params['QueueURL'])
-                if work:
-                    for element in work:
-                        wmspec = WMWorkloadHelper()
-                        wmspec.load(element['url'])
-                        totalUnits.extend(self._splitWork(wmspec,
-                                                         element['element_id']))
+                # if we have sites with no queued work try and get some
+                if resources:
+                    work = self.parent_queue.getWork(resources,
+                                                     self.params['QueueURL'],
+                                                     team)
+                    if work:
+                        for element in work:
+                            wmspec = WMWorkloadHelper()
+                            wmspec.load(element['url'])
+                            totalUnits.extend(self._splitWork(wmspec,
+                                                        element['element_id']))
 
-                    with self.transactionContext():
-                        for unit in totalUnits:
-                            self._insertWorkQueueElement(unit)
-        return len(totalUnits)
+                        with self.transactionContext():
+                            for unit in totalUnits:
+                                self._insertWorkQueueElement(unit,
+                                                             element['request_name'],
+                                                             element['team_name'])
+                        counter += len(totalUnits)
+        return counter
 
     def updateParent(self, full = False, skipWMBS = False):
         """
@@ -770,7 +782,8 @@ class WorkQueue(WorkQueueBase):
             totalUnits.extend(units)
         return totalUnits
 
-    def _insertWorkQueueElement(self, unit, requestName = None):
+    def _insertWorkQueueElement(self, unit, requestName = None,
+                                teamName = None):
         """
         Persist a block to the database
         """
@@ -793,7 +806,8 @@ class WorkQueue(WorkQueueBase):
 
         elementID = wqAction.execute(wmspec.name(), task.name(), primaryInput,
                          nJobs, priority, parentFlag, parentQueueId,
-                         requestName, conn = self.getDBConn(),
+                         requestName, teamName,
+                         conn = self.getDBConn(),
                          transaction = self.existingTransaction())
 
         whitelist = task.siteWhitelist()
@@ -888,12 +902,13 @@ class WorkQueue(WorkQueueBase):
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 
-    def _match(self, conditions):
+    def _match(self, conditions, team = None):
         """
         Match resources to available work
         """
         matchAction = self.daofactory(classname = "WorkQueueElement.GetWork")
-        elements, unmatched = matchAction.execute(conditions, self.params['ItemWeight'],
+        elements, unmatched = matchAction.execute(conditions, team,
+                                       self.params['ItemWeight'],
                                        conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
         return elements, unmatched

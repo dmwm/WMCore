@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.15 2010/02/26 11:38:23 swakef Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: GetWork.py,v 1.16 2010/07/26 13:10:10 swakef Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import random
 import time
@@ -20,7 +20,8 @@ class GetWork(DBFormatter):
     # get elements that match each site resource ordered by priority
     # elements which do not process any data have their input_id set to NULL
     sql = """SELECT we.id, we.wmtask_id, we.subscription_id, wsite.name site_name, 
-                    valid, we.num_jobs, we.input_id, we.parent_flag
+                    valid, we.num_jobs, we.input_id, we.parent_flag,
+                    we.request_name, we.team_name
             FROM wq_element we
             LEFT JOIN  wq_data_site_assoc wbmap ON wbmap.data_id = we.input_id
             LEFT JOIN wq_site wsite ON wbmap.site_id = wsite.id 
@@ -29,6 +30,9 @@ class GetWork(DBFormatter):
                      wbmap.site_id = wsv.site_id)
             WHERE we.status = :available AND
                   we.num_jobs <= :jobs AND
+                  -- only check team restriction if both db and query restrict
+                  (we.team_name IS NULL OR :team IS NULL OR
+                                                  we.team_name = :team) AND
                   -- If have input data release to site with that data,
                   -- else can release to any site
                   (wsite.name = :site OR
@@ -44,9 +48,10 @@ class GetWork(DBFormatter):
                     we.num_jobs DESC -- take large elements first
             """
 
-    def execute(self, resources, weight, conn = None, transaction = False):
+    def execute(self, resources, team, weight, conn = None, transaction = False):
         binds = [{'available' : States['Available'], 'weight' : weight,
-                  "site" : site, "jobs" : jobs, "current_time": int(time.time())} \
+                  'team' : team, "site" : site,
+                  "jobs" : jobs, "current_time": int(time.time())} \
                                     for site, jobs in resources.iteritems()]
         if not binds:
             return {}, {}

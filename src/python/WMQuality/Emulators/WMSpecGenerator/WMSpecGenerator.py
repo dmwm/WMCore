@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WMSpecGenerator.py,v 1.3 2010/02/23 19:06:36 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WMSpecGenerator.py,v 1.4 2010/03/05 22:36:25 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import os
@@ -54,7 +54,7 @@ class WMSpecGenerator(object):
         return self._selectReturnType(spec, returnType)    
     
     def createReRecoSpec(self, specName, returnType="spec"):
-        spec = ReReco.rerecoWorkload(specName) 
+        spec = ReReco.rerecoWorkload(specName, {'InputDatasets' : '/Fake/Test/ReReco'}) 
         return self._selectReturnType(spec, returnType)    
     
     def createRandomProductionSpecs(self, size=10):

@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.18 2010/01/07 22:38:03 sryu Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: REST_t.py,v 1.19 2010/01/11 20:48:38 sryu Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import unittest
 import json
@@ -19,30 +19,42 @@ from WMCore.Configuration import Configuration
 from WMCore.WebTools.Page import make_rfc_timestamp
 from DummyRESTModel import DummyRESTModel
 #decorator import for RESTServer setup
-from RESTServerSetup import setUpDummyRESTModel, setUpDAS, serverSetup 
-from RESTClientAPI import makeRequest, methodTest
+from WMQuality.WebTools.RESTServerSetup import setUpDAS, serverSetup, getDefaultServerURL 
+from WMQuality.WebTools.RESTClientAPI import makeRequest, methodTest
+
+def setUpDummyRESTModel(func):
+    """
+    Decorator which change the rest model
+    """
+    def wrap_function(self):
+        self.restModel = "DummyRESTModel"
+        func(self)
+    return wrap_function
 
 class RESTTest(unittest.TestCase):
     
     def setUp(self):
         self.dasFlag = False
         self.restModel = 'WMCore.WebTools.RESTModel'
+        self.urlbase = getDefaultServerURL()
     
     def tearDown(self):
         self.dasFlag = None
         self.restModel = None
-            
+        self.urlbase = None
+    
     @serverSetup
     def testUnsupportedFormat(self):
         
         # test not accepted type should return 406 error
-        methodTest('GET', '/rest/ping/', accept='text/das', output={'code':406})
+        url = self.urlbase + '/ping'
+        methodTest('GET', url, accept='text/das', output={'code':406})
                 
     @serverSetup
     def testGoodEcho(self):
         
         verb ='POST'
-        url ='/rest/echo'
+        url = self.urlbase + '/echo'
         input={'data': 'unit test'}
         output={'code':200, 'type':'text/json',
                 'data':'{"args": [], "kwargs": {"data": "unit test"}}'}
@@ -53,7 +65,7 @@ class RESTTest(unittest.TestCase):
     def testGoodEchoWithPosArg(self):
         
         verb ='POST'
-        url ='/rest/echo/stuff'
+        url = self.urlbase + '/echo/stuff'
         input={'data': 'unit test'}
         output={'code':200, 'type':'text/json',
                 'data':'{"args": ["stuff"], "kwargs": {"data": "unit test"}}'}
@@ -64,7 +76,7 @@ class RESTTest(unittest.TestCase):
     def testBadMethodEcho(self):
         
         verb ='GET'
-        url ='/rest/echo'
+        url = self.urlbase + '/echo'
         input={'data': 'unit test'}
         output={'code':405, 'type':'text/json'}
         
@@ -72,7 +84,7 @@ class RESTTest(unittest.TestCase):
         
     @serverSetup      
     def testBadVerbEcho(self):
-        url ='/rest/echo'
+        url = self.urlbase + '/echo'
         input={'data': 'unit test'}
         output={'code':501, 'type':'text/json'}
         
@@ -83,7 +95,7 @@ class RESTTest(unittest.TestCase):
     def testPing(self):
         
         verb ='GET'
-        url ='/rest/ping'
+        url = self.urlbase + '/ping'
         output={'code':200, 'type':'text/json', 'data':'"ping"'}
         expireTime =3600
         
@@ -94,16 +106,16 @@ class RESTTest(unittest.TestCase):
        
         verb ='GET'
         
-        url ='/rest/wrong'
+        url = self.urlbase + '/wrong'
         output={'code':404}
         methodTest(verb, url, output=output)
         
-        url ='/rest/echo'
+        url = self.urlbase + '/echo'
         output={'code':405}
         methodTest(verb, url, output=output)
         
         
-        url ='/rest/ping/wrong'
+        url = self.urlbase + '/ping/wrong'
         output={'code':400}
         methodTest(verb, url, output=output)
         
@@ -113,7 +125,7 @@ class RESTTest(unittest.TestCase):
     def testDasPing(self, das=True):
         
         verb ='GET'
-        url ='/rest/ping'
+        url = self.urlbase + '/ping'
         accept = 'text/json+das'
         output={'code':200, 'type':accept}
         expireTime =3600 
@@ -134,7 +146,7 @@ class RESTTest(unittest.TestCase):
     def testList(self):
         
         verb ='GET'
-        url ='/rest/list/'
+        url = self.urlbase + '/list/'
         input = {'int':123, 'str':'abc'}
         output={'code':200, 'type':'text/json', 'data':'{"int": 123, "str": "abc"}'}
         methodTest(verb, url, input=input, output=output)
@@ -143,7 +155,7 @@ class RESTTest(unittest.TestCase):
     @serverSetup    
     def testA(self):
         for t in ['GET', 'POST', 'PUT', 'DELETE', 'UPDATE']:
-                response = makeRequest(values={'value':1234})
+                response = makeRequest(url=self.urlbase + '/', values={'value':1234})
                 assert response[1] == 200, \
                  'Got a return code != 200 (got %s)' % response[1]
     
@@ -194,14 +206,16 @@ class RESTTest(unittest.TestCase):
 #                '. Returned data: %s' % response[0]
                  
         # 2 positional args (e.g. url/arg1/arg2)
-        response = makeRequest(uri='/rest/list/123/abc')
+        url = self.urlbase + '/list/123/abc'
+        response = makeRequest(url=url)
         assert response[1] == 200, \
                 'list with 2 positional args failed: ' +\
                 '. Got a return code != 200 (got %s)' % response[1] +\
                 '. Returned data: %s' % response[0]
                  
         # 2 query string args (e.g. url?int=arg1&str=arg2)
-        response = makeRequest(uri='/rest/list', 
+        url = self.urlbase + '/list/'
+        response = makeRequest(url=url, 
                                     values={'int':'123', 'str':'abc'})
         assert response[1] == 200, \
                 'list with 2 query string args failed: ' +\
@@ -209,7 +223,8 @@ class RESTTest(unittest.TestCase):
                 '. Returned data: %s' % response[0] 
         
         # 1 positional, 1 keyword  (e.g. url/arg1/?str=arg2)
-        response = makeRequest(uri='/rest/list/123/', 
+        url = self.urlbase + '/list/123/'
+        response = makeRequest(url=url, 
                                     values={'str':'abc'})
         assert response[1] == 200, \
                 'list with 1 positional, 1 keyword failed: ' +\
@@ -264,7 +279,8 @@ class RESTTest(unittest.TestCase):
         """
         
         # 2 positional args (e.g. url/arg1/arg2)
-        response = makeRequest(uri='/rest/list/123/', accept='text/json')
+        url = self.urlbase + '/list/123/'
+        response = makeRequest(url=url, accept='text/json')
         assert response[1] == 404, \
                 'list with 2 positional args failed: ' +\
                 '. Got a return code != 400 (got %s)' % response[1] +\
@@ -272,7 +288,8 @@ class RESTTest(unittest.TestCase):
         
         assert response[2] == 'text/json', 'type is not text/json : %s' % type         
         # 2 query string args (e.g. url?int=arg1&str=arg2)
-        response = makeRequest(uri='/rest/list', 
+        url = self.urlbase + '/list'
+        response = makeRequest(url=url, 
                                     values={'int':'abc', 'str':'abc'})
         assert response[1] == 400, \
                 'list with 2 query string args failed: ' +\
@@ -280,7 +297,8 @@ class RESTTest(unittest.TestCase):
                 '. Returned data: %s' % response[0] 
         
         # 1 positional, 1 keyword  (e.g. url/arg1/?str=arg2)
-        response = makeRequest(uri='/rest/list/abc/', 
+        url = self.urlbase + '/list/abc'
+        response = makeRequest(url=url, 
                                     values={'str':'abc'})
         assert response[1] == 400, \
                 'list with 1 positional, 1 keyword failed: ' +\
@@ -318,7 +336,8 @@ class RESTTest(unittest.TestCase):
         """
         
         # 2 positional args (e.g. url/arg1/arg2)
-        response = makeRequest(uri='/rest/data1/')
+        url = self.urlbase + '/data1/'
+        response = makeRequest(url=url)
         assert response[1] == 200, \
                 'dao without args failed: ' +\
                 '. Got a return code != 200 (got %s)' % response[1] +\
@@ -326,7 +345,8 @@ class RESTTest(unittest.TestCase):
         assert response[0] == '123', response[0]        
         
         # 2 query string args (e.g. url?int=arg1&str=arg2)
-        response = makeRequest(uri='/rest/data2', 
+        url = self.urlbase + '/data2'
+        response = makeRequest(url=url, 
                                     values={'num':456})
         assert response[1] == 200, \
                 'dao with 1 args failed: ' +\
@@ -337,7 +357,8 @@ class RESTTest(unittest.TestCase):
         assert response[0] == "{'num': '456'}", "should be {'num': '456'} but got %s" % response[0]         
         
         # 1 positional, 1 keyword  (e.g. url/arg1/?str=arg2)
-        response = makeRequest(uri='/rest/data3/123/', 
+        url = self.urlbase + '/data3/123'
+        response = makeRequest(url=url, 
                                     values={'thing':'abc'})
         assert response[1] == 200, \
                 'dao with 1 positional, 1 keyword failed: ' +\

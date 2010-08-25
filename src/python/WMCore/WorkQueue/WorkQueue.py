@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.136 2010/08/09 16:58:20 sryu Exp $"
-__version__ = "$Revision: 1.136 $"
+__revision__ = "$Id: WorkQueue.py,v 1.137 2010/08/10 16:15:54 swakef Exp $"
+__version__ = "$Revision: 1.137 $"
 
 
 import time
@@ -38,7 +38,6 @@ from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 #TODO: Scale test
-#TODO: Handle multiple dbs instances
 #TODO: Decide whether to move/refactor db functions
 #TODO: Transaction handling
 #TODO: What about sending messages to component to handle almost live status updates
@@ -154,8 +153,8 @@ class WorkQueue(WorkQueueBase):
             self.parent_queue = self._get_remote_queue(self.params['ParentQueue'])
 
         self.dbsHelpers.update(self.params.get('DBSReaders', {}))
-        if not self.dbsHelpers.has_key(self.params["GlobalDBS"]):
-            self.dbsHelpers[self.params["GlobalDBS"]] = DBSReader(self.params["GlobalDBS"])
+        if self.params.get('GlobalDBS'):
+            self._get_dbs(self.params["GlobalDBS"])
 
         self.SiteDB = SiteDB()
 
@@ -299,7 +298,7 @@ class WorkQueue(WorkQueueBase):
             wmspecInfo = wmspecInfoAction.execute(match['wmtask_id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
-            
+
             blockName, dbsBlock = None, None
             if self.params['PopulateFilesets']:
                 if not wmspecCache.has_key(wmspecInfo['id']):
@@ -308,10 +307,11 @@ class WorkQueue(WorkQueueBase):
                         # (check whether that is updated correctly in DB)
                         wmspec.load(wmspecInfo['url'])    
                         wmspecCache[wmspecInfo['id']] = wmspec
-                
+
                 if match['input_id']:
                     self.logger.info("Adding Processing work")
-                    blockName, dbsBlock = self._getDBSBlock(match)
+                    blockName, dbsBlock = self._getDBSBlock(match,
+                                                        wmspecInfo['dbs_url'])
                 else:
                     self.logger.info("Adding Production work")
                 
@@ -348,7 +348,7 @@ class WorkQueue(WorkQueueBase):
 
         return results
     
-    def _getDBSBlock(self, match):
+    def _getDBSBlock(self, match, dbs):
         
         blockLoader = self.daofactory(classname = "Data.LoadByID")
             
@@ -356,7 +356,7 @@ class WorkQueue(WorkQueueBase):
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
         #TODO: move this out of the transactions
-        dbs = self.dbsHelpers.values()[0] #FIXME!!!
+        dbs = self._get_dbs(dbs)
         if match['parent_flag']:
             dbsBlockDict = dbs.getFileBlockWithParents(block["name"])
         else:
@@ -802,8 +802,8 @@ class WorkQueue(WorkQueueBase):
             dbs_url = topLevelTask.dbsUrl()
             wmspec = getWorkloadFromTask(topLevelTask)
 
-            if dbs_url and not self.dbsHelpers.has_key(dbs_url):
-                self.dbsHelpers[dbs_url] = DBSReader(dbs_url)
+            if dbs_url:
+                self._get_dbs(dbs_url)
                 
             policyName = wmspec.startPolicy()
             # update policy parameter
@@ -1019,3 +1019,13 @@ class WorkQueue(WorkQueueBase):
             self.remote_queues[queue] = WorkQueueDS({'endpoint' : queue,
                                                      'logger' : self.logger})
             return self.remote_queues[queue]
+
+    def _get_dbs(self, url):
+        """Return DBS object for url"""
+        if url is None: # fall back to global
+            url = self.params['GlobalDBS']
+        try:
+            return self.dbsHelpers[url]
+        except KeyError:
+            self.dbsHelpers[url] = DBSReader(url)
+            return self.dbsHelpers[url]

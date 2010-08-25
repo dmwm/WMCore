@@ -4,15 +4,15 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.17 2010/04/15 20:54:56 sryu Exp $"
-__version__  = "$Revision: 1.17 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.18 2010/04/29 20:14:51 mnorman Exp $"
+__version__  = "$Revision: 1.18 $"
 
 import threading
 import logging
 import os
 import os.path
 import traceback
-import time
+#import time
 #import cProfile, pstats
 
 
@@ -40,8 +40,9 @@ class JobCreatorPoller(BaseWorkerThread):
         myThread = threading.currentThread()
 
         #DAO factory for WMBS objects
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS", \
-                                     logger = logging, dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = logging,
+                                     dbinterface = myThread.dbi)
         
         #information
         self.config = config
@@ -66,7 +67,8 @@ class JobCreatorPoller(BaseWorkerThread):
         self.processPool = ProcessPool("JobCreator.JobCreatorWorker",
                                        totalSlaves = self.config.JobCreator.workerThreads,
                                        componentDir = self.config.JobCreator.componentDir,
-                                       config = self.config, slaveInit = configDict)
+                                       config = self.config,
+                                       slaveInit = configDict)
 
 
 
@@ -157,10 +159,9 @@ class JobCreatorPoller(BaseWorkerThread):
         if listOfWork != []:
             # Only enqueue if we have work to do!
             self.processPool.enqueue(listOfWork)
-            
             self.processPool.dequeue(totalItems = len(listOfWork))
         
-        logging.info("Number of subscription is enqueued (%s)" % len(listOfWork))
+        logging.info("Number of subscription enqueued is %i" % len(listOfWork))
 
         return
 

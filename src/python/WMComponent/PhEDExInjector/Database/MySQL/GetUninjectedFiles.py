@@ -6,8 +6,8 @@ Retrieve a list of files that have been injected into DBS but not PhEDEx.
 Format the output so that it can easily be injected into PhEDEx.
 """
 
-__revision__ = "$Id: GetUninjectedFiles.py,v 1.3 2009/12/02 20:20:36 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: GetUninjectedFiles.py,v 1.4 2009/12/10 16:06:02 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -91,7 +91,7 @@ class GetUninjectedFiles(DBFormatter):
 
         """
 
-        result = self.dbi.processData(self.findCksumSQL, conn = conn, transaction = transaction)
+        result = self.dbi.processData(self.findCksumSQL, {'lfn': lfn}, conn = conn, transaction = transaction)
 
         dictResult = DBFormatter.formatDict(result)
         #This should be a list

@@ -7,11 +7,12 @@ based on the size of the files
 
 """
 
-__revision__ = "$Id: MergeBySize.py,v 1.5 2009/09/30 12:30:54 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: MergeBySize.py,v 1.6 2009/10/09 20:22:20 ewv Exp $"
+__version__ = "$Revision: 1.6 $"
 
-from sets import Set
 from WMCore.JobSplitting.JobFactory import JobFactory
+from WMCore.Services.UUID import makeUUID
+from WMCore.DataStructs.Fileset import Fileset
 
 
 
@@ -41,22 +42,23 @@ class MergeBySize(JobFactory):
         fileset.sort()
 
         accumSize = 0
-        accumFiles = []
+        jobFiles = Fileset()
         locationDict = self.sortByLocation()
         for location in locationDict:
+            baseName = makeUUID()
             self.newGroup()
             for f in locationDict[location]:
                 accumSize += f['size']
-                accumFiles.append(f)
+                jobFiles.addFile(f)
                 if accumSize >= mergeSize:
-                    self.newJob(name = '%s-%s' % (jobName, len(jobs) +1))
-                    self.currentJob.addFile(accumFiles)
-                    self.currentJob.mask.setMaxAndSkipEvents(-1, 0)
+                    self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1),
+                                      files = jobFiles)
+                    self.currentJob["mask"].setMaxAndSkipEvents(-1, 0)
                     accumSize = 0
-                    accumFiles = []
-    
-            if len(accumFiles) > 0:
+                    jobFiles = Fileset()
+
+            if len(jobFiles) > 0:
                 if overflow:
-                    self.newJob(name = '%s-%s' % (jobName, len(jobs) +1 ))
-                    self.currentJob.addFile(accumFiles)
-                    self.currentJob.mask.setMaxAndSkipEvents(-1, 0)
+                    self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1),
+                                      files = jobFiles)
+                    self.currentJob["mask"].setMaxAndSkipEvents(-1, 0)

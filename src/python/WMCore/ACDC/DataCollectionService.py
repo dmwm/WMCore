@@ -71,6 +71,7 @@ class DataCollectionService(CouchService):
             inpStep = getattr(task.data.input, "inputStep", None)
             filesetName = None
             metadata = {}
+
           
             if inpDataset != None:
                 filesetName = "/%s/%s/%s" % (inpDataset.primary, inpDataset.processed, inpDataset.tier)
@@ -106,6 +107,7 @@ class DataCollectionService(CouchService):
 
                             
             # this isnt doing things in bulk, which may explain turdmuching performance...
+            fileset['task'] = t
             fileset['metadata'] = metadata
             fileset.create()
         
@@ -142,14 +144,31 @@ class DataCollectionService(CouchService):
         result = self.couchdb.loadView("ACDC", 'data_collections',
                  { 'startkey' : collName }, []
                 )
-        print result
+        # somewhat flaky assumption that we get one row, need to add some safeguards on this
+        row = result[u'rows'][0]
+        ownerInfo =  row[u'value'][u'owner']
+        collId =  row[u'value'][u'_id']
+        owner = self.newOwner(ownerInfo[u'group'], ownerInfo[u'user'])
+        coll = CouchCollection(collection_id = collId,
+                               database = self.database, url = self.url)
+        coll.setOwner(owner)
+        coll.get()
+        return coll
         
-    def getFileset(self, taskName):
+    def filesetsByTask(self, collection, taskName):
         """
-        _getFileset_
+        _filesetsByTask_
+        
+        Util to get filesets IDs by 
         """
+        result = self.couchdb.loadView("ACDC", 'datacoll_filesets',
+                 { 'startkey' : [collection['collection_id'], taskName], 'endkey': [collection['collection_id'], taskName] }, []
+                )
+        for row in result[u'rows']:
+            doc = self.couchdb.document(row[u'value'])
+            yield doc
         
-        
+
         
     @CouchUtils.connectToCouch
     def failedJobs(self, *failedJobs):
@@ -158,9 +177,18 @@ class DataCollectionService(CouchService):
         
         Given a list of failed jobs, sort them into Filesets and record them
         """
+        collections = {}
         for job in failedJobs:
-            print job['task']
-            print job['input_files']
+            taskName = job['task']
+            workflow = job['workflow']
+            if not collections.has_key(workflow):
+                collections['workflow'] = self.getDataCollection(job['workflow'])
+            coll = collections['workflow']
+            for fileset in self.filesetsByTask(coll, taskName):
+                cFileset = CouchFileset(database = self.database, url = self.url, fileset_id = fileset['_id'])
+                cFileset.setCollection(coll)
+                cFileset.add(*job['input_files'])
+        
     
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
@@ -222,7 +250,7 @@ class DataCollectionInterfaceTests(unittest.TestCase):
         
         self.harness.drop()
         pass
-        
+    
     def testA(self):
         
         dcs = DataCollectionService(url = self.harness.couchUrl, database = self.harness.dbName)
@@ -234,11 +262,22 @@ class DataCollectionInterfaceTests(unittest.TestCase):
         pkg = JobPackage()
         pkg.load("/Users/evansde/Documents/AptanaWorkspace/WMCORE/test/data/cmsdataops_100806_091657/batch_2177-0/JobPackage.pkl")
         
-        for c in dcs.listDataCollections():
-            print c, c.owner
+        #for c in dcs.listDataCollections():
+        #    print c, c.owner
         
-        dcs.getDataCollection('cmsdataops_100806_091657')
-        #dcs.failedJobs(pkg[2212], pkg[2213])
+        #c = dcs.getDataCollection('cmsdataops_100806_091657')
+        #for f in dcs.listFilesets(c):
+        #    print f
+        
+        
+        #for f in dcs.filesetsByTask(c, pkg[2212]['task']):
+        #    #print count 
+        #    print f
+        #   #count +=1
+        
+        #print pkg[2212]
+        
+        dcs.failedJobs(pkg[2212], pkg[2213])
         
 
 if __name__ == '__main__':

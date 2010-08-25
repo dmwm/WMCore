@@ -5,7 +5,18 @@ from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 import os
 
+"""
+Build, clean and test the WMCore package.
+"""
+
 class TestCommand(Command):
+    """
+    Handle setup.py test with this class - walk through the directory structure 
+    and build up a list of tests, then build a test suite and execute it.
+    
+    TODO: Pull database URL's from environment, and skip tests where database 
+    URL is not present (e.g. for a slave without Oracle connection)
+    """
     user_options = [ ]
 
     def initialize_options(self):
@@ -44,6 +55,9 @@ class TestCommand(Command):
         t.run(testsuite)
 
 class CleanCommand(Command):
+    """
+    Clean up (delete) compiled files
+    """
     user_options = [ ]
 
     def initialize_options(self):
@@ -63,95 +77,25 @@ class CleanCommand(Command):
             except:
                 pass
             
-setup (name='wmcore',
-       version='1.0',
+def getPackages(package_dirs = []):
+    packages = []
+    for dir in package_dirs:
+        for dirpath, dirnames, filenames in os.walk('./%s' % dir):
+            # Exclude things here
+            if dirpath not in ['./src/python/', './src/python/IMProv']: 
+                pathelements = dirpath.split('/')
+                if not 'CVS' in pathelements:
+                    path = pathelements[3:]
+                    packages.append('.'.join(path))
+    return packages
+
+package_dir = {'WMCore': 'src/python/WMCore',
+               'WMComponent' : 'src/python/WMComponent',
+               'WMQuality' : 'src/python/WMQuality'}
+
+setup (name = 'wmcore',
+       version = '1.0',
        cmdclass = { 'test': TestCommand, 'clean': CleanCommand },
-       package_dir={'WMCore': 'src/python/WMCore','WMComponent' : 'src/python/WMComponent','WMQuality' : 'src/python/WMQuality'},
-       packages=['WMComponent.DBSBuffer.Handler',
-                 'WMComponent.DBSBuffer.Database.SQLite.DBSBufferFiles',
-                 'WMComponent.DBSBuffer.Database.SQLite',
-                 'WMComponent.DBSBuffer.Database.Oracle.DBSBufferFiles',
-                 'WMComponent.DBSBuffer.Database.Oracle',
-                 'WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles',
-                 'WMComponent.DBSBuffer.Database.MySQL',
-                 'WMComponent.DBSBuffer.Database.Interface',
-                 'WMComponent.DBSBuffer.Database',
-                 'WMComponent.DBSBuffer',
-                 'WMComponent.Proxy.Handler',
-                 'WMComponent.Proxy',
-                 'WMComponent.ErrorHandler.Database.MySQL',
-                 'WMComponent.ErrorHandler.Database',
-                 'WMComponent.ErrorHandler',
-                 'WMComponent',
-                 'WMQuality',
-                 'WMCore.MsgService.Oracle',
-                 'WMCore.MsgService.MySQL',
-                 'WMCore.MsgService',
-                 'WMCore.Trigger.Oracle',
-                 'WMCore.Trigger.MySQL',
-                 'WMCore.Trigger',
-                 'WMCore.Alerts.MySQL',
-                 'WMCore.Alerts',
-                 'WMCore.Agent',
-                 'WMCore.Algorithms',
-                 'WMCore.JobSplitting',
-                 'WMCore.JobStateMachine',                 
-                 'WMCore.WMBS.SQLite.Jobs',
-                 'WMCore.WMBS.SQLite.Masks',
-                 'WMCore.WMBS.SQLite.Workflow',
-                 'WMCore.WMBS.SQLite.JobGroup',
-                 'WMCore.WMBS.SQLite.Fileset',
-                 'WMCore.WMBS.SQLite.Locations',
-                 'WMCore.WMBS.SQLite.Files',
-                 'WMCore.WMBS.SQLite.Subscriptions',
-                 'WMCore.WMBS.SQLite',
-                 'WMCore.WMBS.Oracle.Jobs',
-                 'WMCore.WMBS.Oracle.Masks',
-                 'WMCore.WMBS.Oracle.Workflow',
-                 'WMCore.WMBS.Oracle.JobGroup',
-                 'WMCore.WMBS.Oracle.Fileset',
-                 'WMCore.WMBS.Oracle.Locations',
-                 'WMCore.WMBS.Oracle.Files',
-                 'WMCore.WMBS.Oracle.Subscriptions',
-                 'WMCore.WMBS.Oracle',                 
-                 'WMCore.WMBS.Actions.Fileset',
-                 'WMCore.WMBS.Actions.Files',
-                 'WMCore.WMBS.Actions.Subscriptions',
-                 'WMCore.WMBS.Actions',
-                 'WMCore.WMBS.WMBSAccountant',
-                 'WMCore.WMBS.Oracle',
-                 'WMCore.WMBS.WMBSAllocater.Allocaters',
-                 'WMCore.WMBS.WMBSAllocater',
-                 'WMCore.WMBS.WMBSFeeder.Feeders',
-                 'WMCore.WMBS.WMBSFeeder',
-                 'WMCore.WMBS.T0AST',
-                 'WMCore.WMBS.MySQL.Jobs',
-                 'WMCore.WMBS.MySQL.Masks',
-                 'WMCore.WMBS.MySQL.Workflow',
-                 'WMCore.WMBS.MySQL.JobGroup',
-                 'WMCore.WMBS.MySQL.Fileset',
-                 'WMCore.WMBS.MySQL.Locations',
-                 'WMCore.WMBS.MySQL.Files',
-                 'WMCore.WMBS.MySQL.Subscriptions',
-                 'WMCore.WMBS.MySQL',
-                 'WMCore.WMBS',
-                 'WMCore.DataStructs',
-                 'WMCore.WMBSFeeder.DBS',
-                 'WMCore.WMBSFeeder.PhEDExNotifier',
-                 'WMCore.WMBSFeeder.Fake',
-                 'WMCore.WMBSFeeder',
-                 'WMCore.ThreadPool.MySQL',
-                 'WMCore.ThreadPool',
-                 'WMCore.Services.SAM',
-                 'WMCore.Services.Dashboard',
-                 'WMCore.Services.JSONParser',
-                 'WMCore.Services.SiteDB',
-                 'WMCore.Services.Twitter',
-                 'WMCore.Services',
-                 'WMCore.SiteScreening',
-                 'WMCore.Database',
-                 'WMCore.WebTools',
-                 'WMCore.HTTPFrontEnd.WMBS',
-                 'WMCore.HTTPFrontEnd',
-                 'WMCore'],)
+       package_dir = package_dir,
+       packages = getPackages(package_dir.values()),)
 

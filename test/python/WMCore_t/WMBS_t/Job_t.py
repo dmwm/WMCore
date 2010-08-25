@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.36 2010/01/22 18:01:15 mnorman Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: Job_t.py,v 1.37 2010/02/04 16:22:18 mnorman Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import unittest
 import logging
@@ -1122,6 +1122,24 @@ class JobTest(unittest.TestCase):
                          [{'site_name': 'test2.site.ch', 'id': 1L}, \
                           {'site_name': 'test.site.ch', 'id': 2L}, \
                           {'site_name': 'test.site.ch', 'id': 3L}])
+
+        return
+
+
+    def testGetDataStructsJob(self):
+        """
+        _testGetDataStructsJob_
+
+        Test the ability to 'cast' as a DataStructs job type
+        """
+
+        testJob  = self.createTestJob()
+        finalJob = testJob.getDataStructsJob()
+
+        for key in finalJob.keys():
+            self.assertEqual(testJob[key], finalJob[key])
+
+        self.assertEqual(str(finalJob.__class__), "<class 'WMCore.DataStructs.Job.Job'>")
 
         return
 

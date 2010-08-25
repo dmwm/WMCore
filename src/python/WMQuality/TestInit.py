@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.24 2010/01/12 21:42:07 sryu Exp $"
+    "$Id: TestInit.py,v 1.25 2010/01/29 15:34:11 sryu Exp $"
 __version__ = \
-    "$Revision: 1.24 $"
+    "$Revision: 1.25 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -138,6 +138,11 @@ class TestInit:
         arbitrary sql statements.
         """
         self.init.initializeSchema(modules)
+        
+    def getDBInterface(self):
+        "shouldbe called after connection is made"
+        myThread = threading.currentThread()
+        return myThread.dbi
 
     def getConfiguration(self, configurationFile = None, connectUrl = None, socket=None):
         """ 

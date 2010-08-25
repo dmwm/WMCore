@@ -11,8 +11,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.18 2010/08/03 15:13:52 mnorman Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.19 2010/08/12 14:41:03 mnorman Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import threading
 import logging
@@ -71,6 +71,7 @@ def retrieveWMSpec(subscription):
     wmWorkloadURL = workflow.spec
     
     if not os.path.isfile(wmWorkloadURL):
+        logging.error("WMWorkloadURL %s is empty" % (wmWorkloadURL))
         return None
     
     wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
@@ -98,6 +99,7 @@ def retrieveJobSplitParams(wmWorkload, task):
     # I don't want to save it in each workflow area, but I may have to
 
     if not wmWorkload:
+        logging.error("Could not find wmWorkload for splitting")
         return {"files_per_job": 5}
     task = wmWorkload.getTaskByPath(task)
     if not task:
@@ -180,10 +182,10 @@ class JobCreatorWorker:
             # This retrieves a single subscription
             subscriptionID = entry.get('subscription')
 
-            if subscriptionID == -1:
+            if subscriptionID < 0:
+                logging.error("Got non-existant subscription")
+                logging.error("Assuming parameters in error: returning")
                 return subscriptionID
-            
-            myThread.transaction.commit()
             
             myThread.transaction.begin()
             
@@ -194,8 +196,6 @@ class JobCreatorWorker:
             wmbsSubscription["workflow"].load()
             workflow         = wmbsSubscription["workflow"]
 
-            #pdb.set_trace()
-            
             wmWorkload       = retrieveWMSpec(wmbsSubscription)
 
 
@@ -203,8 +203,19 @@ class JobCreatorWorker:
             
 
             if not workflow.task or not wmWorkload:
+                # Then we have a problem
+                # We have no sandbox
+                # We NEED a sandbox
+                # Abort this subscription!
+                # But do NOT fail
+                # We have no way of marking a subscription as bad per se
+                # We'll have to just keep skipping it
                 wmTask = None
                 seederList = []
+                logging.error("Have no task for workflow %i" % (workflow.id))
+                logging.error("Aborting Subscription %i" % (subscriptionID))
+                continue
+                
             else:
                 wmTask = wmWorkload.getTaskByPath(workflow.task)
                 if hasattr(wmTask.data, 'seeders'):
@@ -225,7 +236,6 @@ class JobCreatorWorker:
             logging.debug("Split Params: %s" % splitParams)
 
             continueSubscription = True
-            #wmbsJobGroups        = []
             myThread.transaction.commit()
 
             # Turn on the jobFactory
@@ -244,20 +254,17 @@ class JobCreatorWorker:
                 
                 try:
                     wmbsJobGroups = jobSplittingFunction.next()
-                    logging.error("Retrieved %i jobGroups from jobSplitter" % (len(wmbsJobGroups)))
+                    logging.info("Retrieved %i jobGroups from jobSplitter" % (len(wmbsJobGroups)))
                 except StopIteration:
                     # If you receive a stopIteration, we're done
                     logging.error("Completed iteration over subscription %i" % (subscriptionID))
                     continueSubscription = False
                     continue
 
-                # wmbsJobGroups = wmbsJobFactory(**splitParams)
-                # logging.debug("Job Groups %s" % wmbsJobGroups)
-                logging.info("Have jobGroups")
-            
                 # Now we get to find out what job they are.
                 countJobs = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
                 jobNumber = countJobs.execute(workflow = workflow.id)
+                logging.debug("Have %i jobs for this workflow already" % (jobNumber))
                 
                 
             
@@ -276,53 +283,45 @@ class JobCreatorWorker:
                         jobNumber += 1
                         self.saveJob(job = job, workflow = workflow,
                                      wmTask = wmTask, jobNumber = jobNumber)
-                        ## We better save the whole job
-                        ## First, add the necessary components
-                        #if wmTask:
-                        #    # If we managed to load the task,
-                        #    # so the url should be valid
-                        #    job['spec']    = workflow.spec
-                        #    job['sandbox'] = wmTask.data.input.sandbox
-                        #    job['task']    = wmTask.getPathName()
-                        #job['counter']  = jobNumber
-                        #cacheDir = job.getCache()
-                        #job['cache_dir'] = cacheDir
-                        #output = open(os.path.join(cacheDir, 'job.pkl'),'w')
-                        #cPickle.dump(job, output)
-                        #output.close()
+            
 
                     self.createJobGroup(wmbsJobGroup)
 
                     logging.debug("Finished call for jobGroup %i" \
-                                 %(wmbsJobGroup.exists()))
+                                 % (wmbsJobGroup.exists()))
 
 
                 # END: while loop over jobSplitter
 
 
 
-            #wmbsJobFactory.close()
-            #logging.error("Ending a loop")
-            #logging.error(gc.get_count())
-            #logging.error(gc.get_referrers())
-            #logging.error(objgraph.show_most_common_types(limit=50))
-            #logging.error("About to get memory references")
-            #logging.error(_VmB('VmSize:'))
-            #logging.error(_VmB('VmRSS:'))
-            #logging.error(_VmB('VmStk:'))
-            #pdb.set_trace()
+            # About to reset everything
             wmbsJobGroups  = None
             wmTask         = None
             wmWorkload     = None
             splitParams    = None
             wmbsJobFactory = None
             gc.collect()
-            #logging.error("About to get memory references: Part 2")
-            #logging.error(_VmB('VmSize:'))
-            #logging.error(_VmB('VmRSS:'))
-            #logging.error(_VmB('VmStk:'))
-            #logging.error(gc.get_count())
 
+
+
+            # About to check memory
+            logging.debug("About to get memory references: End of subscription loop")
+            logging.debug(_VmB('VmSize:'))
+            logging.debug(_VmB('VmRSS:'))
+            logging.debug(_VmB('VmStk:'))
+            logging.debug(gc.get_count())
+
+
+        # Final memory check
+        logging.debug("About to get memory references: End of __call__()")
+        logging.debug(_VmB('VmSize:'))
+        logging.debug(_VmB('VmRSS:'))
+        logging.debug(_VmB('VmStk:'))
+        logging.debug(gc.get_count())
+
+
+        logging.debug("About to return from JobCreatorWorker.__call__()")
 
         return parameters
 
@@ -334,18 +333,18 @@ class JobCreatorWorker:
         Actually do the mechanics of saving the job to a pickle file
         """
 
-
         if wmTask:
             # If we managed to load the task,
             # so the url should be valid
             job['spec']    = workflow.spec
             job['sandbox'] = wmTask.data.input.sandbox
             job['task']    = wmTask.getPathName()
+
         job['counter']  = jobNumber
         cacheDir = job.getCache()
         job['cache_dir'] = cacheDir
-        output = open(os.path.join(cacheDir, 'job.pkl'),'w')
-        cPickle.dump(job, output)
+        output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
+        cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
         output.close()
 
 
@@ -370,8 +369,8 @@ class JobCreatorWorker:
         changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
         myThread.transaction.commit()
 
-        logging.info("JobCreator has changed jobs to Created " \
-                     +"for jobGroup %i and is ending" %(wmbsJobGroup.id))
+        logging.info("JobCreator has created jobGroup %i and is ending" \
+                     % (wmbsJobGroup.id))
 
 
         return

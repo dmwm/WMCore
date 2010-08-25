@@ -9,8 +9,8 @@ objects into DBS, and the massive interface that runs the
 DBSUploader
 """
 
-__revision__ = "$Id: DBSInterface.py,v 1.2 2010/05/21 21:31:19 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBSInterface.py,v 1.3 2010/06/04 19:12:12 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import time
@@ -147,6 +147,28 @@ def createAlgorithm(apiRef, appName, appVer, appFam,
 # pylint: enable-msg=C0103
 
 
+def createUncheckedBlock(apiRef, name, datasetPath, seName):
+    """
+    _createUncheckedBlock_
+
+    Blindly create block with the established name
+    Doesn't do any checks for open or existant blocks
+    """
+
+    try:
+        newBlockName = apiRef.insertBlock(dataset = datasetPath,
+                                          block = name,
+                                          storage_element_list = [seName])
+
+    except DbsException, ex:
+        msg = "Error in DBSInterface.createUncheckedBlock(%s)\n" % name
+        msg += formatEx(ex)
+        logging.error(msg)
+        raise DBSInterfaceError(msg)
+
+
+    return newBlockName
+
 
 def createFileBlock(apiRef, datasetPath, seName):
     """
@@ -225,6 +247,7 @@ def insertFiles(apiRef, datasetPath, files, block, maxFiles = 10):
         except DbsException, ex:
             msg = "Error in DBSInterface.insertFiles(%s)\n" % datasetPath
             msg += "%s\n" % formatEx(ex)
+            msg += str(traceback.format_exc())
             raise DBSInterfaceError(msg)
 
     return
@@ -482,20 +505,76 @@ class DBSInterface:
         return
 
 
-    def runDBSBuffer(self, algo, dataset, files, override = False):
+    def runDBSBuffer(self, algo, dataset, blocks, override = False):
         """
         _runDBSBuffer_
 
         Run the entire DBSBuffer chain
         """
 
+
+        # First create the dataset
         processed = self.insertDatasetAlgo(algo = algo, dataset = dataset,
                                            override = override)
-        affBlocks = self.insertDBSBufferFiles(files = files,
-                                              dataset = processed)
 
+        # Next create blocks
+        affBlocks = self.createAndInsertBlocks(dataset = dataset,
+                                               procDataset = processed,
+                                               blocks = blocks)
+
+        
         return affBlocks
-            
+
+
+    def createAndInsertBlocks(self, dataset, procDataset, blocks):
+        """
+        _createBlocks_
+        
+        Create all the blocks we use, and insert the
+        files into them.
+        """
+
+        affectedBlocks = []
+
+        for block in blocks:
+            # Create each block one at a time and insert its files
+
+            # First create the block
+            createUncheckedBlock(apiRef = self.dbs, name = block['Name'],
+                                 datasetPath = dataset['Path'],
+                                 seName = block['location'])
+
+            block['Path']               = dataset['Path']
+            block['StorageElementList'] = block['location']
+
+
+            # Now assemble the files
+            readyFiles = []
+            for f in block['newFiles']:
+                for run in f.getRuns():
+                    if not run.run in self.committedRuns:
+                        insertDBSRunsFromRun(apiRef = self.dbs, dSRun = run)
+                        self.committedRuns.append(run.run)
+                dbsfile = createDBSFileFromBufferFile(bufferFile = f,
+                                                      procDataset = procDataset)
+                readyFiles.append(dbsfile)
+
+            block['readyFiles'] = readyFiles
+            flag = False
+            if block['open'] == 'Pending':
+                flag = True
+
+            finBlock = self.insertFilesAndCloseBlocks(block = block, close = flag)
+            self.migrateClosedBlocks(blocks = blocks)
+            affectedBlocks.append(finBlock)
+
+
+        return affectedBlocks
+
+        
+
+
+        
 
     def insertDatasetAlgo(self, algo, dataset, override = False):
         """
@@ -544,127 +623,6 @@ class DBSInterface:
 
 
 
-    def insertDBSBufferFiles(self, files, dataset):
-        """
-        _insertDBSBufferFiles_
-
-        Insert some files for a given datasetAlgo into blocks
-        dataset is a DBS processed dataset object
-        """
-
-        # This will be a list of blocks to migrate
-        affectedBlocks = []
-
-        # This will be a dictionary of all the files, keyed by SE
-        fileLocations = {}
-
-        # Insert the runs for each file if not available
-        # Split the files into locations
-        for f in files:
-            for run in f.getRuns():
-                if not run.run in self.committedRuns:
-                    insertDBSRunsFromRun(apiRef = self.dbs, dSRun = run)
-                    self.committedRuns.append(run.run)
-            if not len(f['locations']) == 1:
-                logging.error("File with lfn %s does not have one SE" \
-                              % (f['lfn']))
-                logging.error(f['locations'])
-                continue
-            fileLoc = f.getLocations()[0]
-            if not fileLoc in fileLocations.keys():
-                fileLocations[fileLoc] = []
-            dbsfile = createDBSFileFromBufferFile(bufferFile = f,
-                                                  procDataset = dataset)
-            fileLocations[fileLoc].append(dbsfile)
-
-        datasetPath = files[0]['datasetPath']
-
-        for location in fileLocations.keys():
-            # This actually inserts the files
-            locBlocks = self.insertIntoBlocks(files = fileLocations[location],
-                                              location = location,
-                                              datasetPath = datasetPath)
-            affectedBlocks.extend(locBlocks)
-
-
-        if self.globalDBSUrl:
-            self.migrateClosedBlocks(blocks = affectedBlocks)
-
-
-        return affectedBlocks
-
-
-    def insertIntoBlocks(self, files, location, datasetPath):
-        """
-        _insertIntoBlocks_
-
-        Split files into blocks based on block max parameters
-        When a block is full, close it and open a new one
-        Return files in block[files]
-        """
-
-        if len(files) == 0:
-            return
-
-        affectedBlocks = []
-        #datasetPath    = files[0]['datasetPath']
-
-        # First, get a block
-        # NOTE: The block as a 'newFiles' field
-        # This only contains files not yet committed
-        block = createFileBlock(apiRef = self.dbs,
-                                datasetPath = datasetPath,
-                                seName = location)
-
-        blockFiles, blockSize, blockTime = self.blockLimits(block)
-
-        
-        
-        # Run over all the files, committing the blocks when they
-        # Exceed max values
-        # NOTE: Logical flaw here, blocks cannot time out inside this loop
-        # Don't think this is a problem.
-        for newFile in files:
-            # If the block is full, get a new one
-            if blockFiles < 1 or blockSize < 1 or blockTime < 0:
-                oldBlock = self.insertFilesAndCloseBlocks(block = block,
-                                                          close = True)
-                affectedBlocks.append(oldBlock)
-                block = createFileBlock(apiRef = self.dbs,
-                                        datasetPath = datasetPath,
-                                        seName = location)
-                blockFiles = self.maxBlockFiles
-                blockTime  = self.maxBlockTime
-                blockSize  = self.maxBlockSize
-            block['newFiles'].append(newFile)
-            blockFiles -= 1
-            blockSize  -= newFile['FileSize']
-
-        # When done, commit the block if it has files
-        # Don't close it
-        self.insertFilesAndCloseBlocks(block = block, close = False)
-        affectedBlocks.append(block)
-
-        return affectedBlocks
-
-
-    def blockLimits(self, block):
-        """
-        _blockLimits_
-
-        Return the number of files, the remaining size, and the remaining time
-        """
-
-        blockRunTime = int(time.time()) - int(block['CreationDate'])
-
-        blockTime = self.maxBlockTime - blockRunTime
-        blockFiles = self.maxBlockFiles - len(block['newFiles']) \
-                     - int(block['NumberOfFiles'])
-        blockSize = self.maxBlockSize - float(block.get('BlockSize', 0))
-
-        return blockFiles, blockSize, blockTime
-
-
     def insertFilesAndCloseBlocks(self, block, close = False):
         """
         _insertFilesAndCloseBlocks_
@@ -676,15 +634,14 @@ class DBSInterface:
         """
 
         # Insert all the files added to the block in this round
-        if len(block.get('newFiles', [])) > 0:
+        if len(block.get('readyFiles', [])) > 0:
             insertFiles(apiRef = self.dbs, datasetPath = block['Path'],
-                        files = block['newFiles'], block = block,
+                        files = block['readyFiles'], block = block,
                         maxFiles = self.maxFilesToCommit)
 
             # Reset the block files
-            block['NumberOfFiles'] += len(block['newFiles'])
-            block['insertedFiles'].extend(block['newFiles'])
-            block['newFiles'] = []
+            block['insertedFiles'].extend(block['readyFiles'])
+            block['readyFiles'] = []
 
         # Close the block if requested
         if close:
@@ -721,11 +678,13 @@ class DBSInterface:
                 logging.error(msg)
                 raise DBSInterfaceError(msg)
             block = blockList[0]
+            block['open'] = 'Pending'
             b2 = self.insertFilesAndCloseBlocks(block = block,
                                                 close = True)
             blocksToClose.append(b2)
 
-        self.migrateClosedBlocks(blocks = blocksToClose)
+        if self.globalDBSUrl:
+            self.migrateClosedBlocks(blocks = blocksToClose)
         
         return blocksToClose
                 
@@ -746,7 +705,7 @@ class DBSInterface:
 
 
         for block in blocks:
-            if block['OpenForWriting'] != '0':
+            if block['open'] != 'Pending':
                 #logging.error("Attempt to migrate open block!")
                 # Block is not done
                 # Ignore this, because we send all blocks here
@@ -758,6 +717,7 @@ class DBSInterface:
                                          block_name = block['Name'],
                                          srcVersion = self.version,
                                          dstVersion = self.config.globalDBSVersion)
+                block['open'] = 0
             except DbsException, ex:
                 msg = "Error in DBSInterface.migrateClosedBlocks()\n"
                 msg += "%s\n" % formatEx(ex)

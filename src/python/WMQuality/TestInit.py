@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.20 2009/10/14 13:30:46 meloam Exp $"
+    "$Id: TestInit.py,v 1.21 2009/10/14 19:28:27 meloam Exp $"
 __version__ = \
-    "$Revision: 1.20 $"
+    "$Revision: 1.21 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -45,6 +45,9 @@ class TestInit:
         self.init = WMInit()
     
     def __del__(self):
+        self.delWorkDir()
+    
+    def delWorkDir(self):
         if (self.testDir != None):
             try:
                 shutil.rmtree( self.testDir )

@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.32 2009/02/05 18:07:56 jacksonj Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: Subscription.py,v 1.33 2009/03/16 16:58:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.33 $"
 
 from sets import Set
 import logging
@@ -160,14 +160,18 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitIfNew()
         return
           
-    def filesOfStatus(self, status):
+    def filesOfStatus(self, status, maxFiles = 100):
         """
-        fids will be a set of id's, we'll then load the corresponding file 
-        objects.
+        _filesOfStatus_
+        
+        Return a Set of File objects that have the given status with respect
+        to this subscription.  By default this will return at most 100 files,
+        or whatever is specified.
         """
         files = Set()
         action = self.daofactory(classname = "Subscriptions.Get%s" % status)
-        for f in action.execute(self["id"], conn = self.getReadDBConn(),
+        for f in action.execute(self["id"], maxFiles,
+                                conn = self.getReadDBConn(),
                                 transaction = self.existingTransaction()):
             fl = File(id = f["file"])
             fl.load()

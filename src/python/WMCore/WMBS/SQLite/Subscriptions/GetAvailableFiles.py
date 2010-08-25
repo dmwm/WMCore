@@ -8,13 +8,14 @@ Return a list of files that are available for processing.
 Available means not acquired, complete or failed.
 """
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.7 2008/12/05 21:06:58 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.8 2009/03/16 16:58:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import GetAvailableFiles \
      as GetAvailableFilesMySQL
 
 class GetAvailableFiles(GetAvailableFilesMySQL):
-    def getSQLAndBinds(self, subscription, conn, transaction):
-        return GetAvailableFilesMySQL.getSQLAndBinds(self, subscription, conn,
+    def getSQLAndBinds(self, subscription, maxFiles, conn, transaction):
+        return GetAvailableFilesMySQL.getSQLAndBinds(self, subscription,
+                                                     maxFiles, conn,
                                                      transaction)

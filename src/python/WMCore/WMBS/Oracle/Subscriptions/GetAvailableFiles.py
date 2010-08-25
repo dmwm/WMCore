@@ -8,15 +8,16 @@ Return a list of files that are available for processing.
 Available means not acquired, complete or failed.
 """
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.6 2009/01/16 22:31:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.7 2009/03/16 16:58:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import \
      GetAvailableFiles as GetAvailableFilesMySQL
 
 class GetAvailableFiles(GetAvailableFilesMySQL):
     
-    def getSQLAndBinds(self, subscription, conn = None, transaction = None):
+    def getSQLAndBinds(self, subscription, maxFiles, conn = None,
+                       transaction = None):
         sql = ""
         binds = {'subscription': subscription}
         
@@ -35,6 +36,8 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
                 blacklist = True
             elif i[0] > 0 and i[1] == '1':
                 whitelist = True
+
+        binds = {"subscription": subscription, "maxfiles": maxFiles}
         
         if whitelist:
             sql = """select fileid from wmbs_fileset_files where
@@ -51,8 +54,8 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
                         subscription=:subscription and
                         valid = 1)
                 )
-                """
-            binds = {'subscription': subscription}
+            and rownum <= :maxfiles    
+            """
             
         elif blacklist:
             sql = """select fileid from wmbs_fileset_files where
@@ -69,7 +72,8 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
                         subscription=:subscription and
                         valid = 0)
                 )
-                """
+            and rownum <= :maxfiles    
+            """
                 
         else:
             sql = """select fileid from wmbs_fileset_files where
@@ -81,6 +85,8 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
             and fileid not in 
                 (select fileid from wmbs_sub_files_complete where subscription=:subscription)
             and fileid in
-                (select fileid from wmbs_file_location)"""
+                (select fileid from wmbs_file_location)
+            and rownum <= :maxfiles
+            """
                 
         return sql, binds

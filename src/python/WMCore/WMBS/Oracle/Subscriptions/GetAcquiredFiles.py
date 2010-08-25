@@ -3,17 +3,15 @@
 _AcquireFiles_
 
 Oracle implementation of Subscription.GetAcquiredFiles
-
-Return a list of files that are available for processing
 """
+
 __all__ = []
-__revision__ = "$Id: GetAcquiredFiles.py,v 1.3 2008/12/05 21:06:25 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: GetAcquiredFiles.py,v 1.4 2009/03/16 16:58:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAcquiredFiles import GetAcquiredFiles \
      as GetAcquiredFilesMySQL
 
 class GetAcquiredFiles(GetAcquiredFilesMySQL):
-    sql = """select fileid from wmbs_sub_files_acquired 
-             where subscription=:subscription"""
-
+    sql = """SELECT fileid FROM wmbs_sub_files_acquired 
+             WHERE subscription = :subscription AND rownum <= :maxfiles"""

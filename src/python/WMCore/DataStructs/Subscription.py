@@ -8,8 +8,8 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.21 2009/01/26 17:07:11 sryu Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: Subscription.py,v 1.22 2009/03/16 16:58:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import copy
 from sets import Set
@@ -118,7 +118,14 @@ class Subscription(Pickleable, dict):
                 self.acquired.files.remove(i)
             self.failed.addFile(i)
         
-    def filesOfStatus(self, status=None):
+    def filesOfStatus(self, status=None, maxFiles = 100):
+        """
+        _filesOfStatus_
+
+        Return a Set of File objects that are associated with the subscription
+        and have a particular status.  The maxFiles parameter will have no affect
+        on the number of files returned.
+        """
         if status == 'AvailableFiles':
             return self.available.getFiles(type='set') - \
             (self.acquiredFiles() | self.completedFiles() | self.failedFiles())
@@ -139,7 +146,7 @@ class Subscription(Pickleable, dict):
         else:
             self['blacklist'].add(location)
         
-    def availableFiles(self):
+    def availableFiles(self, maxFiles = 100):
         """
         Return a Set of files that are available for processing 
         (e.g. not already in use) and at sites that are white listed 
@@ -156,7 +163,8 @@ class Subscription(Pickleable, dict):
                     magicfiles.add(f)
             return magicfiles
 
-        files = self.filesOfStatus(status='AvailableFiles')
+        files = self.filesOfStatus(status = "AvailableFiles",
+                                   maxFiles = maxFiles)
 
         if len(self['whitelist']) > 0:
             # Return files at white listed sites
@@ -167,20 +175,23 @@ class Subscription(Pickleable, dict):
         #Return all files, because you're crazy and just don't care
         return files 
             
-    def acquiredFiles(self):
+    def acquiredFiles(self, maxFiles = 100):
         """
         Set of files marked as acquired.
         """
-        return self.filesOfStatus(status='AcquiredFiles')
+        return self.filesOfStatus(status = "AcquiredFiles",
+                                  maxFiles = maxFiles)
         
-    def completedFiles(self):
+    def completedFiles(self, maxFiles = 100):
         """
         Set of files marked as completed.
         """
-        return self.filesOfStatus(status='CompletedFiles')
+        return self.filesOfStatus(status = "CompletedFiles",
+                                  maxFiles = maxFiles)
     
-    def failedFiles(self):
+    def failedFiles(self, maxFiles = 100):
         """
         Set of files marked as failed. 
         """
-        return self.filesOfStatus(status='FailedFiles')
+        return self.filesOfStatus(status = "FailedFiles",
+                                  maxFiles = maxFiles)

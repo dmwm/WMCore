@@ -6,14 +6,15 @@ MySQL implementation of Subscription.GetAcquiredFiles
 """
 
 __all__ = []
-__revision__ = "$Id: GetAcquiredFiles.py,v 1.6 2009/01/16 22:42:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: GetAcquiredFiles.py,v 1.7 2009/03/16 16:58:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAcquiredFiles(DBFormatter):
     sql = """SELECT file FROM wmbs_sub_files_acquired
-             WHERE subscription = :subscription"""
+             WHERE subscription = :subscription
+             LIMIT :maxfiles"""
 
     def formatDict(self, results):
         """
@@ -33,7 +34,9 @@ class GetAcquiredFiles(DBFormatter):
 
         return formattedResults
     
-    def execute(self, subscription=None, conn = None, transaction = False):
-        results = self.dbi.processData(self.sql, {"subscription": subscription},
+    def execute(self, subscription = None, maxFiles = 100, conn = None,
+                transaction = False):
+        results = self.dbi.processData(self.sql, {"subscription": subscription,
+                                                  "maxfiles": maxFiles},
                                        conn = conn, transaction = transaction)
         return self.formatDict(results)

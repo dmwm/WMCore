@@ -1,10 +1,15 @@
-#set path = $request.request_line.split(' ')[1]
+#try
+#set test = $path
+#except
+#set path = '/'
+#end try
+
 <?xml version="1.0" ?>
 <rss version="2.0">
 <channel>
 <title>$config.title</title>
 <description>$config.description</description>
-<link>$request.base$path</link>
+<link>$path</link>
 <language>en-us</language>
 <pubDate></pubDate>
 <lastBuildDate></lastBuildDate>

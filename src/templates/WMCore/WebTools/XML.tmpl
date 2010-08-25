@@ -1,11 +1,22 @@
-#set path = $request.request_line.split(' ')[1]
+#try
+#set test = $path
+#except
+#set path = '/'
+#end try
+
+#try
+#set test = $data
+#except
+#set data = {}
+#end try
+
 <?xml version='1.0' standalone='yes'?>
 <$config.application>
 	<head>
 		<title>$config.title</title>
 		<desc>$config.description</desc>
 		<admin>$config.admin</admin>
-		<link>$request.base$path</link>
+		<link>$path</link>
 	</head>
 #if type($data) == type({})
 #for k,v in $data.items()

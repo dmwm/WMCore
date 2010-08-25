@@ -3,17 +3,13 @@
 _SiteLocalConfig_
 
 Utility for reading a site local config XML file and converting it
-into an object with an API for getting info from it
-
+into an object with an API for getting info from it.
 """
 
-__version__ = "$Revision: 1.3 $"
-__revision__ = "$Id: SiteLocalConfig.py,v 1.3 2009/12/11 16:36:45 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SiteLocalConfig.py,v 1.4 2010/06/16 18:23:36 sfoulkes Exp $"
 
 import os
-
-#from IMProv.IMProvLoader import loadIMProvFile
-#from IMProv.IMProvQuery import IMProvQuery
 
 from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
 
@@ -62,11 +58,15 @@ class SiteLocalConfig:
         self.siteConfigFile = siteConfigXML
         self.siteName = None
         self.eventData = {}
-        self.calibData = {}
+
+        self.frontierProxies = []
+        self.frontierServers = []
+        
         self.localStageOut = {}
         self.fallbackStageOut = []
+        
         self.read()
-
+        return
 
     def trivialFileCatalog(self):
         """
@@ -125,14 +125,12 @@ class SiteLocalConfig:
 
         """
         try:
-            #node = loadIMProvFile(self.siteConfigFile)
             node = xmlFileToNode(self.siteConfigFile)
         except StandardError, ex:
             msg = "Unable to read SiteConfigFile: %s\n" % self.siteConfigFile
             msg += str(ex)
             raise SiteConfigError, msg
 
-        #node2 = xmlFileToNode(self.siteConfigFile)
         nodeResult =  nodeReader(node)
 
         if not nodeResult.has_key('siteName'):
@@ -148,24 +146,14 @@ class SiteLocalConfig:
             msg += "information in:\n"
             msg += self.siteConfigFile
             raise SiteConfigError, msg
-        if not nodeResult.has_key('calib-data'):
-            msg = "Unable to find calib data entry in:\n"
-            msg += self.siteConfigFile
-            raise SiteConfigError, msg
 
         self.siteName             = nodeResult.get('siteName', None)
         self.eventData['catalog'] = nodeResult.get('catalog', None)
         self.localStageOut        = nodeResult.get('localStageOut', [])
         self.fallbackStageOut     = nodeResult.get('fallbackStageOut', [])
-        for entry in nodeResult.get('calib-data', None):
-            for event in entry.keys():
-                self.calibData[str(event)] = str(entry.get(event, None))
-
-
+        self.frontierServers      = nodeResult.get('frontierServers', [])
+        self.frontierProxies      = nodeResult.get('frontierProxies', [])
         return
-
-
-
 
 def coroutine(func):
     """
@@ -188,7 +176,6 @@ def nodeReader(node):
     
     Given a node, see if we can find what we're looking for
     """
-
     processSiteInfo = {
         'event-data': processEventData(),
         'local-stage-out': processLocalStageOut(),
@@ -197,11 +184,8 @@ def nodeReader(node):
         }
 
     report = {}
-
     sProcess = processSite(processSiteInfo)
-
     processor = processNode(sProcess)
-
     processor.send((report, node))
 
     return report
@@ -280,7 +264,7 @@ def processLocalStageOut():
 @coroutine
 def processFallbackStageOut():
     """
-    Find the processed stage out directory
+    Find the fallback stage out directory
 
     """
 
@@ -294,9 +278,9 @@ def processFallbackStageOut():
                 localReport['command'] = subnode.attrs.get('value', None)
             elif subnode.name == 'option':
                 localReport['option'] = subnode.attrs.get('value', None)
-            elif subnode.name == 'lfn-prefix':
-                localReport['lfn-prefix'] = subnode.attrs.get('value', None)
-        report['fallbackStageOut'] = localReport
+            elif subnode.name == 'catalog':
+                localReport['catalog'] = subnode.attrs.get('url', None)
+        report['fallbackStageOut'] = [localReport]
 
 
 @coroutine
@@ -308,8 +292,18 @@ def processCalibData():
 
     while True:
         report, node = (yield)
-        tmpReport = []
-        for subnode in node.children:
-            tmpReport.append({subnode.name: subnode.attrs.get('url', None)})
-        report['calib-data'] = tmpReport
 
+        frontierProxies = []
+        frontierServers = []
+        for subnode in node.children:
+            if subnode.name == "frontier-connect":
+                for frontierSubnode in subnode.children:
+                    subNodeUrl = frontierSubnode.attrs.get("url", None)
+                    
+                    if frontierSubnode.name == "proxy":
+                        frontierProxies.append(subNodeUrl)
+                    elif frontierSubnode.name == "server":
+                        frontierServers.append(subNodeUrl)
+
+        report["frontierProxies"] = frontierProxies
+        report["frontierServers"] = frontierServers

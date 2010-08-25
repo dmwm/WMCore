@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.16 2010/01/05 20:53:36 sryu Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: REST_t.py,v 1.17 2010/01/05 21:57:26 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import unittest
 import json
@@ -20,7 +20,7 @@ from WMCore.WebTools.Page import make_rfc_timestamp
 from DummyRESTModel import DummyRESTModel
 #decorator import for RESTServer setup
 from RESTServerSetup import setUpDummyRESTModel, setUpDAS, serverSetup 
-from RESTServerSetup import makeRequest
+from RESTClientAPI import makeRequest, methodTest
 
 class RESTTest(unittest.TestCase):
     
@@ -31,26 +31,12 @@ class RESTTest(unittest.TestCase):
     def tearDown(self):
         self.dasFlag = None
         self.restModel = None
-    
-    def methodTest(self, verb, url, input={}, accept='text/json', output={} , expireTime=300):
-        
-        data, code, type, response = makeRequest(url, input, verb, accept)
-        
-        keyMap = {'code': code, 'data': data, 'type': type, 'response': response}
-        for key, value in output.items():
-            assert keyMap[key] == value, \
-                'Got a return %s != %s (got %s) (data %s)' % (key, value, code, data)
-        
-        expires = response.getheader('Expires')        
-        assert expires == make_rfc_timestamp(expireTime), 'Expires header incorrect (%s)' % expires
-        
-        return data, expires
             
     @serverSetup
     def testUnsupportedFormat(self):
         
         # test not accepted type should return 406 error
-        self.methodTest('GET', '/rest/ping/', accept='text/das', output={'code':406})
+        methodTest('GET', '/rest/ping/', accept='text/das', output={'code':406})
                 
     @serverSetup
     def testGoodEcho(self):
@@ -61,7 +47,7 @@ class RESTTest(unittest.TestCase):
         output={'code':200, 'type':'text/json',
                 'data':'{"args": [], "kwargs": {"data": "unit test"}}'}
         
-        self.methodTest(verb, url, input, output=output)
+        methodTest(verb, url, input, output=output)
         
     @serverSetup
     def testGoodEchoWithPosArg(self):
@@ -72,7 +58,7 @@ class RESTTest(unittest.TestCase):
         output={'code':200, 'type':'text/json',
                 'data':'{"args": ["stuff"], "kwargs": {"data": "unit test"}}'}
         
-        self.methodTest(verb, url, input, output=output)
+        methodTest(verb, url, input, output=output)
         
     @serverSetup        
     def testBadMethodEcho(self):
@@ -82,7 +68,7 @@ class RESTTest(unittest.TestCase):
         input={'data': 'unit test'}
         output={'code':405, 'type':'text/json'}
         
-        self.methodTest(verb, url, input, output=output)
+        methodTest(verb, url, input, output=output)
         
     @serverSetup      
     def testBadVerbEcho(self):
@@ -91,7 +77,7 @@ class RESTTest(unittest.TestCase):
         output={'code':501, 'type':'text/json'}
         
         for verb in ['DELETE', 'PUT']:
-            self.methodTest(verb, url, input, output=output)
+            methodTest(verb, url, input, output=output)
         
     @serverSetup
     def testPing(self):
@@ -101,7 +87,7 @@ class RESTTest(unittest.TestCase):
         output={'code':200, 'type':'text/json', 'data':'"ping"'}
         expireTime =3600
         
-        self.methodTest(verb, url, output=output, expireTime=expireTime)
+        methodTest(verb, url, output=output, expireTime=expireTime)
         
     @serverSetup
     def testBadPing(self):
@@ -110,16 +96,16 @@ class RESTTest(unittest.TestCase):
         
         url ='/rest/wrong'
         output={'code':404}
-        self.methodTest(verb, url, output=output)
+        methodTest(verb, url, output=output)
         
         url ='/rest/echo'
         output={'code':405}
-        self.methodTest(verb, url, output=output)
+        methodTest(verb, url, output=output)
         
         
         url ='/rest/ping/wrong'
         output={'code':400}
-        self.methodTest(verb, url, output=output)
+        methodTest(verb, url, output=output)
         
         
     @setUpDAS
@@ -132,7 +118,7 @@ class RESTTest(unittest.TestCase):
         output={'code':200, 'type':accept}
         expireTime =3600 
         
-        data, expires = self.methodTest(verb, url, accept=accept, output=output, expireTime=expireTime)
+        data, expires = methodTest(verb, url, accept=accept, output=output, expireTime=expireTime)
         
         timestp = make_rfc_timestamp(expireTime)
         
@@ -151,7 +137,7 @@ class RESTTest(unittest.TestCase):
         url ='/rest/list/'
         input = {'int':123, 'str':'abc'}
         output={'code':200, 'type':'text/json', 'data':'{"int": 123, "str": "abc"}'}
-        self.methodTest(verb, url, input=input, output=output)
+        methodTest(verb, url, input=input, output=output)
         
         
     @serverSetup    
@@ -349,7 +335,8 @@ class RESTTest(unittest.TestCase):
                 '. Returned data: %s' % response[0]
         #Warning quotation type and order matters
         #Should use encoded and decoded format
-        assert response[0] == "{'thing': 'abc', 'num': '123'}", "should be {'thing': 'abc', 'num': '123'} but got %s" % response[0]         
+        assert response[0] == "{'thing': 'abc', 'num': '123'}", "should be {'thing': 'abc', 'num': '123'} but got %s" % response[0]
         
+
 if __name__ == "__main__":
     unittest.main() 

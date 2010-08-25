@@ -1,9 +1,7 @@
 import cherrypy
 import logging 
-import urllib, urllib2
 from WMCore.Configuration import Configuration
 from WMCore.WebTools.Root import Root
-from httplib import HTTPConnection
 
 def configureServer(restModel='WMCore.WebTools.RESTModel', das=False):
     dummycfg = Configuration()
@@ -55,22 +53,3 @@ def serverSetup(func):
         func(self)
         rt.stop()
     return wrap_function
-
-def makeRequest(uri='/rest/', values=None, type='GET', accept="text/plain"):
-    headers = {}
-    headers = {"Content-type": "application/x-www-form-urlencoded",
-               "Accept": accept}
-    data = None
-    if values:
-        data = urllib.urlencode(values)
-    if type != 'POST' and data != None:
-        uri = '%s?%s' % (uri, data)
-    conn = HTTPConnection('localhost:8080')
-    conn.connect()
-    conn.request(type, uri, data, headers)
-    response = conn.getresponse()
-    
-    data = response.read()
-    conn.close()
-    type = response.getheader('content-type').split(';')[0]
-    return data, response.status, type, response

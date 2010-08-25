@@ -2,33 +2,27 @@
 """
 _XMLParser_
 
-Read the raw XML output from the cmsRun executable
-
+Read the raw XML output from the cmsRun executable. 
 """
 
-__version__ = "$Revision: 1.5 $"
-__revision__ = "$Id: XMLParser.py,v 1.5 2010/03/12 20:24:03 sfoulkes Exp $"
-__author__ = "evansde"
-
+__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: XMLParser.py,v 1.6 2010/03/23 21:26:29 sfoulkes Exp $"
 
 import xml.parsers.expat
 
+from WMCore.FwkJobReport import Report
+from WMCore.DataStructs.Run import Run
 from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode, coroutine
-
-
-
 
 def reportBuilder(nodeStruct, report, target):
     """
     _reportBuilder_
 
     Driver for coroutine pipe for building reports from the Node
-    structure
-
+    structure.
     """
     for node in nodeStruct.children:
         target.send((report, node))
-
 
 @coroutine
 def reportDispatcher(targets):
@@ -36,8 +30,7 @@ def reportDispatcher(targets):
     _reportDispatcher_
 
     Top level routine for dispatching the parts of the job report to the
-    handlers
-
+    handlers.
     """
     while True:
         report, node = (yield)
@@ -82,7 +75,6 @@ def fileHandler(targets):
         moduleRef = report.addOutputModule(moduleName)
         fileRef = report.addOutputFile(moduleName)
         fileAttrs = {}
-        moduleRef.files.fileCount += 1
         for subnode in node.children:
             if subnode.name == "Inputs":
                 targets['Inputs'].send( (fileRef, subnode) )
@@ -93,15 +85,15 @@ def fileHandler(targets):
             else:
                 fileAttrs[subnode.name] = subnode.text
 
+        Report.addAttributesToFile(fileRef, lfn = fileAttrs["LFN"],
+                                   pfn = fileAttrs["PFN"], catalog = fileAttrs["Catalog"],
+                                   module_label = fileAttrs["ModuleLabel"],
+                                   guid = fileAttrs["GUID"],
+                                   ouput_module_class = fileAttrs["OutputModuleClass"],
+                                   events = int(fileAttrs["TotalEvents"]),
+                                   branch_hash = fileAttrs["BranchHash"])
 
-
-        [ setattr(fileRef, k, v) for k, v in fileAttrs.items()]
-
-
-
-
-
-
+        [fileRef]                
 
 @coroutine
 def inputFileHandler(targets):
@@ -115,7 +107,7 @@ def inputFileHandler(targets):
     while True:
         report, node = (yield)
         moduleName = None
-        moduleNode = [ x for x in node.children if x.name == "ModuleLabel"][0]
+        moduleNode = [ x for x in node.children if x.name == "InputSourceClass"][0]
         moduleName = moduleNode.text
 
         moduleRef = report.addInputSource(moduleName)
@@ -129,7 +121,14 @@ def inputFileHandler(targets):
             else:
                 fileAttrs[subnode.name] = subnode.text
 
-        [ setattr(fileRef, k, v) for k, v in fileAttrs.items()]
+        Report.addAttributesToFile(fileRef, lfn = fileAttrs["LFN"],
+                                   pfn = fileAttrs["PFN"], catalog = fileAttrs["Catalog"],
+                                   module_label = fileAttrs["ModuleLabel"],
+                                   guid = fileAttrs["GUID"], input_type = fileAttrs["InputType"],
+                                   input_source_class = fileAttrs["InputSourceClass"],
+                                   events = int(fileAttrs["EventsRead"]))
+
+        [fileRef]
 
 @coroutine
 def analysisFileHandler(targets):
@@ -185,66 +184,85 @@ def skippedEventHandler():
         if event == None: continue
         report.addSkippedEvent(run, event)
 
-
-
-
 @coroutine
 def runHandler():
     """
     _runHandler_
 
-    sink to pack run information into a file
+    Sink to add run information to a file.  Given the following XML:
+      <Runs>
+      <Run ID="122023">
+        <LumiSection ID="215"/>
+        <LumiSection ID="216"/>
+      </Run>
+      <Run ID="122024">
+        <LumiSection ID="1"/>
+        <LumiSection ID="2"/>
+      </Run>    
+      </Runs>
 
+    Create a WMCore.DataStructs.Run object for each run and call the
+    addRunInfoToFile() function to add the run information to the file
+    section.
     """
     while True:
-        filedata, node = (yield)
+        fileSection, node = (yield)
         for subnode in node.children:
             if subnode.name == "Run":
                 runId = subnode.attrs.get("ID", None)
                 if runId == None: continue
-                filedata.runs.section_(runId)
-                runSect = getattr(filedata.runs, runId)
-                lumis = [ lumi.attrs['ID']
+                
+                lumis = [ int(lumi.attrs['ID'])
                           for lumi in subnode.children
                           if lumi.attrs.has_key("ID")]
-                runSect.lumiSections = lumis
 
+                runInfo = Run(runNumber = runId)
+                runInfo.lumis.extend(lumis)
+
+                Report.addRunInfoToFile(fileSection, runInfo)
 
 @coroutine
 def branchHandler():
     """
     _branchHandler_
 
-    sink to pack branch information into a file
+    Sink to pack branch information into a file.  Given the following XML:
+      <Branches>
+        <Branch>Branch Name 1</Branch>
+        <Branch>Branch Name 2</Branch>
+      </Branches>  
 
+    Create a list containing all the branch names as use the
+    addBranchNamesToFile method to add them to the fileSection.
     """
     while True:
-        filedata, node = (yield)
+        fileSection, node = (yield)
         branches = [ subnode.text for subnode in node.children
                      if subnode.name == "Branch" ]
-        filedata.branches.names = branches
+        Report.addBranchNamesToFile(fileSection, branches)
 
 @coroutine
 def inputAssocHandler():
     """
     _inputAssocHandler_
 
-    sink to handle output:input association information
+    Sink to handle output:input association information.  Given the following
+    XML:
+      <Input>
+        <LFN>/path/to/some/lfn.root</LFN>
+        <PFN>/some/pfn/info/path/to/some/lfn.root</PFN>
+      </Input>  
 
+    Extract the LFN and call the addInputToFile() function to associate input to
+    output in the FWJR.
     """
     while True:
-        filedata, node = (yield)
-        fileCount = 0
+        fileSection, node = (yield)
         for inputnode in node.children:
             data = {}
             [ data.__setitem__(subnode.name, subnode.text)
               for subnode in inputnode.children]
-            filelabel = "file%s" % fileCount
-            #filedata.inputs.section_(filelabel)
-            #entry = getattr(filedata.inputs, filelabel)
-            #[ setattr(entry, k, v) for k,v in data.items() ]
-            #fileCount +=1
-
+            Report.addInputToFile(fileSection, data["LFN"])
 
 @coroutine
 def perfRepHandler(targets):

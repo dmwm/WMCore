@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.23 2010/03/05 18:59:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.24 2010/03/23 21:26:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import logging
 import os.path
@@ -522,7 +522,7 @@ class JobAccountantTest(unittest.TestCase):
                    "Error: app name is wrong in DBS buffer."
             assert dbsFile["appVer"] == datasetInfo["applicationVersion"], \
                    "Error: app ver is wrong in DBS buffer."            
-            assert dbsFile["appFam"] == fwkJobReportFile["ModuleLabel"], \
+            assert dbsFile["appFam"] == fwkJobReportFile["module_label"], \
                    "Error: app fam is wrong in DBS buffer."
 
             datasetPath = "/%s/%s/%s" % (datasetInfo["primaryDataset"],
@@ -661,12 +661,12 @@ class JobAccountantTest(unittest.TestCase):
         self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
                                               name = "TestRecoMergeWF", task = "None")
         self.testRecoMergeWorkflow.create()
-        self.testRecoMergeWorkflow.addOutput("anything", self.mergedRecoOutputFileset)
+        self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset)
 
         self.testAlcaMergeWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
                                               name = "TestAlcaMergeWF", task = "None")
         self.testAlcaMergeWorkflow.create()
-        self.testAlcaMergeWorkflow.addOutput("anything", self.mergedAlcaOutputFileset)        
+        self.testAlcaMergeWorkflow.addOutput("Merged", self.mergedAlcaOutputFileset)        
 
         inputFile = File(lfn = "/path/to/some/lfn", size = 600000, events = 60000,
                          locations = "cmssrm.fnal.gov")
@@ -784,12 +784,11 @@ class JobAccountantTest(unittest.TestCase):
         self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
                                               name = "TestRecoMergeWF", task = "None")
         self.testRecoMergeWorkflow.create()
-        self.testRecoMergeWorkflow.addOutput("anything", self.mergedRecoOutputFileset)
+        self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset)
 
         self.testAodMergeWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
                                              name = "TestAodMergeWF", task = "None")
         self.testAodMergeWorkflow.create()
-        self.testAodMergeWorkflow.addOutput("anything", self.mergedRecoOutputFileset)
         self.testAodMergeWorkflow.addOutput("Merged", self.mergedAodOutputFileset)        
 
         inputFileA = File(lfn = "/path/to/some/lfnA", size = 600000, events = 60000,
@@ -1745,6 +1744,7 @@ class JobAccountantTest(unittest.TestCase):
                                          "MergeSuccessNoFiles.pkl"))
         self.verifyJobSuccess(self.testJob["id"])
         return
+
     def setupDBForLoadTest(self):
         """
         _setupDBForLoadTest_
@@ -1817,39 +1817,39 @@ class JobAccountantTest(unittest.TestCase):
         inputFileset.commit()
         return
 
-#     def testOneProcessLoadTest(self):
-#         """
-#         _testOneProcessLoadTest_
+    def testOneProcessLoadTest(self):
+        """
+        _testOneProcessLoadTest_
 
-#         Run the load test using one worker process.
-#         """
-#         print("  Filling DB...")
+        Run the load test using one worker process.
+        """
+        print("  Filling DB...")
 
-#         self.setupDBForLoadTest()
-#         config = self.createConfig(workerThreads = 1)
+        self.setupDBForLoadTest()
+        config = self.createConfig(workerThreads = 1)
 
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
 
-#         print("  Running accountant...")
+        print("  Running accountant...")
 
-#         startTime = time.time()
-#         accountant.algorithm()
-#         endTime = time.time()
-#         print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+        startTime = time.time()
+        accountant.algorithm()
+        endTime = time.time()
+        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
-#         for (jobID, fwjrPath) in self.jobs:
-#             print("  Validating %s, %s" % (jobID, fwjrPath))
-#             jobReport = Report()
-#             jobReport.unpersist(fwjrPath)
+        for (jobID, fwjrPath) in self.jobs:
+            print("  Validating %s, %s" % (jobID, fwjrPath))
+            jobReport = Report()
+            jobReport.unpersist(fwjrPath)
 
-#             self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
-#             self.verifyJobSuccess(jobID)
-#             self.verifyDBSBufferContents("Processing",
-#                                          ["/some/lfn/for/job/%s" % jobID],
-#                                          jobReport.getAllFilesFromStep("cmsRun1"))
+            self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
+            self.verifyJobSuccess(jobID)
+            self.verifyDBSBufferContents("Processing",
+                                         ["/some/lfn/for/job/%s" % jobID],
+                                         jobReport.getAllFilesFromStep("cmsRun1"))
 
-#         return
+        return
 
 #     def testTwoProcessLoadTest(self):
 #         """

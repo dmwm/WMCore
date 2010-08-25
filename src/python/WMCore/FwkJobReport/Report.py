@@ -2,19 +2,21 @@
 """
 _Report_
 
-Job Report object
+Framework job report object.
 """
 
-__version__ = "$Revision: 1.12 $"
-__revision__ = "$Id: Report.py,v 1.12 2010/03/19 15:29:08 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Report.py,v 1.13 2010/03/23 21:26:29 sfoulkes Exp $"
 
 import cPickle
 import logging
+import sys
+import traceback
 
 from WMCore.Configuration import ConfigSection
 
 from WMCore.DataStructs.File import File
-from WMCore.DataStructs.Run  import Run
+from WMCore.DataStructs.Run import Run
 
 from WMCore.FwkJobReport.FileInfo import FileInfo
 
@@ -42,8 +44,6 @@ def dejsonise(jsondict):
             setattr(section, key, value)
     return section
 
-
-
 def checkFileForCompletion(file):
     """
     _checkFileForCompletion_
@@ -56,6 +56,58 @@ def checkFileForCompletion(file):
         return False
 
     return True
+
+def addBranchNamesToFile(fileSection, branchNames):
+    """
+    _addBranchNamesToFile_
+
+    Given a list of branch names add them to the file section in the FWJR.
+    """
+    setattr(fileSection, "branches", branchNames)
+    return
+
+def addInputToFile(fileSection, inputLFN):
+    """
+    _addInputToFile_
+
+    Given the LFN of an input file add it to the input section of the output
+    file.
+    """
+    if not hasattr(fileSection, "input"):
+        setattr(fileSection, "input", [])
+
+    fileSection.input.append(inputLFN)
+    return
+
+def addRunInfoToFile(fileSection, runInfo):
+    """
+    _addRunInfoToFile_
+
+    Given a ConfigSection object corresponding to an input/output file in the
+    FWJR and a WMCore.DataStructs.Run object add the run and lumi information
+    to the ConfigSection.  It will have the following format:
+      fileSection.runs.RUNNUMBER = [LUMI1, LUMI2, LUMI3...]
+
+    Note that the run number will have to be cast to a string.
+    """
+    runSection = fileSection.section_("runs")
+
+    if not type(runInfo) == Run:
+        for singleRun in runInfo:
+            setattr(fileSection.runs, str(singleRun.run), singleRun.lumis)
+    else:
+        setattr(fileSection.runs, str(runInfo.run), runInfo.lumis)        
+    return
+
+def addAttributesToFile(fileSection, **attributes):
+    """
+    _addAttributesToFiles_
+
+    Add attributes to a file in the FWJR.
+    """
+    for attName in attributes.keys():
+        setattr(fileSection, attName, attributes[attName])
+    return
 
 class Report:
     def __init__(self, reportname = None):
@@ -73,7 +125,6 @@ class Report:
 
         Read in the FrameworkJobReport XML file produced
         by cmsRun and pull the information from it into this object
-
         """
         from WMCore.FwkJobReport.XMLParser import xmlToJobReport
         try:
@@ -81,7 +132,14 @@ class Report:
         except Exception, ex:
             msg = "Error reading XML job report file, possibly corrupt XML File:\n"
             msg += "Details: %s" % str(ex)
+            crashMessage = "\nStacktrace:\n"
+
+            stackTrace = traceback.format_tb(sys.exc_info()[2], None)
+            for stackFrame in stackTrace:
+                crashMessage += stackFrame
+                
             print msg
+            print crashMessage
             self.addError("UnknownStep", 50115, "MissingJobReport", msg)
 
     def json(self):
@@ -173,9 +231,6 @@ class Report:
         fileRef = getattr(outMod.files, fileSection)
         outMod.files.fileCount += 1
 
-        #First add the mandatory sections
-        fileRef.section_("branches")
-
         # Now we need to eliminate the optional and non-primitives:
         # runs, parents, branches, locations and datasets
         keyList = file.keys()
@@ -183,7 +238,7 @@ class Report:
         fileRef.section_("runs")
         if file.has_key("runs"):
             for run in file["runs"]:
-                setattr(fileRef.runs, str(run.run), run.lumis)
+                addRunInfoToFile(fileRef, run)
             keyList.remove('runs')
 
         if file.has_key("parents"):
@@ -248,7 +303,6 @@ class Report:
         srcMod.files.fileCount += 1
 
         fileRef.section_("runs")
-        fileRef.section_("branches")
 
         return fileRef
 
@@ -422,7 +476,6 @@ class Report:
 
         return getattr(stepReport.output, outputModule, None)
 
-
     def getOutputFile(self, fileName, outputModule, step):
         """
         _getOutputFile_
@@ -436,15 +489,10 @@ class Report:
             return None
 
         fileRef = getattr(outputMod.files, fileName, None)
-
         file = File()
 
-        #Now we fill it, one piece at a time
-        keyList = fileRef.listSections_()
-
         #Locations
-        file.setLocation(fileRef.location)
-        keyList.remove('location')
+        file.setLocation(getattr(fileRef, "location", None))
 
         #Runs
         runList = fileRef.runs.listSections_()
@@ -452,8 +500,6 @@ class Report:
             lumis  = getattr(fileRef.runs, run)
             newRun = Run(int(run), *lumis)
             file.addRun(newRun)
-        keyList.remove('runs')
-
 
         # And now, datasets
         dataDict = {}
@@ -461,11 +507,18 @@ class Report:
             dataDict[var] = getattr(outputMod.dataset, var)
         file['dataset'] = dataDict
 
-        for entry in keyList:
-            file[entry] = getattr(fileRef, entry)
-
-        #Variables to be added
-        file['ModuleLabel'] = outputModule 
+        file["lfn"] = getattr(fileRef, "lfn", None)
+        file["pfn"] = getattr(fileRef, "pfn", None)
+        file["events"] = int(getattr(fileRef, "events", 0))
+        file["size"] = int(getattr(fileRef, "size", 0))
+        file["branches"] = getattr(fileRef, "branches", [])
+        file["input"] = getattr(fileRef, "input", [])
+        file["branch_hash"] = getattr(fileRef, "branch_hash", None)
+        file["catalog"] = getattr(fileRef, "catalog", "")
+        file["guid"] = getattr(fileRef, "guid", "")
+        file["module_label"] = getattr(fileRef, "module_label", "")
+        file["checksums"] = getattr(fileRef, "checksums", {})
+        file["merged"] = bool(getattr(fileRef, "merged", False))
 
         return file
 
@@ -517,7 +570,7 @@ class Report:
 
         return listOfFiles
 
-    def getInputFilesFromStep(self, stepName):
+    def getInputFilesFromStep(self, stepName, inputSource = "PoolSource"):
         """
         _getInputFilesFromStep_
 
@@ -527,11 +580,23 @@ class Report:
         step = self.retrieveStep(stepName)
 
         inputFiles = []
-        for fileNum in range(step.input.PoolSource.files.fileCount):
-            fwjrFile = getattr(step.input.PoolSource.files, "file%d" % fileNum)
+        source = getattr(step.input, inputSource)
+        for fileNum in range(source.files.fileCount):
+            fwjrFile = getattr(source.files, "file%d" % fileNum)
 
-            inputFile = File(lfn = fwjrFile.LFN, size = fwjrFile.size,
-                             events = fwjrFile.TotalEvents)
+            lfn = getattr(fwjrFile, "lfn", None)
+            pfn = getattr(fwjrFile, "pfn", None)
+            size = getattr(fwjrFile, "size", 0)
+            events = getattr(fwjrFile, "events", 0)
+            branches = getattr(fwjrFile, "branches", [])
+            catalog = getattr(fwjrFile, "catalog", None)
+            guid = getattr(fwjrFile, "guid", None)
+
+            inputFile = File(lfn = lfn, size = size, events = events)
+            inputFile["pfn"] = pfn
+            inputFile["branches"] = branches
+            inputFile["catalog"] = catalog
+            inputFile["guid"] = guid
 
             runSection = getattr(fwjrFile, "runs")
             runNumbers = runSection.listSections_()
@@ -570,7 +635,27 @@ class Report:
 
         return listOfFiles
 
+    def getAllFileRefsFromStep(self, step):
+        """
+        _getAllFileRefsFromStep_
 
+        Retrieve a list of all files produced in a step.  The files will be in
+        the form of references to the ConfigSection objects in the acutal
+        report.
+        """
+        stepReport = self.retrieveStep(step = step)
+        if not stepReport:
+            return []
+
+        outputModules = getattr(stepReport, "outputModules", [])
+        fileRefs = []
+        for outputModule in outputModules:
+            outputModuleRef = self.getOutputModule(step = step, outputModule = outputModule)
+
+            for i in range(outputModuleRef.files.fileCount):
+                fileRefs.append(getattr(outputModuleRef.files, "file%i" % i))
+
+        return fileRefs
 
     def addInfoToOutputFilesForStep(self, stepName, step):
         """
@@ -601,4 +686,3 @@ class Report:
 
         return
                 
-        

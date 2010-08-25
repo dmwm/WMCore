@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.20 2010/03/10 20:51:40 mnorman Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.21 2010/03/23 21:26:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import os
 import threading
@@ -23,11 +23,6 @@ from WMCore.WMBS.JobGroup import JobGroup
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
-
-
-
-
-
 
 class AccountantWorker:
     """
@@ -174,8 +169,6 @@ class AccountantWorker:
         for job in parameters['input']:
             logging.info("Handling %s" % job["fwjr_path"])
             
-
-            
             fwkJobReport = self.loadJobReport(job)
             jobSuccess = None
             
@@ -222,16 +215,10 @@ class AccountantWorker:
 
         self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
 
-
-            
-
         self.transaction.commit()
-
-        # Reset all globals to zero
         self.reset()
             
         return returnList
-
 
     def outputFilesetsForJob(self, outputMap, merged, moduleLabel):
         """
@@ -246,11 +233,10 @@ class AccountantWorker:
         subscription.
         """
         if not outputMap.has_key(moduleLabel):
-            logging.info("Output module label missing.")
+            logging.info("Output module label missing from output map.")
             return None
 
         if merged == False:
-            logging.info("Unmerged...")
             return outputMap[moduleLabel]["fileset"]
 
         if len(outputMap[moduleLabel]["children"]) == 1:
@@ -275,7 +261,7 @@ class AccountantWorker:
                                 status = "NOTUPLOADED")
         dbsFile.setAlgorithm(appName = datasetInfo["applicationName"],
                              appVer = datasetInfo["applicationVersion"],
-                             appFam = jobReportFile["ModuleLabel"],
+                             appFam = jobReportFile["module_label"],
                              psetHash = "GIBBERISH", configContent = "MOREGIBBERISH")
         
         dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["primaryDataset"],
@@ -440,7 +426,6 @@ class AccountantWorker:
                         redneckChildren.add(child)
 
         if len(newParents) > 0:
-
             dbsFile = DBSBufferFile(lfn = outputFile["lfn"])
             dbsFile.load()
             dbsFile.addParents(list(newParents))
@@ -465,18 +450,8 @@ class AccountantWorker:
         if jobType == "Merge":
             fwjrFile["merged"] = True
 
-        if type(fwjrFile["locations"]) == set:
-            s = fwjrFile["locations"].copy()
-            seName = s.pop()
-        elif type(fwjrFile["locations"]) == list:
-            seName = fwjrFile["locations"][0]
-        else:
-            seName = fwjrFile["locations"]
-
         wmbsFile = self.createFileFromDataStructsFile(file = fwjrFile, jobID = jobID)
         
-        
-
         if fwjrFile["merged"]:
             self.addFileToDBS(fwjrFile)
 
@@ -517,12 +492,10 @@ class AccountantWorker:
             return
 
         for fwjrFile in fileList:
-            wmbsFile    = self.addFileToWMBS(jobType,
-                                             fwjrFile,
-                                             wmbsJob["mask"],
-                                             jobID = jobID)
-            merged      = wmbsFile['merged']
-            moduleLabel = fwjrFile["ModuleLabel"]
+            wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
+                                          jobID = jobID)
+            merged = wmbsFile['merged']
+            moduleLabel = fwjrFile["module_label"]
             if not wmbsFile and not moduleLabel:
                 # Something got screwed up in addFileToWMBS.  Send job to FAIL
                 self.transaction.rollback()
@@ -734,7 +707,6 @@ class AccountantWorker:
         """
         wmbsFile = File()
         wmbsFile.update(file)
-
 
         if type(file["locations"]) == set:
             s = file["locations"].copy()

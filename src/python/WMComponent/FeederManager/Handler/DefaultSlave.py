@@ -5,10 +5,9 @@ Default slave for FeederManager
 
 __all__ = []
 __revision__ = \
-    "$Id: DefaultSlave.py,v 1.1 2009/02/02 23:06:49 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
+    "$Id: DefaultSlave.py,v 1.2 2009/11/06 11:26:45 riahi Exp $"
+__version__ = "$Revision: 1.2 $"
 
-import logging
 import threading
 import pickle
 
@@ -28,8 +27,14 @@ class DefaultSlave(ThreadSlave):
         myThread = threading.currentThread()
         self.runningFeedersLock = myThread.runningFeedersLock
         self.runningFeeders = myThread.runningFeeders
+        self.messageArgs = None
+        self.queries = None
+
 
     def initInThread(self):
+        """
+        Load shared queries
+        """
         # Call parent initialisation
         ThreadSlave.initInThread(self)
         
@@ -42,3 +47,14 @@ class DefaultSlave(ThreadSlave):
         # Get feeder objects
         myThread.runningFeedersLock = self.runningFeedersLock
         myThread.runningFeeders = self.runningFeeders
+
+    def __call__(self, parameters):
+        """
+        Unpickle event payload if it is pickled
+        """
+        try:
+            self.messageArgs = pickle.loads(parameters['payload'])
+        except:
+            self.messageArgs = parameters['payload']
+
+

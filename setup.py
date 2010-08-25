@@ -3,6 +3,7 @@ from distutils.core import setup, Command
 from unittest import TextTestRunner, TestLoader, TestSuite
 from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
+from ConfigParser import ConfigParser
 import os, sys
 try:
     from pylint import lint
@@ -178,6 +179,10 @@ class ReportCommand(Command):
         
         srcpypath = '/'.join([os.getcwd(), 'src/python/'])
         sys.path.append(srcpypath)
+
+        cfg = ConfigParser()
+        cfg.read('standards/.pylintrc')
+        
     
         for stats in lint_files(files):
             error += stats['error']
@@ -185,8 +190,14 @@ class ReportCommand(Command):
             refactor += stats['refactor']
             convention += stats['convention'] 
             statement += stats['statement']
-
-        lint_score =  10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)
+        
+        stats = {'error': error,
+            'warning': warning,
+            'refactor': refactor,
+            'convention': convention, 
+            'statement': statement}
+        
+        lint_score = eval(cfg.get('MASTER', 'evaluation'), {}, stats)
         coverage = 0 # TODO: calculate this
         testless_classes = [] # TODO: generate this
         

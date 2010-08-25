@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.7 2009/10/19 13:10:10 riahi Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Feeder.py,v 1.8 2009/11/06 10:52:24 riahi Exp $"
+__version__ = "$Revision: 1.8 $"
 
 # DBS
 from WMCore.Services.DBS.DBSReader import DBSReader
@@ -16,7 +16,6 @@ import time
 import os
 import threading
 
-#from WMCore.WMBSFeeder.Registry import registerFeederImpl
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl 
 from WMCore.WMBS.File import File
 from WMCore.DAOFactory import DAOFactory
@@ -27,24 +26,18 @@ class Feeder(FeederImpl):
     feeder implementation
     """
 
-    def __init__(self, purgeTime = 48,
-                 phedexUrl = \
-           "http://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas",
-                 dbsUrl = \
-         "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"): 
-                 
+    def __init__(self, dbsUrl = \
+         "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"):
         """
         Configure the feeder
         """
 
         FeederImpl.__init__(self)
 
-        # External source parameter
-        self.phedexUrl = phedexUrl
-
         # DBS parameter
         self.dbsReader = DBSReader(dbsUrl)
-
+        self.connectionAttempts = 5 
+ 
         self.myThread = threading.currentThread()
 
         # Get configuration       
@@ -58,20 +51,16 @@ class Feeder(FeederImpl):
               dbinterface = self.myThread.dbi)
         self.locationNew = self.daofactory(classname = "Locations.New")
 
-
-        # The last run that was identified as new, and run purge time
-        self.purgeTime = purgeTime * 3600 # Convert hours to seconds
-
     
     def __call__(self, filesetToProcess):
         """
         The algorithm itself
         """
-     
-        logging.debug("the Feeder is processing %s" % \
-                 filesetToProcess.name) 
  
-        logging.debug("the fileset name is processing %s" % (filesetToProcess.name).split(":")[0])
+        logging.debug("DBSFeeder is processing %s" % \
+                 filesetToProcess.name) 
+        logging.debug("the fileset name  %s" \
+       % (filesetToProcess.name).split(":")[0])
   
         # get list of files
         tries = 1
@@ -80,15 +69,9 @@ class Feeder(FeederImpl):
  
             try:
 
+                blocks = self.dbsReader.getFiles(\
+              (filesetToProcess.name).split(":")[0])
                 now = time.time()  
-
-                try:
-                    blocks = self.dbsReader.getFiles((filesetToProcess.name).split(":")[0])
-
-                except:
-                    logging.debug("dbsReader call error...")
-
-
                 filesetToProcess.last_update = now
                 logging.debug("DBS queries done ...")
 
@@ -97,14 +80,16 @@ class Feeder(FeederImpl):
             except DBSReaderError, ex:
                 logging.error("DBS error: %s, cannot get files for %s" % \
                           (str(ex), filesetToProcess.name))
-                return filesetToProcess
+                # Close fileset
+                filesetToProcess.markOpen(False)
+                return 
 
             # connection error, retry
             except DbsConnectionError, ex:
                 logging.error("Unable to connect to DBS, retrying: " + \
                           str(ex))
                 if tries > self.connectionAttempts: #too many errors - bail out
-                    return filesetToProcess 
+                    return  
                 tries = tries + 1
 
 
@@ -158,6 +143,5 @@ class Feeder(FeederImpl):
         """ 
         pass
 
-#registerFeederImpl(Feeder.__name__, Feeder)
 
 

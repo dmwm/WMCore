@@ -1370,10 +1370,17 @@ class SubscriptionTest(unittest.TestCase):
         getSubTypes = daoFactory(classname = "Subscriptions.GetSubTypes")
 
         result = getSubTypes.execute()
-        self.assertEqual(result, ['Harvesting', 'Merge', 'Processing'])
+
+        assert len(result) == 3, \
+               "Error: Wrong number of types."
+        assert "Processing" in result, \
+               "Error: Processing type is missing."
+        assert "Merge" in result, \
+               "Error: Merge type is missing."
+        assert "Harvesting" in result, \
+               "Error: Harvesting type is missing."
 
         return
-        
 
 if __name__ == "__main__":
     unittest.main()

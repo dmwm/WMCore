@@ -7,12 +7,14 @@ import time
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AddToFileset(DBFormatter):
-    sql = """
-            insert into wmbs_fileset_files (file, fileset, insert_time) 
-                select wmbs_file_details.id, wmbs_fileset.id, :insert_time 
-                from wmbs_file_details, wmbs_fileset 
-                where wmbs_file_details.lfn = :lfn
-                and wmbs_fileset.name = :fileset"""
+    sql = """INSERT INTO wmbs_fileset_files (file, fileset, insert_time)
+               SELECT wmbs_file_details.id, :fileset, :insert_time
+               FROM wmbs_file_details
+               WHERE wmbs_file_details.lfn = :lfn
+               AND NOT EXISTS (SELECT file FROM wmbs_fileset_files wff2 WHERE
+                                wff2.file = wmbs_file_details.id
+                                AND wff2.fileset = :fileset)
+    """
         
     def execute(self, file = None, fileset = None, conn = None,
                 transaction = False):

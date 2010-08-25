@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.15 2010/02/12 16:23:41 evansde Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: WMWorkload.py,v 1.16 2010/03/29 19:19:12 sryu Exp $"
+__version__ = "$Revision: 1.16 $"
 
 
 
@@ -88,6 +88,13 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return self.data.owner
 
+    def setOwner(self, owner):
+        """
+        _setOwner_
+        sets the owner of wmspec
+        """
+        self.data.owner = owner 
+    
     def priority(self):
         """
         _priority_
@@ -303,7 +310,7 @@ class WMWorkload(ConfigSection):
     Request container
 
     """
-    def __init__(self, name):
+    def __init__(self, name="test"):
         ConfigSection.__init__(self, name)
         self.objectType = self.__class__.__name__
         #  //persistent data

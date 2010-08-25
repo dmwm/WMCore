@@ -131,17 +131,19 @@ class LintCommand(Command):
                         files.append(filepath)
                         # run individual tests as follows
                         try:
-                            score = lint.Run(['--rcfile=standards/.pylintrc', 
+                            lint.Run(['--rcfile=standards/.pylintrc', 
                                       '--output-format=parseable', 
+                                      '-r n',
                                       filepath])
-                            result.append((file, score))
+                        except SystemExit:
+                            pass
                         except Exception, e:
                             print "Couldn't lint %s\n%s %s" % (file, e, type(e))
+                            result.append((file, -100))
         # Could run a global test as:
         #input = ['--rcfile=standards/.pylintrc']
         #input.extend(files)
-        #lint.Run(input)
-        print result    
+        #lint.Run(input)    
                     
 def getPackages(package_dirs = []):
     packages = []

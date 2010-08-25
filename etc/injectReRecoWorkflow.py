@@ -25,9 +25,9 @@ from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 arguments = {
     "CmsPath": "/uscmst1/prod/sw/cms",
     "AcquisitionEra": "WMAgentCommissioning10",
-    "Owner": "sfoulkes@fnal.gov",
+    "Requester": "sfoulkes@fnal.gov",
     "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
-    "FrameworkVersion": "CMSSW_3_5_8_patch3",
+    "CMSSWVersion": "CMSSW_3_5_8_patch3",
     "ScramArch": "slc5_ia32_gcc434",
     "ProcessingVersion": "v2scf",
     "SkimInput": "output",

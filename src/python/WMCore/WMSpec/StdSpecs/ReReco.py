@@ -252,9 +252,9 @@ class ReRecoWorkloadFactory():
         """
         # Required parameters.
         self.acquisitionEra = arguments["AcquisitionEra"]
-        self.owner = arguments["Owner"]
+        self.owner = arguments["Requester"]
         self.inputDataset = arguments["InputDataset"]
-        self.frameworkVersion = arguments["FrameworkVersion"]
+        self.frameworkVersion = arguments["CMSSWVersion"]
         self.scramArch = arguments["ScramArch"]
         self.processingVersion = arguments["ProcessingVersion"]
         self.skimInput = arguments["SkimInput"]

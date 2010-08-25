@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.13 2009/07/22 21:55:15 mnorman Exp $"
+    "$Id: TestInit.py,v 1.14 2009/09/30 21:03:18 meloam Exp $"
 __version__ = \
-    "$Revision: 1.13 $"
+    "$Revision: 1.14 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -60,6 +60,10 @@ class TestInit:
         Set up the database connection by retrieving the environment
         parameters.
         """
+        if (os.getenv('DATABASE') == None):
+            raise RuntimeError, \
+                "You must set the DATABASE environment variable to run tests"
+        
         self.init.setDatabaseConnection(os.getenv("DATABASE"), \
             self.backend, os.getenv("DBSOCK"))
 

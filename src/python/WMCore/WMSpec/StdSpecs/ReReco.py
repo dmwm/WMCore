@@ -15,6 +15,7 @@ class ReRecoWorkloadFactory():
     """
     _ReRecoWorkloadFactory_
 
+    Stamp out ReReco workfloads.
     """
     def addDashboardMonitoring(self, task):
         """
@@ -23,6 +24,7 @@ class ReRecoWorkloadFactory():
         Add dashboard monitoring for the given task.
         """
         monitoring = task.data.section_("watchdog")
+        monitoring.interval = 600
         monitoring.monitors = ["DashboardMonitor"]
         monitoring.section_("DashboardMonitor")
         monitoring.DashboardMonitor.softTimeOut = 300000
@@ -34,7 +36,8 @@ class ReRecoWorkloadFactory():
     def createWorkload(self):
         """
         _createWorkload_
-        
+
+        Create a new workload.
         """
         workload = newWorkload(self.workloadName)
         workload.setOwner(self.owner)
@@ -49,7 +52,21 @@ class ReRecoWorkloadFactory():
                             couchDBName = None, configDoc = None):
         """
         _setupProcessingTask_
-        
+
+        Given an empty task add cmsRun, stagOut and logArch steps.  Configure
+        the input depending on the method parameters:
+          inputDataset not empty: This is a top level processing task where the
+            input will be fed in by DBS.  Setup the whitelists and blacklists.
+          inputDataset empty: This processing task will be fed from the output
+            of another task.  The inputStep and name of the output module from
+            that step (inputModule) must be specified.
+
+        Processing config will be setup as follows:
+          configDoc not empty - Use a ConfigCache config, couchUrl and
+            couchDBName must not be empty.
+          configDoc empty - Use a Configuration.DataProcessing config.  The
+            scenarioName, scenarioFunc and scenarioArgs parameters must not be
+            empty.
         """
         self.addDashboardMonitoring(procTask)
         procTaskCmssw = procTask.makeStep("cmsRun1")
@@ -111,12 +128,15 @@ class ReRecoWorkloadFactory():
         logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")
         return
 
-    def addOutputModule(self, parentTask, outputModuleName, dataTier, filterName):
+    def addOutputModule(self, parentTask, outputModuleName, dataTier,
+                        filterName):
         """
         _addOutputModule_
         
-        Add an output module and merge task for files produced by the parent
-        task.
+        Add an output module to the geven processing task.  This will also
+        create merge and cleanup tasks for the output of the output module.
+        A handle to the merge task is returned to make it easy to use the merged
+        output of the output module as input to another task.
         """
         if filterName != None and filterName != "":
             processedDatasetName = "%s-%s-%s" % (self.acquisitionEra, filterName,

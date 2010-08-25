@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.39 2009/05/08 16:04:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: Subscription.py,v 1.40 2009/05/26 15:47:00 sfoulkes Exp $"
+__version__ = "$Revision: 1.40 $"
 
 from sets import Set
 import logging
@@ -332,7 +332,8 @@ class Subscription(WMBSBase, WMSubscription):
         """
         _filesOfStatusByRun_
         
-        Return all the files in the given subscription and the given run which are completed.
+        Return all the files in the given subscription and the given run which
+        have the given status.
         """
         existingTransaction = self.beginTransaction()
 

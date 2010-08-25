@@ -23,6 +23,7 @@ from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
 from WMCore.BossLite.API.BossLiteAPISched  import BossLiteAPISched
 
 from WMCore.BossLite.Common.System import executeCommand
+from nose.plugins.attrib import attr
 
 def fakeTask(db, numjob):
     """
@@ -100,7 +101,7 @@ class SchedulerGLite(unittest.TestCase):
     numjob = 8
     stoppingCriteria = 4
     toKill = 3
-    
+
     def testA_databaseStartup(self):
         """
         testA_databaseStartup
@@ -119,7 +120,7 @@ class SchedulerGLite(unittest.TestCase):
         
         return
 
-    
+    @attr('integration')        
     def testB_submission(self):
         """
         Simple submission operation
@@ -138,7 +139,7 @@ class SchedulerGLite(unittest.TestCase):
         return
     
     
-    
+    @attr('integration')        
     def testC_status(self):
         """
         Simple status check operation
@@ -172,7 +173,7 @@ class SchedulerGLite(unittest.TestCase):
         
         return
     
-    
+    @attr('integration')        
     def testD_getOutput(self):
         """
         Simple getOutput operation
@@ -183,7 +184,12 @@ class SchedulerGLite(unittest.TestCase):
         
         mySchedAPI = BossLiteAPISched( bossLiteSession = myBossLiteAPI, 
                                        schedulerConfig = mySchedConfig )
-        
+        msg  = "To get tests to work properly on buildbot, you cannot write to the source tree "
+        msg += "things behave wrong. "
+        msg += "I would normally change this test myself, but I don't understand what's going on here "
+        msg += "look at WMCore_t.WMSpec_t.Steps_t.Executors_t.StageOut_t in setUp/tearDown for an example "
+        msg += "best, Melo "
+        raise RuntimeError, msg        
         command = "mkdir ./test"
         executeCommand( command )
         

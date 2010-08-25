@@ -16,8 +16,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.66 2010/05/13 16:22:55 mnorman Exp $"
-__version__ = "$Revision: 1.66 $"
+__revision__ = "$Id: Subscription.py,v 1.67 2010/05/24 16:17:04 mnorman Exp $"
+__version__ = "$Revision: 1.67 $"
 
 import logging
 
@@ -466,20 +466,23 @@ class Subscription(WMBSBase, WMSubscription):
             action.execute(fileid = fileset.id, subid = self["id"],
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
-            if not fileset.exists():
+            if not fileset.exists() and len(fileset.files) > 0:
                 # If we got rid of the fileset
                 # If we did not delete the fileset, all files are still in use
                 # Now get rid of unused files
 
                 parent = self.daofactory(classname = "Files.DeleteParentCheck")
                 action = self.daofactory(classname = "Files.DeleteCheck")
+                idList = []
                 for f in fileset.files:
-                    parent.execute(file = f['id'], fileset = fileset.id,
-                                   conn = self.getDBConn(),
-                                   transaction = self.existingTransaction())
-                    action.execute(file = f['id'], fileset = fileset.id,
-                                   conn = self.getDBConn(),
-                                   transaction = self.existingTransaction())
+                    idList.append(f['id'])
+                
+                parent.execute(file = idList, fileset = fileset.id,
+                               conn = self.getDBConn(),
+                               transaction = self.existingTransaction())
+                action.execute(file = idList, fileset = fileset.id,
+                               conn = self.getDBConn(),
+                               transaction = self.existingTransaction())
 
         #Next Workflow
         action = self.daofactory(classname = "Workflow.DeleteCheck")

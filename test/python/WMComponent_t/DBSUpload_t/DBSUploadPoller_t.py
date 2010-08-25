@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.8 $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "mnorman@fnal.gov"
 
 import commands
@@ -248,6 +248,71 @@ class DBSUploadTest(unittest.TestCase):
         return
 
 
+    def bulkAddToBuffer(self, name):
+        """
+        _addToBuffer_
+
+        This should add files to the buffer
+
+        """
+
+        print ""
+        print "WARNING: This only works if DBSBuffer works"
+        print ""
+
+        myThread = threading.currentThread()
+
+        #Stolen shamelessly from Steve's DBSBufferFile_t
+
+        testFiles = []
+
+        testFileParentA = DBSBufferFile(lfn = makeUUID(), size = 1024,
+                                        events = 20, cksum = 1, locations = "malpaquet")
+        testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
+                                     appFam = "RECO", psetHash = "GIBBERISH",
+                                     configContent = "MOREGIBBERISH")
+        testFileParentA.setDatasetPath("/%s/%s/RECO" %(name, name))
+        testFileParentA.addRun(Run(1, *[45]))
+        
+        testFileParentB = DBSBufferFile(lfn = makeUUID(), size = 1024,
+                                        events = 20, cksum = 2, locations = "malpaquet")
+        testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
+                                     appFam = "RECO", psetHash = "GIBBERISH",
+                                     configContent = "MOREGIBBERISH")
+        testFileParentB.setDatasetPath("/%s/%s/RECO" %(name, name))        
+        testFileParentB.addRun(Run(1, *[45]))
+        
+        testFileParentC = DBSBufferFile(lfn = makeUUID(), size = 1024,
+                                        events = 20, cksum = 3, locations = "malpaquet")
+        testFileParentC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
+                                     appFam = "RECO", psetHash = "GIBBERISH",
+                                     configContent = "MOREGIBBERISH")
+        testFileParentC.setDatasetPath("/%s/%s/RECO" %(name, name))        
+        testFileParentC.addRun(Run( 1, *[45]))
+        
+        testFileParentA.create()
+        testFileParentB.create()
+        testFileParentC.create()
+
+        for i in range(0,300):
+                testFile = DBSBufferFile(lfn = makeUUID(), size = 1024,
+                                         events = 10, cksum = 1, locations = "malpaquet")
+                testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
+                                      appFam = "RECO", psetHash = "GIBBERISH",
+                                      configContent = "MOREGIBBERISH")
+                testFile.setDatasetPath("/%s/%s/RECO" %(name, name))
+                testFile.addRun(Run( 1, *[45]))
+                testFile.create()
+        
+                testFile.addParent(testFileParentA["lfn"])
+                testFile.addParent(testFileParentB["lfn"])
+                testFile.addParent(testFileParentC["lfn"])
+
+                testFiles.append(testFile)
+
+        return
+
+
     def testUploadFromSelf(self):
         """
         _testUploadFromSelf_
@@ -344,6 +409,120 @@ class DBSUploadTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
 
         self.assertEqual(len(result), 2)
+
+        #Is the algo listed as being in DBS?
+        result = myThread.dbi.processData("SELECT in_dbs FROM dbsbuffer_algo")[0].fetchall()[0].values()[0]
+
+        self.assertEqual(result, 1)
+
+        result = myThread.dbi.processData("SELECT blockname FROM dbsbuffer_block WHERE id IN (SELECT block_id FROM dbsbuffer_file)")[0].fetchall()
+
+        self.assertEqual(len(result), 2)
+
+        result = myThread.dbi.processData("SELECT open_status FROM dbsbuffer_block")[0].fetchall()
+
+        self.assertEqual(result[0].values()[0], 0)
+        self.assertEqual(result[1].values()[0], 1)
+
+        return
+
+
+    def testLargeUpload(self):
+        myThread = threading.currentThread()
+
+        factory     = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
+        dbinterface = factory.loadObject("UploadToDBS")
+
+        name = "ThisIsATest_%s" %(makeUUID())
+
+        config = self.createConfig()
+        self.bulkAddToBuffer(name)
+
+        datasets=dbinterface.findUploadableDatasets()
+
+        file_ids1 = []
+        for dataset in datasets:
+            file_ids1.extend(dbinterface.findUploadableFiles(dataset, 1000))
+
+
+        self.assertEqual(len(file_ids1), 303)
+
+        testDBSUpload = DBSUpload(config)
+        testDBSUpload.prepareToStart()
+
+        time.sleep(360)
+
+        #self.addSecondBatch()
+        myThread.workerThreadManager.terminateWorkers()
+        datasets=dbinterface.findUploadableDatasets()
+
+        file_ids = []
+        file_list = []
+        for dataset in datasets:
+            file_ids.extend(dbinterface.findUploadableFiles(dataset, 1000))
+        for id in file_ids1:
+            tempFile = DBSBufferFile(id = id["ID"])
+            tempFile.load(parentage = 1)
+            file_list.append(tempFile)
+
+
+
+        self.assertEqual(len(file_ids), 0)
+
+        child = file_list[3]
+
+        self.assertEqual(len(child['parents']), 3)
+
+        dbsurl     = config.DBSUpload.dbsurl
+        dbsversion = config.DBSUpload.dbsversion
+
+        args = { "url" : dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" : dbsversion }
+        #conf = {"level" : 'ERROR', "user" :'NORMAL', "version" : dbsversion }
+        dbswriter = DbsApi(args)
+        #dbsreader = DBSReader(dbsurl)
+        primaryDatasets   = dbswriter.listPrimaryDatasets('*')
+        processedDatasets = dbswriter.listProcessedDatasets()
+        dbsAlgos          = dbswriter.listAlgorithms()
+        
+        datasetNames   = []
+        processedNames = []
+        algoVer        = []
+        #print primaryDatasets
+        for dataset in primaryDatasets:
+            datasetNames.append(dataset['Name'])
+
+        for dataset in processedDatasets:
+            processedNames.append(dataset['Name'])
+
+        for algo in dbsAlgos:
+            #print algo
+            algoVer.append(algo['ApplicationVersion'])
+
+        #Check for primary and processed dataset and application of correct version
+        self.assertEqual(name in datasetNames, True)
+        self.assertEqual(name in processedNames, True)
+        self.assertEqual('CMSSW_3_1_1' in algoVer, True)
+
+        datasetPath = "/%s/%s/RECO" %(name, name)
+
+        files = dbswriter.listDatasetFiles(datasetPath = datasetPath)
+
+        #Check that there are four files
+        self.assertEqual(len(files), 303)
+
+        fileParents = []
+
+        for file in files:
+            fileParents.append(dbswriter.listFileParents(lfn = file['LogicalFileName']))
+
+        time.sleep(10)
+
+        #Check that the final file has three parents
+        self.assertEqual(len(fileParents[3]), 3)
+
+        result = myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
+
+        self.assertEqual(len(result), 152)
 
         #Is the algo listed as being in DBS?
         result = myThread.dbi.processData("SELECT in_dbs FROM dbsbuffer_algo")[0].fetchall()[0].values()[0]

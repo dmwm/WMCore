@@ -108,7 +108,7 @@ def printTransitionInfo():
 
     retryCount = 0
     successSeen = False
-    failureSeen = False
+    exhaustedSeen = False
     for timestamp in timestamps:
         timestampDate = datetime.datetime.fromtimestamp(timestamp)
         for transition in transitionDocs[timestamp]:
@@ -116,7 +116,7 @@ def printTransitionInfo():
                 retryCount += 1
             elif transition["newstate"] == "success":
                 successSeen = True
-            elif transition["newstate"] == "failure":
+            elif transition["newstate"] == "exhausted":
                 failureSeen = True
             
             print "  %s %s -> %s" % (timestampDate.isoformat(" "),

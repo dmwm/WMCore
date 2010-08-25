@@ -5,8 +5,8 @@ _Report_
 Job Report object
 
 """
-__version__ = "$Revision: 1.4 $"
-__revision__ = "$Id: Report.py,v 1.4 2009/11/16 12:45:46 evansde Exp $"
+__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Report.py,v 1.5 2009/12/14 20:32:32 evansde Exp $"
 __author__ = "evansde"
 
 import pickle
@@ -78,8 +78,12 @@ class Report:
         by cmsRun and pull the information from it into this object
 
         """
-        xmlToJobReport(self, xmlfile)
-
+        try:
+            xmlToJobReport(self, xmlfile)
+        except Exception, ex:
+            msg = "Error reading XML job report file, possibly corrupt XML File:\n"
+            msg += "Details: %s" % str(ex)
+            self.addError(50115, "MissingJobReport", msg)
 
     def json(self):
         """

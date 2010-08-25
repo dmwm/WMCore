@@ -82,7 +82,10 @@ class InstallScenario(ScriptInterface):
         applyTweak(process, jobTweak)
         
 
-
+        # revlimiter for testing
+        process.maxEvents.input = 2
+        
+        
         configFile = self.step.data.application.command.configuration
         workingDir = self.stepSpace.location
         handle = open("%s/%s" % (workingDir, configFile), 'w')

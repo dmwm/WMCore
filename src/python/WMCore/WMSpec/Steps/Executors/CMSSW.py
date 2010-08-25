@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.12 2009/12/14 14:32:03 evansde Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: CMSSW.py,v 1.13 2009/12/14 20:32:33 evansde Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -204,6 +204,10 @@ class CMSSW(Executor):
             msg += "%s\n" % spawnedChild.returncode
             raise WMExecutionFailure(spawnedChild.returncode,
                                      "CmsRunFailure", msg)
+
+        self.report.parse(jobReportXML)
+        
+
 
         #TODO: Move all this stuff to the CMSSW diagnostic
         ##if (spawnedChild.returncode == 70):

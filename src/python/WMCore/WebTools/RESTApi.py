@@ -1,4 +1,27 @@
 #!/usr/bin/env python
+"""
+_RESTApi_
+
+A standard class implementing a REST interface. You should configure the 
+application to point at this class, with a model and formatter class configured:
+
+active.section_('rest')
+active.rest.object = 'WMCore.WebTools.RESTApi'
+active.rest.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+active.rest.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
+active.rest.section_('model')
+active.rest.model.object = 'RESTModel'
+active.rest.model.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
+active.rest.model.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+active.rest.section_('formatter')
+active.rest.formatter.object = 'RESTFormatter'
+active.rest.formatter.templates = '/templates/WMCore/WebTools/'
+
+"""
+
+__revision__ = "$Id: RESTApi.py,v 1.6 2009/03/16 12:07:58 metson Exp $"
+__version__ = "$Revision: 1.6 $"
+
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml
 from WMCore.WMFactory import WMFactory

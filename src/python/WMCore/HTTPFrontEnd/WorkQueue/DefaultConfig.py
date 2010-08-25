@@ -5,9 +5,8 @@ import WMCore.WMInit
 config = Configuration()
 
 config.webapp_('WorkQueueService')
-config.WorkQueueService.port = 8080
-config.WorkQueueService.host = "hostname.fnal.gov"
-config.component_('WorkQueueService')
+config.WorkQueueService.server.port = 8080
+config.WorkQueueService.server.host = "hostname.fnal.gov"
 
 config.WorkQueueService.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
 config.WorkQueueService.admin = 'your@email.com'

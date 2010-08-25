@@ -4,8 +4,8 @@
 Rest Model abstract implementation
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.36 2009/12/22 19:46:12 metson Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: RESTModel.py,v 1.37 2009/12/22 20:09:44 metson Exp $"
+__version__ = "$Revision: 1.37 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -18,6 +18,7 @@ class RESTModel(WebAPI):
     know what you're doing.
     """
     def __init__(self, config = {}):
+        self.version = __version__
         WebAPI.__init__(self, config)
         self.methods = {'GET':{
                                'ping': {'default_data':1234, 

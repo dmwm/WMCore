@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.21 2009/09/22 15:13:43 metson Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: RESTApi.py,v 1.22 2009/09/22 15:38:18 metson Exp $"
+__version__ = "$Revision: 1.22 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml
@@ -105,9 +105,12 @@ class RESTApi(WebAPI):
         return self.formatResponse(data)
     
     def formatResponse(self, data):
-        print self.supporttypes
-        datatype = accept(self.supporttypes)
-        
+        acchdr = request.headers.elements('Accept')
+        if len(acchdr) == 1 and '*/*' == str(acchdr[0]):
+            datatype = '*/*'
+        else:
+            datatype = accept(self.supporttypes)
+
         data = self.formatter.format(data, datatype)
         
         response.headers['Content-Type'] = datatype

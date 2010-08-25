@@ -5,8 +5,8 @@ _FileBased_t_
 File based splitting test.
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.8 2009/12/16 17:45:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: FileBased_t.py,v 1.9 2010/04/13 20:41:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import os
@@ -51,8 +51,8 @@ class FileBasedTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute("somese.cern.ch")
-        locationAction.execute("otherse.cern.ch")
+        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site2", seName = "otherse.cern.ch")
         
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()

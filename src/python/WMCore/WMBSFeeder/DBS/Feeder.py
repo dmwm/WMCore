@@ -3,21 +3,24 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.4 2009/07/25 10:47:09 riahi Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Feeder.py,v 1.5 2009/09/30 09:56:21 riahi Exp $"
+__version__ = "$Revision: 1.5 $"
 
-
+# DBS
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from DBSAPI.dbsApiException import DbsConnectionError 
 
 import logging
 import time
+import os
+import threading
 
 #from WMCore.WMBSFeeder.Registry import registerFeederImpl
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl 
 from WMCore.WMBS.File import File
-from WMCore.WMBS.Fileset import Fileset
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMInit import WMInit
 
 class Feeder(FeederImpl):
     """
@@ -42,36 +45,32 @@ class Feeder(FeederImpl):
         # DBS parameter
         self.dbsReader = DBSReader(dbsUrl)
 
-        #self.myThread = threading.currentThread()
+        self.myThread = threading.currentThread()
 
-        # FIXME: it has to be done by another object 
         # Get configuration       
-        #self.wmConf = WMConf(backend = os.getenv('DIALECT'))
-        #self.wmConf.setLogging()
-        #self.wmConf.setDatabaseConnection()
+        self.init = WMInit()
+        self.init.setLogging()
+        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
+            os.getenv('DIALECT'), os.getenv("DBSOCK"))
 
-        #self.daofactory = DAOFactory(package = "WMCore.WMBS" , \
-        #      logger = self.myThread.logger, \
-        #      dbinterface = self.myThread.dbi)
-        #self.locationExist = self.daofactory(classname = "Locations.Exists")
-        #self.locationNew = self.daofactory(classname = "Locations.New")
+        self.daofactory = DAOFactory(package = "WMCore.WMBS" , \
+              logger = self.myThread.logger, \
+              dbinterface = self.myThread.dbi)
+        self.locationExist = self.daofactory(classname = "Locations.Exists")
+        self.locationNew = self.daofactory(classname = "Locations.New")
 
 
         # The last run that was identified as new, and run purge time
         self.purgeTime = purgeTime * 3600 # Convert hours to seconds
 
     
-    def __call__(self, fileset):
+    def __call__(self, filesetToProcess):
         """
         The algorithm itself
         """
      
         logging.debug("the Feeder is processing %s" % \
-                 fileset.name) 
-
-        # Load fileset
-        filesetToProcess = Fileset(name = fileset.name)
-        filesetToProcess.loadData()
+                 filesetToProcess.name) 
   
         # get list of files
         tries = 1
@@ -129,11 +128,11 @@ class Feeder(FeederImpl):
                        fileBlock)
                 continue
 
-            #else:
+            else:
 
-            #    for loc in seList:
-            #        if not self.locationExist.execute(site_name = loc):
-            #            self.locationNew.execute(sename = loc)
+                for loc in seList:
+                    if not self.locationExist.execute(site_name = loc):
+                        self.locationNew.execute(sename = loc)
   
      
             for files in blocks[fileBlock]['Files']:

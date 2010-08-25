@@ -7,12 +7,14 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.18 2010/06/16 14:22:52 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.19 2010/06/29 19:05:36 sfoulkes Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import threading
 import traceback
 import logging
+
+from WMCore.WMException import WMException
 
 from WMCore.WMSpec.WMStep import WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -31,8 +33,6 @@ class ExecuteMaster:
     def __init__(self):
         pass    
 
-
-
     def __call__(self, task, wmbsJob):
         """
         _operator(task)_
@@ -50,19 +50,20 @@ class ExecuteMaster:
         
         for step in task.steps().nodeIterator():
             try:
-                #myThread.watchdogMonitor.notifyStepStart(step)
                 helper = WMStepHelper(step)
                 stepType = helper.stepType()
                 stepName = helper.name()
                 executor = StepFactory.getStepExecutor(stepType)
                 self.doExecution(executor, step, wmbsJob)
+            except WMException, ex:
+                self.toTaskDirectory()
+                break
             except Exception, ex:
-                msg = "Encountered error while running ExecuteMaster"
-                msg += str(ex)
-                msg += str(traceback.format_exc())
+                msg = "Encountered error while running ExecuteMaster:\n"
+                msg += str(ex) + "\n"
+                msg += str(traceback.format_exc()) + "\n"
                 self.toTaskDirectory()
                 logging.error(msg)
-                #raise Exception(msg)
                 break
 
         myThread.watchdogMonitor.notifyJobEnd(task)

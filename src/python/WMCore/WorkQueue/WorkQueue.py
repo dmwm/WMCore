@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.81 2010/03/02 12:15:28 swakef Exp $"
-__version__ = "$Revision: 1.81 $"
+__revision__ = "$Id: WorkQueue.py,v 1.82 2010/03/12 21:05:46 sryu Exp $"
+__version__ = "$Revision: 1.82 $"
 
 
 import time
@@ -295,6 +295,7 @@ class WorkQueue(WorkQueueBase):
                 fileset.addFile(wmbsFile)
 
             fileset.commit()
+            fileset.markOpen(False)
             updateSub = self.daofactory(classname = "WorkQueueElement.UpdateSubscription")
             updateSub.execute(match['id'], sub['id'],
                                     conn = self.getDBConn(),

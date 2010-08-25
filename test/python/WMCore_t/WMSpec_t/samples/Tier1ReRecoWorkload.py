@@ -126,6 +126,14 @@ if os.path.exists(workloadDir):
 #environment = rereco.data.section_('environment')
 #environment.CMS_PATH = workingDir
 
+monitoring  = rereco.data.section_('watchdog')
+monitoring.monitors = ['WMRuntimeMonitor', 'TestMonitor']
+monitoring.section_('TestMonitor')
+monitoring.TestMonitor.connectionURL = "dummy.cern.ch:99999/CMS"
+monitoring.TestMonitor.password      = "ThisIsTheWorld'sStupidestPassword"
+monitoring.TestMonitor.softTimeOut   = 1
+monitoring.TestMonitor.hardTimeOut   = 100
+
 
 taskMaker = TaskMaker(workload, workingDir)
 taskMaker.skipSubscription = True

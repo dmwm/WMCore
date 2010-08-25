@@ -1,15 +1,19 @@
 #!/usr/bin/env
+#pylint: disable-msg=W0613
+"""
+The feeder manager itself, set up event listeners and work event thread
+"""
+__all__ = []
+__revision__ = "$Id: FeederManager.py,v 1.2 2009/07/14 12:46:10 riahi Exp $"
+__version__ = "$Revision: 1.2 $"
+
 import logging
 import threading
 
 from WMCore.Agent.Harness import Harness
 from WMCore.WMFactory import WMFactory
 
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-
-class MyWorker(BaseWorkerThread):
-    def algorithm(self, parameters):
-        threading.currentThread().logger.info("Doing some work!")
+from WMComponent.FeederManager.FeederManagerPoller import FeederManagerPoller
 
 class FeederManager(Harness):
     """
@@ -42,3 +46,9 @@ class FeederManager(Harness):
         myThread = threading.currentThread()
         myThread.runningFeedersLock = threading.Lock()
         myThread.runningFeeders = {}
+
+        pollInterval = self.config.FeederManager.pollInterval
+        logging.info("Setting poll interval to %s seconds" % pollInterval)
+        myThread.workerThreadManager.addWorker(FeederManagerPoller(), \
+                                               pollInterval)
+

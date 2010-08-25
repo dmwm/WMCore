@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.24 2009/05/11 14:52:59 metson Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Page.py,v 1.25 2009/05/12 20:48:42 metson Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import md5
 import urllib
@@ -157,20 +157,18 @@ def exposedasxml (func):
     """
     def wrapper (self, *args, **kwds):
         das = runDas(self, func, *args, **kwds)
-        header = """<?xml version='1.0' standalone='yes'?>
-<das request_timestamp="%s"
-     request_url="%s"
-     request_version="%s"
-     request_call="%s"
-     call_time="%s">""" % (das['request_timestamp'],
-                           das['request_url'],
-                           das['request_version'],
-                           das['request_call'],
-                           das['call_time'])
+        header = "<?xml version='1.0' standalone='yes'?>"
+        keys = das.keys()
+        keys.remove('results')
+        string = ''
+        for key in keys:
+            string = '%s %s="%s"' % (string, key, das[key])
+        header = """%s
+<das %s>""" % (header, string)
 
-        cherrypy.response.headers['ETag'] = das[das['request_call']].__str__().__hash__()
+        cherrypy.response.headers['ETag'] = das['results'].__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/xml"
-        xmldata = header + das[das['request_call']].__str__() + "</das>"
+        xmldata = header + das['results'].__str__() + "</das>"
         return xmldata
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -269,6 +267,7 @@ def runDas(self, func, *args, **kwds):
         res_expire = row['expire']
     else:
         res_expire = 60*5 # 5 minutes
+    print type(func), func.__name__
     if  row.has_key('version'):
         res_version = row['version']
     else:

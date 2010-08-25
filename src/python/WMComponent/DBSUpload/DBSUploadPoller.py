@@ -4,8 +4,8 @@
 The DBSUpload algorithm
 """
 __all__ = []
-__revision__ = "$Id: DBSUploadPoller.py,v 1.6 2009/09/02 20:11:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.7 2009/09/02 22:18:21 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -93,6 +93,8 @@ class DBSUploadPoller(BaseWorkerThread):
 
         """
 
+        logging.debug('Beginning DBSUploadPoller.uploadDatasets')
+
         #Initialize
         dbinterface = self.dbinterface
         addToBuffer = self.addToBuffer
@@ -100,6 +102,7 @@ class DBSUploadPoller(BaseWorkerThread):
         
         #Get datasets out of DBS
         datasets=dbinterface.findUploadableDatasets()
+        logging.debug('Have retrieved %i datasets from DBSBuffer' %(len(datasets)))
 
         myThread = threading.currentThread()
 
@@ -108,6 +111,7 @@ class DBSUploadPoller(BaseWorkerThread):
         for dataset in datasets:
             #If we're here, then we have a dataset that needs to be uploaded.
             #First task, are the algos registered?
+            logging.debug('Have begun to process dataset %s' %(str(dataset['ID'])))
             algos = dbinterface.findAlgos(dataset)
 
             #Necessary for creating Process Datasets
@@ -125,16 +129,20 @@ class DBSUploadPoller(BaseWorkerThread):
             #Now all the algos should be there, so we can create the dataset
             #I'm unhappy about this because I don't know how to put a dataset in more then one algo
             primary = DBSWriterObjects.createPrimaryDataset(datasetInfo = dataset, apiRef = self.dbsapi)
+            logging.debug('Created Primary Dataset')
             processed = DBSWriterObjects.createProcessedDataset(primaryDataset = primary, algorithm = newAlgos, \
                                                                 datasetInfo = dataset, apiRef = self.dbsapi)
+            logging.debug('Created Processed Dataset')
             addToBuffer.addDataset(dataset, 1)
 
             #Once the registration is done, you need to upload the individual files
             file_ids.extend(dbinterface.findUploadableFiles(dataset, self.uploadFileMax))
+            logging.debug('Have retrieved %i files from dataset %s' %(len(file_ids), str(dataset['ID'])))
             
     	    files=[]
     	    #Making DBSBufferFile objects for easy manipulation
             for an_id in file_ids:
+                logging.debug('Beginning to process file %s for dataset %s' %(str(an_id), str(dataset['ID'])))
                 file = DBSBufferFile(id=an_id['ID'])
                 file.load(parentage=1)
                 #Now really stupid stuff has to happen.
@@ -148,9 +156,11 @@ class DBSUploadPoller(BaseWorkerThread):
 
             #Now that you have the files, insert them as a list
             if len(files) > 0:
+                logging.debug('Preparing to insert %i files' %(len(files)))
             	affectedBlocks = self.dbswriter.insertFilesForDBSBuffer(files = files, procDataset = dict(dataset), \
                                                        algos = algos, jobType = "NotMerge", insertDetectorData = False, \
                                                        maxFiles = self.DBSMaxFiles, maxSize = self.DBSMaxSize)
+                logging.debug('Have inserted files and received back blocks %s' %(affectedBlocks))
                 for block in affectedBlocks:
                     info = block['StorageElementList']
                     locations = []

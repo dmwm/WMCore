@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.45 2010/08/09 16:58:46 sryu Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.46 2010/08/09 17:22:27 swakef Exp $"
+__version__ = "$Revision: 1.46 $"
 
 import unittest
 import os
@@ -481,6 +481,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """Block splitting at global level"""
         # force global queue to split work on block
         self.globalQueue.params['SplittingMapping']['DatasetBlock']['name'] = 'Block'
+        self.globalQueue.params['SplittingMapping']['Block']['name'] = 'Block'
+        self.globalQueue.params['SplittingMapping']['Dataset']['name'] = 'Block'
 
         # queue work, globally for block, pass down, report back -> complete
         totalSpec = 1
@@ -495,7 +497,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}),
                          totalBlocks)
         self.assertEqual(len(self.localQueue.status(status = 'Available')),
-                         totalBlocks) # 20 in local
+                         totalBlocks) # 2 in local
+        self.localQueue.updateLocationInfo()
         work = self.localQueue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
         self.assertEqual(len(work), totalBlocks)
         # both refer to same wmspec
@@ -505,6 +508,39 @@ class WorkQueueTest(WorkQueueTestCase):
         # elements in local deleted at end of update, only global ones left
         self.assertEqual(len(self.localQueue.status(status = 'Done')),
                          totalBlocks)
+
+
+    def testGlobalDatsetSplitting(self):
+        """Dataset splitting at global level"""
+        # force global queue to split work on block
+        self.globalQueue.params['SplittingMapping']['DatasetBlock']['name'] = 'Dataset'
+        self.globalQueue.params['SplittingMapping']['Block']['name'] = 'Dataset'
+        self.globalQueue.params['SplittingMapping']['Dataset']['name'] = 'Dataset'
+
+        # queue work, globally for block, pass down, report back -> complete
+        totalSpec = 1
+        totalBlocks = totalSpec * 2
+        self.assertEqual(0, len(self.globalQueue))
+        for _ in range(totalSpec):
+            self.globalQueue.queueWork(self.processingSpec.specUrl())
+        self.assertEqual(totalSpec, len(self.globalQueue))
+
+        # pull to local
+        self.globalQueue.updateLocationInfo()
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}),
+                         totalBlocks)
+        self.assertEqual(len(self.localQueue.status(status = 'Available')),
+                         totalBlocks) # 2 in local
+        self.localQueue.updateLocationInfo()
+        work = self.localQueue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
+        self.assertEqual(len(work), totalBlocks)
+        # both refer to same wmspec
+        self.assertEqual(work[0]['url'], work[1]['url'])
+        self.localQueue.doneWork([str(x['element_id']) for x in work])
+        self.localQueue.updateParent()
+        # elements in local deleted at end of update, only global ones left
+        self.assertEqual(len(self.localQueue.status(status = 'Done')),
+                         totalSpec)
 
 
     def testResetWork(self):

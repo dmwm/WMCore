@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.31 2009/11/23 18:11:03 metson Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: RESTModel.py,v 1.32 2009/11/24 08:03:34 metson Exp $"
+__version__ = "$Revision: 1.32 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request
@@ -85,10 +85,6 @@ class RESTModel(WebAPI):
         add dao (or any other method handler) in self.methods
         self.method need to be initialize if sub class doesn't want to take provide by
         """
-        if not self.methods.has_key(verb):
-            self.methods[verb] = {}
-
-         
         def function(args, kwargs):
             # store the method name
             method = methodKey
@@ -96,6 +92,16 @@ class RESTModel(WebAPI):
             # store the dao
             dao = self.daofactory(classname=daoStr)
             return dao.execute(input)
+                  
+        self.addMethod(verb, methodKey, function, args, validation, version)
+        
+    def addMethod(self, verb, methodKey, function, args=[], validation=[], version=1):
+        """
+        add dao (or any other method handler) in self.methods
+        self.method need to be initialize if sub class doesn't want to take provide by
+        """
+        if not self.methods.has_key(verb):
+            self.methods[verb] = {}
                   
         self.methods[verb][methodKey] = {'args': args,
                                          'call': function,

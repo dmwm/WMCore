@@ -8,8 +8,8 @@ Class for creating MySQL specific schema for the trigger
 
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2009/08/31 19:12:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2009/09/15 18:34:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 
@@ -56,5 +56,5 @@ class Create(DBCreator):
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_tr_action"] = \
-          """ALTER TABLE tr_action ADD
-               (CONSTRAINT TR_TRIGGER_PK PRIMARY KEY (id, trigger_id, flag_id) %s)""" % tablespaceIndex
+          """ALTER TABLE tr_trigger ADD
+               (CONSTRAINT tr_trigger_pk PRIMARY KEY (id, trigger_id, flag_id) %s)""" % tablespaceIndex

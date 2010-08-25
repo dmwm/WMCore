@@ -5,8 +5,8 @@ _Create_
 Class for creating Oracle specific schema for persistent messages.
 """
 
-__revision__ = "$Id: Create.py,v 1.7 2009/09/02 15:22:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Create.py,v 1.8 2009/09/15 18:32:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import logging
 import threading
@@ -733,11 +733,11 @@ class Create(DBCreator):
                (CONSTRAINT ms_available_unique PRIMARY KEY (procid) %s)""" % tablespaceIndex
 
         self.constraints["q_ms_available_status"] = \
-          """ALTER TBALE ms_available ADD
+          """ALTER TABLE ms_available ADD
                (CONSTRAINT ms_available_status CHECK(status IN ('there', 'not_there')))"""
 
         self.constraints["q_ms_available_procid"] = \
-          """ALTER TBALE ms_available ADD
+          """ALTER TABLE ms_available ADD
                (CONSTRAINT ms_available_procid FOREIGN KEY (procid) REFERENCES ms_process(procid))"""
 
         self.create["r_ms_available_priority"] = \

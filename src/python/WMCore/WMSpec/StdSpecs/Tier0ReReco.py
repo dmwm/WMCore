@@ -115,9 +115,6 @@ def tier0ReRecoWorkload(workloadName, arguments):
         scenario, "promptReco", globalTag = globalTagSetting,
         writeTiers = writeDataTiers)
 
-
-    processedDatasetName = "rereco_%s_%s" % (globalTagSetting.replace("::","_"), processingVersion)
-    unmergedDatasetName = "%s" % processedDatasetName
     commonLfnBase = lfnCategory
     commonLfnBase += "/%s" % acquisitionEra
     commonLfnBase += "/%s" % inputPrimaryDataset
@@ -125,44 +122,39 @@ def tier0ReRecoWorkload(workloadName, arguments):
     unmergedLfnBase += "/%s" % acquisitionEra
     unmergedLfnBase += "/%s" % inputPrimaryDataset
 
-
     if "RECO" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
             "outputRECORECO", primaryDataset = inputPrimaryDataset,
-            processedDataset = unmergedDatasetName,
+            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion),
             dataTier = "RECO",
-            lfnBase = "%s/RECO/%s" % ( unmergedLfnBase, processedDatasetName)
+            lfnBase = "%s/RECO/%s-Tier0ReReco-%s" % (unmergedLfnBase, acquisitionEra, processingVersion)
         )   
 
     if "ALCARECO" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
             "outputALCARECOALCARECO", primaryDataset = inputPrimaryDataset,
-            processedDataset = unmergedDatasetName,
+            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion),
             dataTier = "ALCARECO",
-            lfnBase = "%s/ALCARECO/%s" % ( unmergedLfnBase, processedDatasetName)
+            lfnBase = "%s/ALCARECO/%s-Tier0ReReco-%s" % (unmergedLfnBase, acquisitionEra, processingVersion)
         )  
 
     if "AOD" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
             "outputAODRECO", primaryDataset = inputPrimaryDataset,
-            processedDataset = unmergedDatasetName,
+            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion),
             dataTier = "AOD",
-            lfnBase = "%s/AOD/%s" % ( unmergedLfnBase, processedDatasetName)
+            lfnBase = "%s/AOD/%s" % (unmergedLfnBase, acquisitionEra, processingVersion)
         )  
-
-
 
     # manipulate stage out and log archive if needed via type specific helper
     rerecoStageOutHelper = rerecoStageOut.getTypeHelper()
     rerecoLogArchHelper  = rerecoLogArch.getTypeHelper()
 
     # Emulation
-    #if emulationMode:
-    #    rerecoCmsswHelper.data.emulator.emulatorName = "CMSSW"
-    rerecoStageOutHelper.data.emulator.emulatorName = "StageOut"
-    rerecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
-
-
+    if emulationMode:
+        rerecoCmsswHelper.data.emulator.emulatorName = "CMSSW"
+        rerecoStageOutHelper.data.emulator.emulatorName = "StageOut"
+        rerecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
 
     #  //
     # // Merges for each output module
@@ -191,9 +183,9 @@ def tier0ReRecoWorkload(workloadName, arguments):
         mergeRecoCmsswHelper.setDataProcessingConfig(scenario, "merge")
         mergeRecoCmsswHelper.addOutputModule(
             "Merged", primaryDataset = inputPrimaryDataset,
-            processedDataset = processedDatasetName,
+            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion)
             dataTier = "RECO",
-            lfnBase = "%s/RECO/%s" % ( commonLfnBase, processedDatasetName)
+            lfnBase = "%s/RECO/%s-Tier0ReReco-%s" % (commonLfnBase, acquisitionEra, processingVersion)
         )
 
 
@@ -205,6 +197,8 @@ def tier0ReRecoWorkload(workloadName, arguments):
             mergeRecoStageOutHelper.data.emulator.emulatorName = "StageOut"
             mergeRecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
 
+    # We need to setup skims of the ALCA output and merges for the results of
+    # the skims.
     if "ALCARECO" in writeDataTiers:
         skimAlca = rereco.addTask("SkimAlcaReco")
         skimAlca.setInputReference(rerecoCmssw, outputModule = "outputALCARECOALCARECO")        
@@ -240,9 +234,9 @@ def tier0ReRecoWorkload(workloadName, arguments):
             skimAlcaCmsswHelper.addOutputModule(
                 "ALCARECOStream%s" % skim,
                 primaryDataset = inputPrimaryDataset,
-                processedDataset = processedDatasetName,
+                processedDataset = "%s-Tier0ReReco-%s-%s" % (acquisitionEra, skim, processingVersion),
                 dataTier = "ALCARECO",
-                lfnBase = "%s/ALCARECO/%s" % (commonLfnBase, processedDatasetName))
+                lfnBase = "%s/ALCARECO/%s-Tier0ReReco-%s-%s" % (commonLfnBase, acquisitionEra, skim, processingVersion))
             
             mergeAlca = rereco.addTask("MergeAlcaReco%s" % skim)
             mergeAlcaCmssw = mergeAlca.makeStep("mergeAlcaReco%s" % skim)
@@ -253,7 +247,7 @@ def tier0ReRecoWorkload(workloadName, arguments):
             mergeAlcaLogArch.setStepType("LogArchive")
             mergeAlca.addGenerator("BasicNaming")
             mergeAlca.addGenerator("BasicCounter")
-            mergeAlca.setTaskType("Merge")  
+            mergeAlca.setTaskType("Merge")
             mergeAlca.applyTemplates()
             mergeAlca.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 4294967296, min_merge_size = 500000000)            
             
@@ -266,9 +260,9 @@ def tier0ReRecoWorkload(workloadName, arguments):
             mergeAlcaCmsswHelper.setDataProcessingConfig(scenario, "merge")
             mergeAlcaCmsswHelper.addOutputModule(
                 "Merged", primaryDataset = inputPrimaryDataset,
-                processedDataset = processedDatasetName,
+                processedDataset = "%s-Tier0ReReco-%s-%s" % (acquisitionEra, skim, processingVersion),
                 dataTier = "ALCARECO",
-                lfnBase = "%s/ALCARECO/%s" % ( commonLfnBase, processedDatasetName)
+                lfnBase = "%s/ALCARECO/%s-Tier0ReReco-%s-%s" % (commonLfnBase, acquisitionEra, skim, processingVersion)
                 )
 
             mergeAlca.setInputReference(rerecoCmssw, outputModule = "ALCARECOStream%s" % skim)
@@ -292,8 +286,8 @@ def tier0ReRecoWorkload(workloadName, arguments):
         mergeAod.addGenerator("BasicCounter")
         mergeAod.setTaskType("Merge")
         mergeAod.applyTemplates()
-        mergeAod.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 4294967296)
-
+        mergeAod.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 4294967296, min_merge_size = 500000000)
+        
         mergeAodCmsswHelper = mergeAodCmssw.getTypeHelper()
         mergeAodCmsswHelper.cmsswSetup(
             cmsswVersion,
@@ -304,9 +298,9 @@ def tier0ReRecoWorkload(workloadName, arguments):
         mergeAodCmsswHelper.setDataProcessingConfig(scenario, "merge")
         mergeAodCmsswHelper.addOutputModule(
             "Merged", primaryDataset = inputPrimaryDataset,
-            processedDataset = processedDatasetName,
+            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion)
             dataTier = "AOD",
-            lfnBase = "%s/AOD/%s" % ( commonLfnBase, processedDatasetName)
+            lfnBase = "%s/AOD/%s-Tier0ReReco-%s" % (commonLfnBase, acquisitionEra, processingVersion)
         )
 
         mergeAod.setInputReference(rerecoCmssw, outputModule = "outputAODRECO")

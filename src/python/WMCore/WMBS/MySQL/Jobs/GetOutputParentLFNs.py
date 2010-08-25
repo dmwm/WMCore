@@ -5,19 +5,19 @@ _GetOutputParentLFNs_
 MySQL implementation of Jobs.GetOutputParentLFNs
 """
 
-__revision__ = "$Id: GetOutputParentLFNs.py,v 1.4 2009/10/13 19:36:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: GetOutputParentLFNs.py,v 1.5 2009/11/10 14:43:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetOutputParentLFNs(DBFormatter):
-    inputSQL = """SELECT wmbs_file_details.lfn, wmbs_file_details.merged 
+    inputSQL = """SELECT DISTINCT wmbs_file_details.lfn, wmbs_file_details.merged 
                   FROM wmbs_file_details
                     INNER JOIN wmbs_job_assoc ON
                       wmbs_file_details.id = wmbs_job_assoc.file
                   WHERE wmbs_job_assoc.job = :job"""
 
-    parentSQL = """SELECT wmbs_file_details.lfn FROM wmbs_file_details
+    parentSQL = """SELECT DISTINCT wmbs_file_details.lfn FROM wmbs_file_details
                      INNER JOIN wmbs_file_parent ON
                        wmbs_file_details.id = wmbs_file_parent.parent
                      INNER JOIN wmbs_job_assoc ON

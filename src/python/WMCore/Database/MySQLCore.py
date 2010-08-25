@@ -1,5 +1,6 @@
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.Dialects import MySQLDialect
+from WMCore.Database.ResultSet import ResultSet
 
 def bindVarCompare(a, b):
     """
@@ -94,7 +95,7 @@ class MySQLInterface(DBInterface):
             """
             result = ResultSet()
             for bind in bind_list:
-                resultproxy = connection.execute(s, bind)
+                resultproxy = connection.execute(newsql, bind)
                 result.add(resultproxy)
                 resultproxy.close()
             return self.makelist(result)

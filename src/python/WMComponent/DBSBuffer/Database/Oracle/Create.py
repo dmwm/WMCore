@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for Oracle.
 """
 
-__revision__ = "$Id: Create.py,v 1.9 2009/08/24 13:52:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Create.py,v 1.10 2009/08/26 20:03:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 
@@ -23,17 +23,22 @@ class Create(DBCreator):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
 
-        if params == None:
-            params = {}
-            params["tablespace_table"] = "TABLESPACE TIER1_WMBS_DATA"
-            params["tablespace_index"] = "USING INDEX TABLESPACE TIER1_WMBS_INDEX"
+        if params.has_key("tablespace_table"):
+            tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
+        else:
+            tablespaceTable = ""
 
+        if params.has_key("tablespace_index"):
+            tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
+        else:
+            tablespaceIndex = ""
+            
         self.create["01dbsbuffer_dataset"] = \
           """CREATE TABLE dbsbuffer_dataset
                (
 	         id   NUMBER(11)      NOT NULL ENABLE,
 	         path varchar2(500)   NOT NULL ENABLE
-               )%s""" % (params["tablespace_table"])
+               )%s""" % tablespaceTable
 
         self.create["01dbsbuffer_dataset_seq"] = \
           """CREATE SEQUENCE dbsbuffer_dataset_seq
@@ -59,7 +64,7 @@ class Create(DBCreator):
                  pset_hash varchar2(700),
                  config_content CLOB,
                  in_dbs    NUMBER(11)
-               )%s""" %(params["tablespace_table"])
+               )%s""" % tablespaceTable
 
         self.create["02dbsbuffer_algo_seq"] = \
           """CREATE SEQUENCE dbsbuffer_algo_seq
@@ -82,7 +87,7 @@ class Create(DBCreator):
                  algo_id    INTEGER NOT NULL,
                  dataset_id INTEGER NOT NULL,
                  in_dbs     INTEGER DEFAULT 0
-               )%s""" %(params["tablespace_table"])
+               )%s""" % tablespaceTable
 
         self.create["03dbsbuffer_algo_dataset_assoc_seq"] = \
           """CREATE SEQUENCE dbsbuffer_algdset_assoc_seq
@@ -109,7 +114,7 @@ class Create(DBCreator):
                  dataset_algo          NUMBER(11)    NOT NULL ENABLE,
                  status                varchar2(20),
                  LastModificationDate  NUMBER(11)
-               )%s""" %(params["tablespace_table"])
+               )%s""" % tablespaceTable
 
         self.create["04dbsbuffer_file_seq"] = \
           """CREATE SEQUENCE dbsbuffer_file_seq
@@ -130,7 +135,7 @@ class Create(DBCreator):
                (
                  child  NUMBER(11) NOT NULL,
                  parent NUMBER(11) NOT NULL
-               )%s""" %(params["tablespace_table"])
+               )%s""" % tablespaceTable
 
         self.create["06dbsbuffer_file_runlumi_map"] = \
           """CREATE TABLE dbsbuffer_file_runlumi_map
@@ -138,14 +143,14 @@ class Create(DBCreator):
                  filename  INTEGER NOT NULL,
                  run       INTEGER    NOT NULL ENABLE,
                  lumi      INTEGER    NOT NULL ENABLE
-               )%s""" %(params["tablespace_table"])
+               )%s""" % tablespaceTable
 
         self.create["07dbsbuffer_location"] = \
           """CREATE TABLE dbsbuffer_location
                (
                  id      INTEGER       NOT NULL ENABLE,
                  se_name VARCHAR2(255) NOT NULL ENABLE
-               )%s""" %(params["tablespace_table"])
+               )%s""" % tablespaceTable
 
         self.create["07dbsbuffer_location_seq"] = \
           """CREATE SEQUENCE dbsbuffer_location_seq
@@ -166,14 +171,14 @@ class Create(DBCreator):
                (
                  filename   INTEGER NOT NULL,
                  location   INTEGER NOT NULL
-               )%s""" %(params["tablespace_table"])
+               )%s""" % tablespaceTable
 
         self.create["10dbsbuffer_block"] = \
           """CREATE TABLE dbsbuffer_block (
           id        INTEGER,
           blockname VARCHAR(250) NOT NULL,
           location  INTEGER      NOT NULL,
-          is_in_phedex INTEGER DEFAULT 0) %s""" % (params["tablespace_table"])
+          is_in_phedex INTEGER DEFAULT 0) %s""" % tablespaceTable
 
         self.create["10dbsbuffer_block_seq"] = \
           """CREATE SEQUENCE dbsbuffer_block_seq
@@ -189,31 +194,30 @@ class Create(DBCreator):
             SELECT dbsbuffer_block_seq.nextval INTO :new.id FROM dual;
           END;"""       
 
-
         self.indexes["01_pk_dbsbuffer_dataset"] = \
           """ALTER TABLE dbsbuffer_dataset ADD
-               (CONSTRAINT dbsbuffer_dataset_pk PRIMARY KEY (id) %s)""" % params["tablespace_index"]
+               (CONSTRAINT dbsbuffer_dataset_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.indexes["02_pk_dbsbuffer_dataset"] = \
           """ALTER TABLE dbsbuffer_dataset ADD                                     
-               (CONSTRAINT dbsbuffer_dataset_unique UNIQUE (Path) %s)""" % params["tablespace_index"]
+               (CONSTRAINT dbsbuffer_dataset_unique UNIQUE (Path) %s)""" % tablespaceIndex
         
         self.indexes["01_pk_dbsbuffer_algo"] = \
           """ALTER TABLE dbsbuffer_algo ADD
-               (CONSTRAINT dbsbuffer_algo_pk PRIMARY KEY (id) %s)""" % params["tablespace_index"]
+               (CONSTRAINT dbsbuffer_algo_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.indexes["02_pk_dbsbuffer_algo"] = \
           """ALTER TABLE dbsbuffer_algo ADD                                  
                (CONSTRAINT dbsbuffer_algo_unique UNIQUE (app_name, app_ver,
-                                                         app_fam, pset_hash) %s)""" % params["tablespace_index"] 
+                                                         app_fam, pset_hash) %s)""" % tablespaceIndex 
         
         self.indexes["01_pk_dbsbuffer_file"] = \
           """ALTER TABLE dbsbuffer_file ADD
-               (CONSTRAINT dbsbuffer_file_pk PRIMARY KEY (id) %s)""" % params["tablespace_index"]
+               (CONSTRAINT dbsbuffer_file_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.indexes["01_pk_dbsbuffer_file_parent"] = \
           """ALTER TABLE dbsbuffer_file_parent ADD
-               (CONSTRAINT dbsbuffer_file_parent_pk PRIMARY KEY (child, parent) %s)""" % params["tablespace_index"]
+               (CONSTRAINT dbsbuffer_file_parent_pk PRIMARY KEY (child, parent) %s)""" % tablespaceIndex
         
         self.constraints["01_fk_dbsbuffer_file_parent"] = \
           """ALTER TABLE dbsbuffer_file_parent ADD
@@ -227,19 +231,19 @@ class Create(DBCreator):
         
         self.indexes["01_pk_dbsbuffer_location"] = \
           """ALTER TABLE dbsbuffer_location ADD
-               (CONSTRAINT pk_dbsbuffer_location_pk PRIMARY KEY (id) %s)""" % params["tablespace_index"]
+               (CONSTRAINT pk_dbsbuffer_location_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.indexes["02_pk_dbsbuffer_location"] = \
           """ALTER TABLE dbsbuffer_location ADD                                       
-               (CONSTRAINT pk_dbsbuffer_location_unique UNIQUE (se_name) %s)""" % params["tablespace_index"]
+               (CONSTRAINT pk_dbsbuffer_location_unique UNIQUE (se_name) %s)""" % tablespaceIndex
 
         self.indexes["01_pk_dbsbuffer_block"] = \
           """ALTER TABLE dbsbuffer_block ADD
-               (CONSTRAINT dbsbuffer_block_pk PRIMARY KEY (id) %s)""" % params["tablespace_index"]
+               (CONSTRAINT dbsbuffer_block_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.indexes["02_pk_dbsbuffer_block"] = \
           """ALTER TABLE dbsbuffer_block ADD                                    
-               (CONSTRAINT dbsbuffer_block_unique UNIQUE (blockname, location) %s)""" % params["tablespace_index"]
+               (CONSTRAINT dbsbuffer_block_unique UNIQUE (blockname, location) %s)""" % tablespaceIndex
 
         self.constraints["01_fk_dbsbuffer_block"] = \
           """ALTER TABLE dbsbuffer_block ADD                                              
@@ -248,7 +252,7 @@ class Create(DBCreator):
 
         self.indexes["01_pk_dbsbuffer_algodset_assoc"] = \
           """ALTER TABLE dbsbuffer_algo_dataset_assoc ADD
-               (CONSTRAINT dbsbuffer_algodset_assoc_pk PRIMARY KEY (id) %s)""" % params["tablespace_index"]
+               (CONSTRAINT dbsbuffer_algodset_assoc_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.constraints["01_fk_dbsbuffer_algodset_assoc"] = \
           """ALTER TABLE dbsbuffer_algo_dataset_assoc ADD

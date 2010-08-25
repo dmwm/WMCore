@@ -10,8 +10,8 @@ creation and/or tracking.
 If file spans a run will need to create a mask for that file.
 """
 
-__revision__ = "$Id: RunBased.py,v 1.12 2009/02/19 19:53:05 sfoulkes Exp $"
-__version__  = "$Revision: 1.12 $"
+__revision__ = "$Id: RunBased.py,v 1.13 2009/05/28 16:48:30 sfoulkes Exp $"
+__version__  = "$Revision: 1.13 $"
 
 from sets import Set
 
@@ -37,7 +37,7 @@ class RunBased(JobFactory):
         baseName = makeUUID()
         
         # Resulting job set
-        jobs = Set()
+        jobs = []
         
         # Get the available Fileset
         fileset = list(self.subscription.availableFiles())
@@ -73,11 +73,11 @@ class RunBased(JobFactory):
             # Create the job
             job = jobInstance(name = '%s-%s' % (baseName, len(jobs) + 1),
                               files = jobFiles)
-            jobs.add(job)
+            jobs.append(job)
         
         jobGroup = groupInstance(subscription = self.subscription)
         jobGroup.add(jobs)
         jobGroup.commit()
-        jobGroup.recordAcquire(list(jobs))
+        jobGroup.recordAcquire(jobs)
 
         return jobGroup

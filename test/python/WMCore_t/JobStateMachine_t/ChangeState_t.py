@@ -64,7 +64,6 @@ class TestChangeState(unittest.TestCase):
         """
 
         myThread = threading.currentThread()
-        
         factory = WMFactory("WMBS", "WMCore.WMBS")
         destroy = factory.loadObject(myThread.dialect + ".Destroy")
         myThread.transaction.begin()
@@ -135,6 +134,28 @@ class TestChangeState(unittest.TestCase):
         """
     	This is the test class for function Propagate from module ChangeState
     	"""
+        (testSubscription, testFileset, testWorkflow, testFileA,\
+            testFileB, testFileC) = self.createSubscriptionWithFileABC()
+        
+        self.assertFalse(testSubscription.exists() , \
+               "ERROR: Subscription exists before it was created")
+
+        testSubscription.create()
+        
+        assert testSubscription.exists() >= 0, \
+               "ERROR: Subscription does not exist after it was created"
+            
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+        testJobA = Job(name = "TestJobA")
+        testJobA.create(testJobGroupA)
+        testJobB = Job(name = "TestJobB")
+        testJobB.create(testJobGroupA)
+        testJobC = Job(name = "TestJobC")
+        testJobC.create(testJobGroupA)
+        testJobD = Job(name = "TestJobD")
+        testJobD.create(testJobGroupA)
+        self.change.propagate([testJobA,testJobB,testJobC,testJobD], 'created', 'new')
         return
 
 
@@ -178,10 +199,10 @@ class TestChangeState(unittest.TestCase):
 
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
-        testSubscription2 = Subscription(fileset = testFileset,
-                                         workflow = testWorkflow2)
-        testSubscription2.create()
-        testSubscription2.acquireFiles([testFileA, testFileB])
+#        testSubscription2 = Subscription(fileset = testFileset,
+#                                         workflow = testWorkflow2)
+#        testSubscription2.create()
+#        testSubscription2.acquireFiles([testFileA, testFileB])
         
         return (testSubscription, testFileset, testWorkflow, testFileA,
                 testFileB, testFileC)

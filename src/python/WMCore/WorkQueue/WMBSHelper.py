@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.26 2010/05/20 21:28:16 sryu Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.27 2010/05/20 21:38:19 sryu Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import logging
 
@@ -64,23 +64,23 @@ class WMBSHelper:
         # To do: check this is the right change
         #outputModules =  task.getOutputModulesForStep(task.getTopStepName())
         outputModules = task.getOutputModulesForTask()
+        for outputModule in outputModules:
+            for outputModuleName in outputModules.listSections_():
+                if task.taskType() == "Merge":
+                    outputFilesetName = "%s/merged-%s" % (task.getPathName(),
+                                                          outputModuleName)
+                else:
+                    outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
+                                                            outputModuleName)
         
-        for outputModuleName in outputModules.listSections_():
-            if task.taskType() == "Merge":
-                outputFilesetName = "%s/merged-%s" % (task.getPathName(),
-                                                      outputModuleName)
-            else:
-                outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
-                                                        outputModuleName)
-    
-            outputFileset = Fileset(name = outputFilesetName)
-            outputFileset.create()
-            workflow.addOutput(outputModuleName, outputFileset)
-    
-            for childTask in task.childTaskIterator():
-                if childTask.data.input.outputModule == outputModuleName:
-                    self._createChildSubscription(childTask, outputFileset) 
+                outputFileset = Fileset(name = outputFilesetName)
+                outputFileset.create()
+                workflow.addOutput(outputModuleName, outputFileset)
         
+                for childTask in task.childTaskIterator():
+                    if childTask.data.input.outputModule == outputModuleName:
+                        self._createChildSubscription(childTask, outputFileset) 
+            
         return self.topLevelSubscription
 
     def createTopLevelFilesset(self):

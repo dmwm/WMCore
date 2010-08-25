@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.130 2010/08/02 15:56:35 swakef Exp $"
-__version__ = "$Revision: 1.130 $"
+__revision__ = "$Id: WorkQueue.py,v 1.131 2010/08/02 19:06:41 sryu Exp $"
+__version__ = "$Revision: 1.131 $"
 
 
 import time
@@ -675,7 +675,12 @@ class WorkQueue(WorkQueueBase):
                     [sites.__setitem__(name,
                         self.params['QueueDepth'] * slots['total_slots'] * self.params['JobSlotMultiplier'])
                         for name, slots in rc_sites.items() if slots['total_slots'] > 0]
-                    self.logger.info("Pull work for sites %s" % str(sites))
+                    self.logger.info("""Pull work for sites %s 
+                                        with %s queue depth and 
+                                        %s multiply factor
+                                     """ % (str(sites), 
+                                            self.params['QueueDepth'], 
+                                            self.params['JobSlotMultiplier']))
                     _, resources = self._match(sites)
 
                 # if we have sites with no queued work try and get some

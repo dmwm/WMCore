@@ -298,8 +298,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def putMessage(self, request):
         self.initThread()
-        message = JsoniWrapper.loads( cherrypy.request.body.read() )
-        print "PUTMESAGE " + str(message)
+        message = JsonWrapper.loads( cherrypy.request.body.read() )
         return ChangeState.putMessage(request, message)
 
 #    def postRequest(self, requestName, events_written=None, events_merged=None, 

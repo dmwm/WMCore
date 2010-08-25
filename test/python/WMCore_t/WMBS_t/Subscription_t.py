@@ -1041,11 +1041,11 @@ class SubscriptionTest(unittest.TestCase):
         
         testJobGroup.commit()
 
-        nJobs = testSubscription.getNumberOfJobsPerSite('goodse.cern.ch', 'new', testSubscription['id'])
+        nJobs = testSubscription.getNumberOfJobsPerSite('goodse.cern.ch', 'new')
         
         self.assertEqual(nJobs, 3)
         
-        nZero = testSubscription.getNumberOfJobsPerSite('badse.cern.ch', 'New', testSubscription['id'])
+        nZero = testSubscription.getNumberOfJobsPerSite('badse.cern.ch', 'new')
         
         self.assertEqual(nZero, 0)
         

@@ -4,7 +4,7 @@ Unittest file for WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueService.py
 """
 
 __revision__ = "$Id"
-__version__ = "$Revision: 1.7 $"
+__version__ = "$Revision: 1.8 $"
 
 
 import os
@@ -131,28 +131,12 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         
         testName = inspect.stack()[0][3]
         inpt = { "elementIDs": [1] }        
-        data, exp = self._tester(testName, "POST", 200, "status/", inpt)
+        data, exp = self._tester(testName, "GET", 200, "status/", inpt)
 
         self.assertEqual(len(data), 1, "only 1 element needs to be back, got %s" % len(data))
         self.assertEqual(data[0]["Id"], 1, "expected Id 1, got %s" % data[0]["Id"])
 
-
-
-    def testValidationIDsArgumentNotSpecifiedOrWrong(self):
-        #TODO: could try different spec or multiple spec
-        specUrl = self.specGenerator.createReRecoSpec("ProductionSpec1", "file")
-        self.globalQueue.queueWork(specUrl)
-        
-        testName = inspect.stack()[0][3]
-        inpt = { "nonsenceargument": [1] }      
-        
-        data, exp = self._tester(testName, "POST", 400, "status/", inpt)
-        self.assertRaises(AssertionError, self._tester, testName, "POST", 400, "status/", inpt)
-        
-        inpt = { "elementIDs": 1 }
-        self.assertRaises(AssertionError, self._tester, testName, "POST", 400, "status/", inpt)
-        
-        
+                
         
     def testServeWorkflow(self):
         #TODO: could try different spec or multiple spec

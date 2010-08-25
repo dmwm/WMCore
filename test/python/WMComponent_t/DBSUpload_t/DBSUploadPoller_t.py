@@ -6,8 +6,8 @@ DBSUpload test TestDBSUpload module and the harness
 
 """
 
-__revision__ = "$Id: DBSUploadPoller_t.py,v 1.17 2010/02/05 21:54:40 meloam Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: DBSUploadPoller_t.py,v 1.18 2010/02/10 22:31:48 meloam Exp $"
+__version__ = "$Revision: 1.18 $"
 
 
 import os
@@ -322,7 +322,7 @@ class DBSUploadTest(unittest.TestCase):
 
 
     def testLargeUpload(self):
-        return nose.SkipTest
+        raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
         myThread = threading.currentThread()
 
         factory     = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
@@ -433,7 +433,8 @@ class DBSUploadTest(unittest.TestCase):
         Run the poller several times and make sure it doesn't unnecessarily
         create blocks.
         """
-
+        
+        raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
         #return
 
         myThread = threading.currentThread()
@@ -462,7 +463,7 @@ class DBSUploadTest(unittest.TestCase):
             #       "Error: Wrong number of blocks in buffer: %s" % blockCount
 
 
-        args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer }
+        args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer, 'retry' : 0 }
         dbsReader = DBSReader(url = config.DBSUpload.globalDBSUrl, level='ERROR', user='NORMAL', version=config.DBSUpload.globalDBSVer)
 
         primaries = dbsReader.listPrimaryDatasets()
@@ -484,6 +485,7 @@ class DBSUploadTest(unittest.TestCase):
         
         Test closing blocks via timeout
         """
+        raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
 
         myThread = threading.currentThread()
 

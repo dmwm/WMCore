@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.3 $"
+__version__ = "$Revision: 1.4 $"
 
 
 import os
@@ -167,6 +167,7 @@ class MigrateFileBlocksTest(unittest.TestCase):
         Test migration by loading the files
 
         """
+        raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
 
         myThread = threading.currentThread()
         
@@ -221,6 +222,7 @@ class MigrateFileBlocksTest(unittest.TestCase):
         Run the poller several times and make sure it doesn't unnecessarily
         create blocks.
         """
+        raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
 
         #return
 

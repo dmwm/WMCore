@@ -12,7 +12,7 @@ import WMCore.WMRuntime.Bootstrap as Bootstrap
 if __name__ == '__main__':
     job = Bootstrap.loadJobDefinition()
     task = Bootstrap.loadTask(job)
-    monitor = Bootstrap.setupMonitoring(job = job, task = task)
+    monitor = Bootstrap.setupMonitoring()
 
     Bootstrap.setupLogging(os.getcwd())
 

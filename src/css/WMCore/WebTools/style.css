@@ -4,7 +4,7 @@ h1, h2, h3, p{
 }
 
 pre{
-		padding: 0.5em;
+    padding: 0.5em;
 }
 
 h1, h2{
@@ -42,9 +42,11 @@ ol, li, dt, dd {
 	list-style-type: disc;
 	list-style-position: inside;
 }
+
 ol, li, dt {
 	margin-left: 0.5em;
 }
+
 .small{
 	font-size:0.75em;
 }
@@ -65,16 +67,15 @@ hr {
 	border: 0;
     margin: 1em;
 }
+
 body {
         background-color:  #D3D3D3;
-        padding: 1em;
+        margin: 0px;
+        padding: 0px;
 }
 
 table {
         background-color:  #FFFFFF;
-        padding: 0.5em;
-}
-
-body, table {
-        margin: 1em;
+        padding: 0.5em; 
+        margin-bottom: 2em;
 }

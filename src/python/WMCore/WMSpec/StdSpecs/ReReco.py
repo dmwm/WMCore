@@ -234,6 +234,18 @@ def rerecoWorkload(workloadName, arguments):
             mergeRecoStageOutHelper.data.emulator.emulatorName = "StageOut"
             mergeRecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
 
+        cleanupRecoTask = rereco.addTask("CleanupUnmergedReco")
+        cleanupRecoStep = cleanupRecoTask.makeStep("cleanupUnmergedReco")    
+        cleanupRecoStep.setStepType("DeleteFiles")
+
+        cleanupRecoStep.applyTemplates()
+        cleanupRecoStep.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 10)
+        cleanupRecoStep.addGenerator("BasicNaming")
+        cleanupRecoStep.addGenerator("BasicCounter")
+        cleanupRecoStep.setTaskType("Cleanup")
+
+        cleanupRecoTask.setInputReference(rerecoCmssw, outputModule = outputModule("RECO"))
+
     if "ALCARECO" in writeDataTiers:
         mergeAlca = rereco.addTask("MergeAlcaReco")
         mergeAlcaCmssw = mergeAlca.makeStep("mergeAlcaReco")    

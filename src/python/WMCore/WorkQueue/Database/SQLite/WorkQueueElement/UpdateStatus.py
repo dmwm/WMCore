@@ -1,12 +1,12 @@
 """
 _UpdateStaus_
 
-SQLite implementation of WorkQueueElement.GetElements
+SQLite implementation of WorkQueueElement.UpdateStatus
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateStatus.py,v 1.1 2009/07/17 14:25:28 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: UpdateStatus.py,v 1.2 2009/08/12 17:01:25 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WorkQueue.Database.MySQL.WorkQueueElement.UpdateStatus \
      import UpdateStatus as UpdateStatusMySQL

@@ -5,8 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.8 2009/03/09 13:14:23 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Workflow_t.py,v 1.9 2009/03/24 16:29:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import os
@@ -53,16 +53,13 @@ class WorkflowTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
 
-        if not self._teardown:
-            factory = WMFactory("WMBS", "WMCore.WMBS")
-            destroy = factory.loadObject(myThread.dialect + ".Destroy")
-            myThread.transaction.begin()
-            destroyworked = destroy.execute(conn = myThread.transaction.conn)
-            if not destroyworked:
-                raise Exception("Could not complete WMBS tear down.")
-            myThread.transaction.commit()
-            
-            self._teardown = False
+        factory = WMFactory("WMBS", "WMCore.WMBS")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        myThread.transaction.begin()
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete WMBS tear down.")
+        myThread.transaction.commit()
 
     def testCreateDeleteExists(self):
         """

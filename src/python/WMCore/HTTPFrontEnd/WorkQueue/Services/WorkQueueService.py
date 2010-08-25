@@ -49,7 +49,11 @@ class WorkQueueService(ServiceInterface):
 
         self.model.addMethod('POST', 'getwork', partial(wrapGetWork, self.wq),
                              args=["siteJobs", "pullingQueueUrl"])
-        self.model.addMethod('GET', 'status', self.wq.status, args=["status", "before", "after",
+        
+        #TODO: change this call to GET - Preferably Requeust.py in Service handle this automatically
+        # elementIDs -> convert elementID=1&elementID=2 but can be done upper level - responsible for 
+        # client api writer. For now just set as POST since GET breaks the code.
+        self.model.addMethod('POST', 'status', self.wq.status, args=["status", "before", "after",
                                         "elementIDs", "subs", "dictKey"])
         self.model.addMethod('GET', 'wf', partial(serveWorkflow, self.wq), args=['name'])
         self.model.addMethod('PUT', 'synchronize', self.wq.synchronize, args=["child_url", "child_report"])

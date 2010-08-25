@@ -37,6 +37,7 @@ def rerecoWorkload(workloadName, arguments):
     #  //
     # // Processing controls
     #//  TODO: Address defaults etc/exception handling
+    owner = arguments.get("Owner", "DataOps")
     writeDataTiers = arguments.get("OutputTiers", ['RECO'])
     acquisitionEra = arguments.get("AcquisitionEra", "Teatime09")
     globalTagSetting = arguments.get("GlobalTag","GR09_P_V7::All")
@@ -79,6 +80,7 @@ def rerecoWorkload(workloadName, arguments):
     # // Set up the basic workload task and step structure
     #//
     workload = newWorkload(workloadName)
+    workload.setOwner(owner)
     workload.setStartPolicy('DatasetBlock')
     workload.setEndPolicy('SingleShot')
     workload.data.properties.acquisitionEra = acquisitionEra

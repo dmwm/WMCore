@@ -8,8 +8,8 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.24 2009/05/01 19:40:19 sryu Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Subscription.py,v 1.25 2009/10/14 20:45:46 meloam Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import copy
 from sets import Set
@@ -135,6 +135,8 @@ class Subscription(Pickleable, dict):
             return self.completed.getFiles(type='set')
         elif status == 'Failed':
             return self.failed.getFiles(type='set')
+        else:
+            raise RuntimeError, "Invalid filestatus"
     
     
     def markLocation(self, location, whitelist = True):

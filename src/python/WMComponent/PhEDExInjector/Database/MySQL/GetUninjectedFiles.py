@@ -6,8 +6,8 @@ Retrieve a list of files that have been injected into DBS but not PhEDEx.
 Format the output so that it can easily be injected into PhEDEx.
 """
 
-__revision__ = "$Id: GetUninjectedFiles.py,v 1.4 2009/12/10 16:06:02 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: GetUninjectedFiles.py,v 1.5 2009/12/10 19:54:04 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -16,8 +16,14 @@ class GetUninjectedFiles(DBFormatter):
                     dbsbuffer_file.filesize AS filesize,
                     dbsbuffer_block.blockname AS blockname,
                     dbsbuffer_dataset.path AS dataset,
-                    dbsbuffer_location.se_name AS location
+                    dbsbuffer_location.se_name AS location,
+                    dbsbuffer_file_checksums.cksum as cksum,
+                    dbsbuffer_checksum_type.type as cktype                    
                     FROM dbsbuffer_file
+               INNER JOIN dbsbuffer_file_checksums ON
+                 dbsbuffer_file.id = dbsbuffer_file_checksums.fileid
+               INNER JOIN dbsbuffer_checksum_type ON
+                 dbsbuffer_file_checksums.typeid = dbsbuffer_checksum_type.id                 
                INNER JOIN dbsbuffer_algo_dataset_assoc ON
                  dbsbuffer_file.dataset_algo = dbsbuffer_algo_dataset_assoc.id
                INNER JOIN dbsbuffer_dataset ON
@@ -30,17 +36,9 @@ class GetUninjectedFiles(DBFormatter):
                  dbsbuffer_file_location.location = dbsbuffer_location.id
              WHERE dbsbuffer_file.status = 'InDBS'"""
 
-    findCksumSQL = """SELECT dbsbuffer_file_checksums.cksum as cksum,
-                             dbsbuffer_checksum_type.type as cktype
-                      FROM dbsbuffer_file_checksums
-                      INNER JOIN dbsbuffer_checksum_type
-                      ON dbsbuffer_file_checksums.typeid = dbsbuffer_checksum_type.id
-                      WHERE dbsbuffer_file_checksum.fileid = (SELECT id FROM dbsbuffer_file WHERE lfn = :lfn)
-    """
-
-    def formatAndGrabChecksum(self, result, conn = None, transaction = False):
+    def format(self, result):
         """
-        _formatDict_
+        _format_
 
         Format the query results into something that resembles the XML format
         PhEDEx expects for injection:
@@ -48,8 +46,8 @@ class GetUninjectedFiles(DBFormatter):
         {"location1":
           {"dataset1":
             {"block1": {"is-open": "y", "files":
-              [{"lfn": "lfn1", "size": 10, "checksum": "cksum:1234"},
-               {"lfn": "lfn2", "size": 20, "checksum": "cksum:4321"}]}}}}
+              [{"lfn": "lfn1", "size": 10, "checksum": {"cksum": 4321}},
+               {"lfn": "lfn2", "size": 20, "checksum": {"cksum": 4321}]}}}}
 
         In order to do this, we have to graph the checksum
         """
@@ -69,52 +67,20 @@ class GetUninjectedFiles(DBFormatter):
                 datasetDict[row["blockname"]] = {"is-open": "y",
                                                  "files": []}
 
-            #Now you have to get the checksum
-            cksumString = self.getChecksum(lfn = row['lfn'])
-
-            blockDict = datasetDict[row["blockname"]]
-            blockDict["files"].append({"lfn": row["lfn"],
-                                       "size": row["filesize"],
-                                       "checksum": cksumString})
+            blockDict = datasetDict[row["blockname"]]            
+            for file in blockDict["files"]:
+                if file["lfn"] == row["lfn"]:
+                    file["checksum"][row["cktype"]] = row["cksum"]
+                    break
+            else:
+                cksumDict = {row["cktype"]: row["cksum"]}
+                blockDict["files"].append({"lfn": row["lfn"],
+                                           "size": row["filesize"],
+                                           "checksum": cksumDict})
 
         return formattedResult
                  
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn,
                                       transaction = transaction)
-        return self.formatAndGrabChecksum(result, conn, transaction)
-
-
-    def getChecksum(self, lfn, conn = None, transaction = False):
-        """
-        get a Checksum
-
-        """
-
-        result = self.dbi.processData(self.findCksumSQL, {'lfn': lfn}, conn = conn, transaction = transaction)
-
-        dictResult = DBFormatter.formatDict(result)
-        #This should be a list
-
-        if not type(dictResult) == list:
-            return None, None
-
-        cksum = None
-        adler = None
-        for entry in dictResult:
-            if entry['cktype'].lower() == 'cksum':
-                #This is the priority one
-                cksum = entry['cksum'] 
-            elif entry['cktype'].lower() == 'adler32':
-                adler = entry['cksum']
-            #PhEDEX doesn't do anything else
-
-        if not adler and not cksum:
-            return None
-        returnString = ''
-        if adler:
-            returnString.join('adler32:%s' %(adler))
-        if cksum:
-            returnString.join('cksum:%s' %(cksum))
-
-        return returnString
+        return self.format(result)

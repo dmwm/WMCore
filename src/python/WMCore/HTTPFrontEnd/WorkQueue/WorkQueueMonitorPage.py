@@ -4,8 +4,8 @@
 The documentation for the framework
 """
     
-__revision__ = "$Id: WorkQueueMonitorPage.py,v 1.2 2010/05/11 20:04:50 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueueMonitorPage.py,v 1.3 2010/05/19 16:56:59 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from cherrypy import expose
 from WMCore.WebTools.Page import TemplatedPage
@@ -23,7 +23,7 @@ class WorkQueueMonitorPage(TemplatedPage):
         """
         The index of the documentation
         """
-        return serve_file(os.path.join(self.config.html, *args),
+        return serve_file(os.path.join(self.config.html, 'index.html'),
                               content_type='text/html')
         
     @expose

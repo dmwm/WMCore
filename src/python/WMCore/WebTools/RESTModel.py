@@ -5,33 +5,41 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.3 2009/03/16 13:00:04 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: RESTModel.py,v 1.4 2009/03/25 13:34:32 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
-from WMCore.WebTools.Page import DatabasePage
+from WMCore.WebTools.WebAPI import WebAPI
 
-class RESTModel(DatabasePage):
+class RESTModel(WebAPI):
    """Rest model class implementation"""
    def handle_get(self, args, kwargs):
        """Example of handle_get implementation"""
-       data = {"args": args, "kwargs": kwargs}
+       data = {"message": "Unsupported verb method: GET", 
+               "args": args, 
+               "kwargs": kwargs}
        self.debug(str(data))
        return data
 
    def handle_post(self, args, kwargs):
        """Example of handle_post implementation"""
-       data = {"args": args, "kwargs": kwargs}
+       data = {"message": "Unsupported verb method: POST", 
+               "args": args, 
+               "kwargs": kwargs}
        self.debug(str(data))
        return data
 
    def handle_put(self, args, kwargs):
        """Example of handle_put implementation"""
-       data = {"args": args, "kwargs": kwargs}
+       data = {"message": "Unsupported verb method: PUT", 
+               "args": args, 
+               "kwargs": kwargs}
        self.debug(str(data))
        return data
 
    def handle_delete(self, args, kwargs):
        """Example of handle_delete implementation"""
-       data = {"args": args, "kwargs": kwargs}
+       data = {"message": "Unsupported verb method: DELETE", 
+               "args": args, 
+               "kwargs": kwargs}
        self.debug(str(data))
        return data

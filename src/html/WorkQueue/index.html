@@ -51,6 +51,11 @@ body {
 
 <script src="javascript/namespace.js"></script>
 <script src="javascript/dataTable.js"></script>
+<script src="javascript/WorkQueue/WorkQueueTree.js"></script>
+<script src="javascript/WorkQueue/WorkloadStatusYUIPieChart.js"></script>
+<script src="javascript/WorkQueue/JobYUIPieChart.js"></script>
+<script src="javascript/WorkQueue/ElementInfoTable.js"></script>
+<script src="javascript/WorkQueue/WorkloadInfoTable.js"></script>
 <style>
     /*
         For IE 6: trigger "haslayout" for the anchor elements in the root Menu by 
@@ -137,203 +142,10 @@ body {
 
 <script>
 
-//global variable to allow console inspection of tree:
-var tree;
-
-
 (function() {
     var Dom = YAHOO.util.Dom,
         Event = YAHOO.util.Event;
         
-        
-    //Function  creates the tree and 
-    //builds between 3 and 7 children of the root node:
-    //var tree
-    var workQueueTree = function() {
-    
-        //instantiate the tree:
-        tree = new YAHOO.widget.TreeView("workqueuetree");
-
-        for (var i = 0; i < 2 ; i++) {
-            var tmpNode = new YAHOO.widget.TextNode("Global Queue -" + i, tree.getRoot(), false);
-            // tmpNode.collapse();
-            // tmpNode.expand();
-            // buildRandomTextBranch(tmpNode);
-            buildLargeBranch(tmpNode);
-        }
-
-       // Expand and collapse happen prior to the actual expand/collapse,
-       // and can be used to cancel the operation
-       tree.subscribe("expand", function(node) {
-              YAHOO.log(node.index + " was expanded", "info", "example");
-              // return false; // return false to cancel the expand
-           });
-
-       tree.subscribe("collapse", function(node) {
-              YAHOO.log(node.index + " was collapsed", "info", "example");
-           });
-
-       // Trees with TextNodes will fire an event for when the label is clicked:
-       tree.subscribe("labelClick", function(node) {
-              YAHOO.log(node.index + " label was clicked", "info", "example");
-           });
-
-        //The tree is not created in the DOM until this method is called:
-        tree.draw();
-    }
-
-    //function builds 10 children for the node you pass in:
-    function buildLargeBranch(node) {
-        if (node.depth < 5) {
-            YAHOO.log("buildRandomTextBranch: " + node.index, "info", "example");
-            for ( var i = 0; i < 5; i++ ) {
-                new YAHOO.widget.TextNode("Local Queue -" + i, node, false);
-            }
-        }
-    };
-
-    var statusChart = function() {
-    	YAHOO.widget.Chart.SWFURL = "http://yui.yahooapis.com/2.8.1/build/charts/assets/charts.swf";
-        //--- data
-    
-        var dataSchema = {
-            fields: [{key: "status"}, {key: "count"}]
-            };
-
-        var dataUrl = "/workqueue/statusstat"
-
-        var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-    
-        //--- chart
-
-        var mychart = new YAHOO.widget.PieChart( "statuschart", dataSource,
-	    {
-	        dataField: "count",
-	        categoryField: "status",
-	        style:
-	        {
-	            padding: 20,
-	            legend:
-	            {
-	                display: "right",
-	                padding: 10,
-	                spacing: 5,
-	                font:
-	                {
-	                    family: "Arial",
-	                    size: 12
-	                }
-	            }
-	        },
-	        //only needed for flash player express install
-	        expressInstall: "assets/expressinstall.swf"
-	    });
-    };
-	
-	var jobChart = function() {
-        YAHOO.widget.Chart.SWFURL = "http://yui.yahooapis.com/2.8.1/build/charts/assets/charts.swf";
-        //--- data
-    
-        var dataSchema = {
-            fields: [{key: "status"}, {key: "jobs"}]
-            };
-
-        var dataUrl = "/workqueue/jobstatusstat"
-
-        var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-    
-        //--- chart
-
-        var mychart = new YAHOO.widget.PieChart( "jobchart", dataSource,
-        {
-            dataField: "jobs",
-            categoryField: "status",
-            style:
-            {
-                padding: 20,
-                legend:
-                {
-                    display: "right",
-                    padding: 10,
-                    spacing: 5,
-                    font:
-                    {
-                        family: "Arial",
-                        size: 12
-                    }
-                }
-            },
-            //only needed for flash player express install
-            expressInstall: "assets/expressinstall.swf"
-        });
-    };
-    
-    var workloadTable = function() {
-        var formatUrl = function(elCell, oRecord, oColumn, sData) { 
-                elCell.innerHTML = "<a href='" + oRecord.getData("ChildQueueUrl") + "' target='_blank'>" + sData + "</a>"; 
-            };
-        var pbs = [];
-        var progressFormatter = function (elLiner, oRecord, oColumn, oData) {
-                    var pb = new YAHOO.widget.ProgressBar({
-                        width:'90px',
-                        height:'11px',
-                        maxValue:oRecord.getData("total"),
-                        //className:'some_other_image',
-                        value:oData
-                    }).render(elLiner);
-                    pbs.push(pb);
-                };
-        
-        var dataSchema = {
-                fields: [{key: "spec_id"}, {key: "spec_name"}, 
-                         {key: "owner"}, {key: "total", label: "Total Elements"}, 
-						 {key: "done", label: "progress", formatter: progressFormatter}]
-                };
-        
-        var dataUrl = "/workqueue/workloadprogress";
-		
-        var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema);
-        tableConfig = WMCore.WebTools.defaultTableConfig;
-        tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 5});
-		tableConfig.sortedBy ={
-            key: "spec_id", dir:YAHOO.widget.DataTable.CLASS_ASC
-        }
-		
-		var dataTable = WMCore.WebTools.createDataTable("workloadprogress", dataSource, 
-                                     WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                                     tableConfig, 100000);
-    };
-    
-    var elementTable = function() {
-        
-        var formatUrl = function(elCell, oRecord, oColumn, sData) { 
-                elCell.innerHTML = "<a href='" + oRecord.getData("child_queue") + "' target='_blank'>" + sData + "</a>"; 
-            };
-            
-        var dataSchema = {
-            fields: [{key: "id"}, {key: "spec_name"}, {key: "task_name"}, {key: "element_name"}, 
-                     {key: "status"}, {key: "child_queue", formatter:formatUrl}, 
-                     {key: "parent_flag"},
-                     {key: "priority"}, {key: "num_jobs"},
-                     {key: "parent_queue_id"}, {key: "subscription_id"},
-                     {key: "insert_time", parser: "date", formatter:YAHOO.widget.DataTable.formatDate},
-                     {key: "update_time", parser: "date", formatter:YAHOO.widget.DataTable.formatDate}
-                    ]
-            };
-
-        var dataUrl = "/workqueue/elementsinfo"
-
-        var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-        
-        tableConfig = WMCore.WebTools.defaultTableConfig;
-        
-        tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 5});
-        
-        var dataTable = WMCore.WebTools.createDataTable("elements", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             tableConfig, 100000);
-    }
-
     var initTopMenu = function() {
                 /*
                      Instantiate a MenuBar:  The first argument passed to the 
@@ -428,11 +240,11 @@ var tree;
         
         layout.on('render', function() {
             YAHOO.util.Event.onContentReady("menubar", initTopMenu);
-			YAHOO.util.Event.onContentReady("statuschart", statusChart);
-			YAHOO.util.Event.onContentReady("jobchart", jobChart);
-            YAHOO.util.Event.onContentReady("elements", elementTable);
-            YAHOO.util.Event.onContentReady("workloadprogress", workloadTable);
-            YAHOO.util.Event.onContentReady("workqueuetree", workQueueTree);         
+			YAHOO.util.Event.onContentReady("statuschart", workloadStatusChart, "statuschart");
+			YAHOO.util.Event.onContentReady("jobchart", jobChart, "jobchart");
+            YAHOO.util.Event.onContentReady("elements", elementTable, "elements");
+            YAHOO.util.Event.onContentReady("workloadprogress", workloadTable, "workloadprogress");
+            YAHOO.util.Event.onContentReady("workqueuetree", workQueueTree, "workqueuetree");         
         });
         
         layout.render();

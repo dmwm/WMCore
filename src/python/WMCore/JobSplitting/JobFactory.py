@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.16 2009/10/02 19:18:00 evansde Exp $"
-__version__  = "$Revision: 1.16 $"
+__revision__ = "$Id: JobFactory.py,v 1.17 2009/10/29 09:58:18 sfoulkes Exp $"
+__version__  = "$Revision: 1.17 $"
 
 
 import logging
@@ -107,6 +107,12 @@ class JobFactory(WMObject):
             logging.debug('I have committed a jobGroup with id %i' %
                                 (self.currentGroup.id))
             self.currentGroup = None
+
+        for jobGroup in self.jobGroups:
+            for job in jobGroup.jobs:
+                job.save()
+
+        return
 
     def sortByLocation(self):
         """

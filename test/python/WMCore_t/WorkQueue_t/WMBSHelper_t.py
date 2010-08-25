@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WMBSHelper_t.py,v 1.1 2010/07/22 16:57:07 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMBSHelper_t.py,v 1.2 2010/08/16 19:17:16 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 
@@ -32,10 +32,44 @@ class WMBSHelperTest(WorkQueueTestCase):
         setup things - db etc
         """
         WorkQueueTestCase.setUp(self)
-
+        self.wmspec = self.createWMSpec()
+        self.topLevelTask = self.wmspec.taskIterator().next()
+        self.inputDataset = self.topLevelTask.inputDataset()
+        self.dataset = self.topLevelTask.getInputDatasetPath()
+        self.dbs = MockDBSReader(self.inputDataset.dbsurl, self.dataset)
+        
+        
     def tearDown(self):
         """tearDown"""
         WorkQueueTestCase.tearDown(self)
+        pass
+
+    def createWMSpec(self, name = 'ReRecoWorkload', args = rerecoArgs):
+        
+        wmspec = TestReRecoFactory()(name, args)
+        
+        return wmspec 
+    
+    def getDBS(self, wmspec):
+        topLevelTask = wmspec.taskIterator().next()
+        inputDataset = topLevelTask.inputDataset()
+        dataset = topLevelTask.getInputDatasetPath()
+        dbs = MockDBSReader(inputDataset.dbsurl, dataset)
+        #dbsDict = {self.inputDataset.dbsurl : self.dbs}
+        return dbs
+        
+        
+    def createWMBSHelperWithTopTask(self, wmspec, block):
+        
+        topLevelTask = wmspec.taskIterator().next()
+         
+        wmbs = WMBSHelper(wmspec, '/somewhere',
+                          "whatever", topLevelTask.name(), 
+                          topLevelTask.taskType(),
+                          [], [], block)
+        wmbs.createSubscription()
+        
+        return wmbs
 
 #    def testProduction(self):
 #        """Production workflow"""
@@ -44,56 +78,73 @@ class WMBSHelperTest(WorkQueueTestCase):
     def testReReco(self):
         """ReReco workflow"""
         # create workflow
-        wmSpec = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
-        inputDataset = wmSpec.taskIterator().next().inputDataset()
-        dataset = wmSpec.taskIterator().next().getInputDatasetPath()
-        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl, dataset)}
-        taskName = wmSpec.taskIterator().next().name()
-        taskType = wmSpec.taskIterator().next().taskType()
-        # do real tests now...
-        wmbs = WMBSHelper(wmSpec, '/somewhere',
-                          "whatever", taskName, taskType,
-                          [], [], dataset + "#1")
-
-        #import pdb; pdb.set_trace()
-        wmbs.createSubscription()
-
-        files = wmbs.validFiles(dbs[inputDataset.dbsurl].getFileBlock(dataset + "#1"))
+        block = self.dataset + "#1"
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
+        files = wmbs.validFiles(self.dbs.getFileBlock(block))
         self.assertEqual(len(files), 1)
 
-    def testReRecoRunRestriction(self):
+    def testReRecoBlackRunRestriction(self):
         """ReReco workflow with Run restrictions"""
-        wmSpec = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
-        inputDataset = wmSpec.taskIterator().next().inputDataset()
-        dataset = wmSpec.taskIterator().next().getInputDatasetPath()
-        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl, dataset)}
-        taskName = wmSpec.taskIterator().next().name()
-        taskType = wmSpec.taskIterator().next().taskType()
+        block = self.dataset + "#2"
         #add run blacklist
-        wmSpec.taskIterator().next().setInputRunBlacklist([1, 2, 3, 4])
-
-        # Run Blacklist
-        wmbs = WMBSHelper(wmSpec, '/somewhere',
-                          "whatever", taskName, taskType,
-                          [], [], dataset + "#2")
-
-        wmbs.createSubscription()
-        files = wmbs.validFiles(dbs[inputDataset.dbsurl].getFileBlock(dataset + "#2")[dataset + "#2"]['Files'])
+        self.topLevelTask.setInputRunBlacklist([1, 2, 3, 4])
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
+        
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
         self.assertEqual(len(files), 0)
 
+
+    def testReRecoWhiteRunRestriction(self):
+        block = self.dataset + "#2"
         # Run Whitelist
-        wmSpec.taskIterator().next().setInputRunWhitelist([2, 3])
-        wmSpec.taskIterator().next().setInputRunBlacklist([])
-
-        wmbs = WMBSHelper(wmSpec, '/somewhere',
-                          "whatever", taskName, taskType,
-                          [], [], dataset + "#2")
-
-        wmbs.createSubscription()
-        files = wmbs.validFiles(dbs[inputDataset.dbsurl].getFileBlock(dataset + "#2")[dataset + "#2"]['Files'])
+        self.topLevelTask.setInputRunWhitelist([2, 3])
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
         self.assertEqual(len(files), 1)
-
-
+        
+    def testDuplicateFileInsert(self):
+        # using default wmspec
+        block = self.dataset + "#1"
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
+        numOfFiles = wmbs.addFiles(self.dbs.getFileBlock(block)[block])
+        # check initially inserted files.
+        dbsFiles = self.dbs.getFileBlock(block)[block]['Files']
+        self.assertEqual(numOfFiles, len(dbsFiles))
+        firstFileset = wmbs.topLevelFileset
+        wmbsDao = wmbs.daofactory(classname = "Files.InFileset")
+        
+        numOfFiles = len(wmbsDao.execute(firstFileset.id))
+        self.assertEqual(numOfFiles, len(dbsFiles))
+        
+        # use the new spec with same inputdataset
+        block = self.dataset + "#1"
+        wmspec = self.createWMSpec("TestSpec1")
+        dbs = self.getDBS(wmspec)
+        wmbs = self.createWMBSHelperWithTopTask(wmspec, block)
+        # check duplicate insert
+        dbsFiles = dbs.getFileBlock(block)[block]['Files']
+        numOfFiles = wmbs.addFiles(dbs.getFileBlock(block)[block])
+        self.assertEqual(numOfFiles, 0)
+        secondFileset = wmbs.topLevelFileset
+        
+        wmbsDao = wmbs.daofactory(classname = "Files.InFileset")
+        numOfFiles = len(wmbsDao.execute(secondFileset.id))
+        self.assertEqual(numOfFiles, len(dbsFiles))
+        
+        self.assertNotEqual(firstFileset.id, secondFileset.id)
+    
+    def testParentage(self):
+        """
+        TODO: add the parentage test. 
+        1. check whether parent files are created in wmbs.
+        2. check parent files are associated to child.
+        3. When 2 specs with the same input data (one with parent processing, one without it)
+           is inserted, if one without parent processing inserted first then the other with 
+           parent processing insert, it still needs to create parent files although child files
+           are duplicate 
+        """
+        pass
+        
 # pylint: enable=E1103
 
 if __name__ == '__main__':

@@ -67,8 +67,11 @@ class Requests(dict):
                    "Accept": self['accept_type']}
         encoded_data = ''
         
-        assert type(data) == type({}), \
-                "makeRequest input data must be a dict (key/value pairs)"
+        
+        # If you're posting an attachment, the data might not be a dict
+        #   please test against ConfigCache_t if you're unsure.
+        #assert type(data) == type({}), \
+        #        "makeRequest input data must be a dict (key/value pairs)"
         
         # There must be a better way to do this...
         def f(): pass
@@ -78,7 +81,11 @@ class Requests(dict):
                 encoded_data = encoder(data)
             elif encoder == False:
                 # Don't encode the data more than we have to
-                encoded_data = urllib.urlencode(data)
+                #  we don't want to URL encode the data blindly, 
+                #  that breaks POSTing attachments... ConfigCache_t
+                #encoded_data = urllib.urlencode(data)
+                #  -- Andrew Melo 25/7/09
+                encoded_data = data
             else:
                 # Either the encoder is set to True or it's junk, so use 
                 # self.encode

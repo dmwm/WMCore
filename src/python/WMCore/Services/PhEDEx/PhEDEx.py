@@ -268,6 +268,62 @@ class PhEDEx(Service):
         callname = 'subscriptions'
         return self._getResult(callname, args = kwargs, verb="GET")
 
+    def getSubscriptionMapping(self, *dataItems, **kwargs):
+        """
+        Similar basic functionality as self.subscriptions()
+        however: dataItems may be a combination of blocks or datasets and
+        kwargs is passed to PhEDEx; output is parsed and returned in the form
+        { 'dataItem1' : [Node1, Node2] } where dataItem is a block or dataset
+
+        The following cases are handled:
+          o Input is a block and subscription is a dataset
+          o Input is a block and subscription is a block
+          o Input is a dataset and subscription is a dataset
+
+        Not supported:
+          o Input is a dataset but only block subscriptions exist
+        """
+        from collections import defaultdict
+        result = defaultdict(set)
+
+        # bug in phedex api means we can't query multiple datasets/blocks
+        # remove looping construct when fix deployed
+        for item in dataItems:
+
+            # TODO: Bug in which this option causes no results to be returned
+            # uncomment when https://savannah.cern.ch/bugs/index.php?64617 deployed
+            # kwargs['suspended'] = 'n' # require subscription to be active
+
+            # First query for a dataset level subscription (most common)
+            # then if its a block, query for a block level subscription
+            kwargs['dataset'], kwargs['block'] = [item.split('#')[0]], []
+            response = self.subscriptions(**kwargs)['phedex']
+
+            # iterate over response as can't jump to specific datasets
+            for dset in response['dataset']:
+                if dset['subscription']:
+                    # dataset level subscription
+                    if dset['name'] == item.split('#')[0]:
+                        nodes = [x['node'] for x in dset['subscription']
+                                 if x['suspended'] == 'n']
+                        result[item].update(nodes)
+                        break
+
+            #if we have a block we must check for block level subscription also
+            # combine with original query when can give both dataset and block
+            if item.find('#') > -1:
+                kwargs['dataset'], kwargs['block'] = [], [item]
+                response = self.subscriptions(**kwargs)['phedex']
+                for dset in response['dataset']:
+                    for block in dset['block']:
+                        if block['name'] == item:
+                            nodes = [x['node'] for x in block['subscription']
+                                     if x['suspended'] == 'n']
+                            result[item].update(nodes)
+                            break
+        return result
+
+
     def getNodeMap(self):
         """
         _getNodeMap_

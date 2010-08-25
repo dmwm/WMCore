@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.39 2010/02/08 21:28:25 meloam Exp $"
+    "$Id: TestInit.py,v 1.40 2010/02/09 16:06:51 meloam Exp $"
 __version__ = \
-    "$Revision: 1.39 $"
+    "$Revision: 1.40 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -119,7 +119,7 @@ class TestInit:
                 print "wiping mysql"
                 formatter.sql = r"SHOW TABLES"
                 result = formatter.execute()
-                
+                print "we got the following result for SHOW TABLES: %s " % result
                 formatter.sql = "SET foreign_key_checks = 0"
                 formatter.execute()
                 tableNames = []
@@ -134,9 +134,10 @@ class TestInit:
                 formatter.execute()
                 
             elif (dialect == 'SQLite'):
-                formatter.sql = ".tables"
+                formatter.sql = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
                 result = formatter.execute()
-                
+                print "we got the following result for SHOW TABLES: %s " % result
+
                 tableNames = []
                 for oneTable in result:
                     tableNames.append( oneTable[0] )

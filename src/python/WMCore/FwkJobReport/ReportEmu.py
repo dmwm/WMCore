@@ -1,107 +1,127 @@
-'''
-Created on Dec 28, 2009
+#!/usr/bin/env python
+"""
+_ReportEmu_
 
-@author: evansde
-'''
-#import uuid
-from WMCore.Services.UUID       import makeUUID 
+Class for creating bogus framework job reports.
+"""
+
+__revision__ = "$Id: ReportEmu.py,v 1.4 2010/03/09 20:34:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
+
+from WMCore.Services.UUID import makeUUID 
 from WMCore.FwkJobReport.Report import Report
-from WMCore.DataStructs.File    import File
-from WMCore.DataStructs.File    import Run
+from WMCore.DataStructs.File import File
+from WMCore.DataStructs.Run import Run
 
-
-def addRunToFile(fileSection, run, *lumis):
+def addRunsToFile(fileSection, runs):
     """
-    _addRunToFile_
+    _addRunsToFile_
     
-    Add run/lumi information to the file section provided
-    
+    Given a list of DataStruct run objects add them to the given file section.
     """
     fileSection.section_("runs")
-    setattr(fileSection.runs, str(run), lumis)
-    return
     
-def addContributingInput(outFile, lfn, pfn):
-    """
-    _addContributingInput_
-    
-    Util to add an input file to an output file. outFile is the ConfigSection describing the file
-    
-    """
-    section = outFile.inputs
-    counter = section.fileCount
-    counterValue = counter + 1
-    stub = "file%s" % counterValue
-    
-    section.section_(stub)
-    data = getattr(section, stub)
-    
-    data.LFN = lfn
-    data.PFN = pfn
+    for run in runs:
+        setattr(fileSection.runs, str(run.run), tuple(run.lumis))
         
-    section.fileCount += 1
     return
     
-    
-
 class ReportEmu(object):
-    '''
+    """
     _ReportEmu_
     
     Job Report Emulator that creates a Report given a WMTask/WMStep and a Job instance.
-    '''
-
-
+    """
     def __init__(self, **options):
-        '''
-        Constructor
+        """
+        ___init___
         
         Options contain the settings for producing the report instance from the provided step
-        '''
+        """
         self.step = options.get("WMStep", None)
         self.job = options.get("Job", None)
+        return
         
+    def addInputFilesToReport(self, report):
+        """
+        _addInputFilesToReport_
+
+        Pull all of the input files out of the job and add them to the report.
+        """
+        report.addInputSource("PoolSource")
+
+        for inputFile in self.job["input_files"]:
+            inputFileSection = report.addInputFile("PoolSource", LFN = inputFile["lfn"],
+                                                   size = inputFile["size"],
+                                                   TotalEvents = inputFile["events"])
+            addRunsToFile(inputFileSection, inputFile["runs"])
+
+        return
+
+    def determineOutputSize(self):
+        """
+        _determineOutputSize_
+
+        Determine the total size of and number of events in the input files and
+        use the job mask to scale that to something that would reasonably
+        approximate the size of and number of events in the output.
+        """
+        totalSize = 0
+        totalEvents = 0
         
+        outputFirstEvent = 0
+        outputTotalEvents = 0
+        outputSize = 0
         
+        for inputFile in self.job["input_files"]:
+            totalSize += inputFile["size"]
+            totalEvents += inputFile["events"]
+
+        if self.job["mask"]["FirstEvent"] != None and \
+               self.job["mask"]["LastEvent"] != None:
+            outputTotalEvents = self.job["mask"]["LastEvent"] - self.job["mask"]["FirstEvent"]
+        else:
+            outputTotalEvents = totalEvents
+            
+        outputSize = int(totalSize * ((outputTotalEvents * 1.0) / (totalEvents * 1.0)))
+        return (outputSize, outputTotalEvents)
+
+    def addOutputFilesToReport(self, report):
+        """
+        _addOutputFilesToReport_
+
+        Add output files to every output module in the step.  Scale the size
+        and number of events in the output files appropriately.
+        """
+        (outputSize, outputEvents) = self.determineOutputSize()
+
+        for outputModuleName in self.step.listOutputModules():
+            outputModuleSection = self.step.getOutputModule(outputModuleName)
+
+            outputLFN = "%s/%s.root" % (outputModuleSection.lfnBase,
+                                        str(makeUUID()))
+            outputFile = File(lfn = outputLFN, size = outputSize, events = outputEvents,
+                              checksums = {"adler32": "1234", "cksum": "5678"}, merged = False)
+            outputFile.setLocation(self.job["location"])
+            outputFile["dataset"] = {"primaryDataset": outputModuleSection.primaryDataset,
+                                     "processedDataset": outputModuleSection.processedDataset,
+                                     "dataTier": outputModuleSection.dataTier,
+                                     "applicationName": "cmsRun",
+                                     "applicationVersion": self.step.getCMSSWVersion()}
+            
+            outputFileSection = report.addOutputFile(outputModuleName, outputFile)
+            for inputFile in self.job["input_files"]:
+                addRunsToFile(outputFileSection, inputFile["runs"])
+            
+        return
         
     def __call__(self):
         report = Report(self.step.name())
         
-        report.id = self.job['id']
-        report.task = self.job['task']
+        report.id = self.job["id"]
+        report.task = self.job["task"]
         report.workload = None
         
-        
-        
-        report.addInputSource("PoolSauce")
-        inpFiles = []
-        runs = []
-        
-        for ifile in self.job['input_files']:
-            ifilerep = report.addInputFile("PoolSource", LFN = ifile['lfn'], PFN =  "file:%s" % ifile['lfn'], TotalEvents = ifile['events'])
-            inpFiles.append( (ifilerep.LFN, ifilerep.PFN) )
-            for run in ifile['runs']:
-                runs.append(run)
-                addRunToFile(ifilerep, run.run, *run.lumis)
-            
-        
-        for omod in self.step.listOutputModules():
-            omodRef = self.step.getOutputModule(omod)
-            report.addOutputModule(omod)
-            #guid = str(uuid.uuid4())
-            guid = str(makeUUID())
-            basename = "%s.root" % guid
-            outFile = File(lfn = "%s/%s" % (omodRef.lfnBase, basename ),
-                           size = 100, events = 10, merged = False)
-            outFile.setLocation(se = 'bad.cern.ch')
-            outFile.addRun(Run(1, *[45]))
-            outFile['dataset'] = {'name': '/Primary/Processed/Tier', 'ApplicationVersion' : '101', "ApplicationName" : 'JustSomeName'}
-            repOutFile = report.addOutputFile(omod, outFile)
-            #for ifile in inpFiles:
-            #    addContributingInput(repOutFile, ifile[0], ifile[1])
-            for run in runs:
-                addRunToFile(repOutFile, run.run, *run.lumis)
-    
-
+        self.addInputFilesToReport(report)
+        self.addOutputFilesToReport(report)
         return report
-        

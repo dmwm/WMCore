@@ -5,8 +5,8 @@ _Report_
 Job Report object
 """
 
-__version__ = "$Revision: 1.9 $"
-__revision__ = "$Id: Report.py,v 1.9 2010/03/01 19:27:13 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Report.py,v 1.10 2010/03/09 20:34:53 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -458,35 +458,6 @@ class Report:
 
         return file
 
-        
-
-
-    def getFilesFromOutputModule(self, step, outputModule):
-        """
-        _getFilesFromOutputModule_
-        
-        Grab all the files in a particular output module
-        """
-
-        listOfFiles = []
-
-        outputMod = self.getOutputModule(step = step, outputModule = outputModule)
-
-        if not outputMod:
-            return None
-
-        for n in range(outputMod.files.fileCount):
-            file = self.getOutputFile(fileName = 'file%i' %(n), outputModule = outputModule, step = step)
-            if not file:
-                msg = "Could not find file%i in module" %(n)
-                logging.error(msg)
-                return None
-            
-            #Now, append to the list of files
-            listOfFiles.append(file)
-
-        return listOfFiles
-
     def getAllFilesFromStep(self, step):
         """
         _getAllFilesFromStep_
@@ -535,10 +506,55 @@ class Report:
 
         return listOfFiles
 
+    def getInputFilesFromStep(self, stepName):
+        """
+        _getInputFilesFromStep_
 
+        Retrieve a list of input files from the given step.  This assumes that
+        the input source is the PoolSource.
+        """
+        step = self.retrieveStep(stepName)
 
+        inputFiles = []
+        for fileNum in range(step.input.PoolSource.files.fileCount):
+            fwjrFile = getattr(step.input.PoolSource.files, "file%d" % fileNum)
 
+            inputFile = File(lfn = fwjrFile.LFN, size = fwjrFile.size,
+                             events = fwjrFile.TotalEvents)
+
+            runSection = getattr(fwjrFile, "runs")
+            runNumbers = runSection.listSections_()
+
+            for runNumber in runNumbers:
+                lumiTuple = getattr(runSection, str(runNumber))
+                inputFile.addRun(Run(int(runNumber), *lumiTuple))
+
+            inputFiles.append(inputFile)
+
+        return inputFiles
+
+    def getFilesFromOutputModule(self, step, outputModule):
+        """
+        _getFilesFromOutputModule_
         
+        Grab all the files in a particular output module
+        """
 
-        
+        listOfFiles = []
 
+        outputMod = self.getOutputModule(step = step, outputModule = outputModule)
+
+        if not outputMod:
+            return None
+
+        for n in range(outputMod.files.fileCount):
+            file = self.getOutputFile(fileName = 'file%i' %(n), outputModule = outputModule, step = step)
+            if not file:
+                msg = "Could not find file%i in module" %(n)
+                logging.error(msg)
+                return None
+            
+            #Now, append to the list of files
+            listOfFiles.append(file)
+
+        return listOfFiles

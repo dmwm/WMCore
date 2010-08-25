@@ -24,14 +24,15 @@ from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
 arguments = {
     "OutputTiers" : ["RECO", "ALCARECO"],
-    "AcquisitionEra" : "WMAgentCommissioining10",
-    "GlobalTag" :"GR09_R_34X_V5::All",
-    "LFNCategory" : "/store/backfill/2",
-    "TemporaryLFNCategory": "/store/backfill/2/unmerged",
+    "AcquisitionEra" : "WMAgentCommissioining10b",
+    #"GlobalTag" :"GR09_R_34X_V5::All",
+    "GlobalTag" : "GR10_P_V4::All",
+    "LFNCategory" : "/store/temp/WMAgent",
+    "TemporaryLFNCategory": "/store/temp/WMAgent/unmerged",
     "ProcessingVersion" : "v1",
     "Scenario" : "cosmics",
     "CMSSWVersion" : "CMSSW_3_5_6",
-    "InputDatasets" : "/MinimumBias/BeamCommissioning09-v1/RAW",
+    "InputDatasets" : "/MinimumBias/Commissioning10-v4/RAW",
     "Emulate" : False,
     }
 
@@ -131,7 +132,6 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     args["mode"] = "GET"
     dbsApi = DbsApi(args)
     dbsResults = dbsApi.listFiles(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
-    dbsResults = dbsResults[0:1]
     print "  found %d files, inserting into wmbs..." % (len(dbsResults))
 
     for dbsResult in dbsResults:
@@ -161,8 +161,3 @@ for workloadTask in workload.taskIterator():
 
     injectTaskIntoWMBS(os.path.join(os.getcwd(), workloadName, workloadFile),
                        workloadName, workloadTask, inputFileset)
-
-
-
-
-

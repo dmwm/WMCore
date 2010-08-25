@@ -3,8 +3,8 @@
 Base handler for fileRemoved.
 """
 __all__ = []
-__revision__ = "$Id: FileRemovedHandler.py,v 1.4 2009/09/29 12:23:03 delgadop Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: FileRemovedHandler.py,v 1.5 2009/09/29 14:22:46 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -100,6 +100,11 @@ class FileRemovedHandler(object):
                     # TODO: Is there a better way to do this in bulk mode?
                     # Delete the file from the hostdata association
                     self.queries.removeFileHost(guid, pilotId)
+
+                # Now, if the data was not at other host,
+                # remove it also from the tq_data table
+                self.queries.removeLooseData()
+
 
                 # Update last heartbeat
                 self.queries.updatePilot(pilotId, {'last_heartbeat': None})

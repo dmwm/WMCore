@@ -5,6 +5,10 @@ _TaskSpace_
 Frontend module for setting up TaskSpace & StepSpace areas within a job.
 """
 
+
+__revision__ = "$Id: Bootstrap.py,v 1.12 2010/07/19 16:50:57 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
+
 import inspect
 import pickle
 import os
@@ -12,7 +16,6 @@ import os.path
 import logging
 import threading
 import sys
-import inspect
 import socket
 from logging.handlers import RotatingFileHandler
 
@@ -139,6 +142,7 @@ def loadJobDefinition():
     except Exception, ex:
         msg = "Failed to load JobPackage:%s\n" % packageLoc
         msg += str(ex)
+        createErrorReport(exitCode = 11001, errorType = "JobPackageError", errorDetails = msg)
         raise BootstrapException, msg
 
     try:
@@ -146,6 +150,7 @@ def loadJobDefinition():
     except ImportError, ex:
         msg = "Failed to import WMSandbox.JobIndex module\n"
         msg += str(ex)
+        createErrorReport(exitCode = 11002, errorType = "JobIndexError", errorDetails = msg)
         raise BootstrapException, msg
 
     index = WMSandbox.JobIndex.jobIndex
@@ -153,8 +158,9 @@ def loadJobDefinition():
     try:
         job = package[index]
     except Exception, ex:
-        msg = "Failed to extract Job %i\n" %(index)
+        msg = "Failed to extract Job %i\n" % (index)
         msg += str(ex)
+        createErrorReport(exitCode = 11003, errorType = "JobExtractionError", errorDetails = msg)
         raise BootstrapException, msg
     diagnostic = """
     Job Index = %s
@@ -197,10 +203,12 @@ def loadTask(job):
     except Exception, ex:
         msg = "Error looking up task %s\n" % job['task']
         msg += str(ex)
+        createErrorReport(exitCode = 11101, errorType = "TaskLookupError", errorDetails = msg)
         raise BootstrapException, msg
     if task == None:
         msg = "Unable to look up task %s from Workload\n" % job['task']
         msg += "Task name not matched"
+        createErrorReport(exitCode = 11102, errorType = "TaskNotFound", errorDetails = msg)
         raise BootstrapException, msg
     return task
 
@@ -233,6 +241,44 @@ def createInitialReport(job, task, logLocation):
     # Not so fond of this, but we have to put the master
     # report way up at the top so it's returned if the
     # job fails early
+    reportPath = os.path.join(os.getcwd(), '../', logLocation)
+    report.save(reportPath)
+
+    return
+
+
+
+def createErrorReport(exitCode, errorType, errorDetails = None,
+                      logLocation = "Report.pkl"):
+    """
+    _createErrorReport_
+
+    Create a report if something fails inside the Bootstrap
+    This creates a dummy step called 'CRITICAL' and
+    sticks the error in there.
+    """
+
+
+    try:
+        siteCfg = loadSiteLocalConfig()
+    except SiteConfigError:
+        # For now, assume that we did this on purpose
+        msg = "Couldn't find SiteConfig"
+        logging.error(msg)
+    report  = Report.Report()
+
+
+    report.data.seName         = siteCfg.localStageOut.get('se-name',
+                                                           socket.gethostname())
+    report.data.siteName       = getattr(siteCfg, 'siteName', 'Unknown')
+    report.data.hostName       = socket.gethostname()
+    report.data.ceName         = getSyncCE()
+    report.data.completed      = False
+
+
+    report.addError(stepName = 'CRITICAL', exitCode = exitCode,
+                    errorType = errorType, errorDetails = errorDetails)
+
     reportPath = os.path.join(os.getcwd(), '../', logLocation)
     report.save(reportPath)
 
@@ -271,6 +317,11 @@ def setupLogging(logDir):
 
 
 def setupMonitoring():
+    """
+    Setup the basics of the watchdog monitoring.
+    Attach it to a thread.
+
+    """
     try:
         monitor = Watchdog()
         myThread = threading.currentThread

@@ -12,24 +12,14 @@ def makeRequest(url, values=None, type='GET', accept="text/plain",
                "Accept": accept}
     data = None
     if type == 'GET' and values:
-        print "$$$$$$$$"
-        print type
         data = urllib.urlencode(values)
     elif type != 'GET' and values:
-        print "$$$$$$$$"
-        print type, contentType
         if contentType == "application/json":
             data = jsonwrapper.dumps(values)
-            print "%s" % type
-            print data
         # needs to test other encoding type
-        else:
-            data = values
-            print "aaaaa"
-            print data
+        elif contentType == "application/x-www-form-urlencoded":
             data = urllib.urlencode(values)
         
-        print data
     parser = urlparse(url)
     uri = parser.path
     if parser.query:

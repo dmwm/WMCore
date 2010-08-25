@@ -9,8 +9,8 @@ WMCore/WorkQueue/Database/CreateWorkQueueBase.py
 """
 
 __all__ = []
-__revision__ = "$Id: ElementsInfo.py,v 1.1 2010/05/04 14:40:27 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ElementsInfo.py,v 1.2 2010/06/02 21:34:54 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 from WMCore.Database.DBFormatter import DBFormatter
@@ -21,12 +21,13 @@ class ElementsInfo(DBFormatter):
     Use pagination (and synchronize with YUI table) 
     """
     sql = """SELECT we.id as id, ws.name as spec_name, wt.name as task_name, 
-                    wd.name as element_name, parent_queue_id, child_queue, num_jobs,
+                    wd.name as element_name, parent_queue_id, wq.url as child_queue, num_jobs,
                     priority, parent_flag, status, subscription_id, insert_time, update_time
              FROM wq_element we
              INNER JOIN wq_wmtask wt ON (wt.id = we.wmtask_id) 
              INNER JOIN wq_wmspec ws ON (ws.id = wt.wmspec_id)
              LEFT OUTER JOIN wq_data wd ON (wd.id = we.input_id)
+             LEFT OUTER JOIN wq_queues wq ON (wq.id = we.child_queue)
              ORDER BY we.id"""
              
     def convertStatus(self, data):

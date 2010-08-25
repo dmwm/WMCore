@@ -75,7 +75,7 @@ class Requests(dict):
             #encode the data as a get string
             if not data:
                 data = {}
-            uri = "%s?%s" % (uri, urllib.urlencode(data))
+            uri = "%s?%s" % (uri, self.encode(data))
         self['conn'].connect()
         self['conn'].request(type, uri, encoded_data, headers)
         response = self['conn'].getresponse()
@@ -90,7 +90,7 @@ class Requests(dict):
         """
         encode data into some appropriate format, for now make it a string...
         """
-        return urllib.urlencode(data)
+        return urllib.urlencode(data, doseq=1)
 
     def decode(self, data):
         """

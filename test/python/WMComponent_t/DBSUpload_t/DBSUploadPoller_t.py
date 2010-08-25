@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.7 $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "mnorman@fnal.gov"
 
 import commands
@@ -344,6 +344,11 @@ class DBSUploadTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
 
         self.assertEqual(len(result), 2)
+
+        #Is the algo listed as being in DBS?
+        result = myThread.dbi.processData("SELECT in_dbs FROM dbsbuffer_algo")[0].fetchall()[0].values()[0]
+
+        self.assertEqual(result, 1)
 
         return
 

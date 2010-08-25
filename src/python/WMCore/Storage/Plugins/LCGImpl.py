@@ -52,7 +52,7 @@ class LCGImpl(StageOutImplV2):
         logging.info("got the following from lcg-ls %s" % remoteSize)
         remoteSize = remoteSize.split()[4]
         logging.info("Localsize: %s Remotesize: %s" % (localSize, remoteSize))
-        if localSize != remoteSize:
+        if int(localSize) != int(remoteSize):
             try:
                 self.doDelete(toPfn,None,None,None,None)
             except:

@@ -3,8 +3,8 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerPoller.py,v 1.3 2009/12/18 20:52:37 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueManagerPoller.py,v 1.4 2009/12/18 21:35:18 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 import logging
@@ -68,16 +68,20 @@ class WorkQueueManagerPoller(BaseWorkerThread):
                 if self.config.level == "GlobalQueue":
                     workLoadUrlList = self.retrieveWorkLoadFromReqMgr()
                     parentQueueId = None
+                    myThread.transaction.begin()
                     for workLoadUrl in workLoadUrlList:
                         self.workQueue.queueWork(workLoadUrl, parentQueueId)
                         #requestManagner state update call
+                    myThread.transaction.commit()
                 elif self.config.level == "LocalQueue":
                     wmspecInfoList = self.retrievWorkLoadFromGlobalWorkQ()
                     elementIDs = []
+                    myThread.transaction.begin()
                     for wmspecInfo in wmspecInfoList:
                         self.workQueue.queueWork(wmspecInfo['url'], parentQueueId)
                         elementIDs.append(wmspecInfo['element_id'])
                     self.globalQueueDS.status(elementIDs = elementIDs)
+                    myThread.transaction.commit()
         except:
             raise
 

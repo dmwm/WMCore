@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.19 2009/05/12 16:17:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.20 2009/07/01 18:03:05 mnorman Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import unittest
 import logging
@@ -413,6 +413,37 @@ class JobGroupTest(unittest.TestCase):
                "ERROR: Loaded object has too many jobs."        
 
         return
+
+
+    def testSetGetSite(self):
+        """
+        _testSetGetSite_
+
+        For the JobCreator we have to be able to specify the site for a JobGroup.
+        This function tests the accessors for that information.
+
+        """
+
+        myThread = threading.currentThread()
+
+
+        testJobGroup = self.createTestJobGroup()
+
+
+        #We need to set sites in the locations table
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        
+        locationAction = daofactory(classname = "Locations.New")
+        locationAction.execute(siteName = "goodse.cern.ch")
+        locationAction.execute(siteName = "badse.cern.ch")
+
+
+        testJobGroup.setSite("goodse.cern.ch")
+        result = testJobGroup.getSite()
+
+        self.assertEqual(result, "goodse.cern.ch")
 
 if __name__ == "__main__":
     unittest.main() 

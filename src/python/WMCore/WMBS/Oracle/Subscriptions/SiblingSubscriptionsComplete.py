@@ -5,18 +5,22 @@ _SiblingSubscriptionsComplete_
 Oracle implementation of Subscription.SiblingSubscriptionsComplete
 """
 
-__revision__ = "$Id: SiblingSubscriptionsComplete.py,v 1.1 2010/04/22 15:42:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SiblingSubscriptionsComplete.py,v 1.2 2010/07/08 20:07:05 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.SiblingSubscriptionsComplete import \
     SiblingSubscriptionsComplete as SiblingCompleteMySQL    
 
 class SiblingSubscriptionsComplete(SiblingCompleteMySQL):
     sql = """SELECT wmbs_file_details.id, wmbs_file_details.events,
-                    wmbs_file_details.lfn FROM wmbs_file_details
+                    wmbs_file_details.lfn, wmbs_location.se_name FROM wmbs_file_details
                INNER JOIN wmbs_fileset_files ON
                  wmbs_file_details.id = wmbs_fileset_files.fileid AND
                  wmbs_fileset_files.fileset = :fileset
+               INNER JOIN wmbs_file_location ON
+                 wmbs_file_details.id = wmbs_file_location.fileid
+               INNER JOIN wmbs_location ON
+                 wmbs_file_location.location = wmbs_location.id                 
                LEFT OUTER JOIN wmbs_sub_files_acquired this_sub_acquired ON
                  wmbs_file_details.id = this_sub_acquired.fileid AND
                  this_sub_acquired.subscription = :subscription

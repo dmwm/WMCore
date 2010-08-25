@@ -5,8 +5,8 @@ _SiblingProcessingBased_t_
 Test SiblingProcessing job splitting.
 """
 
-__revision__ = "$Id: SiblingProcessingBased_t.py,v 1.1 2010/04/22 15:42:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SiblingProcessingBased_t.py,v 1.2 2010/07/08 20:07:05 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import os
@@ -176,6 +176,8 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                "Error: Job should only have one input file."
         assert result[0].jobs[0]["input_files"][0]["lfn"] == "testFileA", \
                "Error: Input file for job is wrong."
+        assert list(result[0].jobs[0]["input_files"][0]["locations"]) == ["somese.cern.ch"], \
+               "Error: File location is wrong."
         
         result = deleteFactoryB(files_per_job = 1)
 
@@ -217,6 +219,8 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                "Error: Job should only have one input file."
         assert result[0].jobs[0]["input_files"][0]["lfn"] == "testFileD", \
                "Error: Input file for job is wrong."
+        assert list(result[0].jobs[0]["input_files"][0]["locations"]) == ["somese.cern.ch"], \
+               "Error: File location is wrong."
 
         self.testSubscriptionB.completeFiles([self.testFileE, self.testFileF])
         self.testSubscriptionC.completeFiles([self.testFileE, self.testFileF])

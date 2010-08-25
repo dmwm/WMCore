@@ -6,8 +6,8 @@ Launch jobs to run over a file once all other subscriptions that process the fil
 have completed processing it.
 """
 
-__revision__ = "$Id: SiblingProcessingBased.py,v 1.3 2010/04/23 16:43:25 sfoulkes Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: SiblingProcessingBased.py,v 1.4 2010/07/08 20:07:04 sfoulkes Exp $"
+__version__  = "$Revision: 1.4 $"
 
 import threading
 import logging
@@ -19,10 +19,6 @@ from WMCore.Services.UUID import makeUUID
 from WMCore.DAOFactory import DAOFactory
 
 class SiblingProcessingBased(JobFactory):
-    """
-    _SiblingProcessingBased_
-    
-    """
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -55,6 +51,7 @@ class SiblingProcessingBased(JobFactory):
             for jobFile in completeFiles[0:filesPerJob]:
                 newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
                                events = jobFile["events"])
+                newFile["locations"] = set([jobFile["se_name"]])                
                 self.currentJob.addFile(newFile)
                 
             completeFiles = completeFiles[filesPerJob:]
@@ -64,6 +61,7 @@ class SiblingProcessingBased(JobFactory):
             for jobFile in completeFiles:
                 newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
                                events = jobFile["events"])
+                newFile["locations"] = set([jobFile["se_name"]])
                 self.currentJob.addFile(newFile)            
 
         return

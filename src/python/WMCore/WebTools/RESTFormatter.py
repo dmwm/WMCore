@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+"""
+_DASRESTFormatter_
+
+A basic REST formatter
+"""
 from WMCore.WebTools.Page import TemplatedPage, exposejson, exposexml, exposeatom
 
 class RESTFormatter(TemplatedPage):
@@ -11,13 +17,4 @@ class RESTFormatter(TemplatedPage):
 
     @exposeatom
     def atom(self, data):
-        return data
-
-class DASRESTFormatter(RESTFormatter):
-    @exposedasjson
-    def json(self, data):
-        return data
-
-    @exposedasxml
-    def xml(self, data):
         return data

@@ -4,8 +4,8 @@
 JobTracker test 
 """
 
-__revision__ = "$Id: JobTracker_t.py,v 1.2 2009/10/13 21:56:04 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobTracker_t.py,v 1.3 2009/11/17 17:43:56 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import logging
@@ -119,9 +119,10 @@ class JobTrackerTest(unittest.TestCase):
             testJobGroup.add(testJob)
             testJob.create(testJobGroup)
 
-            
-        
         testJobGroup.commit()
+
+        for job in testJobGroup.jobs:
+            job.setCache(os.getcwd())
 
         return testJobGroup
 

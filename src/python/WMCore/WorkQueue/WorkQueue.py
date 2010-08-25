@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.99 2010/04/14 18:12:52 sryu Exp $"
-__version__ = "$Revision: 1.99 $"
+__revision__ = "$Id: WorkQueue.py,v 1.100 2010/04/15 16:04:13 sryu Exp $"
+__version__ = "$Revision: 1.100 $"
 
 
 import time
@@ -230,28 +230,56 @@ class WorkQueue(WorkQueueBase):
         wmSpecInfoAction = self.daofactory(classname = "WMSpec.GetWMSpecInfo")
 
         for match in matches:
-            with self.transactionContext():
-                wmSpecInfo = wmSpecInfoAction.execute(match['wmtask_id'],
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
-
-                if self.params['PopulateFilesets']:
-                    self._wmbsPreparation(match, wmSpecInfo)
-                    self.setStatus('Acquired', match['id'], 'id', pullingQueueUrl)
-                    self.logger.debug("""WMBS subscriptin created
-                                         Upated queue status for %s 'Acquired'""" 
-                                         % match['id'])       
-                else:
-                    status = pullingQueueUrl and 'Negotiating' or 'Acquired'
-                    self.setStatus(status, match['id'], 'id', pullingQueueUrl)
-                    self.logger.debug("Upated status for %s '%s'" % (match['id'], status))       
+            
+            wmSpecInfo = wmSpecInfoAction.execute(match['wmtask_id'],
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+            blockName, dbsBlock = None, None
+            if self.params['PopulateFilesets']:
                 
-                wmSpecInfo['element_id'] = match['id']
-                results.append(wmSpecInfo)
+                if match['input_id']:
+                    self.logger.info("Adding Production work")
+                    blockName, dbsBlock = self._getDBSBlock(match)
+                else:
+                    self.logger.info("Adding Processing work")
+                
+                status = 'Acquired'
+            else:
+                status = pullingQueueUrl and 'Negotiating' or 'Acquired'
+        
+            #make one transaction      
+            with self.transactionContext():
+                if self.params['PopulateFilesets']:
+                    self._wmbsPreparation(match, wmSpecInfo, 
+                                          blockName, dbsBlock)
+                        
+                self.setStatus(status, match['id'], 'id', pullingQueueUrl)
+                self.logger.debug("Upated status for %s '%s'" % 
+                                  (match['id'], status))       
+                
+            wmSpecInfo['element_id'] = match['id']
+            results.append(wmSpecInfo)
 
         return results
+    
+    def _getDBSBlock(self, match):
+        
+        blockLoader = self.daofactory(classname = "Data.LoadByID")
+            
+        block = blockLoader.execute(match['input_id'],
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+        #TODO: move this out of the transactions
+        dbs = self.dbsHelpers.values()[0] #FIXME!!!
+        if match['parent_flag']:
+            dbsBlockDict = dbs.getFileBlockWithParents(block["name"])
+        else:
+            dbsBlockDict = dbs.getFileBlock(block["name"])
+        
+        return block['name'], dbsBlockDict[block['name']]
 
-    def _wmbsPreparation(self, match, wmSpecInfo):
+
+    def _wmbsPreparation(self, match, wmSpecInfo, blockName, dbsBlock):
         """
         """
         self.logger.info("Adding WMBS subscription")
@@ -263,44 +291,27 @@ class WorkQueue(WorkQueueBase):
         blacklist = bAction.execute(match['id'], conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
 
-        if not match['input_id']:
-            self.logger.info("Adding Production work")
-            wmbsHelper = WMBSHelper(wmSpecInfo['wmspec_name'], wmSpecInfo['url'],
-                                    wmSpecInfo['owner'], wmSpecInfo['wmtask_name'],
-                                    wmSpecInfo['wmtask_type'],
-                                    whitelist, blacklist, None)
-            sub = wmbsHelper.createSubscription()
-            
+        self.logger.info("Adding Production work")
+        wmbsHelper = WMBSHelper(wmSpecInfo['wmspec_name'], wmSpecInfo['url'],
+                                wmSpecInfo['owner'], wmSpecInfo['wmtask_name'],
+                                wmSpecInfo['wmtask_type'],
+                                whitelist, blacklist, blockName)
+        sub = wmbsHelper.createSubscription()
+        
+        if dbsBlock != None:
+            wmbsHelper.addFiles(dbsBlock)
+        #else:
             # add MC fake files for each subscription.
             # this is needed for JobCreator trigger: commented out for now.
             #wmbsHelper.addMCFakeFile()
-        else:
-            #TODO : not to create dao multiple times
-            self.logger.info("Adding Processing work")
-            blockLoader = self.daofactory(classname = "Data.LoadByID")
-            
-            block = blockLoader.execute(match['input_id'],
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
 
-            wmbsHelper = WMBSHelper(wmSpecInfo['wmspec_name'], wmSpecInfo['url'],
-                                    wmSpecInfo['owner'], wmSpecInfo['wmtask_name'],
-                                    wmSpecInfo['wmtask_type'],
-                                    whitelist, blacklist, block['name'])
-            sub = wmbsHelper.createSubscription()
+        updateSub = self.daofactory(classname = "WorkQueueElement.UpdateSubscription")
+        updateSub.execute(match['id'], sub['id'],
+                                conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
 
-            dbs = self.dbsHelpers.values()[0] #FIXME!!!
-            if match['parent_flag']:
-                dbsBlock = dbs.getFileBlockWithParents(block["name"])[block['name']]
-            else:
-                dbsBlock = dbs.getFileBlock(block["name"])[block['name']]
-
-            wmbsHelper.addFiles(dbsBlock)
-            updateSub = self.daofactory(classname = "WorkQueueElement.UpdateSubscription")
-            updateSub.execute(match['id'], sub['id'],
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
-
+        self.logger.info('WMBS subscription (%s) is created for element (%s)' 
+                         % (match['id'], sub['id']))
         return
 
     def doneWork(self, elementIDs, id_type = 'id'):

@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 """
-_WMWorkload Test_
+_WMWorkload_t_
 
 Unittest for WMWorkload class
-
 """
 
-
-__revision__ = "$Id: WMWorkload_t.py,v 1.4 2010/04/20 16:03:31 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WMWorkload_t.py,v 1.5 2010/07/21 13:54:58 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import unittest
@@ -16,40 +14,34 @@ import unittest
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 
-
 class WMWorkloadTest(unittest.TestCase):
-    """
-    _WMWorkloadTest_
-
-    """
     def setUp(self):
-        """setup"""
+        """
+        _setUp_
+
+        """
         self.persistFile = "%s/WMWorkloadPersistencyTest.pkl" % os.getcwd()
+        return
 
     def tearDown(self):
-        """cleanup"""
+        """
+        _tearDown_
+
+        """
         if os.path.exists(self.persistFile):
             os.remove(self.persistFile)
+        return
 
+    def testInstantiation(self):
+        """
+        _testInstantiation_
 
-    def testA(self):
-        """instantiation"""
-
-        try:
-            workload = WMWorkload("workload1")
-        except Exception, ex:
-            msg = "Failed to instantiate WMWorkload:\n"
-            msg += str(ex)
-            self.fail(msg)
-
-
-        try:
-            helper = WMWorkloadHelper(WMWorkload("workload2"))
-        except Exception, ex:
-            msg = "Failed to instantiate WMWorkloadHelper:\n"
-            msg += str(ex)
-            self.fail(msg)
-
+        Verify that the WMWorkload class and the WMWorkloadHelper class can
+        be instantiated.
+        """
+        workload = WMWorkload("workload1")
+        helper = WMWorkloadHelper(WMWorkload("workload2"))
+        return
 
     def testB(self):
         """adding Tasks"""
@@ -75,9 +67,6 @@ class WMWorkloadTest(unittest.TestCase):
 
         self.assertEqual(workload.listAllTaskNodes(),
                          ["task1", "task2", "task3", "task4"])
-
-        for i in workload.taskIterator():
-            print i.name()
 
         # prevent adding duplicate tasks
         self.assertRaises(RuntimeError, workload.addTask, task1)
@@ -133,7 +122,96 @@ class WMWorkloadTest(unittest.TestCase):
         for key in ownerProps.keys():
             self.assertEqual(result[key], ownerProps[key])
 
+    def testWhiteBlacklists(self):
+        """
+        _testWhiteBlacklists_
 
+        Verify that setting site/block/run black and white lists through the
+        workload helper class works as expected.  For site black and white lists
+        the workload helper class should update the lists for all tasks.  For
+        run and block lists only tasks that have input datasets defined should
+        be updated.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+
+        procTestTask = testWorkload.newTask("ProcessingTask")
+        procTestTaskCMSSW = procTestTask.makeStep("cmsRun1")
+        procTestTaskCMSSW.setStepType("CMSSW")
+
+        procTestTask.addInputDataset(primary = "PrimaryDataset",
+                                     processed = "ProcessedDataset",
+                                     tier = "DataTier",
+                                     block_whitelist = ["Block1", "Block2"],
+                                     black_blacklist = ["Block3"],
+                                     run_whitelist = [1, 2],
+                                     run_blacklist = [3])
+
+        mergeTestTask = procTestTask.addTask("MergeTask")
+        mergeTestTask.setInputReference(procTestTaskCMSSW, outputModule = "output")
+
+        weirdTestTask = mergeTestTask.addTask("WeirdTask")
+        weirdTestTask.addInputDataset(primary = "PrimaryDatasetB",
+                                      processed = "ProcessedDatasetB",
+                                      tier = "DataTierB",
+                                      block_whitelist = ["BlockA", "BlockB"],
+                                      black_blacklist = ["BlockC"],
+                                      run_whitelist = [11, 12],
+                                      run_blacklist = [13])        
+        
+        testWorkload.setSiteWhitelist(["T1_US_FNAL", "T0_CH_CERN"])
+        testWorkload.setSiteBlacklist(["T1_DE_KIT"])
+        testWorkload.setBlockWhitelist(["Block4"])
+        testWorkload.setBlockBlacklist(["Block5", "Block6"])
+        testWorkload.setRunWhitelist([4])
+        testWorkload.setRunBlacklist([5, 6])
+
+        for task in [procTestTask, mergeTestTask, weirdTestTask]:
+            assert len(task.siteWhitelist()) == 2, \
+                   "Error: Wrong number of sites in white list."
+            assert len(task.siteBlacklist()) == 1, \
+                   "Error: Wrong number of sites in black list."
+            
+            assert "T1_US_FNAL" in task.siteWhitelist(), \
+                   "Error: Site missing from white list."
+            assert "T0_CH_CERN" in task.siteWhitelist(), \
+                   "Error: Site missing from white list."
+            assert "T1_DE_KIT" in task.siteBlacklist(), \
+                   "Error: Site missing from black list."
+
+        for task in [procTestTask, weirdTestTask]:
+            assert len(task.inputBlockWhitelist()) == 1, \
+                   "Error: Wrong number of blocks in white list."
+            assert len(task.inputBlockBlacklist()) == 2, \
+                   "Error: Wrong number of blocks in black list."
+            assert len(task.inputRunWhitelist()) == 1, \
+                   "Error: Wrong number of runs in white list."
+            assert len(task.inputRunBlacklist()) == 2, \
+                   "Error: Wrong number of runs in black list."
+
+            assert "Block4" in task.inputBlockWhitelist(), \
+                   "Error: Block missing from white list."
+            assert "Block5" in task.inputBlockBlacklist(), \
+                   "Error: Block missing from black list."
+            assert "Block6" in task.inputBlockBlacklist(), \
+                   "Error: Block missing from black list."
+
+            assert 4 in task.inputRunWhitelist(), \
+                   "Error: Run missing from white list."
+            assert 5 in task.inputRunBlacklist(), \
+                   "Error: Run missing from black list."
+            assert 6 in task.inputRunBlacklist(), \
+                   "Error: Run missing from black list."
+
+        assert mergeTestTask.inputBlockWhitelist() == None, \
+               "Error: Block white list should be empty."
+        assert mergeTestTask.inputBlockBlacklist() == None, \
+               "Error: Block black list should be empty."
+        assert mergeTestTask.inputRunWhitelist() == None, \
+               "Error: Run white list should be empty."
+        assert mergeTestTask.inputRunBlacklist() == None, \
+               "Error: Run black list should be empty."
+            
+        return
 
 if __name__ == '__main__':
     unittest.main()

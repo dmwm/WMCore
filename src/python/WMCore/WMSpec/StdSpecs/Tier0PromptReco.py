@@ -118,9 +118,9 @@ def tier0PromptRecoWorkload(workloadName, arguments):
         run_blacklist = runBlacklist,
         run_whitelist = runWhitelist
         )
-    rereco.data.constraints.sites.whitelist = siteWhitelist
-    rereco.data.constraints.sites.blacklist = siteBlacklist
-    
+
+    rereco.setSiteWhitelist(siteWhitelist)
+    rereco.setSiteBlacklist(siteBlacklist)
 
     rerecoCmsswHelper.cmsswSetup(
         cmsswVersion,

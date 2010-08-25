@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.31 2010/06/23 18:29:42 sfoulkes Exp $"
-__version__  = "$Revision: 1.31 $"
+__revision__ = "$Id: JobFactory.py,v 1.32 2010/07/21 13:54:57 sfoulkes Exp $"
+__version__  = "$Revision: 1.32 $"
 
 
 import logging
@@ -49,8 +49,8 @@ class JobFactory(WMObject):
         self.currentGroup = None
         self.currentJob = None
 
-        self.siteBlackList = kwargs.get("siteBlackList", [])
-        self.siteWhiteList = kwargs.get("siteWhiteList", [])
+        self.siteBlacklist = kwargs.get("siteBlacklist", [])
+        self.siteWhitelist = kwargs.get("siteWhitelist", [])
 
         # Every time we restart, re-zero the jobs
         self.nJobs = 0
@@ -102,8 +102,8 @@ class JobFactory(WMObject):
         self.currentJob["task"] = self.subscription.taskName()
         self.currentJob["workflow"] = self.subscription.workflowName()
         self.currentJob["owner"] = self.subscription.owner()
-        self.currentJob["siteBlackList"] = self.siteBlackList
-        self.currentJob["siteWhiteList"] = self.siteWhiteList
+        self.currentJob["siteBlacklist"] = self.siteBlacklist
+        self.currentJob["siteWhitelist"] = self.siteWhitelist
 
         self.nJobs += 1
         for gen in self.generators:

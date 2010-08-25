@@ -12,8 +12,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.38 2010/07/19 10:50:18 swakef Exp $"
-__revision__ = "$Revision: 1.38 $"
+__version__ = "$Id: WMTask.py,v 1.39 2010/07/21 13:54:57 sfoulkes Exp $"
+__revision__ = "$Revision: 1.39 $"
 
 import os
 import os.path
@@ -368,8 +368,7 @@ class WMTaskHelper(TreeHelper):
         """
         _jobSplittingAlgorithm_
         
-        Get the job Splitting algo name
-        
+        Retrieve the job splitting algorithm name.
         """
         return getattr(self.data.input.splitting, "algorithm", None)
     
@@ -377,13 +376,16 @@ class WMTaskHelper(TreeHelper):
         """
         _jobSplittingParameters_
         
-        get the parameters to pass to the job splitting algo
-        
+        Retrieve the job splitting parameters.  This will combine the job
+        splitting parameters specified in the spec with the site white list
+        and black list as those are passed to the job splitting code.
         """
         datadict = getattr(self.data.input, "splitting")
-        return datadict.dictionary_()
+        splittingParams = datadict.dictionary_()
+        splittingParams["siteWhitelist"] = self.siteWhitelist()
+        splittingParams["siteBlacklist"] = self.siteBlacklist()
+        return splittingParams
 
-    
     def addGenerator(self, generatorName, **settings):
         """
         _addGenerator_
@@ -442,31 +444,25 @@ class WMTaskHelper(TreeHelper):
         in the task
         
         options should contain at least:
-        
-        - primary - primary dataset name
-        - processed - processed dataset name
-        - tier - data tier name
+          - primary - primary dataset name
+          - processed - processed dataset name
+          - tier - data tier name
         
         optional args:
-        
-        - analysis - analysis dataset path extension
-        - dbsurl - dbs url if not global
-        - block_whitelist - list of whitelisted fileblocks
-        - block_blacklist - list of blacklisted fileblocks
-        - run_whitelist - list of whitelist runs
-        - run_blacklist - list of blacklist runs
-        - totalevents - total events in dataset
-        
+          - dbsurl - dbs url if not global
+          - block_whitelist - list of whitelisted fileblocks
+          - block_blacklist - list of blacklisted fileblocks
+          - run_whitelist - list of whitelist runs
+          - run_blacklist - list of blacklist runs        
         """
         self.data.input.section_("dataset")
+        self.data.input.dataset.dbsurl = None
         self.data.input.dataset.section_("blocks")
         self.data.input.dataset.blocks.whitelist = []
         self.data.input.dataset.blocks.blacklist = []
         self.data.input.dataset.section_("runs")
-        self.data.input.dataset.runs.section_("whitelist")
-        self.data.input.dataset.runs.section_("blacklist")
-        
-
+        self.data.input.dataset.runs.whitelist = []
+        self.data.input.dataset.runs.blacklist = []
         
         primary = options.get("primary", None)
         processed = options.get("processed", None)
@@ -480,30 +476,117 @@ class WMTaskHelper(TreeHelper):
         self.data.input.dataset.processed = processed
         self.data.input.dataset.tier = tier
 
-        
         for opt, arg in options.items():
-            # already handled/checked
             if opt in ['primary', 'processed', 'tier']:
                 continue
-            # blocks
-            if opt == 'block_blacklist':
-                self.data.input.dataset.blocks.blacklist = arg
-                continue
-            if opt == 'block_whitelist':
-                self.data.input.dataset.blocks.whitelist = arg
-                continue
-            if opt == 'dbsurl':
+            elif opt == 'block_blacklist':
+                self.setInputBlockBlacklist(arg)
+            elif opt == 'block_whitelist':
+                self.setInputBlockWhitelist(arg)
+            elif opt == 'dbsurl':
                 self.data.input.dataset.dbsurl = arg
-            if opt == "run_whitelist":
-                [ self.data.input.dataset.runs.whitelist.section_(str(i)) for i in arg ]
-            if opt == "run_blacklist":
-                [ self.data.input.dataset.runs.blacklist.section_(str(i)) for i in arg ]
-            
-            # all other options
-            
-            setattr(self.data.input.dataset, opt, arg)
+            elif opt == "run_whitelist":
+                self.setInputRunWhitelist(arg)
+            elif opt == "run_blacklist":
+                self.setInputRunBlacklist(arg)
+            else:
+                setattr(self.data.input.dataset, opt, arg)
         
         return
+
+    def inputDatasetDBSURL(self):
+        """
+        _inputDatasetDBSURL_
+
+        Retrieve the DBS URL for the input dataset if it exists, none otherwise.
+        """
+        if hasattr(self.data.input, "dataset"):
+            return self.data.input.dataset.dbsurl
+        return None
+
+    def setInputBlockWhitelist(self, blockWhitelist):
+        """
+        _setInputBlockWhitelist_
+
+        Set the block white list for the input dataset.  This must be called
+        after setInputDataset().
+        """
+        self.data.input.dataset.blocks.whitelist = blockWhitelist
+        return
+
+    def inputBlockWhitelist(self):
+        """
+        _inputBlockWhitelist_
+
+        Retrieve the block white list for the input dataset if it exists, none
+        otherwise.
+        """
+        if hasattr(self.data.input, "dataset"):
+            return self.data.input.dataset.blocks.whitelist
+        return None
+
+    def setInputBlockBlacklist(self, blockBlacklist):
+        """
+        _setInputBlockBlacklist_
+        
+        Set the block black list for the input dataset.  This must be called
+        after setInputDataset().
+        """
+        self.data.input.dataset.blocks.blacklist = blockBlacklist
+        return
+
+    def inputBlockBlacklist(self):
+        """
+        _inputBlockBlacklist_
+
+        Retrieve the block black list for the input dataset if it exsits, none
+        otherwise.
+        """
+        if hasattr(self.data.input, "dataset"):
+            return self.data.input.dataset.blocks.blacklist
+        return None
+
+    def setInputRunWhitelist(self, runWhitelist):
+        """
+        _setInputRunWhitelist_
+
+        Set the run white list for the input dataset.  This must be called
+        after setInputDataset().
+        """
+        self.data.input.dataset.runs.whitelist = runWhitelist
+        return
+
+    def inputRunWhitelist(self):
+        """
+        _inputRunWhitelist_
+
+        Retrieve the run white list for the input dataset if it exists, none
+        otherwise.
+        """
+        if hasattr(self.data.input, "dataset"):
+            return self.data.input.dataset.runs.whitelist
+        return None
+    
+    def setInputRunBlacklist(self, runBlacklist):
+        """
+        _setInputRunBlacklist_
+
+        Set the run black list for the input dataset.  This must be called
+        after setInputDataset().
+        """
+        self.data.input.dataset.runs.blacklist = runBlacklist
+        return
+
+    def inputRunBlacklist(self):
+        """
+        _inputRunBlacklist_
+
+        Retrieve the run black list for the input dataset if it exists, none
+        otherwise.
+        """
+        if hasattr(self.data.input, "dataset"):
+            return self.data.input.dataset.runs.blacklist
+        return None
     
     def addProduction(self, **options):
         """
@@ -550,19 +633,35 @@ class WMTaskHelper(TreeHelper):
         """
         _siteWhitelist_
         
-        accessor for white list for the task
-        """
-        
+        Accessor for the site white list for the task.
+        """        
         return self.data.constraints.sites.whitelist
+
+    def setSiteWhitelist(self, siteWhitelist):
+        """
+        _setSiteWhitelist_
+
+        Set the set white list for this task.
+        """
+        self.data.constraints.sites.whitelist = siteWhitelist
+        return
     
     def siteBlacklist(self):
         """
         _siteBlacklist_
         
-        accessor for white list for the task
+        Accessor for the site white list for the task.
         """
-        
         return self.data.constraints.sites.blacklist
+
+    def setSiteBlacklist(self, siteBlacklist):
+        """
+        _setSiteBlacklist_
+
+        Set the site black list for this task.
+        """
+        self.data.constraints.sites.blacklist = siteBlacklist
+        return
     
     def parentProcessingFlag(self):
         """

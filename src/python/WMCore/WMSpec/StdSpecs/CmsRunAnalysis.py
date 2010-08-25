@@ -123,9 +123,9 @@ class CmsRunAnalysis:
             run_blacklist = runBlacklist,
             run_whitelist = runWhitelist
             )
-        analysis.data.constraints.sites.whitelist = siteWhitelist
-        analysis.data.constraints.sites.blacklist = siteBlacklist
 
+        analysis.setSiteWhitelist(siteWhitelist)
+        analysis.setSiteBlacklist(siteBlacklist)
 
         analysisCmsswHelper.cmsswSetup(
             cmsswVersion,

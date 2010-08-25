@@ -4,8 +4,8 @@ WorkQueue splitting by block
 
 """
 __all__ = []
-__revision__ = "$Id: Block.py,v 1.14 2010/07/19 10:50:32 swakef Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Block.py,v 1.15 2010/07/21 13:54:57 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from copy import deepcopy
@@ -47,12 +47,10 @@ class Block(StartPolicyInterface):
         datasetPath = task.getInputDatasetPath()
         validBlocks = []
 
-        blockWhiteList = inputDataset.blocks.whitelist
-        blockBlackList = inputDataset.blocks.blacklist
-        runWhiteList = [int(x) for x in \
-                        inputDataset.runs.whitelist.dictionary_().keys()]
-        runBlackList = [int(x) for x in \
-                        inputDataset.runs.blacklist.dictionary_().keys()]
+        blockWhiteList = task.inputBlockWhitelist()
+        blockBlackList = task.inputBlockBlacklist()
+        runWhiteList = task.inputRunWhitelist()
+        runBlackList = task.inputRunBlacklist()
 
         for block in dbs.getFileBlocksInfo(datasetPath):
 

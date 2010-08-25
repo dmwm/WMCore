@@ -5,8 +5,8 @@ _JobFactory_t_
 Test the job splitting Job Factory
 """
 
-__revision__ = "$Id: JobFactory_t.py,v 1.1 2010/06/23 18:29:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobFactory_t.py,v 1.2 2010/07/21 13:54:58 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 
@@ -44,7 +44,7 @@ class JobFactoryTest(unittest.TestCase):
                                         split_algo = "FileBased")
 
         myJobFactory = JobFactory(subscription = testSubscription)
-        testJobGroups =  myJobFactory(siteWhiteList = ["site1"], siteBlackList = ["site2"])
+        testJobGroups =  myJobFactory(siteWhitelist = ["site1"], siteBlacklist = ["site2"])
 
         for testJobGroup in testJobGroups:
             for job in testJobGroup.jobs:
@@ -54,9 +54,9 @@ class JobFactoryTest(unittest.TestCase):
                        "Error: Workflow is wrong."
                 assert job["owner"] == "Steve", \
                        "Error: Owner is wrong."
-                assert job["siteWhiteList"] == ["site1"], \
+                assert job["siteWhitelist"] == ["site1"], \
                        "Error: Site white list is wrong."
-                assert job["siteBlackList"] == ["site2"], \
+                assert job["siteBlacklist"] == ["site2"], \
                        "Error: Site black list is wrong."
         return
   

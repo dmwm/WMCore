@@ -4,25 +4,19 @@ _WMWorkload_
 
 Request level processing specification, acts as a container of a set
 of related tasks.
-
 """
-__revision__ = "$Id: WMWorkload.py,v 1.23 2010/07/19 20:56:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.23 $"
+
+__revision__ = "$Id: WMWorkload.py,v 1.24 2010/07/21 13:54:57 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import logging
-
-
 
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 
-
-
-
 parseTaskPath = lambda p: [ x for x in p.split('/') if x.strip() != '' ]
-
 
 def getWorkloadFromTask(taskRef):
     """
@@ -340,47 +334,113 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.tasks.tasklist.remove(taskName)
         return
 
-    def setSiteWhiteList(self, siteWhiteList):
+    def setSiteWhitelist(self, siteWhitelist, initialTask = None):
         """
-        _setSiteWhiteList_
+        _setSiteWhitelist_
 
+        Set the site white list for all tasks in the workload.
         """
-        pass
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+        
+        for task in taskIterator:
+            task.setSiteWhitelist(siteWhitelist)
+            self.setSiteWhitelist(siteWhitelist, task)
 
-    def setSiteBlackList(self, siteBlackList):
-        """
-        _setSiteBlackList_
+        return
 
+    def setSiteBlacklist(self, siteBlacklist, initialTask = None):
         """
-        pass
+        _setSiteBlacklist_
 
-    def setBlockWhiteList(self, blockWhiteList):
+        Set the site black list for all tasks in the workload.
         """
-        _setBlockWhiteList_
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+        
+        for task in taskIterator:
+            task.setSiteBlacklist(siteBlacklist)
+            self.setSiteBlacklist(siteBlacklist, task)
+            
+        return
 
+    def setBlockWhitelist(self, blockWhitelist, initialTask = None):
         """
-        pass
+        _setBlockWhitelist_
 
-    def setBlockBlackList(self, blockBlackList):
+        Set the block white list for all tasks that have an input dataset
+        defined.
         """
-        _setBlockBlackList_
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+            
+        for task in taskIterator:
+            if task.inputDatasetPath():
+                task.setInputBlockWhitelist(blockWhitelist)
+            self.setBlockWhitelist(blockWhitelist, task)                
+                
+        return
 
+    def setBlockBlacklist(self, blockBlacklist, initialTask = None):
         """
-        pass
+        _setBlockBlacklist_
 
-    def setRunWhiteList(self, runWhiteList):
+        Set the block black list for all tasks that have an input dataset
+        defined.
         """
-        _setRunWhiteList_
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+        
+        for task in taskIterator:
+            if task.inputDatasetPath():
+                task.setInputBlockBlacklist(blockBlacklist)
+            self.setBlockBlacklist(blockBlacklist, task)
+            
+        return
 
+    def setRunWhitelist(self, runWhitelist, initialTask = None):
         """
-        pass
+        _setRunWhitelist_
 
-    def setRunBlackList(self, runBlackList):
+        Set the run white list for all tasks that have an input dataset defined.
         """
-        _setRunBlackList_
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+        
+        for task in taskIterator:
+            if task.inputDatasetPath():
+                task.setInputRunWhitelist(runWhitelist)
+            self.setRunWhitelist(runWhitelist, task)
 
+        return
+
+    def setRunBlacklist(self, runBlacklist, initialTask = None):
         """
-        pass
+        _setRunBlacklist_
+
+        Set the run black list for all tasks that have an input dataset defined.
+        """
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+            
+        for task in taskIterator:
+            if task.inputDatasetPath():
+                task.setInputRunBlacklist(runBlacklist)
+            self.setRunBlacklist(runBlacklist, task)
+
+        return
 
 class WMWorkload(ConfigSection):
     """

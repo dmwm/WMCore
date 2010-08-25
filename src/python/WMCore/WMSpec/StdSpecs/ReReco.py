@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.40 2010/07/14 16:28:51 mnorman Exp $"
-__revision__ = "$Revision: 1.40 $"
+__version__ = "$Id: ReReco.py,v 1.41 2010/07/21 13:54:57 sfoulkes Exp $"
+__revision__ = "$Revision: 1.41 $"
 
 import subprocess
 
@@ -158,8 +158,8 @@ class ReRecoWorkloadFactory(object):
         procTaskLogArch.setStepType("LogArchive")
         procTask.applyTemplates()
 
-        splitArgs["siteBlackList"] = self.siteBlackList
-        splitArgs["siteWhiteList"] = self.siteWhiteList
+        procTask.setSiteWhitelist(self.siteWhitelist)
+        procTask.setSiteBlacklist(self.siteBlacklist)
 
         newSplitArgs = {}
         for argName in splitArgs.keys():
@@ -174,10 +174,10 @@ class ReRecoWorkloadFactory(object):
             (primary, processed, tier) = self.inputDataset[1:].split("/")
             procTask.addInputDataset(primary = primary, processed = processed,
                                      tier = tier, dbsurl = self.dbsUrl,
-                                     block_blacklist = self.blockBlackList,
-                                     block_whitelist = self.blockWhiteList,
-                                     run_blacklist = self.runBlackList,
-                                     run_whitelist = self.runWhiteList)
+                                     block_blacklist = self.blockBlacklist,
+                                     block_whitelist = self.blockWhitelist,
+                                     run_blacklist = self.runBlacklist,
+                                     run_whitelist = self.runWhitelist)
         else:
             procTask.setInputReference(inputStep, outputModule = inputModule)
 
@@ -271,8 +271,8 @@ class ReRecoWorkloadFactory(object):
                                         max_merge_size = self.maxMergeSize,
                                         min_merge_size = self.minMergeSize,
                                         max_merge_events = self.maxMergeEvents,
-                                        siteWhiteList = self.siteWhiteList,
-                                        siteBlackList = self.siteBlackList)
+                                        siteWhitelist = self.siteWhitelist,
+                                        siteBlacklist = self.siteBlacklist)
     
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
@@ -336,12 +336,12 @@ class ReRecoWorkloadFactory(object):
         
         # Optional arguments.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.blockBlackList = arguments.get("BlockBlacklist", [])
-        self.blockWhiteList = arguments.get("BlockWhitelist", [])
-        self.runBlackList = arguments.get("RunBlacklist", [])
-        self.runWhiteList = arguments.get("RunWhitelist", [])
-        self.siteBlackList = arguments.get("SiteBlacklist", [])
-        self.siteWhiteList = arguments.get("SiteWhitelist", [])
+        self.blockBlacklist = arguments.get("BlockBlacklist", [])
+        self.blockWhitelist = arguments.get("BlockWhitelist", [])
+        self.runBlacklist = arguments.get("RunBlacklist", [])
+        self.runWhitelist = arguments.get("RunWhitelist", [])
+        self.siteBlacklist = arguments.get("SiteBlacklist", [])
+        self.siteWhitelist = arguments.get("SiteWhitelist", [])
         self.unmergedLFNBase = arguments.get("UnmergedLFNBase", "/store/temp/WMAgent/unmerged")
         self.mergedLFNBase = arguments.get("MergedLFNBase", "/store/temp/WMAgent/merged")
         self.minMergeSize = arguments.get("MinMergeSize", 500000000)

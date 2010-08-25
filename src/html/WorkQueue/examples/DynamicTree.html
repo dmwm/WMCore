@@ -63,19 +63,9 @@ enableDebug();
  */
 function processNode(JSONInput, node)
 {
-	// TODO
-	// validate our JSON
-	// how come this is accepted as valid JSON at other places of YUI?
-	// http://developer.yahoo.com/yui/docs/DataSource.js.html seems to do some preprocessing ...
-	// single quotes are troublesome
-	escapedResponseText = JSONInput.replace(/'/g, "\"");
-	// 'id': 1L is troublesome - should be discussed / addressed at WMCore level
-	escapedResponseText = escapedResponseText.replace(/:(\s*[0-9]+)L/g, ":$1");
-	// writeDebug(escapedResponseText);
-	
 	try 
 	{
-		var oResults = YAHOO.lang.JSON.parse(escapedResponseText);
+		var oResults = YAHOO.lang.JSON.parse(JSONInput);
 	}
 	catch(ex)
 	{
@@ -172,6 +162,7 @@ YAHOO.example.treeExample = function() {
                 timeout: 7000
             };
             
+			YAHOO.util.Connect.initHeader("Accept", "text/json", true);
             //With our callback object ready, it's now time to 
             //make our XHR call using Connection Manager's
             //asyncRequest method:
@@ -192,6 +183,7 @@ YAHOO.example.treeExample = function() {
            	//get root node for tree:
            	var rootNode = tree.getRoot();
          	  
+			YAHOO.util.Connect.initHeader("Accept", "text/json", true);
 			YAHOO.util.Connect.asyncRequest('GET', rootUrl,
 				{
     				success: function(response) 

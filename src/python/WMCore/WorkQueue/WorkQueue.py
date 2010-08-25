@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.29 2009/09/17 15:37:53 swakef Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: WorkQueue.py,v 1.30 2009/09/24 20:17:42 sryu Exp $"
+__version__ = "$Revision: 1.30 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -22,6 +22,7 @@ except NameError:
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkQueue.WorkSpecParser import WorkSpecParser
 from WMCore.WMBS.Subscription import Subscription as WMBSSubscription
 from WMCore.WMBS.File import File as WMBSFile
@@ -245,6 +246,7 @@ class WorkQueue(WorkQueueBase):
                 block = blockLoader.execute(match['input_id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
+                
                 if match['parent_flag']:
                     dbsBlock = dbs.getFileBlockWithParents(block["name"])[block['name']]
                 else:
@@ -288,29 +290,33 @@ class WorkQueue(WorkQueueBase):
         self.setStatus('Done', *subscriptions)
 
 
-    def queueWork(self, wmspec, parentQueueId = None):
+    def queueWork(self, wmspecUrl, parentQueueId = None):
         """
         Take and queue work from a WMSpec
         """
-        spec = WorkSpecParser(wmspec)
-
-        if spec.dbs_url and not self.dbsHelpers.has_key(spec.dbs_url):
-            self.dbsHelpers[spec.dbs_url] = DBSReader(spec.dbs_url)
-
-        units = spec.split(split = self.params['SplitByBlock'],
-                           dbs_pool = self.dbsHelpers)
-
-        #TODO: Look at db transactions - try to minimize time active
-        self.beginTransaction()
-
-        for primaryBlock, blocks, jobs in units:
-            wmbsHelper = WMBSHelper(spec, primaryBlock)
-            sub = wmbsHelper.createSubscription()
-
-            self._insertWorkQueueElement(spec, jobs, primaryBlock,
-                                         blocks, sub['id'], parentQueueId)
-
-        self.commitTransaction(self.existingTransaction())
+        wmspec = WMWorkloadHelper()
+        wmspec.load(wmspecUrl)
+        
+        for topLevelTask in wmspec.taskIterator():
+            specPaser = WorkSpecParser(topLevelTask)
+            dbsUrl = topLevelTask.dbsUrl()
+            if dbsUrl and not self.dbsHelpers.has_key(dbsUrl):
+                self.dbsHelpers[dbsUrl] = DBSReader(dbsUrl)
+    
+            units = specPaser.split(split = self.params['SplitByBlock'],
+                                    dbs_pool = self.dbsHelpers)
+    
+            #TODO: Look at db transactions - try to minimize time active
+            self.beginTransaction()
+    
+            for primaryBlock, blocks, jobs in units:
+                wmbsHelper = WMBSHelper(topLevelTask, primaryBlock)
+                sub = wmbsHelper.createSubscription()
+    
+                self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
+                                             blocks, sub['id'], parentQueueId)
+    
+            self.commitTransaction(self.existingTransaction())
 
 
     def pullWork(self, resources):

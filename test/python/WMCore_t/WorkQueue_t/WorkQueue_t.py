@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.13 2009/09/18 13:42:42 swakef Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.14 2009/09/24 20:18:16 sryu Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import unittest
 import pickle
@@ -23,22 +23,23 @@ def createSpec(name, path, dataset = None,
     wmspec = newWorkload(name)
     task = makeWMTask('task1')
     if dataset:
-        task.data.parameters.inputDatasets = dataset
-        task.data.parameters.splitType = 'File'
-        task.data.parameters.splitSize = 1
+        task.addInputDataset(**dataset)
+        task.setSplittingAlgorithm("FileBased", size=1)
+        
+        #FixMe? need setter for blocklist and whitelist
         if blacklist:
             task.data.constraints.sites.blacklist = blacklist
         if whitelist:
             task.data.constraints.sites.whitelist = whitelist
         wmspec.data.dbs = 'http://example.com'
     else:
-        task.data.parameters.splitType = 'Event'
-        task.data.parameters.splitSize = 100
-        task.data.parameters.totalEvents = 1000
+        task.setSplittingAlgorithm("EventBased", size=100)
+        #FIXME need to add WMSpec to save total event properly for production j
+        task.addProduction(totalevents=1000)
     wmspec.addTask(task)
-    out = open(path, 'wb')
-    pickle.dump(wmspec, out)
-    out.close()
+    wmspec.setSpecUrl(path)
+    wmspec.save(path)
+    
 
 
 # //  mock dbs info - ignore a lot of arguments
@@ -134,13 +135,17 @@ class WorkQueueTest(WorkQueueTestCase):
                                             self.blacklistSpecName + ".pckl")
         self.whitelistSpecFile = os.path.join(os.getcwd(),
                                             self.whitelistSpecName + ".pckl")
+        
+        dataset = {'primary':'fake', 'processed':'test', 'tier':'RAW', 
+                   'dbsurl':'http://example.com', 'totalevents':10000}
+        
         createSpec(self.processingSpecName,
-                   self.processingSpecFile, ['/fake/test/RAW'])
+                   self.processingSpecFile, dataset)
         createSpec(self.blacklistSpecName,
-                   self.blacklistSpecFile, ['/fake/test/RAW'],
+                   self.blacklistSpecFile, dataset,
                    blacklist = ['SiteA'])
         createSpec(self.whitelistSpecName,
-                   self.whitelistSpecFile, ['/fake/test/RAW'],
+                   self.whitelistSpecFile, dataset,
                    whitelist = ['SiteB'])
 
 

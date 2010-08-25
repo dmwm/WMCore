@@ -80,15 +80,22 @@ def runUnitTests():
     testsuite = TestSuite()
     failedTestFiles = []
     for test in testfiles:
+        loadedTests = None
         try:
-            testsuite.addTest(TestLoader().loadTestsFromName(test))
+            loadedTests = TestLoader().loadTestsFromName(test)
         except Exception, e:
             try:
-                testsuite.addTest(TestLoader().loadTestsFromModule(test))
+                loadedTests = TestLoader().loadTestsFromModule(test)
             except Exception, f:
                 print "LoadFail: %s Exception: %s Exception2: %s" % (test,e,f)
                 failedTestFiles.append("%s - %s -retry-> %s" % (test, e,f))
-            
+        
+        for oneTest in loadedTests:
+            try:
+                testsuite.addTest( oneTest )
+            except Exception, e:
+                print "AddTestFail: %s Exception %s" % (oneTest.id(), e)
+                
     
     t = TextTestRunner(verbosity=2)
     result = t.run(testsuite)

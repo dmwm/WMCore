@@ -6,8 +6,8 @@ caches them (or not). It is a generalized factory object. If needed this class
 can be made threadsafe.
 """
 
-__revision__ = "$Id: WMFactory.py,v 1.11 2009/08/10 18:58:33 evansde Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WMFactory.py,v 1.12 2009/09/04 16:39:05 evansde Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -15,7 +15,7 @@ import threading
 
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
-from sets import Set
+
 class WMFactory:
     """
     A factory Class that is 'not thread safe' but is intended to work in

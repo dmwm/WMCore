@@ -6,8 +6,8 @@ _Watchdog_
 This cleverly named object is the thread that handles the monitoring of individual jobs
 """
 
-__version__ = "$Revision: 1.3 $"
-__revision__ = "$Id: Watchdog.py,v 1.3 2010/05/17 20:37:50 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Watchdog.py,v 1.4 2010/05/20 13:20:00 mnorman Exp $"
 
 import threading
 import logging
@@ -44,7 +44,7 @@ class Watchdog(threading.Thread):
         self._NewTask     = threading.Event()
         self._JobKilled   = threading.Event()
         self._RunUpdate   = threading.Event()
-        self._Interval    = 20.0
+        self._Interval    = 120.0
         self._Monitors    = []
 
 
@@ -63,6 +63,9 @@ class Watchdog(threading.Thread):
             logging.error(msg)
             #Probably not fatal either
             return
+        if hasattr(task.data.watchdog, 'interval'):
+            # Set the interval off the config
+            self.setInterval(task.data.watchdog.interval)
         for monitor in task.data.watchdog.monitors:
             msg = "Initializing monitor %s" % monitor
             logging.info(msg)

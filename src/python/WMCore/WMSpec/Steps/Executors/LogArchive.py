@@ -6,8 +6,8 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.10 2010/04/29 19:36:16 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: LogArchive.py,v 1.11 2010/05/07 19:40:10 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import os
 import os.path
@@ -120,9 +120,10 @@ class LogArchive(Executor):
         signal.alarm(0)
 
         outputRef = getattr(self.report.data, self.stepName)
-        outputRef.output.pfn = fileInfo['PFN']
-        outputRef.output.location = fileInfo['SEName']
-        outputRef.output.lfn = fileInfo['LFN']
+        outputRef.output.LOGS.section_("file0")
+        outputRef.output.LOGS.file0.pfn = fileInfo['PFN']
+        outputRef.output.LOGS.file0.location = fileInfo['SEName']
+        outputRef.output.LOGS.file0.lfn = fileInfo['LFN']
 
         return
 

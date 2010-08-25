@@ -23,8 +23,6 @@ Once instatiated you will then want to poll it hourly like so:
 reg.refreshCache()
 
 This will push the configuration up to the Registration service
-
-@author: metson
 '''
 from WMCore.Services.Service import Service #Service as
 from WMCore.Services.Requests import JSONRequests

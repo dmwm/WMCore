@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+
+
+__revision__ = "$Id: Add.py,v 1.6 2010/03/09 18:37:22 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
+
 """
 MySQL implementation of AddFile
 """
@@ -25,8 +31,8 @@ class Add(DBFormatter):
                 binds.append({'lfn': f[0], 
                               'filesize': f[1], 
                               'events': f[2],
-				'dataset_algo': dataset_algo,
-				'status' : status})
+				'dataset_algo': f[3],
+				'status' : f[4]})
         return binds
     
     def execute(self, files = None, size = 0, events = 0, cksum = 0,

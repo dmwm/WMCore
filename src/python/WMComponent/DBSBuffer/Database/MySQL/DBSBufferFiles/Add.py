@@ -8,7 +8,8 @@ class Add(DBFormatter):
     sql = """insert into dbsbuffer_file(lfn, filesize, events, cksum, dataset_algo, status) 
                 values (:lfn, :filesize, :events, :cksum, :dataset_algo, :status)"""
                 
-    def getBinds(self, files=None, size=0, events=0, cksum=0, dataset_algo=0):
+    def getBinds(self, files = None, size = 0, events = 0, cksum = 0,
+                 dataset_algo = 0, status = "NOTUPLOADED"):
         # Can't use self.dbi.buildbinds here...
         binds = {}
         if type(files) == type('string'):
@@ -16,8 +17,8 @@ class Add(DBFormatter):
                      'filesize': size, 
                      'events': events,
 		     'cksum' : cksum,
-			'dataset_algo': dataset_algo,
-			'status' : 'NOTUPLOADED'}
+                     'dataset_algo': dataset_algo,
+                     'status' : status}
         elif type(files) == type([]):
         # files is a list of tuples containing lfn, size, events, cksum, dataset, status
             binds = []
@@ -27,13 +28,13 @@ class Add(DBFormatter):
                               'events': f[2],
 				'cksum' : f[3],
 				'dataset_algo': dataset_algo,
-				'status' : 'NOTUPLOADED'
-				})
+				'status' : status})
         return binds
     
-    def execute(self, files=None, size=0, events=0, cksum=0, datasetAlgo=0, conn = None, transaction = False):
-
-        binds = self.getBinds(files, size, events, cksum, datasetAlgo)
+    def execute(self, files = None, size = 0, events = 0, cksum = 0,
+                datasetAlgo = 0, status = "NOTUPLOADED", conn = None,
+                transaction = False):
+        binds = self.getBinds(files, size, events, cksum, datasetAlgo, status)
         
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)

@@ -5,8 +5,8 @@ _DBSBufferFile_
 A simple object representing a file in WMBS
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.2 2009/07/13 20:01:52 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBSBufferFile.py,v 1.3 2009/08/17 18:37:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 
@@ -156,7 +156,8 @@ class DBSBufferFile(WMBSBase, WMFile):
         addAction = self.daofactory(classname = "DBSBufferFiles.Add")
         addAction.execute(files = self["lfn"], size = self["size"],
                           events = self["events"], cksum= self["cksum"],
-                          datasetAlgo = assocID, conn = self.getDBConn(),
+                          datasetAlgo = assocID, status = self["status"],
+                          conn = self.getDBConn(),
                           transaction = self.existingTransaction())
 
         if len(self["runs"]) > 0:        

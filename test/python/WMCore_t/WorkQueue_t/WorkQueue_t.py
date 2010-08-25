@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.33 2010/06/02 14:42:11 swakef Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.34 2010/06/02 17:44:51 swakef Exp $"
+__version__ = "$Revision: 1.34 $"
 
 import unittest
 import os
@@ -127,11 +127,18 @@ class WorkQueueTest(WorkQueueTestCase):
                                      ReportInterval = 0,
                                      QueueURL = "local.example.com",
                                      DBSReaders = dbsHelpers)
+        self.localQueue2 = localQueue(ParentQueue = self.globalQueue,
+                                     CacheDir = self.workDir,
+                                     ReportInterval = 0,
+                                     QueueURL = "local2.example.com",
+                                     DBSReaders = dbsHelpers)
+
         # standalone queue for unit tests
         self.queue = WorkQueue(CacheDir = self.workDir,
                                DBSReaders = dbsHelpers)
 
-        for queue in (self.queue, self.localQueue, self.globalQueue):
+        for queue in (self.queue, self.localQueue,
+                      self.localQueue2, self.globalQueue):
             queue.phedexService = MockPhedexService(dataset)
             queue.SiteDB = fakeSiteDB()
             
@@ -325,7 +332,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                   [str(x['element_id']) for x in work], id_type = 'id')
 
 
-    def testQueueChainingNegotiationFailures(self):
+    def testMultipleQueueChaining(self):
         """
         Chain workQueues and verify status updates, negotiation failues etc
         """
@@ -348,17 +355,30 @@ class WorkQueueTest(WorkQueueTestCase):
         # check that global reset's status if acquired status not verified
         self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
         self.assertEqual(len(self.localQueue.status('Available')), 2)
+        # no work available for queue2 - Negotiating
+        self.assertEqual(self.localQueue2.pullWork({'SiteA' : 1000}), 0)
+        # queue1 hasn't claimed work so reset element to Available
         self.assertEqual(self.globalQueue.flushNegotiationFailures(), 1)
+        # work still available in queue1 until it contacts parent
         self.assertEqual(len(self.globalQueue.status('Available')), 3)
-        # If original queue re-connects it will confirm work acquired
-        # change queue name so it appears that a negotiation failure occurred
-        # and 2 queues were allocated the work - ensure the loser is canceled
-        myname = self.localQueue.params['QueueURL']
-        self.localQueue.params['QueueURL'] = 'local2.example.com'
-        self.localQueue.updateParent() # parent will fail children here
-        self.localQueue.params['QueueURL'] = myname
-        self.assertEqual(len(self.globalQueue.status('Available')), 1)
-        self.assertEqual(len(self.globalQueue.status('Canceled')), 2)
+
+        # queue2 pull available work
+        self.assertEqual(self.localQueue2.pullWork({'SiteA' : 1000}), 2)
+        self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
+        self.assertEqual(len(self.localQueue.status('Available')), 4)
+        self.localQueue2.updateParent() # queue2 claims work
+        self.assertEqual(len(self.globalQueue.status('Negotiating')), 0)
+        self.assertEqual(len(self.globalQueue.status('Acquired')), 1)
+        self.assertEqual(len(self.localQueue.status('Available')), 4)
+
+        # queue1 calls back to parent and find work claimed by queue2
+        self.localQueue.updateParent()
+        self.assertEqual(len(self.globalQueue.status('Acquired')), 1)
+        # As all queues share the same db - all elements will be canceled
+        # as delete is keyed on parent id and no elements will be available
+        # in real life - 1 element will be canceled and 2 will be available
+        self.assertEqual(len(self.localQueue.status('Canceled')), 4)
+        self.assertEqual(len(self.localQueue2.status('Available')), 0)
 
 
     def testQueueChainingStatusUpdates(self):

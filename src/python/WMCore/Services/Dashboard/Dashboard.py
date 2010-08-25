@@ -5,8 +5,8 @@ _Dashboard_
 Talk to the Dashboard Service to get site status.
 """
 
-__revision__ = "$Id: Dashboard.py,v 1.2 2010/01/08 21:20:43 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Dashboard.py,v 1.3 2010/01/08 21:36:36 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Services.Service import Service
 class Dashboard(Service):
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     dict = {}
     dict['endpoint'] = 'http://lxarda16.cern.ch/dashboard/request.py'
     dict['cachepath'] = '/tmp/dashboard'
-    dict['type'] = 'text/csv'
+    dict['accept_type'] = 'text/csv'
     dict['logger'] = logging.getLogger('SAMtest')
     
     dashboard = Dashboard(dict = dict)

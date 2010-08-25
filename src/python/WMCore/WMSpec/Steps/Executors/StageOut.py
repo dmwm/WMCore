@@ -6,17 +6,15 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.7 2010/02/10 17:39:30 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: StageOut.py,v 1.8 2010/03/18 15:13:45 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
-import inspect
 import os
 import os.path
 import logging
 import signal
 
 from WMCore.WMSpec.Steps.Executor           import Executor
-from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.FwkJobReport.Report             import Report
 
 import WMCore.Storage.StageOutMgr as StageOutMgr
@@ -49,7 +47,7 @@ class StageOut(Executor):
         return None
 
 
-    def execute(self, emulator = None, **overrides):
+    def execute(self, emulator = None):
         """
         _execute_
 
@@ -59,27 +57,40 @@ class StageOut(Executor):
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
 
-        #Set wait to 15 minutes
+
+        overrides = {}
+        if hasattr(self.step, 'override'):
+            overrides = self.step.override.dictionary_()
+
+        # Set wait to 15 minutes
         waitTime = overrides.get('waitTime', 900)
-        
+
+        # Pull out StageOutMgr Overrides
+        stageOutCall = {}
+        if overrides.has_key("command") and overrides.has_key("option") \
+               and overrides.has_key("se-name") and overrides.has_key("lfn-prefix"):
+            stageOutCall['command']    = overrides.get('command')
+            stageOutCall['option']     = overrides.get('option')
+            stageOutCall['se-name']    = overrides.get('se-name')
+            stageOutCall['lfn-prefix'] = overrides.get('lfn-prefix')
+
         # naw man, this is real
         # iterate over all the incoming files
-        manager = StageOutMgr.StageOutMgr(**overrides)
+        manager = StageOutMgr.StageOutMgr(**stageOutCall)
         manager.numberOfRetries = self.step.retryCount
         manager.retryPauseTime  = self.step.retryDelay
 
-        #We need to find a list of steps in our task
-        #And eventually a list of jobReports for out steps
+        # We need to find a list of steps in our task
+        # And eventually a list of jobReports for out steps
 
-        #Search through steps for report files
-        #Search through steps for report files
+        # Search through steps for report files
         filesTransferred = []
         for step in self.stepSpace.taskSpace.stepSpaces():
             if step == self.stepName:
                 #Don't try to parse your own report; it's not there yet
                 continue
             stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
-            logging.info("Beginning report processing for step %s" %(step))
+            logging.info("Beginning report processing for step %s" % (step))
             reportLocation = os.path.join(stepLocation, 'Report.pkl')
             if os.path.isfile(reportLocation):
                 #First, get everything from a file and 'unpersist' it
@@ -136,7 +147,7 @@ class StageOut(Executor):
 
                 else:
                     #This is weird, because the step isn't in its own taskSpace
-                    msg = "Could not find any mention of step %s in report in the step TaskSpace" %(step)
+                    msg = "Could not find any mention of step %s in report in the step TaskSpace" % (step)
                     logging.error(msg)
 
                 #Am DONE with report
@@ -144,7 +155,7 @@ class StageOut(Executor):
                 stepReport.persist(reportLocation)
 
             else:
-                logging.error("Cannot find report for step %s in space %s" %(step, stepLocation))
+                logging.error("Cannot find report for step %s in space %s" % (step, stepLocation))
 
         #Done with all steps, and should have a list of stagedOut files in fileForTransfer
         print filesTransferred

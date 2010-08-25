@@ -4,8 +4,8 @@ Global WorkQueue and ReqMgr config.
 
 """
 
-__revision__ = "$Id: ReqMgrGlobalWorkQueueConfig.py,v 1.2 2010/08/12 14:43:23 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ReqMgrGlobalWorkQueueConfig.py,v 1.3 2010/08/18 13:32:50 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 
@@ -34,8 +34,8 @@ userEmail = "sfoulkes@fnal.gov"
 # This is the path to the CMS software installation on the location machine.
 cmsPath = "/uscmst1/prod/sw/cms"
 
-# Probably does not need to be changed.
-couchURL = "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984"
+# The couch username and password needs to be added.
+couchURL = "http://USERNAME:PASSWORD@cmssrv52.fnal.gov:5984"
 configCacheDBName = "wmagent_config_cache"
 
 

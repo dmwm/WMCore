@@ -4,8 +4,8 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.3 2010/08/09 21:43:18 rpw Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.4 2010/08/18 13:32:50 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 
@@ -112,7 +112,7 @@ active.WebRequestSchema.requestor = 'rpw'
 active.WebRequestSchema.reqMgrHost = reqMgrHost
 active.WebRequestSchema.cmsswInstallation = cmsswInstallation
 active.WebRequestSchema.cmsswDefaultVersion = 'CMSSW_3_5_8'
-active.WebRequestSchema.configCacheUrl = "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984"
+active.WebRequestSchema.configCacheUrl = "http://USERNAME:PASSWORD@cmssrv52.fnal.gov:5984"
 active.WebRequestSchema.configCacheDBName = "wmagent_config_cache"
 active.WebRequestSchema.templates = config.ReqMgr.templates
 active.WebRequestSchema.componentDir = config.ReqMgr.componentDir

@@ -11,8 +11,10 @@ _ReReco_
 Standard ReReco workflow.
 """
 
-__version__ = "$Id: ReReco.py,v 1.49 2010/08/13 14:48:56 sfoulkes Exp $"
-__revision__ = "$Revision: 1.49 $"
+__version__ = "$Id: ReReco.py,v 1.50 2010/08/18 13:32:51 sfoulkes Exp $"
+__revision__ = "$Revision: 1.50 $"
+
+import os
 
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
@@ -49,7 +51,7 @@ def getTestArguments():
         "ProcessingConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8",
         "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1",
         
-        "CouchUrl": "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984",
+        "CouchUrl": os.environ.get("COUCHURL", None)
         "CouchDBName": "wmagent_config_cache",
         "Scenario": ""
         
@@ -320,12 +322,12 @@ class ReRecoWorkloadFactory(StdBase):
         self.skimInput = arguments["SkimInput"]
         self.globalTag = arguments["GlobalTag"]        
         self.cmsPath = arguments["CmsPath"]
+        self.couchUrl = arguments["CouchUrl"]
 
         # Required parameters that can be empty.
         self.processingConfig = arguments["ProcessingConfig"]
         self.skimConfig = arguments["SkimConfig"]
         self.scenario = arguments["Scenario"]
-        self.couchUrl = arguments.get("CouchUrl", "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984")
         self.couchDBName = arguments.get("CouchDBName", "wmagent_config_cache")        
         
         # Optional arguments.

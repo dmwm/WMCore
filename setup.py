@@ -730,12 +730,14 @@ class EnvCommand(Command):
             # Use an in memory sqlite one if none is configured. 
              print 'export DATABASE=sqlite://'
             
-        here = os.path.abspath('.')
+        here = get_relative_path()
+        
         tests = here + '/test/python'
         source = here + '/src/python'
         webpth = source + '/WMCore/WebTools'
+        
+        pypath=os.getenv('PYTHONPATH', '').strip(':').split(':')
          
-        pypath=os.getenv('PYTHONPATH', '').split(':')
         for pth in [tests, source]:
             if pth not in pypath:
                 pypath.append(pth)

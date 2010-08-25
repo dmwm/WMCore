@@ -25,7 +25,7 @@ class GetParentIDsByID(DBFormatter):
             else:
                 for f in r.fetchall():
                     out.add(int(f[0]))
-        #print list(out)
+            r.close()
         return list(out) 
   
     def execute(self, ids=None, conn = None, transaction = False):

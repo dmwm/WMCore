@@ -3,95 +3,308 @@
 _DBSBufferFile_
 
 A simple object representing a file in WMBS
-
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.1 2009/05/08 11:06:22 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
-
-from WMCore.DataStructs.File import File as WMFile
-from WMCore.Database.Transaction import Transaction
-from WMCore.DAOFactory import DAOFactory
-from sqlalchemy.exceptions import IntegrityError
+__revision__ = "$Id: DBSBufferFile.py,v 1.2 2009/07/13 20:01:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from sets import Set
 
+from WMCore.DataStructs.File import File as WMFile
+from WMCore.DAOFactory import DAOFactory
+
 from WMCore.DataStructs.Run import Run
+from WMCore.WMBS.WMBSBase import WMBSBase
 
-import threading
+class DBSBufferFile(WMBSBase, WMFile):
+    def __init__(self, lfn = None, id = -1, size = None,
+                 events = None, cksum = None, parents = None, locations = None,
+                 status = "NOTUPLOADED"):
+        WMBSBase.__init__(self)
+        WMFile.__init__(self, lfn = lfn, size = size, events = events, 
+                        cksum = cksum, parents = parents)
+        self.setdefault("status", status)
+        self.setdefault("id", id)
+        self.setdefault("location", Set())
 
-class DBSBufferFile(WMFile):
-    """
-    A simple object representing a file in WMBS
-    """
-    #pylint: disable-msg=R0913
-    def __init__(self, lfn='', id=-1, size=0, events=0, cksum=0,
-		 dataset=0, status=0,
-                 parents=None, locations=None):
-        WMFile.__init__(self, lfn=lfn, size=size, events=events, 
-                        cksum=cksum, parents=parents)
-	self.setdefault("dataset", dataset)
-	self.setdefault("status", status)
-
-        myThread = threading.currentThread()
-        self.logger = myThread.logger
-        self.dialect = myThread.dialect
-        self.dbi = myThread.dbi
-        self.daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
-                                     logger = self.logger,
-                                     dbinterface = self.dbi)
-        # Create the file object
+        # Parameters for the algorithm
+        self.setdefault("appName", None)
+        self.setdefault("appVer", None)
+        self.setdefault("appFam", None)
+        self.setdefault("psetHash", None)
+        self.setdefault("configContent", None)
+        self.setdefault("datasetPath", None)
+        
         if locations == None:
             self.setdefault("newlocations", Set())
         else:
-            self.setdefault("newlocations", locations)
-            
-        self.setdefault("id", id)
-        self['locations'] = Set()
+            self.setdefault("newlocations", self.makeset(locations))
+
+        # The WMBS base class creates a DAO factory for WMBS, we'll need to
+        # overwrite that so we can use the factory for DBSBuffer objects.
+        self.daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                                     logger = self.logger,
+                                     dbinterface = self.dbi)
+        return
 
     def exists(self):
         """
-        Does a file exist with this lfn, return the id
+        _exists_
+
+        Determine whether or not a file with this LFN exists inside the
+        database.  Return the file's ID if it exists, False otherwise.
         """
-        action = self.daofactory(classname='DBSBufferFiles.Exists')
-        return action.execute(lfn = self['lfn'])
+        action = self.daofactory(classname = "DBSBufferFiles.Exists")
+        return action.execute(lfn = self["lfn"], conn = self.getDBConn(),
+                              transaction = self.existingTransaction())
         
-    def getInfo(self):
-        """
-        Return the files attributes as a tuple
-        """
-        return self['lfn'], self['id'], self['size'], self['events'], \
-               self['cksum'], self['dataset'], self['status'], list(self['runs']), list(self['locations']), \
-               list(self['parents'])
-
-    def getDataset(self):
-	"""
-	Returns the dataset this File belongs to
-	"""
-	return self['dataset']
-
     def getStatus(self):
+        """
+        _getStatus_
+
+        Retrieve the status of the file.  This can be one of the following:
+          UPLOADED
+          NOTUPLOADED
 	"""
-	Returns the status of this file (UPLOADED etc.)
-	"""
-	return self['status']
+        return self["status"]
 
     def getLocations(self):
+        """
+        _getLocations_
+
+        Retrieve a list of locations where this file is stored.
 	"""
-	get a list of locations for this file
-	"""
-	return list(self['locations'])
+        return list(self["locations"])
 
     def getRuns(self):
+        """
+        _getRuns_
 
+        Retrieve a list of WMCore.DataStructs.Run objects that represent which
+        run/lumi sections this file contains.
 	"""
-	get a list of run lumi objects (List of Set() of type WMCore.DataStructs.Run)
-	"""
-	return list(self['runs'])
+        return list(self["runs"])
                                     
+    def load(self, parentage = 0):
+        """
+        _load_
+
+        The the file and all it's metadata from the database.  Either the LFN
+        or the file's ID must be specified before this is called.
+        """
+        existingTransaction = self.beginTransaction()
+
+        if self["id"] != -1:
+            action = self.daofactory(classname = "DBSBufferFiles.GetByID")
+            result = action.execute(self["id"], conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+        else:
+            action = self.daofactory(classname = "DBSBufferFiles.GetByLFN")
+            result = action.execute(self["lfn"], conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+
+        self.update(result)
+
+        action = self.daofactory(classname = "DBSBufferFiles.GetRunLumiFile")
+        runs = action.execute(self["lfn"], conn = self.getDBConn(),
+                              transaction = self.existingTransaction())
+        [self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
+
+        action = self.daofactory(classname = "DBSBufferFiles.GetLocation")
+        self["locations"] = action.execute(self["lfn"], conn = self.getDBConn(),
+                                           transaction = self.existingTransaction()) 
+
+        self["newlocations"].clear()
+        self["parents"].clear()
+        
+        if parentage > 0:
+            action = self.daofactory(classname = "DBSBufferFiles.GetParents")
+            lfns = action.execute(self["lfn"], conn = self.getDBConn(),
+                                  transaction = self.existingTransaction())
+            for lfn in lfns:
+                parentFile = DBSBufferFile(lfn = lfn)
+                parentFile.load(parentage = parentage - 1)
+                self["parents"].add(parentFile)
+
+        self.commitTransaction(existingTransaction)
+        return
+    
+    def create(self):
+        """
+        _create_
+
+        """
+        existingTransaction = self.beginTransaction()
+
+        if self.exists() != False:
+            self.load()
+            return
+
+        algoAction = self.daofactory(classname = "NewAlgo")
+        algoAction.execute(appName = self["appName"], appVer = self["appVer"],
+                           appFam = self["appFam"], psetHash = self["psetHash"],
+                           configContent = self["configContent"])
+
+        datasetAction = self.daofactory(classname = "NewDataset")
+        datasetAction.execute(datasetPath = self["datasetPath"])
+
+        assocAction = self.daofactory(classname = "AlgoDatasetAssoc")
+        assocID = assocAction.execute(appName = self["appName"], appVer = self["appVer"],
+                                      appFam = self["appFam"], psetHash = self["psetHash"],
+                                      datasetPath = self["datasetPath"])
+
+        addAction = self.daofactory(classname = "DBSBufferFiles.Add")
+        addAction.execute(files = self["lfn"], size = self["size"],
+                          events = self["events"], cksum= self["cksum"],
+                          datasetAlgo = assocID, conn = self.getDBConn(),
+                          transaction = self.existingTransaction())
+
+        if len(self["runs"]) > 0:        
+            lumiAction = self.daofactory(classname="DBSBufferFiles.AddRunLumi")
+            lumiAction.execute(file = self["lfn"], runs = self["runs"],
+                               conn = self.getDBConn(),
+                               transaction = self.existingTransaction())
+        
+        self.updateLocations()
+        self["id"] = self.exists()
+        self.commitTransaction(existingTransaction)
+        return
+    
+    def delete(self):
+        """
+        _delete_
+        
+        Remove a file from the DSBuffer database.
+        """
+        action = self.daofactory(classname = "DBSBufferFiles.Delete")
+        action.execute(file = self["lfn"], conn = self.getDBConn(),
+                       transaction = self.existingTransaction())
+        return
+        
+    def addChild(self, lfn):
+        """
+        _addChild_
+        
+        Set an existing file (lfn) as a child of this file.
+        """
+        existingTransaction = self.beginTransaction()
+
+        child = DBSBufferFile(lfn = lfn)
+        child.load()
+        
+        if not self["id"] > 0:
+            raise Exception, "Parent file doesn't have an id %s" % self["lfn"]
+        if not child["id"] > 0:
+            raise Exception, "Child file doesn't have an id %s" % child["lfn"]
+
+        action = self.daofactory(classname = "DBSBufferFiles.Heritage")
+        action.execute(child = child["id"], parent = self["id"],
+                       conn = self.getDBConn(),
+                       transaction = self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
+        return
+        
+    def addParent(self, lfn):
+        """
+        _addParent_
+        
+        Set an existing file (lfn) as a parent of this file.
+        """
+        existingTransaction = self.beginTransaction()
+
+        parent = DBSBufferFile(lfn = lfn)
+        parent.load()
+        self["parents"].add(parent)
+
+        if not self["id"] > 0:
+            raise Exception, "Child file doesn't have an id %s" % self["lfn"]
+        if not parent["id"] > 0:
+            raise Exception, "Parent file doesn't have an id %s" % \
+                  parent["lfn"]
+        
+        action = self.daofactory(classname = "DBSBufferFiles.Heritage")
+        action.execute(child = self["id"], parent = parent["id"],
+                       conn = self.getDBConn(),
+                       transaction = self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
+        return
+    
+    def updateLocations(self):
+        """
+        _updateLocations_
+        
+        Write any new locations to the database.  After any new locations are
+        written to the database all locations will be reloaded from the
+        database.
+        """
+        existingTransaction = self.beginTransaction()
+
+        if len(self["newlocations"]) > 0:
+            insertAction = self.daofactory(classname = "DBSBufferFiles.AddLocation")
+            insertAction.execute(siteName = self["newlocations"],
+                                 conn = self.getDBConn(),
+                                 transaction = self.existingTransaction())
+
+            addAction = self.daofactory(classname = "DBSBufferFiles.SetLocation")
+            addAction.execute(file = self["lfn"], location = self["newlocations"],
+                              conn = self.getDBConn(),
+                              transaction = self.existingTransaction())
+
+        getAction = self.daofactory(classname = "DBSBufferFiles.GetLocation")
+        self["locations"] = getAction.execute(self["lfn"], conn = self.getDBConn(),
+                                              transaction = self.existingTransaction())
+
+        self["newlocations"].clear()
+        self.commitTransaction(existingTransaction)
+        return
+        
+    def setLocation(self, se, immediateSave = True):
+        """
+        _setLocation_
+        
+        Sets the location of a file. If immediateSave is True, commit change to
+        the DB immediately, otherwise queue for addition when save() is called.
+        """
+        if isinstance(se, str):
+            self["newlocations"].add(se)
+            self["locations"].add(se)
+        else:
+            self["newlocations"].update(se)
+            self["locations"].update(se)
+
+        if immediateSave:
+            self.updateLocations()
+
+        return
+
+    def setAlgorithm(self, appName = None, appVer = None, appFam = None,
+                     psetHash = None, configContent = None):
+        """
+        _setAlgorithm_
+
+        Set the DBS algorithm for this file.
+        """
+        self["appName"] = appName
+        self["appVer"] = appVer
+        self["appFam"] = appFam
+        self["psetHash"] = psetHash
+        self["configContent"] = configContent
+        return
+
+    def setDatasetPath(self, datasetPath):
+        """
+        _setDatasetPath_
+
+        Set the dataset path for this file.
+        """
+        self["datasetPath"] = datasetPath
+        return
+
     def getParentLFNs(self):
         """
-        get a flat list of parent LFN's
+        Get a flat list of parent LFNs
         """
         result = []
         parents = self['parents']
@@ -103,176 +316,28 @@ class DBSBufferFile(WMFile):
             parents = temp
         result.sort()   # ensure SecondaryInputFiles are in order
         return [x['lfn'] for x in result]
-    
-    def load(self, parentage=0):
+
+    def addRunSet(self, runSet):
         """
-        use lfn to load file info from db
+        add the set of runs.  This should be called after a file is created,
+        unlike addRun which should be called before the file was created.
+        runSet should be set of DataStruct.Run
+        also there should be no duplicate entries in runSet.
+        (May need to change in schema level not to allow duplicate record)
         """
-        result = None 
-        if self['id'] > 0:
-            action = self.daofactory(classname='DBSBufferFiles.GetByID')
-            result = action.execute(self['id'])
-        else:
-            action = self.daofactory(classname='DBSBufferFiles.GetByLFN')
-            result = action.execute(self['lfn'])
-        assert len(result) == 1, "Found %s files, not one" % len(result)
+        existingTransaction = self.beginTransaction()
 
-	result = result[0]
-        self['id'] = result[0]
-        self['lfn'] = result[1]
-        self['size'] = result[2]
-        self['events'] = result[3]
-	self['cksum'] = result[4]
-	self['dataset'] = result[4]
-	self['status'] = result[4]
-       
-	#Get the Run/Lumis
-	action = self.daofactory(classname='DBSBufferFiles.GetRunLumiFile')
-	runs = action.execute(self['lfn']) 	
-	[self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
-
-        action = self.daofactory(classname='DBSBufferFiles.GetLocation')
-        self['locations'] = action.execute(self['lfn']) 
-        self['newlocations'].clear()
+        lumiAction = self.daofactory(classname = "DBSBufferFiles.AddRunLumi")
+        lumiAction.execute(file = self["lfn"], runs = runSet,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction())
         
-        self['parents'] = Set()
-        
-        if parentage > 0:
-            action = self.daofactory(classname='DBSBufferFiles.GetParents')
-            for lfn in action.execute(self['lfn']):
-                f = DBSBufferFile(lfn=lfn).load(parentage=parentage-1)
-                self['parents'].add(f)
-        return self
-    
-    def create(self, trans = None):
-        """
-        _create_
+        action = self.daofactory(classname = "DBSBufferFiles.GetRunLumiFile")
+        runs = action.execute(self["lfn"], conn = self.getDBConn(), 
+                              transaction = self.existingTransaction())
 
-        Create a file.  If no transaction is passed in this will wrap all
-        statements in a single transaction.
-        """
-        if self.exists() != False:
-            return
+        self["runs"].clear()
+        [self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
 
-        if trans == None:
-            newtrans = True            
-            trans = Transaction(self.dbi)
-        else:
-            newtrans = False
-
-        conn = trans.conn
-
-        addAction = self.daofactory(classname="DBSBufferFiles.Add")
-        addAction.execute(files = self["lfn"], size = self["size"],
-                          events = self["events"], cksum= self["cksum"], dataset=self["dataset"],
-			  conn = conn,
-                          transaction = True)
-
-	if len(self["runs"]) > 0:
-        	lumiAction = self.daofactory(classname="DBSBufferFiles.AddRunLumi")
-        	lumiAction.execute(file = self["lfn"], runs = self["runs"],
-                           conn = conn, transaction = True)
-        
-        # Add new locations if required
-        self.updateLocations(trans)
-
-        if newtrans:
-            trans.commit()
-        
-        self["id"] = self.exists()
+        self.commitTransaction(existingTransaction)
         return
-    
-    def delete(self):
-        """
-        Remove a file from WMBS
-        """
-        self.daofactory(classname='DBSBufferFiles.Delete').execute(file=self['lfn'])
-        
-    def addChild(self, lfn):
-        """
-        Set an existing file (lfn) as a child of this file
-        """
-        child = DBSBufferFile(lfn=lfn)
-        child.load()
-        if not self['id'] > 0:
-            raise Exception, "Parent file doesn't have an id %s" % self['lfn']
-        if not child['id'] > 0:
-            raise Exception, "Child file doesn't have an id %s" % child['lfn']
-        
-        self.daofactory(classname='DBSBufferFiles.Heritage').execute(
-                                                        child=child['id'], 
-                                                        parent=self['id'])
-        
-    def addParent(self, lfn):
-        """
-        Set an existing file (lfn) as a parent of this file
-        """
-
-        parent = DBSBufferFile(lfn=lfn)
-        parent.load()
-        self['parents'].add(parent)
-        if not self['id'] > 0:
-            raise Exception, "Child file doesn't have an id %s" % self['lfn']
-        if not parent['id'] > 0:
-            raise Exception, "Parent file doesn't have an id %s" % \
-                        parent['lfn']
-        
-        action = self.daofactory(classname='DBSBufferFiles.Heritage')
-
-        action.execute(child=self['id'], parent=parent['id'])
-    
-    def updateLocations(self, trans = None):
-        """
-        _updateLocations_
-        
-        Write any new locations to the database.  After any new locations are
-        written to the database all locations will be reloaded from the
-        database.
-        """
-        if trans == None:
-            trans = Transaction(self.dbi)
-            newtrans = True
-        else:
-            newtrans = False
-
-        conn = trans.conn
-            
-        # Add new locations if required
-        if len(self["newlocations"]) > 0:
-	    #Lets first add the location, if its not already in database (duplicates will be avoided automatically)
-
-	    insertAction = self.daofactory(classname = "DBSBufferFiles.AddLocation")
-	    insertAction.execute(location = self["newlocations"], conn = conn, transaction = True)
-            #
-            addAction = self.daofactory(classname = "DBSBufferFiles.SetLocation")
-            addAction.execute(file = self["lfn"], location = self["newlocations"],
-                              conn = conn, transaction = True)
-
-        # Update locations from the DB    
-        getAction = self.daofactory(classname = "DBSBufferFiles.GetLocation")
-        self["locations"] = getAction.execute(self["lfn"], conn = conn,
-                                              transaction = True)
-        self["newlocations"].clear()
-
-        if newtrans:
-            trans.commit()
-            
-        return
-        
-    def setLocation(self, se, immediateSave = True):
-        """
-        Sets the location of a file. If immediateSave is True, commit change to
-        the DB immediately, otherwise queue for addition when save() is called.
-        Also removes previous error where a file would have to be saved before
-        locations could be added - confusing when file requires locations on its
-        first creation (breaks transaction model in Fileset commits etc)
-        """
-        if isinstance(se, str):
-            self['newlocations'].add(se)
-            self['locations'].add(se)
-        else:
-            self['newlocations'].update(se)
-            self['locations'].update(se)
-
-        if immediateSave:
-            self.updateLocations()

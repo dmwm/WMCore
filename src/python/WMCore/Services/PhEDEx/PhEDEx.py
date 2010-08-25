@@ -3,7 +3,7 @@ import logging
 import os
 import pwd
 
-# this is temporary library until ProdCommon is ported to WMCore 
+# this is temporary library until ProdCommon is ported to WMCore
 #from ProdCommon.DataMgmt.PhEDEx.DropMaker import DropMaker
 from WMCore.Services.PhEDEx import PhEDExXMLDrop
 from WMCore.Services.Service import Service
@@ -52,7 +52,7 @@ class PhEDEx(Service):
 
         Service.__init__(self, dict)
 
-    def _getResult(self, callname, file = 'result', clearCache = True, 
+    def _getResult(self, callname, file = 'result', clearCache = True,
                    args = None, verb="POST"):
         """
         _getResult_
@@ -68,12 +68,12 @@ class PhEDEx(Service):
         try:
             # overwrite original self['method']
             # this is only place used self['method'], it is safe to overwrite
-            # If that changes keep the reset to original self['method']   
-            self["method"] = verb     
+            # If that changes keep the reset to original self['method']
+            self["method"] = verb
             f = self.refreshCache(file, callname, args)
             result = f.read()
             f.close()
-            
+
         except IOError, ex:
             raise RuntimeError("URL not available: %s" % callname)
 
@@ -83,14 +83,14 @@ class PhEDEx(Service):
 
         return result
 
-    def injectBlocks(self, dbsUrl, node, datasetPath = None, 
+    def injectBlocks(self, dbsUrl, node, datasetPath = None,
                      verbose = 0, strict = 1, *blockNames):
 
         """
         _injectBlocksToPhedex_
-    
+
         dbsUrl is global dbs url
-        node: node name for injection 
+        node: node name for injection
         verbose: 1 for being verbose, 0 for not
         strict: throw an error if it can't insert the data exactly as
                 requested. Otherwise simply return the statistics. The
@@ -103,7 +103,7 @@ class PhEDEx(Service):
         args['node'] = node
 
         xml = PhEDExXMLDrop.makePhEDExDrop(dbsUrl, datasetPath, *blockNames)
-        
+
         args['data'] = xml
         args['verbose'] = verbose
         args['strict'] = strict
@@ -147,19 +147,19 @@ class PhEDEx(Service):
 
         improv = injectionSpec.save()
         xmlString = improv.makeDOMElement().toprettyxml()
-        
+
         args = {}
         args["node"] = nodeName
         args["data"] = xmlString
         args["verbose"] = verbose
         args["strict"] = strict
-        
+
         return self._getResult("inject", args = args, verb = "POST")
 
     def subscribe(self, dbsUrl, subscription):
         """
         _subscribe_
-        
+
         Subscription is PhEDEX subscription structure
         """
 
@@ -187,7 +187,7 @@ class PhEDEx(Service):
     def getReplicaInfoForBlocks(self, **kwargs):
         """
         _blockreplicas_
-        
+
         Get replicas for given blocks
         kwargs are options passed through to phedex
         """
@@ -206,7 +206,7 @@ class PhEDEx(Service):
     def subscriptions(self, **kwargs):
         """
         _subscriptions_
-        
+
         Get subscriptios for blocks and datasets
         kwargs are options passed through to phedex
         """
@@ -227,3 +227,27 @@ class PhEDEx(Service):
           id         - Node id
         """
         return self._getResult("nodes", args = None)
+
+    def getNodeName(self, se):
+        """
+        _getNodeName_
+
+        Convert SE to Name
+        """
+        output = self.getNodeMap()
+        nodeList = output['phedex']['node']
+        for node in nodeList:
+            if node['se'] == se:
+                return node['name']
+
+    def getNodeSE(self, name):
+        """
+        _getNodeSE_
+
+        Convert Name to SE
+        """
+        output = self.getNodeMap()
+        nodeList = output['phedex']['node']
+        for node in nodeList:
+            if node['name'] == name:
+                return node['se']

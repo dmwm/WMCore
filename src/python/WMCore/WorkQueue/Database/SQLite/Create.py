@@ -5,8 +5,8 @@ Implementation of CreateWorkQueue for SQLite.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.9 2009/11/20 22:59:59 sryu Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Create.py,v 1.10 2010/01/25 19:29:45 sryu Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -14,14 +14,14 @@ class Create(CreateWorkQueueBase):
     """
     Class to set up the WMBS schema in a MySQL database
     """
-    def __init__(self, logger = None, dbi = None):
+    def __init__(self, logger = None, dbi = None, params = None):
         """
         _init_
 
         Call the base class's constructor and create all necessary tables,
         constraints and inserts.
         """
-        CreateWorkQueueBase.__init__(self, logger, dbi)
+        CreateWorkQueueBase.__init__(self, logger, dbi, params)
 
         # Can't use ALTER TABLE to add constrints
         self.create["05wq_element"] = \

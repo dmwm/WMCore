@@ -7,8 +7,8 @@ Inherit from CreateWorkQueueBase, and add MySQL specific substitutions (e.g. add
 INNODB).
 """
 
-__revision__ = "$Id: Create.py,v 1.16 2009/11/30 20:13:34 sryu Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Create.py,v 1.17 2010/01/25 19:29:23 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -16,22 +16,22 @@ class Create(CreateWorkQueueBase):
     """
     Class to set up the WorkQueue schema in a MySQL database
     """
-    def __init__(self, logger = None, dbi = None):
+    def __init__(self, logger = None, dbi = None, params = None):
         """
         _init_
 
         Call the base class's constructor and create all necessary tables,
         constraints and inserts.
         """
-        CreateWorkQueueBase.__init__(self, logger, dbi)
+        CreateWorkQueueBase.__init__(self, logger, dbi, params)
 
         # overwrite some tables to use MySql auto increment feature
         self.create["01wq_wmspec"] = \
           """CREATE TABLE wq_wmspec (
              id          INTEGER      NOT NULL AUTO_INCREMENT, 
-             name        VARCHAR(500) NOT NULL,
-             url         VARCHAR(500) NOT NULL,
-             owner       VARCHAR(250) NOT NULL,
+             name        VARCHAR(255) NOT NULL,
+             url         VARCHAR(255) NOT NULL,
+             owner       VARCHAR(255) NOT NULL,
              PRIMARY KEY(id),
              UNIQUE (name)
              )"""
@@ -57,7 +57,7 @@ class Create(CreateWorkQueueBase):
         self.create["04wq_queues"] = \
           """CREATE TABLE wq_queues (
              id               INTEGER    NOT NULL AUTO_INCREMENT,
-             url              VARCHAR(255) NOT NULL,
+             url              VARCHAR(500) NOT NULL,
              PRIMARY KEY (id),
              UNIQUE(url)
              )"""

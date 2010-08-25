@@ -66,7 +66,7 @@ active.secretdocumentation.hidden = True
 
 # I can use an openID secured class
 active.section_('securedocumentation')
-active.secretdocumentation.object = 'WMCore.WebTools.SecureDocumentation'
+active.securedocumentation.object = 'WMCore.WebTools.SecureDocumentation'
 
 #active.section_('welcome')
 #active.welcome.object = 'WMCore.WebTools.Welcome'

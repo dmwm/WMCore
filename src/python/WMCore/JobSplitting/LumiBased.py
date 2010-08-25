@@ -7,14 +7,17 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.21 2010/07/13 14:32:45 sfoulkes Exp $"
-__version__  = "$Revision: 1.21 $"
+__revision__ = "$Id: LumiBased.py,v 1.22 2010/08/05 16:34:44 mnorman Exp $"
+__version__  = "$Revision: 1.22 $"
 
 import operator
+import threading
+
+from WMCore.DataStructs.Run import Run
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.DataStructs.Fileset import Fileset
-from WMCore.Services.UUID import makeUUID
+from WMCore.DataStructs.Fileset     import Fileset
+from WMCore.DAOFactory              import DAOFactory
 
 class LumiBased(JobFactory):
     """
@@ -32,6 +35,7 @@ class LumiBased(JobFactory):
         Allow a flag to determine if we split files between jobs
         """
 
+        myThread = threading.currentThread()
 
         lumisPerJob  = int(kwargs.get('lumis_per_job', 1))
         splitFiles   = bool(kwargs.get('split_files_between_job', False))
@@ -39,11 +43,26 @@ class LumiBased(JobFactory):
         lDict = self.sortByLocation()
         locationDict = {}
 
+        # First we need to load the data
+        if self.package == 'WMCore.WMBS':
+            daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                    logger = myThread.logger,
+                                    dbinterface = myThread.dbi)
+            loadRunLumi = daoFactory(classname = "Files.GetBulkRunLumi")
+
         for key in lDict.keys():
             newlist = []
+            # First we need to load the data
+            if self.package == 'WMCore.WMBS':
+                fileLumis = loadRunLumi.execute(files = lDict[key])
+                for f in lDict[key]:
+                    lumiDict = fileLumis.get(f['id'], {})
+                    for run in lumiDict.keys():
+                        f.addRun(run = Run(run, *lumiDict[run]))
+                    
             for f in lDict[key]:
-                if hasattr(f, 'loadData'):
-                    f.loadData()
+                #if hasattr(f, 'loadData'):
+                #    f.loadData()
                 if len(f['runs']) == 0:
                     continue
                 f['runs'] = sorted(f['runs'])

@@ -12,7 +12,8 @@
 				<tr>
 			    <td>
 						<h1>$title RESTful API</h1>
-						<p>Auto generated API doc page for $title, $description</p>
+						<p>$model.__doc__</p>
+						<p class="small">This is an auto generated API doc page for $title, $description</p>
 		    	</td>
 			  </tr>
 			</table>
@@ -20,9 +21,12 @@
 			  <tr>
 			    <td>
 				  <dl>
+			        #set methods = $model.methods
 				    #try
-				        #for verb in $methods
+				        #for verb in $model.methods
+				        <center>
 				        <h2>Methods available for $verb</h2>
+				        </center>
 					    #for m in $methods[$verb]
 					    <dt>$m: </dt>
 					    <dd>

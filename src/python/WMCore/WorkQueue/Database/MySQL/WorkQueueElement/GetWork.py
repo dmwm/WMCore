@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.14 2010/02/23 17:14:56 swakef Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: GetWork.py,v 1.15 2010/02/26 11:38:23 swakef Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import random
 import time
@@ -67,6 +67,11 @@ class GetWork(DBFormatter):
 
             # Production jobs (can run anywhere) are assigned to a random site
             site = result['site_name'] or random.choice(resources.keys())
+
+            # sites removed from resources when their slots are allocated work
+            if not resources.has_key(site):
+                continue
+
             if  result['id'] not in acquired_ids and \
                                     result['num_jobs'] <= resources[site]:
                 acquired.append(result)

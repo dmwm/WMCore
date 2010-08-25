@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.17 $"
-__revision__ = "$Id: Report.py,v 1.17 2010/04/06 21:43:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Report.py,v 1.18 2010/04/07 15:36:18 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -548,16 +548,12 @@ class Report:
 
         Grabs all files in all output modules in all steps
         """
-
         listOfFiles = []
 
         for step in self.data.steps:
             tmp = self.getAllFilesFromStep(step = step)
-            if not tmp:
-                return None
-            listOfFiles.extend(tmp)
-
-
+            if tmp:
+                listOfFiles.extend(tmp)
 
         return listOfFiles
 

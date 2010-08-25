@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.24 2009/06/29 21:24:58 mnorman Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: File_t.py,v 1.25 2009/08/21 10:01:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import unittest
 import logging
@@ -98,9 +98,6 @@ class FileTest(unittest.TestCase):
         by creating and deleting a file.  The exists() method will be
         called before and after creation and after deletion.
         """
-
-        print "testCreateDeleteExists"
-        
         testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksum=1111)
 
         assert testFile.exists() == False, \
@@ -128,9 +125,6 @@ class FileTest(unittest.TestCase):
         after it was created and doesn't exist after the transaction was rolled
         back.
         """
-
-        print "testCreateTransaction"
-        
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
@@ -161,9 +155,6 @@ class FileTest(unittest.TestCase):
         does not exist after it has been deleted but does exist after the
         transaction is rolled back.
         """
-
-        print "testDeleteTransaction"
-        
         testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                         cksum=1111)
 
@@ -197,9 +188,6 @@ class FileTest(unittest.TestCase):
         Test the getInfo() method of the File class to make sure that it
         returns the correct information.
         """
-
-        print "testGetInfo"
-        
         testFileParent = File(lfn = "/this/is/a/parent/lfn", size = 1024,
                               events = 20, cksum=1111)
         testFileParent.addRun(Run(1, *[45]))
@@ -261,9 +249,6 @@ class FileTest(unittest.TestCase):
         to make sure that getParentLFNs() on the child file returns the correct
         LFNs.
         """
-
-        print "testGetParentLFNs"
-        
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
                                events = 20, cksum = 1)
         testFileParentA.addRun(Run(1, *[45]))
@@ -313,11 +298,8 @@ class FileTest(unittest.TestCase):
         Test the loading of file meta data using the ID of a file and the
         LFN of a file.
         """
-
-        print "testLoad"
-        
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksum = 1, first_event = 2, last_event = 3)
+                        cksum = 1, first_event = 2, last_event = 3, merged = True)
         testFileA.create()
                                                         
         testFileB = File(lfn = testFileA["lfn"])
@@ -367,9 +349,6 @@ class FileTest(unittest.TestCase):
         Test the loading of all data from a file, including run/lumi
         associations, location information and parentage information.
         """
-
-        print "testLoadData"
-        
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
                               events = 20, cksum = 1)
         testFileParentA.addRun(Run( 1, *[45]))
@@ -412,9 +391,6 @@ class FileTest(unittest.TestCase):
         Add a child to some parent files and make sure that all the parentage
         information is loaded/stored correctly from the database.
         """
-
-        print "testAddChild"
-        
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
                               events = 20, cksum = 1)
         testFileParentA.addRun(Run( 1, *[45]))
@@ -454,9 +430,6 @@ class FileTest(unittest.TestCase):
         addition of one of the childs and then verify that it does in fact only
         have one parent.
         """
-
-        print "testAddChildTransaction"
-        
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
                               events = 20, cksum = 1)
         testFileParentA.addRun(Run( 1, *[45]))
@@ -511,9 +484,6 @@ class FileTest(unittest.TestCase):
         Create a file and add a couple locations.  Load the file from the
         database to make sure that the locations were set correctly.
         """
-
-        print "testSetLocation"
-        
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                         cksum = 1)
         testFileA.addRun(Run( 1, *[45]))
@@ -546,9 +516,6 @@ class FileTest(unittest.TestCase):
         locations are correct.  Rollback the database transaction and once
         again reload the file.  Verify that the original locations are back.
         """
-
-        print "testSetLocationTransaction"
-        
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                         cksum = 1)
         testFileA.addRun(Run( 1, *[45]))
@@ -598,9 +565,6 @@ class FileTest(unittest.TestCase):
         sure that the class behaves well when the location is passed in as a
         single string instead of a set.
         """
-
-        print "testLocationsConstructor"
-        
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                         cksum = 1, locations = Set(["se1.fnal.gov"]))
         testFileA.addRun(Run( 1, *[45]))
@@ -643,16 +607,10 @@ class FileTest(unittest.TestCase):
 
         This tests that you can specify a location before creating the file,
         instead of having to do it afterwards.
-
         """
-
-        print "testSetLocationOrder"
-
         myThread = threading.currentThread()
 
-
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10)
-        #testFileA.addRun(Run( 1, *[45]))
         testFileA.setLocation("se1.cern.ch")
         testFileA.create()
 
@@ -668,18 +626,12 @@ class FileTest(unittest.TestCase):
 
         return
         
-
-        
-
     def testAddRunSet(self):
         """
         _testAddRunSet_
 
         Test the ability to add run and lumi information to a file.
         """
-
-        print "testAddRunSet"
-        
         testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                         cksum = 1, locations = "se1.fnal.gov")
         testFile.create()
@@ -690,18 +642,17 @@ class FileTest(unittest.TestCase):
         
         assert (runSet - testFile["runs"]) == Set(), \
             "Error: addRunSet is not updating set correctly"
+
+        return
     
     def testGetAncestorLFNs(self):
         """
         _testGenAncestorLFNs_
 
-        Create a series of files that have several generations if parentage
+        Create a series of files that have several generations of parentage
         information.  Verify that the parentage information is reported
         correctly.
         """
-
-        print "testGetAncestorLFNs"
-        
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
                         cksum = 1, locations = "se1.fnal.gov")
         testFileA.create()
@@ -758,6 +709,7 @@ class FileTest(unittest.TestCase):
         assert testFileD.getDescendants(level=3, type='lfn') == level4, \
               "ERROR: level 3 desc test failed"
 
+        return
 
 if __name__ == "__main__":
     unittest.main() 

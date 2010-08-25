@@ -104,8 +104,15 @@ class WMTaskTest(unittest.TestCase):
 
         print task1.data
 
+    def testD(self):
+        """
+        Test Case for setSplittingAlgorithm
+        """
+        task1 = makeWMTask("task1")
 
-
+        self.assertEqual(task1.setSplittingAlgorithm("EventBased", events_per_job = 100),None)
+        self.assertEqual(task1.jobSplittingAlgorithm(), "EventBased")
+        self.assertEqual(task1.jobSplittingParameters(), {'events_per_job': 100, 'algorithm': 'EventBased'})
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,8 +5,8 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.1 2009/07/09 22:12:09 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.2 2009/07/17 21:18:30 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -15,6 +15,7 @@ import os
 
 config = Configuration()
 config.component_("JobCreator")
+config.JobCreator.namespace = 'WMComponent.JobCreator.JobCreator'
 #The log level of the component. 
 config.JobCreator.logLevel = 'INFO'
 

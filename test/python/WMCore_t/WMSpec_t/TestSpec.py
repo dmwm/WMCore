@@ -5,8 +5,8 @@ _TestSpec_
 Test spec with known output modules used for testing.
 """
 
-__version__ = "$Id: TestSpec.py,v 1.1 2010/06/22 18:28:08 sfoulkes Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: TestSpec.py,v 1.2 2010/06/30 14:37:23 mnorman Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
@@ -145,14 +145,14 @@ class TestWorkloadFactory(object):
         self.addOutputModule(procTask, "TestOutputModule", "RECO", "SomeFilter")
         return workload
 
-def testWorkload():
+def testWorkload(emulation = False):
     """
     _testWorkflow_
 
     Instantiate the TestWorkloadFactory and create a workload.
     """
     myTestWorkloadFactory = TestWorkloadFactory()
-    return myTestWorkloadFactory()
+    return myTestWorkloadFactory(emulation = emulation)
 
 if __name__ == "__main__":
     testWorkload()

@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: GlobalWorkQueueConfig.py,v 1.2 2010/03/18 14:54:01 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: GlobalWorkQueueConfig.py,v 1.3 2010/03/24 15:21:37 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Configuration import Configuration
 config = Configuration()
@@ -28,6 +28,7 @@ config.component_("WorkQueueManager")
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
 config.WorkQueueManager.componentDir = path.join(config.General.workDir, "WorkQueueManager")
 config.WorkQueueManager.level = "GlobalQueue"
+config.WorkQueueManager.queueParams = {'LocationRefreshInterval': 10}
 
 config.webapp_('WorkQueueService')
 config.WorkQueueService.server.port = 8570

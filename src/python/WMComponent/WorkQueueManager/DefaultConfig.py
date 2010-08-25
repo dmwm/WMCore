@@ -5,8 +5,8 @@ Defines default config values for JobAccountant specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.8 2010/02/22 15:18:01 swakef Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.9 2010/03/24 15:21:59 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Agent.Configuration import Configuration
 
@@ -32,7 +32,7 @@ config.WorkQueueManager.reqMgrConfig['teamName'] = 'Dodgers'
 
 
 # add parameters for global or local queue if default param is not what you want
-config.WorkQueueManager.queueParams = {}
+config.WorkQueueManager.queueParams = {'LocationRefreshInterval': 10}
 # uncomment to change CacheDir from default
 #config.WorkQueueManager.queueParams['CacheDir'] = os.path.join(config.WorkQueueManager.componentDir, 'wf')
 

@@ -8,15 +8,15 @@ Return a list of files that are available for processing.
 Available means not acquired, complete or failed.
 """
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.10 2009/05/01 19:42:27 sryu Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: GetAvailableFilesByRun.py,v 1.1 2009/05/01 19:42:27 sryu Exp $"
+__version__ = "$Revision: 1.1 $"
 
-from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import \
-     GetAvailableFiles as GetAvailableFilesMySQL
+from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFilesByRun import \
+     GetAvailableFilesByRun as GetAvailableFilesByRunMySQL
 
-class GetAvailableFiles(GetAvailableFilesMySQL):
+class GetAvailableFilesByRun(GetAvailableFilesByRunMySQL):
     
-    def getSQLAndBinds(self, subscription, conn = None, transaction = None):
+    def getSQL(self, subscription, conn = None, transaction = None):
         
         binds = {'subscription': subscription}
         
@@ -37,12 +37,13 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
                 whitelist = True
 
         sql = """SELECT wff.fileid FROM wmbs_fileset_files wff 
-                  INNER JOIN wmbs_subscription ws ON ws.fileset = wff.fileset 
+                  INNER JOIN wmbs_subscription ws ON ws.fileset = wff.fileset
+                  INNER JOIN wmbs_file_runlumi_map wm ON (wm.fileid = wff.fileid)  
                   INNER JOIN wmbs_file_location wfl ON wfl.fileid = wff.fileid
                   LEFT OUTER JOIN  wmbs_sub_files_acquired wa ON wa.fileid = wff.fileid
                   LEFT OUTER JOIN  wmbs_sub_files_failed wf ON wf.fileid = wff.fileid
                   LEFT OUTER JOIN  wmbs_sub_files_complete wc ON wc.fileid = wff.fileid
-                  WHERE ws.id=:subscription AND wa.fileid is NULL 
+                  WHERE ws.id=:subscription AND wm.run = :run AND wa.fileid is NULL 
                         AND wf.fileid is NULL AND wc.fileid is NULL    
               """
         
@@ -53,4 +54,4 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
             sql += """ AND wfl.location NOT IN (select location from wmbs_subscription_location wsl where
                         wsl.subscription=:subscription AND valid = 0)"""
                 
-        return sql, binds
+        return sql

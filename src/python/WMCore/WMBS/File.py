@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.60 2010/02/09 22:21:48 mnorman Exp $"
-__version__ = "$Revision: 1.60 $"
+__revision__ = "$Id: File.py,v 1.61 2010/02/16 16:37:38 mnorman Exp $"
+__version__ = "$Revision: 1.61 $"
 
 import threading
 import time
@@ -510,5 +510,27 @@ class File(WMBSBase, WMFile):
 
 
         return
+
+
+    def returnDataStructsFile(self):
+        """
+        _returnDataStructsFile_
+
+        Creates a dataStruct file out of this file
+        """
+
+
+        file = WMFile(lfn = self['lfn'], size = self['size'],
+                      events = self['events'], checksums = self['checksums'],
+                      parents = self['parents'], merged = self['merged'])
+
+        for run in self['runs']:
+            file.addRun(run)
+
+        for location in self['locations']:
+            file.setLocation(se = location)
+
+
+        return file
 
 

@@ -3,8 +3,8 @@
 The actual jobArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobArchiverPoller.py,v 1.3 2009/11/17 18:58:46 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobArchiverPoller.py,v 1.4 2010/02/04 16:02:16 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 import logging
@@ -70,8 +70,8 @@ class JobArchiverPoller(BaseWorkerThread):
         logging.debug("Running algorithm for finding finished subscriptions")
         myThread = threading.currentThread()
         try:
-            print "About to try archiving jobs"
             self.archiveJobs()
+            self.pollForClosable()
         except:
             raise
 
@@ -85,18 +85,11 @@ class JobArchiverPoller(BaseWorkerThread):
         archiveJobs will handle the master task of looking for finished jobs,
         and running the code that cleans them out.
         """
-        #print "Got into archiveJobs"
-
         myThread = threading.currentThread()
 
         doneList  = self.findFinishedJobs()
 
-        #print "Polled jobs"
-        #print doneList
-
         self.cleanWorkArea(doneList)
-
-        #print "Cleaning workArea"
 
         successList = []
         failList    = []
@@ -119,15 +112,9 @@ class JobArchiverPoller(BaseWorkerThread):
 
         jobList = []
 
-        print "In JobArchiver.findFinishedJobs"
-
         jobListAction = self.daoFactory(classname = "Jobs.GetAllJobs")
         jobList1  = jobListAction.execute(state = "success")
         jobList2  = jobListAction.execute(state = "exhausted")
-
-        #print "Have called GetAllJobs"
-        #print jobList1
-        #print jobList2
 
         jobList.extend(jobList1)
         jobList.extend(jobList2)
@@ -157,7 +144,7 @@ class JobArchiverPoller(BaseWorkerThread):
         myThread = threading.currentThread()
 
         for job in doneList:
-            print "About to clean cache for job %i" % (job['id'])
+            #print "About to clean cache for job %i" % (job['id'])
             self.cleanJobCache(job)
         
         return
@@ -197,9 +184,31 @@ class JobArchiverPoller(BaseWorkerThread):
 
         shutil.rmtree('%s' % (cacheDir))
 
-        print "Job %i cleaned" % (job['id'])
+        #print "Job %i cleaned" % (job['id'])
 
         return
+
+
+    def pollForClosable(self):
+        """
+        _pollForClosable_
+
+        Search WMBS for filesets that can be closed and mark them as closed.
+        """
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        closableFilesetDAO = self.daoFactory(classname = "Fileset.ListClosable")
+        closableFilesets = closableFilesetDAO.execute()
+
+        for closableFileset in closableFilesets:
+            openFileset = Fileset(id = closableFileset)
+            openFileset.load()
+
+            logging.debug("Closing fileset %s" % openFileset.name)
+            openFileset.markOpen(False)
+
+        myThread.transaction.commit()
 
         
     

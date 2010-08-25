@@ -2,8 +2,13 @@ import WMCore.Database.CMSCouch as CMSCouch
 import time
 import urllib
 import md5
+import cherrypy
 
 class WMConfigCache:
+    
+    def pullConfig(self, url):
+        ''' TODO: need to make a REST api for this '''
+        pass
     
     def deleteConfig(self, docid):
         '''
@@ -13,7 +18,7 @@ class WMConfigCache:
         self.database.queueDelete(document)
         self.database.commit()
         
-    def addConfig(self, new_config):
+    def addConfig(self, new_config, config_name=None):
         '''
             injects a configuration into the cache, returning a tuple with the
             docid and the current revision, in that order. This
@@ -37,7 +42,8 @@ class WMConfigCache:
             
             retval2 = self.database.addAttachment( commit_info[u'id'], 
                                          commit_info[u'rev'], 
-                                         config_string )
+                                         config_string,
+                                         config_name )
             return ( retval2['id'],
                      retval2['rev'])
             
@@ -49,30 +55,30 @@ class WMConfigCache:
             raise IndexError, "More than one record has the same MD5"
             
     
-    def getConfigByDocID(self, docid):
+    def getConfigByDocID(self, docid, config_name=None):
         '''retrieves a configuration by the docid'''
-        retval = self.database.getAttachment( docid )
+        retval = self.database.getAttachment( docid, config_name )
         if (len(retval) < 100):
             print retval
         return retval
         
     
-    def getConfigByHash(self, dochash):
+    def getConfigByHash(self, dochash, config_name=None):
         '''retrieves a configuration by the pset_hash'''
         searchResult = self.searchByHash(dochash)[u'rows']
         if (len(searchResult) == 1):
             # found the configuration
-            return self.getConfigByDocID(searchResult[0]['id'])
+            return self.getConfigByDocID(searchResult[0]['id'], config_name)
         else:
             raise IndexError("Too many/few search results (%s) for hash %s" %
                                 ( len(searchResult), dochash) )    
     
-    def getConfigByMD5(self, md5hash):
+    def getConfigByMD5(self, md5hash, config_name=None):
         '''retrieves a configuration by the md5_hash'''
         searchResult = self.searchByMD5(md5hash)[u'rows']
         if (len(searchResult) == 1):
             # found the configuration
-            return self.getConfigByDocID(searchResult[0]['id'])
+            return self.getConfigByDocID(searchResult[0]['id'], config_name)
         else:
             raise IndexError("Too many/few search results (%s) for MD5 %s" %
                                 ( len(searchResult), md5hash) )    
@@ -137,7 +143,11 @@ class WMConfigCache:
         '''deletes an existing database (be careful!)'''
         self.couch.deleteDatabase(self.dbname)
         
-        
+"""class WMConfigCacheServer
+    def index(self):
+        return "Hello world!"
+    index.exposed = True
+"""        
 
  
 if __name__ == "__main__":

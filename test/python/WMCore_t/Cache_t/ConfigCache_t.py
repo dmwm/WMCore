@@ -91,7 +91,7 @@ class Test(unittest.TestCase):
         """
         filehandle = open('test-pset1.py', 'rb')
         sampletext = filehandle.read()
-        for i in range(20):
+        for i in range(10):
             # made the slightly modified file so the md5 sums dont overlap
             (tmpobj, tmpname) = tempfile.mkstemp()
             newtext = sampletext + ("%s" % i)

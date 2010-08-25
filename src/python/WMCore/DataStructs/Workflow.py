@@ -6,17 +6,21 @@ A class that describes some work to be undertaken on some files
 """
 
 __all__ = []
-__revision__ = "$Id: Workflow.py,v 1.4 2009/05/08 16:39:16 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Workflow.py,v 1.5 2009/10/08 13:35:20 evansde Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 
 class Workflow(Pickleable):
-    def __init__(self, spec=None, owner=None, name='workflow', task=None):        
+    def __init__(self, spec=None, owner=None, name='workflow', task=None):
         #TODO: define a url-like scheme for spec's and enforce it here
+        # spec is a URL to the WMWorkload file
         self.spec = spec
-        self.name = name
+        # name is the name of this workflow instance
+        self.name = name #NEEDED? Redundant...
+        # person making the request
         self.owner = owner
+        # task is the name of the task within the Workload
         self.task = task
         self.outputMap = {}
 

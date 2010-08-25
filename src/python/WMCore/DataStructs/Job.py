@@ -7,8 +7,8 @@ Data object that describes a job
 """
 
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.26 2009/08/26 16:34:18 mnorman Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Job.py,v 1.27 2009/10/08 13:35:20 evansde Exp $"
+__version__ = "$Revision: 1.27 $"
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.JobGroup import JobGroup
@@ -45,8 +45,17 @@ class Job(WMObject, dict):
         self["retry_count"] = 0
         self["location"] = None
         self["mask"] = Mask()
-
+        self["task"] = None
         return
+
+    #  //
+    # // Use property to define getter/setter API for task
+    #//  makes job.task and job.tast = "value" possible
+    task = property(lambda self: self['task'],
+                    lambda self, x: self.__setitem__('task',x))
+
+
+
 
     def getFiles(self, type = "list"):
         """

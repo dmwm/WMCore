@@ -47,13 +47,12 @@ class DummyRESTModel(RESTModel):
         input = self.sanitise_input('list', int, str)
         return input
 
-#TODO necessary to Test this?    
-#    def list1(self):
-#        return 'No arguement'
-#    
-#    def list2(self, num0, num1, num2):
-#        input = self.sanitise_input(num0, num1, num3, 'list')
-#        return input
+    def list1(self):
+        return 'No argument'
+    
+    def list2(self, num0, num1, num2):
+        input = self.sanitise_input(num0, num1, num3, 'list')
+        return input
     
     def val_1(self, input):
         # Convert the input data to an int (will be a string), ignore if it 

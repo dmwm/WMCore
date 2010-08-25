@@ -5,8 +5,8 @@ _Report_
 Job Report object
 
 """
-__version__ = "$Revision: 1.2 $"
-__revision__ = "$Id: Report.py,v 1.2 2009/11/11 17:04:46 evansde Exp $"
+__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Report.py,v 1.3 2009/11/11 20:21:31 evansde Exp $"
 __author__ = "evansde"
 
 
@@ -37,6 +37,7 @@ class Report:
         self.report.section_("parameters")
         self.report.skipped.section_("events")
         self.report.skipped.section_("files")
+        self.report.skipped.files.fileCount = 0
         self.report.analysis.fileCount = 0
 
 
@@ -172,5 +173,40 @@ class Report:
         self.report.status = int(exitCode)
         setattr(errSection, "errorCount", errorCount +1)
         return
+
+
+    def addSkippedFile(self, lfn, pfn):
+        """
+        _addSkippedFile_
+
+        report a skipped input file
+
+        """
+
+        count = self.report.skipped.files.fileCount
+        entry = "file%s" % count
+        self.report.skipped.files.section_(entry)
+        skipSect = getattr(self.report.skipped.files, entry)
+        skipSect.PhysicalFileName = pfn
+        skipSect.LogicalFileName = lfn
+        self.report.skipped.files.fileCount += 1
+        return
+
+
+
+    def addSkippedEvent(self, run, event):
+        """
+        _addSkippedEvent_
+
+
+        """
+        self.report.skipped.events.section_(str(run))
+        runsect = getattr(self.report.skipped.events, str(run))
+        if not hasattr(runsect, "eventList"):
+            runsect.eventList = []
+        runsect.eventList.append(event)
+        return
+
+
 
 

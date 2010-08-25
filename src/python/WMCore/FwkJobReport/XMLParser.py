@@ -6,8 +6,8 @@ Read the raw XML output from the cmsRun executable
 
 """
 
-__version__ = "$Revision: 1.2 $"
-__revision__ = "$Id: XMLParser.py,v 1.2 2009/11/11 17:04:46 evansde Exp $"
+__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: XMLParser.py,v 1.3 2009/11/11 20:21:31 evansde Exp $"
 __author__ = "evansde"
 
 
@@ -152,6 +152,10 @@ def reportDispatcher(targets):
                 targets['PerformanceReport'].send( (report, subnode))
             elif subnode.name == "FrameworkError":
                 targets['FrameworkError'].send( (report, subnode) )
+            elif subnode.name == "SkippedFile":
+                targets['SkippedFile'].send( (report, subnode) )
+            elif subnode.name == "SkippedEvent":
+                targets['SkippedEvent'].send( (report, subnode) )
             else:
                 setattr(report.report.parameters, subnode.name, subnode.text)
 
@@ -256,6 +260,25 @@ def errorHandler():
         excepcode = node.attrs.get("ExitStatus", 8001)
         exceptype = node.attrs.get("Type", "CMSException")
         report.addError(excepcode, exceptype, node.text)
+
+@coroutine
+def skippedFileHandler():
+    while True:
+        report, node = (yield)
+        lfn = node.attrs.get("Lfn", None)
+        pfn = node.attrs.get("Pfn", None)
+        report.addSkippedFile(lfn, pfn)
+
+
+@coroutine
+def skippedEventHandler():
+    while True:
+        report, node = (yield)
+        run = node.attrs.get("Run", None)
+        event = node.attrs.get("Event", None)
+        if run == None: continue
+        if event == None: continue
+        report.addSkippedEvent(run, event)
 
 
 
@@ -428,6 +451,8 @@ def xmlToJobReport(reportInstance, xmlFile):
         "PerformanceReport" : perfRepHandler(perfRepDispatchers),
         "AnalysisFile" : analysisFileHandler(fileDispatchers),
         "FrameworkError" : errorHandler(),
+        "SkippedFile" : skippedFileHandler(),
+        "SkippedEvent" : skippedEventHandler(),
         }
 
     #  //

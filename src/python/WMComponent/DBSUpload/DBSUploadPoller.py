@@ -24,8 +24,8 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.23 2010/05/14 21:56:37 mnorman Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.24 2010/05/14 22:45:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import threading
 import logging
@@ -311,7 +311,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 myThread.transaction.rollback()
                 # Check that algo actually got to DBS
                 algo    = createAlgoFromInfo(info = fileList[datasetAlgo][0])
-                self.dbinterface.setDatasetAlgo(datasetAlgoInfo = datasetAlgo, inDBS = 0)
+                self.dbinterface.setDatasetAlgo(datasetAlgoInfo = algo, inDBS = 0)
                 addToBuffer.updateAlgo(algo, 0)
                 raise Exception(msg)
                     

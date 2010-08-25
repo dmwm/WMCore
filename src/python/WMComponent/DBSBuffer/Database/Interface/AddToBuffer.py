@@ -5,8 +5,8 @@ _addToBuffer_
 APIs related to adding file to DBS Buffer
 
 """
-__version__ = "$Revision: 1.14 $"
-__revision__ = "$Id: AddToBuffer.py,v 1.14 2009/09/03 19:31:31 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: AddToBuffer.py,v 1.15 2009/10/22 15:24:38 sfoulkes Exp $"
 
 
 import logging
@@ -45,21 +45,7 @@ class AddToBuffer:
 	self.updateDSFileCount(dataset=dataset)
 
 	#Parent files
-        for inputFile in file.inputFiles:
-		#Parent file in this case doesn't get added to DBSBuffer
-		parentFile = DBSBufferFile(lfn=inputFile['LFN'])
-
-		if parentFile.exists() == False: 
-			parentFile.create() 
-		else: 
-			parentFile.load()
-		try:
-			bufferFile.addParent(parentFile['lfn'])
-		except Exception, ex:
-                        if ex.__str__().find("Duplicate entry") != -1 :
-                                pass
-                        else:
-                                raise ex
+        bufferFile.addParents(file.inputFiles)
 
         myThread.transaction.commit()
         return

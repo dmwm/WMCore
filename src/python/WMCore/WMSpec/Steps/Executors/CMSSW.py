@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.18 2010/05/11 16:01:59 mnorman Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: CMSSW.py,v 1.19 2010/05/11 16:05:21 mnorman Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -73,8 +73,6 @@ class CMSSW(Executor):
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
 
-        time.sleep(20)
-        return
 
         # write the wrapper script to a temporary location
         # I don't pass it directly through os.system because I don't

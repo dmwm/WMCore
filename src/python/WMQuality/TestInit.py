@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.11 2009/07/08 19:02:42 meloam Exp $"
+    "$Id: TestInit.py,v 1.12 2009/07/13 20:02:55 meloam Exp $"
 __version__ = \
-    "$Revision: 1.11 $"
+    "$Revision: 1.12 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -134,18 +134,22 @@ class TestInit:
         """
         myThread = threading.currentThread()
         # need to find a way to do this for oracle dbs too.
-        if myThread.dialect == 'MySQL' and modules == []:
-            # call the script we use for cleaning:
-            # FIXME: need to be more general
-            if (os.getenv('WMCOREBASE') == None):
-                raise RuntimeError, "WMCOREBASE environment variable undefined"
-            
-            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
-            result = commands.getstatusoutput(command)
-            for entry in result:
-                print(str(entry))
-        else:
-            self.init.clearDatabase(modules)
+        # FIXME
+        # this next block has problems. is there a reason to use it over
+        # having WMInit tear down the database?
+#        if myThread.dialect == 'MySQL' and modules == []:
+#            # call the script we use for cleaning:
+#            # FIXME: need to be more general
+#            if (os.getenv('WMCOREBASE') == None):
+#                raise RuntimeError, "WMCOREBASE environment variable undefined"
+#            
+#            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
+#            result = commands.getstatusoutput(command)
+#            for entry in result:
+#                print(str(entry))
+#        else:
+        print "tearing down this badboy"
+        self.init.clearDatabase(modules)
 
 
 

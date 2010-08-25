@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.21 2009/07/10 19:59:47 mnorman Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: Job_t.py,v 1.22 2009/08/03 18:38:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import unittest
 import logging
@@ -14,6 +14,7 @@ import os
 import commands
 import threading
 import random
+import time
 from sets import Set
 
 from WMCore.Database.DBCore import DBInterface
@@ -27,8 +28,11 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
-from WMQuality.TestInit import TestInit
+from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.JobStateMachine import DefaultConfig
 from WMCore.DataStructs.Run import Run
+
+from WMQuality.TestInit import TestInit
 
 class JobTest(unittest.TestCase):
     _setup = False
@@ -553,7 +557,67 @@ class JobTest(unittest.TestCase):
 
         return
 
+    def testNewestStateChangeDAO(self):
+        """
+        _testNewestStateChangeDAO_
+
+        Test the Jobs.NewsetStateChangeForSub DAO that will return the current
+        state and time of state transition that last occured for a job created
+        by the given subscription.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task="Test")
+        testWorkflow.create()
         
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        newestStateDAO = self.daoFactory(classname = "Jobs.NewestStateChangeForSub")
+        result = newestStateDAO.execute(subscription = testSubscription["id"])
+
+        assert len(result) == 0, \
+               "ERROR: DAO returned more than 0 jobs..."
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        testJobA = Job(name = "TestJobA")
+        testJobA.create(group = testJobGroup)
+
+        stateChanger = ChangeState(DefaultConfig.config,
+                                   "job_t_jsm_database")
+        stateChanger.propagate([testJobA], "created", "new")
+
+        result = newestStateDAO.execute(subscription = testSubscription["id"])
+
+        assert len(result) == 1, \
+               "ERROR: Wrong number of jobs returned: %s" % len(result)
+
+        assert result[0]["name"] == "created", \
+               "ERROR: Job returned in wrong state: %s" % result[0]["name"]
+
+        testJobB = Job(name = "TestJobB")
+        testJobB.create(group = testJobGroup)
+
+        # We need to wait a little bit otherwise both jobs could be returned by
+        # the DAO as their state changes happened within the same second.
+        time.sleep(5)
+
+        stateChanger.propagate([testJobB], "createfailed", "new")
+
+        result = newestStateDAO.execute(subscription = testSubscription["id"])
+
+        assert len(result) == 1, \
+               "ERROR: Wrong number of jobs returned: %s" % len(result)
+
+        assert result[0]["name"] == "createfailed", \
+               "ERROR: Job returned in wrong state: %s" % result[0]["name"]
+
+        return
     
 if __name__ == "__main__":
     unittest.main() 

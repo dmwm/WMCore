@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.7 2009/10/13 23:06:10 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.8 2009/11/09 15:26:50 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from sets import Set
 import unittest
@@ -105,7 +105,7 @@ class EventBasedTest(unittest.TestCase):
         jobGroup1.create()
         newJob = Job()
         newJob.create(jobGroup1)
-        newJob["state"] = "complete"
+        newJob["state"] = "cleanout"
         newJob["oldstate"] = "new"
         newJob["couch_record"] = "somejive"
         newJob["retry_count"] = 0
@@ -117,7 +117,7 @@ class EventBasedTest(unittest.TestCase):
         jobGroup2.create()
         newJob = Job()
         newJob.create(jobGroup2)
-        newJob["state"] = "complete"
+        newJob["state"] = "cleanout"
         newJob["oldstate"] = "new"
         newJob["couch_record"] = "somejive"
         newJob["retry_count"] = 0
@@ -129,7 +129,7 @@ class EventBasedTest(unittest.TestCase):
         jobGroup3.create()
         newJob = Job()
         newJob.create(jobGroup3)
-        newJob["state"] = "complete"
+        newJob["state"] = "cleanout"
         newJob["oldstate"] = "new"
         newJob["couch_record"] = "somejive"
         newJob["retry_count"] = 0
@@ -400,7 +400,7 @@ class EventBasedTest(unittest.TestCase):
                             max_merge_events = 20000)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned."
+               "ERROR: More than one JobGroup returned: %s" % result
 
         assert len(result[0].jobs) == 3, \
                "ERROR: Three jobs should have been returned."
@@ -551,7 +551,7 @@ class EventBasedTest(unittest.TestCase):
                             max_merge_events = 1)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned."
+               "ERROR: More than one JobGroup returned: %s" % result
         
         assert len(result[0].jobs) == 3, \
                "ERROR: Three jobs should have been returned."

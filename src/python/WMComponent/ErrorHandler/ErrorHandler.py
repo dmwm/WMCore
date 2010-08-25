@@ -3,20 +3,21 @@
 """
 _ErrorHandler_
 
-The error handler pools for error conditions (CreateFailed, SubmitFailed, and JobFailed)
+The error handler pools for error conditions
+(CreateFailed, SubmitFailed, and JobFailed)
 By looking at wmbs_job table's status filed.
 All the jobs are handled respectively.
 
 the different failure handlers are configurable in the config file and 
 relate to the three stages of a job: create, submit, run 
 
-The component runs in Poll mode, basically submits itself "Poll" message at the end of each cycle, so that it keeps polling
+The component runs in Poll mode, basically submits itself
+'Poll' message at the end of each cycle, so that it keeps polling
 We can introduce some delay in polling, if have to.
 """
 
-__revision__ = "$Id: ErrorHandler.py,v 1.8 2009/07/28 21:27:38 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
-__author__ = "fvlingen@caltech.edu"
+__revision__ = "$Id: ErrorHandler.py,v 1.9 2010/02/11 20:31:04 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 
 import logging
@@ -24,9 +25,7 @@ import threading
 
 # harness class that encapsulates the basic component logic.
 from WMCore.Agent.Harness import Harness
-# we do not import failure handlers as they are dynamicly 
-# loaded from the config file.
-from WMCore.WMFactory import WMFactory
+
 
 from WMComponent.ErrorHandler.ErrorHandlerPoller import ErrorHandlerPoller
 

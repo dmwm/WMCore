@@ -4,20 +4,15 @@
 The actual error handler algorithm
 """
 __all__ = []
-__revision__ = "$Id: ErrorHandlerPoller.py,v 1.5 2009/12/16 17:45:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ErrorHandlerPoller.py,v 1.6 2010/02/11 20:31:04 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 import logging
-import re
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Fileset      import Fileset
-from WMCore.WMBS.Workflow     import Workflow
 from WMCore.WMBS.Job          import Job
-from WMCore.WMFactory         import WMFactory
 from WMCore.DAOFactory        import DAOFactory
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
@@ -32,11 +27,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.config = config
-    
-    def setup(self, parameters):
-        """
-        Load DB objects required for queries
-        """
 
         myThread = threading.currentThread()
 
@@ -47,12 +37,30 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         self.maxRetries = self.config.ErrorHandler.maxRetries
 
-    def terminate(self,params):
+        return
+    
+    def setup(self, parameters):
+        """
+        Load DB objects required for queries
+        """
+
+        # For now, does nothing
+
+        return
+
+        
+
+    def terminate(self, params):
+        """
+        _terminate_
+        
+        Do one pass, then commit suicide
+        """
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
 
 
-    def processRetries(self, jobs, type):
+    def processRetries(self, jobs, jobType):
         """
         Actually do the retries
 
@@ -71,12 +79,15 @@ class ErrorHandlerPoller(BaseWorkerThread):
                 exhaustJobs.append(ajob)
                 #SIMON's CODE SHOULD PUT the job in "newstate" state
             else:
-                logging.error("Job %i had %s retries remaining" %(ajob['id'], str(ajob['retry_count'])))
+                logging.error("Job %i had %s retries remaining" \
+                              %(ajob['id'], str(ajob['retry_count'])))
 
         #Now to actually do something.
 
-        self.changeState.propagate(exhaustJobs, 'exhausted', '%sfailed' %(type))
-        self.changeState.propagate(cooloffJobs, '%scooloff' %(type), '%sfailed' %(type))
+        self.changeState.propagate(exhaustJobs, 'exhausted', \
+                                   '%sfailed' %(jobType))
+        self.changeState.propagate(cooloffJobs, '%scooloff' %(jobType), \
+                                   '%sfailed' %(jobType))
 
     def handleErrors(self):
         """
@@ -91,26 +102,29 @@ class ErrorHandlerPoller(BaseWorkerThread):
         getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
 
         idList = getJobs.execute(state = 'CreateFailed')
-        logging.debug("Found %s failed jobs failed during creation" % len(idList))
-        for id in idList:
-            job = Job(id = id)
+        logging.debug("Found %s failed jobs failed during creation" \
+                      % len(idList))
+        for jid in idList:
+            job = Job(id = jid)
             job.loadData()
             createList.append(job)
         idList = getJobs.execute(state = 'SubmitFailed')
-        logging.debug("Found %s failed jobs failed during submit" % len(idList))
-        for id in idList:
-            job = Job(id = id)
+        logging.debug("Found %s failed jobs failed during submit" \
+                      % len(idList))
+        for jid in idList:
+            job = Job(id = jid)
             job.loadData()
             submitList.append(job)
         idList = getJobs.execute(state = 'JobFailed')
-        logging.debug("Found %s failed jobs failed during execution" % len(idList))
-        for id in idList:
-            job = Job(id = id)
+        logging.debug("Found %s failed jobs failed during execution" \
+                      % len(idList))
+        for jid in idList:
+            job = Job(id = jid)
             job.loadData()
             jobList.append(job)
 
 
-	self.processRetries(createList, 'create')
+        self.processRetries(createList, 'create')
         self.processRetries(submitList, 'submit')
         self.processRetries(jobList, 'job')
 

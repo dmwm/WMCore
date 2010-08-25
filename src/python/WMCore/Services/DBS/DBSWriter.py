@@ -203,6 +203,7 @@ class DBSWriter:
             msg = "Error in DBSWriterError with DbsApi\n"
             msg += "%s\n" % formatEx(ex)
             raise DBSWriterError(msg)
+        print args
         self.reader = DBSReader(**args)
         
     def createDatasets(self, workflowSpec):
@@ -409,9 +410,8 @@ class DBSWriter:
             #First by using manageFileBlock
             #If that doesn't work, nuke it personally
             if not self.manageFileBlock(fileblockName = fileBlock['Name'], maxFiles = maxFiles, maxSize = maxSize):
-                #Closing block by hand
-                self.dbs.closeBlock(DBSWriterObjects.createDBSFileBlock(fileBlock['Name']))
-                logging.debug('Forced to close block %s manually' %(fileBlock['Name']))
+                #Then the block was left open at the end because we didn't manage to fill it
+                logging.debug('Block %s left open at end of run, as it did not meet the closing requirements' %(fileBlock['Name']))
 
 
         return list(affectedBlocks)

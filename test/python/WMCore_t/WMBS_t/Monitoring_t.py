@@ -5,14 +5,15 @@ _Monitoring_t_
 Unit tests for the WMBS Monitoring DAO objects.
 """
 
-__revision__ = "$Id: Monitoring_t.py,v 1.2 2010/01/26 17:36:23 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Monitoring_t.py,v 1.3 2010/01/26 21:38:34 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import unittest
 import threading
 
-from WMCore.WMBS.Fileset import Fileset as Fileset
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
@@ -97,6 +98,7 @@ class MonitoringTest(unittest.TestCase):
         """
         _testListRunningJobs_
 
+        Test the ListRunningJobs DAO.
         """
         testWorkflow = Workflow(spec = makeUUID(), owner = "Steve",
                                 name = makeUUID(), task="Test")
@@ -150,6 +152,62 @@ class MonitoringTest(unittest.TestCase):
                        "Error: Running job has wrong state."
                 assert runningJob["couch_record"] == testJobC["couch_record"], \
                        "Error: Running job has wrong couch record."                
+
+        return
+
+    def testListWorkflowEfficiency(self):
+        """
+        _testListWorkflowEfficiency_
+
+        """
+        testWorkflow = Workflow(spec = makeUUID(), owner = "Steve",
+                                name = makeUUID(), task="Test")
+        testWorkflow.create()
+
+        testInputFileset = Fileset(name = "TestInputFileset")
+        testInputFileset.create()
+
+        inputFileA = File(lfn = "/this/is/a/input/lfnA", size = 1024, events = 100)
+        inputFileB = File(lfn = "/this/is/a/input/lfnB", size = 1024, events = 100)
+        inputFileC = File(lfn = "/this/is/a/input/lfnC", size = 1024, events = 100)        
+        
+        testInputFileset.addFile(inputFileA)
+        testInputFileset.addFile(inputFileB)
+        testInputFileset.addFile(inputFileC)        
+        testInputFileset.commit()
+
+        testOutputFileset = Fileset(name = "TestOutputFileset")
+        testOutputFileset.create()        
+
+        outputFile = File(lfn = "/this/is/a/output/lfn", size = 1024, events = 50)
+        testOutputFileset.addFile(outputFile)
+        testOutputFileset.commit()
+
+        testWorkflow.addOutput("output", testOutputFileset)
+
+        testSubscription = Subscription(fileset = testInputFileset,
+                                        workflow = testWorkflow,
+                                        type = "Processing")
+        testSubscription.create()
+
+        efficiencyAction = self.daoFactory(classname = "Monitoring.ListWorkflowEfficiency")
+        wfEfficiency = efficiencyAction.execute(subscriptionId = testSubscription["id"])
+
+        assert len(wfEfficiency) == 1, \
+               "Error: Only one output module should be returned."
+
+        assert wfEfficiency[0]["output_files"] == 1, \
+               "Error: Wrong number of output files returned."
+        assert wfEfficiency[0]["output_events"] == 50, \
+               "Error: Wrong number of output events returned."
+        assert wfEfficiency[0]["efficiency"] == "16.67%", \
+               "Error: Wrong workflow efficiency calculated."
+        assert wfEfficiency[0]["input_events"] == 300, \
+               "Error: Wrong number of input events returned."
+        assert wfEfficiency[0]["output_module"] == "output", \
+               "Error: Wrong output module returned."
+        assert wfEfficiency[0]["input_files"] == 3, \
+               "Error: Wrong number of input files returned."
 
         return
         

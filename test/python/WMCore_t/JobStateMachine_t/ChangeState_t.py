@@ -34,7 +34,12 @@ class TestChangeState(unittest.TestCase):
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.ThreadPool"], useDefault = False)
+        try:
+            self.testInit.setSchema(customModules = ["WMCore.ThreadPool"], useDefault = False)
+        except:
+            factory = WMFactory("Threadpool", "WMCore.ThreadPool")
+            destroy = factory.loadObject(myThread.dialect + ".Destroy")
+            destroyworked = destroy.execute(conn = myThread.transaction.conn)
 
                                 
         # if you want to keep from colliding with other people
@@ -100,16 +105,24 @@ class TestChangeState(unittest.TestCase):
         	This is the test class for function RecordInCouch from module ChangeState
         	"""
         jsm = self.change.recordInCouch( [{ "dumb_value": "is_dumb" }], "new", "none")
+        print jsm
         jsm = self.change.recordInCouch( jsm , "created", "new")
+        print jsm
         jsm = self.change.recordInCouch( jsm , "executing", "created")
+        print jsm
         jsm = self.change.recordInCouch( jsm , "complete", "executing")
+        print jsm
         jsm = self.change.recordInCouch( jsm , "success", "complete")
+        print jsm
         jsm = self.change.recordInCouch( jsm , "closeout", "success")
+        print jsm
         jsm = self.change.recordInCouch( jsm , "cleanout", "closeout")
         
         # now, walk up the chain of couch_records to follow the path the
         #  job took through the state machine
+        
         print jsm
+        
             
         return
 

@@ -49,7 +49,7 @@ if can_nose:
             else:
                 return 1
 else:
-    class NoseCommand(Command):
+    class TestCommand(Command):
         user_options = [ ]
         def run(self):
             print "Nose isn't installed. You must install the nose package to run tests (easy_install nose might do it)"

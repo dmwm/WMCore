@@ -5,8 +5,8 @@ _ResourceControl_t_
 Unit tests for ResourceControl.
 """
 
-__revision__ = "$Id: ResourceControl_t.py,v 1.5 2010/03/01 21:19:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ResourceControl_t.py,v 1.6 2010/06/22 19:33:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import threading
@@ -300,16 +300,16 @@ class ResourceControlTest(unittest.TestCase):
         assert createThresholds["testSite2"]["running_jobs"] == 2, \
                "Error: Wrong number of running jobs for site 2"
 
-        assert submitThresholds["testSite1"]["Merge"]["total_running_jobs"] == 2, \
+        assert submitThresholds["testSite1"]["Merge"]["total_running_jobs"] == 1, \
                "Error: Wrong number of running jobs for submit thresholds."
-        assert submitThresholds["testSite1"]["Processing"]["total_running_jobs"] == 2, \
+        assert submitThresholds["testSite1"]["Processing"]["total_running_jobs"] == 1, \
                "Error: Wrong number of running jobs for submit thresholds."
         assert submitThresholds["testSite2"]["Merge"]["total_running_jobs"] == 1, \
                "Error: Wrong number of running jobs for submit thresholds."
         assert submitThresholds["testSite2"]["Processing"]["total_running_jobs"] == 1, \
                "Error: Wrong number of running jobs for submit thresholds."        
 
-        assert submitThresholds["testSite1"]["Merge"]["task_running_jobs"] == 1, \
+        assert submitThresholds["testSite1"]["Merge"]["task_running_jobs"] == 0, \
                "Error: Wrong number of task running jobs for submit thresholds."
         assert submitThresholds["testSite1"]["Processing"]["task_running_jobs"] == 1, \
                "Error: Wrong number of task running jobs for submit thresholds."        

@@ -6,8 +6,8 @@ Query WMBS and ResourceControl to determine how many jobs are still running so
 that we can schedule jobs that have just been created.
 """
 
-__revision__ = "$Id: ListThresholdsForSubmit.py,v 1.2 2010/06/16 19:28:15 sryu Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: ListThresholdsForSubmit.py,v 1.3 2010/06/22 19:33:22 sfoulkes Exp $"
+__version__  = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -30,10 +30,7 @@ class ListThresholdsForSubmit(DBFormatter):
                       wmbs_jobgroup.subscription = wmbs_subscription.id
                     INNER JOIN wmbs_job_state ON
                       wmbs_job.state = wmbs_job_state.id
-                  WHERE wmbs_job_state.name != 'success' AND
-                        wmbs_job_state.name != 'cleanout' AND
-                        wmbs_job_state.name != 'exhausted' AND
-                        wmbs_job_state.name != 'complete'
+                  WHERE wmbs_job_state.name = 'executing'
                   GROUP BY wmbs_job.location, wmbs_subscription.subtype) job_count ON
                   wmbs_location.id = job_count.location AND
                   wmbs_sub_types.id = job_count.subtype"""

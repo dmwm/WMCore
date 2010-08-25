@@ -58,9 +58,6 @@ def stepIdentifier(stepHelper):
 
     """
     task = findTaskAboveNode(stepHelper.data)
-    task._internal_name
-    workload = findWorkloadAboveNode(task)
-    identifier = "/%s/%s/%s" % (workload._internal_name,
-                                task._internal_name,
-                                stepHelper.name())
+    identifier = "%s/%s" % (task.pathName,
+                            stepHelper.name())
     return identifier

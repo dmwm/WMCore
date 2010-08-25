@@ -238,7 +238,7 @@ def tier0ReRecoWorkload(workloadName, arguments):
                 dataTier = "ALCARECO",
                 lfnBase = "%s/ALCARECO/%s-Tier0ReReco-%s-%s" % (commonLfnBase, acquisitionEra, skim, processingVersion))
             
-            mergeAlca = rereco.addTask("MergeAlcaReco%s" % skim)
+            mergeAlca = skimAlca.addTask("MergeAlcaReco%s" % skim)
             mergeAlcaCmssw = mergeAlca.makeStep("mergeAlcaReco%s" % skim)
             mergeAlcaCmssw.setStepType("CMSSW")
             mergeAlcaStageOut = mergeAlcaCmssw.addStep("stageOut1")
@@ -313,3 +313,15 @@ def tier0ReRecoWorkload(workloadName, arguments):
 
 
     return workload
+
+if __name__ == '__main__':
+    arguments = {
+        "InputDatasets" : "/MinBias/Commissioning09-v0/RAW",
+        }
+
+    workload = tier0ReRecoWorkload("Test", arguments)
+            
+    for tt in  workload.taskIterator():
+        print "Have task %s, printing children:" % tt.name()
+        for t in tt.childTaskIterator():
+            print "  %s" % t.name()

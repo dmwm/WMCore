@@ -30,6 +30,7 @@ class SubscriptionTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        #self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -1381,6 +1382,100 @@ class SubscriptionTest(unittest.TestCase):
                "Error: Harvesting type is missing."
 
         return
+
+
+    def testBulkCommit(self):
+        """
+        _testBulkCommit_
+
+        Test committing everything in bulk
+        """
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]))
+        testFileA.addRun(Run(1, *[45]))
+                                 
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]))                         
+        testFileB.addRun(Run(1, *[45]))
+        
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]))
+        testFileC.addRun(Run(2, *[48]))
+
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]))
+        testFileD.addRun(Run(2, *[48]))
+         
+        testFileA.create()
+        testFileB.create()
+        testFileC.create()
+        testFileD.create()
+
+
+        
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testFileset2 = Fileset(name = "TestFileset2")
+        testFileset2.create()
+        
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)
+        testFileset.addFile(testFileD)
+        testFileset.commit()
+
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        # Everything above here has to exist before we get started
+
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupB = JobGroup(subscription = testSubscription)
+
+        testJobA = Job(name = "TestJobA")
+        testJobA.addFile(testFileA)
+        
+        testJobB = Job(name = "TestJobB")
+        testJobB.addFile(testFileB)
+
+        testJobC = Job(name = "TestJobC")
+        testJobC.addFile(testFileC)
+        
+        testJobD = Job(name = "TestJobD")
+        testJobD.addFile(testFileD)
+
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+        testJobGroupB.add(testJobC)
+        testJobGroupB.add(testJobD)
+
+        testSubscription.bulkCommit(jobGroups = [testJobGroupA, testJobGroupB])
+
+        self.assertEqual(testJobA.exists() > 0, True)
+        self.assertEqual(testJobB.exists() > 0, True)
+        self.assertEqual(testJobC.exists() > 0, True)
+        self.assertEqual(testJobD.exists() > 0, True)
+        self.assertEqual(testJobGroupA.exists() > 0, True)
+        self.assertEqual(testJobGroupB.exists() > 0, True)
+
+
+        result = testSubscription.filesOfStatus(status = "Acquired")
+        self.assertEqual(len(result), 4,
+                         'Should have acquired 4 files, instead have %i' %(len(result)))
+        self.assertEqual(len(testJobGroupA.jobs), 2)
+
+
+        return
+        
+
 
 if __name__ == "__main__":
     unittest.main()

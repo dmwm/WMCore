@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.27 2010/05/20 21:38:19 sryu Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.28 2010/05/20 21:46:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import logging
 
@@ -65,7 +65,7 @@ class WMBSHelper:
         #outputModules =  task.getOutputModulesForStep(task.getTopStepName())
         outputModules = task.getOutputModulesForTask()
         for outputModule in outputModules:
-            for outputModuleName in outputModules.listSections_():
+            for outputModuleName in outputModule.listSections_():
                 if task.taskType() == "Merge":
                     outputFilesetName = "%s/merged-%s" % (task.getPathName(),
                                                           outputModuleName)

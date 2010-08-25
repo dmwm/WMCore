@@ -48,8 +48,8 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
-__revision__ = "$Id: Service.py,v 1.55 2010/07/29 11:15:37 metson Exp $"
-__version__ = "$Revision: 1.55 $"
+__revision__ = "$Id: Service.py,v 1.56 2010/07/29 15:11:49 swakef Exp $"
+__version__ = "$Revision: 1.56 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -191,7 +191,7 @@ class Service(dict):
         """
         
         verb = self._verbCheck(verb)
-        os.system("/bin/rm %s/*" % self['requests']['req_cache_path'])
+        os.system("/bin/rm -f %s/*" % self['requests']['req_cache_path'])
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
         try:
             os.remove(cachefile)

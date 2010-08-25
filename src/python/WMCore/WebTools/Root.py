@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.24 2009/06/09 13:30:31 valya Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Root.py,v 1.25 2009/09/18 20:21:38 diego Exp $"
+__version__ = "$Revision: 1.25 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log, tree, engine, dispatch
@@ -31,9 +31,12 @@ import logging
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WebTools.Welcome import Welcome
 
+import WMCore.WebTools.CernOidConsumer
+
 class Root(WMObject):
     def __init__(self, config):
         self.config = config
+        self.secconfig = config.section_("CernOpenID")
         self.config = config.section_("Webtools")
         self.appconfig = config.section_(self.config.application)
         self.app = self.config.application
@@ -89,6 +92,14 @@ class Root(WMObject):
         #cpconfig.update ({'request.error_response': self.handle_error})
         #cpconfig.update ({'tools.proxy.on': True})
         #cpconfig.update ({'proxy.tool.base': '%s:%s' % (socket.gethostname(), opts.port)})
+
+        # SecurityModule config
+        if secconfig.enabled:
+            cpconfig.update({'tools.sessions.on': True})
+            if not secconfig.use_decorators:
+                # do not enable it if you intend to use auth decorators
+                cpconfig.update({'tools.cernoid.on': True}) 
+
         log("loading config: %s" % cpconfig, 
                                    context=self.app, 
                                    severity=logging.DEBUG, 

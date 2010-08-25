@@ -22,6 +22,15 @@ config.component_('Webtools')
 # This is the application
 config.Webtools.application = 'WebtoolsDocs'
 
+# This is the Security config the application will use
+config.component_('CernOpenID')
+config.CernOpenID.enabled = True
+config.CernOpenID.use_decorators = True
+config.CernOpenID.store = 'filestore'
+config.CernOpenID.store_path = environ['WTBASE'] + '/security-store'
+#config.CernOpenID.store.database = 'sqlite://'
+config.CernOpenID.default_session_name = 'CernOpenIdTool'
+
 # This is the config for the application
 config.component_('WebtoolsDocs')
 # Define the default location for templates for the app

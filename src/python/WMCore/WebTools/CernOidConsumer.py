@@ -15,16 +15,20 @@ PROCESSING = 1     # Waiting for the oid server response about the auth
 AUTHENTICATED = 2  # User authenticated correctly
 
 DEFAULT_SESSION_NAME = 'SecurityModule'
+DEFAULT_OID_SERVER = 'https://cmsweb.cern.ch/security/'
 #-----------------------------------------------------------------------------
 # A class to transparently transform a cherrypy-based web app into an OpenID
 # consumer, thus allowing it to use CERN auth/authorization facilities
 class CernOidConsumer(cherrypy.Tool):
     def __init__(self, config):
         self.config = config
+        print config
         if self.config.store == 'filestore':
             self.store = filestore.FileOpenIDStore(self.config.store_path)
         
-        self.session_name = self.config.session_name
+        
+        self.session_name = getattr(self.config, 'session_name', DEFAULT_SESSION_NAME)
+        self.oidserver = getattr(self.config, 'oid_server', DEFAULT_OID_SERVER)
 
         self.base_path = '%s/%s' % (cherrypy.url(), self.config.mount_point)
         self.login_path = '%s/login' % self.base_path
@@ -41,9 +45,9 @@ class CernOidConsumer(cherrypy.Tool):
 
     # This is the method that is called in the cherrypy hook point (whenever
     # the user-agent requests a page
-    def callable(self):
+    def callable(self, role=None, group=None, site=None):
         self.verify()
-        self.process()
+        self.process(role, group, site)
         self.defaults()
     
     def get_session(self):
@@ -74,6 +78,12 @@ class CernOidConsumer(cherrypy.Tool):
                     return True
         return False
 
+    def is_authorised(self, role=None, group=None, site=None):
+        print role
+        print group
+        print site
+        return True
+        
     def is_relogin(self, openid_url):
         if openid_url:
             if cherrypy.session.has_key(self.session_name):
@@ -83,18 +93,33 @@ class CernOidConsumer(cherrypy.Tool):
         return False
                     
 
-    def verify(self):
-        current_url=cherrypy.request.script_name
+    def verify(self, role=None, group=None, site=None):
+        current_url = cherrypy.request.script_name
         # Do not verify auth URLs like the page that requests the user login
         if cherrypy.request.path_info.startswith(self.base_path):
             return
-
-        # If the user requested to login again without loging out first,
-        # force a logout
+        
+        # We could force the url of the server here somehow, but it needs to be
+        # unset if the user isn't logged in...
         openid_url = cherrypy.request.params.get('openid_url',None)
+        
+        try:
+            # ...so instead we asser that the url to be used is the one configured
+            if openid_url:
+                assert openid_url == self.oidserver
+        except:
+            msg = 'Error in discovery: wrong OpenID server '
+            msg += 'You are attempting to authenticate with %s. ' % openid_url
+            msg += 'This is an invalid OpenID URL. You want %s.' % self.oidserver
+            session = self.get_session()
+            session['info'] = msg
+            raise cherrypy.HTTPRedirect(self.error_path)
+            
+        # If the user requested to login again without logging out first,
+        # force a logout
         if self.is_relogin(openid_url):
             del cherrypy.session[self.session_name] # logout before continuing
-                
+        
         # Do not start the verification process if it is was already started
         if self.is_processing():
             return
@@ -103,7 +128,7 @@ class CernOidConsumer(cherrypy.Tool):
         if not openid_url:
             raise cherrypy.HTTPRedirect('%s?url=%s' % (self.login_path, current_url))
 
-        del cherrypy.request.params['openid_url']
+        #del cherrypy.request.params['openid_url']
 
         # Here it is where we start playing with OpenId
         oidconsumer = consumer.Consumer(self.get_session(), self.store)
@@ -133,7 +158,7 @@ class CernOidConsumer(cherrypy.Tool):
     # This function deals with the oid server response (when it redirects
     # the user-agent back to here. This request contains the status of the
     # user authentication in the oid server
-    def process(self):
+    def process(self, role=None, group=None, site=None):
         # Do not process auth URLs like the page that requests the user login
         if cherrypy.request.path_info.startswith(self.base_path):
             return
@@ -141,6 +166,10 @@ class CernOidConsumer(cherrypy.Tool):
         # Also ignores if the authentication process already completed
         if self.is_authenticated():
             return
+        
+        # Not sure if this is what we want...
+        if self.is_authorised(role, group, site):
+            pass
         
         oidconsumer = consumer.Consumer(self.get_session(), self.store)
         cherrypy.session[self.session_name]['status'] = UNKNOWN

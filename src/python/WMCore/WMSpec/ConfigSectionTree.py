@@ -7,8 +7,8 @@ Extension for a normal ConfigSection to provide a Tree structure
 of ConfigSections
 
 """
-__revision__ = "$Id: ConfigSectionTree.py,v 1.4 2009/08/17 16:41:34 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ConfigSectionTree.py,v 1.5 2009/08/17 20:59:28 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import types
 
@@ -279,6 +279,35 @@ class TreeHelper:
             result["%s.%s" %(myName, attr)] = formatNative(getattr(self.data, attr))
 
         return result
+
+
+    def addValue(self, value):
+        """
+        _addValue_
+
+        adds an arbitrary value as a dictionary.  Can have multiple values
+        """
+
+        if not type(value) == dict:
+            raise Exception("TreeHelper.addValue passed a value that was not a dictionary")
+
+        for key in value.keys():
+            splitList = key.split('.')
+            setResult = value[key]
+            if len(splitList) == 1:
+                #Then there is only one level, and we put it here
+                setattr(self.data, key, setResult)
+            else:
+                if splitList[0] in self.data.listSections_():
+                    #If the section exists, go to it directly
+                    helper = TreeHelper(getattr(self.data, splitList[0]))
+                    helper.addValue({splitList[1:]:setResult})
+                else:
+                    #If the section doesn't exist, create it
+                    self.data.section_(splitList[0])
+                    helper = TreeHelper(getattr(self.data, splitList[0]))
+                    helper.addValue({"".join(splitList[1:]):setResult})
+        return
 
 
 

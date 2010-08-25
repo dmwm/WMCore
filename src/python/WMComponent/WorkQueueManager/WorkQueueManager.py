@@ -6,8 +6,8 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-__revision__ = "$Id: WorkQueueManager.py,v 1.16 2010/07/29 15:41:54 swakef Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: WorkQueueManager.py,v 1.17 2010/07/30 16:29:13 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import logging
 import threading
@@ -95,7 +95,7 @@ class WorkQueueManager(Harness):
             raise RuntimeError, msg
 
         if not qConfig.has_key('Teams') and hasattr(config.Agent, 'teamName'):
-            qConfig['Teams'] = [ config.Agent.teamName ]
+            qConfig['Teams'] = config.Agent.teamName
 
         # ReqMgr params
         if not hasattr(wqManager, 'reqMgrConfig'):

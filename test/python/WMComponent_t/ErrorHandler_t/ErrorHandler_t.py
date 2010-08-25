@@ -4,16 +4,15 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.14 2010/02/04 22:36:35 meloam Exp $"
-__version__ = "$Revision: 1.14 $"
-__author__ = "fvlingen@caltech.edu"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.15 2010/02/05 16:52:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import os
 import threading
 import time
 import unittest
 
-from WMComponent.ErrorHandler.ErrorHandler import ErrorHandler
+from WMComponent.ErrorHandler.ErrorHandlerPoller import ErrorHandlerPoller
 
 import WMCore.WMInit
 from WMQuality.TestInit   import TestInit
@@ -29,79 +28,55 @@ from WMCore.WMBS.Job          import Job
 from WMCore.WMBS.JobGroup     import JobGroup
 
 from WMCore.DataStructs.Run   import Run
-
 from WMCore.JobStateMachine.ChangeState import ChangeState
-
 from WMCore.Agent.Configuration import Configuration
 
 class ErrorHandlerTest(unittest.TestCase):
     """
     TestCase for TestErrorHandler module 
     """
-
-    _maxMessage = 10
-
     def setUp(self):
         """
         setup for test.
         """
-
         myThread = threading.currentThread()
         
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.tearDown()
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
                                 useDefault = False)
 
-        
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
-
+        self.setJobTime = self.daofactory(classname = "Jobs.SetStateTime")
         self.testDir = self.testInit.generateWorkDir()
-
-
         self.nJobs = 10
+        return
 
     def tearDown(self):
         """
         Database deletion
         """
         self.testInit.clearDatabase()
-
         self.testInit.delWorkDir()
-
         return
 
+    def getConfig(self):
+        """
+        _getConfig_
 
-
-    def getConfig(self, configPath=None):
-        if configPath == None:
-            configPath = os.path.join(WMCore.WMInit.getWMBASE(), \
-                                                'src/python/WMComponent/ErrorHandler/DefaultConfig.py')
-
+        """
         config = Configuration()
 
         # First the general stuff
         config.section_("General")
         config.General.workDir = os.getenv("TESTDIR", self.testDir)
-
-        # Now the CoreDatabase information
-        # This should be the dialect, dburl, etc
-
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
-
-
-        config.component_("JobAccountant")
-        #The log level of the component. 
-        config.JobAccountant.logLevel = 'INFO'
-        config.JobAccountant.pollInterval = 10
-
 
         config.component_("ErrorHandler")
         # The log level of the component. 
@@ -116,24 +91,18 @@ class ErrorHandlerTest(unittest.TestCase):
         # The poll interval at which to look for failed jobs
         config.ErrorHandler.pollInterval = 60
 
-
         # JobStateMachine
         config.component_('JobStateMachine')
-        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'mnorman:theworst@cmssrv52.fnal.gov:5984')
+        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', None)
         config.JobStateMachine.default_retries = 1
-        config.JobStateMachine.couchDBName     = "mnorman_test"
-
+        config.JobStateMachine.couchDBName     = "errorhandler_t"
 
         return config
-
-
 
     def createTestJobGroup(self):
         """
         Creates a group of several jobs
-
         """
-
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task="Test")
         testWorkflow.create()
@@ -167,135 +136,71 @@ class ErrorHandlerTest(unittest.TestCase):
             testJobGroup.add(testJob)
         
         testJobGroup.commit()
-
         return testJobGroup
-
-
-
 
     def testCreate(self):
         """
+        WMComponent_t.ErrorHandler_t.ErrorHandler_t:testCreate()
+        
         Mimics creation of component and test jobs failed in create stage.
         """
-        ErrorHandlerTest._teardown = True
-        # read the default config first.
-        config = self.getConfig()
-
         testJobGroup = self.createTestJobGroup()
-
+        
+        config = self.getConfig()
         changer = ChangeState(config)
-
         changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
 
         idList = self.getJobs.execute(state = 'CreateFailed')
         self.assertEqual(len(idList), self.nJobs)
 
-
-
-        # we set the maxRetries to 10 for testing purposes
-        config.ErrorHandler.maxRetries = 10
-
-        # load a message service as we want to check if total failure
-        # messages are returned
-        myThread = threading.currentThread()
-
-        testErrorHandler = ErrorHandler(config)
-        testErrorHandler.prepareToStart()
-
-
-        time.sleep(20)
-
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
-
-        time.sleep(10)
-
-
-        # wait until all threads finish to check list size 
-        while threading.activeCount() > 1:
-            print('Currently: '+str(threading.activeCount())+\
-                ' Threads. Wait until all our threads have finished')
-            time.sleep(1)
-
+        testErrorHandler = ErrorHandlerPoller(config)
+        testErrorHandler.setup(None)
+        testErrorHandler.algorithm(None)
 
         idList = self.getJobs.execute(state = 'CreateFailed')
         self.assertEqual(len(idList), 0)
 
         idList = self.getJobs.execute(state = 'CreateCooloff')
         self.assertEqual(len(idList), self.nJobs)
-
         return
-    
 
     def testSubmit(self):
         """
+        WMComponent_t.ErrorHandler_t.ErrorHandler_t:testSubmit()
+        
         Mimics creation of component and test jobs failed in submit stage.
         """
-        ErrorHandlerTest._teardown = True
-        # read the default config first.
-        config = self.getConfig()
-
-
         testJobGroup = self.createTestJobGroup()
 
+        config = self.getConfig()
         changer = ChangeState(config)
-
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
 
         idList = self.getJobs.execute(state = 'SubmitFailed')
         self.assertEqual(len(idList), self.nJobs)
 
-
-        # we set the maxRetries to 10 for testing purposes
-        config.ErrorHandler.maxRetries = 10
-
-        # load a message service as we want to check if total failure
-        # messages are returned
-        myThread = threading.currentThread()
-
-
-
-        testErrorHandler = ErrorHandler(config)
-        testErrorHandler.prepareToStart()
-
-
-        time.sleep(20)
-
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
-
-        time.sleep(10)
-
-
-        # wait until all threads finish to check list size 
-        while threading.activeCount() > 1:
-            print('Currently: '+str(threading.activeCount())+\
-                ' Threads. Wait until all our threads have finished')
-            time.sleep(1)
-
+        testErrorHandler = ErrorHandlerPoller(config)
+        testErrorHandler.setup(None)
+        testErrorHandler.algorithm(None)
 
         idList = self.getJobs.execute(state = 'SubmitFailed')
         self.assertEqual(len(idList), 0)
 
         idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), self.nJobs)
-
         return
-
 
     def testJobs(self):
         """
+        WMComponent_t.ErrorHandler_t.ErrorHandler_t.testJobs()
+
         Mimics creation of component and test jobs failed in execute stage.
         """
-        ErrorHandlerTest._teardown = True
-        # read the default config first.
-        config = self.getConfig()
-
         testJobGroup = self.createTestJobGroup()
-
+        
+        config = self.getConfig()
         changer = ChangeState(config)
-
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
@@ -304,43 +209,16 @@ class ErrorHandlerTest(unittest.TestCase):
         idList = self.getJobs.execute(state = 'JobFailed')
         self.assertEqual(len(idList), self.nJobs)
 
-
-        # we set the maxRetries to 10 for testing purposes
-        config.ErrorHandler.maxRetries = 10
-
-        # load a message service as we want to check if total failure
-        # messages are returned
-        myThread = threading.currentThread()
-
-
-
-        testErrorHandler = ErrorHandler(config)
-        testErrorHandler.prepareToStart()
-
-
-        time.sleep(20)
-
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
-
-        time.sleep(10)
-
-
-        # wait until all threads finish to check list size 
-        while threading.activeCount() > 1:
-            print('Currently: '+str(threading.activeCount())+\
-                ' Threads. Wait until all our threads have finished')
-            time.sleep(1)
-
+        testErrorHandler = ErrorHandlerPoller(config)
+        testErrorHandler.setup(None)
+        testErrorHandler.algorithm(None)
 
         idList = self.getJobs.execute(state = 'JobFailed')
         self.assertEqual(len(idList), 0)
 
         idList = self.getJobs.execute(state = 'JobCooloff')
         self.assertEqual(len(idList), self.nJobs)
-
         return
-
 
 if __name__ == '__main__':
     unittest.main()

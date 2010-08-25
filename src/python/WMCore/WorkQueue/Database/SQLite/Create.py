@@ -5,8 +5,8 @@ Implementation of CreateWorkQueue for SQLite.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2009/08/18 23:18:17 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Create.py,v 1.4 2009/08/27 18:40:44 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -24,7 +24,7 @@ class Create(CreateWorkQueueBase):
         CreateWorkQueueBase.__init__(self, logger, dbi)
 
         # Can't use ALTER TABLE to add constrints
-        self.create["04wq_element"] = \
+        self.create["03wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL,
              wmspec_id        INTEGER    NOT NULL REFERENCES wq_wmspec(id),
@@ -39,14 +39,14 @@ class Create(CreateWorkQueueBase):
              UNIQUE (wmspec_id, block_id)
              ) """
 
-        self.create["05wq_block_parentage"] = \
+        self.create["04wq_block_parentage"] = \
           """CREATE TABLE wq_block_parentage (
              child        INTEGER    NOT NULL REFERENCES wq_block(id),
              parent       INTEGER    NOT NULL REFERENCES wq_block(id),
              PRIMARY KEY (child, parent)
              )"""
 
-        self.create["08wq_block_site_assoc"] = \
+        self.create["06wq_block_site_assoc"] = \
           """CREATE TABLE wq_block_site_assoc (
              block_id     INTEGER    NOT NULL REFERENCES wq_block(id),
              site_id      INTEGER    NOT NULL REFERENCES wq_site(id),

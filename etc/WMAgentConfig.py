@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.8 2010/04/06 20:24:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.9 2010/04/07 15:08:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 import WMCore.WMInit
@@ -98,7 +98,6 @@ config.JobSubmitter.pluginName = "CondorGlobusPlugin"
 config.JobSubmitter.pluginDir = "JobSubmitter.Plugins"
 config.JobSubmitter.submitNode = "cmssrv52.fnal.gov"
 config.JobSubmitter.submitDir = config.General.workDir + "/SubmitJDLs"
-config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(), 'test/python/WMComponent_t/JobSubmitter_t', 'submit.sh')
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
 

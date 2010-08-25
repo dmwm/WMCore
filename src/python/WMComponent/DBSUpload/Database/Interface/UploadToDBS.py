@@ -5,8 +5,8 @@ _UploadToDBS_
 APIs related to adding file to DBS
 
 """
-__version__ = "$Revision: 1.11 $"
-__revision__ = "$Id: UploadToDBS.py,v 1.11 2009/12/07 18:57:58 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: UploadToDBS.py,v 1.12 2009/12/07 21:55:31 mnorman Exp $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -91,9 +91,27 @@ class UploadToDBS:
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database."+ \
                         myThread.dialect)
         newDS = factory.loadObject("SetBlockStatus")
-        newDS.execute(block = block, locations = locations, open_status = openStatus, time = 0, \
+        newDS.execute(block = block, locations = locations, open_status = openStatus, time = time, \
                       conn = myThread.transaction.conn, transaction=myThread.transaction)
         myThread.transaction.commit()
         return
 
+    def findOpenBlocks(self):
+        """
+        _findOpenBlocks_
         
+        This should find all blocks.
+        """
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        
+        factory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                             logger = myThread.logger,
+                             dbinterface = myThread.dbi)
+        openBlocks = factory(classname = "GetOpenBlocks")
+
+        result = openBlocks.execute(conn = myThread.transaction.conn, transaction=myThread.transaction)
+
+        myThread.transaction.commit()
+        return result

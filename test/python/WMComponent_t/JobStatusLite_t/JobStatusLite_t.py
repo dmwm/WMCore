@@ -1,28 +1,81 @@
+#!/usr/bin/env python
+
+"""
+JobStatusLite unit test 
+"""
+
+__revision__ = "$Id: JobStatusLite_t.py,v 1.5 2010/06/16 11:02:25 mcinquil Exp $"
+__version__ = "$Revision: 1.5 $"
+
+
+from WMQuality.TestInit import TestInit
+
+# Import JobStatusLite modules
 from WMComponent.JobStatusLite.JobStatusPoller import JobStatusPoller
 from WMComponent.JobStatusLite.StatusScheduling import StatusScheduling
-from WMQuality.TestInit import TestInit
+
 # Import BossLite Objects
 from WMCore.BossLite.DbObjects.Job         import Job
 from WMCore.BossLite.DbObjects.Task        import Task
 from WMCore.BossLite.DbObjects.RunningJob  import RunningJob
 from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
+from WMCore.BossLite.API.BossLiteAPISched  import BossLiteAPISched
+from WMCore.BossLite.DbObjects.BossLiteDBWM import BossLiteDBWM
+from WMCore.BossLite.Common.Exceptions     import DbError
 
-from WMCore.BossLite.DbObjects.BossLiteDBWM  import BossLiteDBWM
-from WMCore.BossLite.Common.Exceptions  import DbError
-
-import threading
+#import threading
 import unittest
 import os
 
-class JobStatusLite_t(unittest.TestCase):
-    def setUp(self):
-        self.testInit = TestInit(__file__)
+
+def fakeTask( db, numjob ):
+    """
+    This procedure create a fakeTask
+    """
+
+    taskParams = { 'name' : 'testTask_submit', \
+                   'globalSandbox' : '/etc/redhat-release' \
+                 }
+
+    jobParams = { 'executable' : '/bin/hostname', \
+                  'arguments' : '-f' \
+                }
+
+    task = Task( taskParams )
+    task.create( db )
+    task.exists( db )
+    for j in xrange( numjob ):
+        jobParams['name'] = 'Fake_job_%s' % str(j)
+        jobParams['standardError'] = 'hostname-%s.err' % str(j)
+        jobParams['standardOutput'] = 'hostname-%s.out' % str(j)
+        jobParams['outputFiles'] = [ jobParams['standardOutput'] ]
+        
+        job = Job( parameters = jobParams )
+        job.newRunningInstance( db )
+        task.addJob( job )
+    task.save( db )
+    
+    return taskParams['name']
+
+
+class JobStatusLite_t( unittest.TestCase ):
+    """
+    Test cases for JobStatusLite module
+    """
+
+    def setUp( self ):
+        """
+        setup needed for the tests
+        """
+
+        self.testInit = TestInit( __file__ )
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.BossLite"], \
-                                useDefault = False)
+        self.testInit.setSchema( customModules = ["WMCore.BossLite"], \
+                                 useDefault = False \
+                               )
 
-    def tearDown(self):
+    def tearDown( self ):
         """
         Tear down database
         """
@@ -31,154 +84,243 @@ class JobStatusLite_t(unittest.TestCase):
 
         return
 
-    def fillDatabase(self, numtask = 2, numjob = 50, status = 'R', p_status = 'handled'):
+    def fillDatabase( self, numtask = 2, numjob = 50, \
+                      status = 'R', pstatus = 'handled'):
+        """
+        generate some fake tasks/jobs/runjobs
+        """
+
         print "Populating database"
         db = BossLiteDBWM()
-        count_job = 0
+        totaljobadded = 0
         names = []
-        for t in xrange(numtask):
+        for t in xrange( numtask ):
             try:
                 task = Task()
-                task.data['name'] = 'task_%s'%str(t)
-                names.append('task_%s'%str(t))
-                task.create(db)
-                for j in xrange(1, 1+numjob):
-                    job_static = { \
-                                   'name':      '%s_job_%s'%(str(t),str(j)), \
-                                   'jobId':     j, \
-                                   'taskId':    task.exists(db), \
+                task.data['name'] = 'task_%s' % str(t)
+                names.append( 'task_%s' % str(t) )
+                task.create( db )
+                for j in xrange( 1, 1 + numjob ):
+                    jobstatic = { \
+                                   'name':   '%s_job_%s' % (str(t), str(j)), \
+                                   'jobId':  j, \
+                                   'taskId': task.exists( db ), \
                                    'submissionNumber': 1, \
-                                   'closed':    'N' \
-                                 }
-                    job = Job(parameters = job_static)
-                    job.create(db)
-                    job.save(db)
+                                   'closed': 'N' \
+                                }
+                    job = Job( parameters = jobstatic )
+                    job.create( db )
+                    job.save( db )
                     job_run = { \
-                                'jobId':         job.data['jobId'], \
-                                'taskId':        task.exists(db), \
-                                'submission':    1, \
-                                'schedulerId':   'id_scheduler', \
-                                'processStatus': p_status, \
-                                'closed':        'N', \
-                                'status':        status \
+                                'jobId':      job.data['jobId'], \
+                                'taskId':     task.exists( db ), \
+                                'submission': 1, \
+                                'schedulerId':  'id_scheduler', \
+                                'processStatus': pstatus, \
+                                'closed':     'N', \
+                                'status':     status \
                                }
-                    runJob = RunningJob(parameters = job_run)
-                    runJob.create(db)
-                    runJob.save(db)
-                    count_job += 1
+                    runJob = RunningJob( parameters = job_run )
+                    runJob.create( db )
+                    runJob.save( db )
+                    totaljobadded += 1
             except Exception, ex:
-                print "ERROR: '%s'"%str(ex)
-                print "\ttask_" +str(t)
+                print "ERROR: '%s'" % str( ex )
+                print "\ttask_" + str( t )
         print "..finished."
-        return names, count_job
+        return names, totaljobadded
 
 
-    def createConfig(self):
+    def createConfig( self ):
+        """
+        generate an example of configuration for the JobStatusLite component
+        """
+
         config = self.testInit.getConfiguration()
 
         config.component_('JobStatusLite')
-        config.JobStatusLite.namespace       = 'WMComponent.JobStatusLite.JobStatusLite'
-        config.JobStatusLite.componentDir    = os.getcwd()
-        config.JobStatusLite.ComponentDir    = '/tmp/application/JobStatusLite'
-        config.JobStatusLite.logLevel        = 'INFO'
-        config.JobStatusLite.pollInterval    = 60
-        config.JobStatusLite.queryInterval   = 12
-        config.JobStatusLite.jobLoadLimit    = 500
-        config.JobStatusLite.maxJobQuery     = 50
-        config.JobStatusLite.taskLimit       = 30
-        config.JobStatusLite.maxJobsCommit   = 100
-        config.JobStatusLite.processes       = 3
+        config.JobStatusLite.namespace     = \
+                   'WMComponent.JobStatusLite.JobStatusLite'
+        config.JobStatusLite.componentDir  = os.getcwd()
+        config.JobStatusLite.ComponentDir  = '/tmp/application/JobStatusLite'
+        config.JobStatusLite.logLevel      = 'INFO'
+        config.JobStatusLite.pollInterval  = 60
+        config.JobStatusLite.queryInterval = 12
+        config.JobStatusLite.jobLoadLimit  = 500
+        config.JobStatusLite.maxJobQuery   = 50
+        config.JobStatusLite.taskLimit     = 30
+        config.JobStatusLite.maxJobsCommit = 100
+        config.JobStatusLite.processes     = 3
 
         return config
 
 
-    def testA_PollingFailed(self):
+    def submit( self ):
+        """
+        Simple submission operation
+        """
+        
+        myBossLiteAPI = BossLiteAPI()
+
+        taskname = fakeTask( myBossLiteAPI.db, 10 )
+        task = myBossLiteAPI.loadTaskByName( taskname )
+
+        mySchedConfig =  { 'name' : 'SchedulerGLite' }
+        mySchedAPI = BossLiteAPISched( bossLiteSession = myBossLiteAPI, \
+                                       schedulerConfig = mySchedConfig )
+        
+        mySchedAPI.submit( task['id'] )
+        
+        return taskname
+
+    def kill( self, taskid ):
+        """
+        Simple kill operation
+        """
+        myBossLiteAPI = BossLiteAPI()
+
+        mySchedConfig =  { 'name' : 'SchedulerGLite' }
+        mySchedAPI = BossLiteAPISched( bossLiteSession = myBossLiteAPI, \
+                                       schedulerConfig = mySchedConfig )
+
+        task = mySchedAPI.kill( taskid )
+
+        return task['name']
+
+    def testA_PollingFailed( self ):
+        """
+        testing the polling of failed jobs
+        """
+
         config = self.createConfig()
-        t_added, n_job = self.fillDatabase(1, 10, 'A', 'handled')
-        print "Calling JobStatusPoller"
-        obj1 = JobStatusPoller(config)
-        obj1.setup(None)
-        obj1.algorithm(None)
-        obj1.terminate(None)
+        taskadded = self.fillDatabase( 1, 10, 'A', 'handled' )[0]
+        print "Calling JobStatusPoller for Aborted jobs"
+        obj1 = JobStatusPoller( config )
+        obj1.setup( None )
+        obj1.algorithm( None )
+        obj1.terminate( None )
         print "..finished."
-        print "Checking jobs were processed" 
+        print "Checking if jobs were processed" 
         bliteapi = BossLiteAPI()
-        task = bliteapi.loadTaskByName(t_added[0])
+        task = bliteapi.loadTaskByName( taskadded[0] )
         for job in task.jobs:
-            self.assertEqual(job.runningJob['processStatus'], 'failed')
-
-    def testB_PollingSuccess(self):
-        config = self.createConfig()
-        t_added, n_job = self.fillDatabase(1, 10, 'SD', 'handled')
-        print "Calling JobStatusPoller"
-        obj1 = JobStatusPoller(config)
-        obj1.setup(None)
-        obj1.algorithm(None)
-        obj1.terminate(None)
+            self.assertEqual( job.runningJob['processStatus'], 'failed' )
         print "..finished."
-        bliteapi = BossLiteAPI()
-        task = bliteapi.loadTaskByName(t_added[0])
-        for job in task.jobs:
-            self.assertEqual(job.runningJob['processStatus'], 'output_requested')
 
-    def testC_PollingNew(self):
+    def testB_PollingSuccess( self ):
+        """
+        testing the polling of success jobs
+        """
+
         config = self.createConfig()
-        t_added, n_job = self.fillDatabase(1, 10, 'S', 'not_handled')
-        print "Calling JobStatusPoller"
-        obj1 = JobStatusPoller(config)
-        obj1.setup(None)
-        obj1.algorithm(None)
-        obj1.terminate(None)
+        taskadded = self.fillDatabase( 1, 10, 'SD', 'handled' )[0]
+        print "Calling JobStatusPoller for Done jobs"
+        obj1 = JobStatusPoller( config )
+        obj1.setup( None )
+        obj1.algorithm( None )
+        obj1.terminate( None )
         print "..finished."
-        print "Checking jobs were processed"
+        print "Checking if jobs were processed"
         bliteapi = BossLiteAPI()
-        task = bliteapi.loadTaskByName(t_added[0])
+        task = bliteapi.loadTaskByName( taskadded[0] )
         for job in task.jobs:
-            self.assertEqual(job.runningJob['processStatus'], 'handled')
-
-    def testD_PollingKilled(self):
-        config = self.createConfig()
-        t_added, n_job = self.fillDatabase(1, 10, 'K', 'handled')
-        print "Calling JobStatusPoller"
-        obj1 = JobStatusPoller(config)
-        obj1.setup(None)
-        obj1.algorithm(None)
-        obj1.terminate(None)
+            self.assertEqual( job.runningJob['processStatus'], \
+                              'output_requested' )
         print "..finished."
-        print "Checking jobs were processed"
-        db = BossLiteDBWM()
-        bliteapi = BossLiteAPI()
-        task = bliteapi.loadTaskByName(t_added[0])
-        for job in task.jobs:
-            self.assertEqual(job.runningJob['processStatus'], 'failed')
 
+    def testC_PollingNew( self ):
+        """
+        testing the polling of new jobs
+        """
 
-    def testZ_GroupAssignment(self):
         config = self.createConfig()
-        t_added, n_job = self.fillDatabase(5,50)
+        taskadded = self.fillDatabase( 1, 10, 'S', 'not_handled' )[0]
+        print "Calling JobStatusPoller for new jobs"
+        obj1 = JobStatusPoller( config )
+        obj1.setup( None )
+        obj1.algorithm( None )
+        obj1.terminate( None )
+        print "..finished."
+        print "Checking if jobs were processed"
+        bliteapi = BossLiteAPI()
+        task = bliteapi.loadTaskByName( taskadded[0] )
+        for job in task.jobs:
+            self.assertEqual( job.runningJob['processStatus'], 'handled' )
+        print "..finished."
+
+    def testD_PollingKilled( self ):
+        """
+        testing the polling of killed jobs
+        """
+
+        config = self.createConfig()
+        taskadded = self.fillDatabase( 1, 10, 'K', 'handled' )[0]
+        print "Calling JobStatusPoller for Killed jobs"
+        obj1 = JobStatusPoller( config )
+        obj1.setup( None )
+        obj1.algorithm( None )
+        obj1.terminate( None )
+        print "..finished."
+        print "Checking if jobs were processed"
+        bliteapi = BossLiteAPI()
+        task = bliteapi.loadTaskByName( taskadded[0] )
+        for job in task.jobs:
+            self.assertEqual( job.runningJob['processStatus'], 'failed' )
+        print "..finished."
+
+
+    def testE_GroupAssignment( self ):
+        """
+        testing the group assignment for sub-processes
+        """
+
+        config = self.createConfig()
+        numjob = self.fillDatabase( 5, 50 )[1]
         print "Calling StatusScheduling"
-        obj1 = StatusScheduling(config)
-        obj1.setup(None)
-        obj1.algorithm(None)
-        obj1.terminate(None)
+        obj1 = StatusScheduling( config )
+        obj1.setup( None )
+        obj1.algorithm( None )
+        obj1.terminate( None )
         print "..finished."
-        print "Checking jobs were processed"
+        print "Checking if jobs were processed"
         db = BossLiteDBWM()
 
-        ## check if jobs have been selected as new jobs
         ## check if jobs have been assigned to a group
-        result = db.executeSQL("SELECT j.group_id, j.job_id, j.task_id " +\
+        result = db.executeSQL( \
+                               "SELECT j.group_id, j.job_id, j.task_id " +\
                                "FROM jt_group j JOIN bl_runningjob b ON " +\
-                               "(j.task_id = b.task_id and j.job_id = b.job_id) " +\
+                               "(j.task_id = b.task_id and " +\
+                               "j.job_id = b.job_id) " +\
                                "order by j.group_id, j.task_id, j.job_id;" \
                               )
         raws = result[0].fetchall()
-        self.assertEqual(len(raws), n_job)
+        self.assertEqual( len(raws), numjob )
         for tupla in raws:
-            group, task, job = tupla
-            self.assertNotEqual(group, 0)
-        ## check if job status has been updated 
-        ## No check to do till BossLiteAPI are not available
+            group = tupla[0]
+            self.assertNotEqual( group, 0 )
+        print "..finished."
+
+    def testF_StatusCheck( self ):
+        """
+        testing the status check
+        """
+
+        config = self.createConfig()
+        taskname = self.submit()
+        print "Calling StatusScheduling"
+        obj1 = StatusScheduling( config )
+        obj1.setup( None )
+        obj1.algorithm( None )
+        obj1.terminate( None )
+        print "..finished."
+        print "Checking if jobs were processed"
+        bliteapi = BossLiteAPI()
+        task = bliteapi.loadTaskByName( taskname )
+        #for job in task.jobs:
+        #    print job.runningJob
+        ## need to kill the submitted jobs
+        self.kill( task['id'] )
+        print "..finished."
 
 if __name__ == '__main__':
     unittest.main()

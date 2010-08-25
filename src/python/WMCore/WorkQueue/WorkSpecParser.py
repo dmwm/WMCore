@@ -6,8 +6,8 @@ A class that parses WMSpec files and provides relevant info
 """
 
 __all__ = []
-__revision__ = "$Id: WorkSpecParser.py,v 1.12 2009/09/07 14:41:36 swakef Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: WorkSpecParser.py,v 1.13 2009/09/07 14:51:00 swakef Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from urllib import urlopen
@@ -15,7 +15,7 @@ from urllib import urlopen
 #TODO: Pull useful stuff out of wmspec then free it - large data structure
 #TODO: Cleanup, logArchive etc. WorkflowTypes needed???
 
-globalDBS = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
+#globalDBS = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
 
 class WorkSpecParser:
     """
@@ -238,7 +238,7 @@ class WorkSpecParser:
         """Return dbsUrl"""
 #        return self.specParams['dbs']
         #Throw if no dbs???
-        return getattr(self.wmSpec.data, 'dbs', globalDBS)
+        return getattr(self.wmSpec.data, 'dbs', None)
     dbs_url = property(dbs_url)
 
 

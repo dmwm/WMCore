@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.12 2009/03/31 19:54:17 valya Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: CMSCouch.py,v 1.13 2009/04/20 16:07:39 metson Exp $"
+__version__ = "$Revision: 1.13 $"
 
 try:
     # Python 2.6
@@ -200,7 +200,7 @@ class Database(CouchDBRequests):
         """
         return self.post('/%s/_compact' % self.name)
         
-    def loadview(self, design, view, options = {}):
+    def loadview(self, design, view, options = {}, keys = []):
         """
         Load a view by getting, for example:
         http://localhost:5984/tester/_view/viewtest/age_name?count=10&group=true
@@ -227,12 +227,14 @@ class Database(CouchDBRequests):
         more info: http://wiki.apache.org/couchdb/HTTP_view_API
         """
         
-        #options = urllib.urlencode(options)
-        
-        # in version 0.8.1
-#        return self.get('/%s/_view/%s/%s' % (self.name, design, view), options)
-        # in version 0.9.0
-        return self.get('/%s/_design/%s/_view/%s' % (self.name, design, view), options)
+        # the following is CouchDB 090 only, this is the reference platform
+        if len(keys):
+            data = urllib.urlencode(options)
+            return self.post('/%s/_design/%s/_view/%s?%s' % \
+                            (self.name, design, view, data), {'keys':keys})
+        else:
+            return self.get('/%s/_design/%s/_view/%s' % \
+                            (self.name, design, view), options)
         
     def allDocs(self):
         return self.get('/%s/_all_docs' % self.name)

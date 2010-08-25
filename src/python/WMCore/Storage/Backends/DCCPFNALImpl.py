@@ -8,9 +8,10 @@ Implementation of StageOutImpl interface for DCCPFNAL
 import os
 import commands
 
-from WMCore.Storage.Registry import registerStageOutImpl
-from WMCore.Storage.StageOutImpl import StageOutImpl
-from WMCore.Storage.StageOutError import StageOutError
+from StageOut.Registry import registerStageOutImpl
+from StageOut.StageOutImpl import StageOutImpl
+
+from WMCore.WMException import WMException
 
 _CheckExitCodeOption = True
 
@@ -27,7 +28,15 @@ def pnfsPfn(pfn):
 
     pfnSplit = pfn.split("WAX/11/store/", 1)[1]
     filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
-    return filePath
+    
+    # handle lustre location
+    if pfn.find('/store/unmerged/lustre/') == -1:
+        return filePath
+    else:
+        pfnSplit = pfn.split("/store/unmerged/lustre/", 1)[1]
+        filePath = "/lustre/unmerged/%s" % pfnSplit
+        return filePath
+
 
 
 class DCCPFNALImpl(StageOutImpl):
@@ -57,15 +66,46 @@ class DCCPFNALImpl(StageOutImpl):
         if targetPFN.find('/pnfs/') == -1:
             return
 
-        pfnSplit = targetPFN.split("WAX/11/store/", 1)[1]
-        filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
-        directory = os.path.dirname(filePath)
-        command = "#!/bin/sh\n"
-        command += " . /opt/d-cache/dcap/bin/setenv-cmsprod.sh\n"
-        command += "if [ ! -e \"%s\" ]; then\n" % directory
-        command += "  mkdir -p %s\n" % directory
-        command += "fi\n"
-        self.executeCommand(command)
+        # handle dcache or lustre location
+        if targetPFN.find('/store/unmerged/lustre/') == -1:
+            pfnSplit = targetPFN.split("WAX/11/store/", 1)[1]
+            filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
+            directory = os.path.dirname(filePath)
+            command = "#!/bin/sh\n"
+            command += " . /opt/d-cache/dcap/bin/setenv-cmsprod.sh\n"
+            command += "if [ ! -e \"%s\" ]; then\n" % directory
+            command += "  mkdir -p %s\n" % directory
+            command += "fi\n"
+            self.executeCommand(command)
+        else: 
+            pfnSplit = targetPFN.split("/store/unmerged/lustre/", 1)[1]
+            filePath = "/lustre/unmerged/%s" % pfnSplit
+            targetdir= os.path.dirname(filePath)
+            checkdircmd="/bin/ls %s > /dev/null " % targetdir
+            print "Check dir existence : %s" %checkdircmd 
+            try:
+                checkdirexitCode = self.run(checkdircmd)
+            except Exception, ex:
+                msg = "Warning: Exception while invoking command:\n"
+                msg += "%s\n" % checkdircmd
+                msg += "Exception: %s\n" % str(ex)
+                msg += "Go on anyway..."
+                print msg
+                pass
+            if checkdirexitCode:
+                mkdircmd = "/bin/mkdir -m 775 -p %s" % targetdir
+                print "=> creating the dir : %s" %mkdircmd
+                try:
+                    self.run(mkdircmd)
+                except Exception, ex:
+                    msg = "Warning: Exception while invoking command:\n"
+                    msg += "%s\n" % mkdircmd
+                    msg += "Exception: %s\n" % str(ex)
+                    msg += "Go on anyway..."
+                    print msg
+                    pass
+            else:
+                print "=> dir already exists... do nothing."
 
 
     def createSourceName(self, protocol, pfn):
@@ -78,16 +118,20 @@ class DCCPFNALImpl(StageOutImpl):
         if not pfn.startswith("srm"):
             return pfn
 
-        doorCmd = "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh"
-        (status, output) = commands.getstatusoutput(doorCmd)
-            
-        if status != 0:
-            raise StageOutError("Unable to determine dCache door", Command = doorCmd,
-                                output = output)
+        if pfn.find('/store/unmerged/lustre/') == -1:
+            print "Translating PFN: %s\n To use dcache door" % pfn
+            dcacheDoor = commands.getoutput(
+                "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh")
+            pfn = pfn.split("/store/")[1]
+            pfn = "%s%s" % (dcacheDoor, pfn)
+            print "Created Target PFN with dCache Door: ", pfn
+        else: 
+            pfnSplit = pfn.split("/store/unmerged/lustre/", 1)[1]
+            pfn = "/lustre/unmerged/%s" % pfnSplit
 
-        pfn = pfn.split("/store/")[1]
-        pfn = "%s%s" % (output, pfn)
         return pfn
+
+
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
         """
@@ -100,15 +144,17 @@ class DCCPFNALImpl(StageOutImpl):
         if getattr(self, 'stageIn', False):
             return self.buildStageInCommand(sourcePFN, targetPFN, options)
 
-        optionsStr = ""
-        if options != None:
-            optionsStr = str(options)
-        dirname = os.path.dirname(targetPFN)
-        result = "#!/bin/sh\n"
-        result += ". /opt/d-cache/dcap/bin/setenv-cmsprod.sh\n"
-        result += "dccp -o 86400  -d 0 -X -role=cmsprod %s %s %s" % ( optionsStr, sourcePFN, targetPFN)
+        
+        if targetPFN.find('/store/unmerged/lustre/') == -1:
+            optionsStr = ""
+            if options != None:
+                optionsStr = str(options)
+            dirname = os.path.dirname(targetPFN)
+            result = "#!/bin/sh\n"
+            result += ". /opt/d-cache/dcap/bin/setenv-cmsprod.sh\n"
+            result += "dccp -o 86400  -d 0 -X -role=cmsprod %s %s %s" % ( optionsStr, sourcePFN, targetPFN)
 
-        result += \
+            result += \
 """
 EXIT_STATUS=$?
 echo "dccp exit status: $EXIT_STATUS"
@@ -120,10 +166,10 @@ if [[ $EXIT_STATUS != 0 ]]; then
 fi
 """  % pnfsPfn(targetPFN)
 
-        #  //
-        # //  CRC check
-        #//
-        result += \
+            #  //
+            # //  CRC check
+            #//
+            result += \
 """
 /opt/d-cache/dcap/bin/check_dCachefilecksum.sh %s %s
 EXIT_STATUS=$?
@@ -137,7 +183,21 @@ fi
 
 """ % (pnfsPfn(targetPFN), sourcePFN, pnfsPfn(targetPFN))
 
-        return result
+            print "Executing:\n", result
+            return result
+
+        else:
+            original_size = os.stat(sourcePFN)[6]
+            print "Local File Size is: %s" % original_size
+            result = "/bin/cp "
+            if options != None:
+                result += " %s " % options
+            result += " %s " % sourcePFN
+            result += " %s " % targetPFN
+            result += "; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
+            return result
+
+
 
     def buildStageInCommand(self, sourcePFN, targetPFN, options = None):
         """
@@ -145,13 +205,16 @@ fi
 
         Create normal dccp commad for staging in files.
         """
-        optionsStr = ""
-        if options != None:
-            optionsStr = str(options)
-        dirname = os.path.dirname(targetPFN)
-        result = "#!/bin/sh\n"
-        result += "dccp %s %s %s" % (optionsStr, pnfsPfn(sourcePFN), targetPFN)
-        result += \
+
+
+        if targetPFN.find('/store/unmerged/lustre/') == -1:
+            optionsStr = ""
+            if options != None:
+                optionsStr = str(options)
+            dirname = os.path.dirname(targetPFN)
+            result = "#!/bin/sh\n"
+            result += "dccp %s %s %s" % (optionsStr, pnfsPfn(sourcePFN), targetPFN)
+            result += \
 """
 EXIT_STATUS=$?
 echo "dccp exit status: $EXIT_STATUS"
@@ -163,22 +226,52 @@ if [[ $EXIT_STATUS != 0 ]]; then
 fi
 """  % targetPFN
 
-        #  //
-        # //  Size Check
-        #//
-        result += \
+            #  //
+            # //  Size Check
+            #//
+            result += \
 """
-DEST_SIZE=`ls -l %s | cut -d" " -f6`
-FILE_SIZE=`ls -l %s | cut -d" " -f6`
+DEST_SIZE=`dcsize %s | cut -d" " -f1`
+FILE_SIZE=`dcsize %s | cut -d" " -f1`
+if [[ $DEST_SIZE == "" || $FILE_SIZE == "" ]]; then
+    echo "dcsize command is not available or produced an invalid result."
+    echo "Trying stat command:"
+    DEST_SIZE=`stat -c %s %s`
+    FILE_SIZE=`stat -c %s %s`
+fi
+if [[ $DEST_SIZE == "" || $FILE_SIZE == "" ]]; then
+    echo "stat command is not available or produced an invalid result."
+    echo "Trying ls command:"
+    DEST_SIZE=`/bin/ls -l %s | awk '{ print $5 }'`
+    FILE_SIZE=`/bin/ls -l %s | awk '{ print $5 }'`
+fi
 if [ $FILE_SIZE != $DEST_SIZE ]; then
     echo "Source and destination files do not have same file size."
     echo "Cleaning up failed file:"
-   /bin/rm -fv %s
-   exit 60311
+    /bin/rm -fv %s
+    exit 60311
 fi
-""" % (pnfsPfn(targetPFN), pnfsPfn(sourcePFN), pnfsPfn(targetPFN))
-        return result
+""" % (pnfsPfn(targetPFN), pnfsPfn(sourcePFN),
+       '%s', pnfsPfn(targetPFN), '%s', pnfsPfn(sourcePFN),
+       pnfsPfn(targetPFN), pnfsPfn(sourcePFN),
+       pnfsPfn(targetPFN))
 
+            print "Executing:\n", result
+            return result
+
+        else:
+
+            pfnSplit = sourcePFN.split("/store/unmerged/lustre/", 1)[1]
+            filePath = "/lustre/unmerged/%s" % pfnSplit
+            original_size = os.stat(filePath)[6]
+            print "Local File Size is: %s" % original_size
+            result = "/bin/cp "
+            if options != None:
+                result += " %s " % options
+            result += " %s " % filePath
+            result += " %s " % targetPFN
+            result += "; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
+            return result
 
 
     def removeFile(self, pfnToRemove):
@@ -188,10 +281,18 @@ fi
         CleanUp pfn provided
 
         """
-        pfnSplit = pfnToRemove.split("/store/", 1)[1]
-        filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
-        command = "rm -fv %s" %filePath
-        self.executeCommand(command)
+        if pfnToRemove.find('/store/unmerged/lustre/') == -1:
+            pfnSplit = pfnToRemove.split("/store/", 1)[1]
+            filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
+            command = "rm -fv %s" %filePath
+            self.executeCommand(command)
+        else: 
+            pfnSplit = pfnToRemove.split("/store/unmerged/lustre/", 1)[1]
+            pfnToRemove = "/lustre/unmerged/%s" % pfnSplit
+            command = "/bin/rm %s" % pfnToRemove
+            self.executeCommand(command)
+
 
 
 registerStageOutImpl("dccp-fnal", DCCPFNALImpl)
+

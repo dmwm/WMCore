@@ -5,8 +5,8 @@ _PhEDExInjectorPoller_
 Poll the DBSBuffer database and inject files as they are created.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.9 2009/10/15 20:02:36 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.10 2009/12/02 14:52:23 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 import logging
@@ -34,7 +34,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.config = config
         self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
-        self.dbsUrl = config.DBSUpload.dbsurl 
+        self.dbsUrl = config.DBSUpload.globalDBSUrl 
 
         # This will be used to map SE names which are stored in the DBSBuffer to
         # PhEDEx node names.  The first key will be the "kind" which consists

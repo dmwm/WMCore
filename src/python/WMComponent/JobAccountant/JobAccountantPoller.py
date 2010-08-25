@@ -5,8 +5,8 @@ _JobAccountantPoller_
 Poll WMBS for complete jobs and process their framework job reports.
 """
 
-__revision__ = "$Id: JobAccountantPoller.py,v 1.11 2010/04/29 16:03:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: JobAccountantPoller.py,v 1.12 2010/05/25 17:39:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import time
 import threading
@@ -54,7 +54,11 @@ class JobAccountantPoller(BaseWorkerThread):
         if len(completeJobs) == 0:
             # Then we have no work to do.  Bye!
             return
-        
-        self.accountantWorker(completeJobs)
 
+        while len(completeJobs) > 25:
+            jobsSlice = completeJobs[0:25]
+            completeJobs = completeJobs[25:]
+            self.accountantWorker(jobsSlice)
+
+        self.accountantWorker(completeJobs)        
         return

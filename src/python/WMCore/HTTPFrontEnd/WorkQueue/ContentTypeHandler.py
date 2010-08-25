@@ -18,8 +18,8 @@ class ContentTypeHandler:
     
     def jsonHandler(self, args, kwargs):
         """
-        TODO: corrently it only works with cjson not json from python2.6.
-        There is issues of converting unit code to string.
+        TODO: Ugly temporary hack to convert unicode to string for kwargs
+              Only tested on python26 built-in json
         """
         #if get verb doesn't have request.boby 
         #TODO: maybe this should filtered on upper level
@@ -28,7 +28,8 @@ class ContentTypeHandler:
             params = request.body.read()
             if params:
                 kw = JsonWrapper.loads(params)
-                kwargs.update(kw)
+                for k in kw.keys():
+                    kwargs[str(kw)] = kw.pop(k)
         return args, kwargs
     
     def jsonThunkerHandler(self, args, kwargs):

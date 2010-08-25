@@ -8,18 +8,16 @@ attempts to put them in their non-cooloff state again.
 
 """
 
-__revision__ = "$Id: RetryManager.py,v 1.2 2009/05/12 11:52:35 afaq Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: RetryManager.py,v 1.3 2009/07/30 19:24:54 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "anzar@fnal.gov"
 
 
 import logging
+import threading
 
-# harness class that encapsulates the basic component logic.
 from WMCore.Agent.Harness import Harness
-# we do not import failure handlers as they are dynamicly 
-# loaded from the config file.
-from WMCore.WMFactory import WMFactory
+from WMComponent.RetryManager.RetryManagerPoller import RetryManagerPoller
 
 class RetryManager(Harness):
     """
@@ -32,6 +30,7 @@ class RetryManager(Harness):
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
+        self.config = config
 
     def preInitialization(self):
         """
@@ -42,6 +41,5 @@ class RetryManager(Harness):
         myThread = threading.currentThread()
         pollInterval = self.config.RetryManager.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
-        myThread.workerThreadManager.addWorker(WorkflowManagerPoller(), \
-                                               pollInterval)
+        myThread.workerThreadManager.addWorker(RetryManagerPoller(self.config), pollInterval)
 

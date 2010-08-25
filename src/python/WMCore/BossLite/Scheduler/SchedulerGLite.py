@@ -3,8 +3,8 @@
 gLite CLI interaction class through JSON formatted output
 """
 
-__revision__ = "$Id: SchedulerGLite.py,v 1.5 2010/07/25 19:10:20 mcinquil Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: SchedulerGLite.py,v 1.6 2010/07/26 13:47:28 mcinquil Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "filippo.spiga@cern.ch"
 
 import os
@@ -126,7 +126,7 @@ class SchedulerGLite(SchedulerInterface) :
         self.renameOutputFiles = int( self.renameOutputFiles )
         
         # x509 string & hackEnv for CLI commands
-        if self.cert != '':
+        if self.cert is not None and self.cert != '':
             self.proxyString = "env X509_USER_PROXY=" + self.cert + ' '
             self.hackEnv = hackTheEnv()
         else :

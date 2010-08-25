@@ -8,8 +8,8 @@ import os
 from WMCore.BossLite.Common.System import executeCommand
 from WMCore.BossLite.Common.Exceptions import SchedulerError
 
-__version__ = "$Id: SchedulerInterface.py,v 1.1 2010/04/23 21:00:11 mnorman Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: SchedulerInterface.py,v 1.2 2010/07/26 13:47:28 mcinquil Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 
 
@@ -99,7 +99,7 @@ class SchedulerInterface(object):
 
         command = 'voms-proxy-info'
 
-        if self.cert != '' :
+        if self.cert is not None and self.cert != '' :
             command += ' --file ' + self.cert
 
         output, ret = self.ExecuteCommand( command )

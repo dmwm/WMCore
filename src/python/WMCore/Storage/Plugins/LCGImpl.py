@@ -49,6 +49,8 @@ class LCGImpl(StageOutImplV2):
         localSize  = os.path.getsize( localFileName )
         remoteSize = subprocess.Popen(['lcg-ls', '-l', '-b', '-D', 'srmv2', toPfn],
                                        stdout=subprocess.PIPE).communicate()[0]
+        logging.info("got the following from lcg-ls %s" % remoteSize)
+        remoteSize = remoteSize.split()[4]
         logging.info("Localsize: %s Remotesize: %s" % (localSize, remoteSize))
         if localSize != remoteSize:
             try:

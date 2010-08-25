@@ -6,11 +6,11 @@ Utility for reading a site local config XML file and converting it
 into an object with an API for getting info from it.
 """
 
-__version__ = "$Revision: 1.5 $"
-__revision__ = "$Id: SiteLocalConfig.py,v 1.5 2010/06/16 19:12:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: SiteLocalConfig.py,v 1.6 2010/06/30 15:20:13 meloam Exp $"
 
 import os
-
+import logging
 from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
 
 from WMCore.Storage.TrivialFileCatalog import tfcFilename, tfcProtocol, readTFC
@@ -31,6 +31,16 @@ def loadSiteLocalConfig():
     Requires that CMS_PATH is defined as an environment variable
 
     """
+    if os.getenv('WMAGENT_SITE_CONFIG_OVERRIDE', None):
+        overridePath = os.getenv('WMAGENT_SITE_CONFIG_OVERRIDE')
+        if os.path.exists(os.getenv('WMAGENT_SITE_CONFIG_OVERRIDE', None)):
+            logging.log("Using site-local-config.xml override due to $WMAGENT_SITE_CONFIG_OVERRIDE")
+            logging.log(" config at: %s" % overridePath)
+            config = SiteLocalConfig(overridePath)
+            return config
+        else:
+            logging.log("$WMAGENT_SITE_CONFIG_OVERRIDE was provided but didn't point to an existing file. Ignoring")
+            
     defaultPath = "$CMS_PATH/SITECONF/local/JobConfig/site-local-config.xml"
     actualPath = os.path.expandvars(defaultPath)
     if os.environ.get("CMS_PATH", None) == None:

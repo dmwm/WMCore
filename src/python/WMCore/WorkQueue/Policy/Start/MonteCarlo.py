@@ -4,8 +4,8 @@ WorkQueue splitting by block
 
 """
 __all__ = []
-__revision__ = "$Id: MonteCarlo.py,v 1.5 2009/12/15 17:49:57 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: MonteCarlo.py,v 1.6 2009/12/15 21:10:29 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from copy import deepcopy
@@ -29,7 +29,7 @@ class MonteCarlo(StartPolicyInterface):
             # copy spec file restricting events
             spec = deepcopy(self.wmspec)
             spec = self.wmspec
-            spec.getTaskByName(self.initialTask).addProduction(totalevents = current)
+            spec.getTask(self.initialTask.name()).addProduction(totalevents = current)
             self.newQueueElement(Data = None,
                                  ParentData = [],
                                  WMSpec = self.wmspec,

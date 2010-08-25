@@ -1180,21 +1180,13 @@ class SubscriptionTest(unittest.TestCase):
         """
         _testGetJobGroups_
         
-        make some jobs, then do this
-        (11:16:18 AM) scfoulkes: i need a method added to the Subscription 
-                                class 
-        (11:16:22 AM) scfoulkes: getJobGroups()
-        (11:16:38 AM) scfoulkes: that will return a list of all job groups
-                                associated with the subscription that have
-                                jobs that aren't acquired
-        (11:17:47 AM) scfoulkes: where aren't acquired = the jobgroup that
-                                the job belongs to hasn't acquired them yet
+        Verify that the getJobGroups() method will return a list of JobGroups
+        that contain jobs that have not been acquired/completed/failed.
         """
-        return
-        
         (testSubscription, testFileset, testWorkflow, testFileA,\
             testFileB, testFileC) = self.createSubscriptionWithFileABC()
-        stateChanger = ChangeState(DefaultConfig.config,'subscription_t_jsm_database')
+
+        stateChanger = ChangeState(DefaultConfig.config, 'subscription_t_jsm_database')
 
         self.assertFalse(testSubscription.exists() , \
                "ERROR: Subscription exists before it was created")

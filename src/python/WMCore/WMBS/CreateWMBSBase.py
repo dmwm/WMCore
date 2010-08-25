@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.31 2009/07/01 19:16:55 mnorman Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.32 2009/08/18 16:32:36 swakef Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import threading
 
@@ -13,7 +13,7 @@ from WMCore.Database.DBCreator import DBCreator
 
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
-from WMCore.JobStateMachine.ChangeState import Transitions
+from WMCore.JobStateMachine.Transitions import Transitions
 
 class CreateWMBSBase(DBCreator):
     def __init__(self, logger = None, dbi = None):

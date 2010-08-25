@@ -9,22 +9,26 @@ DBSUpload test TestDBSUpload module and the harness
 
 """
 
-__revision__ = "$Id: DBSUploadPoller_t.py,v 1.23 2010/05/26 19:23:15 mnorman Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: DBSUploadPoller_t.py,v 1.24 2010/06/04 19:08:30 mnorman Exp $"
+__version__ = "$Revision: 1.24 $"
 
 
 import os
 import threading
 import time
 import unittest
+import cProfile, pstats
 
-from WMComponent.DBSUpload.DBSUpload import DBSUpload
+from WMComponent.DBSUpload.DBSUpload       import DBSUpload
 from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
+from WMComponent.DBSUpload.DBSUploadWorker import DBSUploadWorker
+
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
-from WMCore.WMFactory import WMFactory
-from WMQuality.TestInit import TestInit
-from WMCore.DAOFactory import DAOFactory
-from WMCore.Services.UUID import makeUUID
+
+from WMCore.WMFactory       import WMFactory
+from WMQuality.TestInit     import TestInit
+from WMCore.DAOFactory      import DAOFactory
+from WMCore.Services.UUID   import makeUUID
 from WMCore.DataStructs.Run import Run
 
 from WMCore.Agent.Configuration import Configuration
@@ -109,11 +113,12 @@ class DBSUploadTest(unittest.TestCase):
 
 
         config.component_("DBSUpload")
-        config.DBSUpload.pollInterval = 10
-        config.DBSUpload.logLevel = 'DEBUG'
-        config.DBSUpload.maxThreads = 1
-        config.DBSUpload.namespace = 'WMComponent.DBSUpload.DBSUpload'
-        config.DBSUpload.componentDir = os.path.join(os.getcwd(), 'Components')
+        config.DBSUpload.pollInterval  = 10
+        config.DBSUpload.logLevel      = 'DEBUG'
+        config.DBSUpload.maxThreads    = 1
+        config.DBSUpload.namespace     = 'WMComponent.DBSUpload.DBSUpload'
+        config.DBSUpload.componentDir  = os.path.join(os.getcwd(), 'Components')
+        config.DBSUpload.workerThreads = 4
 
         config.section_("DBSInterface")
         config.DBSInterface.globalDBSUrl     = 'http://cmssrv49.fnal.gov:8989/DBS209P5/servlet/DBSServlet'
@@ -178,10 +183,12 @@ class DBSUploadTest(unittest.TestCase):
         Also check the timeout
         """
 
+        #return
 
         myThread = threading.currentThread()
         config = self.createConfig()
         config.DBSInterface.DBSBlockMaxTime = 20
+        config.DBSUpload.pollInterval  = 4
 
         name = "ThisIsATest_%s" % (makeUUID())
         tier = "RECO"
@@ -203,7 +210,7 @@ class DBSUploadTest(unittest.TestCase):
         testDBSUpload.prepareToStart()
         #myThread.workerThreadManager.terminateWorkers()
 
-        time.sleep(1)
+        time.sleep(10)
         
         # First do the DBS checks
         # Check datasets and algos
@@ -282,7 +289,12 @@ class DBSUploadTest(unittest.TestCase):
 
         myThread.workerThreadManager.terminateWorkers()
 
+        time.sleep(5)
+
         result = myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
+
+        print "Have block results"
+        print myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
 
         for entry in result:
             self.assertEqual(entry[0], 'InGlobalDBS')
@@ -319,6 +331,7 @@ class DBSUploadTest(unittest.TestCase):
         See that they both get to global
         """
 
+        #return
 
         myThread = threading.currentThread()
         config = self.createConfig()
@@ -362,6 +375,8 @@ class DBSUploadTest(unittest.TestCase):
             testFile.create()
 
 
+        # Have to do things twice to get parents
+        testDBSUpload.algorithm()
         testDBSUpload.algorithm()
 
         # There should now be two blocks
@@ -382,7 +397,8 @@ class DBSUploadTest(unittest.TestCase):
             testFile.addRun(Run( 1, *[46]))
             testFile.create()
 
-
+        # Do it twice for parentage.
+        testDBSUpload.algorithm()
         testDBSUpload.algorithm()
 
         # There should now be one block
@@ -393,7 +409,140 @@ class DBSUploadTest(unittest.TestCase):
         # Well, all the blocks got there, so we're done
         return
 
+
+
+    def testC_WorkerThreadTest(self):
+        """
+        _WorkerThreadTest_
         
+        Test an individual processPool
+        Good for timing tests
+        """
+
+
+
+        myThread = threading.currentThread()
+        config = self.createConfig()
+        config.DBSInterface.DBSBlockMaxTime = 500
+
+        name = "ThisIsATest_%s" % (makeUUID())
+        tier = "RECO"
+        nFiles = 12
+        files = self.getFiles(name = name, tier = tier, nFiles = nFiles)
+        datasetPath = '/%s/%s/%s' % (name, name, tier)
+
+
+        dbsInterface = DBSInterface(config = config)
+        localAPI     = dbsInterface.getAPIRef()
+        globeAPI     = dbsInterface.getAPIRef(globalRef = True)
+
+        # Create a config object
+        from WMComponent.DBSUpload.DBSUploadPoller import createConfigForJSON
+        configDict = createConfigForJSON(config)
+
+        # Open up the buffer wrapper
+        factory = WMFactory("dbsUpload",
+                            "WMComponent.DBSUpload.Database.Interface")
+        uploadToDBS = factory.loadObject("UploadToDBS")
+
+        input = uploadToDBS.findUploadableDAS()
+        self.assertEqual(len(input), 1)
+        for das in input:
+            self.assertEqual(das['AlgoInDBS'], 0)
+            self.assertEqual(das['ApplicationVersion'], 'CMSSW_3_1_1')
+        
+        worker = DBSUploadWorker(**configDict)
+        #worker(parameters = input)
+        cProfile.runctx("worker(parameters = input)", globals(), locals(), filename = "testStats.stat")
+
+
+        # Now see what's in DBSBuffer
+
+        # First grab blocks
+        # Two from primary, 
+        blockAction = self.bufferFactory(classname = "GetBlockFromDataset")
+        names = blockAction.execute(dataset = datasetPath)
+        self.assertEqual(len(names), 2)
+
+        # Shouldn't have gotten the children yet
+        names = blockAction.execute(dataset = '/%s/%s_2/%s' % (name, name, tier))
+        self.assertEqual(len(names), 0)
+
+
+        # Now run it again
+        # This is necessary to get parents
+        input2 = uploadToDBS.findUploadableDAS()
+        worker(parameters = input2)
+
+        # One from secondary
+        names = blockAction.execute(dataset = '/%s/%s_2/%s' % (name, name, tier))
+        self.assertEqual(len(names), 1)
+
+        # Check block status
+        result = myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
+        self.assertEqual(result, [('InGlobalDBS',), ('Open',), ('Open',)])
+
+
+
+        # Now look in DBS
+
+        # Check to see if datasets and algos are in local DBS
+        result  = listAlgorithms(apiRef = localAPI, patternExe = name)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['ExecutableName'], name)
+        result  = listPrimaryDatasets(apiRef = localAPI, match = name)
+        self.assertEqual(result, [name])
+        result    = listProcessedDatasets(apiRef = localAPI, primary = name, dataTier = "*")
+        #self.assertEqual(result, [name, '%s_2' % (name)])
+
+
+        # Check that files are in local DBS
+        affectedBlocks = listBlocks(apiRef = localAPI, datasetPath = datasetPath)
+        result = listDatasetFiles(apiRef = localAPI, datasetPath = datasetPath)
+        self.assertEqual(len(result), nFiles)
+        self.assertEqual(len(affectedBlocks), 2)
+        # Create two blocks, one open, one closed, one with ten files, one with two
+        if affectedBlocks[0]['OpenForWriting'] == '0':
+            self.assertEqual(affectedBlocks[1]['OpenForWriting'], '1')
+            self.assertEqual(affectedBlocks[0]['NumberOfFiles'], 10)
+            self.assertEqual(affectedBlocks[1]['NumberOfFiles'], 2)
+        else:
+            self.assertEqual(affectedBlocks[0]['OpenForWriting'], '1')
+            self.assertEqual(affectedBlocks[1]['NumberOfFiles'], 10)
+            self.assertEqual(affectedBlocks[0]['NumberOfFiles'], 2)
+
+        # Check parents of the child file
+        # Should have twelve parents
+        # All should be files we created (20 events, 1024 size)
+        result = listDatasetFiles(apiRef = localAPI,
+                                  datasetPath = '/%s/%s_2/%s' % (name, name, tier))
+        self.assertEqual(len(result), 1)
+        result = localAPI.listFileParents(lfn = result[0])
+        self.assertEqual(len(result), nFiles)
+        for f in result:
+            self.assertEqual(f['NumberOfEvents'], 20)
+            self.assertEqual(f['FileSize'], 1024)
+
+
+        # Now check GLOBAL
+        # There should be one block in global
+        # It should have ten files and be closed
+        result    = listBlocks(apiRef = globeAPI, datasetPath = datasetPath)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['OpenForWriting'], '0')
+        self.assertEqual(result[0]['NumberOfFiles'], 10)
+
+
+        # Run one more time, this should do nothing
+        worker(parameters = input)
+
+        result = myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
+        self.assertEqual(result, [('InGlobalDBS',), ('Open',), ('Open',)])
+        
+
+        p = pstats.Stats('testStats.stat')
+        p.sort_stats('cumulative')
+        p.print_stats()
         
 
 if __name__ == '__main__':

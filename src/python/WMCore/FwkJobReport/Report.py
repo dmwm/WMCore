@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.13 $"
-__revision__ = "$Id: Report.py,v 1.13 2010/03/23 21:26:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Report.py,v 1.14 2010/03/30 20:48:48 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -501,12 +501,6 @@ class Report:
             newRun = Run(int(run), *lumis)
             file.addRun(newRun)
 
-        # And now, datasets
-        dataDict = {}
-        for var in outputMod.dataset.listSections_():
-            dataDict[var] = getattr(outputMod.dataset, var)
-        file['dataset'] = dataDict
-
         file["lfn"] = getattr(fileRef, "lfn", None)
         file["pfn"] = getattr(fileRef, "pfn", None)
         file["events"] = int(getattr(fileRef, "events", 0))
@@ -519,6 +513,7 @@ class Report:
         file["module_label"] = getattr(fileRef, "module_label", "")
         file["checksums"] = getattr(fileRef, "checksums", {})
         file["merged"] = bool(getattr(fileRef, "merged", False))
+        file["dataset"] = getattr(fileRef, "dataset", {})
 
         return file
 

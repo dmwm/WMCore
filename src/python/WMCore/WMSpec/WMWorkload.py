@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.17 2010/04/09 20:34:12 sryu Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: WMWorkload.py,v 1.18 2010/04/14 20:33:01 mnorman Exp $"
+__version__ = "$Revision: 1.18 $"
 
 
 
@@ -93,7 +93,8 @@ class WMWorkloadHelper(PersistencyHelper):
         _setOwner_
         sets the owner of wmspec
         """
-        self.data.owner = owner 
+        self.data.owner.owner = owner
+
 
      
     def sandbox(self):
@@ -107,6 +108,7 @@ class WMWorkloadHelper(PersistencyHelper):
         _sandbox_
         """
         self.data.sandbox = sandboxPath
+        
     
     def priority(self):
         """
@@ -194,6 +196,7 @@ class WMWorkloadHelper(PersistencyHelper):
              for x in t.taskIterator()]
 
         taskList = parseTaskPath(taskPath)
+
         if taskList[0] != self.name(): # should always be workload name first
             msg = "Workload name does not match:\n"
             msg += "requested name %s from workload %s " % (taskList[0],

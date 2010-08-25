@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.41 2009/12/16 17:45:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: Job.py,v 1.42 2009/12/24 16:19:28 sfoulkes Exp $"
+__version__ = "$Revision: 1.42 $"
 
 import datetime
 
@@ -66,8 +66,10 @@ class Job(WMBSBase, WMJob):
             self["name"] = makeUUID()
 
         jobAction = self.daofactory(classname = "Jobs.New")
-        jobAction.execute(self["jobgroup"], self["name"], self["couch_record"],
-                          self["location"], conn = self.getDBConn(),
+        jobAction.execute(jobgroup = self["jobgroup"], name = self["name"],
+                          couch_record = self["couch_record"], location = self["location"],
+                          cache_dir = self["cache_dir"], outcome = self["outcome"],
+                          conn = self.getDBConn(),
                           transaction = self.existingTransaction())
 
         self.exists()

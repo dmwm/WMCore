@@ -6,8 +6,8 @@ DBSUpload test TestDBSUpload module and the harness
 
 """
 
-__revision__ = "$Id: DBSUploadPoller_t.py,v 1.16 2009/12/10 20:37:17 mnorman Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: DBSUploadPoller_t.py,v 1.17 2010/02/05 21:54:40 meloam Exp $"
+__version__ = "$Revision: 1.17 $"
 
 
 import os
@@ -28,7 +28,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.Services.DBS.DBSReader import DBSReader
 
 from DBSAPI.dbsApi import DbsApi
-
+import nose
 
 
 class DBSUploadTest(unittest.TestCase):
@@ -322,7 +322,7 @@ class DBSUploadTest(unittest.TestCase):
 
 
     def testLargeUpload(self):
-        return
+        return nose.SkipTest
         myThread = threading.currentThread()
 
         factory     = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")

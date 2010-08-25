@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.63 2010/04/05 16:19:55 mnorman Exp $"
-__version__ = "$Revision: 1.63 $"
+__revision__ = "$Id: Subscription.py,v 1.64 2010/04/07 19:43:05 mnorman Exp $"
+__version__ = "$Revision: 1.64 $"
 
 import logging
 
@@ -407,7 +407,18 @@ class Subscription(WMBSBase, WMSubscription):
 
 
         filesets = []
-        filesets.append(self['fileset'].id)
+
+        # The order here is important
+        # You need to delete files and filesets from the bottom up
+        # In order to not violate parentage
+
+        # Get output filesets from jobGroups
+        for jobGroupID in jobGroups:
+            loadAction = self.daofactory(classname = "JobGroup.LoadFromID")
+            result = loadAction.execute(jobGroupID, conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+            filesets.append(result['output'])
+
 
         # Get output filesets from the workflow
         self['workflow'].load()
@@ -416,12 +427,10 @@ class Subscription(WMBSBase, WMSubscription):
             if not id in filesets:
                 filesets.append(id)
 
-        # Get output filesets from jobGroups
-        for jobGroupID in jobGroups:
-            loadAction = self.daofactory(classname = "JobGroup.LoadFromID")
-            result = loadAction.execute(jobGroupID, conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
-            filesets.append(result['output'])
+        
+
+        # Do the input fileset LAST!
+        filesets.append(self['fileset'].id)
 
 
         #First, jobs

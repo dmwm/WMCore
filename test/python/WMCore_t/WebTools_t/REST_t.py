@@ -7,21 +7,24 @@ etc..
 
 """
 
-__revision__ = "$Id: REST_t.py,v 1.4 2009/12/22 16:46:55 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: REST_t.py,v 1.5 2009/12/23 22:34:46 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import os
 import threading
 import logging 
 import cherrypy
+import json
 import urllib, urllib2
 from httplib import HTTPConnection
 from cherrypy import HTTPError
+from wsgiref.handlers import format_date_time
 from WMQuality.TestInit import TestInit
 from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.Configuration import Configuration
 from WMCore.WebTools.Root import Root
+from WMCore.WebTools.Page import make_rfc_timestamp
 
 class DummyDAO1:
     def execute(self, input={}):
@@ -90,7 +93,7 @@ class DummyRESTModel(RESTModel):
         
 class RESTTest(unittest.TestCase):
     
-    def configureServer(self):
+    def configureServer(self, das=False):
         dummycfg = Configuration()
         dummycfg.component_('Webtools')
         dummycfg.Webtools.application = 'UnitTests'
@@ -110,7 +113,10 @@ class RESTTest(unittest.TestCase):
         active.rest.section_('model')
         active.rest.model.object = 'WMCore.WebTools.RESTModel'
         active.rest.section_('formatter')
-        active.rest.formatter.object = 'WMCore.WebTools.RESTFormatter'
+        if das:
+            active.rest.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
+        else:
+            active.rest.formatter.object = 'WMCore.WebTools.RESTFormatter'
         active.rest.formatter.templates = '/tmp'
         
         rt = Root(dummycfg)
@@ -123,11 +129,13 @@ class RESTTest(unittest.TestCase):
         cherrypy.log.access_log.setLevel(logging.WARNING)
         
         for method in ['POST']:
-            data, code, type = self.makeRequest('/rest/echo', 
+            data, code, type, response = self.makeRequest('/rest/echo', 
                                                    {'data': 'unit test'}, 
                                                    method, 'text/json')
             assert code == 200, \
-                 'Got a return code != 200 (got %s)' % code
+                'Got a return code != 200 (got %s)' % code
+            expires = response.getheader('Expires')
+            assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
             assert type == 'text/json'
             assert data == '{"args": [], "kwargs": {"data": "unit test"}}', 'got unexpected response %s' % data
     
@@ -137,12 +145,14 @@ class RESTTest(unittest.TestCase):
         cherrypy.log.error_log.setLevel(logging.WARNING)
         cherrypy.log.access_log.setLevel(logging.WARNING)
         for method in ['POST']:
-            data, code, type = self.makeRequest('/rest/echo/stuff', 
+            data, code, type, response = self.makeRequest('/rest/echo/stuff', 
                                                 {'data': 'unit test'},
                                                 method, 
                                                 'text/json')
             assert code == 200, \
-                 'Got a return code != 200 (got %s)' % code
+                'Got a return code != 200 (got %s)' % code
+            expires = response.getheader('Expires')
+            assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
             assert type == 'text/json'
             assert data == '{"args": ["stuff"], "kwargs": {"data": "unit test"}}', 'got unexpected response %s' % data
             
@@ -153,9 +163,11 @@ class RESTTest(unittest.TestCase):
         cherrypy.log.access_log.setLevel(logging.WARNING)
         
         for method in ['GET']:
-            data, code, type = self.makeRequest('/rest/echo', {'data': 'unit test'}, 
+            data, code, type, response = self.makeRequest('/rest/echo', {'data': 'unit test'}, 
                                           method, 'text/json')
             assert int(code) == 405, "Didn't get a 'Method Not Allowed' response for %s (got %s)" % (method, code)
+            expires = response.getheader('Expires')
+            assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
             assert type == 'text/json' 
         rt.stop()
           
@@ -166,9 +178,11 @@ class RESTTest(unittest.TestCase):
         cherrypy.log.access_log.setLevel(logging.WARNING)
         
         for method in ['DELETE', 'PUT']:
-            data, code, type = self.makeRequest('/rest/echo', {'data': 'unit test'}, 
+            data, code, type, response = self.makeRequest('/rest/echo', {'data': 'unit test'}, 
                                           method, 'text/json')
             assert int(code) == 501, "Didn't get a 'Not Implemented' response for %s (got %s), message: %s" % (method, code, data)
+            expires = response.getheader('Expires')
+            assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
             assert type == 'text/json'
         rt.stop()
     
@@ -177,11 +191,35 @@ class RESTTest(unittest.TestCase):
         rt.start(blocking=False)
         cherrypy.log.error_log.setLevel(logging.WARNING)
         cherrypy.log.access_log.setLevel(logging.WARNING)
-        data, code, type = self.makeRequest('/rest/ping', 
+        data, code, type, response = self.makeRequest('/rest/ping', 
                                           type='GET', accept='text/json')
         assert code == 200, 'Got a return code != 200 (got %s), message: %s' % (code, data)
         assert type == 'text/json'
+        expires = response.getheader('Expires')
+        assert expires == make_rfc_timestamp(3600), 'Expires header incorrect (%s)' % expires 
         assert data == '"ping"', 'got unexpected response %s' % data
+        
+        rt.stop()
+        
+    def testDasPing(self):
+        rt = self.configureServer(True)
+        rt.start(blocking=False)
+        cherrypy.log.error_log.setLevel(logging.WARNING)
+        cherrypy.log.access_log.setLevel(logging.WARNING)
+        data, code, type, response = self.makeRequest('/rest/ping', 
+                                          type='GET', accept='text/json')
+        assert code == 200, 'Got a return code != 200 (got %s), message: %s' % (code, data)
+        assert type == 'text/json'
+        expires = response.getheader('Expires')
+        timestp = make_rfc_timestamp(3600)
+        dict = json.loads(data) 
+        response_expires = format_date_time(dict['response_expires'])
+        assert expires == timestp, 'Expires header incorrect (%s)' % expires
+        assert response_expires == timestp, 'Expires DAS header incorrect (%s)' % response_expires
+        assert response_expires == expires, 'Expires DAS header incorrect (%s)' % response_expires
+        
+        assert dict['results'] == 'ping', 'got unexpected response %s' % dict['results']
+        
         rt.stop()
     
     def makeRequest(self, uri='/rest/', values=None, type='GET', accept="text/plain"):
@@ -200,7 +238,8 @@ class RESTTest(unittest.TestCase):
         
         data = response.read()
         conn.close()
-        return data, response.status, response.getheader('content-type').split(';')[0]
+        type = response.getheader('content-type').split(';')[0]
+        return data, response.status, type, response
     
     def testA(self):
         rt = self.configureServer()

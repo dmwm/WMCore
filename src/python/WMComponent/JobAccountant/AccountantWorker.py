@@ -12,8 +12,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.31 2010/05/24 20:40:46 mnorman Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.32 2010/05/25 20:54:08 mnorman Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import os
 import threading
@@ -240,6 +240,7 @@ class AccountantWorker:
         # Straighten out DBS Parentage
         if len(self.mergedOutputFiles) > 0:
             self.handleDBSBufferParentage()
+            pass
 
         self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
 
@@ -637,10 +638,12 @@ class AccountantWorker:
             parentLFNs.extend(list(newParents))
 
         # Now we get whether or not the parents exist
-        exists = self.dbsExistsAction.execute(lfn = parentLFNs)
-        for parent in parentLFNs:
-            if not parent in exists:
-                parentMissing.add(parent)
+        print "About to parse parents"
+        print len(parentLFNs)
+        #exists = self.dbsExistsAction.execute(lfn = parentLFNs)
+        #for parent in parentLFNs:
+        #    if not parent in exists:
+        #        parentMissing.add(parent)
 
 
         if len(parentMissing) > 0:
@@ -669,6 +672,8 @@ class AccountantWorker:
         # Now all the parents should exist
         # Commit them to DBSBuffer
         logging.info("About to commit all DBSBuffer Heritage information")
+        logging.info(len(bindList))
+        
 
         self.dbsLFNHeritage.execute(binds = bindList,
                                     conn = self.transaction.conn,

@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.63 2010/03/15 15:33:43 sryu Exp $"
-__version__ = "$Revision: 1.63 $"
+__revision__ = "$Id: File.py,v 1.64 2010/03/30 20:42:57 sryu Exp $"
+__version__ = "$Revision: 1.64 $"
 
 import threading
 import time
@@ -269,9 +269,9 @@ class File(WMBSBase, WMFile):
             lumiAction = self.daofactory(classname="Files.AddRunLumi")
             lumiAction.execute(file = self["lfn"], runs = self["runs"],
                                    conn = self.getDBConn(),
-                                   transaction = self.existingTransaction())        
+                                   transaction = self.existingTransaction())
+        self.load()        
         self.updateLocations()
-        self.load()
         # call it here to make sure self["id"] exist 
         if self["parents"]:
             for parent in self['parents']:

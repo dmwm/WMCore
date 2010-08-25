@@ -12,6 +12,7 @@ Placeholder for ideas at present....
 import pickle
 from urllib import urlopen
 from WMCore.Wrappers import JsonWrapper
+from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 
 class PersistencyHelper:
     """
@@ -39,8 +40,9 @@ class PersistencyHelper:
         extension = filename.split(".")[-1].lower()
         if extension == "pkl":
             pickle.dump(self.data, handle)
-        elif extension == 'json':
-            JsonWrapper.dump(self.data, handle)
+        #elif extension == 'json':
+        #    JsonWrapper.dump(JSONThunker().thunk(self.data), 
+        #                     handle)
         else:
             pickle.dump(self.data, handle)
             #handle.write(str(self.data))
@@ -62,8 +64,8 @@ class PersistencyHelper:
         extension = filename.split(".")[-1].lower()
         if extension == "pkl":
             self.data = pickle.load(handle)
-        elif extension == 'json':
-            self.data = JsonWrapper.load(handle)
+        #elif extension == 'json':
+        #    self.data = JSONThunker().unthunk(JsonWrapper.load(handle))  
         else:
             self.data = pickle.load(handle)
             #self.data = handle.read()

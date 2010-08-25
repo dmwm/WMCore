@@ -4,8 +4,8 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.12 2010/01/27 20:53:57 meloam Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.13 2010/02/02 20:50:30 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 __author__ = "fvlingen@caltech.edu"
 
 import os
@@ -31,6 +31,8 @@ from WMCore.DataStructs.Run   import Run
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
+from WMCore.Agent.Configuration import Configuration
+
 class ErrorHandlerTest(unittest.TestCase):
     """
     TestCase for TestErrorHandler module 
@@ -48,13 +50,17 @@ class ErrorHandlerTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+        #self.tearDown()
+        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
                                 useDefault = False)
+
         
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
+
+        self.testDir = self.testInit.generateWorkDir()
 
 
         self.nJobs = 10
@@ -65,6 +71,10 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
 
+        self.testInit.delWorkDir()
+
+        return
+
 
 
     def getConfig(self, configPath=None):
@@ -72,11 +82,45 @@ class ErrorHandlerTest(unittest.TestCase):
             configPath = os.path.join(os.getenv('WMCOREBASE'), \
                                                 'src/python/WMComponent/ErrorHandler/DefaultConfig.py')
 
-        config = self.testInit.getConfiguration()
+        config = Configuration()
+
+        # First the general stuff
+        config.section_("General")
+        config.General.workDir = os.getenv("TESTDIR", self.testDir)
+
+        # Now the CoreDatabase information
+        # This should be the dialect, dburl, etc
+
+        config.section_("CoreDatabase")
+        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+        config.CoreDatabase.socket     = os.getenv("DBSOCK")
+
+
         config.component_("JobAccountant")
         #The log level of the component. 
         config.JobAccountant.logLevel = 'INFO'
         config.JobAccountant.pollInterval = 10
+
+
+        config.component_("ErrorHandler")
+        # The log level of the component. 
+        config.ErrorHandler.logLevel = 'DEBUG'
+        # The namespace of the component
+        config.ErrorHandler.namespace = 'WMComponent.ErrorHandler.ErrorHandler'
+        # maximum number of threads we want to deal
+        # with messages per pool.
+        config.ErrorHandler.maxThreads = 30
+        # maximum number of retries we want for job
+        config.ErrorHandler.maxRetries = 10
+        # The poll interval at which to look for failed jobs
+        config.ErrorHandler.pollInterval = 60
+
+
+        # JobStateMachine
+        config.component_('JobStateMachine')
+        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'mnorman:theworst@cmssrv52.fnal.gov:5984')
+        config.JobStateMachine.default_retries = 1
+        config.JobStateMachine.couchDBName     = "mnorman_test"
 
 
         return config

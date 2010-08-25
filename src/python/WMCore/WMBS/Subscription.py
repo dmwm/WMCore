@@ -16,8 +16,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.67 2010/05/24 16:17:04 mnorman Exp $"
-__version__ = "$Revision: 1.67 $"
+__revision__ = "$Id: Subscription.py,v 1.68 2010/05/25 15:39:31 mnorman Exp $"
+__version__ = "$Revision: 1.68 $"
 
 import logging
 
@@ -461,26 +461,36 @@ class Subscription(WMBSBase, WMSubscription):
 
         for filesetID in filesets:
             fileset = Fileset(id = filesetID)
-            fileset.loadData()
+
+            # Load the files
+            filesetFiles = []
+            action  = self.daofactory(classname = "Files.InFileset")
+            results = action.execute(fileset = filesetID,
+                                     conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
+
+            for result in results:
+                filesetFiles.append(result['fileid'])
+
+
+            
+            
             action = self.daofactory(classname = "Fileset.DeleteCheck")
             action.execute(fileid = fileset.id, subid = self["id"],
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
-            if not fileset.exists() and len(fileset.files) > 0:
+            if not fileset.exists() and len(filesetFiles) > 0:
                 # If we got rid of the fileset
                 # If we did not delete the fileset, all files are still in use
                 # Now get rid of unused files
 
                 parent = self.daofactory(classname = "Files.DeleteParentCheck")
                 action = self.daofactory(classname = "Files.DeleteCheck")
-                idList = []
-                for f in fileset.files:
-                    idList.append(f['id'])
                 
-                parent.execute(file = idList, fileset = fileset.id,
+                parent.execute(file = filesetFiles, fileset = fileset.id,
                                conn = self.getDBConn(),
                                transaction = self.existingTransaction())
-                action.execute(file = idList, fileset = fileset.id,
+                action.execute(file = filesetFiles, fileset = fileset.id,
                                conn = self.getDBConn(),
                                transaction = self.existingTransaction())
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.18 2009/10/29 13:31:13 sfoulkes Exp $"
-__version__  = "$Revision: 1.18 $"
+__revision__ = "$Id: JobFactory.py,v 1.19 2009/12/03 21:07:48 evansde Exp $"
+__version__  = "$Revision: 1.19 $"
 
 
 import logging
@@ -35,6 +35,9 @@ class JobFactory(WMObject):
         self.currentGroup = None
         self.currentJob = None
         self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
+
+
+
 
 
     def __call__(self, jobtype='Job', grouptype='JobGroup', *args, **kwargs):
@@ -90,6 +93,7 @@ class JobFactory(WMObject):
         Instantiate a new Job onject, apply all the generators to it
         """
         self.currentJob = self.jobInstance(name, files)
+        self.currentJob.task = self.subscription.taskName()
         for gen in self.generators:
             gen(self.currentJob)
         self.currentGroup.add(self.currentJob)

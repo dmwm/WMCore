@@ -8,8 +8,8 @@ Module dealing with Configuration file in python format
 
 """
 
-__revision__ = "$Id: Configuration.py,v 1.11 2009/09/04 18:46:01 evansde Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Configuration.py,v 1.12 2009/11/04 16:56:27 hufnagel Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import os
 import imp
@@ -95,7 +95,7 @@ class ConfigSection(object):
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
-            # skip test for internal settinsg
+            # skip test for internal setting
             object.__setattr__(self, name, value)
             return
         if isinstance(value, ConfigSection):
@@ -125,6 +125,19 @@ class ConfigSection(object):
         object.__setattr__(self, name, value)
         self._internal_settings.add(name)
         return
+
+    def __delattr__(self, name):
+        if name.startswith("_internal_"):
+            # skip test for internal setting
+            object.__delattr__(self, name)
+            return
+        else:
+            if name in self._internal_children:
+                self._internal_children.remove(name)
+            if name in self._internal_settings:
+                self._internal_settings.remove(name)
+            object.__delattr__(self, name)
+            return
 
     def __iter__(self):
         for attr in self._internal_settings:

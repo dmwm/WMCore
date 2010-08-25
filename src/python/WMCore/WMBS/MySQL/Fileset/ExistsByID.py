@@ -21,7 +21,7 @@ class ExistsByID(DBFormatter):
         if len(result) == 0:
             return False
         else:
-            return result[0][0]
+            return int(result[0][0])
     
     def getBinds(self, id):
         return self.dbi.buildbinds(self.dbi.makelist(id), "id")

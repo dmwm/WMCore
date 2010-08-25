@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.38 2010/02/26 11:42:24 metson Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: Service.py,v 1.39 2010/02/26 14:44:00 metson Exp $"
+__version__ = "$Revision: 1.39 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -46,6 +46,7 @@ import urllib
 from urlparse import urlparse
 import time
 import socket
+from httplib import HTTPException
 from WMCore.Services.Requests import Requests
 from WMCore.WMException import WMException
 
@@ -213,8 +214,15 @@ class Service(dict):
             f = open(cachefile, 'w')
             f.write(str(data))
             f.close()
+        except HTTPException, e:
+            msg = 'Failed to contact %s (%s) reason: %s'
+            self['logger'].exception(msg % (e.url, e.status, e.reason))
+            self['logger'].debug('Request data: %s' %e.req_data)
+            self['logger'].debug('Request headers: %s' %e.req_headers)    
         except Exception, e:
             self['logger'].exception(e)
+            # Reset the timeout to it's original value
+            socket.setdefaulttimeout(deftimeout)
             raise e
         # Reset the timeout to it's original value
         socket.setdefaulttimeout(deftimeout)

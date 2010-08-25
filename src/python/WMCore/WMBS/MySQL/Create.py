@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: Create.py,v 1.10 2009/05/26 15:44:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Create.py,v 1.11 2009/07/01 19:16:55 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
@@ -66,6 +66,7 @@ class Create(CreateWMBSBase):
              uid          VARCHAR(255),    
              output       INT(11),
              last_update  INT(11)    NOT NULL,
+             location     INT(11),
              PRIMARY KEY (id),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,

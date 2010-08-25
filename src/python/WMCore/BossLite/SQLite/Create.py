@@ -63,7 +63,7 @@ class Create(MySQLCreate):
     job_id            INT(11) NOT NULL,
     name              VARCHAR(255),
     executable        TEXT,
-    events            TEXT,
+    events            INT,
     arguments         TEXT,
     stdin             TEXT,
     stdout            TEXT,

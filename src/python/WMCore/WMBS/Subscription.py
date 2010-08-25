@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.34 2009/03/18 13:22:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: Subscription.py,v 1.35 2009/03/24 16:32:23 sfoulkes Exp $"
+__version__ = "$Revision: 1.35 $"
 
 from sets import Set
 import logging
@@ -193,7 +193,11 @@ class Subscription(WMBSBase, WMSubscription):
             return files
         
         acq = self.acquiredFiles()
-        files = self.availableFiles()
+        files = self.filesOfStatus("AvailableFiles")
+
+        if len(files) == 0:
+            return
+        
         l = Set()
         if len(files) < size or size == 0:
             size = len(files)
@@ -201,8 +205,10 @@ class Subscription(WMBSBase, WMSubscription):
         while i < size:
             l.add(files.pop()['id'])
             i = i + 1
+
         action.execute(self['id'], [x for x in l], conn = self.getWriteDBConn(),
                        transaction = self.existingTransaction())
+
         ret = self.acquiredFiles() - acq
 
         self.commitIfNew()
@@ -212,8 +218,7 @@ class Subscription(WMBSBase, WMSubscription):
         """
         Mark a (set of) file(s) as completed.
         """
-        if files and not isinstance(files, list) and not isinstance(files, set):
-            files = [files]
+        files = self.makelist(files)
 
         completeAction = self.daofactory(classname = "Subscriptions.CompleteFiles")
         completeAction.execute(subscription = self["id"],
@@ -233,8 +238,7 @@ class Subscription(WMBSBase, WMSubscription):
         """
         Mark a (set of) file(s) as failed. 
         """
-        if files and not isinstance(files, list) and not isinstance(files, set):
-            files=[files]
+        files = self.makelist(files)
 
         failAction = self.daofactory(classname = "Subscriptions.FailFiles")
         failAction.execute(subscription = self["id"],

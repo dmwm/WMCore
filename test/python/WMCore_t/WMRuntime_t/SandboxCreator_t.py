@@ -5,8 +5,8 @@
     Tests sandbox production
 """
 
-__revision__ = "$Id: SandboxCreator_t.py,v 1.3 2009/06/11 23:12:49 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SandboxCreator_t.py,v 1.4 2009/06/15 17:20:23 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 import unittest
 import WMCore.WMRuntime.SandboxCreator as SandboxCreator
 import tempfile
@@ -20,6 +20,7 @@ class SandboxCreator_t(unittest.TestCase):
     
     def testMakeSandbox(self):
         creator  = SandboxCreator.SandboxCreator()
+        creator.disableWMCorePackaging()
         workload = TestWorkloads.oneTaskTwoStep()
         task     = workload.getTask("FirstTask")
         tempdir  = tempfile.mkdtemp()

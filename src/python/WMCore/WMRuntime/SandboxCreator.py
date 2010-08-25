@@ -4,19 +4,29 @@
     
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.5 2009/06/15 15:58:19 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: SandboxCreator.py,v 1.6 2009/06/15 17:20:23 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 import os
 import re
 import tarfile
 import tempfile
 import WMCore.WMSpec.WMStep as WMStep
 import urllib
+import WMCore
 
 class SandboxCreator:
     
     def __init__(self):
-        pass
+        self.packageWMCore = True
+    
+    def disableWMCorePackaging(self):
+        """ 
+            __disableWMCorePackaging__
+            
+            use to keep the sandboxer from adding WMCore/* to the sandbox.
+            testing would take forever otherwise
+        """
+        self.packageWMCore = False
     
     def makeSandbox(self, buildItHere, workload, task):
         """
@@ -81,6 +91,12 @@ class SandboxCreator:
         pythonHandle = os.fdopen(archiveHandle,'w+b')
         archive = tarfile.open(None,'w:bz2', pythonHandle)
         archive.add("%s/%s/%s/" % (buildItHere, workloadName, taskName),'/')
+        if (self.packageWMCore):
+            # package up the WMCore distribution
+            # hopefully messing with this magic isn't a recipie for disaster
+            wmcorePath = WMCore.__path__[0]
+            archive.add(wmcorePath, '/WMCore/')
+            
         archive.close()
         pythonHandle.close()
 

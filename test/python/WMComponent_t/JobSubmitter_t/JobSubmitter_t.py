@@ -67,12 +67,14 @@ class JobSubmitterTest(unittest.TestCase):
             locationAction.execute(siteName = site)
             locationSlots.execute(siteName = site, jobSlots = 1000)
 
+
         #Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:
             resourceControl.insertSite(siteName = site, seName = site, ceName = site)
-            resourceControl.insertThreshold(thresholdName = 'ProcessingThreshold', \
-                                            thresholdValue = 1000, siteNames = site)
+            resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
+                                            minSlots = 1000, maxSlots = 10000)
+
 
         self.testDir = self.testInit.generateWorkDir()
             
@@ -216,6 +218,9 @@ class JobSubmitterTest(unittest.TestCase):
         config.JobSubmitter.jobsPerWorker = 100
         config.JobSubmitter.inputFile     = os.path.join(WMCore.WMInit.getWMBASE(), 'test/python/WMComponent_t/JobSubmitter_t', 'FrameworkJobReport-4540.xml')
 
+        print "This is config"
+        print config
+
         #JobStateMachine
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'mnorman:theworst@cmssrv52.fnal.gov:5984')
@@ -303,6 +308,9 @@ class JobSubmitterTest(unittest.TestCase):
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
+
+        print "Should have just made the sandbox"
+        print os.listdir(os.path.join(self.testDir, 'workloadTest'))
 
         workload.save(workloadName)
 
@@ -515,7 +523,10 @@ class JobSubmitterTest(unittest.TestCase):
         self.assertEqual(os.path.isfile('%s/CacheDir/Job_2/Report.pkl' %self.testDir), True, "Job did not return file successfully")
         self.assertEqual(os.path.isfile('%s/CacheDir/Job_8/Report.pkl' %self.testDir), True, "Job did not return file successfully")
 
-        shutil.copy('%s/CacheDir/Job_8/Report.pkl' %self.testDir, os.getcwd())
+        fileStats = os.stat('%s/CacheDir/Job_8/Report.pkl' %self.testDir)
+        self.assertEqual(int(fileStats.st_size) > 0, True, "Job returned zero-length file")
+
+        #shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'CacheDir'))
 
         return
 

@@ -3,17 +3,20 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: TaskArchiverPoller.py,v 1.2 2009/11/17 19:33:18 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TaskArchiverPoller.py,v 1.3 2009/12/14 22:20:29 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import logging
 import os.path
+import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Job          import Job
 from WMCore.DAOFactory        import DAOFactory
+
 
 class TaskArchiverPoller(BaseWorkerThread):
     """
@@ -97,28 +100,20 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         myThread.transaction.begin()
 
-        jobListAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        jobList  = jobListAction.execute(state = "cleanout")
+        #jobListAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        #jobList  = jobListAction.execute(state = "cleanout")
 
-        subscriptionList = self.daoFactory(classname = "Subscriptions.List")
+        subscriptionList = self.daoFactory(classname = "Subscriptions.GetFinishedSubscriptions")
         subscriptions    = subscriptionList.execute()
 
         for subscription in subscriptions:
-            wmbsSubscription = Subscription(id = subscription)
-            jobs             = wmbsSubscription.getJobs()
-            finished = True
-            if len(jobs) == 0:
-                finished = False
-            for job in jobs:
-                if not job['id'] in jobList:
-                    finished = False
-                    break
-            if finished:
-                subList.append(wmbsSubscription)
+            wmbsSubscription = Subscription(id = subscription['id'])
+            subList.append(wmbsSubscription)
 
         myThread.transaction.commit()
-                
+
         return subList
+
 
     def notifyWorkQueue(self, subList):
         """
@@ -148,6 +143,29 @@ class TaskArchiverPoller(BaseWorkerThread):
             subscription.deleteEverything()
 
         return
+
+
+    def pollForClosable(self):
+        """
+        _pollForClosable_
+
+        Search WMBS for filesets that can be closed and mark them as closed.
+        """
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        closableFilesetDAO = self.daoFactory(classname = "Fileset.ListClosable")
+        closableFilesets = closableFilesetDAO.execute()
+
+        for closableFileset in closableFilesets:
+            openFileset = Fileset(id = closableFileset)
+            openFileset.load()
+
+            logging.debug("Closing fileset %s" % openFileset.name)
+            openFileset.markOpen(False)
+
+        myThread.transaction.commit()
+
 
 
 

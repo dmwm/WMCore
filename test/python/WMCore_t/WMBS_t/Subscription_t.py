@@ -44,11 +44,11 @@ class SubscriptionTest(unittest.TestCase):
                                 useDefault = False)
 
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package = "WMCore.WMBS",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
+        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
         
-        locationAction = daofactory(classname = "Locations.New")
+        locationAction = self.daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "goodse.cern.ch")
         locationAction.execute(siteName = "badse.cern.ch")
         
@@ -545,6 +545,86 @@ class SubscriptionTest(unittest.TestCase):
         testFileE.delete()
         testFileF.delete()        
         return
+
+    def testAvailableFilesMeta(self):
+        """
+        _testAvailableFilesMeta_
+
+        Create a subscription and mark a couple files as failed, complete and
+        acquired.  Test to make sure that the remainder of the files show up
+        as available using the GetAvailableFilesMeta DAO object.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task='Test')
+        testWorkflow.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileA.create()
+        testFileB.create()
+        testFileC.create()
+        testFileD.create()
+        testFileE.create()
+        testFileF.create()        
+        
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)
+        testFileset.addFile(testFileD)
+        testFileset.addFile(testFileE)
+        testFileset.addFile(testFileF)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testSubscription.acquireFiles([testFileA])
+        testSubscription.completeFiles([testFileB])
+        testSubscription.failFiles([testFileC])
+
+        availAction = self.daofactory(classname = "Subscriptions.GetAvailableFilesMeta")
+        availableFiles = availAction.execute(subscription = testSubscription["id"])
+
+        testFileDDict = {"id": testFileD["id"], "lfn": testFileD["lfn"],
+                         "size": testFileD["size"], "events": testFileD["events"]}
+        testFileEDict = {"id": testFileE["id"], "lfn": testFileE["lfn"],
+                         "size": testFileE["size"], "events": testFileE["events"]}
+        testFileFDict = {"id": testFileF["id"], "lfn": testFileF["lfn"],
+                         "size": testFileF["size"], "events": testFileF["events"]}        
+
+        goldenFiles = [testFileDDict, testFileEDict, testFileFDict]
+        for availableFile in availableFiles:
+            assert availableFile in goldenFiles, \
+                   "ERROR: Unknown available file: %s" % availableFile
+            goldenFiles.remove(availableFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Missing available files"
+
+        testSubscription.delete()
+        testWorkflow.delete()
+        testFileset.delete()
+        testFileA.delete()
+        testFileB.delete()
+        testFileC.delete()
+        testFileD.delete()
+        testFileE.delete()
+        testFileF.delete()        
+        return    
 
     def testAvailableFilesTransaction(self):
         """
@@ -1101,6 +1181,8 @@ class SubscriptionTest(unittest.TestCase):
         (11:17:47 AM) scfoulkes: where aren't acquired = the jobgroup that
                                 the job belongs to hasn't acquired them yet
         """
+        return
+        
         (testSubscription, testFileset, testWorkflow, testFileA,\
             testFileB, testFileC) = self.createSubscriptionWithFileABC()
         stateChanger = ChangeState(DefaultConfig.config,'subscription_t_jsm_database')

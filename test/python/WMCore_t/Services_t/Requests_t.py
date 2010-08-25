@@ -20,7 +20,7 @@ from WMCore.DataStructs.Job import Job
 from WMCore.WMBS.Job import Job as WMBSJob
 from WMQuality.TestInit import TestInit
 import WMCore.Database.CMSCouch as CMSCouch
-
+from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 
 def runboth(testcase):
     """
@@ -46,7 +46,7 @@ class testThunking(unittest.TestCase):
     Direct tests of thunking standard python type
     """
     def setUp(self):
-        self.thunker = Requests.JSONThunker()
+        self.thunker = JSONThunker()
         
     def roundTrip(self,data):
         encoded = self.thunker.thunk(data)
@@ -85,8 +85,10 @@ class testJSONRequests(unittest.TestCase):
     
     def roundTrip(self,data):
         encoded = self.request.encode(data)
+        print encoded
+        print encoded.__class__.__name__
         decoded = self.request.decode(encoded)
-        
+        print decoded.__class__.__name__
         self.assertEqual( data, decoded ) 
        
     def roundTripLax(self,data):

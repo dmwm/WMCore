@@ -5,8 +5,8 @@ _NewAlgo_
 Oracle implementation of DBSBuffer.NewAlgo
 """
 
-__revision__ = "$Id: NewAlgo.py,v 1.3 2009/10/22 14:51:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: NewAlgo.py,v 1.4 2009/11/13 15:56:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import logging
 
@@ -34,7 +34,14 @@ class NewAlgo(DBFormatter):
         binds = {"app_name": appName, "app_ver": appVer, "app_fam": appFam,
                  "pset_hash": psetHash, "config_content": configContent}
 
-        self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)
+        try:
+            self.dbi.processData(self.sql, binds, conn = conn,
+                                 transaction = transaction)
+        except Exception, ex:
+            if "orig" in dir(ex) and type(ex.orig) != tuple:
+                if str(ex.orig).find("ORA-00001: unique constraint") != -1 and \
+                   str(ex.orig).find("DBSBUFFER_ALGO_UNIQUE") != -1:
+                    return
+            raise ex
             
         return 

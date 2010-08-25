@@ -18,5 +18,6 @@ __all__ = []
 
 import WMCore.Storage.Plugins.StageOutUnitTest
 import WMCore.Storage.Plugins.CPImpl
+import WMCore.Storage.Plugins.LCGImpl
 
 

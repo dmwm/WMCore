@@ -53,8 +53,8 @@ class LCGImpl(StageOutImplV2):
                 pass
             raise StageOutFailure, "File sizes don't match"
         
+        return toPfn
         
-        raise NotImplementedError
     
     def doDelete(self, pfn, seName, command, options, protocol  ):
         """
@@ -69,7 +69,6 @@ class LCGImpl(StageOutImplV2):
             runCommand( "/bin/rm -f %s" % pfn.replace("file:", "", 1) )
         else:
             runCommand( StageOutImpl.createRemoveFileCommand(self, pfn) )
-        raise NotImplementedError        
 
    
 

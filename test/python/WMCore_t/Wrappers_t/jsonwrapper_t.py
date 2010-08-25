@@ -3,12 +3,10 @@
 Unit tests for json wrapper.
 """
 
-__revision__ = "$Id: jsonwrapper_t.py,v 1.2 2010/01/11 14:00:21 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: jsonwrapper_t.py,v 1.3 2010/01/11 14:10:45 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "Valentin Kuznetsov"
 
-import unittest
-import json
 __test = False
 try:
     import cjson
@@ -16,6 +14,9 @@ try:
 except:
     print "No cjson module is found, skip the test"
 
+import unittest
+import json
+import os
 import WMCore.Wrappers.jsonwrapper as json_wrap
 
 class TestWrapper(unittest.TestCase):
@@ -75,28 +76,34 @@ class TestWrapper(unittest.TestCase):
         self.assertEqual(dj_result, cj_result)
         
     def test_file_compare(self):
+        testfile = '/tmp/jsonwrappertest'
+        
         #write self.record to a file via cjson
-        f = open('/tmp/jsonwrappertest', 'w')
+        f = open(testfile, 'w')
         json_wrap._module = "cjson"
         json_wrap.dump(self.record, f)
         f.close()
         #read the file with the json
-        f = open('/tmp/jsonwrappertest', 'r')
+        f = open(testfile, 'r')
         json_wrap._module = "json" 
         data = json_wrap.load(f)
         f.close()
         self.assertEqual(data, self.record) 
+        #Clean up
+        os.remove(testfile)
         
         #write self.record to a file via json
-        f = open('/tmp/jsonwrappertest', 'w')
+        f = open(testfile, 'w')
         json_wrap.dump(self.record, f)
         f.close()
         #read the file with cjson
-        f = open('/tmp/jsonwrappertest', 'r')
+        f = open(testfile, 'r')
         json_wrap._module = "cjson" 
         data = json_wrap.load(f)
         f.close()
         self.assertEqual(data, self.record)
+        #Clean up
+        os.remove(testfile)
         
 if __name__ == "__main__":
     if  __test:

@@ -54,8 +54,12 @@ body {
 <script src="javascript/WorkQueue/WorkQueueTree.js"></script>
 <script src="javascript/WorkQueue/WorkloadStatusYUIPieChart.js"></script>
 <script src="javascript/WorkQueue/JobYUIPieChart.js"></script>
-<script src="javascript/WorkQueue/ElementInfoTable.js"></script>
-<script src="javascript/WorkQueue/WorkloadInfoTable.js"></script>
+<script src="javascript/WorkQueue/ElementInfoWithPagination2.js"></script>
+<!--<script src="javascript/WorkQueue/ElementInfoWithServerPagination.js"></script>
+ This script uses client side pagination
+<script src="javascript/WorkQueue/ElementInfoTable.js"></script> 
+-->
+<script src="javascript/WorkQueue/WorkloadInfoTable.js"></script> 
 <style>
     /*
         For IE 6: trigger "haslayout" for the anchor elements in the root Menu by 
@@ -242,8 +246,9 @@ body {
             YAHOO.util.Event.onContentReady("menubar", initTopMenu);
 			YAHOO.util.Event.onContentReady("statuschart", workloadStatusChart, "statuschart");
 			YAHOO.util.Event.onContentReady("jobchart", jobChart, "jobchart");
-            YAHOO.util.Event.onContentReady("elements", elementTable, "elements");
-            YAHOO.util.Event.onContentReady("workloadprogress", workloadTable, "workloadprogress");
+			YAHOO.util.Event.onContentReady("elements", elementTable, "elements");
+			YAHOO.util.Event.onContentReady("workloadprogress", workloadTable, "workloadprogress");
+            //YAHOO.util.Event.onContentReady("elements", elementTable, "elements");
             YAHOO.util.Event.onContentReady("workqueuetree", workQueueTree, "workqueuetree");         
         });
         

@@ -17,7 +17,7 @@ class WMBSRESTModel(RESTModel):
     implementing the GET verb.
     """
     def __init__(self, config = {}):
-        self.version = "$Revision: 1.13 $"        
+        self.version = "$Revision: 1.14 $"        
         RESTModel.__init__(self, config)
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS", logger = self,
@@ -42,6 +42,10 @@ class WMBSRESTModel(RESTModel):
                     validation = [self.jobStatusValidate])
         
         self.addDAO('GET', "workflowstatus", "Workflow.Status")
+        self.addDAO('GET', "workflowsummary", "Monitoring.WorkflowSummary")
+        self.addDAO('GET', "tasksummary", "Monitoring.TaskSummaryByWorkflow",
+                    args = ["workflowName"])
+        
         self.addDAO('GET', "test", "Workflow.Test")
         
         resourceDAOFactory = DAOFactory(package = "WMCore.ResourceControl", 

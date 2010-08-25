@@ -3,8 +3,8 @@
 
 """
 
-__revision__ = "$Id: Alerts_t.py,v 1.5 2009/10/01 01:31:13 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Alerts_t.py,v 1.6 2009/10/13 22:30:58 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import commands
 import unittest
@@ -48,7 +48,7 @@ class AlertsTest(unittest.TestCase):
         """
         Database deletion 
         """
-        self.testInit.clearDatabase(modules = ["WMCore.Alerts"])
+        self.testInit.clearDatabase()
             
     
     def testPublish(self):

@@ -18,22 +18,16 @@ if __name__ == '__main__':
     Bootstrap.setupLogging(os.getcwd())
 
     task.build(os.getcwd())
-
-    #monitor.start()
-
     task.execute(job)
 
     if monitor.isAlive():
         monitor.shutdown()
 
-    print "Combining reports..."
-    finalReport = Report()
+    finalReport = Report.Report()
     taskSteps = task.listAllStepNames()
-    print "Have the following steps: %s" % taskSteps
     for taskStep in taskSteps:
         if os.path.exists("./%s/Report.pkl" % taskStep):
-            stepReport = Report(taskStep)
-            print "Loading %s" % taskStep
+            stepReport = Report.Report(taskStep)
             stepReport.unpersist("./%s/Report.pkl" % taskStep)
             finalReport.setStep(taskStep, stepReport.retrieveStep(taskStep))
 

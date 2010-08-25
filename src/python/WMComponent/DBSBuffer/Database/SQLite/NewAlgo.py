@@ -1,40 +1,26 @@
 #!/usr/bin/env python
 """
-_DBSBuffer.NewAlgo_
+_NewAlgo_
 
-Add a new algorithm to DBS Buffer
-
+SQLite implementation of DBSBuffer.NewAlgo
 """
-__revision__ = "$Id: NewAlgo.py,v 1.1 2009/05/14 16:18:57 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "mnorman@fnal.gov"
 
-import threading
+__revision__ = "$Id: NewAlgo.py,v 1.2 2009/07/13 19:39:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMComponent.DBSBuffer.Database.MySQL.NewAlgo import NewAlgo as MySQLNewAlgo
 
 class NewAlgo(MySQLNewAlgo):
     """
-    _DBSBuffer.NewAlgo_
+    _NewAlgo_
 
-    Add a new algorithm to DBS Buffer
-
+    Add a new algorithm to the DBSBuffer.  This will do nothing if an algorithm
+    with the given parameters already exists.
     """
-
-    def GetNewAlgoDialect(self):
-
-        return 'SQLite'
-
-
-    def execute(self, dataset=None, conn=None, transaction = False):
-        binds = self.getBinds(dataset)
-
-        try:
-            result = self.dbi.processData(self.sql, binds, conn = conn, transaction = transaction)
-        except Exception, ex:
-            if ex.__str__().find("unique") != -1 :
-                #Ditch duplicate entries
-                return
-            else:
-                raise ex
-        return 
+    sql = """INSERT INTO dbsbuffer_algo (app_name, app_ver, app_fam, pset_hash,
+                                         config_content, in_dbs)
+               SELECT :app_name, :app_ver, :app_fam, :pset_hash,
+                 :config_content, 0 WHERE NOT EXISTS   
+                   (SELECT * FROM dbsbuffer_algo WHERE app_name = :app_name AND
+                      app_ver = :app_ver AND app_fam = :app_fam AND
+                      pset_hash = :pset_hash)"""    

@@ -6,8 +6,8 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.9 2009/08/06 19:24:51 ewv Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: SiteDB.py,v 1.10 2009/08/06 21:33:34 ewv Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.Services.AuthorisedService import AuthorisedService
 import urllib
@@ -70,9 +70,14 @@ class SiteDBJSON(AuthorisedService):
             f.close()
         except IOError:
             raise RuntimeError("URL not available: %s" % callname )
-        # When SiteDB sends proper json, we can use simplejson
-        #return json.loads(result)
-        return self.parser.dictParser(result)
+        try:
+            # When SiteDB sends proper json, we can use simplejson
+            # return json.loads(result)
+            results = self.parser.dictParser(result)
+            return results
+        except SyntaxError:
+            self.clearCache(file, args)
+            raise SyntaxError("Problem parsing data. Cachefile cleared. Retrying may work")
 
 
     def dnUserName(self, dn):

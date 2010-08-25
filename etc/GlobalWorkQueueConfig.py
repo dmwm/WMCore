@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: GlobalWorkQueueConfig.py,v 1.3 2010/03/24 15:21:37 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: GlobalWorkQueueConfig.py,v 1.4 2010/05/20 16:14:42 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Configuration import Configuration
 config = Configuration()
@@ -48,3 +48,7 @@ workqueue.section_('formatter')
 workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
 workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
 workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
+workqueue.queueParams.setdefault('CacheDir', config.General.workDir + '/WorkQueueManager/wf')
+workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (config.Agent.hostName,
+                                                                  config.WorkQueueService.server.port,
+                                                                  'workqueue'))

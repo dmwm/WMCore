@@ -1,98 +1,91 @@
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.Dialects import MySQLDialect
 
-class MySQLInterface(DBInterface):
+def bindVarCompare(a, b):
+    """
+    _bindVarCompare_
 
-    def substitute(self, sql, binds):
+    Bind variables are represented as a tuple with the first element being the
+    variable name and the second being it's position in the query.  We sort on
+    the position in the query.
+    """
+    if a[1] > b[1]:
+        return 1
+    elif a[1] == b[1]:
+        return 0
+    else:
+        return -1
+
+class MySQLInterface(DBInterface):
+    def substitute(self, origSQL, origBindsList):
         """
-        Horrible hacky thing to handle MySQL's lack of bind variable support
-        takes a single sql statment and its associated binds
-        """
-        newsql = sql
-        if binds and isinstance(self.engine.dialect, MySQLDialect):
-            for k in binds.keys():
-                newsql = newsql.replace(':%s' % k, '%%(%s)s' % k)
-        return newsql, binds
-        
-    def executebinds(self, s=None, b=None, connection=None):
-        """
-        _executebinds_
-        """
-        s, b = self.substitute(s, b)
-        return DBInterface.executebinds(self, s, b, connection)
-    
-    def executemanybinds(self, s=None, b=None, connection=None):
-        """
-        _executemanybinds_
-        b is a list of dictionaries for the binds, e.g.:
+        _substitute_
+
+        Transform as set of bind variables from a list of dictionaries to a list
+        of tuples:
         
         b = [ {'bind1':'value1a', 'bind2': 'value2a'},
         {'bind1':'value1b', 'bind2': 'value2b'} ]
         
-        this needs to be reformatted to a list of tuples - TBC! via a cool map 
-        function or similar.
+        Will be transformed into:
         
         b = [ ('value1a', 'value2a'), ('value1b', 'value2b')] 
         
-        Don't need to substitute in the binds - looks like executemany does that 
+        Don't need to substitute in the binds as executemany does that 
         internally. But the sql will also need to be reformatted, such that 
         :bind_name becomes %s.
         
         See: http://www.devshed.com/c/a/Python/MySQL-Connectivity-With-Python/5/
-        
-        Seems the sqlalchemy's executemany on MySQL is a bit flakey, so instead 
-        we get the MySQLDB connection, make a cursor and interact with that 
-        directly. 
-        
-        TODO: add assert check that number of records inserted are the same as
-        number of binds. 
         """
-        b = self.makelist(b)
-        try: 
-            newsql = s
-            binds = b[0].keys()
-            """
-            This extra sort/replace needed if your binds are similarly named, 
-            e.g. file and fileset binds.sort(key=s.index) can lead to incorrect 
-            results
-            """
-            binds.sort(key=len, reverse=True)
-            mapper = {}
-            for k in binds:
-                newbind = 'b%s' % binds.index(k)
-                newsql = newsql.replace(':%s' % k, ':%s' % newbind)
-                mapper[newbind] = k
-                binds[binds.index(k)] = newbind
+        if origBindsList == None:
+            return origSQL, None
+        
+        origBindsList = self.makelist(origBindsList)
+        origBind = origBindsList[0]
 
-            binds.sort(key=newsql.index)
-            
-            self.logger.debug("MySQLCore.executemanybinds: rewriting sql for execute_many: sql %s" % 
-                              s.replace('\n', ' '))
-            for k in binds:
-                newsql = newsql.replace(':%s' % k, '%s')
-            
-            bind_list = []
-            # Now map back to the original bind names
-            for i in binds:
-                binds[binds.index(i)] = mapper[i]
-            for i in b:
-                tpl = tuple( [ i[x] for x in binds] )
-                bind_list.append(tpl)
-                
-            self.logger.debug("MySQLCore.executemanybinds: rewritten sql for execute_many: sql %s" % \
-                              newsql.replace('\n', ' '))
-            self.logger.debug("MySQLCore.executemanybinds: rewritten binds: %s" % bind_list)
-            
-            cur = connection.connection.cursor()
+        bindVarPositionList = []
+        for bindName in origBind.keys():
+            searchPosition = 0
 
-            result = cur.executemany(newsql, bind_list)
-            #assert result, len(bind_list)
-            result = self.makelist(result)
-            #print result
-            cur.close()
-            return result
-        except Exception, e:
-            self.logger.exception("""MySQLCore.executemanybinds failed - sql : %s
-binds : %s
-exception : %s""" % (s, b, e))
-            raise e
+            while True:
+                bindPosition = origSQL.find(":%s" % bindName, searchPosition)
+                if bindPosition == -1:
+                    break
+
+                bindVarPositionList.append((bindName, bindPosition))
+                searchPosition = bindPosition + 1
+
+            origSQL = origSQL.replace(":%s" % bindName, "%s")
+
+        bindVarPositionList.sort(bindVarCompare)
+
+        mySQLBindVarsList = []
+        for origBind in origBindsList:
+            mySQLBindVars = []
+            for bindVarPosition in bindVarPositionList:
+                mySQLBindVars.append(origBind[bindVarPosition[0]])
+
+            mySQLBindVarsList.append(tuple(mySQLBindVars))
+
+        return (origSQL, mySQLBindVarsList)
+
+    def executebinds(self, s = None, b = None, connection = None):
+        """
+        _executebinds_
+
+        Execute a SQL statement that has a single set of bind variables.
+        Transform the bind variables into the format that MySQL expects.
+        """
+        s, b = self.substitute(s, b)
+        return DBInterface.executebinds(self, s, b, connection)
+    
+    def executemanybinds(self, s = None, b = None, connection = None):
+        """
+        _executemanybinds_
+
+        Execute a SQL statement that has multiple sets of bind variables.
+        Transform the bind variables into the format that MySQL expects.        
+        """
+        newsql, bind_list = self.substitute(s, b)
+        result = connection.execute(newsql, bind_list)
+        return self.makelist(result)

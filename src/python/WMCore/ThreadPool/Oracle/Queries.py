@@ -8,9 +8,9 @@ This module implements the Oracle backend for the persistent threadpool.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.4 2009/07/17 16:02:00 sfoulkes Exp $"
+    "$Id: Queries.py,v 1.5 2009/07/21 18:22:48 mnorman Exp $"
 __version__ = \
-    "$Revision: 1.4 $"
+    "$Revision: 1.5 $"
 __author__ = \
     "mnorman@fnal.gov"
 
@@ -118,24 +118,42 @@ INSERT INTO %s(event,payload) SELECT event,payload FROM %s
             # we need a for update in the select to prevent (harmless) deadlock
             # situations with innodb
             sqlStr1 = """
-INSERT INTO %s(event,component,payload,thread_pool_id) 
-   SELECT event,component,payload,thread_pool_id FROM %s 
-   WHERE component= :component AND thread_pool_id = :thread_pool_id
-   AND ROWNUM < %s
-            """ % (target, source, limit)
+INSERT INTO %s (event, component, payload, thread_pool_id) 
+  SELECT event, component, payload, thread_pool_id FROM 
+   (SELECT event, component, payload, thread_pool_id, ROWNUM rn FROM %s 
+   WHERE component=:component AND thread_pool_id=:thread_pool_id)
+  WHERE rn < %s
+   """ % (target, source, limit)
             sqlStr2 = """ 
-DELETE FROM %s 
-WHERE component= :component AND thread_pool_id = :thread_pool_id AND ROWNUM < %s
-""" % (source, limit)
+DELETE FROM %s WHERE id IN
+(SELECT id FROM
+(SELECT id, ROWNUM rn FROM %s
+ WHERE component = :component
+ AND thread_pool_id = :thread_pool_id
+)
+ WHERE rn < %s
+)
+""" % (source, source, limit)
             self.execute(sqlStr1, args)
             self.execute(sqlStr2, args)
         else:
             sqlStr1 = """
-INSERT INTO %s(event,payload) SELECT event,payload FROM %s WHERE ROWNUM < %s
+INSERT INTO %s(event,payload) VALUES
+ (SELECT event, payload FROM
+  (SELECT event, payload, ROWNUM rn FROM %s)
+ WHERE rn < %s
+ )
             """ % (target, source, limit)
             sqlStr2 = """ 
-DELETE FROM %s ORDER BY id WHERE ROWNUM < %s
-            """ % (source )
+DELETE FROM %s WHERE id IN
+ (SELECT id FROM
+  (
+   SELECT id, ROWNUM rn FROM %s
+   ORDER BY id
+  )
+  WHERE rn < %s
+ )
+            """ % (source, source, limit )
             self.execute(sqlStr1, {})
             self.execute(sqlStr2, {})
 

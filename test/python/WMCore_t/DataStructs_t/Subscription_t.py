@@ -13,6 +13,7 @@ from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Workflow import Workflow
 from WMCore.DataStructs.Subscription import Subscription
+from WMCore.DataStructs.Run import Run
 
 class SubscriptionTest(unittest.TestCase):
     """
@@ -54,7 +55,13 @@ class SubscriptionTest(unittest.TestCase):
         No tearDown method for this Testcase
 
         """
-        pass
+        self.dummyFile = None
+        self.dummySet = None 
+    
+        self.dummyFileSet = None
+        self.dummyWorkFlow = None
+        self.dummySubscription = None
+
 
     def testGetWorkflow(self):
         """
@@ -349,15 +356,16 @@ class SubscriptionTest(unittest.TestCase):
         Testcase for the filesOfStatus method of the Subscription Class
 
         """
-        assert self.dummySubscription.filesOfStatus('AvailableFiles') == \
+
+        assert self.dummySubscription.filesOfStatus('Available') == \
           self.dummySubscription.available.getFiles(type='set') - \
             self.dummySubscription.acquiredFiles() | self.dummySubscription.completedFiles() | self.dummySubscription.failedFiles(), \
                 'Method fileOfStatus(\'AvailableFiles\') does not return available files set'
-        assert self.dummySubscription.filesOfStatus('AcquiredFiles') == self.dummySubscription.acquired.getFiles(type='set'), \
+        assert self.dummySubscription.filesOfStatus('Acquired') == self.dummySubscription.acquired.getFiles(type='set'), \
                 'Method fileOfStatus(\'AcquiredFiles\') does not return acquired files set'
-        assert self.dummySubscription.filesOfStatus('CompletedFiles') == self.dummySubscription.completed.getFiles(type='set'), \
+        assert self.dummySubscription.filesOfStatus('Completed') == self.dummySubscription.completed.getFiles(type='set'), \
                 'Method fileOfStatus(\'CompletedFiles\') does not return completed files set'
-        assert self.dummySubscription.filesOfStatus('FailedFiles') == self.dummySubscription.failed.getFiles(type='set'), \
+        assert self.dummySubscription.filesOfStatus('Failed') == self.dummySubscription.failed.getFiles(type='set'), \
                 'Method fileOfStatus(\'FailedFiles\') does not return failed files set'
 
     def testAvailableFiles(self):

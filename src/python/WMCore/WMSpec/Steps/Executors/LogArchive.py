@@ -6,8 +6,8 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.5 2010/04/14 19:23:18 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: LogArchive.py,v 1.6 2010/04/26 21:08:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import os
 import os.path
@@ -110,20 +110,17 @@ class LogArchive(Executor):
         except Alarm:
             msg = "Indefinite hang during stageOut of logArchive"
             logging.error(msg)
+        except Exception, ex:
+            self.report.addError(self.stepName, 1, "LogArchiveFailure", str(ex))
+            self.report.setStepStatus(self.stepName, 0)
+            raise
+        
         signal.alarm(0)
 
-        #print fileInfo
-        #Now tag things
-
         outputRef = getattr(self.report.data, self.stepName)
-        outputRef.output.outputPFN = fileInfo['PFN']
-        outputRef.output.SEName    = fileInfo['SEName']
-        outputRef.output.LFN       = fileInfo['LFN']
-        #print self.step.output
-
-
-        #And now we have to send it
-
+        outputRef.output.pfn = fileInfo['PFN']
+        outputRef.output.location = fileInfo['SEName']
+        outputRef.output.lfn = fileInfo['LFN']
 
         return
 

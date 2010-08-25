@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.14 2010/04/12 20:36:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: StageOut.py,v 1.15 2010/04/26 21:08:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import os
 import os.path
@@ -18,6 +18,7 @@ from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.FwkJobReport.Report             import Report
 
 import WMCore.Storage.StageOutMgr as StageOutMgr
+from WMCore.Storage.StageOutError import StageOutFailure
         
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
 
@@ -132,9 +133,12 @@ class StageOut(Executor):
                     except Alarm:
                         msg = "Indefinite hang during stageOut of logArchive"
                         logging.error(msg)
-                    except:
-                        print "Exception raised in stageout executor, how do we handle that?"
+                    except Exception, ex:
+                        stepReport.addError(self.stepName, 1, "StageOutFailure", str(ex))
+                        stepReport.setStepStatus(self.stepName, 1)
+                        stepReport.persist(reportLocation)                        
                         raise
+                        
                     signal.alarm(0)
                 else:
                     msg = "Not a file: %s" % file

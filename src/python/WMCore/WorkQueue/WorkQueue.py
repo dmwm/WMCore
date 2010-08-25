@@ -568,6 +568,7 @@ class WorkQueue(WorkQueueBase):
             to_update[item['Status']].add(my_item['Id'])
 
         self.logger.debug('Synchronise() updates: %s' % str(to_update))
+        import sys; print sys.version
         with self.transactionContext():
             for ele in progress_updates:
                 self.setProgress(ele, id = 'ParentQueueId')

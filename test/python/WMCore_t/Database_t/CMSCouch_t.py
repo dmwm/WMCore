@@ -10,19 +10,69 @@ import random
 import unittest
 
 class CMSCouchTest(unittest.TestCase):
-    def testOldTest(self):
+    test_counter = 0
+    def setUp(self):
         # Make an instance of the server
-        server = CouchServer()
-        
+        self.server = CouchServer()
+        testname = self.id().split('.')[-1]
         # Create a database, drop an existing one first
-        dbname = 'cmscouch_unittest'
+        dbname = 'cmscouch_unittest_%s' % testname.lower()
         
-        if dbname in server.listDatabases():
-            server.deleteDatabase(dbname)
+        if dbname in self.server.listDatabases():
+            self.server.deleteDatabase(dbname)
         
-        server.createDatabase(dbname)
-        db = server.connectDatabase(dbname)
+        self.server.createDatabase(dbname)
+        self.db = self.server.connectDatabase(dbname)
+    
+    def tearDown(self):
+        if self._exc_info()[0] == None:
+            # This test has passed, clean up after it
+            testname = self.id().split('.')[-1]
+            dbname = 'cmscouch_unittest_%s' % testname.lower()
+            self.server.deleteDatabase(dbname)
+    
+    def testTimeStamping(self):
+        doc = {'foo':123, 'bar':456}
+        id = self.db.commitOne(doc, timestamp=True, returndocs=True)['id']
+        doc = self.db.document(id)
+        self.assertTrue('timestamp' in doc.keys())
+                
+    def testDeleteDoc(self):
+        doc = {'foo':123, 'bar':456}
+        self.db.commitOne(doc)
+        all_docs = self.db.allDocs()
+        self.assertEqual(1, len(all_docs['rows']))
         
+        # The db.delete_doc is immediate
+        id = all_docs['rows'][0]['id']
+        self.db.delete_doc(id)
+        all_docs = self.db.allDocs()
+        self.assertEqual(0, len(all_docs['rows']))
+        
+    def testDeleteQueuedDocs(self):
+        doc1 = {'foo':123, 'bar':456}
+        doc2 = {'foo':789, 'bar':101112}
+        self.db.queue(doc1)
+        self.db.queue(doc2)
+        self.db.commit()
+        all_docs = self.db.allDocs()
+        self.assertEqual(2, len(all_docs['rows']))
+        for res in all_docs['rows']:
+            id = res['id']
+            doc = self.db.document(id)
+            self.db.queueDelete(doc)
+        all_docs = self.db.allDocs()
+        self.assertEqual(2, len(all_docs['rows']))
+        
+        self.db.commit()
+        
+        all_docs = self.db.allDocs()
+        self.assertEqual(0, len(all_docs['rows']))
+        
+    def testWriteReadDocNoID(self):
+        doc = {}
+        
+    def testOldTest(self):
         # Views are defined in design documents. You should aim to keep views that 
         # access the same information in the same design doc, to minimise 
         # (de)serialisation. Design documents are dictionaries we post to the server.
@@ -60,8 +110,13 @@ class CMSCouchTest(unittest.TestCase):
         """}})
         
         # Send the design document to the server
-        db.commit(view)
-        
+        self.db.commit(view)
+        counts = {}
+        counts['red'] = 0
+        counts['blue'] = 0
+        counts['yellow'] = 0
+        counts['green'] = 0
+        counts['black'] = 0
         # Make 100 documents
         for i in range(0, 100):
             rand = random.randint(0, 5)
@@ -78,64 +133,65 @@ class CMSCouchTest(unittest.TestCase):
                 doc['colour'] = 'green'
             else:
                 doc['colour'] = 'black'
+            counts[doc['colour']] += 1
             # These documents are small, so lets do a bulk insert
-            db.queue(doc)
+            self.db.queue(doc)
         # Write everything to the server - we could have queued the view and written the
         # docs and the design doc all at once.
-        db.commit()
+        self.db.commit()
         
         # Now to interact with the data itself
-        reddata = db.loadView('demo', 'listAllRed')
-        print 'there are %s red documents' % reddata['total_rows']
+        reddata = self.db.loadView('demo', 'listAllRed')
+        self.assertEqual(counts['red'], reddata['total_rows'])
         # This will give us the sum over all docs, we need to group by key to get 
         # something interesting...
-        countdata = db.loadView('demo', 'countColours')
-        print 'number of documents: %s' % countdata['rows'][0]['value']
+        countdata = self.db.loadView('demo', 'countColours')
+        self.assertEqual(100, countdata['rows'][0]['value'])
         # Pass in group = True to the loadview call  
-        print 'number of documents by colour'
-        countdata = db.loadView('demo', 'countColours', {'group': True})
-        for row in countdata['rows']:
-            print 'there are %s %s documents' % (row['value'], row['key'])
-            if row['key'] == 'red':
-                self.assertEqual(row['value'] , reddata['total_rows'] )
-        print 'now call the double counted red document'
-        doublecountdata = db.loadView('demo', 'weightedCountColours', {'group': True})
-        for row in doublecountdata['rows']:
-            print 'there are %s %s documents' % (row['value'], row['key'])
-            if row['key'] == 'red':
-                self.assertEqual(row['value'] , 2 * reddata['total_rows'])
         
-        print "Update a document - take the first red document and make it white"
+        countdata = self.db.loadView('demo', 'countColours', {'group': True})
+        for row in countdata['rows']:
+            self.assertEqual(counts[row['key']], row['value'])
+            
+        doublecountdata = self.db.loadView('demo', 'weightedCountColours', {'group': True})
+
+        for row in doublecountdata['rows']:
+            if row['key'] == 'red':
+                self.assertEqual(counts[row['key']] * 2, row['value'])
+            else:
+                self.assertEqual(counts[row['key']], row['value'])
+        
+        #Update a document - take the first red document and make it white
         doc = reddata['rows'][0]['key']
+        
         # We need to get the document's _id, so we can update it.
-        print 'doc before the update: %s' % doc
         doc['colour'] = 'white'
         # CouchDB is schemaless and duck typed, I can add a new field without breaking
         # existing functionality 
         doc['reason'] = 'white with fright!'
         # Commit the update and add a timestamp
-        db.commit(doc, timestamp=True)
+        self.db.commit(doc, timestamp=True)
         
-        print 'doc after the update: %s' % db.document(doc['_id'])
-        
-        print "now delete all the red documents, we emit'ed them as a key in the view"
+        self.assertNotEqual(doc, self.db.document(doc['_id']))
+        self.assertEqual('white', self.db.document(doc['_id'])['colour'])
+                
         for doc in reddata['rows']:
-            db.queueDelete(doc['key'])
+            self.db.queueDelete(doc['key'])
         # Bulk delete
-        db.commit()
+        self.db.commit()
         # Remove them permanently
-        db.compact()
+        self.db.compact()
         
-        countdata = db.loadView('demo', 'countColours', {'group': True})
+        countdata = self.db.loadView('demo', 'countColours', {'group': True})
         for row in countdata['rows']:
-            if row['value'] == 1:
-                print 'there is %s %s document' % (row['value'], row['key'])
-            else:
-                print 'there are %s %s documents' % (row['value'], row['key'])
+            
             if row['key'] == 'red':
-                self.assertEqual( row['value'] , 0 )
-            if row['key'] == 'white':
-                self.assertEqual( row['value'] , 1 )    
+                self.assertEqual(0, row['value'])
+            elif row['key'] == 'white':
+                self.assertEqual(1, row['value'])
+            else:
+                self.assertEqual(counts[row['key']], row['value'])
+
 
 if __name__ == "__main__":
     unittest.main()

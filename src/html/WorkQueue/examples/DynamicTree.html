@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 
-<!-- initial source taken from here
+<!-- initial source code taken from here
      http://developer.yahoo.com/yui/examples/treeview/dynamic_tree.html
 -->
 
@@ -34,7 +34,7 @@ body {
 <script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/json/json.js"></script>
 
 
-<!-- WebTools library -->
+<!-- WebTools libraries -->
 <script src="../javascript/debugging.js"></script>
 
 
@@ -53,10 +53,60 @@ body {
     
 <script type="text/javascript">
 
+
 enableDebug();
+
+
+/*
+ * Function processes JSON response and creates corresponding nodes.
+ * Is used for both ordinary nodes as well as for the root node.
+ */
+function processNode(JSONInput, node)
+{
+	// TODO
+	// validate our JSON
+	// how come this is accepted as valid JSON at other places of YUI?
+	// http://developer.yahoo.com/yui/docs/DataSource.js.html seems to do some preprocessing ...
+	// single quotes are troublesome
+	escapedResponseText = JSONInput.replace(/'/g, "\"");
+	// 'id': 1L is troublesome - should be discussed / addressed at WMCore level
+	escapedResponseText = escapedResponseText.replace(/:(\s*[0-9]+)L/g, ":$1");
+	// writeDebug(escapedResponseText);
+	
+	try 
+	{
+		var oResults = YAHOO.lang.JSON.parse(escapedResponseText);
+	}
+	catch(ex)
+	{
+		writeDebug("exception");
+		writeDebug("name: " + ex.name);
+		writeDebug("message: " + ex.message);
+		writeDebug("fileName: " + ex.fileName);
+		writeDebug("stack: " + ex.stack);
+		// writeDebugObject(ex);
+	}
+		
+    if((oResults) && (oResults.length)) {
+	    //Result is an array if more than one result, string otherwise
+	    if(YAHOO.lang.isArray(oResults)) {
+	        for (var i=0, j=oResults.length; i<j; i++) {
+	            var tempNode = new YAHOO.widget.TextNode(oResults[i].name, node, false);
+	        }
+	    } else {
+	        //there is only one result; comes as string:
+	        var tempNode = new YAHOO.widget.TextNode(oResults.name, node, false)
+	    }
+	}
+	
+	return oResults;
+}
+
 
 YAHOO.example.treeExample = function() {
 
+	var rootUrl = "http://localhost:8888/workqueue/workloads"
+	var sUrl = "http://localhost:8888/workqueue/workloadsbyname"
     var tree, currentIconMode;
 
         function loadNodeData(node, fnLoadComplete)  {
@@ -74,9 +124,7 @@ YAHOO.example.treeExample = function() {
             var nodeLabel = encodeURI(node.label);
             
             //prepare URL for XHR request:
-            var sUrl = "http://localhost:8888/workqueue/workloadsbyname"
 			var postData = "name=" + nodeLabel;
-				// "assets/ysuggest_proxy.php?query=" + nodeLabel;
             
             //prepare our callback object
             var callback = {
@@ -92,50 +140,9 @@ YAHOO.example.treeExample = function() {
 					// and eval() is not recommended solution anyway					
                     // var oResults = eval("(" + oResponse.responseText + ")");
 
-					escapedResponseText = oResponse.responseText; 
-					
-					// use this hardcoded string for debugging				
-					//escapedResponseText = "[{'url': '/tmp/WMAgent/global-work/WorkQueueManager/wf/MinBiasProcessingSpec_Test_0.pkl', 'owner': 'DWMWTest', 'id': 1L, 'name': 'MinBiasProcessingSpec_Test_0'}]";
-					
-					// TODO
-					// validaze our JSON
-					// how come this is accepted as valid JSON at other places of YUI?
-					// http://developer.yahoo.com/yui/docs/DataSource.js.html seems to do some preprocessing ...
-					// single quotes are troublesome
-					escapedResponseText = escapedResponseText.replace(/'/g, "\"");
-					// 'id': 1L is troublesome - should be discussed / addressed at WMCore level
-					escapedResponseText = escapedResponseText.replace(/:(\s*[0-9]+)L/g, ":$1");
-					writeDebug(escapedResponseText);
-					
-					try 
-					{
-						var oResults = YAHOO.lang.JSON.parse(escapedResponseText);
-					}
-					catch(ex)
-					{
-						writeDebug("exception!!!");
-						writeDebug("name: " + ex.name);
-						writeDebug("message: " + ex.message);
-						writeDebug("fileName: " + ex.fileName);
-						writeDebug("stack: " + ex.stack);
-						// writeDebugObject(ex);
-					}
-					
-					writeDebug("javaobject result");
-					writeDebugObject(oResults);
-					writeDebug("array lenght: " + oResults.length);
-
-                    if((oResults) && (oResults.length)) {
-                        //Result is an array if more than one result, string otherwise
-                        if(YAHOO.lang.isArray(oResults)) {
-                            for (var i=0, j=oResults.length; i<j; i++) {
-                                var tempNode = new YAHOO.widget.TextNode(oResults[i].name, node, false);
-                            }
-                        } else {
-                            //there is only one result; comes as string:
-                            var tempNode = new YAHOO.widget.TextNode(oResults.name, node, false)
-                        }
-                    }
+					// writeDebug(oResponse.responseText);
+	
+					var oResults = processNode(oResponse.responseText, node);
                     
                     //When we're done creating child nodes, we execute the node's
                     //loadComplete callback method which comes in via the argument
@@ -171,8 +178,11 @@ YAHOO.example.treeExample = function() {
             YAHOO.util.Connect.asyncRequest('POST', sUrl, callback, postData);
         }
 
-        function buildTree() {
-			
+		/*
+		 * This function processes root node.
+		 */
+        function buildTree() 
+		{	
            	//create a new tree:
            	tree = new YAHOO.widget.TreeView("treeDiv1");
            
@@ -180,26 +190,28 @@ YAHOO.example.treeExample = function() {
            	tree.setDynamicLoad(loadNodeData, currentIconMode);
            
            	//get root node for tree:
-           	var root = tree.getRoot();
+           	var rootNode = tree.getRoot();
          	  
-           	// TODO
-		   	// hardcode the root notes for the moment, later to get from the system
-		   	var rootNodes = ["MinBiasProcessingSpec_Test_0", 
-			                 "MinBiasProcessingSpec_Test_1", 
-							 "MinBiasProcessingSpec_Test_2"]
-		   
-           	for (var i=0, j=rootNodes.length; i<j; i++) {
-				var tempNode = new YAHOO.widget.TextNode(rootNodes[i], root, false);
-           	}
-
-           	// Use the isLeaf property to force the leaf node presentation for a given node.
-           	// This disables dynamic loading for the node.
-           	//var tempNode = new YAHOO.widget.TextNode('This is a leaf node', root, false);
-           	//tempNode.isLeaf = true;
+			YAHOO.util.Connect.asyncRequest('GET', rootUrl,
+				{
+    				success: function(response) 
+					{
+						// writeDebug("success");
+						processNode(response.responseText, rootNode);
+			           	// Use the isLeaf property to force the leaf node presentation for a given node.
+			           	// This disables dynamic loading for the node.
+			           	//var tempNode = new YAHOO.widget.TextNode('This is a leaf node', root, false);
+           				//tempNode.isLeaf = true;
            
-           	//render tree with these toplevel nodes; all descendants of these nodes
-           	//will be generated as needed by the dynamic loader.
-           	tree.draw();
+			           	//render tree with these toplevel nodes; all descendants of these nodes
+			           	//will be generated as needed by the dynamic loader.
+			           	tree.draw();
+    				},
+    				failure: function(response)
+					{
+						writeDebug("reading\n" + rootUrl + "\nfailed, message: " + response.statusText);
+    				}
+				});			
         }
 
 

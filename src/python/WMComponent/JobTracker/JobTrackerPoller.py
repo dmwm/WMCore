@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.3 2009/11/17 17:39:55 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.4 2009/12/02 20:22:32 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 import logging
@@ -250,3 +250,16 @@ class JobTrackerPoller(BaseWorkerThread):
         
 
         return loadedClass
+
+
+    def killJobs(self, jobList = []):
+        """
+        Uses the tracker plugin to kill jobs
+
+        """
+        self.trackerInst.getClassAds()
+        self.trackerInst.kill(jobList)
+
+        return
+
+        

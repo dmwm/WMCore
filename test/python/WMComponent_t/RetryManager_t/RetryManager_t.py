@@ -1,10 +1,14 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101, W0142, C0103
+# E1101: Use configuration files
+# W0142: Use ** magic
+# C0103: Different naming conventions apply for tests
 """
 RetryManager test for module and the harness
 """
 
-__revision__ = "$Id: RetryManager_t.py,v 1.9 2010/04/21 16:46:42 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: RetryManager_t.py,v 1.10 2010/07/02 14:52:47 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import os
 import threading
@@ -100,14 +104,14 @@ class RetryManagerTest(unittest.TestCase):
 
         return config
 
-    def createTestJobGroup(self):
+    def createTestJobGroup(self, nJobs):
         """
         _createTestJobGroup_
         
         Creates a group of several jobs
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task="Test")
+                                name = makeUUID(), task="Test")
         testWorkflow.create()
         
         testWMBSFileset = Fileset(name = "TestFileset")
@@ -130,7 +134,7 @@ class RetryManagerTest(unittest.TestCase):
         testFileA.create()
         testFileB.create()
 
-        for i in range(0,self.nJobs):
+        for i in range(0, nJobs):
             testJob = Job(name = makeUUID())
             testJob.addFile(testFileA)
             testJob.addFile(testFileB)
@@ -146,7 +150,7 @@ class RetryManagerTest(unittest.TestCase):
         
         Mimics creation of component and test jobs failed in create stage.
         """
-        testJobGroup = self.createTestJobGroup()
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
 
         config = self.getConfig()
         changer = ChangeState(config)
@@ -186,30 +190,8 @@ class RetryManagerTest(unittest.TestCase):
         
         Mimics creation of component and test jobs failed in create stage.
         """
-        
-        """ This test fails. Somehow an exception can get raised but that exception doesn't cause this test to fail. Don't get that. Output:
-        
-        WMComponent_t.RetryManager_t.RetryManager_t.RetryManagerTest.testSubmit -- WMComponent_t.RetryManager_t.RetryManager_t:testSubmit() ... Exception in thread Thread-10:
-        Traceback (most recent call last):
-          File "/home/bbslave/shared/python26/lib/python2.6/threading.py", line 522, in __bootstrap_inner
-            self.run()
-          File "/home/bbslave/shared/python26/lib/python2.6/threading.py", line 477, in run
-            self.__target(*self.__args, **self.__kwargs)
-          File "/home/bbslave/buildslave/quicktest/build/src/python/WMCore/Agent/Harness.py", line 486, in startComponent
-            self.prepareToStart()
-          File "/home/bbslave/buildslave/quicktest/build/src/python/WMCore/Agent/Harness.py", line 359, in prepareToStart
-            self.initInThread()
-          File "/home/bbslave/buildslave/quicktest/build/src/python/WMCore/Agent/Harness.py", line 105, in initInThread
-            "ComponentLog")
-          File "/home/bbslave/shared/python26/lib/python2.6/posixpath.py", line 67, in join
-            elif path == '' or path.endswith('/'):
-        AttributeError: 'NoneType' object has no attribute 'endswith'
-        
-        ok
-        """
-        raise Exception, "See WMComponent_t.RetryManager_t.Retry_Manager_t::testSubmit(). This tests fails, but was reporting it passed somehow"
-        
-        testJobGroup = self.createTestJobGroup()
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
+
 
         config = self.getConfig()
         changer = ChangeState(config)
@@ -251,7 +233,7 @@ class RetryManagerTest(unittest.TestCase):
         
         Mimics creation of component and test jobs failed in create stage.
         """
-        testJobGroup = self.createTestJobGroup()
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
         
         config = self.getConfig()
         changer = ChangeState(config)
@@ -287,6 +269,134 @@ class RetryManagerTest(unittest.TestCase):
 
         idList = self.getJobs.execute(state = 'Created')
         self.assertEqual(len(idList), self.nJobs)
+        return
+
+
+
+
+    def testY_MultipleIterations(self):
+        """
+        _MultipleIterations_
+        
+        Paranoia based check to see if I'm saving class instances correctly
+        """
+
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
+
+        config = self.getConfig()
+        changer = ChangeState(config)
+        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
+        changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
+
+        idList = self.getJobs.execute(state = 'CreateCooloff')
+        self.assertEqual(len(idList), self.nJobs)
+
+        testRetryManager = RetryManagerPoller(config)
+        testRetryManager.setup(None)
+
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 50)
+
+        testRetryManager.algorithm(None)
+        idList = self.getJobs.execute(state = 'CreateCooloff')
+        self.assertEqual(len(idList), self.nJobs)
+
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 150)
+
+        testRetryManager.algorithm(None)
+        
+        idList = self.getJobs.execute(state = 'CreateCooloff')
+        self.assertEqual(len(idList), 0)
+
+        idList = self.getJobs.execute(state = 'New')
+        self.assertEqual(len(idList), self.nJobs)
+
+
+
+        # Make a new jobGroup for a second run
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
+
+        # Set job state
+        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
+        changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
+
+        # Set them to go off
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 200)
+
+
+        testRetryManager.algorithm(None)
+        
+        idList = self.getJobs.execute(state = 'CreateCooloff')
+        self.assertEqual(len(idList), 0)
+
+        idList = self.getJobs.execute(state = 'New')
+        self.assertEqual(len(idList), self.nJobs * 2)   
+
+
+        return
+
+
+    def testZ_Profile(self):
+        """
+        _Profile_
+
+        Do a basic profiling of the algo
+        """
+
+        return
+
+        import cProfile, pstats
+
+        nJobs = 1000
+
+        testJobGroup = self.createTestJobGroup(nJobs = nJobs)
+
+        config = self.getConfig()
+        changer = ChangeState(config)
+        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
+        changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
+
+        idList = self.getJobs.execute(state = 'CreateCooloff')
+        self.assertEqual(len(idList), nJobs)
+
+        testRetryManager = RetryManagerPoller(config)
+        testRetryManager.setup(None)
+
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 50)
+
+        testRetryManager.algorithm(None)
+        idList = self.getJobs.execute(state = 'CreateCooloff')
+        self.assertEqual(len(idList), nJobs)
+
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 150)
+
+        startTime = time.time()
+        #cProfile.runctx("testRetryManager.algorithm()", globals(), locals(), filename = "profStats.stat")
+        testRetryManager.algorithm(None)
+        stopTime  = time.time()
+        
+        idList = self.getJobs.execute(state = 'CreateCooloff')
+        self.assertEqual(len(idList), 0)
+
+        idList = self.getJobs.execute(state = 'New')
+        self.assertEqual(len(idList), nJobs)
+
+
+        print("Took %f seconds to run polling algo" % (stopTime - startTime))
+
+        p = pstats.Stats('profStats.stat')
+        p.sort_stats('cumulative')
+        p.print_stats(0.2)
+
         return
 
 if __name__ == '__main__':

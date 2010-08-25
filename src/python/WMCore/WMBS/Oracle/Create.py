@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.22 2009/08/31 21:06:42 dmason Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Create.py,v 1.23 2009/09/04 21:08:28 mnorman Exp $"
+__version__ = "$Revision: 1.23 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.ChangeState import Transitions
@@ -37,6 +37,7 @@ class Create(CreateWMBSBase):
         Call the base class's constructor and create all necessary tables,
         constraints and inserts.
         """
+
         CreateWMBSBase.__init__(self, logger, dbi)
         self.requiredTables.append('09wmbs_subs_type')
 
@@ -94,7 +95,7 @@ class Create(CreateWMBSBase):
 
         self.indexes["01_pk_wmbs_fileset_files"] = \
           """ALTER TABLE wmbs_fileset_files ADD
-               (CONSTRAINT wmbs_file_details_pk PRIMARY KEY (fileid, fileset) %s)""" % tablespaceIndex
+               (CONSTRAINT wmbs_fileset_files_pk PRIMARY KEY (fileid, fileset) %s)""" % tablespaceIndex
 
         self.constraints["01_fk_wmbs_fileset_files"] = \
           """ALTER TABLE wmbs_fileset_files ADD
@@ -156,7 +157,7 @@ class Create(CreateWMBSBase):
         
         self.constraints["02_fk_wmbs_file_location"] = \
           """ALTER TABLE wmbs_file_location ADD                      
-              (CONSTRAINT fk_location_file FOREIGN KEY(location)
+              (CONSTRAINT fk_location_location FOREIGN KEY(location)
                  REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
          
         self.create["08wmbs_workflow"] = \
@@ -184,12 +185,12 @@ class Create(CreateWMBSBase):
                ) %s""" % tablespaceTable
 
         self.constraints["01_fk_wmbs_workflow_output"] = \
-          """ALTER TABLE wmbs_file_location ADD
+          """ALTER TABLE wmbs_workflow_output ADD
               (CONSTRAINT fk_wfoutput_workflow FOREIGN KEY(workflow_id)
                  REFERENCES wmbs_workflow(id) ON DELETE CASCADE)"""
 
         self.constraints["02_fk_wmbs_workflow_output"] = \
-          """ALTER TABLE wmbs_file_location ADD
+          """ALTER TABLE wmbs_workflow_output ADD
               (CONSTRAINT fk_wfoutput_fileset FOREIGN KEY(output_fileset)
                  REFERENCES wmbs_fileset(id) ON DELETE CASCADE)"""
         
@@ -264,12 +265,12 @@ class Create(CreateWMBSBase):
                ) %s""" % tablespaceTable
 
         self.constraints["01_fk_wmbs_sub_files_acquired"] = \
-          """ALTER TABLE wmbs_sub_files_acquied ADD
+          """ALTER TABLE wmbs_sub_files_acquired ADD
                (CONSTRAINT fk_subsacquired_sub FOREIGN KEY (subscription)
                   REFERENCES wmbs_subscription(id) ON DELETE CASCADE)"""
 
         self.constraints["02_fk_wmbs_sub_files_acquired"] = \
-          """ALTER TABLE wmbs_sub_files_acquied ADD
+          """ALTER TABLE wmbs_sub_files_acquired ADD
                (CONSTRAINT fk_subsacquired_file FOREIGN KEY (fileid)
                   REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
 
@@ -357,7 +358,8 @@ class Create(CreateWMBSBase):
                retry_count  INTEGER       DEFAULT 0,
                couch_record VARCHAR(255),
                location     INTEGER,
-               outcome      INTEGER       DEFAULT 0
+               outcome      INTEGER       DEFAULT 0,
+               cache_dir    VARCHAR(255)  DEFAULT 'None'
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_job"] = \
@@ -370,7 +372,7 @@ class Create(CreateWMBSBase):
 
         self.constraints["01_fk_wmbs_job"] = \
           """ALTER TABLE wmbs_job ADD
-               (CONSTRAINT FOREIGN KEY (jobgroup)
+               (CONSTRAINT wmbs_job_fk_jobgroup FOREIGN KEY (jobgroup)
                   REFERENCES wmbs_jobgroup(id) ON DELETE CASCADE)"""
         
         self.constraints["02_fk_wmbs_job"] = \
@@ -382,6 +384,7 @@ class Create(CreateWMBSBase):
           """ALTER TABLE wmbs_job ADD
                (CONSTRAINT fk_state FOREIGN KEY (state)
                   REFERENCES wmbs_job_state(id))"""
+
 
         self.create["16wmbs_job_assoc"] = \
           """CREATE TABLE wmbs_job_assoc (

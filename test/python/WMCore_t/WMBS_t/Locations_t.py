@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.12 2010/02/15 17:31:57 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Locations_t.py,v 1.13 2010/02/25 19:34:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import os
 import unittest
@@ -122,6 +122,42 @@ class LocationsTest(unittest.TestCase):
         self.assertEqual("Choshu" in sites, True)
         self.assertEqual("Tosa" in sites, True)
 
+    def testListSitesTransaction(self):
+        """
+        _testListSitesTransaction_
+
+        Verify that select behave appropriately when dealing with transactions.
+        """
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+        locationNew = daoFactory(classname = "Locations.New")
+
+        locationNew.execute("Satsuma", conn = myThread.transaction.conn, transaction = True)
+        locationNew.execute("Choshu", conn = myThread.transaction.conn, transaction = True)
+        locationNew.execute("Tosa")
+
+        listSites = daoFactory(classname = "Locations.ListSites")
+        nonTransSites = listSites.execute()
+        transSites = listSites.execute(conn = myThread.transaction.conn, transaction = True)
+
+        assert len(nonTransSites) == 1, \
+               "Error: Wrong number of sites in non transaction list."
+        assert "Tosa" in nonTransSites, \
+               "Error: Site missing in non transaction list."
+        assert len(transSites) == 3, \
+               "Error: Wrong number of sites in transaction list."
+        assert "Satsuma" in transSites, \
+               "Error: Site missing in transaction list."
+        assert "Choshu" in transSites, \
+               "Error: Site missing in transaction list."
+        assert "Tosa" in transSites, \
+               "Error: Site missing in transaction list."        
+
+        myThread.transaction.commit()
+        return
 
     def testJobSlots(self):
         """

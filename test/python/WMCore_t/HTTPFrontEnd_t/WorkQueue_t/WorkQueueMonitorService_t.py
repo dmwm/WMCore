@@ -14,8 +14,8 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.5 2010/03/09 14:06:25 maxa Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.6 2010/03/09 17:16:54 maxa Exp $"
+__version__ = "$Revision: 1.6 $"
 
 
 
@@ -136,7 +136,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         """
 
 
-    def _tester(self, testName, verb, code, partUrl, input = {}):
+    def _tester(self, testName, verb, code, partUrl, inpt = {}):
         print 80 * '#'
         print "test: %s" % testName
 
@@ -146,8 +146,8 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         contentType = "application/json"
         accept = "text/json+das"
         
-        if input:
-            input = JsonWrapper.dumps(input)
+        if inpt:
+            inpt = JsonWrapper.dumps(inpt)
         
         # output is dictionary for the output matching 
         # there are four keys you can check:
@@ -155,7 +155,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         output = {"code": code, "type": accept}
 
         url = self.urlbase + partUrl
-        data, exp = methodTest(verb, url,  accept = accept, input = input,
+        data, exp = methodTest(verb, url,  accept = accept, input = inpt,
                                contentType = contentType, output = output)
         data = JsonWrapper.loads(data)
         print "\n\n"
@@ -213,57 +213,57 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         
     def testElementsByStateDAO(self):
         testName = inspect.stack()[0][3]
-        input = {"status": "Available"}
-        data, exp = self._tester(testName, "POST", 200, "elementsbystate", input = input)
+        inpt = {"status": "Available"}
+        data, exp = self._tester(testName, "POST", 200, "elementsbystate", inpt = inpt)
         
         statusInt = data["results"][0]["status"]
         statusStr = States[statusInt]
-        assert input["status"] == statusStr, ("Expecting element status '%s', got "
-            "'%s'" % (input["status"], statusStr))
+        assert inpt["status"] == statusStr, ("Expecting element status '%s', got "
+            "'%s'" % (inpt["status"], statusStr))
 
 
 
     def testElementsNonExistingByStateDAO(self):
         testName = inspect.stack()[0][3]
-        input = {"status": "Failed"}
-        data, exp = self._tester(testName, "POST", 200, "elementsbystate", input = input)
+        inpt = {"status": "Failed"}
+        data, exp = self._tester(testName, "POST", 200, "elementsbystate", inpt = inpt)
         
         r = data["results"]
         assert len(r) == 0, ("Expecting empty result set, no elements with "
-                             "status '%s'") % input["status"]
+                             "status '%s'") % inpt["status"]
         
                          
 
     def testElementsByStateIntegerDAO(self):
         testName = inspect.stack()[0][3]
-        input = {"status": 4} # states by integers - not supported
+        inpt = {"status": 4} # states by integers - not supported
         # call is expected to fail with code 400 and HTTPError
-        data, exp = self._tester(testName, "POST", 400, "elementsbystate", input = input)
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
         self._checkHTTPError(data)
         
-        input = {"status": "4"} # states by integers - not supported
-        data, exp = self._tester(testName, "POST", 400, "elementsbystate", input = input)
+        inpt = {"status": "4"} # states by integers - not supported
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
         self._checkHTTPError(data)
 
-        input = {"status": 456} # states by integers - not supported
-        data, exp = self._tester(testName, "POST", 400, "elementsbystate", input = input)
+        inpt = {"status": 456} # states by integers - not supported
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
         self._checkHTTPError(data)
 
         
 
     def testElementsByStateWrongStateDAO(self):
         testName = inspect.stack()[0][3]
-        # test that the exception is raise on wrong input, error will be raised
-        input = {"status": "nonsensestatus"}        
-        data, exp = self._tester(testName, "POST", 400, "elementsbystate", input = input)
+        # test that the exception is raise on wrong inpt, error will be raised
+        inpt = {"status": "nonsensestatus"}        
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
         self._checkHTTPError(data)
         
         
 
     def testElementsByIdIntegerDAO(self):
         testName = inspect.stack()[0][3]
-        input = {"id": 1}
-        data, exp = self._tester(testName, "POST", 200, "elementsbyid", input = input)
+        inpt = {"id": 1}
+        data, exp = self._tester(testName, "POST", 200, "elementsbyid", inpt = inpt)
                 
         r = data["results"]
         self.assertEqual( len(r) ,  1, "Only 1 element needs to be back, got '%s'" % len(r) )
@@ -274,8 +274,8 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         
     def testElementsByIdStringDAO(self):
         testName = inspect.stack()[0][3]
-        input = {"id": "1"}
-        data, exp = self._tester(testName, "POST", 200, "elementsbyid", input = input)
+        inpt = {"id": "1"}
+        data, exp = self._tester(testName, "POST", 200, "elementsbyid", inpt = inpt)
                 
         r = data["results"]
         self.assertEqual( len(r) ,  1, "Only 1 element needs to be back, got '%s'" % len(r) )
@@ -286,8 +286,8 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         
     def testElementsByNonExistingIdDAO(self):
         testName = inspect.stack()[0][3]
-        input = {"id": 100000}
-        data, exp = self._tester(testName, "POST", 200, "elementsbyid", input = input)
+        inpt = {"id": 100000}
+        data, exp = self._tester(testName, "POST", 200, "elementsbyid", inpt = inpt)
         
         r = data["results"]
         self.assertEqual( len(r) ,  0, "Expected empty result (0 items), got '%s'" % len(r) )
@@ -296,16 +296,16 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
 
     def testElementsByIncorrectIntegerIdDAO(self):
         testName = inspect.stack()[0][3]        
-        input = {"id": -10}
-        data, exp = self._tester(testName, "POST", 400, "elementsbyid", input = input)
+        inpt = {"id": -10}
+        data, exp = self._tester(testName, "POST", 400, "elementsbyid", inpt = inpt)
         
         self._checkHTTPError(data)
 
 
     def testElementsByIncorrectStringIdDAO(self):
         testName = inspect.stack()[0][3]
-        input = {"id": "nonsenseelementid"}
-        data, exp = self._tester(testName, "POST", 400, "elementsbyid", input = input)
+        inpt = {"id": "nonsenseelementid"}
+        data, exp = self._tester(testName, "POST", 400, "elementsbyid", inpt = inpt)
         
         self._checkHTTPError(data)
         

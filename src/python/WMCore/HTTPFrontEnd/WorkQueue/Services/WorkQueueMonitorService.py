@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.7 2010/03/03 20:59:54 sryu Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.8 2010/03/09 17:16:53 maxa Exp $"
 __version__ = "$Revision"
 
 
@@ -73,12 +73,12 @@ class WorkQueueMonitorService(ServiceInterface):
         
 
 
-    def validateState(self, input):
-        """Validate input argument state - only element states as defined in
+    def validateState(self, inpt):
+        """Validate inpt argument state - only element states as defined in
            States (WMCore.WorkQueue.Database) are accepted (i.e. only states
            designated by respective string names, not by integer indices).
         """
-        state = input["status"]
+        state = inpt["status"]
         try:
             try:
                 int(state)
@@ -87,25 +87,25 @@ class WorkQueueMonitorService(ServiceInterface):
             else:
                 raise ValueError # is integer - fail
             States[state]
-        except ValueError, KeyError:
+        except (ValueError, KeyError, TypeError):
             m = "Incorrect input - unknown WorkQueue element state '%s'" % state
             raise AssertionError, m
         else:
-            return input
+            return inpt
         
         
     
-    def validateId(self, input):
-        """Validate input argument id - only positive integers allowed."""
-        id = input["id"]
+    def validateId(self, inpt):
+        """Validate inpt argument id - only positive integers allowed."""
+        id = inpt["id"]
         try:
             if int(id) < 0:
                 raise ValueError
-        except ValueError:
+        except (ValueError, TypeError):
             m = "Incorrect input - id must be positive integer ('%s')" % id            
             raise AssertionError, m
         else:
-            return input
+            return inpt
                 
         
 

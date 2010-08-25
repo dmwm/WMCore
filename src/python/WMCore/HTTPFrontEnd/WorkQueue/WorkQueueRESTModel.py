@@ -4,6 +4,7 @@
 Rest Model for WMBS Monitoring.
 """
 
+from WMCore.Wrappers import jsonwrapper
 from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.DAOFactory import DAOFactory
 
@@ -22,6 +23,7 @@ class WorkQueueRESTModel(RESTModel):
         #only support get for now
         self.methods = {'GET':{}, 'POST':{}, 'PUT':{}, 'DELETE':{}}
         self.addService('POST', 'getwork', self.getWork, args=[])
+        self.addService('PUT', 'synchronize', self.synchronize, args=["child_url", "child_report"])
         self.addService('PUT', 'gotwork', self.wq.gotWork, args=["parentElementID"])
         self.addService('PUT', 'failwork', self.wq.failWork, args=["parentElementID"])
         self.addService('PUT', 'successwork', self.wq.successWork, args=["parentElementID"])
@@ -39,12 +41,27 @@ class WorkQueueRESTModel(RESTModel):
         
     def validateArgs(self, input):
         return input
-        
-
+            
     def getWork(self, **kwargs):    
+        """
+        _getWork_
+        
+        TODO: not the best way to handle parameters which is not in dict format
+        find the better way to handle it 
+        """
         pqUrl = kwargs.pop("PullingQueueUrl", None)
-        pqUrl = None
         result = self.wq.getWork(kwargs, pqUrl)
         return result
+    
+    def synchronize(self, child_url, child_report):
+        """
+        _synchronize_
         
+        TODO: not the best way to handle parameters which is not in dict format
+        find the better way to handle it 
+        """
+        decodedChildReport = jsonwrapper.loads(child_report)
         
+        result = self.wq.synchronize(child_url, decodedChildReport)
+        #print result
+        return result

@@ -487,8 +487,8 @@ class DBObjectsPerformance(unittest.TestCase):
         Performance test, do not abuse!
         """
         
-        numtask = 1 
-        numjob  = 10
+        numtask = 10
+        numjob  = 100
         
         db = BossLiteDBWM()
         log = logging.getLogger( "DBObjectsPerformance" )
@@ -507,13 +507,13 @@ class DBObjectsPerformance(unittest.TestCase):
                     parameters = {'name': '%s_job_%s'%(str(t),str(j)), 
                                   'jobId': j, 
                                   'taskId': tmpId }
-                    job = Job()
+                    job = Job(parameters)
                     job.data['submissionNumber'] = 1
                     job.data['closed'] = 'N'
                     
                     parameters = {'jobId': job.data['jobId'], 
-                                  'taskId': tmpId, 
-                                  'submission': 1 }
+                                  'taskId': tmpId,
+                                  'submission' : job.data['submissionNumber']}
                     runJob = RunningJob(parameters)
                     runJob.data['state'] = 'Commodus'
                     runJob.data['closed'] = 'N'
@@ -529,9 +529,8 @@ class DBObjectsPerformance(unittest.TestCase):
         
         end_time = time.time()
         
-        log.info("task = %4d, jobs/task = %4d," + \
-                    "runJobs/Job = %4d, Time = %08f" % (numtask, 
-                                    numjob, 1, (end_time-start_time)) )
+        log.info("task= %3d, jobs/task= %3d, runJobs/Job= %3d, Time= %f" % \
+            (numtask, numjob, 1, (end_time-start_time)))
         
         return
     

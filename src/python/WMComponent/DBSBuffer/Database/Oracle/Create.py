@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for Oracle.
 """
 
-__revision__ = "$Id: Create.py,v 1.5 2009/07/22 22:05:53 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Create.py,v 1.6 2009/08/12 22:17:08 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 
@@ -169,6 +169,28 @@ class Create(DBCreator):
                  filename   INTEGER NOT NULL,
                  location   INTEGER NOT NULL
                )%s""" %(params["tablespace_table"])
+
+        self.create["10dbsbuffer_block"] = \
+          """CREATE TABLE dbsbuffer_block (
+          id        INTEGER      PRIMARY KEY AUTO_INCREMENT,
+          blockname VARCHAR(250) NOT NULL,
+          location  INTEGER      NOT NULL,
+          CONSTRAINT dbsbuffer_block_pk     PRIMARY KEY (id),
+          CONSTRAINT dbsbuffer_block_unique UNIQUE (blockname, location)"""
+
+        self.create["10dbsbuffer_block_seq"] = \
+          """CREATE SEQUENCE dbsbuffer_block_seq
+          start with 1
+          increment by 1
+          nomaxvalue"""
+
+        self.create["10dbsbuffer_block_trg"] = \
+          """CREATE TRIGGER dbsbuffer_block_trg
+          BEFORE INSERT ON dbsbuffer_block
+          FOR EACH ROW
+          BEGIN
+            SELECT dbsbuffer_block_seq.nextval INTO :new.id FROM dual;
+          END;"""       
 
 
         self.indexes["1_pk_dbsbuffer_dataset"] = \

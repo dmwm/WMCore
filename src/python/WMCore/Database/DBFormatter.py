@@ -6,8 +6,8 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-__revision__ = "$Id: DBFormatter.py,v 1.23 2009/12/26 14:01:57 akhukhun Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: DBFormatter.py,v 1.24 2010/02/15 22:35:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 import datetime
 import time
 
@@ -134,18 +134,20 @@ class DBFormatter(WMObject):
             binds = self.dbi.buildbinds(self.dbi.makelist(kwargs[i]), i, binds)
         return binds
     
-    def execute(self, conn = None, transaction = False):
+    def execute(self, conn = None, transaction = False, returnCursor = False):
         """
         A simple select with no binds/arguments is the default
         """
         result = self.dbi.processData(self.sql, self.getBinds(), 
-                         conn = conn, transaction = transaction)
+                         conn = conn, transaction = transaction,
+                                      returnCursor = returnCursor)
         return self.format(result)
     
-    def executeOne(self, conn = None, transaction = False):
+    def executeOne(self, conn = None, transaction = False, returnCursor = False):
         """
         A simple select with no binds/arguments is the default
         """
         result = self.dbi.processData(self.sql, self.getBinds(), 
-                         conn = conn, transaction = transaction)
+                         conn = conn, transaction = transaction,
+                                      returnCursor = returnCursor)
         return self.formatOne(result)

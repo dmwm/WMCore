@@ -7,7 +7,6 @@ class RESTFormatter(TemplatedPage):
     
     @exposexml
     def xml(self, data):
-        print self.config
         return data
 
     @exposeatom

@@ -9,10 +9,11 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.13 2009/05/09 12:10:34 sryu Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Create.py,v 1.14 2009/05/18 17:32:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
+from WMCore.JobStateMachine.ChangeState import Transitions
 
 class Create(CreateWMBSBase):
     """
@@ -240,14 +241,16 @@ class Create(CreateWMBSBase):
              retry_count  INTEGER DEFAULT 0,
              couch_record VARCHAR(255),
              location     INTEGER,
-             final_state  INTEGER NOT NULL,
+             outcome      INTEGER DEFAULT 0,
              constraint fk_job_jobgroup
                  FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                    ON DELETE CASCADE,
-             constraint fk_location REFERENCES wmbs_location(id),
-             constraint fk_state REFERENCES wmbs_job_state(id),
-             constraint pk_job primary key (id),
-             constraint uk_job_name unique (name))"""     
+             constraint fk_location
+                 FOREIGN KEY (location) REFERENCES wmbs_location(id),
+             constraint fk_state
+                 FOREIGN KEY (state) REFERENCES wmbs_job_state(id),
+             constraint pk_job PRIMARY KEY(id),
+             constraint uk_job_name UNIQUE(name))"""     
 
         self.create["16wmbs_job_assoc"] = \
           """CREATE TABLE wmbs_job_assoc (
@@ -274,7 +277,7 @@ class Create(CreateWMBSBase):
               FOREIGN KEY (job) REFERENCES wmbs_job(id)
                 ON DELETE CASCADE)"""
 
-        for jobState in jobStates:
+        for jobState in Transitions().states():
             jobStateQuery = """INSERT INTO wmbs_job_state(id, name) VALUES
                                (wmbs_job_state_SEQ.nextval, '%s')""" % jobState
             self.inserts["job_state_%s" % jobState] = jobStateQuery

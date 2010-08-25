@@ -3,8 +3,8 @@
 gLite CLI interaction class through JSON formatted output
 """
 
-__revision__ = "$Id: SchedulerGLite.py,v 1.8 2010/08/13 13:04:16 mcinquil Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: SchedulerGLite.py,v 1.9 2010/08/18 01:35:31 mcinquil Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "filippo.spiga@cern.ch"
 
 import os
@@ -633,7 +633,7 @@ class SchedulerGLite(SchedulerInterface) :
                 if jobIds :
                     formattedJobIds = ','.join(jobIds)
                                    
-                    command = self.commandQueryPath \
+                    command = 'python ' + self.commandQueryPath \
                         + 'GLiteStatusQuery.py --jobId=%s' % formattedJobIds
                     
                     outJson, ret = self.ExecuteCommand( self.proxyString + \

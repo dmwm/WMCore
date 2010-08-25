@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: LogCollect.py,v 1.4 2010/07/23 15:01:44 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: LogCollect.py,v 1.5 2010/07/26 16:50:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os.path
 import logging
@@ -137,11 +137,15 @@ class LogCollect(Executor):
         signal.alarm(0)
 
         # If we're still here we didn't die on stageOut
-        for f in readyFiles:
+        for file in self.job["input_files"]:        
             signal.signal(signal.SIGALRM, alarmHandler)
             signal.alarm(waitTime)
             try:
-                deleteMgr(**f)
+                fileToDelete = {"LFN": file["lfn"],
+                                "PFN": None,
+                                "SEName": None,
+                                "StageOutCommand": None}
+                deleteMgr(fileToDelete = fileToDelete)
             except Alarm:
                 msg = "Indefinite hang during delete of LogCollect"
                 logging.error(msg)

@@ -7,8 +7,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.8 2010/02/02 19:48:39 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.9 2010/02/10 17:04:10 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -59,7 +59,6 @@ class JobSubmitterPoller(BaseWorkerThread):
     Handles job submission
 
     """
-
     def __init__(self, config):
 
         myThread = threading.currentThread()
@@ -138,6 +137,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         jobList = self.getJobs()
         #jobList = self.setJobLocations(jobList)
         jobList = self.grabTask(jobList)
+        logging.error("Task grabbed properly")
+        logging.error(jobList)
         self.submitJobs(jobList)
 
 
@@ -268,6 +269,9 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         changeState = ChangeState(self.config)
 
+        logging.error("In submitJobs")
+        logging.error(jobList)
+
         count = 0
         successList = []
         failList    = []
@@ -281,8 +285,13 @@ class JobSubmitterPoller(BaseWorkerThread):
             if not os.path.exists(packagePath):
                 os.makedirs(packagePath)
             package = JobPackage()
-            package.extend(listOfJobs)
+            for job in listOfJobs:
+                package.append(job.getDataStructsJob())
+            #package.extend(listOfJobs)
             package.save(os.path.join(packagePath, 'JobPackage.pkl'))
+
+            logging.error('About to send jobs to ShadowPoolPlugin')
+            logging.error(listOfJobs)
             
             while len(listOfJobs) > self.config.JobSubmitter.jobsPerWorker:
                 listForSub = listOfJobs[:self.config.JobSubmitter.jobsPerWorker]
@@ -343,7 +352,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                 continue
             fileHandle = open(jobPickle, "r")
             loadedJob  = cPickle.load(fileHandle)
-            job.update(loadedJob)
+            for key in loadedJob.keys():
+                if loadedJob[key]:
+                    job[key] = loadedJob[key]
             if not 'sandbox' in job.keys() or not 'task' in job.keys():
                 #Then we need to construct a task or a sandbox
                 if not 'spec' in job.keys():
@@ -356,7 +367,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                 wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
                 wmWorkload.load(job['spec'])
                 job['sandbox'] = task.data.input.sandbox
-                
 
         for job in jobList:
             if job in failList:

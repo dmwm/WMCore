@@ -1,0 +1,4 @@
+For the moment, no handlers are used for the TaskQueue. 
+New tasks are submitted using some TQApi.
+
+These handler files are here just for reference.

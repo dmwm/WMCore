@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.35 2009/11/23 20:48:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: Page.py,v 1.36 2009/12/22 20:03:21 valya Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import urllib
 import cherrypy
@@ -146,6 +146,7 @@ def exposedasplist (func):
         import plistlib
         data_struct = runDas(self, func, *args, **kwds)
         plist_str = plistlib.writePlistToString(data_struct)
+        cherrypy.response.headers['ETag'] = data_struct['results'].__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/xml"
         return plist_str
     wrapper.__doc__ = func.__doc__
@@ -276,13 +277,15 @@ def runDas(self, func, *args, **kwds):
         res_expire = make_timestamp(60*5) # 5 minutes
     try:
         factory = WMFactory('webtools_factory')
-        model = factory.loadObject(self.config.model.object, self.config)
-        res_version = model.version
+        object  = factory.loadObject(self.config.model.object, self.config)
+        res_version = object.version
     except:
-        msg  = 'The model class %s does not have version member data. '\
-        % self.config.application
-        msg += 'Unable to set the version.'
-        raise Exception(msg)
+        res_version = 'unknown'
+#        msg  = traceback.format_exc()
+#        msg += '\nThe application %s does not have version member data. '\
+#        % self.config.application
+#        msg += 'Unable to set the version.'
+#        raise Exception(msg)
 
     try:
         keyhash = hashlib.md5()

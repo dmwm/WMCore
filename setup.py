@@ -74,8 +74,8 @@ def runUnitTests():
                         testmodpath.append(file.replace('.py', ''))
                         testfiles.append('.'.join(testmodpath))
                         
-    sys.stderr = open('/dev/null', 'w')
-    sys.stdout = open('/dev/null', 'w')
+    #sys.stderr = open('/dev/null', 'w')
+    #sys.stdout = open('/dev/null', 'w')
     
     testsuite = TestSuite()
     failedTestFiles = []
@@ -88,8 +88,8 @@ def runUnitTests():
     
     t = TextTestRunner(verbosity=0)
     result = t.run(testsuite)
-    sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderr__
+    #sys.stdout = sys.__stdout__
+    #sys.stderr = sys.__stderr__
     
     print sys.path
     return (result, failedTestFiles, testsuite.countTestCases())

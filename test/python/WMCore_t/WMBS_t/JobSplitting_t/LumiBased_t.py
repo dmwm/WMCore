@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.2 2009/07/13 18:17:26 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LumiBased_t.py,v 1.3 2009/08/05 19:40:16 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 import os
@@ -263,8 +263,8 @@ class EventBasedTest(unittest.TestCase):
 
         self.assertEqual(len(jobGroup2),                       1)
         self.assertEqual(len(jobGroup2[0].jobs),               2)
-        self.assertEqual(len(jobGroup2[0].jobs[0].getFiles()), 4)
-        self.assertEqual(len(jobGroup2[0].jobs[1].getFiles()), 6)
+        self.assertEqual(len(jobGroup2[0].jobs[0].getFiles()), 6)
+        self.assertEqual(len(jobGroup2[0].jobs[1].getFiles()), 4)
 
         jobGroup3 = jobFactory(lumis_per_job = 4)
 
@@ -329,15 +329,15 @@ class EventBasedTest(unittest.TestCase):
 
 
         self.assertEqual(len(jobGroups),         4)
-        self.assertEqual(len(jobGroups[0].jobs), 1)
-        self.assertEqual(len(jobGroups[1].jobs), 3)
+        self.assertEqual(len(jobGroups[0].jobs), 3)
+        self.assertEqual(len(jobGroups[3].jobs), 1)
         self.assertEqual(len(jobGroups[1].jobs[0].getFiles()), 1)
 
         jobGroup2 = jobFactory(files_per_job = 2)
 
         self.assertEqual(len(jobGroup2),         4)
-        self.assertEqual(len(jobGroup2[0].jobs), 1)
-        self.assertEqual(len(jobGroup2[1].jobs), 2)
+        self.assertEqual(len(jobGroup2[0].jobs), 2)
+        self.assertEqual(len(jobGroup2[3].jobs), 1)
         self.assertEqual(len(jobGroup2[1].jobs[0].getFiles()), 2)
 
         jobGroup3 = jobFactory(files_per_job = 8)

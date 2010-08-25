@@ -5,8 +5,8 @@ _FileBased_t_
 File based splitting test.
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.3 2009/07/01 17:56:31 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: FileBased_t.py,v 1.4 2009/08/05 19:40:16 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 import unittest
@@ -88,7 +88,7 @@ class FileBasedTest(unittest.TestCase):
             self.multipleSiteFileset.addFile(newFile)
         for i in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = Set(["otherse.cern.ch"]))
+                           locations = Set(["otherse.cern.ch", "somese.cern.ch"]))
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         self.multipleSiteFileset.commit()

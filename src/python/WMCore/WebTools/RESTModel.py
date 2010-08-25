@@ -6,8 +6,8 @@ Rest Model abstract implementation
 TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.52 2010/01/28 19:58:19 sryu Exp $"
-__version__ = "$Revision: 1.52 $"
+__revision__ = "$Id: RESTModel.py,v 1.53 2010/02/02 18:06:02 sryu Exp $"
+__version__ = "$Revision: 1.53 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -127,7 +127,7 @@ class RESTModel(WebAPI):
         else:
             return data, False
                 
-    def addDAO(self, verb, methodKey, daoStr, args=[], validation=[], version=1):
+    def addDAO(self, verb, methodKey, daoStr, args=[], validation=[], version=1, daoFactory = None):
         """
         add dao in self.methods and wrap it with sanitise_input. Assumes that a 
         DAOFactory instance is available from self.
@@ -137,7 +137,10 @@ class RESTModel(WebAPI):
             method = methodKey
             input = self.sanitise_input(args, kwargs, method)
             # store the dao
-            dao = self.daofactory(classname=daoStr)
+            if daoFactory:
+                dao = daoFactory(classname=daoStr)
+            else:
+                dao = self.daofactory(classname=daoStr)
             # execute the requested input, now a list of keywords
             return dao.execute(**input)
                   

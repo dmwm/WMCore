@@ -9,8 +9,8 @@ Not in the Framework XML
 
 """
 
-__version__ = "$Revision: 1.6 $"
-__revision__ = "$Id: FileInfo.py,v 1.6 2010/03/22 15:06:14 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: FileInfo.py,v 1.7 2010/03/23 22:03:49 sfoulkes Exp $"
 
 
 
@@ -88,7 +88,7 @@ class FileInfo:
 
         """
 
-        pfn = fileReport.PFN
+        pfn = fileReport.pfn
         if pfn.startswith("file:"):
             pfn = pfn.replace("file:", "")
 
@@ -106,7 +106,7 @@ class FileInfo:
 
 
         # Now we know it, we better set it
-        setattr(fileReport, 'PFN', pfn)
+        setattr(fileReport, 'pfn', pfn)
 
         return self.processFile(filename = pfn,
                                 fileReport = fileReport,
@@ -147,12 +147,12 @@ class FileInfo:
         #Get info from file
         mergedLFNBase    = getattr(fileReport, 'MergedLFNBase', None)
         mergedBySize     = getattr(fileReport, 'MergedBySize', False)
-        lfn              = getattr(fileReport, 'LFN')
+        lfn              = getattr(fileReport, 'lfn')
 
         # Do LFN manipulation
         # First in the standard case
         if not fixedLFN and not disableGUID:
-            guid = getattr(fileReport, 'GUID', None)
+            guid = getattr(fileReport, 'guid', None)
             if not guid:
                 msg = "No GUID for file %s" %(lfn)
                 logging.error(msg)
@@ -160,13 +160,13 @@ class FileInfo:
             # Then we have to change the LFN to match the GUID
             dirname = os.path.dirname(lfn)
             filelfn = '%s.root' %(str(guid))
-            setattr(fileReport, 'LFN', os.path.join(dirname, filelfn))
+            setattr(fileReport, 'lfn', os.path.join(dirname, filelfn))
         elif not fixedLFN and mergedBySize and mergedLFNBase:
             # Then we better do the merge stuff
             # Not tested for now
             mergedLFNBase.rstrip('/')
             newLFN = os.path.join(mergedLFNBase, os.path.basename(lfn))
-            setattr(fileReport, 'LFN', newLFN)
+            setattr(fileReport, 'lfn', newLFN)
         
 
 

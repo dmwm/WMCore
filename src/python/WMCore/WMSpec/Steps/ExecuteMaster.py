@@ -7,11 +7,12 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.16 2010/05/19 17:37:11 mnorman Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.17 2010/05/21 19:04:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import threading
 import traceback
+import logging
 
 from WMCore.WMSpec.WMStep import WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory

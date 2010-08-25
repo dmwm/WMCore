@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.48 2009/09/29 15:42:30 mnorman Exp $"
-__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: Subscription.py,v 1.49 2009/09/29 18:34:56 sryu Exp $"
+__version__ = "$Revision: 1.49 $"
 
 from sets import Set
 import logging
@@ -430,3 +430,22 @@ class Subscription(WMBSBase, WMSubscription):
         self.delete()
         return
    
+    def isFileCompleted(self, files):
+        """
+        _isFileCompleted_
+        
+        Returns True if all the given files are in complete status
+        Return False if one of files are not in complete status
+        """
+        if type(files) != list:
+            files = [files] 
+        
+        action = self.daofactory( classname = "Subscriptions.GetCompletedByFileList" )
+        fileIDs =  action.execute(self['id'], files, conn = self.getDBConn(),
+                                          transaction = self.existingTransaction())
+        
+        for f in files:
+            if f['id'] not in fileIDs:
+                return False 
+        
+        return True

@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-__revision__ = "$Id: CondorGlobusPlugin.py,v 1.1 2010/02/26 15:36:13 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CondorGlobusPlugin.py,v 1.2 2010/03/03 16:32:00 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import os.path
@@ -23,6 +23,8 @@ import threading
 from subprocess import Popen, PIPE
 
 from WMCore.DAOFactory import DAOFactory
+
+from WMCore.WMInit import getWMBASE
 
 from WMComponent.JobSubmitter.Plugins.PluginBase import PluginBase
 
@@ -66,7 +68,7 @@ class CondorGlobusPlugin(PluginBase):
 
         jobList = parameters.get('jobs')
         self.packageDir = parameters.get('packageDir', None)
-        self.unpacker   = os.path.join(os.getenv('WMCOREBASE'),
+        self.unpacker   = os.path.join(getWMBASE(),
                                        'src/python/WMCore/WMRuntime/Unpacker.py')
 
         logging.error("I have jobs")

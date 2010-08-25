@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.43 2010/02/08 12:21:02 metson Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: Root.py,v 1.44 2010/02/10 16:33:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.44 $"
 
 # CherryPy
 import cherrypy
@@ -31,14 +31,21 @@ import WMCore.WMLogging
 import logging 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WebTools.Welcome import Welcome
+from WMCore.Agent.Harness import Harness
 
-class Root(WMObject):
+class Root(WMObject, Harness):
     def __init__(self, config):
-        self.config = config.section_("Webtools")
-        self.appconfig = config.section_(self.config.application)
-        self.app = self.config.application
+        Harness.__init__(self, config, compName = "Webtools")
+        self.appconfig = config.section_(self.config.Webtools.application)
+        self.app = self.config.Webtools.application
         self.homepage = None
         self.secconfig = getattr(config, "SecurityModule", None)     
+
+    def initInThread(self):
+        return
+
+    def preInitialization(self):
+        self.start()
     
     def validateConfig(self):
         # Check that the configuration has the required sections
@@ -52,39 +59,39 @@ class Root(WMObject):
     def configureCherryPy(self):
         #Configure CherryPy
         try:
-            cpconfig.update ({"server.environment": self.config.environment})
+            cpconfig.update ({"server.environment": self.config.Webtools.environment})
         except:
             cpconfig.update ({"server.environment": 'production'})
         try:
-            cpconfig.update ({"server.socket_port": int(self.config.port)})
+            cpconfig.update ({"server.socket_port": int(self.config.Webtools.port)})
         except:
             cpconfig.update ({"server.socket_port": 8080})
         try:
-            cpconfig.update ({"server.socket_host": self.config.host})
+            cpconfig.update ({"server.socket_host": self.config.Webtools.host})
         except:
             cpconfig.update ({"server.socket_host": 'localhost'})
         try:
-            cpconfig.update ({'tools.expires.secs': int(self.config.expires)})
+            cpconfig.update ({'tools.expires.secs': int(self.config.Webtools.expires)})
         except:
             cpconfig.update ({'tools.expires.secs': 300})
         try:
-            cpconfig.update ({'log.screen': bool(self.config.log_screen)})
+            cpconfig.update ({'log.screen': bool(self.config.Webtools.log_screen)})
         except:
             cpconfig.update ({'log.screen': True})
         try:
-            cpconfig.update ({'log.access_file': self.config.access_log_file})
+            cpconfig.update ({'log.access_file': self.config.Webtools.access_log_file})
         except:
             cpconfig.update ({'log.access_file': None})
         try:
-            cpconfig.update ({'log.error_file': self.config.error_log_file})
+            cpconfig.update ({'log.error_file': self.config.Webtools.error_log_file})
         except:
             cpconfig.update ({'log.error_file': None})
         try:
-            log.error_log.setLevel(self.config.error_log_level)
+            log.error_log.setLevel(self.config.Webtools.error_log_level)
         except:     
             log.error_log.setLevel(logging.DEBUG)
         try:
-            log.access_log.setLevel(self.config.access_log_level)
+            log.access_log.setLevel(self.config.Webtools.access_log_level)
         except:
             log.access_log.setLevel(logging.DEBUG)
         cpconfig.update ({
@@ -150,7 +157,7 @@ class Root(WMObject):
     def mountPage(self, view, mount_point, globalconf, factory):
         config = Configuration()
         component = config.component_(view._internal_name)
-        component.application = self.config.application
+        component.application = self.config.Webtools.application
         for k in globalconf.keys():
             # Add the global config to the view
             component.__setattr__(k, globalconf[k])

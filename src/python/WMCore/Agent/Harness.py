@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.30 2010/02/10 16:03:44 swakef Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Harness.py,v 1.31 2010/02/10 16:33:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.31 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -47,7 +47,7 @@ class Harness:
     components
     """
 
-    def __init__(self, config):
+    def __init__(self, config, compName = None):
         """
         init
    
@@ -59,7 +59,8 @@ class Harness:
         messages
         """
         self.config = config
-        compName = self.__class__.__name__
+        if not compName:
+            compName = self.__class__.__name__
         if not compName in self.config.listComponents_():
             raise WMException(WMEXCEPTION['WMCORE-8']+compName, 'WMCORE-8')
         self.config.Agent.componentName = compName 
@@ -430,7 +431,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         myThread = threading.currentThread()
         myThread.msgService.finish()
         
-    def startDaemon(self, keepParent = False):
+    def startDaemon(self, keepParent = False, compName = None):
         """
         Same result as start component, except that the comopnent
         is started as a daemon, after which you can close your xterm
@@ -441,7 +442,8 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         """
         msg = "Starting %s as a daemon " % (self.config.Agent.componentName)
         print(msg)
-        compName = self.__class__.__name__
+        if not compName:
+            compName = self.__class__.__name__
         compSect = getattr(self.config, compName, None) 
         msg = "Log will be in %s " %(compSect.componentDir)
         print(msg)

@@ -29,8 +29,8 @@ wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
 
-__revision__ = "$Id: wmcoreD,v 1.11 2010/02/10 15:54:18 swakef Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: wmcoreD,v 1.12 2010/02/10 16:33:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -44,7 +44,6 @@ from WMCore.Agent.Daemon.Details import Details
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.WMFactory import WMFactory
 from WMCore.WMInit import WMInit
-
 
 def usage():
 
@@ -195,6 +194,29 @@ def startup(configFile):
     print('Starting components: '+str(components))
 
     config = loadConfigurationFile(configFile)
+
+    if "Webtools" in components:
+        from WMCore.WebTools.Root import Root        
+        components.remove("Webtools")
+        components.remove(config.Webtools.application)
+        
+        webtoolsRoot = Root(config)
+        webtoolsRoot.startDaemon(keepParent = True, compName = "Webtools")
+        print('Waiting 1 seconds, to ensure daemon file is created')
+        time.sleep(1)
+        compDir = config.component_("Webtools").componentDir
+        compDir = os.path.expandvars(compDir)
+        daemonXML = os.path.join( compDir, "Daemon.xml")
+        if os.path.exists(daemonXML):
+            daemon = Details(daemonXML)
+            if not daemon.isAlive():         
+                print "Error: Component Webtools Did not start properly..."
+                print "Check component log to see why"
+                sys.exit(1)
+        else:
+            print('Path for daemon file does not exist!')
+            sys.exit(1)
+        
     for component in components:
         print('Starting : '+component)
         factory = WMFactory('componentFactory')
@@ -215,9 +237,9 @@ def startup(configFile):
         else:
             print('Path for daemon file does not exist!')
             sys.exit(1)
+
     return
     
-        
 def shutdown(configFile):
     """
     _shutdown_
@@ -231,6 +253,49 @@ def shutdown(configFile):
     """
     print('Stopping components: '+str(components))
     config = loadConfigurationFile(configFile)
+
+    if "Webtools" in components:
+        from WMCore.WebTools.Root import Root        
+        components.remove("Webtools")
+        components.remove(config.Webtools.application)
+        compDir = config.component_("Webtools").componentDir
+        compDir = os.path.expandvars(compDir)
+        daemonXml = os.path.join(compDir, "Daemon.xml")
+        if not os.path.exists(daemonXml):
+            print "Cannot find Daemon.xml for component:", component
+            print "Unable to shut it down"
+        else:
+            daemon = Details(daemonXml)
+            if not daemon.isAlive():
+                print "Component %s with process id %s is not running" % (
+                    component, daemon['ProcessID'],
+                    )
+            else:
+                daemon.killWithPrejudice()
+        if doLogCleanup:
+            #  //
+            # // Log Cleanup
+            #//
+            msg = "Removing %s/ComponentLog" % compDir
+            print msg
+            try:
+                os.remove("%s/ComponentLog" % compDir)
+            except StandardError, ex:
+                msg = "Unable to cleanup Component Log: "
+                msg += "%s/ComponentLog\n" % compDir
+                msg += str(ex)
+                
+        if doDirCleanup:
+            #  //
+            # // Cleanout everything in ComponentDir
+            #//  for this component
+            print "Removing %s\n" % compDir
+            exitCode = subprocess.call(["rm", "-rf", "%s" % compDir])
+            if exitCode:
+                msg = "Failed to clean up dir: %s\n" % compDir
+                msg += output
+                print msg
+        
     for component in components:
         print('Stopping: '+component)
         compDir = config.component_(component).componentDir
@@ -284,6 +349,22 @@ def status(configFile):
     """
     print('Status components: '+str(components))
     config = loadConfigurationFile(configFile)
+
+    if "Webtools" in components:
+        components.remove("Webtools")
+        components.remove(config.Webtools.application)
+        compDir = config.component_("Webtools").componentDir
+        compDir = os.path.expandvars(compDir)
+        daemonXml = os.path.join(compDir, "Daemon.xml")
+        if not os.path.exists(daemonXml):
+            print "Component:Webtools Not Running"
+        else:
+            daemon = Details(daemonXml)
+            if not daemon.isAlive():
+                print "Component:Webtools Not Running"
+            else:
+                print "Component:Webtools Running:%s" % (daemon['ProcessID'])
+        
     for component in components:
         compDir = config.component_(component).componentDir
         compDir = os.path.expandvars(compDir)

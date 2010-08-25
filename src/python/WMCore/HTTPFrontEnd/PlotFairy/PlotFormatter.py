@@ -20,14 +20,14 @@ class PlotFormatter(RESTFormatter):
                              'application/pdf': self.pdf,
                              'image/svg+xml':self.svg}
     
-    def svg(self, figure):
-        return self.plot(figure, 'svg')
+    def svg(self, data, *args, **kwargs):
+        return self.plot(data, 'svg')
     
-    def pdf(self, figure):
-        return self.plot(figure, 'pdf')
+    def pdf(self, data, *args, **kwargs):
+        return self.plot(data, 'pdf')
 
-    def png(self, figure):
-        return self.plot(figure, 'png')
+    def png(self, data, *args, **kwargs):
+        return self.plot(data, 'png')
 
     def plot(self, data, format):
         if hasattr(self.config, "cache"):
@@ -35,6 +35,9 @@ class PlotFormatter(RESTFormatter):
             # http://docs.python.org/library/tempfile.html) and return that file
             raise NotImplemented
         else:
-            buffer = StringIO()
-            data['figure'].savefig(buffer, data.get('dpi',100), format=format)
-            return buffer.getvalue()
+            if 'figure' in data:
+                buffer = StringIO()
+                data['figure'].savefig(buffer, format=format)
+                return buffer.getvalue()
+            return None
+    

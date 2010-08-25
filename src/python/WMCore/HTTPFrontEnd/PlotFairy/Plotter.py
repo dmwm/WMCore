@@ -43,7 +43,7 @@ class Plotter(RESTModel):
             input['data'] = jr.get()
         plot = self.factory.loadObject(input['type'])
         
-        return {'figure': plot(input['data']),'dpi':input['data'].get('dpi',96)}
+        return {'figure': plot(input['data'])}
             
     def validate_input(self, input, verb, method):
         if not 'data' in input.keys():

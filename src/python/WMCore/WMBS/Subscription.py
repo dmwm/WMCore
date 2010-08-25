@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.37 2009/04/16 18:47:45 sryu Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: Subscription.py,v 1.38 2009/05/01 19:43:53 sryu Exp $"
+__version__ = "$Revision: 1.38 $"
 
 from sets import Set
 import logging
@@ -167,8 +167,9 @@ class Subscription(WMBSBase, WMSubscription):
         Return a Set of File objects that have the given status with respect
         to this subscription.
         """
+        status = status.title()
         files = Set()
-        action = self.daofactory(classname = "Subscriptions.Get%s" % status)
+        action = self.daofactory(classname = "Subscriptions.Get%sFiles" % status)
         for f in action.execute(self["id"], conn = self.getReadDBConn(),
                                 transaction = self.existingTransaction()):
             fl = File(id = f["file"])
@@ -199,7 +200,7 @@ class Subscription(WMBSBase, WMSubscription):
             return files
         
         acq = self.acquiredFiles()
-        files = self.filesOfStatus("AvailableFiles")
+        files = self.filesOfStatus("Available")
 
         if len(files) == 0:
             return
@@ -291,7 +292,7 @@ class Subscription(WMBSBase, WMSubscription):
     
     def isCompleteOnRun(self, runID):
         """
-        _isComplete_
+        _isCompleteOnRun_
         
         Check all the files in the given subscripton and the given run are completed.
         
@@ -305,3 +306,20 @@ class Subscription(WMBSBase, WMSubscription):
             return True
         else:
             return False
+        
+    def filesOfStatusByRun(self, status, runID):
+        """
+        _filesOfStatusByRun_
+        
+        Return all the files in the given subscription and the given run which are completed.
+        
+        """
+        files = []
+        action = self.daofactory(classname = "Subscriptions.Get%sFilesByRun" % status)
+        for f in action.execute(self["id"], runID, conn = self.getReadDBConn(),
+                                transaction = self.existingTransaction()):
+            fl = File(id = f["file"])
+            fl.load()
+            files.append(fl)
+            
+        return files 

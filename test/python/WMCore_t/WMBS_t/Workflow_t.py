@@ -5,14 +5,16 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.9 2009/03/24 16:29:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Workflow_t.py,v 1.10 2009/04/01 18:42:30 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import os
 import threading
 
 from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBS.Fileset import Fileset
+
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
@@ -205,6 +207,48 @@ class WorkflowTest(unittest.TestCase):
 
         testWorkflowA.delete()
         return
-                                            
+
+    def testOutput(self):
+        """
+        _testOutput_
+
+        Creat a workflow and add some outputs to it.  Verify that these are
+        stored to and loaded from the database correctly.
+        """
+        testFilesetA = Fileset(name = "testFilesetA")
+        testFilesetB = Fileset(name = "testFilesetB")
+        testFilesetA.create()
+        testFilesetB.create()
+        
+        testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
+                                 name = "wf001")
+        testWorkflowA.create()
+
+        testWorkflowB = Workflow(name = "wf001")
+        testWorkflowB.load()
+
+        assert len(testWorkflowB.outputMap.keys()) == 0, \
+            "ERROR: Output map exists before output is assigned"
+
+        testWorkflowA.addOutput("outModOne", testFilesetA)
+        testWorkflowA.addOutput("outModTwo", testFilesetB)        
+
+        testWorkflowC = Workflow(name = "wf001")
+        testWorkflowC.load()
+
+        assert len(testWorkflowC.outputMap.keys()) == 2, \
+               "ERROR: Incorrect number of outputs in output map"
+        assert "outModOne" in testWorkflowC.outputMap.keys(), \
+               "ERROR: Output modules missing from workflow output map"
+        assert "outModTwo" in testWorkflowC.outputMap.keys(), \
+               "ERROR: Output modules missing from workflow output map"        
+
+        assert testWorkflowC.outputMap["outModOne"].id == testFilesetA.id, \
+               "ERROR: Output map incorrectly maps filesets."
+        assert testWorkflowC.outputMap["outModTwo"].id == testFilesetB.id, \
+               "ERROR: Output map incorrectly maps filesets."
+
+        return
+
 if __name__ == "__main__":
     unittest.main()

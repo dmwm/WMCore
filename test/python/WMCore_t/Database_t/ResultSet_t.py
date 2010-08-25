@@ -36,41 +36,14 @@ class ResultSetTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                     useDefault = False)
 
-        myThread = threading.currentThread()
-
-        self.mydialect = os.getenv("DIALECT")
-        self.mydb      = os.getenv("DATABASE")
-
-
         return
-
-
-
 
     def tearDown(self):
         """
         Delete the ResultSet test class
 
         """
-
-        #Tear down functionality lifted from WMBS
-        # -mnorman
-
-        myThread = threading.currentThread()
-        
-        myThread.transaction.begin()
-        
-        factory = WMFactory("WMBS", "WMCore.WMBS")        
-        destroy = factory.loadObject(self.mydialect + ".Destroy")
-        destroy.create["test"] = "DROP TABLE test"
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        
-        myThread.transaction.commit()
-        self.remove_test = False
-        
+        self.testInit.clearDatabase()
         return
 
 

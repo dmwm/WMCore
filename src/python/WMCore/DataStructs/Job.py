@@ -7,8 +7,8 @@ Data object that describes a job
 """
 
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.31 2010/04/14 20:58:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: Job.py,v 1.32 2010/07/22 16:54:26 sfoulkes Exp $"
+__version__ = "$Revision: 1.32 $"
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.JobGroup import JobGroup
@@ -47,6 +47,8 @@ class Job(WMObject, dict):
         self["task"] = None
         self["fwjr"] = None
         self["fwjr_path"] = None
+        self["workflow"] = None
+        self["owner"] = None
         return
 
     #  //

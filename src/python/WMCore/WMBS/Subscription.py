@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.60 2010/03/08 16:31:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.60 $"
+__revision__ = "$Id: Subscription.py,v 1.61 2010/03/31 21:34:37 sfoulkes Exp $"
+__version__ = "$Revision: 1.61 $"
 
 import logging
 
@@ -502,8 +502,7 @@ class Subscription(WMBSBase, WMSubscription):
                                 transaction = self.existingTransaction())
 
         for jobGroup in jobGroups:
-            if not jobGroup.uid:
-                jobGroup.uid = makeUUID()
+            jobGroup.uid = makeUUID()
             jobGroupList.append({'subscription': self['id'],
                                  'uid': jobGroup.uid,
                                  'output': fsIDs.pop()})

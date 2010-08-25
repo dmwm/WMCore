@@ -6,8 +6,8 @@ Unit tests for  daemon creation
 
 """
 
-__revision__ = "$Id: Daemon_t.py,v 1.8 2010/02/04 21:43:21 meloam Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Daemon_t.py,v 1.9 2010/02/04 22:52:12 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -66,22 +66,23 @@ class DaemonTest(unittest.TestCase):
         # keep the parent alive
         self.pid = createDaemon(self.tempDir, True)
         try:
-            if self.pid != 0 :
-                print('Deamon created I am the parent')
-                time.sleep(2)
-                print('Going to destroy my daemon')
-                details = Details(os.path.join(self.tempDir,"Daemon.xml"))
-                print('Found Deamon details (sleeping for 10 secs.)')
-                print(str(details.isAlive()))
-                time.sleep(10)
-                details.killWithPrejudice()
-                print('Daemon killed')
-            else:
-                while True:
-                    logging.debug('I am a deamon (wait 10 seconds)')
-                    time.sleep(1)
-        except:
-            pass
+            try:
+                if self.pid != 0 :
+                    print('Deamon created I am the parent')
+                    time.sleep(2)
+                    print('Going to destroy my daemon')
+                    details = Details(os.path.join(self.tempDir,"Daemon.xml"))
+                    print('Found Deamon details (sleeping for 10 secs.)')
+                    print(str(details.isAlive()))
+                    time.sleep(10)
+                    details.killWithPrejudice()
+                    print('Daemon killed')
+                else:
+                    while True:
+                        logging.debug('I am a deamon (wait 10 seconds)')
+                        time.sleep(1)
+            except:
+                pass
         finally:
             if self.pid == 0:
                 os._exit(-1)

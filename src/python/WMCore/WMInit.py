@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.18 2010/02/02 19:21:05 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: WMInit.py,v 1.19 2010/02/03 16:57:54 sfoulkes Exp $"
+__version__ = "$Revision: 1.19 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -60,8 +60,9 @@ class WMInit:
             if myThread.dialect != None and myThread.dialect != "SQLite":
                 # Database is already initialized, we'll create a new
                 # transaction and move on.
-                if myThread.transaction != None:
-                    myThread.transaction.commit()
+                if hasattr(myThread, transaction):
+                    if myThread.transaction != None:
+                        myThread.transaction.commit()
 
                 myThread.transaction = Transaction(myThread.dbi)
                 myThread.transaction.commit()

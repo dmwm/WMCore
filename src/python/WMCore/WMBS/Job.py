@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.38 2009/10/15 19:49:15 mnorman Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: Job.py,v 1.39 2009/10/26 16:52:37 sryu Exp $"
+__version__ = "$Revision: 1.39 $"
 
 import datetime
 from sets import Set
@@ -313,7 +313,8 @@ class Job(WMBSBase, WMJob):
         """
 
         action = self.daofactory(classname = "Jobs.GetCache")
-        state  = action.execute(self["id"], conn = self.getDBConn(), transaction = self.existingTransaction)
+        state  = action.execute(self["id"], conn = self.getDBConn(), 
+                                transaction = self.existingTransaction)
 
         return state
 
@@ -325,6 +326,34 @@ class Job(WMBSBase, WMJob):
         """
 
         action = self.daofactory(classname = "Jobs.SetCache")
-        state  = action.execute(ID = self["id"], cacheDir = cacheDir, conn = self.getDBConn(), transaction = self.existingTransaction)       
+        state  = action.execute(id = self["id"], cacheDir = cacheDir, 
+                                conn = self.getDBConn(), 
+                                transaction = self.existingTransaction)       
+
+        return state
+
+    def completeInputFiles(self):
+        """
+        _completeInputFiles_
+        
+        Set the location of the jobCache
+        """
+
+        action = self.daofactory(classname = "Jobs.CompleteInput")
+        state  = action.execute(self["id"], conn = self.getDBConn(), 
+                                transaction = self.existingTransaction)       
+
+        return state
+    
+    def failInputFiles(self):
+        """
+        _failInputFiles_
+        
+        Set the location of the jobCache
+        """
+
+        action = self.daofactory(classname = "Jobs.FailInput")
+        state  = action.execute(self["id"], conn = self.getDBConn(), 
+                                transaction = self.existingTransaction)       
 
         return state

@@ -4,8 +4,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.15 2010/03/22 19:06:48 sryu Exp $"
-__version__  = "$Revision: 1.15 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.16 2010/03/30 19:01:48 sryu Exp $"
+__version__  = "$Revision: 1.16 $"
 
 import threading
 import logging
@@ -182,6 +182,7 @@ init jobCreator
         Poller for looking in all active subscriptions for jobs that need to be made.
 
         """
+        logging.info("Polling Subscription")
         myThread = threading.currentThread()
 
         #First, get list of Subscriptions
@@ -206,7 +207,8 @@ init jobCreator
             self.processPool.enqueue(listOfWork)
             
             self.processPool.dequeue(totalItems = len(listOfWork))
-
+        
+        logging.info("Number of subscription is enqueued (%s)" % len(listOfWork))
 
         return
 

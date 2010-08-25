@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """
-_APISched_t_
+_SchedulerGLite_t_
 
 """
 
-__revision__ = "$Id: SchedulerGLite_t.py,v 1.2 2010/06/02 16:04:26 spigafi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SchedulerGLite_t.py,v 1.3 2010/06/02 21:01:02 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import time
@@ -89,13 +89,14 @@ def printDebug(task, runningInstance = False):
             print msg
 
 
-class APISched(unittest.TestCase):
+class SchedulerGLite(unittest.TestCase):
     """
     Unit-test for BossLiteAPISched
     """
     
     numjob = 8
     stoppingCriteria = 4
+    toKill = 3
     
     def testA_databaseStartup(self):
         """
@@ -116,7 +117,7 @@ class APISched(unittest.TestCase):
         return
 
     
-    def testB_Submission(self):
+    def testB_submission(self):
         """
         Simple submission operation
         """
@@ -128,12 +129,14 @@ class APISched(unittest.TestCase):
                                        schedulerConfig = mySchedConfig )
         
         task = mySchedAPI.submit( taskId = 1 )
+        
+        self.assertEqual(task['id'], 1)
               
         return
     
     
     
-    def testC_Status(self):
+    def testC_status(self):
         """
         Simple status check operation
         """
@@ -167,7 +170,7 @@ class APISched(unittest.TestCase):
         return
     
     
-    def testD_GetOutput(self):
+    def testD_getOutput(self):
         """
         Simple getOutput operation
         """
@@ -179,14 +182,15 @@ class APISched(unittest.TestCase):
                                        schedulerConfig = mySchedConfig )
         
         command = "mkdir ./test"
-        out, ret = executeCommand( command )
+        executeCommand( command )
         
         extractedJob = myBossLiteAPI.loadEnded()
         
         if len(extractedJob) > 0 :
-            jobRange = str(extractedJob[0]['jobId'])
+            jobRange = ','.join([str(x['jobId']) for x in extractedJob ])
             
-            task = mySchedAPI.getOutput( taskId = 1, jobRange = jobRange, outdir = './test' )
+            task = mySchedAPI.getOutput( taskId = 1, 
+                            jobRange = jobRange, outdir = './test' )
             
             #### DEBUG ####
             printDebug(task, runningInstance = True)
@@ -194,7 +198,7 @@ class APISched(unittest.TestCase):
         return
     
     
-    def testD_Kill(self):
+    def testD_kill(self):
         """
         Simple kill operation
         """
@@ -205,10 +209,10 @@ class APISched(unittest.TestCase):
         mySchedAPI = BossLiteAPISched( bossLiteSession = myBossLiteAPI, 
                                        schedulerConfig = mySchedConfig )
         
-        extractedJob = myBossLiteAPI.loadSubmitted(limit = 1)
+        extractedJob = myBossLiteAPI.loadSubmitted(limit = self.toKill)
         
         if len(extractedJob) > 0 :
-            jobRange = str(extractedJob[0]['jobId'])
+            jobRange = ','.join([str(x['jobId']) for x in extractedJob ])
             
             task = mySchedAPI.kill( taskId = 1, jobRange = jobRange)
             
@@ -233,7 +237,7 @@ class APISched(unittest.TestCase):
     
     
 if __name__ == "__main__":
-    APISchedSuite = unittest.TestLoader().loadTestsFromTestCase(APISched)
+    GliteSuite = unittest.TestLoader().loadTestsFromTestCase(SchedulerGLite)
 
     # run the unit-test
-    unittest.TextTestRunner(verbosity=3).run(APISchedSuite)
+    unittest.TextTestRunner(verbosity=3).run(GliteSuite)

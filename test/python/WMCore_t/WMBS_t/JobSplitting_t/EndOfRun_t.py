@@ -5,8 +5,8 @@ _EndOfRun_t_
 End of run splitting test
 """
 
-__revision__ = "$Id: EndOfRun_t.py,v 1.5 2010/05/07 14:20:09 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: EndOfRun_t.py,v 1.6 2010/05/07 14:36:45 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import os
@@ -56,6 +56,7 @@ class EndOfRunTest(unittest.TestCase):
 
         locationAction = daofactory(classname = "Locations.New")
         locationAction.execute(siteName = 's1', seName = "somese.cern.ch")
+        locationAction.execute(siteName = 's2', seName = "otherse.cern.ch")
 
         
         self.multipleFileFileset = Fileset(name = "TestFileset1")
@@ -92,6 +93,21 @@ class EndOfRunTest(unittest.TestCase):
             newFile.create()
             self.singleLumiFileset.addFile(newFile)
         self.singleLumiFileset.commit()
+
+
+        self.multipleSiteFileset = Fileset(name = "TestFileset5")
+        self.multipleSiteFileset.create()
+        for i in range(5):
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile.addRun(Run(i, *[45+i]))
+            newFile.create()
+            self.multipleSiteFileset.addFile(newFile)
+        for i in range(5):
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "otherse.cern.ch")
+            newFile.addRun(Run(i, *[45+i]))
+            newFile.create()
+            self.multipleSiteFileset.addFile(newFile)
+        self.multipleSiteFileset.commit()
             
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "mnorman", name = "wf001", task="Test")
@@ -112,11 +128,16 @@ class EndOfRunTest(unittest.TestCase):
                                                       workflow = testWorkflow,
                                                       split_algo = "EndOfRun",
                                                       type = "Processing")
+        self.multipleSiteSubscription  = Subscription(fileset = self.multipleSiteFileset,
+                                                      workflow = testWorkflow,
+                                                      split_algo = "EndOfRun",
+                                                      type = "Processing")
 
         self.multipleFileSubscription.create()
         self.singleFileSubscription.create()
         self.multipleLumiSubscription.create()
         self.singleLumiSubscription.create()
+        self.multipleSiteSubscription.create()
 
 
         return
@@ -309,6 +330,55 @@ class EndOfRunTest(unittest.TestCase):
                 "JobFactory should have provides us with 9 files")
         
         self.assertEquals(len(myfiles), 9)
+
+
+    def testClosed_MultipleJobs(self):
+        """
+        _testClosed_MultipleJobs_
+        
+        Should break subscription into jobs based on number of files
+        """
+
+        splitter = SplitterFactory()
+        self.multipleFileSubscription.getFileset().markOpen(False)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleFileSubscription)
+        jobGroups = jobFactory(files_per_job = 1)
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 10)
+
+        job = jobGroups[0].jobs[0]
+
+        # We should have one file per job
+        self.assertEqual(len(job['input_files']), 1)
+
+        return
+
+
+    def testClosed_MultipleSites(self):
+        """
+        _testClosed_MultipleSites_
+
+        Test whether we can handle multiple sites
+        """
+
+        splitter = SplitterFactory()
+        self.multipleSiteSubscription.getFileset().markOpen(False)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleSiteSubscription)
+        jobGroups = jobFactory(files_per_job = 10)
+
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 2)
+
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(jobGroups[0].jobs[0]['input_files']), 5)
+        
+        
+
+        
 
 if __name__ == '__main__':
     unittest.main()

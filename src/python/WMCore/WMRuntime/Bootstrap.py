@@ -12,6 +12,8 @@ import os.path
 import logging
 import threading
 import sys
+import inspect
+import socket
 from logging.handlers import RotatingFileHandler
 
 from WMCore.WMException        import WMException
@@ -21,11 +23,63 @@ from WMCore                    import WMLogging
 from WMCore.WMRuntime.Watchdog import Watchdog
 
 from WMCore.DataStructs.JobPackage import JobPackage
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.WMSpec.WMWorkload      import WMWorkloadHelper
+
+from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig, SiteConfigError
+import WMCore.FwkJobReport.Report as Report
+
 
 class BootstrapException(WMException):
     #TODO: make awesome
     pass
+
+
+# Copied direct from ProdAgent to find the damn CE name
+def getSyncCE():
+    """
+    _getSyncCE_
+
+    Extract the SyncCE from GLOBUS_GRAM_JOB_CONTACT if available for OSG,
+    otherwise broker info for LCG
+
+    """
+    result = socket.gethostname()
+
+    if os.environ.has_key('GLOBUS_GRAM_JOB_CONTACT'):
+        #  //
+        # // OSG, Sync CE from Globus ID
+        #//
+        val = os.environ['GLOBUS_GRAM_JOB_CONTACT']
+        try:
+            host = val.split("https://", 1)[1]
+            host = host.split(":")[0]
+            result = host
+        except:
+            pass
+        return result
+    if os.environ.has_key('EDG_WL_JOBID'):
+        #  //
+        # // LCG, Sync CE from edg command
+        #//
+        command = "glite-brokerinfo getCE"
+        pop = popen2.Popen3(command)
+        pop.wait()
+        exitCode = pop.poll()
+        if exitCode:
+            return result 
+        
+        content = pop.fromchild.read()
+        result = content.strip()
+        return result
+
+    if os.environ.has_key('NORDUGRID_CE'):
+        #  //
+        # // ARC, Sync CE from env. var. submitted with the job by JobSubmitter
+        #//
+        return os.environ['NORDUGRID_CE']
+
+    return result
+
 
 
 
@@ -149,6 +203,42 @@ def loadTask(job):
         msg += "Task name not matched"
         raise BootstrapException, msg
     return task
+
+
+def createInitialReport(job, task, logLocation):
+    """
+    _createInitialReport_
+
+    Create an initial job report with the base
+    information in it.
+    """
+    try:
+        siteCfg = loadSiteLocalConfig()
+    except SiteConfigError:
+        # For now, assume that we did this on purpose
+        msg = "Couldn't find SiteConfig"
+        logging.error(msg)
+    report  = Report.Report()
+
+
+    report.data.WMAgentJobID   = job.get('id', None)
+    report.data.WMAgentJobName = job.get('name', None)
+    report.data.seName         = siteCfg.localStageOut.get('se-name',
+                                                           socket.gethostname())
+    report.data.siteName       = getattr(siteCfg, 'siteName', 'Unknown')
+    report.data.hostName       = socket.gethostname()
+    report.data.ceName         = getSyncCE()
+    report.data.completed      = False
+
+    # Not so fond of this, but we have to put the master
+    # report way up at the top so it's returned if the
+    # job fails early
+    reportPath = os.path.join(os.getcwd(), '../', logLocation)
+    report.save(reportPath)
+
+    return
+
+    
 
 
 

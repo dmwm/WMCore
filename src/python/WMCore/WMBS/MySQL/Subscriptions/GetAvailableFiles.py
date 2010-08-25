@@ -28,8 +28,8 @@ CREATE TABLE wmbs_subscription_location (
 """
 
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.15 2009/09/11 16:36:02 mnorman Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.16 2010/06/23 20:49:04 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -56,7 +56,7 @@ class GetAvailableFiles(DBFormatter):
         
        
         
-        sql = """SELECT wff.file, wl.site_name FROM wmbs_fileset_files wff 
+        sql = """SELECT wff.file, wl.se_name FROM wmbs_fileset_files wff 
                   INNER JOIN wmbs_subscription ws ON ws.fileset = wff.fileset 
                   INNER JOIN wmbs_file_location wfl ON wfl.file = wff.file
                   INNER JOIN wmbs_location wl ON wl.id = wfl.location 
@@ -64,7 +64,7 @@ class GetAvailableFiles(DBFormatter):
                   LEFT OUTER JOIN  wmbs_sub_files_failed wf ON ( wf.file = wff.file AND wf.subscription = ws.id )
                   LEFT OUTER JOIN  wmbs_sub_files_complete wc ON ( wc.file = wff.file AND wc.subscription = ws.id )
                   WHERE ws.id=:subscription AND wa.file is NULL 
-                        AND wf.file is NULL AND wc.file is NULL    
+                        AND wf.file is NULL AND wc.file is NULL 
               """
 
 
@@ -74,7 +74,8 @@ class GetAvailableFiles(DBFormatter):
         elif blacklist:
             sql += """ AND wfl.location NOT IN (select location from wmbs_subscription_location where
                         subscription=:subscription AND valid = 0)"""
-                
+
+        #sql += " FOR UPDATE"
         return sql, binds
 
     def formatDict(self, results):
@@ -98,8 +99,8 @@ class GetAvailableFiles(DBFormatter):
         for formattedResult in formattedResults:
             if formattedResult["file"] not in tempResults.keys():
                 tempResults[formattedResult["file"]] = []
-            if "site_name" in formattedResult.keys():
-                tempResults[formattedResult["file"]].append(formattedResult["site_name"])
+            if "se_name" in formattedResult.keys():
+                tempResults[formattedResult["file"]].append(formattedResult["se_name"])
 
         finalResults = []
         for key in tempResults.keys():
@@ -111,8 +112,10 @@ class GetAvailableFiles(DBFormatter):
         return finalResults
            
     def execute(self, subscription = None, conn = None, transaction = False):
+
         sql, binds = self.getSQLAndBinds(subscription, conn = conn,
                                          transaction = transaction)
+
         results = self.dbi.processData(sql, binds, conn = conn,
                                       transaction = transaction)
         return self.formatDict(results)

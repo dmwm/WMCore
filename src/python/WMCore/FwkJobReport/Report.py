@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.14 $"
-__revision__ = "$Id: Report.py,v 1.14 2010/03/30 20:48:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Report.py,v 1.15 2010/04/01 21:57:52 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -248,20 +248,6 @@ class Report:
         if file.has_key("locations"):
             fileRef.location = list(file["locations"])
             keyList.remove('locations')
-
-        if file.has_key('lfn'):
-            fileRef.LFN = file['lfn']
-            keyList.remove('lfn')
-
-        # Now add the dataset
-        # Assume one dataset per output module
-        if outMod.dataset.listSections_() == []:
-            # Then we haven't entered a dataset yet
-            if file.has_key("dataset"):
-                for entry in file['dataset']:
-                    setattr(outMod.dataset, entry, file['dataset'].get(entry, None))
-
-                keyList.remove("dataset")
 
         # All right, the rest should be JSONalizable python primitives
         for entry in keyList:

@@ -6,8 +6,8 @@ General Exception class for WM modules
 
 """
 
-__revision__ = "$Id: WMException.py,v 1.2 2010/02/04 17:52:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WMException.py,v 1.3 2010/06/29 19:00:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -73,7 +73,6 @@ class WMException(exceptions.Exception):
             self['ClassName'] = \
               self['ClassInstance'].__class__.__name__
 
-        logging.error(str(self))
 
     def __getitem__(self, key):
         """

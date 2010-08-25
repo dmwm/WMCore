@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-__revision__ = "$Id: DBFormatter_t.py,v 1.9 2010/02/02 20:45:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: DBFormatter_t.py,v 1.10 2010/02/02 20:52:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import commands
 import logging
@@ -52,25 +52,24 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
             {'bind1':'value1b', 'bind2': 'value2b'},\
             {'bind1':'value1c', 'bind2': 'value2d'} ]
         myThread.select = "select * from test"
-            
-    def tearDown(self):
-        """
-        Delete the databases
-        """
-        self.testInit.clearDatabase()
-
-
-    def testAPrepare(self):
-        """
-        Prepare database by inserting schema and values
-
-        """
 
         myThread = threading.currentThread()
         myThread.transaction = Transaction(myThread.dbi)
         myThread.transaction.processData(myThread.create)
         myThread.transaction.processData(myThread.insert, myThread.insert_binds)
         myThread.transaction.commit()
+
+        return
+            
+    def tearDown(self):
+        """
+        Delete the databases
+        """
+        myThread = threading.currentThread()
+        myThread.transaction = Transaction(myThread.dbi)
+        myThread.transaction.processData("drop table test")
+        myThread.transaction.commit()        
+        self.testInit.clearDatabase()
 
     def testBFormatting(self):
         """

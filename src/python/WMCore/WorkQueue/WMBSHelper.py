@@ -9,8 +9,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.35 2010/08/13 16:47:06 mnorman Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.36 2010/08/13 18:55:55 sryu Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import logging
 import threading
@@ -203,7 +203,6 @@ class WMBSHelper(WMConnectionBase):
         create wmbs files from given dbs block.
         as well as run lumi update
         """
-
 
         self.beginTransaction()
 
@@ -484,44 +483,6 @@ class WMBSHelper(WMConnectionBase):
             
         self.wmbsFilesToCreate.append(wmbsFile)
         
-        return wmbsFile
-        
-        
-    def _convertDBSFileToDBSBufferFile(self, dbsFile):
-        """
-        There are two assumptions made to make this method behave properly,
-        1. DBS returns only one level of ParentList.
-           If DBS returns multiple level of parentage, it will be still get handled.
-           However that might not be what we wanted. In that case, restrict to one level.
-        2. Assumes parents files are in the same location as child files.
-           This is not True in general case, but workquue should only select work only
-           where child and parent files are in the same location  
-        """
-        wmbsParents = []
-        
-        for parent in dbsFile["ParentList"]:
-            wmbsParents.append(self._convertDBSFileToWMBSFile(parent, storageElements))
-        
-        checksums = {}
-        if dbsFile.get('Checksum'):
-            checksums['cksum'] = dbsFile['Checksum']
-        if dbsFile.get('Adler32'):
-            checksums['adler32'] = dbsFile['Adler32']
-            
-        wmbsFile = File(lfn = dbsFile["LogicalFileName"],
-                        size = dbsFile["FileSize"],
-                        events = dbsFile["NumberOfEvents"],
-                        checksums = checksums,
-                        #TODO: need to get list of parent lfn
-                        parents = wmbsParents,
-                        locations = set(storageElements))
-        
-        for lumi in dbsFile['LumiList']:
-            run = Run(lumi['RunNumber'], lumi['LumiSectionNumber']) 
-            wmbsFile.addRun(run)
-            
-        logging.info("WMBS File: %s\n on Location: %s" 
-                     % (wmbsFile['lfn'], wmbsFile['newlocations']))
         return wmbsFile
         
 

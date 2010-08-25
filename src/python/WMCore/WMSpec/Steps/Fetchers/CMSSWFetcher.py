@@ -30,10 +30,6 @@ class CMSSWFetcher(FetcherInterface):
         for t in wmTask.steps().nodeIterator():
             t = WMStep.WMStepHelper(t)
             stepPath = "%s/%s" % (self.workingDirectory(), t.name())
-            #os.makedirs( stepPath )
-            #initHandle = open(stepPath + "/__init__.py", 'w')
-            #initHandle.write("# dummy file for now")
-            #initHandle.close()
 
             # the CMSSW has a special case with its ConfigCache argument
             if not t.stepType() == "CMSSW": continue
@@ -54,8 +50,9 @@ class CMSSWFetcher(FetcherInterface):
 
                 configCache = WMConfigCache(cacheDb,cacheUrl)
                 tweak = configCache.getTweak(configId)
-                tweakFile = "%s/%s" % (stepPath, tweakTarget)
-                tweak.persist(tweakFile, "json")
+                if tweak:
+                    tweakFile = "%s/%s" % (stepPath, tweakTarget)
+                    tweak.persist(tweakFile, "json")
 
 
 

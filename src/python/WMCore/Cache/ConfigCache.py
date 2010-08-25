@@ -15,8 +15,8 @@ except:
 
 import PSetTweaks.PSetTweak as TweakAPI
 
-__revision__ = "$Id: ConfigCache.py,v 1.15 2010/05/08 00:07:32 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: ConfigCache.py,v 1.16 2010/05/18 19:30:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 class WMConfigCache:
     '''
@@ -138,7 +138,10 @@ class WMConfigCache:
         instance.
         """
         d = self.getDocumentByDocID(docid)
-        return TweakAPI.makeTweakFromJSON(d["pset_tweak_details"])
+        if d.has_key("pset_tweak_details"):
+            return TweakAPI.makeTweakFromJSON(d["pset_tweak_details"])
+
+        return None
 
     def getTweakFileByDocID(self, docid):
         """

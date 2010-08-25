@@ -6,8 +6,8 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-__revision__ = "$Id: WorkQueueManager.py,v 1.8 2010/04/06 20:18:43 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WorkQueueManager.py,v 1.9 2010/04/15 21:00:21 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import logging
 import threading
@@ -21,6 +21,7 @@ from WMComponent.WorkQueueManager.WorkQueueManagerReqMgrPoller import WorkQueueM
 from WMComponent.WorkQueueManager.WorkQueueManagerLocationPoller import WorkQueueManagerLocationPoller
 from WMComponent.WorkQueueManager.WorkQueueManagerFlushPoller import WorkQueueManagerFlushPoller
 from WMComponent.WorkQueueManager.WorkQueueManagerReportPoller import WorkQueueManagerReportPoller
+from WMComponent.WorkQueueManager.WorkQueueManagerWMBSFileFeeder import WorkQueueManagerWMBSFileFeeder
 
 from WMCore.WorkQueue.WorkQueue import localQueue, globalQueue, WorkQueue
 from WMCore.Services.RequestManager.RequestManager \
@@ -105,8 +106,9 @@ class WorkQueueManager(Harness):
 
         # Update Locations 
         self.wq.params.setdefault('LocationRefreshInterval', pollInterval)
+        
         myThread.workerThreadManager.addWorker(
-                                    WorkQueueManagerLocationPoller(self.wq), 
+                                    WorkQueueManagerLocationPoller(self.wq),
                                     self.wq.params['LocationRefreshInterval'])
         # Get work from ReqMgr & flush expired negotiations
         if self.config.WorkQueueManager.level == 'GlobalQueue':
@@ -121,6 +123,11 @@ class WorkQueueManager(Harness):
                                                 'reqMgrConfig', {})
                                         ),
                                  pollInterval)
+        elif self.config.WorkQueueManager.level == 'LocalQueue':
+            myThread.workerThreadManager.addWorker(
+                                WorkQueueManagerWMBSFileFeeder(self.wq), 
+                                pollInterval)
+            
         # If we have a parent we need to get work and report back
         if self.wq.params['ParentQueue']:
             # Get work from RequestManager or parent

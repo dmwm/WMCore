@@ -5,13 +5,14 @@ _DBSBufferFile_
 A simple object representing a file in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.7 2009/11/17 20:58:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: DBSBufferFile.py,v 1.8 2009/12/03 19:20:00 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from sets import Set
 import time
 import threading
 import logging
+
 
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.DAOFactory import DAOFactory
@@ -23,10 +24,10 @@ from WMCore.WMBS.WMBSBase import WMBSBase
 class DBSBufferFile(WMBSBase, WMFile):
     def __init__(self, lfn = None, id = -1, size = None,
                  events = None, cksum = None, parents = None, locations = None,
-                 status = "NOTUPLOADED"):
+                 status = "NOTUPLOADED", cktype = 'cksum'):
         WMBSBase.__init__(self)
         WMFile.__init__(self, lfn = lfn, size = size, events = events, 
-                        cksum = cksum, parents = parents)
+                        cksum = cksum, parents = parents, cktype = 'cksum')
         self.setdefault("status", status)
         self.setdefault("id", id)
         self.setdefault("location", Set())
@@ -49,6 +50,9 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.daoFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                      logger = self.logger,
                                      dbinterface = self.dbi)
+
+        #Remove reference to WMBS daofactory to prevent confusion
+        self.daofactory = self.daoFactory
         return
 
     def exists(self):
@@ -108,6 +112,13 @@ class DBSBufferFile(WMBSBase, WMFile):
                                     transaction = self.existingTransaction())
 
         self.update(result)
+
+        #Now get the checksum
+        action = self.daoFactory(classname = 'DBSBufferFiles.GetChecksum')
+        result = action.execute(fileid = self['id'], conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
+        if result:
+            self.update(result)
 
         action = self.daoFactory(classname = "DBSBufferFiles.GetRunLumiFile")
         runs = action.execute(self["lfn"], conn = self.getDBConn(),
@@ -184,7 +195,7 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         addAction = self.daoFactory(classname = "DBSBufferFiles.Add")
         addAction.execute(files = self["lfn"], size = self["size"],
-                          events = self["events"], cksum= self["cksum"],
+                          events = self["events"],
                           datasetAlgo = assocID, status = self["status"],
                           conn = self.getDBConn(),
                           transaction = self.existingTransaction())
@@ -198,6 +209,9 @@ class DBSBufferFile(WMBSBase, WMFile):
         self["id"] = self.exists()
         self.updateLocations()
         self.commitTransaction(existingTransaction)
+        if self['cksum'] and self['cktype']:
+            #Add the primary checksum
+            self.setCksum(cksum = self['cksum'], cktype = self['cktype'])
         return
     
     def delete(self):
@@ -427,4 +441,27 @@ class DBSBufferFile(WMBSBase, WMFile):
                               transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
+        return
+
+    def setCksum(self, cksum, cktype):
+        """
+        _setCKSum_
+        
+        Set the Checksum
+        """
+
+        myThread = threading.currentThread()
+
+        if self['id'] < 0:
+            #You haven't bothered to create the file!
+            return
+
+        existingTransaction = self.beginTransaction()
+
+        action = self.daoFactory(classname = "DBSBufferFiles.AddChecksum")
+        action.execute(fileid = self['id'], cktype = cktype, cksum = cksum, \
+                       conn = self.getDBConn(), transaction = existingTransaction)
+
+        self.commitTransaction(existingTransaction)
+
         return

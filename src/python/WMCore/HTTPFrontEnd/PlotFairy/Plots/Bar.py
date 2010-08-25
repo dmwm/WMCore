@@ -63,8 +63,7 @@ class Bar(Plot):
         'yaxis' - to define a y axis label, log etc. Min/max/labels are ignored for this axis.
         'legend' - try and draw a legend.
         """
-        xy = (input['width']/input.get('dpi',96),input['height']/input.get('dpi',96))
-        fig = figure(figsize=xy, dpi=input.get('dpi',96))
+        fig = self.getfig(input)
     
         axes = fig.add_axes([0.1,0.1,0.8,0.8])
         axes.set_title(input.get('title',''))
@@ -121,9 +120,12 @@ class Bar(Plot):
                 axes.bar(left,height,width,bottom,label=s['label'],facecolor=colour)
                 bottom = [b+h for b,h in zip(bottom,height)]
             
+            if input.get('grid',False):
+                axes.grid()
             if input.get('legend',False):
                 axes.legend(loc=0)
             if xtype=='time':
-                axes.xaxis_date()        
+                axes.xaxis_date()
+                    
             axes.set_xbound(x_min,x_max)
         return fig

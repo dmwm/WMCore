@@ -28,8 +28,7 @@ class Sparkline(Plot):
         'labelled': Add labels to the left of each plot.
         'overlay': Overlay the plots, instead of making a stack of separate plots.
         """
-        xy = (input['width']/input.get('dpi',96),input['height']/input.get('dpi',96))
-        fig = figure(figsize=xy, dpi=input.get('dpi',96))
+        fig = self.getfig(input)
     
         labelled = input.get('labelled',False)
         overlay = input.get('overlay',False)
@@ -38,7 +37,7 @@ class Sparkline(Plot):
     
         if len(data)>0:
             if overlay and len(data)>1:
-                axes = fig.add_axes([0.1,0.1,0.9,0.9])
+                axes = fig.add_axes([0,0,1,1])
                 miny=maxy=0
                 maxlen=0
                 for i,d in enumerate(data):

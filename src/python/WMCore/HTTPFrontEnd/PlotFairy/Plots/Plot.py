@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import re
+import matplotlib
 import matplotlib.colors
+import matplotlib.image
+from matplotlib.pyplot import figure
 '''
 The Plot class is a base class for PlotFairy plots to inherit from. Authors of
 new plots should override the plot(self, data) method. Plots should be 
@@ -17,6 +20,12 @@ class Plot(object):
         '''
         input = self.validate_input(input)
         plot = self.plot(input)
+        
+        #watermark
+        
+        if input.get('watermark',False):
+        	plot = self.watermark(input,plot)    
+            
         pyplot.close()
         return plot
         
@@ -24,13 +33,39 @@ class Plot(object):
         '''
         Create the matplotlib object and return it - override!
         '''
-        return None
+        raise NotImplemented
+    
+    def watermark(self,input,figure):
+    
+    	valid_watermarks = {'cms':'cmslogo.png'}
+    
+        watermark = input.get('watermark',False)
+        watermark_alpha = input.get('watermark_alpha',0.5)
+        watermark_rect = input.get('watermark_rect',(0.05,0.8,0.15,0.15))
+        
+        if watermark in valid_watermarks:
+            try:
+                im = matplotlib.image.imread(valid_watermarks[watermark]) #this only supports PNG, but actually works
+                im[:,:,-1] = watermark_alpha
+                axes = figure.add_axes(watermark_rect)
+                axes.set_axis_off()
+                axes.imshow(im)
+            except:
+                pass
+            
+        return figure
     
     def validate_input(self, input):
         """
         Dummy function to override to validate specific input for a plot.
         """
         return input
+    
+    def getfig(self, input):
+        xy = (input['width']/input.get('dpi',96), 
+              input['height']/input.get('dpi',96))
+        fig = figure(figsize=xy, dpi=input.get('dpi',96))
+        return fig
     
 def siformat(val, unit='', long=False):
     suffix = [(1e18,'E','exa'), (1e15,'P','peta'), (1e12,'T','tera'),
@@ -65,11 +100,13 @@ def binformat(val,unit='',long=False):
     return str(val)
     
 def validate_colour(c):
-    if re.match('^[0-9A-Fa-f]{6}$',c):
-        return '#%s'%c
-    if c in matplotlib.colors.cnames:
+    match = re.match('^#?([0-9A-Fa-f]{6})$',c) 
+    if match:
+        return '#%s'%match.group(1)
+    elif c in matplotlib.colors.cnames:
         return c
-    return '#000000'
+    else:
+        return '#000000'
     
 def validate_series_item(s,default_label='',default_colour='#000000',value_type='seq'):
     if not 'label' in s:
@@ -81,6 +118,8 @@ def validate_series_item(s,default_label='',default_colour='#000000',value_type=
     if not 'value' in s:
         if value_type=='seq':
             s['value']=[]
+        elif value_type=='none':
+            pass
         else:
             s['value']=0
     return s

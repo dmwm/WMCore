@@ -35,10 +35,11 @@ class Baobab(Plot):
         'cm':'name of a matplotlib colourmap' - colouring to use for elements
         'threshold':0.05 - threshold of parent value below which children are culled to unclutter the plot
         """
-        xy = (input['width']/input.get('dpi',96),input['height']/input.get('dpi',96))
-        fig = figure(figsize=xy, dpi=input.get('dpi',96))
+        
+        fig = self.getfig(input)
     
-        axes = fig.add_axes([0.1,0.1,0.8,0.8],polar=True)
+        axes = fig.add_axes([0.05,0.05,0.9,0.8],polar=True)
+        axes.set_aspect(1,'box','C')
         axes.set_title(input.get('title',''))
         axes.set_axis_off()
     
@@ -49,17 +50,16 @@ class Baobab(Plot):
             cmap = cm.Accent 
     
         theta = lambda x: x*(2*math.pi)/data_root['value']
-        threshold = input.get('threshold',0.05)
+        #threshold = input.get('threshold',0.05)
+        minpixel = input.get('minpixel',10)
         
-        
-    
-        def fontsize(n):
-            if len(n)>16:
-                return 6
-            if len(n)>8:
-                return 8
-            return 10
-     
+        def depth_recursor(here):
+            if len(here['children'])>0:
+                return max([depth_recursor(c) for c in here['children']])+1
+            return 1
+            
+        max_depth = depth_recursor(data_root)
+        rad = lambda depth, radians: ((((float(depth)+2)/(max_depth+3))*input['width'])/2.)*radians
     
         def bar_recursor(depth,here,startx):
             if len(here['children'])>0:
@@ -72,7 +72,8 @@ class Baobab(Plot):
                 dumped = 0
                 for c in here['children']:
                     #if c['value']>here['value']*threshold:
-                    if theta(c['value'])>(9./(depth+1)**2)*math.pi/180:
+                    #if theta(c['value'])>(9./(depth+1)**2)*math.pi/180:
+                    if rad(depth,theta(c['value']))>minpixel:
                         cleft,cheight,cwidth,cbottom,cname,cvalue = bar_recursor(depth+1,c,startx)
                         left.extend(cleft)
                         height.extend(cheight)
@@ -123,10 +124,17 @@ class Baobab(Plot):
                 line = Line2D((lx,lx),(0.75,ly),linewidth=1,linestyle='-.',zorder=-2,color='blue')
                 axes.add_line(line)
                 axes.text(lx,ly,siformat(i*use_bar_location,unit),horizontalalignment='center',verticalalignment='center',zorder=-1,color='blue')
-    
+        else:
+            axes.add_line(Line2D((0,0),(0.75,max_height+3),linewidth=0,alpha=0,zorder=-3))
+            #axes.set_ybound(0,max_height+3)
+            
     
         bars = axes.bar(left=left[1:],height=height[1:],width=width[1:],bottom=bottom[1:],color=colours[1:])
-    
+
+        def fontsize(pix,chars):
+            print pix, chars,int(pix/((2+0.6*chars)*(input.get('dpi',96)/72.))) 
+            return int(pix/((2+0.6*chars)*(input.get('dpi',96)/72.)))
+
         if input.get('labelled',False):
             max_height = max(bottom[1:])
             min_height = min(bottom[1:])
@@ -144,13 +152,17 @@ class Baobab(Plot):
                     angle_rad -= 180
                     angle_tan -= 180
                 if angle_deg>270 and angle_deg<=360:
-                    angle_tan -= 180                
+                    angle_tan -= 180
+                radial_text_length = (1./(max_height+3))*input['width']/2              
                 if b==max_height:
-                    axes.text(cx,cy+1.5,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=fontsize(n))
+                    max_text_length = (2.5/(max_height+3))*input['width']/2
+                    max_text_height = w*((max_height+0.5)/(max_height+3))*input['width']/2
+                    axes.text(cx,cy+1.5,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=min(fontsize(max_text_length,len(n)),fontsize(max_text_height,-1)))
                 elif b==min_height:
-                    axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_tan,size=fontsize(n))
+                    max_text_length = min(w,math.pi/2)*(h+.5)/(max_height+3)*input['width']/2
+                    axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_tan,size=fontsize(max_text_length,len(n)))
                 else:
-                    axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=fontsize(n))
+                    axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=fontsize(radial_text_length,len(n)))
     
             axes.text(0,0,siformat(data_root['value'],unit),horizontalalignment='center',verticalalignment='center',weight='bold')
     

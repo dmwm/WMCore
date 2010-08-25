@@ -30,8 +30,7 @@ class Scatter(Plot):
         
         returns a matplotlib Figure object
         """
-        xy = (input['width']/input.get('dpi',96), input['height']/input.get('dpi',96))
-        fig = figure(figsize=xy, dpi=input.get('dpi',96))
+        fig = self.getfig(input)
         axis = fig.add_axes([0.2, 0.1, 0.75, 0.75], 
                             xlabel=input['x-name'], 
                             ylabel=input['y-name'],

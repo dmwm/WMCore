@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.15 2010/02/01 22:14:16 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: WMInit.py,v 1.16 2010/02/01 22:51:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -54,7 +54,6 @@ class WMInit:
         projects. External project formats that are supported can activated 
         it by setting the flavor flag.
         """
-        myThread = threading.currentThread()
 
         # check if connection string is  a string, if not it might be a dictionary.
         if not type(dbConfig) == str and flavor == 'ProdAgent':
@@ -73,6 +72,7 @@ class WMInit:
                 wmDbConf['unix_socket'] = dbConfig['socketFileLocation']
 
         # note: setLogging needs to have been set prior to calling this!
+        myThread = threading.currentThread()
         if dialect.lower() == 'mysql':
             dialect = 'MySQL'
         elif dialect.lower() == 'oracle':
@@ -83,21 +83,19 @@ class WMInit:
         myThread.dialect = dialect
 
         options = {}
-        if not hasattr(myThread, "dbFactory"):
-            if not type(dbConfig) == str:
-                myThread.dbFactory = DBFactory(myThread.logger, dburl = None, options = wmDbConf)
-            else:
-                if myThread.dialect == 'MySQL':
-                    if socketLoc != None:
-                        options['unix_socket'] = socketLoc
-                myThread.dbFactory = DBFactory(myThread.logger, dbConfig, options)
+        if not type(dbConfig) == str:
+            myThread.dbFactory = DBFactory(myThread.logger, dburl = None, options = wmDbConf)
+        else:
+            if myThread.dialect == 'MySQL':
+                if socketLoc != None:
+                    options['unix_socket'] = socketLoc
+            myThread.dbFactory = DBFactory(myThread.logger, dbConfig, options)
 
-        if not hasattr(myThread, "dbi"):
-            myThread.dbi = myThread.dbFactory.connect()
-            
+        myThread.dbi = myThread.dbFactory.connect()
         myThread.transaction = Transaction(myThread.dbi)
-        myThread.transaction.commit()                
-        return
+        myThread.transaction.commit()
+
+
 
     def setSchema(self, modules = [], params = None):
         """

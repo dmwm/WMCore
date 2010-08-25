@@ -20,11 +20,34 @@ parseDataset = lambda x : { "Primary" : x.split("/")[1],
                             "Tier" : x.split("/")[3]}
 
 def outputModule(key):
+    """
+    Provide an easy way to change output module names
+
+    """
     d =  {"RECO": "outputRECORECO",
           "AOD":"outputAODRECO",
           "ALCARECO": "outputALCARECOALCARECO"}
 
     return d.get(key, None)
+
+
+def addMonitoring(task):
+    """
+    _addMonitoring_
+    
+    Add some task monitoring
+    """
+
+    monitoring  = task.data.section_('watchdog')
+    monitoring.monitors = ['DashboardMonitor']
+    monitoring.section_('DashboardMonitor')
+    monitoring.DashboardMonitor.softTimeOut    = 300000
+    monitoring.DashboardMonitor.hardTimeOut    = 600000
+    monitoring.DashboardMonitor.destinationHost = "cms-pamon.cern.ch"
+    monitoring.DashboardMonitor.destinationPort = 8884
+
+
+    return task
 
 class ReRecoWorkloadFactory():
     """
@@ -64,6 +87,9 @@ class ReRecoWorkloadFactory():
         mergeTask = parentTask.addTask("Merge%s" % dataTier.capitalize())
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
+
+
+        mergeTask = addMonitoring(mergeTask)
         
         mergeTaskStageOut = mergeTaskCmssw.addStep("stageOut1")
         mergeTaskStageOut.setStepType("StageOut")
@@ -111,6 +137,8 @@ class ReRecoWorkloadFactory():
         cleanupTask = parentTask.addTask("CleanupUnmerged%s" % dataTier.capitalize())
         cleanupTask.setTaskType("Cleanup")
 
+        cleanupTask = addMonitoring(task = cleanupTask)
+
         parentTaskCmssw = parentTask.getStep("cmsRun1")
         cleanupTask.setInputReference(parentTaskCmssw, outputModule = outputModule(dataTier))
         cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
@@ -128,6 +156,7 @@ class ReRecoWorkloadFactory():
         parent task.
         """
         logCollectTask = parentTask.addTask("LogCollect")
+        logCollectTask = addMonitoring(logCollectTask)
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
         logCollectTask.applyTemplates()
@@ -199,6 +228,7 @@ class ReRecoWorkloadFactory():
         # // set up the production task
         #//
         rerecoTask = workload.newTask("ReReco")
+        rerecoTask = addMonitoring(task = rerecoTask)
         rerecoTaskCmssw = rerecoTask.makeStep("cmsRun1")
         rerecoTaskCmssw.setStepType("CMSSW")
         rerecoTaskStageOut = rerecoTaskCmssw.addStep("stageOut1")

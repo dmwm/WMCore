@@ -32,6 +32,8 @@ except:
 
 if can_nose:
     class TestCommand(Command):
+        """Runs our test suite"""
+        
         user_options = [ ]
 
         def initialize_options(self):

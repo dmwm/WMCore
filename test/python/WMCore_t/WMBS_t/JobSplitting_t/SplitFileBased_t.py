@@ -5,10 +5,9 @@ _SplitFileBased_t_
 Unit tests for the split file job splitting algorithm.
 """
 
-__revision__ = "$Id: SplitFileBased_t.py,v 1.4 2009/10/13 23:06:10 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SplitFileBased_t.py,v 1.5 2009/12/16 18:39:05 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
-from sets import Set
 import unittest
 import os
 import threading
@@ -46,6 +45,11 @@ class SplitFileBasedTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
+
+        myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
         
         return
 
@@ -55,22 +59,8 @@ class SplitFileBasedTest(unittest.TestCase):
 
         Clear out WMBS.
         """
-        myThread = threading.currentThread()
-
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-            
-        myThread.transaction.begin()
-            
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-            
-        myThread.transaction.commit()
         return
+
 
     def stuffWMBS(self):
         """
@@ -86,32 +76,45 @@ class SplitFileBasedTest(unittest.TestCase):
         bunkFileset.create()
 
         bunkWorkflow = Workflow(name = "bunkWorkflow", spec = "bunk",
-                                owner = "Steve")
+                                owner = "Steve", task = "someTask")
         bunkWorkflow.create()
         
         bunkSubscription = Subscription(fileset = bunkFileset,
                                         workflow = bunkWorkflow)
         bunkSubscription.create()
 
+        changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
+
         jobGroup1 = JobGroup(subscription = bunkSubscription)
         jobGroup1.create()
         newJob = Job()
+        newJob["outcome"] = "success"
         newJob.create(jobGroup1)
-        newJob.changeStatus("COMPLETE")
+        newJob.save()
+        newJob["state"] = "cleanout"        
+        changeStateDAO.execute([newJob])                
         jobGroup2 = JobGroup(subscription = bunkSubscription)
         jobGroup2.create()
         newJob = Job()
+        newJob["outcome"] = "success"        
         newJob.create(jobGroup2)
-        newJob.changeStatus("COMPLETE")        
+        newJob.save()        
+        newJob["state"] = "cleanout"        
+        changeStateDAO.execute([newJob])                
         jobGroup3 = JobGroup(subscription = bunkSubscription)
         jobGroup3.create()
         newJob = Job()
+        newJob["outcome"] = "success"        
         newJob.create(jobGroup3)
-        newJob.changeStatus("COMPLETE")
+        newJob.save()        
+        newJob["state"] = "cleanout"        
+        changeStateDAO.execute([newJob])                
         jobGroup4 = JobGroup(subscription = bunkSubscription)
         jobGroup4.create()
         newJob = Job()
-        newJob.create(jobGroup4)        
+        newJob.create(jobGroup4)
+        newJob["state"] = "executing"        
+        changeStateDAO.execute([newJob])                
 
         file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0)
         file1.addRun(Run(1, *[45]))
@@ -145,33 +148,33 @@ class SplitFileBasedTest(unittest.TestCase):
         fileZ = File(lfn = "badFileC", size = 1024, events = 1024, first_event = 2048)
         fileZ.addRun(Run(1, *[47]))
 
-        jobGroup1.groupoutput.addFile(file1)
-        jobGroup1.groupoutput.addFile(file2)
-        jobGroup1.groupoutput.addFile(file3)
-        jobGroup1.groupoutput.addFile(file4)        
-        jobGroup1.groupoutput.commit()
+        jobGroup1.output.addFile(file1)
+        jobGroup1.output.addFile(file2)
+        jobGroup1.output.addFile(file3)
+        jobGroup1.output.addFile(file4)        
+        jobGroup1.output.commit()
 
-        jobGroup2.groupoutput.addFile(fileA)
-        jobGroup2.groupoutput.addFile(fileB)
-        jobGroup2.groupoutput.addFile(fileC)
-        jobGroup2.groupoutput.commit()
+        jobGroup2.output.addFile(fileA)
+        jobGroup2.output.addFile(fileB)
+        jobGroup2.output.addFile(fileC)
+        jobGroup2.output.commit()
+        
+        jobGroup3.output.addFile(fileI)
+        jobGroup3.output.addFile(fileII)
+        jobGroup3.output.addFile(fileIII)
+        jobGroup3.output.addFile(fileIV)        
+        jobGroup3.output.commit()                
 
-        jobGroup3.groupoutput.addFile(fileI)
-        jobGroup3.groupoutput.addFile(fileII)
-        jobGroup3.groupoutput.addFile(fileIII)
-        jobGroup3.groupoutput.addFile(fileIV)        
-        jobGroup3.groupoutput.commit()                
-
-        jobGroup4.groupoutput.addFile(fileX)
-        jobGroup4.groupoutput.addFile(fileY)
-        jobGroup4.groupoutput.addFile(fileZ)
-        jobGroup4.groupoutput.commit()
+        jobGroup4.output.addFile(fileX)
+        jobGroup4.output.addFile(fileY)
+        jobGroup4.output.addFile(fileZ)
+        jobGroup4.output.commit()
 
         self.mergeFileset = Fileset(name = "mergeFileset")
         self.mergeFileset.create()
 
         mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
-                                 owner = "Steve")
+                                 owner = "Steve", task = "someTask")
         mergeWorkflow.create()
         
         self.mergeSubscription = Subscription(fileset = self.mergeFileset,
@@ -214,7 +217,7 @@ class SplitFileBasedTest(unittest.TestCase):
         result = jobFactory()
 
         assert len(result) == 3, \
-               "ERROR: Wrong number of job groups returned."
+               "ERROR: Wrong number of job groups returned: %s" % len(result)
 
         for jobGroup in result:
             assert len(jobGroup.jobs) == 1, \

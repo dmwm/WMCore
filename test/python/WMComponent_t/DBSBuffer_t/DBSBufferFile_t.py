@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.9 2009/12/02 20:10:29 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.10 2009/12/10 17:23:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import os
@@ -20,9 +20,7 @@ from WMCore.DataStructs.Run import Run
 
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
-class FileTest(unittest.TestCase):
-
-    
+class DBSBufferFileTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
@@ -30,13 +28,11 @@ class FileTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         DBSBuffer tables.  Also add some dummy locations.
         """
-
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
                                 useDefault = False)
-                                #useDefault = False, params = {"tablespace_table": '', "tablespace_index":''})
 
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
@@ -45,10 +41,7 @@ class FileTest(unittest.TestCase):
 
         locationAction = self.daoFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
-        locationAction.execute(siteName = "se1.fnal.gov")
-
-        cktypeAction = self.daoFactory(classname = "DBSBufferFiles.AddCKType")
-        cktypeAction.execute(cktype = 'cksum')
+        locationAction.execute(siteName = "se1.fnal.gov")        
         
     def tearDown(self):        
         """
@@ -58,7 +51,6 @@ class FileTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
 
-
     def testCreateDeleteExists(self):
         """
         _testCreateDeleteExists_
@@ -67,8 +59,7 @@ class FileTest(unittest.TestCase):
         by creating and deleting a file.  The exists() method will be
         called before and after creation and after deletion.
         """
-
-        testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksum=1111)
+        testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -99,12 +90,11 @@ class FileTest(unittest.TestCase):
         after it was created and doesn't exist after the transaction was rolled
         back.
         """
-
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
-                                 events = 10, cksum=1111)
+                                 events = 10)
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
@@ -134,9 +124,8 @@ class FileTest(unittest.TestCase):
         does not exist after it has been deleted but does exist after the
         transaction is rolled back.
         """
-
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
-                                 events = 10, cksum=1111)
+                                 events = 10)
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
@@ -173,9 +162,8 @@ class FileTest(unittest.TestCase):
         to make sure that getParentLFNs() on the child file returns the correct
         LFNs.
         """
-
         testFileParentA = DBSBufferFile(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                                        events = 20, cksum = 1)
+                                        events = 20)
         testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -183,7 +171,7 @@ class FileTest(unittest.TestCase):
         testFileParentA.addRun(Run(1, *[45]))
         
         testFileParentB = DBSBufferFile(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                                        events = 20, cksum = 2)
+                                        events = 20)
         testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -191,7 +179,7 @@ class FileTest(unittest.TestCase):
         testFileParentB.addRun(Run(1, *[45]))
         
         testFileParentC = DBSBufferFile(lfn = "/this/is/a/parent/lfnC", size = 1024,
-                                        events = 20, cksum = 3)
+                                        events = 20)
         testFileParentC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -203,7 +191,7 @@ class FileTest(unittest.TestCase):
         testFileParentC.create()
 
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
-                                 events = 10, cksum = 1)
+                                 events = 10)
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
@@ -240,9 +228,9 @@ class FileTest(unittest.TestCase):
         Test the loading of file meta data using the ID of a file and the
         LFN of a file.
         """
-
+        checksums = {"adler32": "adler32", "cksum": "cksum", "md5": "md5"}
         testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                                  cksum = 101, cktype = 'cksum')
+                                  checksums = checksums)
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -266,8 +254,6 @@ class FileTest(unittest.TestCase):
                "ERROR: File size is not an integer type."
         assert type(testFileB["events"]) == int or type(testFileB["events"]) == long, \
                "ERROR: File events is not an integer type."
-        assert type(testFileB["cksum"]) == str, \
-               "ERROR: File cksum is not a string type."
         
         assert type(testFileC["id"]) == int or type(testFileC["id"]) == long, \
                "ERROR: File id is not an integer type."
@@ -275,11 +261,6 @@ class FileTest(unittest.TestCase):
                "ERROR: File size is not an integer type."
         assert type(testFileC["events"]) == int or type(testFileC["events"]) == long, \
                "ERROR: File events is not an integer type."
-        assert type(testFileC["cksum"]) == str, \
-               "ERROR: File cksum is not an integer type."
-
-        self.assertEqual(testFileC['cksum'], '101')
-        self.assertEqual(testFileC['cktype'], 'cksum')
 
         testFileA.delete()
         return
@@ -291,9 +272,8 @@ class FileTest(unittest.TestCase):
         Add a child to some parent files and make sure that all the parentage
         information is loaded/stored correctly from the database.
         """
-
         testFileParentA = DBSBufferFile(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                                        events = 20, cksum = 1)
+                                        events = 20)
         testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -301,7 +281,7 @@ class FileTest(unittest.TestCase):
         
         testFileParentA.addRun(Run( 1, *[45]))
         testFileParentB = DBSBufferFile(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                                        events = 20, cksum = 1)
+                                        events = 20)
         testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -310,8 +290,7 @@ class FileTest(unittest.TestCase):
         testFileParentA.create()
         testFileParentB.create()
         
-        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                                  cksum = 1)
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -344,9 +323,8 @@ class FileTest(unittest.TestCase):
         addition of one of the childs and then verify that it does in fact only
         have one parent.
         """
-
         testFileParentA = DBSBufferFile(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                              events = 20, cksum = 1)
+                              events = 20)
         testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -354,7 +332,7 @@ class FileTest(unittest.TestCase):
         testFileParentA.addRun(Run( 1, *[45]))
         
         testFileParentB = DBSBufferFile(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                              events = 20, cksum = 1)
+                              events = 20)
         testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -363,8 +341,7 @@ class FileTest(unittest.TestCase):
         testFileParentA.create()
         testFileParentB.create()
 
-        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                         cksum = 1)
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -412,9 +389,7 @@ class FileTest(unittest.TestCase):
         Create a file and add a couple locations.  Load the file from the
         database to make sure that the locations were set correctly.
         """
-
-        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksum = 1)
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -429,7 +404,7 @@ class FileTest(unittest.TestCase):
         testFileB = DBSBufferFile(id = testFileA["id"])
         testFileB.load()
 
-        goldenLocations = ["se1.fnal.gov", "se1.cern.ch", "se2.fnal.gov"]
+        goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
 
         for location in testFileB["locations"]:
             assert location in goldenLocations, \
@@ -449,9 +424,7 @@ class FileTest(unittest.TestCase):
         locations are correct.  Rollback the database transaction and once
         again reload the file.  Verify that the original locations are back.
         """
-
-        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                                  cksum = 1)
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -504,9 +477,8 @@ class FileTest(unittest.TestCase):
         sure that the class behaves well when the location is passed in as a
         single string instead of a set.
         """
-
         testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                                  cksum = 1, locations = Set(["se1.fnal.gov"]))
+                                  locations = Set(["se1.fnal.gov"]))
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -515,7 +487,7 @@ class FileTest(unittest.TestCase):
         testFileA.create()
 
         testFileB = DBSBufferFile(lfn = "/this/is/a/lfn2", size = 1024, events = 10,
-                                  cksum = 1, locations = "se1.fnal.gov")
+                                  locations = "se1.fnal.gov")
         testFileB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -554,9 +526,8 @@ class FileTest(unittest.TestCase):
 
         Test the ability to add run and lumi information to a file.
         """
-
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                                 cksum = 1, locations = "se1.fnal.gov")
+                                 locations = "se1.fnal.gov")
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
@@ -579,8 +550,8 @@ class FileTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+                                   logger = myThread.logger,
+                                   dbinterface = myThread.dbi)
 
         createAction = uploadFactory(classname = "SetBlockStatus")
         createAction.execute(block = "someblockname", locations = ["se1.cern.ch"])
@@ -589,7 +560,7 @@ class FileTest(unittest.TestCase):
         getBlockAction = self.daoFactory(classname = "DBSBufferFiles.GetBlock")        
 
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                                 cksum = 1, locations = "se1.fnal.gov")
+                                 locations = "se1.fnal.gov")
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
@@ -611,26 +582,26 @@ class FileTest(unittest.TestCase):
         Verify that the CountFiles DAO object functions correctly.
         """
         testFileA = DBSBufferFile(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                                 cksum = 1, locations = "se1.fnal.gov")
+                                  locations = "se1.fnal.gov")
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
-                              appFam = "RECO", psetHash = "GIBBERISH",
-                              configContent = "MOREGIBBERISH")
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
         testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.create()
 
         testFileB = DBSBufferFile(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                                 cksum = 1, locations = "se1.fnal.gov")
+                                  locations = "se1.fnal.gov")
         testFileB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
-                              appFam = "RECO", psetHash = "GIBBERISH",
-                              configContent = "MOREGIBBERISH")
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
         testFileB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileB.create()
 
         testFileC = DBSBufferFile(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
-                                 cksum = 1, locations = "se1.fnal.gov")
+                                  locations = "se1.fnal.gov")
         testFileC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
-                              appFam = "RECO", psetHash = "GIBBERISH",
-                              configContent = "MOREGIBBERISH")
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
         testFileC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileC.create()                
 
@@ -654,7 +625,7 @@ class FileTest(unittest.TestCase):
         do not already exist in the database.
         """
         testFile = DBSBufferFile(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                                 cksum = 1, locations = "se1.fnal.gov")
+                                 locations = "se1.fnal.gov")
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
@@ -662,10 +633,10 @@ class FileTest(unittest.TestCase):
         testFile.create()
 
         testParent = DBSBufferFile(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                                 cksum = 1, locations = "se1.fnal.gov")
+                                   locations = "se1.fnal.gov")
         testParent.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
-                              appFam = "RECO", psetHash = "GIBBERISH",
-                              configContent = "MOREGIBBERISH")
+                                appFam = "RECO", psetHash = "GIBBERISH",
+                                configContent = "MOREGIBBERISH")
         testParent.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RAW")
         testParent.create()
 
@@ -688,6 +659,4 @@ class FileTest(unittest.TestCase):
         return
         
 if __name__ == "__main__":
-    unittest.main() 
-
-#  LocalWords:  testParent
+    unittest.main()

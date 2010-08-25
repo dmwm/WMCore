@@ -6,16 +6,14 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: LogCollect.py,v 1.1 2010/05/05 21:06:07 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LogCollect.py,v 1.2 2010/05/14 22:47:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
-import os
 import os.path
 import logging
 import signal
-import string
 import tarfile
-import time
+import datetime
 
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.FwkJobReport.Report             import Report
@@ -42,34 +40,21 @@ class LogCollect(Executor):
         Pre execution checks
 
         """
-
         #Are we using an emulator?
         if (emulator != None):
             return emulator.emulatePre( self.step )
-
-
         
         print "Steps.Executors.LogCollect.pre called"
         return None
-
 
     def execute(self, emulator = None):
         """
         _execute_
 
-
         """
         #Are we using emulators again?
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
-
-
-        # We need an lfnBase to continue
-        if not hasattr(self.step, 'lfnBase'):
-            msg = "No lfnBase attached to step"
-            logging.error(msg)
-            raise WMExecutionFailure(60312, "NoBaseLFN", msg)
-
 
         overrides = {}
         if hasattr(self.step, 'override'):
@@ -78,36 +63,31 @@ class LogCollect(Executor):
         # Set wait to 15 minutes
         waitTime = overrides.get('waitTime', 900)
 
-        # Pull out StageOutMgr Overrides
-        stageOutCall = {}
-        if overrides.has_key("command") and overrides.has_key("option") \
-               and overrides.has_key("se-name") and overrides.has_key("lfn-prefix"):
-            stageOutCall['command']    = overrides.get('command')
-            stageOutCall['option']     = overrides.get('option')
-            stageOutCall['se-name']    = overrides.get('se-name')
-            stageOutCall['lfn-prefix'] = overrides.get('lfn-prefix')
+        stageOutParams = {"command": "srmv2", "option": "-streams_num=1",
+                          "se-name": "srm-cms.cern.ch",
+                          "lfn-prefix": "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms"}
 
-
-        # Now we need THREE managers
         try:
             deleteMgr   = DeleteMgr.DeleteMgr()
             stageInMgr  = StageInMgr.StageInMgr()
-            stageOutMgr = StageOutMgr.StageOutMgr(**stageOutCall)
+            stageOutMgr = StageOutMgr.StageOutMgr(**stageOutParams)
         except StandardError, ex:
             msg = "Unable to load StageIn/Out/Delete Impl: %s" % str(ex)
             raise WMExecutionFailure(60312, "MgrImplementationError", msg)
 
 
         # Now we need the logs
-        logs = self.report.getInputFilesFromStep(stepName = self.stepName)
-        readyFiles = []
+        logs = []
+        for file in self.job["input_files"]:
+            logs.append({"LFN": file["lfn"]})
 
+        readyFiles = []
         for file in logs:
             signal.signal(signal.SIGALRM, alarmHandler)
             signal.alarm(waitTime)
             try:
-                file = stageInMgr(**file)
-                readyFiles.append(file)
+                output = stageInMgr(**file)
+                readyFiles.append(output)
             except Alarm:
                 msg = "Indefinite hang during stageIn of LogCollect"
                 logging.error(msg)
@@ -116,6 +96,9 @@ class LogCollect(Executor):
                 logging.error(msg)
                 # Don't do anything other then record it
                 self.report.addSkippedFile(file['PFN'], file['LFN'])
+            except Exception, ex:
+                raise
+            
             signal.alarm(0)
 
         if len(readyFiles) == 0:
@@ -124,24 +107,28 @@ class LogCollect(Executor):
             msg = "No logs staged in during LogCollect step"
             raise WMExecutionFailure(60312, "LogCollectError", msg)
 
+        now = datetime.datetime.now()
         tarPFN = self.createArchive(readyFiles)
+        lfn = "/store/logs/prod/%i/%.2i/%s/%s/%s" % (now.year, now.month, "WMAgent",
+                                                     self.report.data.workload,
+                                                     os.path.basename(tarPFN))
 
-        tarInfo = {'LFN'    : "%s/%s" % (self.lfnBase, os.path.basename(tarPFN)),
+        tarInfo = {'LFN'    : lfn,
                    'PFN'    : tarPFN,
                    'SEName' : None,
                    'GUID'   : None}
 
-
         signal.signal(signal.SIGALRM, alarmHandler)
         signal.alarm(waitTime)
         try:
-            stageOutMgr(**tarInfo)
+            stageOutMgr(tarInfo)
         except Alarm:
                 msg = "Indefinite hang during stageOut of LogCollect"
                 logging.error(msg)
         except Exception, ex:
             msg = "Unable to stage out log archive:\n"
             msg += str(ex)
+            print "MSG: %s" % msg
             raise WMExecutionFailure(60312, "LogCollectStageOutError", msg)
         signal.alarm(0)
 
@@ -166,17 +153,7 @@ class LogCollect(Executor):
         outputRef.output.pfn = tarInfo['PFN']
         outputRef.output.location = tarInfo['SEName']
         outputRef.output.lfn = tarInfo['LFN']
-
-
-
         return 
-
-
-
-        
-
-
-
 
     def post(self, emulator = None):
         """
@@ -192,22 +169,17 @@ class LogCollect(Executor):
         print "Steps.Executors.LogCollect.post called"
         return None
 
-
-
-
-
     def createArchive(self, fileList):
         """
         _createArchive_
 
         Creates a tarball archive for log files
         """
-
-        tarName         = '%s-%i-Logs.tar' % (self.report.data.workload, int(time.time()))
+        tarName         = '%s-%i-logs.tar' % (self.report.data.workload, self.job["counter"])
         tarBallLocation = os.path.join(self.stepSpace.location, tarName)
         tarBall         = tarfile.open(tarBallLocation, 'w:')
         for f in fileList:
-            tarBall.add(f)
+            tarBall.add(f["PFN"])
         tarBall.close()
 
         return tarBallLocation

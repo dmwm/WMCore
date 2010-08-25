@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.35 2009/09/09 21:09:20 mnorman Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: Job.py,v 1.36 2009/09/16 20:14:20 sfoulkes Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import datetime
 from sets import Set
@@ -267,19 +267,24 @@ class Job(WMBSBase, WMJob):
         Serialize the job object.  This will convert all Sets() to lists and
         weed out the internal data structures that don't need to be shared.
         """
-        jobDict = {"name": self["name"], "state_time": self["state_time"],
-                   "couch_record": self["couch_record"], "mask": self["mask"],
-                   "attachments": self["attachments"],
+        jobDict = {"name": self["name"], "mask": self["mask"],
                    "retry_count": self["retry_count"], "state": self["state"],
-                   "jobgroup": self["jobgroup"],
-                   "outcome": self["outcome"], "id": self["id"],
-                   "input_files": []}
+                   "jobgroup": self["jobgroup"], "outcome": self["outcome"],
+                   "id": self["id"], "input_files": []}
 
         for inputFile in self["input_files"]:
             jobDict["input_files"].append(thunker._thunk(inputFile))
 
-        return jobDict
+        # These attributes are added to the job object by the ChangeState
+        # code, and we want to store them in couch.
+        if self.has_key("_id"):
+            jobDict["_id"] = self["_id"]
+        if self.has_key("state_changes"):
+            jobDict["state_changes"] = self["state_changes"]
+        if self.has_key("fwkjrs"):
+            jobDict["fwkjrs"] = self["fwkjrs"]
 
+        return jobDict
 
     def getCache(self):
         """

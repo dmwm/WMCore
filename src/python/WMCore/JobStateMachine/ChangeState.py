@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.26 2009/08/20 10:57:13 mnorman Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: ChangeState.py,v 1.27 2009/09/16 20:14:20 sfoulkes Exp $"
+__version__ = "$Revision: 1.27 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -20,7 +20,7 @@ import base64
 import urllib
 from sets import Set
 import threading
-
+import time
 
 class ChangeState(WMObject, WMConnectionBase):
     """
@@ -36,7 +36,7 @@ class ChangeState(WMObject, WMConnectionBase):
         self.dialect = self.myThread.dialect
         self.dbi = self.myThread.dbi
         self.dbname = couchDbName
-        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = self.logger,
                                      dbinterface = self.dbi)
         self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
@@ -52,14 +52,16 @@ class ChangeState(WMObject, WMConnectionBase):
         Return the jobs back, throw assertion error if the state change is not allowed
         and other exceptions as appropriate
         """
-        
-        if jobs == []:
-            return []
+        if type(jobs) != list:
+            jobs = [jobs]
+
+        if len(jobs) == 0:
+            return
 
         # 1. Is the state transition allowed?
         self.check(newstate, oldstate)
         # 2. Document the state transition
-        jobs = self.recordInCouch(jobs, newstate, oldstate)
+        self.recordInCouch(jobs, newstate, oldstate)
         # 3. Make the state transition
         self.persist(jobs, newstate, oldstate)
 
@@ -85,38 +87,6 @@ class ChangeState(WMObject, WMConnectionBase):
         return self.database.getAttachment(couchID, name)
     
     
-    def getCouchByHeadID(self, id):
-        if (type(id) == type([])):
-            return self.database.loadView('jobs','get_by_head_couch_id',{},id)
-        else:            
-            return self.database.loadView('jobs','get_by_head_couch_id',{},[id])
-        
-    def getCouchByJobID(self, id):
-        if (type(id) == type([])):
-            return self.database.loadView('jobs','get_by_job_id',{},id)
-        else:            
-            return self.database.loadView('jobs','get_by_job_id',{},[id])
-        
-
-    def getCouchByJobIDAndState(self, ids, state):
-        if ids == []:
-            return []
-        ids = list(ids)
-        keylist = []
-        for oneid in ids:
-            keylist.append([oneid, state])
-
-        possibleMatches = self.database.loadView('jobs','get_by_job_id_and_state',{},keylist)
-        retval = {}
-        for onematch in possibleMatches['rows']:
-            onematch = onematch['value']
-            if onematch['job']['id'] not in retval:
-                retval[onematch['job']['id']] = onematch
-            else:
-                if retval[onematch['job']['id']]['timestamp'] < onematch['timestamp']:
-                    retval[onematch['job']['id']] = onematch
-        return retval.values()
-    
     def check(self, newstate, oldstate):
         """
         check that the transition is allowed. return a tuple of the transition
@@ -130,103 +100,68 @@ class ChangeState(WMObject, WMConnectionBase):
         assert newstate in transitions[oldstate], \
                             "Illegal state transition requested"
 
-
     def recordInCouch(self, jobs, newstate, oldstate):
         """
-        Write a document for the job to CouchDB for each state transition for
-        each job. Do this as a bulk operation.
-        TODO: handle attachments
-        couch_head - the first state transition
-        couch_parent - the state transition before thisone
-        couch_record - the document describing this state transition        
-        """
-        for job in jobs:
-            newCouchID = makeUUID()
-            doc = {'type': 'state change'}
-            doc['_id'] = newCouchID
-            doc['old_state'] = oldstate
-            doc['new_state'] = newstate
-            if not 'couch_head' in job:
-                job['couch_head'] = newCouchID
-            doc['couch_head'] = job['couch_head']
-            if 'couch_record' in job:
-                doc['couch_parent'] = job['couch_record']
-                job['couch_parent'] = job['couch_record']
-
-            job['couch_record'] = newCouchID
-            doc['job'] = job
-            # it's gross, but we have to base64 encode the attachments to use the bulk api
-            if job['id'] in self.attachmentList:
-                if not '_attachments' in doc:
-                    doc['_attachments'] = {}
-                for attachmentName in self.attachmentList[job['id']]:
-                    url = self.attachmentList[job['id']][attachmentName]
-                    attachmentString = urllib.urlopen( url ).read(-1)
-                    base64Attachment = base64.b64encode(attachmentString)
-                    doc['_attachments'][attachmentName] = {
-                                        "content_type":"test\/plain",
-                                        "data": base64Attachment}
-
-            self.database.queue(doc, timestamp=True)
-            
-        goodresult = self.database.commit()
-
-        assert len(jobs) == len(goodresult), \
-                    "Got less than I was expecting from CouchDB: \n %s" %\
-                        (goodresult,)
+        _recordInCouch_
         
-        if oldstate == 'none':
-            def function(item1, item2):
-                item1['couch_record'] = item2['id']
-                return item1
-            jobs = map(function, jobs, goodresult)
-        return jobs
+        Record a state transition in couch.  Each job will have it's own
+        document and the transitions will be stored as a list of dicts with each
+        dict having the following keys:
+          oldstate
+          newstate
+          timestamp
+        """
+        transDict = {"oldstate": oldstate, "newstate": newstate,
+                     "timestamp": int(time.time())}
+
+        getCouchDAO = self.daoFactory("Jobs.GetCouchID")
+        setCouchDAO = self.daoFactory("Jobs.SetCouchID")
+        
+        for job in jobs:
+            doc = None
+            couchRecord = None
+            
+            if job["couch_record"] == None:
+                couchRecord = getCouchDAO.execute(jobID = job["id"])
+
+                if couchRecord == None:
+                    doc = job
+                    doc["_id"] = makeUUID()
+                    job["couch_record"] = doc["_id"]
+                    doc["state_changes"] = []
+                    doc["fwkjrs"] = []
+                    setCouchDAO.execute(jobID = job["id"], couchID = doc["_id"])
+                    couchRecord = doc["_id"]
+            else:
+                couchRecord = job["couch_record"]
+
+            if doc == None:
+                doc = self.database.document(couchRecord)
+                doc["retry_count"] = job["retry_count"]
+                doc["outcome"] = job["outcome"]
+
+            doc["state_changes"].append(transDict)
+
+            if job.has_key("fwjr"):
+                doc["fwkjrs"].append(job["fwjr"])
+                del job["fwjr"]
+                
+            self.database.queue(doc)
+            
+        docsCommitted = self.database.commit()
+
+        assert len(jobs) == len(docsCommitted), \
+               "Got less than I was expecting from CouchDB: \n %s" %\
+                        (goodresult,)
+        return
 
     def createDatabase(self):
         ''' initializes a non-existant database'''
         database = self.couchdb.createDatabase(self.dbname)
         hashViewDoc = database.createDesignDoc('jobs')
-        hashViewDoc["views"] = { \
-          "get_by_head_couch_id":
-             {"map": """function(doc) {
-                          if (doc.couch_head) {
-                            emit(doc.couch_head, doc);
-                            }
-                          else {
-                            emit(doc._id, doc);
-                            }
-                          }"""},
-          "get_by_job_id":
-             {"map": """function(doc) {
-                          if (doc.job) {
-                            if (doc.job.id) {
-                              emit(doc.job.id, doc);
-                              }
-                            }
-                          }""" },
-          "get_by_job_id_and_state":
-             {"map": """function(doc) {
-                          if ((doc.job)  && (doc.type) && (doc.new_state) && (doc.job.id)) {
-                            emit([doc.job.id,doc.new_state], doc);
-                            }
-                          }""" },
-           "TransitionByName":
-              {"map": """function(doc) {
-                           if (doc.job) {
-                             emit(doc.job.name, [doc.new_state, doc.old_state, doc.timestamp]);
-                             }
-                           }""" },
-           "ExecutingByName":
-              {"map": """function(doc) {
-                           if (doc.job) {
-                             if (doc.new_state == 'executing') {
-                               emit(doc.job.name, doc.timestamp);
-                               }
-                             }
-                          }""" }  
-          }
+        hashViewDoc["views"] = { }
      
-        database.queue( hashViewDoc )
+        database.queue(hashViewDoc)
         database.commit()
         return database
 
@@ -237,6 +172,6 @@ class ChangeState(WMObject, WMConnectionBase):
         for job in jobs:
             job['state'] = newstate
             job['oldstate'] = oldstate
-        dao = self.daofactory(classname = "Jobs.ChangeState")
+        dao = self.daoFactory(classname = "Jobs.ChangeState")
         dao.execute(jobs, conn = self.getDBConn(),
                     transaction = self.existingTransaction())

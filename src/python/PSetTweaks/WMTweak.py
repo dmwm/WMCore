@@ -101,7 +101,7 @@ _TweakParams = [
 #  //
 # // Standard util to pad a run/job number to make an LFN Group
 #//
-lfnGroup = lambda j : str(j.get('counter', 0)/1000).zfill(4)
+lfnGroup = lambda j : str(j.get("counter", 0) / 500).zfill(4)
 
 def hasParameter(pset, param, nopop = False):
     """

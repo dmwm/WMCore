@@ -171,9 +171,7 @@ def loadConfiguration():
         if config == None:
             config = loadConfigurationFile(configFile)
             
-            if "HWMon" in config.listComponents_():
-                config.listComponents_().remove("HWMon")
-            else:
+            if "HWMon" not in dir(config):
                 error("No 'HWMon' section found in WMCore configuration file! Please, check your configuration file.")
     except ImportError, ex:
         error("Can no load configuration file! Please, check configuration file (" + os.path.abspath(configFile) + ")")

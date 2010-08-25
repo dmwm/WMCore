@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.56 2010/02/09 17:26:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.56 $"
+__revision__ = "$Id: Subscription.py,v 1.57 2010/02/20 19:39:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.57 $"
 
 import logging
 
@@ -363,26 +363,23 @@ class Subscription(WMBSBase, WMSubscription):
  
     def getJobGroups(self):
         """
-            Returns a list of job group IDs associated with the subscription with new jobs
-
-        """
-        # first, make sure we have all the necessary data
-        self.loadData()
+        _getJobGroups_
         
+        Returns a list of job group IDs associated with the subscription with new jobs
+        """
         action = self.daofactory( classname = "Subscriptions.GetJobGroups" )
         return action.execute(self['id'], conn = self.getDBConn(),
                                           transaction = self.existingTransaction())
 
     def getAllJobGroups(self):
         """
+        _getAllJobGroups_
+        
         Returns a list of ALL jobGroups associated with the subscription
-
         """
         action = self.daofactory( classname = "Subscriptions.GetAllJobGroups" )
         return action.execute(self['id'], conn = self.getDBConn(),
                                           transaction = self.existingTransaction())
-
-
 
     def deleteEverything(self):
         """

@@ -1,21 +1,20 @@
 from Utils import *
 from Plot import Plot
 
-class Bar(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAxisMixin,YNumericAxisMixin,NumericSeriesMixin):
+class Bar(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAxisMixin,YNumericAxisMixin,BinnedNumericSeriesMixin):
     __metaclass__=Plot
-    def __init__(self):
-        super(Bar,self).__init__()
     def data(self):
         
         axes = self.figure.gca()
         
+        if len(self.props.series)==0:
+            return    
+        
         nbins = self.props.xaxis['bins']
         edges = self.props.xaxis['edges']
-        bottom = [0]*nbins
+        bottom = [self.props.series[0]['logmin']]*nbins
         left = edges[:-1]
         width = [edges[i+1]-edges[i] for i in range(nbins)]
-        
-        print nbins,edges
         
         for series in self.props.series:
             height = series['values']
@@ -26,8 +25,6 @@ class Bar(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAxisMixin
     
 class LabelledBar(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XAutoLabelledAxisMixin,YNumericAxisMixin,LabelledSeriesMixin):
     __metaclass__=Plot
-    def __init__(self):
-        super(LabelledBar,self).__init__()
     def data(self):
         
         axes = self.figure.gca()

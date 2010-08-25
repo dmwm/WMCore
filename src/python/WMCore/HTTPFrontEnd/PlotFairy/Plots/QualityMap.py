@@ -1,145 +1,34 @@
-from matplotlib.pyplot import figure
-import matplotlib.cm as cm
-from matplotlib.patches import Rectangle
-import numpy as np
 from Plot import Plot
-import Utils
+from Utils import *
 
-class QualityMap(Plot):
+class QualityMap(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XAnyBinnedAxisMixin,YAnyBinnedAxisMixin,ArrayMixin):
+    __metaclass__=Plot
     def __init__(self):
-        self.props = {}
-        self.mixins = [Utils.FigureMixin(self.props),Utils.TitleMixin(self.props),Utils.FigAxesMixin(self.props),Utils.StyleMixin(self.props),Utils.AutoLabelledAxisMixin(self.props,'xaxis'),Utils.NumericAxisMixin(self.props,'yaxis'),Utils.LabelledSeriesMixin(self.props)]
-    def validate_input(self,input):
-        for mixin in self.mixins:
-            res = mixin.validate(input)
-            if res==True:
-                continue
-            else:
-                return res
-        return True
-    def plot(self,input):
-        figure = None
-        for mixin in self.mixins:
-            figure = mixin.apply(figure)
+        self.validators = [ColourBase('colour0',default='#ff0000'),ColourBase('colour1',default='#00ff00')]
+        self.props = Props()
+        super(QualityMap,self).__init__(Array_Min=0.,Array_Max=1.)
+    def data(self):
+        axes = self.figure.gca()
         
-        series = self.props['series']
+        if self.props.xaxis['bins']==None or self.props.yaxis['bins']==None:
+            return
         
-        axes = figure.gca()
-        axes.set_xticks([i+0.5 for i in range(len(series))])
+        x_edges = self.props.xaxis['edges']
+        y_edges = self.props.yaxis['edges']
+        x_bins = self.props.xaxis['bins']
+        y_bins = self.props.yaxis['bins']
         
-        logmin = 0
-        if self.props['yaxis']['log']:
-            cls = Utils.CleanLogSeries([item['value'] for item in series])
-            if cls.minpos:
-                logmin = cls.roundmin()
-            else:
-                return figure
+        left = x_edges[:-1]
+        bottom = y_edges[:-1]
+        width = [x_edges[i+1]-x_edges[i] for i in range(x_bins)]
+        height = [y_edges[i+1]-y_edges[i] for i in range(y_bins)]
         
-        labels = [item['label'] for item in series]
-        left = range(len(series))
-        bottom = [logmin]*len(series)
-        width = [1]*len(series)
-        height = [item['value'] for item in series]
-        colour = [item['colour'] for item in series]
+        c0 = self.props.colour0
+        c1 = self.props.colour1
         
-        axes.set_xticklabels(labels)
-        axes.bar(left,height,width,bottom,label=labels,color=colour)
+        val2colour = lambda x: [c0[i] + x*(c1[i]-c0[i]) for i in (0,1,2)]
         
-        return figure
-
-
-
-
-
-
-
-
-
-
-
-class QualityMap(Plot):
-    def validate_input(self,input):
-        if not 'data' in input:
-            input['data']=[[]]
-        if not 'xaxis' in input:
-            input['xaxis']={}
-        input['xaxis']=validate_axis(input['xaxis'])
-        if not 'yaxis' in input:
-            input['yaxis']={}
-        input['yaxis']=validate_axis(input['yaxis'])
-        return input
+        for y,row in enumerate(self.props.data):
+            for x,item in enumerate(row):
+                axes.bar(left[x],height[y],width[x],bottom[y],facecolor=val2colour(item))
         
-    def plot(self,input):
-        """
-        Draw a quality map as used for phedex transfer quality measurements, etc.
-        
-        Argument in the form:
-        { width, height, title etc
-          xaxis: {type: 'num', min:0, max:2, width: 1},
-          yaxis: {type: 'labels', labels: ['A','B']},
-          data: [
-            [0.1,0.2],
-            [0.3,0.4]
-          ]
-        }
-        Both axis definitions can be either labels or numeric, and obey the rules described under bar charts.
-        Data should be a list of rows, containing floats in the range 0>=x>=1.
-        """
-        fig = self.getfig(input)
-        
-        axes = fig.add_axes([0.1,0.1,0.8,0.8])
-        axes.set_title(input.get('title',''))
-        xaxis = input['xaxis']
-        yaxis = input['yaxis']
-    
-        axes.set_xlabel(xaxis.get('label',''))
-        axes.set_ylabel(yaxis.get('label',''))
-
-        xtype = xaxis['type']
-        ytype = yaxis['type']
-        data = input['data']
-        
-        x_left = []
-        x_width = []
-        y_bottom = []
-        y_height = []
-        
-        if xtype=='labels':
-            xlabels = xaxis.get('labels',[])
-            axes.set_xticklabels(xlabels)
-            axes.set_xticks([i+0.5 for i in range(len(xlabels))])
-            x_left = range(len(xlabels))
-            x_width = 1
-        else:
-            x_min = xaxis.get('min',0)
-            x_max = xaxis.get('max',1)
-            x_width = xaxis.get('width',1)
-            x_range = x_max-x_min
-            x_bins = int(x_range/x_width)
-            x_left = [x_min+i*x_width for i in range(x_bins)]
-            if xtype=='time':
-                axes.xaxis_date()        
-                
-        if ytype=='labels':
-            ylabels = yaxis.get('labels',[])
-            axes.set_yticklabels(ylabels)
-            axes.set_yticks([i+0.5 for i in range(len(ylabels))])
-            y_bottom = range(len(ylabels))
-            y_height = 1
-        else:
-            y_min = yaxis.get('min',0)
-            y_max = yaxis.get('max',1)
-            y_height = yaxis.get('width',1)
-            y_range = y_max-y_min
-            y_bins = int(y_range/y_height)
-            y_bottom = [y_min+i*y_height for i in range(y_bins)]
-            if ytype=='time':
-                axes.yaxis_date()        
-        
-        for y,row in enumerate(data):
-            for x,col in enumerate(row):
-                assert col>=0.
-                assert col<=1.
-                axes.bar(left=x_left[x],bottom=y_bottom[y],width=x_width,height=y_height,facecolor=[1-col,col,0])
-
-        return fig

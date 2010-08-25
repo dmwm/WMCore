@@ -2,7 +2,7 @@ import matplotlib.cm as cm
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
 import numpy as np
-from Plot import Plot, validate_series_item
+from Plot import Plot
 
 class Legend(Plot):
     def validate_input(self,input):

@@ -1,9 +1,8 @@
-from matplotlib.pyplot import figure
-import matplotlib.cm as cm
-from matplotlib.patches import Rectangle
-import numpy as np
 from Plot import Plot
+from Utils import *
 
+class Scatter(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XNumericAxisMixin,YNumericAxisMixin):
+    pass
 class Scatter(Plot):
     def plot(self, input):
         """

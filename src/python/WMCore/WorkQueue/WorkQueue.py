@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.96 2010/04/08 16:49:09 sryu Exp $"
-__version__ = "$Revision: 1.96 $"
+__revision__ = "$Id: WorkQueue.py,v 1.97 2010/04/09 20:35:55 sryu Exp $"
+__version__ = "$Revision: 1.97 $"
 
 
 import time
@@ -26,7 +26,6 @@ from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
-from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.Policy.Start import startPolicy
 from WMCore.WorkQueue.Policy.End import endPolicy
 
@@ -93,6 +92,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('ReleaseRequireSubscribed', True)
         self.params.setdefault('PhEDExEndpoint', None)
         self.params.setdefault('PopulateFilesets', True)
+
         #TODO: current directory as a default directory might not be a best choice.
         # Don't know where else though 
         self.params.setdefault('CacheDir', os.path.join(os.getcwd(),
@@ -135,6 +135,12 @@ class WorkQueue(WorkQueueBase):
             self.dbsHelpers[self.params["GlobalDBS"]] = DBSReader(self.params["GlobalDBS"])
 		
         self.SiteDB = SiteDB()
+        
+        #only import WMBSHelper when it needed
+        if self.params['PopulateFilesets']:
+            from WMCore.WMRuntime.SandboxCreator import SandboxCreator
+            from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+                    
     #  //
     # // External API
     #//
@@ -656,11 +662,16 @@ class WorkQueue(WorkQueueBase):
                              transaction = self.existingTransaction())
 
         if not exists:
-            #TODO: This might not be needed if the getWorkReturns json of wmSpec
-            #Also if we need local cache need to clean up sometime
-            localCache = os.path.join(self.params['CacheDir'], "%s.pkl" % wmSpec.name())
-            wmSpec.setSpecUrl(localCache)
-            wmSpec.save(localCache)
+            
+            if self.params['PopulateFilesets']:
+                sandboxCreator = SandboxCreator()
+                sandboxCreator.makeSandbox(self.params['CacheDir'], wmSpec)
+            else:
+                #TODO: This might not be needed if the getWorkReturns json of wmSpec
+                #Also if we need local cache need to clean up sometime
+                localCache = os.path.join(self.params['CacheDir'], "%s.pkl" % wmSpec.name())
+                wmSpec.setSpecUrl(localCache)
+                wmSpec.save(localCache)
 
             wmSpecAction = self.daofactory(classname = "WMSpec.New")
             #TODO: need a unique value (name?) for first parameter

@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.21 2010/04/14 16:01:12 sfoulkes Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: Fileset_t.py,v 1.22 2010/05/03 12:16:45 riahi Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import unittest
 import logging
@@ -817,6 +817,31 @@ class FilesetTest(unittest.TestCase):
                "ERROR: Fileset is missing files"
 
         return
+
+    def testSetLastUpdate(self):
+        """
+        _testSetLastUpdate_
+
+        Test that setting the lastUpdate of a fileset works when changing it 
+        with the setLastUpdate() method.
+        """
+        testFilesetA = Fileset(name = "TestFileset1")
+        testFilesetA.create()
+        testFilesetA.setLastUpdate(10)
+        testFilesetB = Fileset(name = "TestFileset2")
+        testFilesetB.create()
+        testFilesetB.setLastUpdate(20)
+
+        testFilesetC = Fileset(name = testFilesetA.name)
+        testFilesetC.load()
+        testFilesetD = Fileset(name = testFilesetB.name)
+        testFilesetD.load()
+
+        assert testFilesetC.lastUpdate == 10, \
+               "ERROR: lastUpdate of FilesetC should be 10."
+
+        assert testFilesetD.lastUpdate == 20, \
+               "ERROR: lastUpdate of FilesetD should be 20."
         
         
 if __name__ == "__main__":

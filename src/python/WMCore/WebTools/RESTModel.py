@@ -6,8 +6,8 @@ Rest Model abstract implementation
 TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.46 2010/01/08 16:05:37 sryu Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: RESTModel.py,v 1.47 2010/01/08 17:46:41 sryu Exp $"
+__version__ = "$Revision: 1.47 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -91,6 +91,8 @@ class RESTModel(WebAPI):
         parameters (e.g. method?thing1=abc&thing2=def). All args and kwargs are 
         passed to the model method, this is so configuration for a given method 
         can be identified.
+        
+        TODO: need to refactor exception handling
         """
         verb = verb.upper()
         
@@ -105,6 +107,11 @@ class RESTModel(WebAPI):
             self.debug(error)
             self.debug(traceback.print_exc())
             raise HTTPError(400, error)
+        except HTTPError, he:
+            error = he.__str__()
+            self.debug(error)
+            self.debug(traceback.print_exc())
+            raise 
         #other exceptions report 500 error
         except Exception, e:
             error = e.__str__()

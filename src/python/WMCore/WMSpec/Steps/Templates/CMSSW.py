@@ -70,6 +70,8 @@ class CMSSW(Template):
 
         step.application.section_("command")
         step.application.command.executable = "cmsRun"
+        step.application.command.configuration = "PSet.py"
+        step.application.command.configurationHash = None
         step.application.command.arguments = ""
         step.output.jobReport = "FrameworkJobReport.xml"
         step.output.stdout = "%s-stdout.log" % stepname

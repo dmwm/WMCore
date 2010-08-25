@@ -66,6 +66,9 @@ class WMWorkloadTest(unittest.TestCase):
 
         task4 = workload.newTask("task4")
 
+        workload.newTask("task5")
+        workload.removeTask("task5")
+
         self.assertEqual(workload.listAllTaskNames(),
                          ["task1", "task2", "task3", "task4"])
 
@@ -98,7 +101,7 @@ class WMWorkloadTest(unittest.TestCase):
         workload2.load(self.persistFile)
 
         self.assertEqual(
-            workload1.listAllTaskNames()
+            workload.listAllTaskNames(),
             workload2.listAllTaskNames()
             )
         # probably need to flesh this out a bit more

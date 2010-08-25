@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.11 2009/12/09 17:04:57 swakef Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WMWorkload.py,v 1.12 2010/01/05 18:15:01 swakef Exp $"
+__version__ = "$Revision: 1.12 $"
 
 
 
@@ -266,6 +266,17 @@ class WMWorkloadHelper(PersistencyHelper):
         self.addTask(helper)
         return helper
 
+
+    def removeTask(self, taskName):
+        """
+        _removeTask_
+        
+        Remove given task with given name
+        
+        """
+        self.data.tasks.__delattr__(taskName)
+        self.data.tasks.tasklist.remove(taskName)
+        return
 
 
 class WMWorkload(ConfigSection):

@@ -28,7 +28,7 @@ var elementTable = function(divID) {
 
     var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
     
-    var tableConfig = WMCore.WebTools.createDefaultTableConfig();
+    var tableConfig = WMCore.WebTools.createDefaultTableConfig("id");
     
     tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 10});
     

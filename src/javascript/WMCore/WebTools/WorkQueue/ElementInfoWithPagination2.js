@@ -33,7 +33,7 @@ var elementTable = function(divID) {
     //overwrite default JSARRAY type to JSON
     dataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;    
 
-    var tableConfig = WMCore.WebTools.createDefaultTableConfig();
+    var tableConfig = WMCore.WebTools.createDefaultTableConfig("id");
     tableConfig.paginator = new YAHOO.widget.Paginator({
         rowsPerPage: 10, // REQUIRED
         //totalRecords: myData.length, // OPTIONAL

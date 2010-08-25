@@ -29,18 +29,16 @@ WMCore.WebTools.createDefaultTableDef = function (tableDef) {
     return defaultDef;
 };
 
-WMCore.WebTools.createDefaultTableConfig = function() {
+WMCore.WebTools.createDefaultTableConfig = function(sortBy) {
 	
-	var defaultConfig = {
-	    // Set up pagination
-	    paginator : new YAHOO.widget.Paginator({
-	        rowsPerPage : 25
-	    }),
-	    // Set up initial sort state
-	    sortedBy: {
-	        key: "id", dir:YAHOO.widget.DataTable.CLASS_ASC
-		}
-    }
+	var defaultConfig = {};
+	// Set up pagination
+	defaultConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 25});
+	// Set up pagination
+	if (sortBy) {
+	   defaultConfig.sortedBy = {key: sortBy, dir:YAHOO.widget.DataTable.CLASS_ASC};
+	};
+	   
 	return defaultConfig
 };
 

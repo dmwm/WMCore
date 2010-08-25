@@ -48,8 +48,8 @@ class SubscriptionTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(sename = "goodse.cern.ch")
-        locationAction.execute(sename = "badse.cern.ch")
+        locationAction.execute(siteName = "goodse.cern.ch")
+        locationAction.execute(siteName = "badse.cern.ch")
         
         self._setup = True
         return

@@ -16,8 +16,8 @@ CREATE TABLE wmbs_subscription_location (
                ON DELETE CASCADE)
 """
 __all__ = []
-__revision__ = "$Id: MarkLocation.py,v 1.3 2008/11/11 12:43:17 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: MarkLocation.py,v 1.4 2009/05/09 11:42:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -26,7 +26,7 @@ class MarkLocation(DBFormatter):
             (subscription, location, valid)
         values (
             :subscription, 
-            (select id from wmbs_location where se_name = :location),
+            (select id from wmbs_location where site_name = :location),
             :valid
         )"""
     

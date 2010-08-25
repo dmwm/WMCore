@@ -8,7 +8,7 @@ class SetLocation(DBFormatter):
     sql = """INSERT INTO wmbs_file_location (file, location) 
              SELECT wmbs_file_details.id, wmbs_location.id from wmbs_file_details, wmbs_location 
              WHERE wmbs_file_details.lfn = :lfn
-             AND wmbs_location.se_name = :location 
+             AND wmbs_location.site_name = :location 
              AND NOT EXISTS (SELECT * FROM wmbs_file_location WHERE file = wmbs_file_details.id
              and location = wmbs_location.id)"""
                 

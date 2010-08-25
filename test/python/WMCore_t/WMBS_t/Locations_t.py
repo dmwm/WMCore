@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.3 2009/01/26 14:02:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Locations_t.py,v 1.4 2009/05/09 11:42:26 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 import unittest
@@ -85,8 +85,8 @@ class LocationsTest(unittest.TestCase):
         for location in goldenLocations:
             # The following is intentional, I want to test that inserting the
             # same location multiple times does not cause problems.
-            locationNew.execute(sename = location)
-            locationNew.execute(sename = location)
+            locationNew.execute(siteName = location)
+            locationNew.execute(siteName = location)
         
         locationList = daoFactory(classname = "Locations.List")
         currentLocations = locationList.execute()
@@ -99,8 +99,8 @@ class LocationsTest(unittest.TestCase):
                "ERROR: Some locations are missing..."
         
         locationDelete = daoFactory(classname = "Locations.Delete")
-        locationDelete.execute(sename = "goodse.fnal.gov")
-        locationDelete.execute(sename = "goodse.cern.ch")
+        locationDelete.execute(siteName = "goodse.fnal.gov")
+        locationDelete.execute(siteName = "goodse.cern.ch")
 
         currentLocations = locationList.execute()
         assert len(currentLocations) == 0, \

@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: CursorLeak_t.py,v 1.1 2009/03/24 22:10:17 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CursorLeak_t.py,v 1.2 2009/05/09 11:42:26 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import logging
@@ -59,8 +59,8 @@ class CursorLeakTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(sename = "se1.cern.ch")
-        locationAction.execute(sename = "se1.fnal.gov")        
+        locationAction.execute(siteName = "se1.cern.ch")
+        locationAction.execute(siteName = "se1.fnal.gov")        
         
         self._setup = True
         return

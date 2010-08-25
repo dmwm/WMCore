@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.22 2009/04/14 19:56:36 sryu Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: File_t.py,v 1.23 2009/05/09 11:42:26 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import unittest
 import logging
@@ -58,8 +58,8 @@ class FileTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(sename = "se1.cern.ch")
-        locationAction.execute(sename = "se1.fnal.gov")        
+        locationAction.execute(siteName = "se1.cern.ch")
+        locationAction.execute(siteName = "se1.fnal.gov")        
         
         self._setup = True
         return

@@ -5,7 +5,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 from sets import Set
 
 class GetLocation(DBFormatter):
-    sql = """select se_name from wmbs_location 
+    sql = """select site_name from wmbs_location 
                 where id in (select location from wmbs_file_location 
                     where file in (select id from wmbs_file_details where lfn=:lfn))"""
                     

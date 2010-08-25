@@ -7,8 +7,8 @@ Implementation of StageOutImpl interface for DCCPFNAL
 """
 import os
 import commands
-from WMCore.Storage.Registry import registerStageOutImpl
-from WMCore.Storage.StageOutImpl import StageOutImpl
+from StageOut.Registry import registerStageOutImpl
+from StageOut.StageOutImpl import StageOutImpl
 
 
 _CheckExitCodeOption = True
@@ -21,6 +21,10 @@ def pnfsPfn(pfn):
     Convert a dcap PFN to a PNFS PFN
 
     """
+    # only change PFN on remote storage
+    if pfn.find('/pnfs/') == -1:
+        return pfn
+
     pfnSplit = pfn.split("WAX/11/store/", 1)[1]
     filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
     return filePath
@@ -50,7 +54,7 @@ class DCCPFNALImpl(StageOutImpl):
 
         """
         # only create dir on remote storage
-        if not targetPFN.find('/pnfs/'):
+        if targetPFN.find('/pnfs/') == -1:
             return
 
         pfnSplit = targetPFN.split("WAX/11/store/", 1)[1]
@@ -98,6 +102,10 @@ class DCCPFNALImpl(StageOutImpl):
         Build a dccp command with a pnfs mkdir to generate the directory
 
         """
+
+        if getattr(self, 'stageIn', False):
+            return self.buildStageInCommand(sourcePFN, targetPFN, options)
+
         optionsStr = ""
         if options != None:
             optionsStr = str(options)
@@ -113,7 +121,7 @@ echo "dccp exit status: $EXIT_STATUS"
 if [[ $EXIT_STATUS != 0 ]]; then
    echo "Non-zero dccp Exit status!!!"
    echo "Cleaning up failed file:"
-   /bin/rm %s
+   /bin/rm -fv %s
    exit 60311
 fi
 """  % pnfsPfn(targetPFN)
@@ -129,7 +137,7 @@ echo "CRC Check Exit status: $EXIT_STATUS"
 if [[ $EXIT_STATUS != 0 ]]; then
    echo "Non-zero CRC Check Exit status!!!"
    echo "Cleaning up failed file:"
-   /bin/rm %s
+   /bin/rm -fv %s
    exit 60311
 fi
 
@@ -139,7 +147,47 @@ fi
         return result
 
 
+    def buildStageInCommand(self, sourcePFN, targetPFN, options = None):
+        """
+        _buildStageInCommand_
 
+        Create normal dccp commad for staging in files.
+        """
+        optionsStr = ""
+        if options != None:
+            optionsStr = str(options)
+        dirname = os.path.dirname(targetPFN)
+        result = "#!/bin/sh\n"
+        result += "dccp %s %s %s" % (optionsStr, pnfsPfn(sourcePFN), targetPFN)
+        result += \
+"""
+EXIT_STATUS=$?
+echo "dccp exit status: $EXIT_STATUS"
+if [[ $EXIT_STATUS != 0 ]]; then
+   echo "Non-zero dccp Exit status!!!"
+   echo "Cleaning up failed file:"
+   /bin/rm -fv %s
+   exit 60311
+fi
+"""  % targetPFN
+
+        #  //
+        # //  Size Check
+        #//
+        result += \
+"""
+DEST_SIZE=`ls -l %s | cut -d" " -f6`
+FILE_SIZE=`ls -l %s | cut -d" " -f6`
+if [ $FILE_SIZE != $DEST_SIZE ]; then
+    echo "Source and destination files do not have same file size."
+    echo "Cleaning up failed file:"
+   /bin/rm -fv %s
+   exit 60311
+fi
+""" % (pnfsPfn(targetPFN), pnfsPfn(sourcePFN), pnfsPfn(targetPFN))
+
+        print "Executing:\n", result
+        return result
 
 
 
@@ -152,7 +200,7 @@ fi
         """
         pfnSplit = pfnToRemove.split("/store/", 1)[1]
         filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
-        command = "rm  %s" %filePath
+        command = "rm -fv %s" %filePath
         self.executeCommand(command)
 
 

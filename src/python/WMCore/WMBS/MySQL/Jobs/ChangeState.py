@@ -9,19 +9,19 @@ wrapper class), a retry count for that state, and an id for the couchdb record
 """
 
 __all__ = []
-__revision__ = "$Id: ChangeState.py,v 1.2 2009/07/15 21:54:21 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ChangeState.py,v 1.3 2009/07/15 23:46:54 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ChangeState(DBFormatter):
-    sql = """update wmbs_job
-            set state = (select id from wmbs_job_state where name = :state),
-            retry_count = :retry
-            couch_record = :couch_record
-            state_time = :time
-            WHERE   id = :job
-                AND state = :oldstate
+    sql = """UPDATE wmbs_job
+            SET state = (select id from wmbs_job_state where name = :state),
+                retry_count = :retry,
+                couch_record = :couch_record,
+                state_time = :time
+            WHERE id = :job       
+                AND state = (select id from wmbs_job_state where name = :oldstate)
             """
 
     def getBinds(self, jobs = []):
@@ -31,7 +31,7 @@ class ChangeState(DBFormatter):
         """
         def function(job):
             dict = {'job': job['id'],
-                    'state': job['newstate'],
+                    'state': job['state'],
                     'oldstate': job['oldstate'],
                     'time': self.timestamp(),
                     'retry': job['retry_count'],
@@ -45,7 +45,6 @@ class ChangeState(DBFormatter):
         jobs is a list of Job objects (dicts)
         """
         binds = self.getBinds(jobs)
-        print "doing changestate"
         print self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
         return

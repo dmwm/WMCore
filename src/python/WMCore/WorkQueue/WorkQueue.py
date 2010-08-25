@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.88 2010/03/23 14:32:53 swakef Exp $"
-__version__ = "$Revision: 1.88 $"
+__revision__ = "$Id: WorkQueue.py,v 1.89 2010/03/23 15:33:28 swakef Exp $"
+__version__ = "$Revision: 1.89 $"
 
 
 import time
@@ -24,7 +24,13 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
+#from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
+# SiteDB requires host cert - work around for now
+class SiteDB:
+    def phEDExNodetocmsName(self, node):
+        return node.replace('_MSS',
+                            '').replace('_Buffer',
+                                        '').replace('_Export', '')
 
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper

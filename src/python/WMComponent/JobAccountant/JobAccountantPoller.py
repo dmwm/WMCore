@@ -4,8 +4,8 @@
 The JobAccountant algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobAccountantPoller.py,v 1.1 2009/07/28 21:41:18 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobAccountantPoller.py,v 1.2 2009/09/28 19:54:53 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -13,6 +13,8 @@ import logging
 import os
 import string
 import time
+
+from subprocess import Popen, PIPE
 
 import inspect
 
@@ -32,7 +34,6 @@ from WMComponent.DBSBuffer.DBSBuffer import DBSBuffer
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
 from WMCore.FwkJobReport.FJRParser import readJobReport
-
 
 """
 Usual structure here:
@@ -63,7 +64,7 @@ class JobAccountantPoller(BaseWorkerThread):
     """
 
 
-    def __init__(self, config, dbsBuffer, dbsConfig = None):
+    def __init__(self, config, dbsBuffer = None, dbsConfig = None):
         """
         __init__
 
@@ -77,6 +78,7 @@ class JobAccountantPoller(BaseWorkerThread):
         if dbsConfig == None:
             self.dbsConfig = config
 
+            
         self.buffer = dbsBuffer
 
 
@@ -91,16 +93,20 @@ class JobAccountantPoller(BaseWorkerThread):
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
 
-        uniqueCouchDbName = 'jsm_test'
-        self.changeState = ChangeState(self.config, uniqueCouchDbName)
+        #uniqueCouchDbName = 'jsm_test'
+        self.changeState = ChangeState(self.config)
 
-        #self.buffer = DBSBuffer(self.dbsConfig)
-        #print "I am in setUp"
+        self.buffer = DBSBuffer(self.dbsConfig)
         #print myThread.dbi.processData("SELECT * FROM ms_process")[0].fetchall()
-        #self.buffer.prepareToStart()
-        #print "I have started the buffer"
+        self.buffer.prepareToStart()
+
+        return
+    
 
 
+    def terminate(self,params):
+        logging.debug("terminating. doing one more pass before we die")
+        self.algorithm(params)
 
 
 
@@ -161,6 +167,7 @@ class JobAccountantPoller(BaseWorkerThread):
         for job in exhaustedList:
             self.exhaustJob(job)
 
+
         self.changeState.propagate(successList,    'closeout', 'success')
         self.changeState.propagate(exhaustedList,  'closeout', 'exhausted')
 
@@ -198,12 +205,6 @@ class JobAccountantPoller(BaseWorkerThread):
             job['FJR_Path'] = FJRDict[id]
             jobList.append(job)
 
-
-
-        
-
-        
-
         return jobList
 
 
@@ -222,12 +223,28 @@ class JobAccountantPoller(BaseWorkerThread):
 
         failure = False
 
-        #First, dupm any exhausted jobs
+        #First, dump any exhausted jobs
         if job.getState().lower() == 'exhausted':
             return 'Exhausted'
 
+        if not 'FJR_Path' in job.keys():
+            logging.info("Job %i failed because it has no FJR_Path" %(job['id']))
+            return 'Failed'
+
+        if not job['FJR_Path']:
+            logging.info("Job %i failed because it has no FJR_Path" %(job['id']))
+            return 'Failed'
+        
+        if not os.path.isfile(job['FJR_Path']):
+            logging.info("Job %i failed because the FJR could not be found" %(job['id']))
+            return 'Failed'
+
         #get the jobReport
         jobReport = self.readJobReportInfo(job['FJR_Path'])
+
+        if not jobReport or jobReport == []:
+            logging.info("Job %i failed because the FJR could not be parsed at all" %(job['id']))
+            return 'Failed'
 
         FJR  = jobReport[-1]
         #Check if the job failed obviously
@@ -235,8 +252,6 @@ class JobAccountantPoller(BaseWorkerThread):
             logging.info("Job %i failed with error code %i" %(job['id'], FJR.exitCode))
             return 'Failed'
         file = FJR.files[0]
-
-            
 
         #Somehow get FJR
         #Then assure that we have all necessary keys
@@ -315,6 +330,34 @@ class JobAccountantPoller(BaseWorkerThread):
         Tars and stores the logfiles, etc. for passed job
         """
 
+        if not "cache_dir" in job.keys():
+            logging.error("Could not find cache_dir for job %i" %(job['id']))
+            return
+
+        if not job["cache_dir"]:
+            logging.error("cache_dir of type None for job %i" %(job['id']))
+            return
+
+        if not os.path.isdir(job["cache_dir"]):
+            logging.error("cache_dir not valid directory for job %i" %(job['id']))
+            return
+
+        if os.listdir(job["cache_dir"]) == []:
+            logging.info("cache_dir empty for job %i" %(job['id']))
+            return
+
+        #Well, if we got here, we should tar everything up.
+        tarString = ["tar"]
+        tarString.append("-cvf")
+        tarString.append('%s/Job_%i.tar ' %(job["cache_dir"], job['id']))
+        for file in os.listdir(job["cache_dir"]):
+            tarString.append('%s' %(os.path.join(job["cache_dir"], file)))
+
+        #Now we should have all the files together.  Tar them up
+        pipe = Popen(tarString, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.wait()
+
+        #This should wait for the result, and then return     
         return
     
 

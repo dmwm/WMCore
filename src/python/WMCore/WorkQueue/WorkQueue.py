@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.49 2009/12/16 22:31:22 sryu Exp $"
-__version__ = "$Revision: 1.49 $"
+__revision__ = "$Id: WorkQueue.py,v 1.50 2009/12/17 16:03:11 sryu Exp $"
+__version__ = "$Revision: 1.50 $"
 
 # pylint: disable-msg = W0104, W0622
 # pylint: enable-msg = W0104, W0622
@@ -439,7 +439,7 @@ class WorkQueue(WorkQueueBase):
             # if parent in final state (manual intervention?) force child to same state
             if my_item['Status'] in ('Done', 'Failed', 'Canceled'):
                 # force child to same state
-                child_update[my_item['status']].add(my_item['id'])
+                child_update[my_item['Status']].add(my_item['Id'])
                 continue
 
             to_update[item['Status']].add(my_item['Id'])

@@ -14,8 +14,9 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 
 
 
-__revision__ = "$Id: WorkQueueMonitorModel_t.py,v 1.3 2010/01/27 14:59:14 maxa Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueMonitorModel_t.py,v 1.4 2010/01/28 15:46:46 maxa Exp $"
+__version__ = "$Revision: 1.4 $"
+
 
 
 import os
@@ -75,7 +76,6 @@ class WorkQueueMonitorModelTest(RESTBaseUnitTest, WorkQueueTestCase):
         #                                   QueueURL = self.config.getServerUrl())
         
         
-        
         # populate - as done in test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py
         # create WMSpec first
         WorkQueueTestCase.setUp(self)
@@ -112,10 +112,11 @@ class WorkQueueMonitorModelTest(RESTBaseUnitTest, WorkQueueTestCase):
     
     def tearDown(self):
         print "tearDown()"
+
         RESTBaseUnitTest.tearDown(self)
         # happens in RESTBaseUnitTest if self.schemaModules is set
         # self.testInit.clearDatabase()
-        
+
         # clean up WorkQueues - as done in test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py
         WorkQueueTestCase.tearDown(self)
 
@@ -123,10 +124,10 @@ class WorkQueueMonitorModelTest(RESTBaseUnitTest, WorkQueueTestCase):
             os.unlink(f)
         for d in ('standalone', 'global', 'local'):
             shutil.rmtree(d, ignore_errors = True)
-        
 
-    
-    def testNonExistingMethod(self):
+        
+    # starting with X to prevent from running for now 
+    def XtestNonExistingMethod(self):
         print "testNonExistingMethod()"
         # test not accepted type should return 406 error, in fact getting 404, then OK
         url = self.urlbase + "someWrongMethod"
@@ -134,22 +135,49 @@ class WorkQueueMonitorModelTest(RESTBaseUnitTest, WorkQueueTestCase):
         
         
 
-    def testExistingMethod(self):
+    # starting with X to prevent from running for now
+    def XtestExistingMethod(self):
         print "testExistingMethod()"
         url = self.urlbase + "test"
+    
+        #output is dictionary for the output matching 
+        # there are four keys you can check:
+        # {'code': code, 'data': data, 'type': type, 'response': response}
         data, expires = methodTest("GET", url,  accept = "text/json",
                                    output = {"code": 200})
         # beware of the starting quote - HTTPConnection class seems to wrap
         # the return data this way ...
         dataPrefix =  "\"date/time:"
         errMsg = "Expect data starting with '%s', got '%s'" % (dataPrefix, data)
-        assert data.startswith(dataPrefix), errMsg 
+        assert data.startswith(dataPrefix), errMsg         
         
+                
+    # REST WorkQueue tests
+    
+    # return number of WorkQueue elements, perhaps with IDs?
+    # obvious thing - to monitor status of WorkQueue elements identified by IDs
+    # DAS testing - see RESTServerSetup, model class has to be DASFormatter (or just
+    # specified in configuration)
+    # DAO stuff
+    
+    def testWorkQueueStatus(self):
+        print "testWorkQueueStatus()"
+        url = self.urlbase + "status"
+        # no input specified
+        data, expires = methodTest("POST", url, accept = "text/json",
+                                   output = {"code": 200})
         
-        
-    def testDummy(self):
-        print "testDummy()"
-        assert True
+        print "data: '%s'" % data
+        print "expires: '%s'" % expires
+
+        # with some input
+        # what format is "elementIDs": ['1', '2', '3'] (fails) supposed to be?
+        input = {"status": "Negotiating"}
+        data, expires = methodTest("POST", url, accept = "text/json",
+                                   input = input, output = {"code": 200})
+
+        # test data
+    
 
              
         

@@ -4,8 +4,8 @@
 # W0142: Some people like ** magic
 # R0201: Test methods CANNOT be functions
 
-__revision__ = "$Id: Subscription_t.py,v 1.56 2010/05/24 15:24:21 mnorman Exp $"
-__version__ = "$Revision: 1.56 $"
+__revision__ = "$Id: Subscription_t.py,v 1.57 2010/05/24 15:40:05 mnorman Exp $"
+__version__ = "$Revision: 1.57 $"
 
 
 import unittest
@@ -1281,6 +1281,10 @@ class SubscriptionTest(unittest.TestCase):
                          locations = set(["goodse.cern.ch"]), merged = False)
         testFile1.addRun(Run(2, *[48]))
 
+        testFile2 = File(lfn = "/this/is/a/lfn2", size = 1024, events = 20,
+                         locations = set(["goodse.cern.ch"]), merged = False)
+        testFile2.addRun(Run(2, *[48]))
+
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -1330,6 +1334,7 @@ class SubscriptionTest(unittest.TestCase):
         testJobGroupA.add(testJobA)
         testJobGroupA.add(testJobB)
         testJobGroupA.output.addFile(testFile1)
+        testJobGroupA.output.addFile(testFile2)
         testJobGroupA.output.commit()
 
         testJobGroupA.commit()
@@ -1347,6 +1352,8 @@ class SubscriptionTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM wmbs_jobgroup")[0].fetchall()
         self.assertEqual(len(result), 0)
         self.assertFalse(testJobGroupA.output.exists())
+        self.assertEqual(testFile1.exists(), False)
+        self.assertEqual(testFile2.exists(), False)
         self.assertFalse(testFilesetQ.exists())
         self.assertEqual(testFileA.exists(), False)
         self.assertEqual(testFileB.exists(), False)

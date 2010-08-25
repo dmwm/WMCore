@@ -5,10 +5,35 @@ _DbObject_
 Base class for all objects in the database
 """
 
-__version__ = "$Id: DbObject.py,v 1.1 2010/03/30 10:26:44 mnorman Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: DbObject.py,v 1.2 2010/03/30 15:18:43 mnorman Exp $"
+__revision__ = "$Revision: 1.2 $"
+
+import logging
+import traceback
+import threading
 
 from WMCore.WMConnectionBase import WMConnectionBase
+
+def dbTransaction(func):
+    """
+    Basic transaction decorator function
+    """
+    def wrapper(self, *args, **kwargs):
+        self.existingTransaction = self.beginTransaction()
+        try:
+            res = func(self, *args, **kwargs)
+            self.commitTransaction(self.existingTransaction)
+        except Exception, ex:
+            msg = "Failure in DbObject method"
+            msg += str(ex)
+            msg += str(traceback.format_exc())
+            logging.error(msg)
+            #TODO: Add this to WMConnectionBase?
+            myThread = threading.currentThread()
+            myThread.transaction.rollback()
+            raise Exception(msg)        
+        return res
+    return wrapper
 
 class DbObject(WMConnectionBase):
     """

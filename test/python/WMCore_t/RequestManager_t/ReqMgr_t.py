@@ -12,7 +12,7 @@ import urllib
 
 class TestReqMgr(unittest.TestCase):
     def setUp(self):
-        reqMgrHost = 'cmssrv49.fnal.gov:8585'
+        reqMgrHost = 'http://cmssrv49.fnal.gov:8585'
         self.jsonSender = JSONRequests(reqMgrHost)
         self.jsonSender.delete('/reqMgr/user/me')
         self.requestTypes = ['ReReco', 'StoreResults', 'CmsGen', 'Reco']

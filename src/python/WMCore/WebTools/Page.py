@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.38 2010/01/19 15:57:30 valya Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: Page.py,v 1.39 2010/02/01 18:02:30 sryu Exp $"
+__version__ = "$Revision: 1.39 $"
 
 import urllib
 import cherrypy
@@ -33,6 +33,7 @@ from WMCore.WMFactory import WMFactory
 from wsgiref.handlers import format_date_time
 from datetime import datetime, timedelta
 from time import mktime
+from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 
 DEFAULT_EXPIRE = 5*60
 
@@ -202,6 +203,24 @@ def exposejson (func):
         cherrypy.response.headers['Content-Type'] = "application/json"
         try:
 #            jsondata = encoder.iterencode(data)
+            jsondata = encoder.encode(data)
+            return jsondata
+        except:
+            Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
+#        return data
+    wrapper.__doc__ = func.__doc__
+    wrapper.__name__ = func.__name__
+    wrapper.exposed = True
+    return wrapper
+
+def exposejsonthunker (func):
+    def wrapper (self, *args, **kwds):
+        thunker = JSONThunker()
+        encoder = JSONEncoder()
+        data = func (self, *args, **kwds)
+        cherrypy.response.headers['Content-Type'] = "application/json+thunk"
+        try:
+            data = thunker.thunk(data)
             jsondata = encoder.encode(data)
             return jsondata
         except:

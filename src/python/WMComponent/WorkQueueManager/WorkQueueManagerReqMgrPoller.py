@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.12 2010/06/25 18:47:55 sryu Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.13 2010/06/25 19:18:56 sryu Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import re
 import os
@@ -79,7 +79,13 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
 
             self.logger.info("%s element(s) obtained from RequestManager" % work)
 
-            self.reportToReqMgr()
+#TODO uncomment this and add proper error handling when RequestMgr support this function            
+#            try:
+#                self.reportToReqMgr()
+#            except:
+#                # TODO: needs proper error handling
+#                self.logger.info("""Couldn't Report back to requestManager 
+#                                    - Need proper Error Handling""")
         return
 
 

@@ -6,8 +6,8 @@ Rest Model abstract implementation
 TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.54 2010/02/10 18:49:33 sryu Exp $"
-__version__ = "$Revision: 1.54 $"
+__revision__ = "$Id: RESTModel.py,v 1.55 2010/03/17 18:28:08 sryu Exp $"
+__version__ = "$Revision: 1.55 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -55,32 +55,30 @@ class RESTModel(WebAPI):
         
         # Checks whether verb is supported, if not return 501 error
         if verb not in self.methods.keys():
-            data = {"message": "Unsupported VERB: %s" % verb,
-                    "args": args,
-                    "kwargs": kwargs}
-            self.debug(str(data))
+            data =  "Unsupported VERB: %s, args: %s, kwargs: %s" % (verb, args, kwargs)
+            self.debug(data)
             raise HTTPError(501, data)
         method = args[0]
         
         flag = True
         for v in self.methods.keys():
+            print v
+            print self.methods[v]
             if method in self.methods[v].keys():
                 flag = False
                 break
         if flag:         
-            data = {"message": "Unsupported method for %s: %s" % (verb, method),
-                    "args": args,
-                    "kwargs": kwargs}
-            self.debug(str(data))
+            data =  "Unsupported method for %s: %s args: %s, kwargs: %s" \
+                     % (verb, method, args, kwargs)
+            self.debug(data)
             raise HTTPError(404, data)
         
         # Checks whether method exist but used wrong verb, if not 
         # send 404 error 
         if method not in self.methods[verb].keys():
-            data = {"message": "Unsupported method for the verb %s: %s" % (verb, method),
-                    "args": args,
-                    "kwargs": kwargs}
-            self.debug(str(data))
+            data = "Unsupported method for the verb %s: %s args: %s, kwargs: %s" \
+                     % (verb, method, args, kwargs)
+            self.debug(data)
             raise HTTPError(405, data)
             
     def handler(self, verb, args=[], kwargs={}):

@@ -7,6 +7,7 @@ import os.path
 import threading
 import logging
 import time
+import base64
 
 from subprocess import Popen, PIPE
 
@@ -195,11 +196,11 @@ class CreateWorkArea:
 
         #Create the workload directory
         if not os.path.isdir(workloadDir):
-            os.mkdir(workloadDir)
+            os.makedirs(workloadDir)
 
         #Create the task directory
         if not os.path.isdir(taskDir):
-            os.mkdir(taskDir)
+            os.makedirs(taskDir)
 
         logging.info('JobMaker: Now in directory %s' %(os.getcwd()))
 
@@ -433,7 +434,11 @@ class CreateWorkArea:
             wmWorkload.load(self.workflow.spec)
 
             workload = wmWorkload.name()
-            task     = self.workflow.task
+
+            task = self.workflow.task
+            if task.startswith("/" + workload + "/"):
+                task = task[len(workload) + 2:]
+                
             return os.path.join(self.startDir, workload), os.path.join(self.startDir, workload, task)
 
 

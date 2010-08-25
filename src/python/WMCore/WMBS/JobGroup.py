@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.31 2009/09/10 16:25:44 mnorman Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: JobGroup.py,v 1.32 2009/09/15 16:07:50 mnorman Exp $"
+__version__ = "$Revision: 1.32 $"
 
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
 from WMCore.WMBS.WMBSBase import WMBSBase
@@ -311,3 +311,17 @@ class JobGroup(WMBSBase, WMJobGroup):
         self.commitTransaction(existingTransaction)
 
         return
+
+
+    def getLocationsForJobs(self):
+        """
+        Gets a list of the locations that jobs can run at
+        """
+        if not self.exists():
+            return
+        
+        action = self.daofactory(classname = "JobGroup.GetLocationsForJobs")
+        result = action.execute(id = self.id, conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
+
+        return result

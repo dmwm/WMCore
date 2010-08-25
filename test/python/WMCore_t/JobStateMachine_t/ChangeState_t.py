@@ -132,8 +132,8 @@ class TestChangeState(unittest.TestCase):
 
     def testPropagate(self):
         """
-    	This is the test class for function Propagate from module ChangeState
-    	"""
+        	This is the test class for function Propagate from module ChangeState
+        	"""
         (testSubscription, testFileset, testWorkflow, testFileA,\
             testFileB, testFileC) = self.createSubscriptionWithFileABC()
         
@@ -211,7 +211,37 @@ class TestChangeState(unittest.TestCase):
         """
         	This is the test class for function RecordInCouch from module ChangeState
         	"""
-        jsm = self.change.recordInCouch( [{ "dumb_value": "is_dumb", "id":1 }], "new", "none")
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task="Test")
+        testWorkflow.create()
+        
+        testWMBSFileset = Fileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+
+        testFileA = File(lfn = "/matt/broke/this", size = 1024, events = 10)
+        testFileA.addRun(Run(10, 1,2,3,4))
+        testFileA.setLocation('malpaquet')
+
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(10, *[12312, 12272]))
+        testFileA.setLocation('malpaquet')
+        testFileA.create()
+        testFileB.create()
+
+        testJob = Job(name = 'testA')
+        testJob.addFile(testFileA)
+        testJob.addFile(testFileB)
+        testJobGroup.add(testJob)
+        testJobGroup.commit()
+        
+        jsm = self.change.recordInCouch( testJobGroup.jobs, "new", "none")
         jsm = self.change.recordInCouch( jsm , "created", "new")
         jsm = self.change.recordInCouch( jsm , "executing", "created")
         jsm = self.change.recordInCouch( jsm , "complete", "executing")

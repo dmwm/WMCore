@@ -6,8 +6,8 @@ File based splitting algorithm that will chop a fileset into
 a set of jobs based on file boundaries
 """
 
-__revision__ = "$Id: FileBased.py,v 1.24 2010/02/12 20:17:29 sfoulkes Exp $"
-__version__  = "$Revision: 1.24 $"
+__revision__ = "$Id: FileBased.py,v 1.25 2010/03/12 20:29:52 mnorman Exp $"
+__version__  = "$Revision: 1.25 $"
 
 import threading
 
@@ -39,6 +39,7 @@ class FileBased(JobFactory):
         myThread = threading.currentThread()
         
         filesPerJob  = int(kwargs.get("files_per_job", 10))
+        jobsPerGroup = int(kwargs.get("jobs_per_group", 0))
         filesInJob   = 0
         totalJobs    = 0
         listOfFiles  = []
@@ -48,9 +49,10 @@ class FileBased(JobFactory):
 
         for location in locationDict.keys():
             #Now we have all the files in a certain location
-            fileList   = locationDict[location]
-            filesInJob = 0
-            totalJobs  = 0
+            fileList    = locationDict[location]
+            filesInJob  = 0
+            totalJobs   = 0
+            jobsInGroup = 0
             self.newGroup()
             baseName = makeUUID()
             if len(fileList) == 0:
@@ -58,12 +60,17 @@ class FileBased(JobFactory):
                 #This isn't supposed to happen, but better safe then sorry
                 continue
             for file in fileList:
-                file.loadData(parentage = 1)
                 if filesInJob == 0 or filesInJob == filesPerJob:
+                    if jobsPerGroup:
+                        if jobsInGroup > jobsPerGroup:
+                            self.newGroup()
+                            jobsInGroup = 0
+
                     self.newJob(name = self.getJobName(baseName = baseName, \
                                                        length=totalJobs))
-                    filesInJob = 0
-                    totalJobs += 1
+                    filesInJob   = 0
+                    totalJobs   += 1
+                    jobsInGroup += 1
                     
                 filesInJob += 1
                 self.currentJob.addFile(file)

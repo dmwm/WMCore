@@ -83,7 +83,7 @@ class PhEDEx(AuthorisedService):
         # self.responseType
         return result 
 
-    def injectBlocks(self, dbsUrl, node, datasetPath, verbose=0, strict=1, *blockNames):
+    def injectBlocks(self, dbsUrl, node, datasetPath = None, verbose=0, strict=1, *blockNames):
     
         """
         _injectBlocksToPhedex_

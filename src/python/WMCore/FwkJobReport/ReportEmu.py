@@ -17,15 +17,8 @@ def addRunToFile(fileSection, run, *lumis):
     Add run/lumi information to the file section provided
     
     """
-    runS = str(run)
-    section = fileSection.runs
-    runSect = getattr(section, runS, None)
-    if runSect == None:
-        section.section_(runS)
-        runSect = getattr(section, runS)
-    if not hasattr(runSect, "lumiSections"):
-        runSect.lumiSections = []
-    runSect.lumiSections.extend(lumis)
+    fileSection.section_("runs")
+    setattr(fileSection.runs, str(run), lumis)
     return
     
 def addContributingInput(outFile, lfn, pfn):

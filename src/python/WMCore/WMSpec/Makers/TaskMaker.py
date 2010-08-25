@@ -7,8 +7,8 @@ and then for each task do the jobs necessary for the task
 to start as a proper job.
 
 """
-__revision__ = "$Id: TaskMaker.py,v 1.1 2009/06/12 21:27:30 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TaskMaker.py,v 1.2 2009/10/15 16:15:33 evansde Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 
@@ -30,21 +30,22 @@ from WMCore.WMBS.Fileset             import Fileset
 #The class should carry the following variables:
 #  self.workload = WMSpec.WMWorkloadHelper object, loaded by loadWorkload
 #  self.workdir  = string carrying the name of an open working directory, loaded by loadWorkdir
-#  self.workflowDict = dictionary of WMBS.Workflows keyed by task name; 
-#  self.subDict  = dictionary of WMBS.Subscriptions keyed by task name; 
+#  self.workflowDict = dictionary of WMBS.Workflows keyed by task name;
+#  self.subDict  = dictionary of WMBS.Subscriptions keyed by task name;
 #
 
 
 class TaskMaker:
     """
     Class for separating and starting all tasks in a WMWorkload
-    
+
     """
 
 
     def __init__(self, workload = None, workdir = None):
         self.workload = None
         self.workdir  = None
+        self.skipSubscription = False
         self.workflowDict = {}
         self.subDict      = {}
         self.owner        = ''
@@ -63,11 +64,17 @@ class TaskMaker:
     def loadWorkload(self, inputWorkload):
         """
         If workload is sane, then use it
-        
+
         """
 
         if inputWorkload == None:
             self.workload = None
+        if isinstance(inputWorkload, WMWorkload):
+            self.workload = WMWorkloadHelper(inputWorkload)
+            return
+        if isinstance(inputWorkload, WMWorkloadHelper):
+            self.workload = inputWorkload
+            return
 
         if not os.path.exists(inputWorkload):
             raise Exception('Could not find %s in local file system' %(str(inputWorkload)))
@@ -95,18 +102,18 @@ class TaskMaker:
                 os.mkdir(inputWorkdir)
             except Exception, ex:
                 print 'Caught exception %s in creating workdir %s' %(str(ex), inputWorkdir)
-                raise Exception(ex) 
+                raise Exception(ex)
 
         self.workdir = inputWorkdir
 
         return
-        
+
 
 
     def processWorkload(self):
         """
         Split the workload into tasks, and finish all the process for the task
-        
+
         """
 
         if self.workdir == None or self.workload == None:
@@ -120,13 +127,14 @@ class TaskMaker:
             if task.name() in self.workflowDict.keys():
                 raise Exception('Duplicate task name for workload %s, task %s' %(workload.name(), task.name()))
 
-            subscribeInfo = self.subscribeWMBS(task)
+            if not self.skipSubscription:
+                subscribeInfo = self.subscribeWMBS(task)
             sandboxInfo   = self.createSandbox(task)
 
         logging.info('Done processing workload %s' %(self.workload.name()))
 
         return True
-            
+
 
 
     def createSandbox(self, task):
@@ -179,7 +187,7 @@ class TaskMaker:
                 raise Exception ('I am being asked to chain output for a task %s which does not yet exist' %(taskName))
             outputWorkflow = self.workflowDict[taskName]
             outputWorkflow.addOutput(outputModule, fileSet)
-            
+
 
         logging.info('Registered workflow for step %s' %(task.name()))
 
@@ -212,7 +220,7 @@ class TaskMaker:
         #Add subscription id to task
         setattr(task.data.input.WMBS, 'Subscription', newSub['id'])
 
-        if not newSub.exists() >= 0: 
+        if not newSub.exists() >= 0:
                raise Exception("ERROR: Subscription does not exist after it was created")
 
         logging.info('Created subscription for task %s' %(task.name()))

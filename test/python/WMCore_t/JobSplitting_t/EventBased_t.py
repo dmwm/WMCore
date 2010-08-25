@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: EventBased_t.py,v 1.5 2009/03/03 13:12:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: EventBased_t.py,v 1.6 2009/08/06 16:51:17 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from sets import Set
 import unittest
@@ -92,10 +92,10 @@ class EventBasedTest(unittest.TestCase):
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
         
-        assert job.mask.getMaxEvents() == 100, \
+        assert job["mask"].getMaxEvents() == 100, \
                "ERROR: Job's max events is incorrect."
         
-        assert job.mask["FirstEvent"] == 0, \
+        assert job["mask"]["FirstEvent"] == 0, \
                "ERROR: Job's first event is incorrect."
 
         return
@@ -123,10 +123,10 @@ class EventBasedTest(unittest.TestCase):
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
         
-        assert job.mask.getMaxEvents() == 1000, \
+        assert job["mask"].getMaxEvents() == 1000, \
                "ERROR: Job's max events is incorrect."
         
-        assert job.mask["FirstEvent"] == 0, \
+        assert job["mask"]["FirstEvent"] == 0, \
                "ERROR: Job's first event is incorrect."
 
         return
@@ -154,15 +154,15 @@ class EventBasedTest(unittest.TestCase):
             assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                    "ERROR: Job contains unknown files."
         
-            assert job.mask.getMaxEvents() == 50, \
+            assert job["mask"].getMaxEvents() == 50, \
                    "ERROR: Job's max events is incorrect."
         
-            assert job.mask["FirstEvent"] in [0, 50], \
+            assert job["mask"]["FirstEvent"] in [0, 50], \
                    "ERROR: Job's first event is incorrect."
 
-            assert job.mask["FirstEvent"] not in firstEvents, \
+            assert job["mask"]["FirstEvent"] not in firstEvents, \
                    "ERROR: Job's first event is repeated."
-            firstEvents.append(job.mask["FirstEvent"])
+            firstEvents.append(job["mask"]["FirstEvent"])
 
         return
 
@@ -189,15 +189,15 @@ class EventBasedTest(unittest.TestCase):
             assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                    "ERROR: Job contains unknown files."
         
-            assert job.mask.getMaxEvents() == 99, \
+            assert job["mask"].getMaxEvents() == 99, \
                    "ERROR: Job's max events is incorrect."
         
-            assert job.mask["FirstEvent"] in [0, 99], \
+            assert job["mask"]["FirstEvent"] in [0, 99], \
                    "ERROR: Job's first event is incorrect."
 
-            assert job.mask["FirstEvent"] not in firstEvents, \
+            assert job["mask"]["FirstEvent"] not in firstEvents, \
                    "ERROR: Job's first event is repeated."
-            firstEvents.append(job.mask["FirstEvent"])            
+            firstEvents.append(job["mask"]["FirstEvent"])            
 
         return
 
@@ -223,10 +223,10 @@ class EventBasedTest(unittest.TestCase):
             assert len(job.getFiles(type = "lfn")) == 1, \
                    "ERROR: Job contains too many files."
         
-            assert job.mask.getMaxEvents() == 100, \
+            assert job["mask"].getMaxEvents() == 100, \
                    "ERROR: Job's max events is incorrect."
         
-            assert job.mask["FirstEvent"] == 0, \
+            assert job["mask"]["FirstEvent"] == 0, \
                    "ERROR: Job's first event is incorrect."
 
         return
@@ -256,10 +256,10 @@ class EventBasedTest(unittest.TestCase):
             assert len(job.getFiles(type = "lfn")) == 1, \
                    "ERROR: Job contains too many files."
         
-            assert job.mask.getMaxEvents() == 50, \
+            assert job["mask"].getMaxEvents() == 50, \
                    "ERROR: Job's max events is incorrect."
         
-            assert job.mask["FirstEvent"] in [0, 50], \
+            assert job["mask"]["FirstEvent"] in [0, 50], \
                    "ERROR: Job's first event is incorrect."
 
         return
@@ -290,10 +290,10 @@ class EventBasedTest(unittest.TestCase):
             assert len(job.getFiles(type = "lfn")) == 1, \
                    "ERROR: Job contains too many files."
         
-            assert job.mask.getMaxEvents() == 150, \
+            assert job["mask"].getMaxEvents() == 150, \
                    "ERROR: Job's max events is incorrect."
         
-            assert job.mask["FirstEvent"] == 0, \
+            assert job["mask"]["FirstEvent"] == 0, \
                    "ERROR: Job's first event is incorrect."
 
         return    

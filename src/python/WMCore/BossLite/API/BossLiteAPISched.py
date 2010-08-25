@@ -4,9 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPISched.py,v 1.2 2010/05/24 14:09:28 spigafi Exp $"
-__revision__ = "$Revision: 1.2 $"
-__author__ = "Giuseppe.Codispoti@bo.infn.it"
+__version__ = "$Id: BossLiteAPISched.py,v 1.3 2010/05/26 22:44:16 spigafi Exp $"
+__revision__ = "$Revision: 1.3 $"
 
 
 # db interaction
@@ -56,8 +55,10 @@ class BossLiteAPISched(object):
             # retrieve the scheduler
             if not self.schedConfig.has_key('name') :
                 for job in task.jobs :
-                    if job.runningJob['scheduler'] is not None:
-                        self.schedConfig['name'] = job.runningJob['scheduler']
+                    if job.runningJob is not None:
+                        if job.runningJob['scheduler'] is not None:
+                            self.schedConfig['name'] = \
+                                        job.runningJob['scheduler']
 
             # retrieve the user_proxy
             if task['user_proxy'] is not None:
@@ -179,8 +180,7 @@ class BossLiteAPISched(object):
         return task
     
     
-    def query( self, taskId, jobRange='all', queryType='node', 
-                                        runningAttrs=None, strict=True ):
+    def query( self, taskId, jobRange='all', queryType='node' ):
         """
         query status and eventually other scheduler related information
         - taskId can be both a Task object or the task id

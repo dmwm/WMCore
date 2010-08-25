@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.22 2010/05/03 12:16:45 riahi Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Fileset_t.py,v 1.23 2010/05/11 17:28:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import unittest
 import logging
@@ -164,6 +164,17 @@ class FilesetTest(unittest.TestCase):
 
         assert testFilesetC.name == testFilesetA.name, \
                "ERROR: Load from id didn't load name"
+
+        # Verify we can add files to a loaded fileset.
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
+                         events = 20, checksums = {'cksum': 3})
+        testFileA.create()
+        testFilesetC.addFile(testFileA)
+        testFilesetC.commit()
+
+        testFilesetC.loadData()
+        assert len(testFilesetC.files) == 1, \
+               "Error: Wrong number of files."
 
         testFilesetA.delete()
         return

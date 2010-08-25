@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.30 2009/10/15 20:46:08 mnorman Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: ChangeState.py,v 1.31 2009/10/16 18:18:58 mnorman Exp $"
+__version__ = "$Revision: 1.31 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -21,6 +21,7 @@ import urllib
 from sets import Set
 import threading
 import time
+import logging
 
 class ChangeState(WMObject, WMConnectionBase):
     """
@@ -168,7 +169,8 @@ class ChangeState(WMObject, WMConnectionBase):
             self.database.queue(doc)
 
         if len(couchRecordsToUpdate) > 0:
-            setCouchDAO.execute(bulkList = couchRecordsToUpdate)
+            setCouchDAO.execute(bulkList = couchRecordsToUpdate, conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
             
         docsCommitted = self.database.commit()
         assert len(jobs) == len(docsCommitted), \

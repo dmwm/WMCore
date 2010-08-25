@@ -21,7 +21,7 @@ from WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest import *
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
 import cherrypy
 import threading
-import simplejson as json
+import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import urllib
 
 class ReqMgrRESTModel(RESTModel):
@@ -245,7 +245,8 @@ class ReqMgrRESTModel(RESTModel):
  
         
     def makeRequest(self):
-        requestSchema = json.loads( cherrypy.request.body.read() )
+        body = cherrypy.request.body.read()
+        requestSchema = JsonWrapper.loads( body, encoding='latin-1' )
         maker = retrieveRequestMaker(requestSchema['RequestType'])
         specificSchema = maker.schemaClass()
         specificSchema.update(requestSchema)
@@ -254,6 +255,7 @@ class ReqMgrRESTModel(RESTModel):
         url = url[0:url.find('/request')]
         specificSchema.reqMgrURL = url
         specificSchema.validate()
+
         request = maker(specificSchema)
         # fill the WorkflowSpec's URL
         helper = WMWorkloadHelper(request['WorkflowSpec'])
@@ -296,7 +298,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def putMessage(self, request):
         self.initThread()
-        message = json.loads( cherrypy.request.body.read() )
+        message = JsoniWrapper.loads( cherrypy.request.body.read() )
         print "PUTMESAGE " + str(message)
         return ChangeState.putMessage(request, message)
 

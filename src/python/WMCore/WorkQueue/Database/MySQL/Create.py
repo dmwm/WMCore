@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2009/06/05 17:04:33 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2009/06/10 21:06:21 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -24,6 +24,43 @@ class Create(CreateWorkQueueBase):
         constraints and inserts.
         """        
         CreateWorkQueueBase.__init__(self, logger, dbi)
+        
+        # overwrite some tables to use MySql auto increment feature
+        self.create["01wq_wmspec"] = \
+          """CREATE TABLE wq_wmspec (
+             id          INTEGER      NOT NULL AUTO_INCREMENT, 
+             name        VARCHAR(255) NOT NULL,
+             PRIMARY KEY(id))"""
+             
+        self.create["02wq_site"] = \
+          """CREATE TABLE wq_site (
+             id          INTEGER      NOT NULL AUTO_INCREMENT, 
+             name        VARCHAR(255) NOT NULL,
+             PRIMARY KEY(id)
+             )"""
+                               
+        self.create["03wq_block"] = \
+          """CREATE TABLE wq_block (
+             id             INTEGER      NOT NULL AUTO_INCREMENT,
+             name           VARCHAR(500) NOT NULL,
+             block_size     INTEGER      NOT NULL,
+             num_files      INTEGER      NOT NULL,
+             num_event      INTEGER      NOT NULL,
+             PRIMARY KEY(id)
+             )"""
+             
+        self.create["04wq_element"] = \
+          """CREATE TABLE wq_element (
+             id               INTEGER    NOT NULL AUTO_INCREMENT,
+             wmspec_id        INTEGER    NOT NULL,
+             block_id         INTEGER    NOT NULL,
+             num_jobs         INTEGER    NOT NULL,
+             priority         INTEGER    NOT NULL,
+             parent_flag      INTEGER    DEFAULT 0,
+             last_update      INTEGER    NOT NULL,
+             PRIMARY KEY (id),
+             UNIQUE (wmspec_id, block_id)
+             ) """
 
         
     def execute(self, conn = None, transaction = None):

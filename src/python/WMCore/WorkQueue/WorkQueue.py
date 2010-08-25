@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.66 2010/02/09 17:32:19 swakef Exp $"
-__version__ = "$Revision: 1.66 $"
+__revision__ = "$Id: WorkQueue.py,v 1.67 2010/02/09 18:15:33 swakef Exp $"
+__version__ = "$Revision: 1.67 $"
 
 
 import uuid
@@ -197,7 +197,6 @@ class WorkQueue(WorkQueueBase):
         """
         results = []
         subResults = []
-        #self.updateLocationInfo()
         matches, unmatched = self._match(siteJobs)
 
         # if talking to a child and have resources left get work from parent
@@ -466,7 +465,6 @@ class WorkQueue(WorkQueueBase):
         """
         Update locations for elements
         """
-        trans = self.beginTransaction()
         #get blocks and dbsurls (for now assume global!)
         blocksAction = self.daofactory(classname = "Data.GetActiveData")
         blocks = blocksAction.execute(conn = self.getDBConn(),
@@ -484,6 +482,7 @@ class WorkQueue(WorkQueueBase):
 
         uniqueLocations = set(sum(mapping.values(), []))
 
+        trans = self.beginTransaction()
         if uniqueLocations:
             self._insertSite(list(uniqueLocations))
 

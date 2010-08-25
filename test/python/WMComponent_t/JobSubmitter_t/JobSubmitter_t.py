@@ -3,16 +3,12 @@
 
 
 import unittest
-import random
-import os
-import logging
 import threading
-import time
+
 
 
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMFactory import WMFactory
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
@@ -20,13 +16,8 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Job import Job
-
-from WMCore.Agent.Configuration import *
-
 from WMComponent.JobSubmitter.JobSubmitter import JobSubmitter
-
 from WMCore.JobStateMachine.ChangeState import ChangeState
-
 from subprocess import Popen, PIPE
 
 class JobSubmitterTest(unittest.TestCase):

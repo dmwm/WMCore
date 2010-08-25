@@ -5,10 +5,12 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.19 2010/03/30 20:56:08 sryu Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.20 2010/04/07 19:19:25 sryu Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import logging
+
+from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
@@ -63,6 +65,7 @@ class WMBSHelper:
             self.topLevelSubscription = subs
         
         outputModules =  task.getOutputModulesForStep(task.getTopStepName())
+        
         for outputModuleName in outputModules.listSections_():
             if task.taskType() == "Merge":
                 outputFilesetName = "%s/merged-%s" % (task.getPathName(),
@@ -73,7 +76,6 @@ class WMBSHelper:
     
             outputFileset = Fileset(name = outputFilesetName)
             outputFileset.create()
-    
             workflow.addOutput(outputModuleName, outputFileset)
     
             for childTask in task.childTaskIterator():
@@ -109,7 +111,7 @@ class WMBSHelper:
         self.topLevelFileset.commit()
         self.topLevelFileset.markOpen(False)
     
-    def addFiles(self, dbsBlock):
+    def addFiles(self, dbsBlock, locations):
         """
         _createFiles_
         
@@ -119,7 +121,7 @@ class WMBSHelper:
 
         for dbsFile in dbsBlock['Files']:
             self.topLevelFileset.addFile(self._convertDBSFileToWMBSFile(dbsFile, 
-                                            dbsBlock['StorageElements']))
+                                            locations))
                     
         self.topLevelFileset.commit()
         self.topLevelFileset.markOpen(False)
@@ -157,3 +159,20 @@ class WMBSHelper:
         logging.info("WMBS File: %s\n on Location: %s" 
                      % (wmbsFile['lfn'], wmbsFile['newlocations']))
         return wmbsFile
+    
+    @staticmethod
+    def createSandbox(workload, sandboxLocation):
+        
+        def _createSandboxForTask(task):
+            setattr(task.data.input, 'sandbox', "%s/%s-Sandbox.tar.bz2" % 
+                                     (sandboxLocation, task.name()))
+            sandboxCreator.makeSandbox(sandboxLocation, workload, task)
+            for childTask in task.childTaskIterator():
+                _createSandboxForTask(childTask)
+    
+        sandboxCreator = SandboxCreator()
+        
+        for task in workload.taskIterator():
+            _createSandboxForTask(task)
+            
+        

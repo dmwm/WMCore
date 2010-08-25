@@ -1,7 +1,13 @@
 var elementTable = function(divID) {
         
     var formatUrl = function(elCell, oRecord, oColumn, sData) { 
-            elCell.innerHTML = "<a href='" + sData + "monitor' target='_blank'>" + sData.split('/')[2] + "</a>"; 
+	        var host;
+	        if (!sData) {
+				host = sData;
+			} else {
+				host = sData.split('/')[2]
+			}
+            elCell.innerHTML = "<a href='" + sData + "monitor' target='_blank'>" + host + "</a>"; 
         };
         
 	var dateFormatter = function(elCell, oRecord, oColumn, oData) {
@@ -34,5 +40,5 @@ var elementTable = function(divID) {
     
     var dataTable = WMCore.WebTools.createDataTable(divID, dataSource, 
                          WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                         tableConfig, 100000);
+                         tableConfig, 50000);
 }

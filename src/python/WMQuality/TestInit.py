@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.16 2009/10/13 21:44:25 meloam Exp $"
+    "$Id: TestInit.py,v 1.17 2009/10/13 22:25:27 meloam Exp $"
 __version__ = \
-    "$Revision: 1.16 $"
+    "$Revision: 1.17 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -69,7 +69,7 @@ class TestInit:
         self.testDir = tempfile.mkdtemp()
         if config:
             config.section_("General")
-            config.General.workDir = os.getenv("TESTDIR")
+            config.General.workDir = self.testDir
         return self.testDir
         
     def getBackendFromDbURL(self, dburl):

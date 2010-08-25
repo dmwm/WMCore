@@ -22,7 +22,7 @@ import inspect
 
 import WMCore_t.WMSpec_t.Steps_t as ModuleLocator
 
-class Test(unittest.TestCase):
+class deleteFileTest(unittest.TestCase):
 
 
     def setUp(self):

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.65 2010/02/09 15:09:04 swakef Exp $"
-__version__ = "$Revision: 1.65 $"
+__revision__ = "$Id: WorkQueue.py,v 1.66 2010/02/09 17:32:19 swakef Exp $"
+__version__ = "$Revision: 1.66 $"
 
 
 import uuid
@@ -654,6 +654,7 @@ class WorkQueue(WorkQueueBase):
         blacklist = task.siteBlacklist()
         if len(blacklist) != 0:
             self._insertBlackList(elementID, blacklist)
+        return elementID
 
     def _insertWMSpec(self, wmSpec):
         """

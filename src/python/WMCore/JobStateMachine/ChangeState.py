@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.50 2010/06/24 18:39:52 sfoulkes Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: ChangeState.py,v 1.51 2010/07/01 19:13:55 mnorman Exp $"
+__version__ = "$Revision: 1.51 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
@@ -70,6 +70,7 @@ class ChangeState(WMObject, WMConnectionBase):
             self.database = self.couchdb.connectDatabase(self.dbname)
         except Exception, ex:
             logging.error("Error connecting to couch: %s" % str(ex))
+            self.database = None
 
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
@@ -122,6 +123,7 @@ class ChangeState(WMObject, WMConnectionBase):
         yet exist in couch it will be saved as a seperate document.  If the job
         has a FWJR attached that will be saved as a seperate document.
         """
+
         if not self.database:
             return
         

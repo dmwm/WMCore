@@ -43,6 +43,16 @@ class CouchService(Service):
             users.append(makeUser(group, user, self.url, self.database))
         return users
         
+    def newOwner(self, group, user):
+        """
+        _newOwner_
+        
+        Add a new owner
+        """
+        userInstance = makeUser(group, user, self.url, self.database)
+        userInstance.create()
+        return userInstance
+        
     @CouchUtils.connectToCouch
     def listCollections(self, owner):
         """
@@ -63,6 +73,8 @@ class CouchService(Service):
             coll.setOwner(owner)
             coll.get()
             yield coll
+            
+
             
     @CouchUtils.connectToCouch
     def listFilesets(self, collection):

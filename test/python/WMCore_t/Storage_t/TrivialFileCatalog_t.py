@@ -5,8 +5,8 @@ _TrivialFileCatalog_t_
 Test the parsing of the TFC.
 """
 
-__revision__ = "$Id: TrivialFileCatalog_t.py,v 1.1 2010/06/16 18:25:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TrivialFileCatalog_t.py,v 1.2 2010/07/12 16:04:37 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import unittest
@@ -17,6 +17,8 @@ from WMQuality.TestInit import TestInit
 from WMQuality.TestInit import requiresPython26
 
 from WMCore.Storage.TrivialFileCatalog import tfcFilename, tfcProtocol, readTFC, TrivialFileCatalog
+
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 
 class TrivialFileCatalogTest(unittest.TestCase):
     def setUp(self):
@@ -57,5 +59,18 @@ class TrivialFileCatalogTest(unittest.TestCase):
 
         return
 
+    def testDataServiceXML(self):
+        phedex = PhEDEx(responseType='xml')
+        
+        site = 'T2_UK_SGrid_Bristol'
+        
+        phedex.getNodeTFC(site)
+        
+        tfc_file = phedex.cacheFileName('tfc', inputdata={'node': site})
+        tfc = readTFC(tfc_file)
+        
+        print tfc.matchLFN('srmv2', '/store/user/metson/file')
+    
 if __name__ == "__main__":
-    unittest.main()  
+    unittest.main()
+

@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.37 2010/02/25 16:07:17 sryu Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: Harness.py,v 1.38 2010/03/31 18:24:16 sfoulkes Exp $"
+__version__ = "$Revision: 1.38 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -85,12 +85,9 @@ class Harness:
             os.makedirs(compSect.componentDir)
         except :
             pass
-            #print('Component dir already exists. ')
-            #print('--> '+compSect.componentDir)
-            #print('Continue on with initialization')
-        #print('Component Initialized')
 
         self.threadManagerName = ''
+        return
 
     def initInThread(self):
         """
@@ -169,35 +166,40 @@ class Harness:
             elif connectDialect.lower() == 'oracle':
                 myThread.dialect = 'Oracle'
             elif connectDialect.lower() == 'sqlite':
-                myThread.dialect = 'SQLite' 
-            logging.info(">>>Initializing MsgService Factory")
-            WMFactory("msgService", "WMCore.MsgService."+ \
-                myThread.dialect)
-            myThread.msgService = \
-                myThread.factory['msgService'].loadObject("MsgService")
+                myThread.dialect = 'SQLite'
 
             myThread.transactions = {}
-            # diagnostic messages are ones that most of the time
-            # bypass the other messages. 
-            logging.info(">>>Initializing diagnostic messages")
-            self.diagnosticMessages = []
-            # can be used to print out the parameter 
-            # and handlers used by an agent
-            self.diagnosticMessages.append(compName + ':LogState')
-            self.diagnosticMessages.append('LogState')
-            # debug levels
-            for logLevel in self.logMsg.keys():
-                self.diagnosticMessages.append(compName+ ':Logging.'+logLevel)
-                self.diagnosticMessages.append('Logging.'+logLevel)
-            # events to stop the component.
-            self.diagnosticMessages.append(compName + ':Stop')
-            self.diagnosticMessages.append(compName + ':StopAndWait')
-            self.diagnosticMessages.append('Stop')
-            self.diagnosticMessages.append('StopAndWait')
 
-            logging.info(">>>Instantiating trigger service")
-            WMFactory("trigger", "WMCore.Trigger")
-            myThread.trigger = myThread.factory['trigger'].loadObject("Trigger")
+            if getattr(self.config.Agent, "useMsgService", True):
+                logging.info(">>>Initializing MsgService Factory")
+                WMFactory("msgService", "WMCore.MsgService."+ \
+                          myThread.dialect)
+                myThread.msgService = \
+                                    myThread.factory['msgService'].loadObject("MsgService")
+
+
+                # diagnostic messages are ones that most of the time
+                # bypass the other messages. 
+                logging.info(">>>Initializing diagnostic messages")
+                self.diagnosticMessages = []
+                # can be used to print out the parameter 
+                # and handlers used by an agent
+                self.diagnosticMessages.append(compName + ':LogState')
+                self.diagnosticMessages.append('LogState')
+                # debug levels
+                for logLevel in self.logMsg.keys():
+                    self.diagnosticMessages.append(compName+ ':Logging.'+logLevel)
+                    self.diagnosticMessages.append('Logging.'+logLevel)
+                # events to stop the component.
+                self.diagnosticMessages.append(compName + ':Stop')
+                self.diagnosticMessages.append(compName + ':StopAndWait')
+                self.diagnosticMessages.append('Stop')
+                self.diagnosticMessages.append('StopAndWait')
+            if getattr(self.config.Agent, "useTrigger", True):
+                logging.info(">>>Instantiating trigger service")
+                WMFactory("trigger", "WMCore.Trigger")
+                myThread.trigger = myThread.factory['trigger'].loadObject("Trigger")
+                
             logging.info("Harness part constructor finished")
         except Exception,ex:
             logging.critical("Problem instantiating "+str(ex))
@@ -308,6 +310,8 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         - registering itself with the message service
         - subscribing to message types.
         """
+        if not getattr(self.config.Agent, "useMsgService", True):
+            return
  
         try:
   
@@ -370,7 +374,8 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         logging.info('>>>Committing default transaction')
         logging.info(">>>Flushing messages")
 
-        myThread.msgService.finish()
+        if getattr(self.config.Agent, "useMsgService", True):
+            myThread.msgService.finish()
 
         logging.info('>>>Committing possible other transactions')
         # if we have multiple database we might want to synchronize
@@ -481,32 +486,38 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
             msg = 'None'
             self.prepareToStart()
             while True:
-                msg = myThread.msgService.get()
-                # we commit here as we do not want long standing open 
-                # database connections (but we keep track of the last get 
-                # message state
-                self.handleMessage(msg['name'], msg)
-                logging.debug(">>>Closing and commit all database sessions" \
-                    +" that have been registered")
-                # when we call the msgService.finish we finally remove the msg
-                # from the queu.
-                #myThread.msgService.finish()
+                time.sleep(10)
+
+                if getattr(self.config.Agent, "useMsgService", True):
+                    msg = myThread.msgService.get()
+                    # we commit here as we do not want long standing open 
+                    # database connections (but we keep track of the last get 
+                    # message state
+                    self.handleMessage(msg['name'], msg)
+                    logging.debug(">>>Closing and commit all database sessions" \
+                                  +" that have been registered")
+                    # when we call the msgService.finish we finally remove the msg
+                    # from the queu.
+                    myThread.msgService.finish()
+                    
                 for transaction in myThread.transactions.keys():
                     transaction.commit()
-                logging.debug(">>>Finished handling message of type "+ \
-                    str(msg['name'])+ " \n")
-                if msg['name'] == 'Stop' or \
-                msg['name'] == self.config.Agent.componentName+':Stop':
-                    logging.info(">>>Quick shut down of component")
-                    self.prepareToStop(False)
-                    break
-                if msg['name'] == 'StopAndWait' or  \
-                msg['name'] == self.config.Agent.componentName+':StopAndWait':
-                    logging.info(">>>Shut down of component "+\
-                    "while waiting for threads to finish")
-                    # check if nr of threads is specified.
-                    self.prepareToStop(True, msg['payload']) 
-                    break
+
+                if getattr(self.config.Agent, "useMsgService", True):
+                    logging.debug(">>>Finished handling message of type "+ \
+                                  str(msg['name'])+ " \n")
+                    if msg['name'] == 'Stop' or \
+                           msg['name'] == self.config.Agent.componentName+':Stop':
+                        logging.info(">>>Quick shut down of component")
+                        self.prepareToStop(False)
+                        break
+                    if msg['name'] == 'StopAndWait' or  \
+                           msg['name'] == self.config.Agent.componentName+':StopAndWait':
+                        logging.info(">>>Shut down of component "+\
+                                     "while waiting for threads to finish")
+                        # check if nr of threads is specified.
+                        self.prepareToStop(True, msg['payload']) 
+                        break
         except Exception,ex:
             if self.state == 'initialize':
                 errormsg = """ 
@@ -516,6 +527,11 @@ PostMortem: choked when initializing with error: %s
                 for stackFrame in stackTrace:
                     errormsg += stackFrame         
             else:
+                errormsg = ""
+                stackTrace = traceback.format_tb(sys.exc_info()[2], None)
+                for stackFrame in stackTrace:
+                    errormsg += stackFrame
+                logging.error(errormsg)
                 logging.info(\
                     ">>>Fatal error, rollback all non-committed transactions")
                 logging.info(">>>Closing all connections")
@@ -561,5 +577,3 @@ while trying to handle msg: %s
             msg += str(additionalMsg)
             msg += '\n'
         return msg
-   
-

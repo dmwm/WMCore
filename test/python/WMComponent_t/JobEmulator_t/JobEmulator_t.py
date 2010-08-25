@@ -12,40 +12,29 @@ Inheritance is preferred.
 import os
 import unittest
 import threading
-import time
 
 #FIXME: need to be migrated to new wmcore jobspec stuff.
 from ProdCommon.MCPayloads.JobSpec import JobSpec
 
 from WMComponent.JobEmulator.JobEmulator import JobEmulator
-from WMCore.Agent.Configuration import Configuration
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
 class JobEmulatorTest(unittest.TestCase):
 
-    _setup_done = False
-    _teardown = True
 
     def setUp(self):
-
-        if not JobEmulatorTest._setup_done:
-            self.testInit = TestInit(__file__)
-            self.testInit.setLogging()
-            self.testInit.setDatabaseConnection()
-            # notice we include other parts of the schema here too.
-            self.testInit.setSchema(['WMCore.WMBS', 'WMComponent.JobEmulator.Database'])
-            JobEmulatorTest._setup_done = True
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        # notice we include other parts of the schema here too.
+        self.testInit.setSchema(['WMCore.WMBS', 'WMComponent.JobEmulator.Database'])
 
     def tearDown(self):
         """
         Database deletion
         """
-        myThread = threading.currentThread()
-        if JobEmulatorTest._teardown and myThread.dialect == 'MySQL':
-            # call the script we use for cleaning:
-            self.testInit.clearDatabase()
-        JobEmulatorTest._teardown = False
+        self.testInit.clearDatabase()
 
 
     def testA(self):
@@ -101,10 +90,7 @@ class JobEmulatorTest(unittest.TestCase):
         # Terminate threads otherwise we do not exit.
         myThread = threading.currentThread()
         myThread.workerThreadManager.terminateWorkers()
-    def runTest(self):
 
-        #Run test.
-        self.testA()
 
 if __name__ == '__main__':
     unittest.main()

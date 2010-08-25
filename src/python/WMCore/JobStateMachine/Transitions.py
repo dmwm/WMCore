@@ -20,9 +20,9 @@ class Transitions(dict):
         self.setdefault('createcooloff', ['new'])
         self.setdefault('submitcooloff', ['created'])
         self.setdefault('jobcooloff', ['created'])
-        self.setdefault('success', ['closeout'])
-        self.setdefault('exhausted', ['closeout'])
-        self.setdefault('closeout', ['cleanout'])
+        self.setdefault('success', ['cleanout'])
+        self.setdefault('exhausted', ['cleanout'])
+
 
     def states(self):
         """

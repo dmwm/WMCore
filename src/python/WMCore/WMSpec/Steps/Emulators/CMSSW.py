@@ -14,6 +14,7 @@ class CMSSW(Emulator):
     Emulate the execution of a CMSSW Step
 
     """
+    
     def emulate(self, step):
         """
         _emulate_
@@ -26,3 +27,19 @@ class CMSSW(Emulator):
         step.emulation.emulatedBy = str(self.__class__.__name__)
 
         print "Emulating CMSSW Step"
+    
+    def emulatePre(self,step):
+        '''
+            _emulatePre_
+            
+            Emulates the pre-execution step
+        '''
+        print "Emulating CMSSW Step.pre"
+
+    def emulatePost(self,step):
+        '''
+            _emulatePost_
+            
+            Emulates the post-execution step
+        '''
+        print "Emulating CMSSW Step.pre"

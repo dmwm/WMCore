@@ -3,8 +3,8 @@
 pullWork poller
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerWorkPoller.py,v 1.2 2010/03/24 15:38:52 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueueManagerWorkPoller.py,v 1.3 2010/05/07 19:56:23 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 
@@ -36,8 +36,11 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
                 try:
                     self.queue.logger.info("Updating Parents status")        
                     self.queue.updateParent()
-                except StandardError:
-                    pass
+                except StandardError, ex:
+                    import traceback
+                    self.queue.logger.error("Unable to update Parent Status: %s\n%s" 
+                                    % (str(ex), traceback.format_exc()))
+                    
         except StandardError, ex:
             import traceback
             self.queue.logger.error("Unable to pull work from parent Error: %s\n%s" 

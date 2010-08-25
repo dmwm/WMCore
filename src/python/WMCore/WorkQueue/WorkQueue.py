@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.44 2009/12/15 17:15:40 sryu Exp $"
-__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: WorkQueue.py,v 1.45 2009/12/15 17:50:48 sryu Exp $"
+__version__ = "$Revision: 1.45 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -372,15 +372,15 @@ class WorkQueue(WorkQueueBase):
                 primaryBlock = unit['Data']
                 blocks = unit['ParentData']
                 jobs = unit['Jobs']
-#TODO: not sure this process is needed: Stuart can look over this
-#                wmspec = unit['WMSpec']
-#                unique = uuid.uuid4().hex[:10] # hopefully random enough
-#                new_url = os.path.join(self.params['CacheDir'],
-#                                       "%s.spec" % unique)
-#                if os.path.exists(new_url):
-#                    raise RuntimeError, "spec file %s exists" % new_url
-#                wmspec.setSpecUrl(new_url) #TODO: look at making this a web accessible url
-#                wmspec.save(new_url)
+
+                wmspec = unit['WMSpec']
+                unique = uuid.uuid4().hex[:10] # hopefully random enough
+                new_url = os.path.join(self.params['CacheDir'],
+                                       "%s.spec" % unique)
+                if os.path.exists(new_url):
+                    raise RuntimeError, "spec file %s exists" % new_url
+                wmspec.setSpecUrl(new_url) #TODO: look at making this a web accessible url
+                wmspec.save(new_url)
     
                 self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
                                              blocks, parentQueueId,

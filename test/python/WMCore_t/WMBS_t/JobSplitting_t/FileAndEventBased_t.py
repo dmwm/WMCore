@@ -5,8 +5,8 @@ _FileAndEventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: FileAndEventBased_t.py,v 1.6 2009/07/13 16:06:37 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: FileAndEventBased_t.py,v 1.7 2009/10/13 22:42:57 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from sets import Set
 import unittest
@@ -31,13 +31,7 @@ class FileAndEventBasedTest(unittest.TestCase):
 
     Test event based job splitting.
     """
-    def runTest(self):
-        """
-        _runTest_
 
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """

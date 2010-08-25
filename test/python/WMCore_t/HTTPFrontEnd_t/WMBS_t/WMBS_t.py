@@ -25,13 +25,6 @@ class WMBSServiceTest(unittest.TestCase):
     _setup = False
     _teardown = False
 
-    def runTest(self):
-        """
-        _runTest_
-
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """

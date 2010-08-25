@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.28 2009/10/13 20:53:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: Job_t.py,v 1.29 2009/10/13 22:42:55 meloam Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import unittest
 import logging
@@ -39,13 +39,7 @@ class JobTest(unittest.TestCase):
     _setup = False
     _teardown = False
 
-    def runTest(self):
-        """
-        _runTest_
 
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """

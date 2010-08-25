@@ -5,8 +5,8 @@
 Rest test module
 """
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: Rest_t.py,v 1.3 2008/12/19 01:18:35 valya Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Rest_t.py,v 1.4 2009/10/13 22:42:56 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import logging
 import threading
@@ -157,14 +157,7 @@ class RestTest(unittest.TestCase):
             fail("expected a AttributeError")
         self.assertRaises(AttributeError,badrestformatter)
 
-    def runTest(self):
-        """
-        Run the proxy test
-        """
-        self.testA()
-        self.testB()
-        self.testC()
-
+ 
 if __name__ == '__main__':
     unittest.main()
 

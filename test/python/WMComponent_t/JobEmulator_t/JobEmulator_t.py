@@ -55,6 +55,7 @@ class JobEmulatorTest(unittest.TestCase):
 
          
         config = self.testInit.getConfiguration(os.path.join(os.getenv('WMCOREBASE'),'src/python/WMComponent/JobEmulator/DefaultConfig.py'))
+        self.testInit.generateWorkDir(config)
         jobEmulator = JobEmulator(config)
         jobEmulator.prepareToStart()
         # make sure database settings are set properly.
@@ -64,7 +65,7 @@ class JobEmulatorTest(unittest.TestCase):
         for i in xrange(0, simulateJobs):
             jobspec = JobSpec()
             jobspec.parameters['JobName'] = 'job_'+str(i)
-            jobspecFileLocation = os.path.join(os.getenv('TESTDIR'), 'jobspec'+str(i)+'.xml')
+            jobspecFileLocation = os.path.join(config.General.workDir, 'jobspec'+str(i)+'.xml')
             jobspec.save(jobspecFileLocation)
             jobEmulator.handleMessage('JobEmulator:JobSubmit',jobspecFileLocation) 
             # we know 2 messages have been sent (EmulateJob, and track) so invoke an empty handle message

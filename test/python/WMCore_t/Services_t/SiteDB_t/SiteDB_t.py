@@ -2,8 +2,8 @@
 """
 Test case for SiteDB
 """
-__revision__ = "$Id: SiteDB_t.py,v 1.7 2009/07/10 22:17:57 ewv Exp $"
-__version__  = "$Revision: 1.7 $"
+__revision__ = "$Id: SiteDB_t.py,v 1.8 2009/10/13 22:43:00 meloam Exp $"
+__version__  = "$Revision: 1.8 $"
 __author__   = "ewv@fnal.gov"
 
 import unittest
@@ -22,13 +22,7 @@ class SiteDBTest(unittest.TestCase):
         """
         self.mySiteDB = SiteDBJSON()
 
-    def runTest(self):
-        self.testCmsNametoSE()
-        self.testCmsNametoCE()
-        self.testJSONParser()
-        self.testDNUserName()
-        self.testSEtoCmsName()
-        self.testCmsNametoPhEDExNode()
+
 
 
     def testCmsNametoPhEDExNode(self):

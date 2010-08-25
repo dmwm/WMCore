@@ -6,8 +6,8 @@ Unit tests for WorkerThreads.
 
 """
 
-__revision__ = "$Id: WorkerThreads_t.py,v 1.6 2009/02/09 20:58:02 jacksonj Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WorkerThreads_t.py,v 1.7 2009/10/13 22:43:00 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import threading
@@ -171,12 +171,7 @@ class WorkerThreadsTest(unittest.TestCase):
         print('terminate worker')
         manager.terminateWorkers()
         
-    def runTest(self):
-        """
-        Run tests
-        """
-        self.testA()
-        self.testB()
+
 
 if __name__ == "__main__":
     unittest.main()

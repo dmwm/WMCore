@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.3 2009/08/05 19:40:16 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: LumiBased_t.py,v 1.4 2009/10/13 22:42:57 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 import os
@@ -33,14 +33,7 @@ class EventBasedTest(unittest.TestCase):
 
     Test event based job splitting.
     """
-    def runTest(self):
-        """
-        _runTest_
 
-        Run all the unit tests.
-        """
-        unittest.main()
-    
     def setUp(self):
         """
         _setUp_

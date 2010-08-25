@@ -38,13 +38,7 @@ class FilesetTest(TestCase, WMBSBase):
      Performance testcase for WMBS Fileset class
 
     """
-    def runTest(self):
-        """
-        _runTest_
 
-        Run all the unit tests.
-        """
-        unittest.main()
 
     def setUp(self):
         """

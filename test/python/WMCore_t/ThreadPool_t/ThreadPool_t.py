@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.8 2009/08/31 20:59:06 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.9 2009/10/13 22:42:58 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import threading
@@ -153,11 +153,6 @@ class ThreadPoolTest(unittest.TestCase):
             assert threadPools[j].countMessages() == 0
         myThread.transaction.commit()
   
-    def runTest(self):
-        """ 
-        Run the threadpool tests.
-        """
-        self.testA()
 
 if __name__ == "__main__":
     unittest.main()

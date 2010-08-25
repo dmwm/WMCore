@@ -5,8 +5,8 @@ _Periodic_t_
 Periodic job splitting test.
 """
 
-__revision__ = "$Id: Periodic_t.py,v 1.3 2009/08/13 19:44:19 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Periodic_t.py,v 1.4 2009/10/13 22:42:57 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 import unittest
@@ -32,13 +32,7 @@ class PeriodicTest(unittest.TestCase):
 
     Test file periodic splitting.
     """
-    def runTest(self):
-        """
-        _runTest_
 
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """

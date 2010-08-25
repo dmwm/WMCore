@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.26 2009/09/10 15:58:38 mnorman Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: File_t.py,v 1.27 2009/10/13 22:42:55 meloam Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import unittest
 import logging
@@ -28,14 +28,6 @@ class FileTest(unittest.TestCase):
     _setup = False
     _teardown = False
 
-    def runTest(self):
-        """
-        _runTest_
-
-        Run all the unit tests.
-        """
-        unittest.main()
-    
     def setUp(self):
         """
         _setUp_

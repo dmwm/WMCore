@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-__revision__ = "$Id: DBFormatter_t.py,v 1.6 2009/02/09 21:00:15 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: DBFormatter_t.py,v 1.7 2009/10/13 22:42:59 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import commands
 import logging
@@ -110,9 +110,6 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
         assert output ==  {'bind2': 'value2a', 'bind1': 'value1a'}
         DBFormatterTest.__teardown = True
 
-    def runTest(self):
-        self.testAPrepare()
-        self.testBFormatting()
             
 if __name__ == "__main__":
     unittest.main()     

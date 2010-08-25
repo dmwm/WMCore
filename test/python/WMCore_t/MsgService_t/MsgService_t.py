@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.8 2009/07/17 15:58:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: MsgService_t.py,v 1.9 2009/10/13 22:42:56 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import commands
 import unittest
@@ -401,12 +401,6 @@ class MsgServiceTest(unittest.TestCase):
         myThread.transaction.commit()
         # purge everything.
 
-    def runTest(self):
-        self.testA()
-        self.testB()
-        self.testC()
-        self.testD()
-        self.testE()
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: CursorLeak_t.py,v 1.2 2009/05/09 11:42:26 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: CursorLeak_t.py,v 1.3 2009/10/13 22:42:55 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import logging
@@ -29,13 +29,6 @@ class CursorLeakTest(unittest.TestCase):
     _setup = False
     _teardown = False
 
-    def runTest(self):
-        """
-        _runTest_
-
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """

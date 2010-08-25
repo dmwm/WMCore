@@ -5,8 +5,8 @@ _FixedDelay_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: FixedDelay_t.py,v 1.1 2009/07/22 21:25:52 meloam Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FixedDelay_t.py,v 1.2 2009/10/13 22:42:55 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from sets import Set
 import unittest
@@ -27,13 +27,7 @@ class FixedDelayTest(unittest.TestCase):
 
     Test event based job splitting.
     """
-    def runTest(self):
-        """
-        _runTest_
 
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """

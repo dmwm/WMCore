@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.7 2009/09/10 16:03:49 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Locations_t.py,v 1.8 2009/10/13 22:42:54 meloam Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import os
 import unittest
@@ -20,13 +20,6 @@ class LocationsTest(unittest.TestCase):
     _setup = False
     _teardown = False
 
-    def runTest(self):
-        """
-        _runTest_
-
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """

@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueueElement_t.py,v 1.1 2009/06/24 20:58:08 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueueElement_t.py,v 1.2 2009/10/13 22:42:56 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import pickle
@@ -129,11 +129,6 @@ class WorkQueueElementTest(WorkQueueTestCase):
         ele.setStatus("Acquired")
         self.assertEqual("Acquired", ele.status)
 
-
-    def runTest(self):
-        """Run all tests"""
-        self.testOrdering() 
-        self.testMatch()
 
 if __name__ == "__main__":
     unittest.main()

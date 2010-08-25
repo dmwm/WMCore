@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.4 2009/06/11 18:32:24 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Transaction_t.py,v 1.5 2009/10/13 22:42:59 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import commands
 import logging
@@ -153,12 +153,6 @@ class TransactionTest(unittest.TestCase):
         assert len(myThread.transaction.sqlBuffer) == 0
     
            
-    def runTest(self): 
-        self.testGoodTransaction()
-        self.tearDown()
-        self.testBadTransaction()
-        self.tearDown()
-        self.testLostConnection()
 
 if __name__ == "__main__":
     unittest.main()     

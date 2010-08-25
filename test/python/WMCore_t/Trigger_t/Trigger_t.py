@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: Trigger_t.py,v 1.5 2008/12/18 14:53:17 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Trigger_t.py,v 1.6 2009/10/13 22:42:58 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import os
@@ -160,10 +160,6 @@ class TriggerTest(unittest.TestCase):
         myThread.transaction.commit()
 
 
-    def runTest(self):
-        self.testB() 
-        self.testC() 
-        self.testD() 
 
 if __name__ == "__main__":
     unittest.main()

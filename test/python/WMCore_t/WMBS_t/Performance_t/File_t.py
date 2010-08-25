@@ -42,13 +42,7 @@ class PerformanceFileTest(TestCase, WMBSBase):
 
     """
 
-    def runTest(self):
-        """
-        _runTest_
 
-        Run all the unit tests.
-        """
-        unittest.main()
 
     def setUp(self):
         """

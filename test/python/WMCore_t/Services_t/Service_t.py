@@ -22,11 +22,7 @@ class ServiceTest(unittest.TestCase):
         
         self.myService = Service(dict)
         self.testUrl = 'http://cern.ch'
-    
-    def runTest(self):
-        self.testClear()
-        self.testCachePath()
-        self.testCacheDuration()
+
         
     def testClear(self):
         """

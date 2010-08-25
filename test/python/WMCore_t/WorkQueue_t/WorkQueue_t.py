@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.15 2009/10/12 15:07:50 swakef Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.16 2009/10/13 22:42:56 meloam Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import unittest
 import pickle
@@ -424,14 +424,6 @@ class WorkQueueTest(WorkQueueTestCase):
         # mark work done & check this passes upto the top level
         self.localQueue.setStatus('Done', *([str(x['id']) for x in work]))
         # TODO: Check status of element in global queue
-
-    def runTest(self):
-        """run all tests"""
-        self.testProduction()
-        self.testProcessing()
-        self.testPriority()
-        self.testBlackList()
-        self.testQueueChaining()
 
 
 if __name__ == "__main__":

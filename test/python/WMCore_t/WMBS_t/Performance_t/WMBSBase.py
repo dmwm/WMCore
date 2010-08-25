@@ -28,7 +28,7 @@ from sets import Set
 #Needed for TestInit
 from WMQuality.TestInit import TestInit
 
-__revision__ = "$Id: WMBSBase.py,v 1.18 2009/05/13 18:09:43 mnorman Exp $"
+__revision__ = "$Id: WMBSBase.py,v 1.19 2009/10/13 22:42:57 meloam Exp $"
 __version__ = "$Reivison: $"
 
 class WMBSBase(Performance):
@@ -400,13 +400,9 @@ class WMBSBase(Performance):
         #Base tearDown method for the DB Performance test
         Performance.tearDown(self)
 
-    def runTest(self):
-        """
-        _runTest_
-
-        Run all the unit tests.
-        """
-        unittest.main()
+            
+if __name__ == "__main__":
+    unittest.main()     
 
 
     

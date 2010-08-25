@@ -6,8 +6,8 @@ General test for FJR
 
 """
 
-__revision__ = "$Id: FJR_t.py,v 1.5 2009/10/13 22:31:38 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: FJR_t.py,v 1.6 2009/10/13 22:43:00 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -163,12 +163,7 @@ class FJRTest(unittest.TestCase):
                     self.assertEqual(ds['ProcessedDataset'].find('Commissioning08-v1'), 0)
         return
 
-    def runTest(self):
-        """
-        Run tests.
-        """
-        self.testA()
-        self.testB()
+
             
 if __name__ == "__main__":
     unittest.main()     

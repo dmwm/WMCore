@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.21 2009/09/15 16:04:03 mnorman Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.22 2009/10/13 22:42:54 meloam Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import unittest
 import logging
@@ -35,13 +35,6 @@ class JobGroupTest(unittest.TestCase):
     _setup = False
     _teardown = False
 
-    def runTest(self):
-        """
-        _runTest_
-
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """

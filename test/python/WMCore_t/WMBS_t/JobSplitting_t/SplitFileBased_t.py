@@ -5,8 +5,8 @@ _SplitFileBased_t_
 Unit tests for the split file job splitting algorithm.
 """
 
-__revision__ = "$Id: SplitFileBased_t.py,v 1.2 2009/07/02 15:46:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SplitFileBased_t.py,v 1.3 2009/10/13 22:42:57 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 import unittest
@@ -34,13 +34,6 @@ class SplitFileBasedTest(unittest.TestCase):
 
     Unit tests for the split file job splitting algorithm.
     """
-    def runTest(self):
-        """
-        _runTest_
-
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """

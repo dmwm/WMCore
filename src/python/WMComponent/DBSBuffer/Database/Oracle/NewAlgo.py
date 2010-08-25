@@ -1,19 +1,40 @@
 #!/usr/bin/env python
 """
-_DBSBuffer.NewAlgo_
+_NewAlgo_
 
-Add a new algorithm to DBS Buffer: Oracle version
+Oracle implementation of DBSBuffer.NewAlgo
 """
 
-__revision__ = "$Id: NewAlgo.py,v 1.2 2009/07/14 19:16:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: NewAlgo.py,v 1.3 2009/10/22 14:51:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMComponent.DBSBuffer.Database.MySQL.NewAlgo import NewAlgo as MySQLNewAlgo
+import logging
 
-class NewAlgo(MySQLNewAlgo):
+from sqlalchemy.exceptions import IntegrityError
+from WMCore.Database.DBFormatter import DBFormatter
+
+class NewAlgo(DBFormatter):
     """
-    _DBSBuffer.NewAlgo_
+    _NewAlgo_
 
-    Add a new algorithm to DBS Buffer: Oracle version
+    Add a new algorithm to the DBSBuffer.  This will do nothing if an algorithm
+    with the given parameters already exists.
     """
-    pass
+    sql = """INSERT INTO dbsbuffer_algo (app_name, app_ver, app_fam, pset_hash,
+                                         config_content, in_dbs)
+               SELECT :app_name, :app_ver, :app_fam, :pset_hash,
+                 :config_content, 0 FROM DUAL WHERE NOT EXISTS   
+                   (SELECT * FROM dbsbuffer_algo WHERE app_name = :app_name AND
+                      app_ver = :app_ver AND app_fam = :app_fam AND
+                      pset_hash = :pset_hash)"""
+
+    def execute(self, appName = None, appVer = None, appFam = None,
+                psetHash = None, configContent = None, conn = None,
+                transaction = False):
+        binds = {"app_name": appName, "app_ver": appVer, "app_fam": appFam,
+                 "pset_hash": psetHash, "config_content": configContent}
+
+        self.dbi.processData(self.sql, binds, conn = conn,
+                             transaction = transaction)
+            
+        return 

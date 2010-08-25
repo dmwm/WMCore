@@ -5,8 +5,8 @@ Defines default config values for JobAccountant specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.6 2010/01/28 18:16:28 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.7 2010/02/12 14:34:37 swakef Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 
@@ -14,26 +14,33 @@ from WMCore.Agent.Configuration import Configuration
 
 config = Configuration()
 config.component_("WorkQueueManager")
-# either request Mgr host url or global workqueue das service url needs to be set
-# depending on the level of work queue
-# accessing Request Manager.
-config.WorkQueueManager.level = "GlobalQueue"
 
-# serviceUrl is either upper level queue Url or request manager url in case of global queue 
-config.WorkQueueManager.serviceUrl = 'cmssrv49.fnal.gov:8585'
+# set type of work queue
+config.WorkQueueManager.level = "GlobalQueue"
+#config.WorkQueueManager.level = "LocalQueue"
+
+# In general can be left alone
 config.WorkQueueManager.componentDir = config.General.WorkDir + "/WorkQueueManager"
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
-# accessing global queue
-#config.WorkQueueManager.level = "LocalQueue"
-#config.WorkQueueManager.serviceUrl = "http://cmssrv18.fnal.gov:6660"
+#config.WorkQueueManager.logLevel = 'INFO'
+#config.WorkQueueManager.pollInterval = 600
 
-config.WorkQueueManager.logLevel = 'DEBUG'
-config.WorkQueueManager.pollInterval = 10
+
+# RequestManager config
+config.WorkQueueManager.reqMgrConfig = {}
+# uncomment to override default reqMgr url
+#config.WorkQueueManager.reqMgrConfig['endpoint'] = 'http://cmssrv49.fnal.gov:8585'
+config.WorkQueueManager.reqMgrConfig['teamName'] = 'Dodgers'
+
+
 # add parameters for global or local queue if default param is not what you want
 config.WorkQueueManager.queueParams = {}
+# uncomment to change CacheDir from default
 config.WorkQueueManager.queueParams['CacheDir'] = os.path.join(config.WorkQueueManager.componentDir, 'wf')
 
+# Fill for local queue
 if config.WorkQueueManager.level != "GlobalQueue":
-    config.WorkQueueManager.queueParams['ParentQueue'] = config.WorkQueueManager.serviceUrl
+    # url for the global queue
+    config.WorkQueueManager.queueParams['ParentQueue'] = 'http://example.com:8080/wq'
 # used to identify (contact) this queue. May (or may not) be HTTPFrontend url
 config.WorkQueueManager.queueParams['QueueURL'] = 'http://%s' % os.uname()[1]

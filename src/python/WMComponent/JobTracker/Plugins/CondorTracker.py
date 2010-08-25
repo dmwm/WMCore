@@ -3,8 +3,8 @@
 #Basic model for a tracker plugin
 #Should do nothing
 
-__revision__ = "$Id: CondorTracker.py,v 1.4 2010/06/23 23:04:53 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: CondorTracker.py,v 1.5 2010/06/23 23:08:27 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 import logging
@@ -78,6 +78,10 @@ class CondorTracker(TrackerPlugin):
         logging.debug("Command: %s" % command)           
         pipe = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)
         stdout, stderr = pipe.communicate()
+        logging.debug("condor_q returned the following stdout")
+        logging.debug(stdout)
+        logging.debug("condor_q returned the following stderr")
+        logging.debug(stderr)
         classAdsRaw = stdout.split(':::')
 
 

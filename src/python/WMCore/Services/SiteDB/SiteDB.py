@@ -6,8 +6,8 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.6 2009/05/06 14:46:15 ewv Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: SiteDB.py,v 1.7 2009/07/10 22:04:09 ewv Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.Services.Service import Service
 import urllib
@@ -92,6 +92,7 @@ class SiteDBJSON(Service):
             userName = userinfo['user']
         return userName
 
+
     def cmsNametoCE(self, cmsName):
         """
         Convert CMS name to list of CEs
@@ -123,6 +124,40 @@ class SiteDBJSON(Service):
         for index in theInfo:
             try:
                 item = theInfo[index]['name']
+                if item:
+                    theList.append(item)
+            except KeyError:
+                pass
+
+        return theList
+
+
+    def seToCMSName(self, se):
+        """
+        Convert SE name to the CMS Site they belong to
+        """
+        # Can't understand why this needs to be a list (T1/T2 sharing SE?)
+        file = 'seToCMSName_%s.json' % se
+        try:
+            info = self.getJSON("SEtoCMSName", name=se, file=file)
+            cmsName = info['0']['name']
+        except (KeyError, IndexError):
+            info = self.getJSON("SEtoCMSName", name=se, file=file, clearCache=True)
+            cmsName = info['0']['name']
+        return cmsName
+
+
+    def cmsNametoPhEDExNode(self, cmsName):
+        """
+        Convert CMS name to list of Phedex Nodes
+        """
+        file = 'cmsNametoPhEDExNode_%s.json' % cmsName
+        theInfo = self.getJSON("CMSNametoPhEDExNode", file=file, cms_name=cmsName)
+
+        theList = []
+        for index in theInfo:
+            try:
+                item = theInfo[index]['phedex_node']
                 if item:
                     theList.append(item)
             except KeyError:

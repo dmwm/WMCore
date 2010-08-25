@@ -10,8 +10,8 @@ black/white lists.
 """
 
 __all__ = []
-__revision__ = "$Id: GetAvailableFilesByRun.py,v 1.2 2009/05/26 15:39:16 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: GetAvailableFilesByRun.py,v 1.3 2009/11/12 09:13:54 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -36,7 +36,7 @@ class GetAvailableFilesByRun(DBFormatter):
             elif i[0] > 0 and i[1] == 1:
                 whitelist = True
 
-        sql = """SELECT wff.file FROM wmbs_fileset_files wff 
+        sql = """SELECT distinct(wff.file) FROM wmbs_fileset_files wff 
                   INNER JOIN wmbs_subscription ws ON ws.fileset = wff.fileset
                   INNER JOIN wmbs_file_runlumi_map wm ON (wm.file = wff.file) 
                   INNER JOIN wmbs_file_location wfl ON wfl.file = wff.file

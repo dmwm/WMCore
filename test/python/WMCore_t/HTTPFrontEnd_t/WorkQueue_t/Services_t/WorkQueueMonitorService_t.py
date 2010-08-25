@@ -14,8 +14,8 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.8 2010/04/13 18:47:47 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.9 2010/04/20 16:52:36 maxa Exp $"
+__version__ = "$Revision: 1.9 $"
 
 
 
@@ -47,8 +47,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         self.config.setFormatter("WMCore.WebTools.DASRESTFormatter")
 
         # set database
-        dbUrl = os.environ.get("DATABASE", None) or "sqlite:////tmp/resttest.db"
-        self.config.setDBUrl(dbUrl)
+        self.config.setDBUrl("sqlite:////tmp/resttest.db")
                
         self.urlbase = self.config.getServerUrl()
         

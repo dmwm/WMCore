@@ -6,8 +6,8 @@ MySQL implementation of DeleteParentCheck
 
 """
 __all__ = []
-__revision__ = "$Id: DeleteParentCheck.py,v 1.1 2010/04/07 20:29:30 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DeleteParentCheck.py,v 1.2 2010/05/24 15:38:31 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -18,7 +18,13 @@ class DeleteParentCheck(DBFormatter):
     
         
     def execute(self, file = None, fileset = None, conn = None, transaction = False):
-        binds = {'id': file, 'fileset': fileset}
+        if type(file) == list:
+            binds = []
+            for entry in file:
+                binds.append({'id': entry, 'fileset': fileset})
+        else:
+            binds = {'id': file, 'fileset': fileset}
+
         self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
         return True #or raise

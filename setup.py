@@ -55,6 +55,7 @@ else:
         user_options = [ ]
         def run(self):
             print "Nose isn't installed. You must install the nose package to run tests (easy_install nose might do it)"
+            sys.exit(1)
             pass
         
         def initialize_options(self):

@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-__revision__ = "$Id: DBFormatter_t.py,v 1.8 2009/10/13 23:00:08 meloam Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: DBFormatter_t.py,v 1.9 2010/02/02 20:45:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import commands
 import logging
@@ -38,10 +38,10 @@ class DBFormatterTest(unittest.TestCase):
         self.testInit.setSchema()
 
         myThread = threading.currentThread()
-        if os.getenv("DIALECT") == 'MySQL':
+        if myThread.dialect == 'MySQL':
             myThread.create = """
 create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB """
-        if os.getenv("DIALECT") == 'SQLite':
+        if myThread.dialect == 'SQLite':
             myThread.create = """
                 create table test (bind1 varchar(20), bind2 varchar(20))"""
             

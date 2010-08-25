@@ -7,8 +7,8 @@ To use this you need to use the ThreadSlave class
 """
 
 
-__revision__ = "$Id: ThreadPool.py,v 1.4 2008/09/12 13:02:10 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ThreadPool.py,v 1.5 2009/06/10 16:44:48 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
@@ -84,7 +84,7 @@ class ThreadPool(Queue):
         # restore any threads that might have been lost during a crash
         # de register thread in database so we do not need to restore it.
         msg = "THREADPOOL: Resetting lost threads to queue status if any"
-        logging.info(msg)
+        #logging.info(msg)
         args = {'componentName' : compName, \
             'thread_pool_id' : self.threadPoolId}
         self.query.updateWorkStatus(args, self.poolTable)
@@ -157,7 +157,7 @@ class ThreadPool(Queue):
         #FIXME: we should call the msgService finsih method here before 
         #this commit so we know the event/payload is transferred to a thread. 
         myThread.transaction.commit()
-        logging.info("THREADPOOL: Enqueued item")
+        #logging.info("THREADPOOL: Enqueued item")
 
         # enqueue the work item
         self.callQueue += 1
@@ -195,6 +195,7 @@ class ThreadPool(Queue):
         #~ print "slave thread starting up"
         self.lock.acquire()
         assert( self.activeCount > 0 )
+        exceptCount = 0
         while self.callQueue > 0:
             # Dequeue work
             # handle exceptions to deal with deadlock issues.
@@ -202,10 +203,17 @@ class ThreadPool(Queue):
             try:
                 key, parameters = slaveServer.retrieveWork()
                 self.callQueue -= 1
+                exceptCount = 0
             except Exception, ex:
-                logging.error("Problem with retrieving work : "+str(ex))
-                logging.error("Trying to salvage it")
+                #logging.error("Problem with retrieving work : "+str(ex))
+                #logging.error("Trying to salvage it")
                 slaveServer.sane = False
+                exceptCount += 1
+                #TODO: Fix this exception; it's not a good exception
+                #It just dumps the problem if it's the last thread in the queue
+                if self.callQueue == 1 and exceptCount > 2:
+                    self.callQueue -= 1
+                    logging.error("If we got here, we screwed up badly enough I'm dumping it")
             self.lock.release()
             #~ print "making a call..."
             if slaveServer.sane:

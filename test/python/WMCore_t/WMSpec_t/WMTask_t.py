@@ -56,8 +56,9 @@ class WMTaskTest(unittest.TestCase):
         task2a = task1.addTask("task2a")
         task2b = task1.addTask("task2b")
         task2c = task1.addTask("task2c")
-
-
+        
+        task3 = task2a.addTask("task3")
+        
         step1 = makeWMStep("step1")
         #step1.setTopOfTree()
         step1.addStep("step1a")
@@ -101,7 +102,8 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(task2b.getStep("step2"), None)
         self.assertEqual(task2c.getStep("step1"), None)
 
-
+        
+        self.assertEqual(task1.listNodes(), ['task1', 'task2a', 'task3', 'task2b', 'task2c'])
         #print task1.data
 
     def testD(self):
@@ -109,10 +111,12 @@ class WMTaskTest(unittest.TestCase):
         Test Case for setSplittingAlgorithm
         """
         task1 = makeWMTask("task1")
-
+        task1.setTaskType("Processing")
+        self.assertEqual(task1.taskType(), "Processing")
         self.assertEqual(task1.setSplittingAlgorithm("EventBased", events_per_job = 100),None)
         self.assertEqual(task1.jobSplittingAlgorithm(), "EventBased")
         self.assertEqual(task1.jobSplittingParameters(), {'events_per_job': 100, 'algorithm': 'EventBased'})
+        
 
 if __name__ == '__main__':
     unittest.main()

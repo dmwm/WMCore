@@ -1,4 +1,5 @@
 from WMCore.WebTools.RESTModel import RESTModel
+from cherrypy import HTTPError
 
 class DummyDAO1:
     """
@@ -20,7 +21,7 @@ class DummyDAO3:
     TODO: use this
     """
     def execute(self, num, thing=None):
-        return {'num': num}
+        return {'num': num, 'thing': thing}
 
 class DummyDAOFac:
     """
@@ -45,10 +46,12 @@ class DummyRESTModel(RESTModel):
         self.methods['GET'] = {'list':{'args':['int', 'str'],
                                         'call': self.list,
                                         'version': 2,
-                                        'validation': [self.val_1, 
+                                        'validation': [self.val_0,
+                                                       self.val_1,
                                                        self.val_2, 
-                                                       self.val_3, 
-                                                       self.val_4]},
+                                                       self.val_3,
+                                                       self.val_4 
+                                                       ]},
                                 'list1':{'args':[],
                                          'call': self.list1,
                                          'version': 2,
@@ -66,6 +69,7 @@ class DummyRESTModel(RESTModel):
         self.daofactory = DummyDAOFac()
         self.addDAO('GET', 'data1', 'DummyDAO1', [])
         self.addDAO('GET', 'data2', 'DummyDAO2', ['num'])
+        self.addDAO('GET', 'data3', 'DummyDAO3', ['num', 'thing'])
         
     def list(self, *args, **kwargs):
         """ if sanitise needed to be called method signater of callee should be 
@@ -79,13 +83,18 @@ class DummyRESTModel(RESTModel):
     
     def list2(self, num0, num1, num2):
         """ test multiple argment string return the dictionary of key: value pair of 
-            the arguments """
-             
+            the arguments """     
         return {'num0': num0, 'num1': num1, 'num2': num2}
     
     def list3(self, *args, **kwargs):
         """ test sanitise without any validation specified """
         input = self.sanitise_input(args, kwargs, method = 'list3')
+        return input
+    
+    def val_0(self, input):
+        # checks whether input is right number
+        if len(input) != 2:
+            raise HTTPError(404, 'val_5 failed: input length is not 2 -- (%s)' % len(input))
         return input
     
     def val_1(self, input):
@@ -97,20 +106,37 @@ class DummyRESTModel(RESTModel):
         except:
             pass
         # Checks its first input contains a int
-        assert type(input['int']) == type(123), 'val_1 failed: %s not int' % type(input['int'])
+        try:
+            assert type(input['int']) == type(123) 
+        except AssertionError:
+            raise HTTPError(400, 'val_1 failed: %s not int' % type(input['int']))
         return input
     
     def val_2(self, input):
         # Checks its second input is a string
-        assert type(input['str']) == type('abc'), 'val_2 failed: %s not str' % type(input['str'])
+        try:
+            assert type(input['str']) == type('abc') 
+        except AssertionError:
+            raise HTTPError(400, 'val_2 failed: %s not str' % type(input['str']))
         return input
     
     def val_3(self, input):
         # Checks the int is 123
-        assert input['int'] == 123, 'val_3 failed: %s != 123' % input['int']
+        try:
+            assert input['int'] == 123
+        except AssertionError:
+            raise HTTPError(400, 'val_3 failed: %s != 123' % input['int'])
+        
         return input
     
     def val_4(self, input):
         # Checks the str is 'abc'
-        assert input['str'] == 'abc', 'val_1 failed: %s not str' % input['str']
+        try:
+            assert input['str'] == 'abc'
+        except AssertionError:
+            raise HTTPError(400, 'val_4 failed: %s != "abc"' % input['str'])
+        
         return input
+    
+        
+        

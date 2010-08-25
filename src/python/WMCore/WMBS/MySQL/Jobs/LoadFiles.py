@@ -6,8 +6,8 @@ MySQL implementation of Jobs.LoadFiles
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFiles.py,v 1.5 2009/01/21 22:00:01 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: LoadFiles.py,v 1.6 2009/12/24 16:21:29 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -18,7 +18,7 @@ class LoadFiles(DBFormatter):
     Retrieve all files that are associated with the given job from the
     database.
     """
-    sql = "SELECT FILE FROM wmbs_job_assoc WHERE JOB = :jobid"
+    sql = "SELECT DISTINCT FILE FROM wmbs_job_assoc WHERE JOB = :jobid"
 
     def formatDict(self, results):
         """

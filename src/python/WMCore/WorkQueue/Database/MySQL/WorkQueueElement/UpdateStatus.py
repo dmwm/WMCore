@@ -1,12 +1,12 @@
 """
 _UpdateStaus_
 
-MySQL implementation of WorkQueueElement.GetElements
+MySQL implementation of WorkQueueElement.UpdateStatus
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateStatus.py,v 1.1 2009/06/26 21:06:23 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: UpdateStatus.py,v 1.2 2009/08/12 16:59:49 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

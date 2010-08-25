@@ -82,9 +82,9 @@ class ConfigCache(WMObject):
         self.document    = Document()
         self.attachments = {}
 
-        self.document['PSetTweaks'] = None
-        self.document['info']       = None
-        self.document['config']     = None
+        self.document['pset_tweak_details'] = None
+        self.document['info']               = None
+        self.document['config']             = None
 
 
         return
@@ -334,7 +334,7 @@ class ConfigCache(WMObject):
         Does exactly what it says on the tin
         """
 
-        self.document['PSetTweaks'] = PSetTweak
+        self.document['pset_tweak_details'] = PSetTweak
         
 
         return
@@ -347,7 +347,7 @@ class ConfigCache(WMObject):
         """
 
 
-        return self.document['PSetTweaks']
+        return self.document['pset_tweak_details']
 
 
     def addConfig(self, newConfig):

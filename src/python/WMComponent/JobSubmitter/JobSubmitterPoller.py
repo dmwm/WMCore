@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.23 2010/05/28 15:00:50 mnorman Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.24 2010/06/03 21:32:30 mnorman Exp $"
+__version__ = "$Revision: 1.24 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -330,7 +330,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             for job in listOfJobs:
                 tmpJob = Job(id = job['id'])
                 tmpJob['custom']      = job['custom']
-                tmpJob['sandbox']     = job['sandbox']
+                #tmpJob['sandbox']     = job['sandbox']
                 tmpJob['name']        = job['name']
                 tmpJob['cache_dir']   = job['cache_dir']
                 tmpJob['retry_count'] = job['retry_count']
@@ -347,13 +347,17 @@ class JobSubmitterPoller(BaseWorkerThread):
                 finalList = finalList[self.config.JobSubmitter.jobsPerWorker:]
                 self.processPool.enqueue([{'jobs': listForSub,
                                            'packageDir': packagePath,
-                                           'index': index}])
+                                           'index': index,
+                                           'sandbox': sandbox,
+                                           'agentName': self.config.Agent.agentName}])
                 count += 1
                 index += len(listForSub)
             if len(finalList) > 0:
                 self.processPool.enqueue([{'jobs': finalList,
                                            'packageDir': packagePath,
-                                           'index': index}])
+                                           'index': index,
+                                           'sandbox': sandbox,
+                                           'agentName': self.config.Agent.agentName}])
                 count += 1
 
 

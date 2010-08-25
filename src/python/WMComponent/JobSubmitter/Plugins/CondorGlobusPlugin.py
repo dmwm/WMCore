@@ -12,21 +12,42 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-__revision__ = "$Id: CondorGlobusPlugin.py,v 1.7 2010/05/03 18:43:45 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: CondorGlobusPlugin.py,v 1.8 2010/06/03 21:32:30 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import os
 import os.path
 import logging
 import threading
 
-from subprocess import Popen, PIPE
+import subprocess
 
 from WMCore.DAOFactory import DAOFactory
 
 from WMCore.WMInit import getWMBASE
 
 from WMComponent.JobSubmitter.Plugins.PluginBase import PluginBase
+
+
+subprocess._cleanup = lambda: None
+
+
+
+def parseError(error):
+    """
+    Do some basic condor error parsing
+
+    """
+
+    errorCondition = False
+    errorMsg       = ''
+
+    if 'ERROR: proxy has expired\n' in error:
+        errorCondition = True
+        errorMsg += 'CRITICAL ERROR: Your proxy has expired!'
+
+
+    return errorCondition, errorMsg
 
 class CondorGlobusPlugin(PluginBase):
     """
@@ -51,6 +72,7 @@ class CondorGlobusPlugin(PluginBase):
 
         self.packageDir = None
         self.unpacker   = None
+        self.sandbox    = None
 
         return
 
@@ -64,13 +86,14 @@ class CondorGlobusPlugin(PluginBase):
         if parameters == {} or parameters == []:
             return {'NoResult': [0]}
 
-        logging.error(parameters)
-
         result = {'Success': []}
 
         for entry in parameters:
             jobList         = entry.get('jobs')
             self.packageDir = entry.get('packageDir', None)
+            index           = entry.get('index', 0)
+            self.sandbox    = entry.get('sandbox', None)
+            self.agent      = entry.get('agentName', 'test')
             self.unpacker   = os.path.join(getWMBASE(),
                                        'src/python/WMCore/WMRuntime/Unpacker.py')
             
@@ -87,12 +110,13 @@ class CondorGlobusPlugin(PluginBase):
                     os.mkdir(self.config['submitDir'])
 
 
-            jdlList = self.makeSubmit(jobList)
+            jdlList = self.makeSubmit(jobList, index)
             if not jdlList or jdlList == []:
                 # Then we got nothing
                 logging.error("No JDL file made!")
                 return {'NoResult': [0]}
-            jdlFile = "%s/submit.jdl" % (self.config['submitDir'])
+            jdlFile = "%s/submit_%i.jdl" % (self.config['submitDir'], os.getpid())
+            #jdlFile = "%s/submit.jdl" % (self.config['submitDir'])
             handle = open(jdlFile, 'w')
             handle.writelines(jdlList)
             handle.close()
@@ -101,16 +125,30 @@ class CondorGlobusPlugin(PluginBase):
             # Now submit them
             logging.error("About to submit %i jobs" %(len(jobList)))
             command = ["condor_submit", jdlFile]
-            pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-            pipe.wait()
-            
+            pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
+                                    stderr = subprocess.PIPE, shell = False)
+            output, error = pipe.communicate()
+
             
 
 
-            for job in jobList:
-                if job == {}:
-                    continue
-                result['Success'].append(job['id'])
+            #error = pipe.stderr.readlines()
+            logging.error("Printing out command stderr")
+            logging.error(error)
+            logging.error("Printing out command stdout")
+            logging.error(output)
+            errorCheck, errorMsg = parseError(error = error)
+
+                    
+            
+
+            if not errorCheck:
+                for job in jobList:
+                    if job == {}:
+                        continue
+                    result['Success'].append(job['id'])
+            else:
+                logging.error("JobSubmission failed due to error")
 
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed
@@ -143,11 +181,12 @@ class CondorGlobusPlugin(PluginBase):
         jdl.append("Output = condor.$(Cluster).$(Process).out\n")
         jdl.append("Error = condor.$(Cluster).$(Process).err\n")
         jdl.append("Log = condor.$(Cluster).$(Process).log\n")
+        jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
         
         return jdl
     
         
-    def makeSubmit(self, jobList):
+    def makeSubmit(self, jobList, index):
         """
         _makeSubmit_
 
@@ -163,8 +202,6 @@ class CondorGlobusPlugin(PluginBase):
         jdl = self.initSubmit()
 
 
-        index = 0
-        
         # For each script we have to do queue a separate directory, etc.
         for job in jobList:
             if job == {}:
@@ -178,10 +215,10 @@ class CondorGlobusPlugin(PluginBase):
             job['location'] = job['custom'].get('location', None)
             jdl.append("initialdir = %s\n" % job['cache_dir'])
             jdl.append("transfer_input_files = %s, %s/%s, %s\n" \
-                       % (job['sandbox'], self.packageDir,
+                       % (self.sandbox, self.packageDir,
                           'JobPackage.pkl', self.unpacker))
             argString = "arguments = %s %i\n" \
-                        % (os.path.basename(job['sandbox']), index)
+                        % (os.path.basename(self.sandbox), index)
             jdl.append(argString)
 
             jobCE = self.getCEName(jobSite = job['location'])

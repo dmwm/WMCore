@@ -8,8 +8,8 @@ in the T0 and will only return jobs for runs that have been enabled
 for RECO.
 """
 
-__revision__ = "$Id: T0PromptRecoEventBased.py,v 1.2 2009/10/27 09:03:43 sfoulkes Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: T0PromptRecoEventBased.py,v 1.3 2009/10/29 09:57:54 sfoulkes Exp $"
+__version__  = "$Revision: 1.3 $"
 
 from sets import Set
 import threading
@@ -32,12 +32,6 @@ class T0PromptRecoEventBased(JobFactory):
         An event base splitting algorithm.  All available files are split into a
         set number of events per job.  
         """
-       
-        #  //
-        # // Resulting job set (shouldnt this be a JobGroup??)
-        #//
-        jobs = Set()
-
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
@@ -53,6 +47,7 @@ class T0PromptRecoEventBased(JobFactory):
         carryOver = 0
 
         baseName = makeUUID()
+        jobsCreated = 0
         self.newGroup()
 
         for f in fileset:
@@ -62,7 +57,8 @@ class T0PromptRecoEventBased(JobFactory):
 
             currentEvent = 0
             while currentEvent < eventsInFile:
-                self.newJob(name = '%s-%s' % (baseName, len(jobs) + 1))
+                self.newJob(name = '%s-%s' % (baseName, jobsCreated))
+                jobsCreated += 1
                 self.currentJob.addFile(loadedFile)
                 self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
                 currentEvent += eventsPerJob

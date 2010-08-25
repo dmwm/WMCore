@@ -45,7 +45,6 @@ class CMSSWFetcher(FetcherInterface):
                 cacheUrl = t.data.application.configuration.configCacheUrl
                 cacheDb  = t.data.application.configuration.cacheName
                 configId = t.data.application.configuration.configId
-                cacheUrl = cacheUrl.replace("http://", "")
                 tweakTarget = t.data.application.command.psetTweak
 
                 configCache = WMConfigCache(cacheDb,cacheUrl)

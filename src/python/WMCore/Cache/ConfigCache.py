@@ -15,8 +15,8 @@ except:
 
 import PSetTweaks.PSetTweak as TweakAPI
 
-__revision__ = "$Id: ConfigCache.py,v 1.17 2010/05/19 17:39:47 sfoulkes Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: ConfigCache.py,v 1.18 2010/07/29 19:44:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 
 class WMConfigCache:
     '''
@@ -246,7 +246,7 @@ class WMConfigCache:
         return output
 
 
-    def __init__(self, dbname2 = 'config_cache', dburl = "127.0.0.1:5984"):
+    def __init__(self, dbname2 = 'config_cache', dburl = "http://127.0.0.1:5984"):
         """ attempts to connect to DB, creates if nonexistant:
             TODO: add support for different database URLs
         """

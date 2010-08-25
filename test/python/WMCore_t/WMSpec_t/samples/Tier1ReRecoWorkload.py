@@ -15,6 +15,8 @@ from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 # // Set up the basic workload task and step structure
 #//
 workload = newWorkload("Tier1ReReco")
+workload.setStartPolicy('DatasetBlock')
+workload.setEndPolicy('SingleShot')
 
 #  //
 # // set up the production task
@@ -123,7 +125,6 @@ rereco = workload.getTask("ReReco")
 
 
 
-
 def testSubscription():
     """
     _testSubscription_
@@ -135,7 +136,7 @@ def testSubscription():
     dbs = DbsApi({"url" : "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"})
 
 
-    fileset1 = Fileset(name='SkimFiles')
+    fileset1 = Fileset(name = 'SkimFiles')
 
 
     for dbsF in dbs.listFiles(patternLFN = "/store/data/CRAFT09/Cosmics/RECO/v1/000/108/483/*", retriveList = ['retrive_lumi', 'retrive_run']):
@@ -144,7 +145,7 @@ def testSubscription():
         for lumi in dbsF['LumiList']:
             runNum = lumi['RunNumber']
             if runNum not in runs.keys():
-                runs[runNum]  = Run(runNum)
+                runs[runNum] = Run(runNum)
             runs[runNum].lumis.append(lumi['LumiSectionNumber'])
 
 
@@ -169,18 +170,18 @@ def testSubscription():
     return subscription
 
 
-
-# keep test subscription local to speed things up
-pickledSubs = "%s/recosubscription.pkl" % workingDir
-if os.path.exists(pickledSubs):
-    handle = open(pickledSubs, 'r')
-    subs = pickle.load(handle)
-    handle.close()
-else:
-    subs = testSubscription()
-    handle = open(pickledSubs, 'w')
-    pickle.dump(subs, handle)
-    handle.close()
+if __name__ == '__main__':
+    # keep test subscription local to speed things up
+    pickledSubs = "%s/recosubscription.pkl" % workingDir
+    if os.path.exists(pickledSubs):
+        handle = open(pickledSubs, 'r')
+        subs = pickle.load(handle)
+        handle.close()
+    else:
+        subs = testSubscription()
+        handle = open(pickledSubs, 'w')
+        pickle.dump(subs, handle)
+        handle.close()
 
 
 
@@ -206,38 +207,40 @@ def makeRerecoJobs(task, subscriptionWithFiles):
 
     return package
 
-pkg = makeRerecoJobs(rereco, subs)
-savePkg = "%s/RecoJobPackage.pkl" % workingDir
-pkg.save(savePkg)
+if __name__ == '__main__':
+    pkg = makeRerecoJobs(rereco, subs)
+    savePkg = "%s/RecoJobPackage.pkl" % workingDir
+    pkg.save(savePkg)
 
 
 #  //
 # // generate a convenience script to setup and run the job
 #//
-import inspect
+if __name__ == '__main__':
+    import inspect
 
-import WMCore.WMRuntime as WMRuntime
+    import WMCore.WMRuntime as WMRuntime
 
-runtimeLoc = inspect.getsourcefile(WMRuntime)
-unpacker = runtimeLoc.replace('__init__.py', "Unpacker.py")
-sandbox = rereco.data.sandboxArchivePath
+    runtimeLoc = inspect.getsourcefile(WMRuntime)
+    unpacker = runtimeLoc.replace('__init__.py', "Unpacker.py")
+    sandbox = rereco.data.sandboxArchivePath
 
-runitScript = \
-"""
-%s %s --sandbox=%s --package=%s --index=1
-echo "#To start job do:"
-echo "export PYTHONPATH=`pwd`/job"
-echo "cd job"
-echo "%s WMCore/WMRuntime/Startup.py"
-""" % (
-    sys.executable,
-    unpacker,
-    sandbox,
-    savePkg,
-    sys.executable)
+    runitScript = \
+    """
+    %s %s --sandbox=%s --package=%s --index=1
+    echo "#To start job do:"
+    echo "export PYTHONPATH=`pwd`/job"
+    echo "cd job"
+    echo "%s WMCore/WMRuntime/Startup.py"
+    """ % (
+        sys.executable,
+        unpacker,
+        sandbox,
+        savePkg,
+        sys.executable)
 
-runitFile = open("%s/build.sh" % workingDir, 'w')
-runitFile.write(runitScript)
-runitFile.close()
+    runitFile = open("%s/build.sh" % workingDir, 'w')
+    runitFile.write(runitScript)
+    runitFile.close()
 
 

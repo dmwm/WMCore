@@ -16,11 +16,14 @@ from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 # // Set up the basic workload task and step structure
 #//
 workload = newWorkload("BasicProduction")
+workload.setStartPolicy('MonteCarlo')
+workload.setEndPolicy('SingleShot')
 
 #  //
 # // set up the production task
 #//
 production = workload.newTask("Production")
+production.addProduction(totalevents = 1000)
 prodCmssw = production.makeStep("cmsRun1")
 prodCmssw.setStepType("CMSSW")
 prodStageOut = prodCmssw.addStep("stageOut1")
@@ -64,7 +67,7 @@ prodCmsswHelper.addOutputModule("writeData", primaryDataset = "Primary",
 #  //
 # // production stage out step
 #//
-prodStageOutHelper =prodStageOut.getTypeHelper()
+prodStageOutHelper = prodStageOut.getTypeHelper()
 
 
 #  //

@@ -17,11 +17,14 @@ from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 # // Set up the basic workload task and step structure
 #//
 workload = newWorkload("MultiProduction")
+workload.setStartPolicy('MonteCarlo')
+workload.setEndPolicy('SingleShot')
 
 #  //
 # // set up the production task
 #//
 production = workload.newTask("Production")
+production.addProduction(totalevents = 1000)
 prodCmssw = production.makeStep("cmsRun1")
 prodCmssw.setStepType("CMSSW")
 prodStageOut = prodCmssw.addStep("stageOut1")
@@ -97,7 +100,7 @@ merge3.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)
 #  //
 # // production stage out step
 #//
-prodStageOutHelper =prodStageOut.getTypeHelper()
+prodStageOutHelper = prodStageOut.getTypeHelper()
 
 
 #  //
@@ -140,4 +143,4 @@ merge3CmsswHelper.addOutputModule("mergeData3", primaryDataset = "Primary",
 
 
 
-print workload.data
+#print workload.data

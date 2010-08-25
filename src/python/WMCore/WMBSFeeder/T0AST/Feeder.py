@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.5 2010/05/04 22:41:04 riahi Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Feeder.py,v 1.6 2010/06/02 01:34:16 riahi Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import logging
 import threading
@@ -16,11 +16,13 @@ from WMCore.DataStructs.Run import Run
 from WMCore.DAOFactory import DAOFactory
 #from WMCore.WMFactory import WMFactory
 from traceback import format_exc
+import os
+from WMCore.WMInit import WMInit
 
 import time
 from WMCore.Services.Requests import JSONRequests
 
-LASTIME = int(time.time()) 
+LOCK = threading.Lock()
 
 class Feeder(FeederImpl):
     """
@@ -36,21 +38,31 @@ class Feeder(FeederImpl):
         FeederImpl.__init__(self)
 
         self.maxRetries = 3
-        self.purgeTime = 3600 #(86400 1 day)
-
-        myThread = threading.currentThread()
-        self.daofactory = DAOFactory(package = "WMCore.WMBS" , \
-              logger = myThread.logger, \
-              dbinterface = myThread.dbi)
+        self.purgeTime = 96 
+        self.reopenTime = 120 
 
     def __call__(self, filesetToProcess):
         """
         The algorithm itself
         """
-        global LASTIME    
+        global LOCK
 
-        locationNew = self.daofactory(classname = "Locations.New")
-        getFileLoc = self.daofactory(classname = "Files.GetLocation")
+        # Get configuration
+        initObj = WMInit()
+        initObj.setLogging()
+        initObj.setDatabaseConnection(os.getenv("DATABASE"), \
+            os.getenv('DIALECT'), os.getenv("DBSOCK"))
+
+        myThread = threading.currentThread()
+
+        daofactory = DAOFactory(package = "WMCore.WMBS" , \
+              logger = myThread.logger, \
+              dbinterface = myThread.dbi)
+
+        locationNew = daofactory(classname = "Locations.New")
+        getFileLoc = daofactory(classname = "Files.GetLocation")
+        fileInFileset = daofactory(classname = "Files.InFileset")
+
 
         logging.debug("the T0Feeder is processing %s" % \
                  filesetToProcess.name) 
@@ -59,17 +71,10 @@ class Feeder(FeederImpl):
 
         # Get the start Run if asked
         startRun = (filesetToProcess.name).split(":")[3]
-
         fileType = (filesetToProcess.name).split(":")[2]
-        logging.debug("the fileType is %s" % \
-        (filesetToProcess.name).split(":")[2])
-        
-        #Add if fileset is empty , set LASTIME to 0
-        logging.debug("The fileset object %s" %filesetToProcess.files) 
 
-        # Fisrt call to T0 db for this fileset 
-        if not filesetToProcess.files: 
-            LASTIME = 0
+        
+        LASTIME = filesetToProcess.lastUpdate
  
         # url builder
         primaryDataset = ((filesetToProcess.name).split(":")[0]).split('/')[1]
@@ -86,8 +91,7 @@ class Feeder(FeederImpl):
 
                 myRequester = JSONRequests(url = "vocms52.cern.ch:8889")
                 requestResult = myRequester.get(\
-            url+"/"+"?return_type=text/json%2Bdas")
-                logging.debug("Res %s" %str(requestResult))
+              url+"/"+"?return_type=text/json%2Bdas")
                 newFilesList = requestResult[0]["results"]
 
             except:
@@ -101,7 +105,6 @@ class Feeder(FeederImpl):
 
             logging.debug("T0 queries done ...")
             now = time.time()
-            filesetToProcess.last_update = now
             LASTIME = int(newFilesList['end_time']) + 1
 
             break
@@ -118,28 +121,27 @@ class Feeder(FeederImpl):
                 logging.debug( format_exc() )
 
             for files in newFilesList['files']:
-                logging.debug("Files to add %s" %files)
 
+                # Assume parents aren't asked 
                 newfile = File(str(files['lfn']), \
            size = files['file_size'], events = files['events'])
 
 
                 try:
+
+                    LOCK.acquire() 
+
                     if newfile.exists() == False :
                         newfile.create()
 
-                    else:
-                        newfile.loadData()
-
-                    #Add run test if already exist
-                    for run in files['runs']:
-
-                        if not newfile['runs']:
+                        for run in files['runs']:
 
                             runSet = set()
                             runSet.add(Run( run, *files['runs'][run]))
                             newfile.addRunSet(runSet)
 
+                    else:
+                        newfile.loadData()
 
                     fileLoc = getFileLoc.execute(file = files['lfn'])
 
@@ -148,6 +150,9 @@ class Feeder(FeederImpl):
 
                     else:
                         logging.debug("File already associated to %s" %fileLoc)
+
+
+                    LOCK.release()
 
                     if len(newfile["runs"]):
 
@@ -159,20 +164,47 @@ class Feeder(FeederImpl):
                                 break 
 
                         if not val:
-                            filesetToProcess.addFile(newfile)
-                            logging.debug("new file added...")
+
+                            listFile = fileInFileset.execute\
+                               (filesetToProcess.id)
+                            if {'fileid': newfile['id']} not in listFile:
+
+                                filesetToProcess.addFile(newfile)
+                                filesetToProcess.setLastUpdate\
+                              (int(newFilesList['end_time']) + 1)
+                                filesetToProcess.commit()
+                                logging.debug("new file added...")
+
 
                 except Exception,e:
-                    logging.debug("Error when adding new location...")
+                    logging.debug("Error when adding new files...")
                     logging.debug(e)
                     logging.debug( format_exc() )
+                    LOCK.release()
 
-
+            filesetToProcess.commit()
 
         else:
-            logging.debug("nothing to do...")
+
+            logging.debug("nothing to do in T0AST...")
+            # For reopned fileset or empty 
+            # try until the purge time is reached            
+            if (int(now)/3600 - LASTIME/3600) > self.reopenTime:
+
+                filesetToProcess.setLastUpdate(time.time())
+                filesetToProcess.commit()
+
 
         # Commit the fileset
+        logging.debug("Test purge in T0AST ...")
+        filesetToProcess.load()
+        LASTIME = filesetToProcess.lastUpdate
+
+        if (int(now)/3600 - LASTIME/3600) > self.purgeTime:
+
+            filesetToProcess.markOpen(False)
+            logging.debug("Purge Done...")
+
         filesetToProcess.commit()
 
     def persist(self):

@@ -8,8 +8,8 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set. 
 """
 
-__revision__ = "$Id: Requests.py,v 1.42 2010/08/04 21:57:11 swakef Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: Requests.py,v 1.43 2010/08/09 14:53:49 metson Exp $"
+__version__ = "$Revision: 1.43 $"
 
 import urllib
 from urlparse import urlunparse
@@ -171,8 +171,13 @@ class Requests(dict):
             # only have one endpoint so don't need to determine which to shut
             [conn.close() for conn in self['conn'].connections.values()]
             # ... try again... if this fails propagate error to client
-            response, result = self['conn'].request(uri, method = verb,
+            try:
+                response, result = self['conn'].request(uri, method = verb,
                                     body = encoded_data, headers = headers)
+            except AttributeError:
+                # socket/httplib really screwed up - nuclear option
+                self['conn'].connections = {}
+                raise socket.error
 
         if response.status >= 400:
             e = HTTPException()

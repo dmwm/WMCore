@@ -5,12 +5,12 @@ SANDBOX=$1
 INDEX=$2
 
 ls
-
-/usr/bin/env python Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$INDEX
+. /uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/python/2.6.4-cms2/etc/profile.d/init.sh 
+python2.6 Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$INDEX
 
 cd job
 export PYTHONPATH=$PYTHONPATH:$PWD
-/usr/bin/env python WMCore/WMRuntime/Startup.py
+python2.6 WMCore/WMRuntime/Startup.py
 cp WMTaskSpace/Report.pkl ../
 
 sleep 90

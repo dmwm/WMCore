@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 """
 _WMTweak_
@@ -172,7 +173,6 @@ def setParameter(process, param, value):
             msg += "Cannot set value: %s" % param
             print msg
             return
-            #raise RuntimeError, msg
 
     if "setValue" in dir(lastPSet):
         lastPSet.setValue(value)
@@ -352,21 +352,44 @@ def decomposeConfigSection(csect):
 
     return decomposer.parameters
 
+def makeTaskTweak(stepSection):
+    """
+    _makeTaskTweak_
 
+    Create a tweak for options in the task that apply to all jobs.
+    """
+    result = PSetTweak()
+
+    # GlobalTag
+    if hasattr(stepSection, "application"):
+        if hasattr(stepSection.application, "configuration"):
+            if hasattr(stepSection.application.configuration, "arguments"):
+                globalTag = getattr(stepSection.application.configuration.arguments,
+                                    "globalTag", None)
+                if globalTag != None:
+                    result.addParameter("process.GlobalTag.globaltag", globalTag)
+
+    return result
 
 def makeJobTweak(job):
     """
     _makeJobTweak_
 
     Convert information from a WMBS Job object into a PSetTweak
-    that can be used to modify a CMSSW process
-
+    that can be used to modify a CMSSW process.
     """
     result = PSetTweak()
 
-    # input files
-    inpFiles = [f['lfn'] for f in job['input_files'] ]
-    result.addParameter("process.source.fileNames", inpFiles)
+    # Input files and secondary input files.
+    primaryFiles = []
+    secondaryFiles = []
+    for inputFile in job["input_files"]:
+        primaryFiles.append(inputFile["lfn"])
+        for secondaryFile in inputFile["parents"]:
+            secondaryFiles.append(secondaryFile["lfn"])
+            
+    result.addParameter("process.source.fileNames", primaryFiles)
+    result.addParameter("process.source.secondaryFileNames", secondaryFiles)    
 
     mask =  job['mask']
 
@@ -383,8 +406,6 @@ def makeJobTweak(job):
     firstLumi = mask['FirstLumi']
     if firstLumi != None:
         result.addParameter("process.source.firstLuminosityBlock", firstLumi)
-
-    
 
     # run limits
     firstRun = mask['FirstRun']

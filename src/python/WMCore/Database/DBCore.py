@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.28 2009/04/08 18:53:36 sryu Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: DBCore.py,v 1.29 2009/05/12 16:40:01 swakef Exp $"
+__version__ = "$Revision: 1.29 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -79,7 +79,7 @@ class DBInterface(WMObject):
             WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
             self.logger.debug('DBInterface.executemanybinds - sql : %s' % s)
             self.logger.debug('DBInterface.executemanybinds - binds : %s' % b)
-            raise e
+            raise
         
 
     def executemanybinds(self, s=None, b=None, connection=None):
@@ -129,7 +129,7 @@ class DBInterface(WMObject):
             WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
             self.logger.debug('DBInterface.executemanybinds - sql : %s' % s)
             self.logger.debug('DBInterface.executemanybinds - binds : %s' % b)
-            raise e
+            raise
     
     def connection(self):
         """
@@ -177,7 +177,7 @@ class DBInterface(WMObject):
                     WMCore.WMLogging.sqldebug("rolling back in DBInterface")
                     trans.rollback()
                 self.logger.exception(e)
-                raise e 
+                raise 
             
         elif len(binds) > len(sqlstmt) and len(sqlstmt) == 1:
             #Run single SQL statement for a list of binds - use execute_many()
@@ -199,7 +199,7 @@ class DBInterface(WMObject):
                     WMCore.WMLogging.sqldebug("rolling back in DBInterface")
                     trans.rollback()
                 self.logger.exception(e)
-                raise e
+                raise
             
         elif len(binds) == len(sqlstmt):
             # Run a list of SQL for a list of binds
@@ -221,7 +221,7 @@ class DBInterface(WMObject):
                     WMCore.WMLogging.sqldebug("DBInterface.processData rolling back transaction")
                     trans.rollback()
                 self.logger.exception(e)
-                raise e 
+                raise
             
         else:
             self.logger.exception(

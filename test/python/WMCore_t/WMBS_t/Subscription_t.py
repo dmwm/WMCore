@@ -76,10 +76,18 @@ class SubscriptionTest(unittest.TestCase):
         self._teardown = True
         
     def createSubscriptionWithFileABC(self):
-        
+        """
+        _createSubscriptionWithFileABC_
+
+        Create a subscription where the input fileset has three files.  Also
+        create a second subscription that has acquired two of the files.
+        """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task='Test')
+                                name = "wf001", task = "Test")
         testWorkflow.create()
+        testWorkflow2 = Workflow(spec = "specBOGUS.xml", owner = "Simon",
+                                name = "wfBOGUS", task = "Test")
+        testWorkflow2.create()        
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
                          locations = Set(["goodse.cern.ch"]))
@@ -107,8 +115,13 @@ class SubscriptionTest(unittest.TestCase):
 
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
+        testSubscription2 = Subscription(fileset = testFileset,
+                                         workflow = testWorkflow2)
+        testSubscription2.create()
+        testSubscription2.acquireFiles([testFileA, testFileB])
         
-        return testSubscription, testFileset, testWorkflow, testFileA, testFileB, testFileC
+        return (testSubscription, testFileset, testWorkflow, testFileA,
+                testFileB, testFileC)
 
     def testCreateDeleteExists(self):
         """

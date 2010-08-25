@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.2 2009/12/08 10:08:16 riahi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Feeder.py,v 1.3 2009/12/15 23:12:14 riahi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import os
@@ -12,6 +12,7 @@ import threading
 
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl 
 from WMCore.WMBS.File import File
+#from WMCore.WMBS.Fileset import Fileset
 from WMCore.DataStructs.Run import Run
 from WMCore.WMInit import WMInit
 from WMCore.DAOFactory import DAOFactory
@@ -51,6 +52,7 @@ class Feeder(FeederImpl):
               logger = self.myThread.logger, \
               dbinterface = self.myThread.dbi)
         self.locationNew = self.daofactory(classname = "Locations.New")
+        self.getFileLoc = self.daofactory(classname = "Files.GetLocation")
 
         #factory = WMFactory("default", \
         #    "WMComponent.FeederManager.Database." + self.myThread.dialect)
@@ -62,13 +64,18 @@ class Feeder(FeederImpl):
         """
         global LastTime    
         #global StartTime 
+        #filesetToProcess = Fileset( name = filesetToProcess.name )
+        #filesetToProcess.load() 
 
         logging.debug("the T0Feeder is processing %s" % \
                  filesetToProcess.name) 
         logging.debug("the fileset name %s" % \
          (filesetToProcess.name).split(":")[0])
 
-        fileType = "bulk"
+
+        fileType = (filesetToProcess.name).split(":")[2]
+        logging.debug("the fileType is %s" % \
+        (filesetToProcess.name).split(":")[2])
 
         # url builder
         primaryDataset = ((filesetToProcess.name).split(":")[0]).split('/')[1]
@@ -77,9 +84,11 @@ class Feeder(FeederImpl):
             ).split(":")[0]).split('/')[3]
         url = "/tier0/listfilesoverinterval/%s/%s/%s/%s/%s" % \
               (fileType, LastTime, primaryDataset,processedDataset, dataTier)
+        #url = "/tier0/listbulkfilesoverinterval/%s/%s/%s/%s" % \
+       #       (filesetToProcess.lastUpdate, primaryDataset,\
+       #                processedDataset, dataTier)
 
         tries = 1
- 
         while True:
 
             try:
@@ -90,8 +99,8 @@ class Feeder(FeederImpl):
                 logging.debug(newFilesList)
 
             except:
-                logging.debug("T0Reader call error...")
 
+                logging.debug("T0Reader call error...")
                 if tries == self.maxRetries:
                     return  
                 else:
@@ -116,12 +125,21 @@ class Feeder(FeederImpl):
                 newfile = File(str(files['lfn']), \
            size = files['file_size'], events = files['events'])
                 self.locationNew.execute(siteName = "caf.cern.ch")
-                newfile.setLocation(["caf.cern.ch"])
+
+                fileLoc = self.getFileLoc.execute(file = files['lfn'])
+
+                if 'caf.cern.ch' not in fileLoc:
+                    newfile.setLocation(["caf.cern.ch"])
+
+                else:
+                    logging.debug("File already associated to %s" %fileLoc)
 
                 for run in files['runs']:
                     newfile.addRun(Run( run , *files['runs'][run]))
 
-                newfile.create()
+                if newfile.exists() == False :
+                    newfile.create()
+
                 filesetToProcess.addFile(newfile)
                 logging.debug("new file added...")
 

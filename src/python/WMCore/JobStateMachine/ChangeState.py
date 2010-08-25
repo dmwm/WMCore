@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.46 2010/06/11 18:43:33 sfoulkes Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: ChangeState.py,v 1.47 2010/06/11 19:10:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.47 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
@@ -165,6 +165,9 @@ class ChangeState(WMObject, WMConnectionBase):
                 jobDocument["_id"] = "%s_%s" % (baseUUID, newJobCounter)
                 job["couch_record"] = jobDocument["_id"]
                 jobDocument["jobid"] = job["id"]
+                jobDocument["workflow"] = job["workflow"]
+                jobDocument["task"] = job["task"]
+                jobDocument["owner"] = job["owner"]
                 jobDocument["inputfiles"] = []
                 for inputFile in job["input_files"]:
                     docInputFile = {"lfn": inputFile["lfn"],
@@ -176,9 +179,11 @@ class ChangeState(WMObject, WMConnectionBase):
                                     "merged": inputFile["merged"],
                                     "locations": [],
                                     "runs": []}
-                    jobDocument["inputfiles"].append(docInputFile)
+
                     for location in inputFile["locations"]:
-                        docInputFile.append(location)
+                        docInputFile["locations"].append(location)
+
+                    jobDocument["inputfiles"].append(docInputFile)
                         
                 jobDocument["jobgroup"] = job["jobgroup"]
                 jobDocument["mask"] = {"firstevent": job["mask"]["FirstEvent"],

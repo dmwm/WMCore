@@ -5,8 +5,8 @@ _JobAccountantPoller_
 Poll WMBS for complete jobs and process their framework job reports.
 """
 
-__revision__ = "$Id: JobAccountantPoller.py,v 1.8 2010/03/10 17:52:14 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: JobAccountantPoller.py,v 1.9 2010/04/22 14:30:52 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import time
 import threading
@@ -57,14 +57,19 @@ class JobAccountantPoller(BaseWorkerThread):
         """
         completeJobs = self.getJobsAction.execute(state = "complete")
         logging.info("Jobs: %s" % completeJobs)
+
+        if len(completeJobs) == 0:
+            # Then we have no work to do.  Bye!
+            return
+        
+        dequeueCount = 0
         while len(completeJobs) > 50:
             completeJobsSlice = completeJobs[0:50]
             completeJobs = completeJobs[50:]
             self.processPool.enqueue([{'input': completeJobsSlice}])
-            self.processPool.dequeue()
-            #self.processPool.dequeue(len(completeJobsSlice))
+            dequeueCount += 1
             
         self.processPool.enqueue([{'input': completeJobs}])
-        #self.processPool.dequeue(len(completeJobs))
-        self.processPool.dequeue()
+        dequeueCount += 1
+        self.processPool.dequeue(dequeueCount)
         return

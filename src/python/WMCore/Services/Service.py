@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.40 2010/03/08 23:16:45 sryu Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: Service.py,v 1.41 2010/03/16 19:53:39 sryu Exp $"
+__version__ = "$Revision: 1.41 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -152,7 +152,7 @@ class Service(dict):
         return cachefile
 
     def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True, 
-                     encoder = True, decoder= True, verb = None):
+                     encoder = True, decoder= True, verb = None, contentType = None):
         """
         See if the cache has expired. If it has make a new request to the 
         service for the input data. Return the cachefile as an open file object.  
@@ -164,14 +164,14 @@ class Service(dict):
 
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self['logger'].debug("%s expired, refreshing cache" % cachefile)
-            self.getData(cachefile, url, inputdata, encoder, decoder, verb)
+            self.getData(cachefile, url, inputdata, encoder, decoder, verb, contentType)
         if openfile:
             return open(cachefile, 'r')
         else:
             return cachefile
 
     def forceRefresh(self, cachefile, url='', inputdata = {}, encoder = True, 
-                     decoder = True, verb = None):
+                     decoder = True, verb = None, contentType = None):
         """
         Make a new request to the service for the input data, regardless of the 
         cache statue. Return the cachefile as an open file object.  
@@ -181,7 +181,7 @@ class Service(dict):
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
-        self.getData(cachefile, url, inputdata, encoder, decoder, verb)
+        self.getData(cachefile, url, inputdata, encoder, decoder, verb, contentType)
         return open(cachefile, 'r')
 
     def clearCache(self, cachefile, inputdata = {}, verb = None):
@@ -197,7 +197,7 @@ class Service(dict):
             return
 
     def getData(self, cachefile, url, inputdata = {}, encoder = True, decoder = True, 
-                verb = None):
+                verb = None, contentType = None):
         """
         Takes the already generated *full* path to cachefile and the url of the 
         resource. Don't need to call self.cacheFileName(cachefile, verb, inputdata)
@@ -220,7 +220,8 @@ class Service(dict):
                                                     verb = verb,
                                                     data = inputdata,
                                                     encoder = encoder,
-                                                    decoder = decoder)
+                                                    decoder = decoder,
+                                                    contentType = contentType)
             
             # Don't need to prepend the cachepath, the methods calling getData
             # have done that for us 

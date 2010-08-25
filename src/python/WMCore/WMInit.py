@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.23 2010/05/28 16:49:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: WMInit.py,v 1.24 2010/06/07 20:05:20 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -22,6 +22,35 @@ import os.path
 def getWMBASE():
     """ returns the root of WMCore install """
     return os.path.normpath( os.path.join(os.path.dirname(__file__), '..', '..','..' ) )
+
+def connectToDB():
+    """
+    _connectToDB_
+
+    Connect to the database specified in the WMAgent config.
+    """
+    if not os.environ.has_key("WMAGENT_CONFIG"):
+        print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
+        sys.exit(1)
+        
+    if not os.path.exists(os.environ["WMAGENT_CONFIG"]):
+        print "Can't find config: %s" % os.environ["WMAGENT_CONFIG"]
+        sys.exit(1)
+        
+    wmAgentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
+    
+    if not hasattr(wmAgentConfig, "CoreDatabase"):
+        print "Your config is missing the CoreDatabase section."
+        sys.exit(1)
+        
+    socketLoc = getattr(wmAgentConfig.CoreDatabase, "socket", None)
+    connectUrl = getattr(wmAgentConfig.CoreDatabase, "connectUrl", None)
+    (dialect, junk) = connectUrl.split(":", 1)
+    
+    myWMInit = WMInit()
+    myWMInit.setDatabaseConnection(dbConfig = connectUrl, dialect = dialect,
+                                   socketLoc = socketLoc)
+    return
 
 class WMInit:
 

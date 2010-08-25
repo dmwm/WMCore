@@ -22,7 +22,7 @@ class WorkQueueService(ServiceInterface):
         self.wq = WorkQueue(logger=self.model, dbi=self.model.dbi, **self.model.config.queueParams)
 
         self.model.addMethod('POST', 'getwork', self.wq.getWork, args=["siteJobs", "pullingQueueUrl"])
-        self.model.addMethod('POST', 'status', self.wq.status, args=["status", "before", "after", 
+        self.model.addMethod('GET', 'status', self.wq.status, args=["status", "before", "after",
                                         "elementIDs", "subs", "dictKey"])
         self.model.addMethod('PUT', 'synchronize', self.wq.synchronize, args=["child_url", "child_report"])
         

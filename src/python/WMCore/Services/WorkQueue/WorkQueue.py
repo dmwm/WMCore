@@ -99,7 +99,7 @@ class WorkQueue(Service):
         args['pullingQueueUrl'] = pullingQueueUrl
         
         callname = 'getwork'
-        return self._getResult(callname, args = args, verb="POST")
+        return self._getResult(callname, args = args, verb="GET")
     
     def status(self, status = None, before = None, after = None, 
                elementIDs=None, dictKey = None):

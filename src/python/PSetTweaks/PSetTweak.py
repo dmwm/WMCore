@@ -409,3 +409,20 @@ class PSetTweak:
 
             for param, value in jsoniser.parameters.items():
                 self.addParameter(param , value)
+
+
+def makeTweakFromJSON(jsonDictionary):
+    """
+    _makeTweakFromJSON_
+
+    Make a tweak instance and populate it from a dictionary JSON
+    structure
+
+    """
+    jsoniser = JSONiser()
+    jsoniser.dejson(jsonDictionary)
+    tweak = PSetTweak()
+    for param, value in jsoniser.parameters.items():
+        tweak.addParameter(param , value)
+    return tweak
+

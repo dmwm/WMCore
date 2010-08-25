@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.12 2009/09/17 15:15:31 evansde Exp $"
-__revision__ = "$Revision: 1.12 $"
+__version__ = "$Id: WMTask.py,v 1.13 2009/09/23 16:13:35 sryu Exp $"
+__revision__ = "$Revision: 1.13 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -347,6 +347,8 @@ class WMTaskHelper(TreeHelper):
             if opt == 'block_whitelist':
                 self.data.input.dataset.blocks.whitelist = arg
                 continue
+            if opt == 'dbsurl':
+                self.data.input.dataset.dbsurl = arg
             # all other options
             setattr(self.data.input.dataset, opt, arg)
 
@@ -360,7 +362,49 @@ class WMTaskHelper(TreeHelper):
 
         """
         return getattr(self.data.input, "dataset", None)
-
+    
+    def siteWhitelist(self):
+        """
+        _siteWhitelist_
+        
+        accessor for white list for the task
+        """
+        
+        return self.data.constraints.sites.whitelist
+    
+    def siteBlacklist(self):
+        """
+        _siteBlacklist_
+        
+        accessor for white list for the task
+        """
+        
+        return self.data.constraints.sites.blacklist
+    
+    def parentProcessingFlag(self):
+        """
+        _parentProcessingFlag_
+        
+        accessor for parentProcessing information (two file input)
+        """
+        return getattr(self.data.input.dataset, "parentFlag", False)
+    
+    def totalEvents(self):
+        """
+        _totalEvents_
+        
+        accessor for total events in the given dataset
+        """
+        return self.data.input.dataset.totalEvents
+    
+    def dbsUrl(self):
+        """
+        _dbsUrl_
+        if local dbs url is set for the task, return it
+        otherwise return None
+        """
+        return getattr(self.data.input.dataset, "dbsurl", None)
+        
 
 class WMTask(ConfigSectionTree):
     """

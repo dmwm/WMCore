@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.5 2009/09/10 15:40:20 evansde Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WMWorkload.py,v 1.6 2009/09/23 16:14:02 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 
 
@@ -57,8 +57,28 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data = wmWorkload
 
     def name(self):
+        """
+        _name_
+        
+        return name of the workload
+        """
         return self.data._internal_name
 
+    def owner(self):
+        """
+        _owner_
+        return owner information
+        """
+        return self.data.owner
+    
+    def priority(self):
+        """
+        _priority_
+        return priorty of workload
+        """
+        return self.data.request.priority
+    
+        
     def getTask(self, taskName):
         """
         _getTask_
@@ -140,8 +160,6 @@ class WMWorkloadHelper(PersistencyHelper):
 
 
 
-
-
 class WMWorkload(ConfigSection):
     """
     _WMWorkload_
@@ -156,7 +174,7 @@ class WMWorkload(ConfigSection):
         # // request related information
         #//
         self.section_("request")
-
+        self.request.priority = None # what should be the default value 
         #  //
         # // owner related information
         #//
@@ -167,10 +185,6 @@ class WMWorkload(ConfigSection):
         #//
         self.section_("tasks")
         self.tasks.tasklist = []
-
-
-
-
 
 
 

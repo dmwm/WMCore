@@ -25,7 +25,7 @@ class WorkQueueProfileTest(WorkQueueTestCase):
     _WorkQueueTest_
     
     """
-    
+    __integration__ = "These tests only work at FNAL."
     def setUp(self):
         """
         If we dont have a wmspec file create one

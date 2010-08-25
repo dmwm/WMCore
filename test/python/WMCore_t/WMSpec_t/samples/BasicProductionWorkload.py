@@ -24,6 +24,7 @@ workload.setEndPolicy('SingleShot')
 #//
 production = workload.newTask("Production")
 production.addProduction(totalevents = 1000)
+production.setTaskType("Merge")
 prodCmssw = production.makeStep("cmsRun1")
 prodCmssw.setStepType("CMSSW")
 prodStageOut = prodCmssw.addStep("stageOut1")

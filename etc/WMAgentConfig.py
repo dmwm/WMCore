@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.1 2010/01/22 17:58:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.2 2010/01/26 22:03:40 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Configuration import Configuration
 config = Configuration()
@@ -118,3 +118,9 @@ config.JobArchiver.componentDir  = config.General.workDir + "/JobArchiver"
 config.JobArchiver.pollInterval = 10
 config.JobArchiver.logLevel = "DEBUG"
 config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
+
+config.component_("TaskArchiver")
+config.TaskArchiver.logLevel = "DEBUG"
+config.TaskArchiver.pollInterval = 10
+config.TaskArchiver.timeOut      = 0
+

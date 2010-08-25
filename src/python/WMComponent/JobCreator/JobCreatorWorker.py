@@ -5,16 +5,16 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.4 2010/02/10 16:54:28 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.5 2010/02/26 18:32:00 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 import logging
 import os
 import os.path
-#import cProfile, pstats
+import cProfile, pstats
 
-import pickle
+import cPickle
 
 
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
@@ -135,8 +135,10 @@ class JobCreatorWorker:
                 cacheDir = job.getCache()
                 job['cache_dir'] = cacheDir
                 output = open(os.path.join(cacheDir, 'job.pkl'),'w')
-                pickle.dump(job, output)
+                cPickle.dump(job, output)
                 output.close()
+
+            logging.info("Finished call for jobGroup %i" %(wmbsJobGroup.exists()))
 
         #print "Finished JobCreatorWorker.__call__"
 

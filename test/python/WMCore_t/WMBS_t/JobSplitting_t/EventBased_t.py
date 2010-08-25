@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: EventBased_t.py,v 1.9 2009/12/16 17:45:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: EventBased_t.py,v 1.10 2010/03/11 21:03:56 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import os
@@ -288,73 +288,10 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups[0].jobs[6].getFiles(type = "lfn")), 1)
         
         for job in jobGroups[0].jobs:
-
-        
             self.assertEqual(job["mask"].getMaxEvents(), 150)
-        
             self.assertEqual(job["mask"]["FirstEvent"], 0)
 
         return
-
-
-
-    def test500EventMultipleFileSplit(self):
-        """
-        _test500EventMultipleFileSplit_
-
-        Test job splitting into 500 event jobs when the input subscription has
-        more than one file available.  This test verifies that the job splitting
-        code will put five files per job.
-        """
-        splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleFileSubscription)
-
-        jobGroups = jobFactory(events_per_job = 500)
-
-        self.assertEqual(len(jobGroups), 1)
-        self.assertEqual(len(jobGroups[0].jobs), 2)
-        self.assertEqual(len(jobGroups[0].jobs[0].getFiles(type = "lfn")), 5)
-        self.assertEqual(len(jobGroups[0].jobs[1].getFiles(type = "lfn")), 5)
-        
-        for job in jobGroups[0].jobs:
-
-        
-            self.assertEqual(job["mask"].getMaxEvents(), 500)
-        
-            self.assertEqual(job["mask"]["FirstEvent"], 0)
-
-        return
-
-
-    def test350EventMultipleFileSplit(self):
-        """
-        _test350EventMultipleFileSplit_
-
-        Test job splitting into 350 event jobs when the input subscription has
-        more than one file available.  This test verifies that the job splitting
-        code will put three files per job, and pass on the file that is too large.
-        This should create three jobs of three files each, and dump the last file
-        into the last job.
-        """
-        splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleFileSubscription)
-
-        jobGroups = jobFactory(events_per_job = 350)
-
-        self.assertEqual(len(jobGroups), 1)
-        self.assertEqual(len(jobGroups[0].jobs), 4)
-        self.assertEqual(len(jobGroups[0].jobs[0].getFiles(type = "lfn")), 3)
-        self.assertEqual(len(jobGroups[0].jobs[3].getFiles(type = "lfn")), 1)
-        
-        for job in jobGroups[0].jobs:
-
-        
-            self.assertEqual(job["mask"].getMaxEvents(), 350)
-        
-            self.assertEqual(job["mask"]["FirstEvent"], 0)
-
-        return
-
 
     def test100EventMultipleSite(self):
         """

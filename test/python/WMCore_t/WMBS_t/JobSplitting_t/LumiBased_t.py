@@ -5,8 +5,8 @@ _LumiBased_t
 Test lumi based splitting.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.10 2010/06/18 18:09:26 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: LumiBased_t.py,v 1.11 2010/06/21 21:37:16 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import os
 import threading
@@ -154,8 +154,8 @@ class LumiBasedTest(unittest.TestCase):
                           'FirstEvent': None, 'LastLumi': 800L, 'FirstLumi': 600L})
         self.assertEqual(len(jobGroups[0].jobs[3]['input_files']), 1)
         self.assertEqual(jobGroups[0].jobs[3]['mask'],
-                         {'LastRun': None, 'FirstRun': 9L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': None, 'FirstLumi': 900L})
+                         {'LastRun': 9L, 'FirstRun': 9L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 900L, 'FirstLumi': 900L})
 
 
 
@@ -251,8 +251,8 @@ class LumiBasedTest(unittest.TestCase):
                          {'LastRun': 4L, 'FirstRun': 3L, 'LastEvent': None,
                           'FirstEvent': None, 'LastLumi': 400L, 'FirstLumi': 300L})
         self.assertEqual(jobList[3]['mask'],
-                         {'LastRun': None, 'FirstRun': 4L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': None, 'FirstLumi': 401L})
+                         {'LastRun': 4L, 'FirstRun': 4L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 401L, 'FirstLumi': 401L})
 
 
 

@@ -5,8 +5,8 @@ WorkerNode unittest for WMRuntime/WMSpec
 
 """
 
-__revision__ = "$Id: WorkerNodeSimulation_t.py,v 1.2 2010/03/17 15:04:08 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkerNodeSimulation_t.py,v 1.3 2010/03/19 17:37:55 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 # Basic libraries
 import unittest
@@ -48,8 +48,9 @@ from WMCore.WMRuntime.Unpacker import runUnpacker as RunUnpacker
 import WMCore.WMRuntime.Bootstrap as Bootstrap
 
 # Misc WMCore
-from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUID   import makeUUID
+from WMCore.DataStructs.Run     import Run
+from WMCore.Services.UUID       import makeUUID
+from WMCore.FwkJobReport.Report import Report
 
 
 # DBS
@@ -103,9 +104,6 @@ class basicWNTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
-        #self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-        #                        useDefault = False)
 
 
         self.testDir = self.testInit.generateWorkDir()
@@ -126,7 +124,6 @@ class basicWNTest(unittest.TestCase):
         """
 
         self.testInit.delWorkDir()
-        #self.testInit.clearDatabase()
 
         # Clean up imports
         if 'WMSandbox' in sys.modules.keys():
@@ -189,6 +186,9 @@ class basicWNTest(unittest.TestCase):
         for primeTask in workload.taskIterator():
             for task in primeTask.taskIterator():
                 task.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        
+
+
 
         taskMaker = TaskMaker(workload, workloadDir)
         taskMaker.skipSubscription = True
@@ -214,8 +214,6 @@ class basicWNTest(unittest.TestCase):
         listOfFiles = dbs.listFiles(patternLFN = dataset,
                                     retriveList = ['retrive_lumi', 'retrive_run'])
 
-
-        print "Have %i files" %(len(listOfFiles))
 
         if len(listOfFiles) > 20:
             listOfFiles = listOfFiles[:20]
@@ -249,8 +247,6 @@ class basicWNTest(unittest.TestCase):
 
         # This is sort of awkward
         type    = task.name().split('Merge')[1]
-        print "Have type"
-        print type
         helper  = rereco.getStep('cmsRun1').getTypeHelper()
         output  = helper.getOutputModule("output%sRECO" %(type.upper()))
         lfnBase = output.lfnBase
@@ -282,7 +278,6 @@ class basicWNTest(unittest.TestCase):
 
         # If we're a merge job, create a merge fileset
         if task.taskType() == 'Merge':
-            print task.name()
             return self.createMergeFileset(task = task, rereco = rereco)
 
 
@@ -552,9 +547,25 @@ class basicWNTest(unittest.TestCase):
         # Did we get the right files in the WMTaskSpace
         self.assertEqual(os.listdir(wmTaskDir), ['__init__.py', 'cmsRun1', 'stageOut1',
                                                  'logArch1', '__init__.pyc', 'Report.pkl'])
+        # Get rid of the ReportEmuTestFile
+        os.remove(os.path.join(wmTaskDir, 'cmsRun1', 'ReportEmuTestFile.txt'))
         for dir in ['cmsRun1', 'logArch1', 'stageOut1']:
             path = os.path.join(wmTaskDir, dir)
             self.assertEqual(os.listdir(path), ['__init__.py','__init__.pyc', 'Report.pkl'])
+
+        report = Report()
+        report.load(os.path.join(wmTaskDir, 'cmsRun1', 'Report.pkl'))
+        reportCMSRun = report.data.cmsRun1
+
+        # Parse the report
+        self.assertTrue(os.path.isabs(reportCMSRun.output.outputRECORECO.files.file0.PFN))
+        self.assertEqual(reportCMSRun.output.outputRECORECO.files.file0.LFN,
+                         "/store/unmerged/Teatime09/MinimumBias/RECO/rereco_GR09_P_V7_All_v99/ThisIsGUID.root")
+        self.assertEqual(reportCMSRun.output.outputRECORECO.files.file0.datasetPath,
+                         'MinimumBias/rereco_GR09_P_V7_All_v99/RECO')
+        self.assertEqual(reportCMSRun.output.outputRECORECO.files.file0.size, 10)
+        self.assertEqual(reportCMSRun.output.outputRECORECO.files.file0.checksums,
+                         {'adler32': '11e003a6', 'cksum': '2658792579'})
 
         if os.path.exists('tmpDir'):
             shutil.rmtree('tmpDir')
@@ -583,6 +594,8 @@ class basicWNTest(unittest.TestCase):
 
         workload = self.createWorkload(workloadName = workloadName, emulator = False)
 
+        
+
         self.createWMBSComponents(workload = workload)
 
         self.unpackComponents(workload = workload)
@@ -602,6 +615,12 @@ class basicWNTest(unittest.TestCase):
         self.assertTrue('logArchive.tar.gz' in os.listdir(logArchDir))
         # Did stageOut kick in and execute a local stageOut?
         self.assertTrue('logArchive.tar.gz2' in os.listdir(logArchDir))
+
+
+        if os.path.exists('tmpDir'):
+            shutil.rmtree('tmpDir')
+
+        shutil.copytree(self.testDir, os.path.join(os.getcwd(), 'tmpDir'))
 
 
         return

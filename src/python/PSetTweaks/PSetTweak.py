@@ -49,6 +49,7 @@ def parameterIterator(obj):
     Util to iterate through the parameters in a PSetHolder
 
     """
+    x = None
     for x in childParameters(obj):
         yield getattr(obj, x)
 

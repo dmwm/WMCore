@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: JobArchiver_t.py,v 1.9 2010/05/03 14:00:24 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: JobArchiver_t.py,v 1.10 2010/05/10 18:13:10 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import os
 import logging
@@ -245,10 +245,10 @@ class JobArchiverTest(unittest.TestCase):
         myThread.workerThreadManager.terminateWorkers()
         
         
-        result = myThread.dbi.processData("SELECT state FROM wmbs_job")[0].fetchall()
+        result = myThread.dbi.processData("SELECT wmbs_job_state.name FROM wmbs_job_state INNER JOIN wmbs_job ON wmbs_job.state = wmbs_job_state.id")[0].fetchall()
         
         for val in result:
-            self.assertEqual(val.values()[0], 11, "Job did not end in cleanout state, instead in state %i" %(val.values()[0]))
+            self.assertEqual(val.values(), ['cleanout'])
         
         
         dirList = os.listdir(cacheDir)

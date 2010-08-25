@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.6 2009/10/15 15:05:34 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.7 2009/10/21 15:06:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import logging
 import os.path
@@ -92,9 +92,10 @@ class JobAccountantTest(unittest.TestCase):
         These parameters are still pulled from the environment.
         """
         config = self.testInit.getConfiguration()
-        self.testInit.generateWorkDir(config)
+        #self.testInit.generateWorkDir(config)
 
         config.section_("General")
+        config.General.workDir = "."
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl = os.getenv("COUCHURL")
@@ -236,6 +237,9 @@ class JobAccountantTest(unittest.TestCase):
         the rest to the executing state.  Set the paths to the job reports in
         all of the jobs.
         """
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        
         self.recoOutputFileset = Fileset(name = "RECO")
         self.recoOutputFileset.create()
         self.alcaOutputFileset = Fileset(name = "ALCA")
@@ -271,30 +275,43 @@ class JobAccountantTest(unittest.TestCase):
         self.testJobA["state"] = "complete"
         self.testJobA["mask"].setMaxAndSkipEvents(20000, 0)
         self.testJobA.save()
-        self.stateChangeAction.execute(jobs = [self.testJobA])
+        self.stateChangeAction.execute(jobs = [self.testJobA],
+                                       conn = myThread.transaction.conn,
+                                       transaction = True)                                       
 
         self.testJobB = Job(name = "SplitJobB", files = [inputFile])
         self.testJobB.create(group = testJobGroup)
         self.testJobB["mask"].setMaxAndSkipEvents(20000, 20000)
         self.testJobB["state"] = "executing"
         self.testJobB.save()
-        self.stateChangeAction.execute(jobs = [self.testJobB])
+        self.stateChangeAction.execute(jobs = [self.testJobB],
+                                       conn = myThread.transaction.conn,
+                                       transaction = True)                                       
 
         self.testJobC = Job(name = "SplitJobC", files = [inputFile])
         self.testJobC.create(group = testJobGroup)
         self.testJobC["state"] = "executing"
         self.testJobC["mask"].setMaxAndSkipEvents(20000, 40000)
         self.testJobC.save()
-        self.stateChangeAction.execute(jobs = [self.testJobC])
+        self.stateChangeAction.execute(jobs = [self.testJobC],
+                                       conn = myThread.transaction.conn,
+                                       transaction = True)
 
         fwjrBasePath = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/JobAccountant_t/"
         self.setFWJRAction.execute(jobID = self.testJobA["id"],
-                                   fwjrPath = fwjrBasePath + "SplitSuccessA.xml")
+                                   fwjrPath = fwjrBasePath + "SplitSuccessA.xml",
+                                   conn = myThread.transaction.conn,
+                                   transaction = True)
         self.setFWJRAction.execute(jobID = self.testJobB["id"],
-                                   fwjrPath = fwjrBasePath + "SplitSuccessB.xml")
+                                   fwjrPath = fwjrBasePath + "SplitSuccessB.xml",
+                                   conn = myThread.transaction.conn,
+                                   transaction = True)                                   
         self.setFWJRAction.execute(jobID = self.testJobC["id"],
-                                   fwjrPath = fwjrBasePath + "SplitSuccessC.xml")        
-        return        
+                                   fwjrPath = fwjrBasePath + "SplitSuccessC.xml",
+                                   conn = myThread.transaction.conn,
+                                   transaction = True)                                   
+        myThread.transaction.commit()
+        return
 
     def verifyJobSuccess(self, jobID):
         """
@@ -411,7 +428,7 @@ class JobAccountantTest(unittest.TestCase):
 
         return
 
-    def verifyDBSBufferContents(self, parentFileLFNs, fwkJobReportFiles):
+    def verifyDBSBufferContents(self, subType, parentFileLFNs, fwkJobReportFiles):
         """
         _verifyDBSBufferContents_
 
@@ -420,6 +437,9 @@ class JobAccountantTest(unittest.TestCase):
         the files in the framework job report.  Also verify file parentage.
         """
         for fwkJobReportFile in fwkJobReportFiles:
+            if fwkJobReportFile["MergedBySize"] != "True" and subType != "Merge":
+                continue
+            
             dbsFile = DBSBufferFile(lfn = fwkJobReportFile["LFN"])
 
             assert dbsFile.exists() != False, \
@@ -689,7 +709,7 @@ class JobAccountantTest(unittest.TestCase):
                 assert fwjrFile["LFN"] in self.mergedAlcaOutputFileset.getFiles(type = "lfn"), \
                        "Error: file is missing from alca output fileset."
 
-        self.verifyDBSBufferContents(["/path/to/some/lfn"], jobReports[0].files)
+        self.verifyDBSBufferContents("Processing", ["/path/to/some/lfn"], jobReports[0].files)
 
         return
 
@@ -819,7 +839,7 @@ class JobAccountantTest(unittest.TestCase):
 
         dbsParents = ["/path/to/some/lfnA", "/path/to/some/lfnB",
                       "/path/to/some/lfnC"]
-        self.verifyDBSBufferContents(dbsParents, jobReports[0].files)
+        self.verifyDBSBufferContents("Merge", dbsParents, jobReports[0].files)
 
         self.recoOutputFileset.loadData()
         self.mergedRecoOutputFileset.loadData()
@@ -889,18 +909,20 @@ class JobAccountantTest(unittest.TestCase):
 
         self.jobs = []
         for i in range(100):
-            newFile = File(lfn = makeUUID(), size = 600000, events = 60000,
-                           locations = "cmssrm.fnal.gov", merged = True)
-            newFile.create()
-            inputFileset.addFile(newFile)
-
             testJobGroup = JobGroup(subscription = self.testSubscription)
             testJobGroup.create()
 
-            testJob = Job(name = makeUUID(), files = [newFile])
+            testJob = Job(name = makeUUID())
             testJob.create(group = testJobGroup)
             testJob["state"] = "complete"
             self.stateChangeAction.execute(jobs = [testJob])
+
+            newFile = File(lfn = "/some/lfn/for/job/%s" % testJob["id"], size = 600000, events = 60000,
+                           locations = "cmssrm.fnal.gov", merged = True)
+            newFile.create()
+            inputFileset.addFile(newFile)
+            testJob.addFile(newFile)
+            testJob.associateFiles()
 
             fwjrPath = os.path.join(os.getenv("WMCOREBASE"), "test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports",
                                                 "FrameworkJobReport-45%02d.xml" % i)
@@ -944,6 +966,9 @@ class JobAccountantTest(unittest.TestCase):
             
             self.verifyFileMetaData(jobID, jobReports[0].files)
             self.verifyJobSuccess(jobID)
+            self.verifyDBSBufferContents("Processing",
+                                         ["/some/lfn/for/job/%s" % jobID],
+                                         jobReports[0].files)
 
         return
 
@@ -981,6 +1006,9 @@ class JobAccountantTest(unittest.TestCase):
             
             self.verifyFileMetaData(jobID, jobReports[0].files)
             self.verifyJobSuccess(jobID)
+            self.verifyDBSBufferContents("Processing",
+                                         ["/some/lfn/for/job/%s" % jobID],
+                                         jobReports[0].files)
 
         return
 
@@ -1018,6 +1046,9 @@ class JobAccountantTest(unittest.TestCase):
             
             self.verifyFileMetaData(jobID, jobReports[0].files)
             self.verifyJobSuccess(jobID)
+            self.verifyDBSBufferContents("Processing",
+                                         ["/some/lfn/for/job/%s" % jobID],
+                                         jobReports[0].files)
 
         return
 
@@ -1055,6 +1086,9 @@ class JobAccountantTest(unittest.TestCase):
             
             self.verifyFileMetaData(jobID, jobReports[0].files)
             self.verifyJobSuccess(jobID)
+            self.verifyDBSBufferContents("Processing",
+                                         ["/some/lfn/for/job/%s" % jobID],
+                                         jobReports[0].files)
 
         return
     

@@ -22,5 +22,5 @@ class WMBSRESTModel(RESTModel):
     def handle_get(self, args=[], kwargs={}):
         if args[0].lower() == 'jobs':
             jbs = JobsByState(self, self.dbi)
-            jobcounts = jbs.execute()
-            return {'message': jobcounts}
+
+            return jbs.execute()

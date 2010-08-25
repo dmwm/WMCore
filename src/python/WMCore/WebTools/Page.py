@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.25 2009/05/12 20:48:42 metson Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: Page.py,v 1.26 2009/05/12 20:55:15 metson Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import md5
 import urllib
@@ -163,8 +163,7 @@ def exposedasxml (func):
         string = ''
         for key in keys:
             string = '%s %s="%s"' % (string, key, das[key])
-        header = """%s
-<das %s>""" % (header, string)
+        header = "%s\n<das %s>" % (header, string)
 
         cherrypy.response.headers['ETag'] = das['results'].__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/xml"

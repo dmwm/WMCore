@@ -37,8 +37,8 @@ def rerecoWorkload(workloadName, arguments):
     #  //
     # // Processing controls
     #//  TODO: Address defaults etc/exception handling
+    writeDataTiers = arguments.get("OutputTiers", ['RECO', 'ALCARECO'])
     owner = arguments.get("Owner", "DataOps")
-    writeDataTiers = arguments.get("OutputTiers", ['RECO'])
     acquisitionEra = arguments.get("AcquisitionEra", "Teatime09")
     globalTagSetting = arguments.get("GlobalTag","GR09_P_V7::All")
     lfnCategory = arguments.get("LFNCategory","/store/data")
@@ -97,7 +97,7 @@ def rerecoWorkload(workloadName, arguments):
     rerecoLogArch = rerecoCmssw.addStep("logArch1")
     rerecoLogArch.setStepType("LogArchive")
     rereco.applyTemplates()
-    rereco.setSplittingAlgorithm("EventBased", events_per_job = 10000)
+    rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
     rereco.addGenerator("BasicNaming")
     rereco.addGenerator("BasicCounter")
     rereco.setTaskType("Processing")
@@ -197,7 +197,7 @@ def rerecoWorkload(workloadName, arguments):
         mergeRecoLogArch.setStepType("LogArchive")
 
         mergeReco.applyTemplates()
-        mergeReco.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 4294967296)  
+        mergeReco.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 4294967296, min_merge_size = 500000000)  
         mergeReco.addGenerator("BasicNaming")
         mergeReco.addGenerator("BasicCounter")
         mergeReco.setTaskType("Merge")
@@ -237,7 +237,7 @@ def rerecoWorkload(workloadName, arguments):
         mergeAlca.addGenerator("BasicCounter")
         mergeAlca.setTaskType("Merge")  
         mergeAlca.applyTemplates()
-        mergeAlca.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 4294967296)          
+        mergeAlca.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 4294967296, min_merge_size = 500000000)            
 
         mergeAlcaCmsswHelper = mergeAlcaCmssw.getTypeHelper()
         mergeAlcaCmsswHelper.cmsswSetup(

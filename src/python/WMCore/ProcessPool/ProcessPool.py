@@ -5,8 +5,8 @@ _ProcessPool_
 
 """
 
-__revision__ = "$Id: ProcessPool.py,v 1.14 2010/06/28 21:27:59 sryu Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: ProcessPool.py,v 1.15 2010/08/04 15:17:14 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import subprocess
 import sys
@@ -49,6 +49,9 @@ class WorkerProcess:
         Handle writing to the stdin of the subproc
 
         """
+
+        logging.info("Enqueue called with work")
+        logging.info(work)
 
         self.subproc.stdin.write("%s\n" % work)
         self.subproc.stdin.flush()
@@ -118,20 +121,49 @@ class ProcessPool:
         self.jsonHandler = JSONRequests()
         
         # heartbeat should be registered at this point
-        self.heartbeatAPI = HeartbeatAPI(config.Agent.componentName)
+        self.heartbeatAPI   = HeartbeatAPI(config.Agent.componentName)
         self.slaveClassName = slaveClassName
-        #Grab the python version from the current version
-        #Assume naming convention pythonA.B, i.e., python2.4 for v2.4.X
+        self.componentDir   = componentDir
+        self.config         = config
+        # Grab the python version from the current version
+        # Assume naming convention pythonA.B, i.e., python2.4 for v2.4.X
         majorVersion = sys.version_info[0]
         minorVersion = sys.version_info[1]
 
         if majorVersion and minorVersion:
-            versionString = "python%i.%i" % (majorVersion, minorVersion)
+            self.versionString = "python%i.%i" % (majorVersion, minorVersion)
         else:
-            versionString = "python2.4"
+            self.versionString = "python2.4"
 
         self.workers = []
-        slaveArgs = [versionString, __file__, self.slaveClassName]
+        self.nSlaves = totalSlaves
+        self.slaveInit = slaveInit
+        self.namespace = namespace
+
+
+        # Now actually create the slaves
+        self.createSlaves()
+
+
+        return
+
+
+    def createSlaves(self):
+        """
+        _createSlaves_
+
+        Create the slaves by using the values from __init__()
+        Moving it into a separate function allows us to restart
+        all of them.
+        """
+
+        totalSlaves    = self.nSlaves
+        slaveClassName = self.slaveClassName
+        config         = self.config
+        slaveInit      = self.slaveInit
+        namespace      = self.namespace
+        
+        slaveArgs = [self.versionString, __file__, self.slaveClassName]
         if hasattr(config.CoreDatabase, "socket"):
             socket = config.CoreDatabase.socket
         else:
@@ -148,7 +180,7 @@ class ProcessPool:
         dbConfig = {"dialect": dialect,
                     "connectUrl": config.CoreDatabase.connectUrl,
                     "socket": socket,
-                    "componentDir": componentDir}
+                    "componentDir": self.componentDir}
         if namespace:
             # Then add a namespace to the config
             dbConfig['namespace'] = namespace
@@ -180,7 +212,8 @@ class ProcessPool:
             self.heartbeatAPI.updateWorkerHeartbeat(workerName, pid = slaveProcess.pid)
             totalSlaves -= 1
             count += 1
-        
+
+
         return
     
     def _subProcessName(self, slaveClassName, sequence):
@@ -216,6 +249,9 @@ class ProcessPool:
 
         if workPerWorker == 0:
             workPerWorker = 1
+
+        print "About to enqueue"
+        print len(work)
 
         workIndex = 0
         while(len(work) > workIndex):
@@ -277,6 +313,7 @@ class ProcessPool:
                             self._subProcessName(self.slaveClassName, 
                                                  self.dequeueIndex),
                             state = "Done")
+
                 if output == None:
                     logging.info("No output from worker node line in ProcessPool")
                     continue
@@ -291,6 +328,19 @@ class ProcessPool:
                 self.dequeueIndex = (self.dequeueIndex + 1) % len(self.workers)
 
         return completedWork
+
+
+    def restart(self):
+        """
+        _restart_
+
+        Delete everything and restart all pools
+        """
+
+        self.__del__()
+        self.createSlaves()
+        return
+        
 
 def setupLogging(componentDir):
     """
@@ -381,6 +431,9 @@ if __name__ == "__main__":
             logging.error("Error decoding: %s" % str(ex))
             break
 
+        #logging.info("Have parameters")
+        #logging.info(input)
+
         try:
             output = slaveClass(parameters = input)
         except Exception, ex:
@@ -403,7 +456,7 @@ if __name__ == "__main__":
             else:
                 encodedOutput = jsonHandler.encode(output)
                 sys.stdout.write("%s\n" % encodedOutput)
-                sys.stdout.flush()                
+                sys.stdout.flush()
 
     logging.info("Process with PID %s finished" %(os.getpid()))
     sys.exit(0)

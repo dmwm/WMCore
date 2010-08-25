@@ -216,7 +216,7 @@ def nodeReader(node):
 
     processSMT = processSMType(processLfnPfn)
 
-    processor = processStorageMapping(processSMT)
+    processor = expandPhEDExNode(processStorageMapping(processSMT))
 
     processor.send((report, node))
 
@@ -224,18 +224,39 @@ def nodeReader(node):
 
 
 @coroutine
+def expandPhEDExNode(target):
+    """
+    _expandPhEDExNode_
+    
+    If pulling a TFC from the PhEDEx DS, its wrapped in a top level <phedex> node,
+    this routine handles that extra node if it exists
+    """
+    while True:
+        report, node = (yield)
+        sentPhedex = False
+        for subnode in node.children:
+            if subnode.name == "phedex":
+                target.send( (report, subnode) )
+                sentPhedex = True
+        if not sentPhedex:    
+            target.send( (report, node) )
+
+@coroutine
 def processStorageMapping(target):
     """
     Process everything
 
     """
-
     while True:
         report, node = (yield)
         for subnode in node.children:
             if subnode.name == 'storage-mapping':
-                target.send((report, subnode))
+                target.send( (report, subnode))
 
+                    
+
+                             
+            
 
 @coroutine
 def processSMType(targets):
@@ -254,7 +275,7 @@ def processSMType(targets):
                 targets['result'].send((tmpReport, subnode.attrs.get('result', None)))
                 targets['chain'].send((tmpReport, subnode.attrs.get('chain', None)))
                 report.append(tmpReport)
-        #print report
+        
 
                 
 @coroutine
@@ -301,11 +322,7 @@ def processChain():
 
     while True:
         report, value = (yield)
-        report['chain'] = value
-
-
-
-
-
-
-
+        if value == "":
+            report['chain'] = None
+        else:
+            report['chain'] = value

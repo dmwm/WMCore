@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.19 2009/11/20 23:00:01 sryu Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.20 2009/11/30 20:13:34 sryu Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import threading
 
@@ -23,7 +23,7 @@ class CreateWorkQueueBase(DBCreator):
     requiredTables = ["01wq_wmspec",
                       "02wq_wmtask",
                       "03wq_data",
-                      "04wq_child_queues",
+                      "04wq_queues",
                       "05wq_element",
                       "06wq_data_parentage",
                       "07wq_site",
@@ -76,8 +76,8 @@ class CreateWorkQueueBase(DBCreator):
              UNIQUE (name)
              )"""
 
-        self.create["04wq_child_queues"] = \
-          """CREATE TABLE wq_child_queues (
+        self.create["04wq_queues"] = \
+          """CREATE TABLE wq_queues (
              id               INTEGER    NOT NULL,
              url              VARCHAR(255) NOT NULL,
              PRIMARY KEY (id),
@@ -162,7 +162,7 @@ class CreateWorkQueueBase(DBCreator):
         
         self.constraints["FK_wq_element_child"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_child
-                 FOREIGN KEY(child_queue) REFERENCES wq_child_queues(id)"""
+                 FOREIGN KEY(child_queue) REFERENCES wq_queues(id)"""
         
         self.constraints["FK_wq_element_valid"] = \
               """ALTER TABLE wq_element_site_validation ADD CONSTRAINT FK_wq_element_valid

@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.7 2009/11/20 22:59:58 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: GetWork.py,v 1.8 2009/11/30 20:13:33 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import random
 import time
@@ -60,5 +60,5 @@ class GetWork(DBFormatter):
                                     result['num_jobs'] <= resources[site]:
                 acquired.append(result)
                 acquired_ids.append(result['id'])
-                resources[site] = resources[site] - result['num_jobs']
+                resources[site] = int(resources[site]) - result['num_jobs']
         return acquired

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.35 2009/11/24 22:57:49 sryu Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: WorkQueue.py,v 1.36 2009/11/30 20:13:34 sryu Exp $"
+__version__ = "$Revision: 1.36 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -203,7 +203,7 @@ class WorkQueue(WorkQueueBase):
         results = []
         subResults = []
         matches = self._match(siteJobs)
-         
+        
         wmSpecInfoAction = self.daofactory(classname = "WMSpec.GetWMSpecInfo")
         
         for match in matches:

@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetElements.py,v 1.7 2009/11/20 22:59:58 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: GetElements.py,v 1.8 2009/11/30 20:13:33 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
@@ -18,7 +18,7 @@ class GetElements(DBFormatter):
                     we.update_time, we.subscription_id, we.parent_queue_id,
                     wq.url child_url
                 FROM wq_element we
-                LEFT JOIN wq_child_queues wq ON we.child_queue = wq.id
+                LEFT JOIN wq_queues wq ON we.child_queue = wq.id
           """
 #                ORDER BY priority ASC
     def execute(self, status = None,

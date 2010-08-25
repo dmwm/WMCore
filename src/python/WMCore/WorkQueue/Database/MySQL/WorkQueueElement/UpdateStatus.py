@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.UpdateStatus
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateStatus.py,v 1.5 2009/11/20 22:59:58 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: UpdateStatus.py,v 1.6 2009/11/30 20:13:33 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 
 from WMCore.Database.DBFormatter import DBFormatter
@@ -15,10 +15,10 @@ import time
 
 class UpdateStatus(DBFormatter):
     sql1 = """UPDATE wq_element SET status = :status, update_time = :now"""
-    sql2 = """, child_queue = (SELECT id FROM wq_child_queues WHERE url = :queue)"""
+    sql2 = """, child_queue = (SELECT id FROM wq_queues WHERE url = :queue)"""
     sql3 = """ WHERE %s = :id"""
 
-    queue_insert_sql = """INSERT IGNORE INTO wq_child_queues (url) VALUES (:queue)"""
+    queue_insert_sql = """INSERT IGNORE INTO wq_queues (url) VALUES (:queue)"""
 
     def execute(self, status, ids, id_type = 'id',
                 child_queue = None,

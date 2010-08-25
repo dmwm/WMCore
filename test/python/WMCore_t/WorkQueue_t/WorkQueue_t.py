@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.23 2009/12/15 17:08:39 sryu Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.24 2009/12/16 22:31:49 sryu Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import unittest
 import os
@@ -355,7 +355,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertNotEqual(before, self.localQueue.lastReportToParent)
 
         # finish work locally and propagate to global
-        self.localQueue.doneWork(*[str(x['element_id']) for x in work])
+        self.localQueue.doneWork([str(x['element_id']) for x in work])
         self.localQueue.updateParent()
         self.assertEqual(len(self.globalQueue.status('Done')), 3)
 

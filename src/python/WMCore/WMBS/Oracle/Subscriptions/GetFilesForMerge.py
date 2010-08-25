@@ -6,8 +6,8 @@ Oracle implementation of Subscription.GetFilesForMerge
 """
 
 __all__ = []
-__revision__ = "$Id: GetFilesForMerge.py,v 1.6 2009/11/09 15:27:12 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: GetFilesForMerge.py,v 1.7 2010/03/08 17:06:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetFilesForMerge import GetFilesForMerge as GetFilesForMergeMySQL
 
@@ -26,35 +26,44 @@ class GetFilesForMerge(GetFilesForMergeMySQL):
                     wmbs_file_details.first_event AS file_first_event,
                     wmbs_file_runlumi_map.run AS file_run,
                     wmbs_file_runlumi_map.lumi AS file_lumi,
-                    wmbs_jobgroup.id AS group_id
+                    MIN(wmbs_file_parent.parent) AS file_parent
              FROM wmbs_file_details
-             INNER JOIN wmbs_file_runlumi_map
-               ON wmbs_file_details.id = wmbs_file_runlumi_map.fileid
-             INNER JOIN wmbs_fileset_files
-               ON wmbs_file_details.id = wmbs_fileset_files.fileid
-             INNER JOIN wmbs_jobgroup
-               ON wmbs_fileset_files.fileset = wmbs_jobgroup.output
-             WHERE wmbs_file_details.id IN
-               (SELECT fileid FROM wmbs_fileset_files INNER JOIN wmbs_subscription
-                  ON wmbs_fileset_files.fileset = wmbs_subscription.fileset
-                WHERE wmbs_subscription.id = :p_1)
-               AND wmbs_jobgroup.id NOT IN
-                 (SELECT jobgroup FROM
-                   (SELECT wmbs_job.jobgroup AS jobgroup , COUNT(*) AS total FROM wmbs_job
-                      INNER JOIN wmbs_job_state ON wmbs_job.state = wmbs_job_state.id
-                    WHERE wmbs_job.outcome = 0 OR wmbs_job_state.name != 'cleanout'
-                    GROUP BY wmbs_job.jobgroup) incomplete
-                  WHERE incomplete.total != 0)  
-               AND NOT EXISTS
-                 (SELECT * FROM wmbs_sub_files_acquired WHERE
-                   wmbs_file_details.id = wmbs_sub_files_acquired.fileid AND
-                   :p_1 = wmbs_sub_files_acquired.subscription)
-               AND NOT EXISTS
-                 (SELECT * FROM wmbs_sub_files_complete WHERE
-                   wmbs_file_details.id = wmbs_sub_files_complete.fileid AND
-                   :p_1 = wmbs_sub_files_complete.subscription)
-               AND NOT EXISTS
-                 (SELECT * FROM wmbs_sub_files_failed WHERE
-                   wmbs_file_details.id = wmbs_sub_files_failed.fileid AND
-                   :p_1 = wmbs_sub_files_failed.subscription)
-             """
+             INNER JOIN wmbs_file_runlumi_map ON
+               wmbs_file_details.id = wmbs_file_runlumi_map.fileid
+             INNER JOIN
+               (SELECT wmbs_fileset_files.fileid AS fileid FROM wmbs_fileset_files
+                  INNER JOIN wmbs_subscription ON
+                    wmbs_fileset_files.fileset = wmbs_subscription.fileset
+                  LEFT OUTER JOIN wmbs_sub_files_acquired ON
+                    wmbs_fileset_files.fileid = wmbs_sub_files_acquired.fileid AND
+                    wmbs_sub_files_acquired.subscription = wmbs_subscription.id
+                  LEFT OUTER JOIN wmbs_sub_files_complete ON
+                    wmbs_fileset_files.fileid = wmbs_sub_files_complete.fileid AND
+                    wmbs_sub_files_complete.subscription = wmbs_subscription.id
+                  LEFT OUTER JOIN wmbs_sub_files_failed ON
+                    wmbs_fileset_files.fileid = wmbs_sub_files_failed.fileid AND
+                    wmbs_sub_files_failed.subscription = wmbs_subscription.id                    
+                  WHERE wmbs_subscription.id = :p_1 AND
+                        wmbs_sub_files_acquired.fileid IS NULL AND
+                        wmbs_sub_files_complete.fileid IS NULL AND
+                        wmbs_sub_files_failed.fileid IS NULL) merge_fileset ON
+               wmbs_file_details.id = merge_fileset.fileid
+             LEFT OUTER JOIN wmbs_file_parent ON
+               wmbs_file_details.id = wmbs_file_parent.child
+             WHERE wmbs_file_details.id NOT IN
+               (SELECT child FROM wmbs_file_parent
+                  INNER JOIN wmbs_job_assoc ON
+                    wmbs_file_parent.parent = wmbs_job_assoc.fileid
+                  INNER JOIN wmbs_job ON
+                    wmbs_job_assoc.job = wmbs_job.id
+                  INNER JOIN wmbs_jobgroup ON
+                    wmbs_job.jobgroup = wmbs_jobgroup.id
+                  INNER JOIN wmbs_job_state ON
+                    wmbs_job.state = wmbs_job_state.id
+                WHERE wmbs_job.outcome = 0 OR
+                      wmbs_job_state.name != 'cleanout' AND
+                      wmbs_jobgroup.subscription = :p_1)
+             GROUP BY wmbs_file_details.id, wmbs_file_details.events,
+                    wmbs_file_details.filesize, wmbs_file_details.lfn,
+                    wmbs_file_details.first_event, wmbs_file_runlumi_map.run,
+                    wmbs_file_runlumi_map.lumi"""

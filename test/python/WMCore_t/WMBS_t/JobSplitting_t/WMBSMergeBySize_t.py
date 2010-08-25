@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.10 2009/12/16 18:55:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.11 2010/03/08 17:06:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 import os
@@ -27,20 +27,16 @@ from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
 
-class EventBasedTest(unittest.TestCase):
+class WMBSMergeBySize(unittest.TestCase):
     """
-    _EventBasedTest_
+    _WMBSMergeBySize_
 
-    Test event based job splitting.
     """
-
-    
     def setUp(self):
         """
         _setUp_
 
-        Create two subscriptions: One that contains a single file and one that
-        contains multiple files.
+        Boiler plate DB setup.
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
@@ -60,139 +56,162 @@ class EventBasedTest(unittest.TestCase):
 
         Clear out WMBS.
         """
-        myThread = threading.currentThread()
-
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-            
-        myThread.transaction.begin()
-            
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-            
-        myThread.transaction.commit()
+        self.testInit.clearDatabase()
         return
 
     def stuffWMBS(self):
         """
         _stuffWMBS_
 
-        Insert some dummy jobs, jobgroups, filesets, files and subscriptions
-        into WMBS to test merging.  Three completed job groups each containing
-        several files are injected.  Another incomplete job group is also
-        injected.  Also files are added to the "Mergeable" subscription as well
-        as to the output fileset for their jobgroups.
         """
         changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
 
-        bunkFileset = Fileset(name = "bunkFileset")
-        bunkFileset.create()
+        inputFileset = Fileset(name = "inputFileset")
+        inputFileset.create()
 
-        bunkWorkflow = Workflow(name = "bunkWorkflow", spec = "bunk",
-                                owner = "Steve", task="Test")
-        bunkWorkflow.create()
+        inputWorkflow = Workflow(name = "inputWorkflow", spec = "input",
+                                owner = "Steve", task = "Test")
+        inputWorkflow.create()
         
-        bunkSubscription = Subscription(fileset = bunkFileset,
-                                        workflow = bunkWorkflow)
-        bunkSubscription.create()
+        inputSubscription = Subscription(fileset = inputFileset,
+                                        workflow = inputWorkflow)
+        inputSubscription.create()
 
-        jobGroup1 = JobGroup(subscription = bunkSubscription)
+        parentFile1 = File(lfn = "parentFile1")
+        parentFile1.create()
+        parentFile2 = File(lfn = "parentFile2")
+        parentFile2.create() 
+        parentFile3 = File(lfn = "parentFile3")
+        parentFile3.create()
+        parentFile4 = File(lfn = "parentFile4")
+        parentFile4.create()        
+
+        jobGroup1 = JobGroup(subscription = inputSubscription)
         jobGroup1.create()
-        newJob = Job()
-        newJob.create(jobGroup1)
-        newJob["state"] = "cleanout"
-        newJob["oldstate"] = "new"
-        newJob["couch_record"] = "somejive"
-        newJob["retry_count"] = 0
-        newJob["outcome"] = "success"
-        newJob.save()
-        changeStateDAO.execute([newJob])
-        
-        jobGroup2 = JobGroup(subscription = bunkSubscription)
+        jobGroup2 = JobGroup(subscription = inputSubscription)
         jobGroup2.create()
-        newJob = Job()
-        newJob.create(jobGroup2)
-        newJob["state"] = "cleanout"
-        newJob["oldstate"] = "new"
-        newJob["couch_record"] = "somejive"
-        newJob["retry_count"] = 0
-        newJob["outcome"] = "success"
-        newJob.save()        
-        changeStateDAO.execute([newJob])
+        
+        testJob1 = Job()
+        testJob1.addFile(parentFile1)
+        testJob1.create(jobGroup1)
+        testJob1["state"] = "cleanout"
+        testJob1["oldstate"] = "new"
+        testJob1["couch_record"] = "somejive"
+        testJob1["retry_count"] = 0
+        testJob1["outcome"] = "success"
+        testJob1.save()
+        changeStateDAO.execute([testJob1])
+        
+        testJob2 = Job()
+        testJob2.addFile(parentFile2)
+        testJob2.create(jobGroup1)
+        testJob2["state"] = "cleanout"
+        testJob2["oldstate"] = "new"
+        testJob2["couch_record"] = "somejive"
+        testJob2["retry_count"] = 0
+        testJob2["outcome"] = "success"
+        testJob2.save()        
+        changeStateDAO.execute([testJob2])
 
-        jobGroup3 = JobGroup(subscription = bunkSubscription)
-        jobGroup3.create()
-        newJob = Job()
-        newJob.create(jobGroup3)
-        newJob["state"] = "cleanout"
-        newJob["oldstate"] = "new"
-        newJob["couch_record"] = "somejive"
-        newJob["retry_count"] = 0
-        newJob["outcome"] = "success"
-        newJob.save()        
-        changeStateDAO.execute([newJob])        
-        jobGroup4 = JobGroup(subscription = bunkSubscription)
-        jobGroup4.create()
-        newJob = Job()
-        newJob.create(jobGroup4)        
+        testJob3 = Job()
+        testJob3.addFile(parentFile3)
+        testJob3.create(jobGroup2)
+        testJob3["state"] = "cleanout"
+        testJob3["oldstate"] = "new"
+        testJob3["couch_record"] = "somejive"
+        testJob3["retry_count"] = 0
+        testJob3["outcome"] = "success"
+        testJob3.save()        
+        changeStateDAO.execute([testJob3])
+
+        testJob4 = Job()
+        testJob4.addFile(parentFile4)
+        testJob4.create(jobGroup2)
+        testJob4["state"] = "cleanout"
+        testJob4["oldstate"] = "new"
+        testJob4["couch_record"] = "somejive"
+        testJob4["retry_count"] = 0
+        testJob4["outcome"] = "failure"
+        testJob4.save()        
+        changeStateDAO.execute([testJob4])        
 
         file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0)
         file1.addRun(Run(1, *[45]))
+        file1.create()
+        file1.addParent(parentFile1["lfn"])
         file2 = File(lfn = "file2", size = 1024, events = 1024, first_event = 1024)
         file2.addRun(Run(1, *[45]))
+        file2.create()
+        file2.addParent(parentFile1["lfn"])
         file3 = File(lfn = "file3", size = 1024, events = 1024, first_event = 2048)
         file3.addRun(Run(1, *[45]))
+        file3.create()
+        file3.addParent(parentFile1["lfn"])
         file4 = File(lfn = "file4", size = 1024, events = 1024, first_event = 3072)        
         file4.addRun(Run(1, *[45]))
+        file4.create()
+        file4.addParent(parentFile1["lfn"]) 
 
         fileA = File(lfn = "fileA", size = 1024, events = 1024, first_event = 0)
         fileA.addRun(Run(1, *[46]))
+        fileA.create()
+        fileA.addParent(parentFile2["lfn"])
         fileB = File(lfn = "fileB", size = 1024, events = 1024, first_event = 1024)
         fileB.addRun(Run(1, *[46]))
+        fileB.create()
+        fileB.addParent(parentFile2["lfn"])
         fileC = File(lfn = "fileC", size = 1024, events = 1024, first_event = 2048)
         fileC.addRun(Run(1, *[46]))
-
+        fileC.create()
+        fileC.addParent(parentFile2["lfn"])
+        
         fileI = File(lfn = "fileI", size = 1024, events = 1024, first_event = 0)
         fileI.addRun(Run(2, *[46]))
+        fileI.create()
+        fileI.addParent(parentFile3["lfn"])
         fileII = File(lfn = "fileII", size = 1024, events = 1024, first_event = 1024)
         fileII.addRun(Run(2, *[46]))
+        fileII.create()
+        fileII.addParent(parentFile3["lfn"])
         fileIII = File(lfn = "fileIII", size = 1024, events = 1024, first_event = 2048)
         fileIII.addRun(Run(2, *[46]))
+        fileIII.create()
+        fileIII.addParent(parentFile3["lfn"])        
         fileIV = File(lfn = "fileIV", size = 1024, events = 1024, first_event = 3072)        
-        fileIV.addRun(Run(2, *[46]))        
+        fileIV.addRun(Run(2, *[46]))
+        fileIV.create()
+        fileIV.addParent(parentFile3["lfn"])
 
         fileX = File(lfn = "badFileA", size = 1024, events = 1024, first_event = 0)
         fileX.addRun(Run(1, *[47]))
+        fileX.create()
+        fileX.addParent(parentFile4["lfn"])
         fileY = File(lfn = "badFileB", size = 1024, events = 1024, first_event = 1024)
         fileY.addRun(Run(1, *[47]))
+        fileY.create()
+        fileY.addParent(parentFile4["lfn"])        
         fileZ = File(lfn = "badFileC", size = 1024, events = 1024, first_event = 2048)
         fileZ.addRun(Run(1, *[47]))
+        fileZ.create()
+        fileZ.addParent(parentFile4["lfn"])
 
         jobGroup1.output.addFile(file1)
         jobGroup1.output.addFile(file2)
         jobGroup1.output.addFile(file3)
         jobGroup1.output.addFile(file4)        
+        jobGroup1.output.addFile(fileA)
+        jobGroup1.output.addFile(fileB)
+        jobGroup1.output.addFile(fileC)
         jobGroup1.output.commit()
 
-        jobGroup2.output.addFile(fileA)
-        jobGroup2.output.addFile(fileB)
-        jobGroup2.output.addFile(fileC)
+        jobGroup2.output.addFile(fileI)
+        jobGroup2.output.addFile(fileII)
+        jobGroup2.output.addFile(fileIII)
+        jobGroup2.output.addFile(fileIV)        
+        jobGroup2.output.addFile(fileX)
+        jobGroup2.output.addFile(fileY)
+        jobGroup2.output.addFile(fileZ)
         jobGroup2.output.commit()
-
-        jobGroup3.output.addFile(fileI)
-        jobGroup3.output.addFile(fileII)
-        jobGroup3.output.addFile(fileIII)
-        jobGroup3.output.addFile(fileIV)        
-        jobGroup3.output.commit()                
-
-        jobGroup4.output.addFile(fileX)
-        jobGroup4.output.addFile(fileY)
-        jobGroup4.output.addFile(fileZ)
-        jobGroup4.output.commit()
 
         self.mergeFileset = Fileset(name = "mergeFileset")
         self.mergeFileset.create()
@@ -265,52 +284,56 @@ class EventBasedTest(unittest.TestCase):
                             max_merge_events = 20000)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned."
+               "ERROR: More than one JobGroup returned: %s" % len(result)
 
-        assert len(result[0].jobs) == 1, \
-               "ERROR: One job group should have been returned."
+        assert len(result[0].jobs) == 2, \
+               "Error: Two jobs should have been returned."
+        
+        goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
+                       "fileC"]
+        goldenFilesB = ["fileI", "fileII", "fileIII", "fileIV"]
 
-        jobFiles = list(result[0].jobs)[0].getFiles()
+        for job in result[0].jobs:
+            jobFiles = job.getFiles()
 
-        assert len(jobFiles) == 11, \
-               "ERROR: Merge job should contain 11 files."
+            if len(jobFiles) == len(goldenFilesA):
+                goldenFiles = goldenFilesA
+            else:
+                goldenFiles = goldenFilesB
 
-        goldenFiles = ["file1", "file2", "file3", "file4", "fileA", "fileB",
-                       "fileC", "fileI", "fileII", "fileIII", "fileIV"]
+            currentRun = 0
+            currentLumi = 0
+            currentEvent = 0
+            for file in jobFiles:
+                file.loadData()
+                assert file["lfn"] in goldenFiles, \
+                       "ERROR: Unknown file: %s" % file["lfn"]
+                goldenFiles.remove(file["lfn"])
 
-        currentRun = 0
-        currentLumi = 0
-        currentEvent = 0
-        for file in jobFiles:
-            file.loadData()
-            assert file["lfn"] in goldenFiles, \
-                   "ERROR: Unknown file: %s" % file["lfn"]
-            goldenFiles.remove(file["lfn"])
+                fileRun = list(file["runs"])[0].run
+                fileLumi = min(list(file["runs"])[0])
+                fileEvent = file["first_event"]
 
-            fileRun = list(file["runs"])[0].run
-            fileLumi = min(list(file["runs"])[0])
-            fileEvent = file["first_event"]
+                if currentRun == 0:
+                    currentRun = fileRun
+                    currentLumi = fileLumi
+                    currentEvent = fileEvent
+                    continue
 
-            if currentRun == 0:
-                currentRun = fileRun
-                currentLumi = fileLumi
-                currentEvent = fileEvent
-                continue
+                assert fileRun >= currentRun, \
+                       "ERROR: Files not sorted by run."
 
-            assert fileRun >= currentRun, \
-                   "ERROR: Files not sorted by run."
-
-            if fileRun == currentRun:
-                assert fileLumi >= currentLumi, \
-                       "ERROR: Files not ordered by lumi"
+                if fileRun == currentRun:
+                    assert fileLumi >= currentLumi, \
+                           "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
                     assert fileEvent >= currentEvent, \
                            "ERROR: Files not ordered by first event"
 
-            currentRun = fileRun
-            currentLumi = fileLumi
-            currentEvent = fileEvent
+                currentRun = fileRun
+                currentLumi = fileLumi
+                currentEvent = fileEvent
 
         return    
 
@@ -318,9 +341,10 @@ class EventBasedTest(unittest.TestCase):
         """
         _testMinMergeSize2_
 
-        Set the minimum merge size to be 11,263 bytes which is one byte less
-        than the sum of all the file sizes in the WMBS instance.  Verify that
-        one merge job containing all the files in the WMBS instance is produced.
+        Set the minimum merge size to be 7,167 bytes which is one byte less
+        than the sum of all the file sizes in the largest merge group in the
+        WMBS instance.  Verify that one merge job containing all the files in
+        the largest merge group is produced.
         """
         self.stuffWMBS()
 
@@ -328,22 +352,23 @@ class EventBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 11263, max_merge_size = 20000,
+        result = jobFactory(min_merge_size = 7167, max_merge_size = 20000,
                             max_merge_events = 20000)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned."
+               "ERROR: More than one JobGroup returned: %d" % len(result)
 
         assert len(result[0].jobs) == 1, \
                "ERROR: One job should have been returned."
 
         jobFiles = list(result[0].jobs)[0].getFiles()
 
-        assert len(jobFiles) == 11, \
-               "ERROR: Merge job should contain 11 files."
-
         goldenFiles = ["file1", "file2", "file3", "file4", "fileA", "fileB",
-                       "fileC", "fileI", "fileII", "fileIII", "fileIV"]
+                       "fileC"]
+
+
+        assert len(jobFiles) == len(goldenFiles), \
+               "ERROR: Merge job should contain %d files." % len(goldenFiles)
 
         currentRun = 0
         currentLumi = 0
@@ -536,9 +561,8 @@ class EventBasedTest(unittest.TestCase):
         """
         _testMaxEvents1_
 
-        Set the maximum number of events per merge job to 1.  Verify that three
-        merge jobs are created, each one only containing the output of a single
-        job group.
+        Set the maximum number of events per merge job to 1.  
+
         """
         self.stuffWMBS()
 
@@ -553,7 +577,7 @@ class EventBasedTest(unittest.TestCase):
                "ERROR: More than one JobGroup returned: %s" % result
         
         assert len(result[0].jobs) == 3, \
-               "ERROR: Three jobs should have been returned."
+               "ERROR: Three jobs should have been returned: %s" % len(result[0].jobs)
 
         goldenFilesA = ["file1", "file2", "file3", "file4"]
         goldenFilesB = ["fileA", "fileB", "fileC"]

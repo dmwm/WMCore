@@ -6,8 +6,8 @@ Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
 
-__revision__ = "$Id: WMBSMergeBySize.py,v 1.7 2009/11/09 16:56:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WMBSMergeBySize.py,v 1.8 2010/03/08 17:06:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 
@@ -84,51 +84,43 @@ class WMBSMergeBySize(JobFactory):
         of files that must be merged together.  For example, the files that
         result from event based splitting jobs need to be merged back together.
         This method will return a list of merge units.  A merge unit is a
-        dictionary with the following keys: group_id, total_events, total_size,
+        dictionary with the following keys: file_parent, total_events, total_size,
         run, lumi, and files.  The files in the merge group are stored in a list
         under the files key.
         """
-        mergeUnits = []
+        mergeUnits = {}
 
         for mergeableFile in mergeableFiles:
             newMergeFile = {}
             for key in mergeableFile.keys():
                 newMergeFile[key] = mergeableFile[key]
 
-            if mergeableFile["group_id"] != None:
-                for mergeUnit in mergeUnits:
-                    if mergeUnit["group_id"] == mergeableFile["group_id"]:
-                        mergeUnit["files"].append(newMergeFile)
-                        mergeUnit["total_size"] += newMergeFile["file_size"]
-                        mergeUnit["total_events"] += newMergeFile["file_events"]
+            if not mergeUnits.has_key(newMergeFile["file_run"]):
+                mergeUnits[newMergeFile["file_run"]] = []
+                
+            for mergeUnit in mergeUnits[newMergeFile["file_run"]]:
+                if mergeUnit["file_parent"] == mergeableFile["file_parent"]:
+                    mergeUnit["files"].append(newMergeFile)
+                    mergeUnit["total_size"] += newMergeFile["file_size"]
+                    mergeUnit["total_events"] += newMergeFile["file_events"]
 
-                        if mergeableFile["file_run"] < mergeUnit["run"] or \
+                    if mergeableFile["file_run"] < mergeUnit["run"] or \
                            (mergeableFile["file_run"] == mergeUnit["run"] and \
                             mergeableFile["file_lumi"] < mergeUnit["lumi"]):
-                            newMergeUnit["run"] = newMergeFile["file_run"]
-                            newMergeUnit["lumi"] = newMergeFile["file_lumi"]
+                        newMergeUnit["run"] = newMergeFile["file_run"]
+                        newMergeUnit["lumi"] = newMergeFile["file_lumi"]
                             
-                        break
-                else:
-                    newMergeUnit = {}
-                    newMergeUnit["group_id"] = newMergeFile["group_id"]
-                    newMergeUnit["total_events"] = newMergeFile["file_events"]
-                    newMergeUnit["total_size"] = newMergeFile["file_size"]
-                    newMergeUnit["run"] = newMergeFile["file_run"]
-                    newMergeUnit["lumi"] = newMergeFile["file_lumi"]
-                    newMergeUnit["files"] = []
-                    newMergeUnit["files"].append(newMergeFile)
-                    mergeUnits.append(newMergeUnit)
+                    break
             else:
                 newMergeUnit = {}
-                newMergeUnit["group_id"] = -1
+                newMergeUnit["file_parent"] = newMergeFile["file_parent"]
                 newMergeUnit["total_events"] = newMergeFile["file_events"]
                 newMergeUnit["total_size"] = newMergeFile["file_size"]
                 newMergeUnit["run"] = newMergeFile["file_run"]
-                newMergeUnit["lumi"] = newMergeFile["file_lumi"]                
+                newMergeUnit["lumi"] = newMergeFile["file_lumi"]
                 newMergeUnit["files"] = []
                 newMergeUnit["files"].append(newMergeFile)
-                mergeUnits.append(newMergeUnit)
+                mergeUnits[newMergeFile["file_run"]].append(newMergeUnit)
 
         return mergeUnits
 
@@ -214,9 +206,9 @@ class WMBSMergeBySize(JobFactory):
         mergeableFiles = mergeDAO.execute(self.subscription["id"])
 
         mergeUnits = self.defineMergeUnits(mergeableFiles)
-        mergeUnits.sort(mergeUnitCompare)
 
         self.newGroup()
-        self.defineMergeJobs(mergeUnits)
+        for runNumber in mergeUnits.keys():
+            self.defineMergeJobs(mergeUnits[runNumber])
 
         return

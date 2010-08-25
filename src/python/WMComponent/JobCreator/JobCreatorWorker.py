@@ -11,8 +11,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.16 2010/08/02 21:14:22 mnorman Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.17 2010/08/02 21:39:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import threading
 import logging
@@ -22,8 +22,6 @@ import os.path
 
 import gc
 import sys
-import objgraph
-import pdb
 
 import cPickle
 

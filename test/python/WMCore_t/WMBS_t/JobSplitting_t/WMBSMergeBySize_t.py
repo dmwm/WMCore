@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.2 2009/03/20 14:42:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.3 2009/03/29 23:22:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 import unittest
@@ -175,33 +175,33 @@ class EventBasedTest(unittest.TestCase):
         jobGroup4.groupoutput.addFile(fileZ)
         jobGroup4.groupoutput.commit()
 
-        mergeFileset = Fileset(name = "mergeFileset")
-        mergeFileset.create()
+        self.mergeFileset = Fileset(name = "mergeFileset")
+        self.mergeFileset.create()
 
         mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
                                  owner = "Steve")
         mergeWorkflow.create()
         
-        self.mergeSubscription = Subscription(fileset = mergeFileset,
+        self.mergeSubscription = Subscription(fileset = self.mergeFileset,
                                               workflow = mergeWorkflow,
                                               split_algo = "WMBSMergeBySize")
         self.mergeSubscription.create()
         
-        mergeFileset.addFile(file1)
-        mergeFileset.addFile(file2)
-        mergeFileset.addFile(file3)
-        mergeFileset.addFile(file4)
-        mergeFileset.addFile(fileA)
-        mergeFileset.addFile(fileB)
-        mergeFileset.addFile(fileC)
-        mergeFileset.addFile(fileI)
-        mergeFileset.addFile(fileII)
-        mergeFileset.addFile(fileIII)
-        mergeFileset.addFile(fileIV)
-        mergeFileset.addFile(fileX)
-        mergeFileset.addFile(fileY)
-        mergeFileset.addFile(fileZ)        
-        mergeFileset.commit()
+        self.mergeFileset.addFile(file1)
+        self.mergeFileset.addFile(file2)
+        self.mergeFileset.addFile(file3)
+        self.mergeFileset.addFile(file4)
+        self.mergeFileset.addFile(fileA)
+        self.mergeFileset.addFile(fileB)
+        self.mergeFileset.addFile(fileC)
+        self.mergeFileset.addFile(fileI)
+        self.mergeFileset.addFile(fileII)
+        self.mergeFileset.addFile(fileIII)
+        self.mergeFileset.addFile(fileIV)
+        self.mergeFileset.addFile(fileX)
+        self.mergeFileset.addFile(fileY)
+        self.mergeFileset.addFile(fileZ)        
+        self.mergeFileset.commit()
 
         return
 
@@ -229,6 +229,74 @@ class EventBasedTest(unittest.TestCase):
                "ERROR: No jobs should have been returned."
 
         return
+
+    def testMinMergeSize1a(self):
+        """
+        _testMinMergeSize1a_
+
+        Set the minimum merge size to be 20,000 bytes which is more than the
+        sum of all file sizes in the WMBS instance and mark the fileset as
+        closed.  Verify that one job containing all files is pushed out.
+        """
+        self.stuffWMBS()
+        self.mergeFileset.markOpen(False)
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.mergeSubscription)
+
+        result = jobFactory(min_merge_size = 20000, max_merge_size = 200000,
+                            max_merge_events = 20000)
+
+        assert len(result) == 1, \
+               "ERROR: More than one JobGroup returned."
+
+        assert len(result[0].jobs) == 1, \
+               "ERROR: One job group should have been returned."
+
+        jobFiles = list(result[0].jobs)[0].getFiles()
+
+        assert len(jobFiles) == 11, \
+               "ERROR: Merge job should contain 11 files."
+
+        goldenFiles = ["file1", "file2", "file3", "file4", "fileA", "fileB",
+                       "fileC", "fileI", "fileII", "fileIII", "fileIV"]
+
+        currentRun = 0
+        currentLumi = 0
+        currentEvent = 0
+        for file in jobFiles:
+            file.loadData()
+            assert file["lfn"] in goldenFiles, \
+                   "ERROR: Unknown file: %s" % file["lfn"]
+            goldenFiles.remove(file["lfn"])
+
+            fileRun = list(file["runs"])[0].run
+            fileLumi = min(list(file["runs"])[0])
+            fileEvent = file["first_event"]
+
+            if currentRun == 0:
+                currentRun = fileRun
+                currentLumi = fileLumi
+                currentEvent = fileEvent
+                continue
+
+            assert fileRun >= currentRun, \
+                   "ERROR: Files not sorted by run."
+
+            if fileRun == currentRun:
+                assert fileLumi >= currentLumi, \
+                       "ERROR: Files not ordered by lumi"
+
+                if fileLumi == currentLumi:
+                    assert fileEvent > currentEvent, \
+                           "ERROR: Files not ordered by first event"
+
+            currentRun = fileRun
+            currentLumi = fileLumi
+            currentEvent = fileEvent
+
+        return    
 
     def testMinMergeSize2(self):
         """
@@ -261,11 +329,39 @@ class EventBasedTest(unittest.TestCase):
         goldenFiles = ["file1", "file2", "file3", "file4", "fileA", "fileB",
                        "fileC", "fileI", "fileII", "fileIII", "fileIV"]
 
-        for file in fileset.files:
+        currentRun = 0
+        currentLumi = 0
+        currentEvent = 0
+        for file in jobFiles:
+            file.loadData()
             assert file["lfn"] in goldenFiles, \
                    "ERROR: Unknown file: %s" % file["lfn"]
-
             goldenFiles.remove(file["lfn"])
+
+            fileRun = list(file["runs"])[0].run
+            fileLumi = min(list(file["runs"])[0])
+            fileEvent = file["first_event"]
+
+            if currentRun == 0:
+                currentRun = fileRun
+                currentLumi = fileLumi
+                currentEvent = fileEvent
+                continue
+
+            assert fileRun >= currentRun, \
+                   "ERROR: Files not sorted by run."
+
+            if fileRun == currentRun:
+                assert fileLumi >= currentLumi, \
+                       "ERROR: Files not ordered by lumi"
+
+                if fileLumi == currentLumi:
+                    assert fileEvent > currentEvent, \
+                           "ERROR: Files not ordered by first event"
+
+            currentRun = fileRun
+            currentLumi = fileLumi
+            currentEvent = fileEvent
 
         return
 
@@ -306,11 +402,40 @@ class EventBasedTest(unittest.TestCase):
             else:
                 goldenFiles = goldenFilesC
 
+            currentRun = 0
+            currentLumi = 0
+            currentEvent = 0
             for file in jobFiles:
+                file.loadData()
                 assert file["lfn"] in goldenFiles, \
                        "ERROR: Unknown file in merge jobs."
 
                 goldenFiles.remove(file["lfn"])
+
+            fileRun = list(file["runs"])[0].run
+            fileLumi = min(list(file["runs"])[0])
+            fileEvent = file["first_event"]
+
+            if currentRun == 0:
+                currentRun = fileRun
+                currentLumi = fileLumi
+                currentEvent = fileEvent
+                continue
+
+            assert fileRun >= currentRun, \
+                   "ERROR: Files not sorted by run."
+
+            if fileRun == currentRun:
+                assert fileLumi >= currentLumi, \
+                       "ERROR: Files not ordered by lumi"
+
+                if fileLumi == currentLumi:
+                    assert fileEvent > currentEvent, \
+                           "ERROR: Files not ordered by first event"
+
+            currentRun = fileRun
+            currentLumi = fileLumi
+            currentEvent = fileEvent
 
         assert len(goldenFilesA) == 0 and len(goldenFilesB) == 0 and \
                len(goldenFilesC) == 0, \
@@ -347,14 +472,43 @@ class EventBasedTest(unittest.TestCase):
         goldenFilesC = ["fileI", "fileII", "fileIII", "fileIV"]
 
         jobFiles = list(result[0].jobs)[0].getFiles()
-            
+
+        currentRun = 0
+        currentLumi = 0
+        currentEvent = 0
         for file in jobFiles:
+            file.loadData()
             if file["lfn"] in goldenFilesA:
                 goldenFilesA.remove(file["lfn"])
             elif file["lfn"] in goldenFilesB:
                 goldenFilesB.remove(file["lfn"])
             elif file["lfn"] in goldenFilesC:
                 goldenFilesC.remove(file["lfn"])
+
+            fileRun = list(file["runs"])[0].run
+            fileLumi = min(list(file["runs"])[0])
+            fileEvent = file["first_event"]
+
+            if currentRun == 0:
+                currentRun = fileRun
+                currentLumi = fileLumi
+                currentEvent = fileEvent
+                continue
+
+            assert fileRun >= currentRun, \
+                   "ERROR: Files not sorted by run."
+
+            if fileRun == currentRun:
+                assert fileLumi >= currentLumi, \
+                       "ERROR: Files not ordered by lumi"
+
+                if fileLumi == currentLumi:
+                    assert fileEvent > currentEvent, \
+                           "ERROR: Files not ordered by first event"
+
+            currentRun = fileRun
+            currentLumi = fileLumi
+            currentEvent = fileEvent
 
         assert len(goldenFilesB) == 0 and \
                (len(goldenFilesA) == 0 or len(goldenFilesC) == 0), \
@@ -399,11 +553,40 @@ class EventBasedTest(unittest.TestCase):
             else:
                 goldenFiles = goldenFilesC
 
+            currentRun = 0
+            currentLumi = 0
+            currentEvent = 0
             for file in jobFiles:
+                file.loadData()
                 assert file["lfn"] in goldenFiles, \
                        "ERROR: Unknown file in merge jobs."
 
                 goldenFiles.remove(file["lfn"])
+
+                fileRun = list(file["runs"])[0].run
+                fileLumi = min(list(file["runs"])[0])
+                fileEvent = file["first_event"]
+
+                if currentRun == 0:
+                    currentRun = fileRun
+                    currentLumi = fileLumi
+                    currentEvent = fileEvent
+                    continue
+
+                assert fileRun >= currentRun, \
+                       "ERROR: Files not sorted by run."
+
+                if fileRun == currentRun:
+                    assert fileLumi >= currentLumi, \
+                           "ERROR: Files not ordered by lumi"
+
+                    if fileLumi == currentLumi:
+                        assert fileEvent > currentEvent, \
+                               "ERROR: Files not ordered by first event"
+
+                currentRun = fileRun
+                currentLumi = fileLumi
+                currentEvent = fileEvent
 
         assert len(goldenFilesA) == 0 and len(goldenFilesB) == 0 and \
                len(goldenFilesC) == 0, \
@@ -440,14 +623,43 @@ class EventBasedTest(unittest.TestCase):
         goldenFilesC = ["fileI", "fileII", "fileIII", "fileIV"]
 
         jobFiles = list(result[0].jobs)[0].getFiles()
-            
+
+        currentRun = 0
+        currentLumi = 0
+        currentEvent = 0
         for file in jobFiles:
+            file.loadData()
             if file["lfn"] in goldenFilesA:
                 goldenFilesA.remove(file["lfn"])
             elif file["lfn"] in goldenFilesB:
                 goldenFilesB.remove(file["lfn"])
             elif file["lfn"] in goldenFilesC:
                 goldenFilesC.remove(file["lfn"])
+
+            fileRun = list(file["runs"])[0].run
+            fileLumi = min(list(file["runs"])[0])
+            fileEvent = file["first_event"]
+
+            if currentRun == 0:
+                currentRun = fileRun
+                currentLumi = fileLumi
+                currentEvent = fileEvent
+                continue
+
+            assert fileRun >= currentRun, \
+                   "ERROR: Files not sorted by run."
+
+            if fileRun == currentRun:
+                assert fileLumi >= currentLumi, \
+                       "ERROR: Files not ordered by lumi"
+
+                if fileLumi == currentLumi:
+                    assert fileEvent > currentEvent, \
+                           "ERROR: Files not ordered by first event"
+
+            currentRun = fileRun
+            currentLumi = fileLumi
+            currentEvent = fileEvent
 
         assert len(goldenFilesB) == 0 and \
                (len(goldenFilesA) == 0 or len(goldenFilesC) == 0), \

@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.8 2009/07/24 14:02:03 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: RESTModel.py,v 1.9 2009/07/24 14:19:04 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response
@@ -20,14 +20,16 @@ class RESTModel(WebAPI):
     def __init__(self, config = {}):
         WebAPI.__init__(self, config)
         self.methods = {'GET':{
-                               'ping': {'args':[],
-                               'call':self.ping,
-                               'version': 1}
+                               'ping': {'args':[], 
+                                        'kwargs': {},
+                                        'call':self.ping,
+                                        'version': 1}
                                },
                         'POST':{
-                               'echo': {'args':['default argument'],
-                               'call':self.echo,
-                               'version': 1},
+                               'echo': {'args':['default argument'], 
+                                        'kwargs': {'keyword':'defaults'},
+                                        'call':self.echo,
+                                        'version': 1},
                                }
                          }
         
@@ -42,12 +44,16 @@ class RESTModel(WebAPI):
         Call the appropriate method from self.methods for a given VERB. args are
         URI path elements, the first (arg[0]) is the method name, other elements
         (arg[1:]) are positional arguments to the method. kwargs are query string
-        parameters (e.g. method?thing1=abc&thing2=def).  
+        parameters (e.g. method?thing1=abc&thing2=def).
+          
+        Default arguments and keyword arguments are appended/updated to the data
+        provided by the client.
         """
         verb = verb.upper()
         if verb in self.methods.keys():
             method = args[0]
-            args = args[1:] + tuple(self.methods[verb][args[0]]['args'])
+            args = args[1:] + tuple(self.methods[verb][method]['args'])
+            kwargs = kwargs.update(self.methods[verb][method]['kwargs'])
             if method in self.methods[verb].keys():
                 data = self.methods[verb][method]['call'](args, kwargs)
                 return data 

@@ -41,6 +41,7 @@ class DaemonTest(unittest.TestCase):
     _publishAndGet = 10
 
     def setUp(self):
+
         "make a logger instance and create tables"
        
         self.testInit = TestInit(__file__)
@@ -58,38 +59,38 @@ class DaemonTest(unittest.TestCase):
         shutil.rmtree( self.tempDir, True )
 
                
-    def testA(self):
-        """
-        __testSubscribe__
-
-        Test daemon creation
-        """
-        raise SkipTest, "Nobody knows if this code is actually used"
-        # keep the parent alive
-        self.pid = createDaemon(self.tempDir, True)
-        try:
-            try:
-                if self.pid != 0 :
-                    print('Daemon created I am the parent')
-                    time.sleep(2)
-                    print('Going to destroy my daemon')
-                    details = Details(os.path.join(self.tempDir,"Daemon.xml"))
-                    print('Found Daemon details (sleeping for 10 secs.)')
-                    print(str(details.isAlive()))
-                    time.sleep(10)
-                    details.killWithPrejudice()
-                    print('Daemon killed')
-                else:
-                    while True:
-                        logging.debug('I am a daemon (wait 10 seconds)')
-                        time.sleep(1)
-            except:
-                pass
-        finally:
-            if self.pid == 0:
-                os._exit(-1)
-            else:
-                os.system('kill -9 %s' % self.pid)
+#    def testA(self):
+#        """
+#        __testSubscribe__
+#
+#        Test daemon creation
+#        """
+#        raise SkipTest, "Nobody knows if this code is actually used"
+#        # keep the parent alive
+#        self.pid = createDaemon(self.tempDir, True)
+#        try:
+#            try:
+#                if self.pid != 0 :
+#                    print('Daemon created I am the parent')
+#                    time.sleep(2)
+#                    print('Going to destroy my daemon')
+#                    details = Details(os.path.join(self.tempDir,"Daemon.xml"))
+#                    print('Found Daemon details (sleeping for 10 secs.)')
+#                    print(str(details.isAlive()))
+#                    time.sleep(10)
+#                    details.killWithPrejudice()
+#                    print('Daemon killed')
+#                else:
+#                    while True:
+#                        logging.debug('I am a daemon (wait 10 seconds)')
+#                        time.sleep(1)
+#            except:
+#                pass
+#        finally:
+#            if self.pid == 0:
+#                os._exit(-1)
+#            else:
+#                os.system('kill -9 %s' % self.pid)
 
 if __name__ == "__main__":
     unittest.main()

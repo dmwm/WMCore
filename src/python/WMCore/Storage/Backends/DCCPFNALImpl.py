@@ -8,8 +8,8 @@ Implementation of StageOutImpl interface for DCCPFNAL
 import os
 import commands
 
-from StageOut.Registry import registerStageOutImpl
-from StageOut.StageOutImpl import StageOutImpl
+from Storage.Registry import registerStageOutImpl
+from Storage.StageOutImpl import StageOutImpl
 
 from WMCore.WMException import WMException
 

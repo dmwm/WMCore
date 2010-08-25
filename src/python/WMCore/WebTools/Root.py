@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.53 2010/07/23 13:58:07 metson Exp $"
-__version__ = "$Revision: 1.53 $"
+__revision__ = "$Id: Root.py,v 1.54 2010/08/05 13:36:38 metson Exp $"
+__version__ = "$Revision: 1.54 $"
 
 # CherryPy
 import cherrypy
@@ -45,7 +45,7 @@ class Root(WMObject, Harness):
             self.appconfig = config.section_(webApp)            
             self.app = webApp
             self.secconfig = getattr(self.appconfig, "security")
-            self.serverConfig = config.section_(webApp).section_("server")
+            self.serverConfig = config.section_(webApp).section_("Webtools")
             self.coreDatabase = config.section_("CoreDatabase")
 
         return
@@ -74,7 +74,15 @@ class Root(WMObject, Harness):
 
         """
         configDict = self.serverConfig.dictionary_()
-
+        
+        configurables = ['engine', 'hooks', 'log', 'request', 'response', 
+                         'server', 'tools', 'wsgi', 'checker']
+        # Deal with "long hand" configuration variables
+        for i in configurables:
+            if i in configDict.keys():
+                for k, v in configDict[i].dictionary_().items():
+                    cpconfig["%s.%s" % (i,k)] = v
+        # which we then over write with short hand variables if necessary
         cpconfig["server.environment"] = configDict.get("environment", "production")
         if cpconfig["server.environment"] == "production":
             # If we're production these should be set regardless

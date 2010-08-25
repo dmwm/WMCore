@@ -22,7 +22,15 @@ config.component_('Webtools')
 #config.Webtools.environment = development
 #config.Webtools.thread_pool = 10
 # etc. Check Root.py for all configurables
-
+# The above short-hand can be replaced with explicit namespaced configuration
+# variables as described in http://www.cherrypy.org/wiki/ConfigAPI
+# for example
+config.Webtools.section_('server')
+config.Webtools.server.socket_timeout = 30 
+# Shorthand configurations take precedence over explicit ones, e.g. if you have
+#config.Webtools.server.socket_port = 8010
+#config.Webtools.port = 8011
+# your server will start on 8011
 # This is the application
 config.Webtools.application = 'WebtoolsDocs'
 

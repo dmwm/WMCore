@@ -5,11 +5,12 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: GlobalWorkQueueConfig.py,v 1.7 2010/05/28 15:47:27 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: GlobalWorkQueueConfig.py,v 1.8 2010/06/18 16:48:50 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
+import WMCore.WMInit
 from os import path
-
 from WMCore.Configuration import Configuration
+
 config = Configuration()
 
 config.section_("Agent")
@@ -32,6 +33,7 @@ config.WorkQueueManager.level = "GlobalQueue"
 # needs to change to request manager host
 config.WorkQueueManager.serviceUrl = 'cmssrv52.fnal.gov:8888'
 config.WorkQueueManager.queueParams = {'LocationRefreshInterval': 10}
+config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName}
 
 config.webapp_('WorkQueueService')
 config.WorkQueueService.server.port = 8570

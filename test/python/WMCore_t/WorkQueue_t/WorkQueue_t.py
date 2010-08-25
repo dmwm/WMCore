@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.17 2009/11/12 16:43:33 swakef Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.18 2009/11/20 22:54:10 sryu Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import unittest
 import os
@@ -36,7 +36,7 @@ def createSpec(name, path, dataset = None,
             task.data.constraints.sites.blacklist = blacklist
         if whitelist:
             task.data.constraints.sites.whitelist = whitelist
-        wmspec.data.dbs = 'http://example.com'
+        task.data.input.dataset.dbsurl = 'http://example.com'
     else:
         task.setSplittingAlgorithm("EventBased", size = 100)
         #FIXME need to add WMSpec to save total event properly for production j
@@ -381,12 +381,13 @@ class WorkQueueTest(WorkQueueTestCase):
         # Queue Work & check accepted
         self.queue.queueWork(specfile)
         self.assertEqual(numBlocks, len(self.queue))
-
+        self.queue.updateLocationInfo()
+        
         # Only SiteB in whitelist
         work = self.queue.getWork({'SiteA' : total})
-        self.assertEqual(len(work), 0) # Fail here till whitelist works
+        self.assertEqual(len(work), 0)
 
-        # Site B can run
+        # Site B can run 
         work = self.queue.getWork({'SiteB' : total})
         self.assertEqual(len(work), 2)
 
@@ -431,7 +432,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # mark work done & check this passes upto the top level
         self.localQueue.setStatus('Done',
-                                  [str(x['subscription_id']) for x in work])
+                                  [str(x['element_id']) for x in work], id_type = 'id')
 
 
     def testQueueChainingNegotiationFailures(self):
@@ -498,7 +499,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertNotEqual(before, self.localQueue.lastReportToParent)
 
         # finish work locally and propagate to global
-        self.localQueue.doneWork(*[str(x['subscription_id']) for x in work])
+        self.localQueue.doneWork(*[str(x['element_id']) for x in work])
         self.localQueue.updateParent()
         self.assertEqual(len(self.globalQueue.status('Done')), 3)
 

@@ -6,8 +6,8 @@ provides communication plugin for pilotjob
 
 """
 
-__revision__ = "$Id: NCommunication.py,v 1.3 2009/09/15 12:05:35 khawar Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: NCommunication.py,v 1.4 2009/09/16 12:37:43 khawar Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import threading

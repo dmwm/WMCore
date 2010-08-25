@@ -7,8 +7,8 @@ _PilotComponent_
 
 """
 
-__revision__ = "$Id: PilotJob.py,v 1.3 2009/09/15 12:05:35 khawar Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: PilotJob.py,v 1.4 2009/09/16 12:37:43 khawar Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import os
@@ -123,10 +123,22 @@ def getText(nodelist):
             rc = rc + node.data
     return rc
 
+
+##########################################
+#create the symlinks for /afs/cern.ch/cms
+#used for pilot cache lookup
+##########################################
+def setupSymlinks():
+    symlink_script = "create_cmsconf_links.sh"
+    print executeCommand("sh +x %s" % symlink_script)
+    print "updated CMS_PATH: %s" % os.environ.get('CMS_PATH')
+    os.putenv("CMS_PATH","%s/%s" % (os.getcwd(),"localConf"))
+    print "updated CMS_PATH: %s" % os.environ.get('CMS_PATH')  
+
 """
 Class represents PilotJob 
 """
-PILOT_WAIT_JOB_POLL=100
+PILOT_WAIT_JOB_POLL=120
 
 class PilotJob:  
     """ 
@@ -250,6 +262,7 @@ class PilotJob:
         #otherwise return some job list
         return None
 
+    
     ###################################
     # pilotEnvironmentCheck
     ###################################

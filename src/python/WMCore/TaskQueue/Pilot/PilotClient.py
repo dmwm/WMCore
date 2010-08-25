@@ -7,8 +7,8 @@ Act as bootstrap for pilot job
 
 """
 
-__revision__ = "$Id: PilotClient.py,v 1.4 2009/09/15 12:05:35 khawar Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: PilotClient.py,v 1.5 2009/09/16 12:37:43 khawar Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import os
@@ -57,8 +57,6 @@ if pilotConfig!= None or pilotConfig!='':
 print '2%s'%pilotConfig
 
 #print sys.path
-#getCMSSWInfo()
-#getScramInfo()
 pilotJob = PilotJob(pilotConfig)
 pilotJob.startPilot()
 #pilotJob.addToDataCache('Pilot','simplejson','/data/khawar/antonio/tqcode/reports/FrameworkJobReport.xml_4')

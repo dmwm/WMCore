@@ -3,13 +3,15 @@ import logging
 from WMCore.Configuration import Configuration
 from WMCore.WebTools.Root import Root
 
-def configureServer(restModel='WMCore.WebTools.RESTModel', das=False):
+def getDefaultConfig():
     dummycfg = Configuration()
     dummycfg.component_('Webtools')
     dummycfg.Webtools.application = 'UnitTests'
     dummycfg.Webtools.log_screen = False
     dummycfg.Webtools.access_file = '/dev/null'
     dummycfg.Webtools.error_file = '/dev/null'
+    dummycfg.Webtools.port = 8080
+    dummycfg.Webtools.host = "localhost"
     dummycfg.component_('UnitTests')
     dummycfg.UnitTests.title = 'CMS WMCore/WebTools Unit Tests'
     dummycfg.UnitTests.description = 'Dummy server for the running of unit tests' 
@@ -21,22 +23,31 @@ def configureServer(restModel='WMCore.WebTools.RESTModel', das=False):
     active.rest.templates = '/tmp'
     active.rest.database = 'sqlite://'
     active.rest.section_('model')
-    active.rest.model.object = restModel
+    active.rest.model.object = 'WMCore.WebTools.RESTModel'
     active.rest.section_('formatter')
-    if das:
-        active.rest.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
-    else:
-        active.rest.formatter.object = 'WMCore.WebTools.RESTFormatter'
+    active.rest.formatter.object = 'WMCore.WebTools.RESTFormatter'
     active.rest.formatter.templates = '/tmp'
+    return dummycfg
+
+def getDefaultServerURL():
+    return "http://localhost:8080/rest"
     
+def configureServer(restModel='WMCore.WebTools.RESTModel', das=False, config=None):
+    """
+    either pass custom config or use default config,
+    if default config is used, rest model and format time can be rest.
+    """
+    if config:
+        dummycfg = config
+    else:
+        dummycfg = getDefaultConfig()
+        active = dummycfg.UnitTests.views.active
+        active.rest.model.object = restModel
+        active.rest.section_('formatter')
+        if das:
+            active.rest.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
     rt = Root(dummycfg)
     return rt
-
-def setUpDummyRESTModel(func):
-    def wrap_function(self):
-        self.restModel = "DummyRESTModel"
-        func(self)
-    return wrap_function
 
 def setUpDAS(func):
     def wrap_function(self):

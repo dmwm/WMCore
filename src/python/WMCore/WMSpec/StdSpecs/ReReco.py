@@ -146,23 +146,23 @@ def rerecoWorkload(workloadName, arguments):
 
     if "RECO" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
-            "outputRECO", primaryDataset = inputPrimaryDataset,
+            "outputRECORECO", primaryDataset = inputPrimaryDataset,
             processedDataset = unmergedDatasetName,
             dataTier = "RECO",
             lfnBase = "%s/RECO/%s" % ( unmergedLfnBase, processedDatasetName)
         )   
 
-    if "ALCA" in writeDataTiers:
+    if "ALCARECO" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
-            "outputALCA", primaryDataset = inputPrimaryDataset,
+            "outputALCARECORECO", primaryDataset = inputPrimaryDataset,
             processedDataset = unmergedDatasetName,
-            dataTier = "ALCA",
-            lfnBase = "%s/ALCA/%s" % ( unmergedLfnBase, processedDatasetName)
+            dataTier = "ALCARECO",
+            lfnBase = "%s/ALCARECO/%s" % ( unmergedLfnBase, processedDatasetName)
         )  
 
     if "AOD" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
-            "outputAOD", primaryDataset = inputPrimaryDataset,
+            "outputAODRECO", primaryDataset = inputPrimaryDataset,
             processedDataset = unmergedDatasetName,
             dataTier = "AOD",
             lfnBase = "%s/AOD/%s" % ( unmergedLfnBase, processedDatasetName)
@@ -176,7 +176,7 @@ def rerecoWorkload(workloadName, arguments):
 
     # Emulation
     if emulationMode:
-        rerecoCmsswHelper.data.emulator.emulatorName = "CMSSW"
+        #rerecoCmsswHelper.data.emulator.emulatorName = "CMSSW"
         rerecoStageOutHelper.data.emulator.emulatorName = "StageOut"
         rerecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
 
@@ -215,7 +215,7 @@ def rerecoWorkload(workloadName, arguments):
         )
 
 
-        mergeReco.setInputReference(rerecoCmssw, outputModule = "outputRECO")
+        mergeReco.setInputReference(rerecoCmssw, outputModule = "outputRECORECO")
         if emulationMode:
             mergeRecoStageOutHelper = mergeRecoStageOut.getTypeHelper()
             mergeRecoLogArchHelper  = mergeRecoLogArch.getTypeHelper()
@@ -223,7 +223,7 @@ def rerecoWorkload(workloadName, arguments):
             mergeRecoStageOutHelper.data.emulator.emulatorName = "StageOut"
             mergeRecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
 
-    if "ALCA" in writeDataTiers:
+    if "ALCARECO" in writeDataTiers:
         mergeAlca = rereco.addTask("MergeAlca")
         mergeAlcaCmssw = mergeAlca.makeStep("mergeAlca")    
         mergeAlcaCmssw.setStepType("CMSSW")
@@ -248,12 +248,12 @@ def rerecoWorkload(workloadName, arguments):
         mergeAlcaCmsswHelper.addOutputModule(
             "Merged", primaryDataset = inputPrimaryDataset,
             processedDataset = processedDatasetName,
-            dataTier = "ALCA",
-            lfnBase = "%s/ALCA/%s" % ( commonLfnBase, processedDatasetName)
+            dataTier = "ALCARECO",
+            lfnBase = "%s/ALCARECO/%s" % ( commonLfnBase, processedDatasetName)
         )
 
 
-        mergeAlca.setInputReference(rerecoCmssw, outputModule = "outputALCA")
+        mergeAlca.setInputReference(rerecoCmssw, outputModule = "outputALCARECORECO")
         if emulationMode:
             mergeAlcaStageOutHelper = mergeAlcaStageOut.getTypeHelper()
             mergeAlcaLogArchHelper  = mergeAlcaLogArch.getTypeHelper()
@@ -293,7 +293,7 @@ def rerecoWorkload(workloadName, arguments):
             lfnBase = "%s/AOD/%s" % ( commonLfnBase, processedDatasetName)
         )
 
-        mergeAod.setInputReference(rerecoCmssw, outputModule = "outputAOD")
+        mergeAod.setInputReference(rerecoCmssw, outputModule = "outputAODRECO")
         if emulationMode:
             mergeAodStageOutHelper = mergeAodStageOut.getTypeHelper()
             mergeAodLogArchHelper  = mergeAodLogArch.getTypeHelper()
@@ -303,12 +303,3 @@ def rerecoWorkload(workloadName, arguments):
 
 
     return workload
-    
-
-
-   
-
-
-
-
-    

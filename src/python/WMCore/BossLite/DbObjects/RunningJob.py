@@ -5,17 +5,15 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.11 2010/05/11 22:34:22 spigafi Exp $"
-__revision__ = "$Revision: 1.11 $"
-
-# imports
-# import logging
+__version__ = "$Id: RunningJob.py,v 1.12 2010/05/24 10:00:02 spigafi Exp $"
+__revision__ = "$Revision: 1.12 $"
 
 from WMCore.BossLite.DbObjects.DbObject import DbObject, DbObjectDBFormatter
 
-from WMCore.BossLite.Common.Exceptions import JobError
 from WMCore.BossLite.Common.System import strToList, listToStr
 from WMCore.BossLite.Common.System import encodeTimestamp, decodeTimestamp
+
+from WMCore.BossLite.Common.Exceptions import JobError
 
 class RunningJob(DbObject):
     """
@@ -92,18 +90,11 @@ class RunningJob(DbObject):
                  'processStatus' : None,
                  'closed' : None
                }
-
-    # database properties
-    tableName = "bl_runningjob"
-    tableIndex = ["taskId", "jobId", "submission"]
-    timeFields = ['lbTimestamp', 'submissionTime', 'startTime', \
-                  'scheduledAtSite' , 'stopTime', 'stageOutTime', \
-                  'outputRequestTime', 'outputEnqueueTime', 'getOutputTime']
+    
     # exception class
     exception = JobError
-
-    ##########################################################################
-
+    
+    
     def __init__(self, parameters = None):
         """
         initialize a RunningJob instance
@@ -112,16 +103,14 @@ class RunningJob(DbObject):
         # call super class init method
         DbObject.__init__(self, parameters)
 
-        # set operational errors
         self.warnings = []
         self.errors = []
-
-        # flag for scheduler interaction
         self.active = True
         self.existsInDataBase = False
 
-    ##########################################################################
-
+        return
+    
+    
     def exists(self, db, noDB = False):
         """
         Am I in the database?
@@ -139,9 +128,8 @@ class RunningJob(DbObject):
                 self.data['id'] = tmpId
             
             return tmpId
-
-    ##########################################################################
-
+    
+    
     def create(self, db):
         """
         Create a new Running Job
@@ -149,12 +137,11 @@ class RunningJob(DbObject):
 
         db.objCreate(self)
         
-        # "if self.exists(db)" is not necessary because to save & create 
-        # a valid RunningJob (jobID, taskID, submission) must be valid!  
         self.existsInDataBase = True
 
-    ##########################################################################
-
+        return
+    
+    
     def save(self, db, deep = True):
         """
         Save the job
@@ -168,9 +155,8 @@ class RunningJob(DbObject):
         self.existsInDataBase = True
         
         return
-
-    ##########################################################################
-
+    
+    
     def load(self, db, deep = True):
         """
         Load from the database
@@ -179,61 +165,47 @@ class RunningJob(DbObject):
         result = db.objLoad(self)
         
         if result == []:
-            # Then the job did not exist
-            # no exception will raise?
-            
-            # is this message useful? TEMPORARY SUPPRESSED
-            #logging.error(
-            # "Attempted to load non-existant runningJob with parameters:\n %s" 
-            #            % (self.data) )
+            # raise exception?
             return 
         
         self.data.update(result[0])
         
-        # consistency?
         self.existsInDataBase = True
         
         return 
-
-    ##########################################################################
-
+    
+    
     def remove(self, db):
         """
         remove job object from database
         """
         
         if not self.existsInDataBase:
-            # need to check!
-            # logging.error("Cannot remove from DB non-existant runningJob %s" 
-            #              % (self.data) )
             return 0
         
         db.objRemove(self) 
         
-        # update status
         self.existsInDataBase = False
 
         # return number of entries removed
         return 1
-
-    ##########################################################################
-
+    
+    
     def isError(self):
         """
         returns the status based on the self.errors list
         """
 
         return ( len( self.errors ) != 0 )
-        
-    ##########################################################################
-
+    
+    
     def update(self, db, deep = True):
         """
         update job information in database
         """
 
         return self.save(db, deep)
-
+    
 
 class RunningJobDBFormatter(DbObjectDBFormatter):
     """
@@ -291,6 +263,7 @@ class RunningJobDBFormatter(DbObjectDBFormatter):
         result['closed']                = res['closed']
         
         return result
+    
     
     def postFormat(self, res):
         """

@@ -6,8 +6,8 @@ Read the raw XML output from the cmsRun executable
 
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: XMLParser.py,v 1.1 2009/11/11 00:35:53 evansde Exp $"
+__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: XMLParser.py,v 1.2 2009/11/11 17:04:46 evansde Exp $"
 __author__ = "evansde"
 
 
@@ -150,6 +150,8 @@ def reportDispatcher(targets):
                 targets['AnalysisFile'].send( (report, subnode) )
             elif subnode.name == "PerformanceReport":
                 targets['PerformanceReport'].send( (report, subnode))
+            elif subnode.name == "FrameworkError":
+                targets['FrameworkError'].send( (report, subnode) )
             else:
                 setattr(report.report.parameters, subnode.name, subnode.text)
 
@@ -239,6 +241,22 @@ def analysisFileHandler(targets):
                 attrs[subnode.name] = subnode.attrs.get('Value', None)
 
         report.addAnalysisFile(filename, **attrs)
+
+
+@coroutine
+def errorHandler():
+    """
+    _errorHandler_
+
+    Handle FrameworkError reports
+
+    """
+    while True:
+        report, node = (yield)
+        excepcode = node.attrs.get("ExitStatus", 8001)
+        exceptype = node.attrs.get("Type", "CMSException")
+        report.addError(excepcode, exceptype, node.text)
+
 
 
 
@@ -409,6 +427,7 @@ def xmlToJobReport(reportInstance, xmlFile):
         "InputFile": inputFileHandler(fileDispatchers),
         "PerformanceReport" : perfRepHandler(perfRepDispatchers),
         "AnalysisFile" : analysisFileHandler(fileDispatchers),
+        "FrameworkError" : errorHandler(),
         }
 
     #  //

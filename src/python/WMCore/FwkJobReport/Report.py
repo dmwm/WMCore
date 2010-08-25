@@ -5,8 +5,8 @@ _Report_
 Job Report object
 
 """
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: Report.py,v 1.1 2009/11/11 00:35:50 evansde Exp $"
+__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Report.py,v 1.2 2009/11/11 17:04:46 evansde Exp $"
 __author__ = "evansde"
 
 
@@ -151,17 +151,26 @@ class Report:
         return
 
 
+    def addError(self, exitCode, errorType, errorDetails):
+        """
+        _addError_
 
-if __name__ == '__main__':
+        Add an error report with an exitCode, type/class of error and
+        details of the error as a string
 
-    file1 = "/Users/evansde/Work/devel/logs/FrameworkJobReport-Backup.xml"
-    file2 = "/Users/evansde/Work/devel/logs/TestReport2.xml"
+        """
+        self.report.errors.section_(errorType)
+        errSection = getattr(self.report.errors, errorType)
+        errorCount = getattr(errSection, "errorCount", 0)
 
-    report1 = Report("cmsRun1")
-    report2 = Report("cmsRun2")
+        errEntry = "error%s" % errorCount
+        errSection.section_(errEntry)
+        errDetails = getattr(errSection, errEntry)
+        errDetails.exitStatus = exitCode
+        errDetails.description = errorDetails
 
-    report1.parse(file1)
-    report2.parse(file2)
+        self.report.status = int(exitCode)
+        setattr(errSection, "errorCount", errorCount +1)
+        return
 
-    print report1.data
-    print report2.data
+

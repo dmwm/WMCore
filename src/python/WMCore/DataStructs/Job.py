@@ -7,13 +7,14 @@ Data object that describes a job
 """
 
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.23 2009/05/12 16:20:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Job.py,v 1.24 2009/06/09 18:30:13 evansde Exp $"
+__version__ = "$Revision: 1.24 $"
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.JobGroup import JobGroup
 from WMCore.DataStructs.Mask import Mask
 from WMCore.DataStructs.WMObject import WMObject
+from WMCore.Configuration import ConfigSection
 
 from WMCore.Services.UUID import makeUUID
 
@@ -29,6 +30,7 @@ class Job(WMObject, dict):
         last_update is the time the job last changed
         """
         dict.__init__(self)
+        self.baggage = ConfigSection("baggage")
         if files == None:
             self["input_files"] = []
         else:
@@ -95,7 +97,7 @@ class Job(WMObject, dict):
         """
         self["state"] = newState
         self["state_time"] = int(time.time())
-        
+
         return
 
     def changeOutcome(self, jobOutcome):
@@ -106,3 +108,17 @@ class Job(WMObject, dict):
         """
         self["outcome"] = jobOutcome
         return
+
+    def getBaggage(self):
+        """
+        _getBaggage_
+
+        Get a reference to the embedded ConfigSection that is
+        used to store per job arguments needed to be propagated at
+        submission time
+
+        """
+        return self.baggage
+
+
+

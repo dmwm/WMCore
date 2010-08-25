@@ -131,8 +131,8 @@ monitoring.monitors = ['WMRuntimeMonitor', 'TestMonitor']
 monitoring.section_('TestMonitor')
 monitoring.TestMonitor.connectionURL = "dummy.cern.ch:99999/CMS"
 monitoring.TestMonitor.password      = "ThisIsTheWorld'sStupidestPassword"
-monitoring.TestMonitor.softTimeOut   = 1
-monitoring.TestMonitor.hardTimeOut   = 100
+monitoring.TestMonitor.softTimeOut   = 10000
+monitoring.TestMonitor.hardTimeOut   = 20000
 
 
 taskMaker = TaskMaker(workload, workingDir)

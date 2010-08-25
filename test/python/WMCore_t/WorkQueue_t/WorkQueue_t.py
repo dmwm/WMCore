@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.34 2010/06/02 17:44:51 swakef Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.35 2010/06/08 20:02:39 sryu Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import unittest
 import os
@@ -36,7 +36,7 @@ class fakeSiteDB:
 rerecoArgs = {
     "CmsPath": "/uscmst1/prod/sw/cms",
     "AcquisitionEra": "WMAgentCommissioning10",
-    "Requester": "workqueue@fnal.gov",
+    "Requestor": "workqueue@fnal.gov",
     "InputDataset": "/MinimumBias/BeamCommissioning09-v1/RAW",
     "CMSSWVersion": "CMSSW_3_5_8_patch3",
     "ScramArch": "slc5_ia32_gcc434",

@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: REST_t.py,v 1.8 2009/12/28 21:37:06 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: REST_t.py,v 1.9 2009/12/29 12:33:26 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import os
@@ -56,6 +56,25 @@ class RESTTest(unittest.TestCase):
         
         rt = Root(dummycfg)
         return rt
+    
+    def makeRequest(self, uri='/rest/', values=None, type='GET', accept="text/plain"):
+        headers = {}
+        headers = {"Content-type": "application/x-www-form-urlencoded",
+                   "Accept": accept}
+        data = None
+        if values:
+            data = urllib.urlencode(values)
+        if type != 'POST' and data != None:
+            uri = '%s?%s' % (uri, data)
+        conn = HTTPConnection('localhost:8080')
+        conn.connect()
+        conn.request(type, uri, data, headers)
+        response = conn.getresponse()
+        
+        data = response.read()
+        conn.close()
+        type = response.getheader('content-type').split(';')[0]
+        return data, response.status, type, response
     
     def testGoodEcho(self):
         rt = self.configureServer()
@@ -184,25 +203,6 @@ class RESTTest(unittest.TestCase):
         assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
         assert data == '{"int": 123, "str": "abc"}', 'data is not correct %s' % data
         
-    def makeRequest(self, uri='/rest/', values=None, type='GET', accept="text/plain"):
-        headers = {}
-        headers = {"Content-type": "application/x-www-form-urlencoded",
-                   "Accept": accept}
-        data = None
-        if values:
-            data = urllib.urlencode(values)
-        if type != 'POST' and data != None:
-            uri = '%s?%s' % (uri, data)
-        conn = HTTPConnection('localhost:8080')
-        conn.connect()
-        conn.request(type, uri, data, headers)
-        response = conn.getresponse()
-        
-        data = response.read()
-        conn.close()
-        type = response.getheader('content-type').split(';')[0]
-        return data, response.status, type, response
-    
     def testA(self):
         rt = self.configureServer()
         rt.start(blocking=False)
@@ -216,6 +216,10 @@ class RESTTest(unittest.TestCase):
         rt.stop()
         
     def testSanitisePass(self):
+        """
+        Emulate how CherryPy passes arguments to a method, check that the data
+        returned is correct.
+        """
         config = Configuration()
         component = config.component_('UnitTests')
         component.application = 'UnitTests'
@@ -223,17 +227,53 @@ class RESTTest(unittest.TestCase):
                 
         drm = DummyRESTModel(component)
         
-        # 2 positional args
-        result = drm.list(*[123, 'abc'], **{})
-        assert result == {'int':123, 'str':'abc'}
-        # 2 query string args
-        result = drm.list(*[], **{'int':123, 'str':'abc'})
-        assert result == {'int':123, 'str':'abc'}
+        # 2 positional args (e.g. url/arg1/arg2)
+        result = drm.list(123, 'abc')
+        assert result == {'int':123, 'str':'abc'},\
+                'list with 2 positional args failed: %s' % result
+        # 2 query string args (e.g. url?int=arg1&str=arg2)
+        result = drm.list(int=123, str='abc')
+        assert result == {'int':123, 'str':'abc'},\
+                'list with 2 query string args failed: %s' % result
         
-        # 1 positional, 1 keyword
-        result = drm.list(*[123], **{'str':'abc'})
-        assert result == {'int':123, 'str':'abc'}
+        # 1 positional, 1 keyword  (e.g. url/arg1/?str=arg2)
+        result = drm.list(123, str='abc')
+        assert result == {'int':123, 'str':'abc'},\
+                'list with 1 positional, 1 keyword failed: %s' % result
+    
+    def testSanitisePassHTTP(self):
+        """
+        Same as testSanitisePass but do it over http and check the returned http
+        codes.
+        """
+        rt = self.configureServer(restModel='DummyRESTModel')
+        rt.start(blocking=False)
+        cherrypy.log.error_log.setLevel(logging.WARNING)
+        cherrypy.log.access_log.setLevel(logging.WARNING)
         
+        # 2 positional args (e.g. url/arg1/arg2)
+        response = self.makeRequest(uri='/list/123/abc')
+        assert response[1] == 200, \
+                'list with 2 positional args failed: ' +\
+                '. Got a return code != 200 (got %s)' % response[1] +\
+                '. Returned data: %s' % response[0]
+                 
+        # 2 query string args (e.g. url?int=arg1&str=arg2)
+        response = self.makeRequest(uri='/list', 
+                                    values={'int':'123', 'str':'abc'})
+        assert response[1] == 200, \
+                'list with 2 query string args failed: ' +\
+                '. Got a return code != 200 (got %s)' % response[1] +\
+                '. Returned data: %s' % response[0] 
+        
+        # 1 positional, 1 keyword  (e.g. url/arg1/?str=arg2)
+        response = self.makeRequest(uri='/list/123/', 
+                                    values={'str':'abc'})
+        assert response[1] == 200, \
+                'list with 1 positional, 1 keyword failed: ' +\
+                '. Got a return code != 200 (got %s)' % response[1] +\
+                '. Returned data: %s' % response[0]
+                 
     def testSanitiseAssertFail(self):
         
         config = Configuration()
@@ -244,19 +284,19 @@ class RESTTest(unittest.TestCase):
         drm = DummyRESTModel(component)
         
         # Wrong type for input args
-        self.assertRaises(HTTPError, drm.list, *[123, 123], **{})
-        self.assertRaises(HTTPError, drm.list, *['abc', 'abc'], **{})
-        self.assertRaises(HTTPError, drm.list, *[], **{'str':123, 'int':'abc'})
-        self.assertRaises(HTTPError, drm.list, *[], **{'str':'abc', 'int':'abc'})
-        self.assertRaises(HTTPError, drm.list, *['abc', 123], **{})
-        self.assertRaises(HTTPError, drm.list, *['abc', 'abc'], **{})
-        self.assertRaises(HTTPError, drm.list, *[], **{'str':123, 'int':'abc'})
-        self.assertRaises(HTTPError, drm.list, *[], **{'str':123, 'int':123})
-        self.assertRaises(HTTPError, drm.list, *[], **{'str':'abc', 'int':'abc'})
+        self.assertRaises(HTTPError, drm.list, [123, 123], {})
+        self.assertRaises(HTTPError, drm.list, ['abc', 'abc'], {})
+        self.assertRaises(HTTPError, drm.list, [], {'str':123, 'int':'abc'})
+        self.assertRaises(HTTPError, drm.list, [], {'str':'abc', 'int':'abc'})
+        self.assertRaises(HTTPError, drm.list, ['abc', 123], {})
+        self.assertRaises(HTTPError, drm.list, ['abc', 'abc'], {})
+        self.assertRaises(HTTPError, drm.list, [], {'str':123, 'int':'abc'})
+        self.assertRaises(HTTPError, drm.list, [], {'str':123, 'int':123})
+        self.assertRaises(HTTPError, drm.list, [], {'str':'abc', 'int':'abc'})
         
         # Incorrect values for input args
-        self.assertRaises(HTTPError, drm.list, *[1234, 'abc'], **{})
-        self.assertRaises(HTTPError, drm.list, *[123, 'abcd'], **{})
+        self.assertRaises(HTTPError, drm.list, [1234, 'abc'], {})
+        self.assertRaises(HTTPError, drm.list, [123, 'abcd'], {})
         
     def testSanitiseKeyFail(self):
         config = Configuration()

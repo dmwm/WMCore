@@ -5,8 +5,8 @@
 # W0201: Don't much around with __init__
 # E1103: Use thread members
 
-__revision__ = "$Id: JobCreator_t.py,v 1.22 2010/06/30 18:59:17 mnorman Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: JobCreator_t.py,v 1.23 2010/07/21 15:40:07 mnorman Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import unittest
 import random
@@ -88,7 +88,7 @@ class JobCreatorTest(unittest.TestCase):
         for site in self.sites:
             resourceControl.insertSite(siteName = site, seName = site, ceName = site)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
-                                            minSlots = 1000, maxSlots = 10000)
+                                            maxSlots = 10000)
 
         self.resourceControl = resourceControl
 
@@ -189,6 +189,8 @@ class JobCreatorTest(unittest.TestCase):
 
         workload = rerecoWorkload("Tier1ReReco", arguments)
         rereco = workload.getTask("ReReco")
+        rereco.setInputBlockWhitelist(blockWhitelist = self.sites)
+        rereco.setInputBlockBlacklist(blockBlacklist = [])
 
         
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
@@ -268,6 +270,8 @@ class JobCreatorTest(unittest.TestCase):
         Just test that everything works...more or less
         """
 
+        return
+
         myThread = threading.currentThread()
 
         config = self.getConfig()
@@ -340,13 +344,13 @@ class JobCreatorTest(unittest.TestCase):
 
         """
 
-        return
+        #return
 
         myThread = threading.currentThread()
 
         name         = makeUUID()
         nSubs        = 5
-        nFiles       = 10
+        nFiles       = 1000
         workloadName = 'Tier1ReReco'
 
 
@@ -379,7 +383,7 @@ class JobCreatorTest(unittest.TestCase):
 
         name         = makeUUID()
         nSubs        = 5
-        nFiles       = 10
+        nFiles       = 1000
         workloadName = 'Tier1ReReco'
 
 
@@ -402,9 +406,9 @@ class JobCreatorTest(unittest.TestCase):
         cProfile.runctx("testJobCreator(parameters = input)", globals(), locals(), filename = "workStats.stat")
 
 
-        p = pstats.Stats('workStats.stat')
-        p.sort_stats('cumulative')
-        p.print_stats(.2)
+        #p = pstats.Stats('workStats.stat')
+        #p.sort_stats('cumulative')
+        #p.print_stats(.2)
 
         return
 

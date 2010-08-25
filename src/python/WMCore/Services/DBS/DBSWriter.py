@@ -6,7 +6,7 @@ Interface object for writing data to DBS
 
 """
 
-
+import time
 
 from DBSAPI.dbsApi import DbsApi
 from DBSAPI.dbsException import *
@@ -230,7 +230,7 @@ class DBSWriter:
         
     def insertFilesForDBSBuffer(self, files, procDataset, algos,
                                 jobType = "NotMerge", insertDetectorData = False,
-                                maxFiles = 100, maxSize = 99999999):
+                                maxFiles = 100, maxSize = 99999999, timeOut = None):
         """
         _insertFiles_
 
@@ -341,7 +341,7 @@ class DBSWriter:
 
         for file in insertFiles:
             #Try and close the box
-            if self.manageFileBlock(fileblockName = fileBlock['Name'], maxFiles = maxFiles, maxSize = maxSize):
+            if self.manageFileBlock(fileblockName = fileBlock['Name'], maxFiles = maxFiles, maxSize = maxSize, timeOut = timeOut):
                 fileBlock['OpenForWriting'] = 0
                 if not fileBlock in affectedBlocks:
                     affectedBlocks.append(fileBlock)
@@ -561,7 +561,7 @@ class DBSWriter:
 
 
 
-    def manageFileBlock(self, fileblockName, maxFiles = 100, maxSize = None):
+    def manageFileBlock(self, fileblockName, maxFiles = 100, maxSize = None, timeOut = None):
         """
         _manageFileBlock_
 
@@ -573,6 +573,7 @@ class DBSWriter:
         return False
 
         """
+
 
         #  //
         # // Check that the block exists, and is open before we close it
@@ -611,6 +612,11 @@ class DBSWriter:
         # // Test close block conditions
         #//
         closeBlock = False
+        if timeOut:
+            if int(time.time()) - int(blockInstance['CreationDate']) > timeOut:
+                closeBlock = True
+                msg = "Closing Block based on timeOut: %s" % fileblockName
+                logging.debug(msg)
         if fileCount >= maxFiles:
             closeBlock = True
             msg = "Closing Block Based on files: %s" % fileblockName
@@ -635,8 +641,8 @@ class DBSWriter:
                                                 self.globalDBSUrl,
                                                 fileblockName.split("#")[0], 
                                                 fileblockName,
-                                                self.version,
-                                                self.globalVersion
+                                                srcVersion = self.version,
+                                                dstVersion = self.globalVersion
                                                 )
             else:
                 logging.error("Should've migrated block %s, but didn't" % (fileBlockName))

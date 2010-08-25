@@ -56,6 +56,8 @@ class JobCreatorTest(unittest.TestCase):
                                 useDefault = False)
         self.testInit.setSchema(customModules = ["WMCore.Services.BossLite"],
                                 useDefault = False)
+        self.testInit.setSchema(customModules = ["WMCore.MsgService"],
+                                useDefault = False)
 
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -110,12 +112,20 @@ class JobCreatorTest(unittest.TestCase):
             raise Exception("Could not complete WMBS tear down.")
         myThread.transaction.commit()
 
+        factory = WMFactory("MsgService", "WMCore.MsgService")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        myThread.transaction.begin()
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete MsgService tear down.")
+        myThread.transaction.commit()
+
         factory2 = WMFactory("WMBS", "WMCore.Services.BossLite")
         destroy2 = factory2.loadObject(myThread.dialect + ".Destroy")
         myThread.transaction.begin()
         destroyworked = destroy2.execute(conn = myThread.transaction.conn)
         if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
+            raise Exception("Could not complete BossLite tear down.")
         myThread.transaction.commit()
         
         self._teardown = True
@@ -230,200 +240,65 @@ class JobCreatorTest(unittest.TestCase):
 
         return
 
-
-
-
-
-
-    def testA(self):
+    def createMutlipleSiteCollection(self, instance, nSubs, workloadSpec = None):
         """
-        Test for whether we can handle jobs at random sites
+
+        Creates a giant block of jobs at multiple sites
+
 
         """
+
+
 
         myThread = threading.currentThread()
 
-        self.createBigJobCollection("first", 5)
+        for i in range(0, nSubs):
 
+            nameStr = str(instance) + str(i)
+
+            if not workloadSpec:
+                workloadSpec = "TestSingleWorkload%s/TestHugeTask" %(nameStr)
+
+            myThread.transaction.begin()
+
+            testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
+                                    name = "wf001"+nameStr, task="Test"+nameStr)
+            testWorkflow.create()
         
-        result = myThread.dbi.processData('SELECT * FROM wmbs_subscription',{})
-
-        #print "location data:"
-        #print result[0].fetchall()
-
-
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMCore/JobStateMachine/DefaultConfig.py'))
-
-        # some general settings that would come from the general default 
-        # config file
-
-        config.section_("General")
-        
-        if not os.getenv("TESTDIR") == None:
-            config.General.workDir = os.getenv("TESTDIR")
-        else:
-            config.General.workDir = os.getcwd()
-        
-        config.section_("CoreDatabase")
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT")
-            myThread.dialect = os.getenv('DIALECT')
-        #config.CoreDatabase.socket = os.getenv("DBSOCK")
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        if not os.getenv("DBSOCK") == None:
-            config.CoreDatabase.dbsock = os.getenv("DBSOCK")
-        else:
-            config.CoreDatabase.dbsock = None            
-
-
-
-        testJobCreator = JobCreator(config)
-        testJobCreator.prepareToStart()
-
-        #time.sleep(40)
-
-        #self.createBigJobCollection("second", 5)
-
-        #print myThread.dbi.processData("SELECT * FROM wmbs_jobgroup")[0].fetchall()
-
-        #time.sleep(20)
-
+            testFileset = Fileset(name = "TestFileset"+nameStr)
+            testFileset.create()
         
 
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
+            for j in range(0,100):
+                #pick a random site
+                site = self.sites[0]
+                testFile = File(lfn = "/multLfn"+nameStr+str(j), size = 1024, events = 10)
+                testFile.setLocation(self.sites)
+                testFile.create()
+                testFileset.addFile(testFile)
 
-        while (threading.activeCount() > 1):
-            #We should never trigger this, but something weird is going on
-            print "Waiting for threads to finish"
-            time.sleep(1)
+            testFileset.commit()
+            testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
+            testSubscription.create()
+            print 'Created subscription %s' %(testSubscription['id'])
 
-        #self.teardown = True
+
+            myThread.transaction.commit()
 
 
         return
 
 
-    def testB(self):
+    def getConfig(self):
         """
-        This one actually tests something
+        _getConfig_
 
+        Creates a common config.
         """
 
         myThread = threading.currentThread()
-
-        nSubs = 5
-
-        self.createSingleSiteCollection("first", nSubs)
-
 
         config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMCore/JobStateMachine/DefaultConfig.py'))
-
-        # some general settings that would come from the general default 
-        # config file
-
-        config.section_("General")
-        
-        if not os.getenv("TESTDIR") == None:
-            config.General.workDir = os.getenv("TESTDIR")
-        else:
-            config.General.workDir = os.getcwd()
-        
-        config.section_("CoreDatabase")
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT")
-            myThread.dialect = os.getenv('DIALECT')
-        #config.CoreDatabase.socket = os.getenv("DBSOCK")
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        if not os.getenv("DBSOCK") == None:
-            config.CoreDatabase.dbsock = os.getenv("DBSOCK")
-        else:
-            config.CoreDatabase.dbsock = None            
-
-
-
-        testJobCreator = JobCreator(config)
-        testJobCreator.prepareToStart()
-
-        time.sleep(10)
-
-
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
-
-        result = myThread.dbi.processData('SELECT ID FROM wmbs_jobgroup')
-
-        #print result[0].fetchall()
-
-        self.assertEqual(len(result[0].fetchall()), nSubs)
-
-
-        result = myThread.dbi.processData('SELECT ID FROM wmbs_job')
-
-        #print result[0].fetchall()
-
-        self.assertEqual(len(result[0].fetchall()), nSubs * 20)
-
-        while (threading.activeCount() > 1):
-            #We should never trigger this, but something weird is going on
-            print "Waiting for threads to finish"
-            time.sleep(1)
-
-
-        return
-
-
-    def testC(self):
-        """
-        This one actually tests whether we can read the WMSpec
-
-        """
-
-        if not os.path.exists("basicWorkload.pcl"):
-            print "Could not find local WMWorkload file"
-            print "Aborting!"
-            raise Exception
-
-
-        myThread = threading.currentThread()
-
-        nSubs = 5
-
-        self.createSingleSiteCollection("first", nSubs, os.getcwd() + "/basicWorkload.pcl")
-
-
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/JobCreator/DefaultConfig.py'))
-
-        # some general settings that would come from the general default 
-        # config file
 
         config.section_("General")
         
@@ -458,6 +333,120 @@ class JobCreatorTest(unittest.TestCase):
             config.CoreDatabase.dbsock = None
 
 
+        return config
+
+
+
+
+    def testA(self):
+        """
+        Test for whether or not the job will actually run
+
+        """
+
+        myThread = threading.currentThread()
+
+        nSubs = 5
+
+        self.createBigJobCollection("first", nSubs)
+
+        
+        config = self.getConfig()
+
+        testJobCreator = JobCreator(config)
+        testJobCreator.prepareToStart()
+
+        print "Killing"
+        myThread.workerThreadManager.terminateWorkers()
+
+
+        result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')
+
+        self.assertEqual(len(result[0].fetchall()), nSubs*100)
+
+
+        result = myThread.dbi.processData('SELECT ID FROM wmbs_jobgroup')
+
+        self.assertEqual(len(result[0].fetchall()), len(self.sites) * nSubs)
+
+
+        result = myThread.dbi.processData('SELECT ID FROM wmbs_job')
+
+        assert len(result[0].fetchall()) > nSubs * 20, "Not enough jobs!"
+
+        while (threading.activeCount() > 1):
+            #We should never trigger this, but something weird is going on
+            print "Waiting for threads to finish"
+            time.sleep(1)
+
+        #self.teardown = True
+
+
+        return
+
+
+    def testB(self):
+        """
+        This one actually tests something
+
+        """
+
+        myThread = threading.currentThread()
+
+        nSubs = 5
+
+        self.createSingleSiteCollection("first", nSubs)
+
+        config = self.getConfig()
+
+
+        testJobCreator = JobCreator(config)
+        testJobCreator.prepareToStart()
+
+        time.sleep(10)
+
+
+        print "Killing"
+        myThread.workerThreadManager.terminateWorkers()
+
+        result = myThread.dbi.processData('SELECT ID FROM wmbs_jobgroup')
+
+        self.assertEqual(len(result[0].fetchall()), nSubs)
+
+
+        result = myThread.dbi.processData('SELECT ID FROM wmbs_job')
+
+        self.assertEqual(len(result[0].fetchall()), nSubs * 20)
+
+        while (threading.activeCount() > 1):
+            #We should never trigger this, but something weird is going on
+            print "Waiting for threads to finish"
+            time.sleep(1)
+
+
+        return
+
+
+    def testC(self):
+        """
+        This one actually tests whether we can read the WMSpec
+
+        """
+
+        if not os.path.exists("basicWorkload.pcl"):
+            print "Could not find local WMWorkload file"
+            print "Aborting!"
+            raise Exception
+
+
+        myThread = threading.currentThread()
+
+        nSubs = 5
+
+        self.createSingleSiteCollection("first", nSubs, os.getcwd() + "/basicWorkload.pcl")
+
+        config = self.getConfig()
+
 
         testJobCreator = JobCreator(config)
         testJobCreator.prepareToStart()
@@ -471,23 +460,80 @@ class JobCreatorTest(unittest.TestCase):
         
         result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')
 
-        #print result[0].fetchall()
-
         self.assertEqual(len(result[0].fetchall()), nSubs*100)
 
 
         result = myThread.dbi.processData('SELECT ID FROM wmbs_jobgroup')
-
-        #print result[0].fetchall()
 
         self.assertEqual(len(result[0].fetchall()), nSubs)
 
 
         result = myThread.dbi.processData('SELECT ID FROM wmbs_job')
 
-        #print result[0].fetchall()
+        self.assertEqual(len(result[0].fetchall()), nSubs * 10)
+
+        while (threading.activeCount() > 1):
+            #We should never trigger this, but something weird is going on
+            print "Waiting for threads to finish"
+            time.sleep(1)
+
+
+
+        return
+
+
+    def testD(self):
+        """
+        This one tests whether or not we can choose a site from a list in the file
+        This is not well tested, since I don't know which location it will end up in.
+
+        """
+
+        if not os.path.exists("basicWorkload.pcl"):
+            print "Could not find local WMWorkload file"
+            print "Aborting!"
+            raise Exception
+
+
+        myThread = threading.currentThread()
+
+        nSubs = 5
+
+        self.createSingleSiteCollection("first", nSubs, os.getcwd() + "/basicWorkload.pcl")
+
+        config = self.getConfig()
+
+
+        testJobCreator = JobCreator(config)
+        testJobCreator.prepareToStart()
+
+        time.sleep(60)
+
+
+        print "Killing"
+        myThread.workerThreadManager.terminateWorkers()
+
+        
+        result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')
+
+        self.assertEqual(len(result[0].fetchall()), nSubs*100)
+
+
+        result = myThread.dbi.processData('SELECT ID FROM wmbs_jobgroup')
+
+        self.assertEqual(len(result[0].fetchall()), nSubs)
+
+
+        result = myThread.dbi.processData('SELECT id FROM wmbs_job')
 
         self.assertEqual(len(result[0].fetchall()), nSubs * 10)
+
+        result = myThread.dbi.processData('SELECT site_name FROM wmbs_location WHERE id IN (SELECT location FROM wmbs_job)')
+
+        assert len(result[0].fetchall()) > 0, "Had no locations!"
+
+        for i in result[0].fetchall():
+            assert i.values()[0] in self.sites, "Bad site value %s" %(i.values()[0])
 
         while (threading.activeCount() > 1):
             #We should never trigger this, but something weird is going on

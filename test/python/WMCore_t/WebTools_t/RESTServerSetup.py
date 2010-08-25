@@ -3,7 +3,7 @@ import logging
 from WMCore.Configuration import Configuration
 from WMCore.WebTools.Root import Root
 
-def configureServer(restModel='WMCore.WebTools.RESTModel', das=False):
+def getDefaultConfig():
     dummycfg = Configuration()
     dummycfg.component_('Webtools')
     dummycfg.Webtools.application = 'UnitTests'
@@ -21,14 +21,19 @@ def configureServer(restModel='WMCore.WebTools.RESTModel', das=False):
     active.rest.templates = '/tmp'
     active.rest.database = 'sqlite://'
     active.rest.section_('model')
+    active.rest.model.object = 'WMCore.WebTools.RESTModel'
+    active.rest.section_('formatter')
+    active.rest.formatter.object = 'WMCore.WebTools.RESTFormatter'
+    active.rest.formatter.templates = '/tmp'
+    return dummycfg
+    
+def configureServer(restModel='WMCore.WebTools.RESTModel', das=False):
+    dummycfg = getDefaultConfig()
+    active = dummycfg.UnitTests.views.active
     active.rest.model.object = restModel
     active.rest.section_('formatter')
     if das:
         active.rest.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
-    else:
-        active.rest.formatter.object = 'WMCore.WebTools.RESTFormatter'
-    active.rest.formatter.templates = '/tmp'
-    
     rt = Root(dummycfg)
     return rt
 

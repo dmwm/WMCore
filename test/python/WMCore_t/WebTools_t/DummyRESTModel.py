@@ -62,17 +62,19 @@ class DummyRESTModel(RESTModel):
                                          'version': 2,
                                          'validation': []},
                                          
-                                'list3':{'args':['num0', 'num1', 'num2'],
-                                         'call': self.list2,
+                                'list3':{'args':['a', 'b'],
+                                         'call': self.list3,
                                          'version': 2,
-                                         'validation': []}}
+                                         'validation': []}         
+                                }
+        
         self.daofactory = DummyDAOFac()
         self.addDAO('GET', 'data1', 'DummyDAO1', [])
         self.addDAO('GET', 'data2', 'DummyDAO2', ['num'])
         self.addDAO('GET', 'data3', 'DummyDAO3', ['num', 'thing'])
         
     def list(self, *args, **kwargs):
-        """ if sanitise needed to be called method signater of callee should be 
+        """ if sanitise needed to be called method signature of callee should be 
             (*args, **kwargs) """
         input = self.sanitise_input(args, kwargs, method = 'list')
         return input
@@ -90,7 +92,7 @@ class DummyRESTModel(RESTModel):
         """ test sanitise without any validation specified """
         input = self.sanitise_input(args, kwargs, method = 'list3')
         return input
-    
+        
     def val_0(self, input):
         # checks whether input is right number
         if len(input) != 2:

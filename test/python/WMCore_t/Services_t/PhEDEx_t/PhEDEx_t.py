@@ -11,7 +11,7 @@ from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import SubscriptionList
 class PhEDExTest(unittest.TestCase):
     """
     Provide setUp and tearDown for Reader package module
-    
+
     """
     def setUp(self):
         """
@@ -26,7 +26,7 @@ class PhEDExTest(unittest.TestCase):
         #https://cmswttest.cern.ch/phedex/datasvc/perl/tbedi/auth?ability=datasvc_subscribe
 
         #self.phedexTestDS = "https://localhost:9999/phedex/datasvc/xml/tbedi/"
-        self.dbsTestUrl = "http://cmssrv49.fnal.gov:8989/DBS/servlet/DBSServlet"
+        self.dbsTestUrl = "http://cmssrv49.fnal.gov:8989/DBS209/servlet/DBSServlet"
         self.testNode = "TX_Test1_Buffer"
         self.testNode2 = "TX_Test2_Buffer"
 
@@ -55,6 +55,15 @@ class PhEDExTest(unittest.TestCase):
         for sub in subList.getSubscriptionList():
             print sub
             print phedexApi.subscribe(self.dbsTestUrl, sub)
+
+    def testNodeMap(self):
+
+        dict = {}
+        dict['endpoint'] = self.phedexTestDS
+        phedexApi = PhEDEx(dict)
+
+        self.failUnless(phedexApi.getNodeSE('TX_Test4_MSS') == 'srm.test4.ch')
+        self.failUnless(phedexApi.getNodeName('srm.test1.ch') == 'TX_Test1_MSS')
 
 if __name__ == '__main__':
 

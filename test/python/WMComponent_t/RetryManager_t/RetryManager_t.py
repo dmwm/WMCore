@@ -3,8 +3,8 @@
 RetryManager test for module and the harness
 """
 
-__revision__ = "$Id: RetryManager_t.py,v 1.8 2010/04/02 13:05:27 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: RetryManager_t.py,v 1.9 2010/04/21 16:46:42 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 import threading
@@ -186,6 +186,29 @@ class RetryManagerTest(unittest.TestCase):
         
         Mimics creation of component and test jobs failed in create stage.
         """
+        
+        """ This test fails. Somehow an exception can get raised but that exception doesn't cause this test to fail. Don't get that. Output:
+        
+        WMComponent_t.RetryManager_t.RetryManager_t.RetryManagerTest.testSubmit -- WMComponent_t.RetryManager_t.RetryManager_t:testSubmit() ... Exception in thread Thread-10:
+        Traceback (most recent call last):
+          File "/home/bbslave/shared/python26/lib/python2.6/threading.py", line 522, in __bootstrap_inner
+            self.run()
+          File "/home/bbslave/shared/python26/lib/python2.6/threading.py", line 477, in run
+            self.__target(*self.__args, **self.__kwargs)
+          File "/home/bbslave/buildslave/quicktest/build/src/python/WMCore/Agent/Harness.py", line 486, in startComponent
+            self.prepareToStart()
+          File "/home/bbslave/buildslave/quicktest/build/src/python/WMCore/Agent/Harness.py", line 359, in prepareToStart
+            self.initInThread()
+          File "/home/bbslave/buildslave/quicktest/build/src/python/WMCore/Agent/Harness.py", line 105, in initInThread
+            "ComponentLog")
+          File "/home/bbslave/shared/python26/lib/python2.6/posixpath.py", line 67, in join
+            elif path == '' or path.endswith('/'):
+        AttributeError: 'NoneType' object has no attribute 'endswith'
+        
+        ok
+        """
+        raise Exception, "See WMComponent_t.RetryManager_t.Retry_Manager_t::testSubmit(). This tests fails, but was reporting it passed somehow"
+        
         testJobGroup = self.createTestJobGroup()
 
         config = self.getConfig()

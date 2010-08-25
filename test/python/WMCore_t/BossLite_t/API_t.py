@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: API_t.py,v 1.9 2010/05/17 20:52:53 spigafi Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: API_t.py,v 1.10 2010/05/18 13:52:43 spigafi Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import threading
@@ -387,58 +387,45 @@ class APITest(unittest.TestCase):
         
         tmp = task.exists(db)
         
-        job = Job(parameters = {'name': 'Spartacus', 'taskId': tmp, 'jobId': 606})
-        job.save(db)
+        # 'jobId' MUSt starts from 1. 
+        # Take a look at Task.addJob --> it always overrides 'jobId'!
+        job = Job(parameters = {'name': 'Spartacus', 'taskId': tmp, 'jobId': 1})
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'W'} )
-        self.assertNotEqual(job.runningJob, None) 
-        self.assertEqual(job.runningJob.data['jobId'], 606)  
-        # why I have to save the job?
-        job.save(db)
+        self.assertNotEqual(job.runningJob, None)  
         task.addJob(job)
         
-        job = Job(parameters = {'name': 'Fringe', 'taskId': tmp, 'jobId': 616 })
-        job.save(db)
+        job = Job(parameters = {'name': 'Fringe', 'taskId': tmp, 'jobId': 2 })
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'SD'} )
-        self.assertNotEqual(job.runningJob, None) 
-        self.assertEqual(job.runningJob.data['jobId'], 616) 
-                # why I have to save the job?
-        job.save(db)
+        self.assertNotEqual(job.runningJob, None)  
         task.addJob(job)
         
-        job = Job(parameters = {'name': 'Stargate Universe', 'taskId': tmp, 'jobId': 626 })
-        job.save(db)
+        job = Job(parameters = {'name': 'Stargate Universe', 'taskId': tmp, 'jobId': 3 })
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'A'} )
         self.assertNotEqual(job.runningJob, None) 
-        self.assertEqual(job.runningJob.data['jobId'], 626) 
-        # why I have to save the job?
-        job.save(db)
         task.addJob(job)
         
-        job = Job(parameters = {'name': 'Caprica', 'taskId': tmp, 'jobId': 636 })
-        job.save(db)
+        job = Job(parameters = {'name': 'Caprica', 'taskId': tmp, 'jobId': 4 })
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'K'} )
         self.assertNotEqual(job.runningJob, None) 
-        self.assertEqual(job.runningJob.data['jobId'], 636) 
-        # why I have to save the job?
-        job.save(db)
         task.addJob(job)
         
-        job = Job(parameters = {'name': 'The Mentalist', 'taskId': tmp, 'jobId': 646 })
-        job.save(db)
+        job = Job(parameters = {'name': 'The Mentalist', 'taskId': tmp, 'jobId': 5 })
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, runningAttrs = {'closed' : 'N'} )
         self.assertNotEqual(job.runningJob, None) 
-        self.assertEqual(job.runningJob.data['jobId'], 646)
-        # why I have to save the job?
-        job.save(db) 
         task.addJob(job)
         
         task.save(db)
         
+        # DEBUG
+        #queryResult = db.executeSQL(query = "SELECT * FROM bl_runningjob")
+        #for x in queryResult[0].fetchall() : 
+        #    print x.values()
+         
         result = testAPI.loadCreated()
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]['name'], 'Spartacus')  
@@ -460,4 +447,7 @@ class APITest(unittest.TestCase):
         return
     
 if __name__ == "__main__":
-    unittest.main()
+    suite1 = unittest.TestLoader().loadTestsFromTestCase(APITest)
+
+    # run the unit-test
+    unittest.TextTestRunner(verbosity=3).run(suite1)

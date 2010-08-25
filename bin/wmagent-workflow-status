@@ -143,8 +143,8 @@ def displayRetriedJobs():
     myThread = threading.currentThread()
     myDAOFactory = DAOFactory(package = "WMCore.WMBS",
                               dbinterface = myThread.dbi)
-    failDao = myDAOFactory("Workflow.FailedJobs")
-    results = failDao.execute()
+    retryDao = myDAOFactory("Workflow.RetriedJobs")
+    results = retryDao.execute()
 
     # owner, task, jobId
     jobInfo = {}

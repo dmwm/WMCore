@@ -1,31 +1,34 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1103, W6501, E1101
+#pylint: disable-msg=E1103, W6501, E1101, C0301
 #E1103: Use DB objects attached to thread
 #W6501: Allow string formatting in error messages
 #E1101: Create config sections
+#C0301: The names for everything are so ridiculously long
+# that I'm disabling this.  The rest of you will have to get
+# bigger monitors.
 """
 _AccountantWorker_
 
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.30 2010/05/24 19:33:09 mnorman Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.31 2010/05/24 20:40:46 mnorman Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import os
 import threading
 import logging
 import gc
-import pdb
 
-from WMCore.Agent.Configuration import Configuration
-from WMCore.FwkJobReport.Report import Report
-from WMCore.DAOFactory import DAOFactory
+from WMCore.Agent.Configuration  import Configuration
+from WMCore.FwkJobReport.Report  import Report
+from WMCore.DAOFactory           import DAOFactory
+from WMCore.Database.Transaction import Transaction
 
 from WMCore.DataStructs.Run import Run
-from WMCore.WMBS.File import File
-from WMCore.WMBS.Job import Job
-from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.File       import File
+from WMCore.WMBS.Job        import Job
+from WMCore.WMBS.JobGroup   import JobGroup
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
@@ -49,7 +52,11 @@ class AccountantWorker:
                                      dbinterface = myThread.dbi)
         self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                         logger = myThread.logger,
-                                        dbinterface = myThread.dbi)        
+                                        dbinterface = myThread.dbi)
+        self.uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+                                        logger = myThread.logger,
+                                        dbinterface = myThread.dbi)
+        
 
         self.getOutputMapAction      = self.daoFactory(classname = "Jobs.GetOutputMap")
         self.bulkAddToFilesetAction  = self.daoFactory(classname = "Fileset.BulkAddByLFN")
@@ -73,6 +80,15 @@ class AccountantWorker:
         self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
         self.dbsSetRunLumi     = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
 
+
+        self.dbsNewAlgoAction    = self.dbsDaoFactory(classname = "NewAlgo")
+        self.dbsNewDatasetAction = self.dbsDaoFactory(classname = "NewDataset")
+        self.dbsAssocAction      = self.dbsDaoFactory(classname = "AlgoDatasetAssoc")      
+        self.dbsExistsAction     = self.dbsDaoFactory(classname = "DBSBufferFiles.ExistsForAccountant")
+        self.dbsLFNHeritage      = self.dbsDaoFactory(classname = "DBSBufferFiles.BulkHeritageParent")
+
+        self.dbsSetDatasetAlgoAction = self.uploadFactory(classname = "SetDatasetAlgo")
+
         config = Configuration()
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl = kwargs["couchURL"]
@@ -88,6 +104,7 @@ class AccountantWorker:
         self.listOfJobsToSave  = []
         self.filesetAssoc      = []
         self.count = 0
+        self.assocID           = None
 
         
         return
@@ -221,8 +238,8 @@ class AccountantWorker:
                                           transaction = True)
 
         # Straighten out DBS Parentage
-        for mergedOutputFile in self.mergedOutputFiles:
-            self.setupDBSFileParentage(mergedOutputFile)
+        if len(self.mergedOutputFiles) > 0:
+            self.handleDBSBufferParentage()
 
         self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
 
@@ -328,23 +345,6 @@ class AccountantWorker:
 
         return newParents
         
-
-    def setupDBSFileParentage(self, outputFile):
-        """
-        _setupDBSFileParentage_
-
-        Setup file parentage inside DBSBuffer, properly handling redneck
-        parentage.
-        """
-        myThread = threading.currentThread()
-
-        newParents = self.findDBSParents(lfn = outputFile['lfn'])
-
-        if len(newParents) > 0:
-            dbsFile = DBSBufferFile(lfn = outputFile["lfn"])
-            dbsFile.addParents(list(newParents))
-
-        return
 
     def addFileToWMBS(self, jobType, fwjrFile, jobMask, jobID = None):
         """
@@ -617,3 +617,105 @@ class AccountantWorker:
         self.wmbsFilesToBuild.append(wmbsFile)
 
         return wmbsFile
+
+
+    def handleDBSBufferParentage(self):
+        """
+        _handleDBSBufferParentage_
+
+        Handle all the DBSBuffer Parentage in bulk if you can
+        """
+
+        outputLFNs = [f['lfn'] for f in self.mergedOutputFiles]
+        bindList         = []
+        parentLFNs       = []
+        parentMissing    = set()
+        for lfn in outputLFNs:
+            newParents = self.findDBSParents(lfn = lfn)
+            for parentLFN in newParents:
+                bindList.append({'child': lfn, 'parent': parentLFN})
+            parentLFNs.extend(list(newParents))
+
+        # Now we get whether or not the parents exist
+        exists = self.dbsExistsAction.execute(lfn = parentLFNs)
+        for parent in parentLFNs:
+            if not parent in exists:
+                parentMissing.add(parent)
+
+
+        if len(parentMissing) > 0:
+            # Then we have to create parents
+            # First, do we need to create a dummy dataset?
+            if self.assocID == None:
+                # Then we do
+                self.createDummyAlgoDataset()
+
+
+            # Now we just need to add the files
+            myThread = threading.currentThread()
+            localTransaction = Transaction(myThread.dbi)
+            localTransaction.begin()
+
+            # Execute missing parent addition
+            action = self.dbsDaoFactory(classname = "DBSBufferFiles.AddIgnore")
+            action.execute(lfns = list(parentMissing), datasetAlgo = self.assocID,
+                           status = "AlreadyInDBS",
+                           conn = localTransaction.conn,
+                           transaction = True)
+
+            localTransaction.commit()
+
+
+        # Now all the parents should exist
+        # Commit them to DBSBuffer
+        logging.info("About to commit all DBSBuffer Heritage information")
+
+        self.dbsLFNHeritage.execute(binds = bindList,
+                                    conn = self.transaction.conn,
+                                    transaction = True)
+
+        return
+
+
+
+
+    def createDummyAlgoDataset(self):
+        """
+        _createDummyAlgoDataset_
+        
+        Create a dummy algo and dataset for parents
+        That have not yet made it into DBS
+        """
+
+        logging.info("Creating a bogus dataset and algo")
+
+        myThread = threading.currentThread()
+        localTransaction = Transaction(myThread.dbi)
+        localTransaction.begin()
+        self.dbsNewAlgoAction.execute(appName = "cmsRun", appVer = "UNKNOWN",
+                                      appFam = "UNKNOWN", psetHash = "GIBBERISH",
+                                      configContent = "MOREBIGGERISH",
+                                      conn = localTransaction.conn,
+                                      transaction = True)
+        
+        self.dbsNewDatasetAction.execute(datasetPath = "/bogus/dataset/path",
+                                         conn = localTransaction.conn,
+                                         transaction = True)
+        
+        assocID = self.dbsAssocAction.execute(appName = "cmsRun", appVer = "UNKNOWN",
+                                              appFam = "UNKNOWN", psetHash = "GIBBERISH",
+                                              datasetPath = "/bogus/dataset/path",
+                                              conn = localTransaction.conn,
+                                              transaction = True)
+        
+        self.dbsSetDatasetAlgoAction.execute(datasetAlgo = assocID, inDBS = 1,
+                                             conn = localTransaction.conn,
+                                             transaction = True)
+
+        self.assocID = assocID
+
+        localTransaction.commit()
+
+
+        return
+    

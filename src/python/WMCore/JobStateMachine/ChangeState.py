@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.38 2010/04/12 20:31:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: ChangeState.py,v 1.39 2010/05/03 15:52:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.39 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -183,7 +183,7 @@ class ChangeState(WMObject, WMConnectionBase):
             doc["state_changes"].append(transDict)
 
             if job["fwjr"] != None:
-                doc["fwkjrs"].append(job["fwjr"])
+                doc["fwkjrs"].append(job["fwjr"].__to_json__(None))
                 del job["fwjr"]
 
             self.database.queue(doc)

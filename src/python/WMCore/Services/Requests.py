@@ -8,20 +8,26 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set. 
 """
 
-__revision__ = "$Id: Requests.py,v 1.37 2010/07/29 13:39:38 metson Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: Requests.py,v 1.38 2010/07/29 15:37:09 metson Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import urllib
 from urlparse import urlunparse
 import os
 import base64
 import httplib2
+from urlparse import urlparse
 from httplib import HTTPException
 from WMCore.WMException import WMException
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 
+def check_server_url(srvurl):
+    good_name = srvurl.startswith('http://') or srvurl.startswith('https://')
+    if not good_name:
+        raise ValueError('You must include http(s):// in your servers address')
+    
 class Requests(dict):
     """
     Generic class for sending different types of HTTP Request to a given URL
@@ -41,7 +47,7 @@ class Requests(dict):
         
         # then update with the incoming dict
         self.update(dict)
-        
+        check_server_url(self['host'])
         # and then get the URL opener
         self.setdefault("conn", self._getURLOpener())
         self.additionalHeaders = {}
@@ -235,9 +241,19 @@ class BasicAuthJSONRequests(JSONRequests):
             JSONRequests.__init__(self, url, dict={})
             return
 
-        (auth, hostname) = url.split("@", 2)
-
-        JSONRequests.__init__(self, hostname, dict)
+        # Cleanly pull out the user/password from the url
+        endpoint_components = urlparse(url)
+        
+        try:
+            #Only works on python 2.5 or above
+            scheme = endpoint_components.scheme
+            netloc = endpoint_components.netloc
+        except AttributeError:
+            scheme, netloc = endpoint_components[:2]
+        
+        (auth, hostname) = netloc.split('@')
+        
+        JSONRequests.__init__(self, '%s://%s' % (scheme, hostname), dict)
         self.additionalHeaders["Authorization"] = \
             "Basic " + base64.encodestring(auth).strip()
 

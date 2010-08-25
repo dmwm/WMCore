@@ -104,6 +104,10 @@ def retrieveStageOutImpl(name, stagein=False, useNewVersion = False):
         msg = "Failed to find StageOutImpl for name: %s\n" % name
         raise RegistryError, msg
     
-    return classRef(stagein)
+    if not useNewVersion:
+        return classRef(stagein)
+    else:
+        return classRef()   
+   
 
         

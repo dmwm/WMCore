@@ -59,20 +59,20 @@ class XMLFileblock(list):
             formattedChecksums = ",".join(["%s:%s" % (x.lower(), y) for x, y \
                                            in checksums.items() \
                                            if y not in (None, '')])
-            result.addNode(
-                IMProvNode("file", None,
-                           lfn = lfn,
-                           checksum = formattedChecksums,
-                           size = size)
-                )
+            file = IMProvNode("file")
+            file.attrs['name'] = lfn
+            file.attrs['checksum'] = formattedChecksums
+            file.attrs['bytes'] = size
+            result.addNode(file)
+
         return result
     
 class XMLDataset(list):
     """
     <dataset name='DatasetNameHere' is-open='boolean' is-transient='boolean'>
     <block name='fileblockname' is-open='boolean'>
-    <file lfn='lfn1Here' checksum='cksum:0' size ='fileSize1Here'/>
-    <file lfn='lfn2Here' checksum='cksum:0' size ='fileSize2Here'/> 
+    <file name='lfn1Here' checksum='cksum:0' bytes ='fileBytes1Here'/>
+    <file name='lfn2Here' checksum='cksum:0' bytes ='fileBytes2Here'/> 
     </block>
     </dataset>
     """
@@ -131,14 +131,14 @@ class XMLInjectionSpec:
 
     <dataset name='DatasetNameHere' is-open='boolean' is-transient='boolean'>
     <block name='fileblockname' is-open='boolean'>
-    <file lfn='lfn1Here' checksum='cksum:0' size ='fileSize1Here'/>
-    <file lfn='lfn2Here' checksum='cksum:0' size ='fileSize2Here'/> 
+    <file name='lfn1Here' checksum='cksum:0' bytes ='fileSize1Here'/>
+    <file name='lfn2Here' checksum='cksum:0' bytes ='fileSize2Here'/> 
     </block>
     </dataset>
     <dataset name='DatasetNameHere' is-open='boolean' is-transient='boolean'>
     <block name='fileblockname' is-open='boolean'>
-    <file lfn='lfn1Here' checksum='cksum:0' size ='fileSize1Here'/>
-    <file lfn='lfn2Here' checksum='cksum:0' size ='fileSize2Here'/> </block>
+    <file name='lfn1Here' checksum='cksum:0' bytes ='fileSize1Here'/>
+    <file name='lfn2Here' checksum='cksum:0' bytes ='fileSize2Here'/> </block>
     </dataset>
     
     </dbs>

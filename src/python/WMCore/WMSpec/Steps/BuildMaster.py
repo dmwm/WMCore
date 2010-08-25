@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: BuildMaster.py,v 1.5 2009/05/22 16:04:49 evansde Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: BuildMaster.py,v 1.6 2009/05/22 20:20:09 evansde Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import os
 
@@ -25,12 +25,14 @@ header = \
 __all__ = []
 
 from WMCore.WMRuntime.Bootstrap import establishTaskSpace
-taskSpace = establishTaskSpace()
+def _Locator():
+    pass
+args = {}
 
 """
 
 
-def initialiseWMTaskSpace(directory):
+def initialiseWMTaskSpace(directory, taskName):
     """
     _initialiseWMTaskSpace_
 
@@ -50,6 +52,9 @@ def initialiseWMTaskSpace(directory):
     initFile = "%s/__init__.py" % spaceDir
     handle = open(initFile, "w")
     handle.write(header)
+    handle.write("""args["TaskName"] = "%s"\n""" % taskName)
+    handle.write("""args["Locator"] = _Locator\n""")
+    handle.write("""taskSpace = establishTaskSpace(**args)\n""")
     handle.close()
     return spaceDir
 
@@ -74,7 +79,8 @@ class BuildMaster:
         TODO: Exception handling
 
         """
-        self.taskSpace = initialiseWMTaskSpace(self.workDir)
+        taskName = task.name()
+        self.taskSpace = initialiseWMTaskSpace(self.workDir, taskName)
         for step in task.steps().nodeIterator():
             stepType = step.stepType
             builder = StepFactory.getStepBuilder(stepType)

@@ -21,9 +21,11 @@ taskSpaceInit = \
 __all__ = []
 
 from WMCore.WMRuntime.Bootstrap import establishStepSpace
-stepSpace = establishStepSpace()
-
+def _Locator():
+    pass
+args = {}
 """
+
 
 class Builder:
     """
@@ -67,6 +69,9 @@ class Builder:
 
         handle = open(self.taskSpaceInitMod, 'w')
         handle.write(taskSpaceInit)
+        handle.write("""args["StepName"] = "%s"\n""" % self.stepName)
+        handle.write("""args["Locator"] = _Locator\n""")
+        handle.write("""stepSpace = establishStepSpace(**args)\n""")
         handle.close()
 
 

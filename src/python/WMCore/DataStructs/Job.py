@@ -7,16 +7,19 @@ Data object that describes a job
 """
 
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.22 2009/05/11 11:13:04 sfoulkes Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Job.py,v 1.23 2009/05/12 16:20:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.JobGroup import JobGroup
 from WMCore.DataStructs.Mask import Mask
 from WMCore.DataStructs.WMObject import WMObject
 
+from WMCore.Services.UUID import makeUUID
+
 from sets import Set
 import time
+
 
 class Job(WMObject, dict):
     def __init__(self, name = None, files = None):
@@ -31,10 +34,11 @@ class Job(WMObject, dict):
         else:
             self["input_files"] = files
 
+        self["id"] = makeUUID()
         self["jobgroup"] = None
         self["name"] = name
         self["state"] = 'new'
-        self["state_time"] = time.time()
+        self["state_time"] = int(time.time())
         self["outcome"] = 'fail'
         self["retry_count"] = 0
         self["location"] = None
@@ -90,7 +94,7 @@ class Job(WMObject, dict):
         Change the state of the job.
         """
         self["state"] = newState
-        self["state_time"] = time.time()
+        self["state_time"] = int(time.time())
         
         return
 

@@ -100,11 +100,15 @@ class WebRequestSchema(TemplatedPage):
         schema["BlockWhitelist"] = eval("[%s]"%blockWhitelist)
         schema["BlockBlacklist"] = eval("[%s]"%blockBlacklist)
         if siteWhitelist == None:
-            siteWhitelist = ""
+            siteWhitelist = []
         if siteBlacklist == None:
-            siteBlacklist = ""
-        schema["SiteWhitelist"] = eval("[%s]"%siteWhitelist)
-        schema["SiteBlacklist"] = eval("[%s]"%siteBlacklist)
+            siteBlacklist = []
+        if isinstance(siteWhitelist, str):
+            siteWhitelist = [siteWhitelist]
+        if isinstance(siteBlacklist, str):
+            siteBlacklist = [siteBlacklist]
+        schema["SiteWhitelist"] = siteWhitelist
+        schema["SiteBlacklist"] = siteBlacklist
         schema['CmsPath'] = self.cmsswInstallation
         schema['ProcessingVersion'] = processingVersion
         schema["CouchUrl"] = self.couchUrl

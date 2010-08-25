@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.39 2010/02/01 18:02:30 sryu Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: Page.py,v 1.40 2010/02/26 12:56:27 swakef Exp $"
+__version__ = "$Revision: 1.40 $"
 
 import urllib
 import cherrypy
@@ -49,6 +49,10 @@ class Page(WMObject):
 
     def exception(self, msg):
         if  msg:
+            self.log(msg, logging.ERROR)
+
+    def error(self, msg):
+        if msg:
             self.log(msg, logging.ERROR)
 
     def debug(self, msg):

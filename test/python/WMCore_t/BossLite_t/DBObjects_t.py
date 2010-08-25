@@ -48,8 +48,8 @@ class DBObjectsTest(unittest.TestCase):
         Test creation and destruction of task objects.
         """
         
-        myThread = threading.currentThread()
         db = BossLiteDBWM()
+        myThread = threading.currentThread()
         
         parameters = {'serverName': 'Taginae', 'name': 'Narses'}
         task = Task(parameters = parameters)
@@ -60,9 +60,10 @@ class DBObjectsTest(unittest.TestCase):
         
         self.assertTrue(task.exists(db))
         
-        # Now looks at what's actuallly there
-        taskInfo = myThread.dbi.processData("SELECT * FROM bl_task")[0].fetchall()[0].values()
-
+        # Now looks at what's actually there
+        queryResult = db.executeSQL(query = "SELECT * FROM bl_task")
+        taskInfo = queryResult[0].fetchall()[0].values()
+        
         self.assertTrue('Narses' in taskInfo)
         self.assertTrue('Taginae' in taskInfo)
 
@@ -70,11 +71,11 @@ class DBObjectsTest(unittest.TestCase):
         task.data['outputDirectory'] = 'Zama'
         task.save(db)
         
+        queryResult = db.executeSQL(query = "SELECT * FROM bl_task")
+        taskInfo = queryResult[0].fetchall()[0].values()
         
-        #taskInfo = myThread.dbi.processData("SELECT * FROM bl_task")[0].fetchall()[0].values()
-        #print taskInfo
-        #self.assertTrue('Cannae' in taskInfo)
-        #self.assertTrue('Zama' in taskInfo)
+        self.assertTrue('Cannae' in taskInfo)
+        self.assertTrue('Zama' in taskInfo)
 
         # Load by ID, test save
         task2 = Task(parameters = {'id': 1})
@@ -352,12 +353,16 @@ class DBObjectsTest(unittest.TestCase):
         
         task.update(db, deep=False)
 
-        jobInfo = myThread.dbi.processData("SELECT * FROM bl_job WHERE name = 'Doctore-0'")[0].fetchall()[0].values()       
+        queryResult = db.executeSQL(query = "SELECT * FROM bl_job WHERE name = 'Doctore-0'")
+        jobInfo = queryResult[0].fetchall()[0].values()
+    
         self.assertEqual(jobInfo[5], tmp)
         
         task.update(db, deep=True)
         
-        jobInfo = myThread.dbi.processData("SELECT * FROM bl_job WHERE name = 'Doctore-0'")[0].fetchall()[0].values()
+        queryResult = db.executeSQL(query = "SELECT * FROM bl_job WHERE name = 'Doctore-0'")
+        jobInfo = queryResult[0].fetchall()[0].values()
+        
         self.assertNotEqual(jobInfo[5], tmp)
         
         return

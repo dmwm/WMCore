@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.47 2010/02/16 16:24:59 metson Exp $"
-__version__ = "$Revision: 1.47 $"
+__revision__ = "$Id: Root.py,v 1.48 2010/02/18 15:09:31 metson Exp $"
+__version__ = "$Revision: 1.48 $"
 
 # CherryPy
 import cherrypy
@@ -17,6 +17,8 @@ from cherrypy import quickstart, expose, server, log, tree, engine, dispatch, to
 from cherrypy import config as cpconfig
 # configuration and arguments
 #FIXME
+from WMCore.Agent.Daemon.Create import createDaemon
+from WMCore.Agent.Daemon.Details import Details
 from WMCore.Configuration import Configuration
 from WMCore.Configuration import loadConfigurationFile
 from optparse import OptionParser
@@ -244,7 +246,46 @@ if __name__ == "__main__":
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
                       help="Be more verbose")
+    parser.add_option("-d", "--daemonise",
+                      action="store_true", dest="daemon", default=False,
+                      help="Daemonise the cherrypy process, and return the PID")
+    parser.add_option("-s", "--status",
+                      action="store_true", dest="status", default=False,
+                      help="Return the status of the daemon")
+    parser.add_option("-k", "--kill",
+                      action="store_true", dest="kill", default=False,
+                      help="Kill the daemon")
+    parser.add_option("-k", "--kill",
+                      action="store_true", dest="kill", default=False,
+                      help="Kill the daemon")
+    parser.add_option("-t", "--terminate",
+                      action="store_true", dest="terminate", default=False,
+                      help="Terminate the daemon (kill, wait, kill -9)")
     opts, args = parser.parse_args()
     cfg = loadConfigurationFile(opts.inifile)
+    
+    component = cfg.Webtools.application
+    workdir = getattr(cfg.Webtools, 'componentDir', '/tmp/webtools')
+    if workdir == None:
+        workdir = '/tmp/webtools'
     root = Root(cfg)
-    root.start()
+    if opts.status:
+        daemon = Details('%s/Daemon.xml' % workdir)
+        
+        if not daemon.isAlive():
+            print "Component:%s Not Running" % component
+        else:
+            print "Component:%s Running:%s" % (component, daemon['ProcessID'])
+    elif opts.kill:
+        daemon = Details('%s/Daemon.xml' % workdir)
+        daemon.kill()
+        daemon.removeAndBackupDaemonFile()
+    elif opts.terminate:
+        daemon = Details('%s/Daemon.xml' % workdir)
+        daemon.killWithPrejudice()
+        daemon.removeAndBackupDaemonFile()  
+    elif opts.daemon:
+        createDaemon(workdir)
+        root.start(False)
+    else:
+        root.start()

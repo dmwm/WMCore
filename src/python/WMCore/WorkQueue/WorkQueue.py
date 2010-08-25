@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.63 2010/02/09 12:27:09 swakef Exp $"
-__version__ = "$Revision: 1.63 $"
+__revision__ = "$Id: WorkQueue.py,v 1.64 2010/02/09 14:00:42 swakef Exp $"
+__version__ = "$Revision: 1.64 $"
 
 
 import uuid
@@ -382,7 +382,7 @@ class WorkQueue(WorkQueueBase):
             wmspec = unit['WMSpec']
             self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
                                                  blocks, parentQueueId,
-                                                 topLevelTask)
+                                                 wmspec.taskIterator().next())
         self.commitTransaction(trans)
         return len(totalUnits)
 

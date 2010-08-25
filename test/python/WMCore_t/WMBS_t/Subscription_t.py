@@ -53,7 +53,7 @@ class SubscriptionTest(unittest.TestCase):
         
         self._setup = True
         return
-                                                                
+
     def tearDown(self):
         """
         _tearDown_
@@ -998,7 +998,46 @@ class SubscriptionTest(unittest.TestCase):
                "Run 1 should be completed."
         assert testSubscription.isCompleteOnRun(2) == True, \
                "Run 2 should be completed."
-            
+
+    def testListIncompleteDAO(self):
+        """
+        _testListIncompeteDAO_
+
+        Test the Subscription.ListIncomplete DAO object that returns a list of
+        the subscriptions that have not completed processing all files.
+        """
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+        testSubscription.create()
+
+        myThread = threading.currentThread()        
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+        subIncomplete = daoFactory(classname = "Subscriptions.ListIncomplete")
+
+        incompleteSubs = subIncomplete.execute()
+
+        assert len(incompleteSubs) == 2, \
+               "ERROR: Wrong number of incomplete subscriptions returned: %s" % len(incompleteSubs)
+        assert testSubscription["id"] in incompleteSubs, \
+               "ERROR: Original subscription is missing."
+
+        otherSub = None
+        for subId in incompleteSubs:
+            if subId != testSubscription["id"]:
+                otherSub = subId
+
+        testSubscription.completeFiles([testFileA, testFileB, testFileC])
+
+        incompleteSubs = subIncomplete.execute()
+
+        assert len(incompleteSubs) == 1, \
+               "ERROR: Wrong number of incomplete subscriptions returned."
+        assert otherSub in incompleteSubs, \
+               "ERROR: Wrong subscription ID returned."
+
+        return
                
 if __name__ == "__main__":
     unittest.main()

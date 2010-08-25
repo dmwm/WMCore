@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.50 2010/05/07 14:58:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.51 2010/05/20 20:58:47 sfoulkes Exp $"
+__version__ = "$Revision: 1.51 $"
 
 import threading
 
@@ -384,7 +384,7 @@ class CreateWMBSBase(DBCreator):
                 (jobState)
             self.inserts["job_state_%s" % jobState] = jobStateQuery
 
-        self.subTypes = ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect"]
+        self.subTypes = ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect", "Skim"]
         for i in range(len(self.subTypes)): 
             subTypeQuery = """INSERT INTO wmbs_sub_types (name)
                                 VALUES ('%s')""" % (self.subTypes[i])

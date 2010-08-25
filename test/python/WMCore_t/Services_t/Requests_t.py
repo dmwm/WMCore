@@ -8,6 +8,7 @@ import WMCore.Services.Requests as Requests
 import os
 import threading
 import pprint
+from httplib import HTTPException
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
 from WMCore.DataStructs.Run import Run
@@ -71,7 +72,19 @@ class testThunking(unittest.TestCase):
         self.roundTrip(set([]))
         self.roundTrip(set([123, 'abc']))
         
-
+class testRequestExceptions(unittest.TestCase):
+    def test404Error(self):
+        endp = "cmsweb.cern.ch"
+        url = "/thispagedoesntexist/"
+        req = Requests.Requests(endp)
+        for v in ['GET', 'POST']:
+            self.assertRaises(HTTPException, req.makeRequest, url, verb=v)
+            try:
+                req.makeRequest(url, verb='GET')
+            except HTTPException, e:
+                print e
+                self.assertEqual(e.status, 404)
+        
 class testJSONRequests(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)

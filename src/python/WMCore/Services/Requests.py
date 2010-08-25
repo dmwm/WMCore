@@ -6,14 +6,16 @@ A set of classes to handle making http and https requests to a remote server and
 deserialising the response.
 """
 
-__revision__ = "$Id: Requests.py,v 1.34 2010/02/01 15:41:12 sryu Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: Requests.py,v 1.35 2010/02/26 11:42:58 metson Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import urllib
+from urlparse import urlunparse
 import os
 import base64
 from httplib import HTTPConnection
 from httplib import HTTPSConnection
+from httplib import HTTPException
 from WMCore.WMException import WMException
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
@@ -130,16 +132,34 @@ class Requests(dict):
         
         self['conn'].request(verb, uri, encoded_data, headers)
         response = self['conn'].getresponse()
-        data = response.read()
+        result = response.read()
         self['conn'].close()
-        
+        if response.status >= 400:
+            e = HTTPException()
+            setattr(e, 'req_data', encoded_data)
+            setattr(e, 'req_headers', headers)
+            setattr(e, 'url', self.buildURL(uri)) 
+            setattr(e, 'result', result)
+            setattr(e, 'status', response.status)
+            setattr(e, 'reason', response.reason)
+            setattr(e, 'headers', response.getheaders())
+            raise e
+              
         if type(decoder) == type(self.makeRequest) or type(decoder) == type(f):
-            data = decoder(data)
+            result = decoder(result)
         elif decoder != False:
-            data = self.decode(data)
+            result = self.decode(result)
         
-        return data, response.status, response.reason
-
+        return result, response.status, response.reason
+    
+    def buildURL(self, uri):
+        scheme = 'http'
+        if self['conn'].__class__.__name__.startswith('HTTPS'):
+            scheme = 'https'
+        netloc = '%s:%s' % (self['conn'].host, self['conn'].port)
+        return urlunparse([scheme, netloc, uri, '', '', ''])
+         
+    
     def encode(self, data):
         """
         encode data into some appropriate format, for now make it a string...

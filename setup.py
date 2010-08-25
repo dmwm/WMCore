@@ -63,7 +63,11 @@ class TestCommand(Command):
         print "Running %s tests" % testsuite.countTestCases()
         
         t = TextTestRunner(verbosity = 1)
-        t.run(testsuite)
+        result = t.run(testsuite)
+        if not result.wasSuccessful():
+            sys.exit("Tests unsuccessful. There were %s failures and %s errors"\
+                      % (len(result.failures), len(result.errors)))
+        
         
 class CleanCommand(Command):
     """
@@ -117,7 +121,7 @@ class LintCommand(Command):
         for dirpath, dirnames, filenames in os.walk('./src/python/'):
             # skipping CVS directories and their contents
             pathelements = dirpath.split('/')
-            
+            result = None
             if not 'CVS' in pathelements:
                 # to build up a list of file names which contain tests
                 for file in filenames:
@@ -126,7 +130,7 @@ class LintCommand(Command):
                         files.append(filepath)
                         # run individual tests as follows
                         try:
-                            lint.Run(['--rcfile=standards/.pylintrc', 
+                            result = lint.Run(['--rcfile=standards/.pylintrc', 
                                       '--output-format=parseable', 
                                       filepath])
                         except Exception, e:
@@ -134,7 +138,8 @@ class LintCommand(Command):
         # Could run a global test as:
         #input = ['--rcfile=standards/.pylintrc']
         #input.extend(files)
-        #lint.Run(input)        
+        #lint.Run(input)
+        print result    
                     
 def getPackages(package_dirs = []):
     packages = []

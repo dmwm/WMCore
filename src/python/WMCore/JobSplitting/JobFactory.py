@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.32 2010/07/21 13:54:57 sfoulkes Exp $"
-__version__  = "$Revision: 1.32 $"
+__revision__ = "$Id: JobFactory.py,v 1.33 2010/08/02 20:52:03 mnorman Exp $"
+__version__  = "$Revision: 1.33 $"
 
 
 import logging
 import threading
+import gc
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Fileset  import Fileset
 from WMCore.DataStructs.File     import File
 from WMCore.Services.UUID        import makeUUID
+from WMCore.WMBS.File            import File as WMBSFile
 
 class JobFactory(WMObject):
     """
@@ -24,7 +26,8 @@ class JobFactory(WMObject):
     def __init__(self,
                  package='WMCore.DataStructs',
                  subscription=None,
-                 generators=[]):
+                 generators=[],
+                 limit = 0):
         self.package = package
         self.subscription  = subscription
         self.generators    = generators
@@ -35,6 +38,11 @@ class JobFactory(WMObject):
         self.currentJob    = None
         self.nJobs         = 0
         self.baseUUID      = None
+        self.limit         = limit
+        self.transaction   = None
+        self.proxies       = []
+        self.grabByProxy   = False
+        self.daoFactory    = None
         self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
 
     def __call__(self, jobtype = "Job", grouptype = "JobGroup", *args, **kwargs):
@@ -68,9 +76,11 @@ class JobFactory(WMObject):
 
         map(lambda x: x.start(), self.generators)
 
-        self.algorithm(*args, **kwargs)
 
+        self.limit        = int(kwargs.get("file_load_limit", self.limit))
+        self.algorithm(*args, **kwargs)
         self.commit()
+        #gc.collect()
 
         map(lambda x: x.finish(), self.generators)
         return self.jobGroups
@@ -94,6 +104,7 @@ class JobFactory(WMObject):
         self.currentGroup = self.groupInstance(subscription=self.subscription)
         map(lambda x: x.startGroup(self.currentGroup), self.generators)
 
+
     def newJob(self, name=None, files=None):
         """
         Instantiate a new Job onject, apply all the generators to it
@@ -109,6 +120,7 @@ class JobFactory(WMObject):
         for gen in self.generators:
             gen(self.currentJob)
         self.currentGroup.add(self.currentJob)
+
 
     def appendJobGroup(self):
         """
@@ -134,6 +146,9 @@ class JobFactory(WMObject):
         if len(self.jobGroups) == 0:
             return
 
+        logging.debug("About to commit %i jobGroups" % (len(self.jobGroups)))
+        logging.debug("About to commit %i jobs" % (len(self.jobGroups[0].newjobs)))
+
         if self.package == 'WMCore.WMBS':
             self.subscription.bulkCommit(jobGroups = self.jobGroups)
         else:
@@ -144,6 +159,8 @@ class JobFactory(WMObject):
                 for job in jobGroup.jobs:
                     job.save()
             self.subscription.save()
+
+        gc.collect()
         return
 
     def sortByLocation(self):
@@ -156,7 +173,12 @@ class JobFactory(WMObject):
 
         fileDict = {}
 
-        fileset = self.subscription.availableFiles()
+        if self.grabByProxy:
+            #logging.error("About to load files by proxy")
+            fileset = self.loadFiles(size = self.limit)
+        else:
+            fileset = self.subscription.availableFiles(limit = self.limit)
+            #logging.error("Have fileset")
 
         for file in fileset:
             locSet = frozenset(file['locations'])
@@ -187,3 +209,151 @@ class JobFactory(WMObject):
         name = '%s-%i' % (self.baseUUID, length)
 
         return name
+
+
+
+    def open(self):
+        """
+        _open_
+
+        Open a connection to the database, and put
+        resulting ResultProxies in self.proxies
+        """
+
+        myThread = threading.currentThread()
+
+        # Handle all DAO stuff
+        from WMCore.DAOFactory  import DAOFactory
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
+
+
+        subAction = self.daoFactory(classname = "Subscriptions.GetAvailableFiles")
+        results   = subAction.execute(subscription = self.subscription['id'],
+                                      returnCursor = True)
+
+        for proxy in results:
+            self.proxies.append(proxy)
+
+        # Activate everything so that we grab files by proxy
+        self.grabByProxy  = True
+
+
+
+        return
+
+
+
+
+
+
+    def close(self):
+        """
+        _close_
+
+        Close any leftover connections
+        """
+
+
+        self.proxies     = []
+        self.grabByProxy = False
+
+
+
+
+    def loadFiles(self, size = 10):
+        """
+        _loadFiles_
+
+        Grab some files from the resultProxy
+        Should handle multiple proxies.  Not really sure about that
+        """
+
+        if len(self.proxies) < 1:
+            # Well, you don't have any proxies.
+            # This is what happens when you ran out of files last time
+            logging.info("No additional files found; Ending.")
+            return set()
+        
+
+        resultProxy = self.proxies[0]
+        rawResults  = []
+        keys        = resultProxy.keys
+        files       = set()
+
+
+        while len(rawResults) < size and len(self.proxies) > 0:
+            length = size - len(rawResults)
+            newResults = resultProxy.fetchmany(size = length)
+            if len(newResults) < length:
+                # Assume we're all out
+                # Eliminate this proxy
+                self.proxies.remove(resultProxy)
+            rawResults.extend(newResults)
+
+
+        fileList = self.formatDict(results = rawResults, keys = keys)
+
+
+        fileInfoAct  = self.daoFactory(classname = "Files.GetByID")
+        fileInfoDict = fileInfoAct.execute(file = [x["file"] for x in fileList])
+        
+        #Run through all files
+        for f in fileList:
+            fl = WMBSFile(id = f['file'])
+            fl.loadChecksum()
+            fl.update(fileInfoDict[f['file']])
+            if 'locations' in f.keys():
+                fl.setLocation(f['locations'], immediateSave = False)
+            files.add(fl)
+
+
+        return files
+            
+
+
+
+
+    def formatDict(self, results, keys):
+        """
+        _formatDict_
+
+        Cast the file column to an integer as the DBFormatter's formatDict()
+        method turns everything into strings.  Also, fixup the results of the
+        Oracle query by renaming 'fileid' to file.
+        """
+
+        myThread = threading.currentThread()
+
+        formattedResults = []
+        for entry in results:
+            indivDict = {}
+            for i in range(len(keys)):
+                # Assign each key to a value
+                indivDict[str(keys[i])] = entry[i]
+            formattedResults.append(indivDict)
+                           
+        for formattedResult in formattedResults:
+            if "file" in formattedResult.keys():
+                formattedResult["file"] = int(formattedResult["file"])
+            else:
+                formattedResult["file"] = int(formattedResult["fileid"])
+
+        #Now the tricky part
+        tempResults = {}
+        for formattedResult in formattedResults:
+            if formattedResult["file"] not in tempResults.keys():
+                tempResults[formattedResult["file"]] = []
+            if "se_name" in formattedResult.keys():
+                tempResults[formattedResult["file"]].append(formattedResult["se_name"])
+
+        finalResults = []
+        for key in tempResults.keys():
+            tmpDict = {"file": key}
+            if not tempResults[key] == []:
+                tmpDict['locations'] = tempResults[key]
+            finalResults.append(tmpDict)
+
+        return finalResults
+

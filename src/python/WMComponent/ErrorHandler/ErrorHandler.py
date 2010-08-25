@@ -14,18 +14,21 @@ The component runs in Poll mode, basically submits itself "Poll" message at the 
 We can introduce some delay in polling, if have to.
 """
 
-__revision__ = "$Id: ErrorHandler.py,v 1.7 2009/05/12 11:13:12 afaq Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ErrorHandler.py,v 1.8 2009/07/28 21:27:38 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 
 import logging
+import threading
 
 # harness class that encapsulates the basic component logic.
 from WMCore.Agent.Harness import Harness
 # we do not import failure handlers as they are dynamicly 
 # loaded from the config file.
 from WMCore.WMFactory import WMFactory
+
+from WMComponent.ErrorHandler.ErrorHandlerPoller import ErrorHandlerPoller
 
 class ErrorHandler(Harness):
     """
@@ -40,6 +43,7 @@ class ErrorHandler(Harness):
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
+        self.config = config
 
     def preInitialization(self):
         """
@@ -50,6 +54,5 @@ class ErrorHandler(Harness):
         myThread = threading.currentThread()
         pollInterval = self.config.ErrorHandler.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
-        myThread.workerThreadManager.addWorker(WorkflowManagerPoller(), \
-                                               pollInterval)
+        myThread.workerThreadManager.addWorker(ErrorHandlerPoller(self.config), pollInterval)
 

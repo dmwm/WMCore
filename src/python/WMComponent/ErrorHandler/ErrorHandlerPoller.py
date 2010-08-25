@@ -4,8 +4,8 @@
 The actual error handler algorithm
 """
 __all__ = []
-__revision__ = "$Id: ErrorHandlerPoller.py,v 1.2 2009/05/12 11:50:55 afaq Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ErrorHandlerPoller.py,v 1.3 2009/07/28 21:27:38 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -15,66 +15,103 @@ from sets import Set
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
-from WMCore.WMFactory import WMFactory
-
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBS.Fileset      import Fileset
+from WMCore.WMBS.Workflow     import Workflow
+from WMCore.WMBS.Job          import Job
+from WMCore.WMFactory         import WMFactory
+from WMCore.DAOFactory        import DAOFactory
+
+from WMCore.JobStateMachine.ChangeState import ChangeState
 
 class ErrorHandlerPoller(BaseWorkerThread):
     """
     Polls for Error Conditions, handles them
     """
-    def __init__(self):
+    def __init__(self, config):
         """
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
+        self.config = config
     
     def setup(self, parameters):
         """
         Load DB objects required for queries
         """
-        myThread = threading.currentThread()
-        factory = WMFactory("default", \
-            "WMComponent.ErrorHandler.Database." + myThread.dialect)
 
-	self.failedcreatequery = factory.loadObject("FindFailedCreates")
-	self.failedsubmitquery = factory.loadObject("FindFailedSubmits")
-	self.failedjobquery = factory.loadObject("FindFailedJobs")
+        myThread = threading.currentThread()
+
+        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
+        self.changeState = ChangeState(self.config)
+
+        self.maxRetries = self.config.ErrorHandler.maxRetries
 
 
     def processRetries(self, jobs, type):
+        """
+        Actually do the retries
+
+        """
+
+        exhaustJobs = []
+        cooloffJobs = []
 
 	# Retries < max retry count
         for ajob in jobs:
-                # Retries < max retry count
-                if ajob['retry_count'] < ajob['retry_max']:
-                        #SIMON's CODE SHOULD PUT the job in "exhausted" state
-                # Check if Retries >= max retry count
-                if ajob['retry_count'] >= ajob['retry_max']:
-			newstate=type+'cooloff'
-                        #SIMON's CODE SHOULD PUT the job in "newstate" state
+            # Retries < max retry count
+            if ajob['retry_count'] < self.maxRetries:
+                cooloffJobs.append(ajob)
+            # Check if Retries >= max retry count
+            if ajob['retry_count'] >= self.maxRetries:
+                exhaustJobs.append(ajob)
+                #SIMON's CODE SHOULD PUT the job in "newstate" state
+            else:
+                logging.error("Job %i had %s retries remaining" %(ajob['id'], str(ajob['retry_count'])))
+
+        #Now to actually do something.
+
+        self.changeState.propagate(exhaustJobs, 'exhausted', '%sfailed' %(type))
+        self.changeState.propagate(cooloffJobs, '%scooloff' %(type), '%sfailed' %(type))
 
     def handleErrors(self):
         """
         Queries DB for all watched filesets, if matching filesets become
         available, create the subscriptions
         """
-        # Discover the jobs that failed in create step (with status 'createfailed')
-        jobs = self.failedcreatequery.execute()
-        logging.debug("Found %s failed jobs failed during creation" % len(jobs))
-	processRetries(self, jobs, 'create')
 
-         # Discover the jobs that failed in submit step (with status 'submitfailed')
-        jobs = self.failedsubmitquery.execute()
-        logging.debug("Found %s failed jobs failed during submit" % len(jobs))
-	processRetries(self, jobs, 'submit')
+        createList = []
+        submitList = []
+        jobList    = []
 
-	# Discover the jobs that failed in run step (with status 'jobfailed')
-        jobs = self.failedjobquery.execute()
-        logging.debug("Found %s failed jobs failed during execution" % len(jobs))
-	processRetries(self, jobs, 'job')
+        getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
+
+        idList = getJobs.execute(state = 'CreateFailed')
+        logging.debug("Found %s failed jobs failed during creation" % len(idList))
+        for id in idList:
+            job = Job(id = id)
+            job.loadData()
+            createList.append(job)
+        idList = getJobs.execute(state = 'SubmitFailed')
+        logging.debug("Found %s failed jobs failed during submit" % len(idList))
+        for id in idList:
+            job = Job(id = id)
+            job.loadData()
+            submitList.append(job)
+        idList = getJobs.execute(state = 'JobFailed')
+        logging.debug("Found %s failed jobs failed during execution" % len(idList))
+        for id in idList:
+            job = Job(id = id)
+            job.loadData()
+            jobList.append(job)
+
+
+	self.processRetries(createList, 'create')
+        self.processRetries(submitList, 'submit')
+        self.processRetries(jobList, 'job')
+
 
     def algorithm(self, parameters):
         """

@@ -7,8 +7,8 @@ PilotMonitor plugin for the T0 LSF submission system
 
 """
 __author__= "Khawar.Ahmad@cern.ch"
-__version__= "$Revision: 1.1 $"
-__revision__= "$Id: T0LSFPilotMonitor.py,v 1.1 2009/07/30 22:30:50 khawar Exp $" 
+__version__= "$Revision: 1.2 $"
+__revision__= "$Id: T0LSFPilotMonitor.py,v 1.2 2009/09/16 12:39:53 khawar Exp $" 
 
 import logging
 import traceback

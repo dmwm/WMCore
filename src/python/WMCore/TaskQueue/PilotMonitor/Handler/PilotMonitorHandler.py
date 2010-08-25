@@ -41,9 +41,8 @@ class PilotMonitorHandler(BaseHandler):
         orgPayload = payload
         self.logger.debug("PilotMonitorHandler:monitorPilot")
         payload = cPickle.loads(payload['payload'])
-        site = payload['site'] 
-        submissionMethod = payload['submissionMethod']
-        
+        #site = payload['site'] 
+        #submissionMethod = payload['submissionMethod']
 	
         try:
             monitor = retrieveMonitor( \
@@ -54,29 +53,48 @@ class PilotMonitorHandler(BaseHandler):
 
         jobSubmitted = False
         attempts = 0
+        #return 
         try:
             #self.logger.debug('TQAPI: %s' % self.component.tqStateApi.getPilotCountsBySite())
-            result = monitor( site, self.component.tqStateApi) 
-            self.logger.debug(result)
-            if ( not result.has_key('Error')):     
-                availableStatus = result['availableStatus']
-                availableCount  = result['available']
-                
-                if ( not jobSubmitted and availableStatus is True):
-                    msgPayload = cPickle.dumps({'site':'CERN', \
-                                  'bulkSize':1, \
-                                  'submissionMethod':'LSF'})
-                    #print msgPayload 
-                    msg={'name':'SubmitPilotJob',\
-                         'payload':msgPayload, \
-                         'instant':True }
+            result = {}
+            
+            self.logger.debug(payload)
+            self.logger.debug('has site: %s' %payload.has_key('site') )
 
-                    self.logger.debug('should Publish SubmitPilotJob %s' % availableCount )
-                    self.sendServiceMsg(msg) 
-                    #jobSubmitted = True
-            time.sleep(20)
-            #msg to itself for conitnous working 
-            #self.logger.debug('org payload %s' % orgPayload['payload'])
+            if ( payload.has_key('site') ): 
+                #hasSite = True
+                site = payload['site']
+                if ( site == 'CERN' ):
+                    self.logger.debug('site to Monitor: %s' % site)
+                    return
+                result = monitor( site, self.component.tqStateApi) 
+                self.logger.debug(result)
+            else:
+                result = monitor.monitorAll(self.component.tqStateApi)
+                self.logger.debug('MonitorAllSites: %s' % result)
+ 
+            if ( not result.has_key('Error') ):     
+                #loop over result
+                for site in result.keys():
+                    self.logger.debug('site result: %s' % site)
+                    availableStatus = result[site]['availableStatus']
+                    availableCount  = result[site]['available']
+
+                    if ( not jobSubmitted and availableStatus is True):
+                        msgPayload = cPickle.dumps({'site':site, \
+                                  'bulkSize':availableCount, \
+                                  'submissionMethod':'LSF'})
+                        #print msgPayload 
+                        msg={'name':'SubmitPilotJob',\
+                             'payload':msgPayload, \
+                             'instant':True }
+
+                        self.logger.debug('should Publish SubmitPilotJob %s' % availableCount )
+                        self.sendServiceMsg(msg) 
+
+            #time.sleep(120)
+
+            #msg to itself for continuous working 
             msg = {'name':'MonitorPilots', \
                    'payload':orgPayload['payload'], \
                    'instant': False, \

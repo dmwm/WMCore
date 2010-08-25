@@ -43,7 +43,6 @@ class MonitorInterface:
         self.retrieveSites()
         self.pluginConfiguration = None
         
-
     def newConstraint(self):
         """
         _newConstraint_
@@ -52,7 +51,6 @@ class MonitorInterface:
 
         """
         return ResourceConstraint()
-
 
     def retrieveSites(self):
         """
@@ -68,16 +66,19 @@ class MonitorInterface:
         
         resCon = ResourceControlDB()
         siteNames = resCon.siteNames()
-        
+        #seNames = resCon. 
         for site in siteNames:
             siteData = resCon.getSiteData(site)
             self.allSites[site] = siteData
             siteIndex = siteData['SiteIndex']
+            siteSE = siteData['SEName']
             if siteData['Active'] == True:
                 self.activeSites.append(site)
-            self.siteThresholds[site] = resCon.siteThresholds(siteIndex)
-            self.siteAttributes[site] = resCon.siteAttributes(siteIndex)
-            self.sitePerformance[site] = \
+
+            self.siteThresholds[siteSE] = resCon.siteThresholds(siteIndex)
+            #self.siteThresholds[site]  = resCon.siteThresholds(siteIndex)
+            self.siteAttributes[siteSE]   = resCon.siteAttributes(siteIndex)
+            self.sitePerformance[siteSE]  = \
                 selectRcSitePerformance(siteIndex, self.performanceInterval)
             
         del resCon
@@ -117,5 +118,3 @@ class MonitorInterface:
         published as  ResourceAvailable events
         """
         return [ResourceConstraint() ]
-
-    

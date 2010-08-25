@@ -25,6 +25,7 @@ from PilotMonitor.PilotMonitorComponent import PilotMonitorComponent
 try:
     config = loadProdAgentConfiguration()
     compCfg = config.getConfig("PilotMonitor")
+    tqCfg = config.getConfig("TaskQueue");
 except StandardError, ex:
     msg = "Error reading configuration:\n"
     msg += str(ex)
@@ -35,12 +36,18 @@ compCfg['ComponentDir'] = os.path.expandvars(compCfg['ComponentDir'])
 #settig up the configuration for PilotMonitor
 config = loadConfigurationFile(compCfg['defaultConfig'])
 
-config.PilotMonitorComponent.pollInterval = compCfg['pollInterval']
-config.PilotMonitorComponent.plugin = compCfg['plugin']
-config.PilotMonitorComponent.componentDir=compCfg['ComponentDir']
-config.PilotMonitorComponent.TQConfig=compCfg['TQConfig']
-config.section_("CoreDatabase")
+#poll Interval
+if ( compCfg.has_key("pollInterval") ): 
+    config.PilotMonitorComponent.pollInterval = compCfg['pollInterval']
+
+#plugin
+if ( compCfg.has_key("plugin") ):
+    config.PilotMonitorComponent.plugin = compCfg['plugin']
+
+config.PilotMonitorComponent.componentDir = compCfg['ComponentDir']
+config.PilotMonitorComponent.TQConfig     = tqCfg['TaskQueueConfFile']
 #set config with DB common settings
+config.section_("CoreDatabase")
 config.CoreDatabase.dialect = dbConfig['dbType']
 config.CoreDatabase.socket = dbConfig['socketFileLocation']
 config.CoreDatabase.user = dbConfig['user']
@@ -48,7 +55,7 @@ config.CoreDatabase.passwd = dbConfig['passwd']
 config.CoreDatabase.hostname = dbConfig['host']
 config.CoreDatabase.name = 'WMCoreDB' 
 
-#print config
+print config
 
 #  //
 # // Initialise and start the component
@@ -59,4 +66,3 @@ pilotMonitor.prepareToStart()
 #pilotMonitor.startComponent()
 #pilotMonitor.publishMonitorPilots()
 pilotMonitor.startDeamon()
-print 'Yup go gherei'

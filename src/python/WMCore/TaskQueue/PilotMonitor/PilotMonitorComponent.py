@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 """
-_JobQueueComponent_
+_PilotMonitorComponent_
 
 
 
 """
 
-__revision__ = "$Id: PilotMonitorComponent.py,v 1.1 2009/07/30 22:30:49 khawar Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: PilotMonitorComponent.py,v 1.2 2009/09/16 12:39:52 khawar Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import os
@@ -32,8 +32,10 @@ class PilotMonitorComponent(Harness):
     """
     def __init__(self, config):
         Harness.__init__(self, config)
-        self.pollInterval = self.config.PilotMonitorComponent.pollInterval
-        print self.pollInterval
+        if ( not hasattr(self.config.PilotMonitorComponent,"pollInterval" ) ):
+            self.pollInterval = "00:20:00"
+        else:
+            self.pollInterval = self.config.PilotMonitorComponent.pollInterval
  
 	
     def preInitialization(self):
@@ -56,18 +58,19 @@ class PilotMonitorComponent(Harness):
 
 
     def postInitialization(self):
-        #self.publishMonitorPilots()
-        #pass
-        print 'pollinterval: %s' % self.pollInterval
-        logging.debug('POST INITIALIZATION before if')
+        """ 
+        _postInitialization_
+
+        """
+
         myThread = threading.currentThread()
         if ( myThread.msgService != None):
             logging.debug('POST INITIALIZATION within IF')
-            msgPayload = cPickle.dumps({'site':'CERN', 'bulkSize':1, 'submissionMethod':'LSF'})
+            msgPayload = cPickle.dumps({'bulkSize':1, 'submissionMethod':'LSF'})
             msg = {'name':'MonitorPilots', \
                     'payload':msgPayload, \
                     'instant': False, \
                     'delay':'00:01:00' }
             myThread.msgService.publish(msg)
         else:
-            logging.debug('POST INITIALIZATION: coult not publish initial PilotMonitor message ')  
+            logging.debug('POST INITIALIZATION: could not publish initial PilotMonitor message ')  

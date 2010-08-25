@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.4 2009/05/09 11:42:26 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Locations_t.py,v 1.5 2009/05/09 12:05:33 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import unittest
@@ -85,14 +85,25 @@ class LocationsTest(unittest.TestCase):
         for location in goldenLocations:
             # The following is intentional, I want to test that inserting the
             # same location multiple times does not cause problems.
-            locationNew.execute(siteName = location)
-            locationNew.execute(siteName = location)
+            locationNew.execute(siteName = location, jobSlots = 300)
+            locationNew.execute(siteName = location, jobSlots = 300)
         
+        locationNew.execute(siteName = "empty_site")
+        goldenLocations.append("empty_site")
+
         locationList = daoFactory(classname = "Locations.List")
         currentLocations = locationList.execute()
         for location in currentLocations:
             assert location[1] in goldenLocations, \
                    "ERROR: Unknown location was returned"
+
+            if location[1] == "empty_site":
+                assert location[2] == 0, \
+                    "ERROR: Site has wrong number of job slots."
+            else:
+                assert location[2] == 300, \
+                    "ERROR: Site has wrong number of job slots."
+
             goldenLocations.remove(location[1])
 
         assert len(goldenLocations) == 0, \
@@ -103,8 +114,12 @@ class LocationsTest(unittest.TestCase):
         locationDelete.execute(siteName = "goodse.cern.ch")
 
         currentLocations = locationList.execute()
-        assert len(currentLocations) == 0, \
-               "ERROR: Not all locations were deleted"
+        assert len(currentLocations) == 1, \
+            "ERROR: Not all locations were deleted"
+        assert currentLocations[0][1] == "empty_site", \
+            "ERROR: The wrong sites were deleted."
+
+        return
         
 if __name__ == "__main__":
         unittest.main()

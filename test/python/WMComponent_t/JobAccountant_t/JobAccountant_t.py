@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.21 2010/02/25 22:42:14 sfoulkes Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.22 2010/02/25 23:08:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import logging
 import os.path
@@ -43,6 +43,9 @@ class JobAccountantTest(unittest.TestCase):
 
     Unit tests for the WMAgent JobAccountant.
     """
+    def runTest(self):
+        return
+    
     def setUp(self):
         """
         _setUp_
@@ -2005,4 +2008,13 @@ class JobAccountantTest(unittest.TestCase):
 #         return
 
 if __name__ == '__main__':
-    unittest.main()
+    myTest = JobAccountantTest()
+    myTest.setUp()
+    myTest.setupDBForLoadTest()
+    myWorker = AccountantWorker(couchURL = "cmssrv52.fnal.gov:5984", couchDBName = "accountanttest")
+    startTime = time.time()
+    for (jobID, fwjrPath) in myTest.jobs:
+        myWorker.__call__({"fwjr_path": fwjrPath, "id": jobID})
+    endTime = time.time()
+    print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))            
+    myTest.tearDown()

@@ -8,8 +8,8 @@ Equivalent of a PayloadNode in the old production system WorkflowSpec
 
 """
 
-__revision__ = "$Id: WMStep.py,v 1.5 2009/06/12 16:53:20 evansde Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WMStep.py,v 1.6 2010/01/11 21:05:25 evansde Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper, nodeMap, getNode
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
@@ -104,6 +104,8 @@ class WMStep(ConfigSectionTree):
         self.input.section_("links")
         self.section_("output")
         self.section_("sandbox")
+        
+        self.section_("emulator")
 
 
 

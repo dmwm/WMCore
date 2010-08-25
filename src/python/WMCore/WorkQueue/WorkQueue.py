@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.34 2009/11/20 22:59:58 sryu Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: WorkQueue.py,v 1.35 2009/11/24 22:57:49 sryu Exp $"
+__version__ = "$Revision: 1.35 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -52,20 +52,20 @@ from WMCore.WorkQueue.Database import States
 #  //
 # // Convenience constructor functions
 #//
-def globalQueue(**kwargs):
+def globalQueue(logger=None, dbi=None, **kwargs):
     """Convenience method to create a WorkQueue suitable for use globally
     """
     defaults = {'SplitByBlock' : False,
                 'PopulateFilesets' : False}
     defaults.update(kwargs)
-    return WorkQueue(**defaults)
+    return WorkQueue(logger, dbi,**defaults)
 
-def localQueue(**kwargs):
+def localQueue(logger=None, dbi=None,**kwargs):
     """Convenience method to create a WorkQueue suitable for use locally
     """
     defaults = {'TrackLocationOrSubscription' : 'location'}
     defaults.update(kwargs)
-    return WorkQueue(**defaults)
+    return WorkQueue(logger, dbi,**defaults)
 
 
 
@@ -78,8 +78,8 @@ class WorkQueue(WorkQueueBase):
     This  provide API for JSM (WorkQueuePool) - getWork(), gotWork()
     and injector
     """
-    def __init__(self, **params):
-        WorkQueueBase.__init__(self)
+    def __init__(self, logger=None, dbi=None,  **params):
+        WorkQueueBase.__init__(self, logger, dbi)
         self.dbsHelpers = {}
         self.remote_queues = {}
         self.lastLocationUpdate = 0
@@ -128,10 +128,6 @@ class WorkQueue(WorkQueueBase):
             self.parent_queue = self._get_remote_queue(self.params['ParentQueue'])
 
 
-
-
-
-
     #  //
     # // External API
     #//
@@ -178,8 +174,8 @@ class WorkQueue(WorkQueueBase):
         if not affected:
             raise RuntimeError, "Priority not changed: No matching elements"
 
-    def getWork(self, siteJobs, pullingQueue = None):
-        """
+    def getWork(self, siteJobs, pullingQueueUrl = None):
+        """ 
         _getWork_
         siteJob is dict format of {site: estimateJobSlot}
         
@@ -220,12 +216,12 @@ class WorkQueue(WorkQueueBase):
                 
                 sub = self._wmbsPreparation(match, wmSpecInfo)
                 
-                self.setStatus('Acquired', match['id'],'id', pullingQueue)
+                self.setStatus('Acquired', match['id'],'id', pullingQueueUrl)
             
             else:
                 # never be Acquired status
-                status = pullingQueue and 'Negotiating' or 'Acquired'
-                self.setStatus(status, match['id'],'id', pullingQueue)
+                status = pullingQueueUrl and 'Negotiating' or 'Acquired'
+                self.setStatus(status, match['id'],'id', pullingQueueUrl)
             self.commitTransaction(trans)
             
             wmSpecInfo['element_id'] = match['id']   

@@ -5,17 +5,14 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-
-
+import time
+import logging
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Services.UUID import makeUUID
 from WMCore.WMConnectionBase import WMConnectionBase
-
-import time
-import logging
 
 StateTransitionsByJobID = {"map": \
 """
@@ -46,6 +43,75 @@ function(doc) {
     }
   }
 """}  
+
+ErrorsByWorkflowName = {"map": \
+"""
+function(doc) {
+  if (doc['type'] == 'fwjr') {
+    var specName = doc['fwjr'].task.split('/')[1];
+
+    for (var stepName in doc['fwjr'].steps) {
+      if (doc['fwjr']['steps'][stepName].errors.length > 0) {
+        emit(specName, {'jobid': doc['jobid'],
+                        'retry': doc['retrycount'],
+                        'step': stepName,
+                        'task': doc['fwjr']['task'],
+                        'error': doc['fwjr']['steps'][stepName].errors});
+        }
+      }
+    }
+  }
+"""}
+
+OutputByWorkflowName = {"map": \
+"""
+function(doc) {
+  if (doc['type'] == 'fwjr') {
+    var specName = doc['fwjr'].task.split('/')[1]
+
+    for (var stepName in doc['fwjr']['steps']) {
+      if (stepName != 'cmsRun1') {
+        continue;
+        }
+
+      var stepOutput = doc['fwjr']['steps'][stepName]['output']
+      for (var outputModuleName in stepOutput) {
+        for (var outputFileIndex in stepOutput[outputModuleName]) {
+          var outputFile = stepOutput[outputModuleName][outputFileIndex];
+
+          if (outputModuleName == 'Merged' || (outputFile.hasAttribute('merged') &&
+                                               outputFile.getAttribute('merged'))) {
+            var datasetPath = '/' + outputFile['dataset']['primaryDataset'] +
+                              '/' + outputFile['dataset']['processedDataset'] +
+                              '/' + outputFile['dataset']['dataTier'];
+            emit([specName, datasetPath], {'size': outputFile['size'],
+                                           'events': outputFile['events']});
+            }
+          }
+        }
+      }
+    }
+  }
+""", "reduce": \
+"""
+function (key, values, rereduce) {
+  var output = {'size': 0, 'events': 0, 'count': 0};
+
+  for (var someValue in values) {
+    output['size'] += values[someValue]['size'];
+    output['events'] += values[someValue]['events'];
+
+    if (rereduce) {
+      output['count'] += values[someValue]['count'];
+      }
+    else {
+      output['count'] += 1;
+      }
+    }
+
+  return output;
+  }
+"""}
 
 class ChangeState(WMObject, WMConnectionBase):
     """

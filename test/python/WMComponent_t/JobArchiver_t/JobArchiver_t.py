@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: JobArchiver_t.py,v 1.6 2010/03/11 21:59:43 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JobArchiver_t.py,v 1.7 2010/04/15 14:50:50 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 import logging
@@ -256,13 +256,16 @@ class JobArchiverTest(unittest.TestCase):
             pipe = Popen(['tar', '-xvf', '%s/%s/Job_%i.tar' %(config.JobArchiver.logDir, 'JobCluster_0', job['id'])],
                          stdout = PIPE, stderr = PIPE, shell = False)
             pipe.wait()
-            filename = '%s/%s/%s.out' %(cacheDir[1:], job['name'], job['name'])
+            #filename = '%s/%s/%s.out' %(cacheDir[1:], job['name'], job['name'])
+            filename = '%s.out' %(job['name'])
             self.assertEqual(os.path.isfile(filename), True, 'Could not find file %s' %(filename))
             f = open(filename, 'r')
             fileContents = f.readlines()
             f.close()
             self.assertEqual(fileContents[0].find(job['name']) > -1, True)
-            shutil.rmtree(os.path.join(os.getcwd(), 'tmp'))  # We unpack the tarball locally, so we have to clean up
+            os.remove(filename)
+            if os.path.isfile('Job_%i.tar' %(job['id'])):
+                os.remove('Job_%i.tar' %(job['id']))
 
         return
 

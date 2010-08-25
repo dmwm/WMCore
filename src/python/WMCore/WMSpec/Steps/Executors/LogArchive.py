@@ -6,8 +6,8 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.16 2010/06/14 20:41:11 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: LogArchive.py,v 1.17 2010/06/18 21:02:44 mnorman Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import os
 import os.path
@@ -24,9 +24,16 @@ import WMCore.Storage.StageOutMgr as StageOutMgr
 
 
 class Alarm(Exception):
+    """
+    Silly exception
+
+    """
     pass
 
 def alarmHandler(signum, frame):
+    """
+    Silly handler (raise if you have an alarm)
+    """
     raise Alarm
 
 lfnGroup = lambda j : str(j.get("counter", 0) / 500).zfill(4)
@@ -98,7 +105,8 @@ class LogArchive(Executor):
         tarBallLocation = os.path.join(self.stepSpace.location, tarName)
         tarBall         = tarfile.open(tarBallLocation, 'w:gz')
         for f in logFilesForTransfer:
-            tarBall.add(f)
+            tarBall.add(name  = f,
+                        arcname = f.replace(self.stepSpace.taskSpace.location, '', 1).lstrip('/'))
         tarBall.close()
 
 

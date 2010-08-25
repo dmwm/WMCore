@@ -22,25 +22,29 @@ class WMBSRESTModel(RESTModel):
         self.methods = {'GET':{}}
         self.addDAO('GET', 'jobs', 'Monitoring.JobsByState')
         self.addDAO('GET', 'jobcount', 'Monitoring.JobCountByState')
-        self.addDAO('GET', 'jobsbysubs', 'Monitoring.JobsBySubscription', ['subscription'])
-        self.addDAO('GET', 'jobcountbysubs', 'Monitoring.JobCountBySubscriptionAndRun', ['subscription', 'run'])
+        self.addDAO('GET', 'jobsbysubs', 'Monitoring.JobsBySubscription', 
+                    ['fileset_name', 'workflow_name', 'state_time'],
+                     validation=[self.validateArgs])
+        self.addDAO('GET', 'jobcountbysubs', 'Monitoring.JobCountBySubscriptionAndRun', 
+                    ['subscription', 'run'],
+                    validation=[self.validateArgs])
         
     def addDAO(self, verb, methodKey, daoStr, args=[], validation=[], version=1):
         """
         add dao (or any other method handler) in self.methods
         self.method need to be initialize if sub class doesn't want to take provide by
         """
-        
-        
+
         dao = self.daofactory(classname=daoStr) 
                 
         self.methods[verb][methodKey] = {'args': args,
                                          'call': dao.execute,
-                                         'validation': [],
+                                         'validation': validation,
                                          'version': version}
         
 
-        
+    def validateArgs(self, input):
+        return input
         
         
         

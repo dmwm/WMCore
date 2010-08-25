@@ -27,7 +27,7 @@ import WMCore.Database.CMSCouch as CMSCouch
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
-
+from WMCore.WMInit import getWMBASE
 
 def runboth(testcase):
     """
@@ -113,7 +113,7 @@ class testRequestExceptions(unittest.TestCase):
 class testRepeatCalls(RESTBaseUnitTest):
     def initialize(self):
         self.config = DefaultConfig()
-        self.config.UnitTests.templates = os.environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools'
+        self.config.UnitTests.templates = getWMBASE() + '/src/templates/WMCore/WebTools'
         self.urlbase = self.config.getServerUrl()
         
     def test10Calls(self):

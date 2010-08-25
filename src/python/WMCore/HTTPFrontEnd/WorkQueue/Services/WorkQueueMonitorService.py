@@ -1,5 +1,5 @@
 """
-WMCore/HTTPFrontEnd/WorkQueue/WorkQueueMonitoringModel.py
+WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueMonitorService.py
 
 REST interface to WorkQueue monitoring capabilities.
 
@@ -13,12 +13,14 @@ https://twiki.cern.ch/twiki/bin/view/CMS/WorkQueueInstallation
 writing unittests / testing details:
 https://twiki.cern.ch/twiki/bin/view/CMS/RESTModelUnitTest
 
+
 """
 
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.1 2010/02/01 16:31:06 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.2 2010/02/03 14:16:55 maxa Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 
@@ -34,38 +36,23 @@ class WorkQueueMonitorService(ServiceInterface):
     _myClass = "short cut to the class name for logging purposes"
     
     def register(self):
-        
         self._myClass = self.__class__.__name__ 
         
         self._testDbReadiness()
-        
-        # create an instance of WorkQueue
-        # this one fails - AttributeError: 'ConfigSection' object has no attribute 'queueParams'
-        # self.wq = globalQueue(logger = self, dbi = self.model.dbi, **config.queueParams)
-
-        # taken from test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py
-        self.globalQueue = globalQueue(CacheDir = 'global',
-                                       NegotiationTimeout = 0,
-                                       QueueURL = 'global.example.com')
-
-        # 
-        #self.globalQueue = getGlobalQueue(dbi = self.testInit.getDBInterface(),
-        #                                  CacheDir = 'global',
-        #                                  NegotiationTimeout = 0,
-        #                                  QueueURL = self.config.getServerUrl())    
-
-
 
         self.model.addMethod("GET", "test", self.testMethod)
         self.model.addMethod("GET", "testDb", self.testDb)
-        # TODO - args should not be listed this way ...
-        self.model.addMethod("POST", "status", self.status,
-                       args=["status", "before", "after", "elementIDs", "subs", "dictKey"])
+
+        # from Seangchan (WorkQueueService)
+        self.wq = globalQueue(logger = self.model, dbi = self.model.dbi, **self.model.config.queueParams)
+        self.model.addMethod('POST', 'status', self.wq.status, args=["status", "before", "after", 
+                                        "elementIDs", "subs", "dictKey"])
         
-        # must be DASFormatter   
-        # later using DAO (should use self.addDAO() ...
-            
-        logging.info("%s initialised." % self._myClass)
+        # how to retrieve status of WQ elements
+        # DAO manner
+        
+        # later using DAO (should use self.addDAO() ...    
+        logging.info("%s initialised." % self._myClass)        
         
 
     
@@ -103,20 +90,3 @@ class WorkQueueMonitorService(ServiceInterface):
             return "database test failed, reason: '%s'" % ex
         
         
-        
-    def status(self, status = None, before = None, after = None, elementIDs=None, 
-               dictKey = None):
-        """Monitoring status of the WorkQueue elements"""
-        
-        if elementIDs != None:
-            elementIDs = JsonWrapper.loads(elementIDs)
-        
-        if before != None:
-            before = int(before)
-        if after != None:
-            after = int(after)
-        
-        result = self.globalQueue.status(status, before, after, elementIDs,
-                                         dictKey)
-        
-        return result  

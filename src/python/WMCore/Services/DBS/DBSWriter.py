@@ -259,7 +259,7 @@ class DBSWriter:
 
 	if len(files) < 1: 
 		return 
-        affectedBlocks = set()
+        affectedBlocks = []
         insertFiles =  []
         addedRuns=[]
         seName = None
@@ -357,7 +357,8 @@ class DBSWriter:
                 #//
             for mergedFile in insertFiles:
                 mergedFile['Block'] = fileBlock
-                affectedBlocks.add(fileBlock['Name'])
+                if not fileBlock in affectedBlocks:
+                    affectedBlocks.append(fileBlock)
                 msg="calling: self.dbs.insertMergedFile(%s, %s)" % (str(mergedFile['ParentList']),str(mergedFile))
                 logging.debug(msg)
                 try:
@@ -379,7 +380,8 @@ class DBSWriter:
                 #  //
                 # // Processing files
                 #//
-                affectedBlocks.add(fileBlock['Name'])
+                if not fileBlock in affectedBlocks:
+                    affectedBlocks.append(fileBlock)
                 msg="calling: self.dbs.insertFiles(%s, %s, %s)" % (str(procDataset['Path']),str(insertFiles),str(fileBlock))
                 logging.debug(msg)
 

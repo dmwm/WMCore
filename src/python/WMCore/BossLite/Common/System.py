@@ -12,8 +12,8 @@ import os
 import logging
 import select, signal, fcntl
 
-__version__ = "$Id: System.py,v 1.6 2010/05/11 22:29:43 spigafi Exp $"
-__revision__ = "$Revision: 1.6 $"
+__version__ = "$Id: System.py,v 1.7 2010/05/18 13:48:35 spigafi Exp $"
+__revision__ = "$Revision: 1.7 $"
 
 
 def setPgid():
@@ -110,6 +110,7 @@ def decodeTimestamp( tmp ) :
     # Rounding ...
     return int(result)
 
+
 def encodeTimestamp( tmp ) :
     """
     encodeTimestamp
@@ -126,6 +127,7 @@ def encodeTimestamp( tmp ) :
     # 0 / invalid value -> 1970-01-01 00:00:00
     return time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(0)))
 
+
 def strToList( tmp ) :
     """
     eval of a string which is espected to be a list
@@ -136,7 +138,7 @@ def strToList( tmp ) :
         return []
     else: 
         return tmp[:-1].split(',') 
-    
+
 
 def listToStr( tmp ) :
     """
@@ -150,39 +152,3 @@ def listToStr( tmp ) :
         
     # return '"' + str(tmp).replace('"','""') + '"'
     return output
-
-    
-def evalStdList( strList ) :
-    """
-    _evalStdList_ -> DEPRECATED
-    """
-
-    strList = strList[ 1 : -1 ]
-
-    if strList == '':
-        return []
-    if strList[0] == "'" or strList[0] == '"':
-        return [ str(val[ 1 : -1 ]) for val in strList.split(', ') ]
-    else :
-        return [ str(val) for val in strList.split(',') ]
-
-
-def evalCustomList( strList ) :
-    """
-    _evalCustomList_ -> DEPRECATED
-    """
-    
-    # strList = strList[ strList.find('[')+1 : strList.rfind(']') ].strip()
-    strList = strList.strip()
-    strList = strList.strip('[]')
-
-    if strList == '':
-        return []
-    if strList[0] == "'": 
-        return [ str(val[ val.find("'")+1 : val.rfind("'") ])
-                 for val in strList.split(',') ]
-    elif strList[0] == '"':
-        return [ str(val[ val.find('"')+1 : val.rfind('"') ])
-                 for val in strList.split(',') ]
-    else :
-        return [ str(val) for val in strList.split(',') ]

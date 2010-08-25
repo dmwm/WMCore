@@ -6,8 +6,8 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.7 2009/07/10 22:04:09 ewv Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: SiteDB.py,v 1.8 2009/07/15 19:19:26 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.Services.Service import Service
 import urllib
@@ -61,13 +61,11 @@ class SiteDBJSON(Service):
 
         TODO: Probably want to move this up into Service
         """
-        params = urllib.urlencode(args)
-        query = callname + '?' + params
         result = ''
         if clearCache:
-            self.clearCache(file)
+            self.clearCache(file, args)
         try:
-            f = self.refreshCache(file, query)
+            f = self.refreshCache(file, callname, args)
             result = f.read()
             f.close()
         except IOError:

@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.11 2009/10/13 23:06:09 meloam Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: MsgService_t.py,v 1.12 2010/02/05 21:45:32 meloam Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import commands
 import unittest
@@ -94,10 +94,10 @@ class MsgServiceTest(unittest.TestCase):
         myThread.transaction.begin()
         subscriptions = msgService1.subscriptions()
         # check if subscription succeeded
-        assert subscriptions == [['Message4TestComponent1',], \
+        self.assertEqual(subscriptions , [['Message4TestComponent1',], \
             ['Message4TestComponent2',], \
             ['Message4TestComponent3',], \
-            ['Message4TestComponent4',]]
+            ['Message4TestComponent4',]])
         myThread.transaction.commit()
 
         # subscribe to priority
@@ -111,10 +111,10 @@ class MsgServiceTest(unittest.TestCase):
         # check if subscription succeeded
         myThread.transaction.begin()
         subscriptions = msgService1.prioritySubscriptions()
-        assert subscriptions == [['PriorityMessage4TestComponent1',], \
+        self.assertEqual( subscriptions , [['PriorityMessage4TestComponent1',], \
             ['PriorityMessage4TestComponent2',], \
             ['PriorityMessage4TestComponent3',], \
-            ['PriorityMessage4TestComponent4',]]
+            ['PriorityMessage4TestComponent4',]] )
         myThread.transaction.commit()
         
     def testB(self):
@@ -159,7 +159,7 @@ class MsgServiceTest(unittest.TestCase):
         timePerMessage = float ( float(interval) / float(totalInsert) )
         print('Inserting took: '+str(timePerMessage)+ ' seconds per message')
         # check that the messages indeed have been delivered
-        assert msgService1.pendingMsgs() == MsgServiceTest._maxMsg*3*3
+        self.assertEqual( msgService1.pendingMsgs() , MsgServiceTest._maxMsg*3*3 )
         # messages without instant key have not been send yet 
         # as finsihed method has not been called
         myThread.transaction.commit()
@@ -179,7 +179,7 @@ class MsgServiceTest(unittest.TestCase):
         myThread.transaction.begin()
         pendingMsgs = msgService1.pendingMsgs()
         # check if also other messages where delivered.
-        assert msgService1.pendingMsgs() == MsgServiceTest._maxMsg*3*5
+        self.assertEqual( msgService1.pendingMsgs() , MsgServiceTest._maxMsg*3*5 )
         myThread.transaction.commit()
 
     def testC(self):
@@ -195,13 +195,8 @@ class MsgServiceTest(unittest.TestCase):
         for word in  ['ms_message', 'ms_priority_message', \
                       'buffer_out', 'buffer_in']:
             exReached = True
-            try:
-                msgService1.registerAs(word)
-                exReached = False
-            except Exception,ex:
-                logging.debug("Passed: "+str(ex))
-                pass
-            assert exReached
+            self.assertRaises(Exception, msgService1.registerAs, word)
+
 
         msgService1.registerAs("TestComponent1")
         myThread.transaction.commit()
@@ -214,7 +209,7 @@ class MsgServiceTest(unittest.TestCase):
         myThread.transaction.begin()
         # remove all messages
         msgService1.purgeMessages()
-        assert msgService1.pendingMsgs() == 0
+        self.assertEqual( msgService1.pendingMsgs(),  0 )
         myThread.transaction.commit()
         
         # test publish unique.
@@ -231,7 +226,7 @@ class MsgServiceTest(unittest.TestCase):
         myThread.transaction.begin()
         # as we published unique only 3 entries where made 
         # (1 messages is subscribed by two copmonents)
-        assert msgService1.pendingMsgs() == 3
+        self.assertEqual( msgService1.pendingMsgs() , 3 )
         myThread.transaction.commit()
 
     def testD(self):
@@ -282,7 +277,7 @@ class MsgServiceTest(unittest.TestCase):
         for j in xrange(0, MsgServiceTest._minMsg):
             for i in xrange(0, 10):
                 msg = msgServiceL[i].get() 
-                assert msg['payload'] == 'from0_priority_'+str(j)
+                self.assertEqual(msg['payload'] , 'from0_priority_'+str(j))
                 # we need to finish the message handling.
                 msgServiceL[i].finish()
 
@@ -290,7 +285,7 @@ class MsgServiceTest(unittest.TestCase):
         for j in xrange(0, MsgServiceTest._minMsg):
             for i in xrange(0, 10):
                 msg = msgServiceL[i].get() 
-                assert msg['payload'] == 'from0_normal_'+str(j)
+                self.assertEqual(msg['payload'] ,'from0_normal_'+str(j))
                 # we need to finish the message handling.
                 msgServiceL[i].finish()
         stop = time.time()
@@ -301,7 +296,7 @@ class MsgServiceTest(unittest.TestCase):
 
         myThread.transaction.begin()
         # we should now have 0 messages left.
-        assert msgServiceL[0].pendingMsgs() == 0
+        self.assertEqual( msgServiceL[0].pendingMsgs() , 0 )
         myThread.transaction.commit()
         # purge everything.
         
@@ -314,7 +309,6 @@ class MsgServiceTest(unittest.TestCase):
         and tests the time it takes to do that.
         """
 
-        MsgServiceTest._teardown = True
         # do some insert and get tests and measure it.
         myThread = threading.currentThread()
         myThread.transaction.begin()

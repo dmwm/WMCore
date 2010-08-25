@@ -14,18 +14,8 @@ python2.6 Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$INDEX
 cd job
 export PYTHONPATH=$PYTHONPATH:$PWD
 python2.6 WMCore/WMRuntime/Startup.py
-if [ -f WMTaskSpace/cmsRun1/Report.pkl ]
-then
-  cp WMTaskSpace/cmsRun1/Report.pkl ../
-fi
-if [ -f WMTaskSpace/mergeReco/Report.pkl ]
-then
-  cp WMTaskSpace/mergeReco/Report.pkl ../
-fi
-if [ -f WMTaskSpace/mergeAlcaReco/Report.pkl ]
-then
-  cp WMTaskSpace/mergeAlcaReco/Report.pkl ../
-fi
+
+cp WMTaskSpace/Report.pkl ../
 
 sleep 90
 

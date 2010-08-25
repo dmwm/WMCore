@@ -22,3 +22,17 @@ class Plot(object):
         Create the matplotlib object and return it - override!
         '''
         return None
+    
+    def siformat(val,unit='',long=False):
+        suffix = [(1e18,'E','exa'),(1e15,'P','peta'),(1e12,'T','tera'),(1e9,'G','giga'),(1e6,'M','mega'),(1e3,'k','kilo'),(1,'',''),(1e-3,'m','mili'),(1e-6,'u','micro'),(1e-9,'n','nano'),(1e-12,'p','pico'),(1e-15,'f','femto'),(1e-18,'a','atto')]
+        use = 1
+        if long:
+            use = 2
+        for s in suffix:
+            if abs(val)>=100*s[0]:
+                return "%.0f%s%s"%(val/s[0],s[use],unit)
+            if abs(val)>=10*s[0]:
+                return "%.1f%s%s"%(val/s[0],s[use],unit)
+            if abs(val)>=s[0]:
+                return "%.2f%s%s"%(val/s[0],s[use],unit)
+        return str(val)

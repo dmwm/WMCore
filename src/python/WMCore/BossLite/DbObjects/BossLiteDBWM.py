@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.8 2010/05/17 13:01:15 spigafi Exp $"
-__revision__ = "$Revision: 1.8 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.9 2010/05/17 19:09:54 spigafi Exp $"
+__revision__ = "$Revision: 1.9 $"
 
 from copy import deepcopy
 import threading
@@ -952,6 +952,20 @@ class BossLiteDBWM(BossLiteDBInterface):
         
         else :
             raise NotImplementedError 
+    
+    @dbTransaction
+    def jobLoadByRunningAttr(self, attribute, binds):
+        """
+        put your description here
+        """
+        
+        action = self.engine.daofactory(classname = "Job.LoadByRunningJobAttr")
+        result = action.execute(column = attribute,
+                                value = binds,
+                                conn = self.engine.getDBConn(),
+                                transaction = self.existingTransaction)
+        
+        return result
     
     ##########################################################################
     # Method for execute raw SQL statements through general-purpose DAO

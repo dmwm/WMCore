@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.32 2010/01/11 16:24:44 metson Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: Service.py,v 1.33 2010/01/20 21:53:42 sryu Exp $"
+__version__ = "$Revision: 1.33 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -74,7 +74,6 @@ class Service(dict):
         self.setdefault("inputdata", {})
         self.setdefault("cachepath", '/tmp')
         self.setdefault("cacheduration", 0.5)
-        self.setdefault("accept_type", 'text/xml')
         self.setdefault("method", 'GET')
 
         #Set a timeout for the socket

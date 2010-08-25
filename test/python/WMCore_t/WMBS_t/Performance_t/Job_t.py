@@ -47,7 +47,7 @@ class JobTest(unittest.TestCase, WMBSBase):
         
         for i in range(times):
             startTime = time.time()    
-            testJob = Job(name = joblist[i].name)
+            testJob = Job(name = joblist[i]['name'])
             testJob.create(group = jobgroup)
             endTime = time.time()
             elapsedTime = endTime - startTime
@@ -69,7 +69,7 @@ class JobTest(unittest.TestCase, WMBSBase):
         
         for i in range(times):
             startTime = time.time()    
-            testJob = Job(name = jobs[i].name)
+            testJob = Job(name = jobs[i]['name'])
             testJob.exists()
             endTime = time.time()
             elapsedTime = endTime - startTime
@@ -91,7 +91,7 @@ class JobTest(unittest.TestCase, WMBSBase):
         
         for i in range(times):
             startTime = time.time()    
-            testJob = Job(name = jobs[i].name)
+            testJob = Job(name = jobs[i]['name'])
             testJob.delete()
             endTime = time.time()
             elapsedTime = endTime - startTime
@@ -112,7 +112,7 @@ class JobTest(unittest.TestCase, WMBSBase):
 
         for i in range(times):
             startTime = time.time()    
-            testJob = Job(id = jobs[i].id)
+            testJob = Job(id = jobs[i]['id'])
             testJob.load()
             endTime = time.time()
             elapsedTime = endTime - startTime
@@ -133,7 +133,7 @@ class JobTest(unittest.TestCase, WMBSBase):
 
         for i in range(times):
             startTime = time.time()    
-            testJob = Job(name = jobs[i].name)
+            testJob = Job(name = jobs[i]['name'])
             testJob.load()
             endTime = time.time()
             elapsedTime = endTime - startTime
@@ -142,39 +142,39 @@ class JobTest(unittest.TestCase, WMBSBase):
 
         return
 
-    def testAddOutput(self, times=1):         
-        print "testAddOutput"
-
-        #If testtimes is not set, the arguments are used for how many times
-        #the test method will be run
-        if self.testtimes != 0:
-            times=self.testtimes
-
-        joblist = self.genJobObjects(number=times, name='JobsNew')
-        files = self.genFiles(number=times, name="testAddFiles")
-        testFile = File(lfn = "/this/is/a/lfnQ", size = 1024, events = 10)
-        testFile.create()
-        testJobGroup = self.genJobGroup(number=1)[0]
-        testJobGroup.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileA.addRun(Run(1, *[45]))
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(1, *[46]))
-        testFileA.create()
-        testFileB.create()
-
-        for i in range(times):
-            startTime = time.time()    
-            testJob = Job(name = joblist[i].name, files = [testFileA, testFileB])
-            testJob.create(group = testJobGroup)
-            testJob.addOutput(testFile)
-            endTime = time.time()
-            elapsedTime = endTime - startTime
-            self.totaltime = self.totaltime + elapsedTime  
-            assert self.totaltime <= self.totalthreshold, 'AddFiles DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
-
-        return
+#    def testAddOutput(self, times=1):         
+#        print "testAddOutput"
+#
+#        #If testtimes is not set, the arguments are used for how many times
+#        #the test method will be run
+#        if self.testtimes != 0:
+#            times=self.testtimes
+#
+#        joblist = self.genJobObjects(number=times, name='JobsNew')
+#        files = self.genFiles(number=times, name="testAddFiles")
+#        testFile = File(lfn = "/this/is/a/lfnQ", size = 1024, events = 10)
+#        testFile.create()
+#        testJobGroup = self.genJobGroup(number=1)[0]
+#        testJobGroup.create()
+#
+#        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+#        testFileA.addRun(Run(1, *[45]))
+#        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+#        testFileB.addRun(Run(1, *[46]))
+#        testFileA.create()
+#        testFileB.create()
+#
+#        for i in range(times):
+#            startTime = time.time()    
+#            testJob = Job(name = joblist[i]['name'], files = [testFileA, testFileB])
+#            testJob.create(group = testJobGroup)
+#            testJob.addOutput(testFile)
+#            endTime = time.time()
+#            elapsedTime = endTime - startTime
+#            self.totaltime = self.totaltime + elapsedTime  
+#            assert self.totaltime <= self.totalthreshold, 'AddFiles DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+#
+#        return
 
     def testGetFiles(self, times=1):         
         print "testLoadByName"
@@ -188,7 +188,7 @@ class JobTest(unittest.TestCase, WMBSBase):
 
         for i in range(times):
             startTime = time.time()    
-            testJob = Job(name = jobs[i].name)
+            testJob = Job(name = jobs[i]['name'])
             testJob.getFiles()
             endTime = time.time()
             elapsedTime = endTime - startTime
@@ -197,28 +197,28 @@ class JobTest(unittest.TestCase, WMBSBase):
 
         return
 
-    def testChangeStatus(self, times=1):         
-        print "testChangeStatus"
-
-        #If testtimes is not set, the arguments are used for how many times
-        #the test method will be run
-        if self.testtimes != 0:
-            times=self.testtimes
-
-        jobs = self.genJobObjects(number=times, name='JobsNew')
-        testJobGroup = self.genJobGroup(number=1)[0]
-        testJobGroup.create()
-        
-        for i in range(times):
-            startTime = time.time()    
-            testJob = Job(name = jobs[i].name)
-            testJob.create(group = testJobGroup)
-            testJob.changeStatus("ACTIVE")
-            endTime = time.time()
-            elapsedTime = endTime - startTime
-            self.totaltime = self.totaltime + elapsedTime 
-
-        return
+#    def testChangeStatus(self, times=1):         
+#        print "testChangeStatus"
+#
+#        #If testtimes is not set, the arguments are used for how many times
+#        #the test method will be run
+#        if self.testtimes != 0:
+#            times=self.testtimes
+#
+#        jobs = self.genJobObjects(number=times, name='JobsNew')
+#        testJobGroup = self.genJobGroup(number=1)[0]
+#        testJobGroup.create()
+#        
+#        for i in range(times):
+#            startTime = time.time()    
+#            testJob = Job(name = jobs[i]['name'])
+#            testJob.create(group = testJobGroup)
+#            testJob.changeStatus("ACTIVE")
+#            endTime = time.time()
+#            elapsedTime = endTime - startTime
+#            self.totaltime = self.totaltime + elapsedTime 
+#
+#        return
 
 
     

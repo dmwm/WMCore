@@ -69,7 +69,7 @@ class SubscriptionTest(unittest.TestCase, WMBSBase):
             testSubscription.create()
             endTime = time.time()
             elapsedTime = endTime - startTime
-            self.totaltime = self.totaltime + elapsedTime 
+            self.totaltime = self.totaltime + elapsedTime
             assert self.totaltime <= self.totalthreshold, 'New'+\
                     ' DAO class - Operation too slow ( '+str(i+1)+\
                     ' times, total elapsed time:'+str(self.totaltime)+ \
@@ -217,7 +217,7 @@ class SubscriptionTest(unittest.TestCase, WMBSBase):
         for i in range(times):
             startTime = time.time()
             testSubscription = Subscription(id = subscriptions[i]["id"])
-            failedFiles = testSubscription.filesOfStatus(status = "FailedFiles")
+            failedFiles = testSubscription.filesOfStatus(status = "Failed")
             endTime = time.time()
             elapsedTime = endTime - startTime
             self.totaltime = self.totaltime + elapsedTime
@@ -253,7 +253,7 @@ class SubscriptionTest(unittest.TestCase, WMBSBase):
         for i in range(times):
             startTime = time.time()
             testSubscription = Subscription(id = subscriptions[i]["id"])
-            acquiredFiles = testSubscription.filesOfStatus(status = "AcquiredFiles")
+            acquiredFiles = testSubscription.filesOfStatus(status = "Acquired")
             endTime = time.time()
             elapsedTime = endTime - startTime
             self.totaltime = self.totaltime + elapsedTime
@@ -311,7 +311,7 @@ class SubscriptionTest(unittest.TestCase, WMBSBase):
         for i in range(times):
             startTime = time.time()
             testSubscription = Subscription(id = subscriptions[i]["id"])
-            completedFiles = testSubscription.filesOfStatus(status = "CompletedFiles")
+            completedFiles = testSubscription.filesOfStatus(status = "Completed")
             endTime = time.time()
             elapsedTime = endTime - startTime
             self.totaltime = self.totaltime + elapsedTime
@@ -342,7 +342,7 @@ class SubscriptionTest(unittest.TestCase, WMBSBase):
         for i in range(times):
             startTime = time.time()
             testSubscription = Subscription(id = subscriptions[i]["id"])
-            failedFiles = testSubscription.filesOfStatus(status = "FailedFiles")
+            failedFiles = testSubscription.filesOfStatus(status = "Failed")
             endTime = time.time()
             elapsedTime = endTime - startTime
             self.totaltime = self.totaltime + elapsedTime

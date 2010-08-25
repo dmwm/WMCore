@@ -5,13 +5,11 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.57 2009/12/09 17:51:36 sryu Exp $"
-__version__ = "$Revision: 1.57 $"
+__revision__ = "$Id: File.py,v 1.58 2009/12/15 15:24:30 mnorman Exp $"
+__version__ = "$Revision: 1.58 $"
 
 import threading
 import time
-
-from sets import Set
 
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.DataStructs.Run import Run
@@ -30,10 +28,10 @@ class File(WMBSBase, WMFile):
                         checksums = checksums, parents = parents, merged = merged)
 
         if locations == None:
-            self.setdefault("newlocations", Set())
+            self.setdefault("newlocations", set())
         else:
             if type(locations) == str:
-                self.setdefault("newlocations", Set())
+                self.setdefault("newlocations", set())
                 self['newlocations'].add(locations)
             else:
                 self.setdefault("newlocations", locations)
@@ -41,7 +39,7 @@ class File(WMBSBase, WMFile):
         self.setdefault("first_event", first_event)
         self.setdefault("last_event", last_event)
         self.setdefault("id", id)
-        self['locations'] = Set()
+        self['locations'] = set()
 
     def exists(self):
         """
@@ -77,7 +75,7 @@ class File(WMBSBase, WMFile):
 
     def getRuns(self):
         """
-        Get a list of run lumi objects (List of Set() of type 
+        Get a list of run lumi objects (List of set() of type 
         WMCore.DataStructs.Run)
         """
         return list(self['runs'])
@@ -233,7 +231,7 @@ class File(WMBSBase, WMFile):
         self["locations"] = action.execute(self["lfn"], conn = self.getDBConn(),
                                            transaction = self.existingTransaction())
         self["newlocations"].clear()
-        self["parents"] = Set()
+        self["parents"] = set()
         
         if parentage > 0:
             action = self.daofactory(classname = "Files.GetParents")
@@ -301,7 +299,7 @@ class File(WMBSBase, WMFile):
         
     def addChild(self, lfn):
         """
-        Set an existing file (lfn) as a child of this file
+        set an existing file (lfn) as a child of this file
         """
         existingTransaction = self.beginTransaction()
 
@@ -323,7 +321,7 @@ class File(WMBSBase, WMFile):
         
     def addParent(self, lfn):
         """
-        Set an existing file (lfn) as a parent of this file
+        set an existing file (lfn) as a parent of this file
         """
         existingTransaction = self.beginTransaction()
 
@@ -349,8 +347,8 @@ class File(WMBSBase, WMFile):
         """
         add the set of runs.  This should be called after a file is created,
         unlike addRun which should be called before the file was created.
-        runSet should be set of DataStruct.Run
-        also there should be no duplicate entries in runSet.
+        runset should be set of DataStruct.Run
+        also there should be no duplicate entries in runset.
         (May need to change in schema level not to allow duplicate record)
         """
         existingTransaction = self.beginTransaction()

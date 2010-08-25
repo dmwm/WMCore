@@ -5,10 +5,11 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.1 2009/08/18 23:18:15 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetWork.py,v 1.2 2009/08/27 21:02:43 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import random
+import time
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WorkQueue.Database import States
 
@@ -26,12 +27,12 @@ class GetWork(DBFormatter):
             LEFT OUTER JOIN wq_site wsite ON (wbmap.site_id = wsite.id)
             WHERE we.status = :available AND we.num_jobs <= :jobs AND (wsite.name = :site OR wsite.name IS NULL)
             ORDER BY (we.priority +
-                    :weight * (NOW() - we.insert_time)) DESC
+                    :weight * (:current_time - we.insert_time)) DESC
             """
 
     def execute(self, resources, weight, conn = None, transaction = False):
         binds = [{'available' : States['Available'], 'weight' : weight,
-                  "site" : site, "jobs" : jobs} \
+                  "site" : site, "jobs" : jobs, "current_time": int(time.time())} \
                                     for site, jobs in resources.iteritems()]
         results = self.dbi.processData(self.sql, binds, conn = conn,
                          transaction = transaction)

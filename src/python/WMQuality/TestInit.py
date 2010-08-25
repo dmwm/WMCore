@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.41 2010/02/09 16:10:47 meloam Exp $"
+    "$Id: TestInit.py,v 1.42 2010/02/09 16:15:03 meloam Exp $"
 __version__ = \
-    "$Revision: 1.41 $"
+    "$Revision: 1.42 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -141,17 +141,12 @@ class TestInit:
                 result = formatter.execute()
                 print "we got the following result for SHOW TABLES: %s " % result
 
-                tableNames = []
-                
                 for oneTable in result:
-                    tableNames.append( oneTable[0] )
-                if len(tableNames) == 0:
-                    return
-                tableList = ",".join( tableNames )
-                query = "DROP TABLE IF EXISTS %s" % tableList
-                print query
-                formatter.sql = query
-                formatter.execute()
+                    query = "DROP TABLE IF EXISTS %s" % oneTable[0]
+                    print query
+                    formatter.sql = query
+                    formatter.execute()
+      
             elif (dialect == 'Oracle'):
                 pass
             else:

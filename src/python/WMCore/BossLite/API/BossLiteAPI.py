@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.8 2010/05/18 13:50:47 spigafi Exp $"
-__revision__ = "$Revision: 1.8 $"
+__version__ = "$Id: BossLiteAPI.py,v 1.9 2010/05/19 13:27:07 spigafi Exp $"
+__revision__ = "$Revision: 1.9 $"
 
 #import logging
 import copy
@@ -336,24 +336,15 @@ class BossLiteAPI(object):
     # Methods for Combined Job-RunningJob
     ##########################################################################
 
-    def loadJobsByRunningAttr( self, attribute, value) :
+    def loadJobsByRunningAttr( self, binds, limit = None) :
         """
         retrieve job information from db for job
         whose running instance match attributes
         """
     
         jobList = []
-        binds   = []
-
-        if type(value) == list:
-            for entry in value:
-                binds.append({'value': entry})
-        else:
-            binds = value
-
-
-        results  = self.db.jobLoadByRunningAttr(attribute = attribute, 
-                                                    binds = binds )
+        
+        results  = self.db.jobLoadByRunningAttr(binds = binds, limit = limit)
         
         for entry in results:
             job = Job()
@@ -369,7 +360,7 @@ class BossLiteAPI(object):
         - it takes the highest submission number for each job
         """
         
-        return self.loadJobsByRunningAttr(attribute = 'status', value = 'W')
+        return self.loadJobsByRunningAttr(binds = {'status'  : 'W'})
     
     
     def loadSubmitted( self ) :
@@ -378,7 +369,7 @@ class BossLiteAPI(object):
         - it takes the highest submission number for each job
         """
 
-        return self.loadJobsByRunningAttr(attribute = 'closed', value = 'N')
+        return self.loadJobsByRunningAttr(binds = {'closed' : 'N'})
     
     
     def loadEnded( self ) :
@@ -387,7 +378,7 @@ class BossLiteAPI(object):
         - it takes the highest submission number for each job
         """
 
-        return self.loadJobsByRunningAttr(attribute = 'status', value = 'SD')
+        return self.loadJobsByRunningAttr(binds = {'status' : 'SD'})
     
     
     def loadFailed( self ) :
@@ -400,10 +391,8 @@ class BossLiteAPI(object):
         """
 
         jobList = []
-        jobList.extend(self.loadJobsByRunningAttr(attribute = 'status',
-                                                  value = 'A'))
-        jobList.extend(self.loadJobsByRunningAttr(attribute = 'status',
-                                                  value = 'K'))
+        jobList.extend(self.loadJobsByRunningAttr(binds = {'status' : 'A'} ))
+        jobList.extend(self.loadJobsByRunningAttr(binds = {'status' : 'K'} ))
         
         return jobList
     
@@ -600,4 +589,4 @@ class BossLiteAPI(object):
         """
         
         obj.update(self.db)
-        
+    

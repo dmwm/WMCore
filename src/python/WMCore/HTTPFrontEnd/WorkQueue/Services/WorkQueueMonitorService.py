@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.14 2010/05/04 14:39:49 sryu Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.15 2010/05/10 22:06:27 sryu Exp $"
 __version__ = "$Revision"
 
 
@@ -63,6 +63,9 @@ class WorkQueueMonitorService(ServiceInterface):
         # WorkQueue.status signature:
         # status(self, status = None, before = None, after = None, elementIDs = None, dictKey = None)
         self.model.addDAO("GET", "elementsinfo", "Monitor.ElementsInfo")
+        self.model.addDAO("GET", "elementsinfowithlimit", "Monitor.ElementsInfoWithLimit",
+                          args = ["startIndex", "results"], validation = [self.validateInt])
+        
         self.model.addDAO("GET", "workloadprogress", "Monitor.WorkloadsWithProgress")
         self.model.addDAO("GET", "elements", "Monitor.Elements")
         self.model.addDAO("GET", "sites", "Monitor.Sites")
@@ -85,7 +88,15 @@ class WorkQueueMonitorService(ServiceInterface):
         logging.info("%s initialised." % self._myClass)        
         
 
-
+    def validateInt(self, input):
+        """
+        validate status function and do the type conversion if the argument 
+        requires non string 
+        """
+        input["startIndex"] = int(input["startIndex"])
+        input["results"] = int(input["results"])
+        return input
+    
     def validateState(self, inpt):
         """Validate inpt argument state - only element states as defined in
            States (WMCore.WorkQueue.Database) are accepted (i.e. only states

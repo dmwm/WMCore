@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.7 2010/02/10 03:52:27 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Transaction_t.py,v 1.8 2010/08/02 16:13:36 meloam Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import commands
 import logging
@@ -40,9 +40,6 @@ class TransactionTest(unittest.TestCase):
         self.destroy['MySQL']  = "drop table test ENGINE=InnoDB"
         self.destroy['Oracle'] = "drop table test"
         self.destroy['SQLite'] = "drop table test"
-
-        myThread = threading.currentThread()
-        myThread.dialect = os.getenv('DIALECT')
     
         self.insert = "insert into test (bind1, bind2) values (:bind1, :bind2)"
         self.insert_binds = [ {'bind1':'value1a', 'bind2': 'value2a'},

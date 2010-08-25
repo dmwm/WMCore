@@ -259,6 +259,41 @@ class CoverageCommand(Command):
         """
         return 0.0
     
+class DumbCoverageCommand(Command):
+    """
+    Run a simple coverage test - find classes that don't have a unit test    
+    """
+    
+    user_options = [ ]
+    
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+    
+    def run(self):
+        """
+        Determine the code's test coverage in a dumb way and return that as a 
+        float.
+        """
+        files = generate_filelist()
+        tests = len(files)
+        dir = os.getcwd()
+        for f in files:
+            testpath = '/'.join([dir, f])
+            pth = testpath.split('./src/python/')
+            pth.append(pth[1].replace('/', '_t/').replace('.', '_t.'))
+            pth[1] = 'test/python'
+            testpath = '/'.join(pth)
+            try:
+                assert os.stat(testpath)
+            except:
+                tests -= 1
+        coverage = (float(tests) / float(len(files))) * 100
+        print 'coverage is %2f percent' % coverage
+        return coverage
+    
 def getPackages(package_dirs = []):
     packages = []
     for dir in package_dirs:
@@ -282,7 +317,8 @@ setup (name = 'wmcore',
                    'clean': CleanCommand, 
                    'lint': LintCommand,
                    'report': ReportCommand,
-                   'coverage': CoverageCommand },
+                   'coverage': CoverageCommand ,
+                   'missing': DumbCoverageCommand },
        package_dir = package_dir,
        packages = getPackages(package_dir.values()),)
 

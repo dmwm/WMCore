@@ -3,12 +3,12 @@ _CreateWorkQueue_
 
 Implementation of CreateWorkQueue for MySQL.
 
-Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add 
-INNODB) and specific creates (e.g. for time stamp and enum fields).
+Inherit from CreateWorkQueueBase, and add MySQL specific substitutions (e.g. add 
+INNODB).
 """
 
-__revision__ = "$Id: Create.py,v 1.5 2009/06/24 21:00:24 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Create.py,v 1.6 2009/07/10 15:42:56 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 

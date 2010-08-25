@@ -1,14 +1,14 @@
 """
 _CreateWorkQueue_
 
-Implementation of CreateWorkQueue for MySQL.
+Implementation of CreateWorkQueue for Oracle.
 
-Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add 
-INNODB) and specific creates (e.g. for time stamp and enum fields).
+Inherit from CreateWorkQueue, and add Oracle specific substitutions (e.g. 
+use trigger and sequence to mimic auto increment in MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2009/06/24 21:00:25 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Create.py,v 1.4 2009/07/10 15:43:20 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 

@@ -1,0 +1,13 @@
+<FrameworkJobReport JobSpecID="PromptReco-Run108298-5013" JobType="Processing" Name="PromptReco-Run108298-5013" Status="Failed">
+<ExitCode Value="998"/>
+<FrameworkError ExitStatus="998" Type="BatchMiddlewareFailure">
+         Failure in Batch or Middleware Layer
+         No job report produced/retrieved
+</FrameworkError>
+<TimingService/>
+<GeneratorInfo/>
+<PerformanceReport>
+         <CPU/>
+         <Memory/>
+</PerformanceReport>
+</FrameworkJobReport>

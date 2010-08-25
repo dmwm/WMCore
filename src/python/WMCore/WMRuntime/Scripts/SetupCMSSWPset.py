@@ -188,7 +188,7 @@ class SetupCMSSWPset(ScriptInterface):
             applyTweak(self.process, outTweak)
             
         # revlimiter for testing
-        self.process.maxEvents.input = 2
+        # self.process.maxEvents.input = 2
 
         self.process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
         self.process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")

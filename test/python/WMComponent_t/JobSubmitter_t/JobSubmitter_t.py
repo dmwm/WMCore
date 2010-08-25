@@ -60,6 +60,7 @@ from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 
+from nose.plugins.attrib import attr
 
 def parseJDL(jdlLocation):
     """

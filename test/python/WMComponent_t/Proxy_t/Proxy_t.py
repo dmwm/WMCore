@@ -133,8 +133,8 @@ particular message to the proxy which forwards it.
 
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.11 2009/02/27 22:19:22 fvlingen Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Proxy_t.py,v 1.12 2009/10/13 22:02:46 meloam Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -163,63 +163,50 @@ class ProxyTest(unittest.TestCase):
     TestCase for TestProxy module 
     """
 
-    _setup_done = False
-    _teardown = False
     _maxMessage = 10
 
     def setUp(self):
         """
         setup for test.
         """
-        if not ProxyTest._setup_done:
-            msg = """
+        msg = """
 To run this test you need to have an old msg service 
 setup in a different database and its contact parameters 
-need to be defined in the PROXYDATABASE variable (press key to continue")
-            """
-            #raw_input(msg)
-            self.testInit = TestInit(__file__)
-            self.testInit.setLogging()
-            self.testInit.setDatabaseConnection()
-            self.testInit.setSchema()
-
-            # create the schema in the proxy database
-            myThread = threading.currentThread()
-            options = {}
-            options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("PROXYDATABASE"), \
-                options)
-
-            dbi = dbFactory.connect()
-            transaction = Transaction(dbi)
-            create = OldMsgService()
-            create.execute(conn = transaction.conn)
-            transaction.commit()
- 
-            ProxyTest._setup_done = True
+need to be defined in the PROXYDATABASE variable
+"""
+        #raw_input(msg)
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema()
+        
+        # create the schema in the proxy database
+        myThread = threading.currentThread()
+        options = {}
+        options['unix_socket'] = os.getenv("DBSOCK")
+        dbFactory = DBFactory(myThread.logger, os.getenv("PROXYDATABASE"), \
+            options)
+        
+        dbi = dbFactory.connect()
+        transaction = Transaction(dbi)
+        create = OldMsgService()
+        create.execute(conn = transaction.conn)
+        transaction.commit()
+        
 
     def tearDown(self):
         """
         Database deletion
         """
-        myThread = threading.currentThread()
-        if ProxyTest._teardown and myThread.dialect == 'MySQL':
-            # call the script we use for cleaning:
-            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
-            result = commands.getstatusoutput(command)
-            for entry in result:
-                print(str(entry))
-
-        ProxyTest._teardown = False
+        self.testInit.clearDatabase()
 
 
     def testA(self):
         """
         Mimics creation of component and handles come messages.
         """
-        ProxyTest._teardown = True
         # read the default config first.
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
+        config = self.testInit.getConfiguration(os.path.join(os.getenv('WMCOREBASE'), \
             'src/python/WMComponent/Proxy/DefaultConfig.py'))
 
         # details will be a pickled dictionary
@@ -237,102 +224,80 @@ need to be defined in the PROXYDATABASE variable (press key to continue")
         'JobFailure', 'JobCreate']
         config.Proxy.PXY_Classic_1 = cPickle.dumps(details)
 
-
-        # some general settings that would come from the general default 
-        # config file
-        config.Agent.contact = "fvlingen@caltech.edu"
-        config.Agent.teamName = "Lakers"
-        config.Agent.agentName = "Lebron James"
-
-        config.section_("General")
-        config.General.workDir = os.getenv("TESTDIR")
-
-        config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = 'mysql' 
-        config.CoreDatabase.socket = os.getenv("DBSOCK")
-        config.CoreDatabase.user = os.getenv("DBUSER")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        config.CoreDatabase.hostname = os.getenv("DBHOST")
-        config.CoreDatabase.name = os.getenv("DBNAME")
-
         # initialize component with proper configuration.
         testProxy = Proxy(config)
         # make this a thread so we can send messages.
-        print('--Make a thread from the proxy component\n')
+        logging.debug('--Make a thread from the proxy component\n')
         thread = threading.Thread(target = testProxy.startComponent)
         thread.start()
         # we have our thread with component, now create 2 message services one
         # old one and one new one to test the proxy functionality.
         # if you just want to test a new component just instantiate the new
         # the new message service.
-        print('--Create a new msgService instance '+\
+        logging.debug('--Create a new msgService instance '+\
         '(these represent other components in our test)\n')
         myThread = threading.currentThread()
         newMsgService = myThread.factory['msgService'].loadObject("MsgService")
         myThread.transaction.begin()
         newMsgService.registerAs("newComponent")
         myThread.transaction.commit()
-        print('--Create an old msgService instance\n')
+        logging.debug('--Create an old msgService instance\n')
         oldMsgService = ProxyMsgs(os.getenv("PROXYDATABASE"))
         oldMsgService.registerAs("oldComponent")
-        print('--Waiting a few seconds to make sure everything is running')
+        logging.debug('--Waiting a few seconds to make sure everything is running')
         time.sleep(3)
         # our test proxy is subscribed to ProxySubscribe and will subscribe
         # itself to the payload. Note we subscribe twice (one local, one proxy):
-        print('--Old msgService (proxy)subscribes to "ATestMessage1"\n')
+        logging.debug('--Old msgService (proxy)subscribes to "ATestMessage1"\n')
         oldMsgService.subscribeTo("ATestMessage1")
         oldMsgService.publish("ProxySubscribe","ATestMessage1")
-        print('--Old msgService (proxy)subscribes to "ATestMessage2"\n')
+        logging.debug('--Old msgService (proxy)subscribes to "ATestMessage2"\n')
         oldMsgService.subscribeTo("ATestMessage2")
         oldMsgService.publish("ProxySubscribe","ATestMessage2")
-        print('--New msgService subscribes to JobSuccess and '+\
+        logging.debug('--New msgService subscribes to JobSuccess and '+\
         'JobFailure (these are proxy subscribed to by our proxy comonent)\n')
         myThread.transaction.begin()
         newMsgService.subscribeTo("JobSuccess")
         newMsgService.subscribeTo("JobFailure")
         myThread.transaction.commit()
-        print('--Waiting a few seconds to make sure '+\
+        logging.debug('--Waiting a few seconds to make sure '+\
         'the (proxy) subscriptions arrived\n')
         time.sleep(10)
         # now we can publish a message in the new component that will be 
         # forwarded by the proxy to the old message service.
         myThread.transaction.begin()
         msg = {'name':'ATestMessage1', 'payload':'forOldPA'}
-        print('--Publish 10 messages in new msgService : '+str(msg)+'\n')
+        logging.debug('--Publish 10 messages in new msgService : '+str(msg)+'\n')
         for i in xrange(0, 10):
             newMsgService.publish(msg)
         myThread.transaction.commit()
         newMsgService.finish()
         # wait at the old service for the message to arrive.
-        print('--Waiting in oldMsgService for 10 messages\n')
+        logging.debug('--Waiting in oldMsgService for 10 messages\n')
         for i in xrange(0, 10):
             type, payload = oldMsgService.get()
             assert type == 'ATestMessage1'
             assert payload == 'forOldPA'
-        print('--Old msgService sends 10 JobSuccess messages')
+        logging.debug('--Old msgService sends 10 JobSuccess messages')
         for i in xrange(0, 10):
             oldMsgService.publish("JobSuccess","JobSuccess")
-        print('--New msgService waits for it')
+        logging.debug('--New msgService waits for it')
         for i in xrange(0, 10):
             msg = newMsgService.get()
             assert msg['name'] == 'JobSuccess'
-        print('--New component is (proxy)subscribed to Stop message\n')
-        print('--Old message service sends Stop message\n')
+        logging.debug('--New component is (proxy)subscribed to Stop message\n')
+        logging.debug('--Old message service sends Stop message\n')
         # as we are running the component in a thread we want the component to 
         # stop once all its threads minus itself and the main thread are done
         oldMsgService.publish("StopAndWait","2")
-        print('--Component in thread will receive this message and stop')
+        logging.debug('--Component in thread will receive this message and stop')
         # wait until the thread count is 1 (the main trhead) before
         # ending the test.
         while threading.activeCount() > 1:
             time.sleep(3)
-            print(str(threading.activeCount())+' threads active')
+            logging.debug(str(threading.activeCount())+' threads active')
 
-    def runTest(self):
-        """
-        Run the proxy test
-        """
-        self.testA()
+
 if __name__ == '__main__':
     unittest.main()
 

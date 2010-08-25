@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.24 2009/03/20 14:32:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: JobGroup.py,v 1.25 2009/03/24 22:02:08 sryu Exp $"
+__version__ = "$Revision: 1.25 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -316,15 +316,33 @@ class JobGroup(WMBSBase, WMJobGroup):
                 # all the file status should be acquired at this point
                 return 'ACTIVE%s' % report
     
+    def isComplete(self):
+        """
+        _isComplete_
+        
+        Check all the jobs in the group are completed.
+        self.status can be used for this, but for the fast performance. 
+        use this function
+        
+        To: check query whether performance can be improved
+        """
+        statusAction = self.daofactory(classname = "JobGroup.IsComplete")
+        all, cm = statusAction.execute(self.id,
+                                      conn = self.getReadDBConn(),
+                                      transaction = self.existingTransaction())
+        if all == cm:
+            return True
+        else:
+            return False
+        
     def output(self):
         """
         The output is the files produced by the jobs in the group - these must
         be merged up together.
         """
-        if self.status() == 'COMPLETE':
+        if self.isComplete():
             # output only makes sense if the group is completed
             # load output from DB 
             self.groupoutput.load()
             return self.groupoutput
-        self.logger.debug(self.status(detail=True))
         return False

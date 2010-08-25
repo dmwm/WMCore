@@ -24,7 +24,7 @@ class DBSReader:
 
 
     """
-    def __init__(self, url,  **contact):
+    def __init__(self, url, **contact):
         args = { "url" : url, "level" : 'ERROR'}
         args.update(contact)
         try:
@@ -33,7 +33,7 @@ class DBSReader:
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-        
+
         # setup DLS api - with either dbs or phedex depending on dbs instance
         if url.count('cmsdbsprod.cern.ch/cms_dbs_prod_global') or \
                         self.dbs.getServerInfo()['InstanceName'] == 'GLOBAL':
@@ -43,7 +43,7 @@ class DBSReader:
             dlsType = 'DLS_TYPE_DBS'
             dlsUrl = url
         try:
-            self.dls = dlsClient.getDlsApi(dls_type=dlsType,dls_endpoint=dlsUrl)
+            self.dls = dlsClient.getDlsApi(dls_type = dlsType, dls_endpoint = dlsUrl)
         except DlsApiError, ex:
             msg = "Error in DBSReader with DlsApi\n"
             msg += "%s\n" % str(ex)
@@ -70,7 +70,7 @@ class DBSReader:
             msg = "Error in DBSReader.listPrimaryDataset(%s)\n" % arg
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-            
+
         result = [ x['Name'] for x in result ]
         return result
 
@@ -109,11 +109,11 @@ class DBSReader:
             msg = "Error in DBSReader.listProcessedDatasets(%s)\n" % primary
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-        
+
         result = [ x['Name'] for x in result ]
         return result
-        
-    
+
+
     def listDatasetFiles(self, datasetPath):
         """
         _listDatasetFiles_
@@ -138,7 +138,7 @@ class DBSReader:
         setOfAllLfns = set(allLfns)
         setOfKnownLfns = set(lfns)
         return list(setOfAllLfns.intersection(setOfKnownLfns))
-        
+
     def crossCheckMissing(self, datasetPath, *lfns):
         """
         _crossCheckMissing_
@@ -154,6 +154,22 @@ class DBSReader:
         unknownFiles = setOfKnownLfns.difference(knownFiles)
         return list(unknownFiles)
 
+    def getDatasetInfo(self, dataset):
+        """
+        _getDatasetInfo_
+
+        Get dataset summary includes # of files, events, blocks and total size
+        """
+        self.checkDatasetPath(dataset)
+        try:
+            summary = self.dbs.listDatasetSummary(dataset)
+        except DbsException, ex:
+            msg = "Error in DBSReader.listDatasetSummary(%s)\n" % dataset
+            msg += "%s\n" % formatEx(ex)
+            raise DBSReaderError(msg)
+
+        return summary
+
     def getFileBlocksInfo(self, dataset, onlyClosedBlocks = False):
         """
         """
@@ -164,7 +180,7 @@ class DBSReader:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-        
+
         if onlyClosedBlocks:
             return [x for x in blocks if str(x['OpenForWriting']) != "1"]
 
@@ -184,7 +200,7 @@ class DBSReader:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-        
+
         if onlyClosedBlocks:
             result = [
                 x['Name'] for x in blocks \
@@ -193,7 +209,7 @@ class DBSReader:
 
         else:
             result = [ x['Name'] for x in blocks ]
-            
+
         return result
 
     def listOpenFileBlocks(self, dataset):
@@ -210,14 +226,14 @@ class DBSReader:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-        
-        
+
+
         result = [
             x['Name'] for x in blocks \
             if str(x['OpenForWriting']) == "1"
         ]
-        
-            
+
+
         return result
 
     def blockExists(self, fileBlockName):
@@ -239,7 +255,7 @@ class DBSReader:
             msg += "DBSReader.blockExists(%s)\n" % fileBlockName
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-        
+
         if len(blocks) == 0:
             return False
         return True
@@ -259,8 +275,8 @@ class DBSReader:
                  "", # processed
                  [], #tier_list
                  "", #analysisDataset
-                 fileBlockName, details="True")
-            
+                 fileBlockName, details = "True")
+
         except DbsException, ex:
             msg = "Error in "
             msg += "DBSReader.listFilesInBlock(%s)\n" % fileBlockName
@@ -268,7 +284,7 @@ class DBSReader:
             raise DBSReaderError(msg)
 
         result = []
-        [ result.append(dict(x) ) for x in files ]
+        [ result.append(dict(x)) for x in files ]
         return result
 
     def listFilesInBlockWithParents(self, fileBlockName):
@@ -289,18 +305,18 @@ class DBSReader:
                  fileBlockName,
                  details = None,
                  retriveList = ['retrive_parent' ])
-              
+
         except DbsException, ex:
             msg = "Error in "
             msg += "DBSReader.listFilesInBlockWithParents(%s)\n" % (
-                fileBlockName, )
+                fileBlockName,)
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
 
         result = []
-        [ result.append(dict(x) ) for x in files ]
+        [ result.append(dict(x)) for x in files ]
         return result
-    
+
 
     def lfnsInBlock(self, fileBlockName):
         """
@@ -316,7 +332,7 @@ class DBSReader:
                 "", # processed
                 [], #tier_list
                 "", #analysisDataset
-                fileBlockName, details="False")
+                fileBlockName, details = "False")
         except DbsException, ex:
             msg = "Error in "
             msg += "DBSReader.lfnsInBlock(%s)\n" % fileBlockName
@@ -324,10 +340,10 @@ class DBSReader:
             raise DBSReaderError(msg)
 
         result = []
-        [ result.append(x['LogicalFileName'] ) for x in files ]
+        [ result.append(x['LogicalFileName']) for x in files ]
         return result
 
-        
+
     def listFileBlockLocation(self, fileBlockName):
         """
         _listFileBlockLocation_
@@ -346,8 +362,8 @@ class DBSReader:
         for block in entryList:
             ses.update([str(location.host) for location in block.locations])
         return list(ses)
-        
-        
+
+
     def getFileBlock(self, fileBlockName):
         """
         _getFileBlock_
@@ -365,11 +381,11 @@ class DBSReader:
             "StorageElements" : self.listFileBlockLocation(fileBlockName),
             "Files" : self.listFilesInBlock(fileBlockName),
             "IsOpen" : self.blockIsOpen(fileBlockName),
-            
+
             }
                    }
         return result
-        
+
     def getFileBlockWithParents(self, fileBlockName):
         """
         _getFileBlockWithParents_
@@ -384,17 +400,17 @@ class DBSReader:
         files
         
         """
-        
+
         result = { fileBlockName: {
             "StorageElements" : self.listFileBlockLocation(fileBlockName),
             "Files" : self.listFilesInBlockWithParents(fileBlockName),
             "IsOpen" : self.blockIsOpen(fileBlockName),
-            
+
             }
                    }
         return result
 
-    
+
 
     def getFiles(self, dataset, onlyClosedBlocks = False):
         """
@@ -422,7 +438,7 @@ class DBSReader:
 
         """
         self.checkBlockName(blockName)
-        blockInstance = self.dbs.listBlocks(block_name=blockName)
+        blockInstance = self.dbs.listBlocks(block_name = blockName)
         if len(blockInstance) == 0:
             return False
         blockInstance = blockInstance[0]
@@ -431,8 +447,8 @@ class DBSReader:
             return False
         return True
 
-          
-        
+
+
     def blockToDatasetPath(self, blockName):
         """
         _blockToDatasetPath_
@@ -454,24 +470,24 @@ class DBSReader:
 
         if blocks == []:
             return None
-        
+
         pathname = blocks[-1].get('Path', None)
         return pathname
- 
 
-    def checkDatasetPath(self,pathName):
+
+    def checkDatasetPath(self, pathName):
         """
          _checkDatasetPath_
-        """ 
+        """
         if pathName in ("", None):
-           raise DBSReaderError( "Invalid Dataset Path name: => %s <=" % pathName)  
+           raise DBSReaderError("Invalid Dataset Path name: => %s <=" % pathName)
 
-    def checkBlockName(self,blockName):
+    def checkBlockName(self, blockName):
         """
          _checkBlockName_
         """
         if blockName in ("", "*", None):
-           raise DBSReaderError( "Invalid Block name: => %s <=" % blockName)
+           raise DBSReaderError("Invalid Block name: => %s <=" % blockName)
 
 
 

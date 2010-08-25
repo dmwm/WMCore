@@ -5,16 +5,23 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.64 2010/06/11 16:18:47 sfoulkes Exp $"
-__version__ = "$Revision: 1.64 $"
+__revision__ = "$Id: CMSCouch.py,v 1.65 2010/07/12 11:29:49 metson Exp $"
+__version__ = "$Revision: 1.65 $"
 
 import urllib
 import datetime
+import re
 
 from httplib import HTTPException
 
 from WMCore.Services.Requests import BasicAuthJSONRequests
 
+def check_name(dbname):
+    match = re.match("^[a-z0-9_$()+-/]+$", urllib.unquote_plus(dbname))
+    if not match:
+        msg = '%s is not a valid database name'
+        raise ValueError(msg % urllib.unquote_plus(dbname))
+        
 class Document(dict):
     """
     Document class is the instantiation of one document in the CouchDB
@@ -123,9 +130,13 @@ class Database(CouchDBRequests):
         """
         A set of queries against a CouchDB database
         """
+        check_name(dbname)
+            
+        self.name = urllib.quote_plus(dbname)
+         
         CouchDBRequests.__init__(self, url)
         self._reset_queue()
-        self.name = urllib.quote_plus(dbname)
+        
         self._queue_size = size
         self.threads = []
         self.last_seq = 0
@@ -383,36 +394,34 @@ class CouchServer(CouchDBRequests):
         "List all the databases the server hosts"
         return self.get('/_all_dbs')
 
-    def createDatabase(self, db):
+    def createDatabase(self, dbname):
         """
         A database must be named with all lowercase characters (a-z),
         digits (0-9), or any of the _$()+-/ characters and must end with a slash
-        in the URL - TODO assert this with a regexp
+        in the URL.
         """
-        db = urllib.quote_plus(db)
-        self.put("/%s" % db)
-        return Database(db, self.url)
+        check_name(dbname)
 
-    def deleteDatabase(self, db):
+        self.put("/%s" % urllib.quote_plus(dbname))
+        # Pass the Database constructor the unquoted name - the constructor will 
+        # quote it for us.
+        return Database(dbname, self.url)
+
+    def deleteDatabase(self, dbname):
         "Delete a database from the server"
-        db = urllib.quote_plus(db)
-        return self.delete("/%s" % db)
+        check_name(dbname)
+        dbname = urllib.quote_plus(dbname)
+        return self.delete("/%s" % dbname)
 
     def connectDatabase(self, dbname = 'database', create = True, size = 1000):
         """
         Return a Database instance, pointing to a database in the server. If the
         database doesn't exist create it if create is True.
         """ 
+        check_name(dbname)
         if create and dbname not in self.listDatabases():
-            self.createDatabase(dbname)
-        dbname = urllib.quote_plus(dbname)
+            return self.createDatabase(dbname)
         return Database(dbname, self.url, size)
-
-    def __str__(self):
-        """
-        List all the databases the server has
-        """
-        return self.listDatabases().__str__()
     
     def replicate(self, source, destination, continuous=False, 
                   create_target=False):
@@ -423,6 +432,12 @@ class CouchServer(CouchDBRequests):
                         "target":destination, 
                         "continuous":continuous,
                         "create_target":create_target})
+
+    def __str__(self):
+        """
+        List all the databases the server has
+        """
+        return self.listDatabases().__str__()
 
 # define some standard couch error classes
 # from:

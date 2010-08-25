@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.34 2010/07/20 15:41:31 mnorman Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.35 2010/07/21 21:58:24 mnorman Exp $"
+__version__ = "$Revision: 1.35 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -33,7 +33,9 @@ from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
 from WMCore.ProcessPool.ProcessPool           import ProcessPool
 from WMCore.ResourceControl.ResourceControl   import ResourceControl
 from WMCore.DataStructs.JobPackage            import JobPackage
+
 from WMCore.WMBase        import getWMBASE
+
 
 class BadJobError(Exception):
     """
@@ -448,7 +450,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                 # First get them ready to run
                 jobList = sortedJobList[sandbox]
                 packagePath = os.path.join(os.path.dirname(sandbox),
-                                       'batch_%i' %(jobList[0]['id']))
+                                           'batch_%i_%i' % (jobList[0]['id'],  jobList[-1]['id']))
+                                           #'batch_%i' %(jobList[0]['id']))
                 index = submitIndex.get(packagePath, 0)
                 
                 jobsReady = self.prepForSubmit(jobList = jobList,
@@ -495,7 +498,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                 # Then we have to submit them.
                 jobList = sortedJobList[sandbox]
                 packagePath = os.path.join(os.path.dirname(sandbox),
-                                           'batch_%i' %(jobList[0]['id']))
+                                           'batch_%i_%i' %(jobList[0]['id'],  jobList[-1]['id']))
+                                           #'batch_%i' %(jobList[0]['id']))
                 index = submitIndex.get(packagePath, 0)
                 jobsReady = self.prepForSubmit(jobList = jobList,
                                                sandbox = sandbox,

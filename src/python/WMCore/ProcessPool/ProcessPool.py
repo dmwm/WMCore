@@ -1,15 +1,18 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W0102, W6501, C0103, W0621, W0105, W0703
 """
 _ProcessPool_
 
 """
+
+__revision__ = "$Id: ProcessPool.py,v 1.12 2010/04/28 16:22:26 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import subprocess
 import sys
 import logging
 import os
 import threading
-import sys
 import traceback
 
 from logging.handlers import RotatingFileHandler
@@ -50,7 +53,7 @@ class ProcessPool:
         minorVersion = sys.version_info[1]
 
         if majorVersion and minorVersion:
-            versionString = "python%i.%i" %(majorVersion, minorVersion)
+            versionString = "python%i.%i" % (majorVersion, minorVersion)
         else:
             versionString = "python2.4"
 
@@ -122,7 +125,11 @@ class ProcessPool:
         Assign work to the workers processes.  The work parameters must be a
         list where each item in the list can be serialized into JSON.
         """
+
         workPerWorker = len(work) / len(self.workers)
+
+        if workPerWorker == 0:
+            workPerWorker = 1
 
         workIndex = 0
         while(len(work) > workIndex):
@@ -163,7 +170,9 @@ class ProcessPool:
                 output = worker.stdout.readline()
                 
                 if output == None:
+                    logging.info("No output from worker node line in ProcessPool")
                     continue
+
 
                 completedWork.append(self.jsonHandler.decode(output))
                 totalItems -= 1
@@ -223,6 +232,7 @@ if __name__ == "__main__":
     name of the directory that the log files will be stored in will be passed
     in through stdin as a JSON object.
     """
+    
     slaveClassName = sys.argv[1]
 
     jsonHandler = JSONRequests()
@@ -245,6 +255,8 @@ if __name__ == "__main__":
 
     wmFactory = WMFactory(name = "slaveFactory", namespace = "WMComponent")
     slaveClass = wmFactory.loadObject(classname = slaveClassName, args = slaveInit)
+
+    logging.error("Have slave class")
 
     while(True):
         #Parameters for each job passed in from ProcessPool.enqueue()

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.119 2010/07/01 21:37:32 sryu Exp $"
-__version__ = "$Revision: 1.119 $"
+__revision__ = "$Id: WorkQueue.py,v 1.120 2010/07/02 18:12:18 sryu Exp $"
+__version__ = "$Revision: 1.120 $"
 
 
 import time
@@ -573,18 +573,18 @@ class WorkQueue(WorkQueueBase):
         """
         Update locations for elements
         """
-        #get blocks and dbsurls (for now assume global!)
-        blocksAction = self.daofactory(classname = "Data.GetActiveData")
-        blocks = blocksAction.execute(conn = self.getDBConn(),
+        #get data(dataset or blocks) and dbsurls (for now assume global!)
+        dataAction = self.daofactory(classname = "Data.GetActiveData")
+        data = dataAction.execute(conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
-        if not blocks:
+        if not data:
             return
 
         fullResync = time.time() > self.lastLocationUpdate + \
                                 self.params['FullLocationRefreshInterval']
 
         #query may not support partial update - allow them to change fullResync
-        mapping, fullResync = self._getLocations([x['name'] for x in blocks],
+        mapping, fullResync = self._getLocations([x['name'] for x in data],
                                                  fullResync)
 
         if not mapping:

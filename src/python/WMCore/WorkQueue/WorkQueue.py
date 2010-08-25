@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool 
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.16 2009/06/26 21:10:36 sryu Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: WorkQueue.py,v 1.17 2009/07/02 18:30:13 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import time
 # pylint: disable-msg=W0104,W0622
@@ -22,7 +22,6 @@ except NameError:
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
 
 from WMCore.DataStructs.WMObject import WMObject
-from WMCore.WorkQueue.DBSHelper import DBSHelper
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.WorkSpecParser import WorkSpecParser
@@ -141,7 +140,8 @@ class _WQElement(WorkQueueBase):
 
 
     def __str__(self):
-         return "WQElement: %s:%s priority=%s, nJobs=%s, time=%s" % (self.wmSpec.specUrl,
+        return "WQElement: %s:%s priority=%s, nJobs=%s, time=%s" % (
+                                    self.wmSpec.specUrl,
                                     self.primaryBlock or "All", self.priority,
                                     self.nJobs, self.insertTime)
 
@@ -153,7 +153,7 @@ class _WQElement(WorkQueueBase):
         """
         return True
     online = property(online)
-	   
+   
     def locations(self):
         """
         _locations_
@@ -391,13 +391,15 @@ class WorkQueue(WorkQueueBase):
         return affected > 0
 
 
-    def updateLocationInfo(self):
+    def updateLocationInfo(self, elements=None):
         """
         Update locations for elements
         """
         #print "@@@@@@@@@@"
         #print self.elements
-        for element in self.elements.values():
+        if elements == None:
+            elements = self.elements.values()
+        for element in elements:
             #print "----------------------"           
             #print element.primaryBlock
             dbs = self.dbsHelpers[element.wmSpec.dbs_url]
@@ -490,6 +492,25 @@ class WorkQueue(WorkQueueBase):
             #print "----- %s" % primaryBlock
             ele = _WQElement(spec, jobs, None, primaryBlock, blocks)
             ele.create()
-            # only update in database 
-            #self.elements.append(ele)
+            # only update in database
+            # if needes load the workQueue
+            # self.load() 
         return True
+
+    def listWQElementBySpec(self, wmspecName, status="Available"):
+        """
+        return the list of work queue element given by wmspec name
+        TODO: currently only returns available work queue elements. Check with Rick what he
+              needs.
+        """
+        wqAction = self.daofactory(classname = "WorkQueueElement.GetElementsBySpecName")
+        elements = wqAction.execute(wmspecName, status, conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+        wqElements = []
+        for ele in elements:
+            wqEle = self._getWQElement(ele["wmspec_id"], ele["block_id"], 
+                       ele["num_jobs"], ele["insert_time"])
+            wqElements.append(wqEle)
+        self.updateLocationInfo(wqElements)
+        return wqElements
+        

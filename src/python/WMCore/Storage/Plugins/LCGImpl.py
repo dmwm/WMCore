@@ -72,41 +72,6 @@ class LCGImpl(StageOutImplV2):
         raise NotImplementedError        
 
    
-        
-        result += "FILE_SIZE=`stat -c %s"
-        result += " %s `\n" % localPFN
-        result += "echo \"Local File Size is: $FILE_SIZE\"\n"
-        
-        metadataCheck = \
-        """
-        for ((a=1; a <= 10 ; a++))
-        do
-           SRM_SIZE=`lcg-ls -l -b -D srmv2 %s 2>/dev/null | awk '{print $5}'`
-           echo "Remote Size is $SRM_SIZE"
-           if [[ $SRM_SIZE > 0 ]]; then
-              if [[ $SRM_SIZE == $FILE_SIZE ]]; then
-                 exit 0
-              else
-                 echo "Error: Size Mismatch between local and SE"
-                 echo "Cleaning up failed file:"
-                 %s 
-                 exit 60311
-              fi 
-           else
-              sleep 2
-           fi
-        done
-        echo "Cleaning up failed file:"
-        %s 
-        exit 60311
-
-        """ % (remotePFN, self.createRemoveFileCommand(targetPFN), self.createRemoveFileCommand(targetPFN))
-        result += metadataCheck
-        
-        return result
-
-    
-
 
 
 registerStageOutImplVersionTwo("srmv2-lcg", LCGImpl)

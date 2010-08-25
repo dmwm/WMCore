@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.36 2010/02/18 14:57:42 metson Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: Harness.py,v 1.37 2010/02/25 16:07:17 sryu Exp $"
+__version__ = "$Revision: 1.37 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -39,7 +39,7 @@ from WMCore.WMExceptions import WMEXCEPTION
 from WMCore.WMFactory import WMFactory
 from WMCore import WMLogging
 from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
-
+from WMCore.Agent.ConfigDBMap import ConfigDBMap
 
 class Harness:
     """
@@ -140,14 +140,12 @@ class Harness:
             myThread.config = self.config
             # set attribute for transaction objects.
             myThread.transactions = {}
-            options = {}
-            coreSect = self.config.CoreDatabase
-            if ( hasattr(coreSect, "socket") and coreSect.socket ):
-                options['unix_socket'] = coreSect.socket
+        
             logging.info(">>>Building database connection string")
             # check if there is a premade string if not build it yourself.
-            dbStr = coreSect.connectUrl
-
+            dbConfig = ConfigDBMap(self.config)
+            dbStr = dbConfig.getDBUrl()
+            options = dbConfig.getOption()
             # we only want one DBFactory per database so we will need to 
             # to pass this on in case we are using threads.
             myThread.dbFactory = DBFactory(myThread.logger, dbStr, options)
@@ -164,7 +162,7 @@ class Harness:
 
             logging.info(">>>Initialize transaction dictionary")
 
-            (connectDialect, junk) = coreSect.connectUrl.split(":", 1)
+            (connectDialect, junk) = dbStr.split(":", 1)
 
             if connectDialect.lower() == 'mysql':
                 myThread.dialect = 'MySQL'

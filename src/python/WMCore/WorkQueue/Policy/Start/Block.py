@@ -4,8 +4,8 @@ WorkQueue splitting by block
 
 """
 __all__ = []
-__revision__ = "$Id: Block.py,v 1.17 2010/07/28 15:24:29 swakef Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Block.py,v 1.18 2010/08/13 22:01:37 sryu Exp $"
+__version__ = "$Revision: 1.18 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from copy import deepcopy
@@ -70,6 +70,10 @@ class Block(StartPolicyInterface):
                 lumis = sum([x['LumiList'] for x in \
                             dbs.listFilesInBlock(block['Name'])], [])
                 runs = set([x['RunNumber'] for x in lumis])
+                
+                #TODO: use this one instead of above three lines when dbs api is supported
+                #runs = dbs.listRuns(block = block['Name'])
+                
                 # apply blacklist
                 runs = runs.difference(runBlackList)
                 # if whitelist only accept listed runs

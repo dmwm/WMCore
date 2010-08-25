@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.33 2010/05/25 20:58:09 mnorman Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.34 2010/05/26 16:14:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.34 $"
 
 import logging
 import os.path
@@ -16,8 +16,6 @@ import time
 import copy
 import random
 import tempfile
-#import cProfile
-#import pstats
 
 import WMCore.WMInit
 from WMCore.FwkJobReport.Report import Report
@@ -55,8 +53,6 @@ class JobAccountantTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMComponent.DBSBuffer.Database",
-        #                                        "WMCore.WMBS"])
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database",
                                                 "WMCore.WMBS"],
                                 useDefault = False)
@@ -1001,7 +997,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testSubscription.create()
 
         self.jobs = []
-        for i in range(500):
+        for i in range(100):
             testJobGroup = JobGroup(subscription = self.testSubscription)
             testJobGroup.create()
 
@@ -1013,12 +1009,21 @@ class JobAccountantTest(unittest.TestCase):
             newFile = File(lfn = "/some/lfn/for/job/%s" % testJob["id"], size = 600000, events = 60000,
                            locations = "cmssrm.fnal.gov", merged = True)
             newFile.create()
+
+            pFile = DBSBufferFile(lfn = "/some/lfn/for/job/%s" % testJob["id"], size = 600000, events = 60000)
+            pFile.setAlgorithm(appName = "cmsRun", appVer = "UNKNOWN",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+            pFile.setDatasetPath("/bogus/dataset/path")
+            pFile.addRun(Run(1, *[45]))
+            pFile.create()
+
             inputFileset.addFile(newFile)
             testJob.addFile(newFile)
             testJob.associateFiles()
 
             fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                    "test/python/WMComponent_t/JobAccountant_t/testLoad",
+                                    "test/python/WMComponent_t/JobAccountant_t/fwjrs",
                                     "LoadTest%02d.pkl" % i)
             
             self.jobs.append((testJob["id"], fwjrPath))
@@ -1033,9 +1038,6 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using one worker process.
         """
-
-        return
-        
         print("  Filling DB...")
 
         self.setupDBForLoadTest()
@@ -1129,9 +1131,6 @@ class JobAccountantTest(unittest.TestCase):
         masterFile2.addChild(inputFileA['lfn'])
         masterFile2.addChild(inputFileB['lfn'])
         masterFile2.addChild(inputFileC['lfn'])
-
-
-        
 
         inputFileA.addChild(unmergedFileA["lfn"])
         inputFileB.addChild(unmergedFileB["lfn"])
@@ -1318,9 +1317,6 @@ class JobAccountantTest(unittest.TestCase):
             
             self.jobs.append((testJob["id"], fwjrPath))
             self.setFWJRAction.execute(jobID = testJob["id"], fwjrPath = fwjrPath)
-
-        print "Created parents"
-        print parentCounter
 
         inputFileset.commit()
         return

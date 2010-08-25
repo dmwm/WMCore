@@ -3,12 +3,12 @@
 _Job_t_
 
 Testcase for the Job class.
-""" 
+"""
 
 import unittest, logging, random, time
 from sets import Set
 
-from WMCore.DataStructs.Job import Job 
+from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Workflow import Workflow
@@ -23,7 +23,7 @@ class JobTest(unittest.TestCase):
 
     Testcase for the Job class
 
-    Instantiate a dummy Job object with a dummy Subscription 
+    Instantiate a dummy Job object with a dummy Subscription
     and a dummy Fileset full of random files as input
     """
 
@@ -31,7 +31,7 @@ class JobTest(unittest.TestCase):
         """
         _setUp_
 
-        Initial Setup for the Job Testcase        
+        Initial Setup for the Job Testcase
         """
         self.inputFiles = []
 
@@ -44,12 +44,12 @@ class JobTest(unittest.TestCase):
             lumi = random.randint(0, 8)
 
             file = File(lfn = lfn, size = size, events = events, cksum = 1)
-	    file.addRun(Run(run, *[lumi]))
+            file.addRun(Run(run, *[lumi]))
             self.inputFiles.append(file)
-		
+
         self.dummyJob = Job(files = self.inputFiles)
         return
-	
+
     def tearDown(self):
         """
         No tearDown method for this Testcase
@@ -65,7 +65,7 @@ class JobTest(unittest.TestCase):
         """
         assert self.dummyJob.getFiles() == self.inputFiles, \
             "ERROR: Initial fileset does not match Job fileset"
-        
+
         return
 
     def testGetFilesSet(self):
@@ -129,7 +129,7 @@ class JobTest(unittest.TestCase):
         assert self.dummyJob["state_time"] > currentTime - 1 and \
             self.dummyJob["state_time"] < currentTime + 1, \
             "ERROR: State time not updated on state change"
-        
+
         assert self.dummyJob["state"] == "created", \
             "ERROR: Couldn't change Job state - changeState method error"
 
@@ -146,6 +146,24 @@ class JobTest(unittest.TestCase):
             "ERROR: Job outcome failed to update."
 
         return
+
+    def testGetBaggage(self):
+        """
+        test that setting/accessing the Job Baggage ConfigSection works
+        """
+        setattr(self.dummyJob.baggage, "baggageContents", {"key":"value"})
+
+
+        try:
+            baggage = self.dummyJob.getBaggage()
+        except Exception, ex:
+            msg = "Error calling Job.getBaggage()\n"
+            msg += str(ex)
+            self.fail(msg)
+
+
+
+        self.failUnless(hasattr(baggage, "baggageContents"))
 
 if __name__ == "__main__":
     unittest.main()

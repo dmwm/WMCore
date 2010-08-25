@@ -12,8 +12,8 @@ import os
 import logging
 import select, signal, fcntl
 
-__version__ = "$Id: System.py,v 1.2 2010/05/06 09:37:48 spigafi Exp $"
-__revision__ = "$Revision: 1.2 $"
+__version__ = "$Id: System.py,v 1.3 2010/05/09 14:52:34 spigafi Exp $"
+__revision__ = "$Revision: 1.3 $"
 
 
 def setPgid():
@@ -88,13 +88,33 @@ def executeCommand( command, timeout=None ):
     return ''.join(outc), returncode
 
 
-
-def evalStdList( strList ) :
+def strToList( tmp ) :
     """
-    _evalStdList_
-
     eval of a string which is espected to be a list
     it works for strings created with str([...])
+    """
+    if tmp == '':
+        return []
+    else: 
+        return tmp[:-1].split(',') 
+    
+
+def listToStr( tmp ) :
+    """
+    eval of a string which is espected to be a list
+    it works for strings created with str([...])
+    """
+
+    output = str("")
+    for i in tmp :
+        output += str(i) + ',' 
+        
+    # return '"' + str(tmp).replace('"','""') + '"'
+    return output
+    
+def evalStdList( strList ) :
+    """
+    _evalStdList_ -> DEPRECATED
     """
 
     strList = strList[ 1 : -1 ]
@@ -109,10 +129,7 @@ def evalStdList( strList ) :
 
 def evalCustomList( strList ) :
     """
-    _evalCustomList_
-
-    eval of a string which is espected to be a list
-    it works for any well formed string representing a list
+    _evalCustomList_ -> DEPRECATED
     """
     
     # strList = strList[ strList.find('[')+1 : strList.rfind(']') ].strip()

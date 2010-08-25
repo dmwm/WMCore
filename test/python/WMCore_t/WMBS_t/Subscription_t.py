@@ -234,10 +234,10 @@ class SubscriptionTest(unittest.TestCase):
         failSubscription = Subscription(fileset = testFileset,
                                         workflow = dummyWorkflow)
         failSubscription.create()        
-        failSubscription.failFiles(failSubscription.filesOfStatus("AvailableFiles"))
+        failSubscription.failFiles(failSubscription.filesOfStatus("Available"))
 
         testSubscription.failFiles([testFileA, testFileC])
-        failedFiles = testSubscription.filesOfStatus(status = "FailedFiles")
+        failedFiles = testSubscription.filesOfStatus(status = "Failed")
 
         goldenFiles = [testFileA, testFileC]
         for failedFile in failedFiles:
@@ -273,7 +273,7 @@ class SubscriptionTest(unittest.TestCase):
         myThread.transaction.begin()
 
         testSubscription.failFiles([testFileA, testFileC])
-        failedFiles = testSubscription.filesOfStatus(status = "FailedFiles")
+        failedFiles = testSubscription.filesOfStatus(status = "Failed")
 
         goldenFiles = [testFileA, testFileC]
         for failedFile in failedFiles:
@@ -286,7 +286,7 @@ class SubscriptionTest(unittest.TestCase):
 
         myThread.transaction.rollback()
 
-        failedFiles = testSubscription.filesOfStatus(status = "FailedFiles")
+        failedFiles = testSubscription.filesOfStatus(status = "Failed")
 
         assert len(failedFiles) == 0, \
                "ERROR: Transaction did not roll back failed files"
@@ -318,10 +318,10 @@ class SubscriptionTest(unittest.TestCase):
         completeSubscription = Subscription(fileset = testFileset,
                                             workflow = dummyWorkflow)
         completeSubscription.create()
-        completeSubscription.completeFiles(completeSubscription.filesOfStatus("AvailableFiles"))
+        completeSubscription.completeFiles(completeSubscription.filesOfStatus("Available"))
 
         testSubscription.completeFiles([testFileA, testFileC])
-        completedFiles = testSubscription.filesOfStatus(status = "CompletedFiles")
+        completedFiles = testSubscription.filesOfStatus(status = "Completed")
 
         goldenFiles = [testFileA, testFileC]
         for completedFile in completedFiles:
@@ -357,7 +357,7 @@ class SubscriptionTest(unittest.TestCase):
         myThread.transaction.begin()
         
         testSubscription.completeFiles([testFileA, testFileC])
-        completedFiles = testSubscription.filesOfStatus(status = "CompletedFiles")
+        completedFiles = testSubscription.filesOfStatus(status = "Completed")
 
         goldenFiles = [testFileA, testFileC]
         for completedFile in completedFiles:
@@ -370,7 +370,7 @@ class SubscriptionTest(unittest.TestCase):
 
         myThread.transaction.rollback()
 
-        completedFiles = testSubscription.filesOfStatus(status = "CompletedFiles")
+        completedFiles = testSubscription.filesOfStatus(status = "Completed")
 
         assert len(completedFiles) == 0, \
                "ERROR: Transaction didn't roll back completed files."
@@ -405,7 +405,7 @@ class SubscriptionTest(unittest.TestCase):
         acquireSubscription.acquireFiles()
 
         testSubscription.acquireFiles([testFileA, testFileC])
-        acquiredFiles = testSubscription.filesOfStatus(status = "AcquiredFiles")
+        acquiredFiles = testSubscription.filesOfStatus(status = "Acquired")
 
         goldenFiles = [testFileA, testFileC]
         for acquiredFile in acquiredFiles:
@@ -441,7 +441,7 @@ class SubscriptionTest(unittest.TestCase):
         myThread.transaction.begin()
 
         testSubscription.acquireFiles([testFileA, testFileC])
-        acquiredFiles = testSubscription.filesOfStatus(status = "AcquiredFiles")
+        acquiredFiles = testSubscription.filesOfStatus(status = "Acquired")
 
         goldenFiles = [testFileA, testFileC]
         for acquiredFile in acquiredFiles:
@@ -453,7 +453,7 @@ class SubscriptionTest(unittest.TestCase):
                "ERROR: Missing acquired files"
 
         myThread.transaction.rollback()
-        acquiredFiles = testSubscription.filesOfStatus(status = "AcquiredFiles")
+        acquiredFiles = testSubscription.filesOfStatus(status = "Acquired")
         
         assert len(acquiredFiles) == 0, \
                "ERROR: Transaction didn't roll back acquired files."
@@ -908,6 +908,25 @@ class SubscriptionTest(unittest.TestCase):
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
         testSubscription.create()
         
+        files = testSubscription.filesOfStatusByRun("Available", 1)
+        assert len(files) == 2, "2 files should be available for run 1"
+        
+        files = testSubscription.filesOfStatusByRun("Available", 2)
+        assert len(files) == 1, "1 file should be available for run 2"
+        assert files[0] == testFileC,  "That file shoulb be testFileC"
+        
+        files = testSubscription.filesOfStatusByRun("Completed", 1)
+        assert len(files) == 0, "No files shouldn't be completed for run 1"
+        
+        files = testSubscription.filesOfStatusByRun("Completed", 2)
+        assert len(files) == 0, "No files shouldn't be completed for run 2"
+        
+        files = testSubscription.filesOfStatusByRun("Failed", 1)
+        assert len(files) == 0, "No files shouldn't be failed for run 1"
+        
+        files = testSubscription.filesOfStatusByRun("Failed", 2)
+        assert len(files) == 0, "No files shouldn't be failed for run 2"
+            
         assert testSubscription.isCompleteOnRun(1) == False, \
                "Run 1 shouldn't be completed."
         
@@ -915,6 +934,24 @@ class SubscriptionTest(unittest.TestCase):
                "Run 2 shouldn't be completed."
                 
         testSubscription.completeFiles([testFileA, testFileB])
+        
+        files = testSubscription.filesOfStatusByRun("Available", 1)
+        assert len(files) == 0, "0 files should be available for run 1"
+        
+        files = testSubscription.filesOfStatusByRun("Available", 2)
+        assert len(files) == 1, "1 file should be available for run 2"
+        
+        files = testSubscription.filesOfStatusByRun("Completed", 1)
+        assert len(files) == 2, "2 files should completed for run 1"
+        
+        files = testSubscription.filesOfStatusByRun("Completed", 2)
+        assert len(files) == 0, "No files shouldn't be completed for run 2"
+        
+        files = testSubscription.filesOfStatusByRun("Failed", 1)
+        assert len(files) == 0, "No files shouldn't be failed for run 1"
+        
+        files = testSubscription.filesOfStatusByRun("Failed", 2)
+        assert len(files) == 0, "No files shouldn't be failed for run 2"
         
         assert testSubscription.isCompleteOnRun(1) == True, \
                "Run 1 should be completed."
@@ -924,10 +961,31 @@ class SubscriptionTest(unittest.TestCase):
         
         testSubscription.failFiles([testFileA, testFileC])
         
+        files = testSubscription.filesOfStatusByRun("Available", 1)
+        assert len(files) == 0, "0 files should be available for run 1"
+        
+        files = testSubscription.filesOfStatusByRun("Available", 2)
+        assert len(files) == 0, "0 file should be available for run 2"
+        
+        files = testSubscription.filesOfStatusByRun("Completed", 1)
+        assert len(files) == 1, "1 file should be completed for run 1"
+        assert files[0] == testFileB,  "That file shoulb be testFileB"
+        
+        files = testSubscription.filesOfStatusByRun("Completed", 2)
+        assert len(files) == 0, "No files shouldn't be completed for run 2"
+        
+        files = testSubscription.filesOfStatusByRun("Failed", 1)
+        assert len(files) == 1, "1 file should be failed for run 1"
+        
+        files = testSubscription.filesOfStatusByRun("Failed", 2)
+        assert len(files) == 1, "1 files should be failed for run 2"
+        
+        
         assert testSubscription.isCompleteOnRun(1) == True, \
                "Run 1 should be completed."
         assert testSubscription.isCompleteOnRun(2) == True, \
                "Run 2 should be completed."
+            
                
 if __name__ == "__main__":
     unittest.main()

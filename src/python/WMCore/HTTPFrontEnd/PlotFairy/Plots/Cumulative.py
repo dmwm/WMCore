@@ -3,6 +3,15 @@ from Mixins import *
 from Validators import *
 
 class Cumulative(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAxisMixin,YNumericAxisMixin,BinnedNumericSeriesMixin,WatermarkMixin):
+    '''
+    Draws a cumulative plot of one or more series.
+    
+    The 'values' arrays in the series for this plot should
+    contain one more data point than the number of bins, otherwise
+    the last point will be interpolated down to zero.
+    
+    TODO: Legend.
+    '''
     __metaclass__=Plot
     def __init__(self):
         self.validators = []
@@ -33,5 +42,5 @@ class Cumulative(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAx
             bottom = top
         
         axes.set_xbound(edges[0],edges[-1])
-        axes.set_ybound(logmin)
+        axes.set_ybound(lower=logmin)
         

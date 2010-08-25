@@ -3,13 +3,26 @@ from Mixins import *
 from Validators import *
 
 class Wave(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAxisMixin,YNumericAxisMixin,BinnedNumericSeriesMixin,WatermarkMixin):
+    '''
+    Draws a stack of data series, centred on the middle of the y axis,
+    so it appears to expand and contract like a wave as the total data
+    volume fluctuates. Intended to show both the overall trend and allow
+    major contributors to be identified.
+    
+    Attempts to label each series by selecting the widest point and 
+    interpolating the current centreline angle. This may result in
+    slightly odd results if there are large numbers of bins.
+    
+    TODO: Better text placement, axes control (currently always hidden),
+    line smoothing.
+    '''
     __metaclass__=Plot
     def __init__(self):
         self.props = Props()
-        self.validators = [IntBase('text_size_min',min=1,default=4),
-                           IntBase('truncate_text',default=None),
-                           ElementBase('labelled',bool,default=True),
-                           FloatBase('text_span_bins',default=8.)]
+        self.validators = [IntBase('text_size_min',min=1,default=4,doc_user="Minimum text size to draw. Smaller is ignored."),
+                           IntBase('truncate_text',default=None,doc_user="Maximum length for text."),
+                           ElementBase('labelled',bool,default=True,doc_user="Draw labels in each series."),
+                           FloatBase('text_span_bins',default=8.,doc_user="Maximum number of bins each label should span.")]
         super(Wave,self).__init__(BinnedNumericAxis_allowdefault=True)
     def data(self):
         

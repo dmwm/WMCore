@@ -3,9 +3,13 @@ from Mixins import *
 from Validators import *
 
 class Pie(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,LabelledSeriesMixin,WatermarkMixin):
+    '''
+    A simple pie chart.
+    '''
     __metaclass__=Plot
     def __init__(self):
-        self.validators = [ElementBase('shadow',bool,default=True),ElementBase('percentage',bool,default=True)]
+        self.validators = [ElementBase('shadow',bool,default=True,doc_user="Draw a drop-shadow."),
+                           ElementBase('percentage',bool,default=True,doc_user="Draw a percentage inside each slice.")]
         self.props = Props()
         super(Pie,self).__init__(Axes_Square=True)
     

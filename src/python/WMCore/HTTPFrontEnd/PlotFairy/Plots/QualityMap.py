@@ -3,9 +3,22 @@ from Mixins import *
 from Validators import *
 
 class QualityMap(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XAnyBinnedAxisMixin,YAnyBinnedAxisMixin,ArrayMixin,WatermarkMixin):
+    '''
+    Draws a coloured quality map based on an array of 0->1 datapoints,
+    a la the phedex link quality plot.
+    
+    Values between 0 and 1 are interpolated between colour0 and colour1.
+    
+    The array needs to have the same dimensions as the number of bins
+    specified on both the x and y axes. Each can be either a specified
+    with 3 of (min, max, width, bins), or a list of labels.
+    
+    TODO: Currently has no support for blanking cells. 
+    '''
     __metaclass__=Plot
     def __init__(self):
-        self.validators = [ColourBase('colour0',default='#ff0000'),ColourBase('colour1',default='#00ff00')]
+        self.validators = [ColourBase('colour0',default='#ff0000',doc_user="Colour for values ->0."),
+                           ColourBase('colour1',default='#00ff00',doc_user="Colour for values ->1.")]
         self.props = Props()
         super(QualityMap,self).__init__(Array_Min=0.,Array_Max=1.)
     def data(self):

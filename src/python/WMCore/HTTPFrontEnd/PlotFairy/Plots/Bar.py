@@ -3,6 +3,13 @@ from Validators import *
 from Plot import Plot
 
 class Bar(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAxisMixin,YNumericAxisMixin,BinnedNumericSeriesMixin):
+    '''
+    Draw a bar chart with numeric axes and one or more series.
+    Multiple series are stacked.
+    
+    TODO: Possibility of overlaying multiple series. Horizontal
+    instead of vertical bars. Legend.
+    '''
     __metaclass__=Plot
     def data(self):
         
@@ -23,24 +30,7 @@ class Bar(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAxisMixin
             label = series['label']
             axes.bar(left,height,width,bottom,label=label,color=colour)
             bottom = [b+h for b,h in zip(bottom,height)]
-    
-class LabelledBar(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XAutoLabelledAxisMixin,YNumericAxisMixin,LabelledSeriesMixin):
-    __metaclass__=Plot
-    def data(self):
-        
-        axes = self.figure.gca()
-        
-        series = self.props.series
-        
-        axes.set_xticks([i+0.5 for i in range(len(series))])
-        
-        labels = [item['label'] for item in series]
-        left = range(len(series))
-        bottom = [0]*len(series)
-        width = [1]*len(series)
-        height = [item['value'] for item in series]
-        colour = [item['colour'] for item in series]
-        
-        axes.set_xticklabels(labels)
-        axes.bar(left,height,width,bottom,label=labels,color=colour)
+            
+        axes.set_ybound(lower=self.props.series[0]['logmin'])
+
         

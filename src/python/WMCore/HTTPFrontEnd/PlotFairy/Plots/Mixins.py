@@ -1,15 +1,17 @@
 from Validators import *
 from Utils import *
 
+import matplotlib.ticker
+
 class Mixin(object):
     def __init__(self,*args,**kwargs):
         pass
 
 class FigureMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [IntBase('height',min=1,max=5000,default=600),
-                           IntBase('width',min=1,max=5000,default=800),
-                           FloatBase('dpi',min=1,max=300,default=100.)] 
+        self.validators += [IntBase('height',min=1,max=5000,default=600,doc_user="Canvas height in pixels."),
+                           IntBase('width',min=1,max=5000,default=800,doc_user="Canvas width in pixels."),
+                           FloatBase('dpi',min=1,max=300,default=100.,doc_user="Canvas DPI.")] 
         super(FigureMixin,self).__init__(*args,**kwargs)
     def construct(self,*args,**kwargs):
         self.figure = matplotlib.pyplot.figure(figsize=(self.props.width/self.props.dpi,self.props.height/self.props.dpi),
@@ -18,21 +20,21 @@ class FigureMixin(Mixin):
 
 class TitleMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [ElementBase('notitle',bool,default=False),
-                  ElementBase('title',(str,unicode),default=''),
-                  FontSize('title_size',default=14),
-                  FontSize('subtitle_size',default=12),
-                  FontWeight('title_weight',default='bold'),
-                  FontWeight('subtitle_weight',default='normal'),
-                  FontFamily('title_font',default='serif'),
-                  FontFamily('subtitle_font',default='serif'),
-                  ColourBase('title_colour',default='black'),
-                  ColourBase('subtitle_colour',default='black'),
-                  IntBase('padding_top',min=0,default=kwargs.get('Padding_Top',50)),
-                  IntBase('padding_left',min=0,default=kwargs.get('Padding_Left',70)),
-                  IntBase('padding_right',min=0,default=kwargs.get('Padding_Right',30)),
-                  IntBase('padding_bottom',min=0,default=kwargs.get('Padding_Bottom',50)),
-                  IntBase('linepadding',min=0,default=10)]    
+        self.validators += [ElementBase('notitle',bool,default=False,doc_user="Prevent drawing and allocating space for a title."),
+                  ElementBase('title',(str,unicode),default='',doc_user="Title of the plot. Blank for none. Anything after the first newline will be rendered as `subtitle'."),
+                  FontSize('title_size',default=14,doc_user="Font size for title."),
+                  FontSize('subtitle_size',default=12,doc_user="Font size for subtitle."),
+                  FontWeight('title_weight',default='bold',doc_user="Text style for title."),
+                  FontWeight('subtitle_weight',default='normal',doc_user="Text style for subtitle."),
+                  FontFamily('title_font',default='serif',doc_user="Font family for title."),
+                  FontFamily('subtitle_font',default='serif',doc_user="Font family for subtitle."),
+                  ColourBase('title_colour',default='black',doc_user="Text colour for title."),
+                  ColourBase('subtitle_colour',default='black',doc_user="Text colour for subtitle."),
+                  IntBase('padding_top',min=0,default=kwargs.get('Padding_Top',50),doc_user="Padding in pixels at plot top. Title may go over this area."),
+                  IntBase('padding_left',min=0,default=kwargs.get('Padding_Left',70),doc_user="Padding in pixels at plot left."),
+                  IntBase('padding_right',min=0,default=kwargs.get('Padding_Right',30),doc_user="Padding in pixels at plot right."),
+                  IntBase('padding_bottom',min=0,default=kwargs.get('Padding_Bottom',50),doc_user="Padding in pixels at plot bottom."),
+                  IntBase('linepadding',min=0,default=10,doc_user="Padding in pixels between lines in the title.")]    
         super(TitleMixin,self).__init__(*args,**kwargs)
     def construct(self,*args,**kwargs):
         self.props.topbound = self.props.height-self.props.padding_top
@@ -70,12 +72,12 @@ class TitleMixin(Mixin):
 
 class FigAxesMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [StringBase('projection',('aitoff','hammer','lambert','mollweide','polar'),kwargs.get('Axes_Projection','rectilinear')),
-                  ElementBase('square',bool,default=kwargs.get('Axes_Square',False)),
-                  IntBase('padding_top',min=0,default=kwargs.get('Padding_Top',50)),
-                  IntBase('padding_left',min=0,default=kwargs.get('Padding_Left',70)),
-                  IntBase('padding_right',min=0,default=kwargs.get('Padding_Right',30)),
-                  IntBase('padding_bottom',min=0,default=kwargs.get('Padding_Bottom',50))]    
+        self.validators += [StringBase('projection',('aitoff','hammer','lambert','mollweide','polar'),kwargs.get('Axes_Projection','rectilinear'),doc_user="Projection algorithm to use. Changing this may cause undesirable side effects."),
+                  ElementBase('square',bool,default=kwargs.get('Axes_Square',False),doc_user="Force the plot area to be square, leaving necessary margins.")]
+                  #IntBase('padding_top',min=0,default=kwargs.get('Padding_Top',50)),
+                  #IntBase('padding_left',min=0,default=kwargs.get('Padding_Left',70)),
+                  #IntBase('padding_right',min=0,default=kwargs.get('Padding_Right',30)),
+                  #IntBase('padding_bottom',min=0,default=kwargs.get('Padding_Bottom',50))]    
         super(FigAxesMixin,self).__init__(*args,**kwargs)
     def construct(self,*args,**kwargs):
         w,h = self.props.width,self.props.height
@@ -109,9 +111,9 @@ class FigAxesMixin(Mixin):
         
 class StyleMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [ColourBase('background',default=None),
-                  ColourMap('colourmap',default=None),
-                  ElementBase('gridlines',bool,default=True)]
+        self.validators += [ColourBase('background',default=None,doc_user="Background colour for the canvas."),
+                  ColourMap('colourmap',default=None,doc_user="Colourmap to use for items without preset colours."),
+                  ElementBase('gridlines',bool,default=True,doc_user="Whether to show gridlines.")]
         super(StyleMixin,self).__init__(*args,**kwargs)    
     def construct(self,*args,**kwargs):
         if not self.props.background==None:
@@ -256,13 +258,13 @@ def numeric_bins(data):
                 
 class NumericAxisMixin(Mixin):  
     def __init__(self,*args,**kwargs):
-        self.validators += [DictElementBase(self.__axis,True,[StringBase('label',None,default=''),
-                                                     FloatBase('min',default=None),
-                                                     FloatBase('max',default=None),
-                                                     ElementBase('log',bool,default=False),
-                                                     FloatBase('logbase',min=1,default=10),
-                                                     StringBase('timeformat',default=None),
-                                                     StringBase('format',('num','time','binary','si','hex'),default='num')])]
+        self.validators += [DictElementBase(self.__axis,True,[StringBase('label',None,default='',doc_user="Axis label."),
+                                                     FloatBase('min',default=None,doc_user="Minimum view-limit for axis."),
+                                                     FloatBase('max',default=None,doc_user="Maximum view-limit for axis."),
+                                                     ElementBase('log',bool,default=False,doc_user="Use logarithmic scale."),
+                                                     FloatBase('logbase',min=1,default=10,doc_user="Exponent of log scale, if enabled."),
+                                                     StringBase('timeformat',default=None,doc_user="Time format to use, if format=time. Can either be a strftime() format string or a preset from ('second','minute','hour','day','week','month','year','decade')."),
+                                                     StringBase('format',('num','time','binary','si','hex'),default='num',doc_user="Formatting to use for numbers on this axis.")])]
         super(NumericAxisMixin,self).__init__(*args,**kwargs)
     def predata(self,*args,**kwargs):
         axes = self.figure.gca()
@@ -303,16 +305,18 @@ class BinnedNumericAxisMixin(Mixin):
         self.__binsrc = kwargs.get('BinnedNumericAxis_defaultbinsrc','series')
         self.__allowdefault = kwargs.get('BinnedNumericAxis_allowdefault',False)
         subvalidators = [
-                         FloatBase('min',default=None),
-                         FloatBase('max',default=None),
-                         FloatBase('width',default=None),
-                         IntBase('bins',default=None),
-                         StringBase('label',default=''),
-                         ElementBase('log',bool,default=False),
-                         StringBase('timeformat',default=None),
-                         StringBase('format',('num','time','binary','si','hex'),default='num')
+                         FloatBase('min',default=None,doc_user="Lower edge of first bin."),
+                         FloatBase('max',default=None,doc_user="Lower edge of last bin."),
+                         FloatBase('width',default=None,doc_user="Width of each bin. If logarithmic, this is the width of each bin after log conversion."),
+                         IntBase('bins',default=None,doc_user="Number of bins on this axis. Data will be truncated or padded to reflect this number."),
+                         StringBase('label',default='',doc_user="Axis label."),
+                         ElementBase('log',bool,default=False,doc_user="Use logarithmic scale."),
+                         FloatBase('logbase',min=0,default=10,doc_user="Exponent of log scale, if enabled."),
+                         StringBase('timeformat',default=None,doc_user="Time format to use, if format=time. Can either be a strftime() format string or a preset from ('second','minute','hour','day','week','month','year','decade')."),
+                         StringBase('format',('num','time','binary','si','hex'),default='num',doc_user="Formatting to use for numbers on this axis."),
+                         IntBase('ticks',min=0,default=6,doc_user="How many labels to place on the axis (approximately).")
                          ]
-        self.validators += [DictElementBase(self.__axis,True,subvalidators)]
+        self.validators += [DictElementBase(self.__axis,True,subvalidators,doc_user="For a binned axis, at least three of 'min', 'max', 'width' and 'bins' must be specified.")]
         super(BinnedNumericAxisMixin,self).__init__(*args,**kwargs)
     def validate(self,input):
         if not self.__allowdefault:
@@ -346,6 +350,7 @@ class BinnedNumericAxisMixin(Mixin):
         data = self.props.get(self.__axis)
         
         axis_format(axis,data)
+        axis.set_major_locator(matplotlib.ticker.FixedLocator(edges,data['ticks']))
         
         if self.__axis=='xaxis':
             axes.set_xlabel(data['label'])
@@ -374,19 +379,21 @@ YBinnedNumericAxisMixin = UniqueAxis(BinnedNumericAxisMixin,'yaxis')
 
 class AnyBinnedAxisMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [DictElementBase(self.__axis,False,[StringBase('label',None,default=''),
-                                                               FloatBase('min',default=None),
-                                                               FloatBase('max',default=None),
-                                                               FloatBase('width',min=0,default=None),
-                                                               IntBase('bins',min=0,default=None),
-                                                               StringBase('timeformat',None,default=None),
-                                                               StringBase('format',('num','time','binary','si','hex'),default='num'),
-                                                               ListElementBase('labels',(str,unicode),default=None)])]
+        self.validators += [DictElementBase(self.__axis,False,[StringBase('label',None,default='',doc_user="Axis label."),
+                                                               FloatBase('min',default=None,doc_user="Lower edge of first bin."),
+                                                               FloatBase('max',default=None,doc_user="Lower edge of last bin."),
+                                                               FloatBase('width',min=0,default=None,doc_user="Width of bins on this axis."),
+                                                               IntBase('bins',min=0,default=None,doc_user="Number of bins on this axis. Data will be truncated or padded to reflect this number."),
+                                                               StringBase('timeformat',None,default=None,doc_user="Time format to use, if format=time. Can either be a strftime() format string or a preset from ('second','minute','hour','day','week','month','year','decade')."),
+                                                               StringBase('format',('num','time','binary','si','hex'),default='num',doc_user="Formatting to use for numbers on this axis."),
+                                                               IntBase('ticks',min=0,default=6,doc_user="How many labels to place on the axis (approximately)."),
+                                                               ListElementBase('labels',basestring,default=None,doc_user="List of labels for this axis.")],doc_user="Must either specify a list of labels or at least 3 of 'min', 'max', 'width', 'bins'.")]
         super(AnyBinnedAxisMixin,self).__init__(*args,**kwargs)
     def predata(self,*args,**kwargs):       
         axes = self.figure.gca()
         axis = getattr(axes,self.__axis)
         data = self.props.get(self.__axis)
+        axis_format(axis,data)
         
         if not data['labels']==None:
             data['bins'] = len(data['labels'])
@@ -397,6 +404,7 @@ class AnyBinnedAxisMixin(Mixin):
             bins,edges = numeric_bins(data)
             data['bins']=bins
             data['edges']=edges
+            axis.set_major_locator(matplotlib.ticker.FixedLocator(edges,data['ticks']))
         if self.__axis=='xaxis':
             axes.set_xlabel(data['label'])
         elif self.__axis=='yaxis':
@@ -415,8 +423,8 @@ YAnyBinnedAxisMixin = UniqueAxis(AnyBinnedAxisMixin,'yaxis')
         
 class LabelledAxisMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [DictElementBase(self.__axis,False,[StringBase('label',None,default=''),
-                                                     ListElementBase('labels',(str,unicode),min_elements=1,default=('default',))])]
+        self.validators += [DictElementBase(self.__axis,False,[StringBase('label',None,default='',doc_user="Axis label."),
+                                                     ListElementBase('labels',basestring,min_elements=1,default=('default',),doc_user="List of labels for this axis.")])]
         super(LabelledAxisMixin,self).__init__(*args,**kwargs)   
     def predata(self,*args,**kwargs):
         axes = self.figure.gca()
@@ -440,7 +448,7 @@ YLabelledAxisMixin = UniqueAxis(LabelledAxisMixin,'yaxis')
     
 class AutoLabelledAxisMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [DictElementBase(self.__axis,True,[StringBase('label',None,default='')])]
+        self.validators += [DictElementBase(self.__axis,True,[StringBase('label',None,default='',doc_user="Axis label.")])]
         #print 'AutoLabelledAxisMixin::__init__',self.__class__,self.__dict__.keys()
         super(AutoLabelledAxisMixin,self).__init__(*args,**kwargs)
     def predata(self,*args,**kwargs):
@@ -459,7 +467,11 @@ YAutoLabelledAxisMixin = UniqueAxis(AutoLabelledAxisMixin,'yaxis')
 
 class BinnedNumericSeriesMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [ListElementBase('series',dict,DictElementBase('listitem',False,[StringBase('label',None,default=''),ListElementBase('values',(int,float),allow_missing=False),ColourBase('colour',default=None)]),allow_missing=False)]
+        self.validators += [ListElementBase('series',dict,DictElementBase('listitem',False,[
+                                                                                            StringBase('label',None,default='',doc_user="Series label."),
+                                                                                            ListElementBase('values',(int,float),allow_missing=False,doc_user="List of series values."),
+                                                                                            ColourBase('colour',default=None,doc_user="Series colour. Will be selected from colourmap if unspecified.")
+                                                                                            ]),allow_missing=False)]
         self.__datamode = kwargs.get('BinnedNumericSeries_DataMode','bin')
         self.__logmode = kwargs.get('BinnedNumericSeries_LogMode','clean')
         self.__logsrc = kwargs.get('BinnedNumericSeries_LogSrc','log_y')
@@ -508,7 +520,12 @@ class BinnedNumericSeriesMixin(Mixin):
             
 class LabelledSeriesMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [ListElementBase('series',dict,DictElementBase('listitem',False,[StringBase('label',None,default=''),FloatBase('value',allow_missing=False),ColourBase('colour',default=None),ElementBase('explode',(int,float),default=0)]),allow_missing=False)]
+        self.validators += [ListElementBase('series',dict,DictElementBase('listitem',False,[
+                                                                                            StringBase('label',None,default='',doc_user="Item label."),
+                                                                                            FloatBase('value',allow_missing=False,doc_user="Item value."),
+                                                                                            ColourBase('colour',default=None,doc_user="Item colour. Set from colourmap if unspecified."),
+                                                                                            ElementBase('explode',(int,float),default=0,doc_user="Proportion of radius to explode data.")
+                                                                                            ]),allow_missing=False)]
         super(LabelledSeriesMixin,self).__init__(*args,**kwargs)
     def data(self,*args,**kwargs):
         cmap = self.props.colourmap
@@ -519,7 +536,12 @@ class LabelledSeriesMixin(Mixin):
 
 class LabelledSeries2DMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [ListElementBase('series',dict,DictElementBase('listitem',False,[StringBase('label',None,default=''),ListElementBase('x',(int,float),allow_missing=False),ListElementBase('y',(int,float),allow_missing=False),MarkerBase('marker'),ColourBase('colour',default=None)]),allow_missing=False)]
+        self.validators += [ListElementBase('series',dict,DictElementBase('listitem',False,[
+                                                                                            StringBase('label',None,default='',doc_user="Series label."),
+                                                                                            ListElementBase('x',(int,float),allow_missing=False,doc_user="Series x-values."),
+                                                                                            ListElementBase('y',(int,float),allow_missing=False,doc_user="Series y-values."),
+                                                                                            MarkerBase('marker'),ColourBase('colour',default=None,doc_user="Marker to use for series data points.")
+                                                                                            ]),allow_missing=False,doc_user="Series x and y value lists must be the same length.")]
         super(LabelledSeries2DMixin,self).__init__(*args,**kwargs)
     def data(self,*args,**kwargs):
         cmap = self.props.colourmap
@@ -560,10 +582,10 @@ class ArrayMixin(Mixin):
 class WatermarkMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.__watermarks = {'cms':'cmslogo.png'}
-        self.validators += [StringBase('watermark',options=self.__watermarks.keys(),default=None),
-                            FloatBase('watermark_alpha',min=0,max=1,default=0.5),
-                            StringBase('watermark_location',options=('top','bottom','left','right','topleft','topright','bottomleft','bottomright'),default='topright'),
-                            FloatBase('watermark_scale',min=0,default=1)]
+        self.validators += [StringBase('watermark',options=self.__watermarks.keys(),default=None,doc_user="Name of predefined watermark to use."),
+                            FloatBase('watermark_alpha',min=0,max=1,default=0.5,doc_user="How transparent to make the watermark."),
+                            StringBase('watermark_location',options=('top','bottom','left','right','topleft','topright','bottomleft','bottomright'),default='topright',doc_user="Where to place the watermark."),
+                            FloatBase('watermark_scale',min=0,default=1,doc_user="How much to scale the watermark relative to original size.")]
         super(WatermarkMixin,self).__init__(*args,**kwargs)
         
     def finalise(self,*args,**kwargs):

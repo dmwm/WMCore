@@ -3,14 +3,23 @@ from Mixins import *
 from Validators import *
 
 class Sparkline(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,BinnedNumericSeriesMixin,WatermarkMixin):
+    '''
+    Draw one or more small series without marked axes, intended
+    for quick visualisation of trends.
+    
+    Multiple series can either be drawn overlaid on the same
+    (invisble) axis or on separate, stacked axes. They can also
+    be labelled with auto-scaled text taking up 'text_fraction'
+    of the available width.
+    '''
     __metaclass__=Plot
     def __init__(self):
-        self.validators = [ElementBase('labelled',bool,default=True),
-                           ElementBase('overlay',bool,default=True),
-                           StringBase('linestyle',default='-'),
-                           MarkerBase('marker',default='None'),
-                           FloatBase('linewidth',min=0,default=1),
-                           FloatBase('text_fraction',min=0,max=1,default=0.2)]
+        self.validators = [ElementBase('labelled',bool,default=True,doc_user="Draw series labels."),
+                           ElementBase('overlay',bool,default=True,doc_user="Overlay multiple series on same axis."),
+                           StringBase('linestyle',default='-',doc_user="Matplotlib linestyle for lines."),
+                           MarkerBase('marker',default='None',doc_user="Marker style to draw."),
+                           FloatBase('linewidth',min=0,default=1,doc_user="Linewidth in pixels for drawing."),
+                           FloatBase('text_fraction',min=0,max=1,default=0.2,doc_user="Fraction of width to use for labels.")]
         self.props = Props()
         super(Sparkline,self).__init__(BinnedNumericSeries_BinSrc=None,Padding_Top=0,Padding_Left=0,Padding_Right=0,Padding_Bottom=0)
     def data(self):

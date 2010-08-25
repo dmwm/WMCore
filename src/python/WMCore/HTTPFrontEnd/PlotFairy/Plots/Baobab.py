@@ -11,21 +11,61 @@ from Mixins import *
 from Validators import *
 
 class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
+    '''
+    A hierarchical pie chart, as per GNOME Baobab and KDE Filelight.
+    
+    The plot consists of concentric circles which are progressively subdivided
+    into smaller and smaller elements. This works very well for visualising
+    directory structures in filesystems to show overall space usage, but
+    can be applied to any other form of subdividable data.
+    
+    The data should be a nested series of dictionaries, of the form:
+    
+    {
+     'label': 'root',
+     'value': 1000,
+     'children': [
+                  {'label': 'child',
+                   'value':500,
+                   'children':[]
+                   }
+                  ]
+     }
+    
+    etc, etc. This data should always include a root element reflecting the
+    total volume, but which will not be shown. Elements from depth=1 will be
+    displayed. At each level, the sum of child values must be less than or
+    equal the parent value. Negative values should also not be used.
+    
+    At each level, only elements which would appear larger than `minpixel' are
+    actually displayed. All others are merged together into a reduced-height
+    block.
+    
+    The plotter attempts to draw the label for each node inside the area, after
+    it has been truncated appropriately. The optimum of radial and tangential is
+    picked depending on available length, and the text size determined
+    appropriately.
+    
+    This plot may sometimes cause Agg to complain about excessive rendering
+    complexity. The exact scenario this happens in is not understood yet,
+    try changing the plot size, minpixel, minimum label size or disable
+    labelled altogether.
+    '''
     __metaclass__=Plot
     def __init__(self):
-        self.validators = [IntBase('minpixel',min=0,default=10),
-                           ElementBase('scale',bool,default=True),
-                           StringBase('unit',None,default=''),
-                           StringBase('format',('num','si','binary'),default='si'),
-                           ColourBase('dropped_colour',default='#cccccc'),
-                           ElementBase('external',bool,default=True),
-                           IntBase('scale_number',min=1,default=5),
-                           ElementBase('labelled',bool,default=True),
-                           ElementBase('central_label',bool,default=True),
-                           FloatBase('dropped_colour_size',min=0,max=1,default=0.75),
-                           IntBase('text_truncate_inner',default=-1),
-                           IntBase('text_truncate_outer',default=-1),
-                           IntBase('text_size_min',min=1,default=4)]
+        self.validators = [IntBase('minpixel',min=0,default=10,doc_user="Sectors below this size are merged together."),
+                           ElementBase('scale',bool,default=True,doc_user="Show a scale round the outside."),
+                           StringBase('unit',None,default='',doc_user="Unit to append to numbers."),
+                           StringBase('format',('num','si','binary'),default='si',doc_user="Formatter to use for values."),
+                           ColourBase('dropped_colour',default='#cccccc',doc_user="Colour for merged nodes."),
+                           ElementBase('external',bool,default=True,doc_user="Whether to draw text for the outer ring outside of the diagram."),
+                           IntBase('scale_number',min=1,default=5,doc_user="Number of scale points to draw."),
+                           ElementBase('labelled',bool,default=True,doc_user="Draw labels inside each node, if possible."),
+                           ElementBase('central_label',bool,default=True,doc_user="Draw a label in the centre showing diagram total."),
+                           FloatBase('dropped_colour_size',min=0,max=1,default=0.75,doc_user="Relative height of merged nodes."),
+                           IntBase('text_truncate_inner',default=-1,doc_user="Maximum length of text drawn inside nodes."),
+                           IntBase('text_truncate_outer',default=-1,doc_user="Maximum length of text drawn outside the circle."),
+                           IntBase('text_size_min',min=1,default=4,doc_user="Minimum text size to render. Text smaller than this is not drawn.")]
         self.props = Props()
         super(Baobab,self).__init__(Axes_Projection='polar',Axes_Square=True,Padding_Left=50,Padding_Right=50,Padding_Bottom=50)
     def validate(self,input):

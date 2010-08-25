@@ -5,8 +5,8 @@ _Queries_
 Queries for the alert system for the Oracle database.
 """
 
-__revision__ = "$Id: Queries.py,v 1.1 2009/07/10 21:45:34 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Queries.py,v 1.2 2010/05/04 16:14:12 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 
@@ -24,8 +24,8 @@ class Queries(QueriesMySQL):
         _listPastAlerts_
 
         """
-        sqlQuery = """SELECT ID, SEVERITY, COMPONENT, MESSAGE, GENERATIONTIME,
-                          HISTORYTIME
-                      FROM alert_history ORDER BY GENERATIONTIME DESC ROWNUM <= %d """ % max
+        sqlQuery = """SELECT id, severity, component, message, generationtime, historytime 
+                       FROM (SELECT * FROM alert_history ORDER BY GENERATIONTIME DESC) 
+                       WHERE ROWNUM <= %d """ % max
 
         results = self.execute(sqlQuery, {}, conn, transaction)

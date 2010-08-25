@@ -53,7 +53,7 @@ class PhEDEx(Service):
         Service.__init__(self, dict)
 
     def _getResult(self, callname, file = 'result', clearCache = True, 
-                   args = None, verb="GET"):
+                   args = None, verb="POST"):
         """
         _getResult_
 
@@ -66,13 +66,13 @@ class PhEDEx(Service):
         if clearCache:
             self.clearCache(file, args)
         try:
-            orignalVerb = self["method"]
-            
+            # overwrite original self['method']
+            # this is only place used self['method'], it is safe to overwrite
+            # If that changes keep the reset to original self['method']   
             self["method"] = verb     
             f = self.refreshCache(file, callname, args)
             result = f.read()
             f.close()
-            self["method"] = orignalVerb
             
         except IOError, ex:
             raise RuntimeError("URL not available: %s" % callname)
@@ -136,7 +136,7 @@ class PhEDEx(Service):
         args['group'] = subscription.group
         args['request_only'] = subscription.request_only
 
-        return self._getResult(callname, args = args)
+        return self._getResult(callname, args = args, verb="POST")
 
 
     def getReplicaInfoForBlocks(self, **kwargs):
@@ -148,7 +148,7 @@ class PhEDEx(Service):
         """
 
         callname = 'blockreplicas'
-        return self._getResult(callname, args = kwargs)
+        return self._getResult(callname, args = kwargs, verb="GET")
 
 
     def subscriptions(self, **kwargs):
@@ -160,4 +160,4 @@ class PhEDEx(Service):
         """
 
         callname = 'subscriptions'
-        return self._getResult(callname, args = kwargs)
+        return self._getResult(callname, args = kwargs, verb="GET")

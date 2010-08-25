@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.33 2010/01/29 15:16:20 sfoulkes Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: DBCore.py,v 1.34 2010/01/29 20:37:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.34 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -119,6 +119,7 @@ class DBInterface(WMObject):
         set transaction = True if you already have an active transaction        
         
         """
+        connection = None
         try:
             if not conn: 
                 connection = self.connection()

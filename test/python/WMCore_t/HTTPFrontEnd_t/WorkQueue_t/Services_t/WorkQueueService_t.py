@@ -4,7 +4,7 @@ Unittest file for WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueService.py
 """
 
 __revision__ = "$Id"
-__version__ = "$Revision: 1.2 $"
+__version__ = "$Revision: 1.3 $"
 
 
 import os
@@ -62,7 +62,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         """
         setUP global values
         """
-        #EmulatorUnitTestBase.setUp(self)
+        EmulatorUnitTestBase.setUp(self)
         RESTBaseUnitTest.setUp(self)
         self.params = {}
         self.params['endpoint'] = self.config.getServerUrl()
@@ -77,7 +77,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         
     def tearDown(self):
         RESTBaseUnitTest.tearDown(self)
-        #EmulatorUnitTestBase.tearDown(self)
+        EmulatorUnitTestBase.tearDown(self)
         self.specGenerator.removeSpecs()
      
     def _tester(self, testName, verb, code, partUrl, inpt = {}):

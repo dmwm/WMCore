@@ -4,8 +4,8 @@
 RetryManager test for module and the harness
 """
 
-__revision__ = "$Id: RetryManager_t.py,v 1.5 2010/02/04 22:36:36 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: RetryManager_t.py,v 1.6 2010/02/05 16:46:35 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "mnorman@fnal.gov"
 
 import os
@@ -103,10 +103,10 @@ class RetryManagerTest(unittest.TestCase):
         config.RetryManager.logLevel = 'DEBUG'
         config.RetryManager.namespace = 'WMComponent.RetryManager.RetryManager'
         config.RetryManager.maxRetries = 10
-        config.RetryManager.pollInterval = 10
+        config.RetryManager.pollInterval = 1
         # These are the cooloff times for the RetryManager, the times it waits
         # Before attempting resubmission
-        config.RetryManager.coolOffTime  = {'create': 120, 'submit': 120, 'job': 120}
+        config.RetryManager.coolOffTime  = {'create': 3, 'submit': 3, 'job': 3}
         # Path to plugin directory
         config.RetryManager.pluginPath = 'WMComponent.RetryManager.PlugIns'
         config.RetryManager.pluginName = ''

@@ -326,7 +326,6 @@ class SchedulerARC(SchedulerInterface):
             xrsl += '(' +  self.decode(job, obj, requirements) + ')\n'
         return xrsl
 
-
         
     def decode(self, job, task, requirements=''):
         """
@@ -437,6 +436,7 @@ class SchedulerARC(SchedulerInterface):
         self.logging.debug(command)
         self.setTimeout(300)
         tmp, exitStat = self.ExecuteCommand(command)
+        self.logging.debug("ngsub exitStatus: %i" % exitStat)
         self.logging.debug("ngsub output:\n" + tmp)
         output = tmp.split('\n')
 
@@ -447,8 +447,8 @@ class SchedulerARC(SchedulerInterface):
             try:
                 m = re.match(subRe, output[n])
 
-                if exitStat != 0 or not m:
-                    raise SchedulerError('Error in submit:', output, command)
+                if not m:
+                    raise SchedulerError('Error in submit:', output[n], command)
 
                 arcId = m.group(1) 
                 jobAttributes[job['name']] = arcId

@@ -3,22 +3,18 @@
 _Report_
 
 Job Report object
-
 """
-__version__ = "$Revision: 1.7 $"
-__revision__ = "$Id: Report.py,v 1.7 2010/02/10 17:08:55 mnorman Exp $"
-__author__ = "evansde"
+
+__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Report.py,v 1.8 2010/02/25 22:43:36 sfoulkes Exp $"
 
 import pickle
 import logging
 
 from WMCore.Configuration import ConfigSection
 
-
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run  import Run
-
-
 
 def jsonise(cfgSect):
     result = {}
@@ -50,33 +46,24 @@ def checkFileForCompletion(file):
     """
     _checkFileForCompletion_
 
-    Takes a DataStucts/File object (or derivative) and checks to see that the file is ready for transfer
+    Takes a DataStucts/File object (or derivative) and checks to see that the
+    file is ready for transfer.
     """
-
-    #These should not be defaults
+    return True
     if file['lfn'] == "" or file['size'] == 0 or file['events'] == 0:
         return False
 
-
     return True
 
-
 class Report:
-
     def __init__(self, reportname = None):
         self.data = ConfigSection("FrameworkJobReport")
-
-
-        #These are the objects that are put in place for management
         self.data.steps         = []
 
-
-
         if reportname:
-            self.createSection(reportname = reportname)
+            self.addStep(reportname = reportname)
 
-
-
+        return
 
     def parse(self, xmlfile):
         """
@@ -169,6 +156,7 @@ class Report:
 
         if not checkFileForCompletion(file):
             # Then the file is not complete, and should not be added
+            print "ERROR"
             return None
 
         # Now load the output module and create the file object
@@ -182,30 +170,21 @@ class Report:
         outMod.files.fileCount += 1
 
         #First add the mandatory sections
-        fileRef.section_("inputs")
         fileRef.section_("branches")
-        fileRef.inputs.fileCount = 0
 
         # Now we need to eliminate the optional and non-primitives:
         # runs, parents, branches, locations and datasets
         keyList = file.keys()
         
-        runDict = {}
         fileRef.section_("runs")
-        for run in file['runs']:
-            setattr(fileRef.runs, str(run.run), run.lumis)
+        for runNumber in file["runs"].keys():
+            setattr(fileRef.runs, str(runNumber), file["runs"][runNumber])
         keyList.remove('runs')
         
         setattr(fileRef, 'parents', list(file['parents']))
         keyList.remove('parents')
 
-        locationList = list(file['locations'])
-        keyList.remove('locations')
-        if 'newlocations' in file.keys():
-            locationList.extend(list(file['newlocations']))
-            keyList.remove('newlocations')
-        setattr(fileRef, 'locations', locationList)
-
+        fileRef.location = file["location"]
 
         # Now add the dataset
         # Assume one dataset per output module
@@ -213,8 +192,8 @@ class Report:
             # Then we haven't entered a dataset yet
             for entry in file['dataset']:
                 setattr(outMod.dataset, entry, file['dataset'].get(entry, None))
-            setattr(outMod.dataset, 'OutputModuleName', outputModule)
 
+        keyList.remove("dataset")
 
         # All right, the rest should be JSONalizable python primitives
         for entry in keyList:
@@ -222,10 +201,6 @@ class Report:
 
         #And we're done
         return fileRef
-
-
-        
-
 
     def addInputSource(self, sourceName):
         """
@@ -288,16 +263,21 @@ class Report:
         return
 
 
-    def addError(self, exitCode, errorType, errorDetails):
+    def addError(self, stepName, exitCode, errorType, errorDetails):
         """
         _addError_
 
         Add an error report with an exitCode, type/class of error and
         details of the error as a string
-
         """
-        self.report.errors.section_(errorType)
-        errSection = getattr(self.report.errors, errorType)
+        if self.retrieveStep(stepName) == None:
+            self.addStep(stepName)
+
+        errorType = str(errorType)
+
+        stepSection = self.retrieveStep(stepName)
+        stepSection.errors.section_(errorType)
+        errSection = getattr(stepSection.errors, errorType)
         errorCount = getattr(errSection, "errorCount", 0)
 
         errEntry = "error%s" % errorCount
@@ -305,8 +285,6 @@ class Report:
         errDetails = getattr(errSection, errEntry)
         errDetails.exitStatus = exitCode
         errDetails.description = errorDetails
-
-        self.report.status = int(exitCode)
         setattr(errSection, "errorCount", errorCount +1)
         return
 
@@ -344,9 +322,9 @@ class Report:
         return
 
 
-    def createSection(self, reportname):
+    def addStep(self, reportname):
         """
-        _createSection_
+        _addStep_
         
         This creates a report section into self.report
         """
@@ -388,20 +366,14 @@ class Report:
 
         return
 
-
     def retrieveStep(self, step):
         """
         _retrieveStep_
         
         Grabs a report in the raw and returns it.  
         """
-
         reportSection = getattr(self.data, step, None)
-
         return reportSection
-
-    
-
 
     def load(self, filename):
         """
@@ -458,14 +430,14 @@ class Report:
         keyList = fileRef.listSections_()
 
         #Locations
-        file.setLocation(fileRef.locations)
-        keyList.remove('locations')
+        file.setLocation(fileRef.location)
+        keyList.remove('location')
 
         #Runs
         runList = fileRef.runs.listSections_()
         for run in runList:
             lumis  = getattr(fileRef.runs, run)
-            newRun = Run(run, *lumis)
+            newRun = Run(int(run), *lumis)
             file.addRun(newRun)
         keyList.remove('runs')
 
@@ -481,7 +453,6 @@ class Report:
 
         #Variables to be added
         file['ModuleLabel'] = outputModule 
-
 
         return file
 
@@ -514,7 +485,6 @@ class Report:
 
         return listOfFiles
 
-
     def getAllFilesFromStep(self, step):
         """
         _getAllFilesFromStep_
@@ -537,7 +507,7 @@ class Report:
         for module in listOfModules:
             tmpList = self.getFilesFromOutputModule(step = step, outputModule = module)
             if not tmpList:
-                return None
+                continue
             listOfFiles.extend(tmpList)
 
 

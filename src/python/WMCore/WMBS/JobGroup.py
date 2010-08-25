@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.32 2009/09/15 16:07:50 mnorman Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: JobGroup.py,v 1.33 2009/11/05 15:17:40 sryu Exp $"
+__version__ = "$Revision: 1.33 $"
 
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
 from WMCore.WMBS.WMBSBase import WMBSBase
@@ -80,6 +80,7 @@ class JobGroup(WMBSBase, WMJobGroup):
         myThread = threading.currentThread()
         existingTransaction = self.beginTransaction()
         
+        #overwrite base class self.output for WMBS fileset
         self.output = Fileset(name = makeUUID())
         self.output.create()
 

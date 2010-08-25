@@ -107,7 +107,14 @@ class CoreHelper(WMStepHelper):
         return
 
 
+    def directoryStructure(self):
+        """
+        _directoryStructure_
 
+        Util to retrieve the directory structure
+
+        """
+        return self.data.build.directories
 
 class Template:
     """

@@ -114,7 +114,7 @@ def splitNgstatOutput(output):
      item.
 
      The assumption is that the first line of a job has no indentation,
-     and subsequent lines are indented by at least 1 space.
+     and subsequent lines are indented by at least 1 space or start with "This job was only very recently submitted".
      """
 
      jobs = []
@@ -125,11 +125,13 @@ def splitNgstatOutput(output):
                continue
 
           if line[0].isspace():
-               s += line + '\n'
+               s += '\n' + line
+          elif re.match("This job was only very recently submitted", line):
+               s += ' ' + line
           else:
                if len(s) > 0:
-                    jobs.append(s)
-               s = line + '\n'
+                    jobs.append(s + '\n')
+               s = line 
      if len(s) > 0:
           jobs.append(s)
 
@@ -534,7 +536,7 @@ class SchedulerARC(SchedulerInterface):
                 else:
                     arcStat = "UNKNOWN"
 
-                arcIdMatch = re.search("(\w+://([a-zA-Z0-9.-]+)\S*/\d*)", output)
+                arcIdMatch = re.search("(\w+://([a-zA-Z0-9.-]+)\S*/\d*)", jobstring)
                 if arcIdMatch:
                     arcId = arcIdMatch.group(1)
                     host = arcIdMatch.group(2)
@@ -542,7 +544,7 @@ class SchedulerARC(SchedulerInterface):
                 # This is something that really shoudln't happen.
                 arcStat = "WTF?"
 
-                arcIdMatch = re.search("URL: (\w+://([a-zA-Z0-9.-]+)\S*/\d*)", output)
+                arcIdMatch = re.search("URL: (\w+://([a-zA-Z0-9.-]+)\S*/\d*)", jobstring)
                 if arcIdMatch:
                     arcId = arcIdMatch.group(1)
                     host = arcIdMatch.group(2)

@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>Site Table</title>
+
+<!-- YAHOO YUI Library -->
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.0r4/build/fonts/fonts-min.css" />
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.0r4/build/paginator/assets/skins/sam/paginator.css" />
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.0r4/build/datatable/assets/skins/sam/datatable.css" />
+<!--
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.0r4/build/yahoo-dom-event/yahoo-dom-event.js&2.8.0r4/build/connection/connection-min.js&2.8.0r4/build/datasource/datasource-min.js&2.8.0r4/build/datatable/datatable-min.js&2.8.0r4/build/json/json-min.js"></script>
+-->
+
+<script src="http://yui.yahooapis.com/2.8.0r4/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+<script src="http://yui.yahooapis.com/2.8.0r4/build/connection/connection-min.js"></script>
+<script src="http://yui.yahooapis.com/2.8.0r4/build/element/element-min.js"></script>
+<script src="http://yui.yahooapis.com/2.8.0r4/build/datasource/datasource-min.js"></script>
+<script src="http://yui.yahooapis.com/2.8.0r4/build/datatable/datatable-min.js"></script>
+<script src="http://yui.yahooapis.com/2.8.0r4/build/json/json-min.js"></script>
+<script src="http://yui.yahooapis.com/2.8.0r4/build/dragdrop/dragdrop-min.js" ></script>
+<script type="text/javascript" src="http://yui.yahooapis.com/2.8.0r4/build/paginator/paginator-min.js"></script> 
+
+<!-- WebTools library -->
+<script src="../javascript/namespace.js"></script>
+<script src="../javascript/dataTable.js"></script>
+</head>
+<body class="yui-skin-sam">
+<div id="site"></div>
+<script type="text/javascript">
+
+var formatUrl = function(elCell, oRecord, oColumn, sData) { 
+                elCell.innerHTML = "<a href='" + oRecord.getData("ChildQueueUrl") + "' target='_blank'>" + sData + "</a>"; 
+            };
+var dataSchema = {
+        fields: [{key: "id", parser: "number"}, {key: "name", formatter:formatUrl}]
+        };
+
+var dataUrl = "http://cmssrv52.fnal.gov:9996/workqueue/sites"
+
+var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+var dataTable = WMCore.WebTools.createDataTable("site", dataSource, 
+                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
+							 WMCore.WebTools.defaultTableConfig, 100000)
+
+</script>
+</body>
+</html>

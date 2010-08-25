@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.45 2009/12/15 17:50:48 sryu Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: WorkQueue.py,v 1.46 2009/12/15 22:00:51 sryu Exp $"
+__version__ = "$Revision: 1.46 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -364,7 +364,6 @@ class WorkQueue(WorkQueueBase):
             policy = startPolicy(wmspec.startPolicy(),
                                  self.params['SplittingMapping'])
 
-            #units.extend(policy(wmspec, topLevelTask, self.dbsHelpers))
             units = policy(wmspec, topLevelTask, self.dbsHelpers)
 
             trans = self.beginTransaction()
@@ -758,8 +757,6 @@ class WorkQueue(WorkQueueBase):
         for item in dataNames:
             if item.find('#') != -1:
                 args['block'].append(item)
-                print 777777777
-                print args
             else:
                 args['dataset'].append(item)
                 

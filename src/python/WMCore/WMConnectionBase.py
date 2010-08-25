@@ -5,8 +5,8 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-__revision__ = "$Id: WMConnectionBase.py,v 1.1 2009/06/12 16:37:26 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMConnectionBase.py,v 1.2 2009/10/12 19:24:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 
@@ -26,17 +26,17 @@ class WMConnectionBase:
         check to see if a transaction object has been created.  If none exists,
         create one but leave the transaction closed.
         """
-        self.myThread = threading.currentThread()
-        self.logger = self.myThread.logger
-        self.dialect = self.myThread.dialect
-        self.dbi = self.myThread.dbi
+        myThread = threading.currentThread()
+        self.logger = myThread.logger
+        self.dialect = myThread.dialect
+        self.dbi = myThread.dbi
         self.daofactory = DAOFactory(package = daoPackage,
                                      logger = self.logger,
                                      dbinterface = self.dbi)
 
-        if "transaction" not in dir(self.myThread):
-            self.myThread.transaction = Transaction(self.dbi)
-            self.myThread.transaction.commit()
+        if "transaction" not in dir(myThread):
+            myThread.transaction = Transaction(self.dbi)
+            myThread.transaction.commit()
 
         return
 
@@ -47,7 +47,8 @@ class WMConnectionBase:
         Retrieve the database connection that is associated with the current
         dataabase transaction.
         """
-        return self.myThread.transaction.conn
+        myThread = threading.currentThread()
+        return myThread.transaction.conn
 
     def beginTransaction(self):
         """
@@ -55,8 +56,9 @@ class WMConnectionBase:
 
         Begin a database transaction if one does not already exist.
         """
-        if self.myThread.transaction.conn == None:
-            self.myThread.transaction.begin()
+        myThread = threading.currentThread()
+        if myThread.transaction.conn == None:
+            myThread.transaction.begin()
             return False
 
         return True
@@ -67,7 +69,8 @@ class WMConnectionBase:
 
         Return True if there is an open transaction, False otherwise.
         """
-        if self.myThread.transaction.conn != None:
+        myThread = threading.currentThread()
+        if myThread.transaction.conn != None:
             return True
 
         return False
@@ -79,7 +82,8 @@ class WMConnectionBase:
         Commit a database transaction that was begun by self.beginTransaction().
         """
         if not existingTransaction:
-            self.myThread.transaction.commit()
-            self.myThread.transaction.conn = None
+            myThread = threading.currentThread()
+            myThread.transaction.commit()
+            myThread.transaction.conn = None
 
         return

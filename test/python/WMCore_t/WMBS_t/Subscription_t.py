@@ -1092,7 +1092,67 @@ class SubscriptionTest(unittest.TestCase):
                "ERROR: Wrong subscription ID returned."
 
         return
+    
+    def testGetJobGroups(self):
+        """
+        _testGetJobGroups_
+        
+        make some jobs, then do this
+        (11:16:18 AM) scfoulkes: i need a method added to the Subscription 
+                                class 
+        (11:16:22 AM) scfoulkes: getJobGroups()
+        (11:16:38 AM) scfoulkes: that will return a list of all job groups
+                                associated with the subscription that have
+                                jobs that aren't acquired
+        (11:17:47 AM) scfoulkes: where aren't acquired = the jobgroup that
+                                the job belongs to hasn't acquired them yet
+        """
+        (testSubscription, testFileset, testWorkflow, testFileA,\
+            testFileB, testFileC) = self.createSubscriptionWithFileABC()
+        
 
+        self.assertFalse(testSubscription.exists() , \
+               "ERROR: Subscription exists before it was created")
+
+        testSubscription.create()
+        
+        assert testSubscription.exists() >= 0, \
+               "ERROR: Subscription does not exist after it was created"
+               
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run(10, *[12312]))
+
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(10, *[12312]))
+        testFileA.create()
+        testFileB.create()
+
+        testJobA = Job(name = "TestJobA")
+        testJobA.addFile(testFileA)
+        
+        testJobB = Job(name = "TestJobB")
+        testJobB.addFile(testFileB)
+        
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+        testJobGroupA.commit()
+        
+        firstResult = testSubscription.getJobGroups()
+        self.assertEquals(firstResult, [testJobGroupA.id], \
+                                 "One jobgroup should be available not: %s"
+                                     %firstResult)
+        testJobA.changeStatus('Failed')
+        secondResult = testSubscription.getJobGroups()
+        self.assertEquals(secondResult, [testJobGroupA.id],\
+                            "Should be one jobgroup available, found %s" % secondResult)
+        testJobB.changeStatus('Complete')
+        thirdResult  = testSubscription.getJobGroups()
+        self.assertFalse(thirdResult,\
+                            "Should be no jobgroups, found %s" % thirdResult)    
+            
                
 if __name__ == "__main__":
     unittest.main()

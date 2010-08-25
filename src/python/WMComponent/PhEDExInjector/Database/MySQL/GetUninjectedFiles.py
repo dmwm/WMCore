@@ -6,8 +6,8 @@ Retrieve a list of files that have been injected into DBS but not PhEDEx.
 Format the output so that it can easily be injected into PhEDEx.
 """
 
-__revision__ = "$Id: GetUninjectedFiles.py,v 1.1 2009/09/24 20:48:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetUninjectedFiles.py,v 1.2 2009/12/02 17:54:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -16,7 +16,6 @@ class GetUninjectedFiles(DBFormatter):
                     dbsbuffer_file.filesize AS filesize,
                     dbsbuffer_file.cksum AS checksum,
                     dbsbuffer_block.blockname AS blockname,
-                    dbsbuffer_block.open_status AS open,
                     dbsbuffer_dataset.path AS dataset,
                     dbsbuffer_location.se_name AS location
                     FROM dbsbuffer_file
@@ -58,11 +57,7 @@ class GetUninjectedFiles(DBFormatter):
 
             datasetDict = locationDict[row["dataset"]]
             if row["blockname"] not in datasetDict.keys():
-                if int(row["open"]) == 0:
-                    open = "n"
-                else:
-                    open = "y"
-                datasetDict[row["blockname"]] = {"is-open": open,
+                datasetDict[row["blockname"]] = {"is-open": "y",
                                                  "files": []}
 
             blockDict = datasetDict[row["blockname"]]

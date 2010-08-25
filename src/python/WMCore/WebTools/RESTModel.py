@@ -6,8 +6,8 @@ Rest Model abstract implementation
 TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.50 2010/01/26 17:47:12 sryu Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: RESTModel.py,v 1.51 2010/01/28 19:53:16 sryu Exp $"
+__version__ = "$Revision: 1.51 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -99,7 +99,10 @@ class RESTModel(WebAPI):
         self.classifyHTTPError(verb, args, kwargs)
         try:
             method = args[0]
-            data = self.methods[verb][method]['call'](*args[1:], **kwargs)
+            # if there is nothing to be processed about the parameter
+            # it will just return original parameters
+            params, kwargs = self.processParams(args[1:], kwargs)
+            data = self.methods[verb][method]['call'](*params, **kwargs)
         # in case sanitise_input is not called with in the method, if args doesn't
         # match throws the 400 error
         except TypeError, e:
@@ -222,3 +225,10 @@ class RESTModel(WebAPI):
                 raise HTTPError(400, {e.__class__.__name__: str(e)})
             result.update(filteredInput)
         return result
+
+    def processParams(self, args, kwargs):
+        """
+        If the args and kwargs needs to be processed (encoded, decoded) according to the 
+        http header values or convert request.body overwrite this function in child class 
+        """
+        return args, kwargs

@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.27 2010/08/02 17:35:15 meloam Exp $"
-__version__ = "$Revision: 1.27 $"
+
+
 
 import unittest
 import threading

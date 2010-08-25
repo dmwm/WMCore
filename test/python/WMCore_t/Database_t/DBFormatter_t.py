@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-__revision__ = "$Id: DBFormatter_t.py,v 1.11 2010/02/10 03:52:27 meloam Exp $"
-__version__ = "$Revision: 1.11 $"
+
+
 
 import commands
 import logging

@@ -4,10 +4,10 @@ Slave used for default AddDatasetWatch behavior
 """
 
 __all__ = []
-__revision__ = \
-"$Id: DefaultAddDatasetWatchSlave.py,v 1.8 2010/05/31 22:41:56 riahi Exp $"
-__version__ = "$Revision: 1.8 $"
-__author__ = \
+
+"$Id: DefaultAddDatasetWatchSlave.py,v 1.9 2010/08/18 15:39:13 meloam Exp $"
+
+
     "james.jackson@cern.ch"
 
 import logging

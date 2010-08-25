@@ -11,8 +11,8 @@ all jobs that are in the following states:
   executing
 """
 
-__revision__ = "$Id: ListRunningJobs.py,v 1.1 2010/01/26 17:35:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

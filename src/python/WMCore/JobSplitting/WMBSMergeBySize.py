@@ -6,8 +6,8 @@ Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
 
-__revision__ = "$Id: WMBSMergeBySize.py,v 1.13 2010/08/13 21:20:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+
+
 
 import threading
 

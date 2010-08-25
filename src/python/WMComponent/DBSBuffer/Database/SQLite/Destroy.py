@@ -5,8 +5,8 @@ _Destroy_
 Implementation of DBSBuffer.Destroy for SQLite
 """
 
-__revision__ = "$Id: Destroy.py,v 1.4 2009/12/02 20:14:59 mnorman Exp $"
-__version__ = "$Revision: 1.4 $s"
+
+
 
 import threading
 

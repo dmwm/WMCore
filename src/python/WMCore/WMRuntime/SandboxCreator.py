@@ -4,8 +4,8 @@
 
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.18 2010/07/05 00:32:52 meloam Exp $"
-__version__ = "$Revision: 1.18 $"
+
+
 import os
 import re
 import tarfile

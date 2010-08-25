@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.14 2010/07/26 19:49:10 mnorman Exp $"
-__version__ = "$Revision: 1.14 $"
+
+
 
 import threading
 import logging

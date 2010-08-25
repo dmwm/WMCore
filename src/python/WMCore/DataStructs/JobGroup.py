@@ -30,8 +30,8 @@ complete).
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.19 2009/10/02 16:14:40 metson Exp $"
-__version__ = "$Revision: 1.19 $"
+
+
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Fileset import Fileset

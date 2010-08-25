@@ -5,8 +5,8 @@ _StdBase_
 Base class with helper functions for standard WMSpec files.
 """
 
-__version__ = "$Id: StdBase.py,v 1.2 2010/08/13 14:48:55 sfoulkes Exp $"
-__revision__ = "$Revision: 1.2 $"
+
+
 
 import tempfile
 import subprocess

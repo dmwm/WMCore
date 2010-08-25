@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-__revision__ = "$Id: Destroy.py,v 1.3 2009/08/18 23:18:17 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.WorkQueue.Database.DestroyWorkQueueBase import DestroyWorkQueueBase
 #from WMCore.WorkQueue.Database.Oracle.Create import Create

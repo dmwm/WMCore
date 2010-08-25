@@ -6,8 +6,8 @@ JobAccountant harness.  Instantiate the JobAccountandPoller and have it poll
 WMBS for complete jobs.
 """
 
-__revision__ = "$Id: JobAccountant.py,v 1.6 2009/11/10 15:31:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 import threading
 

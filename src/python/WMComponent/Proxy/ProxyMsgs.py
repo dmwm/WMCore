@@ -6,9 +6,9 @@ down version of the old message service in the prodagent that
 is compliant with the old schema.
 """
 
-__revision__ = "$Id: ProxyMsgs.py,v 1.5 2010/05/30 21:15:41 riahi Exp $"
-__version__ = "$Revision: 1.5 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 
 

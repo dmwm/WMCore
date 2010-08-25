@@ -6,8 +6,8 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Masthead.py,v 1.4 2009/02/04 00:24:13 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import os
 from WMCore.WebTools.Page import TemplatedPage, exposejs, exposecss

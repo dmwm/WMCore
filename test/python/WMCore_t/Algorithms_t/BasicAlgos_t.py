@@ -5,8 +5,8 @@ _BasicAlgos_t_
 Test class for Basic Algorithms
 """
 
-__revision__ = "$Id: BasicAlgos_t.py,v 1.1 2010/08/17 16:05:38 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 
 

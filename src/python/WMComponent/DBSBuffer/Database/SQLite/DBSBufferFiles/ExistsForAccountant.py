@@ -6,8 +6,8 @@ SQLite implementation of Files.ExistsForAccountant
 """
 
 __all__ = []
-__revision__ = "$Id: ExistsForAccountant.py,v 1.1 2010/05/24 20:35:27 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.ExistsForAccountant import ExistsForAccountant as MySQLExistsForAccountant
 

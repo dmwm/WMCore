@@ -15,8 +15,8 @@ except:
 
 import PSetTweaks.PSetTweak as TweakAPI
 
-__revision__ = "$Id: ConfigCache.py,v 1.19 2010/08/16 20:38:34 evansde Exp $"
-__version__ = "$Revision: 1.19 $"
+
+
 
 class WMConfigCache:
     '''

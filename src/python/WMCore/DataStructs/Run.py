@@ -6,8 +6,8 @@ _Run_
 container representing a run, and its constituent lumi sections
 
 """
-__revision__ = "$Id: Run.py,v 1.6 2010/06/22 11:06:52 evansde Exp $"
-__version__  = "$Revision: 1.6 $"
+
+
 
 from WMCore.DataStructs.WMObject import WMObject
 

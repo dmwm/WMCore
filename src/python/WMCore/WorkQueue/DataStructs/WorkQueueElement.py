@@ -4,8 +4,8 @@ WorkQueueElement
 A dictionary based object meant to represent a WorkQueue element
 """
 
-__revision__ = "$Id: WorkQueueElement.py,v 1.5 2010/07/26 13:10:09 swakef Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 STATES = ('Available', 'Negotiating', 'Acquired',
             'Done', 'Failed', 'Canceled')

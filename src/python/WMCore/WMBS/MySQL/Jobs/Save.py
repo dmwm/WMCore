@@ -6,8 +6,8 @@ MySQL implementation of Jobs.Save
 """
 
 __all__ = []
-__revision__ = "$Id: Save.py,v 1.9 2009/12/22 16:11:51 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

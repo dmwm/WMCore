@@ -3,8 +3,8 @@
     WorkQueue.Policy.End.SingleShot tests
 """
 
-__revision__ = "$Id: SingleShot_t.py,v 1.1 2009/12/02 20:34:56 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import unittest
 import math

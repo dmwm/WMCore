@@ -3,8 +3,8 @@ SQLite implementation of site.UpdateDataSiteMapping
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateDataSiteMapping.py,v 1.3 2010/03/30 15:42:40 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.WorkQueue.Database.MySQL.Site.UpdateDataSiteMapping \
     import UpdateDataSiteMapping as UpdateDataSiteMappingMySQL

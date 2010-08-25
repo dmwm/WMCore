@@ -8,8 +8,8 @@
 The DBSUploadWorker for uploading to DBS
 """
 __all__ = []
-__revision__ = "$Id: DBSUploadWorker.py,v 1.4 2010/08/10 16:03:12 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 
 

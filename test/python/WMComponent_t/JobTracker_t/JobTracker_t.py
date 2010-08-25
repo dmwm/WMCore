@@ -4,8 +4,8 @@
 JobTracker test 
 """
 
-__revision__ = "$Id: JobTracker_t.py,v 1.8 2010/06/03 21:31:33 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+
+
 
 import os
 import os.path

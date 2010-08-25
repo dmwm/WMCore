@@ -8,9 +8,9 @@ Class for creating MySQL specific schema for
 keeping track of daemonized processes
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2010/02/05 14:16:12 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 import logging
 import threading

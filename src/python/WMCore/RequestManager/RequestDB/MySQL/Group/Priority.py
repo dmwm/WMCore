@@ -6,8 +6,8 @@ MySQL implementation for adjusting group priorities
 
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: Priority.py,v 1.1 2010/07/01 19:06:19 rpw Exp $"
+
+
 
 
 from WMCore.Database.DBFormatter import DBFormatter

@@ -11,8 +11,8 @@ _ReReco_
 Standard ReReco workflow.
 """
 
-__version__ = "$Id: ReReco.py,v 1.51 2010/08/18 13:46:43 sfoulkes Exp $"
-__revision__ = "$Revision: 1.51 $"
+
+
 
 import os
 

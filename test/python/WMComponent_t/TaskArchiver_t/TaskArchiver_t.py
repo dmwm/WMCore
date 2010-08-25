@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: TaskArchiver_t.py,v 1.5 2010/07/01 20:32:15 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 import os
 import logging

@@ -11,8 +11,8 @@ in the DBFactory class by passing in options={'isolation_level':'DEFERRED'}. If
 you set {'isolation_level':None} all sql will be implicitly committed and the
 Transaction object will be meaningless.
 """
-__revision__ = "$Id: Transaction.py,v 1.12 2010/06/08 14:53:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+
+
 
 import logging
 import time

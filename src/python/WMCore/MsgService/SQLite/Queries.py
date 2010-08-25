@@ -9,8 +9,8 @@ This module implements the SQLite backend for the message
 service through the MySQL version
 """
 
-__revision__ = "$Id: Queries.py,v 1.2 2009/07/02 16:55:16 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.MsgService.MySQL.Queries import Queries as MySQLQueries
 

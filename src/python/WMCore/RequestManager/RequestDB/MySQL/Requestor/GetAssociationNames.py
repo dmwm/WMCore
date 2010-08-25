@@ -5,8 +5,8 @@ _User.GetAssociationNames_
 Retrieve a user/groupname association
 
 """
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: GetAssociationNames.py,v 1.1 2010/07/01 19:14:16 rpw Exp $"
+
+
 
 
 from WMCore.Database.DBFormatter import DBFormatter

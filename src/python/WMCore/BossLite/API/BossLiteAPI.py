@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.14 2010/06/28 19:05:14 spigafi Exp $"
-__revision__ = "$Revision: 1.14 $"
+
+
 
 #import logging
 import copy

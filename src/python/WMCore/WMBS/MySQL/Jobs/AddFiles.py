@@ -5,8 +5,8 @@ MySQL implementation of Jobs.AddFiles
 """
 
 __all__ = []
-__revision__ = "$Id: AddFiles.py,v 1.10 2009/09/10 16:22:59 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+
+
 
 import logging
 

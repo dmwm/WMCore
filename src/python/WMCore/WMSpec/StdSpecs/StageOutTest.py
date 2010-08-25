@@ -6,8 +6,8 @@ Workflow to stage a file back and forth to the SE
 
 
 
-__version__ = "$Id: StageOutTest.py,v 1.1 2010/08/10 22:16:03 meloam Exp $"
-__revision__ = "$Revision: 1.1 $"
+
+
 
 import subprocess
 

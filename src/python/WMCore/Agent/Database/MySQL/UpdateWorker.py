@@ -5,8 +5,8 @@ MySQL implementation of UpdateWorker
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateWorker.py,v 1.2 2010/06/28 21:24:39 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

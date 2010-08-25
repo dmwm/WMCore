@@ -5,8 +5,8 @@ _ListJobStates_
 Retrieve a list of all possible job states from WMBS.
 """
 
-__revision__ = "$Id: ListJobStates.py,v 1.1 2010/01/25 20:42:37 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

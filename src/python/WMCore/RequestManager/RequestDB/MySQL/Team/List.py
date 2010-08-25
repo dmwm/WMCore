@@ -6,8 +6,8 @@ Get a list of teams, including ID mappings
 
 
 """
-__revision__ = "$Id: List.py,v 1.1 2010/06/30 22:57:10 rpw Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

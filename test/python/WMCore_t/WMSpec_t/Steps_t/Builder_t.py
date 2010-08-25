@@ -4,8 +4,8 @@
 Unittest for Builder.py
 '''
 
-__revision__ = "$Id: Builder_t.py,v 1.2 2009/06/18 20:05:27 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 
 import unittest

@@ -7,9 +7,9 @@ Act as bootstrap for pilot job
 
 """
 
-__revision__ = "$Id: PilotClient.py,v 1.5 2009/09/16 12:37:43 khawar Exp $"
-__version__ = "$Revision: 1.5 $"
-__author__ = "Khawar.Ahmad@cern.ch"
+
+
+
 
 import os
 import time

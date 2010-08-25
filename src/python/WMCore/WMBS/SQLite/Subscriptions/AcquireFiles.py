@@ -6,8 +6,8 @@ SQLite implementation of Subscription.AcquireFiles
 """
 
 __all__ = []
-__revision__ = "$Id: AcquireFiles.py,v 1.6 2009/03/23 19:05:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 from WMCore.WMBS.MySQL.Subscriptions.AcquireFiles import AcquireFiles \
      as AcquireFilesMySQL

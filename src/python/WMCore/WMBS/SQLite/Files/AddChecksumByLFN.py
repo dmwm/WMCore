@@ -5,8 +5,8 @@ _AddChecksumByLFN_
 SQLite implementation of AddChecksumByLFN
 """
 
-__revision__ = "$Id: AddChecksumByLFN.py,v 1.2 2010/04/08 20:09:09 sfoulkes Exp $"
-__version__  = "$Revision: 1.2 $"
+
+
 
 from WMCore.WMBS.MySQL.Files.AddChecksumByLFN import AddChecksumByLFN as MySQLAddChecksumByLFN
 

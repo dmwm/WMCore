@@ -5,8 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.16 2010/06/01 17:28:43 riahi Exp $"
-__version__ = "$Revision: 1.16 $"
+
+
 
 import unittest
 import os

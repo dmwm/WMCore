@@ -3,8 +3,8 @@
 WorkQueue Start Policy
 
 """
-__revision__ = "$Id: __init__.py,v 1.3 2010/07/19 12:22:57 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.WMFactory import WMFactory
 

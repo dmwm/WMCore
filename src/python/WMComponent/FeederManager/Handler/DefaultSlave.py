@@ -4,9 +4,9 @@ Default slave for FeederManager
 """
 
 __all__ = []
-__revision__ = \
-    "$Id: DefaultSlave.py,v 1.2 2009/11/06 11:26:45 riahi Exp $"
-__version__ = "$Revision: 1.2 $"
+
+    "$Id: DefaultSlave.py,v 1.3 2010/08/18 15:39:13 meloam Exp $"
+
 
 import threading
 import pickle

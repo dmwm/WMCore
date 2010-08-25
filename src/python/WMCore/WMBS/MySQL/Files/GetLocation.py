@@ -5,8 +5,8 @@ _GetLocation_
 MySQL implementation of File.GetLocation
 """
 
-__revision__ = "$Id: GetLocation.py,v 1.9 2010/04/08 20:09:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

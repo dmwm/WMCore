@@ -5,8 +5,8 @@ _GetParentStatus_
 MySQL implementation of DBSBufferFile.GetParentStatus
 """
 
-__revision__ = "$Id: GetParentStatus.py,v 1.1 2010/01/13 19:54:43 sfoulkes Exp $"
-__version__  = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

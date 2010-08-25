@@ -6,8 +6,8 @@ _WMRuntimeMonitor_
 This is the base class for monitors
 """
 
-__version__ = "$Revision: 1.3 $"
-__revision__ = "$Id: WMRuntimeMonitor.py,v 1.3 2010/05/17 20:37:25 mnorman Exp $"
+
+
 
 import threading
 import os

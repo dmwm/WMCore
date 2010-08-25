@@ -9,8 +9,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.28 2010/08/12 14:43:37 sryu Exp $"
-__version__ = "$Revision: 1.28 $"
+
+
 
 import os
 import WMCore.WMInit

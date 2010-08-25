@@ -6,8 +6,8 @@ A dictionary based object meant to represent a WorkQueue block
 
 #Can we re-use WorkQueueElement for this?
 
-__revision__ = "$Id: WorkQueueElementResult.py,v 1.6 2010/07/28 15:24:29 swakef Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 class WorkQueueElementResult(dict):
     """Class to hold the status of a related group of WorkQueueElements"""

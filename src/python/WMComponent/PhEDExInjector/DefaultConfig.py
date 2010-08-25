@@ -5,8 +5,8 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.3 2009/08/24 09:53:19 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 
 from WMCore.Agent.Configuration import Configuration

@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.22 2010/08/05 16:34:44 mnorman Exp $"
-__version__  = "$Revision: 1.22 $"
+
+
 
 import operator
 import threading

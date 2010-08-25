@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.26 2010/08/16 14:13:09 swakef Exp $"
-__version__ = "$Revision: 1.26 $"
+
+
 
 import re
 import os

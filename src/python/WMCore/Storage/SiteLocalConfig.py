@@ -6,8 +6,8 @@ Utility for reading a site local config XML file and converting it
 into an object with an API for getting info from it.
 """
 
-__version__ = "$Revision: 1.6 $"
-__revision__ = "$Id: SiteLocalConfig.py,v 1.6 2010/06/30 15:20:13 meloam Exp $"
+
+
 
 import os
 import logging

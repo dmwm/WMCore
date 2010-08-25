@@ -3,8 +3,8 @@
 #Basic model fot a tracker plugin
 #Should be overridden by more advanced models
 
-__revision__ = "$Id: TrackerPlugin.py,v 1.2 2009/12/02 20:21:41 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 
 class TrackerPlugin:

@@ -6,8 +6,8 @@ MySQL implementation of Subscription.AcquireFiles
 """
 
 __all__ = []
-__revision__ = "$Id: AcquireFiles.py,v 1.8 2009/03/23 19:05:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

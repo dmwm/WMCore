@@ -9,8 +9,8 @@ WMCore/WorkQueue/Database/CreateWorkQueueBase.py
 """
 
 __all__ = []
-__revision__ = "$Id: WorkloadsByName.py,v 1.1 2010/06/03 15:48:06 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

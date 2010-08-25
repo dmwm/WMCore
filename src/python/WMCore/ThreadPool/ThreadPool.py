@@ -7,9 +7,9 @@ To use this you need to use the ThreadSlave class
 """
 
 
-__revision__ = "$Id: ThreadPool.py,v 1.7 2009/06/19 18:03:27 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
-__author__ = "mnorman@fnal.gov"
+
+
+
 
 import base64
 import cPickle

@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.Delete
 """
 
 __all__ = []
-__revision__ = "$Id: Delete.py,v 1.1 2010/06/02 14:42:10 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 
 from WMCore.Database.DBFormatter import DBFormatter

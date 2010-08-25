@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetParentId
 """
 
 __all__ = []
-__revision__ = "$Id: GetParentId.py,v 1.2 2009/11/12 16:43:31 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WorkQueue.Database import States

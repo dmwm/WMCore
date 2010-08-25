@@ -6,8 +6,8 @@ Oracle implementation of Subscription.GetCompletedFiles
 """
 
 __all__ = []
-__revision__ = "$Id: GetCompletedFiles.py,v 1.7 2009/09/11 19:07:29 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+
+
 
 from WMCore.WMBS.MySQL.Subscriptions.GetCompletedFiles import \
      GetCompletedFiles as GetCompletedFilesMySQL

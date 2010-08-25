@@ -6,9 +6,9 @@ caches them (or not). It is a generalized factory object. If needed this class
 can be made threadsafe.
 """
 
-__revision__ = "$Id: WMFactory.py,v 1.13 2010/02/02 21:41:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 import logging
 import threading

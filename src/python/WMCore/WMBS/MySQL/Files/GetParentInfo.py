@@ -8,8 +8,8 @@ lfn, id and whether or not the file is merged.  This will also determine
 whether or not the file is a redneck parent or redneck child.
 """
 
-__revision__ = "$Id: GetParentInfo.py,v 1.3 2010/04/07 18:57:01 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

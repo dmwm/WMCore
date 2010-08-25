@@ -5,8 +5,8 @@ _FailOrphanFiles_
 MySQL implementation of Subscription.FailOrphanFiles
 """
 
-__revision__ = "$Id: FailOrphanFiles.py,v 1.1 2010/08/13 21:20:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

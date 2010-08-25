@@ -7,11 +7,11 @@ This module implements the mysql backend for the trigger.
 
 """
 
-__revision__ = \
-    "$Id: __init__.py,v 1.2 2008/09/09 13:50:36 fvlingen Exp $"
-__version__ = \
-    "$Revision: 1.2 $"
-__author__ = \
+
+    "$Id: __init__.py,v 1.3 2010/08/18 15:40:06 meloam Exp $"
+
+    "$Revision: 1.3 $"
+
     "fvlingen@caltech.edu"
 
 

@@ -7,9 +7,9 @@ Class for creating MySQL specific schema for the FeederManager
 
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2009/10/07 09:49:52 spiga Exp $"
-__version__ = "$Revision: 1.3 $"
-__author__ = "james.jackson@cern.ch"
+
+
+
 
 import threading
 

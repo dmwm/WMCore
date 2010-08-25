@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: FakeFeeder_t.py,v 1.1 2008/09/25 13:14:02 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import unittest, logging, os, commands
 from WMCore.WMBSFeeder.Fake.Feeder import Feeder as FakeFeeder

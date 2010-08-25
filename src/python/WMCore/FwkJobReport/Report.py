@@ -7,8 +7,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.37 $"
-__revision__ = "$Id: Report.py,v 1.37 2010/08/16 17:25:47 sfoulkes Exp $"
+
+
 
 import cPickle
 import logging

@@ -4,8 +4,8 @@ _DBObject_t_
 
 """
 
-__revision__ = "$Id: DBObjects_t.py,v 1.23 2010/08/18 01:37:41 mcinquil Exp $"
-__version__ = "$Revision: 1.23 $"
+
+
 
 import unittest
 import time

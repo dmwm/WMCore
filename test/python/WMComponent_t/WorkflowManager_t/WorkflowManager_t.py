@@ -5,8 +5,8 @@ _WorkflowManager_t_
 Unit tests for the WorkflowManager_t.
 """
 
-__revision__ = "$Id: WorkflowManager_t.py,v 1.3 2010/02/13 17:53:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import time
 import unittest

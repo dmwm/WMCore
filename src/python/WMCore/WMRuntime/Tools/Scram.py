@@ -25,8 +25,8 @@ sample usage:
 
 """
 
-__revision__ = "$Id: Scram.py,v 1.5 2010/06/18 19:29:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 import os
 import os.path

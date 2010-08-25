@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for Oracle.
 """
 
-__revision__ = "$Id: Create.py,v 1.21 2010/05/27 21:29:29 sryu Exp $"
-__version__ = "$Revision: 1.21 $"
+
+
 
 import threading
 

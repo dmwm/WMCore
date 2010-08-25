@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.UpdateReqMgr
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateReqMgr.py,v 1.1 2010/07/20 13:42:35 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

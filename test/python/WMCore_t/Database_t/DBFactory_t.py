@@ -18,8 +18,8 @@ Test that the following dburl's are correctly made:
 """
 
 
-__revision__ = "$Id: DBFactory_t.py,v 1.4 2010/02/10 03:52:27 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import unittest
 import logging

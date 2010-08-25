@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.47 2010/08/17 21:06:37 mnorman Exp $"
-__version__ = "$Revision: 1.47 $"
+
+
 
 import unittest
 import logging

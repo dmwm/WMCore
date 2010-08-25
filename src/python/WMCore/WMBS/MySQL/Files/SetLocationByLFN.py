@@ -5,8 +5,8 @@ _SetLocationByLFN_
 MySQL implementation of Files.SetLocationByLFN
 """
 
-__revision__ = "$Id: SetLocationByLFN.py,v 1.3 2010/04/08 16:20:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

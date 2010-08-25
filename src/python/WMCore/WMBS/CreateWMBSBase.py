@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.53 2010/08/18 14:03:09 mcinquil Exp $"
-__version__ = "$Revision: 1.53 $"
+
+
 
 import threading
 

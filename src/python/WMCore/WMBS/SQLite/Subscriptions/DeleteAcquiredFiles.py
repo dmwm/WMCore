@@ -9,8 +9,8 @@ Remove a (list of) file(s) from the aquired state, either due to a state change
 """
 
 __all__ = []
-__revision__ = "$Id: DeleteAcquiredFiles.py,v 1.4 2009/01/12 19:26:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.WMBS.MySQL.Subscriptions.DeleteAcquiredFiles import DeleteAcquiredFiles as DeleteAcquiredFilesMySQL
 

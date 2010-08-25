@@ -4,9 +4,9 @@
 Example of data formatter used by REST service
 """
 
-__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: TestFormatter.py,v 1.5 2009/06/07 23:14:27 valya Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
+
 
 
 import traceback

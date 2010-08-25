@@ -5,8 +5,8 @@ _GetGroupsByJobState_
 MySQL implementation of JobGroup.GetGroupsByJobState
 """
 
-__revision__ = "$Id: GetGroupsByJobState.py,v 1.2 2010/01/15 14:25:22 hufnagel Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

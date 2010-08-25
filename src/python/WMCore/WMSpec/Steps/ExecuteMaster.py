@@ -6,9 +6,9 @@ Overseer object that traverses a task and invokes the type based executor
 for each step
 
 """
-__author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.23 2010/08/11 18:52:46 mnorman Exp $"
-__version__ = "$Revision: 1.23 $"
+
+
+
 
 import threading
 import traceback

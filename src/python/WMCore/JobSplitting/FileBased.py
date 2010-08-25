@@ -6,8 +6,8 @@ File based splitting algorithm that will chop a fileset into
 a set of jobs based on file boundaries
 """
 
-__revision__ = "$Id: FileBased.py,v 1.28 2010/08/03 14:38:39 mnorman Exp $"
-__version__  = "$Revision: 1.28 $"
+
+
 
 import threading
 import sys

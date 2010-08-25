@@ -7,8 +7,8 @@ Diagnostic implementation for a job's LogCollect step
 
 """
 
-__revision__ = "$Id: LogCollect.py,v 1.1 2010/05/05 21:06:07 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import os
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler

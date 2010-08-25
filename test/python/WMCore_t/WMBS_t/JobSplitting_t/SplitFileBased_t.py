@@ -5,8 +5,8 @@ _SplitFileBased_t_
 Unit tests for the split file job splitting algorithm.
 """
 
-__revision__ = "$Id: SplitFileBased_t.py,v 1.9 2010/07/14 19:27:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+
+
 
 import unittest
 import os

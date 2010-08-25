@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.47 2010/08/18 13:11:32 swakef Exp $"
-__version__ = "$Revision: 1.47 $"
+
+
 
 import unittest
 import os

@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.17 2010/08/13 21:20:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.17 $"
+
+
 
 import unittest
 import os

@@ -4,8 +4,8 @@ A sane default welcome page
 """
 
 
-__revision__ = "$Id: Welcome.py,v 1.10 2010/01/28 16:37:19 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+
+
 
 import time
 from cherrypy import expose

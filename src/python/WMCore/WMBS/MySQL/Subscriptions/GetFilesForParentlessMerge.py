@@ -5,8 +5,8 @@ _GetFilesForParentlessMerge_
 MySQL implementation of Subscription.GetFilesForParentlessMerge
 """
 
-__revision__ = "$Id: GetFilesForParentlessMerge.py,v 1.1 2010/07/13 21:00:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

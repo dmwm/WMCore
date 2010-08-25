@@ -5,8 +5,8 @@ _Create_
 Class for creating Oracle specific schema for resource control.
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2010/07/15 16:57:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import threading
 

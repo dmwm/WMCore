@@ -7,8 +7,8 @@ Get a physics group ID within the request system
 """
 
 
-__revision__ = "$Id: ID.py,v 1.1 2010/07/01 19:06:19 rpw Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 
 from WMCore.Database.DBFormatter import DBFormatter

@@ -6,8 +6,8 @@ SQLite implementation of JobGroup.GetLocationsForJobs
 """
 
 __all__ = []
-__revision__ = "$Id: GetLocationsForJobs.py,v 1.1 2009/09/15 16:07:01 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import logging
 import inspect

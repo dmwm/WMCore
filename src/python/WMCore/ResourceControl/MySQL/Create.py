@@ -5,8 +5,8 @@ _Create_
 Class for creating MySQL specific schema for resource control.
 """
 
-__revision__ = "$Id: Create.py,v 1.4 2010/07/15 16:57:05 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import threading
 from WMCore.Database.DBCreator import DBCreator

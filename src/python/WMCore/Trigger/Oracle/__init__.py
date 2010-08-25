@@ -7,11 +7,11 @@ This module implements the oracle backend for the trigger.
 
 """
 
-__revision__ = \
-    "$Id: __init__.py,v 1.2 2008/10/01 11:09:10 fvlingen Exp $"
-__version__ = \
-    "$Revision: 1.2 $"
-__author__ = \
+
+    "$Id: __init__.py,v 1.3 2010/08/18 15:38:16 meloam Exp $"
+
+    "$Revision: 1.3 $"
+
     "fvlingen@caltech.edu"
 
 

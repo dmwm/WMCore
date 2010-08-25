@@ -5,8 +5,8 @@ _PhEDExInjectorPoller_
 Poll the DBSBuffer database and inject files as they are created.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.19 2010/06/10 21:04:06 mnorman Exp $"
-__version__ = "$Revision: 1.19 $"
+
+
 
 import threading
 import logging

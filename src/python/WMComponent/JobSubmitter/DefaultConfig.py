@@ -5,8 +5,8 @@ Defines default config values for JobSubmitter specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.3 2009/11/17 16:54:13 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 
 from WMCore.Agent.Configuration import Configuration

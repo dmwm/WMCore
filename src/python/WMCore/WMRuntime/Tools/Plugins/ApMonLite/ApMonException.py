@@ -6,8 +6,8 @@ General Exception class for JC modules
 
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: ApMonException.py,v 1.1 2010/05/17 20:42:29 mnorman Exp $"
+
+
 
 import exceptions
 import inspect

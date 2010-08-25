@@ -5,8 +5,8 @@ _ResourceControl_
 Library from manipulating and querying the resource control database.
 """
 
-__revision__ = "$Id: ResourceControl.py,v 1.6 2010/07/15 19:21:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase

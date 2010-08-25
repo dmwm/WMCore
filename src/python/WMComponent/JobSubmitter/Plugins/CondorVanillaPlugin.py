@@ -10,8 +10,8 @@ _CondorVanillaPlugin_
 A plug-in that should submit directly to vanilla condor CEs
 """
 
-__revision__ = "$Id: CondorVanillaPlugin.py,v 1.5 2010/08/11 20:11:44 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 import os
 import os.path

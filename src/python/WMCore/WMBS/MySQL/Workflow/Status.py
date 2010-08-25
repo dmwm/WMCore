@@ -5,8 +5,8 @@ _Status_
 MySQL implementation of Workflow.Status
 """
 
-__revision__ = "$Id: Status.py,v 1.4 2010/06/15 21:33:34 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

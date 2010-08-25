@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPISched.py,v 1.4 2010/06/28 18:26:38 spigafi Exp $"
-__revision__ = "$Revision: 1.4 $"
+
+
 
 
 # db interaction

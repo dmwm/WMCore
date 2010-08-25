@@ -7,8 +7,8 @@ and then for each task do the jobs necessary for the task
 to start as a proper job.
 
 """
-__revision__ = "$Id: TaskMaker.py,v 1.6 2010/04/12 16:50:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 
 

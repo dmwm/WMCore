@@ -3,8 +3,8 @@
     Mocked Phedex interface
 """
 
-__revision__ = "$Id: PhEDEx.py,v 1.7 2010/08/09 20:20:00 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+
+
 
 # need to clean this up at some point
 

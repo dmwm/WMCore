@@ -6,8 +6,8 @@ API Methods to list the requests in the database
 
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: ListRequests.py,v 1.1 2010/07/01 18:32:56 rpw Exp $"
+
+
 
 import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect

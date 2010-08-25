@@ -5,8 +5,8 @@ _Create_
 Class for creating SQLite specific schema for persistent messages.
 """
 
-__revision__ = "$Id: Create.py,v 1.6 2010/02/09 17:33:23 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 import logging
 import threading

@@ -48,8 +48,8 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
-__revision__ = "$Id: Service.py,v 1.61 2010/08/10 18:11:12 metson Exp $"
-__version__ = "$Revision: 1.61 $"
+
+
 
 SECURE_SERVICES = ('https',)
 

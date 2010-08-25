@@ -12,11 +12,11 @@ service.
 
 """
 
-__revision__ = \
-    "$Id: Queries.py,v 1.8 2009/07/06 19:05:39 sfoulkes Exp $"
-__version__ = \
-    "$Revision: 1.8 $"
-__author__ = \
+
+    "$Id: Queries.py,v 1.9 2010/08/18 15:38:34 meloam Exp $"
+
+    "$Revision: 1.9 $"
+
     "fvlingen@caltech.edu"
 
 import threading

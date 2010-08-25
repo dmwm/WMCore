@@ -28,9 +28,9 @@ OPTIONS         YES             Requests the server to return details about
 -----------------------------------------------------------------------------
 """
 
-__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: Resource.py,v 1.6 2008/12/19 01:17:10 valya Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
+
 
 import cherrypy
 import types

@@ -6,9 +6,9 @@ General test for WMException
 
 """
 
-__revision__ = "$Id: WMException_t.py,v 1.4 2009/10/13 22:42:59 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 import logging
 import unittest

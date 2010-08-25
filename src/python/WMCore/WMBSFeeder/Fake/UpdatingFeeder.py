@@ -7,8 +7,8 @@ A feeder implementation that generates (1000 is default) fake files. Make up ran
 Returns existing files, with updated locations.
 """
 __all__ = []
-__revision__ = "$Id: UpdatingFeeder.py,v 1.1 2008/07/21 17:25:41 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.File import File

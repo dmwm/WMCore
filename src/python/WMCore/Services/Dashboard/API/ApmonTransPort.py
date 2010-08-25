@@ -7,8 +7,8 @@ Use _dict_ for all transportation
 
 """
 
-__version__ = "$Revision: 1.1 $"
-__author__ = "Sanjay.Padhi@cern.ch"
+
+
 
 import random
 import time

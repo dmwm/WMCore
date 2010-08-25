@@ -6,8 +6,8 @@ MySQL implementation of Workflow.InsertOutput
 """
 
 __all__ = []
-__revision__ = "$Id: InsertOutput.py,v 1.3 2009/12/04 21:27:55 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

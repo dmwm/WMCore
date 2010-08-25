@@ -29,9 +29,9 @@ function. This helps the caller to determine which function
 
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.2 2008/09/04 14:32:06 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 
 import threading

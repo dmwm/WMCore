@@ -7,8 +7,8 @@ and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
 back down and verify that everything is complete.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.10 2010/04/27 16:24:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+
+
 
 import threading
 import time

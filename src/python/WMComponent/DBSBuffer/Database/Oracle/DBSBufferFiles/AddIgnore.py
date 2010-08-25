@@ -5,8 +5,8 @@ _AddIgnore_
 MySQL implementation of DBSBufferFiles.AddIgnore
 """
 
-__revision__ = "$Id: AddIgnore.py,v 1.1 2009/11/02 20:12:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.AddIgnore import AddIgnore as \
      MySQLAddIgnore

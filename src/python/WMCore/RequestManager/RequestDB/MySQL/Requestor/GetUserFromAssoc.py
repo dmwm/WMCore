@@ -5,8 +5,8 @@ _Request.GetUserFromAssoc_
 API for getting the requestor from an association id
 
 """
-__revision__ = "$Id: GetUserFromAssoc.py,v 1.1 2010/07/01 19:14:16 rpw Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.54 2010/08/05 13:36:38 metson Exp $"
-__version__ = "$Revision: 1.54 $"
+
+
 
 # CherryPy
 import cherrypy

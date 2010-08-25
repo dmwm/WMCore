@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.38 2010/05/05 20:25:06 sryu Exp $"
-__version__ = "$Revision: 1.38 $"
+
+
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WMFactory import WMFactory

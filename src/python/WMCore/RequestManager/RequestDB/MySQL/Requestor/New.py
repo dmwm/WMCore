@@ -5,8 +5,8 @@ _Requestor.New_
 
 """
 
-__revision__ = "$Id: New.py,v 1.1 2010/07/01 19:14:16 rpw Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 
 

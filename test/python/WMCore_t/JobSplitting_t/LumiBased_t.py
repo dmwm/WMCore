@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.10 2010/06/30 14:11:08 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+
+
 
 import unittest
 

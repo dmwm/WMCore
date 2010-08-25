@@ -6,8 +6,8 @@ General Exception class for JC modules
 
 """
 
-__version__ = "$Revision: 1.2 $"
-__revision__ = "$Id: StageOutError.py,v 1.2 2010/06/29 19:01:25 sfoulkes Exp $"
+
+
 
 import inspect
 import sys

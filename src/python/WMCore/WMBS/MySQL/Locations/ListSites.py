@@ -6,8 +6,8 @@ MySQL implementation of Locations.ListSites
 """
 
 __all__ = []
-__revision__ = "$Id: ListSites.py,v 1.1 2009/07/01 19:22:13 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

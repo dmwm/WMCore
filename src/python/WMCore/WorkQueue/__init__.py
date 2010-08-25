@@ -11,5 +11,5 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 __all__ = []
-__revision__ = "$Id: __init__.py,v 1.2 2009/08/18 23:18:15 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+
+

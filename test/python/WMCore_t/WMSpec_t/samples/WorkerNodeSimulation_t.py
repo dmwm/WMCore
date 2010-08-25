@@ -5,8 +5,8 @@ WorkerNode unittest for WMRuntime/WMSpec
 
 """
 
-__revision__ = "$Id: WorkerNodeSimulation_t.py,v 1.4 2010/04/14 16:53:54 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 # Basic libraries
 import unittest

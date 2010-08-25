@@ -5,8 +5,8 @@ _NewDataset_
 MySQL implementation of DBSBuffer.NewDataset
 """
 
-__revision__ = "$Id: NewDataset.py,v 1.10 2009/10/22 15:08:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

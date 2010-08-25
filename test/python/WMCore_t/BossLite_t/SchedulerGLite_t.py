@@ -4,8 +4,8 @@ _SchedulerGLite_t_
 
 """
 
-__revision__ = "$Id: SchedulerGLite_t.py,v 1.4 2010/08/18 01:37:41 mcinquil Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import unittest
 import time

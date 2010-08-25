@@ -7,8 +7,8 @@ based on the size of the files
 
 """
 
-__revision__ = "$Id: MergeBySize.py,v 1.7 2010/07/13 14:32:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+
+
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID

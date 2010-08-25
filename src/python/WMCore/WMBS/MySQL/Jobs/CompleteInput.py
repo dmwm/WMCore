@@ -5,8 +5,8 @@ _CompleteInput_
 MySQL implementation of Jobs.Complete
 """
 
-__revision__ = "$Id: CompleteInput.py,v 1.5 2010/04/28 16:28:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

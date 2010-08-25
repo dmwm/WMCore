@@ -7,8 +7,8 @@ This is being used by JobTracker algorithm
 """
 
 __all__ = []
-__revision__ = "$Id: LoadJobRunningJob.py,v 1.1 2010/08/16 17:45:16 mcinquil Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.DbObject import DbObjectDBFormatter

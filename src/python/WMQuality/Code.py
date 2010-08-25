@@ -8,9 +8,9 @@ and generate a file for checking the
 code style.
 """
 
-__revision__ = "$Id: Code.py,v 1.6 2010/02/04 22:36:35 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 import commands
 import os

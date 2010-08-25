@@ -9,9 +9,9 @@ between them.
 """
 
 __all__ = []
-__revision__ = "$Id: ProxyQueue.py,v 1.2 2008/09/29 16:10:56 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 
 #FIXME: for now the proxy queue is just a direct interface

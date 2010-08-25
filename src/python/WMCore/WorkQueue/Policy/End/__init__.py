@@ -3,8 +3,8 @@
 WorkQueue End Policy
 
 """
-__revision__ = "$Id: __init__.py,v 1.2 2009/12/09 17:12:44 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.WMFactory import WMFactory
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper

@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.55 2010/08/13 16:37:55 sfoulkes Exp $"
-__version__ = "$Revision: 1.55 $"
+
+
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject

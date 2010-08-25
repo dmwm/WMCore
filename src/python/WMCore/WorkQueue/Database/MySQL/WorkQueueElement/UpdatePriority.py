@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.UpdatePrioriy
 """
 
 __all__ = []
-__revision__ = "$Id: UpdatePriority.py,v 1.3 2009/11/20 22:59:58 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

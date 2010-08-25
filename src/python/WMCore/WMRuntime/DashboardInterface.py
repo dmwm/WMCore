@@ -3,8 +3,8 @@
 
 # This is the interface to the Dashboard that the monitor will use
 
-__version__ = "$Revision: 1.2 $"
-__revision__ = "$Id: DashboardInterface.py,v 1.2 2010/08/11 16:03:01 mnorman Exp $"
+
+
 
 
 import threading

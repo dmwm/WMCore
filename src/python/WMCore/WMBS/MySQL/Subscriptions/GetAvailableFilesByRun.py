@@ -5,8 +5,8 @@ _GetAvailableFilesByRun_
 MySQL implementation of Subscription.GetAvailableFilesByRun
 """
 
-__revision__ = "$Id: GetAvailableFilesByRun.py,v 1.4 2010/06/28 19:01:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

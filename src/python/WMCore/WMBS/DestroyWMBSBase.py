@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-__revision__ = "$Id: DestroyWMBSBase.py,v 1.8 2010/06/28 19:01:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+
+
 
 import threading
 

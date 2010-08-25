@@ -5,8 +5,8 @@ _ParentlessMergeBySize_
 WMBS merging that ignores file parents.
 """
 
-__revision__ = "$Id: ParentlessMergeBySize.py,v 1.1 2010/07/13 21:00:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import threading
 

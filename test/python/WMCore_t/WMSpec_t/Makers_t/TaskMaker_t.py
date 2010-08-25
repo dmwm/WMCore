@@ -7,8 +7,8 @@ Unittest for TaskMaker class
 """
 
 
-__revision__ = "$Id: TaskMaker_t.py,v 1.5 2010/02/04 14:51:15 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 import os
 import os.path

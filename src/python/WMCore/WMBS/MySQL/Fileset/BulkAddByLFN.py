@@ -4,8 +4,8 @@ _BulkAddByLFN_
 MySQL implementation of Fileset.BulkAddByLFN
 """
 
-__revision__ = "$Id: BulkAddByLFN.py,v 1.2 2010/03/23 20:12:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import time
 

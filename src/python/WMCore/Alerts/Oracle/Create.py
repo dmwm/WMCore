@@ -6,8 +6,8 @@ Create the "alert_current" and "alert_history" tables for the alert
 system in a MySQL database.
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2009/10/27 18:57:19 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import threading
 

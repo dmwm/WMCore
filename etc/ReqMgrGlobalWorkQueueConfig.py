@@ -4,8 +4,8 @@ Global WorkQueue and ReqMgr config.
 
 """
 
-__revision__ = "$Id: ReqMgrGlobalWorkQueueConfig.py,v 1.3 2010/08/18 13:32:50 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import os
 

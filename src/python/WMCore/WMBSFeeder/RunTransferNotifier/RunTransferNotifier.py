@@ -29,8 +29,8 @@ TODO:   * Make parent relations condition on actually requiring parent relation
         * DQ flags from DBS?
         * Finish tracking down DBS problems
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.12 2009/12/16 17:45:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+
+
 
 import logging
 

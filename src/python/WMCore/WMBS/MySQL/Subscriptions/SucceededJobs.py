@@ -6,8 +6,8 @@ MySQL implementation of Subscriptions.SucceededJobs
 """
 
 __all__ = []
-__revision__ = "$Id: SucceededJobs.py,v 1.1 2010/06/01 21:09:17 riahi Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

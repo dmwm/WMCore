@@ -3,8 +3,8 @@ MySQL implementation of Site.UpdateBlockSiteMapping
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateDataSiteMapping.py,v 1.5 2010/03/30 15:42:02 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

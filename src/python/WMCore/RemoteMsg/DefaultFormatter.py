@@ -9,9 +9,9 @@ implementing the interface that this class shows may be set at configuration
 time. Otherwise, the default one in this module is used.
 """
 
-__revision__ = "$Id: DefaultFormatter.py,v 1.2 2009/06/07 23:14:27 valya Exp $"
-__version__ = "$Revision: 1.2 $"
-__author__ = "antonio.delgado.peris@cern.ch"
+
+
+
 
 
 from cherrypy import response

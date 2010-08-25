@@ -4,9 +4,9 @@ Slave used for AddWorkflowToManage handler
 """
 
 __all__ = []
-__revision__ = \
-    "$Id: AddWorkflowToManageSlave.py,v 1.4 2009/02/05 23:21:43 jacksonj Exp $"
-__version__ = "$Revision: 1.4 $"
+
+    "$Id: AddWorkflowToManageSlave.py,v 1.5 2010/08/18 15:40:03 meloam Exp $"
+
 
 import logging
 import threading

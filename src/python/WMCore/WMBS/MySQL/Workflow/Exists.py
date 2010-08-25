@@ -6,8 +6,8 @@ MySQL implementation of Workflow.Exists
 
 """
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.7 2009/08/24 11:27:45 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

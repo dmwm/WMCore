@@ -6,8 +6,8 @@ MySQL implementation of Jobs.GetNumberOfJobsPerSite
 """
 
 __all__ = []
-__revision__ = "$Id: GetNumberOfJobsPerSite.py,v 1.2 2010/01/22 20:45:04 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import logging
 

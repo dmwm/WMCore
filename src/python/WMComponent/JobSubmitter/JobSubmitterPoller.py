@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.45 2010/08/11 19:33:26 mnorman Exp $"
-__version__ = "$Revision: 1.45 $"
+
+
 
 
 #This job currently depends on the following config variables in JobSubmitter:

@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.26 2010/04/26 22:03:57 sryu Exp $"
-__version__ = "$Revision: 1.26 $"
+
+
 
 import unittest
 from WMCore.Wrappers import JsonWrapper

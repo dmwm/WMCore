@@ -7,8 +7,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitter.py,v 1.3 2010/02/12 21:14:45 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import logging
 import threading

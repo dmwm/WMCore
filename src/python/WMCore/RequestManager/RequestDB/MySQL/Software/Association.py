@@ -6,8 +6,8 @@ Associate a software version to a request
 
 """
 
-__revision__ = "$Id: Association.py,v 1.1 2010/07/01 19:15:51 rpw Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -4,8 +4,8 @@
 The workflow manager itself, set up event listeners and work event thread
 """
 __all__ = []
-__revision__ = "$Id: WorkflowManager.py,v 1.4 2009/02/05 23:26:34 jacksonj Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import threading
 import logging

@@ -7,11 +7,11 @@ This module implements the oracle backend for the trigger.
 
 """
 
-__revision__ = \
-    "$Id: Queries.py,v 1.1 2008/09/19 15:34:36 fvlingen Exp $"
-__version__ = \
-    "$Revision: 1.1 $"
-__author__ = \
+
+    "$Id: Queries.py,v 1.2 2010/08/18 15:38:16 meloam Exp $"
+
+    "$Revision: 1.2 $"
+
     "fvlingen@caltech.edu"
 
 from WMCore.Trigger.MySQL.Queries import Queries as MySQLQueries

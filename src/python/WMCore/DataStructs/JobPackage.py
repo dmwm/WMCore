@@ -5,8 +5,8 @@ _JobPackage_
 Data structure for storing and retreiving multiple job objects.
 """
 
-__revision__ = "$Id: JobPackage.py,v 1.2 2010/07/28 15:43:20 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import cPickle
 

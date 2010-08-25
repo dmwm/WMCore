@@ -6,8 +6,8 @@ Query WMBS and ResourceControl to determine how many jobs are still running so
 that we can schedule jobs that have just been created.
 """
 
-__revision__ = "$Id: ListThresholdsForSubmit.py,v 1.6 2010/07/15 16:57:05 sfoulkes Exp $"
-__version__  = "$Revision: 1.6 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

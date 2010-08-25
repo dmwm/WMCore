@@ -10,8 +10,8 @@ from WMCore.WebTools.Page import TemplatedPage
 from WMCore.WebTools.Page import exposejson, exposexml, exposeatom, exposetext
 from cherrypy import response, HTTPError, expose
 
-__revision__ = "$Id: RESTFormatter.py,v 1.23 2010/05/05 19:36:40 afaq Exp $"
-__version__ = "$Revision: 1.23 $"
+
+
 
 class RESTFormatter(TemplatedPage):
     def __init__(self, config):

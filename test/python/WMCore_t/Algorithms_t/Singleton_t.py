@@ -3,8 +3,8 @@
 Unit tests for Singleton pattern
 """
 
-__revision__ = "$Id: Singleton_t.py,v 1.1 2009/11/18 16:26:11 ewv Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import unittest
 from WMCore.Algorithms.Singleton import Singleton

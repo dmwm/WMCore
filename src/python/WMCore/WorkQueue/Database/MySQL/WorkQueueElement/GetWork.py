@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.16 2010/07/26 13:10:10 swakef Exp $"
-__version__ = "$Revision: 1.16 $"
+
+
 
 import random
 import time

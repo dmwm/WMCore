@@ -4,8 +4,8 @@
 Handler for remove workflow
 """
 __all__ = []
-__revision__ = "$Id: RemoveWorkflowFromManagement.py,v 1.3 2009/11/28 00:54:16 riahi Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool

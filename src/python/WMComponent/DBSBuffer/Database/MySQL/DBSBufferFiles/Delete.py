@@ -6,8 +6,8 @@ MySQL implementation of DeleteFile
 
 """
 
-__revision__ = "$Id: Delete.py,v 1.3 2009/07/15 20:43:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: PhEDExNotifier_t.py,v 1.3 2008/11/28 13:31:37 gowdy Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import unittest, logging, os, commands
 from WMCore.WMBSFeeder.PhEDExNotifier.PhEDExNotifierComponent import PhEDExNotifierComponent

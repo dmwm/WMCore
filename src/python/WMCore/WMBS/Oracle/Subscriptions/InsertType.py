@@ -5,8 +5,8 @@ _InsertType_
 Oracle implementation of Subscription.InsertType
 """
 
-__revision__ = "$Id: InsertType.py,v 1.1 2010/02/09 17:51:31 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.WMBS.MySQL.Subscriptions.InsertType import InsertType as InsertTypeMySQL
 

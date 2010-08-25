@@ -5,8 +5,8 @@ SQLite implementation of WorkQueueElement.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.4 2009/11/20 22:59:58 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 
 from WMCore.WorkQueue.Database.MySQL.WorkQueueElement.New import New \

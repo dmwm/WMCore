@@ -3,8 +3,8 @@
 Handler for checking messages in a proxy.
 """
 __all__ = []
-__revision__ = "$Id: CheckProxy.py,v 1.1 2008/09/19 15:34:34 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 
 from WMCore.Agent.BaseHandler import BaseHandler

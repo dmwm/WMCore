@@ -6,8 +6,8 @@ This module implements the Oracle backend for the message
 service.
 """
 
-__revision__ = "$Id: Queries.py,v 1.2 2009/07/06 19:05:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import threading
 

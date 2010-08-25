@@ -5,8 +5,8 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.4 2010/02/04 22:36:36 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 
 from WMCore.Agent.Configuration import Configuration

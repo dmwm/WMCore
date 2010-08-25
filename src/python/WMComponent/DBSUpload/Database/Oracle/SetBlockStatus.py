@@ -7,8 +7,8 @@ Update file to reflect block information
 """
 
 
-__revision__ = "$Id: SetBlockStatus.py,v 1.2 2009/09/03 18:56:18 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 
 import threading

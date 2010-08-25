@@ -3,8 +3,8 @@
 Base handler for taskEnd.
 """
 __all__ = []
-__revision__ = "$Id: TaskEndHandler.py,v 1.6 2009/09/29 12:23:03 delgadop Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 from WMCore.WMFactory import WMFactory
 

@@ -5,8 +5,8 @@
 The actual jobArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobArchiverPoller.py,v 1.13 2010/07/01 20:37:09 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+
+
 
 import threading
 import logging

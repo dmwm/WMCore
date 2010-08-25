@@ -6,8 +6,8 @@ MySQL implementation of Subscription.FailFiles
 """
 
 __all__ = []
-__revision__ = "$Id: FailFiles.py,v 1.6 2009/03/24 16:31:26 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

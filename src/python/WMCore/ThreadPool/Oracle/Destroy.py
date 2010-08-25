@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-__revision__ = "$Id: Destroy.py,v 1.2 2009/08/12 17:18:05 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.ThreadPool.MySQL.Destroy import Destroy as MySQLDestroy
 from WMCore.ThreadPool.Oracle.Create import Create

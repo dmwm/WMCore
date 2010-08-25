@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.27 2010/08/05 20:17:19 sfoulkes Exp $"
-__version__ = "$Revision: 1.27 $"
+
+
 
 import unittest
 import logging

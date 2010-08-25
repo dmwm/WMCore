@@ -5,8 +5,8 @@ _SetStatus_
 MySQL implementation of DBSBufferFiles.SetStatus
 """
 
-__revision__ = "$Id: SetStatus.py,v 1.2 2009/12/16 17:45:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

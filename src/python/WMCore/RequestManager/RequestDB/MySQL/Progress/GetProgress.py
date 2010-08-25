@@ -3,8 +3,8 @@
 _Progress.GetProgress_
 
 """
-__revision__ = "$Id: GetProgress.py,v 1.1 2010/07/01 19:07:54 rpw Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

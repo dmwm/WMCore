@@ -6,8 +6,8 @@ API for parsing JSON URLs and returning as python objects.
 
 """
 
-__revision__ = "$Id: JSONParser.py,v 1.10 2009/08/07 14:59:34 ewv Exp $"
-__version__ = "$Revision: 1.10 $"
+
+
 
 import urllib
 import cStringIO

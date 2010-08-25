@@ -6,8 +6,8 @@ Frontend module for setting up TaskSpace & StepSpace areas within a job.
 """
 
 
-__revision__ = "$Id: Bootstrap.py,v 1.13 2010/08/16 16:33:37 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+
+
 
 import inspect
 import pickle

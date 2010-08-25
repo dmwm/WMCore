@@ -7,8 +7,8 @@
 RetryManager test for module and the harness
 """
 
-__revision__ = "$Id: RetryManager_t.py,v 1.10 2010/07/02 14:52:47 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+
+
 
 import os
 import threading

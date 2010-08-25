@@ -5,8 +5,8 @@ _GetOutputMap_
 MySQL implementation of Jobs.GetOutputMap
 """
 
-__revision__ = "$Id: GetOutputMap.py,v 1.2 2009/12/17 21:54:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

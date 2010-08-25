@@ -8,8 +8,8 @@ at some high value.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2009/12/16 18:56:03 afaq Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.ChangeState import Transitions

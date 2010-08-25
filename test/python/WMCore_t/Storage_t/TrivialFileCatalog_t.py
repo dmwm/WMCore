@@ -5,8 +5,8 @@ _TrivialFileCatalog_t_
 Test the parsing of the TFC.
 """
 
-__revision__ = "$Id: TrivialFileCatalog_t.py,v 1.6 2010/08/17 22:03:25 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 import os
 import unittest

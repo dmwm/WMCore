@@ -9,8 +9,8 @@ normal file based splitting except that the input files will also have their
 parentage information loaded so that the parents can be included in the job.
 """
 
-__revision__ = "$Id: TwoFileBased.py,v 1.13 2010/08/16 16:04:53 mnorman Exp $"
-__version__  = "$Revision: 1.13 $"
+
+
 
 import logging
 import threading

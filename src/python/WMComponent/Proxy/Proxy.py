@@ -7,9 +7,9 @@ The proxy component relays messages to other prodagent instances.
 Initially it is designed to communicate with the older prodagent components.
 """
 
-__revision__ = "$Id: Proxy.py,v 1.2 2008/09/29 16:10:56 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 
 import cPickle

@@ -5,8 +5,8 @@ _FileBased_t_
 File based splitting test.
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.8 2009/12/16 17:45:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+
+
 
 import unittest
 

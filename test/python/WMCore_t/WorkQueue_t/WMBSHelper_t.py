@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WMBSHelper_t.py,v 1.2 2010/08/16 19:17:16 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import unittest
 

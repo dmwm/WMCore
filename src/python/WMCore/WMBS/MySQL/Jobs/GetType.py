@@ -5,8 +5,8 @@ _GetType_
 MySQL implementation of Jobs.GetType
 """
 
-__revision__ = "$Id: GetType.py,v 1.1 2009/10/13 20:52:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

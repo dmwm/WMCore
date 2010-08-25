@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: Trigger_t.py,v 1.8 2010/08/02 19:34:35 meloam Exp $"
-__version__ = "$Revision: 1.8 $"
+
+
 
 import unittest
 import os

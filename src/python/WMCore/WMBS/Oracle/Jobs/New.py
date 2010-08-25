@@ -6,8 +6,8 @@ Oracle implementation of Jobs.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.6 2009/12/22 16:09:39 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 from WMCore.WMBS.MySQL.Jobs.New import New as NewJobMySQL
 

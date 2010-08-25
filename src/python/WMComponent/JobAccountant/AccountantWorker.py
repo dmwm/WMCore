@@ -12,8 +12,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.38 2010/07/22 15:53:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.38 $"
+
+
 
 import os
 import threading

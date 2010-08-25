@@ -3,8 +3,8 @@
 The actual JobStatusLite poller algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobStatusPoller.py,v 1.2 2010/06/09 20:28:48 mcinquil Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import threading
 import logging

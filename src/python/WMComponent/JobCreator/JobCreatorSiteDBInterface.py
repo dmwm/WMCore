@@ -5,9 +5,9 @@ A clumsy interface to siteDB for jobCreator
 
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorSiteDBInterface.py,v 1.1 2009/07/09 22:12:16 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "mnorman@fnal.gov"
+
+
+
 
 import logging
 import threading

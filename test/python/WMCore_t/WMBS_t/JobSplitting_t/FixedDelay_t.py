@@ -5,8 +5,8 @@ _FixedDelay_t_
 Fixed delay job splitting.
 """
 
-__revision__ = "$Id: FixedDelay_t.py,v 1.5 2010/06/28 15:34:52 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 import unittest
 import os

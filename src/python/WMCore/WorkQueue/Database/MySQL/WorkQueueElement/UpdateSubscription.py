@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.UpdateSubscription
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateSubscription.py,v 1.5 2010/05/05 14:36:53 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

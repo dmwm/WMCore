@@ -4,8 +4,8 @@ _DestroyAgentBase_
 
 """
 
-__revision__ = "$Id: DestroyAgentBase.py,v 1.1 2010/06/21 21:19:27 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import threading
 import string

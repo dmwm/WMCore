@@ -5,8 +5,8 @@ SQLite implementation of Subscriptions.IsCompleteOnRun
 Checks all files in the given subscription and given run are completed.
 """
 __all__ = []
-__revision__ = "$Id: IsCompleteOnRun.py,v 1.1 2009/04/16 18:47:24 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.WMBS.MySQL.Subscriptions.IsCompleteOnRun import IsCompleteOnRun as IsCompleteOnRunMySQL
 

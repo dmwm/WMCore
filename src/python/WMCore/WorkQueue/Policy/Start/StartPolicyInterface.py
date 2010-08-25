@@ -4,8 +4,8 @@ WorkQueue SplitPolicyInterface
 
 """
 __all__ = []
-__revision__ = "$Id: StartPolicyInterface.py,v 1.8 2010/08/13 20:37:23 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+
+
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement

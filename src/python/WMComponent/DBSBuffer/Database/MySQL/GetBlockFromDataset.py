@@ -5,8 +5,8 @@ _ListDataset_
 MySQL implementation of DBSBuffer.GetBlockFromDataset
 """
 
-__revision__ = "$Id: GetBlockFromDataset.py,v 1.1 2009/12/02 20:09:34 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

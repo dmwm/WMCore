@@ -8,8 +8,8 @@ Return a list of files that are available for processing.
 Available means not acquired, complete or failed.
 """
 __all__ = []
-__revision__ = "$Id: GetFailedFilesByLimit.py,v 1.1 2010/02/26 20:20:51 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.WMBS.Oracle.Subscriptions.GetFailedFiles import \
      GetFailedFiles

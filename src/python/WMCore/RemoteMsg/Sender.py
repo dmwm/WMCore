@@ -7,9 +7,9 @@ This module contains a class whose instances can be used to publish messages
 to other RemoteMsg instances.
 """
 
-__revision__ = "$Id: Sender.py,v 1.1 2009/04/01 12:56:01 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "antonio.delgado.peris@cern.ch"
+
+
+
 
 #import os
 #import inspect

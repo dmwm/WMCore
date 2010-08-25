@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.11 2010/07/26 13:10:10 swakef Exp $"
-__version__ = "$Revision: 1.11 $"
+
+
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

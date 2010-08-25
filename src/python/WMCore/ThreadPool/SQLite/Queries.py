@@ -5,8 +5,8 @@ _Queries_
 This module implements the SQLite backend for the persistent threadpool.
 """
 
-__revision__ = "$Id: Queries.py,v 1.3 2009/08/13 00:09:09 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import threading
 

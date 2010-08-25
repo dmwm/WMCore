@@ -7,9 +7,9 @@ _PilotManagerClient_
 
 """
 
-__revision__ = "$Id: PilotMonitorClient.py,v 1.3 2010/02/05 14:17:35 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
-__author__ = "Khawar.Ahmad@cern.ch"
+
+
+
 
 import os
 import time

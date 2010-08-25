@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.17 2010/06/08 19:05:11 sfoulkes Exp $"
-__version__ = "$Revision: 1.17 $"
+
+
 
 import unittest
 import os

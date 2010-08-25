@@ -6,8 +6,8 @@ Data object that contains a set of files
 
 """
 __all__ = []
-__revision__ = "$Id: Fileset.py,v 1.25 2010/05/03 12:23:30 riahi Exp $"
-__version__ = "$Revision: 1.25 $"
+
+
 from WMCore.DataStructs.WMObject import WMObject 
 
 class Fileset(WMObject):

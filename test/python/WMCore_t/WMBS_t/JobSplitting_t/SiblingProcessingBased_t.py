@@ -5,8 +5,8 @@ _SiblingProcessingBased_t_
 Test SiblingProcessing job splitting.
 """
 
-__revision__ = "$Id: SiblingProcessingBased_t.py,v 1.4 2010/07/27 16:18:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import unittest
 import os

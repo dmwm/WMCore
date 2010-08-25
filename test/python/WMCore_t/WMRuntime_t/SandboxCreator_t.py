@@ -5,8 +5,8 @@
     Tests sandbox production
 """
 
-__revision__ = "$Id: SandboxCreator_t.py,v 1.5 2010/04/09 20:36:41 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 import unittest
 import WMCore.WMRuntime.SandboxCreator as SandboxCreator
 import tempfile

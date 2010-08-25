@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.UpdateStatus
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateStatus.py,v 1.8 2010/05/20 15:12:09 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+
+
 
 
 from WMCore.Database.DBFormatter import DBFormatter

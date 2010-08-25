@@ -5,8 +5,8 @@ _ListThresholdsForCreate_
 Oracle implementation of ResourceControl.ListThresholdsForCreate
 """
 
-__revision__ = "$Id: ListThresholdsForCreate.py,v 1.3 2010/07/28 20:11:17 sfoulkes Exp $"
-__version__  = "$Revision: 1.3 $"
+
+
 
 from WMCore.ResourceControl.MySQL.ListThresholdsForCreate \
      import ListThresholdsForCreate as MySQLListThresholdsForCreate

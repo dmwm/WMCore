@@ -6,8 +6,8 @@ MySQL implementation of JobGroup.LoadFromUID
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromUID.py,v 1.2 2009/01/16 22:38:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

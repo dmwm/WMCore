@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.14 2010/08/04 20:14:55 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+
+
 
 import commands
 import logging

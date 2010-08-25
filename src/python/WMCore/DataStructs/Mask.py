@@ -9,9 +9,9 @@ job in two ways:
 - Exclusive: The stuff outside of the mask is processed
 
 """
-__author__ = "evansde@fnal.gov"
-__revision__ = "$Id: Mask.py,v 1.3 2009/06/05 16:36:22 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
+
 
 
 

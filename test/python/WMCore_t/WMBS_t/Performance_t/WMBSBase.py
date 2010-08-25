@@ -27,8 +27,8 @@ from WMCore.WMFactory import WMFactory
 #Needed for TestInit
 from WMQuality.TestInit import TestInit
 
-__revision__ = "$Id: WMBSBase.py,v 1.21 2009/12/16 17:45:45 sfoulkes Exp $"
-__version__ = "$Reivison: $"
+
+
 
 class WMBSBase(Performance):
     """

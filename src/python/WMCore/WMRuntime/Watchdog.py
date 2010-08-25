@@ -6,8 +6,8 @@ _Watchdog_
 This cleverly named object is the thread that handles the monitoring of individual jobs
 """
 
-__version__ = "$Revision: 1.4 $"
-__revision__ = "$Id: Watchdog.py,v 1.4 2010/05/20 13:20:00 mnorman Exp $"
+
+
 
 import threading
 import logging

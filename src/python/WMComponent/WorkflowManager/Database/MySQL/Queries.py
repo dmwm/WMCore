@@ -7,9 +7,9 @@ This module implements the mysql backend for the
 WorkflowManager
 """
 
-__revision__ = "$Id: Queries.py,v 1.7 2009/10/04 14:44:48 riahi Exp $"
-__version__ = "$Revision: 1.7 $"
-__author__ = "james.jackson@cern.ch"
+
+
+
 
 import threading
 from WMCore.Database.DBFormatter import DBFormatter

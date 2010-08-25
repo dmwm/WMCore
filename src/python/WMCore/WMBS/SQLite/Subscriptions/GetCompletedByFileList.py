@@ -6,8 +6,8 @@ Oracle implementation of Subscription.IsFileCompleted
 """
 
 __all__ = []
-__revision__ = "$Id: GetCompletedByFileList.py,v 1.1 2009/09/29 18:36:09 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.WMBS.MySQL.Subscriptions.GetCompletedByFileList import \
      GetCompletedByFileList as GetCompletedByFileListMySQL

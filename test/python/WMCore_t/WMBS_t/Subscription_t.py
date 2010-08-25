@@ -4,8 +4,8 @@
 # W0142: Some people like ** magic
 # R0201: Test methods CANNOT be functions
 
-__revision__ = "$Id: Subscription_t.py,v 1.61 2010/08/05 20:41:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.61 $"
+
+
 
 
 import unittest

@@ -12,9 +12,9 @@ to pass arbitrary objects if needed through the parameters
 attribute.
 """
 
-__revision__ = "$Id: ThreadSlave.py,v 1.9 2010/08/02 16:04:46 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 import base64
 import cPickle

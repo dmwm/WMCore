@@ -6,8 +6,8 @@ Query the database to determine how many jobs are running so that we can
 determine whether or not to task for more work.  
 """
 
-__revision__ = "$Id: ListThresholdsForCreate.py,v 1.5 2010/07/28 20:11:17 sfoulkes Exp $"
-__version__  = "$Revision: 1.5 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

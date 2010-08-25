@@ -4,8 +4,8 @@ WorkQueue EndPolicyInterface
 
 """
 
-__revision__ = "$Id: EndPolicyInterface.py,v 1.3 2010/03/02 13:39:43 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElementResult import WorkQueueElementResult as WQEResult

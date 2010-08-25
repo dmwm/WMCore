@@ -11,8 +11,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.19 2010/08/12 14:41:03 mnorman Exp $"
-__version__ = "$Revision: 1.19 $"
+
+
 
 import threading
 import logging

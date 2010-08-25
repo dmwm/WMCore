@@ -4,8 +4,8 @@
 Handler for add workflow location info
 """
 __all__ = []
-__revision__ = "$Id: AddToWorkflowManagementLocationList.py,v 1.3 2009/07/25 11:07:22 riahi Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool

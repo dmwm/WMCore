@@ -4,8 +4,8 @@
 Unittest for StageOut.py
 '''
 
-__revision__ = "$Id: StageOut_t.py,v 1.1 2009/05/22 14:11:27 meloam Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 
 import unittest

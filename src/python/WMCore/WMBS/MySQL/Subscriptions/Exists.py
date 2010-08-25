@@ -5,8 +5,8 @@ _Exists_
 MySQL implementation of Subscription.Exists
 """
 
-__revision__ = "$Id: Exists.py,v 1.4 2009/10/12 21:11:16 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

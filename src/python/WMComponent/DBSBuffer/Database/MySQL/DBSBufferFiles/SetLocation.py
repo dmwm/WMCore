@@ -5,8 +5,8 @@ _SetLocation_
 MySQL implementation of DBSBuffer.SetLocation
 """
 
-__revision__ = "$Id: SetLocation.py,v 1.4 2009/10/22 14:55:57 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -6,8 +6,8 @@ MySQL implementation of Jobs.GetAllJobs
 """
 
 __all__ = []
-__revision__ = "$Id: GetAllJobs.py,v 1.3 2010/01/22 20:45:04 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

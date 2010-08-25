@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.22 2010/08/18 01:33:55 mcinquil Exp $"
-__revision__ = "$Revision: 1.22 $"
+
+
 
 from WMCore.Services.UUID import makeUUID
 

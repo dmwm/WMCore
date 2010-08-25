@@ -6,8 +6,8 @@ _GetRequest_
 API to get requests from the DB
 
 """
-__revision__ = "$Id: GetRequest.py,v 1.1 2010/07/01 18:32:55 rpw Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect

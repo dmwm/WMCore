@@ -6,8 +6,8 @@ MySQL implementation of DeleteWorkflow
 
 """
 __all__ = []
-__revision__ = "$Id: Delete.py,v 1.4 2008/11/20 21:52:32 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

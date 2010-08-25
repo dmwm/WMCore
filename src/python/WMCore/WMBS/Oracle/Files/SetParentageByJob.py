@@ -5,8 +5,8 @@ Oracle implementation of File.SetParentageByJob
 Make the parentage link between a file and all the inputs of a given job
 """
 
-__revision__ = "$Id: SetParentageByJob.py,v 1.3 2010/03/09 19:59:53 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.WMBS.MySQL.Files.SetParentageByJob import SetParentageByJob as MySQLSetParentageByJob
 

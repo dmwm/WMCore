@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetChildDetails
 """
 
 __all__ = []
-__revision__ = "$Id: GetChildDetails.py,v 1.1 2009/11/17 16:53:36 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WorkQueue.Database import States

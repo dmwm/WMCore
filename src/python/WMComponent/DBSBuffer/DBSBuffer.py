@@ -4,9 +4,9 @@
 """
 Performs bulk DBS File insertion by buffering, subscribes to job-completion event.
 """
-__revision__ = "$Id: DBSBuffer.py,v 1.1 2008/10/02 19:57:12 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "anzar@fnal.gov"
+
+
+
 
 import logging
 

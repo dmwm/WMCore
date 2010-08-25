@@ -6,8 +6,8 @@ MySQL implementation of Fileset.SetLastUpdate
 """
 
 __all__ = []
-__revision__ = "$Id: SetLastUpdate.py,v 1.1 2010/05/03 12:21:37 riahi Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 import time

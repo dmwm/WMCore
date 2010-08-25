@@ -8,8 +8,8 @@ Mostly borrowed from StageOut since they share a similar function
 
 """
 
-__revision__ = "$Id: DeleteFiles.py,v 1.1 2010/04/21 16:16:39 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.WMSpec.Steps.Template import Template
 from WMCore.WMSpec.Steps.Template import CoreHelper

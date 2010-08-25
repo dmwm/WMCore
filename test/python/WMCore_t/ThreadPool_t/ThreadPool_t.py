@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.15 2010/08/02 16:26:07 meloam Exp $"
-__version__ = "$Revision: 1.15 $"
+
+
 
 import unittest
 import threading

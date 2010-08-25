@@ -12,8 +12,8 @@ list of disctionaries with the following keys:
 
 """
 
-__revision__ = "$Id: SubscriptionStatus.py,v 1.2 2009/12/17 21:53:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

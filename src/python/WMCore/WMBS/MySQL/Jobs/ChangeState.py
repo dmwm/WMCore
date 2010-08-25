@@ -9,8 +9,8 @@ wrapper class), a retry count for that state, and an id for the couchdb record
 """
 
 __all__ = []
-__revision__ = "$Id: ChangeState.py,v 1.8 2010/07/13 22:11:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

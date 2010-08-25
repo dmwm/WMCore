@@ -5,8 +5,8 @@ _UpdateAlgoDatasetAssoc_
 MySQL implementation of DBSBuffer.UpdateAlgoDatasetAssoc
 """
 
-__revision__ = "$Id: UpdateAlgoDatasetAssoc.py,v 1.1 2009/07/13 19:57:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

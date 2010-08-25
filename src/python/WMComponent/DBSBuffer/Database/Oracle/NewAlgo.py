@@ -5,8 +5,8 @@ _NewAlgo_
 Oracle implementation of DBSBuffer.NewAlgo
 """
 
-__revision__ = "$Id: NewAlgo.py,v 1.4 2009/11/13 15:56:19 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import logging
 

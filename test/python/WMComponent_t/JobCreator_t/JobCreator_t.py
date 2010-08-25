@@ -5,8 +5,8 @@
 # W0201: Don't much around with __init__
 # E1103: Use thread members
 
-__revision__ = "$Id: JobCreator_t.py,v 1.24 2010/08/02 19:34:35 meloam Exp $"
-__version__ = "$Revision: 1.24 $"
+
+
 
 import unittest
 import random

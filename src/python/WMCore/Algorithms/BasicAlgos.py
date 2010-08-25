@@ -9,8 +9,8 @@ Python implementations of basic Linux functionality
 
 import os
 
-__revision__ = "$Id: BasicAlgos.py,v 1.1 2010/08/17 16:06:29 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 
 

@@ -4,8 +4,8 @@ _SchedulerARC_t_
 
 """
 
-__revision__ = "$Id: SchedulerARC_t.py,v 1.1 2010/06/18 13:24:40 edelmann Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import unittest
 import time

@@ -4,8 +4,8 @@ _WorkQueueTestCase_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: WorkQueueTestCase.py,v 1.11 2010/08/09 20:20:42 sryu Exp $"
-__version__ = "$Revision: 1.11 $"
+
+
 
 import unittest
 from WMQuality.TestInit import TestInit

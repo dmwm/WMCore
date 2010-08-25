@@ -7,11 +7,11 @@ This module implements the Oracle backend for the persistent threadpool.
 
 """
 
-__revision__ = \
-    "$Id: Queries.py,v 1.5 2009/07/21 18:22:48 mnorman Exp $"
-__version__ = \
-    "$Revision: 1.5 $"
-__author__ = \
+
+    "$Id: Queries.py,v 1.6 2010/08/18 15:38:17 meloam Exp $"
+
+    "$Revision: 1.6 $"
+
     "mnorman@fnal.gov"
 
 import threading

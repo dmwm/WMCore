@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-__revision__ = "$Id: BossLiteCondorPlugin.py,v 1.2 2010/07/27 15:22:19 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import os
 import os.path

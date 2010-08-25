@@ -3,8 +3,8 @@
 update parent poller
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReportPoller.py,v 1.3 2010/05/14 18:56:45 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread

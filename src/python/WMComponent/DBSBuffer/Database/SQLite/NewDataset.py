@@ -5,8 +5,8 @@ _NewDataset_
 SQLite implementation of DBSBuffer.NewDataset
 """
 
-__revision__ = "$Id: NewDataset.py,v 1.3 2010/02/09 17:28:56 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMComponent.DBSBuffer.Database.MySQL.NewDataset import NewDataset as MySQLNewDataset
 

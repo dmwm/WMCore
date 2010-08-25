@@ -3,8 +3,8 @@
 Oracle implementation of File.GetLocation
 """
 
-__revision__ = "$Id: GetLocation.py,v 1.2 2009/05/18 20:14:03 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 #This has been modified for Oracle
 

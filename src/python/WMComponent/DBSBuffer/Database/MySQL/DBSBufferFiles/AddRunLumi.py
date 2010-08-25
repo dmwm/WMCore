@@ -5,8 +5,8 @@ _AddRunLumi_
 MySQL implementation of AddRunLumi
 """
 
-__revision__ = "$Id: AddRunLumi.py,v 1.4 2010/03/09 18:34:05 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -4,8 +4,8 @@ WorkQueue Policy
 
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreWorkQueuePolicy
 """
-__revision__ = "$Id: __init__.py,v 1.1 2009/12/02 13:52:44 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 #
 #from WMCore.WMFactory import WMFactory
 #from WMCore.WMSpec.WMWorkload import WMWorkloadHelper

@@ -6,8 +6,8 @@ MySQL implementation of Workflow.LoadFromTask
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromTask.py,v 1.1 2010/06/01 17:20:48 riahi Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

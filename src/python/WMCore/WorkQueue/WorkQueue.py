@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.141 2010/08/17 15:01:18 swakef Exp $"
-__version__ = "$Revision: 1.141 $"
+
+
 
 
 import time

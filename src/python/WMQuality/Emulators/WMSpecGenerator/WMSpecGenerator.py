@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WMSpecGenerator.py,v 1.7 2010/08/09 20:52:54 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+
+
 
 import unittest
 import os

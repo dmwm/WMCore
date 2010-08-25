@@ -5,8 +5,8 @@ _DBSBufferDataset_t_
 Unit tests for manipulating datasets in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferDataset_t.py,v 1.2 2009/10/13 20:55:27 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import unittest
 import threading

@@ -5,8 +5,8 @@ _User.DeleteAssociation_
 Delete a user/group association
 
 """
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: DeleteAssociation.py,v 1.1 2010/07/01 19:14:15 rpw Exp $"
+
+
 
 
 from WMCore.Database.DBFormatter import DBFormatter

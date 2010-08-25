@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.43 2010/08/10 19:51:12 sfoulkes Exp $"
-__version__ = "$Revision: 1.43 $"
+
+
 
 import unittest
 import logging

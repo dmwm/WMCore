@@ -8,9 +8,9 @@ Class for creating MySQL specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.10 2010/02/03 18:55:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 import logging
 import threading

@@ -11,8 +11,8 @@ of dictionaries with each dictionary having the following keys:
     jobname
 """
 
-__revision__ = "$Id: ListJobsBySub.py,v 1.1 2009/11/17 20:56:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.WMBS.MySQL.Monitoring.DefaultFormatter import DefaultFormatter
 

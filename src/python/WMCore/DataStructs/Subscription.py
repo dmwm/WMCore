@@ -8,8 +8,8 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.31 2010/08/11 20:34:56 meloam Exp $"
-__version__ = "$Revision: 1.31 $"
+
+
 
 import copy
 from WMCore.DataStructs.Pickleable import Pickleable

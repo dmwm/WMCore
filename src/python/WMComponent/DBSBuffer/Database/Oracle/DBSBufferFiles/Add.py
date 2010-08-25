@@ -5,8 +5,8 @@ Oracle implementation of AddFile
 
 #This has been modified for Oracle
 
-__revision__ = "$Id: Add.py,v 1.2 2009/05/18 20:14:03 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.Add import Add as MySQLAdd
 

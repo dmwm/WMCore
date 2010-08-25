@@ -5,8 +5,8 @@ _GetByRequest_
 DB API to get Assignments based on request id
 
 """
-__revision__ = "$Id: GetByRequest.py,v 1.1 2010/07/01 19:03:09 rpw Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

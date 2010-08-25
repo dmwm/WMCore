@@ -3,8 +3,8 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: WMAgentTasks.py,v 1.4 2010/08/17 15:01:18 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import threading
 import logging

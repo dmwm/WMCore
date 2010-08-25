@@ -6,8 +6,8 @@ Recipe 52558: The Singleton Pattern implemented with Python
 http://code.activestate.com/recipes/52558/
 """
 
-__revision__ = "$Id: Singleton.py,v 1.2 2009/11/18 16:26:57 ewv Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 class Singleton(object):
     """

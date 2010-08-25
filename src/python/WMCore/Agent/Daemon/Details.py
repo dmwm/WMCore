@@ -9,8 +9,8 @@ Also, provides utils to shutdown the daemon process
 
 """
 
-__revision__ = "$Id: Details.py,v 1.4 2010/02/18 14:58:46 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 
 import os

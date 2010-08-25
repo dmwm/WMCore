@@ -4,8 +4,8 @@ _HartbeatAPI_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: HeartbeatAPI.py,v 1.4 2010/07/29 14:11:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import threading
 import os

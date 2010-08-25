@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-__version__ = "$Version$"
-# $Id: __init__.py,v 1.1 2008/10/08 15:34:15 fvlingen Exp $
+
+# $Id: __init__.py,v 1.2 2010/08/18 15:39:15 meloam Exp $
 
 
 """

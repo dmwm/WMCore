@@ -17,8 +17,8 @@ output fileset.  That fileset will be searched for any files that have the
 original input file as a parent or grand parent. 
 """
 
-__revision__ = "$Id: GetMergedChildren.py,v 1.1 2009/12/18 17:54:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import logging
 

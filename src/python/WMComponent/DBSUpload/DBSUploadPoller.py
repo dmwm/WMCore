@@ -26,8 +26,8 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.28 2010/08/06 15:40:24 mnorman Exp $"
-__version__ = "$Revision: 1.28 $"
+
+
 
 import threading
 import logging

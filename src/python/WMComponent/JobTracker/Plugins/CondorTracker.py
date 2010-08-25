@@ -3,8 +3,8 @@
 #Basic model for a tracker plugin
 #Should do nothing
 
-__revision__ = "$Id: CondorTracker.py,v 1.7 2010/07/26 19:49:11 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+
+
 
 
 import logging

@@ -3,8 +3,8 @@
 BossLite exceptions
 """
 
-__version__ = "$Id: Exceptions.py,v 1.2 2010/05/28 13:07:27 mcinquil Exp $"
-__revision__ = "$Revision: 1.2 $"
+
+
 
 import inspect
 

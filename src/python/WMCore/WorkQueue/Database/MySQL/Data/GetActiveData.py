@@ -5,8 +5,8 @@ MySQL implementation of Block.GetActiveBlocks
 """
 
 __all__ = []
-__revision__ = "$Id: GetActiveData.py,v 1.1 2009/09/03 15:44:18 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

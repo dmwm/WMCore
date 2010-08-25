@@ -12,8 +12,8 @@ import os
 import re
 import xml.parsers.expat
 
-__revision__ = "$Id: ParseXMLFile.py,v 1.1 2009/11/19 21:19:42 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 
 class Node:

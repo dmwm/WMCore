@@ -5,8 +5,8 @@ _CompleteInput_
 Oracle implementation of Jobs.Complete
 """
 
-__revision__ = "$Id: CompleteInput.py,v 1.2 2010/04/28 16:28:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.WMBS.MySQL.Jobs.CompleteInput import CompleteInput as MySQLCompleteInput
 

@@ -5,8 +5,8 @@ MySQL implementation of InsertWorker
 """
 
 __all__ = []
-__revision__ = "$Id: InsertWorker.py,v 1.1 2010/06/21 21:19:19 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

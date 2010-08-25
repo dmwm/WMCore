@@ -5,8 +5,8 @@ _Status_
 MySQL implementation of DBSBuffer.Status
 """
 
-__revision__ = "$Id: Status.py,v 1.2 2010/06/15 21:50:29 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

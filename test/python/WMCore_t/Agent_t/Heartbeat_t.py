@@ -4,8 +4,8 @@ _WorkQueueTestCase_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: Heartbeat_t.py,v 1.2 2010/06/23 18:16:01 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import unittest
 import time

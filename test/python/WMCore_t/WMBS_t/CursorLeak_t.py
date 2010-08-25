@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: CursorLeak_t.py,v 1.7 2010/02/05 21:39:11 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+
+
 
 import unittest
 import logging

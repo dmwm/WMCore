@@ -4,8 +4,8 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.4 2010/08/18 13:32:50 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import os
 

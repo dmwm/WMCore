@@ -3,8 +3,8 @@ MySQL implementation of Site.CheckValidity
 """
 
 __all__ = []
-__revision__ = "$Id: CheckValidity.py,v 1.1 2009/11/20 23:00:00 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

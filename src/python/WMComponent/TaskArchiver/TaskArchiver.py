@@ -6,8 +6,8 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-__revision__ = "$Id: TaskArchiver.py,v 1.2 2010/08/12 21:05:22 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import logging
 import threading

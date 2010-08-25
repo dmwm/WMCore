@@ -6,8 +6,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: EventBased.py,v 1.18 2010/05/03 14:35:25 mnorman Exp $"
-__version__  = "$Revision: 1.18 $"
+
+
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 

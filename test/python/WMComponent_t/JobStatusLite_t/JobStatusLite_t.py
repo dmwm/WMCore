@@ -4,8 +4,8 @@
 JobStatusLite unit test 
 """
 
-__revision__ = "$Id: JobStatusLite_t.py,v 1.10 2010/08/18 08:30:37 mcinquil Exp $"
-__version__ = "$Revision: 1.10 $"
+
+
 
 
 from WMQuality.TestInit import TestInit

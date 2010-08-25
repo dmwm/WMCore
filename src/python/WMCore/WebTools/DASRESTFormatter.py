@@ -4,8 +4,8 @@ _DASRESTFormatter_
 
 A REST formatter that appends the DAS headers to the result data
 """
-__revision__ = "$Id: DASRESTFormatter.py,v 1.8 2010/04/26 19:45:27 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+
+
 
 # expires is used by the decorator to set the expires header
 # pylint: disable-msg=W0613

@@ -5,8 +5,8 @@ _GetBulkLocation_
 MySQL implementation of File.GetBulkLocation
 """
 
-__revision__ = "$Id: GetBulkLocation.py,v 1.3 2010/04/08 20:09:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -5,8 +5,8 @@ _GetFilesForMerge_
 Oracle implementation of Subscription.GetFilesForMerge
 """
 
-__revision__ = "$Id: GetFilesForMerge.py,v 1.10 2010/06/24 16:15:14 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+
+
 
 from WMCore.WMBS.MySQL.Subscriptions.GetFilesForMerge import GetFilesForMerge as GetFilesForMergeMySQL
 

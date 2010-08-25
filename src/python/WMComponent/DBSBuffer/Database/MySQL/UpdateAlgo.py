@@ -5,8 +5,8 @@ _UpdateAlgo_
 MySQL implementation of DBSBuffer.UpdateAlgo
 """
 
-__revision__ = "$Id: UpdateAlgo.py,v 1.2 2009/07/13 19:53:11 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

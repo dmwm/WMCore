@@ -5,8 +5,8 @@ _BulkNewReturn_
 MySQL implementation of JobGroup.BulkNewReturn
 """
 
-__revision__ = "$Id: BulkNewReturn.py,v 1.3 2010/03/11 19:27:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import time
 

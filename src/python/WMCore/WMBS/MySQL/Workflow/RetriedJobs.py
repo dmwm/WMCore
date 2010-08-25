@@ -5,8 +5,8 @@ _RetriedJobs_
 MySQL implementation of Workflow.RetriedJobs
 """
 
-__revision__ = "$Id: RetriedJobs.py,v 1.1 2010/06/17 14:22:43 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

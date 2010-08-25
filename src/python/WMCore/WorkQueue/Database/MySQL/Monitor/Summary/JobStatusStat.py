@@ -7,8 +7,8 @@ DAO object for WorkQueue
 """
 
 __all__ = []
-__revision__ = "$Id: JobStatusStat.py,v 1.1 2010/06/03 15:48:07 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 
 from WMCore.Database.DBFormatter import DBFormatter

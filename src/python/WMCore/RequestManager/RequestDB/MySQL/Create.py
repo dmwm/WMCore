@@ -5,8 +5,8 @@ _ReqMgr.RequestDB.MySQL_
 MySQL Compatibility layer for Request Manager DB
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2010/07/20 22:59:33 rpw Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import threading
 

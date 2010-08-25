@@ -6,8 +6,8 @@ MySQL implementation of JobGroup.LoadJobs
 """
 
 __all__ = []
-__revision__ = "$Id: LoadJobs.py,v 1.4 2009/01/16 22:38:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

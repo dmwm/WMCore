@@ -8,8 +8,8 @@
 """
 DBS data discovery command line interface
 """
-__revision__ = "$Id: DbsCli.py,v 1.3 2008/11/04 17:54:11 jacksonj Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import httplib, urllib, urllib2, types, string, os, sys
 

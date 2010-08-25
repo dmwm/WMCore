@@ -9,8 +9,8 @@ DBSUpload test TestDBSUpload module and the harness
 
 """
 
-__revision__ = "$Id: DBSUploadPoller_t.py,v 1.24 2010/06/04 19:08:30 mnorman Exp $"
-__version__ = "$Revision: 1.24 $"
+
+
 
 
 import os

@@ -4,8 +4,8 @@ _GetWMSpecInfo_
 MySQL implementation of WMSpec.GetWMSpecInfo
 """
 __all__ = []
-__revision__ = "$Id: GetWMSpecInfo.py,v 1.3 2010/05/12 19:13:55 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

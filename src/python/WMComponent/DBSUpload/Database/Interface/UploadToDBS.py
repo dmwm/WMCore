@@ -5,8 +5,8 @@ _UploadToDBS_
 APIs related to adding file to DBS
 
 """
-__version__ = "$Revision: 1.14 $"
-__revision__ = "$Id: UploadToDBS.py,v 1.14 2010/06/04 19:17:07 mnorman Exp $"
+
+
 
 import logging
 import threading

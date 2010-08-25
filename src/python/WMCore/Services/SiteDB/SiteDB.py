@@ -6,8 +6,8 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.17 2010/05/06 14:07:24 swakef Exp $"
-__version__ = "$Revision: 1.17 $"
+
+
 
 from WMCore.Services.SSLService import SSLService
 import urllib

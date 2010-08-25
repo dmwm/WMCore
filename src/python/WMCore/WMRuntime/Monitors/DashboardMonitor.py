@@ -6,8 +6,8 @@ _TestMonitor_
 This is the test class for monitors
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: DashboardMonitor.py,v 1.1 2010/05/17 20:44:07 mnorman Exp $"
+
+
 
 import threading
 import time

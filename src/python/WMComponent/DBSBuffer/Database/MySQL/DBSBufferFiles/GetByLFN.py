@@ -5,8 +5,8 @@ _GetByLFN_
 MySQL implementation of DBSBufferFiles.GetByLFN
 """
 
-__revision__ = "$Id: GetByLFN.py,v 1.5 2009/12/02 20:13:27 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

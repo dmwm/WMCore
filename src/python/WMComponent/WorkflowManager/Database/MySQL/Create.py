@@ -7,9 +7,9 @@ Class for creating MySQL specific schema for the WorkflowManager
 
 """
 
-__revision__ = "$Id: Create.py,v 1.4 2009/10/07 09:50:06 spiga Exp $"
-__version__ = "$Revision: 1.4 $"
-__author__ = "james.jackson@cern.ch"
+
+
+
 
 import threading
 

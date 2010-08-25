@@ -5,8 +5,8 @@ _Destroy_
 Remove the alert_current and alert_history tables.
 """
 
-__revision__ = "$Id: Destroy.py,v 1.2 2009/08/12 19:55:23 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import threading
 

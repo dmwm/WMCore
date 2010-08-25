@@ -5,8 +5,8 @@ _GetLocation_
 Oracle implementation of Jobs.Location
 """
 
-__revision__ = "$Id: GetLocation.py,v 1.1 2009/10/02 21:25:22 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.WMBS.MySQL.Jobs.GetLocation import GetLocation as MySQLGetLocation
 

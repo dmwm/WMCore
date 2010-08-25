@@ -4,8 +4,8 @@ _IncrementRetry_
 
 """
 
-__revision__ = "$Id: IncrementRetry.py,v 1.1 2010/07/13 22:11:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

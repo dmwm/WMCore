@@ -6,8 +6,8 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-__revision__ = "$Id: JobStatusLite.py,v 1.1 2010/05/13 15:55:47 mcinquil Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import logging
 import threading

@@ -5,8 +5,8 @@ MySQL implementation of Site.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.3 2009/08/18 23:18:15 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

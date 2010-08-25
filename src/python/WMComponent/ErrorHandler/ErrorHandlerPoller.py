@@ -5,8 +5,8 @@
 The actual error handler algorithm
 """
 __all__ = []
-__revision__ = "$Id: ErrorHandlerPoller.py,v 1.8 2010/07/02 14:26:14 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+
+
 
 import threading
 import logging

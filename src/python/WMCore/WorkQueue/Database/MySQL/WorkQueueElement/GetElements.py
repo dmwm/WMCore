@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetElements.py,v 1.15 2010/08/02 15:55:37 swakef Exp $"
-__version__ = "$Revision: 1.15 $"
+
+
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

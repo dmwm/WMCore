@@ -4,8 +4,8 @@
 The documentation for the framework
 """
     
-__revision__ = "$Id: WMBSMonitorPage.py,v 1.2 2010/08/05 15:07:20 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from cherrypy import expose
 from WMCore.WebTools.Page import TemplatedPage

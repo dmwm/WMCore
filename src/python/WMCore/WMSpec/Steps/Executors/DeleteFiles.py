@@ -7,8 +7,8 @@ Implementation of an Executor for a Delete step
 
 """
 
-__revision__ = "$Id: DeleteFiles.py,v 1.5 2010/08/10 22:16:03 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 import os.path
 import logging

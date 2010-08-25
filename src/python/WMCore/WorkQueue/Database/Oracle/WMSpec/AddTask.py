@@ -5,8 +5,8 @@ Oracle implementation of WMSpec.AddTaskMySQL
 """
 
 __all__ = []
-__revision__ = "$Id: AddTask.py,v 1.2 2010/02/08 19:05:44 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.WorkQueue.Database.MySQL.WMSpec.AddTask import AddTask \
      as AddTaskMySQL

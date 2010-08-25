@@ -5,8 +5,8 @@ _WorkQueueManagerPoller_
 Pull work out of the work queue.
 """
 
-__revision__ = "$Id: WorkQueueManagerWorkPoller.py,v 1.7 2010/07/02 19:53:18 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+
+
 
 import socket
 

@@ -5,8 +5,8 @@ SingleShot EndPolicy
 
 """
 
-__revision__ = "$Id: SingleShot.py,v 1.2 2009/12/09 17:12:44 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.WorkQueue.Policy.End.EndPolicyInterface import EndPolicyInterface
 

@@ -6,8 +6,8 @@ SQLAlchemy result sets (aka cursors) can be closed. Make this class look as much
 like the SQLAlchemy class to minimise the impact of adding this class.
 """
 
-__revision__ = "$Id: ResultSet.py,v 1.14 2010/07/21 16:42:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+
+
 
 import threading
 

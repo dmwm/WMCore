@@ -5,8 +5,8 @@ MySQL implementation of Site.LoadByBlockID
 """
 
 __all__ = []
-__revision__ = "$Id: LoadByDataID.py,v 1.1 2010/04/07 19:17:08 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

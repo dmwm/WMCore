@@ -9,11 +9,11 @@ persistent threadpool.
 
 """
 
-__revision__ = \
-    "$Id: __init__.py,v 1.2 2008/09/04 14:32:07 fvlingen Exp $"
-__version__ = \
-    "$Revision: 1.2 $"
-__author__ = \
+
+    "$Id: __init__.py,v 1.3 2010/08/18 15:40:11 meloam Exp $"
+
+    "$Revision: 1.3 $"
+
     "fvlingen@caltech.edu"
 
 

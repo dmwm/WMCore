@@ -5,8 +5,8 @@ _Report_t_
 Unit tests for the Report class.
 """
 
-__revision__ = "$Id: Report_t.py,v 1.9 2010/08/16 16:50:58 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+
+
 
 import unittest
 import os

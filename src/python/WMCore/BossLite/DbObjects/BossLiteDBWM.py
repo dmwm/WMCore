@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.15 2010/06/09 18:44:36 spigafi Exp $"
-__revision__ = "$Revision: 1.15 $"
+
+
 
 import threading
 

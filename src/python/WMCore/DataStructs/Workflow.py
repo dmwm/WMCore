@@ -6,8 +6,8 @@ A class that describes some work to be undertaken on some files
 """
 
 __all__ = []
-__revision__ = "$Id: Workflow.py,v 1.5 2009/10/08 13:35:20 evansde Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 from WMCore.DataStructs.Pickleable import Pickleable
 

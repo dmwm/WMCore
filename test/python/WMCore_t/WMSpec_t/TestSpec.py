@@ -5,8 +5,8 @@ _TestSpec_
 Test spec with known output modules used for testing.
 """
 
-__version__ = "$Id: TestSpec.py,v 1.2 2010/06/30 14:37:23 mnorman Exp $"
-__revision__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep

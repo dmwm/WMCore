@@ -6,9 +6,9 @@ Unit tests for  daemon creation
 
 """
 
-__revision__ = "$Id: Daemon_t.py,v 1.11 2010/02/05 14:17:35 meloam Exp $"
-__version__ = "$Revision: 1.11 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 import commands
 import unittest

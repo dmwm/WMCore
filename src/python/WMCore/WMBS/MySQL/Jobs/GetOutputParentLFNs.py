@@ -5,8 +5,8 @@ _GetOutputParentLFNs_
 MySQL implementation of Jobs.GetOutputParentLFNs
 """
 
-__revision__ = "$Id: GetOutputParentLFNs.py,v 1.5 2009/11/10 14:43:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

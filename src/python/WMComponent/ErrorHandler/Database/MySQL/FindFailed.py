@@ -9,11 +9,11 @@ errorhandler, for locating the fialed jobs in certain state
 
 """
 
-__revision__ = \
-    "$Id: FindFailed.py,v 1.2 2009/05/08 17:16:37 afaq Exp $"
-__version__ = \
-    "$Revision: 1.2 $"
-__author__ = \
+
+    "$Id: FindFailed.py,v 1.3 2010/08/18 15:38:24 meloam Exp $"
+
+    "$Revision: 1.3 $"
+
     "anzar@fnal.gov"
 
 import threading

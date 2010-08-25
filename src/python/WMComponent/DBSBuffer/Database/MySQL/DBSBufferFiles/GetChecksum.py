@@ -5,8 +5,8 @@ _GetChecksum_
 MySQL implementation of DBSBufferFiles.GetChecksum
 """
 
-__revision__ = "$Id: GetChecksum.py,v 1.2 2009/12/10 17:25:18 sfoulkes Exp $"
-__version__  = "$Revision: 1.2 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -4,8 +4,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.21 2010/08/12 14:42:41 mnorman Exp $"
-__version__  = "$Revision: 1.21 $"
+
+
 
 import threading
 import logging

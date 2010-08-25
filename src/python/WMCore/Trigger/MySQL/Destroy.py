@@ -8,9 +8,9 @@ Class for destroying MysQL specific schema for the trigger
 
 """
 
-__revision__ = "$Id: Destroy.py,v 1.3 2009/07/24 17:53:54 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 import threading
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.44 2010/05/05 19:12:40 afaq Exp $"
-__version__ = "$Revision: 1.44 $"
+
+
 
 import urllib
 import cherrypy

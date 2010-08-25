@@ -4,8 +4,8 @@
 The feeder manager itself, set up event listeners and work event thread
 """
 __all__ = []
-__revision__ = "$Id: FeederManager.py,v 1.2 2009/07/14 12:46:10 riahi Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import logging
 import threading

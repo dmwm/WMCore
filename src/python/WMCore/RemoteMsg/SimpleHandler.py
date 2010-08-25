@@ -8,9 +8,9 @@ remote messages. It could be mapped to a msgType using the
 'RemoteMsg.setHandler' method.
 """
 
-__revision__ = "$Id: SimpleHandler.py,v 1.1 2009/04/01 12:56:01 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "antonio.delgado.peris@cern.ch"
+
+
+
 
 import time
 

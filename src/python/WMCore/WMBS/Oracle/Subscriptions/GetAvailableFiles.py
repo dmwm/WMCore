@@ -4,8 +4,8 @@ _GetAvailableFiles_
 
 Oracle implementation of Subscription.GetAvailableFiles
 """
-__revision__ = "$Id: GetAvailableFiles.py,v 1.15 2010/06/28 19:01:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+
+
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import \
      GetAvailableFiles as GetAvailableFilesMySQL

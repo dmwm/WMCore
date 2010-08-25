@@ -11,11 +11,11 @@ This class is not a test but an auxilary class and
 is based on the WMCore.WMInit class.
 
 """
-__revision__ = \
-    "$Id: TestInit.py,v 1.63 2010/08/02 16:11:50 meloam Exp $"
-__version__ = \
-    "$Revision: 1.63 $"
-__author__ = \
+
+    "$Id: TestInit.py,v 1.64 2010/08/18 15:39:56 meloam Exp $"
+
+    "$Revision: 1.64 $"
+
     "fvlingen@caltech.edu"
 
 import commands

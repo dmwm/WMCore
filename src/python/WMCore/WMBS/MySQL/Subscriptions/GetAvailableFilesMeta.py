@@ -7,8 +7,8 @@ the GetAvailabileFiles DAO in that it returns meta data about that file instead
 of just its ID.
 """
 
-__revision__ = "$Id: GetAvailableFilesMeta.py,v 1.2 2009/07/24 15:52:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

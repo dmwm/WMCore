@@ -3,8 +3,8 @@
     WorkQueue.Policy.Start.Dataset tests
 """
 
-__revision__ = "$Id: Dataset_t.py,v 1.11 2010/07/28 15:24:30 swakef Exp $"
-__version__ = "$Revision: 1.11 $"
+
+
 
 import unittest
 import shutil

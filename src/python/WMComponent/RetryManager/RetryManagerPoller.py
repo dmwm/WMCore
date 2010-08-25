@@ -4,8 +4,8 @@
 The actual retry algorithm(s)
 """
 __all__ = []
-__revision__ = "$Id: RetryManagerPoller.py,v 1.8 2010/07/02 14:53:16 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+
+
 
 import threading
 import logging

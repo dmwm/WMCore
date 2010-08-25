@@ -5,8 +5,8 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.15 2010/06/28 19:12:03 spigafi Exp $"
-__revision__ = "$Revision: 1.15 $"
+
+
 
 from WMCore.BossLite.DbObjects.DbObject import DbObject, DbObjectDBFormatter
 

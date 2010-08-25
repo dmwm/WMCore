@@ -6,8 +6,8 @@ Implementations for the various database backends.
 
 """
 __all__ = []
-__revision__ = "$Id: __init__.py,v 1.4 2009/12/02 13:52:44 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
 

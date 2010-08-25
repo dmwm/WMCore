@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.21 2010/06/11 17:42:26 spigafi Exp $"
-__revision__ = "$Revision: 1.21 $"
+
+
 
 import os.path
 

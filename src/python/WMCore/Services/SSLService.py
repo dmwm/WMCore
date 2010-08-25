@@ -6,8 +6,8 @@ An SSLService is the same as a Service but uses HTTPS to connect to the remote
 resources.
 """
 
-__revision__ = "$Id: SSLService.py,v 1.3 2010/07/30 12:56:06 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 import datetime, os, urllib, time
 

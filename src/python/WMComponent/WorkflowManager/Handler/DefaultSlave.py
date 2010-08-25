@@ -4,9 +4,9 @@ Default slave, handles loading of shared DB code
 """
 
 __all__ = []
-__revision__ = \
-    "$Id: DefaultSlave.py,v 1.4 2009/11/06 11:43:28 riahi Exp $"
-__version__ = "$Revision: 1.4 $"
+
+    "$Id: DefaultSlave.py,v 1.5 2010/08/18 15:40:03 meloam Exp $"
+
 
 import threading
 import pickle

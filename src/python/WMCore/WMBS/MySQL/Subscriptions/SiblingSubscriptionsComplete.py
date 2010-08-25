@@ -5,8 +5,8 @@ _SiblingSubscriptionsComplete_
 MySQL implementation of Subscription.SiblingSubscriptionsComplete
 """
 
-__revision__ = "$Id: SiblingSubscriptionsComplete.py,v 1.4 2010/08/12 21:53:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -7,8 +7,8 @@ MySQL implementation of AddRunLumi
 
 import logging
 
-__revision__ = "$Id: AddRunLumi.py,v 1.9 2010/03/09 18:29:01 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

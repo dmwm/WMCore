@@ -50,6 +50,5 @@ manager.terminateWorkers()
 
 """
 
-__revision__ = "$Id: __init__.py,v 1.7 2009/02/02 11:11:34 jacksonj Exp $"
-__version__ = "$Revision: 1.7 $"
-__author__ = "james.jackson@cern.ch"
+
+

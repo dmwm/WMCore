@@ -12,8 +12,8 @@ stand-along REST application ; may be removed later.
 
 """
 
-__revision__ = "$Id: MonitorModelConfig.py,v 1.3 2010/02/08 14:26:33 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 
 import os

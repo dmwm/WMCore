@@ -5,8 +5,8 @@ _Exists_
 MySQL implementation of Fileset.Exists
 """
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.4 2009/05/01 14:47:20 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

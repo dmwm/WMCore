@@ -12,8 +12,8 @@ Caveats:
   - Items declaring each other as parents are unsorteable
 """
 
-__revision__ = "$Id: TreeSort.py,v 1.4 2009/12/16 17:45:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 class _SearchOp:
     """

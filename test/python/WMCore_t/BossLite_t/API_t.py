@@ -4,8 +4,8 @@ _API_t_
 
 """
 
-__revision__ = "$Id: API_t.py,v 1.18 2010/08/18 01:37:41 mcinquil Exp $"
-__version__ = "$Revision: 1.18 $"
+
+
 
 import unittest
 import os

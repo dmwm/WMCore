@@ -7,11 +7,11 @@ This module implements the SQLite backend for the trigger.
 
 """
 
-__revision__ = \
-    "$Id: __init__.py,v 1.1 2009/05/14 15:46:13 mnorman Exp $"
-__version__ = \
-    "$Revision: 1.1 $"
-__author__ = \
+
+    "$Id: __init__.py,v 1.2 2010/08/18 15:40:09 meloam Exp $"
+
+    "$Revision: 1.2 $"
+
     "mnorman@fnal.gov"
 
 

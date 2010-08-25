@@ -6,8 +6,8 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-__revision__ = "$Id: JobTracker.py,v 1.2 2010/02/11 17:09:48 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import logging
 import threading

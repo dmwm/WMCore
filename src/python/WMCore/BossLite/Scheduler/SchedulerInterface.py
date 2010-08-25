@@ -8,8 +8,8 @@ import os
 from WMCore.BossLite.Common.System import executeCommand
 from WMCore.BossLite.Common.Exceptions import SchedulerError
 
-__version__ = "$Id: SchedulerInterface.py,v 1.2 2010/07/26 13:47:28 mcinquil Exp $"
-__revision__ = "$Revision: 1.2 $"
+
+
 
 
 

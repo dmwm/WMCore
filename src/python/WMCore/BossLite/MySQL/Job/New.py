@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Jobs.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.4 2010/08/16 11:14:17 mcinquil Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter

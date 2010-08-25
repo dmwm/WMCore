@@ -8,9 +8,9 @@ a predicate object tree structure that can be evaluated on a
 node
 
 """
-__revision__ = "$Id: Predicates.py,v 1.1 2008/10/08 15:34:15 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "evansde@fnal.gov"
+
+
+
 
 import shlex
 import re

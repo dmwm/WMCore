@@ -6,8 +6,8 @@ MySQL implementation of Fileset.ListFilesetByTask
 """
 
 __all__ = []
-__revision__ = "$Id: ListFilesetByTask.py,v 1.1 2010/06/01 17:13:54 riahi Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

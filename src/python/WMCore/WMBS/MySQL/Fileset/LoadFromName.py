@@ -6,8 +6,8 @@ MySQL implementation of Fileset.LoadFromName
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromName.py,v 1.7 2009/03/03 14:55:31 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

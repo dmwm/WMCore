@@ -5,8 +5,8 @@ _CheckIn_
 CheckIn process for making a request
 
 """
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: CheckIn.py,v 1.1 2010/06/30 22:25:32 rpw Exp $"
+
+
 
 
 import logging

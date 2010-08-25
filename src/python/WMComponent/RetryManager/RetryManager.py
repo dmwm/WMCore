@@ -9,8 +9,8 @@ attempts to put them in their non-cooloff state again.
 
 """
 
-__revision__ = "$Id: RetryManager.py,v 1.4 2010/02/12 14:58:48 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 
 import logging

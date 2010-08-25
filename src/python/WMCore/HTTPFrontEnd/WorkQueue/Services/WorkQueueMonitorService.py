@@ -23,8 +23,8 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.18 2010/06/03 15:48:49 sryu Exp $"
-__version__ = "$Revision"
+
+
 
 
 import os

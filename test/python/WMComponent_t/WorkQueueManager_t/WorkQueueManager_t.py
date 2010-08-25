@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: WorkQueueManager_t.py,v 1.6 2010/07/28 15:24:30 swakef Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 import os
 import logging

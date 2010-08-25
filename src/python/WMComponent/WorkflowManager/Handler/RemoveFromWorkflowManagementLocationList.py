@@ -4,8 +4,8 @@
 Handler for remove workflow location info
 """
 __all__ = []
-__revision__ = "$Id: RemoveFromWorkflowManagementLocationList.py,v 1.2 2009/02/05 23:21:44 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool

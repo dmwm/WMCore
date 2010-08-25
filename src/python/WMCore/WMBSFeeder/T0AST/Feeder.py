@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.7 2010/06/04 09:08:56 riahi Exp $"
-__version__ = "$Revision: 1.7 $"
+
+
 
 import logging
 import threading

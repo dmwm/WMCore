@@ -5,8 +5,8 @@ _MySQLCore_t
 Unit tests for the MySQL version of DBCore.
 """
 
-__revision__ = "$Id: MySQLCore_t.py,v 1.2 2010/02/18 14:46:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import unittest
 import logging

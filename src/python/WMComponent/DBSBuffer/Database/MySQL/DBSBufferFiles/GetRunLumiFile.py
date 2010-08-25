@@ -5,8 +5,8 @@ _GetRunLumiFile_
 MySQL implementation of GetRunLumiFile
 """
 
-__revision__ = "$Id: GetRunLumiFile.py,v 1.3 2009/12/16 17:45:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

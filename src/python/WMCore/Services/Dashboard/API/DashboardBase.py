@@ -6,8 +6,8 @@ Monitoring plugin to broadcast data to the CMS Dashboard
 Allow only to publish a dictionary
 
 """
-__version__ = "$Revision: 1.1 $"
-__author__ = "Sanjay.Padhi@cern.ch"
+
+
 
 import uuid
 import types

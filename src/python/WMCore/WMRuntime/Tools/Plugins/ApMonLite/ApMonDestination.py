@@ -10,7 +10,7 @@ from WMCore.WMRuntime.Tools.Plugins.ApMonLite.ApMonException import ApMonExcepti
 #  //
 # // Copy version string from apmon.py, dont know if it makes a difference
 #//
-__version__ = "2.2.1-py"
+
 
 
 #  //

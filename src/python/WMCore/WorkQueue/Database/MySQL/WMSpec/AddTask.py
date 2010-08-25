@@ -5,8 +5,8 @@ MySQL implementation of WMSpec.New
 """
 
 __all__ = []
-__revision__ = "$Id: AddTask.py,v 1.2 2010/02/08 19:05:45 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

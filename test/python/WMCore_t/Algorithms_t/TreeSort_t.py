@@ -3,8 +3,8 @@
 
 """
 
-__revision__ = "$Id: TreeSort_t.py,v 1.4 2009/10/01 15:11:17 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import unittest
 from WMCore.Algorithms.TreeSort import TreeSort

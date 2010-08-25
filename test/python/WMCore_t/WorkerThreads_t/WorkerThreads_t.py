@@ -6,8 +6,8 @@ Unit tests for WorkerThreads.
 
 """
 
-__revision__ = "$Id: WorkerThreads_t.py,v 1.9 2010/08/02 17:36:54 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+
+
 
 import unittest
 import threading

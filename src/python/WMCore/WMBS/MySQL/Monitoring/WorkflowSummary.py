@@ -6,8 +6,8 @@ List the task name and number of jobs running for a given site and subscription
 type.
 """
 
-__revision__ = "$Id: WorkflowSummary.py,v 1.1 2010/08/16 22:23:56 sryu Exp $"
-__version__  = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.JobStateMachine.Transitions import Transitions

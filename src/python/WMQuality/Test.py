@@ -8,9 +8,9 @@ and generate a file for generating test that map
 to developers responsible for the test.
 """
 
-__revision__ = "$Id: Test.py,v 1.10 2010/02/04 22:36:35 meloam Exp $"
-__version__ = "$Revision: 1.10 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 import commands
 import os

@@ -4,8 +4,8 @@ _APISched_t_
 
 """
 
-__revision__ = "$Id: APISched_t.py,v 1.5 2010/08/18 01:37:41 mcinquil Exp $"
-__version__ = "$Revision: 1.5 $"
+
+
 
 import unittest
 

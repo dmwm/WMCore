@@ -6,9 +6,9 @@ Additional log levels used within wmcore.
 
 """
 __all__ = []
-__revision__ = "$Id: WMLogging.py,v 1.1 2008/10/02 14:31:38 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 
 import logging

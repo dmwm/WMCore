@@ -6,8 +6,8 @@ Oracle implementation of JobGroup.LoadFromID
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromID.py,v 1.2 2009/01/16 22:33:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.WMBS.MySQL.JobGroup.LoadFromID import LoadFromID as LoadFromIDMySQL
 

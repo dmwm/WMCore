@@ -8,9 +8,9 @@ Class for creating SQLite specific schema for the trigger
 
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2009/07/23 14:06:42 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
-__author__ = "mnorman@fnal.gov"
+
+
+
 
 import threading
 

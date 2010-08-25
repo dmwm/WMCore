@@ -3,9 +3,9 @@
 Test WMFactory module
 """
 
-__revision__ = "$Id: WMFactory_t.py,v 1.5 2009/10/13 23:00:08 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
-__author__ = "fvlingen@caltech.edu"
+
+
+
 
 
 import logging

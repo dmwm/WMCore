@@ -5,8 +5,8 @@ _GetOutputParentLFNs_
 Oracle implementation of Jobs.GetOutputParentLFNs
 """
 
-__revision__ = "$Id: GetOutputParentLFNs.py,v 1.2 2009/11/10 14:43:52 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 from WMCore.WMBS.MySQL.Jobs.GetOutputParentLFNs import GetOutputParentLFNs as GetOutputParentLFNsMySQL
 

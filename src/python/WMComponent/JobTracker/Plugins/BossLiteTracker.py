@@ -4,8 +4,8 @@
 
 # It's the tracker for BossLite
 
-__revision__ = "$Id: BossLiteTracker.py,v 1.4 2010/08/16 17:56:05 mcinquil Exp $"
-__version__  = "$Revision: 1.4 $"
+
+
 
 
 import logging

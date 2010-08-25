@@ -7,8 +7,8 @@ Get elements that have been stuck in a state for too long
 """
 
 __all__ = []
-__revision__ = "$Id: GetExpiredElements.py,v 1.1 2009/11/17 16:53:36 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

@@ -15,8 +15,8 @@ from WMCore.BossLite.Common.Exceptions import SchedulerError
 # WMCore framework
 from WMCore.WMFactory         import WMFactory
 
-__version__ = "$Id: Scheduler.py,v 1.1 2010/04/23 20:59:52 mnorman Exp $"
-__revision__ = "$Revision: 1.1 $"
+
+
 
 
 ##########################################################################

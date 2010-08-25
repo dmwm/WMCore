@@ -9,8 +9,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.40 2010/08/18 13:27:52 mnorman Exp $"
-__version__ = "$Revision: 1.40 $"
+
+
 
 import logging
 import threading

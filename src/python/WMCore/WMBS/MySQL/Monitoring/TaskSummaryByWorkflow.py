@@ -5,8 +5,8 @@ _TaskSummary_
 List the summary of job numbers by task given a workflow 
 """
 
-__revision__ = "$Id: TaskSummaryByWorkflow.py,v 1.1 2010/08/16 22:23:57 sryu Exp $"
-__version__  = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -7,8 +7,8 @@ or a a set of files for each job.
 
 """
 
-__revision__ = "$Id: SizeBased.py,v 1.8 2010/07/13 14:32:46 sfoulkes Exp $"
-__version__  = "$Revision: 1.8 $"
+
+
 
 import logging
 

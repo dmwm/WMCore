@@ -6,8 +6,8 @@ Lightweight XPath like querying tool for extracting information
 from an IMProvNode structure
 
 """
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: IMProvQuery.py,v 1.1 2008/10/08 15:34:14 fvlingen Exp $"
+
+
 
 
 import re

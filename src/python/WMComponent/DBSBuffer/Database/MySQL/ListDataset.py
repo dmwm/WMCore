@@ -5,8 +5,8 @@ _ListDataset_
 MySQL implementation of DBSBuffer.ListDataset
 """
 
-__revision__ = "$Id: ListDataset.py,v 1.1 2009/07/13 19:57:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

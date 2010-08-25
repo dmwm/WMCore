@@ -5,8 +5,8 @@ Defines default config values for JobTracker specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.1 2009/10/02 21:28:45 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 import os
 import os.path

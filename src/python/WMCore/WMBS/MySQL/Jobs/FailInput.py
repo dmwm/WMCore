@@ -5,8 +5,8 @@ _FailInput_
 MySQL implementation of Jobs.FailInput
 """
 
-__revision__ = "$Id: FailInput.py,v 1.4 2010/08/10 19:51:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

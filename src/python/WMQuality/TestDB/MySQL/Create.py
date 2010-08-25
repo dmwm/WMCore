@@ -5,8 +5,8 @@ _Create_
 Install the TestDB schema for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2010/05/04 16:18:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+
+
 
 import threading
 

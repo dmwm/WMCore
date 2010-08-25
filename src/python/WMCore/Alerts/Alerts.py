@@ -5,8 +5,8 @@ _Alerts_
 WMCore alert system.
 """
 
-__revision__ = "$Id: Alerts.py,v 1.7 2009/10/01 01:28:54 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+
+
 
 from WMCore.DataStructs.Alert import Alert
 from WMCore.WMFactory import WMFactory

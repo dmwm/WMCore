@@ -6,8 +6,8 @@ Oracle implementation of Subscription.GetAcquiredFiles
 """
 
 __all__ = []
-__revision__ = "$Id: GetAcquiredFiles.py,v 1.6 2009/09/11 19:07:29 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+
+
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAcquiredFiles import GetAcquiredFiles \
      as GetAcquiredFilesMySQL

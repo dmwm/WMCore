@@ -6,8 +6,8 @@ A class representing the structure of data in DAS. The cannonical description of
 this structure is found on:
         https://twiki.cern.ch/twiki/bin/view/CMS/DMWMDataAggregationService
 """
-__revision__ = "$Id: DASDocument.py,v 1.1 2009/05/13 07:24:53 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Lexicon import url
 

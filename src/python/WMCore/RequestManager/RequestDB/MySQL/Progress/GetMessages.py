@@ -4,8 +4,8 @@ _Progress.Message_
 Gets progress messages for a request
 
 """
-__revision__ = "$Id: GetMessages.py,v 1.1 2010/07/01 19:07:53 rpw Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

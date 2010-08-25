@@ -5,8 +5,8 @@ _SetLocation_
 MySQL implementation of Files.SetLocation
 """
 
-__revision__ = "$Id: SetLocation.py,v 1.13 2010/04/08 20:09:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

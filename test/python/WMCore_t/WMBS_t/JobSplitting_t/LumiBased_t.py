@@ -5,8 +5,8 @@ _LumiBased_t
 Test lumi based splitting.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.12 2010/06/30 14:11:08 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+
+
 
 import os
 import threading

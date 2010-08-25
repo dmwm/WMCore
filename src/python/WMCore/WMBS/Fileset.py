@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.46 2010/05/03 12:19:03 riahi Exp $"
-__version__ = "$Revision: 1.46 $"
+
+
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.WMBSBase import WMBSBase

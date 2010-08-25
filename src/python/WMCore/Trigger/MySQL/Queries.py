@@ -7,11 +7,11 @@ This module implements the mysql backend for the trigger.
 
 """
 
-__revision__ = \
-    "$Id: Queries.py,v 1.4 2008/09/26 14:48:04 fvlingen Exp $"
-__version__ = \
-    "$Revision: 1.4 $"
-__author__ = \
+
+    "$Id: Queries.py,v 1.5 2010/08/18 15:40:06 meloam Exp $"
+
+    "$Revision: 1.5 $"
+
     "fvlingen@caltech.edu"
 
 import threading

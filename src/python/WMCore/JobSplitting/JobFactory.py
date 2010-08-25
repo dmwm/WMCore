@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.35 2010/08/05 21:29:23 mnorman Exp $"
-__version__  = "$Revision: 1.35 $"
+
+
 
 
 import logging

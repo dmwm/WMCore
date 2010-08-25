@@ -5,8 +5,8 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-__revision__ = "$Id: WorkQueueBase.py,v 1.4 2009/11/24 22:58:05 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+
+
 
 import threading
 

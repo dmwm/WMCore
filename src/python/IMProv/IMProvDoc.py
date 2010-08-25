@@ -10,8 +10,8 @@ add an IMProv structure to a ScriptObject
 ToDo - Add XPath search abilities to this object in future
 
 """
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: IMProvDoc.py,v 1.1 2008/10/08 15:34:12 fvlingen Exp $"
+
+
 
 import os
 

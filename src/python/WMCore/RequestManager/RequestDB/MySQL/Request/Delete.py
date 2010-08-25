@@ -6,8 +6,8 @@ Delete a request by ID from the database
 
 """
 
-__revision__ = "$Id: Delete.py,v 1.1 2010/07/01 19:12:39 rpw Exp $"
-__version__ = "$Revision: 1.1 $"
+
+
 
 from WMCore.Database.DBFormatter import DBFormatter
 

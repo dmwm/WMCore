@@ -5,8 +5,8 @@ _Create_
 Install the TestDB schema for SQLite.
 """
 
-__revsion__ = "$Id: Create.py,v 1.1 2010/03/01 16:49:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revsion__ = "$Id: Create.py,v 1.2 2010/08/18 15:38:54 meloam Exp $"
+
 
 from WMQuality.TestDB.MySQL.Create import Create as MySQLCreate
 

@@ -84,6 +84,7 @@ class CernOidConsumer(cherrypy.Tool):
                     
 
     def verify(self):
+        current_url=cherrypy.request.script_name
         # Do not verify auth URLs like the page that requests the user login
         if cherrypy.request.path_info.startswith(self.base_path):
             return
@@ -100,7 +101,7 @@ class CernOidConsumer(cherrypy.Tool):
 
         # If the user didn't inform his ID yet, redirect him to the login page
         if not openid_url:
-            raise cherrypy.HTTPRedirect(self.login_path)
+            raise cherrypy.HTTPRedirect('%s?url=%s' % (self.login_path, current_url))
 
         del cherrypy.request.params['openid_url']
 
@@ -147,16 +148,14 @@ class CernOidConsumer(cherrypy.Tool):
         # Ask the oid library to verify the response received from the oid serv.
         current_url=cherrypy.session[self.session_name].get('return_to',None)
         info = oidconsumer.complete(cherrypy.request.params,current_url)
-
+        
         # Now verifies what it does mean
         if info.status == consumer.FAILURE:
             # The OpenID protocol failed, either locally or remotely
             cherrypy.session[self.session_name]['info'] = info.identity_url
-            print "AUTH: %s" % info.message
             raise cherrypy.HTTPRedirect(self.failed_path)
         elif info.status == consumer.CANCEL:
             # Indicates that the user cancelled the OpenID authentication request
-            print "AUTH: %s" % info.identity_url
             raise cherrypy.HTTPRedirect(self.cancel_path)
         elif info.status == consumer.SETUP_NEEDED:
             # Means that the request was in immediate mode and the server was

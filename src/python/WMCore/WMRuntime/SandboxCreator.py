@@ -4,8 +4,8 @@
     
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.3 2009/06/11 23:12:48 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SandboxCreator.py,v 1.4 2009/06/15 15:52:10 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 import os
 import re
 import tarfile
@@ -41,6 +41,13 @@ class SandboxCreator:
             initHandle = open(stepPath + "/__init__.py", 'w')
             initHandle.write("# dummy file for now")
             initHandle.close()
+            
+            # the CMSSW has a special case with its ConfigCache argument
+            if (hasattr(t.data.application.configuration,'configCacheUrl')):
+                fileTarget = "%s/%s" % (stepPath,
+                                    t.data.application.command.configuration)
+                urllib.urlretrieve(fileInfo.src, fileTarget)
+            
             # within the step, the sandbox section has files to be imported
             # TODO: do we need a function to wrap this data call?
             for fileInfo in t.data.sandbox:

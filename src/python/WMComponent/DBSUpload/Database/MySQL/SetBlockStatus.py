@@ -6,8 +6,8 @@ Create new block in dbsbuffer_block
 Update file to reflect block information
 
                                                                                                                                                                                                                                                                                                                                                                                                           """
-__revision__ = "$Id: SetBlockStatus.py,v 1.7 2009/09/23 16:39:19 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: SetBlockStatus.py,v 1.8 2009/12/02 16:28:43 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -20,10 +20,16 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class SetBlockStatus(DBFormatter):
 
-    sql = """INSERT INTO dbsbuffer_block (blockname, location, open_status)
-               SELECT :block, (SELECT id FROM dbsbuffer_location WHERE se_name = :location), :open_status FROM DUAL
-               WHERE NOT EXISTS (SELECT blockname FROM dbsbuffer_block WHERE blockname = :block
-               and location = (SELECT id FROM dbsbuffer_location WHERE se_name = :location))
+    existsSQL = """
+    SELECT blockname FROM dbsbuffer_block WHERE blockname = :block
+    """
+
+    sql = """INSERT INTO dbsbuffer_block (blockname, location, status)
+               SELECT :block, (SELECT id FROM dbsbuffer_location WHERE se_name = :location), :status FROM DUAL
+               """
+
+    updateSQL = """UPDATE dbsbuffer_block SET status = :status
+                     WHERE blockname = :block 
     """
 
 
@@ -43,10 +49,37 @@ class SetBlockStatus(DBFormatter):
 
         locations = list(Set(locations))
 
-        for location in locations:
-            bindVars.append({"block": block, "location": location, "open_status": open_status})
+        
+        #It gets a bit weird here.
+        #Basically, the DBSAPI has preset the OpenForWriting status in a block to be a string 1 or 0
+        #I don't want to mess with DBSAPI, so I have to interpret this here.
+        #Hence us parsing open_status into status
+        status = ''
 
-        self.dbi.processData(self.sql, bindVars, conn = conn,
+        if open_status == '1':
+            status = 'Open'
+        elif open_status == '0':
+            status = 'InGlobalDBS'
+        elif type(open_status) == str:
+            status = open_status
+        else:
+            status = 'Unknown'
+
+        testResult = self.dbi.processData(self.existsSQL, {'block': block}, conn = conn, transaction = transaction)
+
+        res1 = self.formatDict(testResult)
+        sql  = None
+
+        if res1 == []:
+            sql = self.sql
+            for location in locations:
+                bindVars.append({"block": block, "location": location, "status": status})
+        else:
+            sql = self.updateSQL
+            bindVars = {"block": block, "status": status}
+            
+
+        self.dbi.processData(sql, bindVars, conn = conn,
                              transaction = transaction)
         return
                                              

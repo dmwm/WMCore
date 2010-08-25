@@ -7,6 +7,8 @@ import random
 import threading
 import time
 import os
+import shutil
+import logging
 
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
@@ -19,13 +21,19 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Job import Job
 
-from WMCore.Agent.Configuration             import loadConfigurationFile
+from WMCore.Agent.Configuration             import loadConfigurationFile, Configuration
 from WMComponent.JobCreator.JobCreator      import JobCreator
 
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
 
 from WMCore.WMSpec.WMTask                   import WMTask, WMTaskHelper
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+
+#Workload stuff
+from WMCore.WMSpec.WMWorkload import newWorkload
+from WMCore.WMSpec.WMStep import makeWMStep
+from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
+from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
 
 class JobCreatorTest(unittest.TestCase):
@@ -45,6 +53,8 @@ class JobCreatorTest(unittest.TestCase):
         WMBS tables.  Also, create some dummy locations.
         """
         #Stolen from Subscription_t.py
+
+        myThread = threading.currentThread()
         
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
@@ -54,7 +64,6 @@ class JobCreatorTest(unittest.TestCase):
                                                  'WMCore.MsgService',
                                                  'WMCore.ThreadPool',
                                                  'WMCore.ResourceControl'], useDefault = False)
-
 
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -71,7 +80,7 @@ class JobCreatorTest(unittest.TestCase):
         resourceControl = ResourceControl()
         for site in self.sites:
             resourceControl.insertSite(siteName = site, seName = site, ceName = site)
-            resourceControl.insertThreshold(thresholdName = 'processingThreshold', \
+            resourceControl.insertThreshold(thresholdName = 'ProcessingThreshold', \
                                             thresholdValue = 1000, siteNames = site)
 
         self._setup = True
@@ -93,15 +102,15 @@ class JobCreatorTest(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-
         
         myThread = threading.currentThread()
-        
-        self.testInit.clearDatabase()
+
+        self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService', 'WMCore.ThreadPool', 'WMCore.ResourceControl'])
+        #self.testInit.clearDatabase()
         
         time.sleep(2)
 
-        os.popen3('rm -r test/*')
+        self.testInit.delWorkDir()
         
         self._teardown = True
 
@@ -161,18 +170,13 @@ class JobCreatorTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
-        print workloadSpec
         if not workloadSpec:
-            print "Should never be assigning workloadSpec"
+            logging.error("Should never be assigning workloadSpec")
             workloadSpec = "TestSingleWorkload/TestHugeTask"
 
 
         testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman", name = "wf001", task="Merge")
         testWorkflow.create()
-
-        print "Have created workflow"
-        print testWorkflow
-        print testWorkflow.spec
 
         for i in range(0, nSubs):
 
@@ -280,7 +284,6 @@ class JobCreatorTest(unittest.TestCase):
             testFileset = Fileset(name = "TestFileset"+nameStr)
             testFileset.create()
 
-            print "About to go through one iteration of job creation"
             for j in range(0,5000):
                 #pick a random site
                 site = self.sites[0]
@@ -307,10 +310,137 @@ class JobCreatorTest(unittest.TestCase):
         """
 
 
+        myThread = threading.currentThread()
 
-        return self.testInit.getConfiguration(
-                    os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/JobCreator/DefaultConfig.py'))
+        config = Configuration()
 
+        #First the general stuff
+        config.section_("General")
+        config.General.workDir = os.getenv("TESTDIR", os.getcwd())
+
+        #Now the CoreDatabase information
+        #This should be the dialect, dburl, etc
+        config.section_("CoreDatabase")
+        config.CoreDatabase.dialect    = os.getenv("DIALECT")
+        myThread.dialect               = os.getenv('DIALECT')
+        config.CoreDatabase.user       = os.getenv("DBUSER", os.getenv("USER"))
+        config.CoreDatabase.hostname   = os.getenv("DBHOST", os.getenv("HOSTNAME"))
+        config.CoreDatabase.passwd     = os.getenv("DBPASS")
+        config.CoreDatabase.name       = os.getenv("DBNAME", os.getenv("DATABASE"))
+        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+        config.CoreDatabase.dbsock     = os.getenv("DBSOCK")
+
+        config.component_("JobCreator")
+        config.JobCreator.namespace = 'WMComponent.JobCreator.JobCreator'
+        #The log level of the component. 
+        #config.JobCreator.logLevel = 'SQLDEBUG'
+        config.JobCreator.logLevel = 'INFO'
+
+        # maximum number of threads we want to deal
+        # with messages per pool.
+        config.JobCreator.maxThreads                = 1
+        config.JobCreator.UpdateFromResourceControl = True
+        config.JobCreator.pollInterval              = 10
+        config.JobCreator.jobCacheDir               = os.path.join(self.testDir, 'test')
+        config.JobCreator.defaultJobType            = 'processing' #Type of jobs that we run, used for resource control
+        config.JobCreator.workerThreads             = 2
+        config.JobCreator.componentDir              = self.testDir
+        config.JobCreator.useWorkQueue              = False
+        
+        # We now call the JobMaker from here
+        config.component_('JobMaker')
+        config.JobMaker.logLevel        = 'INFO'
+        config.JobMaker.namespace       = 'WMCore.WMSpec.Makers.JobMaker'
+        config.JobMaker.maxThreads      = 1
+        config.JobMaker.makeJobsHandler = 'WMCore.WMSpec.Makers.Handlers.MakeJobs'
+        
+        #JobStateMachine
+        config.component_('JobStateMachine')
+        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'mnorman:theworst@cmssrv52.fnal.gov:5984')
+        config.JobStateMachine.default_retries = 1
+        config.JobStateMachine.couchDBName     = "mnorman_test"
+
+        return config
+
+
+    def createTestWorkload(self, workloadName = None):
+        """
+        _createTestWorkload_
+
+        Creates a test workload for us to run on, hold the basic necessities.
+        """
+
+        if not workloadName:
+            workloadName = os.path.join(self.testDir, 'basicWorkload.pcl')
+
+        if os.path.isdir(workloadName):
+            raise
+        if os.path.isfile(workloadName):
+            os.remove(workloadName)
+
+        #Basic workload definition
+        workload = newWorkload("BasicProduction")
+        workload.setStartPolicy('MonteCarlo')
+        workload.setEndPolicy('SingleShot')
+
+        #Basic production step
+        production = workload.newTask("Production")
+        production.addProduction(totalevents = 1000)
+        prodCmssw = production.makeStep("cmsRun1")
+        prodCmssw.setStepType("CMSSW")
+        prodStageOut = prodCmssw.addStep("stageOut1")
+        prodStageOut.setStepType("StageOut")
+        prodLogArch = prodCmssw.addStep("logArch1")
+        prodLogArch.setStepType("LogArchive")
+        production.applyTemplates()
+        production.setSplittingAlgorithm("FileBased", files_per_job = 10)
+
+        #Basic Merge step
+        merge = workload.newTask("Merge")
+        mergeCmssw = merge.makeStep("cmsRun1")
+        mergeCmssw.setStepType("CMSSW")
+        mergeStageOut = mergeCmssw.addStep("stageOut1")
+        mergeStageOut.setStepType("StageOut")
+        merge.applyTemplates()
+        merge.setSplittingAlgorithm("FileBased", files_per_job = 10)
+
+
+        prodCmsswHelper = prodCmssw.getTypeHelper()
+        prodCmsswHelper.data.section_('emulator')
+        prodCmsswHelper.data.emulator.emulatorName = "CMSSW"
+        prodCmsswHelper.data.application.setup.cmsswVersion = "CMSSW_X_Y_Z"
+        prodCmsswHelper.data.application.setup.softwareEnvironment = " . /uscmst1/prod/sw/cms/bashrc prod"
+        #prodCmsswHelper.data.application.configuration.configCacheUrl = "http://whatever"
+        prodCmsswHelper.addOutputModule("writeData", primaryDataset = "Primary",
+                                        processedDataset = "Processed",
+                                        dataTier = "TIER",
+                                        lfnBase = "/this/is/a/test/LFN")
+
+
+        prodStageOutHelper = prodStageOut.getTypeHelper()
+        prodStageOutHelper.data.section_('emulator')
+        prodStageOutHelper.data.emulator.emulatorName = "StageOut"
+        prodLogArchHelper = prodLogArch.getTypeHelper()
+        prodLogArchHelper.data.section_('emulator')
+        prodLogArchHelper.data.emulator.emulatorName = "LogArchive"
+        merge.setInputReference(prodCmssw, outputModule = "writeData")
+
+
+        monitoring  = production.data.section_('watchdog')
+        monitoring.monitors = ['WMRuntimeMonitor', 'TestMonitor']
+        monitoring.section_('TestMonitor')
+        monitoring.TestMonitor.connectionURL = "dummy.cern.ch:99999/CMS"
+        monitoring.TestMonitor.password      = "ThisIsTheWorld'sStupidestPassword"
+        monitoring.TestMonitor.softTimeOut   = 300
+        monitoring.TestMonitor.hardTimeOut   = 600
+        
+        taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
+        taskMaker.skipSubscription = True
+        taskMaker.processWorkload()
+
+        workload.save(workloadName)
+
+        return workload
 
 
     def testA(self):
@@ -417,21 +547,14 @@ class JobCreatorTest(unittest.TestCase):
 
         #return
 
-        if not os.path.exists("basicWorkload.pcl"):
-            print "Could not find local WMWorkload file"
-            print "Aborting!"
-            raise Exception
+        wmWorkload = self.createTestWorkload()
+
 
         if os.path.exists("basicWorkloadUpdated.pcl"):
             os.remove("basicWorkloadUpdated.pcl")
 
-
-        wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
-        wmWorkload.load("basicWorkload.pcl")
         wmTask     = wmWorkload.getTask("Merge")
         #print wmTask.data
-
-        print "Starting testC"
 
         wmTask.data.section_("seeders")
         wmTask.data.seeders.section_("RandomSeeder")
@@ -443,7 +566,7 @@ class JobCreatorTest(unittest.TestCase):
         wmTask.data.seeders.RandomSeeder.simSiStripDigis            = None
         wmTask.data.seeders.RandomSeeder.LHCTransport               = None
 
-        wmWorkload.save("basicWorkloadUpdated.pcl")
+        wmWorkload.save(os.path.join(self.testDir, "basicWorkloadUpdated.pcl"))
         
 
 
@@ -451,7 +574,7 @@ class JobCreatorTest(unittest.TestCase):
 
         nSubs = 5
 
-        self.createSingleSiteCollection(instance = "first", nSubs = nSubs, workloadSpec = os.path.join(os.getcwd(), "basicWorkloadUpdated.pcl"))
+        self.createSingleSiteCollection(instance = "first", nSubs = nSubs, workloadSpec = os.path.join(self.testDir, "basicWorkloadUpdated.pcl"))
 
         config = self.getConfig()
 
@@ -465,9 +588,6 @@ class JobCreatorTest(unittest.TestCase):
         print "Killing"
         myThread.workerThreadManager.terminateWorkers()
 
-        print myThread.dbi.processData('SELECT spec FROM wmbs_workflow')[0].fetchall()
-
-        
         result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')
 
         self.assertEqual(len(result[0].fetchall()), nSubs*100)
@@ -500,27 +620,16 @@ class JobCreatorTest(unittest.TestCase):
         #return
 
 
-        print "Starting testD"
-        print os.getcwd()
-
-        if not os.path.exists("basicWorkload.pcl"):
-            print "Could not find local WMWorkload file"
-            print "Aborting!"
-            raise Exception
-
+        wmWorkload = self.createTestWorkload()
 
         myThread = threading.currentThread()
 
         nSubs = 5
 
-        self.createSingleSiteCollection("first", nSubs, os.getcwd() + "/basicWorkload.pcl")
+        self.createSingleSiteCollection("first", nSubs, self.testDir + "/basicWorkload.pcl")
         
 
         config = self.getConfig()
-
-        print "Should have jobs in: "
-        print config.JobCreator.jobCacheDir
-
 
         testJobCreator = JobCreator(config)
         testJobCreator.prepareToStart()
@@ -545,7 +654,7 @@ class JobCreatorTest(unittest.TestCase):
 
         self.assertEqual(len(result[0].fetchall()), nSubs * 10)
 
-        self.assertEqual(os.listdir('test/BasicProduction/Merge/JobCollection_1_0/job_1'), ['baggage.pcl'])
+        self.assertEqual(os.listdir('%s/test/BasicProduction/Merge/JobCollection_1_0/job_1' %self.testDir), ['job.pkl'])
 
         while (threading.activeCount() > 1):
             #We should never trigger this, but something weird is going on
@@ -553,7 +662,6 @@ class JobCreatorTest(unittest.TestCase):
             time.sleep(1)
 
 
-        print myThread.dbi.processData("SELECT * FROM wmbs_location")[0].fetchall()
         return
 
 
@@ -562,22 +670,18 @@ class JobCreatorTest(unittest.TestCase):
         This one takes a long time to run, but it runs
         """
 
-        #return
+        return
 
         print "This should take about twelve to fifteen minutes"
 
         
-        if not os.path.exists("basicWorkload.pcl"):
-            print "Could not find local WMWorkload file"
-            print "Aborting!"
-            raise Exception
-
-
+        wmWorkload = self.createTestWorkload()
+        
         myThread = threading.currentThread()
 
         nSubs = 5
 
-        self.getAbsolutelyMassiveJobGroup("first", nSubs, os.getcwd() + "/basicWorkload.pcl")
+        self.getAbsolutelyMassiveJobGroup("first", nSubs, self.testDir + "/basicWorkload.pcl")
 
         config = self.getConfig()
 
@@ -594,12 +698,12 @@ class JobCreatorTest(unittest.TestCase):
         print "Time taken: "
         print stopTime - startTime
 
-        dirs = os.listdir('test/BasicProduction/Merge')
+        dirs = os.listdir(os.path.join(self.testDir, 'BasicProduction/Merge'))
 
         self.assertEqual(len(dirs), (nSubs*500)/500)
         
         for dir in dirs:
-            self.assertEqual(len(os.listdir('test/BasicProduction/Merge/%s' %(dir))), 500)
+            self.assertEqual(len(os.listdir('%s/BasicProduction/Merge/%s' %(self.testDir, dir))), 500)
 
 
         result = myThread.dbi.processData('SELECT id FROM wmbs_job')

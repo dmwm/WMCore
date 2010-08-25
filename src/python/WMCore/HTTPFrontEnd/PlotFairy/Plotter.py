@@ -43,31 +43,18 @@ class Plotter(RESTModel):
             input['data'] = jr.get()
         plot = self.factory.loadObject(input['type'])
         
-        return {'figure': plot(input['data'])}
+        return {'figure': plot(input['data']),'dpi':input['data'].get('dpi',96)}
             
     def validate_input(self, input, verb, method):
         if not 'data' in input.keys():
-            input['data'] = {'height': 600, 'width': 800}
+            input['data'] = {}
             assert 'url' in input.keys()
             reg = "(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?"
             assert re.compile(reg).match(input['url']) != None , \
               "'%s' is not a valid URL (regexp: %s)" % (input['url'], reg)
         else:
             input['data'] = json.loads(urllib.unquote(input['data']))
-            
-        if not 'height' in input['data'].keys():
-            input['data']['height'] = 600.
-        else:
-            input['data']['height'] = float(input['data']['height'])
-            
-        if not 'width' in input['data'].keys():
-            input['data']['width'] = 800.
-        else:
-            input['data']['width'] = float(input['data']['width'])
-        if input['data'].has_key('series'):
-            for s in input['data']['series']:
-                if s.has_key('colour'):
-                    s['colour'] = '#%s' % s['colour']     
+                 
         assert 'type' in input.keys(), \
                 "no type provided - what kind of plot do you want? " +\
                 "Choose one of %s" % self.plot_types.keys()

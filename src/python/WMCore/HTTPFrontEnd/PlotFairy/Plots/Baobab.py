@@ -7,7 +7,8 @@ import matplotlib.ticker
 import numpy as np
 
 from Plot import Plot
-from Utils import *
+from Mixins import *
+from Validators import *
 
 class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
     __metaclass__=Plot
@@ -20,7 +21,11 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
                            ElementBase('external',bool,default=True),
                            IntBase('scale_number',min=1,default=5),
                            ElementBase('labelled',bool,default=True),
-                           ElementBase('central_label',bool,default=True)]
+                           ElementBase('central_label',bool,default=True),
+                           FloatBase('dropped_colour_size',min=0,max=1,default=0.75),
+                           IntBase('text_truncate_inner',default=-1),
+                           IntBase('text_truncate_outer',default=-1),
+                           IntBase('text_size_min',min=1,default=4)]
         self.props = Props()
         super(Baobab,self).__init__(Axes_Projection='polar',Axes_Square=True,Padding_Left=50,Padding_Right=50,Padding_Bottom=50)
     def validate(self,input):
@@ -44,6 +49,9 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
         
         axes = self.figure.gca()
         
+        if self.props.data['value']==0:
+            return    
+
         theta = lambda x: x*(2*math.pi)/self.props.data['value']
         rad = lambda depth, radians: ((((float(depth)+2)/(self.props.max_depth+3))*self.props.width)/2.)*radians
         
@@ -104,7 +112,7 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
         
         if self.props.scale:
             
-            boundaries = locator.bin_boundaries(0,self.props.data['value'])
+            boundaries = locator.bin_boundaries(0,self.props.data['value'])[:-1]
             for b in boundaries:
                 lx = theta(b)
                 if self.props.external:
@@ -145,19 +153,24 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
                 else:
                     radial_length = (1./(max_height+1.5))*(self.props.width/2)
                 if b==max_height and self.props.external:
+                    if self.props.text_truncate_outer != -1 and len(n)>=self.props.text_truncate_outer:
+                        n = n[:self.props.text_truncate_outer-1]+'..'
                     tangential_length = w*(max_height+0.5)*radial_length
-                    axes.text(cx,cy+2.0,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=min(font_size(n,2*radial_length),font_size('',tangential_length)))
+                    text_size=min(font_size(n,2*radial_length),font_size('',tangential_length))
+                    if text_size>self.props.text_size_min:
+                        axes.text(cx,cy+2.0,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=text_size)
                 else:
+                    if self.props.text_truncate_inner != -1 and len(n)>=self.props.text_truncate_inner:
+                        n = n[:self.props.text_truncate_inner-1]+'..'
                     tangential_length = min(w*(b+.33)*radial_length,2*radial_length*math.sqrt(1.33*b+0.88))#h+0.75))
                     if tangential_length>radial_length:
-                        axes.text(cx,cy-0.16,n,horizontalalignment='center',verticalalignment='center',rotation=angle_tan,size=min(font_size('',radial_length),font_size(n,tangential_length)))
+                        text_size = min(font_size('',radial_length),font_size(n,tangential_length))
+                        if text_size>self.props.text_size_min:
+                            axes.text(cx,cy-0.16,n,horizontalalignment='center',verticalalignment='center',rotation=angle_tan,size=text_size)
                     else:
-                        axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=min(font_size('',tangential_length),font_size(n,radial_length)))
+                        text_size = min(font_size('',tangential_length),font_size(n,radial_length))
+                        if text_size>self.props.text_size_min:
+                            axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=text_size)
             if self.props.central_label:
                 axes.text(0,0,formatter(self.props.data['value'])+unit,horizontalalignment='center',verticalalignment='center',weight='bold')
-    
-
-
-
-
-    
+        

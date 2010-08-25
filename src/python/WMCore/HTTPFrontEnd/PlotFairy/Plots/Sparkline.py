@@ -1,5 +1,6 @@
 from Plot import Plot
-from Utils import *
+from Mixins import *
+from Validators import *
 
 class Sparkline(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,BinnedNumericSeriesMixin):
     __metaclass__=Plot

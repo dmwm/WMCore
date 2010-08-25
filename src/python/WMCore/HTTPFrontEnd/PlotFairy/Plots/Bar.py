@@ -1,4 +1,5 @@
-from Utils import *
+from Mixins import *
+from Validators import *
 from Plot import Plot
 
 class Bar(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAxisMixin,YNumericAxisMixin,BinnedNumericSeriesMixin):

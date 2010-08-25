@@ -1,5 +1,6 @@
 from Plot import Plot
-from Utils import *
+from Mixins import *
+from Validators import *
 
 class QualityMap(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XAnyBinnedAxisMixin,YAnyBinnedAxisMixin,ArrayMixin):
     __metaclass__=Plot

@@ -3,16 +3,13 @@ from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
 import numpy as np
 from Plot import Plot
+from Mixins import *
+from Validators import *
 
-class Legend(Plot):
-    def validate_input(self,input):
-        if 'items' in input:
-            pass
-        elif 'series' in input:
-            input['items'] = input['series']
-        else:
-            input['items']=[]
-        return input
+class Legend(FigureMixin,StyleMixin):
+    __metaclass__=Plot
+    def validate(self,input):
+        return True
     def plot(self, input):
         """
         Produce an object representing a pie chart

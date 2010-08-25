@@ -7,7 +7,8 @@ Might also do some caching one day....
 from WMCore.WebTools.RESTFormatter import RESTFormatter
 
 import matplotlib
-from StringIO import StringIO
+matplotlib.use('Agg')
+from cStringIO import StringIO
 
 class PlotFormatter(RESTFormatter):
     def __init__(self, config):
@@ -16,9 +17,13 @@ class PlotFormatter(RESTFormatter):
  
         self.supporttypes = {'image/png': self.png,
                              '*/*': self.png,
-                             'application/pdf': self.pdf}
+                             'application/pdf': self.pdf,
+                             'image/svg+xml':self.svg}
     
-    def pdf(self, data):
+    def svg(self, figure):
+        return self.plot(figure, 'svg')
+    
+    def pdf(self, figure):
         return self.plot(figure, 'pdf')
 
     def png(self, figure):
@@ -28,8 +33,8 @@ class PlotFormatter(RESTFormatter):
         if hasattr(self.config, "cache"):
             # Write the figure to a file (use the tempfile module:
             # http://docs.python.org/library/tempfile.html) and return that file
-            pass
+            raise NotImplemented
         else:
             buffer = StringIO()
-            data['figure'].savefig(buffer, dpi = 300, format=format)
+            data['figure'].savefig(buffer, data.get('dpi',96), format=format)
             return buffer.getvalue()

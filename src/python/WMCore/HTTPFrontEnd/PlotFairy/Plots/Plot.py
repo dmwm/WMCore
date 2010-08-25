@@ -1,28 +1,22 @@
 #!/usr/bin/env python
 import re
 import matplotlib
-import matplotlib.colors
-import matplotlib.image
-import matplotlib.ticker
-from matplotlib.pyplot import figure
 '''
 The Plot class is a base class for PlotFairy plots to inherit from. Authors of
 new plots should override the plot(self, data) method. Plots should be 
 instantiated via a factory, and be stateless.
 '''
-from matplotlib import pyplot 
-
-from Utils import *
-
+import matplotlib.pyplot 
+from Utils import Props
 
 
 class Plot(type):
     def __new__(cls, name, bases, attrs):
+        #print 'Plot::__new__',cls,name,bases
         def _validate(self,input):
             for v in self.validators:
                 if not v.validate(input):
-                    print 'failed: %s'%v.element_name
-                    return False
+                    return 'validation-failed: %s'%v.element_name
             return super(self.__class__,self).validate(input) and self.validate(input)
         attrs['_validate']=_validate
         if not 'validate' in attrs:
@@ -73,25 +67,51 @@ class Plot(type):
         if not 'finalise' in attrs:
             attrs['finalise']=lambda self: None
         def __call__(self,input):
-            if self._validate(input):
-                self._extract(input)
-                self._construct()
-                self._predata()
-                self._data()
-                self._postdata()
-                self._finalise()
-                return self.figure
-            return None
+            self.figure = None
+            validate = self._validate(input)
+            if validate==True:
+                try:
+                    self._extract(input)
+                    self._construct()
+                    self._predata()
+                    self._data()
+                    self._postdata()
+                    self._finalise()
+                    return self.figure
+                except Exception as e:
+                    return self._error(str(e))
+            return self._error(validate)
         attrs['__call__']=__call__
         
-        def __init__(self):
+        def __init__(self,*args,**kwargs):
             self.props = Props()
             self.validators = []
-            super(self.__class__,self).__init__()
+            self.figure = None
+            super(self.__class__,self).__init__(*args,**kwargs)
         if not '__init__' in attrs:
             attrs['__init__']=__init__
         
-        #attrs['props']=Props()
-        #attrs['validators']=[]
-        attrs['figure']=None
+        def _error(self,msg):
+            height = self.props.get('height',600)
+            width = self.props.get('width',800)
+            dpi = self.props.get('dpi',96)
+            if self.figure and isinstance(self.figure,matplotlib.figure.Figure):
+                try:
+                    matplotlib.pyplot.close(self.figure)
+                except:
+                    pass
+            self.figure = matplotlib.pyplot.figure(figsize=(self.props.width/self.props.dpi,self.props.height/self.props.dpi),dpi=self.props.dpi)
+            self.figure.text(0.5,0.5,'Error!\n%s'%msg,ha='center',va='center',weight='bold',color='r')
+            return self.figure
+            
+        if not '_error' in attrs:
+            attrs['_error']=_error
+        def __del__(self):
+            if self.figure and isinstance(self.figure,matplotlib.figure.Figure):
+                try:
+                    matplotlib.pyplot.close(self.figure)
+                except:
+                    pass
+        if not '__del__' in attrs:
+            attrs['__del__']=__del__
         return super(Plot,cls).__new__(cls, name, bases, attrs)

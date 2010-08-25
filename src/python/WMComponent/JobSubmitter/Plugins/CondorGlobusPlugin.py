@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-__revision__ = "$Id: CondorGlobusPlugin.py,v 1.4 2010/04/28 16:43:53 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: CondorGlobusPlugin.py,v 1.5 2010/04/28 16:56:29 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import os.path
@@ -61,7 +61,7 @@ class CondorGlobusPlugin(PluginBase):
         If this class actually did something, this would handle submissions
         """
 
-        if parameters == {} or parameters == [] or not 'jobs' in parameters.keys():
+        if parameters == {} or parameters == []:
             return {'NoResult': [0]}
 
         logging.error(parameters)

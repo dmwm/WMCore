@@ -4,12 +4,11 @@
 Rest Model abstract implementation
 """
 
-__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.34 2009/11/24 22:48:29 sryu Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: RESTModel.py,v 1.35 2009/12/22 17:16:25 metson Exp $"
+__version__ = "$Revision: 1.35 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
-from cherrypy import response, request
+from cherrypy import response, request, HTTPError
 import sys
 
 class RESTModel(WebAPI):
@@ -25,8 +24,8 @@ class RESTModel(WebAPI):
                                         'call':self.ping,
                                         'version': 1,
                                         'args': [],
-                                        'validation': [],
-                                        'expires': 3600}
+                                        #'expires': 3600,
+                                        'validation': []}
                                },
                         'POST':{
                                'echo': {'call':self.echo,
@@ -36,17 +35,17 @@ class RESTModel(WebAPI):
                                }
                          }
         
-    def ping(self): 
+    def ping(self, args=[], kwargs={}): 
         """
         Return a simple message
         """
-        return 'ping' + 'hello' 
+        return 'ping' 
     
-    def echo(self, message):
+    def echo(self, args=[], kwargs={}):
         """
         Echo back the arguments sent to the call 
         """ 
-        return {'echo': message}
+        return {'args': args, 'kwargs': kwargs}
    
     def handler(self, verb, args=[], kwargs={}):
         """
@@ -61,7 +60,7 @@ class RESTModel(WebAPI):
         if verb in self.methods.keys():
             method = args[0]
             if method in self.methods[verb].keys():
-                data = self.methods[verb][method]['call'](*args[1:], **kwargs)
+                data = self.methods[verb][method]['call'](args[1:], kwargs)
                 if 'expires' in self.methods[verb][method].keys():
                     data['expire'] = self.methods[verb][method]['expires']
                 return data
@@ -131,6 +130,8 @@ class RESTModel(WebAPI):
         In all but the most basic cases you'll likely want to over-ride this, or
         at least treat its outcome with deep suspicion.
         
+        Would be nice to loose the method argument and derive it in this method.
+        
         Returns a dictionary.
         """
         
@@ -149,14 +150,19 @@ class RESTModel(WebAPI):
     
     def validate_input(self, input, verb, method):
         """
-        Apply some checks to the input data. This needs to be over ridden by any
-        subclass. You should throw exceptions if the data is invalid. 
+        Apply some checks to the input data. Run all the validation funstions 
+        for the given method. Validation functions should raise exceptions if 
+        the data doesn't pass the validation (assert's are your friend!). These
+        exceptions are caught here and converted into 400 HTTPErrors.  
         """
         validators = self.methods[verb][method].get('validation', [])
         if len(validators) == 0:
             # Do nothing
             return input
         result = {}
-        for fnc in validators:
-            result.update(fnc(input))
-        return result
+        try:
+            for fnc in validators:
+                result.update(fnc(input))
+            return result
+        except Exception, e:
+            raise HTTPError(400, e.message)

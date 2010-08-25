@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: REST_t.py,v 1.6 2009/12/23 22:54:51 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: REST_t.py,v 1.7 2009/12/28 17:45:28 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import os
@@ -229,7 +229,7 @@ class RESTTest(unittest.TestCase):
         data = None
         if values:
             data = urllib.urlencode(values)
-        if type != 'POST':
+        if type != 'POST' and data != None:
             uri = '%s?%s' % (uri, data)
         conn = HTTPConnection('localhost:8080')
         conn.connect()

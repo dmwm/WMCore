@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.45 2009/12/16 17:45:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: Fileset.py,v 1.46 2010/05/03 12:19:03 riahi Exp $"
+__version__ = "$Revision: 1.46 $"
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.WMBSBase import WMBSBase
@@ -47,6 +47,21 @@ class Fileset(WMBSBase, WMFileset):
         self.source = source
         self.sourceUrl = sourceUrl 
         self.lastUpdate = 0
+
+    def setLastUpdate(self, timeUpdate):
+        """
+        _setLastUpdate_
+
+        Change the last update time of this fileset.  The lastUpdate parameter is a int
+        representing the last time where the fileset was modifed.
+        """
+        closeAction = self.daofactory(classname = "Fileset.SetLastUpdate")
+        closeAction.execute(fileset = self.name, timeUpdate = timeUpdate, \
+                            conn = self.getDBConn(),\
+                            transaction = self.existingTransaction())
+
+        self.lastUpdate = timeUpdate
+        return
     
     def addFile(self, file):
         """

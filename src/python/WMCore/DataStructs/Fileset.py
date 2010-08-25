@@ -6,8 +6,8 @@ Data object that contains a set of files
 
 """
 __all__ = []
-__revision__ = "$Id: Fileset.py,v 1.24 2009/12/15 14:13:50 spiga Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Fileset.py,v 1.25 2010/05/03 12:23:30 riahi Exp $"
+__version__ = "$Revision: 1.25 $"
 from WMCore.DataStructs.WMObject import WMObject 
 
 class Fileset(WMObject):
@@ -29,7 +29,19 @@ class Fileset(WMObject):
             
         # assume that the fileset is open at first
         self.open = True
-                
+
+        # assume that the lastUpdate of fileset is 0 at first
+        self.lastUpdate = 0
+
+    def setLastUpdate(self, timeUpdate):
+        """
+        _setLastUpdate_
+
+        Change the last update time of this fileset.  The lastUpdate parameter is a int
+        representing the last time where the fileset was modifed.
+        """
+        self.lastUpdate = timeUpdate
+
     def addFile(self, file):
         """
         Add a (set of) file(s) to the fileset

@@ -22,6 +22,8 @@ workqueue = active.section_('workqueue')
 workqueue.object = 'WMCore.WebTools.RESTApi'
 workqueue.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
 workqueue.database = 'mysql://user@cmssrv188.fnal.gov:3307/TestDB'
+#only needed mysql set up. (if not set it will take from DBSOCK env variable)
+workqueue.dbsocket = /mypath/mysql.sock
 workqueue.section_('model')
 workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
 workqueue.section_('formatter')

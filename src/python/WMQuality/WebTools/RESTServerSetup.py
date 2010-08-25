@@ -17,6 +17,8 @@ class DefaultConfig(Configuration):
         self.component_('UnitTests')
         self.UnitTests.title = 'CMS WMCore/WebTools Unit Tests'
         self.UnitTests.description = 'Dummy server for the running of unit tests' 
+        self.UnitTests.admin ="UnitTestAdmin"
+        self.UnitTests.templates = "/tmp"
         self.UnitTests.section_('views')
         
         active = self.UnitTests.views.section_('active')

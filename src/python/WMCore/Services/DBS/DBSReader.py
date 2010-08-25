@@ -27,12 +27,12 @@ class DBSReader:
     def __init__(self, url, **contact):
         args = { "url" : url, "level" : 'ERROR', "version" : ''}
         args.update(contact)
-        try:
-            self.dbs = DbsApi(args)
-        except DbsException, ex:
-            msg = "Error in DBSReader with DbsApi\n"
-            msg += "%s\n" % formatEx(ex)
-            raise DBSReaderError(msg)
+        #try:
+        self.dbs = DbsApi(args)
+        #except DbsException, ex:
+        #    msg = "Error in DBSReader with DbsApi\n"
+        #    msg += "%s\n" % formatEx(ex)
+        #    raise DBSReaderError(msg)
 
         # setup DLS api - with either dbs or phedex depending on dbs instance
         if url.count('cmsdbsprod.cern.ch/cms_dbs_prod_global') or \

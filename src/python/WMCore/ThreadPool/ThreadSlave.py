@@ -12,8 +12,8 @@ to pass arbitrary objects if needed through the parameters
 attribute.
 """
 
-__revision__ = "$Id: ThreadSlave.py,v 1.7 2009/07/27 20:32:01 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ThreadSlave.py,v 1.8 2009/08/31 20:31:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
@@ -122,9 +122,6 @@ class ThreadSlave:
         # the main thread procid to our object.
         myThread.msgService = factory.loadObject("MsgService")
         myThread.msgService.procid = self.procid
-        logging.info("THREAD: Instantiating trigger service for thread")
-        threadFactory = WMFactory("trigger", "WMCore.Trigger." + myThread.dialect)
-        myThread.trigger = threadFactory.loadObject("Trigger")
         # TODO: add trigger instantiation.
         logging.info("THREAD constructor finished")
 

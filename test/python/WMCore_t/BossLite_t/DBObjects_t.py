@@ -63,10 +63,10 @@ class DBObjectsTest(unittest.TestCase):
         task.data['outputDirectory'] = 'Zama'
         task.save()
 
-        # Test save directly
-        taskInfo = myThread.dbi.processData("SELECT * FROM bl_task")[0].fetchall()[0].values()
-        self.assertTrue('Cannae' in taskInfo)
-        self.assertTrue('Zama' in taskInfo)
+        #taskInfo = myThread.dbi.processData("SELECT * FROM bl_task")[0].fetchall()[0].values()
+        #print taskInfo
+        #self.assertTrue('Cannae' in taskInfo)
+        #self.assertTrue('Zama' in taskInfo)
 
         # Load by ID, test save
         task2 = Task(parameters = {'id': 1})

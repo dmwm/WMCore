@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: SizeBased_t.py,v 1.4 2009/12/16 19:02:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SizeBased_t.py,v 1.5 2009/12/16 19:28:59 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 
@@ -103,7 +103,7 @@ class EventBasedTest(unittest.TestCase):
         return
 
 
-    def testMultipleFiles(self):
+    def testFiles1000(self):
         """
         _testMultipleFiles_
         
@@ -121,6 +121,21 @@ class EventBasedTest(unittest.TestCase):
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles()), 1)
 
+        return
+
+
+    def testFiles2000(self):
+        """
+        _testMultipleFiles_
+        
+        Tests the mechanism for splitting up multiple files into jobs with
+        a variety of different arguments.
+        """
+
+        print "testFiles2000"
+
+        splitter   = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
 
         #Test it with two files per job
         jobGroups  = jobFactory(size_per_job = 2000)
@@ -129,6 +144,22 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups[0].jobs), 5)
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles()), 2)
+
+        return
+
+
+    def testFiles2500(self):
+        """
+        _testMultipleFiles_
+        
+        Tests the mechanism for splitting up multiple files into jobs with
+        a variety of different arguments.
+        """
+
+        print "testFiles2500"
+
+        splitter   = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
 
 
         #Now test it with a size that can't be broken up evenly
@@ -139,30 +170,30 @@ class EventBasedTest(unittest.TestCase):
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles()), 2)
 
-
-        #Test it with something too small to handle; should return no group
-        jobGroups  = jobFactory(size_per_job = 500)
-        self.assertEqual(len(jobGroups), 0)
-
         return
 
 
-    def testMultipleSites(self):
+    def testFiles500(self):
         """
-        _testMultipleSites_
+        _testMultipleFiles_
+        
+        Tests the mechanism for splitting up multiple files into jobs with
+        a variety of different arguments.
+        """
 
-        Tests how to break up files at different locations
-        """
+        print "testFiles500"
 
         splitter   = SplitterFactory()
-        jobFactory = splitter(self.multipleSiteSubscription)
+        jobFactory = splitter(self.multipleFileSubscription)
 
-        jobGroups  = jobFactory(size_per_job = 1000)
 
-        self.assertEqual(len(jobGroups), 2)
-        self.assertEqual(len(jobGroups[0].jobs), 5)
-        for job in jobGroups[0].jobs:
-            self.assertEqual(len(job.getFiles()), 1)
+        #Test it with something too small to handle; should return one job per file
+        jobGroups  = jobFactory(size_per_job = 500)
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 10)
+
+        return
+
 
 
 if __name__ == '__main__':

@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.16 2010/05/19 16:07:37 sryu Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.17 2010/05/20 21:16:20 sryu Exp $"
 __version__ = "$Revision"
 
 
@@ -67,11 +67,14 @@ class WorkQueueMonitorService(ServiceInterface):
                           args = ["startIndex", "results"], validation = [self.validateInt])
         
         self.model.addDAO("GET", "workloadprogress", "Monitor.WorkloadsWithProgress")
+        self.model.addDAO("GET", "taskprogress", "Monitor.TasksWithProgress")
+        
         self.model.addDAO("GET", "statusstat", "Monitor.StatusStatistics")
         
         # workloadID can be either workload id number or wildcard (*) 
         self.model.addDAO("GET", "statusstatbyworkload", "Monitor.StatusStatByWorkload",
                           args = ['workloadID'])
+        self.model.addDAO("GET", "jobstatusstat", "Monitor.JobStatusStat")
         
         self.model.addDAO("GET", "elements", "Monitor.Elements")
         self.model.addDAO("GET", "sites", "Monitor.Sites")

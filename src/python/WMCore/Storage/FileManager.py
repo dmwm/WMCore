@@ -9,8 +9,8 @@ Refactoring of StageOutMgr -- for now, not accessed by default
 
 import os
 import logging
-log = logging.getLogger('WMCore.Storage.StageOutMgrV2')
-
+log = logging
+import traceback
 from WMCore.WMException import WMException
 
 from WMCore.Storage.StageOutError import StageOutError
@@ -33,9 +33,10 @@ class FileManager:
     
     new easy to use interface:
     deleteLFN(lfn) - tries to delete a certain LFN, returning details on success. Raising on failure
-    stageIn/stageOut - accepts the old dicts containing details. only the LFN key is required
-        kept like this for backwards compatibility reasons.
-        
+    stageIn/stageOut - accepts a dict containing the details
+                        PFN stores the local file name
+                        LFN stores the lfn of the file, which will be mapped to a PFN
+                      
     plugin implementations require:
     newPfn =  pluginImplementation.doTransfer( lfn, pfn, stageOut, seName, command, options, protocol  )
     pluginImplementation.doDelete( lfn, pfn, seName, command, options, protocol  )
@@ -58,7 +59,7 @@ class FileManager:
         self.retryPauseTime = retryPauseTime
                                 
         if overrideParams != {}:
-            log.debug("Override: %s" % overrideParams)
+            log.critical("Override: %s" % overrideParams)
             self.override = True
             self.initialiseOverride()
         else:
@@ -71,7 +72,11 @@ class FileManager:
 
         Use call to invoke transfers (either in or out)
         input: 
-            fileToStage: a dict containing at least the LFN string
+            fileToStage: a dict containing at least:
+                        LFN: the LFN for one end of the transfer, will be
+                            mapped to a PFN before the transfer
+                        PFN: (annoyingly) Not a PFN, but is the local filename
+                            for the file when it's transferred to/from
             stageOut: boolean for if the file is staged in or out
         output:
             dict from fileToStage with PFN, SEName, StageOutCommand added
@@ -82,7 +87,8 @@ class FileManager:
         """
 
         log.info("Working on file: %s" % fileToStage['LFN'])
-        lfn = fileToStage['LFN']
+        lfn =           fileToStage['LFN']
+        localFileName = fileToStage['PFN']
 
 
         log.info("Beginning %s" % ('StageOut' if stageOut else 'StageIn'))
@@ -94,10 +100,13 @@ class FileManager:
         # loop over all the different methods. This unifies regular and fallback stuff. Nice.
         methodCounter = 1
         for currentMethod in stageOutMethods:
+            # the PFN that is received here is mapped from the LFN
             (seName, command, options, pfn, protocol) =\
-                self.getTransferDetails(lfn)
-            
-            newPfn = self._doTransfer(currentMethod, methodCounter)
+                self.getTransferDetails(lfn, currentMethod)
+            log.debug("Mapped LFN:    %s" % lfn)
+            log.debug("    to PFN:    %s" % pfn)
+            log.debug("LocalFileName: %s" % localFileName)
+            newPfn = self._doTransfer(currentMethod, methodCounter, localFileName, pfn, stageOut)
             if newPfn:
                 log.info("Transfer succeeded: %s" % fileToStage)
                 fileToStage['PFN'] = newPfn
@@ -139,18 +148,18 @@ class FileManager:
             
             # do the copy. The implementation is responsible for its own verification
             try:
-                deleteSlave.doDelete( lfn, pfn, seName, command, options, protocol  )
+                deleteSlave.doDelete( pfn, seName, command, options, protocol  )
             except StageOutError, ex:
-                self.info("Delete failed in an expected manner. Exception is:")
-                self.info("%s" % str(ex))
+                log.info("Delete failed in an expected manner. Exception is:")
+                log.info("%s" % str(ex))
                 continue
             # note to people who think it's cheeky to catch exception after ranting against it:
             # this makes sense because no matter what the exception, we want to keep going
             # additionally, it prints out the proper backtrace so we can diagnose issues
             # AMM - 6/30/2010
             except Exception, ex:
-                self.critical("Delete failed in an unexpected manner. Exception is:")
-                self.critical("%s" % str(ex))
+                log.critical("Delete failed in an unexpected manner. Exception is:")
+                log.critical("%s" % str(ex))
                 continue
             
             # successful deletions make it here
@@ -210,10 +219,10 @@ class FileManager:
         """
         implName = seName = lfn_prefix = option = None
         try:
-            implName = self.siteCfg.localStageOut.get("command")
-            seName   = self.siteCfg.localStageOut.get("se-name")
-            lfn_prefix  = self.siteCfg.localStageOut.get("lfn-prefix")
-            option   = self.siteCfg.localStageOut.get('option', None)
+            implName   = self.overrideConf["command"]
+            seName     = self.overrideConf["se-name"]
+            lfn_prefix = self.overrideConf["lfn-prefix"]
+            option     = self.overrideConf['option']
               
         except:
             log.critical( 'Either command, se-name or the lfn-prefix are missing from the override' )
@@ -263,20 +272,24 @@ class FileManager:
     
     def stageOut(self,fileToStage):
         self.stageFile(fileToStage, stageOut=True)
-
-
-    
-    def _doTransfer(self, currentMethod, methodCounter, lfn, pfn, stageOut):
+  
+    def _doTransfer(self, currentMethod, methodCounter, localFileName, pfn, stageOut):
         """
         performs a transfer using a selected method and retries.
         necessary because python doesn't have a good nested loop break syntax
         """
         
-        (seName, command, options, pfn, protocol) =\
-            self.getTransferDetails(lfn, currentMethod)
+        (seName, command, options, _, protocol) =\
+            self.getTransferDetails(localFileName, currentMethod)
+        
+        # Swap directions if we're staging in
+        if not stageOut:
+            tempPfn       = pfn
+            pfn           = localFileName
+            localFileName = tempPfn
                     
-        for retryNumber in range(0,self.retryCount - 1):
-            log.info("Attempting transfer method %s, Retry number:" % (methodCounter, retryNumber))
+        for retryNumber in range(self.numberOfRetries + 1):
+            log.info("Attempting transfer method %s, Retry number: %s" % (methodCounter, retryNumber))
             log.debug("Current method information: %s" % currentMethod)
             
             stageOutSlave =  retrieveStageOutImpl(command, useNewVersion=True)
@@ -284,11 +297,12 @@ class FileManager:
             # do the copy. The implementation is responsible for its own verification
             newPfn = None
             try:
-                newPfn = stageOutSlave.doTransfer( lfn, pfn, stageOut, seName, command, options, protocol  )
+                newPfn = stageOutSlave.doTransfer( localFileName, pfn, stageOut, seName, command, options, protocol  )
             except StageOutError, ex:
-                self.info("Transfer failed in an expected manner. Exception is:")
-                self.info("%s" % str(ex))
-                self.info("Sleeping for %s seconds" % self.retryPauseTime)
+                log.info("Transfer failed in an expected manner. Exception is:")
+                log.info("%s" % str(ex))
+                log.info("Sleeping for %s seconds" % self.retryPauseTime)
+                log.info(traceback.format_exc())
                 time.sleep( self.retryPauseTime )
                 continue
             # note to people who think it's cheeky to catch exception after ranting against it:
@@ -296,10 +310,11 @@ class FileManager:
             # additionally, it prints out the proper backtrace so we can diagnose issues
             # AMM - 6/30/2010
             except Exception, ex:
-                self.critical("Transfer failed in an unexpected manner. Exception is:")
-                self.critical("%s" % str(ex))
-                self.critical("Since this is an unexpected error, we are continuing to the next method")
-                self.critical("and not retrying the same one")
+                log.critical("Transfer failed in an unexpected manner. Exception is:")
+                log.critical("%s" % str(ex))
+                log.critical("Since this is an unexpected error, we are continuing to the next method")
+                log.critical("and not retrying the same one")
+                log.critical(traceback.format_exc())
                 break
             
             # successful transfers make it here
@@ -366,7 +381,7 @@ class FileManager:
 # wrapper classes for compatibility
 class StageInMgr(FileManager):
     def __init__(self, numberOfRetries = 30, retryPauseTime=60, **overrideParams):
-        FileManager.__init__(self, numberOfRetries = 30, retryPauseTime=60, **overrideParams)
+        FileManager.__init__(self, numberOfRetries = numberOfRetries, retryPauseTime=retryPauseTime, **overrideParams)
     def __call__(self, fileToStage):
         """
         stages in a file, fileToStage is a dict with at least the LFN key
@@ -376,7 +391,7 @@ class StageInMgr(FileManager):
     
 class StageOutMgr(FileManager):
     def __init__(self, numberOfRetries = 30, retryPauseTime=60, **overrideParams):
-        FileManager.__init__(self, numberOfRetries = 30, retryPauseTime=60, **overrideParams)
+        FileManager.__init__(self, numberOfRetries = numberOfRetries, retryPauseTime=retryPauseTime, **overrideParams)
     def __call__(self, fileToStage):
         """
         stages out a file, fileToStage is a dict with at least the LFN key
@@ -386,7 +401,7 @@ class StageOutMgr(FileManager):
 
 class DeleteMgr(FileManager):
     def __init__(self, numberOfRetries = 30, retryPauseTime=60, **overrideParams):
-        FileManager.__init__(self, numberOfRetries = 30, retryPauseTime=60, **overrideParams)
+        FileManager.__init__(self, numberOfRetries = numberOfRetries, retryPauseTime=retryPauseTime, **overrideParams)
     def __call__(self, fileToStage):
         """
         stages out a file, fileToStage is a dict with at least the LFN key

@@ -21,7 +21,7 @@ class WinImpl(StageOutImplV2):
     Test plugin that always returns success
 
     """
-    def doTransfer(self, fromPfn, toPfn, seName, command, options, protocol  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
         return "WIN!!!"
 
     def doDelete(self, lfn, pfn, seName, command, options, protocol  ):
@@ -38,7 +38,7 @@ class FailImpl(StageOutImplV2):
 
     """
 
-    def doTransfer(self, lfn, pfn, seName, command, options, protocol  ):
+    def doTransfer(self, lfn, pfn, stageOut, seName, command, options, protocol  ):
         raise StageOutFailure("FailImpl returns FAIL!!!")
 
 
@@ -67,7 +67,7 @@ class LocalCopyImpl(StageOutImplV2):
 
         return
     
-    def doTransfer(self, fromPfn, toPfn, seName, command, options, protocol  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
         self.createOutputDirectory( toPfn )
         shutil.copy(fromPfn, toPfn)
         if os.path.getsize(fromPfn) != os.path.getsize(toPfn):

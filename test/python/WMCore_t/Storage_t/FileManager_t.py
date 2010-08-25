@@ -8,6 +8,7 @@ import unittest
 import logging
 import shutil
 import tempfile
+import os.path
 from WMCore.Storage.FileManager import StageInMgr,StageOutMgr,DeleteMgr,FileManager
 import WMCore.Storage.StageOutError
 class FileManagerTest(unittest.TestCase):
@@ -90,7 +91,7 @@ class FileManagerTest(unittest.TestCase):
     def testStageOutMgrWrapperRealCopy(self):
         self.testDir = tempfile.mkdtemp()
         fileForTransfer = {'LFN': '/etc/hosts', \
-                           'PFN': 'THISISUNUSEDFORSOMEREASON', \
+                           'PFN': '/etc/hosts', \
                            'SEName' : None, \
                            'StageOutCommand': None}
         wrapper = StageOutMgr(  **{
@@ -99,9 +100,11 @@ class FileManagerTest(unittest.TestCase):
                                 'se-name'  : 'test-win', 
                                 'lfn-prefix': self.testDir})
         wrapper(fileForTransfer)
+        self.assertTrue( os.path.exists(os.path.join(self.testDir, '/etc/hosts')))
+
     def testStageInMgrWrapperWin(self):
         fileForTransfer = {'LFN': '/etc/hosts', \
-                           'PFN': 'file:///etc/hosts', \
+                           'PFN': '/etc/hosts', \
                            'SEName' : None, \
                            'StageOutCommand': None}
         wrapper = StageInMgr(  **{
@@ -128,7 +131,7 @@ class FileManagerTest(unittest.TestCase):
     def testStageInMgrWrapperRealCopy(self):
         self.testDir = tempfile.mkdtemp()
         fileForTransfer = {'LFN': '/etc/hosts', \
-                           'PFN': 'THISISUNUSEDFORSOMEREASON', \
+                           'PFN': '/etc/hosts', \
                            'SEName' : None, \
                            'StageOutCommand': None}
         wrapper = StageOutMgr(  **{

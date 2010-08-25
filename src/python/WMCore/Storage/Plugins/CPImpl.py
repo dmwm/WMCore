@@ -20,13 +20,6 @@ class CPImpl(StageOutImplV2):
     Implement interface for plain cp command
     
     """
-class LocalCopyImpl(StageOutImplV2):
-    """
-    _LocalCopyImp_
-
-    Test plugin that copies to a local directory
-
-    """
 
     def createOutputDirectory(self, targetPFN):
         """
@@ -41,7 +34,7 @@ class LocalCopyImpl(StageOutImplV2):
 
         return
     
-    def doTransfer(self, fromPfn, toPfn, seName, command, options, protocol  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
         self.createOutputDirectory( toPfn )
         shutil.copy(fromPfn, toPfn)
         if os.path.getsize(fromPfn) != os.path.getsize(toPfn):

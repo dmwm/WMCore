@@ -16,7 +16,7 @@ from WMCore.JobStateMachine import DefaultConfig
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
-import WMCore.Database.CMSCouch as CMSCouch
+from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
@@ -24,9 +24,6 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.FwkJobReport.Report import Report
 
 class TestChangeState(unittest.TestCase):
-
-    transitions = None
-    change = None
     def setUp(self):
         """
         _setUp_
@@ -45,8 +42,7 @@ class TestChangeState(unittest.TestCase):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
 
-        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
-        self.change = ChangeState(DefaultConfig.config, "changestate_t")
+        self.couchServer = CouchServer(dburl = os.getenv("COUCHURL"))
         return
 
     def tearDown(self):
@@ -54,39 +50,39 @@ class TestChangeState(unittest.TestCase):
         _tearDown_
 
         """
-        myThread = threading.currentThread()
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
+        self.testInit.clearDatabase()
+        self.couchServer.deleteDatabase("changestate_t")
         return
 
     def testCheck(self):
     	"""
     	This is the test class for function Check from module ChangeState
     	"""
+        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
+        change = ChangeState(DefaultConfig.config, "changestate_t")
+
         # Run through all good state transitions and assert that they work
         for state in self.transitions.keys():
             for dest in self.transitions[state]:
-                self.change.check(dest, state)
+                change.check(dest, state)
         dummystates = ['dummy1', 'dummy2', 'dummy3', 'dummy4']
 
         # Then run through some bad state transistions and assertRaises(AssertionError)
         for state in self.transitions.keys():
             for dest in dummystates:
-                self.assertRaises(AssertionError, self.change.check, dest, state)
+                self.assertRaises(AssertionError, change.check, dest, state)
     	return
 
     def testRecordInCouch(self):
     	"""
         _testRecordInCouch_
         
-        Verify that state changes are recorded correctly into a single couch
-        document.
+        Verify that jobs, state transitions and fwjrs are recorded into seperate
+        couch documents correctly.
     	"""
+        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
+        change = ChangeState(DefaultConfig.config, "changestate_t")
+        
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = "Test")
         testWorkflow.create()
@@ -103,13 +99,73 @@ class TestChangeState(unittest.TestCase):
         testJobB = Job(name = "TestJobB")
         testJobA.create(testJobGroupA)
         testJobB.create(testJobGroupA)
-        
-        self.change.recordInCouch([testJobA, testJobB], "new", "none")
-        self.change.recordInCouch([testJobA, testJobB], "created", "new")
-        self.change.recordInCouch([testJobA, testJobB], "executing", "created")
 
-        testJobADoc = self.change.database.document(testJobA["couch_record"])
-        testJobBDoc = self.change.database.document(testJobB["couch_record"])        
+        testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048)
+        testFileA.create()
+        testJobA.addFile(testFileA)
+
+        testFileB = File(lfn = "SomeLFNB", events = 1025, size = 2049)
+        testFileB.create()
+        testJobB.addFile(testFileB)        
+
+        timestamp = int(time.time())
+
+        change.propagate([testJobA, testJobB], "new", "none")
+        change.propagate([testJobA, testJobB], "created", "new")
+        change.propagate([testJobA, testJobB], "executing", "created")
+
+        testJobADoc = change.database.document(testJobA["couch_record"])
+
+        assert testJobADoc["jobid"] == testJobA["id"], \
+               "Error: ID parameter is incorrect."
+        assert testJobADoc["name"] == testJobA["name"], \
+               "Error: Name parameter is incorrect."
+        assert testJobADoc["jobgroup"] == testJobA["jobgroup"], \
+               "Error: Jobgroup parameter is incorrect."
+        assert testJobADoc["mask"] == testJobA["mask"], \
+               "Error: Mask parameter is incorrect."
+        assert testJobADoc["input_files"] == testJobA["input_files"], \
+               "Error: Input files parameter is incorrect."
+        
+        testJobBDoc = change.database.document(testJobB["couch_record"])
+
+        assert testJobBDoc["jobid"] == testJobB["id"], \
+               "Error: ID parameter is incorrect."
+        assert testJobBDoc["name"] == testJobB["name"], \
+               "Error: Name parameter is incorrect."
+        assert testJobBDoc["jobgroup"] == testJobB["jobgroup"], \
+               "Error: Jobgroup parameter is incorrect."
+        assert testJobBDoc["mask"] == testJobB["mask"], \
+               "Error: Mask parameter is incorrect."
+        assert testJobBDoc["input_files"] == testJobB["input_files"], \
+               "Error: Input files parameter is incorrect."
+
+        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t")
+        options = {"startkey": testJobA["id"], "endkey": testJobA["id"]}
+        results = changeStateDB.loadView("JobDump", "stateTransitionsByJobID",
+                                         options)
+
+        assert len(results["rows"]) == 3, \
+               "Error: Wrong number of state transitions."
+
+        goldenNewStates = ["new", "created", "executing"]
+        for result in results["rows"]:
+            if result["value"]["oldstate"] == "none":
+                assert result["value"]["newstate"] == "new", \
+                       "Error: Wrong newstate."
+                goldenNewStates.remove("new")
+            elif result["value"]["oldstate"] == "new":
+                assert result["value"]["newstate"] == "created", \
+                       "Error: Wrong newstate."
+                goldenNewStates.remove("created")
+            elif result["value"]["oldstate"] == "created":
+                assert result["value"]["newstate"] == "executing", \
+                       "Error: Wrong newstate."
+                goldenNewStates.remove("executing")
+
+        assert len(goldenNewStates) == 0, \
+               "Error: Missing state transitions."
+                    
         return
 
     def testPersist(self):
@@ -118,6 +174,9 @@ class TestChangeState(unittest.TestCase):
         
         This is the test class for function Propagate from module ChangeState
         """
+        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
+        change = ChangeState(DefaultConfig.config, "changestate_t")
+        
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = "Test")
         testWorkflow.create()
@@ -139,8 +198,8 @@ class TestChangeState(unittest.TestCase):
         testJobD = Job(name = "TestJobD")
         testJobD.create(testJobGroupA)        
 
-        self.change.persist([testJobA, testJobB], "created", "new")
-        self.change.persist([testJobC, testJobD], "new", "none")        
+        change.persist([testJobA, testJobB], "created", "new")
+        change.persist([testJobC, testJobD], "new", "none")        
 
         stateDAO = self.daoFactory(classname = "Jobs.GetState")
 
@@ -161,6 +220,9 @@ class TestChangeState(unittest.TestCase):
 
         Verify that serialization of a job works when adding a FWJR.
         """
+        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
+        change = ChangeState(DefaultConfig.config, "changestate_t")
+        
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = "Test")
         testWorkflow.create()
@@ -176,12 +238,12 @@ class TestChangeState(unittest.TestCase):
         testJobA = Job(name = "TestJobA")
         testJobA.create(testJobGroupA)
 
-        self.change.propagate([testJobA], 'created', 'new')
+        change.propagate([testJobA], 'created', 'new')
         myReport = Report()
         myReport.unpersist("Report.pkl")
         testJobA["fwjr"] = myReport
 
-        self.change.propagate([testJobA], 'executing', 'created')        
+        change.propagate([testJobA], 'executing', 'created')        
         return
 
 if __name__ == "__main__":

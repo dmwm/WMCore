@@ -1,15 +1,12 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W6501, E1103
-# W6501: pass information to logging using string arguments
-# E1103: We attach argument to currentThread elsewhere
 """
 _ChangeState_
 
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.41 2010/06/09 19:13:31 sfoulkes Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: ChangeState.py,v 1.42 2010/06/10 16:05:47 sfoulkes Exp $"
+__version__ = "$Revision: 1.42 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
@@ -22,6 +19,17 @@ import threading
 import time
 import logging
 
+stateTransitionsByJobID = {"map": \
+"""
+function(doc) {
+  if (doc['type'] == 'state') {
+    emit(doc['jobid'], {'oldstate': doc['oldstate'],
+                        'newstate': doc['newstate'],
+                        'timestamp': doc['timestamp']});
+    }
+  }
+"""}
+
 class ChangeState(WMObject, WMConnectionBase):
     """
     Propagate the state of a job through the JSM.
@@ -30,24 +38,14 @@ class ChangeState(WMObject, WMConnectionBase):
         WMObject.__init__(self, config)
         WMConnectionBase.__init__(self, "WMCore.WMBS")
 
-        self.myThread = threading.currentThread()
-        self.attachmentList = {}
-        self.logger = self.myThread.logger
-        self.dialect = self.myThread.dialect
-        self.dbi = self.myThread.dbi
-
-        self.database = None
-
         if couchDbName == None:
-            couchDbName = getattr(self.config.JobStateMachine, "couchDBName",
-                                   "Unknown")
-            
-        self.dbname = couchDbName
-
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = self.logger,
-                                     dbinterface = self.dbi)
+            self.dbname = getattr(self.config.JobStateMachine, "couchDBName",
+                                  "Unknown")
+        else:
+            self.dbname = couchDbName
+        
         try:
+            self.database = None
             self.couchdb = None
             self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
             if self.dbname not in self.couchdb.listDatabases():
@@ -57,8 +55,8 @@ class ChangeState(WMObject, WMConnectionBase):
         except Exception, ex:
             logging.error("Error connecting to couch: %s" % str(ex))
 
-        self.getCouchDAO = self.daoFactory("Jobs.GetCouchID")
-        self.setCouchDAO = self.daoFactory("Jobs.SetCouchID")
+        self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
+        self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
         return
 
     def propagate(self, jobs, newstate, oldstate):
@@ -84,8 +82,7 @@ class ChangeState(WMObject, WMConnectionBase):
             
         # 3. Make the state transition
         self.persist(jobs, newstate, oldstate)
-
-        return jobs
+        return
     
     def check(self, newstate, oldstate):
         """
@@ -103,7 +100,11 @@ class ChangeState(WMObject, WMConnectionBase):
     def recordInCouch(self, jobs, newstate, oldstate):
         """
         _recordInCouch_
-        
+
+        Record relevant job information in couch.  This will always record the
+        state change information as a seperate document.  If the job does not
+        yet exist in couch it will be saved as a seperate document.  If the job
+        has a FWJR attached that will be saved as a seperate document.
         """
         if not self.database:
             return
@@ -127,12 +128,17 @@ class ChangeState(WMObject, WMConnectionBase):
         baseUUID = makeUUID()
         couchRecordsToUpdate = []
         
-        for jobID in jobMap:
+        for jobID in jobMap.keys():
             job = jobMap[jobID]
             couchDocID = job.get("couch_record", None)
 
+            if newstate == "new":
+                oldstate = "none"
+            else:
+                oldstate = job["state"]
+                
             transitionDocument = {"jobid": job["id"],
-                                  "oldstate": job["state"],
+                                  "oldstate": oldstate,
                                   "newstate": newstate,
                                   "timestamp": timestamp,
                                   "type": "state"}
@@ -141,7 +147,8 @@ class ChangeState(WMObject, WMConnectionBase):
             if couchDocID == None:
                 jobDocument = {}
                 jobDocument["_id"] = "%s_%s" % (baseUUID, newJobCounter)
-                jobDocument["id"] = job["id"]
+                job["couch_record"] = jobDocument["_id"]
+                jobDocument["jobid"] = job["id"]
                 jobDocument["input_files"] = job["input_files"]
                 jobDocument["jobgroup"] = job["jobgroup"]
                 jobDocument["mask"] = job["mask"]
@@ -167,10 +174,14 @@ class ChangeState(WMObject, WMConnectionBase):
         return
 
     def createDatabase(self):
-        ''' initializes a non-existant database'''
+        """
+        _createDatabase_
+
+        """
         database = self.couchdb.createDatabase(self.dbname)
-        hashViewDoc = database.createDesignDoc('jobs')
-        hashViewDoc["views"] = { }
+        
+        hashViewDoc = database.createDesignDoc("JobDump")
+        hashViewDoc["views"] = {"stateTransitionsByJobID": stateTransitionsByJobID}
      
         database.queue(hashViewDoc)
         database.commit()
@@ -183,6 +194,6 @@ class ChangeState(WMObject, WMConnectionBase):
         for job in jobs:
             job['state'] = newstate
             job['oldstate'] = oldstate
-        dao = self.daoFactory(classname = "Jobs.ChangeState")
+        dao = self.daofactory(classname = "Jobs.ChangeState")
         dao.execute(jobs, conn = self.getDBConn(),
                     transaction = self.existingTransaction())

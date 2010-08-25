@@ -208,15 +208,16 @@ if __name__ == "__main__":
 
     encodedSlaveInit = sys.stdin.readline()
     if encodedSlaveInit != "\n":
-        slaveInit = jsonHandler.decode(encodedSlaveInit)
+        unicodeSlaveInit = jsonHandler.decode(encodedSlaveInit)
+        slaveInit = {}
+        for key in unicodeSlaveInit.keys():
+            slaveInit[str(key)] = unicodeSlaveInit[key]
     else:
         slaveInit = None
 
     wmInit = WMInit()
     setupLogging(config["componentDir"])
     setupDB(config, wmInit)
-
-
 
     wmFactory = WMFactory(name = "slaveFactory", namespace = "WMComponent")
     slaveClass = wmFactory.loadObject(classname = slaveClassName, args = slaveInit)
@@ -227,7 +228,10 @@ if __name__ == "__main__":
         encodedInput = sys.stdin.readline()
 
         try:
-            input = jsonHandler.decode(encodedInput)
+            unicodeInput = jsonHandler.decode(encodedInput)
+            input = {}
+            for key in unicodeInput.keys():
+                input[str(key)] = unicodeInput[key]
         except Exception, e:
             break
 

@@ -5,11 +5,10 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.3 2009/10/13 19:34:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.4 2009/10/13 21:39:29 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import logging
-import os
 import os.path
 import threading
 import unittest
@@ -18,15 +17,11 @@ import copy
 
 from WMCore.FwkJobReport.ReportParser import readJobReport
 
-from WMCore.Agent.Configuration import loadConfigurationFile
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.Database.Transaction import Transaction
-from WMCore.WMFactory import WMFactory
+
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.UUID import makeUUID
 
-from WMCore.Agent.Configuration import Configuration
 
 from WMCore.WMBS.Workflow     import Workflow
 from WMCore.WMBS.Subscription import Subscription
@@ -38,9 +33,6 @@ from WMCore.WMBS.Fileset      import Fileset
 from WMComponent.JobAccountant.JobAccountant import JobAccountant
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
-from WMCore.DataStructs.Run import Run
-
-from WMCore.JobStateMachine.ChangeState import ChangeState
 
 class JobAccountantTest(unittest.TestCase):
     """
@@ -55,13 +47,12 @@ class JobAccountantTest(unittest.TestCase):
         Create the database connections, install the schemas and create the
         DAO objects.
         """
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
 
-        self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
-                                useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+        self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database",
+                                                "WMCore.WMBS"],
                                 useDefault = False)
 
         myThread = threading.currentThread()
@@ -89,25 +80,7 @@ class JobAccountantTest(unittest.TestCase):
 
         Clear out the WMBS and DBSBuffer database schemas.
         """
-        myThread = threading.currentThread()
-        
-        factory2 = WMFactory("WMBS", "WMCore.WMBS")
-        destroy2 = factory2.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy2.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete MsgService tear down.")
-        myThread.transaction.commit()
-                
-        factory = WMFactory("DBSBuffer", "WMComponent.DBSBuffer.Database")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete DBSBuffer tear down.")
-        myThread.transaction.commit()
-
-        return
+        self.testInit.clearDatabase()
 
     def createConfig(self, workerThreads):
         """
@@ -118,16 +91,10 @@ class JobAccountantTest(unittest.TestCase):
         database as the component will create it's own database connections.
         These parameters are still pulled from the environment.
         """
-        config = Configuration()
-        config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = os.getenv("DIALECT")
-        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-
-        if config.CoreDatabase.dialect == "MySQL":
-            config.CoreDatabase.socket = os.getenv("DBSOCK")
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         config.section_("General")
-        config.General.workDir = "."
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl = os.getenv("COUCHURL")
@@ -176,7 +143,7 @@ class JobAccountantTest(unittest.TestCase):
         testJob["state"] = "complete"
         self.stateChangeAction.execute(jobs = [testJob])
 
-        fwjrPath = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/JobAccountant_t/" + fwjrName
+        fwjrPath = os.path.join(os.getenv("WMCOREBASE"),"test/python/WMComponent_t/JobAccountant_t/", fwjrName)
         self.setFWJRAction.execute(jobID = testJob["id"], fwjrPath = fwjrPath)
         return
 
@@ -681,10 +648,11 @@ class JobAccountantTest(unittest.TestCase):
         self.testJob.save()
         self.stateChangeAction.execute(jobs = [self.testJob])
 
-        fwjrBasePath = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/JobAccountant_t/"
         self.setFWJRAction.execute(jobID = self.testJob["id"],
-                                   fwjrPath = fwjrBasePath + "MergedSkimSuccess.xml")
-        return
+                                   os.path.join(os.getenv("WMCOREBASE"),
+                                                "/test/python/WMComponent_t/JobAccountant_t/",
+                                                "MergedSkimSuccess.xml"))
+        
 
     def testMergedSkim(self):
         """
@@ -701,8 +669,9 @@ class JobAccountantTest(unittest.TestCase):
         accountant.pollForJobs()
         accountant.processPool.dequeue(1)
 
-        fwjrBasePath = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/JobAccountant_t/"
-        jobReports = readJobReport(fwjrBasePath + "MergedSkimSuccess.xml")
+        jobReports = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+                                                "/test/python/WMComponent_t/JobAccountant_t/",
+                                                "MergedSkimSuccess.xml"))
         self.verifyFileMetaData(self.testJob["id"], jobReports[0].files)
         self.verifyJobSuccess(self.testJob["id"])
 
@@ -832,9 +801,10 @@ class JobAccountantTest(unittest.TestCase):
         self.testJob.save()
         self.stateChangeAction.execute(jobs = [self.testJob])
 
-        fwjrBasePath = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/JobAccountant_t/"
         self.setFWJRAction.execute(jobID = self.testJob["id"],
-                                   fwjrPath = fwjrBasePath + "MergeSuccess.xml")
+                                   fwjrPath = os.path.join(os.getenv("WMCOREBASE"),
+                                                "/test/python/WMComponent_t/JobAccountant_t/",
+                                                "MergeSuccess.xml"))
         return
 
     def testMergeSuccess(self):
@@ -851,8 +821,9 @@ class JobAccountantTest(unittest.TestCase):
         accountant.pollForJobs()
         accountant.processPool.dequeue(1)
 
-        fwjrBasePath = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/JobAccountant_t/"
-        jobReports = readJobReport(fwjrBasePath + "MergeSuccess.xml")
+        jobReports = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+                                                "/test/python/WMComponent_t/JobAccountant_t/",
+                                                "MergedSkimSuccess.xml"))
         self.verifyFileMetaData(self.testJob["id"], jobReports[0].files)
         self.verifyJobSuccess(self.testJob["id"])
 
@@ -889,6 +860,8 @@ class JobAccountantTest(unittest.TestCase):
         the DBSBuffer directory.  The job reports are from repack jobs that have
         several outputs, so configure the workflows accordingly.
         """
+        config = self.createConfig(workerThreads = 1)
+
         inputFileset = Fileset(name = "TestFileset")
         inputFileset.create()
 
@@ -924,8 +897,6 @@ class JobAccountantTest(unittest.TestCase):
                                              type = "Processing")
         self.testSubscription.create()
 
-        fwjrBase = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports/"
-
         self.jobs = []
         for i in range(100):
             newFile = File(lfn = makeUUID(), size = 600000, events = 60000,
@@ -941,7 +912,8 @@ class JobAccountantTest(unittest.TestCase):
             testJob["state"] = "complete"
             self.stateChangeAction.execute(jobs = [testJob])
 
-            fwjrPath = fwjrBase + "FrameworkJobReport-45%02d.xml" % i
+            fwjrPath = os.path.join(config.General.workDir,
+                                                "FrameworkJobReport-45%02d.xml" % i)
             self.jobs.append((testJob["id"], fwjrPath))
             self.setFWJRAction.execute(jobID = testJob["id"], fwjrPath = fwjrPath)
 
@@ -954,27 +926,27 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using one worker process.
         """
-        print "\nOne process load test:"
+        logging.debug("\nOne process load test:")
 
-        print "  Filling DB..."
+        logging.debug("  Filling DB...")
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 1)
 
         accountant = JobAccountant(config)
         accountant.preInitialization()
 
-        print "  Running accountant..."
+        logging.debug("  Running accountant...")
 
         startTime = time.time()
         accountant.pollForJobs()
         accountant.processPool.dequeue(100)
         endTime = time.time()
-        print "  Performance: %s fwjrs/sec" % (100 / (endTime - startTime))
+        logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
         return
 
         for (jobID, fwjrPath) in self.jobs:
-            print "  Validating %s, %s" % (jobID, fwjrPath)
+            logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
             jobReports = readJobReport(fwjrPath)
 
             # There are some job reports missing, so we'll just ignore the
@@ -994,27 +966,26 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using two worker processes.
         """
-        print "\nTwo process load test:"
+        logging.debug("\nTwo process load test:")
 
-        print "  Filling DB..."
+        logging.debug("  Filling DB...")
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 2)
 
         accountant = JobAccountant(config)
         accountant.preInitialization()
 
-        print "  Running accountant..."
+        logging.debug("  Running accountant...")
 
         startTime = time.time()
         accountant.pollForJobs()
         accountant.processPool.dequeue(100)
         endTime = time.time()
-        print "  Performance: %s fwjrs/sec" % (100 / (endTime - startTime))
+        logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
-        return
 
         for (jobID, fwjrPath) in self.jobs:
-            print "  Validating %s, %s" % (jobID, fwjrPath)
+            logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
             jobReports = readJobReport(fwjrPath)
 
             # There are some job reports missing, so we'll just ignore the
@@ -1034,27 +1005,27 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using four workers processes.
         """
-        print "\nFour process load test:"
+        logging.debug("\nFour process load test:")
 
-        print "  Filling DB..."
+        logging.debug("  Filling DB...")
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 4)
 
         accountant = JobAccountant(config)
         accountant.preInitialization()
 
-        print "  Running accountant..."
+        logging.debug("  Running accountant...")
 
         startTime = time.time()
         accountant.pollForJobs()
         accountant.processPool.dequeue(100)
         endTime = time.time()
-        print "  Performance: %s fwjrs/sec" % (100 / (endTime - startTime))
+        logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
         return
 
         for (jobID, fwjrPath) in self.jobs:
-            print "  Validating %s, %s" % (jobID, fwjrPath)
+            logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
             jobReports = readJobReport(fwjrPath)
 
             # There are some job reports missing, so we'll just ignore the
@@ -1074,27 +1045,27 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using eight workers processes.
         """
-        print "\nEight process load test:"
+        logging.debug("\nEight process load test:")
 
-        print "  Filling DB..."
+        logging.debug("  Filling DB...")
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 8)
 
         accountant = JobAccountant(config)
         accountant.preInitialization()
 
-        print "  Running accountant..."
+        logging.debug("  Running accountant...")
 
         startTime = time.time()
         accountant.pollForJobs()
         accountant.processPool.dequeue(100)
         endTime = time.time()
-        print "  Performance: %s fwjrs/sec" % (100 / (endTime - startTime))
+        logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
         return
 
         for (jobID, fwjrPath) in self.jobs:
-            print "  Validating %s, %s" % (jobID, fwjrPath)
+            logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
             jobReports = readJobReport(fwjrPath)
 
             # There are some job reports missing, so we'll just ignore the

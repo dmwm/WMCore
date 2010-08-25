@@ -166,7 +166,7 @@ def createDaemon(workdir, keepParent = False):
         pid = None
     if pid :
         mess = """
-Start aborded since pid file '%s' exists. 
+Start aborted since pid file '%s' exists. 
 Please kill process and remove file first. 
 If process is still running this file contains
 information on that.

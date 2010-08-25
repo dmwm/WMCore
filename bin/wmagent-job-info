@@ -127,7 +127,7 @@ def printTransitionInfo():
 
     if successSeen:
         print "\nOutcome: Success"
-    elif failureSeen:
+    elif exhaustedSeen:
         print "\nOutcome: Failure"
     else:
         print "\nOutcome: Unknown, still running."

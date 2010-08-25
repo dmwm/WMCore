@@ -4,8 +4,8 @@ _PhEDExInjectorPoller_
 
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.5 2009/09/08 18:28:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.6 2009/09/08 20:06:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 import logging
@@ -57,11 +57,11 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         cmswebReq = JSONRequests(url = "cmsweb.cern.ch")
         cmswebResp = cmswebReq.get(uri = "/phedex/datasvc/json/prod/nodes")[0]
 
-        for node in cmswebResp:
-            if not seMap.has_key(node["kind"]):
-                seMap[node["kind"]] = {}
+        for node in cmswebResp["phedex"]["node"]:
+            if not self.seMap.has_key(node["kind"]):
+                self.seMap[node["kind"]] = {}
 
-            seMap[node["kind"]][node["se"]] = node["name"]
+            self.seMap[node["kind"]][node["se"]] = node["name"]
 
         return
 
@@ -94,20 +94,24 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 logging.error("Could not map SE %s to PhEDEx node." % \
                               uninjectedBlock["location"])
                 continue
-                    
-            result = self.phedex.injectBlocks(self.dbsUrl,
-                                              uninjectedBlock["location"],
-                                              uninjectedBlock["blockname"])
 
-            if not result.has_key("error"):
+            logging.debug("Going to inject: %s, %s" % \
+                          (location, uninjectedBlock["blockname"]))
+            datasetPath = uninjectedBlock["blockname"].rsplit("#")[0]
+            injectRes = self.phedex.injectBlocks(self.dbsUrl, location, datasetPath,
+                                                 0, 0, uninjectedBlock["blockname"])
+
+            if not injectRes.has_key("error"):
                 injectedBlocks.append({"location": uninjectedBlock["location"],
-                                       "blockname": uninjectedBlock["blockname"])
+                                       "blockname": uninjectedBlock["blockname"]})
             else:
                 logging.error("Error injecting block %s: %s" % \
-                              (uninjectBlock["blockname"], result["error"]))
+                              (uninjectBlock["blockname"], injectRes["error"]))
 
-        setAction.execute(injectedBlocks, conn = myThread.transaction.conn,
-                          transaction = myThread.transaction)
+        if len(injectedBlocks) > 0:
+            self.setInjected.execute(injectedBlocks,
+                                     conn = myThread.transaction.conn,
+                                     transaction = myThread.transaction)
 
         myThread.transaction.commit()
         return

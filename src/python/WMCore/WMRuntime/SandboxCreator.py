@@ -4,8 +4,8 @@
 
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.9 2009/09/04 18:39:27 evansde Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: SandboxCreator.py,v 1.10 2009/09/28 18:41:46 evansde Exp $"
+__version__ = "$Revision: 1.10 $"
 import os
 import re
 import tarfile
@@ -13,6 +13,7 @@ import tempfile
 import WMCore.WMSpec.WMStep as WMStep
 import urllib
 import WMCore
+from WMCore.WMSpec.Steps.StepFactory import getFetcher
 
 class SandboxCreator:
 
@@ -40,6 +41,7 @@ class SandboxCreator:
         archive.close()
 
 
+
     def makeSandbox(self, buildItHere, workload, task):
         """
             __makeSandbox__
@@ -48,6 +50,16 @@ class SandboxCreator:
             returning the path to the archive and putting it in the
             task
         """
+        #  //
+        # // Set up Fetcher plugins, use default list for maintaining
+        #//  compatibility
+        fetcherNames = [ "CMSSWFetcher", "URLFetcher" ]
+        taskFetchers = getattr(task.data, "fetchers", [])
+        fetcherNames.extend(taskFetchers)
+        fetcherInstances = map(getFetcher, fetcherNames)
+
+
+
         # generate the real path and make it
         workloadName = workload.name()
         taskName     = task.name()
@@ -63,29 +75,14 @@ class SandboxCreator:
             initHandle.write("# dummy file for now")
             initHandle.close()
 
-            # the CMSSW has a special case with its ConfigCache argument
-            if (hasattr(t.data.application.configuration,'retrieveConfigUrl')):
-                fileTarget = "%s/%s" % (
-                    stepPath,
-                    t.data.application.command.configuration)
-                urllib.urlretrieve(
-                    t.data.application.configuration.retrieveConfigUrl,
-                    fileTarget)
 
-            # within the step, the sandbox section has files to be imported
-            # TODO: do we need a function to wrap this data call?
-            for fileInfo in t.data.sandbox:
-                # fileInfo.src is the source file
-                # fileInfo.injob is where we stuck it
-                match = re.search("^.*/(.*?)$", fileInfo.src)
-                if (match):
-                    fileSuffix = match.group(1)
-                else:
-                    fileSuffix = "sandboxFile.dat"
 
-                fileTarget = "%s/%s" % (stepPath, fileSuffix)
-                urllib.urlretrieve(fileInfo.src, fileTarget)
-                fileInfo.injob = fileTarget
+        #  //
+        # // Execute the fetcher plugins
+        #//
+        for fetcher in fetcherInstances:
+            fetcher.setWorkingDirectory(path)
+            fetcher(task)
 
         # and generate the __init__.py
         # TODO: find out what else should go in this init. I don't understand
@@ -100,6 +97,7 @@ class SandboxCreator:
         # now, tar everything up and put it somewhere special
         (archiveHandle,archivePath) = tempfile.mkstemp('.tar.bz2','sbox',
                                                       buildItHere)
+
 
         task.data.sandboxArchivePath = archivePath
         pythonHandle = os.fdopen(archiveHandle,'w+b')

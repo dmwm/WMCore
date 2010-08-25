@@ -162,7 +162,7 @@ class TestCommand(Command):
                  len(result.failures),
                  len(result.errors),
                  len(failedTestFiles))
-        if result.wasSuccessful():
+        if (not result.wasSuccessful()) or len(result.errors):
             print "FAILED: setup.py test" 
             sys.exit(1)
         else:

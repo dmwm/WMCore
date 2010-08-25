@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.18 2009/10/14 13:38:33 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Fileset_t.py,v 1.19 2009/12/15 15:17:43 mnorman Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import unittest
 import logging
@@ -175,13 +175,13 @@ class FilesetTest(unittest.TestCase):
         Test saving and loading all fileset information.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileA.addRun(Run( 1, *[45]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileB.addRun(Run( 1, *[45]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileC.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileB.create()
@@ -237,13 +237,13 @@ class FilesetTest(unittest.TestCase):
         make sure that all the results it returns are consistant.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileA.addRun(Run( 1, *[45]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileB.addRun(Run( 1, *[45]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileC.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileB.create()
@@ -310,13 +310,13 @@ class FilesetTest(unittest.TestCase):
         if they are not in the database.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileA.addRun(Run( 1, *[45]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileB.addRun(Run( 1, *[45]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
@@ -374,13 +374,13 @@ class FilesetTest(unittest.TestCase):
         they do not have any files.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileA.addRun(Run( 1, *[45]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileB.addRun(Run( 1, *[45]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
@@ -513,9 +513,9 @@ class FilesetTest(unittest.TestCase):
         testFilesetOpen = Fileset(name = "TestFilesetOpen", is_open = True)
         testFilesetOpen.create()
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, cksum = 3)        
+                         events = 20, checksums = {'cksum': 3})        
         testFilesetOpen.addFile(testFileA)
         testFilesetOpen.addFile(testFileB)
         testFilesetOpen.commit()
@@ -523,9 +523,9 @@ class FilesetTest(unittest.TestCase):
         testFilesetClosed = Fileset(name = "TestFilesetClosed", is_open = False)
         testFilesetClosed.create()
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
-                         events = 20, cksum = 3)        
+                         events = 20, checksums = {'cksum': 3})        
         testFilesetClosed.addFile(testFileC)
         testFilesetClosed.addFile(testFileD)
         testFilesetClosed.commit()
@@ -587,20 +587,20 @@ class FilesetTest(unittest.TestCase):
         filesets.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
-                         events = 20, cksum = 3)
+                         events = 20, checksums = {'cksum': 3})
         testFileD.addRun(Run( 1, *[45]))
         testFileD.create()        
 

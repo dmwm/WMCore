@@ -8,8 +8,8 @@ Module dealing with Configuration file in python format
 
 """
 
-__revision__ = "$Id: Configuration.py,v 1.9 2009/08/17 16:39:04 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Configuration.py,v 1.10 2009/09/04 16:10:26 evansde Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import os
 import imp
@@ -19,6 +19,7 @@ _SimpleTypes = [
     types.BooleanType,
     types.FloatType,
     types.StringType,
+    types.UnicodeType,
     types.LongType,
     types.NoneType,
     types.IntType,
@@ -40,7 +41,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if type(value) == types.StringType:
+    if type(value) in types.StringType:
         value = "\'%s\'" % value
     return str(value)
 
@@ -61,7 +62,7 @@ def formatNative(value):
         return dict
     else:
         return format(value)
-    
+
 
 class ConfigSection(object):
     """
@@ -78,10 +79,10 @@ class ConfigSection(object):
         self._internal_docstrings = {}
         self._internal_children = set()
         self._internal_parent_ref = None
-        
+
     def __eq__(self, other):
         if (isinstance(other, type(self))):
-            return ( 
+            return (
                 (self._internal_documentation == other._internal_documentation) and
                 (self._internal_name == other._internal_name) and
                 (self._internal_settings == other._internal_settings) and
@@ -90,7 +91,7 @@ class ConfigSection(object):
                 (self._internal_parent_ref == other._internal_parent_ref))
         else:
             return (id(self) == id(other))
-        
+
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
@@ -109,6 +110,8 @@ class ConfigSection(object):
             msg = "Unsupported Type: %s\n" % type(value)
             msg += "Added to WMAgent Configuration"
             raise RuntimeError, msg
+        if type(value) == types.UnicodeType:
+            value = str(value)
         if type(value) in (types.ListType, types.TupleType, types.DictType):
             vallist = value
             if type(value) == types.DictType:

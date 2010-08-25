@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.8 2010/06/18 18:09:18 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: LumiBased_t.py,v 1.9 2010/06/22 13:29:39 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 
@@ -121,8 +121,8 @@ class EventBasedTest(unittest.TestCase):
                           'FirstEvent': None, 'LastLumi': 800L, 'FirstLumi': 600L})
         self.assertEqual(len(jobGroups[0].jobs[3]['input_files']), 1)
         self.assertEqual(jobGroups[0].jobs[3]['mask'],
-                         {'LastRun': None, 'FirstRun': 9L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': None, 'FirstLumi': 900L})
+                         {'LastRun': 9L, 'FirstRun': 9L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 900L, 'FirstLumi': 900L})
 
 
 
@@ -221,8 +221,8 @@ class EventBasedTest(unittest.TestCase):
                          {'LastRun': 4L, 'FirstRun': 3L, 'LastEvent': None,
                           'FirstEvent': None, 'LastLumi': 400L, 'FirstLumi': 300L})
         self.assertEqual(jobList[3]['mask'],
-                         {'LastRun': None, 'FirstRun': 4L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': None, 'FirstLumi': 401L})
+                         {'LastRun': 4L, 'FirstRun': 4L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 401L, 'FirstLumi': 401L})
 
 
 

@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.14 2010/06/17 20:49:09 mnorman Exp $"
-__version__  = "$Revision: 1.14 $"
+__revision__ = "$Id: LumiBased.py,v 1.15 2010/06/17 21:00:22 mnorman Exp $"
+__version__  = "$Revision: 1.15 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset
@@ -56,7 +56,7 @@ class LumiBased(JobFactory):
                 #Let's grab all the Lumi sections in the file
                 for run in f['runs']:
                     for i in run:
-                        fileLumiList.append(int(str(run.run) + str(i)))
+                        fileLumiList.append('%i_%i' % (run.run, i))
 
                 for fileLumi in fileLumiList:
                     if not lumiDict.has_key(fileLumi):
@@ -97,14 +97,14 @@ class LumiBased(JobFactory):
                 #Now is it too big?
                 if len(jobFiles) == filesPerJob:
                     self.newJob(name = makeUUID(), files = jobFiles)
-                    self.currentJob["mask"].setMaxAndSkipLumis(1, lumi)
+                    self.currentJob["mask"].setMaxAndSkipLumis(1, int(lumi.split('_')[1]))
                     jobFiles = Fileset()
 
             #If we've run out of files before completing a job
             if len(jobFiles) != 0:
                 
                 self.newJob(name = makeUUID(), files = jobFiles)
-                self.currentJob["mask"].setMaxAndSkipLumis(1, lumi)
+                self.currentJob["mask"].setMaxAndSkipLumis(1, int(lumi.split('_')[1]))
                 jobFiles = Fileset()
 
     def LumiBasedJobSplitting(self, lumiDict, lumisPerJob, location):
@@ -143,8 +143,8 @@ class LumiBased(JobFactory):
             #If we now have enough lumis, we end.
             if currentLumis >= lumisPerJob:
                 self.newJob(name = makeUUID(), files = jobFiles)
-                self.currentJob["mask"].setMaxAndSkipLumis(currentLumis, lumi)
-                self.currentJob["mask"].setMaxAndSkipRuns(currentRuns, currentRun.run)
+                self.currentJob["mask"].setMaxAndSkipLumis(currentLumis - 1, int(lumi.split('_')[1]))
+                self.currentJob["mask"].setMaxAndSkipRuns(currentRuns - 1, currentRun.run)
                 #Wipe clean
                 currentLumis = 0
                 currentRuns  = 0
@@ -153,8 +153,8 @@ class LumiBased(JobFactory):
         if not len(jobFiles.getFiles()) == 0:
             #Then we have files we need to check in because we ran out of lumis before filling the last job
             self.newJob(name = makeUUID(), files = jobFiles)
-            self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, lumi)
-            self.currentJob["mask"].setMaxAndSkipRuns(currentRuns, currentRun.run)
+            self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob - 1, int(lumi.split('_')[1]))
+            self.currentJob["mask"].setMaxAndSkipRuns(currentRuns - 1, currentRun.run)
             
 
     def EventBasedJobSplitting(self, lumiDict, eventsPerJob, location):
@@ -187,7 +187,7 @@ class LumiBased(JobFactory):
                 #If you have enough events, end the job and start a new one
                 else:
                     self.newJob(name = makeUUID(), files = jobFiles)
-                    self.currentJob["mask"].setMaxAndSkipLumis(1, lumi)
+                    self.currentJob["mask"].setMaxAndSkipLumis(1, int(lumi.split('_')[1]))
                     
                     #Clear Fileset
                     jobFiles = Fileset()
@@ -199,6 +199,6 @@ class LumiBased(JobFactory):
             #If we have excess events, make a final job
             if not currentEvents == 0:
                 self.newJob(name = makeUUID(), files = jobFiles)
-                self.currentJob["mask"].setMaxAndSkipLumis(1, lumi)
+                self.currentJob["mask"].setMaxAndSkipLumis(1, int(lumi.split('_')[1]))
                 jobFiles = Fileset()
                 currentEvents = 0

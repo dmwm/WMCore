@@ -21,51 +21,54 @@ class DCCPFNALImplTest(unittest.TestCase):
     
     def setUp(self):
         self.commandPrepend = os.path.join(getWMBASE(),'src','python','WMCore','Storage','Plugins','DDCPFNAL','wrapenv.sh')
+        self.runMocker  = mox.MockObject(RunCommandThing)
+        self.copyMocker = mox.MockObject(ourFallbackPlugin)
+        def runCommandStub(command):
+            (num1, num2) =  self.runMocker.runCommand(command)
+            return (num1, num2)
+        def getImplStub(command, useNewVersion = None):
+            return self.copyMocker
+        
+        self.runCommandBackup   = WMCore.Storage.Plugins.DCCPFNALImpl.runCommand
+        WMCore.Storage.Plugins.DCCPFNALImpl.runCommand = runCommandStub
+        self.stageOutImplBackup = WMCore.Storage.Plugins.DCCPFNALImpl.retrieveStageOutImpl
+        WMCore.Storage.Plugins.DCCPFNALImpl.retrieveStageOutImpl = getImplStub
         pass
     
     def tearDown(self):
-        pass
+        WMCore.Storage.Plugins.DCCPFNALImpl.runCommand = self.runCommandBackup
+        WMCore.Storage.Plugins.DCCPFNALImpl.retrieveStageOutImpl = self.stageOutImplBackup
+        
     
     def testFail(self):
 
-        runMocker  = mox.MockObject(RunCommandThing)
-        copyMocker = mox.MockObject(ourFallbackPlugin)
-        def runCommandStub(command):
-            (num1, num2) =  runMocker.runCommand(command)
-            return (num1, num2)
-        def getImplStub(command, useNewVersion = None):
-            return copyMocker
-        
-        WMCore.Storage.Plugins.DCCPFNALImpl.runCommand = runCommandStub
-        WMCore.Storage.Plugins.DCCPFNALImpl.retrieveStageOutImpl = getImplStub
-        
         #first try to make a non existant file (regular)
-        runMocker.runCommand( 
+        self.runMocker.runCommand( 
             [self.commandPrepend,'dccp', '-o', '86400', '-d', '0', '-X', '-role=cmsprod', '/store/NONEXISTANTSOURCE', '/store/NONEXISTANTTARGET' ]\
              ).AndReturn(("1", "This was a test of the fail system"))
              
         #then try to make a non existant file on lustre
         # -- fake making a directory
-        runMocker.runCommand( 
+        self.runMocker.runCommand( 
             [self.commandPrepend, 'mkdir', '-m', '755', '-p', '/store/unmerged']\
              ).AndReturn(("0", "we made a directory, yay"))        
         # -- fake the actual copy
-        copyMocker.doTransfer( \
+        self.copyMocker.doTransfer( \
             '/store/unmerged/lustre/NONEXISTANTSOURCE', '/store/unmerged/lustre/NONEXISTANTTARGET', True, None, None, None, None\
              ).AndRaise(StageOutFailure("testFailure"))
         
    
         # now try to delete it (pnfs)
-        runMocker.runCommand( 
+        self.runMocker.runCommand( 
             ['rm', '-fv', '/pnfs/cms/WAX/11/store/tmp/testfile' ]\
              ).AndReturn(("1", "This was a test of the fail system"))
         # try to delete it (lustre)
-        runMocker.runCommand( 
+        self.runMocker.runCommand( 
             ['/bin/rm', '/lustre/unmerged/NOTAFILE']\
              ).AndReturn(("1", "This was a test of the fail system"))
 
-        mox.Replay(runMocker)       
-        mox.Replay(copyMocker)
+        mox.Replay(self.runMocker)       
+        mox.Replay(self.copyMocker)
         #ourPlugin.runCommand = runMocker.runCommand()
         testObject = ourPlugin()
         
@@ -87,8 +90,76 @@ class DCCPFNALImplTest(unittest.TestCase):
                               None)
         testObject.doDelete('/store/tmp/testfile', None, None, None, None  )
         testObject.doDelete('/store/unmerged/lustre/NOTAFILE',None, None, None, None )
-        mox.Verify(runMocker)
-        mox.Verify(copyMocker)
+        mox.Verify(self.runMocker)
+        mox.Verify(self.copyMocker)
+    def testWin(self):
+
+
+        
+        #first try to make a file (regular). this one works
+        self.runMocker.runCommand( 
+            [self.commandPrepend,'dccp', '-o', '86400', '-d', '0', '-X', '-role=cmsprod', '/store/NONEXISTANTSOURCE', '/store/NONEXISTANTTARGET' ]\
+             ).AndReturn((0, "This transfer works"))
+        self.runMocker.runCommand( 
+            [self.commandPrepend,'/opt/d-cache/dcap/bin/check_dCachefilecksum.sh', '/store/NONEXISTANTTARGET', '/store/NONEXISTANTSOURCE']\
+             ).AndReturn((0, "Oh, the checksum was checked"))
+        
+        # now make a file and have the checksum fail
+        self.runMocker.runCommand( 
+            [self.commandPrepend,'dccp', '-o', '86400', '-d', '0', '-X', '-role=cmsprod', '/store/NONEXISTANTSOURCE', '/store/NONEXISTANTTARGET' ]\
+             ).AndReturn((0, "This transfer works"))
+        self.runMocker.runCommand( 
+            [self.commandPrepend,'/opt/d-cache/dcap/bin/check_dCachefilecksum.sh', '/store/NONEXISTANTTARGET', '/store/NONEXISTANTSOURCE']\
+             ).AndReturn((1, "Oh, the checksum was checked. Things look bad"))
+        self.runMocker.runCommand( 
+            [self.commandPrepend, 'mkdir', '-m', '755', '-p', '/store/unmerged']\
+             ).AndReturn((0, ""))
+                          
+        #then try to make a non existant file on lustre
+        # -- fake making a directory
+        self.runMocker.runCommand( 
+            [self.commandPrepend, 'mkdir', '-m', '755', '-p', '/store/unmerged']\
+             ).AndReturn((0, "we made a directory, yay"))        
+        # -- fake the actual copy
+        self.copyMocker.doTransfer( \
+            '/store/unmerged/lustre/NONEXISTANTSOURCE', '/store/unmerged/lustre/NONEXISTANTTARGET', True, None, None, None, None\
+             ).AndReturn("balls")
+        
+        mox.Replay(self.runMocker)       
+        mox.Replay(self.copyMocker)
+        #ourPlugin.runCommand = runMocker.runCommand()
+        testObject = ourPlugin()
+        
+        # copy normally and have it work
+        newPfn = testObject.doTransfer('/store/NONEXISTANTSOURCE',
+                              '/store/NONEXISTANTTARGET',
+                              True, 
+                              None,
+                              None,
+                              None,
+                              None)
+        self.assertEqual(newPfn, '/store/NONEXISTANTTARGET')
+        # second time fails the checksum
+        self.assertRaises(StageOutFailure,
+                           testObject.doTransfer,'/store/NONEXISTANTSOURCE',
+                              '/store/NONEXISTANTTARGET',
+                              True, 
+                              None,
+                              None,
+                              None,
+                              None)
+        
+        # copy to lustre normally and have it work
+        newPfn = testObject.doTransfer('/store/unmerged/lustre/NONEXISTANTSOURCE',
+                              '/store/unmerged/lustre/NONEXISTANTTARGET',
+                              True, 
+                              None,
+                              None,
+                              None,
+                              None)
+        self.assertEqual(newPfn, "balls")
+        mox.Verify(self.runMocker)
+        mox.Verify(self.copyMocker)
         
 
 if __name__ == "__main__":

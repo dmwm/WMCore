@@ -14,11 +14,4 @@ class AddToFileset(AddFileToFilesetMySQL):
     sql = """insert into wmbs_fileset_files 
             (fileid, fileset, insert_time) 
             values ((select id from wmbs_file_details where lfn = :lfn),
-            (select id from wmbs_fileset where name = :fileset), :timestamp)"""
-                    
-    def getBinds(self, file = None, fileset = None):
-        return self.dbi.buildbinds(self.dbi.makelist(fileset), 'fileset',
-                        self.dbi.buildbinds(self.dbi.makelist(file), 'lfn',
-                                self.dbi.buildbinds(
-                                    self.dbi.makelist(self.timestamp()), 'timestamp')))
-    
+            (select id from wmbs_fileset where name = :fileset), :insert_time)"""

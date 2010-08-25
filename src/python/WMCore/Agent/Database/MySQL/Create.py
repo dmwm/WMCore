@@ -1,0 +1,34 @@
+"""
+_CreateAgent_
+
+Implementation of CreateAgent for MySQL.
+
+Inherit from CreateAgentBase, and add MySQL specific substitutions (e.g. add 
+INNODB).
+"""
+
+__revision__ = "$Id: Create.py,v 1.1 2010/06/21 21:19:18 sryu Exp $"
+__version__ = "$Revision: 1.1 $"
+
+from WMCore.Agent.Database.CreateAgentBase import CreateAgentBase
+
+class Create(CreateAgentBase):
+    """
+    Class to set up the Agent schema in a MySQL database
+    """
+    def __init__(self, logger = None, dbi = None, params = None):
+        """
+        _init_
+
+        Call the base class's constructor and create all necessary tables,
+        constraints and inserts.
+        """
+        CreateAgentBase.__init__(self, logger, dbi, params)
+        
+    
+    def execute(self, conn = None, transaction = None):
+        for i in self.create.keys():
+            self.create[i] = self.create[i] + " ENGINE=InnoDB"
+            self.create[i] = self.create[i].replace('INTEGER', 'INT(11)')
+            
+        return CreateAgentBase.execute(self, conn, transaction)

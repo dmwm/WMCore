@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.6 2009/10/13 16:20:16 riahi Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Feeder.py,v 1.7 2009/10/19 13:10:10 riahi Exp $"
+__version__ = "$Revision: 1.7 $"
 
 # DBS
 from WMCore.Services.DBS.DBSReader import DBSReader
@@ -70,6 +70,8 @@ class Feeder(FeederImpl):
      
         logging.debug("the Feeder is processing %s" % \
                  filesetToProcess.name) 
+ 
+        logging.debug("the fileset name is processing %s" % (filesetToProcess.name).split(":")[0])
   
         # get list of files
         tries = 1
@@ -81,7 +83,7 @@ class Feeder(FeederImpl):
                 now = time.time()  
 
                 try:
-                    blocks = self.dbsReader.getFiles(filesetToProcess.name)
+                    blocks = self.dbsReader.getFiles((filesetToProcess.name).split(":")[0])
 
                 except:
                     logging.debug("dbsReader call error...")

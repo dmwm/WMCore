@@ -5,8 +5,8 @@ Filesets and Feeders manager
 """
 
 __all__ = []
-__revision__ = "$Id: FeederManagerPoller.py,v 1.2 2009/07/25 11:01:57 riahi Exp $" 
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FeederManagerPoller.py,v 1.3 2009/10/19 13:08:15 riahi Exp $" 
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import logging
@@ -137,8 +137,10 @@ class FeederManagerPoller(BaseWorkerThread):
         ##fileset = parentFeeder.getParentsForNewFiles(fileset)
 
         # FIXME: Get it more generic
-        logging.debug("feeder called for %s" % fileset.name)
+        logging.debug("feeder name is %s" %(fileset.name).split(":")[1])
+
         feeder = Feeder()
+
         try:
             feeder(fileset)
         except:

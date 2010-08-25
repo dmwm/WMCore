@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.3 2009/10/13 19:34:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import os
@@ -220,7 +220,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant.preInitialization()
         accountant.pollForJobs()
 
-        accountant.dequeue(1)
+        accountant.processPool.dequeue(1)
 
         self.verifyJobFailure("T0Skim-Run2-Skim2-Jet-631")
         return
@@ -240,7 +240,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant.preInitialization()
         accountant.pollForJobs()
 
-        accountant.dequeue(1)
+        accountant.processPool.dequeue(1)
 
         self.verifyJobFailure("T0Skim-Run2-Skim2-Jet-631")
         return
@@ -259,7 +259,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant = JobAccountant(config)
         accountant.preInitialization()
         accountant.pollForJobs()
-        accountant.dequeue(1)
+        accountant.processPool.dequeue(1)
 
         self.verifyJobFailure("T0Merge-Run1-Mu-AOD-722")
         return
@@ -538,7 +538,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant.preInitialization()
         accountant.pollForJobs()
 
-        accountant.dequeue(1)
+        accountant.processPool.dequeue(1)
         
         fwjrBasePath = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/JobAccountant_t/"
         jobReports = readJobReport(fwjrBasePath + "SplitSuccessA.xml")
@@ -569,7 +569,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJobB, self.testJobC])
 
         accountant.pollForJobs()
-        accountant.dequeue(2)
+        accountant.processPool.dequeue(2)
         
         jobReports = readJobReport(fwjrBasePath + "SplitSuccessB.xml")
         self.verifyFileMetaData(self.testJobB["id"], jobReports[0].files)
@@ -699,8 +699,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant = JobAccountant(config)
         accountant.preInitialization()
         accountant.pollForJobs()
-
-        accountant.dequeue(1)
+        accountant.processPool.dequeue(1)
 
         fwjrBasePath = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/JobAccountant_t/"
         jobReports = readJobReport(fwjrBasePath + "MergedSkimSuccess.xml")
@@ -850,7 +849,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant = JobAccountant(config)
         accountant.preInitialization()
         accountant.pollForJobs()
-        accountant.dequeue(1)
+        accountant.processPool.dequeue(1)
 
         fwjrBasePath = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/JobAccountant_t/"
         jobReports = readJobReport(fwjrBasePath + "MergeSuccess.xml")
@@ -968,7 +967,7 @@ class JobAccountantTest(unittest.TestCase):
 
         startTime = time.time()
         accountant.pollForJobs()
-        accountant.dequeue(100)
+        accountant.processPool.dequeue(100)
         endTime = time.time()
         print "  Performance: %s fwjrs/sec" % (100 / (endTime - startTime))
 
@@ -1008,7 +1007,7 @@ class JobAccountantTest(unittest.TestCase):
 
         startTime = time.time()
         accountant.pollForJobs()
-        accountant.dequeue(100)
+        accountant.processPool.dequeue(100)
         endTime = time.time()
         print "  Performance: %s fwjrs/sec" % (100 / (endTime - startTime))
 
@@ -1048,7 +1047,7 @@ class JobAccountantTest(unittest.TestCase):
 
         startTime = time.time()
         accountant.pollForJobs()
-        accountant.dequeue(100)
+        accountant.processPool.dequeue(100)
         endTime = time.time()
         print "  Performance: %s fwjrs/sec" % (100 / (endTime - startTime))
 
@@ -1088,7 +1087,7 @@ class JobAccountantTest(unittest.TestCase):
 
         startTime = time.time()
         accountant.pollForJobs()
-        accountant.dequeue(100)
+        accountant.processPool.dequeue(100)
         endTime = time.time()
         print "  Performance: %s fwjrs/sec" % (100 / (endTime - startTime))
 

@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2009/06/10 21:06:21 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2009/06/15 20:57:02 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -49,7 +49,7 @@ class Create(CreateWorkQueueBase):
              PRIMARY KEY(id)
              )"""
              
-        self.create["04wq_element"] = \
+        self.create["05wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL AUTO_INCREMENT,
              wmspec_id        INTEGER    NOT NULL,
@@ -57,6 +57,7 @@ class Create(CreateWorkQueueBase):
              num_jobs         INTEGER    NOT NULL,
              priority         INTEGER    NOT NULL,
              parent_flag      INTEGER    DEFAULT 0,
+             status           INTEGER    DEFAULT 0,
              last_update      INTEGER    NOT NULL,
              PRIMARY KEY (id),
              UNIQUE (wmspec_id, block_id)

@@ -43,8 +43,7 @@ class SubscriptionTest(unittest.TestCase):
         self.dummySet = Set() 
         self.dummySet.add(self.dummyFile)
         self.dummyFileSet = Fileset(name = 'SubscriptionTestFileset', 
-                                    files = self.dummySet, 
-                                    logger = self.logger)
+                                    files = self.dummySet)
         self.dummyWorkFlow = Workflow()
         self.dummySubscription = Subscription(fileset = self.dummyFileSet, 
                                               workflow = self.dummyWorkFlow)

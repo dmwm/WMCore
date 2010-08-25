@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.38 2009/03/03 14:56:12 sfoulkes Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: Fileset.py,v 1.39 2009/04/14 17:44:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.39 $"
 
 from sets import Set
 
@@ -142,12 +142,12 @@ class Fileset(WMBSBase, WMFileset):
             self.load()
 
         action = self.daofactory(classname = "Files.InFileset")
-        results = action.execute(fileset = self.name,
+        results = action.execute(fileset = self.id,
                                  conn = self.getReadDBConn(),
                                  transaction = self.existingTransaction())
 
         for result in results:
-            file = File(id = result["id"])
+            file = File(id = result["fileid"])
             file.loadData(parentage = 1)
             self.files.add(file)
 

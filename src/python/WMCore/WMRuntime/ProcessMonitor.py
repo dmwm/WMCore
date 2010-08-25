@@ -62,18 +62,22 @@ class ChildProcess(object):
         
     def forkAndExecute(self):
         pid = os.fork()
-        if (pid):
-            # we're in the child
-            if (self.ourStderr):
-                sys.stderr = self.ourStderr
-            if (self.ourStdout):
-                sys.stderr = self.ourStdout
-            exitCode = self.execute()
-            print "Falling through ChildProcess.forkAndExecute with code %s" %\
-                     exitCode
-            sys.stdout.flush()
-            sys.stderr.flush()
-            os._exit( exitCode )
+        if (not pid):
+            try:
+                # we're in the child
+                if (self.ourStderr):
+                    sys.stderr = self.ourStderr
+                if (self.ourStdout):
+                    sys.stderr = self.ourStdout
+                exitCode = self.execute()
+                print "Falling through ChildProcess.forkAndExecute with code %s" %\
+                         exitCode
+                sys.stdout.flush()
+                sys.stderr.flush()
+                os._exit( exitCode )
+            except Exception, e:
+                print "Something bad happened in ChildProcess.forkAndExecute in the child: %s" % e
+                os._exit(99)
             
         else:
             # we're in the parent

@@ -18,8 +18,14 @@ class StageOutStepHelper(CoreHelper):
     for StageOut tasks
 
     """
-
-
+    def addFile(self, infile, outfile):
+        """
+            Enqueues(sp?) a file to the StageOut step
+        """
+        target = self.data.files.section_(self.data.filecount)
+        target.input  = infile
+        target.output = outfile
+        self.data.filecount += 1 
 
 
 
@@ -34,7 +40,8 @@ class StageOut(Template):
     def install(self, step):
         stepname = nodeName(step)
         step.stepType = "StageOut"
-
+        step.section_("files")
+        step.filecount = 0
 
 
     def helper(self, step):

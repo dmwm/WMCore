@@ -252,7 +252,7 @@ class ReRecoWorkloadFactory():
         if self.emulationMode:
             rerecoStageOutHelper = rerecoTaskStageOut.getTypeHelper()
             rerecoLogArchHelper  = rerecoTaskLogArch.getTypeHelper()
-            rerecoCmsswHelper.data.emulator.emulatorName = "CMSSW"
+            rerecoTaskCmsswHelper.data.emulator.emulatorName = "CMSSW"
             rerecoStageOutHelper.data.emulator.emulatorName = "StageOut"
             rerecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
             
@@ -272,3 +272,4 @@ def rerecoWorkload(workloadName, arguments):
     """
     myReRecoFactory = ReRecoWorkloadFactory()
     return myReRecoFactory(workloadName, arguments)
+

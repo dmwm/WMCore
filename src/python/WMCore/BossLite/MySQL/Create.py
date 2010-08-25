@@ -4,8 +4,8 @@ _Create_
 Base class for creating the BossLite database.
 """
 
-__revision__ = "$Id: Create.py,v 1.6 2010/05/29 13:05:06 spigafi Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Create.py,v 1.7 2010/06/28 18:54:34 spigafi Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 
@@ -107,15 +107,15 @@ ENGINE = InnoDB DEFAULT CHARSET=latin1;
     status VARCHAR(255),
     status_reason TEXT,
     destination TEXT, 
-    lb_timestamp DATETIME,
-    submission_time DATETIME,
-    scheduled_at_site DATETIME,
-    start_time DATETIME,
-    stop_time DATETIME,
-    stageout_time DATETIME,
-    getoutput_time DATETIME,
-    output_request_time DATETIME,
-    output_enqueue_time DATETIME,
+    lb_timestamp INT,
+    submission_time INT,
+    scheduled_at_site INT,
+    start_time INT,
+    stop_time INT,
+    stageout_time INT,
+    getoutput_time INT,
+    output_request_time INT,
+    output_enqueue_time INT,
     getoutput_retry INT,
     output_dir TEXT,
     storage TEXT,

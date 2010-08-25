@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.62 2010/07/23 18:47:57 meloam Exp $"
+    "$Id: TestInit.py,v 1.63 2010/08/02 16:11:50 meloam Exp $"
 __version__ = \
-    "$Revision: 1.62 $"
+    "$Revision: 1.63 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -186,6 +186,7 @@ class TestInit:
                             
       
             elif (dialect == 'Oracle'):
+                print "Rookie, fix blowing away oracle in TestInit. thanks"
                 pass
             else:
                 raise RuntimeError, "This dialect is unsupported by trashDatabases"

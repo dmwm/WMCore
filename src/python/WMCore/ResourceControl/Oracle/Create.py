@@ -5,8 +5,8 @@ _Create_
 Class for creating Oracle specific schema for resource control.
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2010/02/09 17:59:14 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2010/07/15 16:57:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 
@@ -37,7 +37,6 @@ class Create(DBCreator):
         CREATE TABLE rc_threshold(
             site_id INTEGER NOT NULL,
             sub_type_id INTEGER NOT NULL,
-            min_slots INTEGER NOT NULL,
             max_slots INTEGER NOT NULL) %s""" % tablespaceTable
 
         self.constraints["rc_threshold_fk1"] = \

@@ -6,8 +6,8 @@ Query WMBS and ResourceControl to determine how many jobs are still running so
 that we can schedule jobs that have just been created.
 """
 
-__revision__ = "$Id: ListThresholdsForSubmit.py,v 1.5 2010/06/22 21:20:05 mnorman Exp $"
-__version__  = "$Revision: 1.5 $"
+__revision__ = "$Id: ListThresholdsForSubmit.py,v 1.6 2010/07/15 16:57:05 sfoulkes Exp $"
+__version__  = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -15,7 +15,7 @@ class ListThresholdsForSubmit(DBFormatter):
     sql = """SELECT wmbs_location.site_name AS site_name,
                     wmbs_location.se_name AS se_name,
                     wmbs_location.job_slots,
-                    rc_threshold.min_slots, rc_threshold.max_slots,
+                    rc_threshold.max_slots,
                     wmbs_sub_types.name AS task_type,
                     job_count.total AS task_running_jobs
                     FROM wmbs_location
@@ -62,9 +62,8 @@ class ListThresholdsForSubmit(DBFormatter):
             formattedResult = formattedResults[result["site_name"]][result["task_type"]]
             formattedResult["total_slots"] = result["job_slots"]
             formattedResult["task_running_jobs"] = result["task_running_jobs"]
-            formattedResult["min_slots"] = result["min_slots"]
             formattedResult["max_slots"] = result["max_slots"]
-            formattedResult['se_name']   = result['se_name']
+            formattedResult["se_name"]   = result["se_name"]
 
         for siteName in totalRunning.keys():
             for taskType in formattedResults[siteName].keys():
@@ -100,4 +99,3 @@ class ListThresholdsForSubmit(DBFormatter):
             return self.formatTable(results)
         else:
             return results
-        

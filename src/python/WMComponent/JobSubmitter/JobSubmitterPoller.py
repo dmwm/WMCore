@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.32 2010/07/08 20:52:56 mnorman Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.33 2010/07/15 16:57:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.33 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -323,35 +323,18 @@ class JobSubmitterPoller(BaseWorkerThread):
                 logging.error("Job %i eliminated all sites in blacklist" % (job['id']))
                 raise BadJobError
 
-
-
-        
-
-        # First look for sites where we have
-        # less then the minimum jobs of this type
+        tmpSlots = -999999
+        tmpSite  = None
         for site in possibleSites:
             siteDict = self.sites[site][jobType]
             if not siteDict['task_running_jobs'] < siteDict['max_slots']:
-                # Then we have too many jobs in this place already
+                # Then we have too many jobs for this task
+                # Ignore this site
                 continue
-            nSpaces = self.sites[site][jobType]['min_slots'] \
-                      - self.sites[site][jobType]['task_running_jobs']
+            nSpaces = siteDict['total_slots'] - siteDict['total_running_jobs']
             if nSpaces > tmpSlots:
                 tmpSlots = nSpaces
                 tmpSite  = site
-        if tmpSlots < 0:  # Then we didn't have any sites under the minimum
-            tmpSlots = -999999
-            tmpSite  = None
-            for site in possibleSites:
-                siteDict = self.sites[site][jobType]
-                if not siteDict['task_running_jobs'] < siteDict['max_slots']:
-                    # Then we have too many jobs for this task
-                    # Ignore this site
-                    continue
-                nSpaces = siteDict['total_slots'] - siteDict['total_running_jobs']
-                if nSpaces > tmpSlots:
-                    tmpSlots = nSpaces
-                    tmpSite  = site
 
         # Having chosen a site, account for it
         if tmpSite:

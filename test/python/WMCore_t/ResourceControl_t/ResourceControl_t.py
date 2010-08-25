@@ -5,8 +5,8 @@ _ResourceControl_t_
 Unit tests for ResourceControl.
 """
 
-__revision__ = "$Id: ResourceControl_t.py,v 1.7 2010/07/01 19:52:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ResourceControl_t.py,v 1.8 2010/07/15 16:57:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import threading
@@ -64,11 +64,11 @@ class ResourceControlTest(unittest.TestCase):
         myResourceControl.insertSite("testSite1", 10, "testSE1", "testCE1")
         myResourceControl.insertSite("testSite2", 100, "testSE2", "testCE2")
 
-        myResourceControl.insertThreshold("testSite1", "Processing", 10, 20)
-        myResourceControl.insertThreshold("testSite1", "Merge", 100, 200) 
-        myResourceControl.insertThreshold("testSite1", "Merge", 150, 250)
-        myResourceControl.insertThreshold("testSite2", "Processing", 25, 50)
-        myResourceControl.insertThreshold("testSite2", "Merge", 75, 135)
+        myResourceControl.insertThreshold("testSite1", "Processing", 20)
+        myResourceControl.insertThreshold("testSite1", "Merge", 200) 
+        myResourceControl.insertThreshold("testSite1", "Merge", 250)
+        myResourceControl.insertThreshold("testSite2", "Processing", 50)
+        myResourceControl.insertThreshold("testSite2", "Merge", 135)
 
         createThresholds =  myResourceControl.listThresholdsForCreate()
 
@@ -120,8 +120,6 @@ class ResourceControlTest(unittest.TestCase):
                "Error: Site thresholds wrong"        
         assert site1Thresholds["Processing"]["max_slots"] == 20, \
                "Error: Site thresholds wrong"
-        assert site1Thresholds["Processing"]["min_slots"] == 10, \
-               "Error: Site thresholds wrong"
 
         assert site1Thresholds["Merge"]["total_slots"] == 10, \
                "Error: Site thresholds wrong"
@@ -130,8 +128,6 @@ class ResourceControlTest(unittest.TestCase):
         assert site1Thresholds["Merge"]["task_running_jobs"] == 0, \
                "Error: Site thresholds wrong"        
         assert site1Thresholds["Merge"]["max_slots"] == 250, \
-               "Error: Site thresholds wrong"
-        assert site1Thresholds["Merge"]["min_slots"] == 150, \
                "Error: Site thresholds wrong"
 
         assert site2Thresholds["Processing"]["total_slots"] == 100, \
@@ -142,8 +138,6 @@ class ResourceControlTest(unittest.TestCase):
                "Error: Site thresholds wrong"        
         assert site2Thresholds["Processing"]["max_slots"] == 50, \
                "Error: Site thresholds wrong"
-        assert site2Thresholds["Processing"]["min_slots"] == 25, \
-               "Error: Site thresholds wrong"
 
         assert site2Thresholds["Merge"]["total_slots"] == 100, \
                "Error: Site thresholds wrong"
@@ -153,8 +147,6 @@ class ResourceControlTest(unittest.TestCase):
                "Error: Site thresholds wrong"        
         assert site2Thresholds["Merge"]["max_slots"] == 135, \
                "Error: Site thresholds wrong"
-        assert site2Thresholds["Merge"]["min_slots"] == 75, \
-               "Error: Site thresholds wrong"                        
 
         return
 
@@ -169,10 +161,10 @@ class ResourceControlTest(unittest.TestCase):
         myResourceControl.insertSite("testSite1", 10, "testSE1", "testCE1")
         myResourceControl.insertSite("testSite2", 20, "testSE2", "testCE2")        
 
-        myResourceControl.insertThreshold("testSite1", "Processing", 10, 20)
-        myResourceControl.insertThreshold("testSite1", "Merge", 100, 200) 
-        myResourceControl.insertThreshold("testSite2", "Processing", 25, 50)
-        myResourceControl.insertThreshold("testSite2", "Merge", 75, 135)        
+        myResourceControl.insertThreshold("testSite1", "Processing", 20)
+        myResourceControl.insertThreshold("testSite1", "Merge", 200) 
+        myResourceControl.insertThreshold("testSite2", "Processing", 50)
+        myResourceControl.insertThreshold("testSite2", "Merge", 135)        
 
         testWorkflow = Workflow(spec = makeUUID(), owner = "Steve",
                                 name = makeUUID(), task = "Test")
@@ -349,6 +341,29 @@ class ResourceControlTest(unittest.TestCase):
         assert siteInfo["ce_name"] == "testCE1", \
                "Error: CE name is wrong."
         assert siteInfo["job_slots"] == 10, \
+               "Error: Job slots is wrong."
+
+        return
+
+    def testUpdateJobSlots(self):
+        """
+        _testUpdateJobSlots_
+
+        Verify that it is possible to update the number of job slots at a site.
+        """
+        myResourceControl = ResourceControl()
+        myResourceControl.insertSite("testSite1", 10, "testSE1", "testCE1")
+
+        siteInfo = myResourceControl.listSiteInfo("testSite1")
+
+        assert siteInfo["job_slots"] == 10, \
+               "Error: Job slots is wrong."        
+
+        myResourceControl.setJobSlotsForSite("testSite1", 20)
+
+        siteInfo = myResourceControl.listSiteInfo("testSite1")
+
+        assert siteInfo["job_slots"] == 20, \
                "Error: Job slots is wrong."
 
         return

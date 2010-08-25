@@ -5,16 +5,13 @@ _ResourceControl_
 Library from manipulating and querying the resource control database.
 """
 
-__revision__ = "$Id: ResourceControl.py,v 1.4 2010/07/07 19:20:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ResourceControl.py,v 1.5 2010/07/15 16:57:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
 
 class ResourceControl(WMConnectionBase):
-    """
-    Wrapper Object
-    """
     def __init__(self):
         WMConnectionBase.__init__(self, daoPackage = "WMCore.ResourceControl")
         self.wmbsDAOFactory = DAOFactory(package = "WMCore.WMBS",
@@ -48,7 +45,7 @@ class ResourceControl(WMConnectionBase):
                                   conn = self.getDBConn(),
                                   transaction = self.existingTransaction())[0]
 
-    def insertThreshold(self, siteName, taskType, minSlots, maxSlots):
+    def insertThreshold(self, siteName, taskType, maxSlots):
         """
         _insertThreshold_
 
@@ -62,7 +59,7 @@ class ResourceControl(WMConnectionBase):
                               transaction = self.existingTransaction())
         insertAction = self.daofactory(classname = "InsertThreshold")
         insertAction.execute(siteName = siteName, taskType = taskType,
-                             minSlots = minSlots, maxSlots = maxSlots,
+                             maxSlots = maxSlots,
                              conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
@@ -81,7 +78,6 @@ class ResourceControl(WMConnectionBase):
           total_slots - Total number of slots available at the site
           task_running_jobs - Number of jobs for this task running at the site
           total_running_jobs - Total jobs running at the site
-          min_slots - Minimum number of job slots for this task at the site
           max_slots - Maximum number of job slots for this task at the site
         """
         listAction = self.daofactory(classname = "ListThresholdsForSubmit")
@@ -112,3 +108,13 @@ class ResourceControl(WMConnectionBase):
         return listActions.execute(taskType, siteName,
                                    conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
+
+    def setJobSlotsForSite(self, siteName, jobSlots):
+        """
+        _setJobSlotsForSite_
+
+        Set the number of job slots for the given site.
+        """
+        slotsAction = self.daofactory(classname = "SetJobSlotsForSite")
+        slotsAction.execute(siteName, jobSlots, conn = self.getDBConn(),
+                            transaction = self.existingTransaction())

@@ -5,37 +5,45 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.2 2009/07/17 21:18:30 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.3 2009/10/15 19:52:03 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 from WMCore.Agent.Configuration import Configuration
 import os
+import os.path
 
 
 config = Configuration()
 config.component_("JobCreator")
 config.JobCreator.namespace = 'WMComponent.JobCreator.JobCreator'
 #The log level of the component. 
+#config.JobCreator.logLevel = 'SQLDEBUG'
 config.JobCreator.logLevel = 'INFO'
 
 # maximum number of threads we want to deal
 # with messages per pool.
-config.JobCreator.maxThreads = 1
-#
-# JobCreator
-#
+config.JobCreator.maxThreads       = 1
+config.JobCreator.UpdateFromSiteDB = True
+config.JobCreator.pollInterval     = 10
+config.JobCreator.jobCacheDir      = os.path.join(os.getcwd(), 'test')
+config.JobCreator.defaultJobType   = 'processing' #Type of jobs that we run, used for resource control
+config.JobCreator.workerThreads    = 2
+config.JobCreator.componentDir     = os.getcwd()
 
-config.JobCreator.pollInterval = 10
-
-
+#We now call the JobMaker from here
+config.component_('JobMaker')
+config.JobMaker.logLevel        = 'INFO'
+config.JobMaker.namespace       = 'WMCore.WMSpec.Makers.JobMaker'
+config.JobMaker.maxThreads      = 1
+config.JobMaker.makeJobsHandler = 'WMCore.WMSpec.Makers.Handlers.MakeJobs'
 
 jsm = config.component_('JobStateMachine')
 
 if (os.getenv('COUCHURL') != None):
     couchurl = os.getenv('COUCHURL')
 else:
-    couchurl = 'localhost:5984'
+    couchurl = 'cmssrv48.fnal.gov:5984'
 
 jsm.couchurl = couchurl
 jsm.default_retries = 1

@@ -16,6 +16,9 @@ from WMCore.DataStructs.Run import Run
 from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
 from DBSAPI.dbsApi import DbsApi
 
+from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
+
+
 if not os.environ.has_key("WMAGENT_CONFIG"):
     print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
     sys.exit(0)
@@ -48,6 +51,12 @@ arguments = {
     }
 
 workload = rerecoWorkload("Tier1ReReco", arguments)
+
+# Build a sandbox using TaskMaker
+taskMaker = TaskMaker(workload, os.getcwd())
+taskMaker.skipSubscription = True
+taskMaker.processWorkload()
+
 workload.save("rereco.pkl")
 
 def doIndent(level):
@@ -73,6 +82,7 @@ def injectTaskIntoWMBS(specUrl, task, inputFileset, indent = 0):
                                   split_algo = task.jobSplittingAlgorithm(),
                                   type = task.taskType())
     mySubscription.create()
+    mySubscription.markLocation("fnal.gov")
 
     outputModules =  task.getOutputModulesForStep(task.getTopStepName())
     for outputModuleName in outputModules.listSections_():
@@ -113,7 +123,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     for dbsResult in dbsResults:
         myFile = File(lfn = dbsResult["LogicalFileName"], size = dbsResult["FileSize"],
                       events = dbsResult["NumberOfEvents"], checksums = {"cksum": dbsResult["Checksum"]},
-                      locations = "cmssrm.fnal.gov")
+                      locations = "fnal.gov")
         myRun = Run(runNumber = dbsResult["LumiList"][0]["RunNumber"])
         for lumi in dbsResult["LumiList"]:
             myRun.lumis.append(lumi["LumiSectionNumber"])
@@ -134,7 +144,7 @@ for workloadTask in workload.taskIterator():
                                       inputDataset.tier)
     injectFilesFromDBS(inputFileset, inputDatasetPath)
 
-    injectTaskIntoWMBS("/home/sfoulkes/etc/rereco.pkl", workloadTask,
+    injectTaskIntoWMBS("/storage/local/data1/wmagent/install/WMCORE/etc/rereco.pkl", workloadTask,
                        inputFileset)
 
 

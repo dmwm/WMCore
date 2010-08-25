@@ -3,8 +3,8 @@
     Mocked DBS interface for Start Policy unit tests
 """
 
-__revision__ = "$Id: MockDBSReader.py,v 1.3 2010/03/24 16:24:04 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: MockDBSReader.py,v 1.4 2010/03/29 23:30:16 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 #//     - ignore some params in dbs spec - silence pylint warnings
 # pylint: disable-msg=W0613,R0201
@@ -22,8 +22,8 @@ class MockDBSReader:
                                      'Size' : 100000,
                                      'Parents' : ()},
                                     {'Name' : dataset + "#2",
-                                     'NumEvents' : 1000,
-                                     'NumFiles' : 10,
+                                     'NumberOfEvents' : 1000,
+                                     'NumberOfFiles' : 10,
                                      'Size' : 300000,
                                      'Parents' : ()}
                                    ]
@@ -72,8 +72,8 @@ class MockDBSReader:
     def getDatasetInfo(self, dataset):
         """Dataset summary"""
         result = {}
-        result['number_of_events'] = sum([x['NumEvents'] for x in self.blocks[dataset]])
-        result['number_of_files'] = sum([x['NumFiles'] for x in self.blocks[dataset]])
+        result['number_of_events'] = sum([x['NumberOfEvents'] for x in self.blocks[dataset]])
+        result['number_of_files'] = sum([x['NumberOfFiles'] for x in self.blocks[dataset]])
         result['path'] = dataset
         return result
 # pylint: enable-msg=W0613,R0201

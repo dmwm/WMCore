@@ -1,30 +1,31 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101
+#pylint: disable-msg=E1101, W6501, W0142, E1103, R0903, R0914
 #E1101 doesn't allow you to define config sections using .section_()
+#W6501: Allow us to use string formatting for logging messages
+#W0142: Use ** magic
+#E1103: Transaction attached to myThread
+#R0903: You can't win with pylint; it wants more methods, and then
+# wants to move them outside the class
+#R0914: We just have too many variables to pass normally
 """
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.10 2010/04/28 16:33:41 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.11 2010/04/29 20:07:08 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 import logging
 import os
 import os.path
-import cProfile, pstats
 
 import cPickle
 
 
-from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.DAOFactory                      import DAOFactory
 from WMCore.JobSplitting.SplitterFactory    import SplitterFactory
 from WMCore.WMBS.Subscription               import Subscription
-from WMCore.WMBS.Workflow                   import Workflow
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
-from WMCore.ThreadPool                      import WorkQueue
-from WMCore.Database.Transaction            import Transaction
                                             
                                             
 from WMCore.WMSpec.Seeders.SeederManager                import SeederManager
@@ -33,7 +34,60 @@ from WMCore.WMSpec.Makers.Interface.CreateWorkArea      import CreateWorkArea
 
 from WMCore.Agent.Configuration import Configuration
 
+def retrieveWMSpec(subscription):
+    """
+    _retrieveWMSpec_
+    
+    Given a subscription, this function loads the WMSpec associated with that workload
+    """
+    workflow = subscription['workflow']
+    wmWorkloadURL = workflow.spec
+    
+    if not os.path.isfile(wmWorkloadURL):
+        return None
+    
+    wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
+    wmWorkload.load(wmWorkloadURL)  
+    
+    return wmWorkload
+
+
+def retrieveJobSplitParams(wmWorkload, task):
+    """
+    _retrieveJobSplitParams_
+    
+    Retrieve job splitting parameters from the workflow.  The way this is
+    setup currently sucks, we have to know all the job splitting parameters
+    up front.  The following are currently supported:
+        files_per_job
+        min_merge_size
+        max_merge_size
+        max_merge_events
+    """
+
+
+    # This function has to find the WMSpec, and get the parameters from the spec
+    # I don't know where the spec is, but I'll have to find it.
+    # I don't want to save it in each workflow area, but I may have to
+
+    if not wmWorkload:
+        return {"files_per_job": 5}
+    task = wmWorkload.getTaskByPath(task)
+    if not task:
+        return {"files_per_job": 5}
+    else:
+        return task.jobSplittingParameters()
+
+
+
+
+    
+
 class JobCreatorWorker:
+    """
+    This is the ProcessPool worker function that actually
+    runs the jobCreator
+    """
 
     def __init__(self, **configDict):
         """
@@ -45,7 +99,8 @@ class JobCreatorWorker:
         self.transaction = myThread.transaction
 
         #DAO factory for WMBS objects
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS", logger = logging, dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS", logger = logging,
+                                     dbinterface = myThread.dbi)
 
         # WMCore splitter factory for splitting up jobs.
         self.splitterFactory = SplitterFactory()
@@ -102,7 +157,7 @@ class JobCreatorWorker:
             wmbsSubscription.load()
             wmbsSubscription["workflow"].load()
             workflow         = wmbsSubscription["workflow"]
-            wmWorkload       = self.retrieveWMSpec(wmbsSubscription)
+            wmWorkload       = retrieveWMSpec(wmbsSubscription)
 
             logging.info("Retrieved WMBS info")
 
@@ -120,9 +175,10 @@ class JobCreatorWorker:
             logging.info("About to enter JobFactory")
 
             # My hope is that the job factory is smart enough only to split un-split jobs
-            wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS", \
-                                                  subscription = wmbsSubscription, generators=seederList)
-            splitParams = self.retrieveJobSplitParams(wmWorkload, workflow.task)
+            wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS",
+                                                  subscription = wmbsSubscription,
+                                                  generators=seederList)
+            splitParams = retrieveJobSplitParams(wmWorkload, workflow.task)
             logging.debug("Split Params: %s" % splitParams)
             wmbsJobGroups = wmbsJobFactory(**splitParams)
             logging.debug("Job Groups %s" % wmbsJobGroups)
@@ -137,7 +193,7 @@ class JobCreatorWorker:
             for wmbsJobGroup in wmbsJobGroups:
                 self.createJobGroup(wmbsJobGroup)
                 # Create a directory
-                self.createWorkArea.processJobs(jobGroupID = wmbsJobGroup.exists(), \
+                self.createWorkArea.processJobs(jobGroupID = wmbsJobGroup.exists(),
                                                 startDir = self.jobCacheDir)
                 
                 for job in wmbsJobGroup.jobs:
@@ -145,7 +201,8 @@ class JobCreatorWorker:
                     # We better save the whole job
                     # First, add the necessary components
                     if wmTask:
-                        # If we managed to load the task, so the url should be valid
+                        # If we managed to load the task,
+                        # so the url should be valid
                         job['spec']    = workflow.spec
                         job['sandbox'] = wmTask.data.input.sandbox
                         job['task']    = wmTask.getPathName()
@@ -157,7 +214,8 @@ class JobCreatorWorker:
                     output.close()
                 
 
-                logging.info("Finished call for jobGroup %i" %(wmbsJobGroup.exists()))
+                logging.info("Finished call for jobGroup %i" \
+                             %(wmbsJobGroup.exists()))
 
         #print "Finished JobCreatorWorker.__call__"
 
@@ -166,33 +224,7 @@ class JobCreatorWorker:
 
 
 
-    def retrieveJobSplitParams(self, wmWorkload, task):
-        """
-        _retrieveJobSplitParams_
-
-        Retrieve job splitting parameters from the workflow.  The way this is
-        setup currently sucks, we have to know all the job splitting parameters
-        up front.  The following are currently supported:
-          files_per_job
-          min_merge_size
-          max_merge_size
-          max_merge_events
-        """
-
-
-        #This function has to find the WMSpec, and get the parameters from the spec
-        #I don't know where the spec is, but I'll have to find it.
-        #I don't want to save it in each workflow area, but I may have to
-
-        foundParams = True
-
-        if not wmWorkload:
-            return {"files_per_job": 5}
-        task = wmWorkload.getTaskByPath(task)
-        if not task:
-            return {"files_per_job": 5}
-        else:
-            return task.jobSplittingParameters()
+    
 
 
     def createJobGroup(self, wmbsJobGroup):
@@ -211,26 +243,12 @@ class JobCreatorWorker:
         changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
         myThread.transaction.commit()
 
-        logging.info("JobCreator has changed jobs to Created for jobGroup %i and is ending" %(wmbsJobGroup.id))
+        logging.info("JobCreator has changed jobs to Created " \
+                     +"for jobGroup %i and is ending" %(wmbsJobGroup.id))
 
 
         return
 
 
 
-    def retrieveWMSpec(self, subscription):
-        """
-        _retrieveWMSpec_
-
-        Given a subscription, this function loads the WMSpec associated with that workload
-        """
-        workflow = subscription['workflow']
-        wmWorkloadURL = workflow.spec
-
-        if not os.path.isfile(wmWorkloadURL):
-            return None
-
-        wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
-        wmWorkload.load(wmWorkloadURL)  
-
-        return wmWorkload
+    

@@ -89,8 +89,20 @@ class DBSReader:
 
         return result
 
-
-
+    #TODO this is not supported by dbs yet (block case).
+    def listRuns(self, dataset = None, block = None):
+        try:
+            if block:
+                results = self.dbs.listRuns(block = block)
+            else:
+                results = self.dbs.listRuns(dataset = dataset)
+        except DbsException, ex:
+            msg = "Error in DBSReader.listRuns(%s, %s)\n" % (dataset, block)
+            msg += "%s\n" % formatEx(ex)
+            raise DBSReaderError(msg)
+    
+        return results
+            
     def listProcessedDatasets(self, primary, dataTier = None):
         """
         _listProcessedDatasets_
@@ -175,6 +187,38 @@ class DBSReader:
                 summary['NumberOfFiles'] = v
             if k == 'number_of_events':
                 summary['NumberOfEvents'] = v
+            #if k == 'number_of_blocks':
+            #    summary['NumberOfBlocks'] = v    
+        return summary
+    
+    #TODO this will replace getDataset info from above once dbs api is supported
+    def getDBSSummaryInfo(self, dataset = None, block = None):
+        """
+        _getDatasetInfo_
+
+        Get dataset summary includes # of files, events, blocks and total size
+        """
+        if dataset:
+            self.checkDatasetPath(dataset)
+        try:
+            if block:
+                summary = self.dbs.getSummary(block = block)
+            else: # dataset case dataset shouldn't be None
+                summary = self.dbs.getSummary(dataset = dataset)
+        except DbsException, ex:
+            msg = "Error in DBSReader.listDatasetSummary(%s, %s)\n" % (dataset, block)
+            msg += "%s\n" % formatEx(ex)
+            raise DBSReaderError(msg)
+        # summary returns
+        # 'number_of_files', 'number_of_events', 'number_of_blocks', 'total_size', 'path'
+        # map that to syncronize with other dbs key
+        for k, v in summary.items():
+            if k == 'number_of_files':
+                summary['NumberOfFiles'] = v
+            if k == 'number_of_events':
+                summary['NumberOfEvents'] = v
+            if k == 'number_of_lumis':
+                summary['NumberOfLumis'] = v
             #if k == 'number_of_blocks':
             #    summary['NumberOfBlocks'] = v    
         return summary

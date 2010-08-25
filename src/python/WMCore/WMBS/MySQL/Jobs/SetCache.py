@@ -6,8 +6,8 @@ MySQL implementation of Jobs.GetState
 """
 
 __all__ = []
-__revision__ = "$Id: SetCache.py,v 1.2 2009/09/10 16:14:57 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SetCache.py,v 1.3 2009/10/26 16:51:46 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -23,7 +23,7 @@ class SetCache(DBFormatter):
              SET cache_dir = :cacheDir
              WHERE id = :jobid"""
 
-    def execute(self, ID = None, cacheDir = None, conn = None, transaction = False, jobDictList = None):
+    def execute(self, id = None, cacheDir = None, conn = None, transaction = False, jobDictList = None):
         """
         _execute_
 
@@ -36,8 +36,8 @@ class SetCache(DBFormatter):
 
         if jobDictList:
             binds = jobDictList
-        elif ID and cacheDir:
-            binds = {"jobid": ID, "cacheDir": cacheDir}
+        elif id and cacheDir:
+            binds = {"jobid": id, "cacheDir": cacheDir}
         else:
             logging.error("Jobs.SetCache not sent values to set!")
             return

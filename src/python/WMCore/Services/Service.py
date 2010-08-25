@@ -48,8 +48,8 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
-__revision__ = "$Id: Service.py,v 1.59 2010/07/30 13:24:00 swakef Exp $"
-__version__ = "$Revision: 1.59 $"
+__revision__ = "$Id: Service.py,v 1.60 2010/07/30 15:42:58 swakef Exp $"
+__version__ = "$Revision: 1.60 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -176,7 +176,7 @@ class Service(dict):
         
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self['logger'].debug("%s expired, refreshing cache" % cachefile)
-            self.getData(cachefile, url, inputdata, encoder, decoder, verb, contentType)
+            self.getData(cachefile, url, inputdata, {}, encoder, decoder, verb, contentType)
 
         if openfile:
             return open(cachefile, 'r')
@@ -211,7 +211,8 @@ class Service(dict):
         except OSError: # File doesn't exist
             return
 
-    def getData(self, cachefile, url, inputdata = {}, encoder = True, decoder = True, 
+    def getData(self, cachefile, url, inputdata = {}, incoming_headers = {},
+                encoder = True, decoder = True,
                 verb = 'GET', contentType = None):
         """
         Takes the already generated *full* path to cachefile and the url of the 
@@ -231,6 +232,7 @@ class Service(dict):
             data, status, reason, from_cache = self["requests"].makeRequest(uri = url,
                                                     verb = verb,
                                                     data = inputdata,
+                                                    incoming_headers = incoming_headers,
                                                     encoder = encoder,
                                                     decoder = decoder,
                                                     contentType = contentType)

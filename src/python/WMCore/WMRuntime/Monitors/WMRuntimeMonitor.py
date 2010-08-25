@@ -6,8 +6,8 @@ _WMRuntimeMonitor_
 This is the base class for monitors
 """
 
-__version__ = "$Revision: 1.2 $"
-__revision__ = "$Id: WMRuntimeMonitor.py,v 1.2 2009/12/22 17:37:09 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WMRuntimeMonitor.py,v 1.3 2010/05/17 20:37:25 mnorman Exp $"
 
 import threading
 import os
@@ -34,6 +34,8 @@ class WMRuntimeMonitor:
         self.currentStep      = None
         self.currentStepName  = None
         self.currentStepSpace = None
+        self.job              = None
+        self.task             = None
         return
 
 
@@ -74,7 +76,7 @@ class WMRuntimeMonitor:
         return
 
     
-    def stepEnd(self, step):
+    def stepEnd(self, step, stepReport):
         """
         Tasked ended notifier.
         """

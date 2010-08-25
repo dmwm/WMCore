@@ -6,8 +6,8 @@ _TestMonitor_
 This is the test class for monitors
 """
 
-__version__ = "$Revision: 1.3 $"
-__revision__ = "$Id: TestMonitor.py,v 1.3 2010/02/10 17:35:15 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TestMonitor.py,v 1.4 2010/05/17 20:37:25 mnorman Exp $"
 
 import threading
 import time
@@ -147,7 +147,7 @@ class TestMonitor(WMRuntimeMonitor):
 
         return
 
-    def stepEnd(self, step):
+    def stepEnd(self, step, stepReport):
         """
         Step end notification
 

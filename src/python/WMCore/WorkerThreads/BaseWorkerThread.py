@@ -9,8 +9,8 @@ to perform thread-specific setup and clean-up operations
 """
 
 __revision__ = \
-        "$Id: BaseWorkerThread.py,v 1.13 2009/02/09 10:00:45 jacksonj Exp $"
-__version__ = "$Revision: 1.13 $"
+        "$Id: BaseWorkerThread.py,v 1.14 2009/07/20 19:10:10 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -90,8 +90,9 @@ class BaseWorkerThread:
         myThread.logger = self.logger
 
         # Set up database connection and default transaction
-        if self.component.config.CoreDatabase.dialect == 'mysql':
-            myThread.dialect = 'MySQL'
+        #if self.component.config.CoreDatabase.dialect == 'mysql':
+        #    myThread.dialect = 'MySQL'
+        myThread.dialect = self.component.config.CoreDatabase.dialect
 
         logging.info("Initialising default database")
         myThread.dbi = myThread.dbFactory.connect()

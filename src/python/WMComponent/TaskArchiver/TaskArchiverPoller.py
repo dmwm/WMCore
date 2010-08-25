@@ -1,20 +1,21 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W6501, W0142
+# W6501: pass information to logging using string arguments
+# W0142: Some people like ** magic
 """
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: TaskArchiverPoller.py,v 1.8 2010/05/27 14:12:36 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: TaskArchiverPoller.py,v 1.9 2010/07/01 21:10:03 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import threading
 import logging
-import os.path
-import time
+import traceback
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.WMBS.Subscription   import Subscription
-from WMCore.WMBS.Job            import Job
 from WMCore.WMBS.Fileset        import Fileset
 from WMCore.DAOFactory          import DAOFactory
 from WMCore.WorkQueue.WorkQueue import localQueue
@@ -36,7 +37,8 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         self.config = config
         if getattr(self.config.TaskArchiver, "useWorkQueue", False) != False:
-            self.workQueue = localQueue(**self.config.TaskArchiver.WorkQueueParams)
+            wqp = self.config.TaskArchiver.WorkQueueParams
+            self.workQueue = localQueue(**wqp)
         else:
             self.workQueue = None
 
@@ -62,7 +64,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
     
 
-    def algorithm(self, parameters):
+    def algorithm(self, parameters = None):
         """
 	Performs the archiveJobs method, looking for each type of failure
 	And deal with it as desired.
@@ -70,8 +72,18 @@ class TaskArchiverPoller(BaseWorkerThread):
         logging.debug("Running algorithm for finding finished subscriptions")
         try:
             self.archiveTasks()
-        except:
-            raise
+        except Exception, ex:
+            myThread = threading.currentThread()
+            msg = "Caught exception in TaskArchiver\n"
+            msg += str(ex)
+            msg += str(traceback.format_exc())
+            msg += "\n\n"
+            if hasattr(myThread, 'transaction') \
+                   and myThread.transaction != None \
+                   and hasattr(myThread.transaction, 'transaction') \
+                   and myThread.transaction.transaction != None:
+                myThread.transaction.rollback()
+            raise Exception(msg)
 
         return
 
@@ -84,6 +96,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         checking to see if they've finished, and then notifying the workQueue and
         finishing things up.
         """
+
+
         subList = self.findFinishedSubscriptions()
         if len(subList) == 0:
             return
@@ -94,7 +108,6 @@ class TaskArchiverPoller(BaseWorkerThread):
         else:
             self.killSubscriptions(subList)
             
-        #self.cleanWorkArea(doneList)
         return
 
     def findFinishedSubscriptions(self):
@@ -115,6 +128,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         for subscription in subscriptions:
             wmbsSubscription = Subscription(id = subscription['id'])
             subList.append(wmbsSubscription)
+            logging.info("Found subscription %i" %subscription['id'])
 
         myThread.transaction.commit()
 
@@ -148,8 +162,10 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         Actually dump the subscriptions
         """
-        for subscription in doneList:
-            subscription.deleteEverything()
+
+        for sub in doneList:
+            logging.info("Deleting subscription %i" % sub['id'])
+            sub.deleteEverything()
 
         return
 

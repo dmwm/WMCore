@@ -522,6 +522,21 @@ class SSLRequests(Requests):
         method getting a secure (HTTPS) connection
         """
         return HTTPSConnection(self['host'])
+
+class SSLJSONRequests(JSONRequests):
+    """
+    _SSLJSONRequests_
+    
+    Implementation of JSONRequests using HTTPS to send requests to a given URL, 
+    without authenticating via a key/cert pair.
+    """ 
+    def _getURLOpener(self):
+        """
+        _getURLOpener_
+        
+        Retrieve a secure (HTTPS) connection.
+        """
+        return HTTPSConnection(self["host"])    
     
 class SecureRequests(Requests):
     """

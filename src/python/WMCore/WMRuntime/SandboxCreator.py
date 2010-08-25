@@ -4,8 +4,8 @@
 
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.8 2009/09/01 19:41:45 evansde Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: SandboxCreator.py,v 1.9 2009/09/04 18:39:27 evansde Exp $"
+__version__ = "$Revision: 1.9 $"
 import os
 import re
 import tarfile
@@ -105,7 +105,7 @@ class SandboxCreator:
         pythonHandle = os.fdopen(archiveHandle,'w+b')
 
         #TODO: Tweak so the name of the sandbox is a bit more sensible
-        archive = tarfile.open(archivePath,'w:bz2', pythonHandle)
+        archive = tarfile.open(None,'w:bz2', pythonHandle)
         archive.add("%s/%s/%s/" % (buildItHere, workloadName, taskName),'/')
         if (self.packageWMCore):
             # package up the WMCore distribution

@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.12 2009/12/15 14:07:57 spiga Exp $"
-__version__  = "$Revision: 1.12 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.13 2010/01/19 20:19:01 spiga Exp $"
+__version__  = "$Revision: 1.13 $"
 __author__   = "ewv@fnal.gov"
 
 import types
@@ -26,11 +26,11 @@ class BlackWhiteListParser(object):
     (and simple wildcards), but internally filters only on the CE/SE name.
     """
 
-    def __init__(self, whiteList=None, blackList=None, logger=None, mapper=None):
+    def __init__(self, whiteList=None, blackList=None, logger=None, mapper=None, dict={} ):
         self.logger = logger
         self.kind = 'se'
         self.mapper = mapper
-        self.siteDBAPI = SiteDBJSON()
+        self.siteDBAPI = SiteDBJSON(dict)
         if type(whiteList) == type("string"):
             if whiteList:
                 whiteList = whiteList.split(',')
@@ -238,9 +238,9 @@ class SEBlackWhiteListParser(BlackWhiteListParser):
     from the user's input; see the documentation for BlackWhiteListParser.
     """
 
-    def __init__(self, whiteList=None, blackList=None,  logger=None):
-        self.siteDBAPI = SiteDBJSON()
-        super(SEBlackWhiteListParser, self).__init__(whiteList, blackList, logger, self.siteDBAPI.cmsNametoSE)
+    def __init__(self, whiteList=None, blackList=None,  logger=None, dict={}):
+        self.siteDBAPI = SiteDBJSON(dict)
+        super(SEBlackWhiteListParser, self).__init__(whiteList, blackList, logger, self.siteDBAPI.cmsNametoSE, dict)
 
 
 
@@ -250,6 +250,6 @@ class CEBlackWhiteListParser(BlackWhiteListParser):
     from the user's input; see the documentation for BlackWhiteListParser.
     """
 
-    def __init__(self, whiteList=None, blackList=None,  logger=None):
-        self.siteDBAPI = SiteDBJSON()
-        super(CEBlackWhiteListParser, self).__init__(whiteList, blackList, logger, self.siteDBAPI.cmsNametoCE)
+    def __init__(self, whiteList=None, blackList=None,  logger=None, dict={}):
+        self.siteDBAPI = SiteDBJSON(dict)
+        super(CEBlackWhiteListParser, self).__init__(whiteList, blackList, logger, self.siteDBAPI.cmsNametoCE, dict)

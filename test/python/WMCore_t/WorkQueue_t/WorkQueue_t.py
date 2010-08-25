@@ -3,12 +3,13 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.21 2009/12/09 17:12:44 swakef Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.22 2009/12/14 13:56:40 swakef Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import unittest
 import os
 import shutil
+from copy import deepcopy, copy
 
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -16,181 +17,15 @@ from WMCore.WMSpec.WMTask import makeWMTask
 
 from WorkQueueTestCase import WorkQueueTestCase
 
+from WMCore_t.WMSpec_t.samples.BasicProductionWorkload import workload as BasicProductionWorkload
+from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workload as Tier1ReRecoWorkload
+from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workingDir
+shutil.rmtree(workingDir, ignore_errors = True)
+from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
+from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
+
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
-
-
-def createSpec(name, path, dataset = None,
-               blacklist = None, whitelist = None):
-    """
-    create a wmspec object and save to disk
-    """
-    wmspec = newWorkload(name)
-    wmspec.data.owner = 'WorkQueueTest'
-    task = makeWMTask('task1')
-    if dataset:
-        task.addInputDataset(**dataset)
-        task.setSplittingAlgorithm("FileBased", size = 1)
-        wmspec.setStartPolicy('DatasetBlock')
-        wmspec.setEndPolicy('SingleShot')
-
-        #FixMe? need setter for blocklist and whitelist
-        if blacklist:
-            task.data.constraints.sites.blacklist = blacklist
-        if whitelist:
-            task.data.constraints.sites.whitelist = whitelist
-        task.data.input.dataset.dbsurl = 'http://example.com'
-    else:
-        task.setSplittingAlgorithm("EventBased", size = 100)
-        wmspec.setStartPolicy('MonteCarlo')
-        wmspec.setEndPolicy('SingleShot')
-        #FIXME need to add WMSpec to save total event properly for production j
-        task.addProduction(totalevents = 1000)
-    wmspec.addTask(task)
-    wmspec.setSpecUrl(path)
-    wmspec.save(path)
-
-
-
-# //  mock dbs info - ignore a lot of arguments
-#//     - ignore some params in dbs spec - silence pylint warnings
-# pylint: disable-msg=W0613,R0201
-class MockDBSReader:
-    """
-    Mock up dbs access
-    """
-    def __init__(self, url):
-        self.blocks = {'/fake/test/RAW': [{'Name' : '/fake/test/RAW#1',
-                                    'NumEvents' : 500,
-                                    'NumFiles' : 5,
-                                    'Size' : 100000,
-                                    'Parents' : ()},
-                                    {'Name' : '/fake/test/RAW#2',
-                                    'NumEvents' : 1000,
-                                    'NumFiles' : 10,
-                                    'Size' : 300000,
-                                    'Parents' : ()}
-                                    ]}
-        self.locations = {'/fake/test/RAW#1' : ['SiteA'],
-                '/fake/test/RAW#2' : ['SiteA', 'SiteB']}
-
-        dbsFile1 = {'Checksum': "12345",
-                    'LogicalFileName': "/store/data/fake/RAW/file1",
-                    'NumberOfEvents': 1000,
-                    'FileSize': 102400,
-                    'ParentList': []
-                    }
-
-        dbsFile2 = {'Checksum': "123456",
-                    'LogicalFileName': "/store/data/fake/RECO/file2",
-                    'NumberOfEvents': 1001,
-                    'FileSize': 103400,
-                    'ParentList': ["/store/data/fake/file2parent"]
-                    }
-
-        self.files = {'/fake/test/RAW#1' : [dbsFile1],
-                      '/fake/test/RAW#2' : [dbsFile2]}
-
-    def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True):
-        """Fake block info"""
-        return self.blocks[dataset]
-
-    def listFileBlockLocation(self, block):
-        """Fake locations"""
-        return self.locations[block]
-
-    def listFilesInBlock(self, block):
-        """Fake files"""
-        return self.files[block]
-
-    def getFileBlock(self, block):
-        """Return block + locations"""
-        result = { block : {
-            "StorageElements" : self.listFileBlockLocation(block),
-            "Files" : self.listFilesInBlock(block),
-            "IsOpen" : False,
-            }
-                   }
-        return result
-
-    def getDatasetInfo(self, dataset):
-        """Dataset summary"""
-        result = {}
-        result['number_of_events'] = sum([x['NumEvents'] for x in self.blocks[dataset]])
-        result['number_of_files'] = sum([x['NumFiles'] for x in self.blocks[dataset]])
-        result['path'] = dataset
-        return result
-
-#TODO: This is horrible and needs to be replaced
-class MockPhedexService:
-    """
-    TODO: Move to a proper mocking libs for this
-    """
-    def __init__(self):
-        self.dbs = MockDBSReader('')
-        self.locations = {'/fake/test/RAW#1' : ['SiteA'],
-                '/fake/test/RAW#2' : ['SiteA', 'SiteB']}
-
-    def getReplicaInfoForBlocks(self, **args):
-        """
-        Where are blocks located
-        """
-        #blocks = [ {'bytes' : bytes, 'files' : files, 'name' : name      ]
-        data = {"phedex":{"request_timestamp":1254762796.13538,
-                          "block" : [{"files":"5", "name": '/fake/test/RAW#1',
-                                      'replica' : [{'se':'SiteA'}]},
-                                     {"files":"10", "name": '/fake/test/RAW#2',
-                                      'replica' : [{'se':'SiteA'}, {'se':'SiteB'}]},
-                                    ]
-                          }
-        }
-        return data
-
-    def subscriptions(self, **args):
-        """
-        Where is data subscribed - for now just replicate blockreplicas
-        """
-        if args.has_key('dataset') and args['dataset']:
-            data = {'phedex' : {"request_timestamp" : 1254850198.15418,
-                                'dataset' : [{'name' : '/fake/test/RAW', 'files' : 5,
-                                              'subscription' : [{'node': 'SiteA', 'custodial': 'n', 'suspend_until': None,
-                                                                 'level': 'dataset', 'move': 'n', 'request': '47983',
-                                                                 'time_created': '1232989000', 'priority': 'low',
-                                                                 'time_update': None, 'node_id': '781',
-                                                                 'suspended': 'n', 'group': None}
-                                                                ]
-                                              }]
-                                }
-                    }
-            return data
-        else:
-            data = {"phedex":{"request_timestamp":1254920053.14921,
-                              "dataset":[{"bytes":"10438786614", "files":"10", "is_open":"n",
-                                          "name":"/fake/test/RAW",
-                                          "block":[{"bytes":"10438786614", "files":"5", "is_open":"n",
-                                                    "name":"/fake/test/RAW#1",
-                                                    "id":"454370", "subscription"
-                                                                                :[ {'node' : x } for x in self.locations['/fake/test/RAW#1']]
-                                                                                #{"priority":"normal", "request":"51253", "time_created":"1245165314",
-                                                                                #   "move":"n", "suspend_until":None, "node":"SiteA",
-                                                                                #   "time_update":"1228905272", "group":None, "level":"block",
-                                                                                #   "node_id":"641", "custodial":"n", "suspended":"n"}]
-                                                    },
-                                                     {"bytes":"10438786614", "files":"10", "is_open":"n",
-                                                    "name":"/fake/test/RAW#2",
-                                                    "id":"454370", "subscription"
-                                                                                :[ {'node' : x } for x in self.locations['/fake/test/RAW#2']]
-                                                                                #{"priority":"normal", "request":"51253", "time_created":"1245165314",
-                                                                                #   "move":"n", "suspend_until":None, "node":"SiteA",
-                                                                                #   "time_update":"1228905272", "group":None, "level":"block",
-                                                                                #   "node_id":"641", "custodial":"n", "suspended":"n"}]
-                                                    }]
-                                        }], "instance":"prod"
-                                }
-                    }
-            return data
-
-# pylint: enable-msg=W0613,R0201
 
 
 class WorkQueueTest(WorkQueueTestCase):
@@ -204,34 +39,34 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         WorkQueueTestCase.setUp(self)
 
-        self.specFile = os.path.join(os.getcwd(), 'testworkflow.pickle')
-        self.specName = 'testWf'
-        createSpec(self.specName, self.specFile)
-        self.processingSpecName = 'testProcessing'
-        self.blacklistSpecName = 'testBlacklist'
-        self.whitelistSpecName = 'testWhitelist'
-        self.processingSpecFile = os.path.join(os.getcwd(),
-                                            self.processingSpecName)
-        self.blacklistSpecFile = os.path.join(os.getcwd(),
-                                            self.blacklistSpecName)
-        self.whitelistSpecFile = os.path.join(os.getcwd(),
-                                            self.whitelistSpecName)
+        # Basic production Spec
+        self.spec = BasicProductionWorkload
+        self.spec.setSpecUrl(os.path.join(os.getcwd(), 'testworkflow.spec'))
+        self.spec.save(self.spec.specUrl())
 
-        dataset = {'primary':'fake', 'processed':'test', 'tier':'RAW',
-                   'dbsurl':'http://example.com', 'totalevents':10000}
+        # Sample Tier1 ReReco spec
+        self.processingSpec = Tier1ReRecoWorkload
+        self.processingSpec.setSpecUrl(os.path.join(os.getcwd(),
+                                                    'testProcessing.spec'))
+        self.processingSpec.save(self.processingSpec.specUrl())
 
-        createSpec(self.processingSpecName,
-                   self.processingSpecFile, dataset)
-        createSpec(self.blacklistSpecName,
-                   self.blacklistSpecFile, dataset,
-                   blacklist = ['SiteA'])
-        createSpec(self.whitelistSpecName,
-                   self.whitelistSpecFile, dataset,
-                   whitelist = ['SiteB'])
+        # ReReco spec with blacklist
+        self.blacklistSpec = deepcopy(self.processingSpec)
+        self.blacklistSpec.setSpecUrl(os.path.join(os.getcwd(),
+                                                    'testBlacklist.spec'))
+        self.blacklistSpec.taskIterator().next().data.constraints.sites.blacklist = ['SiteA']
+        self.blacklistSpec.data._internal_name = 'blacklistSpec'
+        self.blacklistSpec.save(self.blacklistSpec.specUrl())
 
-        #self.globalQueue = WorkQueue(SplitByBlock = False, # Global queue
-        #                             PopulateFilesets = False,
-        #                             CacheDir = None)
+        # ReReco spec with whitelist
+        self.whitelistSpec = deepcopy(self.processingSpec)
+        self.whitelistSpec.setSpecUrl(os.path.join(os.getcwd(),
+                                                    'testWhitelist.spec'))
+        self.whitelistSpec.taskIterator().next().data.constraints.sites.whitelist = ['SiteB']
+        self.blacklistSpec.data._internal_name = 'whitelistlistSpec'
+        self.whitelistSpec.save(self.whitelistSpec.specUrl())
+
+        # Create queues
         self.globalQueue = globalQueue(CacheDir = 'global',
                                        NegotiationTimeout = 0,
                                        QueueURL = 'global.example.com')
@@ -240,27 +75,33 @@ class WorkQueueTest(WorkQueueTestCase):
 #                            ParentQueue = self.globalQueue,
 #                            CacheDir = None)
         # ignore mid queue as it causes database duplication's
-#        self.localQueue = WorkQueue(SplitByBlock = True, # local queue
-#                            ParentQueue = self.globalQueue,
-#                            CacheDir = None)
         self.localQueue = localQueue(ParentQueue = self.globalQueue,
                                      CacheDir = 'local',
                                      ReportInterval = 0,
                                      QueueURL = "local.example.com")
         # standalone queue for unit tests
         self.queue = WorkQueue(CacheDir = 'standalone')
-        mockDBS = MockDBSReader('http://example.com')
+
+        # setup Mock DBS and PhEDEx
+        inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        mockDBS = MockDBSReader('http://example.com', dataset)
         for queue in (self.queue, self.localQueue, self.globalQueue):
             queue.dbsHelpers['http://example.com'] = mockDBS
-            queue.phedexService = MockPhedexService()
+            queue.dbsHelpers['http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'] = mockDBS
+            queue.phedexService = MockPhedexService(dataset)
 
 
     def tearDown(self):
         """tearDown"""
         WorkQueueTestCase.tearDown(self)
 
-        for f in (self.specFile, self.processingSpecFile,
-                  self.blacklistSpecFile, self.whitelistSpecFile):
+        for f in (self.spec.specUrl(),
+                  self.processingSpec.specUrl(),
+                  self.blacklistSpec.specUrl(),
+                  self.whitelistSpec.specUrl()):
             try:
                 os.unlink(f)
             except OSError:
@@ -274,7 +115,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Enqueue and get work for a production WMSpec.
         """
-        specfile = self.specFile
+        specfile = self.spec.specUrl()
         numBlocks = 2
         njobs = [1] * numBlocks # array of jobs per block
         total = sum(njobs)
@@ -307,10 +148,10 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Queue Work & check accepted
         for _ in range (0, numBlocks):
-            self.queue.queueWork(self.specFile)
+            self.queue.queueWork(self.spec.specUrl())
 
         # priority change
-        self.queue.setPriority(50, self.specName)
+        self.queue.setPriority(50, self.spec.name())
         self.assertRaises(RuntimeError, self.queue.setPriority, 50, 'blahhhhh')
 
         # claim all work
@@ -325,7 +166,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Enqueue and get work for a processing WMSpec.
         """
-        specfile = self.processingSpecFile
+        specfile = self.processingSpec.specUrl()
         njobs = [1, 1] # array of jobs per block
         total = sum(njobs)
 
@@ -355,7 +196,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Black & White list functionality
         """
-        specfile = self.blacklistSpecFile
+        specfile = self.blacklistSpec.specUrl()
         njobs = [5, 10] # array of jobs per block
         numBlocks = len(njobs)
         total = sum(njobs)
@@ -369,8 +210,11 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.queue.getWork({'SiteA' : total})
         self.assertEqual(len(work), 0)
 
+        # copy block over to SiteB (all dbsHelpers point to same instance)
         fakeDBS = self.queue.dbsHelpers['http://example.com']
-        fakeDBS.locations['/fake/test/RAW#1'] = ['SiteA', 'SiteB', 'SiteAA']
+        for block in fakeDBS.locations:
+            if block.endswith('1'):
+                fakeDBS.locations[block] = ['SiteA', 'SiteB', 'SiteAA']
         self.queue.phedexService.locations.update(fakeDBS.locations)
         self.queue.updateLocationInfo()
 
@@ -382,7 +226,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(work), 2)
 
         # Test whitelist stuff
-        specfile = self.whitelistSpecFile
+        specfile = self.whitelistSpec.specUrl()
         njobs = [5, 10] # array of jobs per block
         numBlocks = len(njobs)
         total = sum(njobs)
@@ -409,7 +253,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # check no work in local queue
         self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
         # Add work to top most queue
-        self.globalQueue.queueWork(self.processingSpecFile)
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.assertEqual(1, len(self.globalQueue))
 
         # check work isn't passed down to site without subscription
@@ -455,7 +299,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
 
         # Add work to top most queue
-        self.globalQueue.queueWork(self.processingSpecFile)
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.assertEqual(1, len(self.globalQueue))
         self.globalQueue.updateLocationInfo()
         # pull to local queue
@@ -484,7 +328,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
 
         # Add work to top most queue
-        self.globalQueue.queueWork(self.processingSpecFile)
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.assertEqual(1, len(self.globalQueue))
         self.globalQueue.updateLocationInfo()
 

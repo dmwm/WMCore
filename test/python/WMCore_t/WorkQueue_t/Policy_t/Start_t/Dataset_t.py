@@ -3,15 +3,15 @@
     WorkQueue.Policy.Start.Dataset tests
 """
 
-__revision__ = "$Id: Dataset_t.py,v 1.1 2009/12/10 16:30:44 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Dataset_t.py,v 1.2 2009/12/14 13:56:40 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import shutil
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
 from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workload as Tier1ReRecoWorkload
 from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workingDir
-from WMCore_t.WorkQueue_t.Policy_t.Start_t.MockDBSReader import MockDBSReader
+from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 shutil.rmtree(workingDir, ignore_errors = True)
 
 class DatasetTestCase(unittest.TestCase):

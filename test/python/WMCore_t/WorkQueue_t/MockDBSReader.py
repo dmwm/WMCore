@@ -3,7 +3,7 @@
     Mocked DBS interface for Start Policy unit tests
 """
 
-__revision__ = "$Id: MockDBSReader.py,v 1.1 2009/12/10 16:30:44 swakef Exp $"
+__revision__ = "$Id: MockDBSReader.py,v 1.1 2009/12/14 13:56:40 swakef Exp $"
 __version__ = "$Revision: 1.1 $"
 
 #//     - ignore some params in dbs spec - silence pylint warnings
@@ -27,25 +27,25 @@ class MockDBSReader:
                                      'Size' : 300000,
                                      'Parents' : ()}
                                    ]
-        self.locations = {dataset + "#1" : ['SiteA'],
-                          dataset + "#2" : ['SiteA', 'SiteB']}
+            self.locations = {dataset + "#1" : ['SiteA'],
+                              dataset + "#2" : ['SiteA', 'SiteB']}
 
-        dbsFile1 = {'Checksum': "12345",
-                    'LogicalFileName': "/store/data/fake/file1",
-                    'NumberOfEvents': 1000,
-                    'FileSize': 102400,
-                    'ParentList': []
-                    }
+            dbsFile1 = {'Checksum': "12345",
+                        'LogicalFileName': "/store/data/fake/file1",
+                        'NumberOfEvents': 1000,
+                        'FileSize': 102400,
+                        'ParentList': []
+                        }
 
-        dbsFile2 = {'Checksum': "123456",
-                    'LogicalFileName': "/store/data/fake_parent/file2",
-                    'NumberOfEvents': 1001,
-                    'FileSize': 103400,
-                    'ParentList': ["/store/data/fake/file1"]
-                    }
+            dbsFile2 = {'Checksum': "123456",
+                        'LogicalFileName': "/store/data/fake_parent/file2",
+                        'NumberOfEvents': 1001,
+                        'FileSize': 103400,
+                        'ParentList': ["/store/data/fake/file1"]
+                        }
 
-        self.files = {dataset + "#1" : [dbsFile1],
-                      dataset + "#2" : [dbsFile2]}
+            self.files = {dataset + "#1" : [dbsFile1],
+                          dataset + "#2" : [dbsFile2]}
 
     def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True):
         """Fake block info"""

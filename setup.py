@@ -44,10 +44,11 @@ if can_nose:
     
         def run(self):
             retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python'])
+            print "DID CVS GET THIS"
             if retval:
-                return 0 
+                sys.exit( 0 ) 
             else:
-                return 1
+                sys.exit( 1 )
 else:
     class TestCommand(Command):
         user_options = [ ]

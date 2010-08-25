@@ -12,8 +12,8 @@ import os
 import logging
 import select, signal, fcntl
 
-__version__ = "$Id: System.py,v 1.4 2010/05/10 12:31:40 spigafi Exp $"
-__revision__ = "$Revision: 1.4 $"
+__version__ = "$Id: System.py,v 1.5 2010/05/11 10:52:29 spigafi Exp $"
+__revision__ = "$Revision: 1.5 $"
 
 
 def setPgid():
@@ -89,11 +89,35 @@ def executeCommand( command, timeout=None ):
     return ''.join(outc), returncode
 
 
+def timestampToStr( tmp ) :
+    """
+    timestampToStr: not implemented
+    """
+    
+    return tmp
+    
+def strToTimestamp( tmp ) :
+    """
+    strToTimestamp: used to save on database timestamp correctly
+    """
+    
+    try:
+        # if I can, I convert...
+        return time.strftime("%Y-%m-%d %H:%M:%S", \
+                    time.gmtime(int(tmp)))
+    except TypeError :
+        pass
+    except ValueError :
+        pass
+
+    return tmp
+
 def strToList( tmp ) :
     """
     eval of a string which is espected to be a list
     it works for strings created with str([...])
     """
+    
     if tmp == '':
         return []
     else: 

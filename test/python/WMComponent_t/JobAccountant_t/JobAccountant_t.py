@@ -5,9 +5,6 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-
-
-
 import logging
 import os.path
 import threading

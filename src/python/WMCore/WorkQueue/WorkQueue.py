@@ -94,7 +94,8 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('QueueDepth', 2) # when less than this locally
         self.params.setdefault('ItemWeight', 0.01) # Queuing time weighted avg
         self.params.setdefault('LocationRefreshInterval', 600)
-        self.params.setdefault('FullLocationRefreshInterval', 3600)
+        # always do full location lookup - partial not very useful
+        self.params.setdefault('FullLocationRefreshInterval', 0)
         self.params.setdefault('TrackLocationOrSubscription', 'subscription')
         self.params.setdefault('ReleaseIncompleteBlocks', False)
         self.params.setdefault('ReleaseRequireSubscribed', True)

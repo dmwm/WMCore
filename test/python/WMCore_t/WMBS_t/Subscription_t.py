@@ -1263,10 +1263,10 @@ class SubscriptionTest(unittest.TestCase):
         getSubTypes = self.daofactory(classname = "Subscriptions.GetSubTypes")
         result = getSubTypes.execute()
 
-        self.assertEqual(len(result), 7, "Error: Wrong number of types.")
+        self.assertEqual(len(result), 8, "Error: Wrong number of types.")
 
         for subType in ["Processing", "Merge", "Harvesting", "Cleanup",
-                        "LogCollect", "Skim", "Analysis"]:
+                        "LogCollect", "Skim", "Analysis", "Production"]:
             self.assertTrue(subType in result, "Type %s is missing" % (subType))
 
         return

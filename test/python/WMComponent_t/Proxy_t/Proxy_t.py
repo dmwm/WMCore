@@ -133,9 +133,9 @@ particular message to the proxy which forwards it.
 
 """
 
-
-
-
+__revision__ = "$Id: Proxy_t.py,v 1.15 2010/02/10 03:52:28 meloam Exp $"
+__version__ = "$Revision: 1.15 $"
+__author__ = "fvlingen@caltech.edu"
 
 import commands
 import cPickle

@@ -5,8 +5,8 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-
-
+__revision__ = "$Id: WMBSBase.py,v 1.3 2009/06/12 16:37:54 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMConnectionBase import WMConnectionBase
 

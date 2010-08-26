@@ -5,9 +5,9 @@ _WorkerThreadManager_
 A class used to manage regularly running worker threads.
 """
 
-
-
-
+__revision__ = "$Id: WorkerThreadManager.py,v 1.12 2010/06/23 18:11:09 sryu Exp $"
+__version__ = "$Revision: 1.12 $"
+__author__ = "james.jackson@cern.ch"
 
 import threading
 import logging

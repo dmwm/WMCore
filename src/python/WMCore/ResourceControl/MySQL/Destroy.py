@@ -5,8 +5,8 @@ _Destroy_
 Clear out the ResourceControl schema.
 """
 
-
-
+__revision__ = "$Id: Destroy.py,v 1.3 2010/07/14 14:49:02 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 from WMCore.Database.DBCreator import DBCreator

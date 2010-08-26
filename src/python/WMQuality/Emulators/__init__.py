@@ -1,7 +1,7 @@
 """
 """
-
-
+__revision__ = "$"
+__version__ = "$"
 import logging
 import os
 from WMCore.Configuration import loadConfigurationFile

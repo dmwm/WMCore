@@ -10,6 +10,13 @@ FeederManage. It should be split up into DAO objects
 
 import time
 
+__revision__ = \
+    "$Id: Queries.py,v 1.3 2009/07/14 13:12:11 riahi Exp $"
+__version__ = \
+    "$Revision: 1.3 $"
+__author__ = \
+    "james.jackson@cern.ch"
+
 import threading
 
 from WMCore.Database.DBFormatter import DBFormatter

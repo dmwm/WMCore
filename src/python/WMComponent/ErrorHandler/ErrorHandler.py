@@ -16,8 +16,8 @@ The component runs in Poll mode, basically submits itself
 We can introduce some delay in polling, if have to.
 """
 
-
-
+__revision__ = "$Id: ErrorHandler.py,v 1.9 2010/02/11 20:31:04 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 
 import logging

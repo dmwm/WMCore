@@ -5,8 +5,8 @@ _NewDataset_
 Oracle implementation of DBSBuffer.NewDataset
 """
 
-
-
+__revision__ = "$Id: NewDataset.py,v 1.3 2009/10/22 14:49:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

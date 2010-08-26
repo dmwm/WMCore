@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Job.Load
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: Load.py,v 1.2 2010/05/28 11:47:30 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import Job, JobDBFormatter
@@ -20,7 +20,6 @@ class Load(DBFormatter):
     sql = """SELECT id as id, 
                     job_id as jobId, 
                     task_id as taskId,
-                    wmbs_job_id as wmbsJobId,
                     name as name, 
                     executable as executable, 
                     events as events,
@@ -54,9 +53,8 @@ class Load(DBFormatter):
 
         sqlFilled = self.sql % (whereClause)
         
-
         result = self.dbi.processData(sqlFilled, {}, conn = conn,
                                       transaction = transaction)
+        
         ppResult = self.formatDict(result)
         return objFormatter.postFormat(ppResult)
-

@@ -3,8 +3,8 @@
     Mocked Phedex interface
 """
 
-
-
+__revision__ = "$Id: MockPhedexService.py,v 1.6 2010/04/07 17:49:45 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 # need to clean this up at some point
 

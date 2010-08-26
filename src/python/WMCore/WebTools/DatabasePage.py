@@ -3,8 +3,8 @@
 A page that knows how to format DB queries
 """
 
-
-
+__revision__ = "$Id: DatabasePage.py,v 1.7 2010/03/01 20:26:23 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 import threading

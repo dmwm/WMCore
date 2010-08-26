@@ -6,8 +6,8 @@ MySQL implementation of Subscription.LoadFromFilesetWorkflow
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: LoadFromFilesetWorkflow.py,v 1.3 2009/10/12 21:11:16 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

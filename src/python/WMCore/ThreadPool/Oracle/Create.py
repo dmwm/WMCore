@@ -7,9 +7,9 @@ Class for creating Oracle specific schema for persistent messages.
 
 """
 
-
-
-
+__revision__ = "$Id: Create.py,v 1.5 2009/09/10 15:37:48 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
+__author__ = "mnorman@fnal.gov"
 
 import threading
 

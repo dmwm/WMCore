@@ -3,8 +3,8 @@
 
 # This is the interface to the Dashboard that the monitor will use
 
-
-
+__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DashboardInterface.py,v 1.1 2010/05/17 20:43:42 mnorman Exp $"
 
 
 import threading
@@ -31,20 +31,20 @@ def generateDashboardID(job, workload, task):
 
     """
 
-    jobName = job['name'].replace("_", "-")
+    jobId = job['name'].replace("_", "-")
     agentName = getattr(workload.data, 'WMAgentName', 'WMAgentPrimary')
     
-    #jobName = "ProdAgent_%s_%s" %(
-    #    agentName, jobId )
+    jobName = "ProdAgent_%s_%s" %(
+        agentName, jobId )
 
     workflowId = task.getPathName().replace('/', '-')
     workflowId = workflowId.replace("_", "-")
     taskName = "ProdAgent_%s_%s" % ( workflowId,
                                      agentName)
     subCount = job.get('retry_count', 0)
-    jobIdent = "WMAgent_%i_%i_%s" % (job['id'], subCount, jobName)
+    jobName = "%s_%s" % (jobName, subCount)
     
-    return taskName, jobIdent
+    return taskName, jobName
 
 
 
@@ -172,9 +172,6 @@ class DashboardInfo(dict):
 
         self.setdefault("taskName", taskName)
         self.setdefault("jobName", jobName)
-
-
-        self.jobSuccess = 0
         
 
 
@@ -206,7 +203,6 @@ class DashboardInfo(dict):
 
 
         self['JobFinished'] = time.time()
-        self['JobExitStatus'] = self.jobSuccess
         self.publish()
         return
     
@@ -239,14 +235,10 @@ class DashboardInfo(dict):
         Fill with step-ending information
         """
 
-        stepSuccess = stepReport.stepSuccessful(stepName = helper.name())
-
         helper = WMStepHelper(step)
         self['ExeEnd']        = helper.name()
         self['ExeFinishTime'] = time.time()
-        self['ExeExitStatus'] = stepSuccess
-        if not stepSuccess == 0:
-            self.jobSuccess = 1
+        self['ExeExitStatus'] = stepReport.stepSuccessful(stepName = helper.name())
         self.publish()
 
 

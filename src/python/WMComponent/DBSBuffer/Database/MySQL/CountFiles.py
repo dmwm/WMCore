@@ -5,8 +5,8 @@ _CountFiles_
 MySQL implementation of DBSBuffer.CountFiles
 """
 
-
-
+__revision__ = "$Id: CountFiles.py,v 1.1 2009/10/13 19:55:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

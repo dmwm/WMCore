@@ -9,8 +9,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-
-
+__revision__ = "$Id: WMAgentConfig.py,v 1.27 2010/08/11 19:53:49 sryu Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import os
 import WMCore.WMInit
@@ -166,8 +166,8 @@ config.TaskArchiver.useWorkQueue = True
 config.webapp_('WorkQueueService')
 config.WorkQueueService.componentDir = config.General.workDir + "/WorkQueueService"
 ## User specific parameter
-config.WorkQueueService.Webtools.port = 9997
-config.WorkQueueService.Webtools.host = config.Agent.hostName
+config.WorkQueueService.server.port = 9997
+config.WorkQueueService.server.host = config.Agent.hostName
 config.WorkQueueService.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
 config.WorkQueueService.admin = config.Agent.contact
 config.WorkQueueService.title = 'WorkQueue Data Service'
@@ -185,7 +185,7 @@ workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueSer
 workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
 workqueue.queueParams.setdefault('CacheDir', config.General.workDir + 'WorkQueueManager/wf')
 workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (config.Agent.hostName,
-                                                                  config.WorkQueueService.Webtools.port,
+                                                                  config.WorkQueueService.server.port,
                                                                   'workqueue'))
 workqueuemonitor = config.WorkQueueService.views.active.section_('workqueuemonitor')
 workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
@@ -195,9 +195,9 @@ workqueuemonitor.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html/')
 
 config.webapp_("WMBSMonitoring")
 config.WMBSMonitoring.componentDir = config.General.workDir + "/WMBSMonitoring"
-config.WMBSMonitoring.Webtools.host = config.Agent.hostName
+config.WMBSMonitoring.server.host = config.Agent.hostName
 ## User specific parameter
-config.WMBSMonitoring.Webtools.port = 8087
+config.WMBSMonitoring.server.port = 8087
 config.WMBSMonitoring.templates = WMCore.WMInit.getWMBASE() + '/src/templates/WMCore/WebTools'
 config.WMBSMonitoring.admin = "sfoulkes@fnal.gov"
 config.WMBSMonitoring.title = "WMBS Monitoring"

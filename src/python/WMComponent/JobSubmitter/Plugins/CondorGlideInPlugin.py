@@ -14,8 +14,8 @@ A plug-in that should submit directly to condor glide-in nodes
 
 """
 
-
-
+__revision__ = "$Id: CondorGlideInPlugin.py,v 1.15 2010/08/05 14:38:20 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import os
 import os.path

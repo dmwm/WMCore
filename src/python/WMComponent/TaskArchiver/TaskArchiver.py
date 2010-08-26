@@ -6,8 +6,8 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-
-
+__revision__ = "$Id: TaskArchiver.py,v 1.1 2009/10/30 13:43:05 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import logging
 import threading
@@ -16,6 +16,10 @@ from WMCore.Agent.Harness import Harness
 from WMCore.WMFactory import WMFactory
 
 from WMComponent.TaskArchiver.TaskArchiverPoller import TaskArchiverPoller
+
+#from WMCore.WorkQueue.WorkQueue import WorkQueue
+
+
 
 
 class TaskArchiver(Harness):

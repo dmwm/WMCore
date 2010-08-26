@@ -3,8 +3,8 @@
 Data objects for TQ APIs use.
 """
 
-
-
+__revision__ = "$Id: TQApiData.py,v 1.4 2009/09/29 12:23:02 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import xml.dom.minidom
 

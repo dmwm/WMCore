@@ -5,8 +5,8 @@ _Monitoring_t_
 Unit tests for the WMBS Monitoring DAO objects.
 """
 
-
-
+__revision__ = "$Id: Monitoring_t.py,v 1.3 2010/01/26 21:38:34 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import unittest

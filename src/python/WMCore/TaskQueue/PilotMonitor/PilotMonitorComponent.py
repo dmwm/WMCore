@@ -7,9 +7,9 @@ _PilotMonitorComponent_
 
 """
 
-
-
-
+__revision__ = "$Id: PilotMonitorComponent.py,v 1.2 2009/09/16 12:39:52 khawar Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "Khawar.Ahmad@cern.ch"
 
 import os
 import time

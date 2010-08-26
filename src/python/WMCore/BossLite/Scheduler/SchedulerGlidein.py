@@ -3,8 +3,8 @@
 _SchedulerGlidein_
 """
 
-
-
+__revision__ = "$Id: SchedulerGlidein.py,v 1.1 2010/06/03 22:02:28 spigafi Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.BossLite.Scheduler.SchedulerCondorCommon import SchedulerCondorCommon
 import os

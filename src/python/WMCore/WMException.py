@@ -6,9 +6,9 @@ General Exception class for WM modules
 
 """
 
-
-
-
+__revision__ = "$Id: WMException.py,v 1.3 2010/06/29 19:00:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
+__author__ = "fvlingen@caltech.edu"
 
 
 import exceptions

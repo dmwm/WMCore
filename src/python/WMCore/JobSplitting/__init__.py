@@ -7,6 +7,6 @@ like event, run, lumi, file.
 
 """
 __all__ = []
-
-
+__revision__ = "$Id: __init__.py,v 1.1 2008/07/03 13:19:46 metson Exp $"
+__version__ = "$Revision: 1.1 $"
 

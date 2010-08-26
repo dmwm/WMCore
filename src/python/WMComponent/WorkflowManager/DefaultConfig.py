@@ -5,8 +5,8 @@ Defines default config values for WorkflowManager specific
 parameters.
 """
 __all__ = []
-
-
+__revision__ = "$Id: DefaultConfig.py,v 1.3 2009/02/05 23:26:34 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 

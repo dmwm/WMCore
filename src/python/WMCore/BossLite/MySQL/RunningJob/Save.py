@@ -6,8 +6,8 @@ MySQL implementation of BossLite.RunningJob.Save
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: Save.py,v 1.3 2010/05/10 13:00:10 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.RunningJob import RunningJobDBFormatter

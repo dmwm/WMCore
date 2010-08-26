@@ -7,8 +7,8 @@ Get output datasets for a request ID
 """
 
 
-
-
+__revision__ = "$Id: GetOutput.py,v 1.1 2010/07/01 19:04:43 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -5,8 +5,8 @@ MySQL implementation of File.SetParentage
 Make the parentage link between two file lfns in bulk
 """
 __all__ = []
-
-
+__revision__ = "$Id: SetParentage.py,v 1.2 2010/08/13 18:52:50 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

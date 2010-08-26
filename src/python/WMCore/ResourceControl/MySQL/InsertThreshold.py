@@ -6,8 +6,8 @@ This module inserts thresholds for the given sites for MySQL.  If the thresholds
 have already been inserted this will modify them.
 """
 
-
-
+__revision__ = "$Id: InsertThreshold.py,v 1.3 2010/07/15 16:57:05 sfoulkes Exp $"
+__version__  = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -4,9 +4,9 @@
 Template Action for trigger.
 """
 
-
-
-
+__revision__ = "$Id: ActionTemplate.py,v 1.2 2008/09/09 13:50:35 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "fvlingen@caltech.edu"
 
 
 import logging

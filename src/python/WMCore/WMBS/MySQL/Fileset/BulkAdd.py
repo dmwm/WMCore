@@ -4,8 +4,8 @@ _BulkAdd_
 MySQL implementation of Fileset.BulkAdd
 """
 
-
-
+__revision__ = "$Id: BulkAdd.py,v 1.1 2009/10/14 13:39:32 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

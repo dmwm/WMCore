@@ -6,9 +6,9 @@ Killer plugin for killing TaskQueue jobs
 
 """
 
-
-
-
+__revision__ = "$Id: TaskQueueKiller.py,v 1.1 2009/12/16 18:08:05 delgadop Exp $"
+__version__ = "$Revision: 1.1 $"
+__author__ = "antonio.delgado.peris@cern.ch"
 
 import logging
 import traceback

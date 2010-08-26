@@ -6,8 +6,8 @@ Launch jobs to run over a file once all other subscriptions that process the fil
 have completed processing it.
 """
 
-
-
+__revision__ = "$Id: SiblingProcessingBased.py,v 1.5 2010/07/26 16:21:28 sfoulkes Exp $"
+__version__  = "$Revision: 1.5 $"
 
 import threading
 import logging

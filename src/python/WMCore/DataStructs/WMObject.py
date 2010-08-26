@@ -6,8 +6,8 @@ Helper class that other objects should inherit from
 
 """
 __all__ = []
-
-
+__revision__ = "$Id: WMObject.py,v 1.9 2009/12/15 14:13:51 spiga Exp $"
+__version__ = "$Revision: 1.9 $"
 
 
 class WMObject(object):

@@ -5,8 +5,8 @@ _InsertType_
 MySQL implementation of Subscriptions.InsertType
 """
 
-
-
+__revision__ = "$Id: InsertType.py,v 1.1 2010/02/09 17:51:28 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

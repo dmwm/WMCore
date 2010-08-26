@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-
-
+__revision__ = "$Id: LogCollect.py,v 1.5 2010/07/26 16:50:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os.path
 import logging

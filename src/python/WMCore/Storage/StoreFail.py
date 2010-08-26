@@ -7,8 +7,8 @@ Util class to stage out a set of files from a job report to the /store/unmerged/
 namespace
 
 """
-
-
+__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: StoreFail.py,v 1.1 2009/06/18 21:14:35 meloam Exp $"
 
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutMgr import StageOutMgr

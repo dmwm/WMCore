@@ -6,8 +6,8 @@ General test of Lexicon
 
 """
 
-
-
+__revision__ = "$Id: Lexicon_t.py,v 1.3 2009/11/18 16:51:49 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import unittest

@@ -3,8 +3,8 @@
 
 """
 
-
-
+__revision__ = "$Id: Alerts_t.py,v 1.6 2009/10/13 22:30:58 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import commands
 import unittest

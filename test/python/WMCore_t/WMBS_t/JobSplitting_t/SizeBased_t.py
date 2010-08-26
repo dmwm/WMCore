@@ -5,8 +5,8 @@ _SizeBased_t_
 Size based splitting test.
 """
 
-
-
+__revision__ = "$Id: SizeBased_t.py,v 1.7 2010/06/28 15:27:25 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import threading

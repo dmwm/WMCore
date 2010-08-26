@@ -6,9 +6,9 @@ creates logger handler for logging
  
 """
 
-
-
-
+__revision__ = "$Id: CommonUtil.py,v 1.5 2009/09/29 12:23:01 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
+__author__ = "antonio.delgado.peris@cern.ch"
 
 import logging
 #pickle, encoding n decoding data

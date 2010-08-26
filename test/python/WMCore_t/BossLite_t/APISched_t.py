@@ -4,8 +4,8 @@ _APISched_t_
 
 """
 
-
-
+__revision__ = "$Id: APISched_t.py,v 1.4 2010/06/28 18:27:44 spigafi Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 
@@ -20,8 +20,6 @@ from WMCore.BossLite.DbObjects.Task        import Task
 # Import API
 from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
 from WMCore.BossLite.API.BossLiteAPISched  import BossLiteAPISched
-
-from nose.plugins.attrib import attr
 
 def fakeTask(db, numjob):
     """
@@ -41,15 +39,12 @@ def fakeTask(db, numjob):
     task.create(db)
     # self.assertEqual(tmpId, task.exists(db))
     task.exists(db)
-    i = 0
     for j in xrange(numjob):
         
         jobParams['name'] = 'Fake_job_%s' % str(j)
         jobParams['standardError'] = 'hostname-%s.err' % str(j)
         jobParams['standardOutput'] = 'hostname-%s.out' % str(j)
         jobParams['outputFiles'] = [ jobParams['standardOutput'] ]
-        jobParams['wmbsJobId']   = i
-        i += 1
         
         job = Job( parameters = jobParams )
         job.newRunningInstance(db)
@@ -65,17 +60,17 @@ class APISched(unittest.TestCase):
     Unit-test for BossLiteAPISched
     """
     
-    @attr('integration')    
+    
     def testA_databaseStartup(self):
         """
         testA_databaseStartup
         """
         
-        self.testInit = TestInit(__file__)
-        self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        testInit = TestInit(__file__)
+        testInit.setLogging()
+        testInit.setDatabaseConnection()
         
-        self.testInit.setSchema(customModules = ["WMCore.BossLite"],
+        testInit.setSchema(customModules = ["WMCore.BossLite"],
                                 useDefault = False)
         
         # populate DB
@@ -84,7 +79,7 @@ class APISched(unittest.TestCase):
         
         return
     
-    @attr('integration')    
+    
     def testB_Submission(self):
         """
         Simple submission operation
@@ -108,7 +103,7 @@ class APISched(unittest.TestCase):
         
         return
     
-    @attr('integration')    
+    
     def testC_Status(self):
         """
         Simple status check operation
@@ -132,7 +127,7 @@ class APISched(unittest.TestCase):
         
         return
     
-    @attr('integration')    
+    
     def testD_GetOutput(self):
         """
         Simple getOutput operation
@@ -157,16 +152,16 @@ class APISched(unittest.TestCase):
         return
     
     
-    ## TODO: use standard unit test behaviour
     def testE_dropDatabase(self):
         """
         Simple submission through SchedulerGLite
         """
-        self.testInit = TestInit(__file__)
-        self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
         
-        self.testInit.clearDatabase()
+        testInit = TestInit(__file__)
+        testInit.setLogging()
+        testInit.setDatabaseConnection()
+        
+        testInit.clearDatabase()
         
         return
     

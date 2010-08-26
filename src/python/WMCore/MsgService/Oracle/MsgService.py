@@ -37,7 +37,12 @@ messages after it is handled.
 #you have to redo basically every function, which I find annoying.
 # -mnorman
 
-
+__revision__ = \
+    "$Id: MsgService.py,v 1.3 2009/09/02 19:47:03 sfoulkes Exp $"
+__version__ = \
+    "$Revision: 1.3 $"
+__author__ = \
+    "mnorman@fnal.gov"
 
 import os
 import socket

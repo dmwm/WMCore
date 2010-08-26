@@ -4,9 +4,9 @@
 """
 Rest test module
 """
-
-
-
+__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
+__revision__ = "$Id: Rest_t.py,v 1.5 2009/10/13 23:00:06 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import logging
 import threading

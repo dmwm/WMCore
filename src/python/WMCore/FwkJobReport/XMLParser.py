@@ -5,8 +5,8 @@ _XMLParser_
 Read the raw XML output from the cmsRun executable. 
 """
 
-
-
+__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: XMLParser.py,v 1.9 2010/06/09 21:51:33 evansde Exp $"
 
 import os
 import xml.parsers.expat

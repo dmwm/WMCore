@@ -4,8 +4,8 @@ _TwoFileAndEventBased_
 
 """
 
-
-
+__revision__ = "$Id: TwoFileAndEventBased.py,v 1.7 2010/05/05 19:14:57 sfoulkes Exp $"
+__version__  = "$Revision: 1.7 $"
 
 
 from WMCore.JobSplitting.JobFactory import JobFactory

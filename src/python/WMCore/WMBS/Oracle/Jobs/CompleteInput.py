@@ -2,14 +2,17 @@
 """
 _CompleteInput_
 
-Oracle implementation of Jobs.CompleteInput
+Oracle implementation of Jobs.Complete
 """
+
+__revision__ = "$Id: CompleteInput.py,v 1.2 2010/04/28 16:28:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Jobs.CompleteInput import CompleteInput as MySQLCompleteInput
 
 class CompleteInput(MySQLCompleteInput):
     fileSelect = """SELECT job_files.subscriptionid, job_files.fileid,
-                           COUNT(wmbs_job_assoc.job) AS total, SUM(wmbs_job.outcome) AS numsuccess FROM
+                           COUNT(wmbs_job_assoc.job) AS total, SUM(wmbs_job.outcome) AS success FROM
                       (SELECT wmbs_jobgroup.subscription AS subscriptionid,
                               wmbs_job_assoc.fileid AS fileid FROM wmbs_job_assoc
                          INNER JOIN wmbs_job ON
@@ -24,8 +27,7 @@ class CompleteInput(MySQLCompleteInput):
                       INNER JOIN wmbs_jobgroup ON
                         wmbs_job.jobgroup = wmbs_jobgroup.id
                     WHERE wmbs_jobgroup.subscription = job_files.subscriptionid    
-                    GROUP BY job_files.subscriptionid, job_files.fileid
-                    HAVING COUNT(wmbs_job_assoc.job) = SUM(wmbs_job.outcome)"""
+                    GROUP BY job_files.subscriptionid, job_files.fileid"""    
 
     acquiredDelete = """DELETE FROM wmbs_sub_files_acquired
                         WHERE subscription = :subid AND fileid = :fileid"""
@@ -34,7 +36,4 @@ class CompleteInput(MySQLCompleteInput):
                       WHERE subscription = :subid AND fileid = :fileid"""    
 
     sql = """INSERT INTO wmbs_sub_files_complete (fileid, subscription)
-               SELECT :fileid, :subid FROM DUAL
-               WHERE NOT EXISTS
-                 (SELECT * FROM wmbs_sub_files_complete
-                  WHERE fileid = :fileid AND subscription = :subid)"""    
+               VALUES (:fileid, :subid)"""

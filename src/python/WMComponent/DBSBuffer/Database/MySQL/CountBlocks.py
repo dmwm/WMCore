@@ -5,8 +5,8 @@ _CountBlocks_
 MySQL implementation of DBSBuffer.CountBlocks
 """
 
-
-
+__revision__ = "$Id: CountBlocks.py,v 1.1 2009/09/28 15:12:12 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

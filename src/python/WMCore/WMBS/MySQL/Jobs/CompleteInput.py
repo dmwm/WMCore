@@ -5,8 +5,8 @@ _CompleteInput_
 MySQL implementation of Jobs.Complete
 """
 
-
-
+__revision__ = "$Id: CompleteInput.py,v 1.5 2010/04/28 16:28:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -19,7 +19,7 @@ class CompleteInput(DBFormatter):
     entries from the acquired and failed tables.
     """
     fileSelect = """SELECT job_files.subscriptionid, job_files.fileid,
-                           COUNT(wmbs_job_assoc.job) AS total, SUM(wmbs_job.outcome) AS numsuccess FROM
+                           COUNT(wmbs_job_assoc.job) AS total, SUM(wmbs_job.outcome) AS success FROM
                       (SELECT wmbs_jobgroup.subscription AS subscriptionid,
                               wmbs_job_assoc.file AS fileid FROM wmbs_job_assoc
                          INNER JOIN wmbs_job ON
@@ -34,8 +34,7 @@ class CompleteInput(DBFormatter):
                       INNER JOIN wmbs_jobgroup ON
                         wmbs_job.jobgroup = wmbs_jobgroup.id
                     WHERE wmbs_jobgroup.subscription = job_files.subscriptionid    
-                    GROUP BY job_files.subscriptionid, job_files.fileid
-                    HAVING total = numsuccess"""    
+                    GROUP BY job_files.subscriptionid, job_files.fileid"""    
 
     acquiredDelete = """DELETE FROM wmbs_sub_files_acquired
                         WHERE subscription = :subid AND file = :fileid"""
@@ -44,10 +43,7 @@ class CompleteInput(DBFormatter):
                       WHERE subscription = :subid AND file = :fileid"""    
 
     sql = """INSERT INTO wmbs_sub_files_complete (file, subscription)
-               SELECT :fileid, :subid FROM DUAL
-               WHERE NOT EXISTS
-                 (SELECT * FROM wmbs_sub_files_complete
-                  WHERE file = :fileid AND subscription = :subid)"""
+               VALUES (:fileid, :subid)"""
     
     def execute(self, id, conn = None, transaction = False):
         if type(id) == list:
@@ -63,8 +59,9 @@ class CompleteInput(DBFormatter):
 
         binds = []
         for possibleDelete in possibleDeletes:
-            binds.append({"fileid": possibleDelete["fileid"],
-                          "subid": possibleDelete["subscriptionid"]})
+            if possibleDelete["total"] == possibleDelete["success"]:
+                binds.append({"fileid": possibleDelete["fileid"],
+                              "subid": possibleDelete["subscriptionid"]})
 
         if len(binds) == 0:
             return

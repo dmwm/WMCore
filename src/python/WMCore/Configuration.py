@@ -8,8 +8,8 @@ Module dealing with Configuration file in python format
 
 """
 
-
-
+__revision__ = "$Id: Configuration.py,v 1.17 2010/07/29 20:59:24 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import os
 import imp

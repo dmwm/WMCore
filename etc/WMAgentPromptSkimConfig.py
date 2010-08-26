@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration for PromptSkimming.
 """
 
-
-
+__revision__ = "$Id: WMAgentPromptSkimConfig.py,v 1.3 2010/06/10 16:22:29 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import WMCore.WMInit

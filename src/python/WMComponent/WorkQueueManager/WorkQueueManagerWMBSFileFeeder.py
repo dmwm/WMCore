@@ -3,8 +3,8 @@
 pullWork poller
 """
 __all__ = []
-
-
+__revision__ = "$Id: WorkQueueManagerWMBSFileFeeder.py,v 1.5 2010/08/02 18:58:05 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 import threading

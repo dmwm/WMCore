@@ -5,8 +5,8 @@ _DBSBuffer.UpdateAlgo_
 Add PSetHash to Algo in DBS Buffer
 """
 
-
-
+__revision__ = "$Id: UpdateAlgo.py,v 1.2 2009/07/14 19:15:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMComponent.DBSBuffer.Database.MySQL.UpdateAlgo import UpdateAlgo as MySQLUpdateAlgo
 

@@ -7,9 +7,9 @@ mappings to a human readable message.
 
 """
 
-
-
-
+__revision__ = "$Id: WMExceptions.py,v 1.10 2009/11/23 20:50:02 metson Exp $"
+__version__ = "$Revision: 1.10 $"
+__author__ = "fvlingen@caltech.edu"
 
 
 WMEXCEPTION = {'WMCore-1' : 'Not allowed to instantiate ',

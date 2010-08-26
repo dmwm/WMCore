@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-
-
+__revision__ = "$Id: JobGroup_t.py,v 1.28 2010/04/14 20:56:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import unittest
 import logging

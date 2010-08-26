@@ -3,9 +3,9 @@
 Handler for dispatching messages to other proxies.
 """
 __all__ = []
-
-
-
+__revision__ = "$Id: Dispatcher.py,v 1.2 2008/09/29 16:10:56 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "fvlingen@caltech.edu"
 
 
 from WMCore.Agent.BaseHandler import BaseHandler

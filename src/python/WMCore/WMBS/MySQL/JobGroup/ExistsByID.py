@@ -6,8 +6,8 @@ MySQL implementation of JobGroup.ExistsByID
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: ExistsByID.py,v 1.1 2008/12/05 21:02:04 sryu Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

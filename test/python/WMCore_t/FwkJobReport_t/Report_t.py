@@ -5,8 +5,8 @@ _Report_t_
 Unit tests for the Report class.
 """
 
-
-
+__revision__ = "$Id: Report_t.py,v 1.7 2010/08/11 16:56:17 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import os
@@ -329,25 +329,21 @@ cms::Exception caught in EventProcessor and rethrown
         myReport.parse(xmlPath)
 
         jsonReport = myReport.__to_json__(None)
-
-        assert "task" in jsonReport.keys(), \
-               "Error: Task name missing from report."
-
-        assert len(jsonReport["steps"].keys()) == 1, \
+        assert len(jsonReport.keys()) == 1, \
                "Error: Wrong number of steps in report."
-        assert "cmsRun1" in jsonReport["steps"].keys(), \
+        assert "cmsRun1" in jsonReport.keys(), \
                "Error: Step missing from json report."
         
-        cmsRunStep = jsonReport["steps"]["cmsRun1"]
+        cmsRunStep = jsonReport["cmsRun1"]
 
         jsonReportSections = ["status", "errors", "logs", "parameters", "site",
-                              "analysis", "cleanup", "input", "output", "start",
-                              "end"]
+                              "analysis", "cleanup", "input", "output"]
         for jsonReportSection in jsonReportSections:
             assert jsonReportSection in cmsRunStep.keys(), \
                 "Error: missing section: %s" % jsonReportSection
                 
         return
+
 
     def testTimeSetting(self):
         """
@@ -355,7 +351,10 @@ cms::Exception caught in EventProcessor and rethrown
 
         Can we set the times correctly?
         """
-        stepName = "cmsRun1"
+
+        
+
+        stepName = 'cmsRun1'
         timeDiff = 0.01
         myReport = Report(stepName)
         localTime = time.time()
@@ -363,10 +362,14 @@ cms::Exception caught in EventProcessor and rethrown
         myReport.setStepStopTime(stepName)
         repTime = myReport.getTimes(stepName)
 
-        self.assertTrue(repTime["startTime"] - localTime < timeDiff)
-        self.assertTrue(repTime["stopTime"] - localTime < timeDiff)
+        self.assertTrue(repTime['startTime'] - localTime < timeDiff)
+        self.assertTrue(repTime['stopTime'] - localTime < timeDiff)
 
         return
+
+
+        
+        
     
 if __name__ == "__main__":
     unittest.main()

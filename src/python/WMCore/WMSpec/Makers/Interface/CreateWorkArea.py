@@ -252,9 +252,8 @@ class CreateWorkArea:
 
         #Now actually start to do things
         myThread.transaction.begin()
-        #jobList = self.jobGroup.listJobIDs()
-        for job in self.jobGroup.jobs:
-            jid = job['id']
+        jobList = self.jobGroup.listJobIDs()
+        for jid in jobList:
 
             if jobCounter%1000 == 0:
                 #Create a new jobCollection
@@ -266,7 +265,6 @@ class CreateWorkArea:
             name = self.getDirectoryName(jid)
             nameList.append(name)
             nameDictList.append({'jobid':jid, 'cacheDir':name})
-            job['cache_dir'] = name
 
 
         setBulkCache.execute(jobDictList = nameDictList)

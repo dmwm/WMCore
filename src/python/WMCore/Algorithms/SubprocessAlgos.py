@@ -12,8 +12,8 @@ import os
 import re
 import subprocess
 
-
-
+__revision__ = "$Id: SubprocessAlgos.py,v 1.1 2009/12/22 17:33:08 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 def findPIDs(name, user = os.getpid()):

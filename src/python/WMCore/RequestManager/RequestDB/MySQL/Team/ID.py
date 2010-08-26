@@ -5,8 +5,8 @@ _Team.ID_
 Get the id for an operations team
 
 """
-
-
+__revision__ = "$Id: ID.py,v 1.1 2010/06/30 22:56:58 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

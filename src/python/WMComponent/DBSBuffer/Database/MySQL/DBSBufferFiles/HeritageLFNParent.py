@@ -5,8 +5,8 @@ _HeritageLFNParent_
 MySQL implementation of DBSBufferFiles.HeritageLFNParent
 """
 
-
-
+__revision__ = "$Id: HeritageLFNParent.py,v 1.3 2010/05/24 19:33:48 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

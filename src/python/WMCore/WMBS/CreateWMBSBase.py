@@ -4,6 +4,9 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
+__revision__ = "$Id: CreateWMBSBase.py,v 1.52 2010/06/28 19:01:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.52 $"
+
 import threading
 
 from WMCore.Database.DBCreator import DBCreator
@@ -48,7 +51,6 @@ class CreateWMBSBase(DBCreator):
                                "09wmbs_workflow_output",
                                "08wmbs_subscription",
                                "10wmbs_sub_files_acquired",
-                               "10wmbs_sub_files_available",
                                "11wmbs_sub_files_failed",
                                "12wmbs_sub_files_complete",
                                "13wmbs_jobgroup",
@@ -58,6 +60,7 @@ class CreateWMBSBase(DBCreator):
                                "17wmbs_job_mask",
                                "18wmbs_checksum_type",
                                "19wmbs_file_checksums"]
+
 
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
@@ -110,7 +113,6 @@ class CreateWMBSBase(DBCreator):
              se_name   VARCHAR(255),
              ce_name   VARCHAR(255),
              job_slots INTEGER,
-             plugin    VARCHAR(255),
              UNIQUE(site_name))"""
 
         self.create["07wmbs_file_location"] = \
@@ -137,6 +139,7 @@ class CreateWMBSBase(DBCreator):
              workflow_id       INTEGER NOT NULL,
              output_identifier VARCHAR(255) NOT NULL,
              output_fileset    INTEGER NOT NULL,
+             output_parent     VARCHAR(255),
              FOREIGN KEY(workflow_id)  REFERENCES wmbs_workflow(id)
                ON DELETE CASCADE,
              FOREIGN KEY(output_fileset)  REFERENCES wmbs_fileset(id)
@@ -168,29 +171,16 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_sub_files_acquired (
              subscription INTEGER NOT NULL,
              file         INTEGER NOT NULL,
-             PRIMARY KEY (subscription, file),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
                ON DELETE CASCADE)
              """
 
-        self.create["10wmbs_sub_files_available"] = \
-          """CREATE TABLE wmbs_sub_files_available (
-             subscription INTEGER NOT NULL,
-             file         INTEGER NOT NULL,
-             PRIMARY KEY (subscription, file),
-             FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-               ON DELETE CASCADE,
-             FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
-               ON DELETE CASCADE)
-             """        
-
         self.create["11wmbs_sub_files_failed"] = \
           """CREATE TABLE wmbs_sub_files_failed (
              subscription INTEGER NOT NULL,
              file         INTEGER NOT NULL,
-             PRIMARY KEY (subscription, file),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
@@ -200,7 +190,6 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_sub_files_complete (
              subscription INTEGER NOT NULL,
              file         INTEGER NOT NULL,
-             PRIMARY KEY (subscription, file),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
@@ -328,12 +317,6 @@ class CreateWMBSBase(DBCreator):
         self.constraints["02_idx_wmbs_sub_files_acquired"] = \
           """CREATE INDEX idx_wmbs_sub_files_acq_file ON wmbs_sub_files_acquired(file) %s""" % tablespaceIndex
 
-        self.constraints["01_idx_wmbs_sub_files_available"] = \
-          """CREATE INDEX idx_wmbs_sub_files_ava_sub ON wmbs_sub_files_available(subscription) %s""" % tablespaceIndex
-
-        self.constraints["02_idx_wmbs_sub_files_available"] = \
-          """CREATE INDEX idx_wmbs_sub_files_ava_file ON wmbs_sub_files_available(file) %s""" % tablespaceIndex        
-
         self.constraints["01_idx_wmbs_sub_files_failed"] = \
           """CREATE INDEX idx_wmbs_sub_files_fail_sub ON wmbs_sub_files_failed(subscription) %s""" % tablespaceIndex
 
@@ -383,7 +366,7 @@ class CreateWMBSBase(DBCreator):
                 (jobState)
             self.inserts["job_state_%s" % jobState] = jobStateQuery
 
-        self.subTypes = ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect", "Skim", "Analysis"]
+        self.subTypes = ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect", "Skim"]
         for i in range(len(self.subTypes)): 
             subTypeQuery = """INSERT INTO wmbs_sub_types (name)
                                 VALUES ('%s')""" % (self.subTypes[i])

@@ -3,8 +3,8 @@ Unittest file for WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueService.py
 
 """
 
-
-
+__revision__ = "$Id"
+__version__ = "$Revision: 1.9 $"
 
 
 #setup emulator for test, this needs to be at top of the file

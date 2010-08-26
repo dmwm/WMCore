@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-
-
+__revision__ = "$Id: WorkQueueProfile_t.py,v 1.5 2010/08/09 21:19:20 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 #setup emulator for test, this needs to be at top of the file
 from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
@@ -25,16 +25,10 @@ class WorkQueueProfileTest(WorkQueueTestCase):
     _WorkQueueTest_
     
     """
-
     
     def setUp(self):
         """
         If we dont have a wmspec file create one
-        
-        Warning: For the real profiling test including 
-        spec generation. need to use real spec instead of 
-        using emulator generated spec which doesn't include
-        couchDB access and cmssw access  
         """
         WorkQueueTestCase.setUp(self)
         self.specGenerator = WMSpecGenerator()

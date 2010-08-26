@@ -3,8 +3,8 @@
     WorkQueue.Policy.Start.MonteCarlo tests
 """
 
-
-
+__revision__ = "$Id: MonteCarlo_t.py,v 1.4 2010/02/12 16:33:55 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 from WMCore.WorkQueue.Policy.Start.MonteCarlo import MonteCarlo

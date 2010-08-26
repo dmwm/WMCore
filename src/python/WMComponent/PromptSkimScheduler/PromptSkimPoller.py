@@ -5,8 +5,8 @@ _PromptSkimPoller_
 Poll T0AST for complete blocks and launch skims.
 """
 
-
-
+__revision__ = "$Id: PromptSkimPoller.py,v 1.4 2010/06/07 15:54:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import time
 import threading

@@ -7,6 +7,13 @@ This module implements the mysql backend for the persistent threadpool.
 
 """
 
+__revision__ = \
+    "$Id: Queries.py,v 1.7 2009/07/17 16:02:30 sfoulkes Exp $"
+__version__ = \
+    "$Revision: 1.7 $"
+__author__ = \
+    "fvlingen@caltech.edu"
+
 import threading
 
 from WMCore.Database.DBFormatter import DBFormatter

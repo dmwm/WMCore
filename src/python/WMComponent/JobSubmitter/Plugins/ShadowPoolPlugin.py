@@ -8,8 +8,8 @@ cms-sleepgw.fnal.gov
 
 """
 
-
-
+__revision__ = "$Id: ShadowPoolPlugin.py,v 1.3 2010/02/10 17:04:33 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import os.path

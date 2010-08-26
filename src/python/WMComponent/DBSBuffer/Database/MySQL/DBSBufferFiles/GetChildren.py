@@ -5,8 +5,8 @@ _GetChildren_
 MySQL implementation of DBSBufferFiles.GetChildren
 """
 
-
-
+__revision__ = "$Id: GetChildren.py,v 1.1 2010/01/13 19:54:43 sfoulkes Exp $"
+__version__  = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

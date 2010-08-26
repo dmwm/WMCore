@@ -5,8 +5,8 @@ _ResourceControl_
 Library from manipulating and querying the resource control database.
 """
 
-
-
+__revision__ = "$Id: ResourceControl.py,v 1.6 2010/07/15 19:21:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
@@ -19,8 +19,7 @@ class ResourceControl(WMConnectionBase):
                                          dbinterface = self.dbi)
         return
 
-    def insertSite(self, siteName, jobSlots = 0, seName = None,
-                   ceName = None, plugin = None):
+    def insertSite(self, siteName, jobSlots = 0, seName = None, ceName = None):
         """
         _insertSite_
 
@@ -30,7 +29,7 @@ class ResourceControl(WMConnectionBase):
         insertAction = self.wmbsDAOFactory(classname = "Locations.New")
         insertAction.execute(siteName = siteName, jobSlots = jobSlots,
                              seName = seName, ceName = ceName,
-                             plugin = plugin, conn = self.getDBConn(),
+                             conn = self.getDBConn(),
                              transaction = self.existingTransaction())
         return
 
@@ -43,8 +42,8 @@ class ResourceControl(WMConnectionBase):
         """
         listAction = self.wmbsDAOFactory(classname = "Locations.GetSiteInfo")
         result = listAction.execute(siteName = siteName,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+                                  conn = self.getDBConn(),
+                                  transaction = self.existingTransaction())
         if len(result) == 0:
             return None
         return result[0]

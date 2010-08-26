@@ -6,8 +6,8 @@ MySQL implementation of Fileset.ListOpenByName
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: ListOpenByName.py,v 1.1 2009/11/13 15:06:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

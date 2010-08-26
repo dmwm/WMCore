@@ -9,8 +9,8 @@ Note that the period here refers to the amount of time between the end of a job
 and the creation of a new job.
 """
 
-
-
+__revision__ = "$Id: Periodic.py,v 1.9 2010/04/19 14:39:25 sfoulkes Exp $"
+__version__  = "$Revision: 1.9 $"
 
 import time
 import threading

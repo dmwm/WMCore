@@ -5,9 +5,9 @@ _DBSBuffer.NewFile_
 Add a new file to DBS Buffer: Oracle version
 
 """
-
-
-
+__revision__ = "$Id: UpdateDSFileCount.py,v 1.3 2009/06/10 16:30:56 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
+__author__ = "mnorman@fnal.gov"
 
 #This has been updated for use with Oracle
 

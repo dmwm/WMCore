@@ -4,8 +4,8 @@ _SchedulerCondor_
 Scheduler class for vanilla Condor scheduler
 """
 
-
-
+__revision__ = "$Id: SchedulerCondor.py,v 1.1 2010/06/03 22:02:28 spigafi Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import os
 

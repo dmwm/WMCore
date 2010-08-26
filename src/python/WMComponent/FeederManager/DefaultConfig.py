@@ -5,8 +5,8 @@ Defines default config values for FeederManager specific
 parameters.
 """
 __all__ = []
-
-
+__revision__ = "$Id: DefaultConfig.py,v 1.2 2009/07/14 16:30:15 riahi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 

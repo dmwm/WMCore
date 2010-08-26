@@ -7,8 +7,8 @@ Inherit from CreateAgent, and add Oracle specific substitutions (e.g.
 use trigger and sequence to mimic auto increment in MySQL.
 """
 
-
-
+__revision__ = "$Id: Create.py,v 1.2 2010/06/22 16:46:35 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Agent.Database.CreateAgentBase import CreateAgentBase
 

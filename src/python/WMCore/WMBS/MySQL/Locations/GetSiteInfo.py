@@ -6,8 +6,8 @@ MySQL implementation of Locations.GetSiteInfo
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: GetSiteInfo.py,v 1.1 2010/02/15 17:33:23 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -19,7 +19,7 @@ class GetSiteInfo(DBFormatter):
     Usually useful only in the submitter
     """
     
-    sql = "SELECT site_name, se_name, ce_name, job_slots, plugin FROM wmbs_location WHERE site_name = :site"
+    sql = "SELECT site_name, se_name, ce_name, job_slots FROM wmbs_location WHERE site_name = :site"
 
 
     def execute(self, siteName = None, conn = None, transaction = False):

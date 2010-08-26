@@ -3,6 +3,9 @@
 gLite CLI interaction class through JSON formatted output
 """
 
+__revision__ = "$Id: SchedulerGLite.py,v 1.6 2010/07/26 13:47:28 mcinquil Exp $"
+__version__ = "$Revision: 1.6 $"
+__author__ = "filippo.spiga@cern.ch"
 
 import os
 import tempfile
@@ -125,24 +128,16 @@ class SchedulerGLite(SchedulerInterface) :
         # x509 string & hackEnv for CLI commands
         if self.cert is not None and self.cert != '':
             self.proxyString = "env X509_USER_PROXY=" + self.cert + ' '
-            # TODO: deprecated
-            #self.hackEnv = hackTheEnv()
+            self.hackEnv = hackTheEnv()
         else :
             self.proxyString = ''
-
-            # Don't wont always to crash
-            #if os.getenv('X509_USER_PROXY') is None:
-            #    raise SchedulerError('Proxy not defined: %s'%str(self.proxyString),str(self.cert))
-            self.logging.debug("WARNING: proxy not in the env")
-
-            # TODO: deprecated
-            #self.hackEnv = hackTheEnv('env')
+            self.hackEnv = hackTheEnv('env')
             
         # Retrieve the location of GLiteStatusQuery.py ...
         wmcoreBasedir = WMCore.WMInit.getWMBASE()    
         if wmcoreBasedir  :
             self.commandQueryPath = wmcoreBasedir + \
-                                    '/src/python/WMCore/BossLite/Scheduler/'
+                                    '/lib/WMCore/BossLite/Scheduler/'
         else :
             # Impossible to locate GLiteQueryStatus.py ...
             raise SchedulerError(
@@ -221,9 +216,6 @@ class SchedulerGLite(SchedulerInterface) :
         # the '-e' override the ...
         if service != '' :
             command += ' -e ' + service
-        elif self.service != '':
-            command += ' -e ' + self.service
-
 
         command += ' ' + fname
         out, ret = self.ExecuteCommand( self.proxyString + command )
@@ -554,9 +546,6 @@ class SchedulerGLite(SchedulerInterface) :
 
         if service != '' :
             command += ' -e ' + service
-        elif self.service != '':
-            command += ' -e ' + self.service
-
 
         command += " " + fname
         
@@ -589,9 +578,8 @@ class SchedulerGLite(SchedulerInterface) :
         command = "glite-wms-job-logging-info -v 3 " + schedulerId + \
                   " > " + outfile
         
-        out, ret = self.ExecuteCommand( self.proxyString + command )
-        # hackEnv deprecated
-#                        self.proxyString + self.hackEnv + command )
+        out, ret = self.ExecuteCommand( 
+                        self.proxyString + self.hackEnv + command )
             
         return out
 
@@ -636,13 +624,11 @@ class SchedulerGLite(SchedulerInterface) :
                 if jobIds :
                     formattedJobIds = ','.join(jobIds)
                                    
-                    command = 'python ' + self.commandQueryPath \
+                    command = self.commandQueryPath \
                         + 'GLiteStatusQuery.py --jobId=%s' % formattedJobIds
                     
-                    outJson, ret = self.ExecuteCommand( self.proxyString + \
-                                                        command )
-                    # hackEnv deprecated
-#                                    self.proxyString + self.hackEnv + command)
+                    outJson, ret = self.ExecuteCommand(
+                                    self.proxyString + self.hackEnv + command)
                                            
                     # Check error
                     if ret != 0 :
@@ -681,17 +667,14 @@ class SchedulerGLite(SchedulerInterface) :
                 if jobIds :
                     formattedParentIds = ','.join(parentIds)
                     formattedJobIds = ','.join(jobIds)
-
-                    # Temporary solution to work with python
-                    command = 'python ' + self.commandQueryPath \
+                    
+                    command = self.commandQueryPath \
                         + 'GLiteStatusQuery.py --parentId=%s --jobId=%s' \
                             % (formattedParentIds, formattedJobIds)
                     
-                    outJson, ret = self.ExecuteCommand( self.proxyString + \
-                                                        command )
-                    # hackEnv deprecated
-#                                    self.proxyString + self.hackEnv + command)
-
+                    outJson, ret = self.ExecuteCommand(
+                                    self.proxyString + self.hackEnv + command)
+                                           
                     # Check error
                     if ret != 0 :
                         # obj.errors doesn't exist for Task object...
@@ -756,6 +739,7 @@ class SchedulerGLite(SchedulerInterface) :
         """
         build a job jdl
         """
+        
         # general part
         jdl = "[\n"
         jdl += 'Type = "job";\n'
@@ -813,6 +797,7 @@ class SchedulerGLite(SchedulerInterface) :
         build a collection jdl easy to be handled by the wmproxy API interface
         and gives back the list of input files for a better handling
         """
+        
         # general part for task
         jdl = "[\n"
         jdl += 'Type = "collection";\n'
@@ -928,7 +913,6 @@ class SchedulerGLite(SchedulerInterface) :
         # close jdl
         jdl += 'SignificantAttributes = {"Requirements", "Rank", "FuzzyRank"};'
         jdl += "\n]\n"
-
 
         # return values
         return jdl

@@ -6,8 +6,8 @@ SQLite implementation of JobGroup.GetSite
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: SetSite.py,v 1.2 2009/07/22 21:11:11 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.JobGroup.SetSite import SetSite as MySQLSetSite
 

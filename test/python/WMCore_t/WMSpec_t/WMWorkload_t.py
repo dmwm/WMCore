@@ -5,8 +5,8 @@ _WMWorkload_t_
 Unittest for WMWorkload class
 """
 
-
-
+__revision__ = "$Id: WMWorkload_t.py,v 1.5 2010/07/21 13:54:58 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import unittest

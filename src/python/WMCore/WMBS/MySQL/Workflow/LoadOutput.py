@@ -5,10 +5,14 @@ _LoadOutput_
 MySQL implementation of Workflow.LoadOutput
 """
 
+__revision__ = "$Id: LoadOutput.py,v 1.2 2009/12/04 21:27:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadOutput(DBFormatter):
-    sql = """SELECT output_identifier, output_fileset FROM wmbs_workflow_output
+    sql = """SELECT output_identifier, output_fileset, output_parent
+               FROM wmbs_workflow_output
              WHERE workflow_id = :workflow"""
 
     def formatDict(self, result):

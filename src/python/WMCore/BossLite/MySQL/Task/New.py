@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Task.New
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: New.py,v 1.3 2010/05/29 13:03:56 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Task import TaskDBFormatter

@@ -26,8 +26,8 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
-
-
+__revision__ = "$Id: DBSUploadPoller.py,v 1.27 2010/06/04 19:11:29 mnorman Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import threading
 import logging
@@ -180,8 +180,6 @@ class DBSUploadPoller(BaseWorkerThread):
 
         return
 
-
-
     def uploadDatasets(self):
         """
         This should do the hard work of adding things to DBS.
@@ -211,8 +209,6 @@ class DBSUploadPoller(BaseWorkerThread):
             # open blocks that we should timeout
             blocks = dbinterface.findOpenBlocks()
 
-            logging.info("Found %i open blocks" % (len(blocks)))
-
             blocksToClose = []
             doneBlocks    = []
 
@@ -221,7 +217,6 @@ class DBSUploadPoller(BaseWorkerThread):
                        > self.dbsBlockTimeout:
                     # Then we have to load a block
                     blocksToClose.append(buffBlock['blockname'])
-                    logging.info("Going to close and migrate block due to timeout: %s" % (buffBlock['blockname']))
 
             # Actually finish the blocks
             if len(blocksToClose) > 0:
@@ -229,7 +224,6 @@ class DBSUploadPoller(BaseWorkerThread):
 
             for block in doneBlocks:
                 # Now close 'em in DBSBuffer
-                logging.info("About to close block in DBSBuffer due to timeout: %s" % (block['Name']))
                 dbinterface.setBlockStatus(block['Name'], locations = None,
                                            openStatus = 0)
 
@@ -266,8 +260,6 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
-
-        
         
     def algorithm(self, parameters = None):
         """

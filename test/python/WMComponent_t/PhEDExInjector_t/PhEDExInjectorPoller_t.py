@@ -7,8 +7,8 @@ and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
 back down and verify that everything is complete.
 """
 
-
-
+__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.10 2010/04/27 16:24:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 import time
@@ -26,8 +26,8 @@ from WMCore.Agent.Configuration import Configuration
 from WMCore.WMFactory import WMFactory
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
-from WMQuality.TestInit import TestInit
 
+from WMQuality.TestInit import TestInit
 
 class PhEDExInjectorPollerTest(unittest.TestCase):
     """
@@ -37,7 +37,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
     and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
     back down and verify that everything is complete.    
     """
-    __integration__ = "depends on Phedex"
     def setUp(self):
         """
         _setUp_

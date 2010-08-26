@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-
-
+__revision__ = "$Id: CreateAgentBase.py,v 1.3 2010/06/23 18:07:09 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 

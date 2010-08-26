@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-
-
+__revision__ = "$Id: CondorGlobusPlugin.py,v 1.12 2010/07/29 18:44:13 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import os
 import os.path

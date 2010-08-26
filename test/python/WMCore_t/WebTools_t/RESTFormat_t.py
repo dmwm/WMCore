@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-
-
+__revision__ = "$Id: RESTFormat_t.py,v 1.11 2010/04/19 14:46:50 sryu Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 try:

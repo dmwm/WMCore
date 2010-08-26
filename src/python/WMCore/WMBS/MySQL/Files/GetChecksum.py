@@ -5,8 +5,8 @@ MySQL implementation of GetChecksum
 """
 
 
-
-
+__revision__ = "$Id: GetChecksum.py,v 1.3 2009/12/09 17:52:14 sryu Exp $"
+__version__  = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

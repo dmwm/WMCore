@@ -3,8 +3,8 @@
 Code for migrating blocks to global DBS
 """
 
-
-
+__revision__ = "$Id: MigrateFileBlocks.py,v 1.3 2009/12/07 18:55:32 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import logging

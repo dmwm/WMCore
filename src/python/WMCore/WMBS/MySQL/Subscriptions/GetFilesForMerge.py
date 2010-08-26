@@ -6,8 +6,8 @@ MySQL implementation of Subscription.GetFilesForMerge
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: GetFilesForMerge.py,v 1.9 2010/06/24 16:15:13 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

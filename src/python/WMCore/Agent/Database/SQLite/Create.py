@@ -5,8 +5,8 @@ Implementation of CreateAgent for SQLite.
 
 """
 
-
-
+__revision__ = "$Id: Create.py,v 1.3 2010/06/23 18:07:04 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Agent.Database.CreateAgentBase import CreateAgentBase
 

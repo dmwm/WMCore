@@ -7,8 +7,8 @@ Implementation of an Executor for a Delete step
 
 """
 
-
-
+__revision__ = "$Id: DeleteFiles.py,v 1.4 2010/07/23 14:36:24 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os.path
 import logging
@@ -20,7 +20,6 @@ from WMCore.WMSpec.Steps.Executor           import Executor
 import WMCore.Storage.DeleteMgr as DeleteMgr
         
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
-import WMCore.Storage.FileManager
 
 class DeleteFiles(Executor):
     """
@@ -71,11 +70,6 @@ class DeleteFiles(Executor):
         waitTime = overrides.get('waitTime', 900)
 
         # Pull out StageOutMgr Overrides
-        # switch between old stageOut behavior and new, fancy stage out behavior
-        useNewStageOutCode = False
-        if overrides.has_key('newStageOut') and overrides.get('newStageOut'):
-            useNewStageOutCode = True
-            
         stageOutCall = {}
         if overrides.has_key("command") and overrides.has_key("option") \
                and overrides.has_key("se-name") and overrides.has_key("lfn-prefix"):
@@ -89,61 +83,24 @@ class DeleteFiles(Executor):
         manager = DeleteMgr.DeleteMgr(**stageOutCall)
         manager.numberOfRetries = self.step.retryCount
         manager.retryPauseTime  = self.step.retryDelay
-        # naw man, this is real
-        # iterate over all the incoming files
-        if not useNewStageOutCode:
-            # old style
-            manager = DeleteMgr.DeleteMgr(**stageOutCall)
-            manager.numberOfRetries = self.step.retryCount
-            manager.retryPauseTime  = self.step.retryDelay
-        else:
-            # new style
-            logging.critical("DeleteFiles IS USING NEW STAGEOUT CODE")
-            print "DeleteFiles IS USING NEW STAGEOUT CODE"
-            manager = WMCore.Storage.FileManager.DeleteMgr(
-                                retryPauseTime  = self.step.retryDelay,
-                                numberOfRetries = self.step.retryCount,
-                                **stageOutCall)
+
 
         # This is where the deleted files go
         filesDeleted = []
 
         for file in self.job['input_files']:
-            logging.debug("Deleting LFN: %s" % file.get('lfn'))
             fileForTransfer = {'LFN': file.get('lfn'),
                                'PFN': None,  # PFNs are assigned in the Delete Manager
                                'SEName' : None,  # SEName is assigned in the delete manager
                                'StageOutCommand': None}
-            filesDeleted.append( self.deleteOneFile(fileForTransfer, manager, waitTime))
 
-        if hasattr(self.step, 'filesToDelete'):
-            # files from the configTree to be deleted
-            for k, v in self.step.filesToDelete.dictionary_().iteritems():
-                if k.startswith('file'):
-                    logging.debug("Deleting LFN: %s" % v)
-                    fileForTransfer = {'LFN' : v,
-                                       'PFN' : None,
-                                       'SEName' : None,
-                                       'StageOutCommand' : None}
-                    filesDeleted.append( self.deleteOneFile(fileForTransfer, manager, waitTime))
-            
-
-
-        # Now we've got to put things in the report
-        for file in filesDeleted:
-            self.report.addRemovedCleanupFile(**file)
-
-                
-        return
-
-    def deleteOneFile(self, fileForTransfer, manager, waitTime):
             signal.signal(signal.SIGALRM, alarmHandler)
             signal.alarm(waitTime)
 
             try:
                 manager(fileToDelete = fileForTransfer)
                 #Afterwards, the file should have updated info.
-                return fileForTransfer
+                filesDeleted.append(fileForTransfer)
 
             except Alarm:
                 msg = "Indefinite hang during stageOut of logArchive"
@@ -160,7 +117,16 @@ class DeleteFiles(Executor):
                 raise
 
             signal.alarm(0)
-    
+
+
+        # Now we've got to put things in the report
+        for file in filesDeleted:
+            self.report.addRemovedCleanupFile(**file)
+
+                
+        return
+
+
     def post(self, emulator = None):
         """
         _post_

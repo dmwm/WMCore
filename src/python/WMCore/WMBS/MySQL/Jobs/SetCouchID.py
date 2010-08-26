@@ -5,8 +5,8 @@ _SetCouchID_
 MySQL implementation of Jobs.SetCouchID
 """
 
-
-
+__revision__ = "$Id: SetCouchID.py,v 1.2 2009/10/15 20:31:51 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

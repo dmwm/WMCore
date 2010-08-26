@@ -5,8 +5,8 @@ _Requests_
 Methods to check on the requests belonging to a group
 
 """
-
-
+__revision__ = "$Id: Requests.py,v 1.1 2010/07/01 17:59:56 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 import logging

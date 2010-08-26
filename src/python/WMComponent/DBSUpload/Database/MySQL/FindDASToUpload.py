@@ -6,8 +6,8 @@ dataset-algo combinations from the DBSBuffer.
 
 """
 
-
-
+__revision__ = "$Id: FindDASToUpload.py,v 1.1 2010/06/14 16:38:51 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

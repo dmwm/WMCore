@@ -5,8 +5,8 @@ _SetFWJRPath_
 MySQL implementation of Jobs.SetFWJRPath
 """
 
-
-
+__revision__ = "$Id: SetFWJRPath.py,v 1.2 2010/06/01 16:11:32 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

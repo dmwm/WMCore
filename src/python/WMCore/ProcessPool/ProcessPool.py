@@ -5,8 +5,8 @@ _ProcessPool_
 
 """
 
-
-
+__revision__ = "$Id: ProcessPool.py,v 1.17 2010/08/13 16:02:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import subprocess
 import sys

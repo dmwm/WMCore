@@ -7,8 +7,8 @@ MySQL implementation of File.GetParentIDsByID
 Return a list of ids which are parents for a file with a given id(s).
 """
 
-
-
+__revision__ = "$Id: GetParentIDsByID.py,v 1.5 2009/12/16 17:45:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

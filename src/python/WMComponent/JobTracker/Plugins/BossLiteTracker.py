@@ -1,25 +1,24 @@
 #!/bin/env python
-#pylint: disable-msg=E1103
-# E1103: The thread will have a logger and a dbi before it gets here
 
 # It's the tracker for BossLite
 
-
-
+__revision__ = "$Id: BossLiteTracker.py,v 1.1 2010/07/08 15:44:57 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 import logging
+import os
 import time
 import threading
 
 from WMCore.DAOFactory import DAOFactory
 
+#from xml.sax.handler import ContentHandler
 from WMComponent.JobTracker.Plugins.TrackerPlugin  import TrackerPlugin
 
 from WMCore.BossLite.DbObjects.Job           import Job
-from WMCore.BossLite.DbObjects.RunningJob    import RunningJob
 from WMCore.BossLite.DbObjects.BossLiteDBWM  import BossLiteDBWM
-#from WMCore.WMConnectionBase    import WMConnectionBase
+
 
 
 
@@ -39,8 +38,6 @@ class BossLiteTracker(TrackerPlugin):
         self.config = config
 
         myThread = threading.currentThread()
-
-        #self.engine = WMConnectionBase(daoPackage = "WMCore.BossLite")
 
         self.daoFactory = DAOFactory(package = "WMCore.BossLite",
                                      logger = myThread.logger,
@@ -66,8 +63,6 @@ class BossLiteTracker(TrackerPlugin):
         and the classAds we have
         """
 
-        logging.info('Getting BossLite jobs')
-
         # Create an object to store final info
         trackDict = {}
 
@@ -75,17 +70,14 @@ class BossLiteTracker(TrackerPlugin):
         killList  = []
 
         # Get all the jobs in BossLite
-        jobAction = self.daoFactory(classname = "Job.LoadJobRunningJob")
+        jobAction = self.daoFactory(classname = "RunningJob.LoadJobStatus")
         jobList   = jobAction.execute()
 
         # Reformat jobList
         # TODO: Think of a better way to do this
         jobInfo = {}
         for job in jobList:
-            jobInfo[job['wmbsJobId']] = job
-
-        
-        logging.info('Translating BossLite job status')
+            jobInfo[job['id']] = job
 
 
         # Go over each job in WMBS
@@ -98,14 +90,8 @@ class BossLiteTracker(TrackerPlugin):
                 jobAd     = jobInfo.get(job['id'])
                 jobStatus = jobAd.get('status', 'C')
                 statName  = 'NA'
-                #dtStamp   = jobAd.get('lbTimestamp')
-                #jobTime   = time.mktime(dtStamp.timetuple())
-                jobTime   = jobAd.get('lbTimestamp')
-
-                if jobStatus is None:
-                    logging.error("None job status for '%s'"%str(jobAd))
-                    continue
-
+                dtStamp   = jobAd.get('time')
+                jobTime   = time.mktime(dtStamp.timetuple())
                 # If the job is waiting to run, it's Idle
                 if jobStatus.lower() in ['c', 'su', 'w', 'ss', 'sr']:
                     statName = 'Idle'
@@ -125,13 +111,12 @@ class BossLiteTracker(TrackerPlugin):
                     statName = jobStatus
 
                 trackDict[job['id']] = {'Status': statName,
-                                        'StatusTime': long(time.time()) - jobTime}
+                                        'StatusTime': time.time() - jobTime}
             
+
         # At the end, kill all the jobs that have exited
-        logging.info("Removing exited jobs")
         self.kill(killList = killList)
 
-        logging.info("Done!")
 
         return trackDict
 
@@ -150,5 +135,5 @@ class BossLiteTracker(TrackerPlugin):
             job.load(db)
             job.remove(db)
 
-        return
 
+        return

@@ -5,8 +5,8 @@ _Destroy_
 MySQL implementation of BossLite.Destroy
 """
 
-
-
+__revision__ = "$Id: Destroy.py,v 1.2 2010/05/10 13:34:33 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 

@@ -5,8 +5,8 @@ _Destroy_
 Implementation of FeederManager.Destroy for MySQL
 """
 
-
-
+__revision__ = "$Id: Destroy.py,v 1.1 2009/11/06 23:50:57 riahi Exp $"
+__version__ = "$Revision: 1.1 $s"
 
 import threading
 

@@ -4,9 +4,9 @@
 REST service implementation
 """
 
-
-
-
+__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
+__revision__ = "$Id: RestService.py,v 1.4 2008/12/19 01:17:10 valya Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.HTTPFrontEnd.REST.services.rest.Resource import Resource
 

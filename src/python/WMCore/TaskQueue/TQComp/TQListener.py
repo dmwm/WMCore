@@ -5,9 +5,9 @@ _TQListener_
 
 """
 
-
-
-
+__revision__ = "$Id: TQListener.py,v 1.5 2009/09/29 12:23:02 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
+__author__ = "antonio.delgado.peris@cern.ch"
 
 import os
 import threading

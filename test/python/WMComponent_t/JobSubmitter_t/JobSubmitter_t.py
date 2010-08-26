@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-
-
+__revision__ = "$Id: JobSubmitter_t.py,v 1.27 2010/08/02 17:35:15 meloam Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import unittest
 import threading
@@ -60,7 +60,6 @@ from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 
-from nose.plugins.attrib import attr
 
 def parseJDL(jdlLocation):
     """
@@ -364,7 +363,8 @@ class JobSubmitterTest(unittest.TestCase):
 
         #JobStateMachine
         config.component_('JobStateMachine')
-        config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
+        config.JobStateMachine.couchurl        = os.getenv('COUCHURL',
+                                                           'mnorman:theworst@cmssrv52.fnal.gov:5984')
         config.JobStateMachine.default_retries = 1
         config.JobStateMachine.couchDBName     = "mnorman_test"
 
@@ -452,7 +452,7 @@ class JobSubmitterTest(unittest.TestCase):
             
 
 
-    @attr('integration')
+
     def testA_BasicTest(self):
         """
         Use the CondorGlobusPlugin to create a very simple test
@@ -614,7 +614,7 @@ class JobSubmitterTest(unittest.TestCase):
         return
 
 
-    @attr('integration')
+
     def testC_TestPlugin(self):
         """
         Run the plugin directly.
@@ -802,7 +802,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         return
 
-    @attr('integration')
+
     def testE_WhiteListBlackList(self):
         """
         _WhiteListBlackList_
@@ -1017,7 +1017,7 @@ class JobSubmitterTest(unittest.TestCase):
         pipe.communicate()
 
 
-    @attr('integration')
+
     def testF_OverloadTest(self):
         """
         _OverloadTest_
@@ -1087,7 +1087,7 @@ class JobSubmitterTest(unittest.TestCase):
         return
 
 
-    @attr('integration')
+
     def testG_IndexErrorTest(self):
         """
         _IndexErrorTest_

@@ -8,8 +8,8 @@ Remove a (list of) file(s) from wmbs_sub_files_[] table, either due to a state c
 (e.g file has become completed/failed) or as a clean up/resubmission.
 """
 __all__ = []
-
-
+__revision__ = "$"
+__version__ = "$"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

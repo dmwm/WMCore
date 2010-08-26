@@ -5,8 +5,8 @@ Oracle implementation of Subscriptions.IsCompleteOnRun
 Checks all files in the given subscription and given run are completed.
 """
 __all__ = []
-
-
+__revision__ = "$Id: IsCompleteOnRun.py,v 1.2 2009/05/27 12:23:02 gowdy Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.IsCompleteOnRun import IsCompleteOnRun as IsCompleteOnRunMySQL
 

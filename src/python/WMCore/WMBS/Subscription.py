@@ -16,8 +16,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-
-
+__revision__ = "$Id: Subscription.py,v 1.72 2010/08/05 20:54:36 mnorman Exp $"
+__version__ = "$Revision: 1.72 $"
 
 import logging
 

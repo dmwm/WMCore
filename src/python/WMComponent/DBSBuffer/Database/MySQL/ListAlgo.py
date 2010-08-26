@@ -5,8 +5,8 @@ _ListAlgo_
 MySQL implementation of DBSBuffer.ListAlgo
 """
 
-
-
+__revision__ = "$Id: ListAlgo.py,v 1.1 2009/07/13 19:57:44 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

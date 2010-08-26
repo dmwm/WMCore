@@ -5,8 +5,8 @@ _SiteLocalConfig_t_
 Unit test for parsing the site local config file.
 """
 
-
-
+__revision__ = "$Id: SiteLocalConfig_t.py,v 1.2 2010/06/16 19:12:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import unittest

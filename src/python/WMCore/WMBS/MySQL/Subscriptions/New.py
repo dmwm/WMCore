@@ -5,8 +5,8 @@ _Subscription.New_
 MySQL implementation of Subscription.New
 """
 
-
-
+__revision__ = "$Id: New.py,v 1.9 2009/10/12 21:11:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

@@ -3,8 +3,8 @@
 #Basic model for a tracker plugin
 #Should do nothing
 
-
-
+__revision__ = "$Id: TestTracker.py,v 1.5 2010/04/28 21:11:37 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 import logging

@@ -2,9 +2,9 @@
 """
 Test case for SiteDB
 """
-
-
-
+__revision__ = "$Id: SiteDB_t.py,v 1.10 2010/07/30 12:15:44 swakef Exp $"
+__version__  = "$Revision: 1.10 $"
+__author__   = "ewv@fnal.gov"
 
 import unittest
 

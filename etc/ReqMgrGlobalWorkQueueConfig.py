@@ -4,8 +4,8 @@ Global WorkQueue and ReqMgr config.
 
 """
 
-
-
+__revision__ = "$Id: ReqMgrGlobalWorkQueueConfig.py,v 1.1 2010/07/02 20:00:26 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import os
 
@@ -34,8 +34,8 @@ userEmail = "sfoulkes@fnal.gov"
 # This is the path to the CMS software installation on the location machine.
 cmsPath = "/uscmst1/prod/sw/cms"
 
-# The couch username and password needs to be added.
-couchURL = "http://USERNAME:PASSWORD@cmssrv52.fnal.gov:5984"
+# Probably does not need to be changed.
+couchURL = "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984"
 configCacheDBName = "wmagent_config_cache"
 
 
@@ -58,8 +58,8 @@ config.CoreDatabase.dbsock = databaseSocket
 
 config.webapp_("ReqMgr")
 config.ReqMgr.componentDir = os.path.join(config.General.workDir, "ReqMgr")
-config.ReqMgr.Webtools.host = serverHostName
-config.ReqMgr.Webtools.port = reqMgrPort
+config.ReqMgr.server.host = serverHostName
+config.ReqMgr.server.port = reqMgrPort
 config.ReqMgr.templates = os.path.join(WMCore.WMInit.getWMBASE(),
                                        "src/templates/WMCore/WebTools")
 config.ReqMgr.requestor = userName
@@ -111,8 +111,8 @@ config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
 
 config.webapp_('WorkQueueService')
 config.WorkQueueService.componentDir = os.path.join(config.General.workDir, "WorkQueueService")
-config.WorkQueueService.Webtools.port = globalWorkQueuePort
-config.WorkQueueService.Webtools.host = serverHostName
+config.WorkQueueService.server.port = globalWorkQueuePort
+config.WorkQueueService.server.host = serverHostName
 config.WorkQueueService.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
 config.WorkQueueService.admin = config.Agent.contact
 config.WorkQueueService.title = 'WorkQueue Data Service'
@@ -131,7 +131,7 @@ workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueSer
 workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
 workqueue.queueParams.setdefault('CacheDir', config.General.workDir + '/WorkQueueManager/wf')
 workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (serverHostName,
-                                                                  config.WorkQueueService.Webtools.port,
+                                                                  config.WorkQueueService.server.port,
                                                                   'workqueue'))
 
 workqueuemonitor = active.section_('workqueuemonitor')

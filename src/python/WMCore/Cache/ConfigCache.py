@@ -15,8 +15,8 @@ except:
 
 import PSetTweaks.PSetTweak as TweakAPI
 
-
-
+__revision__ = "$Id: ConfigCache.py,v 1.18 2010/07/29 19:44:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 
 class WMConfigCache:
     '''
@@ -127,19 +127,6 @@ class WMConfigCache:
         d.update({"pset_tweak_details" : tweakDict})
         retval = self.database.commitOne(d)[0]
         return (retval["id"], retval["rev"])
-
-    def addTweak(self, docid, rev, tweakDict = {"process":{}}):
-         ''' Adds the human-readable script to the given id
-             Makes it easy to see what you're doing since
-             the pickled version isn't legible
-         '''
-         d = self.getDocumentByDocID(docid)
-         d.update({"pset_tweak_details" : tweakDict})
-         commitInfo = self.database.commitOne( d )
-
-         return 
-
-
 
     def getTweak(self, docid):
         """

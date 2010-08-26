@@ -9,9 +9,9 @@ pilot requesting a task it just returns the first available task in the queue
 a reference example and not meant to be used in production.
 """
 
-
-
-
+__revision__ = "$Id: TrivialMatchmaker.py,v 1.3 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
+__author__ = "antonio.delgado.peris@cern.ch"
 
 
 from Constants import taskStates

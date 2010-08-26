@@ -6,8 +6,8 @@ MySQL implementation of Masks.Load
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: Load.py,v 1.2 2009/01/11 17:44:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -8,9 +8,9 @@ Performs bulk DBS File(s) insertion by :
 	if buffer has hit the configured limit
 """
 
-
-
-
+__revision__ = "$Id: DBSUpload.py,v 1.5 2009/08/12 17:54:09 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
+__author__ = "anzar@fnal.gov"
 
 import logging
 import threading

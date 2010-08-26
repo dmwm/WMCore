@@ -5,8 +5,8 @@ _ReportEmu_
 Class for creating bogus framework job reports.
 """
 
-
-
+__revision__ = "$Id: ReportEmu.py,v 1.7 2010/03/23 20:48:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os.path
 

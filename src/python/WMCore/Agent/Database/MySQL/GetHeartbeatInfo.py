@@ -5,8 +5,8 @@ MySQL implementation of GetHeartbeatInfo
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: GetHeartbeatInfo.py,v 1.2 2010/06/23 18:07:04 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

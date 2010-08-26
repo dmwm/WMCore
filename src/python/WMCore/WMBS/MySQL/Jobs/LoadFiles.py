@@ -6,8 +6,8 @@ MySQL implementation of Jobs.LoadFiles
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: LoadFiles.py,v 1.6 2009/12/24 16:21:29 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

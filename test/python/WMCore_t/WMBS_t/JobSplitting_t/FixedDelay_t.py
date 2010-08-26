@@ -5,6 +5,9 @@ _FixedDelay_t_
 Fixed delay job splitting.
 """
 
+__revision__ = "$Id: FixedDelay_t.py,v 1.5 2010/06/28 15:34:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
+
 import unittest
 import os
 import threading
@@ -118,24 +121,23 @@ class FixedDelayTest(unittest.TestCase):
     def testNone(self):
         """
         _testNone_
-
-        Since the subscriptions are open, we shouldn't get any jobs back
+        since the subscriptions are open, we shouldn't get any jobs back
         """
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
-        jobGroups = jobFactory(trigger_time = int(time.time())*2)
+        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
         jobFactory = splitter(self.multipleFileSubscription)
-        jobGroups = jobFactory(trigger_time = int(time.time())*2)
+        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
         jobFactory = splitter(self.multipleLumiSubscription)
-        jobGroups = jobFactory(trigger_time = int(time.time())*2)
+        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
 
         jobFactory = splitter(self.singleLumiSubscription)
-        jobGroups = jobFactory(trigger_time = int(time.time())*2)
+        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
         return
@@ -143,8 +145,7 @@ class FixedDelayTest(unittest.TestCase):
     def testClosed(self):
         """
         _testClosed_
-
-        Since the subscriptions are closed and none of the files have been
+        since the subscriptions are closed and none of the files ahve been
         acquired, all of the files should show up
         """
         splitter = SplitterFactory()

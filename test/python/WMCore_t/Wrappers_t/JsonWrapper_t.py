@@ -3,15 +3,15 @@
 Unit tests for json wrapper.
 """
 
-
-
+__revision__ = "$Id: JsonWrapper_t.py,v 1.5 2010/08/02 16:01:58 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 import nose
 __test = False
 try:
     import cjson
     __test = True
 except:
-    pass
+
 
 import unittest
 try:

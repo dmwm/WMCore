@@ -7,8 +7,10 @@ class DataBlockGenerator(object):
         self.blocks = {}        
         self.locations = {}
         self.files = {}
-    
-    def _blockGenerator(self, dataset):
+        
+    def _dataGenerator(self, dataset):
+        
+        #some simple process to generate block with consistency
         
         self.blocks[dataset] = []
         
@@ -26,19 +28,18 @@ class DataBlockGenerator(object):
                                      'Parents' : ()}
                                      )
             
-            
-    def _fileGenerator(self, blockName):
+            for fileID in range(numOfFiles):
+                if not self.files.has_key(blockName):
+                    self.files[blockName] = []
+                    
+                fileName =  "/store/data/%s/file%s" % (blockName, fileID)
+                parentFileName = "/store/data/%s_parent/file%s_parent" % (blockName, fileID)
+                dbsFile = {'LogicalFileName': fileName, 
+                           'ParentList' : [self.createDBSFile({'LogicalFileName':parentFileName})],
+                          }
+                self.files[blockName].append(self.createDBSFile(dbsFile))
         
-        self.files[blockName] = []
-        
-        for fileID in range(GlobalParams.numOfFilesPerBlock()):
-           
-            fileName =  "/store/data/%s/file%s" % (blockName, fileID)
-            parentFileName = "/store/data/%s_parent/file%s_parent" % (blockName, fileID)
-            dbsFile = {'LogicalFileName': fileName, 
-                       'ParentList' : [self.createDBSFile({'LogicalFileName':parentFileName})],
-                      }
-            self.files[blockName].append(self.createDBSFile(dbsFile))
+        return self.blocks[dataset]
     
     def createDBSFile(self, dbsFile = {}):
         defaultDBSFile = {'Checksum': "123456",
@@ -54,19 +55,20 @@ class DataBlockGenerator(object):
     def getBlocks(self, dataset):
         
         if not self.blocks.has_key(dataset):
-            self._blockGenerator(dataset)
+            self._dataGenerator(dataset)
         return  self.blocks[dataset]
         
     def getFiles(self, block):
         if not self.files.has_key(block):
-            self._fileGenerator(block)
+            dataset = self.getDataset(block)
+            self._dataGenerator(dataset)
         return  self.files[block]
     
     def getLocation(self, block):
         
         return Globals.getSites(block)
     
-    def getDatasetName(self, block):
+    def getDataset(self, block):
         return block.split('#')[0]
                 
     

@@ -6,8 +6,8 @@ MySQL implementation of DeleteFileset
 
 """
 __all__ = []
-
-
+__revision__ = "$Id: Delete.py,v 1.2 2008/11/20 21:52:33 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

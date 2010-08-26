@@ -6,8 +6,8 @@ Oracle implementation of Jobs.LoadFiles
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: LoadFiles.py,v 1.5 2009/01/21 22:01:30 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WMBS.MySQL.Jobs.LoadFiles import LoadFiles as LoadFilesMySQL

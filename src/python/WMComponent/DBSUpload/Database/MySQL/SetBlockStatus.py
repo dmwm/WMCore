@@ -6,8 +6,8 @@ Create new block in dbsbuffer_block
 Update file to reflect block information
 """
 
-
-
+__revision__ = "$Id: SetBlockStatus.py,v 1.11 2010/02/20 21:11:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 import exceptions

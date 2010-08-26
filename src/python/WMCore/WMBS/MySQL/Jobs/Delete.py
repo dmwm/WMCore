@@ -7,8 +7,8 @@ MySQL implementation of Jobs.Delete
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: Delete.py,v 1.3 2008/12/10 22:26:15 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

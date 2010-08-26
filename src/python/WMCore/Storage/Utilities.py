@@ -6,8 +6,8 @@ _Utilities_
 Misc utils for stage out operations
 
 """
-
-
+__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Utilities.py,v 1.1 2009/06/18 21:14:34 meloam Exp $"
 
 
 from IMProv.IMProvLoader import loadIMProvString

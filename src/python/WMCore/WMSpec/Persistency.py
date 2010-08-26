@@ -9,8 +9,8 @@ Placeholder for ideas at present....
 
 """
 
-
-
+__revision__ = "$Id: Persistency.py,v 1.11 2010/04/07 16:29:48 sryu Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import cPickle
 from urllib2 import urlopen, Request

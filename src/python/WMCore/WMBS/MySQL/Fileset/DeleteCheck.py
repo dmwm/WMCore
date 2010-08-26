@@ -6,8 +6,8 @@ MySQL implementation of DeleteCheck
 
 """
 __all__ = []
-
-
+__revision__ = "$Id: DeleteCheck.py,v 1.1 2009/09/25 15:14:55 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step.
 """
 
-
-
+__revision__ = "$Id: CMSSW.py,v 1.25 2010/07/22 21:36:54 mnorman Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import tempfile
 import subprocess

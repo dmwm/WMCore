@@ -7,8 +7,8 @@ Diagnostic implementation for a job's DeleteFiles step
 
 """
 
-
-
+__revision__ = "$Id: DeleteFiles.py,v 1.1 2010/04/21 16:16:40 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import os
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler

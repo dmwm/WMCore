@@ -6,8 +6,8 @@ MySQL implementation of Jobs.New
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: New.py,v 1.16 2010/02/25 20:49:19 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import time
 import logging

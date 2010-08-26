@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-
-
+__revision__ = "$Id: DBCore.py,v 1.37 2010/02/15 22:28:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.37 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject

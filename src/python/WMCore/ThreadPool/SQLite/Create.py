@@ -5,8 +5,8 @@ _Create_
 Class for creating SQLite specific schema for persistent messages.
 """
 
-
-
+__revision__ = "$Id: Create.py,v 1.2 2009/07/17 16:01:32 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 from WMCore.Database.DBCreator import DBCreator

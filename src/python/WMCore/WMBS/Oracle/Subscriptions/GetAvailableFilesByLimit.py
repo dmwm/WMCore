@@ -5,8 +5,8 @@ _GetAvailableFilesByLimit_
 Oracle implementation of Subscription.GetAvailableFilesByLimit
 """
 
-
-
+__revision__ = "$Id: GetAvailableFilesByLimit.py,v 1.2 2010/06/28 19:01:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.Oracle.Subscriptions.GetAvailableFiles import GetAvailableFiles as GetAvailableFilesOracle
 

@@ -3,8 +3,8 @@
 Handler for PhEDExInjection requets
 """
 __all__ = []
-
-
+__revision__ = "$Id: NewInjectionHandler.py,v 1.2 2009/08/24 11:10:03 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 from WMCore.Agent.BaseHandler import BaseHandler

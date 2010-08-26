@@ -59,30 +59,27 @@ class GetElements(DBFormatter):
                 conn = None, transaction = False):
         binds = {}
         sep = "WHERE"
-        if status is not None:
+        if status:
             binds['status'] = States[status]
-            self.sql += " %s we.status = :status" % sep
+            self.sql += "%s we.status = :status" % sep
             sep = "AND"
-        if since is not None:
+        if since:
             binds['since'] = int(since)
-            self.sql += " %s update_time >= :since" % sep
+            self.sql += "%s update_time >= :since" % sep
             sep = "AND"
-        if before is not None:
+        if before:
             binds['before'] = int(before)
-            self.sql += " %s update_time <= :before" % sep
+            self.sql += "%s update_time <= :before" % sep
             sep = "AND"
         if reqMgrUpdateNeeded:
-            self.sql += " %s request_name IS NOT NULL AND reqmgr_time <= we.update_time" % sep
+            self.sql += "%s request_name IS NOT NULL AND reqmgr_time <= we.update_time" % sep
             sep = "AND"
-        # must be last as it converts binds to a list
         if elementIDs:
             tmp_binds = []
             for id in elementIDs:
-                bind = {'id': id}
-                bind.update(binds)
-                tmp_binds.append(bind)
+                tmp_binds.append({'id': id})
             binds = tmp_binds
-            self.sql += " %s we.id = :id" % sep
+            self.sql += "%s we.id = :id" % sep
             sep = "AND"
         result = self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)

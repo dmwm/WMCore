@@ -5,8 +5,8 @@ Parser for XML output of condor_q
 Original version by Brian Bockelman
 """
 
-
-
+__revision__ = "$Id: CondorHandler.py,v 1.1 2010/06/03 22:02:28 spigafi Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from xml.sax.handler import ContentHandler, feature_external_ges
 from xml.sax import make_parser

@@ -6,8 +6,8 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-
-
+__revision__ = "$Id: DBFormatter.py,v 1.27 2010/07/23 18:46:06 afaq Exp $"
+__version__ = "$Revision: 1.27 $"
 import datetime
 import time
 

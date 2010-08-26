@@ -3,8 +3,8 @@
 The JobStatus subprocess worker for the status check/update
 """
 __all__ = []
-
-
+__revision__ = "$Id: StatusWorker.py,v 1.4 2010/07/26 17:06:36 mcinquil Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 import logging

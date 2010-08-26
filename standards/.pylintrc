@@ -64,6 +64,9 @@ max-branchs=30
 # Maximum number of statements in function / method body
 max-statements=100
 
+# Required attributes for module, separated by a comma
+required-attributes=__revision__,__version__
+
 # Regular expression which should only match functions or classes name which do
 # not require a docstring
 no-docstring-rgx=__.*__

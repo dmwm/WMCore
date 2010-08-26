@@ -8,8 +8,8 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set. 
 """
 
-
-
+__revision__ = "$Id: Requests.py,v 1.44 2010/08/10 18:09:31 metson Exp $"
+__version__ = "$Revision: 1.44 $"
 
 import urllib
 from urlparse import urlunparse

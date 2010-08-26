@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-
-
+__revision__ = "$Id: DBFormatter_t.py,v 1.11 2010/02/10 03:52:27 meloam Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import commands
 import logging
@@ -95,7 +95,7 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
             {'bind2': 'value2d', 'bind1': 'value1c'}] )
         result = myThread.transaction.processData(myThread.select)
         output = dbformatter.formatOneDict(result)
-        self.assertEqual( output,  {'bind2': 'value2a', 'bind1': 'value1a'} )
+        self.assertEqual( output ==  {'bind2': 'value2a', 'bind1': 'value1a'} )
 
             
 if __name__ == "__main__":

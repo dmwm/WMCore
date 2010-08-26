@@ -5,8 +5,8 @@ _NewAlgo_
 SQLite implementation of DBSBuffer.NewAlgo
 """
 
-
-
+__revision__ = "$Id: NewAlgo.py,v 1.3 2010/02/09 17:12:52 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMComponent.DBSBuffer.Database.MySQL.NewAlgo import NewAlgo as MySQLNewAlgo
 

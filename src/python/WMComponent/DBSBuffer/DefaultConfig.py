@@ -5,8 +5,8 @@ Defines default config values for DBSBuffer specific
 parameters.
 """
 __all__ = []
-
-
+__revision__ = "$Id: DefaultConfig.py,v 1.3 2010/02/05 14:16:14 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 from WMCore.Agent.Configuration import Configuration

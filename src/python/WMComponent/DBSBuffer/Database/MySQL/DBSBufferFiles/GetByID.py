@@ -5,8 +5,8 @@ _GetByID_
 MySQL implementation of DBSBufferFiles.GetByID
 """
 
-
-
+__revision__ = "$Id: GetByID.py,v 1.4 2009/12/02 20:13:00 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

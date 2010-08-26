@@ -6,8 +6,8 @@ Oracle implementation of Masks.New
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: New.py,v 1.5 2010/07/13 16:45:19 hufnagel Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WMBS.MySQL.Masks.New import New as NewMasksMySQL
 

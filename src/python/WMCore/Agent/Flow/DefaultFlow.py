@@ -7,9 +7,9 @@ Sample configuration for generating workflow.
 
 """
 
-
-
-
+__revision__ = "$Id: DefaultFlow.py,v 1.2 2009/01/26 16:11:58 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "fvlingen@caltech.edu"
 
 import os
 import cPickle

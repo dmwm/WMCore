@@ -7,8 +7,8 @@ Get a users ID within the request system
 """
 
 
-
-
+__revision__ = "$Id: NameFromID.py,v 1.1 2010/07/01 19:14:16 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 

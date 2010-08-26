@@ -4,9 +4,9 @@ A base handler from which all handlers inherit from.
 Handlers are mapped to messages in the component.
 """
 
-
-
-
+__revision__ = "$Id: BaseHandler.py,v 1.1 2008/08/26 13:56:32 fvlingen Exp $"
+__version__ = "$Revision: 1.1 $"
+__author__ = "fvlingen@caltech.edu"
 
 
 import logging

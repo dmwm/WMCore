@@ -5,8 +5,8 @@ _addToBuffer_
 APIs related to adding file to DBS Buffer
 
 """
-
-
+__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: AddToBuffer.py,v 1.18 2010/06/08 19:05:11 sfoulkes Exp $"
 
 
 import logging

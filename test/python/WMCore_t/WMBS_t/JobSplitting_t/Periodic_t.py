@@ -5,8 +5,8 @@ _Periodic_t_
 Periodic job splitting test.
 """
 
-
-
+__revision__ = "$Id: Periodic_t.py,v 1.8 2010/06/28 15:27:25 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import os

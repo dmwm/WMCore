@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-
-
+__revision__ = "$Id: JobAccountant_t.py,v 1.38 2010/08/02 19:34:36 meloam Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import logging
 import os.path

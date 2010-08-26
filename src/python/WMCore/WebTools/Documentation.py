@@ -4,8 +4,8 @@
 The documentation for the framework
 """
     
-
-
+__revision__ = "$Id: Documentation.py,v 1.7 2010/01/28 16:44:35 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from cherrypy import expose
 from WMCore.WebTools.Page import TemplatedPage

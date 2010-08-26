@@ -2,8 +2,8 @@
 A bunch of functions that check the permissions on a file are what they should 
 be, or more restrictive. 
 '''
-
-
+__revision__ = "$Id: Permissions.py,v 1.1 2009/11/27 02:10:45 metson Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import os
 import stat

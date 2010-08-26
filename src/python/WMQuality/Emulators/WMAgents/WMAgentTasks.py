@@ -3,8 +3,8 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-
-
+__revision__ = "$Id: WMAgentTasks.py,v 1.3 2010/03/05 15:45:10 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import logging
@@ -36,6 +36,7 @@ class WMAgentTasks(BaseWorkerThread):
             elementIDs = []
             for element in data:
                 elementIDs.append(element['element_id'])
+            self.wq.gotWork(elementIDs)
             time.sleep(5)
             self.wq.doneWork(elementIDs)
             #self.wq.failWork(elementIDs)

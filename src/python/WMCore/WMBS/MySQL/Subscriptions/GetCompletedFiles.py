@@ -6,8 +6,8 @@ MySQL implementation of Subscription.GetCompletedFiles
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: GetCompletedFiles.py,v 1.9 2009/09/11 19:07:30 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import GetAvailableFiles
 

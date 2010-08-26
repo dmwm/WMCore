@@ -3,8 +3,8 @@
 Default handler for add dataset to watch
 """
 __all__ = []
-
-
+__revision__ = "$Id: DefaultAddDatasetWatch.py,v 1.2 2009/05/21 14:45:23 riahi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 from WMCore.Agent.BaseHandler import BaseHandler

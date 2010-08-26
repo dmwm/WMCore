@@ -5,8 +5,8 @@ _FixedDelay_t_
 Event based splitting test.
 """
 
-
-
+__revision__ = "$Id: FixedDelay_t.py,v 1.3 2009/12/16 17:45:44 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 

@@ -5,8 +5,8 @@ _ParentlessMergeBySize_t_
 Unit tests for parentless WMBS merging.
 """
 
-
-
+__revision__ = "$Id: ParentlessMergeBySize_t.py,v 1.1 2010/07/13 21:00:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import unittest
 import os

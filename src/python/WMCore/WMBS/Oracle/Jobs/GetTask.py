@@ -6,8 +6,8 @@ Oracle implementation of Jobs.Task
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: GetTask.py,v 1.1 2009/10/23 19:24:07 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import logging
 

@@ -6,8 +6,8 @@ General Exception class for Prod modules
 
 """
 
-
-
+__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ProdException.py,v 1.1 2009/07/20 18:25:16 mnorman Exp $"
 
 import exceptions
 import inspect

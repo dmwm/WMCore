@@ -8,9 +8,9 @@ Class for destroying Oracle specific schema for the trigger
 
 """
 
-
-
-
+__revision__ = "$Id: Destroy.py,v 1.3 2009/08/12 17:22:40 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
+__author__ = "mnorman@fnal.gov"
 
 import threading
 

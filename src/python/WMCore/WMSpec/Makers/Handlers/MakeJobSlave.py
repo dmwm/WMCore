@@ -4,9 +4,9 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-
-
-
+__revision__ = "$Id: MakeJobSlave.py,v 1.1 2009/06/19 18:06:15 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
+__author__ = "mnorman@fnal.gov"
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool

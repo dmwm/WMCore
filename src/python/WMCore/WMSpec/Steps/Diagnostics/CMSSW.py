@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0212
-# W0212: Names are not accessible for WMTask objects, etc.
 """
 _CMSSW_
 
@@ -10,37 +8,22 @@ Diagnostic implementation for a CMSSW job
 """
 
 import os
-import os.path
 import logging
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 
-import WMCore.Algorithms.BasicAlgos as BasicAlgos
-
 class Exit127(DiagnosticHandler):
-    """
-    Handle non-existant executable
-
-    """
     def __call__(self, errCode, executor, **args):
         msg = "Executable Not Found"
         executor.report.addError(executor.step._internal_name,
                                  50110, "ExecutableNotFound", msg)
         
 class Exit126(DiagnosticHandler):
-    """
-    Handle bad permissions
-
-    """
     def __call__(self, errCode, executor, **args):
         msg = "Executable permissions not executable"
         executor.report.addError(executor.step._internal_name,
                                  50111, "ExecutableBadPermissions", msg)
 
 class Exit60515(DiagnosticHandler):
-    """
-    Handle SCRAM script failure
-
-    """
     def __call__(self, errCode, executor, **args):
         """
         Added for Steve to handle SCRAM script failure
@@ -81,15 +64,6 @@ class CMSRunHandler(DiagnosticHandler):
             executor.report.parse(jobRepXml)
             reportStep = executor.report.retrieveStep(executor.step._internal_name)
             reportStep.status = self.code
-
-
-        errLog = os.path.join(os.path.dirname(jobRepXml),
-                              '%s-stderr.log' % (executor.step._internal_name))
-
-        if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, 10)
-            msg += '\n Adding last ten lines of CMSSW stderr:\n'
-            msg += "".join(logTail)
                 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
@@ -124,19 +98,6 @@ class EDMExceptionHandler(DiagnosticHandler):
         jobRepXml = os.path.join(executor.step.builder.workingDir,
                                  executor.step.output.jobReport)
 
-        errLog = os.path.join(os.path.dirname(jobRepXml),
-                              '%s-stderr.log' % (executor.step._internal_name))
-
-
-        addOn = '\n'
-        if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, 10)
-            addOn += '\nAdding last ten lines of CMSSW stderr:\n'
-            addOn += "".join(logTail)
-        else:
-            logging.error("No stderr from CMSSW")
-            logging.error(os.listdir(os.path.basename(jobRepXml)))
-
         if not os.path.exists(jobRepXml):
             # no report => Error
             msg = "No Job Report Found: %s" % jobRepXml
@@ -146,17 +107,12 @@ class EDMExceptionHandler(DiagnosticHandler):
         
         # job report XML exists, load the exception information from it
         executor.report.parse(jobRepXml)
-
-
-        
-                              
         
         
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
             msg = "Job Report contains no error report, but cmsRun exited non-zero: %s" % errCode
-            msg += addOn
             executor.report.addError(executor.step._internal_name,
                                      50116, "MissingErrorReport", msg)
             return
@@ -165,15 +121,8 @@ class EDMExceptionHandler(DiagnosticHandler):
             #check exit code in report is non zero
             if executor.report.report.status == 0:
                 msg = "Job Report contains no error report, but cmsRun exited non-zero: %s" % errCode
-                msg += addOn
                 executor.report.addError(executor.step._internal_name,
                                          50116, "MissingErrorReport", msg)
-
-            else:
-                msg = "Adding extra error in order to hold error report"
-                msg += addOn
-                executor.report.addError(executor.step._internal_name,
-                                         99999, "ErrorLoggingAddition", msg)
         return
 
 

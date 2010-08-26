@@ -8,8 +8,8 @@ Mostly borrowed from StageOut since they share a similar function
 
 """
 
-
-
+__revision__ = "$Id: LogCollect.py,v 1.1 2010/05/05 21:06:06 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.WMSpec.Steps.Template import Template
 from WMCore.WMSpec.Steps.Template import CoreHelper

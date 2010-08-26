@@ -12,8 +12,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-
-
+__version__ = "$Id: WMTask.py,v 1.41 2010/08/09 16:04:48 sfoulkes Exp $"
+__revision__ = "$Revision: 1.41 $"
 
 import os
 import os.path

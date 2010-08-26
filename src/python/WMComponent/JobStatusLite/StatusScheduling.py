@@ -3,8 +3,8 @@
 The actual JobStatus process scheduling algorithm
 """
 __all__ = []
-
-
+__revision__ = "$Id: StatusScheduling.py,v 1.3 2010/06/09 20:28:48 mcinquil Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import logging

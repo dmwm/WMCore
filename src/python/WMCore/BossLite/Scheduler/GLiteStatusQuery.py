@@ -4,8 +4,8 @@ _GLiteLBQuery_
 GLite LB query functions
 """
 
-
-
+__revision__ = "$Id: GLiteStatusQuery.py,v 1.1 2010/05/18 14:32:06 spigafi Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import sys
 import os

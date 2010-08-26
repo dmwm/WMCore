@@ -4,8 +4,8 @@ _StatusDB_
 
 """
 
-
-
+__version__ = "$Id: StatusDB.py,v 1.1 2010/05/13 15:55:33 mcinquil Exp $"
+__revision__ = "$Revision: 1.1 $"
 
 import threading
 import time

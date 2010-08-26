@@ -7,9 +7,9 @@ _PilotComponent_
 
 """
 
-
-
-
+__revision__ = "$Id: PilotJob.py,v 1.1 2009/05/27 17:20:25 khawar Exp $"
+__version__ = "$Revision: 1.1 $"
+__author__ = "Khawar.Ahmad@cern.ch"
 
 import os
 import sys

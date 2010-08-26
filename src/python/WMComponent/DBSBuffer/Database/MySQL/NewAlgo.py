@@ -5,8 +5,8 @@ _NewAlgo_
 MySQL implementation of DBSBuffer.NewAlgo
 """
 
-
-
+__revision__ = "$Id: NewAlgo.py,v 1.5 2009/10/22 15:08:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

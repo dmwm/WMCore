@@ -109,9 +109,9 @@ class MyComponent(Harness):
 ---------------------------------------------------------
 """
 
-
-
-
+__revision__ = "$Id: RemoteMsg.py,v 1.1 2009/04/01 12:56:01 delgadop Exp $"
+__version__ = "$Revision: 1.1 $"
+__author__ = "antonio.delgado.peris@cern.ch"
 
 import os
 import threading

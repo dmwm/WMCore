@@ -6,8 +6,8 @@ MySQL implementation of Workflow.LoadFromSpecOwner
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: LoadFromSpecOwner.py,v 1.5 2009/08/13 21:44:35 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
     

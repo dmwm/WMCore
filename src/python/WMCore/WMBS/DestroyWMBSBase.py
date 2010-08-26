@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-
-
+__revision__ = "$Id: DestroyWMBSBase.py,v 1.8 2010/06/28 19:01:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 
@@ -42,7 +42,6 @@ class DestroyWMBSBase(DBCreator):
         self.delete["13wmbs_sub_types"] = "DROP TABLE wmbs_sub_types"
         self.delete["12wmbs_subscription"] = "DROP TABLE wmbs_subscription"
         self.delete["10wmbs_sub_files_acquired"] = "DROP TABLE wmbs_sub_files_acquired"
-        self.delete["10wmbs_sub_files_available"] = "DROP TABLE wmbs_sub_files_available"
         self.delete["09wmbs_sub_files_failed"] = "DROP TABLE wmbs_sub_files_failed"
         self.delete["08wmbs_sub_files_complete"] = "DROP TABLE wmbs_sub_files_complete"
         self.delete["07wmbs_jobgroup"] = "DROP TABLE wmbs_jobgroup"

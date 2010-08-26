@@ -6,8 +6,8 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-
-
+__revision__ = "$Id: TaskArchiverPoller.py,v 1.9 2010/07/01 21:10:03 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import threading
 import logging

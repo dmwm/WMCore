@@ -5,8 +5,8 @@ Errors for DBS interfaces, ported from the old DBSError
 and containing the ProdException class
 """
 
-
-
+__revision__ = "$Id: DBSErrors.py,v 1.1 2010/05/21 21:32:05 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import exceptions
 import inspect

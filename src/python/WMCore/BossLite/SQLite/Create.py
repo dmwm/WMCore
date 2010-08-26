@@ -62,7 +62,6 @@ class Create(MySQLCreate):
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
     task_id           INT(11) NOT NULL,
     job_id            INT(11) NOT NULL,
-    wmbs_job_id       INT(11) NOT NULL,
     name              VARCHAR(255),
     executable        TEXT,
     events            INT,

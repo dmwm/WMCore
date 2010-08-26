@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Jobs.LoadByRunningJobAttr
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.9 2010/06/28 18:56:54 spigafi Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
@@ -22,7 +22,6 @@ class LoadByRunningJobAttr(DBFormatter):
     sql = """SELECT bl_job.id as id,
                 bl_job.job_id as jobId, 
                 bl_job.task_id as taskId,
-                bl_job.wmbs_job_id as wmbsJobId,
                 bl_job.name as name, 
                 bl_job.executable as executable, 
                 bl_job.events as events,

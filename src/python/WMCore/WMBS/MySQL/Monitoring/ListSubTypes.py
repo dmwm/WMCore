@@ -5,8 +5,8 @@ _ListSubTypes_
 Retrieve a list of all subscription types from WMBS.
 """
 
-
-
+__revision__ = "$Id: ListSubTypes.py,v 1.1 2009/11/17 18:50:44 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -3,8 +3,8 @@
 Default function for Job Maker
 """
 __all__ = []
-
-
+__revision__ = "$Id: MakeJob.py,v 1.1 2009/06/19 18:06:15 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 from WMCore.Agent.BaseHandler import BaseHandler

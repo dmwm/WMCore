@@ -12,11 +12,9 @@ from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 from WMCore.Services.Requests import JSONRequests
 
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-
 from WMCore.Cache.ConfigCache import WMConfigCache
 
-class PromptSkimWorkloadFactory(StdBase):
+class PromptSkimWorkloadFactory():
     """
     _PromptSkimWorkloadFactory_
 
@@ -241,7 +239,7 @@ class PromptSkimWorkloadFactory(StdBase):
 
         # Required parameters that can be empty.
         self.skimConfig = arguments["SkimConfig"]
-        self.couchUrl = arguments.get("CouchUrl", "http://cmssrv52.fnal.gov:5984")
+        self.couchUrl = arguments.get("CouchUrl", "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984")
         self.couchDBName = arguments.get("CouchDBName", "wmagent_config_cache")        
         
         # Optional arguments.

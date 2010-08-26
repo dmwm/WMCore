@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1103
-# E1103:  Attach objects to threading
 """
 _TwoFileBased_
 
@@ -9,28 +7,24 @@ normal file based splitting except that the input files will also have their
 parentage information loaded so that the parents can be included in the job.
 """
 
-
-
+__revision__ = "$Id: TwoFileBased.py,v 1.12 2010/06/08 20:05:57 mnorman Exp $"
+__version__  = "$Revision: 1.12 $"
 
 import logging
 import threading
 
 from WMCore.JobSplitting.JobFactory import JobFactory
+from WMCore.Services.UUID           import makeUUID
 from WMCore.DAOFactory              import DAOFactory
 
 from WMCore.WMBS.File  import File
 
 class TwoFileBased(JobFactory):
-    """
-    Two file read workflow splitting
-
-    """
 
 
     def __init__(self, package='WMCore.DataStructs',
                  subscription=None,
-                 generators=[],
-                 limit = None):
+                 generators=[]):
         """
         __init__
 
@@ -41,8 +35,7 @@ class TwoFileBased(JobFactory):
 
         JobFactory.__init__(self, package = 'WMCore.WMBS',
                             subscription = subscription,
-                            generators = generators,
-                            limit = limit)
+                            generators = generators)
 
 
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
@@ -83,7 +76,6 @@ class TwoFileBased(JobFactory):
             if len(fileList) == 0:
                 #No files for this location
                 #This isn't supposed to happen, but better safe then sorry
-                logging.debug("Have location %s with no files" % (location))
                 continue
             for file in fileList:
                 parentLFNs = self.findParent(lfn = file['lfn'])
@@ -106,9 +98,6 @@ class TwoFileBased(JobFactory):
                 self.currentJob.addFile(file)
                 
                 listOfFiles.append(file)
-
-
-            
 
         return
 

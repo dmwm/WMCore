@@ -3,8 +3,8 @@
 BossLite logging facility
 """
 
-
-
+__version__ = "$Id: BossLiteLogger.py,v 1.2 2010/05/06 09:37:48 spigafi Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 from WMCore.BossLite.Common.Exceptions import BossLiteError
 

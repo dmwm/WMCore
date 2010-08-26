@@ -6,8 +6,8 @@ Determine the efficiency in terms of input events / output events for a
 workflow.
 """
 
-
-
+__revision__ = "$Id: ListWorkflowEfficiency.py,v 1.1 2010/01/26 21:37:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

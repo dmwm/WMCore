@@ -5,8 +5,8 @@ _GetBlock_
 MySQL implementation of DBSBufferFiles.GetBlock
 """
 
-
-
+__revision__ = "$Id: GetBlock.py,v 1.1 2009/09/22 19:50:34 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

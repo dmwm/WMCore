@@ -4,8 +4,8 @@
 The documentation for the framework
 """
     
-
-
+__revision__ = "$Id: WorkQueueMonitorPage.py,v 1.4 2010/05/28 15:48:52 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from cherrypy import expose
 from WMCore.WebTools.Page import TemplatedPage

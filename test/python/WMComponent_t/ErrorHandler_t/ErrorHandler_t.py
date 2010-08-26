@@ -4,8 +4,8 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-
-
+__revision__ = "$Id: ErrorHandler_t.py,v 1.17 2010/07/02 14:25:53 mnorman Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import os
 import threading

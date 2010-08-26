@@ -6,8 +6,8 @@ Retrieve a list of files that have been injected into DBS but not PhEDEx.
 Format the output so that it can easily be injected into PhEDEx.
 """
 
-
-
+__revision__ = "$Id: GetUninjectedFiles.py,v 1.5 2009/12/10 19:54:04 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

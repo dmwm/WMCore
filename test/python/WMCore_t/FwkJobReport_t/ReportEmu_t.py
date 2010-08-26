@@ -5,8 +5,8 @@ _ReportEmu_t_
 Tests for the JobReport emulator.
 """
 
-
-
+__revision__ = "$Id: ReportEmu_t.py,v 1.3 2010/03/23 20:48:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 

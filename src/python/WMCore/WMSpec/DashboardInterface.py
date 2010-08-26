@@ -9,8 +9,8 @@ of the job and the report.
 
 """
 
-
-
+__version__ = "$Id: DashboardInterface.py,v 1.1 2010/05/12 19:46:48 mnorman Exp $"
+__revision__ = "$Revision: 1.1 $"
 
 
 

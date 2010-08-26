@@ -5,8 +5,8 @@ _GetFinishedSubscriptions_
 Oracle implementation of Subscription.GetFinishedSubscriptions
 """
 
-
-
+__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.5 2010/08/06 14:00:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetFinishedSubscriptions import GetFinishedSubscriptions as MySQLFinishedSubscriptions
 

@@ -5,8 +5,8 @@ _DbObject_
 Base class for all objects in the database
 """
 
-
-
+__version__ = "$Id: DbObject.py,v 1.8 2010/05/10 12:44:37 spigafi Exp $"
+__revision__ = "$Revision: 1.8 $"
 
 class DbObject(object):
     """

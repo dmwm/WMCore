@@ -6,8 +6,8 @@ Frontend module for setting up TaskSpace & StepSpace areas within a job.
 """
 
 
-
-
+__revision__ = "$Id: Bootstrap.py,v 1.12 2010/07/19 16:50:57 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import inspect
 import pickle
@@ -200,11 +200,6 @@ def loadTask(job):
 
     try:
         task = workload.getTaskByPath(job['task'])
-    except KeyError, ex:
-        msg =  "Task name not in job object"
-        msg += str(ex)
-        createErrorReport(exitCode = 11103, errorType = "TaskNotInJob", errorDetails = msg)
-        raise BootstrapException, msg
     except Exception, ex:
         msg = "Error looking up task %s\n" % job['task']
         msg += str(ex)
@@ -242,7 +237,6 @@ def createInitialReport(job, task, logLocation):
     report.data.hostName       = socket.gethostname()
     report.data.ceName         = getSyncCE()
     report.data.completed      = False
-    report.setTaskName(taskName = job.get('task', 'TaskNotFound'))
 
     # Not so fond of this, but we have to put the master
     # report way up at the top so it's returned if the

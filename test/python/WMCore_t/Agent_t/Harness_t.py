@@ -4,9 +4,9 @@
 Component test TestComponent module and the harness
 """
 
-
-
-
+__revision__ = "$Id: Harness_t.py,v 1.17 2010/02/10 03:52:26 meloam Exp $"
+__version__ = "$Revision: 1.17 $"
+__author__ = "fvlingen@caltech.edu"
 
 import commands
 import logging

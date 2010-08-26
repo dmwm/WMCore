@@ -5,8 +5,8 @@ _Progress.Message_
 API for creating a new progress message for a request
 
 """
-
-
+__revision__ = "$Id: Message.py,v 1.2 2010/07/21 19:36:08 rpw Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

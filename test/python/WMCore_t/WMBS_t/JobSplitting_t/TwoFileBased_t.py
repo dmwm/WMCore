@@ -5,8 +5,8 @@ _TwoFileBased_t_
 File based splitting test with parentage.
 """
 
-
-
+__revision__ = "$Id: TwoFileBased_t.py,v 1.3 2010/06/28 18:55:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import os

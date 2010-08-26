@@ -4,8 +4,8 @@
 Handler for add workflow
 """
 __all__ = []
-
-
+__revision__ = "$Id: AddWorkflowToManage.py,v 1.3 2009/05/21 14:46:39 riahi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool

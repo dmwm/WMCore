@@ -9,8 +9,8 @@ Unittest to see if the main configs need updating
 """
 
 
-
-
+__revision__ = "$Id: Config_t.py,v 1.1 2010/06/11 14:56:14 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 import re

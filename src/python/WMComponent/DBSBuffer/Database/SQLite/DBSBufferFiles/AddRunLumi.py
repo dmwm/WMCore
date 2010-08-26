@@ -5,9 +5,9 @@ SQLite implementation of AddRunLumi
 
 """
 
-
-
-
+__revision__ = "$Id: AddRunLumi.py,v 1.2 2009/05/18 20:16:10 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "mnorman@fnal.gov"
 
 
 from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.AddRunLumi import AddRunLumi as MySQLAddRunLumi

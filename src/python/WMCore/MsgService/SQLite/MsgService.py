@@ -8,9 +8,9 @@ This class calls the MySQL MsgService for use with SQLite
 
 """
 
-
-
-
+__revision__ = ""
+__version__ = ""
+__author__ = "mnorman@fnal.gov"
 
 
 #This is the SQLite placeholder for the MySQL MsgService.

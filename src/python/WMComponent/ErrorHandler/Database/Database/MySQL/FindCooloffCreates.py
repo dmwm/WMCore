@@ -9,6 +9,13 @@ errorhandler, for locating the failed job creation
 
 """
 
+__revision__ = \
+    "$Id: FindCooloffCreates.py,v 1.1 2009/05/12 16:39:45 afaq Exp $"
+__version__ = \
+    "$Revision: 1.1 $"
+__author__ = \
+    "anzar@fnal.gov"
+
 import threading
 
 from WMCore.Database.DBFormatter import DBFormatter

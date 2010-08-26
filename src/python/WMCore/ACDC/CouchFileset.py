@@ -78,8 +78,6 @@ class CouchFileset(Fileset):
             return check
         document    = CMSCouch.Document()
         document['fileset'] = self
-        del document['fileset']['database']
-        del document['fileset']['url']
         commitInfo = self.couchdb.commitOne( document )
         self['fileset_id'] = commitInfo[0]['id']
         document['_id'] = commitInfo[0]['id']

@@ -3,9 +3,9 @@
 SchedulerFake
 """
 
-
-
-
+__revision__ = "$Id: SchedulerFake.py,v 1.2 2010/06/03 11:12:51 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "filippo.spiga@cern.ch"
 
 from WMCore.BossLite.Scheduler.SchedulerInterface import SchedulerInterface
 from WMCore.BossLite.Common.Exceptions import SchedulerError

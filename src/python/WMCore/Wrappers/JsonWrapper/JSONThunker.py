@@ -24,7 +24,6 @@ class JSONThunker:
         self.passThroughTypes = (types.NoneType,
                                  types.BooleanType,
                                  types.IntType,
-                                 types.FloatType,
                                  types.LongType,
                                  types.ComplexType,
                                  types.StringTypes,

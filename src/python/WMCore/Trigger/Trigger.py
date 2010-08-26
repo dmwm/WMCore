@@ -6,9 +6,9 @@ Class that implements trigger functionality for
 Different components to synchronize work
 """
 
-
-
-
+__revision__ = "$Id: Trigger.py,v 1.3 2008/09/19 15:34:35 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
+__author__ = "fvlingen@caltech.edu"
 
 import base64
 import cPickle

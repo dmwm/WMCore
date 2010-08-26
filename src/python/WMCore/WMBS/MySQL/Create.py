@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-
-
+__revision__ = "$Id: Create.py,v 1.16 2009/12/15 16:58:56 sryu Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 

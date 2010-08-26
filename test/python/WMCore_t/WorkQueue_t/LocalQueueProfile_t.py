@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-
-
+__revision__ = "$Id: LocalQueueProfile_t.py,v 1.3 2010/08/09 21:19:20 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 #setup emulator for test, this needs to be at top of the file
 from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig

@@ -7,8 +7,8 @@ Data object that describes a job
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: Job.py,v 1.32 2010/07/22 16:54:26 sfoulkes Exp $"
+__version__ = "$Revision: 1.32 $"
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.JobGroup import JobGroup

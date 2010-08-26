@@ -6,8 +6,8 @@ State Change API methods
 
 
 """
-
-
+__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ChangeState.py,v 1.1 2010/07/01 18:32:55 rpw Exp $"
 
 import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect

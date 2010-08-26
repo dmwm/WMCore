@@ -7,9 +7,9 @@ Base class for formatters that create tables.
 
 """
 
-
-
-
+__revision__ = "$Id: DBCreator.py,v 1.9 2010/02/03 18:49:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
+__author__ = "fvlingen@caltech.edu"
 
 
 

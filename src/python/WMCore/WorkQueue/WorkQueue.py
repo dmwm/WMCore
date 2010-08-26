@@ -40,7 +40,7 @@ from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 from WMCore.Services.DBS.DBSReader import DBSReader
-import sys; print sys.version
+
 #TODO: Scale test
 #TODO: Decide whether to move/refactor db functions
 #TODO: Transaction handling
@@ -186,8 +186,6 @@ class WorkQueue(WorkQueueBase):
         """
         try:
             iter(ids)
-            if type(ids) in types.StringTypes:
-                raise TypeError
         except TypeError:
             ids = [ids]
 
@@ -329,7 +327,7 @@ class WorkQueue(WorkQueueBase):
                                     transaction = self.existingTransaction())
                     wmspecInfo['data'] = data['name']
         
-            #make one transaction
+            #make one transaction      
             with self.transactionContext():
                 if self.params['PopulateFilesets']:    
                     subscription = self._wmbsPreparation(match, 
@@ -459,8 +457,7 @@ class WorkQueue(WorkQueueBase):
         """
         pass
 
-    def queueWork(self, wmspecUrl, parentQueueId = None,
-                  team = None, request = None):
+    def queueWork(self, wmspecUrl, parentQueueId = None, team = None):
         """
         Take and queue work from a WMSpec
         """
@@ -472,7 +469,7 @@ class WorkQueue(WorkQueueBase):
         # Do database stuff in one quick loop
         with self.transactionContext():
             for unit in totalUnits:
-                self._insertWorkQueueElement(unit, request, team)
+                self._insertWorkQueueElement(unit, teamName = team)
 
         return len(totalUnits)
 
@@ -605,7 +602,7 @@ class WorkQueue(WorkQueueBase):
     # // Methods that call out to remote services
     #//
 
-    def updateLocationInfo(self, forceRefresh = False):
+    def updateLocationInfo(self):
         """
         Update locations for elements
         """
@@ -616,10 +613,7 @@ class WorkQueue(WorkQueueBase):
         if not data:
             return
 
-        if forceRefresh:
-            fullResync = True
-        else:
-            fullResync = time.time() > self.lastLocationUpdate + \
+        fullResync = time.time() > self.lastLocationUpdate + \
                                 self.params['FullLocationRefreshInterval']
 
         #query may not support partial update - allow them to change fullResync

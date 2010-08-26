@@ -5,8 +5,8 @@ _Queries_
 Queries for the alert system for the Oracle database.
 """
 
-
-
+__revision__ = "$Id: Queries.py,v 1.2 2010/05/04 16:14:12 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 

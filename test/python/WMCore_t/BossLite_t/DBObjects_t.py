@@ -4,8 +4,8 @@ _DBObject_t_
 
 """
 
-
-
+__revision__ = "$Id: DBObjects_t.py,v 1.22 2010/05/19 09:56:33 spigafi Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import unittest
 import time
@@ -121,7 +121,7 @@ class DBObjectsTest(unittest.TestCase):
         task = Task()
         task.create(db)
         job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 
-                                'taskId': task.exists(db), 'wmbsJobId': 1 })
+                                            'taskId': task.exists(db)})
         
         self.assertFalse(job.exists(db))
         
@@ -130,14 +130,12 @@ class DBObjectsTest(unittest.TestCase):
         job.data['dlsDestination'] = ['file:///www.google.com', 
                                       'http://www.cern.ch',
                                       'C:/windows/explorer.exe' ]
-        job.data['wmbsJobId']      = 1
         job.save(db)
         
         self.assertTrue(job.exists(db))
         
         job2 = Job(parameters = {'id': 1, 'jobId': 101, 
                                         'taskId': task.exists(db)})
-
         job2.load(db)
         for key in job2.data.keys():
             self.assertEqual(job2.data[key], job.data[key])
@@ -165,7 +163,7 @@ class DBObjectsTest(unittest.TestCase):
         task = Task()
         task.create(db)
         job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 
-                                'taskId': task.exists(db), 'wmbsJobId': 1 })
+                                            'taskId': task.exists(db)})
         job.create(db)
         runJob = RunningJob(parameters = {'jobId': job.data['jobId'], 
                                           'taskId': task.exists(db), 
@@ -229,7 +227,7 @@ class DBObjectsTest(unittest.TestCase):
         task = Task()
         task.create(db)
         job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 
-                                'taskId': task.exists(db), 'wmbsJobId': 1 })
+                                            'taskId': task.exists(db)})
         # WFT??? Yes, it is necessary for consistency... orrible!!!
         job.data['submissionNumber'] = 1
         job.create(db)
@@ -249,7 +247,7 @@ class DBObjectsTest(unittest.TestCase):
         self.assertTrue(job.runningJob != None)
         
         job2 = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 
-                                 'taskId': task.exists(db), 'wmbsJobId': 1 })
+                                                'taskId': task.exists(db)})
         
          # WFT??? Yes, it is necessary for consistency... orrible!!!
         job2.data['submissionNumber'] = runJob.data['submission']
@@ -310,11 +308,9 @@ class DBObjectsTest(unittest.TestCase):
         task.data['startDirectory']  = 'Ilithyia'
         task.data['outputDirectory'] = 'Lucretia'
         
-        i = 0
         for jobId in range(0, nTestJobs):
             job = Job( parameters = {'name': ('Doctore-' + str(jobId)),
-                                     'events' : jobId+1000, 'wmbsJobId': i } )
-            i += 1
+                                            'events' : jobId+1000 } )
             task.addJob(job)
 
         task.save(db)
@@ -353,12 +349,10 @@ class DBObjectsTest(unittest.TestCase):
         
         task.data['startDirectory']  = 'Ilithyia'
         task.data['outputDirectory'] = 'Lucretia'
-
-        i = 0
+        
         for jobId in range(0, nTestJobs):
             job = Job( parameters = {'name': ('Doctore-' + str(jobId)),
-                                     'events' : jobId+1000, 'wmbsJobId': i } )
-            i += 1
+                                            'events' : jobId+1000 } )
             task.addJob(job)
 
         task.save(db)
@@ -381,7 +375,7 @@ class DBObjectsTest(unittest.TestCase):
                                                 WHERE name = 'Doctore-0' """)
         jobInfo = queryResult[0].fetchall()[0].values()
         
-        self.assertEqual(jobInfo[6], tmp)
+        self.assertEqual(jobInfo[5], tmp)
         
         task.update(db, deep=True)
         
@@ -389,7 +383,7 @@ class DBObjectsTest(unittest.TestCase):
                                                 WHERE name = 'Doctore-0' """)
         jobInfo = queryResult[0].fetchall()[0].values()
         
-        self.assertNotEqual(jobInfo[6], tmp)
+        self.assertNotEqual(jobInfo[5], tmp)
         
         return
     
@@ -403,12 +397,12 @@ class DBObjectsTest(unittest.TestCase):
         
         parameters = {'name': 'Bishop'}
         task = Task(parameters)
-        parameters = {'name': 'Walter', 'events' : 42, 'wmbsJobId': 1 }
+        parameters = {'name': 'Walter', 'events' : 42 }
         job = Job( parameters )
         job.newRunningInstance(db)
         task.addJob(job)
         
-        parameters = {'name': 'Peter', 'events' : 24, 'wmbsJobId': 2 }
+        parameters = {'name': 'Peter', 'events' : 24 }
         job = Job( parameters )
         job.newRunningInstance(db)
         task.addJob(job)
@@ -500,8 +494,6 @@ class DBObjectsPerformance(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.BossLite"],
-                                useDefault = False)
         
         return
     
@@ -512,12 +504,22 @@ class DBObjectsPerformance(unittest.TestCase):
         """
         
         self.testInit.attemptToCloseDBConnections()
-        self.testInit.clearDatabase()
         
         return
     
     
-    def testA_createAndSaveObjects(self):
+    def testA_databaseStartup(self):
+        """
+        testA_databaseStartup
+        """
+        
+        self.testInit.setSchema(customModules = ["WMCore.BossLite"],
+                                useDefault = False)
+        
+        return
+    
+    
+    def testB_createAndSaveObjects(self):
         """
         Performance test, do not abuse!
         """
@@ -537,13 +539,10 @@ class DBObjectsPerformance(unittest.TestCase):
                 self.assertEqual(tmpId, task.exists(db))
                 
                 task.exists(db)
-                i = 0
                 for j in xrange(self.numjob):
                     parameters = {'name': '%s_job_%s' % (str(t), str(j)), 
                                   'jobId': j, 
-                                  'taskId': tmpId,
-                                  'wmbsJobId': i }
-                    i += 1
+                                  'taskId': tmpId }
                     job = Job(parameters)
                     job.data['closed'] = 'N'
                                         
@@ -571,14 +570,13 @@ class DBObjectsPerformance(unittest.TestCase):
         return
     
     
-    def testB_LoadObjects(self):
+    def testC_LoadObjects(self):
         """
         testC_databaseIsPersistent
         """
         
         db = BossLiteDBWM()
         log = logging.getLogger( "DBObjectsPerformance" )
-        self.testA_createAndSaveObjects()
 
         task = Task(parameters = {'id': 1})
                 
@@ -595,6 +593,15 @@ class DBObjectsPerformance(unittest.TestCase):
         
         return
     
+    
+    def testD_databaseClean(self):
+        """
+        testC_databaseIsPersistent
+        """
+        
+        self.testInit.clearDatabase()
+        
+        return
     
     
 if __name__ == "__main__":
@@ -613,5 +620,4 @@ if __name__ == "__main__":
 
     # run the unit-test
     unittest.TextTestRunner(verbosity=3).run(unitA)
-    unittest.TextTestRunner(verbosity=3).run(unitB)
     

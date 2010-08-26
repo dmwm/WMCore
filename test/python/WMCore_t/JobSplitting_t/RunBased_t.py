@@ -5,8 +5,8 @@ _RunBased_t_
 RunBased splitting test.
 """
 
-
-
+__revision__ = "$Id: RunBased_t.py,v 1.3 2010/06/28 15:27:25 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 

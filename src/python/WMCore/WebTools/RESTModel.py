@@ -6,8 +6,8 @@ Rest Model abstract implementation
 TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-
-
+__revision__ = "$Id: RESTModel.py,v 1.61 2010/04/26 21:16:09 sryu Exp $"
+__version__ = "$Revision: 1.61 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -21,6 +21,7 @@ class RESTModel(WebAPI):
     know what you're doing.
     """
     def __init__(self, config = {}):
+        self.version = __version__
         WebAPI.__init__(self, config)
         self.methods = {'GET':{
                                'ping': {'default_data':1234, 

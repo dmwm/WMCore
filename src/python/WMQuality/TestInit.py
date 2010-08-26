@@ -11,6 +11,12 @@ This class is not a test but an auxilary class and
 is based on the WMCore.WMInit class.
 
 """
+__revision__ = \
+    "$Id: TestInit.py,v 1.63 2010/08/02 16:11:50 meloam Exp $"
+__version__ = \
+    "$Revision: 1.63 $"
+__author__ = \
+    "fvlingen@caltech.edu"
 
 import commands
 import logging
@@ -19,7 +25,6 @@ import threading
 import tempfile
 import shutil
 import time
-import nose
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -51,7 +56,7 @@ def requiresPython26(testMethod, *args, **kwargs):
     """
     def skipTest(*args, **kwargs):
         print "SKIPPING"
-        raise nose.SkipTest
+        #raise nose.SkipTest
         
     import sys
 
@@ -71,7 +76,7 @@ class TestInit:
     minimize code duplication.
     """ 
 
-    def __init__(self, testClassName = "Unknown Class"):
+    def __init__(self, testClassName):
         self.testClassName = testClassName
         self.testDir = None
         self.currModules = []

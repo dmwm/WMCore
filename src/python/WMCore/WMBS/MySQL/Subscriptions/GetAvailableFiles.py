@@ -8,8 +8,8 @@ Return a list of files that are available for processing.
 Available means not acquired, complete or failed.
 """
 
-
-
+__revision__ = "$Id: GetAvailableFiles.py,v 1.17 2010/06/28 19:01:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -58,13 +58,7 @@ class GetAvailableFiles(DBFormatter):
 
         return finalResults
            
-    def execute(self, subscription, conn = None, transaction = False, returnCursor = False):
-
-        if returnCursor:
-            return self.dbi.processData(self.sql, {"subscription": subscription},
-                                        conn = conn, transaction = transaction,
-                                        returnCursor = returnCursor)
-        
+    def execute(self, subscription, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, {"subscription": subscription},
                                        conn = conn, transaction = transaction)
         return self.formatDict(results)

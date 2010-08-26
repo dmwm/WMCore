@@ -5,8 +5,8 @@ _Alert_
 Data structure that contains details about an alert.
 """
 
-
-
+__revision__ = "$Id: Alert.py,v 1.2 2008/10/28 16:29:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 

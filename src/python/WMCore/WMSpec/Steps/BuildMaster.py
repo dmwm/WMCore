@@ -6,9 +6,9 @@ Overseer object that traverses a task and invokes the type based builder
 for each step
 
 """
-
-
-
+__author__ = "evansde"
+__revision__ = "$Id: BuildMaster.py,v 1.9 2010/04/12 18:01:17 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 

@@ -5,8 +5,8 @@ _Request.FindByProdMgr_
 API for finding a new request by prodmgr association
 
 """
-
-
+__revision__ = "$Id: FindByProdMgr.py,v 1.1 2010/07/01 19:12:39 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

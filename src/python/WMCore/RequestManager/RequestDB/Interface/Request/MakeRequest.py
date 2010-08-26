@@ -6,8 +6,8 @@ API for creating a new request in the database
 
 """
 
-
-
+__revision__ = "$Id: MakeRequest.py,v 1.1 2010/07/01 18:32:56 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 import logging

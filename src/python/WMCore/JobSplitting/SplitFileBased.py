@@ -8,8 +8,8 @@ but instead of combining multiple merge units together this will create a
 single job for each merge unit.
 """
 
-
-
+__revision__ = "$Id: SplitFileBased.py,v 1.5 2010/07/14 19:27:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 

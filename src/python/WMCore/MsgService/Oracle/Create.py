@@ -5,8 +5,8 @@ _Create_
 Class for creating Oracle specific schema for persistent messages.
 """
 
-
-
+__revision__ = "$Id: Create.py,v 1.8 2009/09/15 18:32:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import logging
 import threading

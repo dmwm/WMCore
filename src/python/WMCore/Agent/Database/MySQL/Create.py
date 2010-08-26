@@ -7,8 +7,8 @@ Inherit from CreateAgentBase, and add MySQL specific substitutions (e.g. add
 INNODB).
 """
 
-
-
+__revision__ = "$Id: Create.py,v 1.2 2010/06/22 16:46:34 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Agent.Database.CreateAgentBase import CreateAgentBase
 

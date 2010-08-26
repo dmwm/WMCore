@@ -4,8 +4,8 @@
 # W0142: Some people like ** magic
 # R0201: Test methods CANNOT be functions
 
-
-
+__revision__ = "$Id: Subscription_t.py,v 1.61 2010/08/05 20:41:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.61 $"
 
 
 import unittest
@@ -1254,6 +1254,7 @@ class SubscriptionTest(unittest.TestCase):
         testFileC.delete()        
         return
 
+
     def testGetSubTypes(self):
         """
         _testGetSubTypes_
@@ -1261,15 +1262,15 @@ class SubscriptionTest(unittest.TestCase):
         Test the getSubTypes function
         """
         getSubTypes = self.daofactory(classname = "Subscriptions.GetSubTypes")
+
         result = getSubTypes.execute()
 
-        self.assertEqual(len(result), 7, "Error: Wrong number of types.")
-
-        for subType in ["Processing", "Merge", "Harvesting", "Cleanup",
-                        "LogCollect", "Skim", "Analysis"]:
+        self.assertEqual(len(result), 6, "Error: Wrong number of types.")
+        for subType in ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect", "Skim"]:
             self.assertTrue(subType in result, "Type %s is missing" % (subType))
 
         return
+
 
     def testBulkCommit(self):
         """
@@ -1277,6 +1278,7 @@ class SubscriptionTest(unittest.TestCase):
 
         Test committing everything in bulk
         """
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task = "Test")
         testWorkflow.create()

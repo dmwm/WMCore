@@ -12,8 +12,8 @@ on the subset of jobs assigned to them.
 
 """
 
-
-
+__revision__ = "$Id: JobStatusWork.py,v 1.5 2010/07/26 17:06:36 mcinquil Exp $"
+__version__ = "$Revision: 1.5 $"
 
 #import threading
 #from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI

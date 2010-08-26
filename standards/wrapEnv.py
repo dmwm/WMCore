@@ -24,10 +24,7 @@ if ( not (requestedPython in buildslave.conf) ):
     sys.exit(1)
 
 if 'PYTHONPATH' in buildslave.conf[requestedPython]:
-    if 'PYTHONPATH' in os.environ:    
-        os.environ['PYTHONPATH'] = "%s:%s" % (buildslave.conf[requestedPython]['PYTHONPATH'], os.environ['PYTHONPATH'])
-    else:
-        os.environ['PYTHONPATH'] = buildslave.conf[requestedPython]['PYTHONPATH']
+    os.environ['PYTHONPATH'] = "%s:%s" % (buildslave.conf[requestedPython]['PYTHONPATH'], os.environ['PYTHONPATH'])
 
 if 'PATH' in buildslave.conf[requestedPython]:
     os.environ['PATH'] = "%s:%s" % (buildslave.conf[requestedPython]['PATH'], os.environ['PATH'])

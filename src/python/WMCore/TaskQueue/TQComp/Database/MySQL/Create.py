@@ -8,9 +8,9 @@ Class for creating MySQL specific schema for the error handler.
 
 """
 
-
-
-
+__revision__ = "$Id: Create.py,v 1.7 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.7 $"
+__author__ = "delgadop@cern.ch"
 
 import threading
 

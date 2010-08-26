@@ -6,8 +6,8 @@ If a subscription's fileset is closed, make a job that will run over any availab
 files
 """
 
-
-
+__revision__ = "$Id: EndOfRun.py,v 1.9 2010/06/28 15:36:03 sfoulkes Exp $"
+__version__  = "$Revision: 1.9 $"
 
 import logging
 from WMCore.JobSplitting.JobFactory import JobFactory

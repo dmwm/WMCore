@@ -8,6 +8,12 @@ This module implements the mysql backend for the retry manager, for locating the
 
 """
 
+__revision__ = \
+    "$Id: FindCooloffSubmits.py,v 1.1 2009/05/12 16:39:45 afaq Exp $"
+__version__ = \
+    "$Revision: 1.1 $"
+__author__ = \
+    "anzar@fnal.gov"
 
 import threading
 
@@ -21,7 +27,7 @@ class FindCooloffSubmits(FindCooloffs):
     """
 
     def execute(self, conn=None, transaction = False):
-    	jobStatus = 'submitcooloff'
-    	result FindFailed.execute(self.sql, binds,
-                             conn = conn, transaction = transaction)
+	jobStatus = 'submitcooloff'
+	result FindFailed.execute(self.sql, binds,
+                         conn = conn, transaction = transaction)
 

@@ -6,8 +6,8 @@ MySQL function to load jobs for submission
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: LoadForSubmitter.py,v 1.1 2010/07/08 20:50:42 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

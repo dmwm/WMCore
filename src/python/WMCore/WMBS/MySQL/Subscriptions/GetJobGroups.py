@@ -5,8 +5,8 @@ _GetJobGroups_
 MySQL implementation of Subscriptions.GetJobGroups
 """
 
-
-
+__revision__ = "$Id: GetJobGroups.py,v 1.6 2009/10/28 12:51:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

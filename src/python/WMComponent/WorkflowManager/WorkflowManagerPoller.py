@@ -4,7 +4,9 @@
 The actual subscription creation algorithm
 """
 __all__ = []
-
+__revision__ = "$Id: WorkflowManagerPoller.py,v 1.6 \
+            2009/07/27 23:21:44 riahi Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 import logging

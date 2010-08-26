@@ -8,8 +8,8 @@ Test for the DBSInterface
 
 """
 
-
-
+__revision__ = "$Id: DBSInterface_t.py,v 1.2 2010/05/21 21:32:33 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 import os

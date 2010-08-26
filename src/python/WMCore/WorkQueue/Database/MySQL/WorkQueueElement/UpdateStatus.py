@@ -29,8 +29,7 @@ class UpdateStatus(DBFormatter):
         
         if status not in States:
             raise RuntimeError, "Invalid state: %s" % status
-        if id_type not in ('parent_queue_id', 'id', 'subscription_id',
-                           'request_name'):
+        if id_type not in ('parent_queue_id', 'id', 'subscription_id'):
             raise RuntimeError, "Invalid id_type: %s" % id_type
 
         now = int(time.time())

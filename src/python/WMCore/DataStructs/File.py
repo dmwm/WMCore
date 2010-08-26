@@ -6,8 +6,8 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-
-
+__revision__ = "$Id: File.py,v 1.26 2010/07/06 16:25:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.26 $"
 import datetime
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Run import Run

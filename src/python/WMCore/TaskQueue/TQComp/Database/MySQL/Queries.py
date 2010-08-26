@@ -8,6 +8,12 @@ This module implements the mysql backend for the TQComp
 
 """
 
+__revision__ = \
+    "$Id: Queries.py,v 1.8 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = \
+    "$Revision: 1.8 $"
+__author__ = \
+    "delgadop@cern.ch"
 
 import threading
 import logging

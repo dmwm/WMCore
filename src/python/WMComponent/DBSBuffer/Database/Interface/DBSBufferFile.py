@@ -5,8 +5,8 @@ _DBSBufferFile_
 A simple object representing a file in DBSBuffer.
 """
 
-
-
+__revision__ = "$Id: DBSBufferFile.py,v 1.14 2010/06/08 19:05:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import time
 import threading

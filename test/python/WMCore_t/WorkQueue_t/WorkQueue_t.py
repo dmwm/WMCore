@@ -3,27 +3,30 @@
     WorkQueue tests
 """
 
-
-
+__revision__ = "$Id: WorkQueue_t.py,v 1.46 2010/08/09 17:22:27 swakef Exp $"
+__version__ = "$Revision: 1.46 $"
 
 import unittest
 import os
+import shutil
+from copy import deepcopy, copy
 
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
-from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
-from WMCore_t.WMSpec_t.samples.BasicProductionWorkload \
-                                    import workload as BasicProductionWorkload
-from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
-                                import workload as MultiTaskProductionWorkload
+from WMCore.WMSpec.WMWorkload import newWorkload
+from WMCore.WMSpec.WMTask import makeWMTask
+
+from WorkQueueTestCase import WorkQueueTestCase
+
+from WMCore_t.WMSpec_t.samples.BasicProductionWorkload import workload as BasicProductionWorkload
+from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload import workload as MultiTaskProductionWorkload
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
+from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
 from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
 
 class fakeSiteDB:
-    """Fake sitedb interactions"""
     def phEDExNodetocmsName(self, node):
-        """strip buffer/mss etc"""
         return node.replace('_MSS',
                             '').replace('_Buffer',
                                         '').replace('_Export', '')
@@ -38,25 +41,10 @@ rerecoArgs.update({
     })
 
 class TestReRecoFactory(ReRecoWorkloadFactory):
-    """Override bits that talk to cmsssw"""
     
     def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
                             scenarioArgs):
         return {}
-
-    #TODO: Remove this when each queue can be isolated (i.e. separate db's)
-    def setReRecoPolicy(self, workload, splitAlgo, splitAgrs):
-        """Force DatasetBlock till test cases can handle multiple queues
-           with Block splitting at global level"""
-        ReRecoWorkloadFactory.setReRecoPolicy(self, workload,
-                                              splitAlgo, splitAgrs)
-        workload.setStartPolicy("DatasetBlock")
-
-def getFirstTask(wmspec):
-    """Return the 1st top level task"""
-    # http://www.logilab.org/ticket/8774
-    # pylint: disable-msg=E1101,E1103
-    return wmspec.taskIterator().next()
 
 class WorkQueueTest(WorkQueueTestCase):
     """
@@ -85,18 +73,18 @@ class WorkQueueTest(WorkQueueTestCase):
         self.blacklistSpec = rerecoFactory('blacklistSpec', rerecoArgs)
         self.blacklistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testBlacklist.spec'))
-        getFirstTask(self.blacklistSpec).data.constraints.sites.blacklist = ['SiteA']
+        self.blacklistSpec.taskIterator().next().data.constraints.sites.blacklist = ['SiteA']
         self.blacklistSpec.save(self.blacklistSpec.specUrl())
 
         # ReReco spec with whitelist
         self.whitelistSpec = rerecoFactory('whitelistlistSpec', rerecoArgs)
         self.whitelistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testWhitelist.spec'))
-        getFirstTask(self.whitelistSpec).data.constraints.sites.whitelist = ['SiteB']
+        self.whitelistSpec.taskIterator().next().data.constraints.sites.whitelist = ['SiteB']
         self.whitelistSpec.save(self.whitelistSpec.specUrl())
 
         # setup Mock DBS and PhEDEx
-        inputDataset = getFirstTask(self.processingSpec).inputDataset()
+        inputDataset = self.processingSpec.taskIterator().next().inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)
@@ -594,33 +582,6 @@ class WorkQueueTest(WorkQueueTestCase):
                          if x['ChildQueueUrl'] == self.localQueue2.params['QueueURL']]
         self.assertEqual(len(work_at_local2), 1)
 
-
-    def testCancelWork(self):
-        """Cancel work"""
-        self.queue.queueWork(self.processingSpec.specUrl())
-        elements = len(self.queue)
-        self.queue.updateLocationInfo()
-        work = self.queue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
-        self.assertEqual(len(self.queue), 0)
-        self.assertEqual(len(self.queue.status(status='Acquired')), elements)
-        ids = [x['element_id'] for x in work]
-        canceled = self.queue.cancelWork(ids)
-        self.assertEqual(sorted(canceled), sorted(ids))
-        self.assertEqual(len(self.queue), 0)
-        self.assertEqual(len(self.queue.status(status='Canceled')), elements)
-
-        # now cancel a request
-        self.queue.queueWork(self.spec.specUrl(), request = 'Request-1')
-        elements = len(self.queue)
-        work = self.queue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
-        self.assertEqual(len(self.queue), 0)
-        self.assertEqual(len(self.queue.status(status='Acquired')), elements)
-        ids = [x['element_id'] for x in work]
-        canceled = self.queue.cancelWork('Request-1', id_type = 'request_name')
-        self.assertEqual(canceled, 'Request-1')
-        self.assertEqual(len(self.queue), 0)
-        self.assertEqual(len(self.queue.status(status='Canceled',
-                                               elementIDs = ids)), elements)
-
+        
 if __name__ == "__main__":
     unittest.main()

@@ -8,9 +8,9 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-
-
-
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.14 2010/05/19 16:24:33 spiga Exp $"
+__version__  = "$Revision: 1.14 $"
+__author__   = "ewv@fnal.gov"
 
 import types
 import fnmatch

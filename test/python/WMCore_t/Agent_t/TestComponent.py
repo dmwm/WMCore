@@ -9,9 +9,9 @@ components.
 
 """
 
-
-
-
+__revision__ = "$Id: TestComponent.py,v 1.2 2009/02/09 21:00:14 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "fvlingen@caltech.edu"
 
 import logging
 

@@ -5,8 +5,8 @@ _NewestStateChangeForSub_
 MySQL implementation of Jobs.NewestStateChangeForSub
 """
 
-
-
+__revision__ = "$Id: NewestStateChangeForSub.py,v 1.1 2009/08/03 18:39:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

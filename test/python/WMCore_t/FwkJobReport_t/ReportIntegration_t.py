@@ -6,8 +6,8 @@ Verify that the whole FWJR chain works correctly:
   CMSSW XML -> XMLParser -> Report -> Pickle -> UnPickle -> Accountant
 """
 
-
-
+__revision__ = "$Id: ReportIntegration_t.py,v 1.3 2010/08/02 17:56:34 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import os

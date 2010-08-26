@@ -7,8 +7,8 @@ from TQComp.Apis.TQApi.
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: TQStateApi.py,v 1.8 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.8 $"
 
 #import logging
 import threading

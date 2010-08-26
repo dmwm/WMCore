@@ -6,8 +6,8 @@ Oracle implementation of NewWorkflow
 
 """
 __all__ = []
-
-
+__revision__ = "$Id: New.py,v 1.3 2009/05/08 16:38:21 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.MySQL.Workflow.New import New as NewWorkflowMySQL
 

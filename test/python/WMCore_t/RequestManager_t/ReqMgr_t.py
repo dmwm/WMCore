@@ -1,10 +1,6 @@
 from WMCore.Services.Requests import JSONRequests
 import unittest
-try:
-    import json
-except:
-    import simplejson
-    json = simplejson
+import simplejson as json
 import WMCore.RequestManager.RequestMaker.WMWorkloadCache as WMWorkloadCache
 from httplib import HTTPException
 import urllib
@@ -12,7 +8,7 @@ import urllib
 
 class TestReqMgr(unittest.TestCase):
     def setUp(self):
-        reqMgrHost = 'http://cmssrv49.fnal.gov:8585'
+        reqMgrHost = 'cmssrv49.fnal.gov:8585'
         self.jsonSender = JSONRequests(reqMgrHost)
         self.jsonSender.delete('/reqMgr/user/me')
         self.requestTypes = ['ReReco', 'StoreResults', 'CmsGen', 'Reco']

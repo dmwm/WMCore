@@ -9,8 +9,8 @@ Not in the Framework XML
 
 """
 
-
-
+__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: FileInfo.py,v 1.8 2010/03/24 16:35:52 sfoulkes Exp $"
 
 
 

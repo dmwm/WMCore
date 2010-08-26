@@ -5,8 +5,8 @@ _Request.New_
 API for creating a new request
 
 """
-
-
+__revision__ = "$Id: New.py,v 1.1 2010/07/01 18:48:20 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

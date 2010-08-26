@@ -5,8 +5,8 @@ _SAM_
 Talk to the SAM Service to get site status from the results of SAM tests.
 """
 
-
-
+__revision__ = "$Id: SAM.py,v 1.6 2010/03/08 23:16:51 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Services.Service import Service
 

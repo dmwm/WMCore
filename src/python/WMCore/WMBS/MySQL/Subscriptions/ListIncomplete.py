@@ -6,8 +6,8 @@ MySQL implementation of Subscription.ListIncomplete
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: ListIncomplete.py,v 1.3 2009/11/03 19:55:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-
-
+__revision__ = "$Id: Destroy.py,v 1.1 2010/06/21 21:19:13 sryu Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Agent.Database.DestroyAgentBase import DestroyAgentBase
 

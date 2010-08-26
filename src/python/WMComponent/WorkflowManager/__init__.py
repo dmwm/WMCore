@@ -44,5 +44,6 @@ complete.
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: __init__.py,v 1.3 2009/02/05 23:21:44 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
+__author__ = "james.jackson@cern.ch"

@@ -8,9 +8,9 @@ stub classes.
 
 """
 
-
-
-
+__revision__ = "$Id: Generate.py,v 1.3 2009/01/26 16:11:58 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
+__author__ = "fvlingen@caltech.edu"
 
 import cPickle
 import os

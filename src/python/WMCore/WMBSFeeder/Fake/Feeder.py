@@ -7,8 +7,8 @@ A feeder implementation that generates fake files. Make up random sizes, names a
 Always returns new/unique files.
 """
 __all__ = []
-
-
+__revision__ = "$Id: Feeder.py,v 1.4 2008/08/13 15:22:05 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.File import File

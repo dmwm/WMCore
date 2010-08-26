@@ -6,8 +6,8 @@ Oracle implementation of Subscription.GetFailedFiles
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: GetFailedFiles.py,v 1.6 2009/09/11 19:07:29 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetFailedFiles import GetFailedFiles \
      as GetFailedFilesMySQL

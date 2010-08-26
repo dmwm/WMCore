@@ -11,9 +11,9 @@ of the WMCore DB interface.
 It could be mapped to a msgType using the 'RemoteMsg.setHandler' method.
 """
 
-
-
-
+__revision__ = "$Id: SimpleInCompHandler.py,v 1.1 2009/04/01 12:56:01 delgadop Exp $"
+__version__ = "$Revision: 1.1 $"
+__author__ = "antonio.delgado.peris@cern.ch"
 
 #import os
 #import inspect

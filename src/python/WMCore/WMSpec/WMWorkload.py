@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 """
 
-
-
+__revision__ = "$Id: WMWorkload.py,v 1.24 2010/07/21 13:54:57 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import logging
 

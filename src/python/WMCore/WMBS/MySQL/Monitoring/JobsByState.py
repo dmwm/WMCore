@@ -5,8 +5,8 @@ _JobsByState_
 Monitoring DAO classes for Jobs in WMBS
 """
 __all__ = []
-
-
+__revision__ = "$Id: JobsByState.py,v 1.2 2009/07/30 16:32:42 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Monitoring.DefaultFormatter import DefaultFormatter
 

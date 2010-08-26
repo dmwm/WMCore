@@ -5,8 +5,8 @@ _ResourceControl_t_
 Unit tests for ResourceControl.
 """
 
-
-
+__revision__ = "$Id: ResourceControl_t.py,v 1.8 2010/07/15 16:57:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import threading

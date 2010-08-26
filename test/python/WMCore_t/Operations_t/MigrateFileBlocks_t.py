@@ -6,8 +6,8 @@ DBSUpload test TestDBSUpload module and the harness
 
 """
 
-
-
+__revision__ = "$Id $"
+__version__ = "$Revision: 1.4 $"
 
 
 import os

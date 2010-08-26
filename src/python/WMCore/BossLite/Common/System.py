@@ -12,8 +12,8 @@ import os
 import logging
 import select, signal, fcntl
 
-
-
+__version__ = "$Id: System.py,v 1.8 2010/06/28 19:19:48 spigafi Exp $"
+__revision__ = "$Revision: 1.8 $"
 
 
 def setPgid():

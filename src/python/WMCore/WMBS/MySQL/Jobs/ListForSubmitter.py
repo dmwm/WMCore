@@ -5,8 +5,8 @@ _ListForSubmitter_
 MySQL function to list jobs for submission
 """
 
-
-
+__revision__ = "$Id: ListForSubmitter.py,v 1.2 2010/08/11 18:50:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

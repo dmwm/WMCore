@@ -5,8 +5,8 @@ _GetAvailableFilesMeta_
 Oracle implementation of Subscription.GetAvailableFilesMeta
 """
 
-
-
+__revision__ = "$Id: GetAvailableFilesMeta.py,v 1.2 2009/07/24 15:52:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFilesMeta import \
      GetAvailableFilesMeta as GetAvailableFilesMetaMySQL

@@ -6,9 +6,9 @@ Unit tests for  daemon creation
 
 """
 
-
-
-
+__revision__ = "$Id: Daemon_t.py,v 1.11 2010/02/05 14:17:35 meloam Exp $"
+__version__ = "$Revision: 1.11 $"
+__author__ = "fvlingen@caltech.edu"
 
 import commands
 import unittest
@@ -24,7 +24,6 @@ from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
-from nose.plugins.skip import Skip, SkipTest
 
 class DaemonTest(unittest.TestCase):
     """
@@ -41,7 +40,6 @@ class DaemonTest(unittest.TestCase):
     _publishAndGet = 10
 
     def setUp(self):
-
         "make a logger instance and create tables"
        
         self.testInit = TestInit(__file__)
@@ -59,38 +57,37 @@ class DaemonTest(unittest.TestCase):
         shutil.rmtree( self.tempDir, True )
 
                
-#    def testA(self):
-#        """
-#        __testSubscribe__
-#
-#        Test daemon creation
-#        """
-#        raise SkipTest, "Nobody knows if this code is actually used"
-#        # keep the parent alive
-#        self.pid = createDaemon(self.tempDir, True)
-#        try:
-#            try:
-#                if self.pid != 0 :
-#                    print('Daemon created I am the parent')
-#                    time.sleep(2)
-#                    print('Going to destroy my daemon')
-#                    details = Details(os.path.join(self.tempDir,"Daemon.xml"))
-#                    print('Found Daemon details (sleeping for 10 secs.)')
-#                    print(str(details.isAlive()))
-#                    time.sleep(10)
-#                    details.killWithPrejudice()
-#                    print('Daemon killed')
-#                else:
-#                    while True:
-#                        logging.debug('I am a daemon (wait 10 seconds)')
-#                        time.sleep(1)
-#            except:
-#                pass
-#        finally:
-#            if self.pid == 0:
-#                os._exit(-1)
-#            else:
-#                os.system('kill -9 %s' % self.pid)
+    def testA(self):
+        """
+        __testSubscribe__
+
+        Test daemon creation
+        """
+        # keep the parent alive
+        self.pid = createDaemon(self.tempDir, True)
+        try:
+            try:
+                if self.pid != 0 :
+                    print('Daemon created I am the parent')
+                    time.sleep(2)
+                    print('Going to destroy my daemon')
+                    details = Details(os.path.join(self.tempDir,"Daemon.xml"))
+                    print('Found Daemon details (sleeping for 10 secs.)')
+                    print(str(details.isAlive()))
+                    time.sleep(10)
+                    details.killWithPrejudice()
+                    print('Daemon killed')
+                else:
+                    while True:
+                        logging.debug('I am a daemon (wait 10 seconds)')
+                        time.sleep(1)
+            except:
+                pass
+        finally:
+            if self.pid == 0:
+                os._exit(-1)
+            else:
+                os.system(['kill', '-9', self.pid])
 
 if __name__ == "__main__":
     unittest.main()

@@ -6,9 +6,9 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-
-
-
+__revision__ = "$Id: WMInit.py,v 1.26 2010/06/15 13:29:56 meloam Exp $"
+__version__ = "$Revision: 1.26 $"
+__author__ = "fvlingen@caltech.edu"
 
 import logging
 import threading

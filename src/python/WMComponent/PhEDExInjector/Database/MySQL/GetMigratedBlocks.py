@@ -4,8 +4,8 @@ _GetMigratedBlocks_
 
 """
 
-
-
+__revision__ = "$Id: GetMigratedBlocks.py,v 1.1 2009/12/02 17:56:32 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

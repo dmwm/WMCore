@@ -87,10 +87,11 @@ class WorkQueueTest(RESTBaseUnitTest):
         #print wqApi.synchronize(childUrl, childResources)
         
     def testStatusChange(self):
-        raise RuntimeError, "This test causes buildbot to timeout. see - http://vpac05.phy.vanderbilt.edu:8010/builders/Unit%20Tests%20Mysql/builds/154/steps/test/logs/stdio - MELO"
+        
         self.globalQueue.queueWork(self.specGenerator.createProcessingSpec('ProcessingSpec', "file"))
         wqApi = WorkQueueDS(self.params)
 
+        print wqApi.gotWork([1])
         print wqApi.status()
         print wqApi.doneWork([1])
         print wqApi.status()

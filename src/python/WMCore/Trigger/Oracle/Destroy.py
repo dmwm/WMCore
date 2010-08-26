@@ -8,9 +8,9 @@ Class for creating MySQL specific schema for the trigger
 
 """
 
-
-
-
+__revision__ = "$Id: Destroy.py,v 1.1 2008/09/19 15:34:35 fvlingen Exp $"
+__version__ = "$Revision: 1.1 $"
+__author__ = "fvlingen@caltech.edu"
 
 import threading
 

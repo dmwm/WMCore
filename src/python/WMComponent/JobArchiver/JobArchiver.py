@@ -6,8 +6,8 @@ Checks for finished jobs
 Upon finding jobs cleans out their logs.
 """
 
-
-
+__revision__ = "$Id: JobArchiver.py,v 1.2 2010/02/11 17:33:37 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading

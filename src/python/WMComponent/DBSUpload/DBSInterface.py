@@ -9,8 +9,8 @@ objects into DBS, and the massive interface that runs the
 DBSUploader
 """
 
-
-
+__revision__ = "$Id: DBSInterface.py,v 1.5 2010/08/06 15:40:24 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import logging
 import time

@@ -6,8 +6,8 @@ Monitoring DAO classes for Jobs in WMBS
 TODO: this is not working version
 """
 __all__ = []
-
-
+__revision__ = "$Id: FileCountBySubscriptionAndRun.py,v 1.1 2009/07/30 16:32:42 sryu Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.WMBS.MySQL.Monitoring.DefaultFormatter import DefaultFormatter
 

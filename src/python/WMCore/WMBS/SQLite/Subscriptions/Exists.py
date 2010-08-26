@@ -13,8 +13,8 @@ TABLE wmbs_subscription
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: Exists.py,v 1.4 2009/01/12 19:26:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.Exists import Exists as ExistsMySQL
 

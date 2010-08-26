@@ -5,8 +5,8 @@ _LoadFromID_
 MySQL implementation of Subscription.LoadFromID
 """
 
-
-
+__revision__ = "$Id: LoadFromID.py,v 1.3 2009/10/12 21:11:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -6,8 +6,8 @@ List the task name and number of jobs running for a given site and subscription
 type.
 """
 
-
-
+__revision__ = "$Id: ListWorkloadsForTaskSite.py,v 1.2 2010/07/15 16:57:05 sfoulkes Exp $"
+__version__  = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

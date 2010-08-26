@@ -6,8 +6,8 @@ MySQL implementation of ListFileset
 
 """
 __all__ = []
-
-
+__revision__ = "$Id: List.py,v 1.4 2008/11/26 19:46:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -4,8 +4,8 @@ _BossLiteDBInterface_
 
 """
 
-
-
+__version__ = "$Id: BossLiteDBInterface.py,v 1.2 2010/05/18 13:49:39 spigafi Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 
 class BossLiteDBInterface(object):

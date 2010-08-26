@@ -9,6 +9,9 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
+__revision__ = "$Id: Create.py,v 1.36 2010/07/30 14:05:37 sfoulkes Exp $"
+__version__ = "$Revision: 1.36 $"
+
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.Transitions import Transitions
 
@@ -155,8 +158,7 @@ class Create(CreateWMBSBase):
                site_name VARCHAR(255) NOT NULL,
                se_name   VARCHAR(255),
                ce_name   VARCHAR(255),
-               job_slots INTEGER,
-               plugin    VARCHAR(255)
+               job_slots INTEGER
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_location"] = \
@@ -214,7 +216,8 @@ class Create(CreateWMBSBase):
           """CREATE TABLE wmbs_workflow_output (
                workflow_id       INTEGER      NOT NULL,
                output_identifier VARCHAR(255) NOT NULL,
-               output_fileset    INTEGER      NOT NULL
+               output_fileset    INTEGER      NOT NULL,
+               output_parent     VARCHAR(255) 
                ) %s""" % tablespaceTable
 
         self.constraints["01_fk_wmbs_workflow_output"] = \
@@ -310,32 +313,6 @@ class Create(CreateWMBSBase):
 
         self.constraints["02_idx_wmbs_sub_files_acquired"] = \
           """CREATE INDEX idx_wmbs_sub_files_acq_file ON wmbs_sub_files_acquired(fileid) %s""" % tablespaceIndex
-
-        self.create["10wmbs_sub_files_available"] = \
-          """CREATE TABLE wmbs_sub_files_available (
-               subscription INTEGER NOT NULL,
-               fileid       INTEGER NOT NULL
-               ) %s""" % tablespaceTable
-
-        self.indexes["01_pk_wmbs_sub_files_available"] = \
-          """ALTER TABLE wmbs_sub_files_available ADD
-               (CONSTRAINT wmbs_sub_files_available_pk PRIMARY KEY (subscription, fileid) %s)""" % tablespaceIndex
-
-        self.constraints["01_fk_wmbs_sub_files_available"] = \
-          """ALTER TABLE wmbs_sub_files_available ADD
-               (CONSTRAINT fk_subsavailable_sub FOREIGN KEY (subscription)
-                  REFERENCES wmbs_subscription(id) ON DELETE CASCADE)"""
-
-        self.constraints["02_fk_wmbs_sub_files_available"] = \
-          """ALTER TABLE wmbs_sub_files_available ADD
-               (CONSTRAINT fk_subsavailable_file FOREIGN KEY (fileid)
-                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
-
-        self.constraints["01_idx_wmbs_sub_files_available"] = \
-          """CREATE INDEX idx_wmbs_sub_files_ava_sub ON wmbs_sub_files_available(subscription) %s""" % tablespaceIndex
-
-        self.constraints["02_idx_wmbs_sub_files_available"] = \
-          """CREATE INDEX idx_wmbs_sub_files_ava_file ON wmbs_sub_files_available(fileid) %s""" % tablespaceIndex        
 
         self.create["11wmbs_sub_files_failed"] = \
           """CREATE TABLE wmbs_sub_files_failed (
@@ -569,7 +546,7 @@ class Create(CreateWMBSBase):
                                (wmbs_job_state_SEQ.nextval, '%s')""" % jobState
             self.inserts["job_state_%s" % jobState] = jobStateQuery
 
-        self.subTypes = ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect", "Skim", "Analysis"]
+        self.subTypes = ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect", "Skim"]
         for i in range(len(self.subTypes)):
             subTypeQuery = """INSERT INTO wmbs_sub_types (id, name)
                               VALUES (wmbs_sub_types_SEQ.nextval, '%s')""" % (self.subTypes[i])

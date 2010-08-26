@@ -5,8 +5,8 @@ _SetJobSlotsForSite_
 Set the number of job slots available at a given site.
 """
 
-
-
+__revision__ = "$Id: SetJobSlotsForSite.py,v 1.1 2010/07/15 16:57:05 sfoulkes Exp $"
+__version__  = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

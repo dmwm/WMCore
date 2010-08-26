@@ -5,8 +5,8 @@ _Destroy_
 Tear down the MySQL version of the TestDB schema.
 """
 
-
-
+__revision__ = "$Id: Destroy.py,v 1.2 2010/05/04 16:18:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 

@@ -10,6 +10,12 @@ basically in JobFailed status
 
 """
 
+__revision__ = \
+    "$Id: FindFailedJobs.py,v 1.1 2009/05/08 16:32:40 afaq Exp $"
+__version__ = \
+    "$Revision: 1.1 $"
+__author__ = \
+    "anzar@fnal.gov"
 
 import threading
 

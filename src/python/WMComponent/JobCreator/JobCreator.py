@@ -7,8 +7,8 @@ Handler implementation for polling
 
 """
 
-
-
+__revision__ = "$Id: JobCreator.py,v 1.2 2010/02/12 15:41:48 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading

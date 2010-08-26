@@ -8,11 +8,8 @@ import os, sys, os.path
 import logging
 import unittest
 import time
-
-# pylint and coverage aren't standard, but aren't strictly necessary
+#PyLinter and coverage aren't standard, but aren't strictly necessary
 # you should get them though
-# testing a branch/merge
-
 can_lint = False
 can_coverage = False
 can_nose = False
@@ -75,15 +72,11 @@ if can_nose:
                          'If you set this I WILL DELETE YOUR DATABASE AFTER EVERY TEST. DO NOT RUN ON A PRODUCTION SYSTEM'),
                          ('buildBotMode=',
                           None,
-                          'Are we running inside buildbot?'),
-                         ('workerNodeTestsOnly=',
-                          None,
-                          "Are we testing WN functionality? (Only runs WN-specific tests)")]
+                          'Are we running inside buildbot?')]
 
         def initialize_options(self):
             self.reallyDeleteMyDatabaseAfterEveryTest = False
             self.buildBotMode = False
-            self.workerNodeTestsOnly = False
             pass
         
         def finalize_options(self):
@@ -97,17 +90,13 @@ if can_nose:
                 import WMQuality.TestInit
                 WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
                 time.sleep(4)
-            if self.workerNodeTestsOnly:
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest'],
-                                    addplugins=[DetailedOutputter()])
-            elif not self.buildBotMode:
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python', '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest'])
+            
+            if not self.buildBotMode:
+                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python', '-m', '(_t.py$)|(_t$)|(^test)'])
             else:    
                 print "### We are in buildbot mode ###"
                 sys.stdout.flush()
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a',
-                                         '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
-                                         '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase'],
+                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a','!integration,!performance,!__integration__,!__performance__'],
                                     addplugins=[DetailedOutputter()])
                 
             if retval:

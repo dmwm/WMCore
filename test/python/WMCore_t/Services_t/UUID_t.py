@@ -1,7 +1,7 @@
 #!/bin/env python
 
-
-
+__revision__ = "$Id: UUID_t.py,v 1.1 2009/10/29 20:51:55 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 import unittest

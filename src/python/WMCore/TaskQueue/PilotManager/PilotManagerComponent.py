@@ -7,9 +7,9 @@ _JobQueueComponent_
 
 """
 
-
-
-
+__revision__ = "$Id: PilotManagerComponent.py,v 1.3 2009/09/16 12:39:13 khawar Exp $"
+__version__ = "$Revision: 1.3 $"
+__author__ = "Khawar.Ahmad@cern.ch"
 
 import os
 import time

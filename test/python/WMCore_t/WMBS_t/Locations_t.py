@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-
-
+__revision__ = "$Id: Locations_t.py,v 1.15 2010/04/14 20:46:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import os
 import unittest

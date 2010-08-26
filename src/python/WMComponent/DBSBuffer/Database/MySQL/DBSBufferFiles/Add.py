@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-
-
+__revision__ = "$Id: Add.py,v 1.6 2010/03/09 18:37:22 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 """
 MySQL implementation of AddFile

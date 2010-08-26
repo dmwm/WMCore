@@ -7,8 +7,8 @@ Get map of status to status id
 """
 
 
-
-
+__revision__ = "$Id: Map.py,v 1.1 2010/07/01 19:09:29 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

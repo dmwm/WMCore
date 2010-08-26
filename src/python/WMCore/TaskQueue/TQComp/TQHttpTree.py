@@ -10,9 +10,9 @@ messages and act on them according to configuration (see the 'RemoteMsg'
 module documentation).
 """
 
-
-
-
+__revision__ = "$Id: TQHttpTree.py,v 1.5 2009/09/29 12:23:02 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
+__author__ = "antonio.delgado.peris@cern.ch"
 
 import threading
 

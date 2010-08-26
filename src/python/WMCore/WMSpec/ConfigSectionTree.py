@@ -7,8 +7,8 @@ Extension for a normal ConfigSection to provide a Tree structure
 of ConfigSections
 
 """
-
-
+__revision__ = "$Id: ConfigSectionTree.py,v 1.8 2010/06/21 19:01:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import types
 

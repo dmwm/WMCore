@@ -6,8 +6,8 @@ Adjust user priority
 
 """
 
-
-
+__revision__ = "$Id: Priority.py,v 1.1 2010/07/01 19:14:16 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 

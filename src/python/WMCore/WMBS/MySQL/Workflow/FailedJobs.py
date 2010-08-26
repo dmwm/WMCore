@@ -5,8 +5,8 @@ _FailedJobs_
 MySQL implementation of Workflow.FailedJobs
 """
 
-
-
+__revision__ = "$Id: FailedJobs.py,v 1.1 2010/06/14 20:38:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

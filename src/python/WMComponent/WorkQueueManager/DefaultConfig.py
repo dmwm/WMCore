@@ -5,8 +5,8 @@ Defines default config values for JobAccountant specific
 parameters.
 """
 __all__ = []
-
-
+__revision__ = "$Id: DefaultConfig.py,v 1.9 2010/03/24 15:21:59 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Agent.Configuration import Configuration
 

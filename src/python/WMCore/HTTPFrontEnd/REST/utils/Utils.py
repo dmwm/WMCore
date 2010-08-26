@@ -4,9 +4,9 @@
 """
 Common utilities module used by REST services
 """
-
-
-
+__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
+__revision__ = "$Id: Utils.py,v 1.4 2008/12/19 01:17:10 valya Exp $"
+__version__ = "$Revision: 1.4 $"
 
 # import system modules
 import time

@@ -5,8 +5,8 @@ _FailInput_
 Oracle implementation of Jobs.FailInput
 """
 
-
-
+__revision__ = "$Id: FailInput.py,v 1.3 2010/08/10 19:51:12 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.MySQL.Jobs.FailInput import FailInput as MySQLFailInput
 

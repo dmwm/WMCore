@@ -8,8 +8,8 @@ Class for creating MySQL specific schema for the trigger
 
 """
 
-
-
+__revision__ = "$Id: Create.py,v 1.3 2009/09/15 18:34:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 

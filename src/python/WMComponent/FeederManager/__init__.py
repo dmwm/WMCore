@@ -13,4 +13,5 @@ complex and varied.
     The FeederManager may need to evaluate reg exp's in fileset names... tbd
 """
 __all__ = []
-
+__revision__ = "$Id: __init__.py,v 1.1 2008/11/27 12:41:32 metson Exp $"
+__version__ = "$Revision: 1.1 $"

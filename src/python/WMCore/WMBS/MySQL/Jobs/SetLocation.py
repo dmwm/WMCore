@@ -6,8 +6,8 @@ MySQL implementation of Jobs.SetLocation
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: SetLocation.py,v 1.1 2010/01/22 17:38:01 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

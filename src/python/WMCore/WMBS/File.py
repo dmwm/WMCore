@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-
-
+__revision__ = "$Id: File.py,v 1.65 2010/05/05 18:57:46 sfoulkes Exp $"
+__version__ = "$Revision: 1.65 $"
 
 import threading
 import time

@@ -6,8 +6,8 @@ MySQL implementation of Files.ExistsByID
 """
 
 __all__ = []
-
-
+__revision__ = "$"
+__version__ = "$"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

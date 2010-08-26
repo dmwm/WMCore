@@ -7,8 +7,8 @@ Delete all file status information. For resubmissions and for each state change.
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: ClearFileStatus.py,v 1.1 2009/04/08 18:55:17 sryu Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.ClearFileStatus import ClearFileStatus \
      as ClearFileStatusMySQL

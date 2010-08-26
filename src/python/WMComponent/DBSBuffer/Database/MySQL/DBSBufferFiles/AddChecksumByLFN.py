@@ -5,8 +5,8 @@ MySQL implementation of AddChecksumByLFN
 """
 
 
-
-
+__revision__ = "$Id: AddChecksumByLFN.py,v 1.1 2010/03/09 18:33:43 mnorman Exp $"
+__version__  = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

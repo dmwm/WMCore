@@ -6,8 +6,8 @@ SQLite implementation of JobGroup.New
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: New.py,v 1.3 2009/01/11 17:40:46 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.MySQL.JobGroup.New import New as NewMySQL
 

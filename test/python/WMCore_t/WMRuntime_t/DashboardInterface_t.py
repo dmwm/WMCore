@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-
-
+__revision__ = "$Id: DashboardInterface_t.py,v 1.2 2010/05/17 20:59:15 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 import threading

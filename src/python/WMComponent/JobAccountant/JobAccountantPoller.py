@@ -5,8 +5,8 @@ _JobAccountantPoller_
 Poll WMBS for complete jobs and process their framework job reports.
 """
 
-
-
+__revision__ = "$Id: JobAccountantPoller.py,v 1.12 2010/05/25 17:39:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import time
 import threading

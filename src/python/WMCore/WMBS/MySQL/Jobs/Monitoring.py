@@ -5,8 +5,8 @@ _Monitoring_
 Monitoring DAO classes for Jobs in WMBS
 """
 __all__ = []
-
-
+__revision__ = "$Id: Monitoring.py,v 1.2 2009/05/12 11:53:11 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

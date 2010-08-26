@@ -5,8 +5,8 @@ Defines default config values for JobAccountant specific
 parameters.
 """
 __all__ = []
-
-
+__revision__ = "$Id: DefaultConfig.py,v 1.2 2010/02/05 14:16:14 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 

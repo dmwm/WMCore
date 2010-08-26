@@ -5,8 +5,8 @@ _Queries_
 Queries for the alert system for the MySQL database.
 """
 
-
-
+__revision__ = "$Id: Queries.py,v 1.3 2009/10/23 19:57:53 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import time

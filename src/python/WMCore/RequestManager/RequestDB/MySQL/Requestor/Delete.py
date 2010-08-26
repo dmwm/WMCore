@@ -5,8 +5,8 @@ _Delete_
 Delete a user based on username
 
 """
-
-
+__revision__ = "$Id: Delete.py,v 1.1 2010/07/01 19:14:16 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 

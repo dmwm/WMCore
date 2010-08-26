@@ -17,7 +17,7 @@ class WMBSRESTModel(RESTModel):
     implementing the GET verb.
     """
     def __init__(self, config = {}):
-        
+        self.version = "$Revision: 1.14 $"        
         RESTModel.__init__(self, config)
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS", logger = self,

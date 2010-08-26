@@ -4,9 +4,9 @@
 """
 Makes jobs in the proper state.
 """
-
-
-
+__revision__ = "$Id: JobMaker.py,v 1.1 2009/06/19 18:12:07 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
+__author__ = "mnorman@fnal.gov"
 
 import logging
 

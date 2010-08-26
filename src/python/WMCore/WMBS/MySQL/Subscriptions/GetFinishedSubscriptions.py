@@ -5,8 +5,8 @@ _GetFinishedSubscriptions_
 MySQL implementation of Subscription.GetFinishedSubscriptions
 """
 
-
-
+__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.6 2010/08/06 14:00:46 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import time
 import logging

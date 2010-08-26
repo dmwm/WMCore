@@ -5,8 +5,8 @@ _LoadDBSFilesByDAS_
 MySQL implementation of LoadDBSFilesByDAS
 """
 
-
-
+__revision__ = "$Id: LoadDBSFilesByDAS.py,v 1.3 2010/08/09 15:54:18 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 

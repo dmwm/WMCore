@@ -5,8 +5,8 @@ _Request.Priority_
 API for adjusting the priority of a request
 
 """
-
-
+__revision__ = "$Id: Priority.py,v 1.1 2010/07/01 19:12:39 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

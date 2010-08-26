@@ -5,8 +5,8 @@ _AddLocation_
 Oracle implementation of DBSBufferFiles.AddLocation
 """
 
-
-
+__revision__ = "$Id: AddLocation.py,v 1.5 2009/11/13 15:58:20 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import copy
 

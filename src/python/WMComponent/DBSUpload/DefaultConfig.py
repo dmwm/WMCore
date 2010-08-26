@@ -5,8 +5,8 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-
-
+__revision__ = "$Id: DefaultConfig.py,v 1.10 2010/02/24 21:44:40 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import os
 

@@ -407,14 +407,12 @@ class StageOutMgr(FileManager):
 class DeleteMgr(FileManager):
     def __init__(self, numberOfRetries = 30, retryPauseTime=60, **overrideParams):
         FileManager.__init__(self, numberOfRetries = numberOfRetries, retryPauseTime=retryPauseTime, **overrideParams)
-    def __call__(self, fileToDelete):
+    def __call__(self, fileToStage):
         """
         stages out a file, fileToStage is a dict with at least the LFN key
         the dict will be modified and returned, or an exception will be raised
         """
-        if not 'LFN' in fileToDelete:
-            raise StageOutFailure, 'LFN not provided to deleteLFN'
-        return self.deleteLFN(fileToDelete['LFN'])
+        return self.deleteLFN(fileToStage)
 
 
 

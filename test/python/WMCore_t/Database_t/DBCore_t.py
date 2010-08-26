@@ -5,8 +5,8 @@ _DBCore_t_
 Unit tests for the DBInterface class
 """
 
-
-
+__revision__ = "$Id: DBCore_t.py,v 1.7 2010/05/04 16:18:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import logging

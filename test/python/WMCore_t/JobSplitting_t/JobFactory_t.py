@@ -5,8 +5,8 @@ _JobFactory_t_
 Test the job splitting Job Factory
 """
 
-
-
+__revision__ = "$Id: JobFactory_t.py,v 1.2 2010/07/21 13:54:58 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 

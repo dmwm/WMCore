@@ -6,8 +6,8 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-
-
+__revision__ = "$Id: WorkQueueManager.py,v 1.17 2010/07/30 16:29:13 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import logging
 import threading

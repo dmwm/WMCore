@@ -7,8 +7,8 @@ Diagnostic implementation for a job's LogArchive step
 
 """
 
-
-
+__revision__ = "$Id: LogArchive.py,v 1.1 2009/12/11 16:35:35 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import os
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler

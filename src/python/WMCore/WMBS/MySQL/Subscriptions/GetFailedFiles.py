@@ -6,8 +6,8 @@ MySQL implementation of Subscription.GetFailedFiles
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: GetFailedFiles.py,v 1.9 2009/09/11 19:07:30 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import GetAvailableFiles
 

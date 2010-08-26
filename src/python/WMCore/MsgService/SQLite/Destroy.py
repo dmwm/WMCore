@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-
-
+__revision__ = "$Id: Destroy.py,v 1.1 2009/07/20 18:33:23 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import threading
 

@@ -5,8 +5,8 @@ _EndOfRun_t_
 End of run splitting test
 """
 
-
-
+__revision__ = "$Id: EndOfRun_t.py,v 1.6 2010/05/07 14:36:45 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import os

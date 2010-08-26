@@ -12,6 +12,9 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
+__revision__ = "$Id: AccountantWorker.py,v 1.38 2010/07/22 15:53:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.38 $"
+
 import os
 import threading
 import logging
@@ -71,6 +74,7 @@ class AccountantWorker(WMConnectionBase):
         self.dbsInsertLocation = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
         self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
         self.dbsSetRunLumi     = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
+
 
         self.dbsNewAlgoAction    = self.dbsDaoFactory(classname = "NewAlgo")
         self.dbsNewDatasetAction = self.dbsDaoFactory(classname = "NewDataset")
@@ -167,9 +171,10 @@ class AccountantWorker(WMConnectionBase):
         if not hasattr(jobReport.data, 'steps'):
             return False
 
-        if not jobReport.taskSuccessful():
-            return False
-
+        for step in jobReport.data.steps:
+            report = getattr(jobReport.data, step)
+            if report.status != 'Success' and report.status != 0:
+                return False
 
         return True
    
@@ -215,13 +220,10 @@ class AccountantWorker(WMConnectionBase):
             self.bulkAddToFilesetAction.execute(binds = self.filesetAssoc,
                                                 conn = self.getDBConn(),
                                                 transaction = self.existingTransaction())
-
-        self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
-
+        # Now do WMBSJobs
         idList = []
         for wmbsJob in self.listOfJobsToSave:
             idList.append(wmbsJob['id'])
-
         if len(idList) > 0:
             self.jobCompleteInput.execute(id = idList,
                                           conn = self.getDBConn(),
@@ -230,6 +232,8 @@ class AccountantWorker(WMConnectionBase):
         # Straighten out DBS Parentage
         if len(self.mergedOutputFiles) > 0:
             self.handleDBSBufferParentage()
+
+        self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
 
         self.commitTransaction(existingTransaction = False)
         self.reset()
@@ -274,7 +278,6 @@ class AccountantWorker(WMConnectionBase):
                                 events = jobReportFile["events"],
                                 checksums = jobReportFile["checksums"],
                                 status = "NOTUPLOADED")
-        #dbsFile["locations"] = set()
         dbsFile.setAlgorithm(appName = datasetInfo["applicationName"],
                              appVer = datasetInfo["applicationVersion"],
                              appFam = jobReportFile["module_label"],
@@ -287,7 +290,6 @@ class AccountantWorker(WMConnectionBase):
             newRun = Run(runNumber = run.run)
             newRun.extend(run.lumis)
             dbsFile.addRun(newRun)
-
 
         dbsFile.setLocation(se = list(jobReportFile["locations"])[0], immediateSave = False)
         self.dbsFilesToCreate.append(dbsFile)
@@ -367,7 +369,7 @@ class AccountantWorker(WMConnectionBase):
         wmbsJob.getMask()
         outputID = wmbsJob.loadOutputID()
 
-        wmbsJob["fwjr"] = fwkJobReport
+        wmbsJob["fwjr"]    = fwkJobReport
 
         outputMap = self.getOutputMapAction.execute(jobID = jobID,
                                                     conn = self.getDBConn(),
@@ -573,9 +575,6 @@ class AccountantWorker(WMConnectionBase):
         if type(file["locations"]) == set:
             seName = list(file["locations"])[0]
         elif type(file["locations"]) == list:
-            if len(file['locations']) > 1:
-                logging.error("Have more then one location for a file in job %i" % (jobID))
-                logging.error("Choosing location %s" % (file['locations'][0]))
             seName = file["locations"][0]
         else:
             seName = file["locations"]

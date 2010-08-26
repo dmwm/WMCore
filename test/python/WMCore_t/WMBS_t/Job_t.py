@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-
-
+__revision__ = "$Id: Job_t.py,v 1.43 2010/08/10 19:51:12 sfoulkes Exp $"
+__version__ = "$Revision: 1.43 $"
 
 import unittest
 import logging
@@ -793,44 +793,46 @@ class JobTest(unittest.TestCase):
 
         testJobA = Job(name = "TestJobA", files = [testFileA, testFileB, testFileC])
         testJobB = Job(name = "TestJobB", files = [testFileA, testFileB, testFileC])        
-
         bogusJob = Job(name = "BogusJob", files = [testFileA, testFileB, testFileC])
-
         testJobA.create(group = testJobGroup)
         testJobB.create(group = testJobGroup)        
-
         bogusJob.create(group = bogusJobGroup)
         
         testJobA.failInputFiles()
         testJobB.failInputFiles()
 
-        # Before testJobB is 'done' nothing should happen
-        self.assertEqual(len(testSubscription.filesOfStatus("Available")), 0)
-        self.assertEqual(len(testSubscription.filesOfStatus("Acquired")), 0)
-        self.assertEqual(len(testSubscription.filesOfStatus("Failed")), 0)
-        self.assertEqual(len(testSubscription.filesOfStatus("Completed")), 3)
+        availFiles = len(testSubscription.filesOfStatus("Available"))
+        assert availFiles == 0, \
+               "Error: test sub has wrong number of available files: %s" % availFiles
 
-        changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
-        testJobB["state"] = "cleanout"
-        changeStateAction.execute([testJobB])
+        acqFiles = len(testSubscription.filesOfStatus("Acquired"))
+        assert acqFiles == 0, \
+               "Error: test sub has wrong number of acquired files: %s" % acqFiles
 
-        # Try again
+        compFiles = len(testSubscription.filesOfStatus("Completed"))
+        assert compFiles == 0, \
+               "Error: test sub has wrong number of complete files: %s" % compFiles
 
-        testJobA.failInputFiles()
+        failFiles = len(testSubscription.filesOfStatus("Failed"))
+        assert failFiles == 3, \
+               "Error: test sub has wrong number of failed files: %s" % failFiles
 
-        # Should now be failed
-        self.assertEqual(len(testSubscription.filesOfStatus("Available")), 0)
-        self.assertEqual(len(testSubscription.filesOfStatus("Acquired")), 0)
-        self.assertEqual(len(testSubscription.filesOfStatus("Failed")), 3)
-        self.assertEqual(len(testSubscription.filesOfStatus("Completed")), 0)
+        availFiles = len(bogusSubscription.filesOfStatus("Available"))
+        assert availFiles == 0, \
+               "Error: test sub has wrong number of available files: %s" % availFiles
 
-        # bogus should be unchanged
-        self.assertEqual(len(bogusSubscription.filesOfStatus("Available")), 0)
-        self.assertEqual(len(bogusSubscription.filesOfStatus("Acquired")), 3)
-        self.assertEqual(len(bogusSubscription.filesOfStatus("Failed")), 0)
-        self.assertEqual(len(bogusSubscription.filesOfStatus("Completed")), 0)
+        acqFiles = len(bogusSubscription.filesOfStatus("Acquired"))
+        assert acqFiles == 3, \
+               "Error: test sub has wrong number of acquired files: %s" % acqFiles
+
+        compFiles = len(bogusSubscription.filesOfStatus("Completed"))
+        assert compFiles == 0, \
+               "Error: test sub has wrong number of complete files: %s" % compFiles
+
+        failFiles = len(bogusSubscription.filesOfStatus("Failed"))
+        assert failFiles == 0, \
+               "Error: test sub has wrong number of failed files: %s" % failFiles        
         
-
         return
 
     def testCompleteJobInput(self):

@@ -5,8 +5,8 @@ _HeritageLFNChild_
 MySQL implementation of DBSBufferFiles.HeritageLFNChild
 """
 
-
-
+__revision__ = "$Id: HeritageLFNChild.py,v 1.1 2009/10/22 15:40:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -29,13 +29,7 @@ class StoreResultsSchema(RequestSchema):
     def __init__(self):
         RequestSchema.__init__(self)
         # not used yet
-        self.validateFields = [
-            'InputDatasets',
-            'CMSSWVersion',
-            'ScramArch',
-            'Group',
-            'DbsUrl'
-            ]
+        self.validateFields = ['InputDatasets', 'FinalDestination']
 
 
 registerRequestType("StoreResults", StoreResultsRequest, StoreResultsSchema)
@@ -43,14 +37,13 @@ registerRequestType("StoreResults", StoreResultsRequest, StoreResultsSchema)
 
 if __name__ == '__main__':
    requestSchema = StoreResultsSchema()
-   requestSchema['InputDatasets'] = ['/PRIM/PROC/TIER']
+   requestSchema['InputDatasets'] = ['somedbs:somedataset']
+   requestSchema['FinalDestination'] = 'T2_Northern_South_Dakota'
    requestSchema['RequestType'] = 'StoreResults'
    requestSchema['OutputDataset'] = 'Output'
-   requestScheme['DbsUrl'] = 'http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_02/servlet/DBSServlet'
    requestSchema['Requestor'] = 'Eric'
    requestSchema['Group'] = 'PeopleSimilarToEric'
-   requestSchema['CMSSWVersion'] = 'CMSSW_3_6_2'
-   requestSchema['ScramArch'] = 'slc5_ia32_gcc434'
+   requestSchema['CMSSWVersion'] = 'CMSSW_3_1_2'
    maker = retrieveRequestMaker(requestSchema['RequestType'])
    request = maker(requestSchema)
    requestSchema.validate()

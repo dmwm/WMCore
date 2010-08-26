@@ -3,8 +3,8 @@
 Base handler for addFile.
 """
 __all__ = []
-
-
+__revision__ = "$Id: AddFileHandler.py,v 1.6 2009/12/16 18:09:05 delgadop Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMFactory import WMFactory
 

@@ -6,8 +6,8 @@ MySQL implementation of NewWorkflow
 
 """
 __all__ = []
-
-
+__revision__ = "$Id: New.py,v 1.4 2009/05/08 16:58:23 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

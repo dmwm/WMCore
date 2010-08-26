@@ -6,8 +6,8 @@ MySQL implementation of Jobs.GetState
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: GetState.py,v 1.1 2009/07/10 20:02:49 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

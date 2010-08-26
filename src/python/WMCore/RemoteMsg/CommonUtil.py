@@ -3,9 +3,9 @@
 __CommonUtil__
 """
 
-
-
-
+__revision__ = "$Id: CommonUtil.py,v 1.2 2009/06/07 23:14:27 valya Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "antonio.delgado.peris@cern.ch"
 
 import logging
 #pickle, encoding n decoding data

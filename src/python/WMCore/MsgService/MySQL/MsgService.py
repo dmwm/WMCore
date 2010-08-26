@@ -33,7 +33,12 @@ the normal messages.
 messages after it is handled.
 """
 
-
+__revision__ = \
+    "$Id: MsgService.py,v 1.11 2009/07/02 16:55:16 sfoulkes Exp $"
+__version__ = \
+    "$Revision: 1.11 $"
+__author__ = \
+    "fvlingen@caltech.edu"
 
 import os
 import socket

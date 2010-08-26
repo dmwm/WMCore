@@ -5,8 +5,8 @@ _AddBulkParentage_
 MySQL implementation of Files.AddBulkParentage
 """
 
-
-
+__revision__ = "$Id: AddBulkParentage.py,v 1.1 2009/12/17 22:34:14 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

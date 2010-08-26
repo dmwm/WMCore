@@ -6,8 +6,8 @@ Oracle implementation of Jobs.GetNumberOfJobsPerSite
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: GetNumberOfJobsPerSite.py,v 1.1 2009/07/09 21:33:28 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import logging
 

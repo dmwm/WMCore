@@ -5,8 +5,8 @@ _IMProvNode_
 Dictionary based node container for constructing
 IMProv Documents from
 """
-
-
+__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: IMProvNode.py,v 1.1 2008/10/08 15:34:14 fvlingen Exp $"
 
 
 from xml.dom.minidom import Element, Text

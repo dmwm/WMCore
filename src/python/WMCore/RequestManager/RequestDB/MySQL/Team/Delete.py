@@ -5,8 +5,8 @@ _Team.Delete_
 Delete an operations team
 
 """
-
-
+__revision__ = "$Id: Delete.py,v 1.1 2010/06/30 22:56:52 rpw Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

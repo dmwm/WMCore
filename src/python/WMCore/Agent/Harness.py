@@ -18,9 +18,9 @@ including session objects and workflow entities.
 
 """
 
-
-
-
+__revision__ = "$Id: Harness.py,v 1.43 2010/06/24 19:30:37 sryu Exp $"
+__version__ = "$Revision: 1.43 $"
+__author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
 

@@ -6,8 +6,8 @@ MySQL implementation of Workflow.LoadFromID
 """
 
 __all__ = []
-
-
+__revision__ = "$Id: LoadFromID.py,v 1.5 2009/08/13 21:44:35 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -48,8 +48,8 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
-
-
+__revision__ = "$Id: Service.py,v 1.61 2010/08/10 18:11:12 metson Exp $"
+__version__ = "$Revision: 1.61 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -256,7 +256,7 @@ class Service(dict):
                 msg += ' unavailable - it returned %s because %s'
                 msg = msg % (cachefile, he.url, he.status, he.reason)
                 self['logger'].warning(msg)
-                raise he, msg
+                raise he
             else:
                 cache_age = os.path.getmtime(cachefile)
                 t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
@@ -283,7 +283,7 @@ class Service(dict):
                         msg += ' unavailable - it returned %s because %s'
                         msg = msg % (cachefile, he.url, he.status, he.reason)
                         self['logger'].warning(msg)
-                    raise he, msg
+                    raise he
             
     def _verbCheck(self, verb='GET'):
         if verb.upper() in self.supportVerbList:

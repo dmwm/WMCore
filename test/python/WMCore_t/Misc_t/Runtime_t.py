@@ -5,8 +5,8 @@ WorkerNode unittest for WMRuntime/WMSpec
 
 """
 
-
-
+__revision__ = "$Id: Runtime_t.py,v 1.3 2010/07/30 14:11:12 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 # Basic libraries
 import unittest

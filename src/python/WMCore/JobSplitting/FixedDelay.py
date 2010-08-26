@@ -6,8 +6,8 @@ If the current time is beyond trigger_time, add
 any unacquired jobs to 
 """
 
-
-
+__revision__ = "$Id: FixedDelay.py,v 1.6 2010/07/13 14:32:45 sfoulkes Exp $"
+__version__  = "$Revision: 1.6 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID

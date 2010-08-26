@@ -1377,7 +1377,6 @@ class JobAccountantTest(unittest.TestCase):
         startTime = time.time()
         #accountant.algorithm()
         #cProfile.runctx("accountant.algorithm()", globals(), locals(), filename = "testStats.stat")
-
         
         endTime = time.time()
         print("  Time: %f" %(endTime - startTime))

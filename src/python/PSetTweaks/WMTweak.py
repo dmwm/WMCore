@@ -404,10 +404,8 @@ def makeJobTweak(job):
         result.addParameter("process.source.firstRun", firstRun)
     lastRun = mask['LastRun']
     if lastRun != None:
-        result.addParameter("process.source.lastRun". lastRun)
-    
+        result.addParameter("process.source.lastRun", lastRun)
 
-    # lumi limits
     if mask["FirstLumi"]:
         result.addParameter("process.source.lumisToProcess",
                             ["%s:%s-%s:%s" % (mask["FirstRun"], mask["FirstLumi"],

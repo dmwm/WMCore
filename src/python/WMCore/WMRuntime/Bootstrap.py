@@ -28,7 +28,7 @@ from WMCore.WMRuntime.Watchdog import Watchdog
 from WMCore.DataStructs.JobPackage import JobPackage
 from WMCore.WMSpec.WMWorkload      import WMWorkloadHelper
 
-from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig, SiteConfigError
+from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig, SiteConfigError, SiteLocalConfig
 import WMCore.FwkJobReport.Report as Report
 
 
@@ -231,6 +231,9 @@ def createInitialReport(job, task, logLocation):
         # For now, assume that we did this on purpose
         msg = "Couldn't find SiteConfig"
         logging.error(msg)
+        #TODO: Make less goatballs for testing purposes
+        return
+        
     report  = Report.Report()
 
 
@@ -271,6 +274,8 @@ def createErrorReport(exitCode, errorType, errorDetails = None,
         # For now, assume that we did this on purpose
         msg = "Couldn't find SiteConfig"
         logging.error(msg)
+        #TODO: Make this not suck goatballs when you are just running tests
+        return
     report  = Report.Report()
 
 

@@ -249,35 +249,69 @@ def getTestArguments():
     args = {}
     args['AcquisitionEra'] = "CSA2010"
     args['Requestor'] = "evansde77"
-    args['CMSSWVersion'] = "CMSSW_3_7_1"
+
     args["ScramArch"] =  "slc5_ia32_gcc434"
     args["ProcessingVersion"] = "v2scf"
     args["SkimInput"] = "output"
-    args["GlobalTag"] = "GR10_P_v4::All"
+    args["GlobalTag"] = None
     
-    args["ProcessingConfig"] = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8"
-    args["SkimConfig"] = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"
     
-    args["CouchUrl"] = "http://dmwmwriter:PASSWORD@cmssrv52.fnal.gov:5984"
+    args["CouchUrl"] = "http://dmwmwriter:PASSWORD@localhost:5986"
     args["CouchDBName"] = "config_cache1"
-    args["ConfigCacheDoc"] = "f6676adf792b73cd24f3b9b3c260f575"
-    
+    # 371 config
+    #args['CMSSWVersion'] = "CMSSW_3_7_1"
+    #args["ConfigCacheDoc"] = "f6676adf792b73cd24f3b9b3c260f575"
+
+    #381 config
+    args['CMSSWVersion'] = "CMSSW_3_8_1"
+    args["ConfigCacheDoc"] = "a3c2f9c1d2231060b1de9dafe7d5b8f2"
     args['PrimaryDataset'] = "Derp"
     
     return args
 
 def main():
     """main functionf for testing"""
-    #from WMCore.DataStructs.Job import Job
-    
+    from WMCore.DataStructs.Job import Job
+    from WMCore.DataStructs.File import File
+    from WMCore.DataStructs.Run import Run
+    from WMCore.DataStructs.JobPackage import JobPackage
+    from WMCore.Services.UUID import makeUUID
+    from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
     factory = MonteCarloWorkloadFactory()
     workload = factory("derp", getTestArguments())
 
-
     task = workload.getTask('Production')
+    job = Job("SampleJob")
+    job["id"] = makeUUID()
+    job["task"] = task.getPathName()
+    job["workflow"] = workload.name()
+    job['mask']['FirstEvent'] = 0
+    job['mask']['FirstRun'] = 1000000
 
+
+    mcFile = File("VirtiualMCInputFile", 0,  10)
+    mcFile.addRun(Run(1000000, 1))
+    job.addFile( mcFile )
+    job['mask']['LastEvent'] = mcFile['events']
+    
+    jpackage = JobPackage()
+    jpackage[1] = job
+    
+    print jpackage
+    
+    import pickle
+    
+    handle = open("%s/JobPackage.pkl" % os.getcwd(), 'w')
+    pickle.dump(  jpackage, handle)
+    handle.close()
+
+
+    
+    taskMaker = TaskMaker(workload, os.getcwd())
+    taskMaker.skipSubscription = True
+    taskMaker.processWorkload()
     task.build(os.getcwd())
-    #task.execute(Job("job1"))
+    
 
 if __name__ == '__main__':
     main()

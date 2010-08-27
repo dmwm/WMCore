@@ -115,6 +115,7 @@ for workloadTask in workload.taskIterator():
     virtualFile.addRun(myRun)
     virtualFile.create()
     inputFileset.addFile(virtualFile)
+    inputFileset.commit()
 
     injectTaskIntoWMBS(os.path.join(os.getcwd(), workloadName, workloadFile),
                        workloadName, workloadTask, inputFileset)

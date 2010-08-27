@@ -47,7 +47,8 @@ class TrivialFileCatalogTest(unittest.TestCase):
         self.assertEqual(type(tfcInstance), type(TrivialFileCatalog()))
 
         #Look for similarities in each node of the TFC file
-        for x in tfcInstance:
+        for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
+          for x in tfcInstance[mapping]:
             self.assertEqual(x.has_key('path-match-expr'), True)
             self.assertEqual(x.has_key('path-match'), True)
             self.assertEqual(x.has_key('protocol'), True)
@@ -88,7 +89,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         
         tfc_file = phedex.cacheFileName('tfc', inputdata={'node': site})
         tfc = readTFC(tfc_file)
-        print tfc
+        #print tfc
         # Hacky XML parser 
         phedex_dom = parseString(phedex.getPFN(site, lfn, protocol))
          

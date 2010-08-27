@@ -37,7 +37,7 @@ from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
 
 _TFCArgSplit = re.compile("\?protocol=")
 
-class TrivialFileCatalog(list):
+class TrivialFileCatalog(dict):
     """
     _TrivialFileCatalog_
 
@@ -46,11 +46,14 @@ class TrivialFileCatalog(list):
     """
 
     def __init__(self):
-        list.__init__(self)
+        dict.__init__(self)
+        self['lfn-to-pfn'] = []
+        self['pfn-to-lfn'] = []
         self.preferredProtocol = None # attribute for preferred protocol
         
 
-    def addMapping(self, protocol, match, result, chain = None):
+    def addMapping(self, protocol, match, result, 
+              chain = None, mapping_type = 'lfn-to-pfn'):
         """
         _addMapping_
 
@@ -63,8 +66,31 @@ class TrivialFileCatalog(list):
         entry.setdefault("path-match", re.compile(match))
         entry.setdefault("result", result)
         entry.setdefault("chain", chain)
-        self.append(entry)
+        self[mapping_type].append(entry)
         
+    def doMatch(self, protocol, path, style):
+        """
+        _doMatch_
+        
+        Generalised way of building up the mappings.
+        
+        Return None if no match
+        """
+        for mapping in self[style]:
+            if mapping['protocol'] != protocol:
+                continue
+            if mapping['path-match'].match(path):
+                if mapping['chain'] != None:
+                    path = self.matchLFN(mapping['chain'], path)
+                try:
+                    splitPath = mapping['path-match'].split(path, 1)[1]
+                except IndexError:
+                    continue
+                result = mapping['result'].replace("$1", splitPath)
+                return result
+  
+        return None
+
 
     def matchLFN(self, protocol, lfn):
         """
@@ -75,31 +101,31 @@ class TrivialFileCatalog(list):
 
         Return None if no match
         """
-        for mapping in self:
-            if mapping['protocol'] != protocol:
-                continue
-            if mapping['path-match'].match(lfn):
-                if mapping['chain'] != None:
-                    lfn = self.matchLFN(mapping['chain'], lfn)
-                try:
-                    splitLFN = mapping['path-match'].split(lfn, 1)[1]
-                except IndexError:
-                    continue
-                result = mapping['result'].replace("$1", splitLFN)
-                return result
+        return self.doMatch(protocol, lfn, 'lfn-to-pfn')
+        
+    def matchPFN(self, protocol, pfn):
+        """
+        _matchLFN_
 
-        return None
+        Return the result for the LFN provided if the LFN
+        matches the path-match for that protocol
+
+        Return None if no match
+        """
+        return self.doMatch(protocol, pfn, 'pfn-to-lfn')
 
     def __str__(self):
         result = ""
-        for item in self:
-            result += "LFN-to-PFN: %s %s %s" % (
-                item['protocol'],
-                item['path-match-expr'],
-                item['result'])
-            if item['chain'] != None:
-                result += " chain=%s" % item['chain']
-            result += "\n"
+        for mapping in ['lfn-to-pfn', 'pfn-to-lfn']: 
+            for item in self[mapping]:
+                result += "%s: %s %s %s" % (
+                    mapping,
+                    item['protocol'],
+                    item['path-match-expr'],
+                    item['result'])
+                if item['chain'] != None:
+                    result += " chain=%s" % item['chain']
+                result += "\n"
             
         return result
     
@@ -153,19 +179,17 @@ def readTFC(filename):
     parsedResult = nodeReader(node)
 
     tfcInstance = TrivialFileCatalog()
-
-    for entry in parsedResult:
-        protocol = entry.get("protocol", None)
-        match    = entry.get("path-match", None)
-        result   = entry.get("result", None)
-        chain    = entry.get("chain", None)
-        if True in (protocol, match == None):
-            continue
-        tfcInstance.addMapping(str(protocol), str(match), str(result), chain)
-
+    for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
+        for entry in parsedResult[mapping]:
+            protocol = entry.get("protocol", None)
+            match    = entry.get("path-match", None)
+            result   = entry.get("result", None)
+            chain    = entry.get("chain", None)
+            if True in (protocol, match == None):
+                continue
+            tfcInstance.addMapping(str(protocol), str(match), str(result), chain, mapping)
 
     return tfcInstance
-
 
 
 def loadTFC(contactString):
@@ -212,7 +236,7 @@ def nodeReader(node):
         'chain': processChain()
         }
 
-    report = []
+    report = {'lfn-to-pfn': [], 'pfn-to-lfn': []}
 
     processSMT = processSMType(processLfnPfn)
 
@@ -268,13 +292,13 @@ def processSMType(targets):
     while True:
         report, node = (yield)
         for subnode in node.children:
-            if subnode.name == 'lfn-to-pfn':
+            if subnode.name in ['lfn-to-pfn', 'pfn-to-lfn']:
                 tmpReport = {'path-match-expr': subnode.name}
                 targets['protocol'].send((tmpReport, subnode.attrs.get('protocol', None)))
                 targets['path-match'].send((tmpReport, subnode.attrs.get('path-match', None)))
                 targets['result'].send((tmpReport, subnode.attrs.get('result', None)))
                 targets['chain'].send((tmpReport, subnode.attrs.get('chain', None)))
-                report.append(tmpReport)
+                report[subnode.name].append(tmpReport)
         
 
                 

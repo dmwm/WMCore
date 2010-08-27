@@ -36,7 +36,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
                 self.queue.logger.info("Done Pulling work") 
                 if work:
                     self.queue.logger.info("There is new work, update location info") 
-                    self.queue.updateLocationInfo()       
+                    self.queue.updateLocationInfo(forceRefresh = True)       
                 try:
                     self.queue.logger.info("Updating Parents status")        
                     self.queue.updateParent()

@@ -9,10 +9,6 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-
-
-
-
 import time
 import os
 import types
@@ -602,7 +598,7 @@ class WorkQueue(WorkQueueBase):
     # // Methods that call out to remote services
     #//
 
-    def updateLocationInfo(self):
+    def updateLocationInfo(self, forceRefresh = False):
         """
         Update locations for elements
         """
@@ -613,7 +609,10 @@ class WorkQueue(WorkQueueBase):
         if not data:
             return
 
-        fullResync = time.time() > self.lastLocationUpdate + \
+        if forceRefresh:
+            fullResync = True
+        else:
+            fullResync = time.time() > self.lastLocationUpdate + \
                                 self.params['FullLocationRefreshInterval']
 
         #query may not support partial update - allow them to change fullResync

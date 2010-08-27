@@ -177,7 +177,7 @@ class Requests(dict):
             except AttributeError:
                 # socket/httplib really screwed up - nuclear option
                 self['conn'].connections = {}
-                raise socket.error
+                raise socket.error, 'Error contacting: %s' % self['host']
 
         if response.status >= 400:
             e = HTTPException()

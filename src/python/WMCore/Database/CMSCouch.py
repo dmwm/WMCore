@@ -9,7 +9,7 @@ http://wiki.apache.org/couchdb/API_Cheatsheet
 
 
 
-
+import time
 import urllib
 import datetime
 import re
@@ -277,21 +277,40 @@ class Database(CouchDBRequests):
         doc.delete()
         self.commitOne(doc)
 
-    def compact(self, views=[]):
-        """
-        Compact the database: http://wiki.apache.org/couchdb/Compaction
-         
-        If given, views should be a list of design document name (minus the 
-        _design/ - e.g. myviews not _design/myviews). For each view in the list 
-        view compaction will be triggered.
-        """
-        
-        response = self.post('/%s/_compact' % self.name)
-        if len(views) > 0:
-            for view in views:
-                response[view] = self.post('/%s/_compact/%s' % (self.name, 
-                                                                view))
-        return response
+    def compact(self, views=[], blocking=False, blocking_poll=5, callback=False):
+       """
+       Compact the database: http://wiki.apache.org/couchdb/Compaction
+
+       If given, views should be a list of design document name (minus the
+       _design/ - e.g. myviews not _design/myviews). For each view in the list
+       view compaction will be triggered. Also, if the views list is provided 
+       _view_cleanup is called to remove old view output.
+
+       If True blocking will cause this call to wait until the compaction is
+       completed, polling for status with frequency blocking_poll and calling
+       the function specified by callback on each iteration.
+       
+       The callback function can be used for logging and could also be used to
+       timeout the compaction based on status (e.g. don't time out if compaction
+       is less than X% complete. The callback function takes the Database (self)
+       as an argument. If the callback function raises an exception the block is
+       removed and the compact call returns.
+       """
+       response = self.post('/%s/_compact' % self.name)
+       if len(views) > 0:
+         for view in views:
+           response[view] = self.post('/%s/_compact/%s' % (self.name, view))
+           response['view_cleanup' ] = self.post('/%s/_view_cleanup' % (self.name))
+           
+       if blocking:
+         while self.info()['compact_running']:
+           if callback:
+             try: 
+               callback(self)
+             except Exception, e:
+               return response
+           time.sleep(blocking_poll)
+       return response
             
     def changes(self, since=-1):
         """

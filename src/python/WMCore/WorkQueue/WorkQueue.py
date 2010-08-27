@@ -40,10 +40,9 @@ from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 from WMCore.Services.DBS.DBSReader import DBSReader
-import sys; print sys.version
+
 #TODO: Scale test
 #TODO: Decide whether to move/refactor db functions
-#TODO: Transaction handling
 #TODO: What about sending messages to component to handle almost live status updates
 
 #  //

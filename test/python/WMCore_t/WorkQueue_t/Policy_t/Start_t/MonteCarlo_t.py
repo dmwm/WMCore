@@ -8,7 +8,7 @@
 
 import unittest
 from WMCore.WorkQueue.Policy.Start.MonteCarlo import MonteCarlo
-from WMCore_t.WMSpec_t.samples.BasicProductionWorkload import workload as BasicProductionWorkload
+from WMCore_t.WorkQueue_t.WorkQueue_t import TestMonteCarloFactory, mcArgs
 from WMCore_t.WMSpec_t.samples.MultiMergeProductionWorkload import workload as MultiMergeProductionWorkload
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload import workload as MultiTaskProductionWorkload
 
@@ -18,6 +18,7 @@ class MonteCarloTestCase(unittest.TestCase):
 
     def testBasicProductionWorkload(self):
         """Basic Production Workload"""
+        BasicProductionWorkload = TestMonteCarloFactory()('MonteCarloWorkload', mcArgs)
         for task in BasicProductionWorkload.taskIterator():
             units = MonteCarlo(**self.splitArgs)(BasicProductionWorkload, task)
 

@@ -17,6 +17,8 @@ from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
                                 import workload as MultiTaskProductionWorkload
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
+from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
+from WMCore.WMSpec.StdSpecs.MonteCarlo import getTestArguments as getMCArgs
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
 
@@ -30,16 +32,28 @@ class fakeSiteDB:
 
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
+
+
+# update to not talk to couch
+# also see retrieveConfigUrl removal when creating workflow
+# find a better way to do this...
 rerecoArgs = getTestArguments()
-#update to not connect couch
 rerecoArgs.update({
     "CouchUrl": None,
     "CouchDBName": None,
     })
 
+mcArgs = getMCArgs()
+mcArgs.update({
+    "CouchUrl": None,
+    "CouchDBName": None,
+    "ConfigCacheDoc" : None
+    })
+mcArgs.pop('ConfigCacheDoc')
+
 class TestReRecoFactory(ReRecoWorkloadFactory):
     """Override bits that talk to cmsssw"""
-    
+
     def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
                             scenarioArgs):
         return {}
@@ -51,6 +65,22 @@ class TestReRecoFactory(ReRecoWorkloadFactory):
         ReRecoWorkloadFactory.setReRecoPolicy(self, workload,
                                               splitAlgo, splitAgrs)
         workload.setStartPolicy("DatasetBlock")
+
+class TestMonteCarloFactory(MonteCarloWorkloadFactory):
+    """Override bits that talk to cmsssw"""
+    def __call__(self, *args, **kwargs):
+        workload = MonteCarloWorkloadFactory.__call__(self, *args, **kwargs)
+        delattr(getFirstTask(workload).steps().data.application.configuration,
+                'retrieveConfigUrl')
+        return workload
+
+    def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
+                            scenarioArgs):
+        return {}
+
+    def getOutputModules(self, *args, **kwargs):
+        "Don't talk to couch"
+        return {}
 
 def getFirstTask(wmspec):
     """Return the 1st top level task"""
@@ -70,7 +100,8 @@ class WorkQueueTest(WorkQueueTestCase):
         WorkQueueTestCase.setUp(self)
 
         # Basic production Spec
-        self.spec = BasicProductionWorkload
+        mcFactory = TestMonteCarloFactory()
+        self.spec = mcFactory('testProduction', mcArgs)
         self.spec.setSpecUrl(os.path.join(self.workDir, 'testworkflow.spec'))
         self.spec.save(self.spec.specUrl())
 

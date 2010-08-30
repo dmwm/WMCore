@@ -30,6 +30,8 @@
          <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="blockWhitelist"></INPUT>
      #elif $key == 'BlockBlacklist'
          <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="blockBlacklist"></INPUT>
+     #elif $key == 'CouchUrl'
+         #pass 
      #else
          <tr><td> $key </td><td> $value </td></tr>
      #end if

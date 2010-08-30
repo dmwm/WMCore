@@ -59,6 +59,54 @@ class JobFactoryTest(unittest.TestCase):
                 assert job["siteBlacklist"] == ["site2"], \
                        "Error: Site black list is wrong."
         return
-  
+
+    def testProductionRunNumber(self):
+        """
+        _testProductionRunNumber_
+        
+        Verify that jobs created by production subscritpions have the correct
+        run number is their job mask.  Also verify that non-production
+        subscriptions don't have modified run numbers.
+        """
+        testWorkflow = Workflow(spec = "spec.pkl", owner = "Steve",
+                                name = "TestWorkflow", task = "TestTask")
+    
+        testFileset = Fileset(name = "TestFileset")
+        testFile = File(lfn = "someLFN")
+        testFileset.addFile(testFile)
+        testFileset.commit()
+        
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        split_algo = "FileBased",
+                                        type = "Production")
+    
+        myJobFactory = JobFactory(subscription = testSubscription)
+        testJobGroups =  myJobFactory()
+    
+        for testJobGroup in testJobGroups:
+            for job in testJobGroup.jobs:
+                assert job["mask"]["FirstRun"] == 1, \
+                       "Error: First run is wrong."
+                assert job["mask"]["LastRun"] == 1, \
+                       "Error: Last run is wrong."
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        split_algo = "FileBased",
+                                        type = "Processing")
+    
+        myJobFactory = JobFactory(subscription = testSubscription)
+        testJobGroups =  myJobFactory()
+        
+        for testJobGroup in testJobGroups:
+            for job in testJobGroup.jobs:
+                assert job["mask"]["FirstRun"] == None, \
+                       "Error: First run is wrong."
+                assert job["mask"]["LastRun"] == None, \
+                       "Error: Last run is wrong."
+
+        return
+            
 if __name__ == '__main__':
     unittest.main()

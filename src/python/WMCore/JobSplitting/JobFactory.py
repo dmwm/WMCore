@@ -116,6 +116,10 @@ class JobFactory(WMObject):
         self.currentJob["siteBlacklist"] = self.siteBlacklist
         self.currentJob["siteWhitelist"] = self.siteWhitelist
 
+        # All production jobs must be run 1
+        if self.subscription["type"] == "Production":
+            self.currentJob["mask"].setMaxAndSkipRuns(0, 1)
+                        
         self.nJobs += 1
         for gen in self.generators:
             gen(self.currentJob)

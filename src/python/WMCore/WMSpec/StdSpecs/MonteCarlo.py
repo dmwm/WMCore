@@ -166,6 +166,7 @@ class MonteCarloWorkloadFactory(MoveToStdBase):
         self.processingVersion = arguments["ProcessingVersion"]
         self.globalTag = arguments["GlobalTag"]        
         self.primaryDataset = arguments['PrimaryDataset']
+        self.totalEvents = arguments['RequestSizeEvents']
         jobSplittingAlgo = arguments.get("JobSplittingAlgorithm", "EventBased")
         jobSplittingParams = arguments.get("JobSplittingArgs", {"events_per_job": 1000})
         
@@ -205,7 +206,14 @@ class MonteCarloWorkloadFactory(MoveToStdBase):
         production.addGenerator("BasicCounter")
         #TODO: Seed Generator
         production.setTaskType("Production")
-        production.addProduction(**{"ProductionArgs": "GoHere"})
+        startPolicyParams = arguments.get("StartPolicyArgs", {'SliceType': "NumberOfEvents",
+                                                              'SliceSize': jobSplittingParams['events_per_job']})
+        workload.setStartPolicy('MonteCarlo', **startPolicyParams)
+        workload.setEndPolicy('SingleShot') # only have 1 policy currently
+    
+        productionParams = arguments.get("ProductionArgs", {'totalevents' : self.totalEvents})
+        production.addProduction(**productionParams)
+    
     
         prodTaskCmsswHelper = productionCmssw.getTypeHelper()
         prodTaskCmsswHelper.setGlobalTag(self.globalTag)
@@ -254,7 +262,7 @@ def getTestArguments():
     args["ProcessingVersion"] = "v2scf"
     args["SkimInput"] = "output"
     args["GlobalTag"] = None
-    
+    args['RequestSizeEvents'] = 100000
     
     args["CouchUrl"] = "http://dmwmwriter:PASSWORD@localhost:5986"
     args["CouchDBName"] = "config_cache1"
@@ -280,37 +288,41 @@ def main():
     factory = MonteCarloWorkloadFactory()
     workload = factory("derp", getTestArguments())
 
-    task = workload.getTask('Production')
-    job = Job("SampleJob")
-    job["id"] = makeUUID()
-    job["task"] = task.getPathName()
-    job["workflow"] = workload.name()
-    job['mask']['FirstEvent'] = 0
-    job['mask']['FirstRun'] = 1000000
+    print workload.data.policies
+    print workload.data.tasks.Production.production
 
 
-    mcFile = File("VirtiualMCInputFile", 0,  10)
-    mcFile.addRun(Run(1000000, 1))
-    job.addFile( mcFile )
-    job['mask']['LastEvent'] = mcFile['events']
-    
-    jpackage = JobPackage()
-    jpackage[1] = job
-    
-    print jpackage
-    
-    import pickle
-    
-    handle = open("%s/JobPackage.pkl" % os.getcwd(), 'w')
-    pickle.dump(  jpackage, handle)
-    handle.close()
-
-
-    
-    taskMaker = TaskMaker(workload, os.getcwd())
-    taskMaker.skipSubscription = True
-    taskMaker.processWorkload()
-    task.build(os.getcwd())
+    # task = workload.getTask('Production')
+    # job = Job("SampleJob")
+    # job["id"] = makeUUID()
+    # job["task"] = task.getPathName()
+    # job["workflow"] = workload.name()
+    # job['mask']['FirstEvent'] = 0
+    # job['mask']['FirstRun'] = 1000000
+    # 
+    # 
+    # mcFile = File("VirtiualMCInputFile", 0,  10)
+    # mcFile.addRun(Run(1000000, 1))
+    # job.addFile( mcFile )
+    # job['mask']['LastEvent'] = mcFile['events']
+    # 
+    # jpackage = JobPackage()
+    # jpackage[1] = job
+    # 
+    # print jpackage
+    # 
+    # import pickle
+    # 
+    # handle = open("%s/JobPackage.pkl" % os.getcwd(), 'w')
+    # pickle.dump(  jpackage, handle)
+    # handle.close()
+    # 
+    # 
+    # 
+    # taskMaker = TaskMaker(workload, os.getcwd())
+    # taskMaker.skipSubscription = True
+    # taskMaker.processWorkload()
+    # task.build(os.getcwd())
     
 
 if __name__ == '__main__':

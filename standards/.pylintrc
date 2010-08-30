@@ -176,8 +176,8 @@ enable-exceptions=yes
 # Enable / disable this checker
 enable-format=yes
 
-# Maximum number of characters on a single line.
-max-line-length=80
+# Maximum number of characters on a single line. Blame Wakefield for 160
+max-line-length=160
 
 # Maximum number of lines in a module
 max-module-lines=1000

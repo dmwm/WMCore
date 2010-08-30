@@ -59,7 +59,7 @@ class WMBSHelper(WMConnectionBase):
     """
 
     def __init__(self, wmSpec, wmSpecUrl, wmSpecOwner, taskName, 
-                 taskType, whitelist, blacklist, blockName):
+                 taskType, whitelist, blacklist, blockName, SiteDB):
         #TODO: 
         # 1. get the top level task.
         # 2. get the top level step and input
@@ -74,6 +74,7 @@ class WMBSHelper(WMConnectionBase):
         self.whitelist = whitelist
         self.blacklist = blacklist
         self.block = blockName or None
+        self.SiteDB = SiteDB
         self.topLevelFileset = None
         self.topLevelSubscription = None    
         self.topLevelTask = wmSpec.getTask(self.topLevelTaskName)
@@ -185,17 +186,27 @@ class WMBSHelper(WMConnectionBase):
         return
 
     def addMCFakeFile(self):
+        """Add a fake file for wmbs to run production over"""
+        if not hasattr(self.topLevelTask.data.production, 'totalEvents'):
+            raise RuntimeError, "Task has no totalEvents parameter"
+        events = self.topLevelTask.data.production.totalEvents
+        if not self.topLevelTask.siteWhitelist():
+            raise RuntimeError, "Site whitelist mandatory for MonteCarlo"
+        locations = set(self.SiteDB.cmsNametoSE(x) for x \
+                        in self.topLevelTask.siteWhitelist())
         mcFakeFileName = "MCFakeFile-%s" % makeUUID()
         wmbsFile = File(lfn = mcFakeFileName,
-                        size = 0,
-                        events = 0,
-                        checksums = 0
+                        events = events,
+                        locations = locations,
                         )
-        
-        self.topLevelFileset.addFile(wmbsFile)
-        self.topLevelFileset.commit()
-        self.topLevelFileset.markOpen(False)
+        wmbsFile.addRun(Run(1, 1))
+        wmbsFile['inFileset'] = False
+        self.wmbsFilesToCreate.append(wmbsFile)
 
+        totalFiles = self._addFilesToWMBSInBulk()
+
+        self.topLevelFileset.markOpen(False)
+        return totalFiles
 
     def createSubscriptionAndAddFiles(self, dbsBlock):
         """
@@ -213,10 +224,10 @@ class WMBSHelper(WMConnectionBase):
         if dbsBlock != None:
             self.addFiles(dbsBlock)
         #For MC case
-        #else:
+        else:
         # add MC fake files for each subscription.
         # this is needed for JobCreator trigger: commented out for now.
-        #    self.addMCFakeFile()
+            self.addMCFakeFile()
         
         self.commitTransaction(existingTransaction = False)
 

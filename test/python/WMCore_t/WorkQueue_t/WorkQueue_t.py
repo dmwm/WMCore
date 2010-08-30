@@ -30,6 +30,10 @@ class fakeSiteDB:
                             '').replace('_Buffer',
                                         '').replace('_Export', '')
 
+    def cmsNametoSE(self, name):
+        mapping = {'SiteA' : 'a.example.com', 'SiteB' : 'b.example.com'}
+        return mapping[name]
+
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
 
@@ -102,6 +106,8 @@ class WorkQueueTest(WorkQueueTestCase):
         # Basic production Spec
         mcFactory = TestMonteCarloFactory()
         self.spec = mcFactory('testProduction', mcArgs)
+        getFirstTask(self.spec).setSiteWhitelist(['SiteA', 'SiteB'])
+        getFirstTask(self.spec).addProduction(totalevents = 10000)
         self.spec.setSpecUrl(os.path.join(self.workDir, 'testworkflow.spec'))
         self.spec.save(self.spec.specUrl())
 

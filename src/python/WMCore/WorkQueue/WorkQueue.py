@@ -386,7 +386,7 @@ class WorkQueue(WorkQueueBase):
         wmbsHelper = WMBSHelper(wmspec, wmspecInfo['url'],
                                 wmspecInfo['owner'], wmspecInfo['wmtask_name'],
                                 wmspecInfo['wmtask_type'],
-                                whitelist, blacklist, blockName)
+                                whitelist, blacklist, blockName, self.SiteDB)
 
 
         

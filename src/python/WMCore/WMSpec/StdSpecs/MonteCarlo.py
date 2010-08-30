@@ -167,6 +167,7 @@ class MonteCarloWorkloadFactory(MoveToStdBase):
         self.globalTag = arguments["GlobalTag"]        
         self.primaryDataset = arguments['PrimaryDataset']
         self.totalEvents = arguments['RequestSizeEvents']
+        self.seeding = arguments.get('Seeding', "AutomaticSeeding")
         jobSplittingAlgo = arguments.get("JobSplittingAlgorithm", "EventBased")
         jobSplittingParams = arguments.get("JobSplittingArgs", {"events_per_job": 1000})
         
@@ -204,7 +205,7 @@ class MonteCarloWorkloadFactory(MoveToStdBase):
         production.setSplittingAlgorithm(jobSplittingAlgo, **jobSplittingParams)
         production.addGenerator("BasicNaming")
         production.addGenerator("BasicCounter")
-        #TODO: Seed Generator
+        production.addGenerator(self.seeding)
         production.setTaskType("Production")
         startPolicyParams = arguments.get("StartPolicyArgs", {'SliceType': "NumberOfEvents",
                                                               'SliceSize': jobSplittingParams['events_per_job']})

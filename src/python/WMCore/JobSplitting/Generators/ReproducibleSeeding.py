@@ -13,9 +13,6 @@ List of seeds is retrieved from the ConfigCache PSet Tweak
 
 """
 
-import sys
-import os
-import unittest
 
 from WMCore.JobSplitting.Generators.GeneratorInterface import GeneratorInterface
 from WMCore.Cache.WMConfigCache import ConfigCache
@@ -59,26 +56,3 @@ class ReproducibleSeeding(GeneratorInterface):
 
 
 
-from WMCore.DataStructs.Job import Job
-
-class ReproducibleSeedingTests(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def testA(self):
-                
-        repro = ReproducibleSeeding(
-            CouchUrl = "http://dmwmwriter:PASSWORD@localhost:5986",
-            CouchDBName = "config_cache1",
-            ConfigCacheDoc = "a3c2f9c1d2231060b1de9dafe7d5b8f2"
-        )
-        
-        job = Job("Job1")
-        
-        repro(job)
-        
-        
-        
-
-if __name__ == '__main__':
-    unittest.main()

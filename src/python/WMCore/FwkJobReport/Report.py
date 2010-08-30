@@ -743,6 +743,25 @@ class Report:
                 value = False
 
         return value
+
+
+    def getAnalysisFilesFromStep(self, step):
+        """
+        _getAnalysisFilesFromStep_
+
+        Retrieve a list of all the analysis files produced in a step.
+        """
+        stepReport = self.retrieveStep(step=step)
+
+        if not stepReport:
+            return []
+
+        analysisFiles = stepReport.analysis
+        result = []
+        for fileNum in range(analysisFiles.fileCount):
+            result.append(getattr(analysisFiles, "file%s" % fileNum))
+
+        return result
         
 
     def getAllFileRefsFromStep(self, step):

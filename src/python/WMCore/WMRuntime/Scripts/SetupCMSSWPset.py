@@ -19,6 +19,7 @@ import FWCore.ParameterSet.Config as cms
 applyPromptReco = lambda s, a: s.promptReco(a['globalTag'], a['writeTiers'])
 applyAlcaSkim = lambda s, a: s.alcaSkim(a['skims'])
 applySkimming = lambda s, a: s.skimming(a['skims'])
+applyDqmHarvesting = lambda s, a: s.dqmHarvesting(a['datasetName'], a['runNumber'], a['globalTag'])
 
 class SetupCMSSWPset(ScriptInterface):
     """
@@ -28,7 +29,8 @@ class SetupCMSSWPset(ScriptInterface):
     funcMap = {
         "promptReco": applyPromptReco,
         "alcaSkim": applyAlcaSkim,
-        "skimming": applySkimming
+        "skimming": applySkimming,
+        "dqmHarvesting": applyDqmHarvesting
         }
     
     def createProcess(self, scenario, funcName, funcArgs):
@@ -127,7 +129,7 @@ class SetupCMSSWPset(ScriptInterface):
         if hasattr(self.process, "outputModules"):
             outputModuleNames = self.process.outputModules.keys()
         else:
-            outputModulesNames = self.process.outputModules_()            
+            outputModuleNames = self.process.outputModules_()            
         for outMod in outputModuleNames:
             outModRef = getattr(self.process, outMod)
             if not hasattr(outModRef, "dataset"):

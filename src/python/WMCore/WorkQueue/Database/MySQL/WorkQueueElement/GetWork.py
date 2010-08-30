@@ -27,7 +27,7 @@ class GetWork(DBFormatter):
             LEFT JOIN wq_site wsite ON wbmap.site_id = wsite.id 
             LEFT JOIN wq_element_site_validation wsv ON
                     (we.id = wsv.element_id AND
-                     wbmap.site_id = wsv.site_id)
+                     (we.input_id IS NULL OR (wbmap.site_id = wsv.site_id)))
             WHERE we.status = :available AND
                   we.num_jobs <= :jobs AND
                   -- only check team restriction if both db and query restrict

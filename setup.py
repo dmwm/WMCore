@@ -678,6 +678,9 @@ def getPackages(package_dirs = []):
                 if not 'CVS' in pathelements:
                     path = pathelements[3:]
                     packages.append('.'.join(path))
+                if not 'svn' in pathelements:
+                    path = pathelements[3:]
+                    packages.append('.'.join(path))
     return packages
 
 package_dir = {'WMCore': 'src/python/WMCore',

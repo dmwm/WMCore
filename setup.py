@@ -673,14 +673,14 @@ def getPackages(package_dirs = []):
     for dir in package_dirs:
         for dirpath, dirnames, filenames in os.walk('./%s' % dir):
             # Exclude things here
-            if dirpath not in ['./src/python/', './src/python/IMProv']: 
-                pathelements = dirpath.split('/')
-                if not 'CVS' in pathelements:
-                    path = pathelements[3:]
-                    packages.append('.'.join(path))
-                if not 'svn' in pathelements:
-                    path = pathelements[3:]
-                    packages.append('.'.join(path))
+            if dirpath not in ['./src/python/', './src/python/IMProv']:
+				pathelements = dirpath.split('/')
+				if ((not 'CVS' in pathelements) and
+                		(not 'svn' in pathelements) and
+                		(not '.svn' in pathelements) and
+                		(not '.git' in pathelements)):
+					path = pathelements[3:]
+					packages.append('.'.join(path))
     return packages
 
 package_dir = {'WMCore': 'src/python/WMCore',

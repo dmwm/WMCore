@@ -16,7 +16,7 @@ class MonteCarlo(StartPolicyInterface):
     def __init__(self, **args):
         StartPolicyInterface.__init__(self, **args)
         self.args.setdefault('SliceType', 'NumberOfEvents')
-        self.args.setdefault('SliceSize', 1000)
+        self.args.setdefault('SliceSize', 1000000)
 
 
     def split(self):

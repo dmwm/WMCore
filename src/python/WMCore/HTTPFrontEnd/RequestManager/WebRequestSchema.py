@@ -51,136 +51,90 @@ class WebRequestSchema(TemplatedPage):
     index.exposed = True
 
 
-    def makeSchema(self, cmsswVersion=None, scramArch=None, requestType=None,
-            requestPriority=None, requestSizeEvents=None, requestSizeFiles=None,
-            acquisitionEra=None, scenario=None, globalTag=None, processingVersion=None,
-            group=None, requestor=None, filein=None, inputMode=None, couchDBConfig = None,
-            dbs=None, lfnCategory=None,
-            processingConfig=None,
-            skimInput1= None, skimConfig1= None,
-            mergedLFNBase = None, unmergedLFNBase = None,
-            splitAlgo=None, filesPerJob=None, lumisPerJob=None, eventsPerJob=None, splitFilesBetweenJob=False,
-            skimSplitAlgo=None, skimFilesPerJob=None, skimTwoFilesPerJob=None,
-            runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None,
-            siteWhitelist=None, siteBlacklist=None, RECO=None, ALCA=None, AOD=None,
-            minMergeSize=None, maxMergeSize=None, maxMergeEvents=None):
+    def makeSchema(self, **kwargs):
         current_time = time.strftime('%y%m%d_%H%M%S',
                                  time.localtime(time.time()))
 
-        maker = retrieveRequestMaker(requestType)
+        maker = retrieveRequestMaker(kwargs["RequestType"])
         schema = maker.newSchema()
+        print str(kwargs)
+        schema.update(kwargs)        
         schema['Requestor'] = self.requestor
         schema['RequestName'] = self.requestor + '_' + current_time
-        schema["RequestType"] = requestType
-        schema["RequestPriority"] = requestPriority
-        schema["RequestSizeEvents"] = requestSizeEvents
-        schema["RequestSizeFiles"] = requestSizeFiles
-        schema["AcquisitionEra"] = acquisitionEra
-        schema["GlobalTag"] = globalTag
-        schema["Group"] = group
-        schema["CMSSWVersion"] = cmsswVersion
-        schema["ScramArch"] = scramArch
-        schema["InputDataset"] = filein
-        schema["InputDatasets"] = [filein]
-        schema["SkimInput"] = skimInput1
-        schema["DbsUrl"] = dbs
-        # FIXME duplicate
-        schema["LFNCategory"] = lfnCategory
-        schema["UnmergedLFNBase"] = mergedLFNBase
-        schema["UnmergedLFNBase"] = unmergedLFNBase
-        schema["RunWhitelist"] = eval("[%s]"%runWhitelist)
-        schema["RunBlacklist"] = eval("[%s]"%runBlacklist)
-        schema["BlockWhitelist"] = eval("[%s]"%blockWhitelist)
-        schema["BlockBlacklist"] = eval("[%s]"%blockBlacklist)
-        if siteWhitelist == None:
-            siteWhitelist = []
-        if siteBlacklist == None:
-            siteBlacklist = []
-        if not isinstance(siteWhitelist, list):
-            siteWhitelist = [siteWhitelist]
-        if not isinstance(siteBlacklist, list):
-            siteBlacklist = [siteBlacklist]
-        schema["SiteWhitelist"] = siteWhitelist
-        schema["SiteBlacklist"] = siteBlacklist
+
+        if kwargs.has_key("InputDataset"):
+            schema["InputDatasets"] = [kwargs["InputDataset"]]
+        # hack until makers accept numbered skims
+        if kwargs.has_key("SkimInput1"):
+            schema["SkimInput"] = schema["SkimInput1"]
+            schema["SkimConfig"] = schema["SkimConfig1"]
+        self.parseList("RunWhitelist", kwargs, schema)
+        self.parseList("RunBlacklist", kwargs, schema)
+        self.parseList("BlockWhitelist", kwargs, schema)
+        self.parseList("BlockBlacklist", kwargs, schema)
+        self.parseSite("SiteWhitelist", kwargs, schema)
+        self.parseSite("SiteBlacklist", kwargs, schema)
+
         schema['CmsPath'] = self.cmsswInstallation
-        schema['ProcessingVersion'] = processingVersion
         schema["CouchUrl"] = self.couchUrl
         schema["CouchDBName"] = self.couchDBName
         print "SCHEMA " + str(schema)
 
-        schema["SkimConfig"] = skimConfig1
-        if minMergeSize != None:  
-            schema["MinMergeSize"] = minMergeSize
-        if maxMergeSize != None:
-            schema["MaxMergeSize"] = maxMergeSize
-        if maxMergeEvents != None:
-            schema["MaxMergeEvents"] = maxMergeEvents
-
-        schema["Label"] = "WHATEVER"
-        tiers = []
-        if RECO != None:
-           tiers.append("RECO")
-        if ALCA != None:
-           tiers.append("ALCA")
-        if AOD != None:
-           tiers.append("AOD")
-        schema["OutputTiers"] = tiers
-
-        if splitAlgo != None:
+        if kwargs.has_key("StdJobSplitAlgo"):            
             schema["StdJobSplitAlgo"] = splitAlgo
             d = {}
             if splitAlgo == "FileBased":
-                 d = {'files_per_job' : filesPerJob }
+                 d = {'files_per_job' : kwargs["filesPerJob"] }                 
             elif splitAlgo == "LumiBased":
-                 d = {'lumis_per_job' : lumisPerJob, 'split_files_between_job':splitFilesBetweenJob}
+                 d = {'lumis_per_job' : kwargs["lumisPerJob"],
+                      'split_files_between_job':kwargs["splitFilesBetweenJob"]}                 
             elif splitAlgo == "EventBased":        
-                 d = {'events_per_job': eventsPerJob}
+                 d = {'events_per_job': kwargs["eventsPerJob"]}                 
             else:
                   raise RuntimeError("Cannot find splitting algo " + splitAlgo)
             schema["StdJobSplitArgs"] = d
 
-        if skimSplitAlgo != None:
+        if kwargs.has_key("SkimJobSplitAlgo"):
+            skimSplitAlgo = kwargs["SkimJobSplitAlgo"]            
             schema["SkimJobSplitAlgo"] = skimSplitAlgo
             files_per_job = 0
             if skimSplitAlgo == "FileBased":
-               files_per_job = skimFilesPerJob
+               files_per_job = kwargs["skimFilesPerJob"]               
             elif skimSplitAlgo == "TwoFileBased":
-               files_per_job = skimTwoFilesPerJob
+               files_per_job = kwargs["skimTwoFilesPerJob"]               
             else:
                   raise RuntimeError("Cannot find splitting algo " + skimSplitAlgo)
             schema["SkimJobSplitArgs"] = {'files_per_job': files_per_job}
 
-        if requestType == "CmsGen":
-            # No idea what I'm doing here
-            schema['CmsGenParameters'] = {'generator' : 'madgraph'}
-            schema['CmsGenConfiguration'] = """madgraph\nttjets\ntarballnamehere"""
+        #delete unnecessary parameters.
+        # is there a way to make these fields never appear?
+        inputMode = kwargs['inputMode']
+        inputValues = {'scenario':'Scenario', 'url':'ProcessingConfig',
+                       'couchDB':'ConfigCacheDoc'}
+        for n,v in inputValues.iteritems():
+            if n != inputMode:
+                schema[v] = ""
+
         cherrypy.session['schema'] = schema
-
-        schema["Scenario"] = ""
-        schema["ProcessingConfig"] = ""
-        if inputMode == "scenario":
-            schema["Scenario"] = scenario
-        elif inputMode == "url":
-            schema["ProcessingConfig"] = processingConfig
-        elif inputMode == "couchDB":
-            schema["ProcessingConfig"] = couchDBConfig
-        elif inputMode == "cmsDriver":
-            # FIXME output dataset isn't just LFNCategory
-            url = 'cmsDriver?'
-            # add a few options
-            if requestType in ['Reco',  'ReReco']:
-               url += '&reco=True'
-            if requestType in ['MonteCarlo', 'CmsGen']:
-               if schema["RequestSizeEvents"] == -1:
-                   raise RuntimeError("Must set the number of events to generate")
-               url += '&gen=True'
-            raise cherrypy.HTTPRedirect(url)
-        else:
-            print "Warning: bad configuration option"
-
         return self.submit()
     makeSchema.exposed = True
 
+    def parseList(self, name, kwargs, schema):
+        """ For a given run or block list, put it in as a list """
+        if kwargs.has_key(name):
+            schema[name] = eval("[%s]"%kwargs[name])
+        else:
+            schema[name] = []
+
+    def parseSite(self, name, kwargs, schema):
+        """ puts site whitelist & blacklists into nice format"""
+        if kwargs.has_key(name):
+            value = kwargs[name]
+            if value == None:
+                value = []
+            if not isinstance(value, list):
+                value = [value]
+            schema[name] = value
 
     def submit(self):
         schema = cherrypy.session.get('schema', None)

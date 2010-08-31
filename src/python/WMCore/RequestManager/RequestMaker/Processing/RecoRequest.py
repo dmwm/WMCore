@@ -40,11 +40,10 @@ class RecoSchema(RequestSchema):
         RequestSchema.__init__(self)
         self.validateFields = [
             "CMSSWVersion",
-            "Label",
             "GlobalTag",
             "AcquisitionEra",
             "InputDatasets",
-            "DBSURL",
+            "DbsUrl",
             "LFNCategory",
             "OutputTiers"
             ]

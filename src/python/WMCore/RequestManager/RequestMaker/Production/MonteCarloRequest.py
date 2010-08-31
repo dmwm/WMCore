@@ -12,7 +12,7 @@ one step MC generation request with a built in generator
 from WMCore.RequestManager.RequestMaker.RequestMakerInterface import RequestMakerInterface
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
 from WMCore.RequestManager.RequestMaker.Registry import registerRequestType
-
+from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
 
 class MonteCarloRequest(RequestMakerInterface):
     """
@@ -24,6 +24,11 @@ class MonteCarloRequest(RequestMakerInterface):
     def __init__(self):
         RequestMakerInterface.__init__(self)
 
+    def makeWorkload(self, schema):
+       print schema
+       factory = MonteCarloWorkloadFactory()
+       return factory(schema['RequestName'], schema).data
+
 
 class MonteCarloSchema(RequestSchema):
     """
@@ -34,21 +39,13 @@ class MonteCarloSchema(RequestSchema):
     """
     def __init__(self):
         RequestSchema.__init__(self)
-        self.setdefault("ProductionChannel", None)
-        self.setdefault("Label", None)
-        self.setdefault("Activity", "Production")
         self.setdefault("CMSSWVersion", None)
-        self.setdefault("Category", "MC")
-        self.setdefault("Configuration", None)
+        self.setdefault("ConfigCacheDoc", None)
         self.setdefault("PileupDataset", None)
-        self.setdefault("FinalDestination", None)
-        self.setdefault("PSetHash", None)
         self.validateFields = [
-            "ProductionChannel",
             "CMSSWVersion",
-            "Label",
-            "Configuration",
-            "PSetHash",
+            "ConfigCacheDoc",
+            "PrimaryDataset"
             ]
 
 

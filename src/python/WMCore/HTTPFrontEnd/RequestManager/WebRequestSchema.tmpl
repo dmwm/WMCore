@@ -17,7 +17,7 @@
 <form action="makeSchema" method="post">
 User: $requestor&nbsp Group:
 
-<select name="group">'
+<select name="Group">'
     #for $group in $groups
         <option>$group</option>
     #end for
@@ -183,8 +183,22 @@ Site Blacklist:
 </SELECT><BR/>
 #end def
 
+
+#def emulatorBlock
+Emulator:
+<SELECT NAME="Emulator">
+  <OPTION>True</OPTION>
+  <OPTION>False</OPTION>
+</SELECT><BR>
+#end def
+
+#def processingVersionBlock
+Acquisition Era: <INPUT TYPE="text" name="AcquisitionEra" SIZE=20></BR>
+ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 /><br/>
+#end def
+
 #def trailerBlock($requestType)
-    <INPUT TYPE="hidden" NAME="requestType" VALUE=$requestType></INPUT>
+    <INPUT TYPE="hidden" NAME="RequestType" VALUE=$requestType></INPUT>
      <p><input type="submit" value="Submit"/></p></form>
 #end def
 

@@ -40,7 +40,6 @@ class ReRecoSchema(RequestSchema):
         self.validateFields = [
             "CMSSWVersion",
             "ScramArch",
-            "Label",
             "GlobalTag",
             "AcquisitionEra",
             "InputDataset",

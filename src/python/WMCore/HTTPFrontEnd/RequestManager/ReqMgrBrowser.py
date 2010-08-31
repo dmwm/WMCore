@@ -25,7 +25,7 @@ class ReqMgrBrowser(TemplatedPage):
         self.adminFields = {'RequestStatus':'statusMenu', 'ReqMgrRequestBasePriority':'priorityMenu'}
         self.requests = []
         configCacheUrl = config.configCacheUrl
-        self.configCache = WMConfigCache('reqmgr', configCacheUrl)
+        self.configCache = WMConfigCache(config.configDBName, configCacheUrl)
         self.workloadDir = config.workloadCache
         self.jsonSender = JSONRequests(config.reqMgrHost)
         self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
@@ -61,19 +61,10 @@ class ReqMgrBrowser(TemplatedPage):
         helper.load(pfn)
 
         docId = None
-        try:
-            # Header consists of links to orig. config, tweakfile,
-            # and a command to remake the Workload
-            # request['Configuration']
-            config = helper.data.tasks.Production.steps.cmsRun1.application.command.configuration
-            # see if it's in CouchDBURL/docId format
-            parts = config.split('/')
-            if len(parts) > 1:
-                docId = parts[1]
-        except:
-            pass
         d = helper.data.request.schema.dictionary_()
         d['RequestWorkflow'] = request['RequestWorkflow']
+        if d.has_key('ConfigCacheDoc') and d['ConfigCacheDoc'] != "":
+            docId = d['ConfigCacheDoc']        
         self.addHtmlLinks(d)
         assignments= self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0]
         adminHtml = self.statusMenu(requestName, request['RequestStatus']) \
@@ -99,7 +90,7 @@ class ReqMgrBrowser(TemplatedPage):
     showFullConfig.exposed = True
 
     def showTweakFile(self, docId):
-        return str(pickle.loads(self.configCache.getTweakFileByDocID(docId))).replace('\n', '<br>')
+        return str(self.configCache.getTweakFileByDocID(docId)).replace('\n', '<br>')
     showTweakFile.exposed = True
 
     def showWorkload(self, filepath):

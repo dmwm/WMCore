@@ -46,6 +46,7 @@ config.ReqMgr.title = 'CMS Request Manager'
 config.ReqMgr.description = 'CMS Request manager'
 config.ReqMgr.couchURL = 'http://cmssrv52.fnal.gov:5984'
 
+config.ReqMgr.configDBName = 'wmagent_config_cache'
 
 reqMgrHost = '%s:%s' % (host, port)
 
@@ -74,6 +75,7 @@ active.reqMgrBrowser.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrBrowser'
 active.reqMgrBrowser.reqMgrHost = reqMgrHost
 active.reqMgrBrowser.workloadCache = active.download.dir
 active.reqMgrBrowser.configCacheUrl = config.ReqMgr.couchURL
+active.reqMgrBrowser.configDBName = config.ReqMgr.configDBName
 
 #active.section_('CmsDriverWebRequest')
 #active.CmsDriverWebRequest.object = 'ReqMgr.RequestInterface.WWW.CmsDriverWebRequest'

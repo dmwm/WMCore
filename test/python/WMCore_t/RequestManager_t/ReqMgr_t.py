@@ -31,10 +31,10 @@ class TestReqMgr(unittest.TestCase):
         self.assertTrue('me' in self.jsonSender.get('/reqMgr/group/PeopleLikeMe')[0])
         self.assertTrue('PeopleLikeMe' in self.jsonSender.get('/reqMgr/group?user=me')[0])
 
-        self.jsonSender.delete(urllib.quote('/reqMgr/team/Red Sox'))
-        self.assertFalse('Red Sox' in self.jsonSender.get('/reqMgr/team')[0])
-        self.assertEqual(self.jsonSender.put(urllib.quote('/reqMgr/team/Red Sox'))[1], 200)
-        self.assertTrue('Red Sox' in self.jsonSender.get('/reqMgr/team')[0])
+        self.jsonSender.delete(urllib.quote('/reqMgr/team/White Sox'))
+        self.assertFalse('White Sox' in self.jsonSender.get('/reqMgr/team')[0])
+        self.assertEqual(self.jsonSender.put(urllib.quote('/reqMgr/team/White Sox'))[1], 200)
+        self.assertTrue('White Sox' in self.jsonSender.get('/reqMgr/team')[0])
 
         # some foreign key stuff to dealwith
         #self.assertFalse('CMSSW_X_Y_Z' in self.jsonSender.get('/reqMgr/version')[0])
@@ -46,7 +46,8 @@ class TestReqMgr(unittest.TestCase):
             print requestType
             requestName = 'Test'+requestType
             requestSchema = {}
-            requestSchema['Configuration'] = 'cmssrv52.fnal.gov:5984/3c0628fa51ef5a8d7874753e43acf336'
+            #requestSchema['Configuration'] = 'http://cmssrv52.fnal.gov:5984/idmwmwriter:p1nksh0rts3c0628fa51ef5a8d7874753e43acf336'
+            #requestSchema['Configuration'] =  "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8"
             requestSchema['PSetHash'] = '37f7bf89a5814ffaba1a8c72eb9e14df'
             requestSchema['RequestName'] = requestName
             requestSchema['RequestType'] = requestType
@@ -74,6 +75,7 @@ class TestReqMgr(unittest.TestCase):
             requestSchema["SkimInput"] = "output"
             requestSchema["CmsPath"] = "/uscmst1/prod/sw/cms"
             requestSchema["Scenario"] = "pp"
+            requestSchema["Emulator"] = False
             self.assertRaises(HTTPException, self.jsonSender.delete, '/reqMgr/request/'+requestName)
             self.assertEqual(self.jsonSender.put('/reqMgr/request/'+requestName, requestSchema)[1], 200)
 
@@ -91,12 +93,12 @@ class TestReqMgr(unittest.TestCase):
             request = self.jsonSender.get('/reqMgr/request/'+requestName)[0]
             self.assertEqual(request['RequestStatus'], 'assignment-approved')
 
-            self.assertTrue(self.jsonSender.put(urllib.quote('/reqMgr/assignment/Red Sox/'+requestName))[1] == 200)
-            requestsAndSpecs = self.jsonSender.get(urllib.quote('/reqMgr/assignment/Red Sox'))[0]
+            self.assertTrue(self.jsonSender.put(urllib.quote('/reqMgr/assignment/White Sox/'+requestName))[1] == 200)
+            requestsAndSpecs = self.jsonSender.get(urllib.quote('/reqMgr/assignment/White Sox'))[0]
             self.assertTrue(requestName in requestsAndSpecs.keys())
             workloadHelper = WMWorkloadCache.loadFromURL(requestsAndSpecs[requestName])
             self.assertEqual(workloadHelper.getOwner()['Requestor'], "me")
-            self.assertTrue(self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0] == ['Red Sox'])
+            self.assertTrue(self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0] == ['White Sox'])
 
             agentUrl = 'http://cmssrv96.fnal.gov'
             self.jsonSender.put('/reqMgr/workQueue/%s?url=%s'% (requestName, urllib.quote(agentUrl)) )

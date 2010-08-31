@@ -3,15 +3,10 @@
 _Subscription_
 
 workflow + fileset = subscription
-
-TODO: Add some kind of tracking for state of files - though if too much is
-added becomes counter productive
 """
-__all__ = []
-
-
 
 import copy
+
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
 

@@ -108,8 +108,11 @@ for workloadTask in workload.taskIterator():
 
     virtualFile = File(lfn = "%s-virtual-input" % workloadTask.getPathName(),
                        size = 0, events = numEvents,
-                       locations = "cmssrm.fnal.gov", merged = True)
-
+                       locations = set(["cmssrm.fnal.gov", "storm-fe-cms.cr.cnaf.infn.it",
+                                        "cmssrm-fzk.gridka.de", "srm2.grid.sinica.edu.tw",
+                                        "srm-cms.gridpp.rl.ac.uk", "ccsrm.in2p3.fr",
+                                        "srmcms.pic.es"]), merged = False)
+    
     myRun = Run(runNumber = 1)
     myRun.lumis.append(1)
     virtualFile.addRun(myRun)

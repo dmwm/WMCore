@@ -59,7 +59,7 @@ class StartPolicyInterface(PolicyInterface):
             msg = """ No element is created from
                       wmspec: %s
                       task: %s
-                      data: %s """ (wmspec.name(), task.name(), data)
+                      data: %s """ % (wmspec.name(), task.name(), data)
             raise EmptyWorkExcpetion(msg)
         return self.workQueueElements
 

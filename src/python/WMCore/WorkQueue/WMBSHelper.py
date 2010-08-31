@@ -198,6 +198,7 @@ class WMBSHelper(WMConnectionBase):
         wmbsFile = File(lfn = mcFakeFileName,
                         events = events,
                         locations = locations,
+                        merged = False, # merged causes dbs parentage relation
                         )
         wmbsFile.addRun(Run(1, 1))
         wmbsFile['inFileset'] = False

@@ -165,7 +165,24 @@ class RunJobTest(unittest.TestCase):
         return
         
         
+    def testB_CheckWMBSBuild(self):
+        """
+        _CheckWMBSBuild_
 
+        Trivial test that checks whether we can build
+        runJobs from WMBS jobs
+        """
+
+        jobGroup = self.createJobs(nJobs = 10)
+
+        for job in jobGroup.jobs:
+            rj = RunJob()
+            rj.buildFromJob(job = job)
+            self.assertEqual(job['id'], rj['jobid'])
+            self.assertEqual(job['retry_count'], rj['retry_count'])
+
+
+        return
 
 
         

@@ -34,3 +34,17 @@ class RunJob(dict):
 
 
         return
+
+
+    def buildFromJob(self, job):
+        """
+        _buildFromJob_
+        
+        Build a RunJob from a WMBS Job
+        """
+
+        self['jobid']       = job.get('id', None)
+        self['retry_count'] = job.get('retry_count', None)
+
+        return
+        

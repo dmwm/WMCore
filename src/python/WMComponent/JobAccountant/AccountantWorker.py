@@ -606,8 +606,9 @@ class AccountantWorker(WMConnectionBase):
         # Commit them to DBSBuffer
         logging.info("About to commit all DBSBuffer Heritage information")
         logging.info(len(bindList))
-        
-        self.dbsLFNHeritage.execute(binds = bindList,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+
+        if len(bindList) > 0:
+            self.dbsLFNHeritage.execute(binds = bindList,
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
         return

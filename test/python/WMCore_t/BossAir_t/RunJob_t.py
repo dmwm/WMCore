@@ -137,6 +137,17 @@ class RunJobTest(unittest.TestCase):
         self.assertEqual(len(loadJobs), 10)
 
         idList = [x['id'] for x in loadJobs]
+
+        for job in loadJobs:
+            job['bulkid'] = 1001
+
+        updateDAO = self.daoFactory(classname = "UpdateJobs")
+        updateDAO.execute(jobs = loadJobs)
+
+        loadJobs = loadJobsDAO.execute(status = 'New')
+        self.assertEqual(len(loadJobs), 10)
+        for job in loadJobs:
+            self.assertEqual(job['bulkid'], '1001')
         
 
         setStatusDAO = self.daoFactory(classname = "SetStatus")

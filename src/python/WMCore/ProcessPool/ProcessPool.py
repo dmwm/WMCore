@@ -115,7 +115,8 @@ class ProcessPool:
         self.jsonHandler = JSONRequests()
         
         # heartbeat should be registered at this point
-        self.heartbeatAPI   = HeartbeatAPI(config.Agent.componentName)
+        if getattr(config.Agent, "useHearbeat"):
+            self.heartbeatAPI   = HeartbeatAPI(config.Agent.componentName)
         self.slaveClassName = slaveClassName
         self.componentDir   = componentDir
         self.config         = config
@@ -203,7 +204,9 @@ class ProcessPool:
             self.workers.append(WorkerProcess(subproc = slaveProcess))
             workerName = self._subProcessName(self.slaveClassName, count)
             
-            self.heartbeatAPI.updateWorkerHeartbeat(workerName, pid = slaveProcess.pid)
+            if getattr(self.config.Agent, "useHearbeat"):
+                self.heartbeatAPI.updateWorkerHeartbeat(workerName, 
+                                            pid = slaveProcess.pid)
             totalSlaves -= 1
             count += 1
 
@@ -258,7 +261,8 @@ class ProcessPool:
             worker = self.workers[self.enqueueIndex]
             worker.enqueue(work = encodedWork, length = length)
             
-            self.heartbeatAPI.updateWorkerHeartbeat(
+            if getattr(self.config.Agent, "useHearbeat"):
+                self.heartbeatAPI.updateWorkerHeartbeat(
                             self._subProcessName(self.slaveClassName, 
                                                  self.enqueueIndex),
                             state = "Running")
@@ -303,7 +307,8 @@ class ProcessPool:
                 logging.error("dequeue: %s" % output)
                 self.runningWork -= 1
                 
-                self.heartbeatAPI.updateWorkerHeartbeat(
+                if getattr(self.config.Agent, "useHearbeat"):
+                    self.heartbeatAPI.updateWorkerHeartbeat(
                             self._subProcessName(self.slaveClassName, 
                                                  self.dequeueIndex),
                             state = "Done")

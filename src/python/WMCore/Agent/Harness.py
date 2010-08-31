@@ -364,8 +364,10 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         # note: every component gets a (unique) name: 
         # self.config.Agent.componentName
         logging.info(">>>Registering Component - %s" % self.config.Agent.componentName)
-        self.heartbeatAPI = HeartbeatAPI(self.config.Agent.componentName)
-        self.heartbeatAPI.registerComponent()
+        
+        if getattr(self.config.Agent, "useHeartbeat", True):
+            self.heartbeatAPI = HeartbeatAPI(self.config.Agent.componentName)
+            self.heartbeatAPI.registerComponent()
         
         logging.info('>>>Starting initialization\n')
 

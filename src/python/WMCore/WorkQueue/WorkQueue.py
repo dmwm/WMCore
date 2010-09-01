@@ -798,6 +798,9 @@ class WorkQueue(WorkQueueBase):
                 self._get_dbs(dbs_url)
                 
             policyName = wmspec.startPolicy()
+            if not policyName:
+                raise RuntimeError("WMSpec doens't define policyName, current value: '%s'" % policyName)
+
             # update policy parameter
             self.params['SplittingMapping'][policyName].update(args = wmspec.startPolicyParameters())
             policy = startPolicy(policyName, self.params['SplittingMapping'])

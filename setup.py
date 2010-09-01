@@ -39,6 +39,21 @@ except:
     pass
 
 if can_nose:
+    def get_subpackages(dir, prefix = ""):
+        if prefix.startswith('.'):
+            prefix = prefix[1:]
+        result=[]
+        for subdir in os.listdir(dir):
+            if os.path.isdir(os.path.join(dir, subdir)):
+                result.extend( get_subpackages(os.path.join(dir,subdir), prefix + "." + subdir) )
+            else:
+                # should be a file
+                if subdir.endswith('.py'):
+                    if subdir.startswith('__init__.py'):
+                        continue
+                    result.append( prefix + "."+ subdir[:-3])
+        return result
+    
     class DetailedOutputter(Plugin):
         name = "detailed"
         def __init__(self):
@@ -103,10 +118,17 @@ if can_nose:
                 retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python', '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest'])
             else:    
                 print "### We are in buildbot mode ###"
+                srcRoot = os.path.join(os.path.normpath(os.path.dirname(__file__)), 'src', 'python')
+                modulesToCover = []
+                modulesToCover.extend(get_subpackages(os.path.join(srcRoot,'WMCore'), 'WMCore'))
+                modulesToCover.extend(get_subpackages(os.path.join(srcRoot,'WMComponent'), 'WMComponent'))
+                modulesToCover.extend(get_subpackages(os.path.join(srcRoot,'WMQuality'), 'WMQuality'))
+                moduleList = ",".join(modulesToCover)
                 sys.stdout.flush()
                 retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a',
                                          '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
-                                         '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase'],
+                                         '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
+                                         '--cover-package=' + moduleList],
                                     addplugins=[DetailedOutputter()])
                 
             if retval:

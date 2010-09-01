@@ -128,7 +128,7 @@ if can_nose:
                 retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a',
                                          '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
                                          '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
-                                         '--cover-package=' + moduleList],
+                                         '--cover-package=' + moduleList, '--cover-inclusive'],
                                     addplugins=[DetailedOutputter()])
                 
             if retval:

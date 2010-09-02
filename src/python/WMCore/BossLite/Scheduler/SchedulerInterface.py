@@ -11,8 +11,6 @@ from WMCore.BossLite.Common.Exceptions import SchedulerError
 
 
 
-
-
 class SchedulerInterface(object):
     """
     Upper layer for scheduler interaction

@@ -7,8 +7,6 @@ MySQL implementation of BossLite.Job.Delete
 
 __all__ = []
 
-
-
 from WMCore.BossLite.MySQL.Task.Delete import Delete as TaskDelete
 
 class Delete(TaskDelete):

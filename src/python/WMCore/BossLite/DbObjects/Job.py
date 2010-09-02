@@ -5,8 +5,6 @@ _Job_
 """
 
 
-
-
 from WMCore.Services.UUID import makeUUID
 
 from WMCore.BossLite.DbObjects.DbObject   import DbObject, DbObjectDBFormatter
@@ -34,6 +32,7 @@ class Job(DbObject):
                'standardError' : 'stderr',
                'inputFiles' : 'input_files',
                'outputFiles' : 'output_files',
+               'outputDirectory' : 'output_dir',
                'dlsDestination' : 'dls_destination',
                'submissionNumber' : 'submission_number',
                'closed' : 'closed'
@@ -60,6 +59,7 @@ class Job(DbObject):
                  'standardError' : "",
                  'inputFiles' : [],
                  'outputFiles' : [],
+                 'outputDirectory' : "",
                  'dlsDestination' : [],
                  'submissionNumber' : 0,
                  'closed' : 'N'
@@ -73,6 +73,9 @@ class Job(DbObject):
         """
         initialize a Job instance
         """
+
+        ## Pylint is happy
+        self.data = {}
 
         # call super class init method
         DbObject.__init__(self, parameters)
@@ -343,6 +346,7 @@ class JobDBFormatter(DbObjectDBFormatter):
         result['standardError']    = res['standardError']
         result['inputFiles']       = listToStr(res['inputFiles'])
         result['outputFiles']      = listToStr(res['outputFiles'])
+        result['outputDirectory']  = res['outputDirectory']
         result['dlsDestination']   = listToStr(res['dlsDestination'])
         result['submissionNumber'] = res['submissionNumber']
         result['closed']           = res['closed']
@@ -372,6 +376,7 @@ class JobDBFormatter(DbObjectDBFormatter):
             result['standardError']    = entry['standarderror']
             result['inputFiles']       = strToList(entry['inputfiles'])
             result['outputFiles']      = strToList(entry['outputfiles'])
+            result['outputDirectory']  = entry['outputdirectory']
             result['dlsDestination']   = strToList(entry['dlsdestination'])
             result['submissionNumber'] = entry['submissionnumber']
             result['closed']           = entry['closed']

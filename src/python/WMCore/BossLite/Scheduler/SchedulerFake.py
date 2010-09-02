@@ -4,9 +4,6 @@ SchedulerFake
 """
 
 
-
-
-
 from WMCore.BossLite.Scheduler.SchedulerInterface import SchedulerInterface
 from WMCore.BossLite.Common.Exceptions import SchedulerError
 

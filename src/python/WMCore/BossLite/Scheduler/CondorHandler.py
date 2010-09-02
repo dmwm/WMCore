@@ -6,8 +6,6 @@ Original version by Brian Bockelman
 """
 
 
-
-
 from xml.sax.handler import ContentHandler, feature_external_ges
 from xml.sax import make_parser
 import sys

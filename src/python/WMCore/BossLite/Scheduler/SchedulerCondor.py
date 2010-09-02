@@ -5,8 +5,6 @@ Scheduler class for vanilla Condor scheduler
 """
 
 
-
-
 import os
 
 from SchedulerCondorCommon import SchedulerCondorCommon

@@ -14,8 +14,6 @@ import select, signal, fcntl
 
 
 
-
-
 def setPgid():
     """
     preexec_fn for Popen to set subprocess pgid

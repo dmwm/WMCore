@@ -17,8 +17,6 @@ from WMCore.WMFactory         import WMFactory
 
 
 
-
-
 ##########################################################################
 class Scheduler(object):
     """

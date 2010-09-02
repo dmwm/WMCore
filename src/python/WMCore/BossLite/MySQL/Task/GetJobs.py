@@ -7,8 +7,6 @@ MySQL implementation of BossLite.Task.GetJobs
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
 
@@ -30,6 +28,7 @@ class GetJobs(DBFormatter):
                     stderr as StandardError, 
                     input_files as inputFiles, 
                     output_files as outputFiles, 
+                    output_dir as outputDirectory, 
                     dls_destination as dlsDestination, 
                     submission_number as submissionNumber, 
                     closed as closed

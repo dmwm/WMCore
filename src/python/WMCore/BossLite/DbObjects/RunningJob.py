@@ -6,8 +6,6 @@ Class for jobs that are running
 """
 
 
-
-
 from WMCore.BossLite.DbObjects.DbObject import DbObject, DbObjectDBFormatter
 
 from WMCore.BossLite.Common.System import strToList, listToStr
@@ -105,6 +103,9 @@ class RunningJob(DbObject):
         """
         initialize a RunningJob instance
         """
+
+        ## Pylint is happy
+        self.data = {}
 
         # call super class init method
         DbObject.__init__(self, parameters)

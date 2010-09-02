@@ -7,8 +7,6 @@ MySQL implementation of BossLite.Task.Delete
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Delete(DBFormatter):

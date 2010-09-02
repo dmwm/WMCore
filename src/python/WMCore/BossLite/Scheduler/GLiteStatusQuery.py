@@ -5,8 +5,6 @@ GLite LB query functions
 """
 
 
-
-
 import sys
 import os
 import getopt

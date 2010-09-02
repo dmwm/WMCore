@@ -7,8 +7,6 @@ MySQL implementation of BossLite.RunningJob.Load
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.RunningJob import RunningJob
 from WMCore.BossLite.DbObjects.RunningJob import RunningJobDBFormatter

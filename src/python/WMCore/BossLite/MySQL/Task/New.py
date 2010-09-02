@@ -7,8 +7,6 @@ MySQL implementation of BossLite.Task.New
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Task import TaskDBFormatter
 
@@ -17,13 +15,13 @@ class New(DBFormatter):
     Task.New
     """
     
-    sql = """INSERT INTO bl_task (name, dataset, start_dir, output_dir,
+    sql = """INSERT INTO bl_task (name, dataset, start_dir,
                 global_sandbox, cfg_name, server_name, job_type,
                 total_events, user_proxy, outfile_basename, 
                 common_requirements)
              VALUES
                 (:name, :dataset, :startDirectory,
-                :outputDirectory, :globalSandbox,
+                :globalSandbox,
                 :cfgName, :serverName, :jobType, :totalEvents, :user_proxy,
                 :outfileBasename, :commonRequirements)
                 """

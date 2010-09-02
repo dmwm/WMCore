@@ -4,8 +4,6 @@ _SchedulerGlidein_
 """
 
 
-
-
 from WMCore.BossLite.Scheduler.SchedulerCondorCommon import SchedulerCondorCommon
 import os
 

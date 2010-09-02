@@ -7,8 +7,6 @@ SQLite implementation of BossLite.Job.New
 
 __all__ = []
 
-
-
 from WMCore.BossLite.MySQL.Job.New import New as MySQLNew
 
 class New(MySQLNew):

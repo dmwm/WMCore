@@ -8,8 +8,6 @@ This is being used by JobTracker algorithm
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.DbObject import DbObjectDBFormatter
 

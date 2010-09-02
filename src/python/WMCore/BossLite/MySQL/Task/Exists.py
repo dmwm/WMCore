@@ -7,8 +7,6 @@ MySQL implementation of BossLite.Jobs.Exists
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Exists(DBFormatter):

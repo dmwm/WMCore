@@ -6,8 +6,6 @@ _BossLiteDBInterface_
 
 
 
-
-
 class BossLiteDBInterface(object):
     """
     _BossLiteDBInterface_

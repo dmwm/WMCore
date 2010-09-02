@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101
+#pylint: disable-msg=R0902
+# E1101: false positives
+# R0902: Too many instance attributes
+
 """
 gLite CLI interaction class through JSON formatted output
 """
@@ -7,6 +12,7 @@ gLite CLI interaction class through JSON formatted output
 import os
 import tempfile
 import re
+import sets
 
 import WMCore.WMInit
 
@@ -67,7 +73,7 @@ def hackTheEnv(prependCommand = ''):
     newEnv = prependCommand + ' '
     
     try :
-        pythonCategory = os.environ['PYTHON_CATEGORY']
+        #pythonCategory = os.environ['PYTHON_CATEGORY']
         
         # revert PATH & LD_LYBRARY_PATH
         pyVersionToRemove = os.environ['PYTHON_VERSION']
@@ -90,9 +96,9 @@ def hackTheEnv(prependCommand = ''):
                 newLdLibPath += x + ':'   
         newEnv += 'LD_LIBRARY_PATH=' + newLdLibPath[:-1] + ' '
         
-    except :
+    except Exception, ex:
+        print "Problem hacking the env '%s' " % str(ex)
         # revert not necessary or something went wrong during the hacking
-        pass
     
     return newEnv
 
@@ -125,19 +131,14 @@ class SchedulerGLite(SchedulerInterface) :
         # x509 string & hackEnv for CLI commands
         if self.cert is not None and self.cert != '':
             self.proxyString = "env X509_USER_PROXY=" + self.cert + ' '
-            # TODO: deprecated
-            #self.hackEnv = hackTheEnv()
         else :
             self.proxyString = ''
+            if os.getenv('X509_USER_PROXY') is None:
+                raise SchedulerError('Proxy not defined: %s' % \
+                                      str(self.proxyString), 
+                                      str(self.cert)
+                                    )
 
-            # Don't wont always to crash
-            #if os.getenv('X509_USER_PROXY') is None:
-            #    raise SchedulerError('Proxy not defined: %s'%str(self.proxyString),str(self.cert))
-            self.logging.debug("WARNING: proxy not in the env")
-
-            # TODO: deprecated
-            #self.hackEnv = hackTheEnv('env')
-            
         # Retrieve the location of GLiteStatusQuery.py ...
         wmcoreBasedir = WMCore.WMInit.getWMBASE()    
         if wmcoreBasedir  :
@@ -187,7 +188,7 @@ class SchedulerGLite(SchedulerInterface) :
 
     ##########################################################################
     
-    def submit( self, obj, requirements='', config ='', service='' ):
+    def submit( self, obj, requirements = '', config = '', service = '' ):
         """
         submit a jdl to glite
         ends with a call to retrieve wms and job,gridid asssociation
@@ -224,14 +225,14 @@ class SchedulerGLite(SchedulerInterface) :
         elif self.service != '':
             command += ' -e ' + self.service
 
-
         command += ' ' + fname
         out, ret = self.ExecuteCommand( self.proxyString + command )
         
         os.unlink( fname )
         
         if ret != 0 :
-            raise SchedulerError('error executing glite-wms-job-submit: "%s"'%str(out), str(jdl))
+            raise SchedulerError('error executing glite-wms-job-submit: "%s"' \
+                                  % str(out), str(jdl) )
         
         try:
             
@@ -252,8 +253,8 @@ class SchedulerGLite(SchedulerInterface) :
             # submission converts . to _ in job name - convert back
             for job in obj.jobs:
                 if job['name'].count('.'):
-                    returned_name = job['name'].replace('.', '_')
-                    returnMap[job['name']] = returnMap.pop(returned_name)
+                    returnedname = job['name'].replace('.', '_')
+                    returnMap[job['name']] = returnMap.pop(returnedname)
 
             return returnMap, str(jOut['parent']), str(jOut['endpoint']) 
         elif type(obj) == Job:
@@ -264,8 +265,8 @@ class SchedulerGLite(SchedulerInterface) :
                                                 str(jOut['children'][child])
             # submission converts . to _ in job name - convert back
             if obj['name'].count('.'):
-                returned_name = obj['name'].replace('.', '_')
-                returnMap[obj['name']] = returnMap.pop(returned_name)
+                returnedname = obj['name'].replace('.', '_')
+                returnMap[obj['name']] = returnMap.pop(returnedname)
 
             return returnMap, str(jOut['parent']), str(jOut['endpoint'])
         else : 
@@ -274,7 +275,7 @@ class SchedulerGLite(SchedulerInterface) :
         
     ##########################################################################
 
-    def getOutput( self, obj, outdir='' ):
+    def getOutput( self, obj, outdir = '' ):
         """
         retrieve job output
         """
@@ -508,7 +509,8 @@ class SchedulerGLite(SchedulerInterface) :
 
     ##########################################################################
 
-    def matchResources( self, obj, requirements='', config='', service='' ):
+    def matchResources( self, obj, requirements = '', config = '', 
+                        service = '' ):
         """
         execute a resources discovery through WMS
         IMPORTANT NOTE: glite-wms-job-list-match doesn't accept collections!
@@ -522,23 +524,23 @@ class SchedulerGLite(SchedulerInterface) :
         if not config :
             config = self.config
             
-        fakeJdl = "[\n"
-        fakeJdl += 'Type = "job";\n'
-        fakeJdl += 'Executable = "/bin/echo";\n'
-        # fakeJdl += 'Arguments  = "";\n'
+        jdl = "[\n"
+        jdl += 'Type = "job";\n'
+        jdl += 'Executable = "/bin/echo";\n'
+        # jdl += 'Arguments  = "";\n'
         
         try :
             requirements = requirements.strip()
             while requirements[0] == '[':
                 requirements = requirements[1:-1].strip()
-            fakeJdl += '\n' + requirements + '\n'
-        except :
-            pass
+            jdl += '\n' + requirements + '\n'
+        except Exception, ex:
+            self.logging.error("Problem building requirements '%s' " %str(ex) )
         
-        fakeJdl += ' SignificantAttributes = {"Requirements", "Rank", "FuzzyRank"};'
-        fakeJdl += "\n]\n"
+        jdl += ' SignificantAttributes = {"Requirements", "Rank", "FuzzyRank"};'
+        jdl += "\n]\n"
         
-        tmpFile.write( fakeJdl )
+        tmpFile.write( jdl )
         tmpFile.close()
         
         # delegate proxy
@@ -554,9 +556,6 @@ class SchedulerGLite(SchedulerInterface) :
 
         if service != '' :
             command += ' -e ' + service
-        elif self.service != '':
-            command += ' -e ' + self.service
-
 
         command += " " + fname
         
@@ -571,11 +570,11 @@ class SchedulerGLite(SchedulerInterface) :
         
         
         # return CE without duplicate
-        listCE=list(set(out))
-        if len(listCE)==0:
+        listCE = list(set(out))
+        if len(listCE) == 0:
             self.logging.debug(
                 'List match performed with following requirements:\n %s'
-                                                            % str(fakeJdl) )  
+                                                            % str(jdl) )  
         return listCE
     
     
@@ -598,7 +597,7 @@ class SchedulerGLite(SchedulerInterface) :
 
     ##########################################################################
     
-    def query(self, obj, service='', objType='node') :
+    def query(self, obj, service = '', objType = 'node') :
         """
         query status and eventually other scheduler related information
         """
@@ -636,7 +635,7 @@ class SchedulerGLite(SchedulerInterface) :
                 if jobIds :
                     formattedJobIds = ','.join(jobIds)
                                    
-                    command = 'python ' + self.commandQueryPath \
+                    command = 'python2.4 ' + self.commandQueryPath \
                         + 'GLiteStatusQuery.py --jobId=%s' % formattedJobIds
                     
                     outJson, ret = self.ExecuteCommand( self.proxyString + \
@@ -681,9 +680,8 @@ class SchedulerGLite(SchedulerInterface) :
                 if jobIds :
                     formattedParentIds = ','.join(parentIds)
                     formattedJobIds = ','.join(jobIds)
-
-                    # Temporary solution to work with python
-                    command = 'python ' + self.commandQueryPath \
+                    
+                    command = 'python2.4 ' + self.commandQueryPath \
                         + 'GLiteStatusQuery.py --parentId=%s --jobId=%s' \
                             % (formattedParentIds, formattedJobIds)
                     
@@ -729,7 +727,8 @@ class SchedulerGLite(SchedulerInterface) :
 
     ##########################################################################
 
-    def jobDescription (self, obj, requirements='', config='', service = ''):
+    def jobDescription (self, obj, requirements = '', config = '', \
+                        service = ''):
         """
         retrieve scheduler specific job description
         """
@@ -739,7 +738,7 @@ class SchedulerGLite(SchedulerInterface) :
         
     ##########################################################################
 
-    def decode  ( self, obj, requirements='' ) :
+    def decode  ( self, obj, requirements = '' ) :
         """
         prepare file for submission
         """
@@ -752,7 +751,7 @@ class SchedulerGLite(SchedulerInterface) :
 
     ##########################################################################
 
-    def jdlFile( self, job, requirements='' ) :
+    def jdlFile( self, job, requirements = '' ) :
         """
         build a job jdl
         """
@@ -808,7 +807,7 @@ class SchedulerGLite(SchedulerInterface) :
 
     ##########################################################################
     
-    def collectionJdlFile ( self, task, requirements='' ):
+    def collectionJdlFile ( self, task, requirements = '' ):
         """
         build a collection jdl easy to be handled by the wmproxy API interface
         and gives back the list of input files for a better handling
@@ -824,7 +823,6 @@ class SchedulerGLite(SchedulerInterface) :
         #  \\ in the form root.inputsandbox[ISBindex]
         commonFiles = ''
         isbIndex = 0
-
         # task input files handling:
         if task['startDirectory'] is None or task['startDirectory'][0] == '/':
             # files are stored locally, compose with 'file://'
@@ -832,6 +830,8 @@ class SchedulerGLite(SchedulerInterface) :
                 for ifile in task['globalSandbox'].split(','):
                     if ifile.strip() == '' :
                         continue
+                    #filename = ifile
+                    #if not os.path.isabs(ifile) and os.path.exists(ifile):
                     filename = os.path.abspath( ifile )
                     globalSandbox += '"file://' + filename + '",'
                     commonFiles += "root.inputsandbox[%d]," % isbIndex
@@ -852,13 +852,14 @@ class SchedulerGLite(SchedulerInterface) :
                     commonFiles += '"' + ifile + '",'
 
         # output bypass WMS?
-        if task['outputDirectory'] is not None and \
-               task['outputDirectory'].find('gsiftp://') >= 0 :
-            jdl += 'OutputSandboxBaseDestURI = "%s";\n' % \
-                   task['outputDirectory']
+        #if task['outputDirectory'] is not None and \
+        #       task['outputDirectory'].find('gsiftp://') >= 0 :
+        #    jdl += 'OutputSandboxBaseDestURI = "%s";\n' % \
+        #           task['outputDirectory']
 
         # single job definition
         jdl += "Nodes = {\n"
+
         for job in task.jobs :
             jdl += '[\n'
             jdl += 'NodeName   = "NodeName_%s";\n' % job[ 'name' ]
@@ -868,6 +869,11 @@ class SchedulerGLite(SchedulerInterface) :
                 jdl += 'StdInput = "%s";\n' % job[ 'standardInput' ]
             jdl += 'StdOutput  = "%s";\n' % job[ 'standardOutput' ]
             jdl += 'StdError   = "%s";\n' % job[ 'standardError' ]
+
+            if job['outputDirectory'] is not None and \
+                   job['outputDirectory'].find('gsiftp://') >= 0 :
+                jdl += 'OutputSandboxBaseDestURI = "%s";\n' % \
+                       job['outputDirectory']
 
             # extra job attributes
             if job.runningJob is not None \
@@ -921,14 +927,13 @@ class SchedulerGLite(SchedulerInterface) :
             while requirements[0] == '[':
                 requirements = requirements[1:-1].strip()
             jdl += '\n' + requirements + '\n'
-        except :
-            # catch a generic exception (?)
-            pass
+        except Exception, ex:
+            # catch a generic exception
+            self.logging.error("Problem building requirements '%s' " %str(ex) )
 
         # close jdl
         jdl += 'SignificantAttributes = {"Requirements", "Rank", "FuzzyRank"};'
         jdl += "\n]\n"
-
 
         # return values
         return jdl
@@ -936,8 +941,8 @@ class SchedulerGLite(SchedulerInterface) :
 
     ##########################################################################
     
-    def lcgInfoVo (self, tags, fqan, seList=None, blacklist=None,  
-                  whitelist=None, full=False):
+    def lcgInfoVo (self, tags, fqan, seList = None, blacklist = None,  
+                  whitelist = None, full = False):
         """
         execute a resources discovery through bdii
         returns a list of resulting sites
@@ -1020,8 +1025,8 @@ class SchedulerGLite(SchedulerInterface) :
 
     ##########################################################################
     
-    def lcgInfo (self, tags, vos, seList=None, blacklist=None, 
-                whitelist=None, full=False):
+    def lcgInfo (self, tags, vos, seList = None, blacklist = None, 
+                whitelist = None, full = False):
         """
         execute a resources discovery through bdii
         returns a list of resulting sites

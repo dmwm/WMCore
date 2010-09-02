@@ -7,8 +7,6 @@ SQLite implementation of BossLite.Job.Save
 
 __all__ = []
 
-
-
 from WMCore.BossLite.MySQL.Job.Save import Save as MySQLSave
 
 class Save(MySQLSave):

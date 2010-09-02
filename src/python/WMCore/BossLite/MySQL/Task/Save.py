@@ -7,8 +7,6 @@ MySQL implementation of BossLite.Task.Save
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Task import TaskDBFormatter
 
@@ -20,7 +18,6 @@ class Save(DBFormatter):
     sql = """UPDATE bl_task
              SET dataset = :dataset, 
                  start_dir = :startDirectory, 
-                 output_dir = :outputDirectory,
                  global_sandbox = :globalSandbox, 
                  cfg_name = :cfgName, 
                  server_name = :serverName, 

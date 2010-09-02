@@ -5,8 +5,6 @@ Base class for CondorG and GlideIn schedulers
 """
 
 
-
-
 import os
 import commands
 from subprocess import *

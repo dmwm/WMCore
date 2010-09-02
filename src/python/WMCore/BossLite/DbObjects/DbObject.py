@@ -6,8 +6,6 @@ Base class for all objects in the database
 """
 
 
-
-
 class DbObject(object):
     """
     Superclass of all objects that can be stored in the database.

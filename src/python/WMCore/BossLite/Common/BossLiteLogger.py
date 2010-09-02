@@ -4,8 +4,6 @@ BossLite logging facility
 """
 
 
-
-
 from WMCore.BossLite.Common.Exceptions import BossLiteError
 
 class BossLiteLogger(object):

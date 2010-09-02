@@ -4,8 +4,6 @@ BossLite exceptions
 """
 
 
-
-
 import inspect
 
 class BossLiteError(Exception):

@@ -5,8 +5,6 @@ _BossLiteDBWM_
 """
 
 
-
-
 import threading
 
 from WMCore.BossLite.Common.Exceptions  import DbError
@@ -283,9 +281,9 @@ class BossLiteDBWM(BossLiteDBInterface):
             action = self.engine.daofactory(classname = "Task.Load")
             
         elif type(obj) == Job :
-            
+
             action = self.engine.daofactory(classname = "Job.Load")
-        
+
         elif type(obj) == RunningJob :
             
             action = self.engine.daofactory( classname = "RunningJob.Load" )

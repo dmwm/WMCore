@@ -5,8 +5,6 @@ Base class for creating the BossLite database.
 """
 
 
-
-
 import threading
 
 from WMCore.Database.DBCreator import DBCreator
@@ -48,7 +46,6 @@ class Create(DBCreator):
     name VARCHAR(255),
     dataset VARCHAR(255),
     start_dir TEXT,
-    output_dir TEXT,
     global_sandbox TEXT,
     cfg_name TEXT,
     server_name TEXT,
@@ -79,6 +76,7 @@ class Create(DBCreator):
     stderr TEXT,
     input_files TEXT,
     output_files TEXT,
+    output_dir TEXT,
     dls_destination TEXT,
     submission_number INT default 0,
     closed CHAR default 'N',

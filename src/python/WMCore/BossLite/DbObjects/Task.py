@@ -5,8 +5,6 @@ _Task_
 """
 
 
-
-
 import os.path
 
 from WMCore.Services.UUID import makeUUID
@@ -27,7 +25,6 @@ class Task(DbObject):
                'name' : 'name',
                'dataset' : 'dataset',
                'startDirectory' : 'start_dir',
-               'outputDirectory' : 'output_dir',
                'globalSandbox' : 'global_sandbox',
                'cfgName' : 'cfg_name',
                'serverName' : 'server_name',
@@ -46,7 +43,6 @@ class Task(DbObject):
                  'name' : None,
                  'dataset' : None,
                  'startDirectory' : None,
-                 'outputDirectory' : None,
                  'globalSandbox' : None,
                  'cfgName' : None,
                  'serverName' : None,
@@ -65,6 +61,9 @@ class Task(DbObject):
         """
         initialize a Task instance
         """
+
+        ## Pylint is happy
+        self.data = {}
 
         # call super class init method
         DbObject.__init__(self, parameters)
@@ -336,10 +335,10 @@ class Task(DbObject):
         for job in self.jobs:
 
             # compute full path for output files
-            job['fullPathOutputFiles'] = [
-                self.joinPath( self.data['outputDirectory'],  ofile)
-                for ofile in job['outputFiles']
-                if ofile != '']
+            #job['fullPathOutputFiles'] = [
+            #    self.joinPath( self.data['outputDirectory'],  ofile)
+            #    for ofile in job['outputFiles']
+            #    if ofile != '']
             
             # compute full path for output files
             job['fullPathInputFiles'] = [
@@ -381,7 +380,6 @@ class TaskDBFormatter(DbObjectDBFormatter):
         
         # result['id']               = entry['id']
         result['startDirectory']     = res['startDirectory']
-        result['outputDirectory']    = res['outputDirectory']
         result['globalSandbox']      = res['globalSandbox']
         result['cfgName']            = res['cfgName']
         result['serverName']         = res['serverName']
@@ -406,7 +404,6 @@ class TaskDBFormatter(DbObjectDBFormatter):
             result = {}
             result['id']                 = entry['id']
             result['startDirectory']     = entry['startdirectory']
-            result['outputDirectory']    = entry['outputdirectory']
             result['globalSandbox']      = entry['globalsandbox']
             result['cfgName']            = entry['cfgname']
             result['serverName']         = entry['servername']

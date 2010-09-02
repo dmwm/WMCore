@@ -4,8 +4,6 @@ _SchedulerCondorG_
 """
 
 
-
-
 import os
 from WMCore.BossLite.Scheduler.SchedulerCondorCommon import SchedulerCondorCommon
 

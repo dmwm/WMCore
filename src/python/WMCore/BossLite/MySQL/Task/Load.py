@@ -7,8 +7,6 @@ MySQL implementation of BossLite.Task.Load
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Task import Task, TaskDBFormatter
 
@@ -21,7 +19,6 @@ class Load(DBFormatter):
                     name as name, 
                     dataset as dataset, 
                     start_dir as startDirectory, 
-                    output_dir as outputDirectory, 
                     global_sandbox as globalSandbox, 
                     cfg_name as cfgName, 
                     server_name as serverName, 

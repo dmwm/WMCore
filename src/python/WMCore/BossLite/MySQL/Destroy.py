@@ -6,8 +6,6 @@ MySQL implementation of BossLite.Destroy
 """
 
 
-
-
 import threading
 
 from WMCore.Database.DBCreator import DBCreator

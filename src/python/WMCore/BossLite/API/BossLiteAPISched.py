@@ -5,9 +5,6 @@ _BossLiteAPI_
 """
 
 
-
-
-
 # db interaction
 from WMCore.BossLite.API.BossLiteAPI import BossLiteAPI
 

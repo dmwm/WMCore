@@ -7,8 +7,6 @@ MySQL implementation of BossLite.Jobs.LoadByRunningJobAttr
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
 
@@ -32,6 +30,7 @@ class LoadByRunningJobAttr(DBFormatter):
                 bl_job.stderr as StandardError,
                 bl_job.input_files as inputFiles, 
                 bl_job.output_files as outputFiles,
+                bl_job.output_dir as outputDirectory, 
                 bl_job.dls_destination as dlsDestination,
                 bl_job.submission_number as submissionNumber,
                 bl_job.closed as closed

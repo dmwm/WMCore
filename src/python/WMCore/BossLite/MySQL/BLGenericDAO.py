@@ -5,9 +5,6 @@ _BLGenericDAO_
 MySQL implementation of BossLite.BLGenericDAO
 """
 
-__all__ = []
-
-
 
 from WMCore.Database.DBFormatter import DBFormatter
 

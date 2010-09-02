@@ -7,8 +7,6 @@ MySQL implementation of BossLite.Jobs.Save
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
 
@@ -23,6 +21,7 @@ class Save(DBFormatter):
                 arguments = :arguments, stdin = :standardInput,
                 stdout = :standardOutput, stderr = :standardError,
                 input_files = :inputFiles, output_files = :outputFiles,
+                output_dir = :outputDirectory, 
                 dls_destination = :dlsDestination, 
                 submission_number = :submissionNumber, closed = :closed
                 WHERE job_id = :jobId AND task_id = :taskId

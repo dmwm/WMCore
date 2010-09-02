@@ -7,8 +7,6 @@ MySQL implementation of BossLite.RunningJob.Save
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.RunningJob import RunningJobDBFormatter
 

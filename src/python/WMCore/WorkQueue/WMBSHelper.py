@@ -9,9 +9,6 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-
-
-
 import logging
 import threading
 
@@ -19,14 +16,19 @@ from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Job import Job
 from WMCore.WMException import WMException
 from WMCore.Services.UUID import makeUUID
 from WMCore.DataStructs.Run import Run
+
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
 # Added to allow bulk commits
 from WMCore.DAOFactory           import DAOFactory
 from WMCore.WMConnectionBase     import WMConnectionBase
+
+from WMCore.Agent.Configuration import Configuration
+from WMCore.JobStateMachine.ChangeState import ChangeState
 
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
     """Function to return status of wmbs subscriptions
@@ -50,6 +52,50 @@ class WorkQueueWMBSException(WMException):
 
     pass
 
+def killWorkflow(workflowName, couchURL, couchDBName):
+    """
+    _killWorkflow_
+
+    Kill a workflow that is already executing inside the agent.  This will
+    mark all incomplete jobs as failed and files that belong to all
+    non-cleanup and non-logcollect subscriptions as failed.  The name of the
+    JSM couch database and the URL to the database must be passed in as well
+    so the state transitions are logged.
+    """
+    myThread = threading.currentThread()    
+    daoFactory = DAOFactory(package = "WMCore.WMBS",
+                            logger = myThread.logger,
+                            dbinterface = myThread.dbi)    
+    killFilesAction = daoFactory(classname = "Subscriptions.KillWorkflow")
+    killJobsAction = daoFactory(classname = "Jobs.KillWorkflow")
+
+    existingTransaction = False
+    if myThread.transaction.conn:
+        existingTransaction = True
+    else:
+        myThread.transaction.begin()
+
+    killFilesAction.execute(workflowName = workflowName,
+                            conn = myThread.transaction.conn,
+                            transaction = True)
+
+    liveJobs = killJobsAction.execute(workflowName = workflowName,
+                                      conn = myThread.transaction.conn,
+                                      transaction = True)
+
+    config = Configuration()
+    config.section_("JobStateMachine")
+    config.JobStateMachine.couchurl = couchURL
+    config.JobStateMachine.couchDBName = couchDBName
+    changeState = ChangeState(config)
+
+    for liveJob in liveJobs:
+        liveWMBSJob = Job(id = liveJob["id"])
+        changeState.propagate(liveWMBSJob, "killed", liveJob["state"])
+
+    if not existingTransaction:
+        myThread.transaction.commit()
+    return
 
 class WMBSHelper(WMConnectionBase):
     """
@@ -449,9 +495,6 @@ class WMBSHelper(WMConnectionBase):
         # Now that we've created those files, clear the list
         self.dbsFilesToCreate = []
         return
-
-
-        
         
     def _addToDBSBuffer(self, dbsFile, checksums, locations):
         """

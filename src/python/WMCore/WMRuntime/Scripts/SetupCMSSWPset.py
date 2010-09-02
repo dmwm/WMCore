@@ -185,7 +185,33 @@ class SetupCMSSWPset(ScriptInterface):
         tweak.unpersist(psetTweak)
         applyTweak(self.process, tweak)
         return
-
+        
+    def handleSeeding(self):
+        """
+        _handleSeeding_
+        
+        Handle Random Seed settings for the job
+        """
+        baggage = self.job.getBaggage()
+        seeding = getattr(baggage, "seeding", None)
+        if seeding == None:
+            return
+        if seeding == "AutomaticSeeding":
+            from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
+            helper = RandomNumberServiceHelper(self.process.RandomNumberGeneratorService)
+            helper.populate()
+            return
+        if seeding == "ReproducibleSeeding":
+            randService = self..process.RandomNumberGeneratorService
+            tweak = PSetTweak()
+            for x in randService:
+                parameter = "process.RandomNumberGeneratorService.%s.initialSeed" % x._internal_name
+                tweak.addParameter(parameter, x.initialSeed)
+            applyTweak(self.process, tweak)
+            return
+        # still here means bad seeding algo name
+        raise RuntimeError, "Bad Seeding Algorithm: %s" % seeding
+        
     def __call__(self):
         """
         _call_
@@ -226,6 +252,9 @@ class SetupCMSSWPset(ScriptInterface):
             
         # revlimiter for testing
         #self.process.maxEvents.input = 2
+        
+        # check for random seeds and the method of seeding which is in the job baggage
+        self.handleSeeding()
         
         # accept an overridden TFC from the step
         if hasattr(step.application,'overrideCatalog'):

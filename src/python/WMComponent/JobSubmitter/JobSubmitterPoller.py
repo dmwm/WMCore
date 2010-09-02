@@ -272,7 +272,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         # We need to remove any jobs from the cache that were not returned in
         # the last call to the database.
         jobIDsToPurge = self.cachedJobIDs - dbJobs
-        self.cachedJobIDs -= dbJobs
+        self.cachedJobIDs -= jobIDsToPurge
 
         if len(jobIDsToPurge) == 0:
             return

@@ -178,7 +178,7 @@ class ChangeState(WMObject, WMConnectionBase):
         # Check for wrong transitions
         transitions = Transitions()
         assert newstate in transitions[oldstate], \
-                            "Illegal state transition requested"
+               "Illegal state transition requested: %s -> %s" % (oldstate, newstate)
 
     def recordInCouch(self, jobs, newstate, oldstate):
         """

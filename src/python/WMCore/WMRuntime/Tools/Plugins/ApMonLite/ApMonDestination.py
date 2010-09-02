@@ -110,6 +110,7 @@ class ApMonDestination(dict):
         #  //
         # // first pack version of this client and the dest password
         #//
+        __version__ = "WMCore_Version_Disabled"
         packer.pack_string ("v:%sp:%s" % (__version__, self['Passwd']))
     
         #  //

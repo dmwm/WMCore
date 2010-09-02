@@ -229,6 +229,7 @@ class JobSubmitterPoller(BaseWorkerThread):
           - Path to cache directory
         """
         badJobs = []
+        dbJobs = set()
 
         logging.info("Querying WMBS for jobs to be submitted...")
         newJobs = self.listJobsAction.execute()
@@ -237,11 +238,12 @@ class JobSubmitterPoller(BaseWorkerThread):
         logging.info("Determining possible sites for new jobs...")
         jobCount = 0
         for newJob in newJobs:
-            jobCount += 1
             jobID = newJob['id']
+            dbJobs.add(jobID)
             if jobID in self.cachedJobIDs:
                 continue
 
+            jobCount += 1
             if jobCount % 5000 == 0:
                 logging.info("Processed %d/%d new jobs." % (jobCount, len(newJobs)))
 
@@ -310,7 +312,24 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # If there are any leftover jobs, we want to get rid of them.
         self.flushJobPackages()
-        logging.info("Done with refreshCache() loop, submitting jobs.")
+        logging.info("Done with refreshCache() loop, pruning killed jobs.")
+
+        # We need to remove any jobs from the cache that were not returned in
+        # the last call to the database.
+        jobIDsToPurge = self.cachedJobIDs - dbJobs
+        self.cachedJobIDs -= dbJobs
+
+        if len(jobIDsToPurge) == 0:
+            return
+
+        for siteName in self.cachedJobs.keys():
+            for taskType in self.cachedJobs[siteName].keys():
+                for workflow in self.cachedJobs[siteName][taskType].keys():
+                    for cachedJob in self.cachedJobs[siteName][taskType][workflow]:
+                        if cachedJob[0] in jobIDsToPurge:
+                            self.cachedJobs[siteName][taskType][workflow].remove(cachedJob)
+
+        logging.info("Done pruning killed jobs, moving on to submit.")
         return
 
     def getThresholds(self):

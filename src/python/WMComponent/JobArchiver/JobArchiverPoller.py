@@ -142,15 +142,16 @@ class JobArchiverPoller(BaseWorkerThread):
 
         Will actually, surprisingly, find finished jobs (i.e., jobs either exhausted or successful)
         """
-
         jobList = []
 
         jobListAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        jobList1  = jobListAction.execute(state = "success")
-        jobList2  = jobListAction.execute(state = "exhausted")
+        jobList1 = jobListAction.execute(state = "success")
+        jobList2 = jobListAction.execute(state = "exhausted")
+        jobList3 = jobListAction.execute(state = "killed")        
 
         jobList.extend(jobList1)
         jobList.extend(jobList2)
+        jobList.extend(jobList3)
 
         if len(jobList) == 0:
             # Then nothing is ready

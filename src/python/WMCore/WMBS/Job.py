@@ -14,9 +14,6 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-
-
-
 import datetime
 
 from WMCore.DataStructs.Job import Job as WMJob

@@ -5,10 +5,6 @@ _LoadFromID_
 MySQL implementation of Jobs.LoadFromID.
 """
 
-__all__ = []
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadFromID(DBFormatter):

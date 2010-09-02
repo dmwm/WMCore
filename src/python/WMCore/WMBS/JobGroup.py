@@ -22,26 +22,10 @@ on but don't know the group. They do know their subscription and corresponding
 workflow. This means Jobs can update their state in the database without 
 talking to the group, and WMBS JobGroups can calculate status from the database
 instead of the in memory objects. 
-
-The group has a status call which goes through the jobs and updates the db for 
-state changes and then returns the status of the group (active, failed, 
-complete).
-
-WMAgent deals with groups and calls group.status periodically
-
-CREATE TABLE wmbs_jobgroup (
-     id           INTEGER      PRIMARY KEY AUTOINCREMENT,
-     subscription INT(11)    NOT NULL,
-     output       INT(11),
-     last_update  TIMESTAMP NOT NULL,
-     FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-       ON DELETE CASCADE,
-     FOREIGN KEY (output) REFERENCES wmbs_fileset(id)
-            ON DELETE CASCADE)
 """
 
-
-
+import logging
+import threading
 
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
 from WMCore.WMBS.WMBSBase import WMBSBase
@@ -51,9 +35,6 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMBS.Subscription import Subscription
 
 from WMCore.Services.UUID import makeUUID
-
-import logging
-import threading
 
 class JobGroup(WMBSBase, WMJobGroup):
     """

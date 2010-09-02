@@ -37,5 +37,3 @@ class Transitions(dict):
             for i in possiblestates:
                 knownstates.add(i)
         return list(knownstates)
-
-

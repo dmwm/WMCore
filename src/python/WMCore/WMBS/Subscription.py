@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0231, W0221
-# W0221: When we overwrite the DS Subscription, we sometimes add
-#   new variables.  It's inevitable.
 """
 _Subscription_
 
@@ -10,14 +7,7 @@ A simple object representing a Subscription in WMBS.
 A subscription is just a way to link many sets of jobs to a 
 fileset and track the process of the associated jobs. It is 
 associated to a single fileset and a single workflow.
-
-workflow + fileset = subscription
-
-subscription + application logic = jobs
 """
-
-
-
 
 import logging
 

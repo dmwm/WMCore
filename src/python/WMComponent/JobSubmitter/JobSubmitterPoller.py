@@ -4,19 +4,11 @@
 # for the whitelist and the blacklist
 # W6501: pass information to logging using string arguments
 # C0301: I'm ignoring this because breaking up error messages is painful
-
 """
-Creates jobs for new subscriptions
+_JobSubmitterPoller_t_
 
+Submit jobs for execution.
 """
-
-
-
-
-
-#This job currently depends on the following config variables in JobSubmitter:
-# pluginName
-# pluginDir
 
 import logging
 import threading
@@ -33,42 +25,6 @@ from WMCore.ProcessPool.ProcessPool           import ProcessPool
 from WMCore.ResourceControl.ResourceControl   import ResourceControl
 from WMCore.DataStructs.JobPackage            import JobPackage
 from WMCore.WMBase        import getWMBASE
-
-
-
-#pylint: disable-msg=C0103
-def _VmB(VmKey):
-    '''Private.
-
-    Code taken from:
-    http://code.activestate.com/recipes/286222-memory-usage/
-    '''
-    _proc_status = '/proc/%d/status' % os.getpid()
-
-    _scale = {'kB': 1024.0, 'mB': 1024.0*1024.0,
-              'KB': 1024.0, 'MB': 1024.0*1024.0}
-
-     # get pseudo file  /proc/<pid>/status
-    try:
-        t = open(_proc_status)
-        v = t.read()
-        t.close()
-    except:
-        return 0.0  # non-Linux?
-     # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
-    i = v.index(VmKey)
-    v = v[i:].split(None, 3)  # whitespace
-    if len(v) < 3:
-        return 0.0  # invalid format?
-     # convert Vm value to bytes
-    return float(v[1]) * _scale[v[2]]
-
-
-#pylint: enable-msg=C0103
-
-
-
-
 
 def siteListCompare(a, b):
     """
@@ -130,8 +86,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                                        totalSlaves = self.config.JobSubmitter.workerThreads,
                                        componentDir = self.config.JobSubmitter.componentDir,
                                        config = self.config, slaveInit = configDict,
-                                       namespace = getattr(self.config.JobSubmitter, "pluginNamespace", None))
-
+                                       namespace = getattr(self.config.JobSubmitter,
+                                                           "pluginNamespace", None))
 
         self.changeState = ChangeState(self.config)
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
@@ -179,7 +135,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         batchDir = os.path.join(sandboxDir, "batch_%s" % batchID)
         
         if len(jobPackage.keys()) == self.packageSize:
-            
             if not os.path.exists(batchDir):
                 os.makedirs(batchDir)
                 
@@ -502,13 +457,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                                            'agentName': agentName}])
                 lenWork += 1
 
-
-
         # And then, at the end of the day, we have to dequeue them.
         result = []
         result = self.processPool.dequeue(lenWork)
-       
-
         return
 
     def algorithm(self, parameters = None):

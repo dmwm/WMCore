@@ -46,7 +46,7 @@ class TestReqMgr(unittest.TestCase):
             print requestType
             requestName = 'Test'+requestType
             requestSchema = {}
-            #requestSchema['Configuration'] = 'http://cmssrv52.fnal.gov:5984/idmwmwriter:p1nksh0rts3c0628fa51ef5a8d7874753e43acf336'
+            #requestSchema['Configuration'] = 'http://cmssrv52.fnal.gov:5984/idmwmwriter:PASSWORD3c0628fa51ef5a8d7874753e43acf336'
             #requestSchema['Configuration'] =  "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8"
             requestSchema['PSetHash'] = '37f7bf89a5814ffaba1a8c72eb9e14df'
             requestSchema['RequestName'] = requestName

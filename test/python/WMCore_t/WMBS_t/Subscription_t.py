@@ -1,12 +1,8 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1103, W0142, R0201
-# E1103: allow thread to hold variables
-# W0142: Some people like ** magic
-# R0201: Test methods CANNOT be functions
+"""
+_Subscription_t_
 
-
-
-
+"""
 
 import unittest
 import logging

@@ -11,9 +11,6 @@ _ReReco_
 Standard ReReco workflow.
 """
 
-
-
-
 import os
 
 from WMCore.WMSpec.WMWorkload import newWorkload

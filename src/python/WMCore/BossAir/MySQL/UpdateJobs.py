@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_NewJobs_
+_UpdateJobs_
 
 MySQL implementation for updating jobs
 """
@@ -17,7 +17,7 @@ class UpdateJobs(DBFormatter):
 
 
     sql = """UPDATE bl_runjob SET wmbs_id = :jobid, grid_id = :gridid,
-               bulk_id = :bulkid,
+               bulk_id = :bulkid, status_time = :status_time,
                sched_status = (SELECT id FROM bl_status WHERE name = :status),
                retry_count = :retry_count
                WHERE id = :id
@@ -39,7 +39,8 @@ class UpdateJobs(DBFormatter):
         binds = []
         for job in jobs:
             binds.append({'jobid': job['jobid'], 'gridid': job.get('gridid', None), 'bulkid': job.get('bulkid', None),
-                          'status': job.get('status', None), 'retry_count': job['retry_count'], 'id': job['id']})
+                          'status': job.get('status', None), 'retry_count': job['retry_count'], 'id': job['id'],
+                          'status_time': job.get('status_time', None)})
 
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)

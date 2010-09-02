@@ -135,6 +135,7 @@ class RunJobTest(unittest.TestCase):
         loadJobsDAO = self.daoFactory(classname = "LoadByStatus")
         loadJobs = loadJobsDAO.execute(status = "New")
         self.assertEqual(len(loadJobs), 10)
+        
 
         idList = [x['id'] for x in loadJobs]
 
@@ -148,6 +149,12 @@ class RunJobTest(unittest.TestCase):
         self.assertEqual(len(loadJobs), 10)
         for job in loadJobs:
             self.assertEqual(job['bulkid'], '1001')
+
+
+        loadWMBSDAO = self.daoFactory(classname = "LoadByWMBSID")
+        for job in jobGroup.jobs:
+            jDict = loadWMBSDAO.execute(jobs = [job])
+            self.assertEqual(job['id'], jDict[0]['jobid'])
         
 
         setStatusDAO = self.daoFactory(classname = "SetStatus")
@@ -157,6 +164,11 @@ class RunJobTest(unittest.TestCase):
         self.assertEqual(len(result), 10)
         result = loadJobsDAO.execute(status = 'New')
         self.assertEqual(len(result), 0)
+
+        runningJobDAO = self.daoFactory(classname = "LoadRunning")
+        runningJobs = runningJobDAO.execute()
+
+        self.assertEqual(len(runningJobs), 10)
 
         completeDAO = self.daoFactory(classname = "CompleteJob")
         completeDAO.execute(jobs = idList)
@@ -191,6 +203,9 @@ class RunJobTest(unittest.TestCase):
             rj.buildFromJob(job = job)
             self.assertEqual(job['id'], rj['jobid'])
             self.assertEqual(job['retry_count'], rj['retry_count'])
+            job2 = rj.buildWMBSJob()
+            self.assertEqual(job['id'], job2['id'])
+            self.assertEqual(job['retry_count'], job2['retry_count'])
 
 
         return

@@ -9,7 +9,7 @@ The runJob class object.
 It is very simple.
 """
 
-
+from WMCore.WMBS.Job import Job
 
 class RunJob(dict):
     """
@@ -19,7 +19,9 @@ class RunJob(dict):
     the necessary fields.
     """
 
-    def __init__(self, id = -1, jobid = -1, gridid = -1, bulkid = -1, retry_count = 0, status = None):
+    def __init__(self, id = -1, jobid = -1, gridid = -1,
+                 bulkid = -1, retry_count = 0, status = None,
+                 location = None, user = None):
         """
         Just make sure you init the dictionary fields
 
@@ -31,6 +33,8 @@ class RunJob(dict):
         self.setdefault('bulkid', bulkid)
         self.setdefault('retry_count', retry_count)
         self.setdefault('status', status)
+        self.setdefault('location', location)
+        self.setdefault('user', user)
 
 
         return
@@ -48,3 +52,18 @@ class RunJob(dict):
 
         return
         
+
+
+    def buildWMBSJob(self):
+        """
+        _buildWMBSJob_
+
+        Does exactly what it sounds like
+        """
+
+
+        job = Job(id = self['jobid'])
+        job['retry_count'] = self['retry_count']
+
+
+        return job

@@ -3,6 +3,7 @@ import logging
 import os
 import pwd
 
+from xml.dom.minidom import parseString
 from WMCore.Services.Service import Service
 from WMCore.Wrappers import JsonWrapper
 
@@ -299,6 +300,31 @@ class PhEDEx(Service):
     def getNodeTFC(self, node):
         data = self._getResult('tfc', args = {'node':node}, verb="GET")
         return data
+
+    def getPFN(self, nodes=[], lfns=[], destination=None, protocol='srmv2', custodial='n'):
+        """
+        Get the PFN for an LFN on a node. Return a dict with a tuple of the input as the key
+        and the pfn as the value.
+        """
+        input_dict = {'node': nodes, 'lfn': lfns, 'protocol': protocol, 'custodial': custodial}
+        if destination:
+            input_dict['destination'] = destination
+
+        data = self._getResult('lfn2pfn', args = input_dict, verb = 'GET')
+        result_dict = {}
+
+        if self.responseType == "json":
+            for mapping in data['phedex']['mapping']:
+                key = (mapping['node'], mapping['lfn'])
+                result_dict[key] = mapping['pfn']
+        else:
+            phedex_dom = parseString(data)
+            for mapping in phedex_dom.getElementsByTagName("mapping"):
+                key = (mapping.getAttribute('node'), mapping.getAttribute('lfn'))
+                result_dict[key] = mapping.getAttribute('pfn')
+
+
+        return result_dict
 
 # TODO: find the better way to handle emulation:
 # hacky code: swap the namespace if emulator config is set 

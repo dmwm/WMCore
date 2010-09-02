@@ -89,12 +89,9 @@ class TrivialFileCatalogTest(unittest.TestCase):
         
         tfc_file = phedex.cacheFileName('tfc', inputdata={'node': site})
         tfc = readTFC(tfc_file)
-        #print tfc
-        # Hacky XML parser 
-        phedex_dom = parseString(phedex.getPFN(site, lfn, protocol))
-         
-        phedex_pfn = phedex_dom.getElementsByTagName("mapping")[0].getAttribute('pfn') 
-        
+
+        pfn_dict = phedex.getPFN(site, lfn, protocol)
+        phedex_pfn = pfn_dict[(site, lfn)]
         pfn = tfc.matchLFN(protocol, lfn)
         msg = 'TFC pfn (%s) did not match PhEDEx pfn (%s)' % (pfn, phedex_pfn)
         assert phedex_pfn == pfn,  msg

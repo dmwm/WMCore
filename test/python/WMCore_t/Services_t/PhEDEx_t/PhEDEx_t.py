@@ -99,6 +99,20 @@ class PhEDExTest(unittest.TestCase):
         self.assert_('T2_UK_London_IC' in subs[block]) #block
         self.assert_('T1_US_FNAL_MSS' in subs[block]) #dataset
 
+    def testPFNLookup(self):
+        phedex = PhEDEx()
+        call1 = phedex.getPFN(['T2_UK_SGrid_Bristol'], ['/store/user/metson/file'])
+
+        # Should get one mapping back (one lfn, one node)
+        self.assert_(len(call1.keys()) == 1)
+        call1_key = call1.keys()[0]
+
+        call2 = phedex.getPFN(['T2_UK_SGrid_Bristol', 'T1_US_FNAL_Buffer'], ['/store/user/metson/file'])
+        # Should get back two mappings (two nodes)
+        self.assert_(call1_key in call2.keys())
+
+        # and one of the mappings should be the same as from the previous call
+        self.assert_(call1[call1_key] == call2[call1_key])
 if __name__ == '__main__':
 
     unittest.main()

@@ -33,6 +33,8 @@ from WMCore.DataStructs.Run import Run
 
 from WMCore.Agent.Configuration import Configuration
 
+from WMCore.Agent.HeartbeatAPI  import HeartbeatAPI
+
 #from WMCore.Services.DBS.DBSReader import DBSReader
 
 from WMComponent.DBSUpload.DBSInterface import *
@@ -82,6 +84,13 @@ class DBSUploadTest(unittest.TestCase):
         locationAction.execute(siteName = "malpaquet") 
 
 
+        # Set heartbeat
+        self.componentName = 'JobSubmitter'
+        self.heartbeatAPI  = HeartbeatAPI(self.componentName)
+        self.heartbeatAPI.registerComponent()
+
+        return
+
     def tearDown(self):
         """
         _tearDown_
@@ -105,6 +114,9 @@ class DBSUploadTest(unittest.TestCase):
         #First the general stuff
         config.section_("General")
         config.General.workDir = os.getenv("TESTDIR", os.getcwd())
+
+        config.section_("Agent")
+        config.Agent.componentName = 'DBSUpload'
 
         #Now the CoreDatabase information
         #This should be the dialect, dburl, etc

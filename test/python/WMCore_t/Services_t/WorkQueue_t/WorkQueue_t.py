@@ -29,12 +29,18 @@ class WorkQueueTest(RESTBaseUnitTest):
     It will start WorkQueue RESTService
     Server DB is SQlite.
     Client DB sets from environment variable. 
+    This checks whether DS call makes without error and return the results.
+    TODO: check the correctness of the data (This will be double checking
+    since they will be check in workqueue unittest)
     """
     def initialize(self):
-        self.config = DefaultConfig('WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
-        dbUrl = os.environ.get("DATABASE", None) or "sqlite:////tmp/resttest.db"
+        self.config = DefaultConfig(
+                'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
+        dbUrl = os.environ.get("DATABASE", None) \
+                or "sqlite:////tmp/resttest.db"
         self.config.setDBUrl(dbUrl)        
-        self.config.setFormatter('WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter')
+        self.config.setFormatter(
+             'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter')
 
         # mysql example
         #self.config.setDBUrl('mysql://username@host.fnal.gov:3306/TestDB')
@@ -42,7 +48,8 @@ class WorkQueueTest(RESTBaseUnitTest):
         self.schemaModules = ["WMCore.WorkQueue.Database"]
         wqConfig = self.config.getModelConfig()
         wqConfig.queueParams = {}
-        wqConfig.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
+        wqConfig.serviceModules = [
+            'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
         
     def setUp(self):
         """
@@ -67,37 +74,40 @@ class WorkQueueTest(RESTBaseUnitTest):
     def testGetWork(self):
         
         specName = "ProductionSpec"
-        self.globalQueue.queueWork(self.specGenerator.createProductionSpec(specName, "file"))
+        self.globalQueue.queueWork(self.specGenerator.createProductionSpec(
+                                                            specName, "file"))
         
         wqApi = WorkQueueDS(self.params)
 
         data = wqApi.getWork({'SiteB' : 15, 'SiteA' : 15}, "http://test.url")
-        self.assertEqual( len(data) ,  1, "only 1 element needs to be back. Got (%s)" % len(data) )
+        self.assertEqual( len(data) ,  1, 
+                          "only 1 element needs to be back. Got (%s)" % len(data) )
         self.assertEqual(data[0]['wmspec_name'], specName)
         
     def testSynchronize(self):
-        self.globalQueue.queueWork(self.specGenerator.createProcessingSpec('ProcessingSpec', "file"))
+        self.globalQueue.queueWork(self.specGenerator.createProcessingSpec(
+                                                 'ProcessingSpec', "file"))
         wqApi = WorkQueueDS(self.params)
         childUrl = "http://test.url"
         childResources = [{'ParentQueueId' : 1, 'Status' : 'Available'}]
-        print wqApi.synchronize(childUrl, childResources)
+        self.assertEqual(wqApi.synchronize(childUrl, childResources),
+                         {'Canceled': set([1])})
         
         childUrl = "http://test.url"
         childResources = []
         #print wqApi.synchronize(childUrl, childResources)
         
     def testStatusChange(self):
-        raise RuntimeError, "This test causes buildbot to timeout. see - http://vpac05.phy.vanderbilt.edu:8010/builders/Unit%20Tests%20Mysql/builds/154/steps/test/logs/stdio - MELO"
-        self.globalQueue.queueWork(self.specGenerator.createProcessingSpec('ProcessingSpec', "file"))
+        
+        self.globalQueue.queueWork(self.specGenerator.createProcessingSpec(
+                                                  'ProcessingSpec', "file"))
         wqApi = WorkQueueDS(self.params)
-
-        print wqApi.status()
-        print wqApi.doneWork([1])
-        print wqApi.status()
-        print wqApi.failWork([1])
-        print wqApi.status()
-        print wqApi.cancelWork([1])
-        print wqApi.status()
+        
+        self.assertEqual(len(wqApi.status()), 1)
+        self.assertEqual(wqApi.doneWork([1]), [1])
+        self.assertEqual(wqApi.failWork([1]), [1])
+        self.assertEqual(wqApi.cancelWork([1]), [1])
+        #print wqApi.status()
         
 if __name__ == '__main__':
 

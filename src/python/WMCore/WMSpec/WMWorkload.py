@@ -540,25 +540,17 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setJobSplittingParameters(self, taskType, splitAlgo, splitArgs,
-                                  initialTask = None):
+    def setJobSplittingParameters(self, taskPath, splitAlgo, splitArgs):
         """
         _setJobSplittingParameters_
 
-        Update the job splitting algorithm and arguments for all tasks with the
-        given type.
+        Update the job splitting algorithm and arguments for the given task.
         """
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
-            
-        for task in taskIterator:
-            if task.taskType() == taskType:
-                task.setSplittingAlgorithm(splitAlgo, **splitArgs)
+        taskHelper = self.getTaskByPath(taskPath)
+        if taskHelper == None:
+            return
 
-            self.setJobSplittingParameters(taskType, splitAlgo, splitArgs, task)
-
+        taskHelper.setSplittingAlgorithm(splitAlgo, **splitArgs)
         return
 
     def listOutputDatasets(self, initialTask = None):

@@ -472,9 +472,9 @@ class WMWorkloadTest(unittest.TestCase):
         skimTask.setTaskType("Skim")
         skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)                
 
-        testWorkload.setJobSplittingParameters("Processing", "TwoFileBased",
+        testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask", "TwoFileBased",
                                                {"files_per_job": 2})
-        testWorkload.setJobSplittingParameters("Skim", "RunBased",
+        testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask/MergeTask/SkimTask", "RunBased",
                                                {"max_files": 21,
                                                 "some_other_param": "value"})
 

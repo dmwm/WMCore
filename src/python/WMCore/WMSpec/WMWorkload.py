@@ -381,7 +381,7 @@ class WMWorkloadHelper(PersistencyHelper):
             taskIterator = self.taskIterator()
             
         for task in taskIterator:
-            if task.inputDatasetPath():
+            if task.getInputDatasetPath():
                 task.setInputBlockWhitelist(blockWhitelist)
             self.setBlockWhitelist(blockWhitelist, task)                
                 
@@ -400,7 +400,7 @@ class WMWorkloadHelper(PersistencyHelper):
             taskIterator = self.taskIterator()
         
         for task in taskIterator:
-            if task.inputDatasetPath():
+            if task.getInputDatasetPath():
                 task.setInputBlockBlacklist(blockBlacklist)
             self.setBlockBlacklist(blockBlacklist, task)
             
@@ -418,7 +418,7 @@ class WMWorkloadHelper(PersistencyHelper):
             taskIterator = self.taskIterator()
         
         for task in taskIterator:
-            if task.inputDatasetPath():
+            if task.getInputDatasetPath():
                 task.setInputRunWhitelist(runWhitelist)
             self.setRunWhitelist(runWhitelist, task)
 

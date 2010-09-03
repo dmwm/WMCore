@@ -145,7 +145,7 @@ class BaseWorkerThread:
             # to get the right name
             myThread = threading.currentThread()
             
-            if getattr(self.component.config.Agent, "useHeartbeat"):
+            if getattr(self.component.config.Agent, "useHeartbeat", True):
                 self.heartbeatAPI.updateWorkerHeartbeat(myThread.getName())
             # Run event loop while termination is not flagged
             while not self.notifyTerminate.isSet():
@@ -160,7 +160,7 @@ class BaseWorkerThread:
                         try:
                             # heartbeat needed to be called after self.initInThread 
                             # to get the right name
-                            if getattr(self.component.config.Agent, "useHeartbeat"):
+                            if getattr(self.component.config.Agent, "useHeartbeat", True):
                                 self.heartbeatAPI.updateWorkerHeartbeat(
                                                 myThread.getName(), "Running")
                             self.algorithm(parameters)
@@ -183,7 +183,7 @@ class BaseWorkerThread:
                             
                             logging.error(msg)
                             
-                            if getattr(self.component.config.Agent, "useHeartbeat"):
+                            if getattr(self.component.config.Agent, "useHeartbeat", True):
                                 self.heartbeatAPI.updateWorkerError(
                                                     myThread.getName(), msg)
                         # Put the thread to sleep

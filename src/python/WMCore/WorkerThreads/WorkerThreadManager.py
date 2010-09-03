@@ -5,10 +5,6 @@ _WorkerThreadManager_
 A class used to manage regularly running worker threads.
 """
 
-
-
-
-
 import threading
 import logging
 import time
@@ -74,7 +70,7 @@ class WorkerThreadManager:
         worker.terminateCallback = self.slaveTerminateCallback
         worker.notifyPause = self.pauseSlaves
         worker.notifyResume = self.resumeSlaves
-        if getattr(self.component.config.Agent, "useHeartbeat"):
+        if getattr(self.component.config.Agent, "useHeartbeat", True):
             worker.heartbeatAPI = HeartbeatAPI(self.component.config.Agent.componentName)
         
 

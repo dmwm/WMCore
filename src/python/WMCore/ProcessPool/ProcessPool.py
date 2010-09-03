@@ -115,8 +115,9 @@ class ProcessPool:
         self.jsonHandler = JSONRequests()
         
         # heartbeat should be registered at this point
-        if getattr(config.Agent, "useHeartbeat"):
-            self.heartbeatAPI   = HeartbeatAPI(config.Agent.componentName)
+        if getattr(config.Agent, "useHeartbeat", True):
+            self.heartbeatAPI = HeartbeatAPI(config.Agent.componentName)
+            
         self.slaveClassName = slaveClassName
         self.componentDir   = componentDir
         self.config         = config
@@ -204,7 +205,7 @@ class ProcessPool:
             self.workers.append(WorkerProcess(subproc = slaveProcess))
             workerName = self._subProcessName(self.slaveClassName, count)
             
-            if getattr(self.config.Agent, "useHeartbeat"):
+            if getattr(self.config.Agent, "useHeartbeat", True):
                 self.heartbeatAPI.updateWorkerHeartbeat(workerName, 
                                             pid = slaveProcess.pid)
             totalSlaves -= 1
@@ -261,7 +262,7 @@ class ProcessPool:
             worker = self.workers[self.enqueueIndex]
             worker.enqueue(work = encodedWork, length = length)
             
-            if getattr(self.config.Agent, "useHeartbeat"):
+            if getattr(self.config.Agent, "useHeartbeat", True):
                 self.heartbeatAPI.updateWorkerHeartbeat(
                             self._subProcessName(self.slaveClassName, 
                                                  self.enqueueIndex),
@@ -307,7 +308,7 @@ class ProcessPool:
                 logging.error("dequeue: %s" % output)
                 self.runningWork -= 1
                 
-                if getattr(self.config.Agent, "useHeartbeat"):
+                if getattr(self.config.Agent, "useHeartbeat", True):
                     self.heartbeatAPI.updateWorkerHeartbeat(
                             self._subProcessName(self.slaveClassName, 
                                                  self.dequeueIndex),

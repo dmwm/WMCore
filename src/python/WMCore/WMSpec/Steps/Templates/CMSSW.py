@@ -145,6 +145,14 @@ class CMSSWStepHelper(CoreHelper):
         """
         self.data.output.minMergeSize = minMergeSize
         return
+
+    def minMergeSize(self):
+        """
+        _minMergeSize_
+
+        Retrieve the minimum size for promoting a file to merged status.
+        """
+        return self.data.output.minMergeSize
     
 class CMSSW(Template):
     """

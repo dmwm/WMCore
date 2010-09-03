@@ -7,13 +7,8 @@ _WMTask_
 Object containing a set of executable Steps which form a template for a
 set of jobs.
 
-Equivalent of a WorkflowSpec in the ProdSystem
-
+Equivalent of a WorkflowSpec in the ProdSystem.
 """
-
-
-
-
 
 import os
 import os.path
@@ -28,8 +23,6 @@ from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 import WMCore.WMSpec.Utilities as SpecUtils
 from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
 import WMCore.FwkJobReport.Report as Report
-
-
 
 def getTaskFromStep(stepRef):
     """
@@ -58,8 +51,7 @@ class WMTaskHelper(TreeHelper):
     _WMTaskHelper_
     
     Util wrapper containing tools & methods for manipulating the WMTask
-    data object
-    
+    data object.    
     """
     def __init__(self, wmTask):
         TreeHelper.__init__(self, wmTask)
@@ -187,17 +179,14 @@ class WMTaskHelper(TreeHelper):
         setattr(self.data.steps, "topStepName", stepName)
         return
 
-    
     def listAllStepNames(self):
         """
         _listAllStepNames_
         
-        Get a list of all the step names contained in this task
-        
+        Get a list of all the step names contained in this task.        
         """
         step = self.steps()
         return step.allNodeNames()
-
     
     def getStep(self, stepName):
         """get a particular step from the workflow"""
@@ -350,20 +339,31 @@ class WMTaskHelper(TreeHelper):
         
         """
         return self.data.input
-    
+
+    def setSplittingParameters(self, **params):
+        """
+        _setSplittingParameters_
+
+        Set the job splitting parameters.
+        """        
+        [setattr(self.data.input.splitting, key, val)
+         for key, val in params.items() ]
+        return
+          
     def setSplittingAlgorithm(self, algoName, **params):
         """
         _setSplittingAlgorithm_
         
-        Set the splitting algorithm name and arguments
-        
+        Set the splitting algorithm name and arguments.  Clear out any old
+        splitting parameters as well.
         """
-        # Could consider checking values against the JobSplitting package
-        # here...
+        delattr(self.data.input, "splitting")
+        self.data.input.section_("splitting")
+        
         setattr(self.data.input.splitting, "algorithm", algoName)
-        [ setattr(self.data.input.splitting, key, val)
-          for key, val in params.items() ]
-    
+        self.setSplittingParameters(**params)
+        return
+
     def jobSplittingAlgorithm(self):
         """
         _jobSplittingAlgorithm_

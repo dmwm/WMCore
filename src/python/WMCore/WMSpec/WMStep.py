@@ -32,21 +32,17 @@ class WMStepHelper(TreeHelper):
         """
         _setStepType_
 
-        Set the type of the step
-
+        Set the type of the step.
         """
         self.data.stepType = stepType
 
     def stepType(self):
-        """get stepType"""
+        """
+        _stepType_
+
+        Retrieve the step type.
+        """
         return self.data.stepType
-
-    def getTask(self):
-        """
-        get Task instance that contains this Step
-        """
-
-
 
     def applicationSection(self):
         """get application ConfigSection ref"""

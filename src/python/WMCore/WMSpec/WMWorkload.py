@@ -6,10 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 """
 
-
-
-
 import logging
+import os
 
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
@@ -23,8 +21,7 @@ def getWorkloadFromTask(taskRef):
     _getWorkloadFromTask_
 
     Util to retrieve a Workload wrapped in a WorkloadHelper
-    from a WMTask
-
+    from a WMTask.
     """
     nodeData = taskRef
     if isinstance(taskRef, WMTaskHelper):
@@ -46,14 +43,11 @@ def getWorkloadFromTask(taskRef):
     return WMWorkloadHelper(topNode)
 
 
-
-
 class WMWorkloadHelper(PersistencyHelper):
     """
     _WMWorkloadHelper_
 
-    Methods & Utils for working with a WMWorkload instance
-
+    Methods & Utils for working with a WMWorkload instance.
     """
     def __init__(self, wmWorkload = None):
         self.data = wmWorkload
@@ -100,8 +94,6 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-
-     
     def sandbox(self):
         """
         _sandbox_
@@ -436,11 +428,177 @@ class WMWorkloadHelper(PersistencyHelper):
             taskIterator = self.taskIterator()
             
         for task in taskIterator:
-            if task.inputDatasetPath():
+            if task.getInputDatasetPath():
                 task.setInputRunBlacklist(runBlacklist)
             self.setRunBlacklist(runBlacklist, task)
 
         return
+
+    def updateLFNsAndDatasets(self, initialTask = None):
+        """
+        _updateLFNsAndDatasets_
+
+        Update all the output LFNs and data names for all tasks in the workflow.
+        This needs to be called after updating the acquisition era, processing
+        version or merged/unmerged lfn base.
+        """
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+            
+        for task in taskIterator:
+            for stepName in task.listAllStepNames():
+                stepHelper = task.getStepHelper(stepName)
+
+                if stepHelper.stepType() == "CMSSW":
+                    for outputModuleName in stepHelper.listOutputModules():
+                        outputModule = stepHelper.getOutputModule(outputModuleName)
+                        filterName = getattr(outputModule, "filterName", None)
+
+                        if filterName:
+                            processedDataset = "%s-%s-%s" % (self.data.properties.acquisitionEra,
+                                                             filterName,
+                                                             self.data.properties.processingVersion)
+                        else:
+                            processedDataset = "%s-%s" % (self.data.properties.acquisitionEra,
+                                                          self.data.properties.processingVersion)
+
+                        unmergedLFN = "%s/%s/%s" % (self.data.properties.unmergedLFNBase,
+                                                    getattr(outputModule, "dataTier"),
+                                                    processedDataset)
+                        mergedLFN = "%s/%s/%s" % (self.data.properties.mergedLFNBase,
+                                                  getattr(outputModule, "dataTier"),
+                                                  processedDataset)                        
+                        setattr(outputModule, "processedDataset", processedDataset)
+                        setattr(outputModule, "lfnBase", unmergedLFN)
+                        setattr(outputModule, "mergedLFNBase", mergedLFN)
+
+            task.setTaskLogBaseLFN(self.data.properties.unmergedLFNBase)
+            self.updateLFNsAndDatasets(task)
+
+        return
+    
+    def setAcquisitionEra(self, acquisitionEra):
+        """
+        _setAcquistionEra_
+
+        Change the acquisition era for all tasks in the spec and then update
+        all of the output LFNs and datasets to use the new acquisition era.
+        """
+        self.data.properties.acquisitionEra = acquisitionEra
+        self.updateLFNsAndDatasets()
+        return
+
+    def setProcessingVersion(self, processingVersion):
+        """
+        _setProcessingVersion_
+
+        Change the processing version for all tasks in the spec and then update
+        all of the output LFNs and datasets to use the new processing version.
+        """
+        self.data.properties.processingVersion = processingVersion
+        self.updateLFNsAndDatasets()
+        return
+
+    def setLFNBase(self, mergedLFNBase, unmergedLFNBase):
+        """
+        _setLFNBase_
+
+        Set the merged and unmerged base LFNs for all tasks.  Update all of the
+        output LFNs to use them.
+        """
+        self.data.properties.mergedLFNBase = mergedLFNBase
+        self.data.properties.unmergedLFNBase = unmergedLFNBase
+        self.updateLFNsAndDatasets()
+        return
+
+    def setMergeParameters(self, minSize, maxSize, maxEvents,
+                           initialTask = None):
+        """
+        _setMergeParameters_
+
+        Set the parameters for every merge task in the workload.  Also update
+        the min merge size of every CMSSW step.
+        """
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+            
+        for task in taskIterator:
+            if task.taskType() == "Merge":
+                task.setSplittingParameters(min_merge_size = minSize,
+                                            max_merge_size = maxSize,
+                                            max_merge_events = maxEvents)
+            for stepName in task.listAllStepNames():
+                stepHelper = task.getStepHelper(stepName)                
+                if stepHelper.stepType() == "CMSSW":
+                    stepHelper.setMinMergeSize(minSize)
+
+            self.setMergeParameters(minSize, maxSize, maxEvents, task)
+
+        return
+
+    def setJobSplittingParameters(self, taskType, splitAlgo, splitArgs,
+                                  initialTask = None):
+        """
+        _setJobSplittingParameters_
+
+        Update the job splitting algorithm and arguments for all tasks with the
+        given type.
+        """
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+            
+        for task in taskIterator:
+            if task.taskType() == taskType:
+                task.setSplittingAlgorithm(splitAlgo, **splitArgs)
+
+            self.setJobSplittingParameters(taskType, splitAlgo, splitArgs, task)
+
+        return
+
+    def listOutputDatasets(self, initialTask = None):
+        """
+        _listOutputDatasets_
+
+        """
+        outputDatasets = []
+        
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+            
+        for task in taskIterator:
+            for stepName in task.listAllStepNames():
+                stepHelper = task.getStepHelper(stepName)
+
+                if stepHelper.stepType() == "CMSSW":
+                    for outputModuleName in stepHelper.listOutputModules():
+                        outputModule = stepHelper.getOutputModule(outputModuleName)
+                        outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
+                                                       outputModule.processedDataset,
+                                                       outputModule.dataTier)
+                        if outputDataset not in outputDatasets:
+                            outputDatasets.append(outputDataset)
+
+            moreDatasets = self.listOutputDatasets(task)
+            for anotherDataset in moreDatasets:
+                if anotherDataset not in outputDatasets:
+                    outputDatasets.append(anotherDataset)
+
+        return outputDatasets
+
+    def setRetryPolicy(self):
+        """
+        _setRetryPolicy_
+
+        """
+        pass
 
 class WMWorkload(ConfigSection):
     """
@@ -481,7 +639,9 @@ class WMWorkload(ConfigSection):
         #//
         self.section_("properties")
         self.properties.acquisitionEra = None
-        
+        self.properties.processingVersion = None
+        self.properties.unmergedLFNBase = "/store/unmerged"
+        self.properties.mergedLFNBase = "/store/data"
 
         #  //
         # // tasks

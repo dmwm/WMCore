@@ -36,4 +36,8 @@ class MonteCarlo(StartPolicyInterface):
 
     def validate(self):
         """Check args and spec work with block splitting"""
-        pass
+        if not self.initialTask.totalEvents():
+            raise RuntimeError, 'Invalid total events selection'
+
+        if not self.initialTask.siteWhitelist():
+            raise RuntimeError, "Site whitelist mandatory for MonteCarlo"

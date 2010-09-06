@@ -53,6 +53,7 @@ class StartPolicyInterface(PolicyInterface):
         if dbs_pool:
             self.dbs_pool.update(dbs_pool)
         self.data = data
+        self.validate()
         self.split()
         
         if len(self.workQueueElements) == 0:

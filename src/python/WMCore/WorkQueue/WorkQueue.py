@@ -82,6 +82,7 @@ class WorkQueue(WorkQueueBase):
         self.dbsHelpers = {}
         self.remote_queues = {}
         self.lastLocationUpdate = 0
+        self.lastFullResync = 0
         self.lastReportToParent = 0
         self.lastFullReportToParent = 0
         self.parent_queue = None
@@ -93,8 +94,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('QueueDepth', 2) # when less than this locally
         self.params.setdefault('ItemWeight', 0.01) # Queuing time weighted avg
         self.params.setdefault('LocationRefreshInterval', 600)
-        # always do full location lookup - partial not very useful
-        self.params.setdefault('FullLocationRefreshInterval', 0)
+        self.params.setdefault('FullLocationRefreshInterval', 7200)
         self.params.setdefault('TrackLocationOrSubscription', 'subscription')
         self.params.setdefault('ReleaseIncompleteBlocks', False)
         self.params.setdefault('ReleaseRequireSubscribed', True)
@@ -605,29 +605,44 @@ class WorkQueue(WorkQueueBase):
     # // Methods that call out to remote services
     #//
 
-    def updateLocationInfo(self, forceRefresh = False):
+    def updateLocationInfo(self, newDataOnly = False):
         """
         Update locations for elements
         """
-        #get data(dataset or blocks) and dbsurls (for now assume global!)
-        dataAction = self.daofactory(classname = "Data.GetActiveData")
-        data = dataAction.execute(conn = self.getDBConn(),
+        mapping = {}
+        #TODO: fullResync is only needed to update the sites
+        # where data is deleted. Find the better way to update
+        # site with deleted data.
+        fullResync = False
+        if not newDataOnly:
+
+            #get data(dataset or blocks) and dbsurls (for now assume global!)
+            dataAction = self.daofactory(classname = "Data.GetActiveData")
+            data = dataAction.execute(conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
-        if not data:
-            return
+            if data:
+                currentTime = time.time()
+                fullResync = currentTime > self.lastFullResync + \
+                            self.params['FullLocationRefreshInterval']
+                mapping, fullResync = self._getLocations(
+                                           [x['name'] for x in data], fullResync)
+                self.lastFullResync = currentTime
+        #get data(dataset or blocks) and dbsurls (for now assume global!)
+        newAction = self.daofactory(classname = "Data.GetDataWithoutSite")
+        newData = newAction.execute(conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
 
-        if forceRefresh:
-            fullResync = True
-        else:
-            fullResync = time.time() > self.lastLocationUpdate + \
-                                self.params['FullLocationRefreshInterval']
+        newMapping = {}
+        if newData:
+            # always update the location regardless last update
+            newMapping, fullResync = self._getLocations(
+                                [x['name'] for x in newData], True)
 
+        mapping.update(newMapping)
         #query may not support partial update - allow them to change fullResync
-        mapping, fullResync = self._getLocations([x['name'] for x in data],
-                                                 fullResync)
 
         if not mapping:
-            return
+            return 0
 
         uniqueLocations = set(sum(mapping.values(), []))
 
@@ -635,10 +650,11 @@ class WorkQueue(WorkQueueBase):
             if uniqueLocations:
                 self._insertSite(list(uniqueLocations))
 
-            mappingAct = self.daofactory(classname = "Site.UpdateDataSiteMapping")
+            mappingAct = self.daofactory(classname =
+                                         "Site.UpdateDataSiteMapping")
             mappingAct.execute(mapping, fullResync, conn = self.getDBConn(),
                                transaction = self.existingTransaction())
-
+        return len(mapping)
 
     def pullWork(self, resources = None):
         """
@@ -978,7 +994,12 @@ class WorkQueue(WorkQueueBase):
             if not fullRefresh:
                 args['update_since'] = self.lastLocationUpdate
             response = self.phedexService.getReplicaInfoForBlocks(**args)['phedex']
-            self.lastLocationUpdate = response['request_timestamp']
+            # only update self.lcation when update_since is applied
+            # this setting has to be after getting response since service all might
+            # fail
+            if not fullRefresh:
+                self.lastLocationUpdate = response['request_timestamp']
+
             for block in response['block']:
                 result.setdefault(block['name'], [])
                 nodes = [se['node'] for se in block['replica']]
@@ -1000,6 +1021,7 @@ class WorkQueue(WorkQueueBase):
                     sites.append(siteName)     
             result.__setitem__(data, sites)
             
+
         return result, fullRefresh
 
 

@@ -79,7 +79,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     self.wq.logger.exception("Error processing request %s" % reqName)
                 
             self.wq.logger.info("There is new work, update location info")     
-            self.wq.updateLocationInfo(forceRefresh = True)
+            self.wq.updateLocationInfo(newDataOnly = True)
 
         self.logger.info("%s element(s) obtained from RequestManager" % work)
 

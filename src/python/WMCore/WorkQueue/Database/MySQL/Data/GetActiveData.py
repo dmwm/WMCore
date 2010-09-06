@@ -1,7 +1,7 @@
 """
-_New_
+_GetActiveData_
 
-MySQL implementation of Block.GetActiveBlocks
+MySQL implementation of Data.GetActiveData
 """
 
 __all__ = []

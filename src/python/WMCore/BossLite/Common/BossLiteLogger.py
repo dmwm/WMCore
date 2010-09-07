@@ -34,12 +34,13 @@ class BossLiteLogger(object):
 
             for job in task.jobs:
                 # evaluate errors
-                if job.runningJob.isError() :
-                    errors[job['jobId']] = job.runningJob.errors
+                if job is not None and job.runningJob is not None:
+                    if job.runningJob.isError() :
+                        errors[job['jobId']] = job.runningJob.errors
                     
-                # evaluate warning
-                if job.runningJob.warnings != [] :
-                    warnings[job['jobId']] = job.runningJob.warnings
+                    # evaluate warning
+                    if job.runningJob.warnings != [] :
+                        warnings[job['jobId']] = job.runningJob.warnings
 
             if warnings != {}:
                 self.data['type'] = 'warning'

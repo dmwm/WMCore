@@ -152,9 +152,10 @@ class Scheduler(object):
         for job in obj.jobs :
 
             # evaluate errors:
-            if job.runningJob.isError() :
-                errors += str( job.runningJob.errors )
-                continue
+            if job is not None and job.runningJob is not None:
+                if job.runningJob.isError() :
+                    errors += str( job.runningJob.errors )
+                    continue
 
         # handle errors
         if errors != '' :

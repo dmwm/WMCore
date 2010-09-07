@@ -24,6 +24,8 @@ def parseRange(  nRange, rangeSep = ':', listSep = ',' ) :
 
     if type( nRange ) == int or type( nRange ) == long:
         return [ str(nRange) ]
+    elif type( nRange ) == type( list() ):
+        return nRange
 
     nList = []
 

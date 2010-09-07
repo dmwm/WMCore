@@ -93,7 +93,9 @@ class StatusScheduling(BaseWorkerThread):
             return
 
         # new processes to start
-        self.processPool.enqueue(groups)
+        for g in groups:
+            logging.info("Enqueuing...%i %s "%((len(groups)),str(g)))
+            self.processPool.enqueue( [g] )
 
         # wait for processes to finish
         logging.info("Waiting workers...")

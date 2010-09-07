@@ -202,7 +202,7 @@ class SetupCMSSWPset(ScriptInterface):
             helper.populate()
             return
         if seeding == "ReproducibleSeeding":
-            randService = self..process.RandomNumberGeneratorService
+            randService = self.process.RandomNumberGeneratorService
             tweak = PSetTweak()
             for x in randService:
                 parameter = "process.RandomNumberGeneratorService.%s.initialSeed" % x._internal_name

@@ -462,7 +462,8 @@ class AccountantWorker(WMConnectionBase):
                                   dbsFile['status']))
             
             dbsFileLoc.append({'lfn': lfn, 'sename' : jobLocation})
-            runLumiBinds.append({'lfn': lfn, 'runs': dbsFile['runs']})
+            if dbsFile['runs']:
+                runLumiBinds.append({'lfn': lfn, 'runs': dbsFile['runs']})
 
             if selfChecksums:
                 # If we have checksums we have to create a bind
@@ -488,9 +489,10 @@ class AccountantWorker(WMConnectionBase):
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
 
-        self.dbsSetRunLumi.execute(file = runLumiBinds,
-                                   conn = self.getDBConn(),
-                                   transaction = self.existingTransaction())
+        if len(runLumiBinds) > 0:
+            self.dbsSetRunLumi.execute(file = runLumiBinds,
+                                       conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
 
         # Now that we've created those files, clear the list
         self.dbsFilesToCreate = []
@@ -518,7 +520,8 @@ class AccountantWorker(WMConnectionBase):
             lfn           = wmbsFile['lfn']
             selfChecksums = wmbsFile['checksums']
             parentageBinds.append({'child': lfn, 'jobid': wmbsFile['jid']})
-            runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
+            if wmbsFile['runs']:
+                runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
             fileLocations.append({'lfn': lfn, 'location': wmbsFile.getLocations()[0]})
 
             if selfChecksums:
@@ -544,9 +547,10 @@ class AccountantWorker(WMConnectionBase):
                                        conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
 
-        self.setFileRunLumi.execute(file = runLumiBinds,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+        if runLumiBinds:
+            self.setFileRunLumi.execute(file = runLumiBinds,
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
 
         self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
                                         conn = self.getDBConn(),

@@ -772,7 +772,7 @@ class JobAccountantTest(unittest.TestCase):
                                      jobReport.getAllFilesFromStep("cmsRun1"))
         return
 
-    def setupDBForMergeSuccess(self, createDBSParents = True):
+    def setupDBForMergeSuccess(self, createDBSParents = True, noLumi = False):
         """
         _setupDBForMergeSuccess_
 
@@ -807,13 +807,13 @@ class JobAccountantTest(unittest.TestCase):
         self.testAodMergeWorkflow.addOutput("Merged", self.mergedAodOutputFileset)        
 
         inputFileA = File(lfn = "/path/to/some/lfnA", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov", merged = True)
+                         locations = "cmssrm.fnal.gov", merged = createDBSParents)
         inputFileA.create()
         inputFileB = File(lfn = "/path/to/some/lfnB", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov", merged = True)
+                         locations = "cmssrm.fnal.gov", merged = createDBSParents)
         inputFileB.create()
         inputFileC = File(lfn = "/path/to/some/lfnC", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov", merged = True)
+                         locations = "cmssrm.fnal.gov", merged = createDBSParents)
         inputFileC.create()        
 
         unmergedFileA = File(lfn = "/path/to/some/unmerged/lfnA", size = 600000, events = 60000,
@@ -882,10 +882,16 @@ class JobAccountantTest(unittest.TestCase):
         self.testJob.save()
         self.stateChangeAction.execute(jobs = [self.testJob])
 
-        self.setFWJRAction.execute(jobID = self.testJob["id"],
-                                   fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                                "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-                                                "MergeSuccess.pkl"))
+        if noLumi:
+            self.setFWJRAction.execute(jobID = self.testJob["id"],
+                                       fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                                                               "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                                               "MergeSuccessNoLumi.pkl"))
+        else:
+            self.setFWJRAction.execute(jobID = self.testJob["id"],
+                                       fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                                                               "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                                               "MergeSuccess.pkl"))            
         return
 
     def testMergeSuccess(self):
@@ -932,6 +938,52 @@ class JobAccountantTest(unittest.TestCase):
                        "Error: file is missing from merged aod output fileset."
 
         return
+
+    def testMergeSuccessNoLumi(self):
+        """
+        _testMergeSuccessNoLumi_
+
+        Verify that the accountant works correctly with jobs that produce files
+        with no run and lumi information.
+        """
+        self.setupDBForMergeSuccess(noLumi = True)
+
+        config = self.createConfig()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
+
+        jobReport = Report()
+        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                         "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                         "MergeSuccessNoLumi.pkl"))
+        self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.testJob["id"])
+
+        dbsParents = ["/path/to/some/lfnA", "/path/to/some/lfnB",
+                      "/path/to/some/lfnC"]
+        self.verifyDBSBufferContents("Merge", dbsParents, jobReport.getAllFilesFromStep("cmsRun1"))
+
+        self.recoOutputFileset.loadData()
+        self.mergedRecoOutputFileset.loadData()
+        self.aodOutputFileset.loadData()
+        self.mergedAodOutputFileset.loadData()
+
+        assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 0, \
+               "Error: No files should be in the merged reco fileset."
+        assert len(self.recoOutputFileset.getFiles(type = "list")) == 0, \
+               "Error: No files should be in the reco fileset."
+
+        assert len(self.mergedAodOutputFileset.getFiles(type = "list")) == 1, \
+               "Error: One file should be in the merged aod fileset."
+        assert len(self.aodOutputFileset.getFiles(type = "list")) == 3, \
+               "Error: Three files should be in the aod fileset."
+
+        fwjrFile = jobReport.getAllFilesFromStep("cmsRun1")[0]
+        assert fwjrFile["lfn"] in self.mergedAodOutputFileset.getFiles(type = "lfn"), \
+                       "Error: file is missing from merged aod output fileset."
+
+        return    
 
     def testParentlessMergeSuccess(self):
         """
@@ -1077,39 +1129,39 @@ class JobAccountantTest(unittest.TestCase):
         inputFileset.commit()
         return
     
-    @attr('performance')
-    def testOneProcessLoadTest(self):
-        """
-        _testOneProcessLoadTest_
+#     @attr('performance')
+#     def testOneProcessLoadTest(self):
+#         """
+#         _testOneProcessLoadTest_
 
-        Run the load test using one worker process.
-        """
-        print("  Filling DB...")
-        self.setupDBForLoadTest()
+#         Run the load test using one worker process.
+#         """
+#         print("  Filling DB...")
+#         self.setupDBForLoadTest()
         
-        config = self.createConfig()
-        accountant = JobAccountantPoller(config)
-        accountant.setup()
+#         config = self.createConfig()
+#         accountant = JobAccountantPoller(config)
+#         accountant.setup()
 
-        print("  Running accountant...")
+#         print("  Running accountant...")
 
-        startTime = time.time()
-        accountant.algorithm()
-        endTime = time.time()
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+#         startTime = time.time()
+#         accountant.algorithm()
+#         endTime = time.time()
+#         print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
-        for (jobID, fwjrPath) in self.jobs:
-            print("  Validating %s, %s" % (jobID, fwjrPath))
-            jobReport = Report()
-            jobReport.unpersist(fwjrPath)
+#         for (jobID, fwjrPath) in self.jobs:
+#             print("  Validating %s, %s" % (jobID, fwjrPath))
+#             jobReport = Report()
+#             jobReport.unpersist(fwjrPath)
 
-            self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
-            self.verifyJobSuccess(jobID)
-            self.verifyDBSBufferContents("Processing",
-                                         ["/some/lfn/for/job/%s" % jobID],
-                                         jobReport.getAllFilesFromStep("cmsRun1"))
+#             self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
+#             self.verifyJobSuccess(jobID)
+#             self.verifyDBSBufferContents("Processing",
+#                                          ["/some/lfn/for/job/%s" % jobID],
+#                                          jobReport.getAllFilesFromStep("cmsRun1"))
 
-        return
+#         return
 
     def testDBRollback(self):
         """
@@ -1400,48 +1452,48 @@ class JobAccountantTest(unittest.TestCase):
         inputFileset.commit()
         return
 
-    def testZ1_BigHeritage(self):
-        """
-        _testBigHeritage_
+#     def testZ1_BigHeritage(self):
+#         """
+#         _testBigHeritage_
 
-        Run the big heritage test.
-        """
-        print "Starting Heritage Test"
+#         Run the big heritage test.
+#         """
+#         print "Starting Heritage Test"
         
-        print("  Filling DB...")
+#         print("  Filling DB...")
 
-        self.setupDBForHeritageTest()
+#         self.setupDBForHeritageTest()
         
-        config = self.createConfig()
-        accountant = JobAccountantPoller(config)
-        accountant.setup()
+#         config = self.createConfig()
+#         accountant = JobAccountantPoller(config)
+#         accountant.setup()
 
-        print("  Running accountant...")
+#         print("  Running accountant...")
 
-        startTime = time.time()
-        #accountant.algorithm()
-        #cProfile.runctx("accountant.algorithm()", globals(), locals(), filename = "testStats.stat")
+#         startTime = time.time()
+#         #accountant.algorithm()
+#         #cProfile.runctx("accountant.algorithm()", globals(), locals(), filename = "testStats.stat")
         
-        endTime = time.time()
-        print("  Time: %f" %(endTime - startTime))
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+#         endTime = time.time()
+#         print("  Time: %f" %(endTime - startTime))
+#         print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
-        for (jobID, fwjrPath) in self.jobs:
-            print("  Validating %s, %s" % (jobID, fwjrPath))
-            jobReport = Report()
-            jobReport.unpersist(fwjrPath)
+#         for (jobID, fwjrPath) in self.jobs:
+#             print("  Validating %s, %s" % (jobID, fwjrPath))
+#             jobReport = Report()
+#             jobReport.unpersist(fwjrPath)
 
-            self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
-            self.verifyJobSuccess(jobID)
-            #self.verifyDBSBufferContents("Processing",
-            #                             ["/some/lfn/for/job/%s" % jobID],
-            #                             jobReport.getAllFilesFromStep("cmsRun1"))
+#             self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
+#             self.verifyJobSuccess(jobID)
+#             #self.verifyDBSBufferContents("Processing",
+#             #                             ["/some/lfn/for/job/%s" % jobID],
+#             #                             jobReport.getAllFilesFromStep("cmsRun1"))
 
-        #p = pstats.Stats('testStats.stat')
-        #p.sort_stats('cumulative')
-        #p.print_stats()
+#         #p = pstats.Stats('testStats.stat')
+#         #p.sort_stats('cumulative')
+#         #p.print_stats()
 
-        return
+#         return
 
     def setupDBForMergedSkimSuccess(self):
         """

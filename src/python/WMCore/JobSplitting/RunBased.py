@@ -83,11 +83,11 @@ class RunBased(JobFactory):
 
                 #Now split them into sections according to files per job
                 while len(runDict[run]) > 0:
-                    jobFiles = Fileset()
+                    jobFiles = []
                     for i in range(filesPerJob):
                         #Watch out if your last job has less then the full number of files
                         if len(runDict[run]) > 0:
-                            jobFiles.addFile(runDict[run].pop())
+                            jobFiles.append(runDict[run].pop())
 
                     # Create the job
                     currentJob = self.newJob('%s-%s' % (baseName, len(self.currentGroup.newjobs)), 

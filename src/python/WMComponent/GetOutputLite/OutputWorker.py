@@ -26,8 +26,6 @@ class OutputWorker:
         config = Configuration()
         self.config = config
 
-        self.end = 'output_retrieved'
-
         return
 
     def __call__(self, parameters):
@@ -68,52 +66,27 @@ class OutputWorker:
                 ## before retrieving succeeded jobs..
                 if work['status'] == 'SD':
 
-                    ## getting the full path removing gsiftp + hostname
-                    for j in task.jobs:
-                        if j is not None:
-                            outdir = j['outputDirectory'].split(task['startDirectory'], 1)[-1]
-                            break
-
-                    ## start trieving
+                    ## start retrieving
                     logging.info('Retrieving output for ' + 
                                  '%i jobs'%len(work['joblist']))
+                    logging.info(' for jobs %s'%str(work['joblist']))
                     task = schedSession.getOutput(
                                              taskObj = task,
                                              jobRange = work['joblist'],
-                                             outdir = outdir
                                                  )
-                    for jj in task.jobs:
-                        if jj in work['joblist']:
-                            jj.runningJob['processStatus'] = self.end
-                            jj.runningJob['closed']        = 'Y'
-
-                    ## updating all jobs in once
-                    bossSession.updateDB( task )
-
-
                 ## then retrieving aborted jobs!
                 elif work['status'] == 'A':
 
                     ## start retrieving (by default in job out dir)
                     logging.info('Retrieving post mortem information for ' +
-                                 '%i jobs'%len(work['joblist']))
+                                 '%i jobs, %s'%(len(work['joblist']),str(work['joblist'])))
                     schedSession.postMortem( taskObj = task,
                                              jobRange = work['joblist'] )
-                    for jj in task.jobs:
-                        if jj['jobId'] in work['joblist']:
-                            if os.path.exists(
-                                  os.path.join(
-                  jj['outputDirectory'].split(task['startDirectory'], 1)[-1], 
-                  'loggingInfo.log')
-                                             ):
-                                jj.runningJob['processStatus'] = self.end
-                                jj.runningJob['closed']        = 'Y'
-
-                    ## updating all jobs in once
-                    bossSession.updateDB( task )
                     
             except Exception, ex:
                 logging.error("Problem [%s]"%str(ex))
+                import traceback
+                logging.error(str(traceback.format_exc()))
             logging.info('Done') 
 
         logging.debug(str(mythread) + ": finished OutputWorker.__call__")

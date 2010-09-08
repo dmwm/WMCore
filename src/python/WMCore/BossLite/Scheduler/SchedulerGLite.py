@@ -283,13 +283,25 @@ class SchedulerGLite(SchedulerInterface) :
         # sanity check: if outdir is '' or None perform getoutput operation in
         # the current working directory
         if outdir == '' or outdir is None :
-            outdir = '.'
+            if type(obj) is RunningJob:
+                outdir = '.'
+            else:
+                ## will use the job.outoutdirectory if available
+                outdir = None
         
         if type(obj) == Job :
             
             # check for the RunningJob integrity
             if not self.valid( obj.runningJob ):
                 raise SchedulerError('invalid object', str( obj.runningJob ))
+
+            if outdir is None :
+                if obj['outputDirectory'].startswith('gsiftp://'):
+                    outdir = '/' + obj['outputDirectory'].split('gsiftp://', 1)[-1].split('/', 1)[-1]
+                elif obj['outputDirectory'].startswith('/'):
+                    outdir = obj['outputDirectory']
+                else:
+                    outdir = '.'
             
             # the object passed is a valid Job, let's go on ...
                 
@@ -350,6 +362,14 @@ class SchedulerGLite(SchedulerInterface) :
                 if not self.valid( selJob.runningJob ):
                     continue
                 
+                if outdir is None :
+                    if selJob['outputDirectory'].startswith('gsiftp://'):
+                        outdir = '/' + selJob['outputDirectory'].split('gsiftp://', 1)[-1].split('/', 1)[-1]
+                    elif obj['outputDirectory'].startswith('/'):
+                        outdir = selJob['outputDirectory']
+                    else:
+                        outdir = '.'
+
                 command = "glite-wms-job-output --json --noint --dir " \
                             + outdir + " " + selJob.runningJob['schedulerId']
                 

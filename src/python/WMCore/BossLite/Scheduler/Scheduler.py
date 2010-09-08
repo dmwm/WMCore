@@ -180,6 +180,7 @@ class Scheduler(object):
             obj['closed'] = 'Y'
             obj['getOutputTime'] = timestamp
             obj['statusScheduler'] = "Retrieved"
+            obj['processStatus'] = 'output_retrieved' 
 
         # the object passed is a job
         elif type(obj) == Job and self.schedObj.valid(obj.runningJob):
@@ -187,6 +188,7 @@ class Scheduler(object):
             obj.runningJob['closed'] = 'Y'
             obj.runningJob['getOutputTime'] = timestamp
             obj.runningJob['statusScheduler'] = "Retrieved"
+            obj.runningJob['processStatus'] = 'output_retrieved'
 
         # the object passed is a Task
         elif type(obj) == Task :
@@ -209,6 +211,7 @@ class Scheduler(object):
                     job.runningJob['closed'] = 'Y'
                     job.runningJob['getOutputTime'] = timestamp
                     job.runningJob['statusScheduler'] = "Retrieved"
+                    job.runningJob['processStatus'] = 'output_retrieved'
 
             # handle errors
             if errors != '' :
@@ -356,6 +359,7 @@ class Scheduler(object):
             obj['closed'] = 'Y'
             obj['getOutputTime'] = timestamp
             obj['statusScheduler'] = "Cleared"
+            obj['processStatus'] = 'output_retrieved'
 
         # the object passed is a job
         elif type(obj) == Job and self.schedObj.valid(obj.runningJob):
@@ -363,6 +367,7 @@ class Scheduler(object):
             obj.runningJob['closed'] = 'Y'
             obj.runningJob['getOutputTime'] = timestamp
             obj.runningJob['statusScheduler'] = "Cleared"
+            obj.runningJob['processStatus'] = 'output_retrieved'
 
         # the object passed is a Task
         elif type(obj) == Task :
@@ -385,6 +390,7 @@ class Scheduler(object):
                     job.runningJob['closed'] = 'Y'
                     job.runningJob['getOutputTime'] = timestamp
                     job.runningJob['statusScheduler'] = "Cleared"
+                    job.runningJob['processStatus'] = 'output_retrieved'
 
             # handle errors
             if errors != '' :

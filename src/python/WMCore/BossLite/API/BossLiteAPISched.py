@@ -584,6 +584,7 @@ class BossLiteAPISched(object):
         
         # scheduler query
         self.scheduler.postMortem( task, outfile )
+        self.bossLiteSession.updateRunningInstances( task )
 
         return
     

@@ -256,7 +256,7 @@ class Service(dict):
                 msg += ' unavailable - it returned %s because %s'
                 msg = msg % (cachefile, he.url, he.status, he.reason)
                 self['logger'].warning(msg)
-                raise he, msg
+                raise HTTPException(msg)
             else:
                 cache_age = os.path.getmtime(cachefile)
                 t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
@@ -283,7 +283,7 @@ class Service(dict):
                         msg += ' unavailable - it returned %s because %s'
                         msg = msg % (cachefile, he.url, he.status, he.reason)
                         self['logger'].warning(msg)
-                    raise he, msg
+                    raise HTTPException(msg)
             
     def _verbCheck(self, verb='GET'):
         if verb.upper() in self.supportVerbList:

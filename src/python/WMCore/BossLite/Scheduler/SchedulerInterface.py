@@ -185,7 +185,7 @@ class SchedulerInterface(object):
 
     ##########################################################################
 
-    def postMortem ( self, schedIdList, outfile, service ) :
+    def postMortem ( self, schedIdList, outfile, service, dir ) :
         """
         execute any post mortem command such as logging-info
         and write it in outfile

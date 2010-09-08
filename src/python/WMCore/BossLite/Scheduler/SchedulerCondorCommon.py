@@ -485,7 +485,7 @@ class SchedulerCondorCommon(SchedulerInterface) :
 
 
 
-    def postMortem( self, schedulerId, outfile, service):
+    def postMortem( self, schedulerId, outfile, service, dir):
         """
         Get detailed postMortem job info
         """

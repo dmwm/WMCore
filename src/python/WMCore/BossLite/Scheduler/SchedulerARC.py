@@ -664,7 +664,7 @@ class SchedulerARC(SchedulerInterface):
                 job.runningJob.errors.append("Killing job %s failed: %s" % (job['name'], line))
 
 
-    def postMortem (self, arcId, outfile, service):
+    def postMortem (self, arcId, outfile, service, dir):
         """
         execute any post mortem command such as logging-info
         and write it in outfile

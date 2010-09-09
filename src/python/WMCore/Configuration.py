@@ -422,7 +422,7 @@ class Configuration(object):
         webappSection = self.section_(webappName)
         if webappName not in self._internal_webapps:
             self._internal_webapps.append(webappName)
-            webappSection.section_("server")
+            webappSection.section_("Webtools")
             webappSection.section_("database")
             webappSection.section_("security")
 

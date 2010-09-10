@@ -171,7 +171,6 @@ class CondorVanillaPlugin(PluginBase):
         
         jdl.append("universe = vanilla\n")
         jdl.append("Requirements = OpSys == \"LINUX\" && (Arch == \"INTEL\" || Arch == \"x86_64\")\n")
-        jdl.append("should_transfer_executable = TRUE\n")
         jdl.append("transfer_output_files = Report.pkl\n")
         jdl.append("should_transfer_files = YES\n")
         jdl.append("when_to_transfer_output = ON_EXIT\n")

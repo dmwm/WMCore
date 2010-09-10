@@ -108,7 +108,6 @@ class ShadowPoolPlugin(PluginBase):
         #jdl.append("universe = vanilla\n")
         jdl.append("universe = globus\n")
         jdl.append("globusscheduler = cms-sleepgw.fnal.gov/jobmanager-condor\n" )
-        jdl.append("should_transfer_executable = TRUE\n")
         #jdl.append("transfer_output_files = FrameworkJobReport.xml\n")
         jdl.append("transfer_output_files = Report.pkl\n")
         jdl.append("should_transfer_files = YES\n")

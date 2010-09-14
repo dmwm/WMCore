@@ -33,14 +33,14 @@ class ReqMgrRESTModel(RESTModel):
         self.urlPrefix = '%s/download?filepath=' % config.model.reqMgrHost
         self.cache = WMWorkloadCache.WMWorkloadCache(config.model.workloadCache)
 
-        self.methods = {'GET':{'request' : {'call':self.getRequest, 'args':['requestName']},
-                               'assignment' : {'call':self.getAssignment, 'args':['teamName', 'request']},
-                               'user' :  {'call':self.getUser, 'args':['userName']},
-                               'group' :  {'call':self.getGroup, 'args':['group', 'user']},
-                               'version' :  {'call':self.getVersion, 'args':[]},
-                               'team' :  {'call':self.getTeam, 'args':[]},
-                               'workQueue' : {'call':self.getWorkQueue, 'args':['request', 'workQueue']},
-                               'message' : {'call':self.getMessage, 'args':['request']}
+        self.methods = {'GET':{'request' : {'call':self.getRequest, 'args':['requestName'], 'expires': 0},
+                               'assignment' : {'call':self.getAssignment, 'args':['teamName', 'request'], 'expires': 0},
+                               'user' :  {'call':self.getUser, 'args':['userName'], 'expires': 0},
+                               'group' :  {'call':self.getGroup, 'args':['group', 'user'], 'expires': 0},
+                               'version' :  {'call':self.getVersion, 'args':[], 'expires': 0},
+                               'team' :  {'call':self.getTeam, 'args':[], 'expires': 0},
+                               'workQueue' : {'call':self.getWorkQueue, 'args':['request', 'workQueue'], 'expires': 0},
+                               'message' : {'call':self.getMessage, 'args':['request'], 'expires': 0}
                               },
                         'PUT':{'request' : {'call':self.putRequest, 
                                             'args':['requestName', 'status', 'priority']},

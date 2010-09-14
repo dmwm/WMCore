@@ -5,22 +5,22 @@ _CMSSWFetcher_
 Fetch configfiles and PSet TWeaks for CMSSW Steps in a WMTask
 
 """
+
 import os
 import urllib
-from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
-from WMCore.Cache.ConfigCache import WMConfigCache
-import WMCore.WMSpec.WMStep as WMStep
 
+from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
+from WMCore.Cache.WMConfigCache import ConfigCache
+
+import WMCore.WMSpec.WMStep as WMStep
+import PSetTweaks.PSetTweak as TweakAPI
 
 class CMSSWFetcher(FetcherInterface):
     """
     _CMSSWFetcher_
 
-    Pull configs from local config cache and add to sandbox
-
+    Pull configs from local config cache and add to sandbox.
     """
-
-
     def __call__(self, wmTask):
         """
         Trip through steps, find CMSSW steps, pull in config files,
@@ -47,8 +47,9 @@ class CMSSWFetcher(FetcherInterface):
                 configId = t.data.application.configuration.configId
                 tweakTarget = t.data.application.command.psetTweak
 
-                configCache = WMConfigCache(cacheDb,cacheUrl)
-                tweak = configCache.getTweak(configId)
+                configCache = ConfigCache(cacheUrl, cacheDb)
+                configCache.loadByID(configId)
+                tweak = TweakAPI.makeTweakFromJSON(configCache.getPSetTweaks())
                 if tweak:
                     tweakFile = "%s/%s" % (stepPath, tweakTarget)
                     tweak.persist(tweakFile, "json")

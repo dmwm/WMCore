@@ -2,7 +2,6 @@ import sys
 import tempfile
 import os
 import PSetTweaks.WMTweak as WMTweak
-from WMCore.Cache.ConfigCache import WMConfigCache
 from WMCore.Cache.WMConfigCache import ConfigCache
 
 

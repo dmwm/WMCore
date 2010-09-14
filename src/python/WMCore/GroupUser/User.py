@@ -57,7 +57,10 @@ class User(CouchObject):
         document['owner'] = {}
         document['owner']['user'] = self['name']
         document['owner']['group'] = self.group['name']
-        self.couch.commitOne(document)
+        
+        retval = self.couch.commitOne(document)
+        document["_id"] = retval[0]["id"]
+        document["_rev"] = retval[0]["rev"]
         return
         
     @Decorators.requireConnection
@@ -91,7 +94,3 @@ def makeUser(groupname, username, couchUrl = None, couchDatabase = None):
     user  = User(name = username)
     user.setGroup(group)
     return user
-    
-
-
-

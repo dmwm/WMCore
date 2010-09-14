@@ -46,14 +46,9 @@ class ConfigCache(WMObject):
     The class that handles the upload and download of configCache
     artifacts from Couch
     """
-
-
-
-    def __init__(self, config, couchDBName = None, id = None, rev = None):
-        WMObject.__init__(self, config)
-
+    def __init__(self, dbURL, couchDBName = None, id = None, rev = None):
         self.dbname = couchDBName
-        self.dburl  = self.config.CoreDatabase.couchurl
+        self.dburl  = dbURL
 
         try:
             self.couchdb = CouchServer(self.dburl)
@@ -67,8 +62,6 @@ class ConfigCache(WMObject):
             logging.error(msg)
             raise ConfigCacheException(message = msg)
             
-
-
         # Couch variables
         self.id   = id  # Couch ID
         self.rev  = rev # Couch Revision
@@ -77,18 +70,14 @@ class ConfigCache(WMObject):
         self.group = None
         self.owner = None
 
-
         # Internal data structure
-        self.document    = Document()
+        self.document  = Document()
         self.attachments = {}
 
         self.document['pset_tweak_details'] = None
         self.document['info']               = None
         self.document['config']             = None
-
-
         return
-
 
     def createDatabase(self):
         """
@@ -96,10 +85,8 @@ class ConfigCache(WMObject):
 
         """
         database = self.couchdb.createDatabase(self.dbname)
-
         database.commit()
         return database
-
 
     def createUserGroup(self, groupname, username):
         """
@@ -107,12 +94,9 @@ class ConfigCache(WMObject):
 
         Create all the userGroup information
         """
-
         self.createGroup(name = groupname)
         self.createUser(username = username)
-
         return
-
 
     def createGroup(self, name):
         """
@@ -120,28 +104,18 @@ class ConfigCache(WMObject):
 
         Create Group for GroupUser
         """
-
         self.group = Group(name = name)
         self.group.setCouch(self.dburl, self.dbname)
         self.group.connect()
-
         return
-
 
     @Decorators.requireGroup
     def createUser(self, username):
-
         self.owner = makeUser(self.group['name'], username,
                               couchUrl = self.dburl,
                               couchDatabase = self.dbname)
-
         self.owner.ownThis(self.document)
-
         return
-
-
-    
-
 
     @Decorators.requireGroup
     @Decorators.requireUser
@@ -151,8 +125,6 @@ class ConfigCache(WMObject):
 
         Save yourself!  Save your internal document.
         """
-
-
         rawResults = self.database.commit(doc = self.document)
 
         # We should only be committing one document at a time
@@ -160,11 +132,8 @@ class ConfigCache(WMObject):
 
         try:
             commitResults = rawResults[-1]
-
             self.rev = commitResults.get('rev')
             self.id  = commitResults.get('id')
-
-            
         except KeyError, ex:
             msg  = "Document returned from couch without ID or Revision\n"
             msg += "Document probably bad\n"
@@ -212,12 +181,13 @@ class ConfigCache(WMObject):
         return
 
 
-    def loadByID(self):
+    def loadByID(self, configID):
         """
         _loadByID_
 
         Load a document from the server given its couchID
         """
+        self.id = configID
 
         try:
             doc = self.database.document(id = self.id)
@@ -331,61 +301,50 @@ class ConfigCache(WMObject):
         """
         _setPSetTweaks_
 
-        Does exactly what it says on the tin
+        Set the PSet tweak details for the config.
         """
-
         self.document['pset_tweak_details'] = PSetTweak
-        
-
         return
 
     def getPSetTweaks(self):
         """
         _getPSetTweaks_
 
-        Returns whatever you have in the current document
+        Retrieve the PSet tweak details.
         """
-
-
         return self.document['pset_tweak_details']
 
+    def getOutputModuleInfo(self):
+        """
+        _getOutputModuleInfo_
 
-    def addConfig(self, newConfig):
+        Retrieve the dataset information for the config in the ConfigCache.
+        """
+        psetTweaks = self.getPSetTweaks()
+        outputModuleNames = psetTweaks["process"]["outputModules_"]
+
+        results = {}
+        for outputModuleName in outputModuleNames:
+            outModule = psetTweaks["process"][outputModuleName]
+            results[outputModuleName] = {"dataTier": outModule["dataset"]["dataTier"],
+                                         "filterName": outModule["dataset"]["filterName"]}
+
+        return results
+
+    def addConfig(self, newConfig, psetHash):
         """
         _addConfig_
 
 
         """
-
-        if not self.id:
-            # Then we have a non-existant document
-            # Hard to add stuff to that
-            msg = "Attempting to add config to non-existant document"
-            logging.error(msg)
-
-
         # The newConfig parameter is a URL suitable for passing to urlopen.
         configString = urllib.urlopen(newConfig).read(-1)
         configMD5 = hashlib.md5(configString).hexdigest()
 
-
-
-        if False:
-            # Then we have a duplicate file
-            # Load from the source
-            return
-
-
-        self.document['md5_hash']      = configMD5
+        self.document['md5_hash'] = configMD5
+        self.document['pset_hash'] = psetHash
         self.attachments['configFile'] = configString
-
-
-        # Save the new md5 hash
-        self.save()
-
-
         return
-
 
     def getConfig(self):
         """

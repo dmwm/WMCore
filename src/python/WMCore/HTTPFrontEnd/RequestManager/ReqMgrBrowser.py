@@ -1,10 +1,9 @@
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
-from WMCore.Cache.ConfigCache import WMConfigCache
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from PSetTweaks.PSetTweak import PSetHolder, PSetTweak
 from WMCore.Services.Requests import JSONRequests
 import WMCore.HTTPFrontEnd.RequestManager.Sites
-#from WMCore.Agent.Harness import Harness
+
 import cherrypy
 import logging
 import os.path
@@ -25,7 +24,6 @@ class ReqMgrBrowser(TemplatedPage):
         self.adminFields = {'RequestStatus':'statusMenu', 'ReqMgrRequestBasePriority':'priorityMenu'}
         self.requests = []
         configCacheUrl = config.configCacheUrl
-        self.configCache = WMConfigCache(config.configDBName, configCacheUrl)
         self.workloadDir = config.workloadCache
         self.jsonSender = JSONRequests(config.reqMgrHost)
         self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()

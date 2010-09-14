@@ -1,18 +1,83 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python
+"""
+_inject-to-config-cache_
+
+Add a config and it's meta data to the config cache.
+"""
+
+import os
 import sys
-from WMCore.Cache.ConfigCache import WMConfigCache
+import imp
+import subprocess
 
-if (len(sys.argv) != 4):
-	print "Usage: %s couchUrl database_name input_file" % sys.argv[0]
-	sys.exit(1)
+from PSetTweaks.WMTweak import makeTweak
+from WMCore.Cache.WMConfigCache import ConfigCache
 
+def edmConfigHash(inputFile):
+    """
+    _edmConfigHash_
+    
+    Run edmConfigHash binary to generate a PSetHash.  
+    """
+    print "Hashing config...",
+    sys.stdout.flush()
+    fileHandle = open(inputFile, "r")
+    
+    proc = subprocess.Popen(["edmConfigHash"], shell = True, cwd = os.getcwd(),
+                            stdout = subprocess.PIPE,
+                            stderr = subprocess.PIPE,
+                            stdin = fileHandle)
 
-couchUrl  = sys.argv[1]
-couchDB   = sys.argv[2]
-inputFile = sys.argv[3]
+    stdout, stderr = proc.communicate()
+    fileHandle.close()
+    
+    if proc.returncode == 0:
+        hashData = str(stdout).strip()
+        print "done."
+        return hashData
 
-cache = WMConfigCache( couchDB, couchUrl )
-(docid, revision) = cache.addConfig( inputFile )
-print "Added file to config cache"
-print "DocID:    %s" % docid
-print "Revision: %s" % revision
+    msg = "Error running edmConfigHash:\n"
+    msg += stdout
+    msg += "\n"
+    msg += stderr
+    raise RuntimeError(msg)
+
+def loadConfig(configPath):
+    """
+    _loadConfig_
+
+    Import a config.
+    """
+    print "Importing the config, this may take a while...",
+    sys.stdout.flush()
+    cfgBaseName = os.path.basename(configPath).replace(".py", "")
+    cfgDirName = os.path.dirname(configPath)
+    modPath = imp.find_module(cfgBaseName, [cfgDirName])
+
+    loadedConfig = imp.load_module(cfgBaseName, modPath[0],
+                                   modPath[1], modPath[2])
+
+    print "done."
+    return loadedConfig
+
+if __name__ == "__main__":
+    if len(sys.argv) != 6:
+        print "Usage: %s couchUrl database_name user_name group_name input_file" % sys.argv[0]
+        sys.exit(1)
+
+    if not os.path.exists(sys.argv[5]):
+        print "Error: Can't locate config file."
+        sys.exit(1)
+
+    loadedConfig = loadConfig(sys.argv[5])
+    psetHash = edmConfigHash(sys.argv[5])
+
+    configCache = ConfigCache(sys.argv[1], sys.argv[2])
+    configCache.createUserGroup(sys.argv[4], sys.argv[3])
+    configCache.addConfig(sys.argv[5], psetHash)
+    configCache.setPSetTweaks(makeTweak(loadedConfig.process).jsondictionary())
+    configCache.save()
+
+    print "Added file to the config cache:"
+    print "  DocID:    %s" % configCache.id
+    print "  Revision: %s" % configCache.rev

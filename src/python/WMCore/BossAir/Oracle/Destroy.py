@@ -15,7 +15,7 @@ from WMCore.Database.DBCreator import DBCreator
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 
-from WMCore.BossLite.MySQL.Create import Create
+from WMCore.BossAir.Oracle.Create import Create
 
 class Destroy(DBCreator):    
     """
@@ -34,15 +34,18 @@ class Destroy(DBCreator):
             logger = myThread.logger
         if dbi == None:
             dbi = myThread.dbi
-
-
-        DBCreator.__init__(self, logger, dbi)
             
+        DBCreator.__init__(self, logger, dbi)
 
-        self.create['01bl_runjob']    = "DROP TABLE bl_runjob"
-        self.create['02bl_status']    = "DROP TABLE bl_status"
+        self.delete['01bl_runjob']    = "DROP TABLE bl_runjob"
+        self.delete['02bl_status']    = "DROP TABLE bl_status"
 
-        self.requiredTables = []
+
+        j = 50
+        for i in Create.sequence_tables:
+            seqname = '%s_SEQ' % i
+            self.create["%s%s" % (j, seqname)] = \
+                           "DROP SEQUENCE %s"  % seqname 
 
         return
     

@@ -50,4 +50,4 @@ class TestPlugin(BasePlugin):
 
         """
 
-        return [], jobs
+        return [], [], jobs

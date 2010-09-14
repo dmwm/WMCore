@@ -19,12 +19,15 @@ class RunJob(dict):
     the necessary fields.
     """
 
-    def __init__(self, id = -1, jobid = -1, gridid = -1,
-                 bulkid = -1, retry_count = 0, status = None,
+    def __init__(self, id = None, jobid = -1, gridid = None,
+                 bulkid = None, retry_count = 0, status = None,
                  location = None, user = None, plugin = None,
-                 cache_dir = None, status_time = 0):
+                 cache_dir = None, status_time = None):
         """
-        Just make sure you init the dictionary fields
+        Just make sure you init the dictionary fields.
+
+        If the field has no value, leave it as NONE so we can
+        overwrite it later.
 
         """
 
@@ -78,8 +81,8 @@ class RunJob(dict):
         job['retry_count']  = self['retry_count']
         job['couch_record'] = None
 
-        for key in job.keys():
-            if key in self.keys() and key != 'id':
+        for key in self.keys():
+            if key != 'id':
                 job[key] = self[key]
 
 

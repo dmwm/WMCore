@@ -35,7 +35,8 @@ class BasePlugin:
 
         # NOTE: This MUST be overridden in the plugin
         # MUST MUST MUST
-        self.states = []
+        # These are just the MANDATORY states
+        self.states = ['New', 'Timeout']
 
 
 
@@ -54,9 +55,13 @@ class BasePlugin:
         _track_
         
         Tracks jobs
+        Returns three lists:
+        1) the running jobs
+        2) the jobs that need to be updated in the DB
+        3) the complete jobs
         """
 
-        return
+        return jobs, jobs, []
 
 
     def complete(self, jobs):

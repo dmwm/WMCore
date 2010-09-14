@@ -53,14 +53,15 @@ class CondorPlugin(BasePlugin):
 
         BasePlugin.__init__(self, config)
 
-        self.states = ['New', 'Running', 'Idle', 'Complete', 'Held', 'Error']
+        self.states = ['New', 'Running', 'Idle', 'Complete', 'Held', 'Error', 'Timeout']
 
         self.stateMap = {'New': 'Pending',
                          'Idle': 'Pending',
                          'Running': 'Running',
                          'Held': 'Running',
                          'Complete': 'Complete',
-                         'Error': 'Error'}
+                         'Error': 'Error',
+                         'Timeout': 'Error'}
 
 
         self.locationDict = {}
@@ -155,6 +156,10 @@ class CondorPlugin(BasePlugin):
         _track_
 
         Track the jobs while in condor
+        This returns a three-way ntuple
+        First, the total number of jobs still running
+        Second, the jobs that need to be changed
+        Third, the jobs that need to be completed
         """
 
 
@@ -163,6 +168,7 @@ class CondorPlugin(BasePlugin):
 
         changeList   = []
         completeList = []
+        runningList  = []
 
         # Get the job
         jobInfo = self.getClassAds()
@@ -185,14 +191,21 @@ class CondorPlugin(BasePlugin):
                     # Job is Running, doing what it was supposed to
                     statName = 'Running'
 
+                # Get the global state
+                job['globalState'] = self.stateMap[statName]
+
                 if statName != job['status']:
                     # Then the status has changed
                     job['status']      = statName
                     job['status_time'] = jobAd.get('stateTime', 0)
-                    job['globalState'] = self.stateMap[statName]
                     changeList.append(job)
 
-        return changeList, completeList
+
+                runningList.append(job)
+
+                
+
+        return runningList, changeList, completeList
 
 
 

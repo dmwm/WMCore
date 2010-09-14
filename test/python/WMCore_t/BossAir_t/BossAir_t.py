@@ -41,7 +41,8 @@ from WMCore.WMBS.Job          import Job
 
 from WMCore.WMBS.Job import Job
 
-from WMCore.BossAir.BossAirAPI import BossAirAPI, BossAirException
+from WMCore.BossAir.BossAirAPI   import BossAirAPI, BossAirException
+from WMCore.BossAir.StatusPoller import StatusPoller
 
 from WMCore.Agent.HeartbeatAPI              import HeartbeatAPI
 
@@ -215,6 +216,11 @@ class BossAirTest(unittest.TestCase):
         config.JobStateMachine.couchDBName     = "mnorman_test"
 
 
+        # JobStatus
+        config.component_('JobStatus')
+        config.JobStatus.stateTimeouts  = {'Pending': 2, 'Running': 86400}
+
+
 
         return config
 
@@ -326,7 +332,7 @@ class BossAirTest(unittest.TestCase):
             testJob['sandbox'] = task.data.input.sandbox
             testJob['spec']    = os.path.join(self.testDir, 'basicWorkload.pcl')
             testJob['mask']['FirstEvent'] = 101
-            testJob['user']    = 'mnorman'
+            testJob['owner']   = 'mnorman'
             testJob["siteBlacklist"] = bl
             testJob["siteWhitelist"] = wl
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
@@ -372,6 +378,7 @@ class BossAirTest(unittest.TestCase):
 
         for i in range(nJobs):
             testJob = Job(name = '%s-%i' % (nameStr, i))
+            testJob['location'] = self.sites[0]
             testJob.create(testJobGroup)
             jobList.append(testJob)
 
@@ -451,12 +458,17 @@ class BossAirTest(unittest.TestCase):
         loadedJobs = baAPI.loadByWMBS(wmbsJobs = jobDummies)
         self.assertEqual(len(loadedJobs), nJobs)
 
+
         # See if we can delete jobs
         baAPI._deleteJobs(jobs = deadJobs)
         
         # Confirm that they're gone
         deadJobs = baAPI._loadByStatus(status = 'Dead')
         self.assertEqual(len(deadJobs), 0)
+
+
+        self.assertEqual(len(baAPI.jobs), 0)
+
         
 
         return
@@ -490,8 +502,8 @@ class BossAirTest(unittest.TestCase):
         # Prior to building the job, each job must have a plugin
         # and user assigned
         for job in jobDummies:
-            job['plugin'] = 'TestPlugin'
-            job['user']   = 'mnorman'
+            job['plugin']   = 'TestPlugin'
+            job['owner']    = 'mnorman'
 
         baAPI.submit(jobs = jobDummies)
 
@@ -510,6 +522,11 @@ class BossAirTest(unittest.TestCase):
         # Should be no more running jobs
         runningJobs = baAPI._listRunning()
         self.assertEqual(len(runningJobs), 0)
+
+
+        # Check if they're complete
+        completeJobs = baAPI.getComplete()
+        self.assertEqual(len(completeJobs), nJobs)
 
 
         # Do this test because BossAir is specifically built
@@ -536,6 +553,8 @@ class BossAirTest(unittest.TestCase):
         This test works on the CondorPlugin, checking all of
         its functions with a single set of jobs
         """
+
+        #return
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
@@ -567,7 +586,7 @@ class BossAirTest(unittest.TestCase):
             tmpJob['cache_dir']   = self.testDir
             tmpJob['retry_count'] = 0
             tmpJob['plugin']      = 'CondorPlugin'
-            tmpJob['user']        = 'mnorman'
+            tmpJob['owner']        = 'mnorman'
             jobList.append(tmpJob)
 
 
@@ -614,7 +633,7 @@ class BossAirTest(unittest.TestCase):
         Prototype the BossAir workflow
         """
 
-        return
+        #return
 
         myThread = threading.currentThread()
 
@@ -655,68 +674,74 @@ class BossAirTest(unittest.TestCase):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, nSubs * nJobs)
 
+        newJobs = baAPI._loadByStatus(status = 'New')
+        self.assertEqual(len(newJobs), nSubs * nJobs)
 
+        # Check WMBS
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+        
+
+        statusPoller = StatusPoller(config = config)
+
+        statusPoller.algorithm()
+
+
+        newJobs = baAPI._loadByStatus(status = 'New')
+        self.assertEqual(len(newJobs), 0)
+
+        newJobs = baAPI._loadByStatus(status = 'Idle')
+        self.assertEqual(len(newJobs), nSubs * nJobs)
+        
+
+        # Tracker should do nothing
+        jobTracker.algorithm()
+
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+
+        # Wait for jobs to timeout due to short Pending wait period
+        time.sleep(5)
+
+
+        statusPoller.algorithm()
+
+        newJobs = baAPI._loadByStatus(status = 'Idle')
+        self.assertEqual(len(newJobs), 0)
+
+        print "About to do test that fails"
+        print myThread.dbi.processData("SELECT * FROM bl_status")[0].fetchall()
+        print myThread.dbi.processData("SELECT sched_status FROM bl_runjob")[0].fetchall()
+
+        newJobs = baAPI._loadByStatus(status = 'Timeout', complete = '0')
+        self.assertEqual(len(newJobs), nSubs * nJobs)
+
+        # Jobs should be gone
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0)
+
+
+        # Check if they're complete
+        completeJobs = baAPI.getComplete()
+        self.assertEqual(len(completeJobs), nSubs * nJobs)
+
+
+        # Because they timed out, they all should have failed
+        jobTracker.algorithm()
+
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), 0)
+
+        result = getJobsAction.execute(state = 'JobFailed', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+        
 
         return
 
         
-
-        # Check WMBS
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-        baList = baAPI.list()
-        self.assertEqual(len(baList), nSubs * nJobs)
-
-        jobTracker.setup()
-        jobTracker.algorithm()
-
-
-        # Check WMBS
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-        baList = baAPI.list()
-        self.assertEqual(len(baList), nSubs * nJobs)
-
-
-
-        protoStatus = ProtoStatus(config = config)
-        protoStatus.algorithm()
-
-        baList = baAPI.list()
-        self.assertEqual(len(baList), nSubs * nJobs)
-        for job in baList:
-            self.assertEqual(job['status'].lower(), 'idle')
-
-
-        # Now clean-up
-        command = ['condor_rm', self.user]
-        pipe = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)
-        pipe.communicate()
-
-
-
-        protoStatus.algorithm()
-
-
-        baList = baAPI.list()
-        self.assertEqual(len(baList), nSubs * nJobs)
-        for job in baList:
-            self.assertEqual(job['status'].lower(), 'complete')
-
-
-        jobTracker.algorithm()
-
-        result = getJobsAction.execute(state = 'Complete', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-        baList = baAPI.list()
-        self.assertEqual(len(baList), 0)
-
-        return
 
 
     @attr('integration')
@@ -948,7 +973,7 @@ class BossAirTest(unittest.TestCase):
         Because I need a test for the monitoring DAO
         """
 
-
+        return
 
         myThread = threading.currentThread()
 
@@ -966,7 +991,7 @@ class BossAirTest(unittest.TestCase):
         # and user assigned
         for job in jobDummies:
             job['plugin']   = 'TestPlugin'
-            job['user']     = 'mnorman'
+            job['owner']    = 'mnorman'
             job['location'] = 'T2_US_UCSD'
             job.save()
 

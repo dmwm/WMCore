@@ -17,8 +17,8 @@ class LoadByID(DBFormatter):
 
 
     sql = """SELECT rj.wmbs_id AS jobid, rj.grid_id AS gridid, rj.bulk_id AS bulkid,
-               st.name AS status, rj.retry_count as retry_count, rj.id AS id,
-               rj.status_time as status_time, wl.plugin AS plugin, wf.owner AS user
+               st.name AS status, rj.retry_count AS retry_count, rj.id AS id,
+               rj.status_time AS status_time, wl.plugin AS plugin, wf.owner AS owner
                FROM bl_runjob rj
                INNER JOIN bl_status st ON rj.sched_status = st.id
                INNER JOIN wmbs_job wj ON wj.id = rj.wmbs_id

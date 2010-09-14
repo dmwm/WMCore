@@ -42,6 +42,7 @@ class UpdateJobs(DBFormatter):
                           'status': job.get('status', None), 'retry_count': job['retry_count'], 'id': job['id'],
                           'status_time': job.get('status_time', None)})
 
+
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
 

@@ -82,6 +82,7 @@ class BossAirAPI(WMConnectionBase):
         self.runningJobDAO = self.daoFactory(classname = "LoadRunning")
         self.loadJobsDAO   = self.daoFactory(classname = "LoadByStatus")
         self.completeDAO   = self.daoFactory(classname = "CompleteJob")
+        self.monitorDAO    = self.daoFactory(classname = "LoadForMonitoring")
                                 
 
         self.loadPlugin()
@@ -606,6 +607,30 @@ class BossAirAPI(WMConnectionBase):
 
 
         return
+
+
+
+
+    def monitor(self):
+        """
+        _monitor_
+
+        Initiate the call to the monitoring DAO
+        This should not be called by the standard Submitter/Status/Tracker
+        system.  It is meant for outside calling.
+        """
+
+
+        existingTransaction = self.beginTransaction()
+
+
+        results = self.monitorDAO.execute(conn = self.getDBConn(),
+                                          transaction = self.existingTransaction())  
+
+        self.commitTransaction(existingTransaction)
+
+
+        return results
 
 
         

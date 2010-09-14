@@ -420,6 +420,7 @@ class BossAirTest(unittest.TestCase):
         deadJobs = baAPI._loadByStatus(status = 'Dead')
         self.assertEqual(len(deadJobs), 0)
         raisesException = False
+        
         try:
             baAPI._loadByStatus(status = 'FalseStatus')
         except BossAirException:
@@ -612,6 +613,8 @@ class BossAirTest(unittest.TestCase):
 
         Prototype the BossAir workflow
         """
+
+        return
 
         myThread = threading.currentThread()
 
@@ -932,6 +935,49 @@ class BossAirTest(unittest.TestCase):
             shutil.rmtree('tmpDir')
 
         shutil.copytree(self.testDir, 'tmpDir')
+
+
+        return
+
+
+
+    def testG_monitoringDAO(self):
+        """
+        _monitoringDAO_
+
+        Because I need a test for the monitoring DAO
+        """
+
+
+
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+
+        baAPI  = BossAirAPI(config = config)
+
+
+        # Create some jobs
+        nJobs = 10
+
+        jobDummies = self.createDummyJobs(nJobs = nJobs)
+
+        # Prior to building the job, each job must have a plugin
+        # and user assigned
+        for job in jobDummies:
+            job['plugin']   = 'TestPlugin'
+            job['user']     = 'mnorman'
+            job['location'] = 'T2_US_UCSD'
+            job.save()
+
+        baAPI.submit(jobs = jobDummies)
+
+
+        results = baAPI.monitor()
+
+        self.assertEqual(len(results), nJobs)
+        for job in results:
+            self.assertEqual(job['plugin'], 'CondorPlugin')
 
 
         return

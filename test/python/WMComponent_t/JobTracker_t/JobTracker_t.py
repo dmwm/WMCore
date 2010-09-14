@@ -35,10 +35,10 @@ from WMCore.WMBS.Job          import Job
 
 from WMCore.DataStructs.Run   import Run
 
-from WMComponent.JobTracker.JobTracker       import JobTracker
+from WMComponent.JobTracker.JobTracker import JobTracker
 from WMComponent.JobTracker.JobTrackerPoller import JobTrackerPoller
-from WMCore.ResourceControl.ResourceControl  import ResourceControl
-from WMCore.JobStateMachine.ChangeState      import ChangeState
+
+from WMCore.JobStateMachine.ChangeState import ChangeState
 
 from WMCore.Agent.Configuration import Configuration
 
@@ -136,8 +136,8 @@ class JobTrackerTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"])
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"],
+        #self.tearDown()
+        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
                                 useDefault = False)
 
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
@@ -145,17 +145,9 @@ class JobTrackerTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
         self.getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
 
-
-        #Create sites in resourceControl
-        resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = 'malpaquet', seName = 'se.malpaquet',
-                                   ceName = 'malpaquet', plugin = "CondorPlugin")
-        resourceControl.insertThreshold(siteName = 'malpaquet', taskType = 'Processing', \
-                                        maxSlots = 10000)
-
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute(siteName = "malpaquet", seName = "malpaquet",
-                               ceName = "malpaquet", plugin = "CondorPlugin") 
+                               ceName = "malpaquet") 
 
 
         # We actually need the user name
@@ -167,7 +159,7 @@ class JobTrackerTest(unittest.TestCase):
         """
         Database deletion
         """
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"])
+        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"])
 
         self.testInit.delWorkDir()
         
@@ -199,31 +191,6 @@ class JobTrackerTest(unittest.TestCase):
         config.JobTracker.idleTimeLimit = 7776000
         config.JobTracker.heldTimeLimit = 7776000
         config.JobTracker.unknTimeLimit = 7776000
-
-
-        config.component_("JobSubmitter")
-        config.JobSubmitter.logLevel      = 'INFO'
-        config.JobSubmitter.maxThreads    = 1
-        config.JobSubmitter.pollInterval  = 10
-        config.JobSubmitter.pluginName    = 'AirPlugin'
-        config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
-        config.JobSubmitter.submitDir     = os.path.join(self.testDir, 'submit')
-        config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
-        #config.JobSubmitter.submitScript  = os.path.join(os.getcwd(), 'submit.sh')
-        config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(),
-                                                         'test/python/WMComponent_t/JobSubmitter_t',
-                                                         'submit.sh')
-        config.JobSubmitter.componentDir  = os.path.join(os.getcwd(), 'Components')
-        config.JobSubmitter.workerThreads = 2
-        config.JobSubmitter.jobsPerWorker = 200
-        config.JobSubmitter.gLiteConf     = os.path.join(os.getcwd(), 'config.cfg')
-
-
-
-        # BossAir
-        config.component_("BossAir")
-        config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
-        config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
 
 
         #JobStateMachine
@@ -348,11 +315,11 @@ class JobTrackerTest(unittest.TestCase):
         jobTracker.algorithm()
 
         result = self.getJobs.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nJobs)
+        self.assertEqual(len(result), 0)
 
 
         result = self.getJobs.execute(state = 'complete', jobType = "Processing")
-        self.assertEqual(len(result), 0)
+        self.assertEqual(len(result), 10)
 
 
 
@@ -368,30 +335,17 @@ class JobTrackerTest(unittest.TestCase):
         # Create a submit script
         createSubmitScript(submitDir)
 
-
-        jobPackage = os.path.join(self.testDir, 'JobPackage.pkl')
-        f = open(jobPackage, 'w')
-        f.write(' ')
-        f.close()
-
-        sandbox = os.path.join(self.testDir, 'sandbox.box')
-        f = open(sandbox, 'w')
-        f.write(' ')
-        f.close()
-
+        # Now create some jobs
         for job in testJobGroup.jobs:
-            job['plugin']    = 'CondorPlugin'
-            job['user']      = 'jchurchill'
-            job['custom']    = {'location': 'malpaquet'}
-            job['cache_dir'] = self.testDir
+            jdl = createJDL(id = job['id'], directory = submitDir, jobCE = jobCE)
+            jdlFile = os.path.join(submitDir, 'condorJDL_%i.jdl' % (job['id']))
+            handle = open(jdlFile, 'w')
+            handle.writelines(jdl)
+            handle.close()
 
-        info = {}
-        info['packageDir'] = self.testDir
-        info['index']      = 0
-        info['sandbox']    = sandbox
-
-        jobTracker.bossAir.submit(jobs = testJobGroup.jobs, info = info)
-
+            command = ["condor_submit", jdlFile]
+            pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
+                                    stderr = subprocess.PIPE, shell = False)
 
         time.sleep(1)
 
@@ -417,23 +371,13 @@ class JobTrackerTest(unittest.TestCase):
 
 
         # Then we're done
-        jobTracker.bossAir.kill(jobs = testJobGroup.jobs)
+        killList = [x['id'] for x in testJobGroup.jobs]
+        jobTracker.killJobs(jobList = killList)
 
         # No jobs should be left
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0)
-
-
-        jobTracker.algorithm()
-
-
-        # Are jobs in the right state?
-        result = self.getJobs.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), 0)
-
-        result = self.getJobs.execute(state = 'Complete', jobType = "Processing")
-        self.assertEqual(len(result), nJobs)
-
+            
 
         # This is optional if you want to look at what
         # files were actually created during running
@@ -452,7 +396,7 @@ class JobTrackerTest(unittest.TestCase):
         Run a really long test using the condor plugin
         """
 
-        return
+        #return
 
         # This has to be run with an empty queue
         nRunning = getCondorRunningJobs(self.user)

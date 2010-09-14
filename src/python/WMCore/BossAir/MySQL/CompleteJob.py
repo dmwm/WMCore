@@ -5,6 +5,7 @@ _CompleteJob_
 MySQL implementation for labeling a job Complete
 """
 
+import logging
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -27,12 +28,17 @@ class CompleteJob(DBFormatter):
         Complete jobs
         """
 
+        if len(jobs) < 1:
+            # Then we have nothing to do
+            return
+
         binds = []
         for job in jobs:
             binds.append({'id': job})
 
         
-        result = self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)
+        self.dbi.processData(self.sql, binds, conn = conn,
+                             transaction = transaction)
+
 
         return

@@ -5,13 +5,19 @@ _BasePlugin_
 Base class for BossAir plugins
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.14 2010/06/28 19:05:14 spigafi Exp $"
-__revision__ = "$Revision: 1.14 $"
+from WMCore.WMException import WMException
 
 
 
+class BossAirPluginException(WMException):
+    """
+
+    Generalized exception class for BossAir Plugins
 
 
+    """
+
+    
 
 
 class BasePlugin:

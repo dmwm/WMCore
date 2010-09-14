@@ -75,6 +75,12 @@ class JobSubmitterPoller(BaseWorkerThread):
             configDict["submitScript"] = os.path.join(getWMBASE(),
                                                       "src/python/WMComponent/JobSubmitter/submit.sh")
 
+
+        if hasattr(self.config, 'BossAir'):
+            configDict['pluginNames'] = config.BossAir.pluginNames
+            configDict['pluginDir']   = config.BossAir.pluginDir
+            configDict['gLiteConf']   = config.JobSubmitter.gLiteConf
+
         if hasattr(self.config.JobSubmitter, 'inputFile'):
             configDict['inputFile'] = self.config.JobSubmitter.inputFile
 

@@ -16,7 +16,7 @@ class NewState(DBFormatter):
     """
 
 
-    sql = """INSERT INTO bl_status (name) VALUES (:name)"""
+    sql = """INSERT IGNORE INTO bl_status (name) VALUES (:name)"""
 
 
 

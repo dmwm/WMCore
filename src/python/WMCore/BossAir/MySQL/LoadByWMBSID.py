@@ -39,6 +39,10 @@ class LoadByWMBSID(DBFormatter):
         where you don't have any bossAir info
         """
 
+        if len(jobs) < 1:
+            # No jobs to run
+            return
+
         binds = []
         for job in jobs:
             binds.append({'id': job['id'], 'retry_count': job['retry_count']})

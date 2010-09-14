@@ -4,11 +4,6 @@
 BossAir preliminary test
 """
 
-__revision__ = "$Id: JobTracker_t.py,v 1.8 2010/06/03 21:31:33 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
-
-
-
 
 import os
 import time
@@ -51,9 +46,15 @@ from WMCore.BossAir.BossAirAPI import BossAirAPI, BossAirException
 from WMCore.Agent.HeartbeatAPI              import HeartbeatAPI
 
 
+from WMCore_t.WMSpec_t.TestSpec import testWorkload
+
+
 
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMComponent.JobTracker.JobTrackerPoller import JobTrackerPoller
+
+
+from nose.plugins.attrib import attr
 
 
 
@@ -89,6 +90,8 @@ class BossAirTest(unittest.TestCase):
 
     sites = ['T2_US_Florida', 'T2_US_UCSD', 'T2_TW_Taiwan', 'T1_CH_CERN', 'malpaquet']
 
+    
+
     def setUp(self):
         """
         setup for test.
@@ -113,18 +116,12 @@ class BossAirTest(unittest.TestCase):
         locationSlots  = self.daoFactory(classname = "Locations.SetJobSlots")
 
 
-        #locationAction.execute(siteName = "malpaquet", seName = "malpaquet",
-        #                       ceName = "malpaquet") 
-
-        for site in self.sites:
-            locationAction.execute(siteName = site, seName = 'se.%s' % (site), ceName = site)
-            locationSlots.execute(siteName = site, jobSlots = 1000)
-
 
         #Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:
-            resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site), ceName = site)
+            resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
+                                       ceName = site, plugin = "CondorPlugin")
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             maxSlots = 10000)
 
@@ -176,7 +173,7 @@ class BossAirTest(unittest.TestCase):
 
 
         config.component_("BossAir")
-        config.BossAir.pluginNames = ['TestPlugin']
+        config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
         config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
 
         config.component_("JobSubmitter")
@@ -188,7 +185,9 @@ class BossAirTest(unittest.TestCase):
         config.JobSubmitter.submitDir     = os.path.join(self.testDir, 'submit')
         config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
         #config.JobSubmitter.submitScript  = os.path.join(os.getcwd(), 'submit.sh')
-        config.JobSubmitter.submitScript  = '/uscms/home/mnorman/WMCORE/src/python/WMComponent/JobSubmitter/submit.sh'
+        config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(),
+                                                         'test/python/WMComponent_t/JobSubmitter_t',
+                                                         'submit.sh')
         config.JobSubmitter.componentDir  = os.path.join(os.getcwd(), 'Components')
         config.JobSubmitter.workerThreads = 2
         config.JobSubmitter.jobsPerWorker = 200
@@ -211,8 +210,7 @@ class BossAirTest(unittest.TestCase):
 
         # JobStateMachine
         config.component_('JobStateMachine')
-        config.JobStateMachine.couchurl        = os.getenv('COUCHURL',
-                                                           'mnorman:theworst@cmssrv52.fnal.gov:5984')
+        config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
         config.JobStateMachine.default_retries = 1
         config.JobStateMachine.couchDBName     = "mnorman_test"
 
@@ -228,9 +226,8 @@ class BossAirTest(unittest.TestCase):
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        arguments = getTestArguments()
 
-        workload = rerecoWorkload("Tier1ReReco", arguments)
+        workload = testWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
 
         
@@ -329,6 +326,7 @@ class BossAirTest(unittest.TestCase):
             testJob['sandbox'] = task.data.input.sandbox
             testJob['spec']    = os.path.join(self.testDir, 'basicWorkload.pcl')
             testJob['mask']['FirstEvent'] = 101
+            testJob['user']    = 'mnorman'
             testJob["siteBlacklist"] = bl
             testJob["siteWhitelist"] = wl
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
@@ -380,6 +378,7 @@ class BossAirTest(unittest.TestCase):
         return jobList
 
 
+    @attr('integration')
     def testA_APITest(self):
         """
         _APITest_
@@ -462,7 +461,74 @@ class BossAirTest(unittest.TestCase):
         return
 
 
-    def testB_CondorTest(self):
+    @attr('integration')
+    def testB_PluginTest(self):
+        """
+        _PluginTest_
+        
+
+        Now check that these functions worked if called through plugins
+        Instead of directly.
+
+        There are only three plugin
+        """
+
+
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+
+        baAPI  = BossAirAPI(config = config)
+
+
+        # Create some jobs
+        nJobs = 10
+
+        jobDummies = self.createDummyJobs(nJobs = nJobs)
+
+        # Prior to building the job, each job must have a plugin
+        # and user assigned
+        for job in jobDummies:
+            job['plugin'] = 'TestPlugin'
+            job['user']   = 'mnorman'
+
+        baAPI.submit(jobs = jobDummies)
+
+
+        newJobs = baAPI._loadByStatus(status = 'New')
+        self.assertEqual(len(newJobs), nJobs)
+
+        # Should be no more running jobs
+        runningJobs = baAPI._listRunning()
+        self.assertEqual(len(runningJobs), nJobs)
+
+
+        # Test Plugin should complete all jobs
+        baAPI.track()
+
+        # Should be no more running jobs
+        runningJobs = baAPI._listRunning()
+        self.assertEqual(len(runningJobs), 0)
+
+
+        # Do this test because BossAir is specifically built
+        # to keep it from finding completed jobs
+        result = myThread.dbi.processData("SELECT id FROM bl_runjob")[0].fetchall()
+        self.assertEqual(len(result), nJobs)
+
+
+        baAPI.removeComplete(jobs = jobDummies)
+
+
+        result = myThread.dbi.processData("SELECT id FROM bl_runjob")[0].fetchall()
+        self.assertEqual(len(result), 0)
+        
+
+        return
+
+
+    @attr('integration')
+    def testC_CondorTest(self):
         """
         _CondorTest_
 
@@ -470,18 +536,14 @@ class BossAirTest(unittest.TestCase):
         its functions with a single set of jobs
         """
 
-        return
-
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
 
         config = self.getConfig()
-        config.BossAir.pluginName = 'CondorPlugin'
 
         nJobs = 10
 
         jobDummies = self.createDummyJobs(nJobs = nJobs)
-
 
         baAPI  = BossAirAPI(config = config)
 
@@ -503,6 +565,8 @@ class BossAirTest(unittest.TestCase):
             tmpJob['name']        = j['name']
             tmpJob['cache_dir']   = self.testDir
             tmpJob['retry_count'] = 0
+            tmpJob['plugin']      = 'CondorPlugin'
+            tmpJob['user']        = 'mnorman'
             jobList.append(tmpJob)
 
 
@@ -515,37 +579,23 @@ class BossAirTest(unittest.TestCase):
 
         baAPI.submit(jobs = jobList, info = info)
 
-        baAPI.new(jobs = jobList)
-
-
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, nJobs)
 
-        baList = baAPI.list()
+        newJobs = baAPI._loadByStatus(status = 'New')
+        self.assertEqual(len(newJobs), nJobs)
 
 
-        trackList = baAPI.track(jobs = jobList)
-        for job in trackList:
-            # All jobs should be there and idle
-            self.assertEqual(job['Status'], 'Idle')
+        baAPI.track()
 
-            # Should also be in baList
-            for entry in baList:
-                if entry['id'] == job['id']:
-                    # This is the right one
-                    self.assertEqual(entry['status'], 'new')
-                    break
+        newJobs = baAPI._loadByStatus(status = 'New')
+        self.assertEqual(len(newJobs), 0)
 
+        newJobs = baAPI._loadByStatus(status = 'Idle')
+        self.assertEqual(len(newJobs), nJobs)
 
 
         baAPI.kill(jobs = jobList)
-
-        baAPI.remove(jobs = jobList)
-
-        baList = baAPI.list()
-
-        self.assertEqual(baList, [])
-
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0)
@@ -555,14 +605,15 @@ class BossAirTest(unittest.TestCase):
 
 
 
-    def testC_PrototypeChain(self):
+    @attr('integration')
+    def testD_PrototypeChain(self):
         """
         _PrototypeChain_
 
         Prototype the BossAir workflow
         """
 
-        return
+        myThread = threading.currentThread()
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
@@ -596,11 +647,16 @@ class BossAirTest(unittest.TestCase):
         jobSubmitter = JobSubmitterPoller(config = config)
         jobTracker   = JobTrackerPoller(config = config)
 
-
         jobSubmitter.algorithm()
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, nSubs * nJobs)
+
+
+
+        return
+
+        
 
         # Check WMBS
         getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
@@ -660,8 +716,8 @@ class BossAirTest(unittest.TestCase):
         return
 
 
-
-    def testD_gLiteBasics(self):
+    @attr('integration')
+    def testE_gLiteBasics(self):
         """
         _gLiteBasics_
 
@@ -764,7 +820,8 @@ class BossAirTest(unittest.TestCase):
         return
 
 
-    def testE_gLiteSucks(self):
+    @attr('integration')
+    def testF_gLiteSucks(self):
         """
         _gLiteSucks_
 

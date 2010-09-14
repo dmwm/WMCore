@@ -28,11 +28,26 @@ class TestPlugin(BasePlugin):
         self.states = ['New', 'Dead', 'Gone']
 
 
-    def submit(self, jobs, info):
+    def submit(self, jobs, info = None):
         """
         Check and see if we have jobs
 
         """
 
         for job in jobs:
-            print job
+            #print job
+            pass
+
+
+        return jobs, []
+
+
+
+    def track(self, jobs, info = None):
+        """
+        Label the jobs as done
+        
+
+        """
+
+        return [], jobs

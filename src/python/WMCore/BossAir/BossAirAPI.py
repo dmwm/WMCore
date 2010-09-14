@@ -13,9 +13,6 @@ geared toward the inside expect RunJob objects.  Interior interfaces are
 marked by names starting with '_' such as '_listRunning'
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.14 2010/06/28 19:05:14 spigafi Exp $"
-__revision__ = "$Revision: 1.14 $"
-
 import threading
 import logging
 
@@ -27,6 +24,9 @@ from WMCore.BossAir.RunJob   import RunJob
 from WMCore.WMConnectionBase import WMConnectionBase
 
 from WMCore.WMException import WMException
+
+
+
 
 
 class BossAirException(WMException):
@@ -253,6 +253,10 @@ class BossAirAPI(WMConnectionBase):
         Expects runJob input
         """
 
+        if len(jobs) < 1:
+            # Nothing to do
+            return
+
         idList = [x['id'] for x in jobs]
 
         existingTransaction = self.beginTransaction()
@@ -272,6 +276,10 @@ class BossAirAPI(WMConnectionBase):
         Update the job entries in the BossAir database
         """
 
+        if len(jobs) < 1:
+            # Nothing to do
+            return
+
         existingTransaction = self.beginTransaction()
 
 
@@ -288,6 +296,10 @@ class BossAirAPI(WMConnectionBase):
 
         Delete the job entries in the BossAir database
         """
+
+        if len(jobs) < 1:
+            # Nothing to do
+            return
 
         idList = [x['id'] for x in jobs]
 
@@ -336,7 +348,7 @@ class BossAirAPI(WMConnectionBase):
 
 
 
-    def submit(self, jobs):
+    def submit(self, jobs, info = None):
         """
         _submit_
 
@@ -364,6 +376,7 @@ class BossAirAPI(WMConnectionBase):
         for job in jobs:
             rj = RunJob()
             rj.buildFromJob(job = job)
+            rj['location'] = job.get('custom', {}).get('location', None)
             runJobs.append(rj)
             self.jobs.append({'id': rj['jobid'], 'plugin': rj['plugin'], 'user': rj['user']})
 
@@ -378,15 +391,22 @@ class BossAirAPI(WMConnectionBase):
         for plugin in pluginDict.keys():
             if not plugin in self.plugins.keys():
                 # Then we have a non-existant plugin
-                msg =  "Given a plugin we don't have access to %s\n" % (plugin)
+                msg =  "CRITICAL ERROR: Non-existant plugin!\n"
+                msg += "Given a plugin %s that we don't have access to.\n" % (plugin)
                 msg += "Ignoring the jobs for this plugin for now"
                 logging.error(msg)
             else:
-                localSuccess, localFailure = self.plugins.submit(pluginDict.get(plugin))
+                pluginInst   = self.plugins[plugin]
+                jobsToSubmit = pluginDict.get(plugin, [])
+                localSuccess, localFailure = pluginInst.submit(jobs = jobsToSubmit,
+                                                               info = info)
                 for job in localSuccess:
                     successJobs.append(job.buildWMBSJob())
                 for job in localFailure:
                     failureJobs.append(job.buildWMBSJob())
+
+        # Create successful jobs in BossAir
+        self.createNewJobs(wmbsJobs = successJobs)
 
         return successJobs, failureJobs
 
@@ -409,12 +429,17 @@ class BossAirAPI(WMConnectionBase):
 
         runningJobs = self._listRunning()
 
+        if len(runningJobs) < 1:
+            # Then we have no running jobs
+            return
+
         for runningJob in runningJobs:
             foundJob = False
             for jCache in self.jobs:
                 if jCache['id'] == runningJob['jobid']:
                     foundJob = True
-                    runningJob['user'] = jCache['user'] 
+                    runningJob['user']   = jCache['user']
+                    runningJob['plugin'] = jCache['plugin']
                     loadedJobs.append(runningJob)
                     break
             if not foundJob:
@@ -422,8 +447,10 @@ class BossAirAPI(WMConnectionBase):
                 # How the hell did that happen?
                 # Are we recovering?
                 jobsToLoad.append(job)
-            
-        loadedJobs.extend(self.loadByWMBS(wmbsJobs = jobsToLoad, addToCache = True))
+
+        if len(jobsToLoad) > 0:
+            # Then we have jobs to load
+            loadedJobs.extend(self.loadByWMBS(wmbsJobs = jobsToLoad, addToCache = True))
         
         for runningJob in loadedJobs:
             plugin = runningJob['plugin']
@@ -433,22 +460,33 @@ class BossAirAPI(WMConnectionBase):
 
         for plugin in jobsToTrack.keys():
             if not plugin in self.plugins.keys():
-                msg =  "Jobs tracking with non-existant plugin %s" % (plugin)
-                msg += "They were submitted but can't be tracked?"
-                msg += "That's too strange to continue"
+                msg =  "Jobs tracking with non-existant plugin %s\n" % (plugin)
+                msg += "They were submitted but can't be tracked?\n"
+                msg += "That's too strange to continue\n"
                 logging.error(msg)
                 raise BossAirException(msg)
             else:
                 # Then we send them to the plugins
                 # Shoudl give you a lit of jobs to change and jobs to complete
-                localChanges, localCompletes = self.plugins.track(jobsToTrack[plugin])
+                pluginInst = self.plugins[plugin]
+                localChanges, localCompletes = pluginInst.track(jobs = jobsToTrack[plugin])
                 jobsToChange.extend(localChanges)
                 jobsToComplete.extend(localCompletes)
 
         self._updateJobs(jobs = jobsToChange)
         self._complete(jobs = jobsToComplete)
 
-        return
+
+        # We should have a globalState variable for changed jobs
+        # from the plugin
+        # Return that to the calling function
+        returnList = []
+        for rj in jobsToChange:
+            job = rj.buildWMBSJob()
+            job['globalState'] = rj['globalState']
+            returnList.append(job)
+
+        return returnList
 
     def _complete(self, jobs):
         """
@@ -458,24 +496,49 @@ class BossAirAPI(WMConnectionBase):
         Requires jobs in RunJob format
         """
 
+        if len(jobs) < 1:
+            # Nothing to do
+            return
+
         # We should be insulated from bad plugins by track()
         jobsToComplete = {}
+        idsToComplete  = []
 
         for job in jobs:
             if not job['plugin'] in jobsToComplete.keys():
                 jobsToComplete[job['plugin']] = []
             jobsToComplete[job['plugin']].append(job)
+            idsToComplete.append(job['id'])
 
         for plugin in jobsToComplete.keys():
             self.plugins[plugin].complete(jobsToComplete[plugin])
 
         existingTransaction = self.beginTransaction()
 
-        self.completeDAO.execute(jobs = idList)    
+        self.completeDAO.execute(jobs = idsToComplete)    
 
         self.commitTransaction(existingTransaction)
 
         return
+
+
+    def removeComplete(self, jobs):
+        """
+        _removeComplete_
+
+        Remove jobs from BossAir
+        This is meant to operate ONLY on completed jobs
+        It does not operate any plugin cleanup or
+        batch system kills
+        """
+
+        jobsToRemove = []
+        for job in jobs:
+            rj = RunJob()
+            rj.buildFromJob(job = job)
+            jobsToRemove.append(rj)
+
+        self._deleteJobs(jobs = jobsToRemove)
 
 
 
@@ -486,8 +549,69 @@ class BossAirAPI(WMConnectionBase):
         Kill jobs using plugin functions
         """
 
-
         self.check()
+
+
+        jobsToLoad     = []
+        jobsToChange   = []
+        loadedJobs     = []
+        jobsToComplete = []
+
+        jobsToKill = {}
+
+        runningJobs = self._listRunning()
+
+        if len(runningJobs) < 1:
+            # Then we have no running jobs
+            return
+
+        for runningJob in runningJobs:
+            foundJob = False
+            for jCache in self.jobs:
+                if jCache['id'] == runningJob['jobid']:
+                    foundJob = True
+                    runningJob['user']   = jCache['user']
+                    runningJob['plugin'] = jCache['plugin']
+                    loadedJobs.append(runningJob)
+                    break
+            if not foundJob:
+                # Then we have a job that didn't enter through submit
+                # How the hell did that happen?
+                # Are we recovering?
+                jobsToLoad.append(job)
+
+        if len(jobsToLoad) > 0:
+            # Then we have jobs to load
+            loadedJobs.extend(self.loadByWMBS(wmbsJobs = jobsToLoad, addToCache = True))
+        
+        for runningJob in loadedJobs:
+            plugin = runningJob['plugin']
+            if not plugin in jobsToKill.keys():
+                jobsToKill[plugin] = []
+            jobsToKill[plugin].append(runningJob)
+
+        for plugin in jobsToKill.keys():
+            if not plugin in self.plugins.keys():
+                msg =  "Jobs tracking with non-existant plugin %s\n" % (plugin)
+                msg += "They were submitted but can't be tracked?\n"
+                msg += "That's too strange to continue\n"
+                logging.error(msg)
+                raise BossAirException(msg)
+            else:
+                # Then we send them to the plugins
+                # Shoudl give you a lit of jobs to change and jobs to complete
+                pluginInst = self.plugins[plugin]
+                pluginInst.kill(jobs = jobsToKill[plugin])
+                self._complete(jobs = jobsToKill[plugin])
+
+
+        return
+
+
+        
+
+
+
 
 
 

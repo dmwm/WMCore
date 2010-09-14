@@ -34,7 +34,7 @@ from WMCore.WorkQueue.WorkQueue import WorkQueue
 from WMCore.HTTPFrontEnd.WorkQueue.Services.ServiceInterface import ServiceInterface
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WorkQueue.Database import States
-
+from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfo
 
 class WorkQueueMonitorService(ServiceInterface):
     _myClass = "short cut to the class name for logging purposes"
@@ -95,7 +95,13 @@ class WorkQueueMonitorService(ServiceInterface):
         self.model.addDAO("GET", "statusstatbyworkload", "Monitor.Summary.StatusStatByWorkload",
                           args = ['workloadID'])
         self.model.addDAO("GET", "jobstatusstat", "Monitor.Summary.JobStatusStat")
+        self.model.addDAO("GET", "childqueues", "Monitor.Summary.GetChildQueues")
+        self.model.addDAO("GET", "childqueuesbyrequest", "Monitor.Summary.GetAssignedLocalQueueByRequest")
         
+        ###############################################
+        ## external call to couchDB                  ##
+        ###############################################
+        self.model.addMethod("GET", "jobsummary", JobInfo.getJobSummaryByWorkflow)
         
         ###############################################
         ## To do:  Revisit this usage  related view  ##

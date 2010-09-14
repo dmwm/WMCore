@@ -6,7 +6,7 @@ Rest Model for Workqueue DAS.
 
 from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.WMFactory import WMFactory
-from WMCore.HTTPFrontEnd.WorkQueue.ContentTypeHandler import ContentTypeHandler
+from WMCore.HTTPFrontEnd.ContentTypeHandler import ContentTypeHandler
 
 class WorkQueueRESTModel(RESTModel):
     """

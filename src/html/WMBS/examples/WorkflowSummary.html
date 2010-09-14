@@ -34,25 +34,35 @@
 var formatUrl = function(elCell, oRecord, oColumn, sData) { 
     elCell.innerHTML = "<a href='TaskSummaryDetail.html' target='_blank'>" + sData + "</a>"; 
 };
-		
+
 var dataSchema = {
         fields: [{key: "wmspec", formatter: formatUrl}, 
-		         {key: "num_task", label: "task"},
-		         {key: "total_jobs", label: 'total'},
-				 {key: "pending"}, 
-				 {key: "processing", label: 'in progress'},
+                 {key: "total_jobs", label: 'total'},
+                 {key: "pending"},
+                 {key: "processing", label: 'in progress'},
                  {key: "real_fail", label: "fail"}, 
-				 {key: "real_success", label: "success"}]
-        };
+                 {key: "real_success", label: "success"}]
+};
 
-var dataUrl = "/wmbs/workflowsummary"
+var dataUrl = "/wmbs/workflowsummary";
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema);
 //writeDebugObject(dataSource)
-writeEval(dataSource.responseType)
+//writeEval(dataSource.responseType);
 var dataTable = WMCore.WebTools.createDataTable("resourceInfo", dataSource, 
                              WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.createDefaultTableConfig(), 100000)
+                             WMCore.WebTools.createDefaultTableConfig(), 100000);
+
+var taskSummaryHandler = function(oArgs){
+	var target = oArgs.target;
+	var oRecord = this.getRecord(target);
+	//oRecord.setData("workflow", workflow);
+	var workflow = oRecord.getData("wmspec");
+	alert(workflow)
+
+};
+
+dataTable.subscribe("cellClickEvent", taskSummaryHandler);
 
 </script>
 </body>

@@ -154,3 +154,27 @@ class WorkQueue(Service):
         
         callname = 'cancelwork'
         return self._getResult(callname, args = args, verb = "PUT")
+
+    def getChildQueues(self):
+        """
+        This service only provided by global queue
+        """
+        args = {}
+        callname = 'childqueues'
+        return self._getResult(callname, args = args, verb = "GET")
+
+    def getChildQueuesByRequest(self):
+        """
+        This service only provided by global queue
+        """
+        args = {}
+        callname = 'childqueuesbyrequest'
+        return self._getResult(callname, args = args, verb = "GET")
+
+    def getJobSummaryFromCouchDB(self):
+        """
+        This service only provided by local queue
+        """
+        args = {}
+        callname = 'jobsummary'
+        return self._getResult(callname, args = args, verb = "GET")

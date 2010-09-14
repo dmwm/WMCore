@@ -10,6 +10,8 @@ import logging
 from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.Requests import JSONRequests
+from WMCore.HTTPFrontEnd.ContentTypeHandler import ContentTypeHandler
+from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfoByID
 
 class WMBSRESTModel(RESTModel):
     """
@@ -46,10 +48,17 @@ class WMBSRESTModel(RESTModel):
         self.addDAO('GET', "tasksummary", "Monitoring.TaskSummaryByWorkflow",
                     args = ["workflowName"])
         
+        self.addDAO('GET', "failedjobsbyworkflow", "Monitoring.FailedJobsByWorkflow",
+                    args = ["workflowName"])
+
+        self.addDAO('GET', "failedjobsbytask", "Monitoring.FailedJobsByTask",
+                    args = ["taskID"])
+
         self.addDAO('GET', "test", "Workflow.Test")
         
         resourceDAOFactory = DAOFactory(package = "WMCore.ResourceControl", 
                                         logger = self, dbinterface = self.dbi)
+
         self.addDAO('GET', "listthresholdsforsubmit", "ListThresholdsForSubmit",
                      args = ["tableFormatt"], 
                      validation = [self.setTableFormat],
@@ -60,10 +69,24 @@ class WMBSRESTModel(RESTModel):
                      validation = [self.setTableFormat],
                      daoFactory = resourceDAOFactory)
         
+        self.addDAO('GET', "listthresholds", "ListThresholds",
+                     daoFactory = resourceDAOFactory)
+
+        self.addDAO('GET', "updatethresholds", "UpdateThresholdsInBulk",
+                     args = ['sitename', 'tasktype', 'maxslots'],
+                     daoFactory = resourceDAOFactory)
+
+
         dbsDAOFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                   logger = self, dbinterface = self.dbi)
+
         self.addDAO('GET', "dbsbufferstatus", "Status",
                     daoFactory = dbsDAOFactory)
+
+
+        self.addMethod('GET', 'jobinfobyid', JobInfoByID.getJobInfo,
+                       args = ['jobID'])
+
         return
     
     def jobStatusValidate(self, input):
@@ -138,3 +161,14 @@ class WMBSRESTModel(RESTModel):
     def setTableFormat(self, input):
         input["tableFormat"] = True
         return input
+
+    def processParams(self, args, kwargs):
+        """
+        overwrite base class processParams to handle encoding and decoding
+        depending on the content type.
+
+        TODO: corrently it only works with cjson not json from python2.6.
+        There is issues of converting unit code to string.
+        """
+        handler = ContentTypeHandler()
+        return handler.convertToParam(args, kwargs)

@@ -48,6 +48,7 @@ config.Agent.teamName = "cmsdataops"
 config.Agent.agentName = "WMAgentCommissioning"
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
+config.Agent.useHeartbeat = True
 
 config.section_("General")
 config.General.workDir = workDirectory

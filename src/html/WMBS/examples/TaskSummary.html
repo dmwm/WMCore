@@ -42,7 +42,7 @@ var dataUrl = "/wmbs/tasksummary/ReReco-v7"
 
 var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
 //writeDebugObject(dataSource)
-writeEval(dataSource.responseType)
+//writeEval(dataSource.responseType)
 var dataTable = WMCore.WebTools.createDataTable("resourceInfo", dataSource, 
                              WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
                              WMCore.WebTools.createDefaultTableConfig(), 100000)

@@ -8,6 +8,7 @@ __all__ = []
 
 
 import os
+import WMCore.WMInit
 
 from WMCore.Configuration import Configuration
 
@@ -118,3 +119,9 @@ active.WebRequestSchema.configCacheUrl = "http://USERNAME:PASSWORD@cmssrv52.fnal
 active.WebRequestSchema.configCacheDBName = "wmagent_config_cache"
 active.WebRequestSchema.templates = config.ReqMgr.templates
 active.WebRequestSchema.componentDir = config.ReqMgr.componentDir
+
+active.section_('RequestOverview')
+active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestMgr.RequestOverview'
+active.RequestOverview.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
+active.RequestOverview.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript')
+active.RequestOverview.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html')

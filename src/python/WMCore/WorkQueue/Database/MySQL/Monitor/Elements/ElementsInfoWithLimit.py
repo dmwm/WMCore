@@ -28,7 +28,7 @@ class ElementsInfoWithLimit(DBFormatter):
              INNER JOIN wq_wmspec ws ON (ws.id = wt.wmspec_id)
              LEFT OUTER JOIN wq_data wd ON (wd.id = we.input_id)
              LEFT OUTER JOIN wq_queues wq ON (wq.id = we.child_queue)
-             ORDER BY we.id
+             ORDER BY we.id DESC
              LIMIT :startIndex, :results """
     
     sqlCount = "SELECT count(*) FROM wq_element"

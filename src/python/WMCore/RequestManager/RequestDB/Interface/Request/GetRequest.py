@@ -105,3 +105,33 @@ def getRequestAssignments(requestId):
     getAssign = factory(classname = "Assignment.GetByRequest")
     result = getAssign.execute(requestId)
     return result
+
+
+def getOverview():
+    """
+    _getOverview_
+
+    Get the status, type and global queue info for all the request
+
+    """
+    factory = DBConnect.getConnection()
+    getSummary = factory(classname = "Request.GetOverview")
+    result = getSummary.execute()
+    return result
+
+def getGlobalQueues():
+    """
+    _getGlobaQueues_
+
+    Get list of Global Queues from request mgr db
+    Convert Global Queue monitoring address to GlobalQueue
+    Service address
+    """
+    factory = DBConnect.getConnection()
+    getQueues = factory(classname = "Request.GetGlobalQueues")
+    results = getQueues.execute()
+    queues = []
+    for url in results:
+        queues.append(url.replace('workqueuemonitor', 'workqueue'))
+
+    return queues

@@ -187,7 +187,10 @@ class Scram:
                                 stderr=logFile,
                                 stdin=subprocess.PIPE,
                                 )
-
+        if os.environ.get('VO_CMS_SW_DIR', None ) == None:
+            proc.stdin.write('export VO_CMS_SW_DIR=%s\n'%os.environ['VO_CMS_SW_DIR']) 
+        if os.environ.get('OSG_APP', None) == None:
+            proc.stdin.write('export VO_CMS_SW_DIR=%s/cmssoft/cms\n'%os.environ['OSG_APP'])
         # BADPYTHON
         proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
         proc.stdin.write("%s\n" % self.preCommand())

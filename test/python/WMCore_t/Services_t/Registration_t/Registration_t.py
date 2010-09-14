@@ -8,9 +8,11 @@ Created on 16 Jul 2009
 import unittest
 import logging
 import os
+import tempfile
 
 from WMCore.Services.Registration.Registration import Registration
-from WMCore.Services.Requests import JSONRequests
+from WMCore.Services.Requests import BasicAuthJSONRequests
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 class RegistrationTest(unittest.TestCase):
     """
@@ -21,7 +23,24 @@ class RegistrationTest(unittest.TestCase):
         """
         setUP global values
         """
-        pass
+        testname = self.id().split('.')[-1]
+        
+        logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename='service_unittests.log',
+                    filemode='w')
+        
+        logger_name = 'Service%s' % testname.replace('test', '', 1)
+        
+        self.logger = logging.getLogger(logger_name)
+        
+        self.cache_path = tempfile.mkdtemp()
+        self.testInit = TestInitCouchApp("RegistrationTest")
+        self.testInit.setupCouch("regsvc")
+
+    def tearDown(self):
+        self.testInit.tearDownCouch()
         
     def testPush(self):
         reg_info ={
@@ -33,15 +52,16 @@ class RegistrationTest(unittest.TestCase):
         }
         
         reg = Registration({'inputdata': reg_info,
-                            'endpoint': 'http://localhost:5984/registrationservice/',
+                            'endpoint': '%s/regsvc/' % self.testInit.couchUrl,
                             'cert': os.getcwd() + '/' +__file__,
-                            'key': os.getcwd() + '/' +__file__})
-        f = reg.refreshCache()
-        f.read()
-        f.close()
+                            'key': os.getcwd() + '/' +__file__,
+                            'logger': self.logger, 
+                            'cachepath' : self.cache_path,
+                            'req_cache_path': '%s/requests' % self.cache_path,})
+        reg.refreshCache()
         
-        json = JSONRequests('localhost:5984')
-        data = json.get('/registrationservice/' + \
+        json = BasicAuthJSONRequests(self.testInit.couchUrl)
+        data = json.get('/regsvc/' + \
                        str(reg['inputdata']['url'].__hash__()))
         for k, v in reg_info.items():
             if k != 'timestamp':

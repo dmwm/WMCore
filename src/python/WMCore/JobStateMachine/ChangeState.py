@@ -14,105 +14,6 @@ from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Services.UUID import makeUUID
 from WMCore.WMConnectionBase import WMConnectionBase
 
-StateTransitionsByJobID = {"map": \
-"""
-function(doc) {
-  if (doc['type'] == 'state') {
-    emit(doc['jobid'], {'oldstate': doc['oldstate'],
-                        'newstate': doc['newstate'],
-                        'location': doc['location'],
-                        'timestamp': doc['timestamp']});
-    }
-  }
-"""}
-
-FwjrsByJobID = {"map": \
-"""
-function(doc) {
-  if (doc['type'] == 'fwjr') {
-    emit(doc['jobid'], {'_id': doc['_id']});
-    }
-  }
-"""}  
-
-JobsByJobID = {"map": \
-"""
-function(doc) {
-  if (doc['type'] == 'job') {
-    emit(doc['jobid'], {'_id': doc['_id']});
-    }
-  }
-"""}  
-
-ErrorsByWorkflowName = {"map": \
-"""
-function(doc) {
-  if (doc['type'] == 'fwjr') {
-    var specName = doc['fwjr'].task.split('/')[1];
-
-    for (var stepName in doc['fwjr'].steps) {
-      if (doc['fwjr']['steps'][stepName].errors.length > 0) {
-        emit(specName, {'jobid': doc['jobid'],
-                        'retry': doc['retrycount'],
-                        'step': stepName,
-                        'task': doc['fwjr']['task'],
-                        'error': doc['fwjr']['steps'][stepName].errors});
-        }
-      }
-    }
-  }
-"""}
-
-OutputByWorkflowName = {"map": \
-"""
-function(doc) {
-  if (doc['type'] == 'fwjr') {
-    var specName = doc['fwjr'].task.split('/')[1]
-
-    for (var stepName in doc['fwjr']['steps']) {
-      if (stepName != 'cmsRun1') {
-        continue;
-        }
-
-      var stepOutput = doc['fwjr']['steps'][stepName]['output']
-      for (var outputModuleName in stepOutput) {
-        for (var outputFileIndex in stepOutput[outputModuleName]) {
-          var outputFile = stepOutput[outputModuleName][outputFileIndex];
-
-          if (outputModuleName == 'Merged' || (outputFile.hasAttribute('merged') &&
-                                               outputFile.getAttribute('merged'))) {
-            var datasetPath = '/' + outputFile['dataset']['primaryDataset'] +
-                              '/' + outputFile['dataset']['processedDataset'] +
-                              '/' + outputFile['dataset']['dataTier'];
-            emit([specName, datasetPath], {'size': outputFile['size'],
-                                           'events': outputFile['events']});
-            }
-          }
-        }
-      }
-    }
-  }
-""", "reduce": \
-"""
-function (key, values, rereduce) {
-  var output = {'size': 0, 'events': 0, 'count': 0};
-
-  for (var someValue in values) {
-    output['size'] += values[someValue]['size'];
-    output['events'] += values[someValue]['events'];
-
-    if (rereduce) {
-      output['count'] += values[someValue]['count'];
-      }
-    else {
-      output['count'] += 1;
-      }
-    }
-
-  return output;
-  }
-"""}
-
 class ChangeState(WMObject, WMConnectionBase):
     """
     Propagate the state of a job through the JSM.
@@ -140,6 +41,7 @@ class ChangeState(WMObject, WMConnectionBase):
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
         self.incrementRetryDAO = self.daofactory("Jobs.IncrementRetry")
+        self.workflowTaskDAO = self.daofactory("Jobs.GetWorkflowTask")
         return
 
     def propagate(self, jobs, newstate, oldstate):
@@ -194,17 +96,27 @@ class ChangeState(WMObject, WMConnectionBase):
         
         jobMap = {}
         jobIDsToCheck = []
+        jobTasksToCheck = []
         for job in jobs:
             jobMap[job["id"]] = job
             if job["couch_record"] == None:
                 jobIDsToCheck.append(job["id"])
+            if job.get("task", None) == None or job.get("workflow", None) == None:
+                jobTasksToCheck.append(job["id"])
 
-        couchIDs = self.getCouchDAO.execute(jobID = jobIDsToCheck,
-                                            conn = self.getDBConn(),
-                                            transaction = self.existingTransaction())
-
-        for couchID in couchIDs:
-            jobMap[couchID["jobid"]]["couch_record"] = couchID["couch_record"]
+        if len(jobIDsToCheck) > 0:
+            couchIDs = self.getCouchDAO.execute(jobID = jobIDsToCheck,
+                                                conn = self.getDBConn(),
+                                                transaction = self.existingTransaction())
+            for couchID in couchIDs:
+                jobMap[couchID["jobid"]]["couch_record"] = couchID["couch_record"]
+        if len(jobTasksToCheck) > 0:
+            jobTasks = self.workflowTaskDAO.execute(jobIDs = jobTasksToCheck,
+                                                    conn = self.getDBConn(),
+                                                    transaction = self.existingTransaction())
+            for jobTask in jobTasks:
+                jobMap[jobTask["id"]]["task"] = jobTask["task"]
+                jobMap[jobTask["id"]]["workflow"] = jobTask["name"]  
 
         timestamp = int(time.time())
         couchRecordsToUpdate = []
@@ -220,6 +132,8 @@ class ChangeState(WMObject, WMConnectionBase):
                                   "oldstate": oldstate,
                                   "newstate": newstate,
                                   "timestamp": timestamp,
+                                  "workflow": job["workflow"],
+                                  "task": job["task"],
                                   "type": "state"}
 
             if job.get("location", None):
@@ -298,14 +212,6 @@ class ChangeState(WMObject, WMConnectionBase):
         Create the couch database and install the views.
         """
         database = self.couchdb.createDatabase(self.dbname)
-        
-        hashViewDoc = database.createDesignDoc("JobDump")
-        viewDict = {"stateTransitionsByJobID": StateTransitionsByJobID,
-                    "fwjrsByJobID": FwjrsByJobID,
-                    "jobsByJobID": JobsByJobID}
-        hashViewDoc["views"] = viewDict
-     
-        database.queue(hashViewDoc)
         database.commit()
         return database
 

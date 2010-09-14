@@ -8,19 +8,24 @@ import threading
 import time
 import urllib
 
-from WMQuality.TestInit import TestInit
+from WMQuality.TestInitCouchApp import TestInitCouchApp
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
+from WMCore.Database.CMSCouch import CouchServer
+
 from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
 from WMCore.JobStateMachine import DefaultConfig
+
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.Database.CMSCouch import CouchServer
-from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
+
+from WMCore.DataStructs.Run import Run
+
 from WMCore.FwkJobReport.Report import Report
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 
@@ -31,9 +36,10 @@ class TestChangeState(unittest.TestCase):
 
         """
         self.transitions = Transitions()
-        self.testInit = TestInit(__file__)
+        self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        self.testInit.setupCouch("changestate_t", "JobDump")
 
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
@@ -52,7 +58,7 @@ class TestChangeState(unittest.TestCase):
 
         """
         self.testInit.clearDatabase()
-        self.couchServer.deleteDatabase("changestate_t")
+        self.testInit.tearDownCouch()
         return
 
     def testCheck(self):
@@ -138,7 +144,6 @@ class TestChangeState(unittest.TestCase):
         assert testJobADoc["owner"] == testJobA["owner"], \
                "Error: Owner parameter is incorrect."
 
-
         assert testJobADoc["mask"]["firstevent"] == testJobA["mask"]["FirstEvent"], \
                "Error: First event in mask is incorrect."
         assert testJobADoc["mask"]["lastevent"] == testJobA["mask"]["LastEvent"], \
@@ -181,7 +186,7 @@ class TestChangeState(unittest.TestCase):
                "Error: Input files parameter is incorrect."
 
         changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t")
-        options = {"startkey": testJobA["id"], "endkey": testJobA["id"]}
+        options = {"startkey": testJobA["id"], "endkey": [testJobA["id"], {}]}
         results = changeStateDB.loadView("JobDump", "stateTransitionsByJobID",
                                          options)
 

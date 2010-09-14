@@ -332,6 +332,9 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the site white list for all tasks in the workload.
         """
+        if type(siteWhitelist) != type([]):
+            siteWhitelist = [siteWhitelist]
+            
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
@@ -349,6 +352,9 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the site black list for all tasks in the workload.
         """
+        if type(siteBlacklist) != type([]):
+            siteBlacklist = [siteBlacklist]
+            
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
@@ -367,6 +373,9 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the block white list for all tasks that have an input dataset
         defined.
         """
+        if type(blockWhitelist) != type([]):
+            blockWhitelist = [blockWhitelist]
+            
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
@@ -386,6 +395,9 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the block black list for all tasks that have an input dataset
         defined.
         """
+        if type(blockBlacklist) != type([]):
+            blockBlacklist = [blockBlacklist]
+            
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
@@ -404,6 +416,9 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the run white list for all tasks that have an input dataset defined.
         """
+        if type(runWhitelist) != type([]):
+            runWhitelist = [runWhitelist]
+            
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
@@ -422,6 +437,9 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the run black list for all tasks that have an input dataset defined.
         """
+        if type(runBlacklist) != type([]):
+            runBlacklist = [runBlacklist]
+            
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
@@ -553,10 +571,34 @@ class WMWorkloadHelper(PersistencyHelper):
         taskHelper.setSplittingAlgorithm(splitAlgo, **splitArgs)
         return
 
+    def listJobSplittingParametersByTask(self, initialTask = None):
+        """
+        _listJobSplittingParametersByTask_
+
+        Create a dictionary that maps task names to job splitting parameters.
+        """
+        output = {}
+        
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+            
+        for task in taskIterator:        
+            taskName = task.getPathName()
+            taskParams = task.jobSplittingParameters()
+            del taskParams["siteWhitelist"]
+            del taskParams["siteBlacklist"]
+            output[taskName] = taskParams
+            output.update(self.listJobSplittingParametersByTask(task))
+
+        return output
+            
     def listOutputDatasets(self, initialTask = None):
         """
         _listOutputDatasets_
 
+        List the names of all the datasets produced by this workflow.
         """
         outputDatasets = []
         

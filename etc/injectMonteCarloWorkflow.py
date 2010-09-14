@@ -24,8 +24,6 @@ from DBSAPI.dbsApi import DbsApi
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
 arguments = getTestArguments()
-arguments["CouchUrl"] = "http://dmwmwriter:PASSWORD@cmssrv52.fnal.gov:5984"
-arguments["CouchDBName"] = "config_cache1"
 numEvents = None
 
 if len(sys.argv) != 3:

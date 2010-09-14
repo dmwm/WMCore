@@ -1,331 +1,100 @@
 #!/usr/bin/env python
-# encoding: utf-8
-# pylint: disable-msg=C0301,W0142
 """
-MonteCarlo.py
+_MonteCarlo_
 
 Created by Dave Evans on 2010-08-17.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-
 import os
 
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
-from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.Cache.WMConfigCache import ConfigCache
-from WMCore.Configuration import ConfigSection
-
-
-class MoveToStdBase:
+def getTestArguments():
     """
-    Placeholder for stuff that should move to StdBase once we finish meddling with them
+    _getTestArguments_
+
+    """
+    args = {}
+    args["AcquisitionEra"] = "CSA2010"
+    args["Requestor"] = "sfoulkes@fnal.gov"
+    args["ScramArch"] =  "slc5_ia32_gcc434"
+    args["PrimaryDataset"] = "MonteCarloData"    
+    args["ProcessingVersion"] = "v2scf"
+    args["GlobalTag"] = None
+    args["RequestSizeEvents"] = 10
+    
+    args["CouchURL"] = os.environ.get("COUCHURL", None)
+    args["CouchDBName"] = "scf_wmagent_configcache"
+
+    args["CMSSWVersion"] = "CMSSW_3_8_1"
+    args["ProdConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
+    return args
+
+class MonteCarloWorkloadFactory(StdBase):
+    """
+    _MonteCarloWorkloadFactory_
+
+    Stamp out Monte Carlo workflows.
     """
     def __init__(self):
-        self.workloadName = None
-        self.owner = None
-        self.acquisitionEra = None
-        self.maxMergeSize = None
-        self.unmergedLFNBase = None
-        self.globalTag = None
-        self.minMergeSize = None
-        self.primaryDataset = None
-        self.mergedLFNBase = None
-        self.maxMergeEvents = None
-        self.couchConfigDoc = None
-        self.dbsUrl = None
-        self.processingVersion = None
-        self.scramArch = None
-        self.siteWhitelist = None
-        self.siteBlacklist = None
-        self.frameworkVersion = None
-        self.couchUrl = None
-        self.couchDBName = None
-        self.emulation = None
-        
-        
-        
-        
-    def newWorkload(self):
+        StdBase.__init__(self)
+
+    def buildWorkload(self):
         """
-        Create a new workload instance
+        _buildWorkload_
+
+        Build a workflow for a MonteCarlo request.  This means a production
+        config and merge tasks for each output module.
         """
-        workload = newWorkload(self.workloadName)
-        workload.setOwner(self.owner)
-        workload.data.properties.acquisitionEra = self.acquisitionEra
+        workload = self.createWorkload()
+        self.setWorkQueueSplitPolicy(workload, "EventBased", {"events_per_job": 100})
+        prodTask = workload.newTask("Production")
+
+        outputMods = self.setupProcessingTask(prodTask, "Production", None,
+                                              couchURL = self.couchURL, couchDBName = self.couchDBName,
+                                              configDoc = self.prodConfigCacheID, splitAlgo = self.prodJobSplitAlgo,
+                                              splitArgs = self.prodJobSplitArgs,
+                                              seeding = self.seeding, totalEvents = self.totalEvents) 
+        self.addLogCollectTask(prodTask)
+
+        prodMergeTasks = {}
+        for outputModuleName in outputMods.keys():
+            outputModuleInfo = outputMods[outputModuleName]
+            self.addMergeTask(prodTask, self.prodJobSplitAlgo,
+                              outputModuleName, outputModuleInfo["dataTier"],
+                              outputModuleInfo["processedDataset"])
+
         return workload
-        
-    def addOutputModule(self, parentTask,  outputModuleName, primaryDataset,
-                        dataTier, filterName):
-        """
-        _addOutputModule_
-
-        Add an output module to the geven processing task.  This will also
-        create merge and cleanup tasks for the output of the output module.
-        A handle to the merge task is returned to make it easy to use the merged
-        output of the output module as input to another task.
-        """
-        if filterName != None and filterName != "":
-            processedDatasetName = "%s-%s-%s" % (self.acquisitionEra, filterName,
-                                                 self.processingVersion)
-        else:
-            processedDatasetName = "%s-%s" % (self.acquisitionEra,
-                                              self.processingVersion)
-
-        unmergedLFN = "%s/%s/%s" % (self.unmergedLFNBase, dataTier,
-                                    processedDatasetName)
-        mergedLFN = "%s/%s/%s" % (self.mergedLFNBase, dataTier,
-                                  processedDatasetName)
-        cmsswStep = parentTask.getStep("cmsRun1")
-        cmsswStepHelper = cmsswStep.getTypeHelper()
-        cmsswStepHelper.addOutputModule(outputModuleName,
-                                        primaryDataset = primaryDataset,
-                                        processedDataset = processedDatasetName,
-                                        dataTier = dataTier,
-                                        lfnBase = unmergedLFN,
-                                        mergedLFNBase = mergedLFN)
-        return self.addMergeTask(parentTask,
-                                 outputModuleName, primaryDataset, dataTier, processedDatasetName)
-
-    def addMergeTask(self, parentTask, parentOutputModule, primaryDataset,
-                    dataTier, processedDatasetName):
-        """
-        _addMergeTask_
-
-        Create a merge task for files produced by the parent task.
-        """
-        mergeTask = parentTask.addTask("%sMerge%s" % (parentTask.name(), parentOutputModule))
-        #self.addDashboardMonitoring(mergeTask)
-        mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
-        mergeTaskCmssw.setStepType("CMSSW")
-
-        mergeTaskStageOut = mergeTaskCmssw.addStep("stageOut1")
-        mergeTaskStageOut.setStepType("StageOut")
-        mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
-        mergeTaskLogArch.setStepType("LogArchive")
-
-        mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)        
-        #self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModule))
-
-        mergeTask.addGenerator("BasicNaming")
-        mergeTask.addGenerator("BasicCounter")
-        mergeTask.setTaskType("Merge")  
-        mergeTask.applyTemplates()
-
-        
-        splitAlgo = "WMBSMergeBySize"
-        
-        mergeTask.setSplittingAlgorithm(splitAlgo,
-                                        max_merge_size = self.maxMergeSize,
-                                        min_merge_size = self.minMergeSize,
-                                        max_merge_events = self.maxMergeEvents,
-                                        siteWhitelist = self.siteWhitelist,
-                                        siteBlacklist = self.siteBlacklist)
-
-        mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                        scramArch = self.scramArch)
-        mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
-
-        mergedLFN = "%s/%s/%s" % (self.mergedLFNBase, dataTier, processedDatasetName)    
-        mergeTaskCmsswHelper.addOutputModule("Merged",
-                                             primaryDataset = primaryDataset,
-                                             processedDataset = processedDatasetName,
-                                             dataTier = dataTier,
-                                             lfnBase = mergedLFN)
-
-        parentTaskCmssw = parentTask.getStep("cmsRun1")
-        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModule)
-        #self.addCleanupTask(parentTask, parentOutputModule)
-        return mergeTask
-    
-
-class MonteCarloWorkloadFactory(MoveToStdBase):
-    """
-    MonteCarlo request type workload.
-    Notable features
-    - Config comes from ConfigCache, grabbing output modules from the PSetTweak info
-    - Does not in ANY WAY SHAPE OR FORM DO ANYTHING WITH SCRAM. EVAR. DERP.
-    
-    """
-    def __init__(self):
-        MoveToStdBase.__init__(self)
-
         
     def __call__(self, workloadName, arguments):
         """
         Create a workload instance for a MonteCarlo request
         
         """
-        # Required parameters.
-        self.workloadName = workloadName
-        self.acquisitionEra = arguments["AcquisitionEra"]
-        self.owner = arguments["Requestor"]
+        StdBase.__call__(self, workloadName, arguments)
+
+        # Required parameters that must be specified by the Requestor.
+        self.inputPrimaryDataset = arguments["PrimaryDataset"]
         self.frameworkVersion = arguments["CMSSWVersion"]
-        self.scramArch = arguments["ScramArch"]
-        self.processingVersion = arguments["ProcessingVersion"]
-        self.globalTag = arguments["GlobalTag"]        
-        self.primaryDataset = arguments['PrimaryDataset']
-        self.totalEvents = arguments['RequestSizeEvents']
-        self.seeding = arguments.get('Seeding', "AutomaticSeeding")
-        jobSplittingAlgo = arguments.get("JobSplittingAlgorithm", "EventBased")
-        jobSplittingParams = arguments.get("JobSplittingArgs", {"events_per_job": 1000})
-        
+        self.globalTag = arguments["GlobalTag"]
+        self.totalEvents = arguments["RequestSizeEvents"]
+        self.seeding = arguments.get("Seeding", "AutomaticSeeding")
+        self.prodConfigCacheID = arguments["ProdConfigCacheID"]
 
-        
-        self.couchUrl = arguments.get("CouchUrl", "http://derpderp:derpityderp@cmssrv52.derp.gov:5984")
-        self.couchDBName = arguments.get("CouchDBName", "wmagent_config_cache")        
-        self.couchConfigDoc = arguments.get("ConfigCacheDoc", None)
-        
-        # for publication
+        # The CouchURL and name of the ConfigCache database must be passed in
+        # by the ReqMgr or whatever is creating this workflow.
+        self.couchURL = arguments["CouchURL"]
+        self.couchDBName = arguments["CouchDBName"]        
+
+        # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-
-        self.siteBlacklist = arguments.get("SiteBlacklist", [])
-        self.siteWhitelist = arguments.get("SiteWhitelist", [])
-
-        self.unmergedLFNBase = arguments.get("UnmergedLFNBase", "/store/temp/WMAgent/unmerged")
-        self.mergedLFNBase = arguments.get("MergedLFNBase", "/store/temp/WMAgent/merged")
-
-        self.minMergeSize = arguments.get("MinMergeSize", 500000000)
-        self.maxMergeSize = arguments.get("MaxMergeSize", 4294967296)
-        self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
         self.emulation = arguments.get("Emulation", False)
+
+        # These are mostly place holders because the job splitting algo and
+        # parameters will be updated after the workflow has been created.
+        self.prodJobSplitAlgo  = arguments.get("ProdJobSplitAlgo", "EventBased")
+        self.prodJobSplitArgs  = arguments.get("ProdJobSplitArgs",
+                                               {"events_per_job": 1000})
         
-        workload = self.newWorkload()
-        
-    
-        production = workload.newTask("Production")
-        productionCmssw = production.makeStep("cmsRun1")
-        productionCmssw.setStepType("CMSSW")
-        productionStageOut = productionCmssw.addStep("stageOut1")
-        productionStageOut.setStepType("StageOut")
-        productionLogArch = productionCmssw.addStep("logArch1")
-        productionLogArch.setStepType("LogArchive")
-        production.applyTemplates()
-        production.setSplittingAlgorithm(jobSplittingAlgo, **jobSplittingParams)
-        production.addGenerator("BasicNaming")
-        production.addGenerator("BasicCounter")
-        production.addGenerator(self.seeding)
-        production.setTaskType("Production")
-        startPolicyParams = arguments.get("StartPolicyArgs", {'SliceType': "NumberOfEvents",
-                                                              'SliceSize': jobSplittingParams['events_per_job']})
-        workload.setStartPolicy('MonteCarlo', **startPolicyParams)
-        workload.setEndPolicy('SingleShot') # only have 1 policy currently
-    
-        productionParams = arguments.get("ProductionArgs", {'totalevents' : self.totalEvents})
-        production.addProduction(**productionParams)
-    
-    
-        prodTaskCmsswHelper = productionCmssw.getTypeHelper()
-        prodTaskCmsswHelper.setGlobalTag(self.globalTag)
-        prodTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                           scramArch = self.scramArch)
-        prodTaskCmsswHelper.setConfigCache(self.couchUrl, self.couchConfigDoc, dbName = self.couchDBName)
-    
-        for omod in self.getOutputModules():
-            self.addOutputModule( production,  omod['moduleName'], self.primaryDataset,
-                                omod['dataTier'], omod['filterName'])
-
-        return workload
-    
-    def getOutputModules(self):
-        """
-        _getOutputModules_
-        
-        Use the config cache URL to pull the PSet Tweak and grab the output modules it defines
-        
-        TODO: Move to ConfigCache API, this will be general for anything dealing with the config cache
-        
-        """
-        config = ConfigSection("ConfigCache")
-        config.section_("CoreDatabase")
-        config.CoreDatabase.couchurl = self.couchUrl
-        confCache = ConfigCache(config = config, couchDBName= self.couchDBName, id = self.couchConfigDoc)
-        confCache.load()
-        outMods = confCache.document[u'pset_tweak_details'][u'process'][u'outputModules_']
-        
-        for outMod in outMods:
-            outModule = confCache.document[u'pset_tweak_details'][u'process'][outMod]
-            result = {"moduleName" : str(outMod)}
-            for datasetP in outModule[u'dataset'][u'parameters_']:
-                result[str(datasetP)] = str(outModule[u'dataset'][datasetP])
-            yield result
-
-        
-
-def getTestArguments():
-    """generate some test data"""
-    args = {}
-    args['AcquisitionEra'] = "CSA2010"
-    args['Requestor'] = "evansde77"
-
-    args["ScramArch"] =  "slc5_ia32_gcc434"
-    args["ProcessingVersion"] = "v2scf"
-    args["SkimInput"] = "output"
-    args["GlobalTag"] = None
-    args['RequestSizeEvents'] = 100000
-    
-    args["CouchUrl"] = "http://dmwmwriter:PASSWORD@localhost:5986"
-    args["CouchDBName"] = "config_cache1"
-    # 371 config
-    #args['CMSSWVersion'] = "CMSSW_3_7_1"
-    #args["ConfigCacheDoc"] = "f6676adf792b73cd24f3b9b3c260f575"
-
-    #381 config
-    args['CMSSWVersion'] = "CMSSW_3_8_1"
-    args["ConfigCacheDoc"] = "a3c2f9c1d2231060b1de9dafe7d5b8f2"
-    args['PrimaryDataset'] = "Derp"
-    
-    return args
-
-def main():
-    """main functionf for testing"""
-    from WMCore.DataStructs.Job import Job
-    from WMCore.DataStructs.File import File
-    from WMCore.DataStructs.Run import Run
-    from WMCore.DataStructs.JobPackage import JobPackage
-    from WMCore.Services.UUID import makeUUID
-    from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-    factory = MonteCarloWorkloadFactory()
-    workload = factory("derp", getTestArguments())
-
-    print workload.data.policies
-    print workload.data.tasks.Production.production
-
-
-    # task = workload.getTask('Production')
-    # job = Job("SampleJob")
-    # job["id"] = makeUUID()
-    # job["task"] = task.getPathName()
-    # job["workflow"] = workload.name()
-    # job['mask']['FirstEvent'] = 0
-    # job['mask']['FirstRun'] = 1000000
-    # 
-    # 
-    # mcFile = File("VirtiualMCInputFile", 0,  10)
-    # mcFile.addRun(Run(1000000, 1))
-    # job.addFile( mcFile )
-    # job['mask']['LastEvent'] = mcFile['events']
-    # 
-    # jpackage = JobPackage()
-    # jpackage[1] = job
-    # 
-    # print jpackage
-    # 
-    # import pickle
-    # 
-    # handle = open("%s/JobPackage.pkl" % os.getcwd(), 'w')
-    # pickle.dump(  jpackage, handle)
-    # handle.close()
-    # 
-    # 
-    # 
-    # taskMaker = TaskMaker(workload, os.getcwd())
-    # taskMaker.skipSubscription = True
-    # taskMaker.processWorkload()
-    # task.build(os.getcwd())
-    
-
-if __name__ == '__main__':
-    main()
-
+        return self.buildWorkload()

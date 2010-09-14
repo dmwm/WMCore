@@ -5,76 +5,334 @@ _StdBase_
 Base class with helper functions for standard WMSpec files.
 """
 
+from WMCore.WMSpec.WMWorkload import newWorkload
+from WMCore.WMSpec.WMStep import makeWMStep
+from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 
-
-
-import tempfile
-import subprocess
-import os
-import shutil
-
-from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
+from WMCore.Cache.WMConfigCache import ConfigCache
 
 class StdBase(object):
     """
     _StdBase_
 
+    Base class with helper functions for standard WMSpec file.
     """
     def __init__(self):
+        """
+        __init__
+
+        Setup parameters that will be used by all workflows.  These parameters
+        are not required to be set when the workflow is first created but will
+        need to be set before the sandbox is created and jobs are made.
+
+        These parameters can be changed after the workflow has been created by
+        the methods in the WMWorkloadHelper class.
+        """
+        self.workloadName = None
+        self.owner = None
+        self.acquisitionEra = None
+        self.scramArch = None
+        self.processingVersion = None
+        self.siteBlacklist = []
+        self.siteWhitelist = []
+        self.unmergedLFNBase = None
+        self.mergedLFNBase = None
+        self.minMergeSize = 500000000
+        self.maxMergeSize = 4294967296
+        self.maxMergeEvents = 100000
         return
+
+    def __call__(self, workloadName, arguments):
+        """
+        __call__
+
+        Look through the arguments that were passed into the workload's call
+        method and pull out any that are setup by this base class.
+        """
+        self.workloadName = workloadName
+        self.owner = arguments.get("Requestor", None)
+        self.acquisitionEra = arguments.get("AcquisitionEra", None)
+        self.scramArch = arguments.get("ScramArch", None)
+        self.processingVersion = arguments.get("ProcessingVersion", None)
+        self.siteBlacklist = arguments.get("SiteWhitelist", [])
+        self.siteWhitelist = arguments.get("SiteBlacklist", [])
+        self.unmergedLFNBase = arguments.get("UnmergedLFNBase", None)
+        self.mergedLFNBase = arguments.get("MergeLFNBase", None)
+        self.minMergeSize = arguments.get("MinMergeSize", 500000000)
+        self.maxMergeSize = arguments.get("MaxMergeSize", 4294967296)
+        self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
+        return
+
+    def determineOutputModules(self, scenarioName = None, scenarioArgs = None,
+                               configDoc = None, couchURL = None,
+                               couchDBName = None):
+        """
+        _determineOutputModules_
+
+        Determine the output module names and associated metadata for the
+        given config.
+        """
+        outputModules = {}
+        if scenarioName != None:
+            for dataTier in scenarioArgs["writeTiers"]:
+                outputModuleName = "output%s%s" % (dataTier, dataTier)
+                outputModules[outputModuleName] = {"dataTier": dataTier,
+                                                   "filterName": None}
+        else:
+            configCache = ConfigCache(couchURL, couchDBName)
+            configCache.loadByID(configDoc)
+            outputModules = configCache.getOutputModuleInfo()
+
+        return outputModules
     
-    def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
-                            scenarioArgs):
+    def addDashboardMonitoring(self, task):
         """
-        _getOutputModuleInfo_
-
-        For a given config try to determine the output module configuration.
-        Create a temporary directory and setup a CMSSW project using scramv1 in
-        it.  Use a subshell and scramv1 to setup the CMSSW environment and then
-        execute the outputmodules-from-config script.  Looks for the JSON file
-        that the script leaves behind and pass that back to the caller.
-        """
-        stderr = None
-        stdout = None
+        _addDashboardMonitoring_
         
-        try:
-            self.tempDir = tempfile.mkdtemp()
+        Add dashboard monitoring for the given task.
+        """
+        monitoring = task.data.section_("watchdog")
+        monitoring.interval = 600
+        monitoring.monitors = ["DashboardMonitor"]
+        monitoring.section_("DashboardMonitor")
+        monitoring.DashboardMonitor.softTimeOut = 300000
+        monitoring.DashboardMonitor.hardTimeOut = 600000
+        monitoring.DashboardMonitor.destinationHost = "cms-pamon.cern.ch"
+        monitoring.DashboardMonitor.destinationPort = 8884
+        return task
 
-            scramProcess = subprocess.Popen(["/bin/bash"], shell = True,
-                                            cwd = self.tempDir,
-                                            stdout = subprocess.PIPE,
-                                            stderr = subprocess.PIPE,
-                                            stdin = subprocess.PIPE)
+    def createWorkload(self):
+        """
+        _createWorkload_
 
-            scramProcess.stdin.write("export SCRAM_ARCH=%s\n" % self.scramArch)
-            scramProcess.stdin.write(". %s/cmsset_default.sh\n" % self.cmsPath)
-            scramProcess.stdin.write("scramv1 project CMSSW %s\n" % self.frameworkVersion)
+        Create a new workload.
+        """
+        workload = newWorkload(self.workloadName)
+        workload.setOwner(self.owner)
+        return workload
+    
+    def setWorkQueueSplitPolicy(self, workload, splitAlgo, splitArgs):
+        """
+        _setWorkQueueSplitPolicy_
+        
+        Set the WorkQueue split policy.
+        """
+        SplitAlgoToStartPolicy = {"FileBased" : "NumberOfFiles",
+                                  "EventBased" : "NumberOfEvents"}
+        SplitAlgoToArgMap = {"NumberOfFiles" : "files_per_job",
+                             "NumberOfEvents" : "events_per_job"}
 
-            scramProcess.stdin.write("cd %s\n" % self.frameworkVersion)
-            scramProcess.stdin.write("eval `scramv1 ru -sh`\n")
+        sliceType = SplitAlgoToStartPolicy.get(splitAlgo, "FileBased")
+        sliceSize = splitArgs.get(SplitAlgoToArgMap[sliceType], 1)
 
-            encoder = JSONEncoder()
-            config = {"configUrl": configUrl, "scenarioName": scenarioName,
-                      "scenarioFunc": scenarioFunc, "scenarioArgs": scenarioArgs}
+        workload.setStartPolicy("Block", SliceType = sliceType, SliceSize = sliceSize)
+        workload.setEndPolicy("SingleShot")
+        return
+        
+    def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
+                            inputModule = None, scenarioName = None,
+                            scenarioFunc = None, scenarioArgs = None, couchURL = None,
+                            couchDBName = None, configDoc = None, splitAlgo = "FileBased",
+                            splitArgs = {'files_per_job': 1}, seeding = None, totalEvents = None):
+        """
+        _setupProcessingTask_
 
-            scramProcess.stdin.write("outputmodules-from-config\n")
-            scramProcess.stdin.write(encoder.encode(config))
+        Given an empty task add cmsRun, stagOut and logArch steps.  Configure
+        the input depending on the method parameters:
+          inputDataset not empty: This is a top level processing task where the
+            input will be fed in by DBS.  Setup the whitelists and blacklists.
+          inputDataset empty: This processing task will be fed from the output
+            of another task.  The inputStep and name of the output module from
+            that step (inputModule) must be specified.
 
-            (stdout, stderr) = scramProcess.communicate()
+        Processing config will be setup as follows:
+          configDoc not empty - Use a ConfigCache config, couchURL and
+            couchDBName must not be empty.
+          configDoc empty - Use a Configuration.DataProcessing config.  The
+            scenarioName, scenarioFunc and scenarioArgs parameters must not be
+            empty.
 
-            outputHandle = open(os.path.join(self.tempDir, self.frameworkVersion,
-                                             "outputModules.json"))
-            outputJSON = outputHandle.read()
-            outputHandle.close()
+        The seeding and totalEvents parameters are only used for production jobs.
+        """
+        self.addDashboardMonitoring(procTask)
+        procTaskCmssw = procTask.makeStep("cmsRun1")
+        procTaskCmssw.setStepType("CMSSW")
+        procTaskStageOut = procTaskCmssw.addStep("stageOut1")
+        procTaskStageOut.setStepType("StageOut")
+        procTaskLogArch = procTaskCmssw.addStep("logArch1")
+        procTaskLogArch.setStepType("LogArchive")
+        procTask.applyTemplates()
 
-            shutil.rmtree(self.tempDir)
+        procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
 
-            decoder = JSONDecoder()        
-            return decoder.decode(outputJSON)
-        except Exception, ex:
-            error = "Error determining output modules: %s.  " % str(ex)
-            error += "STDOUT from process: %s\n" % stdout
-            error += "STDERR from process: %s\n" % stderr
-            shutil.rmtree(self.tempDir)
-            raise Exception, error
+        procTask.setSiteWhitelist(self.siteWhitelist)
+        procTask.setSiteBlacklist(self.siteBlacklist)
+
+        newSplitArgs = {}
+        for argName in splitArgs.keys():
+            newSplitArgs[str(argName)] = splitArgs[argName]
+        
+        procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
+        procTask.setTaskType(taskType)
+        procTask.addGenerator("BasicNaming")
+        procTask.addGenerator("BasicCounter")
+
+        if taskType == "Production":
+            procTask.addGenerator(seeding)
+            procTask.addProduction(totalevents = totalEvents)
+        else:
+            if inputDataset != None:
+                (primary, processed, tier) = self.inputDataset[1:].split("/")
+                procTask.addInputDataset(primary = primary, processed = processed,
+                                         tier = tier, dbsurl = self.dbsUrl,
+                                         block_blacklist = self.blockBlacklist,
+                                         block_whitelist = self.blockWhitelist,
+                                         run_blacklist = self.runBlacklist,
+                                         run_whitelist = self.runWhitelist)
+            else:
+                procTask.setInputReference(inputStep, outputModule = inputModule)
+
+        procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
+        procTaskStageHelper = procTaskStageOut.getTypeHelper()
+        procTaskCmsswHelper.setGlobalTag(self.globalTag)
+        procTaskStageHelper.setMinMergeSize(self.minMergeSize)
+        procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                       scramArch = self.scramArch)
+        if configDoc != None:
+            procTaskCmsswHelper.setConfigCache(couchURL, configDoc, couchDBName)
+        else:
+            procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
+                                                        **scenarioArgs)
+
+        configOutput = self.determineOutputModules(scenarioName, scenarioArgs,
+                                                   configDoc, couchURL, couchDBName)
+        outputModules = {}
+        for outputModuleName in configOutput.keys():
+            outputModule = self.addOutputModule(procTask, outputModuleName,
+                                                configOutput[outputModuleName]["dataTier"],
+                                                configOutput[outputModuleName]["filterName"])
+            outputModules[outputModuleName] = outputModule
+
+        return outputModules
+
+    def addOutputModule(self, parentTask, outputModuleName, dataTier, filterName):
+        """
+        _addOutputModule_
+        
+        Add an output module to the given processing task.
+        """
+        if filterName != None and filterName != "":
+            processedDatasetName = "%s-%s-%s" % (self.acquisitionEra, filterName,
+                                                 self.processingVersion)
+        else:
+            processedDatasetName = "%s-%s" % (self.acquisitionEra,
+                                              self.processingVersion)
+        
+        unmergedLFN = "%s/%s/%s" % (self.unmergedLFNBase, dataTier,
+                                    processedDatasetName)
+        mergedLFN = "%s/%s/%s" % (self.mergedLFNBase, dataTier,
+                                  processedDatasetName)
+        cmsswStep = parentTask.getStep("cmsRun1")
+        cmsswStepHelper = cmsswStep.getTypeHelper()
+        cmsswStepHelper.addOutputModule(outputModuleName,
+                                        primaryDataset = self.inputPrimaryDataset,
+                                        processedDataset = processedDatasetName,
+                                        dataTier = dataTier,
+                                        lfnBase = unmergedLFN,
+                                        mergedLFNBase = mergedLFN)
+
+        return {"dataTier": dataTier, "processedDataset": processedDatasetName}        
+
+    def addLogCollectTask(self, parentTask, taskName = "LogCollect"):
+        """
+        _addLogCollectTask_
+        
+        Create a LogCollect task for log archives that are produced by the
+        parent task.
+        """
+        logCollectTask = parentTask.addTask(taskName)
+        self.addDashboardMonitoring(logCollectTask)        
+        logCollectStep = logCollectTask.makeStep("logCollect1")
+        logCollectStep.setStepType("LogCollect")
+        logCollectTask.applyTemplates()
+        logCollectTask.setSplittingAlgorithm("EndOfRun", files_per_job = 500)
+        logCollectTask.addGenerator("BasicNaming")
+        logCollectTask.addGenerator("BasicCounter")
+        logCollectTask.setTaskType("LogCollect")
+    
+        parentTaskLogArch = parentTask.getStep("logArch1")
+        logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")
+        return
+
+    def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModule,
+                     dataTier, processedDatasetName):
+        """
+        _addMergeTask_
+    
+        Create a merge task for files produced by the parent task.
+        """
+        mergeTask = parentTask.addTask("%sMerge%s" % (parentTask.name(), parentOutputModule))
+        self.addDashboardMonitoring(mergeTask)
+        mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
+        mergeTaskCmssw.setStepType("CMSSW")
+        
+        mergeTaskStageOut = mergeTaskCmssw.addStep("stageOut1")
+        mergeTaskStageOut.setStepType("StageOut")
+        mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
+        mergeTaskLogArch.setStepType("LogArchive")
+
+        mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)        
+        self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModule))
+        
+        mergeTask.addGenerator("BasicNaming")
+        mergeTask.addGenerator("BasicCounter")
+        mergeTask.setTaskType("Merge")
+        mergeTask.applyTemplates()
+
+        if parentTaskSplitting == "EventBased":
+            splitAlgo = "WMBSMergeBySize"
+        else:
+            splitAlgo = "ParentlessMergeBySize"
             
+        mergeTask.setSplittingAlgorithm(splitAlgo,
+                                        max_merge_size = self.maxMergeSize,
+                                        min_merge_size = self.minMergeSize,
+                                        max_merge_events = self.maxMergeEvents,
+                                        siteWhitelist = self.siteWhitelist,
+                                        siteBlacklist = self.siteBlacklist)
+    
+        mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
+        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                        scramArch = self.scramArch)
+        mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
+
+        mergedLFN = "%s/%s/%s" % (self.mergedLFNBase, dataTier, processedDatasetName)    
+        mergeTaskCmsswHelper.addOutputModule("Merged",
+                                             primaryDataset = self.inputPrimaryDataset,
+                                             processedDataset = processedDatasetName,
+                                             dataTier = dataTier,
+                                             lfnBase = mergedLFN)
+    
+        parentTaskCmssw = parentTask.getStep("cmsRun1")
+        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModule)
+        self.addCleanupTask(parentTask, parentOutputModule)
+        return mergeTask
+
+    def addCleanupTask(self, parentTask, parentOutputModuleName):
+        """
+        _addCleanupTask_
+        
+        Create a cleanup task to delete files produces by the parent task.
+        """
+        cleanupTask = parentTask.addTask("%sCleanupUnmerged%s" % (parentTask.name(), parentOutputModuleName))
+        self.addDashboardMonitoring(cleanupTask)        
+        cleanupTask.setTaskType("Cleanup")
+
+        parentTaskCmssw = parentTask.getStep("cmsRun1")
+        cleanupTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+        cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
+       
+        cleanupStep = cleanupTask.makeStep("cleanupUnmerged%s" % parentOutputModuleName)
+        cleanupStep.setStepType("DeleteFiles")
+        cleanupTask.applyTemplates()
+        return

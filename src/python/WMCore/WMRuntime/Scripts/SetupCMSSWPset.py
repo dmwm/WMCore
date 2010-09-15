@@ -16,10 +16,10 @@ from PSetTweaks.WMTweak import makeOutputTweak, makeJobTweak, makeTaskTweak
 
 import FWCore.ParameterSet.Config as cms
 
-applyPromptReco = lambda s, a: s.promptReco(a['globalTag'], a['writeTiers'])
-applyAlcaSkim = lambda s, a: s.alcaSkim(a['skims'])
-applySkimming = lambda s, a: s.skimming(a['skims'])
-applyDqmHarvesting = lambda s, a: s.dqmHarvesting(a['datasetName'], a['runNumber'], a['globalTag'])
+applyPromptReco = lambda s, a: s.promptReco(**a)
+applyAlcaSkim = lambda s, a: s.alcaSkim(**a)
+applySkimming = lambda s, a: s.skimming(**a)
+applyDqmHarvesting = lambda s, a: s.dqmHarvesting(**a)
 
 class SetupCMSSWPset(ScriptInterface):
     """

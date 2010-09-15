@@ -30,18 +30,19 @@ def getTestArguments():
     arguments = {
         "CmsPath": "/afs/cern.ch/cms/sw",
         "Requestor": "direyes@cern.ch",
-        "InputDataset": "/RelValMinBias/CMSSW_3_8_1-MC_38Y_V8-v1/GEN-SIM-RECO",
-        "CMSSWVersion": "CMSSW_3_8_1",
+        "InputDataset": "/RelValMinBias/CMSSW_3_8_2-MC_38Y_V9-v1/GEN-SIM-RECO",
+        "CMSSWVersion": "CMSSW_3_8_2",
         "ScramArch": "slc5_ia32_gcc434",
         "ProcessingVersion": "v1",
-        "GlobalTag": "MC_38Y_V8::All",
+        "GlobalTag": "MC_38Y_V9::All",
         "Scenario": "relvalmc",
         "Proxy": "/afs/cern.ch/user/r/relval/.globus/direyes/myproxy",
         "DqmGuiUrl": "https://cmsweb.cern.ch/dqm/dev",
         "CouchUrl": None,
         "DoStageOut": True,
         "DoDqmUpload": True,
-        "DqmBaseLFN": '/store/unmerged/dqm/wmagent'
+        "DqmBaseLFN": '/store/temp/WMAgent/dqm',
+        "RefHistogram": '/store/unmerged/dqm/wmagent/CMSSW_3_8_1/RelValMinBias/GEN-SIM-RECO/MC_38Y_V8-v1/0000/DQM_V0001_R000000001__RelValMinBias__CMSSW_3_8_1-MC_38Y_V8-v1__GEN-SIM-RECO.root'
         }
 
     return arguments
@@ -207,14 +208,9 @@ class HarvestingWorkloadFactory(StdBase):
         self.dqmGuiUrl = arguments['DqmGuiUrl']
 
         # Required parameters that can be empty.
-        # TODO: Add ref. histograms handling
-        # I'm not yet sure how to do this. The reference file should be
-        # inserted in process.DQMStore.referenceFileName
-        # So far, I have considred two options:
-        # * Tweak PSetTweaks in order to fill this field via this API.
-        # * Add an extra input argument to
-        #   Configuration.DataProcessing.Impl.scenario.dqmHarvesting()
-        #   and let this method insert the reference file.
+        # Add an extra input argument to
+        # Configuration.DataProcessing.Impl.scenario.dqmHarvesting()
+        # and let this method insert the reference file.
         self.refHistogram = arguments.get("RefHistogram", None)
         self.doStageOut = arguments.get("DoStageOut", True)
         self.doDqmUpload = arguments.get("DoDqmUpload", True)
@@ -251,11 +247,17 @@ class HarvestingWorkloadFactory(StdBase):
         workload = self.newWorkload()
         harvTask = workload.newTask("Harvesting")
 
+        # Filling up information for Configuration/DataProcessing scenarios
+        scenarioArgs = {"globalTag": self.globalTag,
+                        "datasetName": self.inputDataset,
+                        "runNumber": self.runWhitelist} # runNumber is not really used by dqmHarvesting(), putting a dummy value.
+        # Is there a reference histogram?
+        if self.refHistogram is not None:
+            scenarioArgs["referenceFile"] = self.refHistogram
+
         self.setupHarvestingTask(harvTask, "Harvesting", self.inputDataset,
                                  scenarioName = self.scenario, scenarioFunc = "dqmHarvesting",
-                                 scenarioArgs = {"globalTag": self.globalTag,
-                                                 "datasetName": self.inputDataset,
-                                                 "runNumber": self.runWhitelist}, # runNumber is not really used by dqmHarvesting(), putting a dummy value.
+                                 scenarioArgs = scenarioArgs,
                                  couchUrl = self.couchUrl, couchDBName = self.couchDBName,
                                  configDoc = procConfigDoc, splitAlgo = self.jobSplitAlgo,
                                  splitArgs = self.jobSplitArgs) 
@@ -300,7 +302,7 @@ def main():
     job["task"] = task.getPathName()
     job["workflow"] = workload.name()
 
-    file = File(lfn="/store/relval/CMSSW_3_8_1/RelValMinBias/GEN-SIM-RECO/MC_38Y_V8-v1/0011/2A26C912-32A2-DF11-8273-00261894384A.root")
+    file = File(lfn="/store/relval/CMSSW_3_8_2/RelValMinBias/GEN-SIM-RECO/MC_38Y_V9-v1/0019/FEC5BB4D-BFAF-DF11-A52A-001A92810AD2.root")
     job.addFile(file)
 
     jpackage = JobPackage()

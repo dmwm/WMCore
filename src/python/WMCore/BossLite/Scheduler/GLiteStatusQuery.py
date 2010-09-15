@@ -38,9 +38,28 @@ except :
     sys.exit(1)
 
 # manage json library using the appropriate WMCore wrapper
-from WMCore.Wrappers import JsonWrapper as json
+#from WMCore.Wrappers import JsonWrapper as json
 
 ##########################################################################
+
+class myJSONEncoder(object):
+    """
+    easy class able to transform a string representation of a python dictionary
+    in a valid JSON output recognizable by simplejson
+    """
+
+    def dumps(self, myString):
+        """
+        the same interface as simplejson ...
+        """
+
+        tmp = str(myString)
+        tmp = tmp.replace('\'','"')
+        tmp = tmp.replace('None','null')
+
+        return tmp
+
+
 class GLiteStatusQuery(object):
     """
     basic class to handle glite jobs status query
@@ -389,7 +408,8 @@ def main():
         lbInstance.checkJobsBulk( jobIds, parent, errors )     
     else :
         lbInstance.checkJobs( jobIds, errors )
-       
+
+    json = myJSONEncoder()      
     if errors :
         print '\nError during API calls.\n'
         print str(errors)

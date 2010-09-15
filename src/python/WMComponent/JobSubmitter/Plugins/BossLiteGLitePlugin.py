@@ -93,6 +93,8 @@ class BossLiteGLitePlugin(PluginBase):
             self.sandbox    = entry.get('sandbox', None)
             self.agent      = entry.get('agentName', 'test')
 
+            logging.info("Got %i jobs to submit" %len(jobList) )
+
             if self.packageDir is None:
                 self.packageDir = jobList[0]['batch_dir']
 
@@ -100,10 +102,9 @@ class BossLiteGLitePlugin(PluginBase):
             myBossLiteAPI = BossLiteAPI()
 
             jpkgPath = os.path.join(self.packageDir, 'JobPackage.pkl')
-            ## Prepary the input sandbox string for the whole task
-            ## Temporary usage of submitNode to cummunicate Unpacker.py path
+            ## Prepares the input sandbox string for the whole task
             inputsbstr = "%s,%s,%s,%s" % (jpkgPath, self.sandbox, \
-                         self.config['submitNode'], self.config['submitScript'])
+                         self.config['unpackerScript'], self.config['submitScript'])
             #inputsbstr = self.config['submitScript']
 
             taskParams = {'name' : makeUUID(),
@@ -136,7 +137,8 @@ class BossLiteGLitePlugin(PluginBase):
                              'standardError' : '%s.err' % taskParams['name'],
                              'standardOutput' : '%s.out' % taskParams['name'],
                              'outputFiles': [
-                                              'Report.pkl', '.BrokerInfo',
+                                              'Report.pkl',
+                                              '.BrokerInfo',
                                               '%s.err' % taskParams['name'],
                                               '%s.out' % taskParams['name']
                                             ],
@@ -170,9 +172,11 @@ class BossLiteGLitePlugin(PluginBase):
 
             ## performing real submission
             try:
+                logging.info("submitting...")
                 mySchedAPI.submit( taskObj = task,
                    requirements = self.requirements(dest) + self.otherParJdl()
                                  )
+                logging.info('...done!')
             except SchedulerError, ex:
                 logging.error("Problem in submission: '%s'" % str(ex))
 
@@ -219,7 +223,7 @@ class BossLiteGLitePlugin(PluginBase):
                '&& (other.GlueHostNetworkAdapterOutboundIP) ' + \
                '&& other.GlueCEStateStatus == "Production"  ' + \
                '&&  other.GlueCEPolicyMaxCPUTime>=130 %s ;\n' \
-                 % self.sewhite(sesites)
+                % self.sewhite(sesites)
 
     def otherParJdl(self):
         """
@@ -246,8 +250,8 @@ class BossLiteGLitePlugin(PluginBase):
             sr = ' && ('
             for se in sesites:
                 sr += ' Member("%s", other.GlueCESEBindGroupSEUniqueID) ||' % se
+                logging.info('\t selected SE: [%s]' % se)
             sr = sr[:-3] + ')'
-        logging.info(sr)
         return sr
 
 
@@ -282,7 +286,7 @@ class BossLiteGLitePlugin(PluginBase):
 
         if not jobSite in self.locationDict.keys():
             siteInfo = self.locationAction.execute(siteName = jobSite)
-            self.locationDict[jobSite] = siteInfo[0].get('ce_name', None)
+            self.locationDict[jobSite] = siteInfo[0].get('se_name', None)
         return self.locationDict[jobSite]
 
 

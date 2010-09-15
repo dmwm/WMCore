@@ -77,8 +77,20 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
                 "timestamp": timestamp, 
                 "bld_id": buildnumber, 
                 "step": "notsure",
-                "reason": traceback
+                "reason": traceback,
+                "rev"   : revision
             }
+        database.queue(myData)
+    else: # win case
+        myData = {
+                "test_name": (case.getAttribute('classname') + '.' + case.getAttribute('name')), 
+                "builder": buildername, 
+                "timestamp": timestamp, 
+                "bld_id": buildnumber, 
+                "step": "notsure",
+                "reason": "success",
+                "rev"   : revision
+        }
         database.queue(myData)
         
 database.commit()

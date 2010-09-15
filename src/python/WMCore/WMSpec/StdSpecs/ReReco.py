@@ -38,7 +38,7 @@ def getTestArguments():
         "SkimInput": "output",
         "GlobalTag": "GR10_P_v4::All",
         
-        "CouchUrl": os.environ.get("COUCHURL", None),
+        "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "scf_wmagent_configcache",
         
         "ProcScenario": "cosmics",
@@ -79,7 +79,7 @@ class ReRecoWorkloadFactory(StdBase):
          self.inputDataTier) = self.inputDataset[1:].split("/")
 
         workload = self.createWorkload()
-        self.setWorkQueueSplitPolicy(workload, "FileBased", {"files_per_job": 1})
+        self.setWorkQueueSplitPolicy(workload, "Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         procTask = workload.newTask("ReReco")
 
         outputMods = self.setupProcessingTask(procTask, "Processing", self.inputDataset,
@@ -138,7 +138,7 @@ class ReRecoWorkloadFactory(StdBase):
 
         # The CouchURL and name of the ConfigCache database must be passed in
         # by the ReqMgr or whatever is creating this workflow.
-        self.couchURL = arguments["CouchUrl"]
+        self.couchURL = arguments["CouchURL"]
         self.couchDBName = arguments["CouchDBName"]        
 
         # One of these parameters must be set.

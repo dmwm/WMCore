@@ -43,13 +43,13 @@ class fakeSiteDB:
 # find a better way to do this...
 rerecoArgs = getTestArguments()
 rerecoArgs.update({
-    "CouchUrl": None,
+    "CouchURL": None,
     "CouchDBName": None,
     })
 
 mcArgs = getMCArgs()
 mcArgs.update({
-    "CouchUrl": None,
+    "CouchURL": None,
     "CouchDBName": None,
     "ConfigCacheDoc" : None
     })
@@ -58,31 +58,26 @@ mcArgs.pop('ConfigCacheDoc')
 class TestReRecoFactory(ReRecoWorkloadFactory):
     """Override bits that talk to cmsssw"""
 
-    def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
-                            scenarioArgs):
+    def determineOutputModules(self, *args, **kwargs):
+        "Don't talk to couch"
         return {}
 
     #TODO: Remove this when each queue can be isolated (i.e. separate db's)
-    def setReRecoPolicy(self, workload, splitAlgo, splitAgrs):
-        """Force DatasetBlock till test cases can handle multiple queues
-           with Block splitting at global level"""
-        ReRecoWorkloadFactory.setReRecoPolicy(self, workload,
-                                              splitAlgo, splitAgrs)
+    def __call__(self, *args, **kwargs):
+        """Force DatasetBlock split for testing"""
+        workload = ReRecoWorkloadFactory.__call__(self, *args, **kwargs)
         workload.setStartPolicy("DatasetBlock")
+        return workload
 
 class TestMonteCarloFactory(MonteCarloWorkloadFactory):
     """Override bits that talk to cmsssw"""
-    def __call__(self, *args, **kwargs):
-        workload = MonteCarloWorkloadFactory.__call__(self, *args, **kwargs)
+    def __call__(self, workflowName, args):
+        workload = MonteCarloWorkloadFactory.__call__(self, workflowName, args)
         delattr(getFirstTask(workload).steps().data.application.configuration,
                 'retrieveConfigUrl')
         return workload
 
-    def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
-                            scenarioArgs):
-        return {}
-
-    def getOutputModules(self, *args, **kwargs):
+    def determineOutputModules(self, *args, **kwargs):
         "Don't talk to couch"
         return {}
 

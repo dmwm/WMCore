@@ -222,10 +222,10 @@ class JobArchiverPoller(BaseWorkerThread):
             os.makedirs(logDir)
 
         # Otherwise we have something in there
-        tarName = 'Job_%i.tar' % (job['id'])
+        tarName = 'Job_%i.tar.bz2' % (job['id'])
 
         tarball = tarfile.open(name = os.path.join(logDir, tarName),
-                               mode = 'w')
+                               mode = 'w:bz2')
         for fileName in cacheDirList:
             tarball.add(name = os.path.join(cacheDir, fileName),
                         arcname = 'Job_%i/%s' %(job['id'], fileName))

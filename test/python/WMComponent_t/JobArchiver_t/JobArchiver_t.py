@@ -220,8 +220,8 @@ class JobArchiverTest(unittest.TestCase):
 
         logList = os.listdir(os.path.join(config.JobArchiver.logDir, 'JobCluster_0'))
         for job in testJobGroup.jobs:
-            self.assertEqual('Job_%i.tar' %(job['id']) in logList, True, 'Could not find transferred tarball for job %i' %(job['id']))
-            pipe = Popen(['tar', '-xvf', '%s/%s/Job_%i.tar' %(config.JobArchiver.logDir, 'JobCluster_0', job['id'])],
+            self.assertEqual('Job_%i.tar.bz2' %(job['id']) in logList, True, 'Could not find transferred tarball for job %i' %(job['id']))
+            pipe = Popen(['tar', '-jxvf', '%s/%s/Job_%i.tar.bz2' %(config.JobArchiver.logDir, 'JobCluster_0', job['id'])],
                          stdout = PIPE, stderr = PIPE, shell = False)
             pipe.wait()
             #filename = '%s/%s/%s.out' %(cacheDir[1:], job['name'], job['name'])
@@ -232,8 +232,8 @@ class JobArchiverTest(unittest.TestCase):
             f.close()
             self.assertEqual(fileContents[0].find(job['name']) > -1, True)
             shutil.rmtree('Job_%i' %(job['id']))
-            if os.path.isfile('Job_%i.tar' %(job['id'])):
-                os.remove('Job_%i.tar' %(job['id']))
+            if os.path.isfile('Job_%i.tar.bz2' %(job['id'])):
+                os.remove('Job_%i.tar.bz2' %(job['id']))
 
         return
 

@@ -13,19 +13,19 @@ from copy import deepcopy
 
 # looking for the environment...
 try:
-    path=os.environ['GLITE_WMS_LOCATION']
+    path = os.environ['GLITE_WMS_LOCATION']
 except:
     try:
-       path=os.environ['GLITE_LOCATION']
+        path = os.environ['GLITE_LOCATION']
     except:
         print "\nPlease set the GLITE_WMS_LOCATION environment variable pointing to the User Interface installation path.\n"
         sys.exit(1)
 
 # append lib/lib64 directories to search path
-for app in ["lib","lib64"]:
-        for bpp in ["",os.sep+"python"]:
-                libPath=path+os.sep+app+bpp
-                sys.path.append(libPath)
+for app in ["lib", "lib64"]:
+    for bpp in ["", os.sep+"python"]:
+        libPath = path+os.sep+app+bpp
+        sys.path.append(libPath)
 
 try :
     # 'glite_wmsui_LbWrapper' exists on both gLite 3.1 and gLite 3.2 
@@ -42,11 +42,13 @@ except :
 
 ##########################################################################
 
-class myJSONEncoder(object):
+class MyJSONEncoder:
     """
     easy class able to transform a string representation of a python dictionary
     in a valid JSON output recognizable by simplejson
     """
+    def __init__(self):
+        pass
 
     def dumps(self, myString):
         """
@@ -118,7 +120,9 @@ class GLiteStatusQuery(object):
         self.jobId = self.states.index('Jobid')
 
         import re
-        self.ft = re.compile("(\d+)Undefined=(\d+) Submitted=(\d+) Waiting=(\d+) Ready=(\d+) Scheduled=(\d+) Running=(\d+) Done=(\d+) Cleared=(\d+) Aborted=(\d+) Cancelled=(\d+) Unknown=(\d+) Purged=(\d+)")
+        self.ft = re.compile("(\d+)Undefined=(\d+) Submitted=(\d+) Waiting=(\d+) Ready=(\d+) \
+                              Scheduled=(\d+) Running=(\d+) Done=(\d+) Cleared=(\d+) Aborted=(\d+) \
+                              Cancelled=(\d+) Unknown=(\d+) Purged=(\d+)")
 
     ##########################################################################
     def getJobInfo( self, jobInfo, runningJob, forceAborted=False ):
@@ -351,8 +355,6 @@ def main():
         print usage()
         sys.exit(1)
 
-    inputFile = None 
-    outputFile = None
     parent = []
     jobList = []
 
@@ -409,7 +411,7 @@ def main():
     else :
         lbInstance.checkJobs( jobIds, errors )
 
-    json = myJSONEncoder()      
+    json = MyJSONEncoder()      
     if errors :
         print '\nError during API calls.\n'
         print str(errors)

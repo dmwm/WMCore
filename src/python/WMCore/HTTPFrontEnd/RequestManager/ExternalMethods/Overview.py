@@ -4,7 +4,10 @@ from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 
 def getGlobalSummaryView():
-    print "BCD"
+    """
+    get summary view of workflow 
+    getting information from global queue and localqueue
+    """
     requestInfo = getOverview()
     #get information from global queue.
     gQueues = getGlobalQueues()
@@ -14,7 +17,9 @@ def getGlobalSummaryView():
 
 
 def _globalQueueInfo(gQueues):
-
+    """
+    getting information about workflow from global queue
+    """
     gRequestInfo = []
     cRequestInfo = []
     for queue in gQueues:
@@ -26,6 +31,9 @@ def _globalQueueInfo(gQueues):
     return gRequestInfo, cRequestInfo
 
 def _localQueueInfo(globalQ):
+    """
+    getting information from local queue
+    """
     cQueues = globalQ.getChildQueues()
     jobSummary = []
     for cQueue in cQueues:
@@ -35,7 +43,9 @@ def _localQueueInfo(globalQ):
     return jobSummary
 
 def _formatTable(requestInfo, gRequestInfo, cRequestInfo):
-
+    """
+    combine the results from different sources and format them
+    """
     for item in requestInfo:
         for gItem in gRequestInfo:
             if item['request_name'] == gItem['request_name']:

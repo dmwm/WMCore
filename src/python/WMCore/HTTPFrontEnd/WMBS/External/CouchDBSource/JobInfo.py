@@ -70,6 +70,10 @@ def getJobSummaryByWorkflow():
                                     options)
     couchDocBase = CouchDBConnectionBase.getCouchDBHtmlBase(
                                     "JobDump", "workflowSummary")
+    couchJobInfoBase = CouchDBConnectionBase.getCouchDBHtmlBase(
+                                    "JobDump", "replace_to_Jobs", 
+                                    'jobStatusByWorkflowName',
+                                    type = "list")
     # reformat to match other type. (not very performative)
     formatted = []
     for item in result['rows']:
@@ -77,6 +81,15 @@ def getJobSummaryByWorkflow():
         dictItem['request_name'] = item['key'][0]
         dictItem.update(item['value'])
         dictItem['couch_doc_base'] = "%s/%s" % (couchDocBase, item['key'][0])
+        options = {'startkey':'["%s"]' % item['key'][0],
+                   'endkey':'["%s",{}]' % item['key'][0],
+                   "group": 'true', "group_level": 3}
+    
+        dictItem['couch_job_info_base'] = CouchDBConnectionBase.getCouchDBHtmlBase(
+                                    "JobDump", "replace_to_Jobs", 
+                                    'jobStatusByWorkflowName', options = options,
+                                    type = "list")
+        
         formatted.append(dictItem)
 
     return formatted

@@ -1,5 +1,64 @@
 var overviewTable = function(divID){
-
+    
+	var formatGlobalQ = function(elCell, oRecord, oColumn, sData) { 
+            var host;
+            if (!sData) {
+                host = "Not Assigned";
+            } else {
+                host = sData.split('/')[2];
+				elCell.innerHTML = "<a href='" + sData + "' target='_blank'>" + host + "</a>"; 
+            };
+        };
+	
+	var formatLocalQ = function(elCell, oRecord, oColumn, sData) { 
+            var host;
+            if (!sData) {
+                host = "Not Assigned";
+            } else {
+                host = sData.split('/')[2];
+				elCell.innerHTML = "<a href='" + sData + "monitor' target='_blank'>" + host + "</a>";
+            }; 
+        };
+    
+	var formatCouchDB = function(elCell, oRecord, oColumn, sData) { 
+            var host;
+            if (!sData) {
+                host = "Not Assigned";
+            } else {
+                host = "CouchDB Link";
+				elCell.innerHTML = "<a href='" + sData + "' target='_blank'>" + host + "</a>";
+            };
+        };
+		
+	var formatJobLink = function(elCell, oRecord, oColumn, sData, type) { 
+            var host;
+            if (!sData) {
+                elCell.innerHTML = 0;
+            } else {
+                host = sData;
+                elCell.innerHTML = "<a href='" + oRecord.getData("couch_job_info_base").replace("replace_to_", type) + "' target='_blank'>" + host + "</a>";
+            };
+        };
+	var formatPending = function(elCell, oRecord, oColumn, sData) { 
+            formatJobLink(elCell, oRecord, oColumn, sData, "pending")
+    };
+	
+	var formatRunning = function(elCell, oRecord, oColumn, sData) { 
+            formatJobLink(elCell, oRecord, oColumn, sData, "running")
+    };
+	
+	var formatCoolOff = function(elCell, oRecord, oColumn, sData) { 
+            formatJobLink(elCell, oRecord, oColumn, sData, "cooloff")
+    };
+	
+	var formatSuccess = function(elCell, oRecord, oColumn, sData) { 
+            formatJobLink(elCell, oRecord, oColumn, sData, "success")
+    };
+	
+	var formatFailure = function(elCell, oRecord, oColumn, sData) { 
+            formatJobLink(elCell, oRecord, oColumn, sData, "failure")
+    };
+	
     var dataSchema = {
         fields: [{key: "request_name"},
                  {key: "status"},
@@ -11,12 +70,26 @@ var overviewTable = function(divID){
                  {key: "running"},
                  {key: "success"},
                  {key: "failure"},
-                 {key: "couch_doc_base", label: "summary"}]
+                 {key: "couch_doc_base"},
+				 {key: "couch_job_info_base"}]
         };
 
+        var dataTableCols = [{key: "request_name"},
+                 {key: "status"},
+                 {key: "type"},
+                 {key: "global_queue", formatter:formatGlobalQ},
+                 {key: "local_queue", formatter:formatLocalQ},
+                 {key: "pending", formatter:formatPending},
+                 {key: "cooloff", formatter:formatCoolOff},
+                 {key: "running", formatter:formatRunning},
+                 {key: "success", formatter:formatSuccess},
+                 {key: "failure", formatter:formatFailure},
+                 {key: "couch_doc_base", label: "summary", formatter:formatCouchDB}
+                 ];
+         
     var dataUrl = "/reqMgr/overview"
     var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
     //writeDebugObject(dataSource)
     //writeEval(dataSource.responseType)
-    var dataTable = WMCore.WebTools.createDataTable(divID, dataSource, WMCore.WebTools.createDefaultTableDef(dataSchema.fields), WMCore.WebTools.createDefaultTableConfig(), 100000)
+    var dataTable = WMCore.WebTools.createDataTable(divID, dataSource, WMCore.WebTools.createDefaultTableDef(dataTableCols), WMCore.WebTools.createDefaultTableConfig(), 100000)
 }

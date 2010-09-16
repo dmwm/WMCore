@@ -48,7 +48,7 @@ class CouchDBConnectionBase(object):
         return couchDB
 
     @staticmethod
-    def getCouchDBHtmlBase(design, view, options = {}, type = "show"):
+    def getCouchDBHtmlBase(design, view, path = None, options = {}, type = "show"):
         """
         type should be either 'show' or 'list'
         Couch server will raise an error if another type is passed
@@ -64,5 +64,8 @@ class CouchDBConnectionBase(object):
 
         if (options):
             data = urllib.urlencode(options)
-            baseURL = "%s?%s" % (baseURL, data)
+            if path:
+                baseURL = "%s/%s?%s" % (baseURL, path, data)
+            else:
+                baseURL = "%s?%s" % (baseURL, data)
         return baseURL

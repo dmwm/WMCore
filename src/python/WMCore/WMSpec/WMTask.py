@@ -738,8 +738,8 @@ class WMTaskHelper(TreeHelper):
                 # This should raise an alarm bell, as per Steve's request
                 # TODO: Change error code
                 finalReport.addStep(reportname = taskStep, status = 1)
-                finalReport.addError(stepName = taskStep, exitCode = 99999,
-                                     errorType = "Could not find report file for this step!")
+                finalReport.addError(stepName = taskStep, exitCode = 99999, errorType = "ReportManipulatingError", 
+                                     errorDetails = "Could not find report file for this step!")
 
         finalReport.data.completed = True
         finalReport.persist(logLocation)

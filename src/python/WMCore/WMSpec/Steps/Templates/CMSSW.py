@@ -77,7 +77,7 @@ class CMSSWStepHelper(CoreHelper):
         docUrl = "%s/%s/%s" % (url, dbName, document)
         self.data.application.configuration.configUrl = docUrl
         self.data.application.configuration.retrieveConfigUrl = \
-                                        "%s/original_script" % docUrl
+                                        "%s/configFile" % docUrl
 
 
 

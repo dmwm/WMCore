@@ -292,33 +292,67 @@ class Scheduler(object):
 
 
     ##########################################################################
-    def postMortem ( self, obj, outfile ) :
+    def postMortem ( self, obj, outfile = None ) :
         """
         execute any post mortem command such as logging-info
         """
 
         # check the proxy
         self.schedObj.checkUserProxy()
+        timestamp = int( time.time() )
+
+        import os
 
         # the object passed is a runningJob
         if type(obj) == RunningJob :
-            self.schedObj.postMortem(
-                obj['schedulerId'], outfile, self.parameters['service']
-                )
+            if outfile is not None and outfile == 'loggingInfo.log':
+                outfile = 'loggingInfo.%i.log' % obj['submission']
+            self.schedObj.postMortem( obj['schedulerId'],
+                                      outfile,
+                                      self.parameters['service']
+                                    )
+            if os.path.exists(  outfile ):
+                obj['closed'] = 'Y'
+                obj['getOutputTime'] = timestamp
+                obj['processStatus'] = 'output_retrieved'
+
 
         # the object passed is a job
         elif type(obj) == Job :
+            if outfile is not None and outfile == 'loggingInfo.log':
+                outfile = 'loggingInfo.%i.log' % obj['submissionNumber']
             self.schedObj.postMortem( obj.runningJob['schedulerId'], \
-                                      outfile, self.parameters['service']
-                )
+                                      outfile, \
+                                      self.parameters['service'], \
+                                      obj['outputDirectory']
+                                    )
+            if os.path.exists( os.path.join(obj['outputDirectory'], outfile) ):
+                obj.runningJob['closed'] = 'Y'
+                obj.runningJob['getOutputTime'] = timestamp
+                obj.runningJob['processStatus'] = 'output_retrieved'
+
+
 
         # the object passed is a Task
         elif type(obj) == Task :
             for job in obj.jobs:
                 if job.runningJob is None:
                     continue
+
+                if outfile is not None and outfile == 'loggingInfo.log':
+                    outfile = 'loggingInfo.%i.log' % job['submissionNumber']
+
                 self.schedObj.postMortem( job.runningJob['schedulerId'], \
-                                          outfile, self.parameters['service'] )
+                                          outfile, \
+                                          self.parameters['service'], \
+                                          job['outputDirectory']
+                                        )
+                if job['outputDirectory'].startswith('gsiftp://'):
+                    dir = '/' + job['outputDirectory'].split('gsiftp://', 1)[-1].split('/', 1)[-1]
+                    if os.path.exists( os.path.join(dir, outfile)):
+                        job.runningJob['closed'] = 'Y'
+                        job.runningJob['getOutputTime'] = timestamp
+                        job.runningJob['processStatus'] = 'output_retrieved'
 
         # unknown object type
         else:

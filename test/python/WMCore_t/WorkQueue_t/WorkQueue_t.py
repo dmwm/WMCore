@@ -8,6 +8,8 @@
 
 import unittest
 import os
+import pickle
+import threading
 
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
@@ -22,8 +24,12 @@ from WMCore.WMSpec.StdSpecs.MonteCarlo import getTestArguments as getMCArgs
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
 
+from WMCore.DAOFactory import DAOFactory
+
 class fakeSiteDB:
     """Fake sitedb interactions"""
+    mapping = mapping = {'SiteA' : 'a.example.com', 'SiteB' : 'b.example.com'}
+
     def phEDExNodetocmsName(self, node):
         """strip buffer/mss etc"""
         return node.replace('_MSS',
@@ -31,8 +37,7 @@ class fakeSiteDB:
                                         '').replace('_Export', '')
 
     def cmsNametoSE(self, name):
-        mapping = {'SiteA' : 'a.example.com', 'SiteB' : 'b.example.com'}
-        return mapping[name]
+        return self.mapping[name]
 
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
@@ -166,7 +171,16 @@ class WorkQueueTest(WorkQueueTestCase):
                       self.localQueue2, self.globalQueue):
             queue.phedexService = MockPhedexService(dataset)
             queue.SiteDB = fakeSiteDB()
-            
+
+        # create relevant sites in wmbs
+        for site, se in self.queue.SiteDB.mapping.items():
+            daofactory = DAOFactory(package = "WMCore.WMBS",
+                                    logger = threading.currentThread().logger,
+                                    dbinterface = threading.currentThread().dbi)
+            addLocation = daofactory(classname = "Locations.New")
+            addLocation.execute(siteName = site, seName = se)
+
+
     def tearDown(self):
         """tearDown"""
         WorkQueueTestCase.tearDown(self)
@@ -180,22 +194,52 @@ class WorkQueueTest(WorkQueueTestCase):
         numUnit = 2
         jobSlot = [10] * numUnit # array of jobs per block
         total = sum(jobSlot)
-        
+
         for _ in range(numUnit):
             self.queue.queueWork(specfile)
-        self.assertEqual(20, len(self.queue))
+        self.assertEqual(numUnit, len(self.queue))
 
         # try to get work
         work = self.queue.getWork({'SiteA' : 0})
         self.assertEqual([], work)
         work = self.queue.getWork({'SiteA' : jobSlot[0]})
-        self.assertEqual(len(work), 10)
+        self.assertEqual(len(work), 1)
         # claim all work
         work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
-        self.assertEqual(len(work), 10)
+        self.assertEqual(len(work), 1)
 
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))
+
+
+    def testProductionMultiQueue(self):
+        """Test production with multiple queueus"""
+        specfile = self.spec.specUrl()
+        numUnit = 1
+        jobSlot = [10] * numUnit # array of jobs per block
+        total = sum(jobSlot)
+
+        self.globalQueue.queueWork(specfile)
+        self.assertEqual(numUnit, len(self.globalQueue))
+
+        self.assertEqual(numUnit, self.localQueue.pullWork({'SiteA' : total}))
+        self.assertEqual(numUnit, len(self.localQueue.status(status = 'Available')))
+        self.assertEqual(numUnit, len(self.localQueue.status(status = 'Negotiating')))
+
+        self.localQueue.updateParent()
+        self.assertEqual(0, len(self.localQueue.status(status = 'Negotiating')))
+        self.assertEqual(numUnit, len(self.localQueue.status(status = 'Acquired')))
+
+        work = self.localQueue.getWork({'SiteA' : total})
+        self.assertEqual(numUnit, len(work))
+
+        curr_event = 1
+        for unit in work:
+            with open(unit['mask_url']) as mask_file:
+                mask = pickle.load(mask_file)
+                self.assertEqual(curr_event, mask['FirstEvent'])
+                curr_event = mask['LastEvent'] + 1
+        self.assertEqual(curr_event - 1, 10000)
 
 
     def testPriority(self):
@@ -204,8 +248,10 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         totalJobs = 10
         jobSlot = 10
+        totalSlices = 1
 
         self.queue.queueWork(self.spec.specUrl())
+        self.assertEqual(totalJobs, sum([x['Jobs'] for x in self.queue.status()]))
 
         # priority change
         self.queue.setPriority(50, self.spec.name())
@@ -213,7 +259,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # claim all work
         work = self.queue.getWork({'SiteA' : jobSlot})
-        self.assertEqual(len(work), totalJobs)
+        self.assertEqual(len(work), totalSlices)
 
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'SiteA' : jobSlot})))
@@ -470,16 +516,20 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Queue Work &njobs check accepted
         self.queue.queueWork(specfile)
-        self.assertEqual(numElements * 10, len(self.queue))
+        self.assertEqual(2, len(self.queue))
 
         # try to get work
         work = self.queue.getWork({'SiteA' : 0})
         self.assertEqual([], work)
         work = self.queue.getWork({'SiteA' : njobs[0]})
-        self.assertEqual(len(work), 10)
+        self.assertEqual(len(work), 1)
+        self.assertEqual(sum([x['Jobs'] for x in self.queue.status(status = 'Acquired')]),
+                         njobs[0])
         # claim all work
         work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
-        self.assertEqual(len(work), 20)
+        self.assertEqual(len(work), 1)
+        self.assertEqual(sum([x['Jobs'] for x in self.queue.status(status = 'Acquired')]),
+                         total)
 
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))
@@ -495,7 +545,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         specfile = self.spec.specUrl()
         self.globalQueue.queueWork(specfile, team = 'The A-Team')
-        self.assertEqual(10, len(self.globalQueue))
+        self.assertEqual(1, len(self.globalQueue))
         slots = {'SiteA' : 1000, 'SiteB' : 1000}
 
         # Can't get work for wrong team
@@ -505,9 +555,10 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(self.localQueue.pullWork(slots), 0)
         # and with correct team name
         self.localQueue.params['Teams'] = ['The A-Team']
-        self.assertEqual(self.localQueue.pullWork(slots), 100)
+        self.assertEqual(self.localQueue.pullWork(slots), 1)
         # when work leaves the queue in the agent it doesn't care about teams
-        self.assertEqual(len(self.localQueue.getWork(slots)), 100)
+        self.localQueue.params['Teams'] = ['other']
+        self.assertEqual(len(self.localQueue.getWork(slots)), 1)
         self.localQueue.updateParent()
         self.assertEqual(0, len(self.globalQueue))
 
@@ -516,9 +567,9 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.queueWork(specfile, team = 'The C-Team')
         self.localQueue.params['Teams'] = ['The B-Team', 'The C-Team']
         self.localQueue.updateParent()
-        self.assertEqual(self.localQueue.pullWork(slots), 200)
+        self.assertEqual(self.localQueue.pullWork(slots), 2)
         self.localQueue.updateParent()
-        self.assertEqual(len(self.localQueue.getWork(slots)), 200)
+        self.assertEqual(len(self.localQueue.getWork(slots)), 2)
 
 
     def testGlobalBlockSplitting(self):

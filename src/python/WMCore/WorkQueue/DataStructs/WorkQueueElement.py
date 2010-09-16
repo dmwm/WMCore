@@ -42,6 +42,8 @@ class WorkQueueElement(dict):
         self.setdefault('PercentSuccess', 0)
         self.setdefault('RequestName', None)
         self.setdefault('TeamName', None)
+        # Mask used to constrain MC run/lumi ranges
+        self.setdefault('Mask', None)
 
     def inEndState(self):
         """Have we finished processing"""

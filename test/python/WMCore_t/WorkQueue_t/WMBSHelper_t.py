@@ -15,6 +15,8 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Job import Job
 
+from WMCore.DataStructs.Mask import Mask
+
 from WMCore.DAOFactory import DAOFactory
 
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
@@ -23,8 +25,10 @@ from WMCore.WorkQueue.WMBSHelper import killWorkflow
 from WorkQueueTestCase import WorkQueueTestCase
 
 from WMCore_t.WorkQueue_t.WorkQueue_t import TestReRecoFactory, rerecoArgs
+from WMCore_t.WorkQueue_t.WorkQueue_t import TestMonteCarloFactory, mcArgs
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
+from WMCore_t.WorkQueue_t.WorkQueue_t import fakeSiteDB
 
 class WMBSHelperTest(WorkQueueTestCase):
     def setUp(self):
@@ -38,8 +42,20 @@ class WMBSHelperTest(WorkQueueTestCase):
         self.inputDataset = self.topLevelTask.inputDataset()
         self.dataset = self.topLevelTask.getInputDatasetPath()
         self.dbs = MockDBSReader(self.inputDataset.dbsurl, self.dataset)
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = threading.currentThread().logger,
+                                     dbinterface = threading.currentThread().dbi)
         return
-        
+
+    def setupMCWMSpec(self):
+        """Setup MC workflow"""
+        self.wmspec = self.createMCWMSpec()
+        self.topLevelTask = getFirstTask(self.wmspec)
+        self.inputDataset = self.topLevelTask.inputDataset()
+        self.dataset = self.topLevelTask.getInputDatasetPath()
+        self.dbs = None
+        self.siteDB = fakeSiteDB()
+
     def tearDown(self):
         """
         _tearDown_
@@ -309,9 +325,15 @@ class WMBSHelperTest(WorkQueueTestCase):
     def createWMSpec(self, name = 'ReRecoWorkload', args = rerecoArgs):
         wmspec = TestReRecoFactory()(name, args)
         return wmspec 
-   
+
+    def createMCWMSpec(self, name = 'MonteCarloWorkload', args = mcArgs):
+        wmspec = TestMonteCarloFactory()(name, args)
+        getFirstTask(wmspec).addProduction(totalevents = 10000)
+        getFirstTask(wmspec).setSiteWhitelist(['SiteA', 'SiteB', 'SiteC'])
+        return wmspec
+
     def getDBS(self, wmspec):
-        topLevelTask = getFirstTask(wmspec.taskIterator())
+        topLevelTask = getFirstTask(wmspec)
         inputDataset = topLevelTask.inputDataset()
         dataset = topLevelTask.getInputDatasetPath()
         dbs = MockDBSReader(inputDataset.dbsurl, dataset)
@@ -319,16 +341,17 @@ class WMBSHelperTest(WorkQueueTestCase):
         return dbs
         
         
-    def createWMBSHelperWithTopTask(self, wmspec, block):
+    def createWMBSHelperWithTopTask(self, wmspec, block, mask = None):
         
         topLevelTask = getFirstTask(wmspec)
          
         wmbs = WMBSHelper(wmspec, '/somewhere',
                           "whatever", topLevelTask.name(), 
                           topLevelTask.taskType(),
-                          [], [], block, None)
-        wmbs.createSubscription()
-        
+                          [], [], block, mask)
+        if block:
+            block = self.dbs.getFileBlock(block)[block]
+        wmbs.createSubscriptionAndAddFiles(dbsBlock = block)
         return wmbs
 
 #    def testProduction(self):
@@ -366,7 +389,8 @@ class WMBSHelperTest(WorkQueueTestCase):
         # using default wmspec
         block = self.dataset + "#1"
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
-        numOfFiles = wmbs.addFiles(self.dbs.getFileBlock(block)[block])
+        wmbs.topLevelFileset.loadData()
+        numOfFiles = len(wmbs.topLevelFileset.files)
         # check initially inserted files.
         dbsFiles = self.dbs.getFileBlock(block)[block]['Files']
         self.assertEqual(numOfFiles, len(dbsFiles))
@@ -404,6 +428,50 @@ class WMBSHelperTest(WorkQueueTestCase):
            are duplicate 
         """
         pass
+
+
+
+    def testMCFakeFileInjection(self):
+        """Inject fake Monte Carlo files into WMBS"""
+        self.setupMCWMSpec()
+
+        mask = Mask(FirstRun = 12, FirstLumi = 1234, FirstEvent = 12345,
+                    LastEvent = 999995, LastLumi = 12345, LastRun = 12)
+
+        # add sites that would normally be added by operator via resource_control
+        locationDAO = self.daoFactory(classname = "Locations.New")
+        ses = []
+        for site in ['SiteA', 'SiteB']:
+            locationDAO.execute(siteName = site, seName = self.siteDB.cmsNametoSE(site))
+            ses.append(self.siteDB.cmsNametoSE(site))
+
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
+        subscription = wmbs.topLevelSubscription
+        self.assertEqual(1, subscription.exists())
+        fileset = subscription['fileset']
+        self.assertEqual(1, fileset.exists())
+        fileset.loadData() # need to refresh from database
+
+        self.assertEqual(len(fileset.files), 1)
+        self.assertEqual(len(fileset.parents), 0)
+        self.assertFalse(fileset.open)
+
+        file = list(fileset.files)[0]
+        self.assertEqual(file['first_event'], mask['FirstEvent'])
+        self.assertEqual(file['last_event'], mask['LastEvent'])
+        self.assertEqual(file['events'], mask['LastEvent'] - mask['FirstEvent'] + 1) # inclusive range
+        self.assertEqual(file['merged'], False) # merged files get added to dbs
+        self.assertEqual(len(file['parents']), 0)
+        #file.loadData()
+        self.assertEqual(sorted(file['locations']), sorted(ses))
+        self.assertEqual(len(file.getParentLFNs()), 0)
+
+        self.assertEqual(len(file.getRuns()), 1)
+        run = file.getRuns()[0]
+        self.assertEqual(run.run, mask['FirstRun'])
+        self.assertEqual(run.lumis[0], mask['FirstLumi'])
+        self.assertEqual(run.lumis[-1], mask['LastLumi'])
+        self.assertEqual(len(run.lumis), mask['LastLumi'] - mask['FirstLumi'] + 1)
 
 if __name__ == '__main__':
     unittest.main()

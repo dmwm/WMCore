@@ -111,11 +111,13 @@ class StdBase(object):
         workload.setOwner(self.owner)
         return workload
     
-    def setWorkQueueSplitPolicy(self, workload, splitAlgo, splitArgs):
+    def setWorkQueueSplitPolicy(self, workload, policyName, splitAlgo, splitArgs):
         """
         _setWorkQueueSplitPolicy_
         
         Set the WorkQueue split policy.
+        policyName should be either 'DatasetBlock', 'Dataset', 'MonteCarlo' 'Block'
+        different policy could be added in the workqueue plug in.
         """
         SplitAlgoToStartPolicy = {"FileBased" : "NumberOfFiles",
                                   "EventBased" : "NumberOfEvents"}
@@ -125,7 +127,7 @@ class StdBase(object):
         sliceType = SplitAlgoToStartPolicy.get(splitAlgo, "FileBased")
         sliceSize = splitArgs.get(SplitAlgoToArgMap[sliceType], 1)
 
-        workload.setStartPolicy("Block", SliceType = sliceType, SliceSize = sliceSize)
+        workload.setStartPolicy(policyName, SliceType = sliceType, SliceSize = sliceSize)
         workload.setEndPolicy("SingleShot")
         return
         

@@ -5,7 +5,7 @@ from WMCore.WMSpec.StdSpecs.ReReco import \
 def getParams():
     testArgs = getTestArguments()
     # remove couch config
-    testArgs.update({'CouchUrl': None, 'CouchDBName': None})
+    testArgs.update({'CouchURL': None, 'CouchDBName': None})
     
     return testArgs
 

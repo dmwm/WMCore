@@ -21,6 +21,7 @@ class MonteCarloTestCase(unittest.TestCase):
         """Basic Production Workload"""
         BasicProductionWorkload = TestMonteCarloFactory()('MonteCarloWorkload', mcArgs)
         getFirstTask(BasicProductionWorkload).addProduction(totalevents = 1000)
+        getFirstTask(BasicProductionWorkload).setSiteWhitelist(['SiteA', 'SiteB'])
         for task in BasicProductionWorkload.taskIterator():
             units = MonteCarlo(**self.splitArgs)(BasicProductionWorkload, task)
 
@@ -33,6 +34,7 @@ class MonteCarloTestCase(unittest.TestCase):
 
     def testMultiMergeProductionWorkload(self):
         """Multi merge production workload"""
+        getFirstTask(MultiMergeProductionWorkload).setSiteWhitelist(['SiteA', 'SiteB'])
         for task in MultiMergeProductionWorkload.taskIterator():
             units = MonteCarlo(**self.splitArgs)(MultiMergeProductionWorkload, task)
 
@@ -47,6 +49,7 @@ class MonteCarloTestCase(unittest.TestCase):
         """Multi Task Processing Workflow"""
         count = 0
         tasks = []
+        getFirstTask(MultiTaskProductionWorkload).setSiteWhitelist(['SiteA', 'SiteB'])
         for task in MultiTaskProductionWorkload.taskIterator():
             count += 1
             units = MonteCarlo(**self.splitArgs)(MultiTaskProductionWorkload, task)

@@ -46,14 +46,34 @@ def _formatTable(requestInfo, gRequestInfo, cRequestInfo):
     """
     combine the results from different sources and format them
     """
+    def addToLocalQueueList(dictItem, queueList):
+        queue = dictItem.pop('local_queue', None)
+        if queue:
+            if type(queue) == list:
+                queueList.extend(queue)
+            else:
+                queueList.append(queue)
+        return queueList
+    
+        
     for item in requestInfo:
         for gItem in gRequestInfo:
             if item['request_name'] == gItem['request_name']:
-                #TODO this should be handled correctly if ther will be multiple queues
+                localQueueList = []
+                addToLocalQueueList(item, localQueueList)
+                addToLocalQueueList(gItem, localQueueList)
                 item.update(gItem)
+                item['local_queue'] = localQueueList
         for cItem in cRequestInfo:
             if item['request_name'] == cItem['request_name']:
-                #TODO this should be handled correctly if ther will be multiple queues
+                #Not just update items it should add the job numbers.
+                #When there is multiple couchDB
+                for status in ['pending', 'cooloff', 
+                               'running', 'success', 'failure']:
+                    jobs = item.pop(status, 0)
+                    cJobs = cItem.pop(status, 0)
+                    item[status] = jobs + cJobs
+                    
                 item.update(cItem)
 
     return requestInfo

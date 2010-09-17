@@ -76,7 +76,7 @@ class WebRequestSchema(TemplatedPage):
         self.parseSite("SiteBlacklist", kwargs, schema)
 
         schema['CmsPath'] = self.cmsswInstallation
-        schema["CouchUrl"] = self.couchUrl
+        schema["CouchURL"] = self.couchUrl
         schema["CouchDBName"] = self.couchDBName
         print "SCHEMA " + str(schema)
 

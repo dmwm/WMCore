@@ -42,6 +42,14 @@ from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
 from WMCore.Agent.ConfigDBMap import ConfigDBMap
 from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 
+class HarnessException(WMException):
+    """
+    _HarnessException_
+    
+    Well, it has the harness errors in it.
+    Otherwise, it's just part of WMException.
+    """
+
 class Harness:
     """
     Harness class that wraps standard functionality used in all daemon 
@@ -105,6 +113,11 @@ class Harness:
             compName = self.config.Agent.componentName
             compSect = getattr(self.config, compName, None) 
             if not hasattr(compSect, "logFile"):
+                if not getattr(compSect, 'componentDir', None):
+                    errorMessage =  "No componentDir for log entries found!\n"
+                    errorMessage += "Harness cannot run without componentDir.\n"
+                    logging.error(errorMessage)
+                    raise HarnessException(errorMessage)                    
                 compSect.logFile = os.path.join(compSect.componentDir, \
                     "ComponentLog")
             print('Log file is: '+compSect.logFile)

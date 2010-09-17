@@ -3,7 +3,7 @@ var overviewTable = function(divID){
 	var formatGlobalQ = function(elCell, oRecord, oColumn, sData) { 
             var host;
             if (!sData) {
-                host = "Not Assigned";
+                elCell.innerHTML = "Not Assigned";
             } else {
                 host = sData.split('/')[2];
 				elCell.innerHTML = "<a href='" + sData + "' target='_blank'>" + host + "</a>"; 
@@ -13,11 +13,13 @@ var overviewTable = function(divID){
 	var formatLocalQ = function(elCell, oRecord, oColumn, sData) { 
             var host;
             if (!sData) {
-                host = "Not Assigned";
+                elCell.innerHTML = "Not Assigned";
             } else {
-                host = sData.split('/')[2];
-				elCell.innerHTML = "<a href='" + sData + "monitor' target='_blank'>" + host + "</a>";
-            }; 
+				for (data in sData) {
+					host = sData[data].split('/')[2];
+					elCell.innerHTML = "<a href='" + sData + "monitor' target='_blank'>" + host + "</a> <br>";
+				};
+			}; 
         };
     
 	var formatCouchDB = function(elCell, oRecord, oColumn, sData) { 

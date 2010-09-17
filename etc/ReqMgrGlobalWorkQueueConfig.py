@@ -55,7 +55,7 @@ config.General.workDir = workDirectory
 
 config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl
-config.CoreDatabase.dbsock = databaseSocket
+config.CoreDatabase.socket = databaseSocket
 
 config.webapp_("ReqMgr")
 config.ReqMgr.componentDir = os.path.join(config.General.workDir, "ReqMgr")

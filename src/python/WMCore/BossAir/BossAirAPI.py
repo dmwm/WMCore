@@ -650,6 +650,22 @@ class BossAirAPI(WMConnectionBase):
 
 
 
+    def update(self, jobs):
+        """
+        _update_
+
+        Overwrite the database with whatever you put into
+        this function.
+        """
+
+        runJobs = self._buildRunningJobs(wmbsJobs = jobs)
+
+        self._updateJobs(jobs = runJobs)
+
+        return
+
+
+
 
     def monitor(self):
         """

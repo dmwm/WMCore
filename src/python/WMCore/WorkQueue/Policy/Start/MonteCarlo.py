@@ -52,14 +52,17 @@ class MonteCarlo(StartPolicyInterface):
 
     def validate(self):
         """Check args and spec work with block splitting"""
-        if not self.initialTask.totalEvents():
-            raise RuntimeError, 'Invalid total events selection'
+        StartPolicyInterface.validateCommon(self)
+        msg = 'WMSpec "%s" failed validation: ' % self.wmspec.name()
+
+        if self.initialTask.totalEvents() < 1:
+            raise RuntimeError, msg + 'Invalid total events selection: %s' % str(self.initialTask.totalEvents())
 
         if not self.initialTask.siteWhitelist():
-            raise RuntimeError, "Site whitelist mandatory for MonteCarlo"
+            raise RuntimeError, msg + "Site whitelist mandatory for MonteCarlo"
 
         if self.mask and self.mask['LastEvent'] < self.mask['FirstEvent']:
-            raise RuntimeError, "Invalid start & end events"
+            raise RuntimeError, msg + "Invalid start & end events"
 
         if self.mask and self.mask['LastLumi'] < self.mask['FirstLumi']:
-            raise RuntimeError, "Invalid start & end lumis"
+            raise RuntimeError, msg + "Invalid start & end lumis"

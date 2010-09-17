@@ -5,7 +5,7 @@ WorkQueue SplitPolicyInterface
 """
 __all__ = []
 
-
+import types
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
@@ -41,6 +41,16 @@ class StartPolicyInterface(PolicyInterface):
     def validate(self):
         """Check params and spec are appropriate for the policy"""
         raise NotImplementedError
+
+    def validateCommon(self):
+        """Common validation stuff"""
+        msg = 'WMSpec "%s" failed validation: ' % self.wmspec.name()
+
+        if self.initialTask.siteWhitelist() and type(self.initialTask.siteWhitelist()) in types.StringTypes:
+            raise RuntimeError, msg + 'Invalid site whitelist: Must be tuple/list but is %s' % type(self.initialTask.siteWhitelist())
+
+        if self.initialTask.siteBlacklist() and type(self.initialTask.siteBlacklist()) in types.StringTypes:
+            raise RuntimeError, msg + 'Invalid site blacklist: Must be tuple/list but is %s' % type(self.initialTask.siteWhitelist())
 
     def newQueueElement(self, **args):
         args.setdefault('WMSpec', self.wmspec)

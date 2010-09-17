@@ -705,5 +705,33 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.queue.status(status='Canceled',
                                                elementIDs = ids)), elements)
 
+
+    def testInvalidSpecs(self):
+        """Complain on invalid WMSpecs"""
+        # invalid white list
+        mcFactory = TestMonteCarloFactory()
+        mcspec = mcFactory('testProductionInvalid', mcArgs)
+        getFirstTask(mcspec).setSiteWhitelist('ThisIsInvalid')
+        mcspec.setSpecUrl(os.path.join(self.workDir, 'testProductionInvalid.spec'))
+        mcspec.save(mcspec.specUrl())
+        self.assertRaises(RuntimeError, self.queue.queueWork, mcspec.specUrl())
+        getFirstTask(mcspec).setSiteWhitelist([])
+
+        # 0 events
+        getFirstTask(mcspec).addProduction(totalevents = 0)
+        mcspec.save(mcspec.specUrl())
+        self.assertRaises(RuntimeError, self.queue.queueWork, mcspec.specUrl())
+
+        # no dataset
+        rerecoFactory = TestReRecoFactory()
+        processingSpec = rerecoFactory('testProcessingInvalid', rerecoArgs)
+        processingSpec.setSpecUrl(os.path.join(self.workDir,
+                                                    'testProcessingInvalid.spec'))
+        processingSpec.save(processingSpec.specUrl())
+        getFirstTask(processingSpec).data.input.dataset = None
+        processingSpec.save(processingSpec.specUrl())
+        self.assertRaises(RuntimeError, self.queue.queueWork, processingSpec.specUrl())
+
+
 if __name__ == "__main__":
     unittest.main()

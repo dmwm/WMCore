@@ -44,7 +44,11 @@ class Block(StartPolicyInterface):
 
     def validate(self):
         """Check args and spec work with block splitting"""
-        pass
+        StartPolicyInterface.validateCommon(self)
+        msg = 'WMSpec "%s" failed validation: ' % self.wmspec.name()
+
+        if not self.initialTask.inputDataset():
+            raise RuntimeError, msg + 'No input dataset'
 
     def validBlocks(self, task, dbs):
         """Return blocks that pass the input data restriction"""

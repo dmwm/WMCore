@@ -78,7 +78,7 @@ active.download.dir = config.ReqMgr.componentDir
 
 active.section_("reqMgrBrowser")
 active.reqMgrBrowser.object = "WMCore.HTTPFrontEnd.RequestManager.ReqMgrBrowser"
-active.reqMgrBrowser.reqMgrHost = "%s:%s" % (serverHostName, reqMgrPort)
+active.reqMgrBrowser.reqMgrHost = "http://%s:%s" % (serverHostName, reqMgrPort)
 active.reqMgrBrowser.workloadCache = active.download.dir
 active.reqMgrBrowser.configCacheUrl = config.ReqMgr.couchURL
 
@@ -87,14 +87,14 @@ active.reqMgr.object = "WMCore.WebTools.RESTApi"
 active.reqMgr.section_("model")
 active.reqMgr.model.object = "WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel"
 active.reqMgr.model.workloadCache = active.download.dir
-active.reqMgr.model.reqMgrHost = "%s:%s" % (serverHostName, reqMgrPort)
+active.reqMgr.model.reqMgrHost = "http://%s:%s" % (serverHostName, reqMgrPort)
 active.reqMgr.section_("formatter") 
 active.reqMgr.formatter.object = "WMCore.WebTools.RESTFormatter"
 active.reqMgr.formatter.templates = config.ReqMgr.templates
 
 active.section_("WebRequestSchema")
 active.WebRequestSchema.object = "WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema"
-active.WebRequestSchema.reqMgrHost = "%s:%s" % (serverHostName, reqMgrPort)
+active.WebRequestSchema.reqMgrHost = "http://%s:%s" % (serverHostName, reqMgrPort)
 active.WebRequestSchema.cmsswInstallation = cmsPath
 active.WebRequestSchema.cmsswDefaultVersion = "CMSSW_3_5_8"
 active.WebRequestSchema.configCacheUrl = couchURL

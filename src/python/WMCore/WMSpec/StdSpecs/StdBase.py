@@ -91,6 +91,7 @@ class StdBase(object):
         
         Add dashboard monitoring for the given task.
         """
+        return
         monitoring = task.data.section_("watchdog")
         monitoring.interval = 600
         monitoring.monitors = ["DashboardMonitor"]

@@ -372,7 +372,7 @@ class SchedulerGLite(SchedulerInterface) :
                     unsetdir = True
                     if selJob['outputDirectory'].startswith('gsiftp://'):
                         outdir = '/' + selJob['outputDirectory'].split('gsiftp://', 1)[-1].split('/', 1)[-1]
-                    elif obj['outputDirectory'].startswith('/'):
+                    elif selJob['outputDirectory'].startswith('/'):
                         outdir = selJob['outputDirectory']
                     else:
                         outdir = '.'

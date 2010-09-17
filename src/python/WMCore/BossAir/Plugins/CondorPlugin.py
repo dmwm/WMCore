@@ -39,6 +39,24 @@ def parseError(error):
     return errorCondition, errorMsg
 
 
+def stateMap(name):
+    """
+    For a given name, return a global state
+
+
+    """
+
+    stateDict = {'New': 'Pending',
+                 'Idle': 'Pending',
+                 'Running': 'Running',
+                 'Held': 'Running',
+                 'Complete': 'Complete',
+                 'Error': 'Error',
+                 'Timeout': 'Error'}
+
+    return stateDict.get(name, 'Error')
+
+
 
 class CondorPlugin(BasePlugin):
     """
@@ -54,15 +72,6 @@ class CondorPlugin(BasePlugin):
         BasePlugin.__init__(self, config)
 
         self.states = ['New', 'Running', 'Idle', 'Complete', 'Held', 'Error', 'Timeout']
-
-        self.stateMap = {'New': 'Pending',
-                         'Idle': 'Pending',
-                         'Running': 'Running',
-                         'Held': 'Running',
-                         'Complete': 'Complete',
-                         'Error': 'Error',
-                         'Timeout': 'Error'}
-
 
         self.locationDict = {}
 
@@ -107,7 +116,6 @@ class CondorPlugin(BasePlugin):
             return result
 
         # Grab the master subscription info
-        self.packageDir = info.get('packageDir', None)
         self.sandbox    = info.get('sandbox', None)
         index           = info.get('index', 0)
         self.unpacker   = os.path.join(getWMBASE(),
@@ -192,7 +200,7 @@ class CondorPlugin(BasePlugin):
                     statName = 'Running'
 
                 # Get the global state
-                job['globalState'] = self.stateMap[statName]
+                job['globalState'] = stateMap(statName)
 
                 if statName != job['status']:
                     # Then the status has changed
@@ -293,7 +301,7 @@ class CondorPlugin(BasePlugin):
                 continue
             jdl.append("initialdir = %s\n" % job['cache_dir'])
             jdl.append("transfer_input_files = %s, %s/%s, %s\n" \
-                       % (self.sandbox, self.packageDir,
+                       % (self.sandbox, job['packageDir'],
                           'JobPackage.pkl', self.unpacker))
             argString = "arguments = %s %i\n" \
                         % (os.path.basename(self.sandbox), index)

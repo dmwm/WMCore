@@ -62,7 +62,9 @@ class StatusPoller(BaseWorkerThread):
 
         runningJobs = self.bossAir.track()
 
-
+        if len(runningJobs) < 1:
+            # Then we have no jobs
+            return
 
         if self.timeouts == {}:
             # Then we've set outself to have no timeouts
@@ -74,7 +76,7 @@ class StatusPoller(BaseWorkerThread):
         
         # Now check for timeouts
         for job in runningJobs:
-            globalState = job.get('globalState', 'Unknown')
+            globalState = job.get('globalState', 'Error')
             statusTime  = job.get('status_time', None)
             timeout     = self.timeouts.get(globalState, None)
             if timeout != None and statusTime != None:
@@ -88,5 +90,17 @@ class StatusPoller(BaseWorkerThread):
         # and then kill them.
         self.bossAir.update(jobs = jobsToKill)
         self.bossAir.kill(jobs = jobsToKill)
+
+
+        return
+
+    def terminate(self, params):
+        """
+        _terminate_
+        
+        Kill the code after one final pass when called by the master thread.
+        """
+        logging.debug("terminating. doing one more pass before we die")
+        self.algorithm(params)
                 
             

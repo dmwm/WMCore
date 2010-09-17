@@ -450,6 +450,7 @@ class BossAirAPI(WMConnectionBase):
         loadedJobs     = []
         jobsToComplete = []
         jobsToReturn   = []
+        returnList     = []
 
         jobsToTrack = {}
 
@@ -468,7 +469,7 @@ class BossAirAPI(WMConnectionBase):
 
         if len(runningJobs) < 1:
             # Then we have no running jobs
-            return
+            return returnList
 
 
         loadedJobs = self._buildRunningJobs(wmbsJobs = runningJobs, doRunJobs = True)
@@ -502,7 +503,6 @@ class BossAirAPI(WMConnectionBase):
         # We should have a globalState variable for changed jobs
         # from the plugin
         # Return that to the calling function
-        returnList = []
         for rj in jobsToReturn:
             job = rj.buildWMBSJob()
             job['globalState'] = rj['globalState']
@@ -629,6 +629,22 @@ class BossAirAPI(WMConnectionBase):
                 pluginInst.kill(jobs = jobsToKill[plugin])
                 self._complete(jobs = jobsToKill[plugin])
 
+
+        return
+
+
+
+    def update(self, jobs):
+        """
+        _update_
+
+        Overwrite the database with whatever you put into
+        this function.
+        """
+
+        runJobs = self._buildRunningJobs(wmbsJobs = jobs)
+
+        self._updateJobs(jobs = runJobs)
 
         return
 

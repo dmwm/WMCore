@@ -22,7 +22,7 @@ class RunJob(dict):
     def __init__(self, id = None, jobid = -1, gridid = None,
                  bulkid = None, retry_count = 0, status = None,
                  location = None, user = None, plugin = None,
-                 cache_dir = None, status_time = None):
+                 cache_dir = None, status_time = None, packageDir = None):
         """
         Just make sure you init the dictionary fields.
 
@@ -42,6 +42,7 @@ class RunJob(dict):
         self.setdefault('plugin', plugin)
         self.setdefault('cache_dir', cache_dir)
         self.setdefault('status_time', status_time)
+        self.setdefault('packageDir', packageDir)
 
 
         return

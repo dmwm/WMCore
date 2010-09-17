@@ -414,7 +414,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                 jobDict = {'id': cachedJob[0],
                            'retry_count': cachedJob[1],
                            'custom': {'location': emptySite[0]},
-                           'cache_dir': cachedJob[4]}
+                           'cache_dir': cachedJob[4],
+                           'packageDir': package}
 
                 # Add to jobsToSubmit
                 jobsToSubmit[package].append(jobDict)
@@ -444,6 +445,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         agentName = self.config.Agent.agentName
         lenWork   = 0
+        jobList   = []
 
         for package in jobsToSubmit.keys():
             sandbox = self.sandboxPackage[package]
@@ -451,19 +453,18 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             #Clean out the package reference
             del self.sandboxPackage[package]
-            
-            if len(jobs) == 0:
-                # No jobs in this package
-                continue
-            while len(jobs) > 0:
-                # Then we have to split a chunk off and submit it
-                jobsReady = jobs[:self.config.JobSubmitter.jobsPerWorker]
-                jobs      = jobs[self.config.JobSubmitter.jobsPerWorker:]
-                self.processPool.enqueue([{'jobs': jobsReady,
-                                           'packageDir': package,
-                                           'sandbox': sandbox,
-                                           'agentName': agentName}])
-                lenWork += 1
+
+            jobList.extend(jobs)
+
+        # We're not constrained to do this by package now:
+        while len(jobList) > 0:
+            # Then we have to split a chunk off and submit it
+            jobsReady = jobList[:self.config.JobSubmitter.jobsPerWorker]
+            jobList   = jobList[self.config.JobSubmitter.jobsPerWorker:]
+            self.processPool.enqueue([{'jobs': jobsReady,
+                                       'sandbox': sandbox,
+                                       'agentName': agentName}])
+            lenWork += 1
 
         # And then, at the end of the day, we have to dequeue them.
         result = []
@@ -508,3 +509,13 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         return
 
+
+
+    def terminate(self, params):
+        """
+        _terminate_
+        
+        Kill the code after one final pass when called by the master thread.
+        """
+        logging.debug("terminating. doing one more pass before we die")
+        self.algorithm(params)

@@ -11,13 +11,78 @@
 #//     - ignore some params in dbs spec - silence pylint warnings
 # pylint: disable-msg=W0613,R0201
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx as RealPhEDEx
 
-class PhEDEx:
+class PhEDEx(RealPhEDEx):
     """
     """
     def __init__(self, *args, **kwargs):
         print "Using PhEDEx Emulator ...."
         self.dataBlocks = DataBlockGenerator()
+
+    def injectBlocks(self, node, xmlData, verbose = 0, strict = 1):
+
+        """
+        do nothing don't inject block.
+        """
+
+        return None
+
+    def subscribe(self, subscription, xmlData):
+        """
+        do nothing don't subscribe.
+        """
+
+        return None
+
+    def getReplicaInfoForFiles(self, **args):
+        """
+        _getReplicaInfoForFiles_
+        TODO: Need to be implemented correctly,
+        Currently not used
+
+        Retrieve file replica information from PhEDEx.
+
+        block          block name, with '*' wildcards, can be multiple (*).  required when no lfn is specified.
+        node           node name, can be multiple (*)
+        se             storage element name, can be multiple (*)
+        update_since   unix timestamp, only return replicas updated since this
+                    time
+        create_since   unix timestamp, only return replicas created since this
+                    time
+        complete       y or n. if y, return only file replicas from complete block
+                    replicas.  if n only return file replicas from incomplete block
+                    replicas.  default is to return either.
+        dist_complete  y or n.  if y, return only file replicas from blocks
+                    where all file replicas are available at some node. if
+                    n, return only file replicas from blocks which have
+                    file replicas not available at any node.  default is
+                    to return either.
+        subscribed     y or n, filter for subscription. default is to return either.
+        custodial      y or n. filter for custodial responsibility.  default is
+                    to return either.
+        group          group name.  default is to return replicas for any group.
+        lfn            logical file nam
+        """
+        return None
+
+    def getNodeMap(self):
+        """
+        _getNodeMap_
+
+        TODO: Need to be implemented correctly,
+        Currently not used
+
+        Retrieve information about nodes known to this PhEDEx instance.  Each
+        node entry will have the following keys:
+          name       - PhEDEx node name
+          se         - Storage element name
+          kind       - Node type, e.g. 'Disk' or 'MSS'
+          technology - Node technology, e.g. 'Castor'
+          id         - Node id
+        """
+
+        return None
 
     def getReplicaInfoForBlocks(self, **args):
         """
@@ -74,6 +139,8 @@ class PhEDEx:
                                                     })
             return data
         
+
+
     def emulator(self):
         return "PhEDEx emulator ...."
 # pylint: enable-msg=W0613,R0201

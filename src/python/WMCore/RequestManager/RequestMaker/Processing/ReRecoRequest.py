@@ -41,11 +41,9 @@ class ReRecoSchema(RequestSchema):
             "CMSSWVersion",
             "ScramArch",
             "GlobalTag",
-            "AcquisitionEra",
             "InputDataset",
             "SkimInput",
             "CmsPath",
-            "ProcessingVersion"
             ]
         self.optionalFields = [
             "SiteWhitelist",
@@ -56,6 +54,7 @@ class ReRecoSchema(RequestSchema):
             "RunBlacklist",
             "Scenario",
             "ProcessingConfig",
+            "ProcessingVersion",
             "SkimConfig",
             "CouchUrl",
             "CouchDBName",

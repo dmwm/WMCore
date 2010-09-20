@@ -16,7 +16,7 @@ cmsswInstallation =  '/uscmst1/prod/sw/cms'
 
 config = Configuration()
 #connectUrl = "mysql://rpw@localhost/reqmgr_rpw"
-connectUrl = "oracle://rpw:changeme_2009@cmscald"
+connectUrl = "oracle://rpw:somepassword@cmscald"
 dbsock = '/var/lib/mysql/mysql.sock'
 dbsock = ""
 config.section_("CoreDatabase")
@@ -37,8 +37,8 @@ config.ReqMgr.description = 'CMS Request manager'
 
 config.webapp_("ReqMgr")
 config.ReqMgr.componentDir = "/home/rpw/ReqMgr"
-config.ReqMgr.server.host = basehost
-config.ReqMgr.server.port = port
+config.ReqMgr.Webtools.host = basehost
+config.ReqMgr.Webtools.port = port
 config.ReqMgr.database.connectUrl = connectUrl
 #config.ReqMgr.database.socket = config.CoreDatabase.socket
 config.ReqMgr.templates = os.environ['WTBASE'] + '/src/templates/WMCore/WebTools'

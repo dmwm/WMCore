@@ -1,5 +1,6 @@
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.Cache.WMConfigCache import ConfigCache 
 from PSetTweaks.PSetTweak import PSetHolder, PSetTweak
 from WMCore.Services.Requests import JSONRequests
 import WMCore.HTTPFrontEnd.RequestManager.Sites
@@ -17,13 +18,21 @@ class ReqMgrBrowser(TemplatedPage):
         # Take a guess
         self.templatedir = __file__.rsplit('/', 1)[0]
         self.urlPrefix = '%s/download/?filepath=' % config.reqMgrHost
-        self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'ReqMgrRequestBasePriority', 'ReqMgrRequestorBasePriority', 'ReqMgrGroupBasePriority', 'RequestStatus', 'Complete', 'Success']
+        self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'ReqMgrRequestBasePriority', 'RequestStatus', 'Complete', 'Success']
         self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged', 'Complete':'percentComplete', 'Success' : 'percentSuccess'}
         self.linkedFields = {'RequestName':'requestDetails'}
+        self.detailsFields = ['RequestName', 'RequestType', 'Requestor', 'CMSSWVersion', 'ScramArch', 'GlobalTag', 'RequestSizeEvents', 
+            'InputDataset', 'PrimaryDataset', 'AcquisitionEra', 'ProcessingVersion', 
+            'RunWhitelist', 'RunBlacklist', 'BlockWhitelist', 'BlockBlacklist', 
+            'RequestWorkflow', 'Scenario', 'PrimaryDataset']
+
         self.adminMode = True
-        self.adminFields = {'RequestStatus':'statusMenu', 'ReqMgrRequestBasePriority':'priorityMenu'}
+        # don't allow mass editing.  Make people click one at a time.
+        #self.adminFields = {'RequestStatus':'statusMenu', 'ReqMgrRequestBasePriority':'priorityMenu'}
+        self.adminFields = {}
         self.requests = []
-        configCacheUrl = config.configCacheUrl
+        self.configCacheUrl = config.configCacheUrl
+        self.configDBName = config.configDBName
         self.workloadDir = config.workloadCache
         self.jsonSender = JSONRequests(config.reqMgrHost)
         self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
@@ -61,13 +70,13 @@ class ReqMgrBrowser(TemplatedPage):
         docId = None
         d = helper.data.request.schema.dictionary_()
         d['RequestWorkflow'] = request['RequestWorkflow']
-        if d.has_key('ConfigCacheDoc') and d['ConfigCacheDoc'] != "":
-            docId = d['ConfigCacheDoc']        
+        if d.has_key('ProdConfigCacheID') and d['ProdConfigCacheID'] != "":
+            docId = d['ProdConfigCacheID']        
         self.addHtmlLinks(d)
         assignments= self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0]
         adminHtml = self.statusMenu(requestName, request['RequestStatus']) \
                   + ' Priority ' + self.priorityMenu(requestName, request['ReqMgrRequestBasePriority'])
-        return self.templatepage("Request", requestSchema=d,
+        return self.templatepage("Request", detailsFields = self.detailsFields, requestSchema=d,
                                 workloadDir = self.workloadDir, 
                                 docId=docId, assignments=assignments,
                                 adminHtml = adminHtml,
@@ -78,17 +87,18 @@ class ReqMgrBrowser(TemplatedPage):
     requestDetails.exposed = True
 
     def showOriginalConfig(self, docId):
-        configString =  self.configCache.getOriginalConfigByDocID(docId)
-        return '<pre>' + configString  + '</pre>'
+        configCache = ConfigCache(self.configCacheUrl, self.configDBName)
+        configCache.loadByID(docId)
+        configString =  configCache.getConfig()
+        if configString == None:
+            return "Cannot find document " + str(docId) + " in Couch DB"
+        return '<pre>' + configString + '</pre>'
     showOriginalConfig.exposed = True
 
-    def showFullConfig(self, docId):
-        configString = str(pickle.loads(self.configCache.getConfigByDocID(docId)))
-        return '<pre>' + configString  + '</pre>'
-    showFullConfig.exposed = True
-
     def showTweakFile(self, docId):
-        return str(self.configCache.getTweakFileByDocID(docId)).replace('\n', '<br>')
+        configCache = ConfigCache(self.configCacheUrl, self.configDBName)
+        configCache.loadByID(docId)
+        return str(configCache.getPSetTweaks()).replace('\n', '<br>')
     showTweakFile.exposed = True
 
     def showWorkload(self, filepath):
@@ -123,7 +133,7 @@ class ReqMgrBrowser(TemplatedPage):
         result = ""
         for request in requests:
             # see if this is slower
-            request = self.jsonSender.get("/reqMgr/request/"+request["RequestName"])[0]
+            #request = self.jsonSender.get("/reqMgr/request/"+request["RequestName"])[0]
             result += self.drawRequest(request)
         return result;
 
@@ -191,10 +201,15 @@ class ReqMgrBrowser(TemplatedPage):
         return "%i%%" % maxPercent
 
     def percentComplete(self, request):
-        return self.biggestUpdate('percent_complete', request)
+        #return self.biggestUpdate('percent_complete', request)
+        pct = request.get('percent_complete', 0)
+        return "%i%%" % pct
 
     def percentSuccess(self, request):
-        return self.biggestUpdate('percent_success', request)
+        #return self.biggestUpdate('percent_success', request)
+        pct = request.get('percent_success', 0)
+        return "%i%%" % pct
+
 
     def biggestUpdate(self, field, request):
         max = 0
@@ -251,29 +266,55 @@ class ReqMgrBrowser(TemplatedPage):
     def handleAssignmentPage(self, *args, **kwargs):
         """ handles some checkboxes """
         result = ""
-        requestName = kwargs["requestName"]
+        requestName = kwargs["RequestName"]
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
         helper = WMWorkloadHelper()
         pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
         helper.load(pfn)
         schema = helper.data.request.schema
+        # look for teams
         for key, value in kwargs.iteritems():
-           if key == "siteWhitelist":
-               result += "Site Whitelist changed to " + str(value) + "<BR>"
-               helper.setSiteWhitelist(value)
-               schema.SiteWhitelist = value
-               helper.save(pfn)
-           elif key == "siteBlacklist":
-               result += "Site Blacklist changed to " + str(value) + "<BR>"
-               helper.setSiteBlacklist(value)
-               schema.SiteBlacklist = value
-               helper.save(pfn)
-           elif key == "requestName":
-               pass
-           elif value != None:
-               #ChangeState.assignRequest(kwargs['requestName'], team) 
-               self.jsonSender.put('/reqMgr/assignment/%s/%s' % (urllib.quote(key), requestName))
-               result += "Assigned " + requestName + " to " + key  + "<BR>"
+            setattr(schema, key, value)
+            if key.startswith("Team"):
+                team = key[4:]
+                try:
+                    self.jsonSender.put('/reqMgr/assignment/%s/%s' % (urllib.quote(team), requestName))
+                except:
+                    result += "Cannot assign to team " + team + "\n"
+
+        if kwargs.has_key("StdJobSplitAlgo"):
+            schema["StdJobSplitAlgo"] = splitAlgo
+            d = {}
+            if splitAlgo == "FileBased":
+                 d = {'files_per_job' : kwargs["filesPerJob"] }
+            elif splitAlgo == "LumiBased":
+                 d = {'lumis_per_job' : kwargs["lumisPerJob"],
+                      'split_files_between_job':kwargs["splitFilesBetweenJob"]}
+            elif splitAlgo == "EventBased":
+                 d = {'events_per_job': kwargs["eventsPerJob"]}
+            else:
+                  raise RuntimeError("Cannot find splitting algo " + splitAlgo)
+            schema["StdJobSplitArgs"] = d
+
+        if kwargs.has_key("SkimJobSplitAlgo"):
+            skimSplitAlgo = kwargs["SkimJobSplitAlgo"]
+            schema["SkimJobSplitAlgo"] = skimSplitAlgo
+            files_per_job = 0
+            if skimSplitAlgo == "FileBased":
+               files_per_job = kwargs["skimFilesPerJob"]
+            elif skimSplitAlgo == "TwoFileBased":
+               files_per_job = kwargs["skimTwoFilesPerJob"]
+            else:
+                  raise RuntimeError("Cannot find splitting algo " + skimSplitAlgo)
+            schema["SkimJobSplitArgs"] = {'files_per_job': files_per_job}
+
+        helper.setSiteWhitelist(self.parseSite(kwargs,"SiteWhitelist"))
+        helper.setSiteBlacklist(self.parseSite(kwargs,"SiteBlacklist"))
+        helper.setProcessingVersion(kwargs["ProcessingVersion"])
+        helper.setAcquisitionEra(kwargs["AcquisitionEra"])
+        helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
+        helper.setMergeParameters(kwargs["MinMergeSize"], kwargs["MaxMergeSize"], kwargs["MaxMergeEvents"])
+        helper.save(pfn)
         result += self.detailsBackLink(requestName)
         return result
     handleAssignmentPage.exposed = True
@@ -309,3 +350,13 @@ class ReqMgrBrowser(TemplatedPage):
         helper.save(workload)
         return message + self.detailsBackLink(requestName)
     modifyWorkload.exposed = True
+
+
+    def parseSite(self, kw, name):
+        """ puts site whitelist & blacklists into nice format"""
+        value = kw.get(name, [])
+        if value == None:
+            value = []
+        if not isinstance(value, list):
+            value = [value]
+        return value

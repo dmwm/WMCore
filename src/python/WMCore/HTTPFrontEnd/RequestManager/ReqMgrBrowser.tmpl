@@ -39,14 +39,14 @@ dataSource.responseType = YAHOO.util.DataSource.TYPE_HTMLTABLE;
 dataSource.responseSchema = {
     fields: [
         { key: 'Name'}, { key: 'Group'}, { key: 'Requestor'}, 
-        { key: 'Type'}, { key: 'Request Priority'},  { key: 'User Priority'}, { key: 'Group Priority'},{ key: 'Status'},
+        { key: 'Type'}, { key: 'Request Priority'},  { key: 'Status'},
         { key: 'Complete' }, { key: 'Success' }
     ]
 };
  
 var columnDefs = [
         { key: 'Name', sortable:true}, { key: 'Group', sortable:true}, { key: 'Requestor', sortable:true},
-        { key: 'Type', sortable:true}, { key: 'Request Priority', sortable:true},  { key: 'User Priority', sortable:true}, { key: 'Group Priority', sortable:true},
+        { key: 'Type', sortable:true}, { key: 'Request Priority', sortable:true}, 
         { key: 'Status', sortable:true}, { key: 'Complete', sortable:true},
         { key: 'Success', sortable:true}
 ];

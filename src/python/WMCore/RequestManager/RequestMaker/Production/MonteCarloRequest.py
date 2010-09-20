@@ -40,11 +40,11 @@ class MonteCarloSchema(RequestSchema):
     def __init__(self):
         RequestSchema.__init__(self)
         self.setdefault("CMSSWVersion", None)
-        self.setdefault("ConfigCacheDoc", None)
+        self.setdefault("ProdConfigCacheID", None)
         self.setdefault("PileupDataset", None)
         self.validateFields = [
             "CMSSWVersion",
-            "ConfigCacheDoc",
+            "ProdConfigCacheID",
             "PrimaryDataset"
             ]
 

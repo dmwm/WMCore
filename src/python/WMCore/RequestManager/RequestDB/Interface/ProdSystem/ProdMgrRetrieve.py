@@ -38,7 +38,7 @@ def acceptRequest(requestId):
     it was assigned to
 
     """
-    ChangeStatus.changeRequestIDStatus(requestId, "assigned-prodmgr")
+    ChangeStatus.changeRequestIDStatus(requestId, "acquired")
     return
 
 

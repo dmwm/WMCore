@@ -40,7 +40,7 @@ except getopt.GetoptError, ex:
 
 # load the configuration
 path = __file__.rsplit('/',1)[0]
-defaultConfig = path+'/../src/python/WMCore/HTTPFrontEnd/RequestManager/DefaultConfig.py'
+defaultConfig = path+'/../DefaultConfig.py'
 if not os.path.exists(defaultConfig):
     print "Cannot find " + defaultConfig
     sys.exit(1)
@@ -90,9 +90,8 @@ def getList():
 
 def doDelete():
     requests = getList()
-    print str(args)
     for request in requests:
-        if request['RequestName'] in args:
+        if args == ['all'] or request['RequestName'] in args:
             print "Deleting " + request['RequestName']
             RequestAdmin.deleteRequest(request["RequestID"])
 

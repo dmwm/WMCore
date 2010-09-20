@@ -19,6 +19,7 @@ import WMCore.RequestManager.RequestDB.Interface.ProdSystem.ProdMgrRetrieve as P
 from WMCore.RequestManager.RequestMaker.Processing.RecoRequest import *
 from WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest import *
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
+import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import cherrypy
 import threading
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
@@ -200,6 +201,15 @@ class ReqMgrRESTModel(RESTModel):
         if request != None:
             return ProdManagement.getProdMgr(request)
 
+    def abortRequest(self, request):
+        self.initThread()
+        response = self.getWorkQueue(request=request)
+        url = response[0]
+        if url == None or url == "":
+             raise HTTPError(400, "Cannot find URL for request " + request)
+        workqueue = WorkQueue.WorkQueue({'endpoint': url})     
+        workqueue.cancelWork([request])
+   
     def getMessage(self, request=None):
         self.initThread()
         return ChangeState.getMessages(request)
@@ -235,6 +245,9 @@ class ReqMgrRESTModel(RESTModel):
                 if not status in RequestStatus.NextStatus[oldStatus]:
                     raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
                            oldStatus, status,  RequestStatus.NextStatus[oldStatus])
+                if status == 'aborted':
+                    # delete from the workqueue
+                    self.abortRequest(requestName)
                 if priority != None:
                     ChangeState.changeRequestStatus(requestName, status, priority)
                     self.updatePriorityInWorkflow(requestName, priority)

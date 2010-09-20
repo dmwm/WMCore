@@ -60,11 +60,8 @@ Configuration <BR>
       <OPTION> relvalmcfs </OPTION>
     </select><BR>
   </INPUT>
-  <INPUT TYPE="radio" NAME="inputMode" VALUE="url" CHECKED> URL
-    <INPUT TYPE=TEXT" NAME="ProcessingConfig" VALUE=$defaultProcessingConfig SIZE=80></INPUT><BR>
-  </INPUT>
   <INPUT TYPE="radio" NAME="inputMode" VALUE="couchDB"> CouchDB ID
-    <INPUT TYPE=TEXT" NAME="ConfigCacheDoc" SIZE=80>
+    <INPUT TYPE=TEXT" NAME="ProdConfigCacheID" SIZE=80>
   </INPUT><BR>
 
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
@@ -107,72 +104,12 @@ function addSkim() {
 </script>
 #end def
 
-#def mergeBlock
-Merged LFN Base: <SELECT name="MergedLFNBase"> 
-  <OPTION>/store/data</OPTION>
-  <OPTION>/store/backfill/1</OPTION>
-  <OPTION>/store/backfill/2</OPTION>
-</SELECT><BR>
-Unmerged LFN Base: <SELECT name="UnmergedLFNBase">
-  <OPTION>/store/unmerged</OPTION>
-  <OPTION>/store/backfill/1/unmerged</OPTION>
-  <OPTION>/store/backfill/1/test01/unmerged</OPTION>
-  <OPTION>/store/temp/unmerged</OPTION>
-  <OPTION>/store/temp/WMAgent/unmerged</OPTION>
-</SELECT><BR>
-
-Min Merge Size <INPUT TYPE="text" name="MinMergeSize" VALUE=500000000 size=10/>
-Max Merge Size <INPUT TYPE="text" name="MaxMergeSize" VALUE=4294967296 size=10/>
-Max Merge Events <INPUT TYPE="text" name="MaxMergeEvents" VALUE=50000 size=10/><br>
-#end def
-
-#def splitBlock
-Job Splitting:<BR>
-<INPUT TYPE="radio" NAME="splitAlgo" VALUE="FileBased" CHECKED>File Based&nbsp&nbsp&nbsp&nbsp
-    Files per Job: <INPUT TYPE="text" NAME="filesPerJob" VALUE=1></INPUT>
-</INPUT><BR>
-<INPUT TYPE="radio" NAME="splitAlgo" VALUE="LumiBased">Lumi Based&nbsp&nbsp&nbsp&nbsp
-    Lumis per Job: <INPUT TYPE="text" NAME="lumisPerJob" VALUE=1></INPUT> &nbsp&nbsp&nbsp&nbsp
-    Split Files Between Job: <SELECT NAME="splitFilesBetweenJob">
-        <OPTION> True </OPTION>
-        <OPTION> False </OPTION>
-    </SELECT>
-</INPUT><BR>
-<INPUT TYPE="radio" NAME="splitAlgo" VALUE="EventBased">Event Based&nbsp&nbsp&nbsp&nbsp
-    Events per Job:  <INPUT TYPE="text" NAME="eventsPerJob" VALUE=1></INPUT>
-</INPUT><BR>
-
-Skim Splitting:<BR>
-<INPUT TYPE="radio" NAME="skimSplitAlgo" VALUE="FileBased" CHECKED>File Based&nbsp&nbsp&nbsp&nbsp
-    Files per Job: <INPUT TYPE="text" NAME="skimFilesPerJob" VALUE=1></INPUT><BR>
-</INPUT>
-<INPUT TYPE="radio" NAME="skimSplitAlgo" VALUE="TwoFileBased">Two File Based&nbsp&nbsp&nbsp&nbsp
-    Files per Job: <INPUT TYPE="text" NAME="skimTwoFilesPerJob" VALUE=1></INPUT><BR>
-</INPUT>
-#end def
-
 #def runBlockBlock
 Run Whitelist (separated by commas): <input type="text" name="RunWhitelist" size=40/><br/>
 Run Blacklist (separated by commas): <input type="text" name="RunBlacklist" size=40/><br/>
 Block Whitelist (separated by commas): <input type="text" name="BlockWhitelist" size=40/><br/>
 Block Blocklist (separated by commas): <input type="text" name="BlockBlacklist" size=40/><br/>
 #end def
-
-#def siteBlock
-Site Whitelist:
-<SELECT NAME="siteWhitelist" MULTIPLE SIZE=10>
-   #for $site in $sites:
-     <OPTION>$site</OPTION>
-   #end for
-</SELECT> &nbsp&nbsp&nbsp&nbsp
-Site Blacklist:
-<SELECT NAME="siteBlacklist" MULTIPLE SIZE=10>
-   #for $site in $sites:
-       <OPTION>$site</OPTION>
-   #end for
-</SELECT><BR/>
-#end def
-
 
 #def emulatorBlock
 Emulator:
@@ -182,10 +119,6 @@ Emulator:
 </SELECT><BR>
 #end def
 
-#def processingVersionBlock
-Acquisition Era: <INPUT TYPE="text" name="AcquisitionEra" SIZE=20></BR>
-ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 /><br/>
-#end def
 
 #def trailerBlock($requestType)
     <INPUT TYPE="hidden" NAME="RequestType" VALUE=$requestType></INPUT>
@@ -203,20 +136,16 @@ ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 /><br/>
         <DIV ID="rereco">
             $headerBlock
             $softwareBlock
-            $processingVersionBlock
             $configBlock
             $ioBlock
             $skimBlock(1)
             $moreSkims
-            $mergeBlock
-            $splitBlock
             $runBlockBlock
             $trailerBlock("ReReco")
         </DIV>
         <DIV ID="mc">
             $headerBlock
             $softwareBlock
-            $processingVersionBlock
             $emulatorBlock
             $skimBlock(1)
             $moreSkims

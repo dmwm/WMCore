@@ -28,8 +28,6 @@ class WebRequestSchema(TemplatedPage):
         self.couchDBName = config.configCacheDBName
         cherrypy.config.update({'tools.sessions.on': True, 'tools.encode.on':True, 'tools.decode.on':True})
 
-        self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
-        self.defaultProcessingConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8"
         self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
 
     def index(self, requestType=None):
@@ -46,21 +44,25 @@ class WebRequestSchema(TemplatedPage):
         reqTypes = ["ReReco"]
         return self.templatepage("WebRequestSchema", requestor=self.requestor,
           groups=groups, reqTypes=reqTypes, 
-          versions=self.versions, defaultVersion=self.cmsswVersion,sites=self.sites, 
-          defaultProcessingConfig=self.defaultProcessingConfig, defaultSkimConfig=self.defaultSkimConfig)
+          versions=self.versions, defaultVersion=self.cmsswVersion,
+          defaultSkimConfig=self.defaultSkimConfig)
     index.exposed = True
 
 
     def makeSchema(self, **kwargs):
         current_time = time.strftime('%y%m%d_%H%M%S',
                                  time.localtime(time.time()))
-
+        # make sure no extra spaces snuck in
+        for k, v in kwargs.iteritems():
+            kwargs[k] = v.strip()
         maker = retrieveRequestMaker(kwargs["RequestType"])
         schema = maker.newSchema()
         print str(kwargs)
         schema.update(kwargs)        
         schema['Requestor'] = self.requestor
         schema['RequestName'] = self.requestor + '_' + current_time
+        schema['CouchURL'] = self.couchUrl
+        schema['CouchDBName'] = self.couchDBName
 
         if kwargs.has_key("InputDataset"):
             schema["InputDatasets"] = [kwargs["InputDataset"]]
@@ -72,8 +74,6 @@ class WebRequestSchema(TemplatedPage):
         self.parseList("RunBlacklist", kwargs, schema)
         self.parseList("BlockWhitelist", kwargs, schema)
         self.parseList("BlockBlacklist", kwargs, schema)
-        self.parseSite("SiteWhitelist", kwargs, schema)
-        self.parseSite("SiteBlacklist", kwargs, schema)
 
         schema['CmsPath'] = self.cmsswInstallation
         schema["CouchURL"] = self.couchUrl
@@ -91,7 +91,7 @@ class WebRequestSchema(TemplatedPage):
             elif splitAlgo == "EventBased":        
                  d = {'events_per_job': kwargs["eventsPerJob"]}                 
             else:
-                  raise RuntimeError("Cannot find splitting algo " + splitAlgo)
+                  raise cherrypy.HTTPError(400, "Cannot find splitting algo " + splitAlgo)
             schema["StdJobSplitArgs"] = d
 
         if kwargs.has_key("SkimJobSplitAlgo"):
@@ -103,14 +103,16 @@ class WebRequestSchema(TemplatedPage):
             elif skimSplitAlgo == "TwoFileBased":
                files_per_job = kwargs["skimTwoFilesPerJob"]               
             else:
-                  raise RuntimeError("Cannot find splitting algo " + skimSplitAlgo)
+                  raise cherrypy.HTTPError(400, "Cannot find splitting algo " + skimSplitAlgo)
             schema["SkimJobSplitArgs"] = {'files_per_job': files_per_job}
 
         #delete unnecessary parameters.
         # is there a way to make these fields never appear?
+        if not 'inputMode' in kwargs:
+            raise cherrypy.HTTPError(400, "Please set the input mode")
         inputMode = kwargs['inputMode']
-        inputValues = {'scenario':'Scenario', 'url':'ProcessingConfig',
-                       'couchDB':'ConfigCacheDoc'}
+        inputValues = {'scenario':'Scenario',
+                       'couchDB':'ProdConfigCacheID'}
         for n,v in inputValues.iteritems():
             if n != inputMode:
                 schema[v] = ""
@@ -126,25 +128,10 @@ class WebRequestSchema(TemplatedPage):
         else:
             schema[name] = []
 
-    def parseSite(self, name, kwargs, schema):
-        """ puts site whitelist & blacklists into nice format"""
-        if kwargs.has_key(name):
-            value = kwargs[name]
-            if value == None:
-                value = []
-            if not isinstance(value, list):
-                value = [value]
-            schema[name] = value
-
     def submit(self):
         schema = cherrypy.session.get('schema', None)
         if schema == None:
            return "Where did that darn schema go?"
-        schema['PSetHash'] = cherrypy.session.get('PSetHash', None)
-        newLabel = cherrypy.session.get('Label', None)
-        if newLabel != None:
-           schema['Label'] = newLabel
-        schema['ProductionChannel'] = cherrypy.session.get('ProductionChannel', None)
         try:
             result = self.jsonSender.put('/reqMgr/request/'+schema['RequestName'], schema)
         except HTTPException, ex:

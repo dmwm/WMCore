@@ -112,29 +112,39 @@ class ReqMgrRESTModel(RESTModel):
             # add some details
             result = []
             for request in requests:
-               result.append(GetRequest.getRequest(request['RequestID']))
+               requestName = request['RequestName']
+               result.append(self.fillRequest(requestName, request['RequestID']))
             return result
         else:
             for request in requests:
                 if request['RequestName'] == requestName:
                     # add some details
-                    request = GetRequest.getRequest(request['RequestID'])
-                    assignments= GetRequest.getRequestAssignments(self.requestID(requestName))
-                    if assignments != []:
-                        request['Assignments'] = []
-                    for assignment in assignments:
-                        request['Assignments'].append(assignment['TeamName'])
-
-                    # show the status and messages
-                    request['RequestMessages'] = self.getMessage(requestName)
-                    # updates
-                    request['RequestUpdates'] = ChangeState.getProgress(requestName)
-                    # it returns a datetime object, which I can't pass through
-                    for update in request['RequestUpdates']:
-                        update['update_time'] = str(update['update_time'])
-                    return request
+                    return self.fillRequest(requestName, request['RequestID'])
             raise RuntimeError("Cannot find request" + requestName)
 
+    
+    def fillRequest(self, requestName, requestID):
+        request = GetRequest.getRequest(requestID)
+        assignments= GetRequest.getRequestAssignments(requestID)
+        if assignments != []:
+            request['Assignments'] = []
+        for assignment in assignments:
+            request['Assignments'].append(assignment['TeamName'])
+
+        # show the status and messages
+        request['RequestMessages'] = self.getMessage(requestName)
+        # updates
+        request['RequestUpdates'] = ChangeState.getProgress(requestName)
+        # it returns a datetime object, which I can't pass through
+        request['percent_complete'] = 0
+        request['percent_success'] = 0
+        for update in request['RequestUpdates']:
+            update['update_time'] = str(update['update_time'])
+            if update.has_key('percent_complete'):
+               request['percent_complete'] = update['percent_complete']
+            if update.has_key('percent_success'):
+               request['percent_success'] = update['percent_success']
+        return request
 
 
     def getAssignment(self, teamName=None, request=None):
@@ -216,7 +226,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def putWorkQueue(self, request, url):
         self.initThread()
-        ChangeState.changeRequestStatus(request, "assigned-prodmgr")
+        ChangeState.changeRequestStatus(request, "acquired")
         return ProdManagement.associateProdMgr(request, urllib.unquote(url))
 
 
@@ -327,7 +337,9 @@ class ReqMgrRESTModel(RESTModel):
     def putMessage(self, request):
         self.initThread()
         message = JsonWrapper.loads( cherrypy.request.body.read() )
-        return ChangeState.putMessage(request, message)
+        result = ChangeState.putMessage(request, message)
+        print "SENT " + str(result)
+        return result
 
 #    def postRequest(self, requestName, events_written=None, events_merged=None, 
 #                    files_written=None, files_merged = None, dataset=None):

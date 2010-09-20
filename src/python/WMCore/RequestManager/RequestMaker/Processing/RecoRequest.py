@@ -41,7 +41,6 @@ class RecoSchema(RequestSchema):
         self.validateFields = [
             "CMSSWVersion",
             "GlobalTag",
-            "AcquisitionEra",
             "InputDatasets",
             "DbsUrl",
             "LFNCategory",

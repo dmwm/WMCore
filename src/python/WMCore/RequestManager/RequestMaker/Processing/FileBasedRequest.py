@@ -58,7 +58,6 @@ class FileBasedSchema(RequestSchema):
 
         self.validateFields = [
             "CMSSWVersion",
-            "ProcessingVersion",
             "Configuration",
             "Conditions",
             "PSetHash",

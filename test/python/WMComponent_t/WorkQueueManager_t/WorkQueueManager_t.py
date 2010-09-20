@@ -223,7 +223,7 @@ class fakeReqMgr():
             return {}
 
     def putWorkQueue(self, reqName, url):
-        self.status[reqName] = 'assigned-prodmgr'
+        self.status[reqName] = 'acquired'
 
     def reportRequestStatus(self, name, status):
         self.status[name] = status

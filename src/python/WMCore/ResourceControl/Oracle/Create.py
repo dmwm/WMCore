@@ -18,7 +18,7 @@ class Create(DBCreator):
     
     Class for creating Oracle specific schema for resource control.
     """
-    def __init__(self, **params):
+    def __init__(self, logger = None, dbi = None, params = None):    
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         self.create = {}

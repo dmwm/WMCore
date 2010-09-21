@@ -15,6 +15,7 @@ from WMCore.DataStructs.File     import File
 from WMCore.Services.UUID        import makeUUID
 from WMCore.WMBS.File            import File as WMBSFile
 
+
 class JobFactory(WMObject):
     """
     A JobFactory is created with a subscription (which has a fileset). It is a
@@ -236,7 +237,7 @@ class JobFactory(WMObject):
                                      dbinterface = myThread.dbi)
 
 
-        subAction = self.daoFactory(classname = "Subscriptions.GetAvailableFiles")
+        subAction = self.daoFactory(classname = "Subscriptions.GetAvailableFilesID")
         results   = subAction.execute(subscription = self.subscription['id'],
                                       returnCursor = True)
 
@@ -306,23 +307,29 @@ class JobFactory(WMObject):
                 self.proxies.remove(resultProxy)
             rawResults.extend(newResults)
 
+        if rawResults == []:
+            # Nothing to do
+            return set()
 
 
         fileList = self.formatDict(results = rawResults, keys = keys)
 
+        fileIDs = [x['fileid'] for x in fileList]
+
 
         fileInfoAct  = self.daoFactory(classname = "Files.GetByID")
-        fileInfoDict = fileInfoAct.execute(file = [x["file"] for x in fileList])
-        
-        #Run through all files
-        for f in fileList:
-            fl = WMBSFile(id = f['file'])
-            #fl.loadChecksum()
-            fl.update(fileInfoDict[f['file']])
-            if 'locations' in f.keys():
-                fl.setLocation(f['locations'], immediateSave = False)
-            files.add(fl)
+        fileInfoDict = fileInfoAct.execute(file = fileIDs)
 
+        getLocAction = self.daoFactory(classname = "Files.GetLocationBulk")
+        getLocDict   = getLocAction.execute(files = fileIDs)
+
+        for fID in fileIDs:
+            fl = WMBSFile(id = fID)
+            fl.update(fileInfoDict[fID])
+            locations = getLocDict.get((fID), [])
+            for loc in locations:
+                fl.setLocation(loc, immediateSave = False)
+            files.add(fl)
 
         return files
             
@@ -348,27 +355,7 @@ class JobFactory(WMObject):
                 # Assign each key to a value
                 indivDict[str(keys[i])] = entry[i]
             formattedResults.append(indivDict)
+
+        return formattedResults
                            
-        for formattedResult in formattedResults:
-            if "file" in formattedResult.keys():
-                formattedResult["file"] = int(formattedResult["file"])
-            else:
-                formattedResult["file"] = int(formattedResult["fileid"])
-
-        #Now the tricky part
-        tempResults = {}
-        for formattedResult in formattedResults:
-            if formattedResult["file"] not in tempResults.keys():
-                tempResults[formattedResult["file"]] = []
-            if "se_name" in formattedResult.keys():
-                tempResults[formattedResult["file"]].append(formattedResult["se_name"])
-
-        finalResults = []
-        for key in tempResults.keys():
-            tmpDict = {"file": key}
-            if not tempResults[key] == []:
-                tmpDict['locations'] = tempResults[key]
-            finalResults.append(tmpDict)
-
-        return finalResults
 

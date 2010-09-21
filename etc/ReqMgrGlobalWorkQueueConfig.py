@@ -68,6 +68,12 @@ config.ReqMgr.admin = userEmail
 config.ReqMgr.title = "CMS Request Manager"
 config.ReqMgr.description = "CMS Request Manager"
 config.ReqMgr.couchURL = couchURL
+#TODO: when Webtools run as a component
+# expires has to be set here but if it runs stand alone application
+# it is set under rest model section as below. - need to change to
+# make synchronized for both
+# active.reqMgr.default_expires = 0
+config.ReqMgr.default_expires = 0
 
 views = config.ReqMgr.section_('views')
 active = views.section_('active')
@@ -111,6 +117,7 @@ config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
                                         'endpoint': "http://%s:%s/reqMgr/" % (serverHostName, reqMgrPort)}
 
 config.webapp_('WorkQueueService')
+config.WorkQueueService.default_expires = 0
 config.WorkQueueService.componentDir = os.path.join(config.General.workDir, "WorkQueueService")
 config.WorkQueueService.Webtools.port = globalWorkQueuePort
 config.WorkQueueService.Webtools.host = serverHostName

@@ -164,6 +164,7 @@ config.TaskArchiver.WorkQueueParams = {}
 config.TaskArchiver.useWorkQueue = True
 
 config.webapp_('WorkQueueService')
+config.WorkQueueService.default_expires = 0
 config.WorkQueueService.componentDir = config.General.workDir + "/WorkQueueService"
 ## User specific parameter
 config.WorkQueueService.Webtools.port = 9997
@@ -193,7 +194,9 @@ workqueuemonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templa
 workqueuemonitor.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/')
 workqueuemonitor.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html/')
 
+#TODO: make wmbs monitoring part of workqueueservice. (use the same port but different application)
 config.webapp_("WMBSMonitoring")
+config.WMBSMonitoring.default_expires = 0
 config.WMBSMonitoring.componentDir = config.General.workDir + "/WMBSMonitoring"
 config.WMBSMonitoring.Webtools.host = config.Agent.hostName
 ## User specific parameter

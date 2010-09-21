@@ -47,6 +47,7 @@ class PhEDEx(Service):
                     filemode = 'w')
             dict['logger'] = logging.getLogger('PhEDExParser')
 
+        dict.setdefault('cacheduration', 0)
         Service.__init__(self, dict)
 
     def _getResult(self, callname, clearCache = False,

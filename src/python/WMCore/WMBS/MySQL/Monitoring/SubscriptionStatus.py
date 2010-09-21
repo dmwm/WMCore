@@ -107,11 +107,11 @@ class SubscriptionStatus(DBFormatter):
                     percentComplete = 0
                     percentSuccess = 0
                 elif success + failure == 0:
-                    percentComplete = int((success + failure) / (success + failure + running) * 1000)
+                    percentComplete = int((success + failure) / (success + failure + running) * 100)
                     percentSuccess = 0
                 else:
-                    percentComplete = int((success + failure) / (success + failure + running) * 1000)
-                    percentSuccess = int(success / (success + failure) * 1000)
+                    percentComplete = int((success + failure) / (success + failure + running) * 100)
+                    percentSuccess = int(success / (success + failure) * 100)
 
                 subId = workflows[workflowName][filesetName]["subId"]                
                     

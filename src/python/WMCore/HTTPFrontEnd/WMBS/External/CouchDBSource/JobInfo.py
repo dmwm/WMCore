@@ -11,6 +11,8 @@ import os
 from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource.CouchDBConnectionBase \
     import CouchDBConnectionBase
 
+from WMCore.Database.CMSCouch import CouchError
+
 def getJobInfo(jobID):
     """
     _getJobInfo_
@@ -64,10 +66,19 @@ def getJobSummaryByWorkflow():
         {"key":["MonteCarlo-v8"],"value":{"pending":7,"running":0,"cooloff":0,"success":0,"failure":0}}
      ]}
     """
-    changeStateDB = CouchDBConnectionBase.getCouchDB()
+    try:
+        changeStateDB = CouchDBConnectionBase.getCouchDB()
+    except:
+        #TODO log the error in the server
+        #If the server is down it doesn't throw CouchError,
+        #Need to distinquish between server down and CouchError
+        return [{"request_name": 'Couch not avaiable'}]
+    
     options = {"group": True, "group_level": 1}
     result = changeStateDB.loadView("JobDump", "statusByWorkflowName",
-                                    options)
+                                        options)    
+        
+
     couchDocBase = CouchDBConnectionBase.getCouchDBHtmlBase(
                                     "JobDump", "workflowSummary")
     couchJobInfoBase = CouchDBConnectionBase.getCouchDBHtmlBase(

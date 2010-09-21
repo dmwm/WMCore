@@ -25,7 +25,7 @@ var overviewTable = function(divID){
 	var formatCouchDB = function(elCell, oRecord, oColumn, sData) { 
             var host;
             if (!sData) {
-                host = "Not Assigned";
+                elCell.innerHTML = "<font color='red'> Can't connect CouchDB <font>";
             } else {
                 host = "CouchDB Link";
 				elCell.innerHTML = "<a href='" + sData + "' target='_blank'>" + host + "</a>";

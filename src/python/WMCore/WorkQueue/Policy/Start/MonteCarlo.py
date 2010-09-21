@@ -21,7 +21,7 @@ class MonteCarlo(StartPolicyInterface):
 
     def split(self):
         """Apply policy to spec"""
-        total = self.initialTask.totalEvents()
+        total = int(self.initialTask.totalEvents())
         current = self.args['SliceSize']
         while total > 0:
             if total < current:

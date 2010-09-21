@@ -238,7 +238,7 @@ class WMBSHelper(WMConnectionBase):
         events = self.topLevelTask.data.production.totalEvents
         if not self.topLevelTask.siteWhitelist():
             raise RuntimeError, "Site whitelist mandatory for MonteCarlo"
-        locations = set(self.SiteDB.cmsNametoSE(x) for x \
+        locations = set(self.SiteDB.cmsNametoSE(x)[0] for x \
                         in self.topLevelTask.siteWhitelist())
         mcFakeFileName = "MCFakeFile-%s" % makeUUID()
         wmbsFile = File(lfn = mcFakeFileName,
@@ -247,7 +247,7 @@ class WMBSHelper(WMConnectionBase):
                         merged = False, # merged causes dbs parentage relation
                         )
         wmbsFile.addRun(Run(1, 1))
-        wmbsFile['inFileset'] = False
+        wmbsFile['inFileset'] = True
         self.wmbsFilesToCreate.append(wmbsFile)
 
         totalFiles = self._addFilesToWMBSInBulk()

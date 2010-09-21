@@ -24,6 +24,14 @@ function(doc) {
       emit([doc['workflow'], doc['task'], doc['jobid'], doc['timestamp']],
             {'jobid': doc['jobid'], 'timestamp': doc['timestamp'], 
              'state': 'failure', 'task': doc['task']});
+    } else if (doc['oldstate'] == 'submitfailed' && doc['newstate'] == 'exhausted') {
+      emit([doc['workflow'], doc['task'], doc['jobid'], doc['timestamp']],
+            {'jobid': doc['jobid'], 'timestamp': doc['timestamp'], 
+             'state': 'failure', 'task': doc['task']});
+    } else if (doc['oldstate'] == 'createfailed' && doc['newstate'] == 'exhausted') {
+      emit([doc['workflow'], doc['task'], doc['jobid'], doc['timestamp']],
+            {'jobid': doc['jobid'], 'timestamp': doc['timestamp'], 
+             'state': 'failure', 'task': doc['task']});
     }
   }
 }

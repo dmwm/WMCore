@@ -77,7 +77,7 @@ class Create(CreateWorkQueueBase):
              priority         INTEGER    NOT NULL,
              parent_flag      INTEGER    DEFAULT 0,
              status           INTEGER    DEFAULT 0,
-             subscription_id  INTEGER    NOT NULL,
+             subscription_id  INTEGER,
              team_name        VARCHAR(255),
              events_written   INTEGER    DEFAULT 0,
              files_processed  INTEGER    DEFAULT 0,

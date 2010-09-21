@@ -29,7 +29,6 @@ class GetWork(DBFormatter):
                     (we.id = wsv.element_id AND
                      (we.input_id IS NULL OR (wbmap.site_id = wsv.site_id)))
             WHERE we.status = :available AND
-                  we.num_jobs <= :jobs AND
                   -- only check team restriction if both db and query restrict
                   (we.team_name IS NULL OR :team IS NULL OR
                                                   we.team_name = :team) AND
@@ -44,15 +43,14 @@ class GetWork(DBFormatter):
                                                   FROM wq_element_site_validation
                                                   WHERE valid = 1)))
             ORDER BY (we.priority +
-                    :weight * (:current_time - we.insert_time)) DESC,
-                    we.num_jobs DESC -- take large elements first
+                    :weight * (:current_time - we.insert_time)) DESC
             """
 
     def execute(self, resources, team, weight, conn = None, transaction = False):
         binds = [{'available' : States['Available'], 'weight' : weight,
                   'team' : team, "site" : site,
-                  "jobs" : jobs, "current_time": int(time.time())} \
-                                    for site, jobs in resources.iteritems()]
+                  "current_time": int(time.time())} \
+                                    for site, jobs in resources.iteritems() if jobs > 0]
         if not binds:
             return {}, {}
         results = self.dbi.processData(self.sql, binds, conn = conn,
@@ -73,12 +71,8 @@ class GetWork(DBFormatter):
             # Production jobs (can run anywhere) are assigned to a random site
             site = result['site_name'] or random.choice(resources.keys())
 
-            # sites removed from resources when their slots are allocated work
-            if not resources.has_key(site):
-                continue
-
-            if  result['id'] not in acquired_ids and \
-                                    result['num_jobs'] <= resources[site]:
+            # Release work as long as site has resources (even if resources are smaller than work)
+            if result['id'] not in acquired_ids and resources.get(site, 0) > 0:
                 acquired.append(result)
                 acquired_ids.append(result['id'])
                 newslots = int(resources[site]) - result['num_jobs']

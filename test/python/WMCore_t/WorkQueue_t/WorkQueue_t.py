@@ -278,13 +278,15 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(njobs), len(self.queue))
 
         self.queue.updateLocationInfo()
-        # Not quite enough resources
-        work = self.queue.getWork({'SiteA' : njobs[0] - 1,
-                                   'SiteB' : njobs[1] - 1})
+        # No resources
+        work = self.queue.getWork({})
+        self.assertEqual(len(work), 0)
+        work = self.queue.getWork({'SiteA' : 0,
+                                   'SiteB' : 0})
         self.assertEqual(len(work), 0)
 
-        # Only 1 block at SiteB
-        work = self.queue.getWork({'SiteB' : total})
+        # Only 1 block at SiteB - get 1 work element when any resources free
+        work = self.queue.getWork({'SiteB' : 1})
         self.assertEqual(len(work), 1)
 
         # claim remaining work

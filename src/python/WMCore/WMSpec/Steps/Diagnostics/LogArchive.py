@@ -30,6 +30,9 @@ class LAExceptionHandler(DiagnosticHandler):
         Twiddle thumbs, contemplate navel, toss coin
 
         """
+        msg         = "Error in LogArchive: %s\n" % (errCode)
+        description = "Misc. LogArchive error"
+        
         jobRepXml = os.path.join(executor.step.builder.workingDir,
                                  executor.step.output.jobReport)
 
@@ -46,15 +49,19 @@ class LAExceptionHandler(DiagnosticHandler):
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
-            msg = "Job Report contains no error report, but StageOutManager exited non-zero: %s" % errCode
+            msg = "Job Report contains no error report, but LogArchiveManager exited non-zero: %s" % errCode
+            executor.report.addError(executor.step._internal_name,
+                                     errCode, description, msg)
             executor.report.addError(50116, "MissingErrorReport", msg)
             return
 
         else:
             #check exit code in report is non zero
             if executor.report.report.status == 0:
-                msg = "Job Report contains no error report, but StageOutManager exited non-zero: %s" % errCode
+                msg = "Job Report contains no error report, but LogArchiveManager exited non-zero: %s" % errCode
                 executor.report.addError(50116, "MissingErrorReport", msg)
+            executor.report.addError(executor.step._internal_name,
+                                     errCode, description, msg)
         return
 
 class LogArchive(Diagnostic):
@@ -62,6 +69,8 @@ class LogArchive(Diagnostic):
     def __init__(self):
         Diagnostic.__init__(self)
 
-
-        catchAll = LAExceptionHandler()
+        # Setup a default handler
+        catchAll            = LAExceptionHandler()
+        self.defaultHandler = catchAll
+        
         [ self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if not self.handlers.has_key(x) ]

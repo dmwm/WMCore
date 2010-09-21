@@ -91,8 +91,16 @@ class CMSSW(Executor):
             architecture = scramArch,
             )
         
-        logging.info("Runing SCRAM")   
-        projectOutcome = scram.project()
+        logging.info("Runing SCRAM")
+        try:
+            projectOutcome = scram.project()
+        except Exception, ex:
+            msg =  "Exception raised while running scram.\n"
+            msg += str(ex)
+            logging.critical("Error running SCRAM")
+            logging.critical(msg)
+            raise WMExecutionFailure(60513, "ScramSetupFailure", msg)
+        
         if projectOutcome > 0:
             msg = scram.diagnostic()
             #self.report.addError(60513, "ScramSetupFailure", msg)

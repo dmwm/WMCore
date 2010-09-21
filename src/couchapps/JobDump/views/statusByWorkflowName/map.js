@@ -7,16 +7,31 @@ function(doc) {
     } else if(doc['oldstate'] == 'created' && doc['newstate'] == 'executing') {
       output['pending'] -= 1;
       output['running'] += 1;
+    } else if(doc['oldstate'] == 'created' && doc['newstate'] == 'submitfailed') {
+      output['pending'] -= 1;
     } else if(doc['oldstate'] == 'jobfailed' && doc['newstate'] == 'jobcooloff') {
+      output['cooloff'] += 1;
+    } else if(doc['oldstate'] == 'submitfailed' && doc['newstate'] == 'submitcooloff') {
+      output['cooloff'] += 1;
+    } else if(doc['oldstate'] == 'createfailed' && doc['newstate'] == 'createcooloff') {
       output['cooloff'] += 1;
     } else if(doc['oldstate'] == 'jobcooloff' && doc['newstate'] == 'created') {
       output['cooloff'] -= 1;
       output['pending'] += 1;
+    } else if(doc['oldstate'] == 'submitcooloff' && doc['newstate'] == 'created') {
+      output['cooloff'] -= 1;
+      output['pending'] += 1;
+    } else if(doc['oldstate'] == 'createcooloff' && doc['newstate'] == 'new') {
+      output['cooloff'] -= 1;
     } else if(doc['oldstate'] == 'executing' && doc['newstate'] == 'complete') {
       output['running'] -= 1;
     } else if (doc['oldstate'] == 'complete' && doc['newstate'] == 'success') {
       output['success'] += 1;
     } else if (doc['oldstate'] == 'jobfailed' && doc['newstate'] == 'exhausted') {
+      output['failure'] += 1;
+    } else if (doc['oldstate'] == 'submitfailed' && doc['newstate'] == 'exhausted') {
+      output['failure'] += 1;
+    } else if (doc['oldstate'] == 'createfailed' && doc['newstate'] == 'exhausted') {
       output['failure'] += 1;
     }
    

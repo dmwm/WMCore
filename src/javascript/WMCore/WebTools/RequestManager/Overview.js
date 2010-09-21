@@ -58,7 +58,7 @@ var overviewTable = function(divID){
     };
 	
 	var formatFailure = function(elCell, oRecord, oColumn, sData) { 
-            formatJobLink(elCell, oRecord, oColumn, sData, "failure")
+            formatJobLink(elCell, oRecord, oColumn, sData, "failed")
     };
 	
     var dataSchema = {

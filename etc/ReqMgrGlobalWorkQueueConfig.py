@@ -144,7 +144,7 @@ workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (serverHostName
 
 workqueuemonitor = active.section_('workqueuemonitor')
 workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
-workqueuemonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
+workqueuemonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/WorkQueue')
 workqueuemonitor.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/')
 workqueuemonitor.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html/')
 

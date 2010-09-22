@@ -35,6 +35,16 @@ class WorkQueueMonitorPage(TemplatedPage):
             return self.templatepage(args[0], config=self.config)
         else:
             return self.index()
+        
+    @expose
+    def template(self, *args, **kwargs):
+        """
+        Show the documentation for a page or return the index
+        """
+        if len(args) > 0:
+            return self.templatepage(args[0], **kwargs)
+        # make not found page
+        return self.index()
 
     @expose
     def javascript(self, *args):

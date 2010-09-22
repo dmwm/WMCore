@@ -1,12 +1,14 @@
 var overviewTable = function(divID){
     
+	var postfixLink = "/template/ElementSummaryByWorkflow?workflow=";
+	
 	var formatGlobalQ = function(elCell, oRecord, oColumn, sData) { 
             var host;
             if (!sData) {
                 elCell.innerHTML = "Not Assigned";
             } else {
                 host = sData.split('/')[2];
-				elCell.innerHTML = "<a href='" + sData + "' target='_blank'>" + host + "</a>"; 
+				elCell.innerHTML = "<a href='" + sData + postfixLink + oRecord.getData("request_name") + "' target='_blank'>" + host + "</a>"; 
             };
         };
 	
@@ -17,13 +19,17 @@ var overviewTable = function(divID){
             } else {
 				for (data in sData) {
 					host = sData[data].split('/')[2];
-					elCell.innerHTML = "<a href='" + sData + "monitor' target='_blank'>" + host + "</a> <br>";
+					elCell.innerHTML = "<a href='" + sData + "monitor" + postfixLink + oRecord.getData("request_name") + "' target='_blank'>" + host + "</a> <br>";
 				};
 			}; 
         };
     
 	var formatCouchDB = function(elCell, oRecord, oColumn, sData) { 
             var host;
+			if (!oRecord.getData("local_queue")) {
+			     elCell.innerHTML = "Not yet Assigned";
+				 return	
+			}
             if (!sData) {
                 elCell.innerHTML = "<font color='red'> Can't connect CouchDB <font>";
             } else {

@@ -73,7 +73,7 @@ class StdBase(object):
         given config.
         """
         outputModules = {}
-        if scenarioName != None:
+        if scenarioName != None and scenarioName != "":
             for dataTier in scenarioArgs["writeTiers"]:
                 outputModuleName = "output%s%s" % (dataTier, dataTier)
                 outputModules[outputModuleName] = {"dataTier": dataTier,
@@ -201,7 +201,7 @@ class StdBase(object):
         procTaskStageHelper.setMinMergeSize(self.minMergeSize)
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
-        if configDoc != None:
+        if configDoc != None and configDoc != "":
             procTaskCmsswHelper.setConfigCache(couchURL, configDoc, couchDBName)
         else:
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,

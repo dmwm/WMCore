@@ -62,6 +62,8 @@ class WorkQueueMonitorService(ServiceInterface):
         ##  Element related view   ##
         #############################
         self.model.addDAO("GET", "elementsinfo", "Monitor.Elements.ElementsInfo")
+        self.model.addDAO("GET", "elementsbyworkflow", "Monitor.Elements.ElementsInfoByWorkflow",
+                          args = ["workflow"])
         self.model.addDAO("GET", "elementsinfowithlimit", "Monitor.Elements.ElementsInfoWithLimit",
                           args = ["startIndex", "results"], validation = [self.validateInt])
         

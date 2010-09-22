@@ -31,16 +31,29 @@ function(doc, req) {
   }
 
   response += "\n";
-  response += "<iframe scrolling=auto frameborder=0 width=100% marginwidth=0 marginheight=0 src='../../_list/stateTransitions/stateTransitionsByJobID?startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]'>";
-  response += "</iframe>\n";
+  response += "<div id=stateTransitions></div>\n";
 
   response += "\n<br>\n";
-  response += "<iframe scrolling=auto frameborder=0 width=100% marginwidth=0 marginheight=0 src='../../_list/jobErrors/errorsByJobID?startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]'>";
-  response += "</iframe>\n";
+  response += "<div id=errors></div>\n";
 
   response += "\n<br>\n";
-  response += "<iframe scrolling=auto frameborder=0 width=100% marginwidth=0 marginheight=0 src='../../_list/jobLogArchives/logArchivesByJobID?startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]'>";
-  response += "</iframe>\n";
+  response += "<div id=logArchives></div>\n";
+
+  response += "<script type=\"text/javascript\">\n";
+  response += "xmlhttp = new XMLHttpRequest();\n";
+  response += "xmlhttp.open(\"GET\", \"../../_list/stateTransitions/stateTransitionsByJobID?startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]\", false);\n";
+  response += "xmlhttp.send();\n";
+  response += "document.getElementById(\"stateTransitions\").innerHTML=xmlhttp.responseText;\n";
+
+  response += "xmlhttp.open(\"GET\", \"../../_list/jobErrors/errorsByJobID?startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]\", false);\n";
+  response += "xmlhttp.send();\n";
+  response += "document.getElementById(\"errors\").innerHTML=xmlhttp.responseText;\n";
+
+  response += "xmlhttp.open(\"GET\", \"../../_list/jobLogArchives/logArchivesByJobID?startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]\", false);\n";
+  response += "xmlhttp.send();\n";
+  response += "document.getElementById(\"logArchives\").innerHTML=xmlhttp.responseText;\n";
+
+  response += "</script>\n";
 
   response += "\n\n</pre></body></html>";
   return response;

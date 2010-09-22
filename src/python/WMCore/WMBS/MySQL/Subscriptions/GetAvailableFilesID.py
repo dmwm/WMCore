@@ -16,7 +16,6 @@ from WMCore.Database.DBFormatter import DBFormatter
 class GetAvailableFilesID(DBFormatter):
     sql = """SELECT wff.file AS fileid FROM wmbs_fileset_files wff 
                INNER JOIN wmbs_subscription ws ON ws.fileset = wff.fileset 
-               INNER JOIN wmbs_file_location wfl ON wfl.file = wff.file
                LEFT OUTER JOIN  wmbs_sub_files_acquired wa ON ( wa.file = wff.file AND wa.subscription = ws.id )
                LEFT OUTER JOIN  wmbs_sub_files_failed wf ON ( wf.file = wff.file AND wf.subscription = ws.id )
                LEFT OUTER JOIN  wmbs_sub_files_complete wc ON ( wc.file = wff.file AND wc.subscription = ws.id )

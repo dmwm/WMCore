@@ -222,7 +222,7 @@ class SetupCMSSWPset(ScriptInterface):
         self.process = None
 
         scenario = getattr(step.application.configuration, "scenario", None)
-        if scenario != None:
+        if scenario != None and scenario != "":
             funcName = getattr(step.application.configuration, "function", None)
             funcArgs = getattr(step.application.configuration, "arguments", None)
             self.createProcess(scenario, funcName, funcArgs)

@@ -7,7 +7,6 @@ function(doc, req) {
   response += "<div id=output></div>\n";
 
   response += "\n<br>\n";
-  response += "Errors:\n<br>\n";
   response += "<div id=errors></div>\n";
 
   response += "<script type=\"text/javascript\">\n";

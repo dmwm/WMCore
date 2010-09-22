@@ -67,6 +67,29 @@ var overviewTable = function(divID){
             formatJobLink(elCell, oRecord, oColumn, sData, "failed")
     };
 	
+	var pbs = [];
+    var progressFormatter = function (elLiner, oRecord, oColumn, oData) {
+		  var total = (oRecord.getData("pending") + oRecord.getData("pending")
+		               + oRecord.getData("running") + oRecord.getData("cooloff")
+					   + oRecord.getData("success") + oRecord.getData("failure"));
+					   
+		  var completed = oRecord.getData("success") + oRecord.getData("failure");
+		  
+		  //if total is 0 make 0% complete
+		  if (total == 0) {
+		  	  total = 1;
+		  };
+          var pb = new YAHOO.widget.ProgressBar({
+                     width:'90px',
+                    height:'11px',
+                    maxValue: total,
+                    //className:'some_other_image',
+                    value:completed
+           }).render(elLiner);
+                pbs.push(pb);
+    };
+		   
+		   
     var dataSchema = {
         fields: [{key: "request_name"},
                  {key: "status"},
@@ -92,7 +115,8 @@ var overviewTable = function(divID){
                  {key: "running", formatter:formatRunning},
                  {key: "success", formatter:formatSuccess},
                  {key: "failure", formatter:formatFailure},
-                 {key: "couch_doc_base", label: "summary", formatter:formatCouchDB}
+                 {key: "couch_doc_base", label: "summary", formatter:formatCouchDB},
+				 {key: "progress", formatter:progressFormatter}
                  ];
          
     var dataUrl = "/reqMgr/overview"

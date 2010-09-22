@@ -17,11 +17,7 @@ class Create(DBCreator):
     This should create the BossLite schema; since they don't do it.
 
     """
-
-    sequence_tables = []
-
-    sequence_tables.append('bl_runjob')
-    sequence_tables.append('bl_status')
+    sequence_tables = [ 'bl_runjob', 'bl_status' ]
 
     def __init__(self, logger = None, dbi = None, params = None):
         """

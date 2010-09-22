@@ -314,7 +314,9 @@ class JobFactory(WMObject):
 
         fileList = self.formatDict(results = rawResults, keys = keys)
 
-        fileIDs = [x['fileid'] for x in fileList]
+        # Why am I eliminating duplicates here?
+        # Steve seems to have found some
+        fileIDs = list(set([x['fileid'] for x in fileList]))
 
 
         fileInfoAct  = self.daoFactory(classname = "Files.GetByID")

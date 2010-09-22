@@ -383,7 +383,7 @@ class FileBasedTest(unittest.TestCase):
 
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.multipleFileSubscription)
+                              subscription = self.multipleSiteSubscription)
 
         jobFactory.open()
         jobGroups = []
@@ -402,10 +402,17 @@ class FileBasedTest(unittest.TestCase):
 
         jobFactory.close()
 
+        
 
-        self.assertEqual(len(jobGroups), 5)
+        self.assertEqual(len(jobGroups), 6)
         for group in jobGroups:
-            self.assertEqual(len(group.jobs), 2)
+            self.assertTrue(len(group.jobs) in [1, 2])
+            for job in group.jobs:
+                self.assertTrue(len(job['input_files']) in (1,2))
+                for file in job['input_files']:
+                    self.assertTrue(file['locations'] in [set(['somese.cern.ch']),
+                                                              set(['otherse.cern.ch',
+                                                                   'somese.cern.ch'])])
 
 
 
@@ -435,8 +442,8 @@ class FileBasedTest(unittest.TestCase):
         jobFactory.close()
 
 
-        p = pstats.Stats('coroutine.stats')
-        p.strip_dirs().sort_stats('cumulative').print_stats(.2)
+        #p = pstats.Stats('coroutine.stats')
+        #p.strip_dirs().sort_stats('cumulative').print_stats(.2)
         #p.strip_dirs().sort_stats('time').print_stats(.1)
 
 

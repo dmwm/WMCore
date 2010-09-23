@@ -326,10 +326,15 @@ class ConfigCache(WMObject):
         results = {}
         for outputModuleName in outputModuleNames:
             outModule = psetTweaks["process"][outputModuleName]
-            results[outputModuleName] = {"dataTier": outModule["dataset"]["dataTier"],
-                                         "filterName": outModule["dataset"]["filterName"]}
+            dataset = outModule.get("dataset", None)
+            if dataset:
+                results[outputModuleName] = {"dataTier": outModule["dataset"]["dataTier"],
+                                             "filterName": outModule["dataset"]["filterName"]}
+            else:
+                results[outputModuleName] = {"dataTier": None, "filterName": None}
 
         return results
+
 
     def addConfig(self, newConfig, psetHash):
         """

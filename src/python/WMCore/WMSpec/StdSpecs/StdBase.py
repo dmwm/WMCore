@@ -224,17 +224,28 @@ class StdBase(object):
         
         Add an output module to the given processing task.
         """
-        if filterName != None and filterName != "":
-            processedDatasetName = "%s-%s-%s" % (self.acquisitionEra, filterName,
-                                                 self.processingVersion)
-        else:
-            processedDatasetName = "%s-%s" % (self.acquisitionEra,
-                                              self.processingVersion)
-        
-        unmergedLFN = "%s/%s/%s" % (self.unmergedLFNBase, dataTier,
-                                    processedDatasetName)
-        mergedLFN = "%s/%s/%s" % (self.mergedLFNBase, dataTier,
-                                  processedDatasetName)
+        if parentTask.name() == 'Analysis':
+            # TODO in case of user data need to implement policy to define 
+            #  1  processedDatasetName 
+            #  2  primaryDatasetName
+            #  ( 3  dataTier should be always 'USER'.) 
+            #  4 then we'll know how to deal with Merge
+            dataTier = 'USER'
+            processedDatasetName = None
+            unmergedLFN = self.userUnmergedLFN
+            mergedLFN = None
+        else: 
+            if filterName != None and filterName != "":
+                processedDatasetName = "%s-%s-%s" % (self.acquisitionEra, filterName,
+                                                     self.processingVersion)
+            else:
+                processedDatasetName = "%s-%s" % (self.acquisitionEra,
+                                                  self.processingVersion)
+            
+            unmergedLFN = "%s/%s/%s" % (self.unmergedLFNBase, dataTier,
+                                        processedDatasetName)
+            mergedLFN = "%s/%s/%s" % (self.mergedLFNBase, dataTier,
+                                      processedDatasetName)
         cmsswStep = parentTask.getStep("cmsRun1")
         cmsswStepHelper = cmsswStep.getTypeHelper()
         cmsswStepHelper.addOutputModule(outputModuleName,

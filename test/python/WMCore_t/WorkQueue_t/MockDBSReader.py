@@ -51,9 +51,12 @@ class MockDBSReader:
 
     def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True, blockName = '*'):
         """Fake block info"""
-        if blockName != '*':
-            return [x for x in self.blocks[dataset] if x['Name'] == blockName]
-        return self.blocks[dataset]
+        try:
+            if blockName != '*':
+                return [x for x in self.blocks[dataset] if x['Name'] == blockName]
+            return self.blocks[dataset]
+        except KeyError:
+            return []
 
     def listFileBlockLocation(self, block):
         """Fake locations"""

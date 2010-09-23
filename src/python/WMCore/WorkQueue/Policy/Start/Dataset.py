@@ -8,6 +8,7 @@ __all__ = []
 
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from math import ceil
 
 class Dataset(StartPolicyInterface):
@@ -73,8 +74,9 @@ class Dataset(StartPolicyInterface):
 
     def validate(self):
         """Check args and spec work with block splitting"""
+        StartPolicyInterface.validateCommon(self)
         if not self.initialTask.inputDataset():
-            raise RuntimeError, 'No input dataset'
+            raise WorkQueueWMSpecError(self.wmspec, 'No input dataset')
 
     def validBlocks(self, task, dbs):
         """Return blocks that pass the input data restriction"""

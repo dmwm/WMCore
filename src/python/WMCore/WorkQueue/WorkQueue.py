@@ -29,6 +29,7 @@ from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.Policy.Start import startPolicy
 from WMCore.WorkQueue.Policy.End import endPolicy
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.WMBS.Subscription import Subscription as WMBSSubscription
@@ -40,6 +41,7 @@ from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 from WMCore.Services.DBS.DBSReader import DBSReader
+from DBSAPI.dbsApiException import DbsConfigurationError
 
 #TODO: Scale test
 #TODO: Decide whether to move/refactor db functions
@@ -805,29 +807,36 @@ class WorkQueue(WorkQueueBase):
         """
         #TODO: This can leave orphan files behind - remove them on exception
         totalUnits = []
+
         # split each top level task into constituent work elements
         for topLevelTask in wmspec.taskIterator():
             dbs_url = topLevelTask.dbsUrl()
             wmspec = getWorkloadFromTask(topLevelTask)
 
-            if dbs_url:
-                self._get_dbs(dbs_url)
-                
-            policyName = wmspec.startPolicy()
-            if not policyName:
-                raise RuntimeError("WMSpec doens't define policyName, current value: '%s'" % policyName)
+            try:
+                if dbs_url:
+                    self._get_dbs(dbs_url)
 
-            # update policy parameter
-            self.params['SplittingMapping'][policyName].update(args = wmspec.startPolicyParameters())
-            policy = startPolicy(policyName, self.params['SplittingMapping'])
-            self.logger.info("Using %s start policy with %s " % (policyName,
-                                            self.params['SplittingMapping']))
-            units = policy(wmspec, topLevelTask, self.dbsHelpers, data)
-            for unit in units:
-                unit['ParentQueueId'] = parentQueueId
-            self.logger.info("Queuing %s unit(s): wf: %s for task: %s" % (
-                             len(units), wmspec.name(), topLevelTask.name()))
-            totalUnits.extend(units)
+                policyName = wmspec.startPolicy()
+                if not policyName:
+                    raise RuntimeError("WMSpec doens't define policyName, current value: '%s'" % policyName)
+
+                # update policy parameter
+                self.params['SplittingMapping'][policyName].update(args = wmspec.startPolicyParameters())
+                policy = startPolicy(policyName, self.params['SplittingMapping'])
+                self.logger.info("Using %s start policy with %s " % (policyName,
+                                                self.params['SplittingMapping']))
+                units = policy(wmspec, topLevelTask, self.dbsHelpers, data, mask)
+                for unit in units:
+                    unit['ParentQueueId'] = parentQueueId
+                self.logger.info("Queuing %s unit(s): wf: %s for task: %s" % (
+                                 len(units), wmspec.name(), topLevelTask.name()))
+                totalUnits.extend(units)
+            # some dbs errors should be considered fatal
+            except (DbsConfigurationError), ex:
+                error = WorkQueueWMSpecError(wmspec, "DBS config error: %s" % str(ex))
+                raise error
+
         return totalUnits
 
     def _insertWorkQueueElement(self, unit, requestName = None,

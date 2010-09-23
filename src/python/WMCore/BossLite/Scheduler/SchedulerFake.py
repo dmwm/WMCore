@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101
+#pylint: disable-msg=R0902
+# E1101: false positives
+# R0902: Too many instance attributes
+
 """
 SchedulerFake
 """
@@ -81,7 +86,7 @@ class SchedulerFake(SchedulerInterface) :
         returnMap = {}
         if type(obj) == Task :                                    
             for job in obj.jobs:
-                    returnMap[job['name']] = "%s-schedulerId" % (job['name'])
+                returnMap[job['name']] = "%s-schedulerId" % (job['name'])
 
             return returnMap, str("XXX1"), str("XX2")
         
@@ -209,7 +214,7 @@ class SchedulerFake(SchedulerInterface) :
         return
     
     
-    def postMortem( self, schedulerId, outfile, service):
+    def postMortem( self, schedulerId, outfile, service, dir = None):
         """
         Fake postMortem
         """
@@ -293,8 +298,8 @@ class SchedulerFake(SchedulerInterface) :
         """
         
         return """Routine jobDescription done: requirements = %s\n""" + \
-                """\t config = %s\n\t, %s\n""" + \
-                """\t service = %s\n\t, %s\n""" % \
+                """\t config = %s,\n""" + \
+                """\t service = %s\n""" % \
                                         (requirements, config, service)
     
     

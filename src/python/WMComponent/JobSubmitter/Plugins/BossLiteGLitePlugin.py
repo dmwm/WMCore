@@ -140,6 +140,7 @@ class BossLiteGLitePlugin(PluginBase):
                                               '%s.err' % taskParams['name'],
                                               '%s.out' % taskParams['name']
                                             ],
+                             'submissionNumber': job['retry_count'] - 1,
                              'outputDirectory' : taskParams['startDirectory'] + \
                                                  job['cache_dir']
                             }

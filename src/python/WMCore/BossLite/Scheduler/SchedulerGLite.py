@@ -279,7 +279,7 @@ class SchedulerGLite(SchedulerInterface) :
         """
         retrieve job output
         """
-        
+
         # sanity check: if outdir is '' or None perform getoutput operation in
         # the current working directory
         if outdir == '' or outdir is None :
@@ -337,14 +337,20 @@ class SchedulerGLite(SchedulerInterface) :
                 # let's move outputs in the right place...
                 # required ONLY for local file stage-out
                 tmp = re.search(self.pathPattern, out)
-                
                 if tmp :
                     command = "mv " + tmp.group(1) + "/* " + outdir + "/"
                     os.system( command )
                     
                     command = "rm -rf " + tmp.group(1)
                     os.system( command )
-                # 
+                else:
+                    cmd = 'cd %s; ' % outdir
+                    for f in obj['outputFiles']:
+                        if f is not None and len(f) > 0:
+                            if f.find('.') != -1:
+                                sx, dot, dx = f.rpartition('.')
+                                cmd += 'mv %s %s' % (f, sx + dot + obj['submissionNumber'] + dot + dx)
+                    os.system(cmd)
                 
                 self.logging.debug("Output of %s successfully retrieved" 
                                         % str(obj.runningJob['schedulerId'])) 
@@ -361,14 +367,17 @@ class SchedulerGLite(SchedulerInterface) :
                 
                 if not self.valid( selJob.runningJob ):
                     continue
-                
+
                 if outdir is None :
+                    unsetdir = True
                     if selJob['outputDirectory'].startswith('gsiftp://'):
                         outdir = '/' + selJob['outputDirectory'].split('gsiftp://', 1)[-1].split('/', 1)[-1]
                     elif selJob['outputDirectory'].startswith('/'):
                         outdir = selJob['outputDirectory']
                     else:
                         outdir = '.'
+                else:
+                    unsetdir = False
 
                 command = "glite-wms-job-output --json --noint --dir " \
                             + outdir + " " + selJob.runningJob['schedulerId']
@@ -410,10 +419,22 @@ class SchedulerGLite(SchedulerInterface) :
                         
                         command = "rm -rf " + tmp.group(1)
                         os.system( command )
-                    # 
+
+                    else: 
+                        cmd = 'cd %s; ' % outdir
+                        for f in selJob['outputFiles']:
+                            if f is not None and len(f) > 0:
+                                if f.find('.') != -1:
+                                    sx, dot, dx = f.rpartition('.')
+                                    cmd += 'mv %s %s ;' % (f, sx + dot + \
+                                    str(selJob['submissionNumber']) + dot + dx)
+                        os.system(cmd)
                     
                     self.logging.debug("Output of %s successfully retrieved" 
                                 % str(selJob.runningJob['schedulerId']))
+
+                if unsetdir is True:
+                    outdir = None
         
         else:
              # unknown object type
@@ -600,20 +621,24 @@ class SchedulerGLite(SchedulerInterface) :
     
     ##########################################################################
 
-    def postMortem( self, schedulerId, outfile, service):
+    def postMortem( self, schedulerId, outfile, service, dir = None):
         """
         perform scheduler logging-info
         """
-        
+
+        if dir is not None and outfile.startswith('/') is False:
+            if dir.startswith('gsiftp://'):
+                dir = '/' + dir.split('gsiftp://', 1)[-1].split('/', 1)[-1]
+            outfile = os.path.join( dir, outfile )
+
         command = "glite-wms-job-logging-info -v 3 " + schedulerId + \
                   " > " + outfile
-        
+
         out, ret = self.ExecuteCommand( self.proxyString + command )
         # hackEnv deprecated
 #                        self.proxyString + self.hackEnv + command )
-            
-        return out
 
+        return out
 
     ##########################################################################
     

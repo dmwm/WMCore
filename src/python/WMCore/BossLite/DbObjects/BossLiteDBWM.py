@@ -181,8 +181,9 @@ class BossLiteDBWM(BossLiteDBInterface):
         
         elif type(obj) == RunningJob :
             
-            if (obj.data['jobId'] and obj.data['taskId'] and \
-                                                obj.data['submission']) :
+            if (obj.data['jobId'] is not None and
+                obj.data['taskId'] is not None and
+                obj.data['submission'] is not None) :
                 binds = {'taskId' : obj.data['taskId'],
                          'jobId' : obj.data['jobId'],
                          'submission' : obj.data['submission'] }
@@ -313,13 +314,13 @@ class BossLiteDBWM(BossLiteDBInterface):
         return result
     
     @dbTransaction
-    def jobLoadJobs(self, id, jobRange = None):
+    def jobLoadJobs(self, jobid, jobRange = None):
         """
         Load all (or a subset of) Jobs associated to a specific Task 
         """
         
         action = self.engine.daofactory( classname = 'Task.GetJobs' )
-        result = action.execute(id = id,
+        result = action.execute(id = jobid,
                                 range = jobRange,
                                 conn = self.engine.getDBConn(),
                                 transaction = self.existingTransaction)

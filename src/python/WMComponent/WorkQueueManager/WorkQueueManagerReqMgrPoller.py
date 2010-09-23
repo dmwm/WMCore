@@ -46,6 +46,15 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
             #TODO: Same functionality as WorkQueue.pullWork() - combine
             for team, reqName, workLoadUrl in workLoads:
                 try:
+                    #TO: maybe better to do bulk status update outside the loop.
+                    self.reqMgr.reportRequestStatus(reqName, "negotiating")
+                except Exception, ex:
+                    self.wq.logger.error("""
+                        Unable to update ReqMgr state to negotiating: %s
+                        Ignoring this request: %s""" % (str(ex), reqName))
+                    continue
+
+                try:
                     self.wq.logger.info("Processing request %s" % reqName)
                     wmspec = WMWorkloadHelper()
                     wmspec.load(workLoadUrl)

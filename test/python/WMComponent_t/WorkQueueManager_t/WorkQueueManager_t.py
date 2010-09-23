@@ -163,10 +163,6 @@ class WorkQueueManagerTest(unittest.TestCase):
         reqPoller.algorithm({})
         self.assertEqual(reqMgr.status[str(reqMgr.count)], 'completed')
 
-        globalQ.setStatus('Failed', 1)
-        reqPoller.algorithm({})
-        self.assertEqual(reqMgr.status[str(reqMgr.count)], 'failed')
-
         # reqMgr problems should not crash client
         reqPoller = WorkQueueManagerReqMgrPoller(None, globalQ, {})
         reqPoller.algorithm({})
@@ -208,6 +204,8 @@ class WorkQueueManagerTest(unittest.TestCase):
 
 class fakeReqMgr():
     """Fake ReqMgr stuff"""
+    from WMCore.RequestManager.RequestDB.Settings.RequestStatus import NextStatus
+
     def __init__(self, spec):
         self.spec = spec
         self.count = 0
@@ -218,6 +216,7 @@ class fakeReqMgr():
         assert(type(team) in types.StringTypes)
         if not self.count and team == 'The A-Team':
             self.count += 1
+            self.status[str(self.count)] = 'assigned'
             return {str(self.count) : self.spec.specUrl()}
         else:
             return {}
@@ -226,6 +225,8 @@ class fakeReqMgr():
         self.status[reqName] = 'acquired'
 
     def reportRequestStatus(self, name, status):
+        if status not in self.NextStatus[self.status[name]]:
+            raise RuntimeError, "Invalid status move: %s" % status
         self.status[name] = status
 
     def reportRequestProgress(self, name, **args):

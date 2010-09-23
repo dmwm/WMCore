@@ -55,7 +55,7 @@ class GetElements(DBFormatter):
 
     def execute(self, status = None,
                 since = None, before = None, elementIDs=None,
-                reqMgrUpdateNeeded = False,
+                reqMgrUpdateNeeded = False, parentId = None,
                 conn = None, transaction = False):
         binds = {}
         sep = "WHERE"
@@ -73,6 +73,10 @@ class GetElements(DBFormatter):
             sep = "AND"
         if reqMgrUpdateNeeded:
             self.sql += " %s request_name IS NOT NULL AND reqmgr_time <= we.update_time" % sep
+            sep = "AND"
+        if parentId is not None:
+            binds['parent_queue_id'] = int(parentId)
+            self.sql += " %s parent_queue_id = :parent_queue_id" % sep
             sep = "AND"
         # must be last as it converts binds to a list
         if elementIDs:

@@ -185,7 +185,7 @@ class Task(DbObject):
         if self.data['id'] < 0:
             self.exists(db)
                 
-        jobList = db.jobLoadJobs(id = self.data['id'], jobRange = jobRange) 
+        jobList = db.jobLoadJobs(jobid = self.data['id'], jobRange = jobRange)
            
         # update the jobs information
         for job in jobList:

@@ -190,6 +190,7 @@ class ChangeState(WMObject, WMConnectionBase):
                                              "couchid": jobDocument["_id"]})                
                 self.database.queue(jobDocument, viewlist = ["jobDump/jobsByJobID"])
             elif job.get("fwjr", None):
+                job["fwjr"].setTaskName(job["task"])
                 fwjrDocument = {"jobid": job["id"],
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),

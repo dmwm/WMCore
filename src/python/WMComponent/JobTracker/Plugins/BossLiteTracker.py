@@ -72,7 +72,7 @@ class BossLiteTracker(TrackerPlugin):
         trackDict = {}
 
         # Create an object to store the jobs to kill
-        killList  = []
+        #killList  = []
 
         # Get all the jobs in BossLite
         jobAction = self.daoFactory(classname = "Job.LoadJobRunningJob")
@@ -119,7 +119,7 @@ class BossLiteTracker(TrackerPlugin):
                 elif jobStatus.lower() == 'e':
                     statName = 'NA'
                     # Since this job is done, we get rid of it
-                    killList.append(jobAd['name'])
+                    #killList.append(jobAd['name'])
                 # Otherwise, we've got nothing
                 else:
                     statName = jobStatus
@@ -128,8 +128,8 @@ class BossLiteTracker(TrackerPlugin):
                                         'StatusTime': long(time.time()) - jobTime}
             
         # At the end, kill all the jobs that have exited
-        logging.info("Removing exited jobs")
-        self.kill(killList = killList)
+        #logging.info("Removing exited jobs")
+        #self.kill(killList = killList)
 
         logging.info("Done!")
 

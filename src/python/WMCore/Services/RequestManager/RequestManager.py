@@ -49,7 +49,7 @@ class RequestManager(Service):
             dict['logger'] = logging.getLogger('RequestMgrParser')
 
         dict['accept_type'] = 'text/json'
-        dict.setdefault('cacheduration', 0.05)
+        dict.setdefault('cacheduration', 0)
 
         Service.__init__(self, dict)
 

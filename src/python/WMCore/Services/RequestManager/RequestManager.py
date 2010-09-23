@@ -54,7 +54,7 @@ class RequestManager(Service):
         Service.__init__(self, dict)
 
     def _getResult(self, callname, clearCache = False,
-                   args = None, verb = "GET"):
+                   args = None, verb = "GET", encoder = None):
         """
         _getResult_
 
@@ -68,7 +68,7 @@ class RequestManager(Service):
         if clearCache:
             self.clearCache(file, args, verb)
 
-        f = self.refreshCache(file, callname, args, verb = verb)
+        f = self.refreshCache(file, callname, args, encoder = encoder, verb = verb)
         result = f.read()
         f.close()
 
@@ -125,6 +125,11 @@ class RequestManager(Service):
         callname = 'request/%s?status=%s' % (requestName,
                                              status)
         return self._getResult(callname, verb = "PUT")
+
+    def sendMessage(self, request, msg):
+        """Attach a message to the request"""
+        callname = "%s/%s" % ('message', request)
+        return self._getResult(callname, args = msg, verb = "PUT", encoder = JsonWrapper.dumps)
 
 # TODO: find the better way to handle emulation:
 # hacky code: swap the namespace if emulator config is set 

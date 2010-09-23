@@ -202,6 +202,30 @@ class WorkQueueManagerTest(unittest.TestCase):
                          100)
         self.assertEqual(reqMgr.status[str(reqMgr.count)], 'completed')
 
+
+    def testInvalidSpec(self):
+        """Report invalid spec back to ReqMgr"""
+        spec = self.createProcessingSpec(splitter = 'Block')
+        globalQ = self.setupGlobalWorkqueue(spec)
+        getFirstTask(spec).data.input.dataset.primary = 'thisdoesntexist'
+        spec.save(spec.specUrl())
+        reqMgr = fakeReqMgr(spec)
+        reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
+        reqPoller.algorithm({})
+        self.assertEqual('failed', reqMgr.status[str(reqMgr.count)])
+        self.assertTrue('No work in spec:' in reqMgr.msg[str(reqMgr.count)])
+
+        spec = self.createProcessingSpec(splitter = 'Block')
+        globalQ = self.setupGlobalWorkqueue(spec)
+        getFirstTask(spec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
+        spec.save(spec.specUrl())
+        reqMgr = fakeReqMgr(spec)
+        reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
+        reqPoller.algorithm({})
+        self.assertEqual('failed', reqMgr.status[str(reqMgr.count)])
+        self.assertTrue('DBS config error' in reqMgr.msg[str(reqMgr.count)])
+
+
 class fakeReqMgr():
     """Fake ReqMgr stuff"""
     from WMCore.RequestManager.RequestDB.Settings.RequestStatus import NextStatus
@@ -211,6 +235,7 @@ class fakeReqMgr():
         self.count = 0
         self.status = {}
         self.progress = {}
+        self.msg = {}
 
     def getAssignment(self, team):
         assert(type(team) in types.StringTypes)
@@ -233,6 +258,8 @@ class fakeReqMgr():
         self.progress.setdefault(name, {})
         self.progress[name].update(args)
 
+    def sendMessage(self, request, msg):
+        self.msg[request] = msg
 
 if __name__ == '__main__':
     unittest.main()

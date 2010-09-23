@@ -8,6 +8,7 @@ __all__ = []
 
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.DataStructs.Mask import Mask
 from copy import copy
 from math import ceil
@@ -53,16 +54,15 @@ class MonteCarlo(StartPolicyInterface):
     def validate(self):
         """Check args and spec work with block splitting"""
         StartPolicyInterface.validateCommon(self)
-        msg = 'WMSpec "%s" failed validation: ' % self.wmspec.name()
 
         if self.initialTask.totalEvents() < 1:
-            raise RuntimeError, msg + 'Invalid total events selection: %s' % str(self.initialTask.totalEvents())
+            raise WorkQueueWMSpecError(self.wmspec, 'Invalid total events selection: %s' % str(self.initialTask.totalEvents()))
 
         if not self.initialTask.siteWhitelist():
-            raise RuntimeError, msg + "Site whitelist mandatory for MonteCarlo"
+            raise WorkQueueWMSpecError(self.wmspec, "Site whitelist mandatory for MonteCarlo")
 
         if self.mask and self.mask['LastEvent'] < self.mask['FirstEvent']:
-            raise RuntimeError, msg + "Invalid start & end events"
+            raise WorkQueueWMSpecError(self.wmspec, "Invalid start & end events")
 
         if self.mask and self.mask['LastLumi'] < self.mask['FirstLumi']:
-            raise RuntimeError, msg + "Invalid start & end lumis"
+            raise WorkQueueWMSpecError(self.wmspec, "Invalid start & end lumis")

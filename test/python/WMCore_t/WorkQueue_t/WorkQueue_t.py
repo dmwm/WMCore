@@ -12,6 +12,7 @@ import pickle
 import threading
 
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
+from WMCore.WorkQueue.WorkQueueExceptions import *
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 from WMCore_t.WMSpec_t.samples.BasicProductionWorkload \
                                     import workload as BasicProductionWorkload
@@ -716,13 +717,19 @@ class WorkQueueTest(WorkQueueTestCase):
         getFirstTask(mcspec).setSiteWhitelist('ThisIsInvalid')
         mcspec.setSpecUrl(os.path.join(self.workDir, 'testProductionInvalid.spec'))
         mcspec.save(mcspec.specUrl())
-        self.assertRaises(RuntimeError, self.queue.queueWork, mcspec.specUrl())
+        self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, mcspec.specUrl())
+        getFirstTask(mcspec).setSiteWhitelist([])
+
+        # no whitelist
+        getFirstTask(mcspec).setSiteWhitelist(None)
+        mcspec.save(mcspec.specUrl())
+        self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, mcspec.specUrl())
         getFirstTask(mcspec).setSiteWhitelist([])
 
         # 0 events
         getFirstTask(mcspec).addProduction(totalevents = 0)
         mcspec.save(mcspec.specUrl())
-        self.assertRaises(RuntimeError, self.queue.queueWork, mcspec.specUrl())
+        self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, mcspec.specUrl())
 
         # no dataset
         rerecoFactory = TestReRecoFactory()
@@ -732,7 +739,25 @@ class WorkQueueTest(WorkQueueTestCase):
         processingSpec.save(processingSpec.specUrl())
         getFirstTask(processingSpec).data.input.dataset = None
         processingSpec.save(processingSpec.specUrl())
-        self.assertRaises(RuntimeError, self.queue.queueWork, processingSpec.specUrl())
+        self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, processingSpec.specUrl())
+
+        # invalid dbs url
+        rerecoFactory = TestReRecoFactory()
+        processingSpec = rerecoFactory('testProcessingInvalid', rerecoArgs)
+        processingSpec.setSpecUrl(os.path.join(self.workDir,
+                                                    'testProcessingInvalid.spec'))
+        getFirstTask(processingSpec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
+        processingSpec.save(processingSpec.specUrl())
+        self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, processingSpec.specUrl())
+
+        # invalid dataset name
+        rerecoFactory = TestReRecoFactory()
+        processingSpec = rerecoFactory('testProcessingInvalid', rerecoArgs)
+        processingSpec.setSpecUrl(os.path.join(self.workDir,
+                                                    'testProcessingInvalid.spec'))
+        getFirstTask(processingSpec).data.input.dataset.primary = 'thisdoesntexist'
+        processingSpec.save(processingSpec.specUrl())
+        self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
 
 
 if __name__ == "__main__":

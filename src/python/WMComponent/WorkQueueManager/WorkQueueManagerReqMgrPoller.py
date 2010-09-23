@@ -14,6 +14,7 @@ import time
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkQueue.Policy.End import endPolicy
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 
 class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
     """
@@ -84,6 +85,16 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                             self.wq.rollbackTransaction(trans)
 
                     work += len(units)
+                except (WorkQueueWMSpecError, WorkQueueNoWorkError), ex:
+                    # fatal error - report back to ReqMgr
+                    self.wq.logger.error("Permanent failure processing request %s - %s" % (reqName, str(ex)))
+                    self.wq.logger.error("Marking request %s as failed in ReqMgr" % reqName)
+                    try:
+                        self.reqMgr.reportRequestStatus(reqName, 'failed')
+                        self.reqMgr.sendMessage(reqName, str(ex)) # now append error message
+                    except Exception, ex:
+                        self.wq.logger("Unable to report to ReqMgr: %s" % str(ex))
+
                 except Exception, ex:
                     self.wq.logger.exception("Error processing request %s" % reqName)
                 

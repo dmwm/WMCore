@@ -157,7 +157,8 @@ class WorkQueueTest(WorkQueueTestCase):
                                      CacheDir = self.workDir,
                                      ReportInterval = 0,
                                      QueueURL = "local2.example.com",
-                                     DBSReaders = dbsHelpers)
+                                     DBSReaders = dbsHelpers,
+                                     IgnoreDuplicates = False)
 
         # standalone queue for unit tests
         self.queue = WorkQueue(CacheDir = self.workDir,
@@ -705,5 +706,22 @@ class WorkQueueTest(WorkQueueTestCase):
         processingSpec.save(processingSpec.specUrl())
         self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
 
+    def testIgnoreDuplicates(self):
+        """Ignore duplicate work"""
+        specfile = self.spec.specUrl()
+        self.globalQueue.queueWork(specfile)
+        self.assertEqual(1, len(self.globalQueue))
+        
+        slots = {'SiteA' : 1000, 'SiteB' : 1000}
+        work = self.localQueue.pullWork(slots)
+        self.assertEqual(work, 1)
+        
+        # put back to available & re-acquire
+        self.globalQueue.flushNegotiationFailures()
+        self.localQueue.setStatus('Acquired', 2) # also need to mark previous element as not-available
+        work = self.localQueue.pullWork(slots)
+        self.assertEqual(work, 0)
+        self.assertEqual(2, len(self.globalQueue.status())) # 1 in local & 1 in global
+        
 if __name__ == "__main__":
     unittest.main()

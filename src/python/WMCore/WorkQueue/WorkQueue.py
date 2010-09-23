@@ -111,6 +111,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('FullReportInterval', 3600)
         self.params.setdefault('ReportInterval', 300)
         self.params.setdefault('Teams', [''])
+        self.params.setdefault('IgnoreDuplicates', True)
 
         self.params.setdefault('SplittingMapping', {})
         self.params['SplittingMapping'].setdefault('DatasetBlock',
@@ -480,7 +481,8 @@ class WorkQueue(WorkQueueBase):
 
 
     def status(self, status = None, before = None, after = None, elementIDs = None,
-               dictKey = None, syncWithWMBS = False, reqMgrUpdateNeeded = False):
+               dictKey = None, syncWithWMBS = False, reqMgrUpdateNeeded = False,
+               parentId = None):
         """Return status of elements
            Note: optional parameters are AND'ed together
         """
@@ -490,6 +492,7 @@ class WorkQueue(WorkQueueBase):
                               status = status,
                               elementIDs = elementIDs,
                               reqMgrUpdateNeeded = reqMgrUpdateNeeded,
+                              parentId = parentId,
                               conn = self.getDBConn(),
                               transaction = self.existingTransaction())
 
@@ -692,6 +695,16 @@ class WorkQueue(WorkQueueBase):
                         for element in work:
                             wmspec = WMWorkloadHelper()
                             wmspec.load(element['url'])
+                            
+                            # check we haven't seen this before
+                            if self.params['IgnoreDuplicates'] and self.status(parentId = element['element_id']):
+                                self.logger.warning('Ignoring duplicate work: %s' % wmspec.name())
+                                continue
+                            
+                            mask = None
+                            if element.get('mask_url'):
+                                with open(element['mask_url']) as mask_file:
+                                    mask = pickle.load(mask_file)
                             totalUnits.extend(self._splitWork(wmspec,
                                                         element['element_id'],
                                                         element.get('data')))

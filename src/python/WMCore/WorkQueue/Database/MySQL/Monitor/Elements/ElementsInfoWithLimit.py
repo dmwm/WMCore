@@ -21,8 +21,12 @@ class ElementsInfoWithLimit(DBFormatter):
     Use pagination (and synchronize with YUI table) 
     """
     sql = """SELECT we.id as id, ws.name as spec_name, wt.name as task_name, 
-                    wd.name as element_name, parent_queue_id, wq.url as child_queue, num_jobs,
-                    priority, parent_flag, status, subscription_id, insert_time, update_time
+                    wd.name as element_name, parent_queue_id, 
+                    wq.url as child_queue, num_jobs,
+                    priority, parent_flag, status, subscription_id, 
+                    team_name, events_written, files_processed,
+                    percent_complete, percent_success,
+                    insert_time, update_time
              FROM wq_element we
              INNER JOIN wq_wmtask wt ON (wt.id = we.wmtask_id) 
              INNER JOIN wq_wmspec ws ON (ws.id = wt.wmspec_id)

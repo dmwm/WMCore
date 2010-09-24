@@ -22,6 +22,9 @@ def wrapGetWork(workqueue, *args, **kwargs):
     for item in result:
         item['url'] = "%s/wf/%s" % (workqueue.params['QueueURL'],
                                     path.basename(item['url']))
+        if item.has_key('mask_url'):
+            item['mask_url'] = "%s/wf/%s" % (workqueue.params['QueueURL'],
+                                             path.basename(item['mask_url']))
     return result
 
 def serveWorkflow(workqueue, name):

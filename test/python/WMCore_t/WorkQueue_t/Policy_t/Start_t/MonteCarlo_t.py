@@ -15,21 +15,38 @@ from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload import workload as Mu
 
 class MonteCarloTestCase(unittest.TestCase):
 
-    splitArgs = dict(SliceType = 'NumEvents', SliceSize = 100)
+    splitArgs = dict(SliceType = 'NumEvents', SliceSize = 100, MaxJobsPerElement = 1)
 
     def testBasicProductionWorkload(self):
         """Basic Production Workload"""
+        # change split defaults for this test
+        splitArgs = dict(SliceType = 'NumEvents', SliceSize = 100, MaxJobsPerElement = 5)
+
         BasicProductionWorkload = TestMonteCarloFactory()('MonteCarloWorkload', mcArgs)
+        getFirstTask(BasicProductionWorkload).setSiteWhitelist(['SiteA', 'SiteB'])
         getFirstTask(BasicProductionWorkload).addProduction(totalevents = 1000)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['SiteA', 'SiteB'])
         for task in BasicProductionWorkload.taskIterator():
-            units = MonteCarlo(**self.splitArgs)(BasicProductionWorkload, task)
+            units = MonteCarlo(**splitArgs)(BasicProductionWorkload, task)
 
-            self.assertEqual(10, len(units))
+            self.assertEqual(int(1000 / (splitArgs['SliceSize'] * splitArgs['MaxJobsPerElement'])),
+                             len(units))
+            first_event = 1
+            first_lumi = 1
+            first_run = 1
             for unit in units:
-                self.assertEqual(1, unit['Jobs'])
+                self.assertEqual(int(splitArgs['MaxJobsPerElement']), unit['Jobs'])
                 self.assertEqual(unit['WMSpec'], BasicProductionWorkload)
                 self.assertEqual(unit['Task'], task)
+                self.assertEqual(unit['Mask']['FirstEvent'], first_event)
+                self.assertEqual(unit['Mask']['FirstLumi'], first_lumi)
+                last_event = first_event + (self.splitArgs['SliceSize'] * unit['Jobs']) - 1
+                self.assertEqual(unit['Mask']['LastEvent'], last_event)
+                self.assertEqual(unit['Mask']['LastLumi'], first_lumi + unit['Jobs'] - 1)
+                self.assertEqual(unit['Mask']['FirstRun'], first_run)
+                first_event = last_event + 1
+                first_lumi += unit['Jobs'] # one lumi per job
+            self.assertEqual(last_event, 1000)
 
 
     def testMultiMergeProductionWorkload(self):

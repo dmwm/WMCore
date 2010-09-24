@@ -16,6 +16,7 @@ https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 import time
 import os
 import types
+import pickle
 try:
     from collections import defaultdict
 except (NameError, ImportError):
@@ -320,7 +321,11 @@ class WorkQueue(WorkQueueBase):
                                                         wmspecInfo['dbs_url'])
                 else:
                     self.logger.info("Adding Production work")
-                
+                    wmspecInfo['mask_url'] = None
+                    lumi_path = os.path.join(self.params['CacheDir'],
+                                              "%s.mask" % match['id'])
+                    if os.path.exists(lumi_path):
+                            wmspecInfo['mask_url'] = lumi_path
                 status = 'Acquired'
             else:
                 status = pullingQueueUrl and 'Negotiating' or 'Acquired'
@@ -334,7 +339,7 @@ class WorkQueue(WorkQueueBase):
         
             #make one transaction
             with self.transactionContext():
-                if self.params['PopulateFilesets']:    
+                if self.params['PopulateFilesets']:
                     subscription = self._wmbsPreparation(match, 
                                           wmspecCache[wmspecInfo['id']],
                                           wmspecInfo, blockName, dbsBlock)
@@ -383,13 +388,17 @@ class WorkQueue(WorkQueueBase):
         blacklist = bAction.execute(match['id'], conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
 
+        mask = None
+        if wmspecInfo.get('mask_url'):
+            with open(wmspecInfo['mask_url']) as mask_file:
+                mask = pickle.load(mask_file)
         #Warning: wmspec.specUrl might not be same as wmspecInfo['url']
         #as well as wmspec.getOwner() != wmspecInfo['owner']
         #Need to clean up
         wmbsHelper = WMBSHelper(wmspec, wmspecInfo['url'],
                                 wmspecInfo['owner'], wmspecInfo['wmtask_name'],
                                 wmspecInfo['wmtask_type'],
-                                whitelist, blacklist, blockName, self.SiteDB)
+                                whitelist, blacklist, blockName, mask)
 
 
         
@@ -706,7 +715,6 @@ class WorkQueue(WorkQueueBase):
                         for element in work:
                             wmspec = WMWorkloadHelper()
                             wmspec.load(element['url'])
-                            
                             # check we haven't seen this before
                             if self.params['IgnoreDuplicates'] and self.status(parentId = element['element_id']):
                                 self.logger.warning('Ignoring duplicate work: %s' % wmspec.name())
@@ -718,7 +726,8 @@ class WorkQueue(WorkQueueBase):
                                     mask = pickle.load(mask_file)
                             totalUnits.extend(self._splitWork(wmspec,
                                                         element['element_id'],
-                                                        element.get('data')))
+                                                        element.get('data'),
+                                                        mask))
                             self.logger.info("Getting element form parent queue: %s" % element.get('data'))
 
                         with self.transactionContext():
@@ -821,7 +830,8 @@ class WorkQueue(WorkQueueBase):
     # //  Internal methods
     #//
 
-    def _splitWork(self, wmspec, parentQueueId = None, data = None):
+    def _splitWork(self, wmspec, parentQueueId = None,
+                   data = None, mask = None):
         """
         Split work into WorkQeueueElements
 
@@ -874,7 +884,7 @@ class WorkQueue(WorkQueueBase):
         wmspec = unit['WMSpec']
         task = unit["Task"]
         parentQueueId = unit['ParentQueueId']
-            
+
         self._insertWMSpec(wmspec)
         self._insertWMTask(wmspec.name(), task)
 
@@ -897,6 +907,12 @@ class WorkQueue(WorkQueueBase):
         blacklist = task.siteBlacklist()
         if blacklist:
             self._insertBlackList(elementID, blacklist)
+
+        if unit.get('Mask'):
+            import pickle
+            with open(os.path.join(self.params['CacheDir'],
+                                   "%s.mask" % elementID), 'wb') as mask_file:
+                pickle.dump(unit['Mask'], mask_file)
 
         return elementID
 

@@ -105,7 +105,7 @@ class WMBSHelper(WMConnectionBase):
     """
 
     def __init__(self, wmSpec, wmSpecUrl, wmSpecOwner, taskName, 
-                 taskType, whitelist, blacklist, blockName, SiteDB):
+                 taskType, whitelist, blacklist, blockName, mask):
         #TODO: 
         # 1. get the top level task.
         # 2. get the top level step and input
@@ -120,7 +120,7 @@ class WMBSHelper(WMConnectionBase):
         self.whitelist = whitelist
         self.blacklist = blacklist
         self.block = blockName or None
-        self.SiteDB = SiteDB
+        self.mask = mask or None
         self.topLevelFileset = None
         self.topLevelSubscription = None    
         self.topLevelTask = wmSpec.getTask(self.topLevelTaskName)
@@ -144,7 +144,7 @@ class WMBSHelper(WMConnectionBase):
         self.setFileAddChecksum      = self.daofactory(classname = "Files.AddChecksumByLFN")
         self.addFileAction           = self.daofactory(classname = "Files.Add")
         self.addToFileset            = self.daofactory(classname = "Files.AddToFileset")
-
+        self.getLocationInfo         = self.daofactory(classname = "Locations.GetSiteInfo")
 
 
         # DAOs from DBSBuffer for file commit
@@ -233,21 +233,44 @@ class WMBSHelper(WMConnectionBase):
 
     def addMCFakeFile(self):
         """Add a fake file for wmbs to run production over"""
-        if not hasattr(self.topLevelTask.data.production, 'totalEvents'):
-            raise RuntimeError, "Task has no totalEvents parameter"
-        events = self.topLevelTask.data.production.totalEvents
+        needed = ['FirstEvent', 'FirstLumi', 'FirstRun', 'LastEvent', 'LastLumi', 'LastRun']
+        for key in needed:
+            if self.mask and self.mask.get(key) is None:
+                raise RuntimeError, 'Invalid value "%s" for %s' % (self.mask.get(key), key)
         if not self.topLevelTask.siteWhitelist():
             raise RuntimeError, "Site whitelist mandatory for MonteCarlo"
-        locations = set(self.SiteDB.cmsNametoSE(x)[0] for x \
-                        in self.topLevelTask.siteWhitelist())
+
+        locations = set()
+        for site in self.topLevelTask.siteWhitelist():
+            try:
+                siteInfo = self.getLocationInfo.execute(site, conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
+                if not siteInfo:
+                    self.logger.info('Skipping MonteCarlo injection to site "%s" as unknown to wmbs' % site)
+                    continue
+                locations.add(siteInfo[0]['se_name'])
+            except StandardError, ex:
+                self.logger.error('Error getting storage element for "%s": %s' % (site, str(ex)))
+        if not locations:
+            raise RuntimeError, "No locations to inject Monte Carlo work to, unable to proceed"
+
         mcFakeFileName = "MCFakeFile-%s" % makeUUID()
         wmbsFile = File(lfn = mcFakeFileName,
-                        events = events,
+                        first_event = self.mask['FirstEvent'],
+                        last_event = self.mask['LastEvent'],
+                        events = self.mask['LastEvent'] - self.mask['FirstEvent'] + 1, # inclusive range
                         locations = locations,
                         merged = False, # merged causes dbs parentage relation
                         )
-        wmbsFile.addRun(Run(1, 1))
-        wmbsFile['inFileset'] = True
+
+        if self.mask:
+            lumis = range(self.mask['FirstLumi'], self.mask['LastLumi'] + 1) # inclusive range
+            wmbsFile.addRun(Run(self.mask['FirstRun'], *lumis)) # assume run number static
+        else:
+            wmbsFile.addRun(Run(1, 1))
+
+        wmbsFile['inFileset'] = True # file is not a parent
+
         self.wmbsFilesToCreate.append(wmbsFile)
 
         totalFiles = self._addFilesToWMBSInBulk()
@@ -272,8 +295,6 @@ class WMBSHelper(WMConnectionBase):
             self.addFiles(dbsBlock)
         #For MC case
         else:
-        # add MC fake files for each subscription.
-        # this is needed for JobCreator trigger: commented out for now.
             self.addMCFakeFile()
         
         self.commitTransaction(existingTransaction = False)
@@ -348,7 +369,7 @@ class WMBSHelper(WMConnectionBase):
                 msg += "File lfn: %s\n" % (lfn)
                 logging.error(msg)
                 raise WorkQueueWMBSException(msg)
-            
+
             for loc in wmbsFile['newlocations']:
                 fileLocations.append({'lfn': lfn, 'location': loc})
 

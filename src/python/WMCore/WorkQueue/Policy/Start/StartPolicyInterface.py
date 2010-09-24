@@ -22,6 +22,7 @@ class StartPolicyInterface(PolicyInterface):
         self.splitParams = None
         self.dbs_pool = {}
         self.data = None
+        self.lumi = None
 
     def split(self):
         """Apply policy to spec"""
@@ -46,13 +47,14 @@ class StartPolicyInterface(PolicyInterface):
         args.setdefault('Task', self.initialTask)
         self.workQueueElements.append(WorkQueueElement(**args))
 
-    def __call__(self, wmspec, task, dbs_pool = None, data = None):
+    def __call__(self, wmspec, task, dbs_pool = None, data = None, mask = None):
         self.wmspec = wmspec
         self.splitParams = self.wmspec.data.policies.start
         self.initialTask = task
         if dbs_pool:
             self.dbs_pool.update(dbs_pool)
         self.data = data
+        self.mask = mask
         self.validate()
         self.split()
         

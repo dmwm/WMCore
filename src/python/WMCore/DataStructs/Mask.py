@@ -23,8 +23,8 @@ class Mask(dict):
 
 
     """
-    def __init__(self):
-        dict.__init__(self)
+    def __init__(self, **kwargs):
+        dict.__init__(self, **kwargs)
         self.inclusive = True
         self.setdefault("FirstEvent", None)
         self.setdefault("LastEvent", None)

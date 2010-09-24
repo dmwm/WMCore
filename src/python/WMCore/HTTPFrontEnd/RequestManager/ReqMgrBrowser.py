@@ -37,6 +37,8 @@ class ReqMgrBrowser(TemplatedPage):
         self.jsonSender = JSONRequests(config.reqMgrHost)
         self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
 
+        self.mergedLFNBases = {"ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
+                               "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}
 
     def index(self):
         requests = self.getRequests()
@@ -254,13 +256,14 @@ class ReqMgrBrowser(TemplatedPage):
 
     def assignmentPage(self, requestName):
         teams = self.jsonSender.get('/reqMgr/team')[0]
+        requestType = self.jsonSender.get('/reqMgr/request/%s' % requestName)[0]["RequestType"]
         # get assignments
         assignments = self.jsonSender.get('/reqMgr/assignment?request=%s' % requestName)[0]
         # might be a list, or a dict team:priority
         if isinstance(assignments, dict):
             assignments = assignments.keys()
         return self.templatepage("Assign", requestName=requestName, teams=teams, 
-                   assignments=assignments, sites=self.sites)
+                   assignments=assignments, sites=self.sites, mergedLFNBases = self.mergedLFNBases[requestType])
     assignmentPage.exposed = True
     
     def handleAssignmentPage(self, *args, **kwargs):

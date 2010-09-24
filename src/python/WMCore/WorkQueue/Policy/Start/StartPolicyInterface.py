@@ -5,7 +5,7 @@ WorkQueue SplitPolicyInterface
 """
 __all__ = []
 
-
+import types
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement

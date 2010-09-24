@@ -73,15 +73,15 @@ class StdBase(object):
         given config.
         """
         outputModules = {}
-        if scenarioName != None and scenarioName != "":
+        if configDoc != None and configDoc != "":
+            configCache = ConfigCache(couchURL, couchDBName)
+            configCache.loadByID(configDoc)
+            outputModules = configCache.getOutputModuleInfo()
+        else:
             for dataTier in scenarioArgs["writeTiers"]:
                 outputModuleName = "output%s%s" % (dataTier, dataTier)
                 outputModules[outputModuleName] = {"dataTier": dataTier,
                                                    "filterName": None}
-        else:
-            configCache = ConfigCache(couchURL, couchDBName)
-            configCache.loadByID(configDoc)
-            outputModules = configCache.getOutputModuleInfo()
 
         return outputModules
     

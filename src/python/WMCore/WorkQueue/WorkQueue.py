@@ -481,8 +481,7 @@ class WorkQueue(WorkQueueBase):
 
 
     def status(self, status = None, before = None, after = None, elementIDs = None,
-               dictKey = None, syncWithWMBS = False, reqMgrUpdateNeeded = False,
-               parentId = None):
+               dictKey = None, syncWithWMBS = False, parentId = None):
         """Return status of elements
            Note: optional parameters are AND'ed together
         """
@@ -491,7 +490,6 @@ class WorkQueue(WorkQueueBase):
                               before = before,
                               status = status,
                               elementIDs = elementIDs,
-                              reqMgrUpdateNeeded = reqMgrUpdateNeeded,
                               parentId = parentId,
                               conn = self.getDBConn(),
                               transaction = self.existingTransaction())
@@ -516,6 +514,19 @@ class WorkQueue(WorkQueueBase):
             items = dict(tmp)
         return items
 
+
+    def statusReqMgrUpdateNeeded(self, dictKey = None):
+        """Return elements that need to update ReqMgr"""
+        action = self.daofactory(classname = "WorkQueueElement.GetReqMgrUpdateNeeded")
+        items = action.execute(conn = self.getDBConn(),
+                               transaction = self.existingTransaction())
+        # if dictKey given format as a dict with the appropriate key
+        if dictKey:
+            tmp = defaultdict(list)
+            for item in items:
+                tmp[item[dictKey]].append(item)
+            items = dict(tmp)
+        return items
 
     def synchronize(self, child_url, child_report):
         """

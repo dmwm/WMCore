@@ -161,8 +161,8 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                             'percent_success' : ele['PercentSuccess']}
                     self.reqMgr.reportRequestProgress(ele['RequestName'],
                                                       **args)
-
-                updated.append(ele['Id'])
+                for eleItem in ele['Elements']:
+                    updated.append(eleItem['Id'])
 
             except Exception, ex:
                 msg = 'Error updating ReqMgr about request "%s": %s'
@@ -170,7 +170,6 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
 
         if updated:
             self.wq.setReqMgrUpdate(now, *updated)
-
 
     def reqMgrStatus(self, ele):
         """Map WorkQueue Status to that reported to ReqMgr"""

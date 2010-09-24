@@ -2,8 +2,10 @@
 <HEAD>
 <META HTTP-EQUIV="Pragma" CONTENT="no-cache">
 </HEAD>
+<TITLE>Request Details For $requestSchema['RequestName']</TITLE>
 <body>
 #if $docId != None
+<B> Configuration </B><BR>
 <a href="../showOriginalConfig/$docId" >Original Config</a> &nbsp&nbsp&nbsp
 <a href="../showTweakFile/$docId" >TweakFile</a><br><br>
 #end if
@@ -42,7 +44,8 @@
 <INPUT TYPE=submit VALUE="Modify">
 </FORM>
 
-<br>Assignments<br><hr>
+<hr>
+<br><B>Assignments</B><br>
 <table>
 #if $assignments != None:
 #for $assignment in $assignments
@@ -58,7 +61,8 @@ $adminHtml
 <input type=submit>
 </form>
 
-<br>Messages:<br>---------<br>
+<HR>
+<br><B>Messages:</B><br>
 #if $messages != None
 #for $message in $messages:
     message[0]<br>

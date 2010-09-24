@@ -10,7 +10,20 @@
 <!-- Source file for TabView -->
 <script src="http://yui.yahooapis.com/2.8.1/build/tabview/tabview-min.js"></script>
 
-<head> <title> Job request </title> </head>
+<head> <title> Job request </title> 
+<!-- Hokey way to keep ENTER from submitting the form.  Ticket #401 -->
+<script type="text/javascript">
+
+function stopRKey(evt) {
+  var evt = (evt) ? evt : ((event) ? event : null);
+  var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement : null);
+  if ((evt.keyCode == 13) && (node.type=="text"))  {return false;}
+}
+
+document.onkeypress = stopRKey;
+
+</script> 
+</head>
 <BODY CLASS="yui-skin-sam">
 
 #def headerBlock

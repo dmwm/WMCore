@@ -101,7 +101,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
         return config
 
-    def createTestJobGroup(self, nJobs = 10):
+    def createTestJobGroup(self, nJobs = 10, retry_count = 1):
         """
         Creates a group of several jobs
         """
@@ -136,11 +136,14 @@ class ErrorHandlerTest(unittest.TestCase):
 
         for i in range(0, nJobs):
             testJob = Job(name = makeUUID())
-            testJob.addFile(testFileA)
-            testJob.addFile(testFileB)
-            testJob['retry_count'] = 1
+            testJob['retry_count'] = retry_count
             testJob['retry_max'] = 10
             testJobGroup.add(testJob)
+            testJob.create(group = testJobGroup)
+            testJob.addFile(testFileA)
+            testJob.addFile(testFileB)
+            testJob.save()
+
         
         testJobGroup.commit()
 
@@ -242,7 +245,7 @@ class ErrorHandlerTest(unittest.TestCase):
         Test that the system can exhaust jobs correctly
         """
 
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs, retry_count = 5)
 
         config = self.getConfig()
         config.ErrorHandler.maxRetries = 1

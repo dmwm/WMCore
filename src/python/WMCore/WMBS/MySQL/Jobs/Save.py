@@ -16,11 +16,11 @@ class Save(DBFormatter):
                couch_record = :couch_record, outcome = :outcome, cache_dir = :cache_dir,
                location = 
                  (SELECT id FROM wmbs_location WHERE site_name = :location),
-               fwjr_path = :fwjr
+               fwjr_path = :fwjr, retry_count = :retry_count
              WHERE id = :jobid"""
     
     def execute(self, jobid, jobgroup, name, couch_record, location, outcome, cache_dir, fwjr, 
-                conn = None, transaction = False):
+                retry_count = 0, conn = None, transaction = False):
         if outcome == 'success':
             boolOutcome = 1
         else:
@@ -28,7 +28,8 @@ class Save(DBFormatter):
         
         binds = {"jobid": jobid, "jobgroup": jobgroup, "name": name, 
                  "couch_record": couch_record, "location": location, 
-                 "outcome": boolOutcome, "cache_dir": cache_dir, "fwjr": fwjr}
+                 "outcome": boolOutcome, "cache_dir": cache_dir, "fwjr": fwjr,
+                 'retry_count': retry_count}
 
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)

@@ -24,9 +24,9 @@ Site Blacklist:
 </SELECT><BR/>
 
 Merged LFN Base: <SELECT name="MergedLFNBase">
-  <OPTION>/store/data</OPTION>
-  <OPTION>/store/backfill/1</OPTION>
-  <OPTION>/store/backfill/2</OPTION>
+  #for $mergedLFNBase in $mergedLFNBases
+    <OPTION>$mergedLFNBase</OPTION>
+  #end for
 </SELECT><BR>
 Unmerged LFN Base: <SELECT name="UnmergedLFNBase">
   <OPTION>/store/unmerged</OPTION>

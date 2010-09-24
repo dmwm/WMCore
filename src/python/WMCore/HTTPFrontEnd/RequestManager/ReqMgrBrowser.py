@@ -270,20 +270,27 @@ class ReqMgrBrowser(TemplatedPage):
         """ handles some checkboxes """
         result = ""
         requestName = kwargs["RequestName"]
+        assignments = self.jsonSender.get('/reqMgr/assignment?request=%s' % requestName)[0]
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
         helper = WMWorkloadHelper()
         pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
         helper.load(pfn)
         schema = helper.data.request.schema
         # look for teams
+        teams = []
         for key, value in kwargs.iteritems():
             setattr(schema, key, value)
             if key.startswith("Team"):
                 team = key[4:]
-                try:
-                    self.jsonSender.put('/reqMgr/assignment/%s/%s' % (urllib.quote(team), requestName))
-                except:
-                    result += "Cannot assign to team " + team + "\n"
+                if not team in assignments:
+                    teams.append(team)
+                    try:
+                        self.jsonSender.put('/reqMgr/assignment/%s/%s' % (urllib.quote(team), requestName))
+                        result += "Assigned to team %S\n" % team
+                    except:
+                        result += "Cannot assign to team " + team + "\n"
+        if teams == [] and assignments == []:
+            raise cherrypy.HTTPError(400, "Must assign to one or more teams")
 
         if kwargs.has_key("StdJobSplitAlgo"):
             schema["StdJobSplitAlgo"] = splitAlgo

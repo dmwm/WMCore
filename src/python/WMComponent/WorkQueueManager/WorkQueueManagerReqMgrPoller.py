@@ -162,12 +162,12 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                             'percent_success' : ele['PercentSuccess']}
                     self.reqMgr.reportRequestProgress(ele['RequestName'],
                                                       **args)
-
-                updated.append(ele['Id'])
+                for eleItem in ele['Elements']:
+                    updated.append(eleItem['Id'])
 
             except RuntimeError, ex:
-                msg = "Error updating ReqMgr about element %s: %s"
-                self.wq.logger.warning(msg % (ele['Id'], str(ex)))
+                msg = 'Error updating ReqMgr about request "%s": %s'
+                self.wq.logger.warning(msg % (ele['RequestName'], str(ex)))
 
         try:
             self.wq.setReqMgrUpdate(now, updated)

@@ -69,11 +69,19 @@ class JobSubmitterPoller(BaseWorkerThread):
                       'defaultRetries': self.config.JobStateMachine.default_retries,
                       'couchDBName': self.config.JobStateMachine.couchDBName}
         
+        if hasattr(self.config.JobSubmitter, "unpackerScript"):
+            configDict["unpackerScript"] = self.config.JobSubmitter.unpackerScript
+
         if hasattr(self.config.JobSubmitter, "submitScript"):
             configDict["submitScript"] = self.config.JobSubmitter.submitScript
         else:
             configDict["submitScript"] = os.path.join(getWMBASE(),
                                                       "src/python/WMComponent/JobSubmitter/submit.sh")
+
+        if hasattr(self.config, 'BossAir'):
+            configDict['pluginNames'] = config.BossAir.pluginNames
+            configDict['pluginDir']   = config.BossAir.pluginDir
+            configDict['gLiteConf']   = config.JobSubmitter.gLiteConf
 
         if hasattr(self.config.JobSubmitter, 'inputFile'):
             configDict['inputFile'] = self.config.JobSubmitter.inputFile

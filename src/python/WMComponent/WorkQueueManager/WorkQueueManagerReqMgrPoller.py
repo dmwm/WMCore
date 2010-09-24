@@ -142,8 +142,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         now = int(time.time())
         updated = []
 
-        elements = self.wq.status(reqMgrUpdateNeeded = True,
-                                  dictKey = "RequestName")
+        elements = self.wq.statusReqMgrUpdateNeeded(dictKey = "RequestName")
         elements = [endPolicy(group,
                              self.wq.params['EndPolicySettings']) for \
                              group in elements.values()]

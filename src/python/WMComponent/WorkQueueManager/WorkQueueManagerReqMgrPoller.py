@@ -106,7 +106,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         try:
             self.reportToReqMgr()
         except:
-            pass # error message already logged
+            self.wq.logger.exception("Error caught during RequestManager update")
         return
 
 
@@ -151,9 +151,9 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
             return
 
         for ele in elements:
-            try:
-                status = self.reqMgrStatus(ele)
+            status = self.reqMgrStatus(ele)
 
+            try:
                 if status:
                     self.reqMgr.reportRequestStatus(ele['RequestName'],
                                                     status)
@@ -165,15 +165,13 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
 
                 updated.append(ele['Id'])
 
-            except RuntimeError, ex:
-                msg = "Error updating ReqMgr about element %s: %s"
-                self.wq.logger.warning(msg % (ele['Id'], str(ex)))
+            except Exception, ex:
+                msg = 'Error updating ReqMgr about request "%s": %s'
+                self.wq.logger.warning(msg % (ele['RequestName'], str(ex)))
 
-        try:
-            self.wq.setReqMgrUpdate(now, updated)
-        except StandardError:
-            msg = "Error saving reqMgr status update to db"
-            self.wq.logger.exception(msg)
+        if updated:
+            self.wq.setReqMgrUpdate(now, *updated)
+
 
     def reqMgrStatus(self, ele):
         """Map WorkQueue Status to that reported to ReqMgr"""

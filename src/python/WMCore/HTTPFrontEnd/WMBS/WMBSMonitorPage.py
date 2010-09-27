@@ -27,15 +27,26 @@ class WMBSMonitorPage(TemplatedPage):
                               content_type='text/html')
         
     @expose
-    def default(self, *args, **kwargs):
+    def default(self, *args):
         """
         Show the documentation for a page or return the index
         """
         if len(args) > 0:
-            return self.templatepage(args[0], config=self.config, **kwargs)
+            return serve_file(os.path.join(self.config.html, 'WMBS', *args),
+                              content_type='text/html')
         else:
             return self.index()
 
+    @expose
+    def template(self, **kwargs):
+        """
+        Show the documentation for a page or return the index
+        """
+        if len(args) > 0:
+            return self.templatepage(args[0], **kwargs)
+        # make not found page
+        return self.index()
+    
     @expose
     def javascript(self, *args):
         if args[0] == "external":

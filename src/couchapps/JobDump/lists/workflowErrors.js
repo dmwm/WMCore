@@ -1,12 +1,14 @@
 function(head, req) {
-  function printFailed(jobs, inputLFNs) {
+  function printFailed(jobs, inputLFNs, inputRuns) {
     if (jobs.length == 0) {
       return;
     }
 
     var jobSummaryURL = "../../_show/jobSummary/";
     var uniqueJobs = new Array();
+    var uniqueLFNs = new Array();
     jobs.sort();
+    inputLFNs.sort();
 
     var previousJob = null;
     for (jobIndex in jobs) {
@@ -15,8 +17,27 @@ function(head, req) {
         previousJob = jobs[jobIndex];
       }
     }
-         
-    send("      " + uniqueJobs.length + " jobs failed " + jobs.length + " times:\n        ");
+
+    var previousLFN = null;
+    for (inputIndex in inputLFNs) {
+      if (previousLFN == null || inputLFNs[inputIndex] != previousLFN) {
+        uniqueLFNs.push(inputLFNs[inputIndex]);
+        previousLFN = inputLFNs[inputIndex];
+      }
+    }
+
+    if (uniqueJobs.length == 1) {
+      send("      " + uniqueJobs.length + " job failed ");
+    } else {
+      send("      " + uniqueJobs.length + " jobs failed ");
+    }
+
+    if (jobs.length == 1) {
+      send(jobs.length + " time:\n        ");
+    } else {
+      send(jobs.length + " times:\n        ");
+    }
+
     var first = true;
     var jobCount = 0;
     for (jobIndex in uniqueJobs) {
@@ -32,7 +53,32 @@ function(head, req) {
         jobCount += 1;
       }      
     }
-    send("\n");
+    send("\n\n");
+
+    if (uniqueLFNs.length == 1) {
+      send("      " + uniqueLFNs.length + " file was used as input for ");
+    } else {
+      send("      " + uniqueLFNs.length + " files were used as input for ");
+    }
+
+    if (uniqueJobs.length == 1) {
+      send("this job:\n");
+    } else {
+      send("these jobs:\n");
+    }
+
+    for (var lfnIndex in uniqueLFNs) {
+      send("        " + uniqueLFNs[lfnIndex] + "\n");
+    }
+
+    send("\n      Run Information:\n");
+    for (var runNumber in inputRuns) {
+      send("        " + runNumber + ":");
+      for (var lumiIndex in inputRuns[runNumber]) {
+        send(" " + inputRuns[runNumber][lumiIndex]);
+        }
+      send("\n");
+    }  
   }
 
   var row;
@@ -46,6 +92,7 @@ function(head, req) {
   var errorDesc = "None";
   var jobs = new Array();
   var inputLFNs = new Array();
+  var inputRuns = new Object;
 
   while (row = getRow()) {
     if (taskName != row.value["task"]) {
@@ -73,6 +120,7 @@ function(head, req) {
       printFailed(jobs, inputLFNs);
       jobs = new Array();
       inputLFNs = new Array();
+      inputRuns = new Object;
 
       errorDesc = row.value["error"][0]["details"];
       for (errorIndex in row.value["error"]) {
@@ -89,8 +137,41 @@ function(head, req) {
     }
 
     jobs.push(row.value["jobid"]);
+
+    for (var inputIndex in row.value["input"]) {
+      inputLFNs.push(row.value["input"][inputIndex]);
+    }
+
+    for (var runNumber in row.value["runs"]) {
+      var runFound = false;
+      for (var knownRun in inputRuns) {
+        if (knownRun == runNumber) {
+          runFound = true;
+          break;
+        }
+      }
+
+      if (runFound == false) {
+        inputRuns[runNumber] = new Array();
+      }
+
+      for (var lumiIndex in row.value["runs"][runNumber]) {
+        var lumiFound = false;
+        lumiNumber = row.value["runs"][runNumber][lumiIndex];
+        for (var knownLumiIndex in inputRuns[runNumber]) {
+          if (lumiNumber == inputRuns[runNumber][knownLumiIndex]) {
+            lumiFound = true;
+            break;
+          }
+        }
+
+        if (lumiFound == false) {
+          inputRuns[runNumber].push(lumiNumber);
+        }
+      }
+    }
   }
 
-  printFailed(jobs, inputLFNs);
+  printFailed(jobs, inputLFNs, inputRuns);
   send("</pre></body></html>");
 };

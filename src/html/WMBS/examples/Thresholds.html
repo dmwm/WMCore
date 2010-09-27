@@ -30,11 +30,45 @@
 <script type="text/javascript">
 //enableDebug()
 // {key: state} is omitted
+
+
+var textBoxEditorOptions = {
+    asyncSubmitter: function (callback, maxSlots) {
+        var record = this.getRecord(),
+            column = this.getColumn(),
+            oldValue = this.value,
+            datatable = this.getDataTable();
+        YAHOO.util.Connect.asyncRequest(
+            'GET',
+            '/wmbs/updatethreshold?siteName=' + record.getData("site") + '&taskType=' + record.getData("type") + '&maxSlots=' + maxSlots, 
+            {
+                success:function(o) {
+                    //var r = YAHOO.lang.JSON.parse(o.responseText);
+					alert("change value from " + oldValue + " to " + maxSlots)
+                    callback(true, maxSlots)
+                },
+                failure:function(o) {
+                    alert("Can't update" + o.statusText);
+                    callback();
+                },
+                scope:this
+            }//,
+			//'{sitename:' + record.getData("site")  + ', tasktype:' + record.getData("type") + ', maxslots:' + maxSlots +'}'
+            //'
+        );                                              
+    },
+	
+	validator:YAHOO.widget.DataTable.validateNumber
+};
+
 var dataSchema = {
-        fields: [{key:"check", formatter:"checkbox"},
+        fields: [//{key:"update",
+		          //editor: new YAHOO.widget.RadioCellEditor({radioOptions: ["yes"], disableBtns: false})
+				  //editor: new YAHOO.widget.CheckboxCellEditor({checkboxOptions: ["yes"]})
+				  //},
 		         {key: "site"},  {key: "type"},
 				 {key: "max_slots",
-				  editor: new YAHOO.widget.TextboxCellEditor({validator:YAHOO.widget.DataTable.validateNumber})}]
+				  editor: new YAHOO.widget.TextboxCellEditor(textBoxEditorOptions)}]
 };
 
 var dataUrl = "/wmbs/listthresholds"
@@ -44,7 +78,7 @@ var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
 //writeEval(dataSource.responseType)
 var dataTable = WMCore.WebTools.createDataTable("resourceInfo", dataSource, 
                              WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.createDefaultTableConfig(), 100000)
+                             WMCore.WebTools.createDefaultTableConfig(), 1000000)
 
 
 // Set up editing flow

@@ -72,10 +72,13 @@ class WMBSRESTModel(RESTModel):
         self.addDAO('GET', "listthresholds", "ListThresholds",
                      daoFactory = resourceDAOFactory)
 
-        self.addDAO('GET', "updatethresholds", "UpdateThresholdsInBulk",
-                     args = ['sitename', 'tasktype', 'maxslots'],
-                     daoFactory = resourceDAOFactory)
+        #self.addDAO('GET', "updatethresholds", "UpdateThresholdsInBulk",
+        #             args = ['sitename', 'tasktype', 'maxslots'],
+        #             daoFactory = resourceDAOFactory)
 
+        self.addDAO('GET', "updatethreshold", "InsertThreshold",
+                     args = ['siteName', 'taskType', 'maxSlots'],
+                     daoFactory = resourceDAOFactory)
 
         dbsDAOFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                   logger = self, dbinterface = self.dbi)

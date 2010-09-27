@@ -279,7 +279,8 @@ class ReqMgrBrowser(TemplatedPage):
         # look for teams
         teams = []
         for key, value in kwargs.iteritems():
-            setattr(schema, key, value)
+            kwargs[key] = value.strip()
+            setattr(schema, key, value.strip())
             if key.startswith("Team"):
                 team = key[4:]
                 if not team in assignments:

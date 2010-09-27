@@ -55,7 +55,7 @@ class StageOutImpl:
             msg = "Command exited with status: %s" % (exitCode)
             print msg
         except Exception, ex:
-            raise StageOutError(msg, Command = command, ExitCode = 60311)
+            raise StageOutError(str(ex), Command = command, ExitCode = 60311)
         if exitCode in self.directoryErrorCodes:
             raise StageOutInvalidPath()
         elif exitCode:

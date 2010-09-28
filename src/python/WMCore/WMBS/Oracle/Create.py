@@ -196,7 +196,7 @@ class Create(CreateWMBSBase):
         self.create["07wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
                id    INTEGER      NOT NULL,
-               spec  VARCHAR(255) NOT NULL,
+               spec  VARCHAR(500) NOT NULL,
                name  VARCHAR(255) NOT NULL,
                task  VARCHAR(255) NOT NULL,
                owner VARCHAR(255)

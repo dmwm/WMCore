@@ -8,7 +8,8 @@ import os
 import sys
 import threading
 import time
-from optparse import OptionParser
+from optparse import OptionParser, Option
+from copy import copy
 
 from WMCore.WMInit import connectToDB
 from WMCore.Configuration import loadConfigurationFile
@@ -26,11 +27,22 @@ from DBSAPI.dbsApi import DbsApi
 
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
+def check_list(option, opt, value):
+    return value.split(",")
+
+class MyOption(Option):
+    TYPES = Option.TYPES + ("list",)
+    TYPE_CHECKER = copy(Option.TYPE_CHECKER)
+    TYPE_CHECKER["list"] = check_list
+
 usage = "usage: %prog [options]"
-parser = OptionParser(usage)
+parser = OptionParser(usage=usage, option_class=MyOption)
 parser.add_option("-d", "--dataset", dest="InputDataset", type="string",
                   action="store", help="Dataset to harvest",
                   metavar="DATASET")
+parser.add_option("-R", "--run", dest="RunWhitelist", type="list",
+                  action="store", help="Comma separated list of runs",
+                  metavar="RUN1,RUN2", default=[])
 parser.add_option("-r", "--release", dest="CMSSWVersion", type="string",
                   action="store", help="CMSSW version to use for harvesting",
                   metavar="CMSSW_X_Y_Z")
@@ -99,9 +111,10 @@ def injectTaskIntoWMBS(specUrl, workflowName, task, inputFileset, indent = 0):
     mySubscription = Subscription(fileset = inputFileset, workflow = myWorkflow,
                                   split_algo = task.jobSplittingAlgorithm(),
                                   type = task.taskType())
+    print "%s  workflow id: %s" % (doIndent(indent), mySubscription["workflow"].id)
     mySubscription.create()
 
-def injectFilesFromDBS(inputFileset, datasetPath):
+def injectFilesFromDBS(inputFileset, datasetPath, runsWhiteList=[]):
     """
     _injectFilesFromDBS_
 
@@ -116,6 +129,8 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     print "  found %d files, inserting into wmbs..." % (len(dbsResults))
 
     for dbsResult in dbsResults:
+        if runsWhiteList and str(dbsResult["LumiList"][0]["RunNumber"]) not in runsWhiteList:
+            continue
         myFile = File(lfn = dbsResult["LogicalFileName"], size = dbsResult["FileSize"],
                       events = dbsResult["NumberOfEvents"], checksums = {"cksum": dbsResult["Checksum"]},
                       locations = "cmssrm.fnal.gov", merged = True)
@@ -125,6 +140,9 @@ def injectFilesFromDBS(inputFileset, datasetPath):
         myFile.addRun(myRun)
         myFile.create()
         inputFileset.addFile(myFile)
+
+    if len(inputFileset) < 1:
+        raise Exception, "No files were selected!"
 
     inputFileset.commit()
     inputFileset.markOpen(False)
@@ -140,7 +158,7 @@ for workloadTask in workload.taskIterator():
     inputDatasetPath = "/%s/%s/%s" % (inputDataset.primary,
                                       inputDataset.processed,
                                       inputDataset.tier)
-    injectFilesFromDBS(inputFileset, inputDatasetPath)
+    injectFilesFromDBS(inputFileset, inputDatasetPath, options.RunWhitelist)
 
     injectTaskIntoWMBS(os.path.join(os.getcwd(), workloadName, workloadFile),
                        workloadName, workloadTask, inputFileset)

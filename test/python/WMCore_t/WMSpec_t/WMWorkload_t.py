@@ -338,8 +338,8 @@ class WMWorkloadTest(unittest.TestCase):
                                              primaryDataset = "bogusPrimary",
                                              processedDataset = "bogusProcessed",
                                              dataTier = "DataTierA",
-                                             lfnBase = "bogusUnmerged",
-                                             mergedLFNBase = "bogusMerges",
+                                             lfnBase = "bogusMerged",
+                                             mergedLFNBase = "bogusMerged",
                                              filterName = None)
 
         skimTask = mergeTask.addTask("SkimTask")
@@ -381,10 +381,16 @@ class WMWorkloadTest(unittest.TestCase):
             mergedLFN = "/store/data/%s/%s" % (dataTier, procDataset)
             unmergedLFN = "/store/unmerged/%s/%s" % (dataTier, procDataset)
 
-            self.assertEqual(outputModule.lfnBase, unmergedLFN,
-                             "Error: Incorrect unmerged LFN.")
-            self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
-                             "Error: Incorrect merged LFN.")
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
 
         testWorkload.setProcessingVersion("vTest")
 
@@ -407,10 +413,16 @@ class WMWorkloadTest(unittest.TestCase):
             mergedLFN = "/store/data/%s/%s" % (dataTier, procDataset)
             unmergedLFN = "/store/unmerged/%s/%s" % (dataTier, procDataset)
 
-            self.assertEqual(outputModule.lfnBase, unmergedLFN,
-                             "Error: Incorrect unmerged LFN.")
-            self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
-                             "Error: Incorrect merged LFN.")
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
 
         testWorkload.setLFNBase("/store/temp/WMAgent/merged",
                                 "/store/temp/WMAgent/unmerged")
@@ -434,10 +446,16 @@ class WMWorkloadTest(unittest.TestCase):
             mergedLFN = "/store/temp/WMAgent/merged/%s/%s" % (dataTier, procDataset)
             unmergedLFN = "/store/temp/WMAgent/unmerged/%s/%s" % (dataTier, procDataset)
 
-            self.assertEqual(outputModule.lfnBase, unmergedLFN,
-                             "Error: Incorrect unmerged LFN.")
-            self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
-                             "Error: Incorrect merged LFN.")
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
 
         outputDatasets = testWorkload.listOutputDatasets()
         self.assertEqual(len(outputDatasets), 3,

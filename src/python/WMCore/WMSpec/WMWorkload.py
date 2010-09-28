@@ -466,6 +466,7 @@ class WMWorkloadHelper(PersistencyHelper):
             taskIterator = self.taskIterator()
             
         for task in taskIterator:
+            taskType = task.taskType()
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
 
@@ -489,9 +490,15 @@ class WMWorkloadHelper(PersistencyHelper):
                                                   getattr(outputModule, "dataTier"),
                                                   processedDataset)                        
                         setattr(outputModule, "processedDataset", processedDataset)
-                        setattr(outputModule, "lfnBase", unmergedLFN)
-                        setattr(outputModule, "mergedLFNBase", mergedLFN)
 
+                        # For merge tasks, we want all output to go to the merged LFN base.
+                        if taskType == "Merge":
+                            setattr(outputModule, "lfnBase", mergedLFN)
+                            setattr(outputModule, "mergedLFNBase", mergedLFN)
+                        else:
+                            setattr(outputModule, "lfnBase", unmergedLFN)
+                            setattr(outputModule, "mergedLFNBase", mergedLFN)
+                            
             task.setTaskLogBaseLFN(self.data.properties.unmergedLFNBase)
             self.updateLFNsAndDatasets(task)
 

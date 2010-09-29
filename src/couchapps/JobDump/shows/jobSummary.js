@@ -31,6 +31,9 @@ function(doc, req) {
   }
 
   response += "\n";
+  response += "<div id=output></div>\n";
+
+  response += "\n";
   response += "<div id=stateTransitions></div>\n";
 
   response += "\n<br>\n";
@@ -44,6 +47,10 @@ function(doc, req) {
   response += "xmlhttp.open(\"GET\", \"../../_list/stateTransitions/stateTransitionsByJobID?startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]\", false);\n";
   response += "xmlhttp.send();\n";
   response += "document.getElementById(\"stateTransitions\").innerHTML=xmlhttp.responseText;\n";
+
+  response += "xmlhttp.open(\"GET\", \"../../_list/jobOutput/outputByJobID?startkey=" + doc["jobid"] + "&endkey=" + doc["jobid"] + "\", false);\n";
+  response += "xmlhttp.send();\n";
+  response += "document.getElementById(\"output\").innerHTML=xmlhttp.responseText;\n";
 
   response += "xmlhttp.open(\"GET\", \"../../_list/jobErrors/errorsByJobID?startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]\", false);\n";
   response += "xmlhttp.send();\n";

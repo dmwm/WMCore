@@ -20,6 +20,7 @@ marked by names starting with '_' such as '_listRunning'
 
 import threading
 import logging
+import subprocess
 
 from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMFactory         import WMFactory
@@ -71,6 +72,10 @@ class BossAirAPI(WMConnectionBase):
         self.pluginDir  = config.BossAir.pluginDir
         # This is the default state jobs are created in
         self.newState   = getattr(config.BossAir, 'newState', 'New')
+
+        # Get any proxy info
+        self.checkProxy = getattr(config.BossAir, 'checkProxy', False)
+        self.cert       = getattr(config.BossAir, 'cert', None)
 
 
         # Create a factory to load plugins
@@ -370,6 +375,22 @@ class BossAirAPI(WMConnectionBase):
 
         Perform checks of critical components, i.e. proxy validation, etc.
         """
+
+        if self.checkProxy:
+            command = 'voms-proxy-info'
+            if self.cert is not None and self.cert != '' :
+                command += ' --file ' + self.cert
+
+            pipe = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            output, err = pipe.communicate()
+
+            try:
+                output = output.split("timeleft  :")[1].strip()
+            except IndexError:
+                raise BossAirException("Missing Proxy", output.strip())
+            
+            if output == "0:00:00":
+                raise BossAirException("Proxy Expired", output.strip())
 
         return
 

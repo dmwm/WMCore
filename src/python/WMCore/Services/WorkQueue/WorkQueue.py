@@ -54,7 +54,7 @@ class WorkQueue(Service):
         else:
             return {}
         
-    def _getResult(self, callname, clearCache = False,
+    def _getResult(self, callname, clearCache = True,
                    args = None, verb="POST", contentType = None):
         """
         _getResult_
@@ -111,7 +111,7 @@ class WorkQueue(Service):
                 args.append(('elementIDs', elementID))
         
         callname = 'status'
-        return self._getResult(callname, args = args, verb = "GET", 
+        return self._getResult(callname, args = args, verb = "GET",
                                contentType = "text/plain")
     
     def synchronize(self, child_url, child_report):

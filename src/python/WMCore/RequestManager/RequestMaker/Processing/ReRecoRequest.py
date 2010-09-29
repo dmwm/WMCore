@@ -42,7 +42,6 @@ class ReRecoSchema(RequestSchema):
             "ScramArch",
             "GlobalTag",
             "InputDataset",
-            "SkimInput",
             "CmsPath",
             ]
         self.optionalFields = [
@@ -71,9 +70,7 @@ class ReRecoSchema(RequestSchema):
         if self['InputDataset'].count('/') != 3:
             raise RuntimeError, "Need three slashes in InputDataset "+self['InputDataset']
 
-
 registerRequestType("ReReco", ReRecoRequest, ReRecoSchema)
-
 
 if __name__ == "__main__":
     schema = ReRecoSchema()

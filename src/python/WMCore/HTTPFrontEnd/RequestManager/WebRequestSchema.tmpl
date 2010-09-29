@@ -58,11 +58,9 @@ Software Release: <select name="CMSSWVersion">
 
 #end def 
 
-#def configBlock
-# of Events: <input type="text" name="RequestSizeEvents" size=10 value=-1 />
-# of Files: <input type="text" name="RequestSizeFiles" size=5 value=1 /><br/>
+#def configBlock($radioName, $scenarioName, $cacheName)
 Configuration <BR>
-  <INPUT TYPE="radio" NAME="inputMode" VALUE="scenario"> Scenario
+  <INPUT TYPE="radio" NAME=$radioName VALUE="scenario"> Scenario
     <select name="Scenario">
       <option selected> pp
       <option> cosmics
@@ -73,7 +71,7 @@ Configuration <BR>
       <OPTION> relvalmcfs </OPTION>
     </select><BR>
   </INPUT>
-  <INPUT TYPE="radio" NAME="inputMode" VALUE="couchDB"> CouchDB ID
+  <INPUT TYPE="radio" NAME=$radioName VALUE="couchDB"> CouchDB ID
     <INPUT TYPE=TEXT" NAME="ProdConfigCacheID" SIZE=80>
   </INPUT><BR>
 
@@ -85,7 +83,6 @@ Input Dataset: <input type="text" name="InputDataset" size=40 /><br/>
 
 DBS: <!--input type="text" name="dbs" VALUE="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" size=80/><br/-->
 <select name="DbsUrl">
-                <option>None</option>
 		<option>http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet</option>
                 <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_01/servlet/DBSServlet</option>
                 <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_02/servlet/DBSServlet</option>
@@ -93,12 +90,13 @@ DBS: <!--input type="text" name="dbs" VALUE="http://cmsdbsprod.cern.ch/cms_dbs_p
 #end def
 
 #def skimBlock($skimNum)
-Skim Input: <INPUT TYPE="text", NAME="SkimInput$skimNum" SIZE=40 VALUE="output"/><BR/>
+Skim Name: <INPUT TYPE="text", NAME="SkimName$skimNum" SIZE=20 VALUE="skim"$skimNum/>
+Skim Input: <INPUT TYPE="text", NAME="SkimInput$skimNum" SIZE=20 VALUE="output"/><BR/>
 Skim Config: <INPUT TYPE="text" NAME="SkimConfig$skimNum" VALUE=$defaultSkimConfig size=80/><br>
 #end def
 
-#def moreSkims
-<input type="hidden" value="1" id="nskims" />
+#def moreSkims($firstSkim)
+<input type="hidden" value=$firstSkim id="nskims" />
 <a href="javascript:;" onclick="addSkim();">Add Skim</a><br>
 <div id="skimDiv"> </div>
 <script>
@@ -110,8 +108,9 @@ function addSkim() {
   var newdiv = document.createElement('div');
   var divIdName = 'my'+num+'Div';
   newdiv.setAttribute('id',divIdName);
-  newdiv.innerHTML = 'Skim Input '+num+': <INPUT TYPE="text", NAME="skimInput'+num+'" SIZE=40 VALUE="output"/><BR/>' 
-  +'Skim Config ' + num +': <INPUT TYPE="text" NAME="skimConfig'+num+'"/> <br>'
+  newdiv.innerHTML = 'Skim Name: <INPUT TYPE="text", NAME="SkimName'+num+'" SIZE=20 VALUE="skim'+num+'"/><BR>' 
+  + ' Skim Input '+num+': <INPUT TYPE="text", NAME="SkimInput'+num+'" SIZE=40 VALUE="output"/><BR/>' 
+  +'Skim Config ' + num +': <INPUT TYPE="text" NAME="SkimConfig'+num+'"/> <br>'
   ni.appendChild(newdiv);
 }
 </script>
@@ -149,20 +148,20 @@ Emulator:
         <DIV ID="rereco">
             $headerBlock
             $softwareBlock
-            $configBlock
+# of Events: <input type="text" name="RequestSizeEvents" size=10 value=-1 />
+# of Files: <input type="text" name="RequestSizeFiles" size=5 value=1 /><br/>
+            $configBlock("inputMode", "Scenario", "ProdConfigCacheID")
             $ioBlock
-            $skimBlock(1)
-            $moreSkims
+            $moreSkims(0)
             $runBlockBlock
             $trailerBlock("ReReco")
         </DIV>
         <DIV ID="mc">
             $headerBlock
             $softwareBlock
+# of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
             $emulatorBlock
-            $skimBlock(1)
-            $moreSkims
-            $configBlock
+            $configBlock("inputMode", "Scenario", "ProdConfigCacheID")
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
             $trailerBlock("MonteCarlo")
         </DIV>

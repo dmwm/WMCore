@@ -64,16 +64,42 @@ class WebRequestSchema(TemplatedPage):
         schema['CouchURL'] = self.couchUrl
         schema['CouchDBName'] = self.couchDBName
 
+        #delete unnecessary parameters.
+        # is there a way to make these fields never appear?
+        if not 'inputMode' in kwargs:
+            raise cherrypy.HTTPError(400, "Please set the input mode")
+        inputMode = kwargs['inputMode']
+        inputValues = {'scenario':'Scenario',
+                       'couchDB':'ProdConfigCacheID'}
+        for n,v in inputValues.iteritems():
+            if n != inputMode:
+                schema[v] = ""
+
         if kwargs.has_key("InputDataset"):
             schema["InputDatasets"] = [kwargs["InputDataset"]]
-        # hack until makers accept numbered skims
-        if kwargs.has_key("SkimInput1"):
-            schema["SkimInput"] = schema["SkimInput1"]
-            schema["SkimConfig"] = schema["SkimConfig1"]
-        self.parseList("RunWhitelist", kwargs, schema)
-        self.parseList("RunBlacklist", kwargs, schema)
-        self.parseList("BlockWhitelist", kwargs, schema)
-        self.parseList("BlockBlacklist", kwargs, schema)
+        skimNumber = 1
+        # a list of dictionaries
+        schema["SkimConfigs"] = []
+        while kwargs.has_key("SkimName%s" % skimNumber):
+            d = {}
+            d["SkimName"] = kwargs["SkimName%s" % skimNumber]
+            d["SkimInput"] = kwargs["SkimInput%s" % skimNumber]
+            d["Scenario"] = kwargs["Scenario"]
+
+            if kwargs.get("SkimConfig%s" % skimNumber, None) != None:
+                d["ConfigCacheID"] = kwargs["SkimConfig%s" % skimNumber]
+       
+            schema["SkimConfigs"].append(d)
+            skimNumber += 1
+
+        if kwargs.has_key("RunWhitelist") and kwargs["RunWhitelist"] != '':
+            schema["RunWhitelist"] = [int(n) for n in kwargs["RunWhitelist"].split(',')]
+        if kwargs.has_key("RunBlacklist") and kwargs["RunBlacklist"] != '':
+            schema["RunBlacklist"] = [int(n) for n in kwargs["RunBlacklist"].split(',')]
+        if kwargs.has_key("BlockWhitelist") and kwargs["BlockWhitelist"] != '':
+            schema["BlockWhitelist"] = kwargs["BlockWhitelist"].split(',')
+        if kwargs.has_key("BlockBlacklist") and kwargs["BlockBlacklist"] != '':
+            schema["BlockBlacklist"] = kwargs["BlockBlacklist"].split(',')
 
         schema['CmsPath'] = self.cmsswInstallation
         schema["CouchUrl"] = self.couchUrl
@@ -106,27 +132,10 @@ class WebRequestSchema(TemplatedPage):
                   raise cherrypy.HTTPError(400, "Cannot find splitting algo " + skimSplitAlgo)
             schema["SkimJobSplitArgs"] = {'files_per_job': files_per_job}
 
-        #delete unnecessary parameters.
-        # is there a way to make these fields never appear?
-        if not 'inputMode' in kwargs:
-            raise cherrypy.HTTPError(400, "Please set the input mode")
-        inputMode = kwargs['inputMode']
-        inputValues = {'scenario':'Scenario',
-                       'couchDB':'ProdConfigCacheID'}
-        for n,v in inputValues.iteritems():
-            if n != inputMode:
-                schema[v] = ""
 
         cherrypy.session['schema'] = schema
         return self.submit()
     makeSchema.exposed = True
-
-    def parseList(self, name, kwargs, schema):
-        """ For a given run or block list, put it in as a list """
-        if kwargs.has_key(name):
-            schema[name] = eval("[%s]"%kwargs[name])
-        else:
-            schema[name] = []
 
     def submit(self):
         schema = cherrypy.session.get('schema', None)

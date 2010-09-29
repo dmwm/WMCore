@@ -24,7 +24,7 @@ class TaskSummaryByWorkflow(DBFormatter):
                  wmbs_job.state = wmbs_job_state.id
             WHERE wmbs_workflow.name = :workflow_name
             GROUP BY wmbs_workflow.task, wmbs_job_state.name 
-            ORDER BY wmbs_workflow.id DESC"""
+            ORDER BY wmbs_workflow.id ASC"""
             
     def failCount(self, result):
         if  result["state"] == 'success' or result["state"] == 'cleanout' \

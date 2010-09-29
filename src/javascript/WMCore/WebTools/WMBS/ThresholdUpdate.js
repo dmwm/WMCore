@@ -16,7 +16,7 @@ resourceTable = function(divID){
 			}
 			);
 		},
-		
+		disableBtns: true,
 		validator: YAHOO.widget.DataTable.validateNumber
 	};
 	

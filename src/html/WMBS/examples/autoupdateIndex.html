@@ -57,11 +57,12 @@ body {
 <!--<script src="javascript/WorkQueue/ElementInfoWithPagination2.js"></script>
 <script src="javascript/WorkQueue/ElementInfoWithServerPagination.js"></script>
  This script uses client side pagination
--->
+
 <script src="javascript/WMBS/TaskSummaryTable.js"></script>
 <script src="javascript/WMBS/WorkflowSummaryTable.js"></script>
-
+-->
 <script src="javascript/debugging.js"></script>
+<script src="javascript/WMBS/WorkflowSummaryWithTask.js"></script>
 <style>
     /*
         For IE 6: trigger "haslayout" for the anchor elements in the root Menu by
@@ -125,11 +126,11 @@ body {
 <div id="center1">
     <span class="title">Workflow Summary</span>
     <div id="workflowSummary">
-        Error: workflow summary
+        Table Test
     </div>
     <span class="title">Task Summary</span>
     <div id="taskSummary">
-        <b> Click wmspec column to get the task summary </b>
+        Table Test
     </div>
 </div>
 <div id="bottom1"></div>
@@ -138,7 +139,7 @@ body {
 <script>
 
 (function() {
-	//enableDebug()
+    //enableDebug()
     var Dom = YAHOO.util.Dom,
         Event = YAHOO.util.Event;
 
@@ -232,20 +233,20 @@ body {
 
             ]
         });
-	
-	   var callBackFunction = function(e, oArgs) {
+    
+       var callBackFunction = function(e, oArgs) {
                 layout.on('render', this, args.firstWorkflow);
                 layout.render();
        };
 
-	   var wmbsDisplay = function(e, workflow) {
-			YAHOO.util.Event.onContentReady("menubar", initTopMenu);
-			
-			var args = {};
-			args.divID = "workflowSummary";
-			args.task = taskTable
-			
-            YAHOO.util.Event.onContentReady("center1", workflowTable, args);	
+       var wmbsDisplay = function(e, workflow) {
+            YAHOO.util.Event.onContentReady("menubar", initTopMenu);
+            
+            var args = {};
+            args.divID = "workflowSummary";
+            args.taskDivID = "taskSummary";
+            args.firstWorkflow = 0;
+            YAHOO.util.Event.onContentReady("center1", workflowTable, args);    
         };
 
         layout.on('render', wmbsDisplay);
@@ -253,7 +254,7 @@ body {
 
         //writeEval(dataSource.responseType)
         layout.render();
-		writeDebugObject(wmbsDisply.args)
+        writeDebugObject(wmbsDisply.args)
     });
 })();
 

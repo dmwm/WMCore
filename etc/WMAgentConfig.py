@@ -194,38 +194,22 @@ workqueuemonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templa
 workqueuemonitor.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/')
 workqueuemonitor.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html/')
 
-#TODO: make wmbs monitoring part of workqueueservice. (use the same port but different application)
-config.webapp_("WMBSMonitoring")
-config.WMBSMonitoring.default_expires = 0
-config.WMBSMonitoring.componentDir = config.General.workDir + "/WMBSMonitoring"
-config.WMBSMonitoring.Webtools.host = config.Agent.hostName
-## User specific parameter
-config.WMBSMonitoring.Webtools.port = 8087
-config.WMBSMonitoring.templates = WMCore.WMInit.getWMBASE() + '/src/templates/WMCore/WebTools'
-config.WMBSMonitoring.admin = "sfoulkes@fnal.gov"
-config.WMBSMonitoring.title = "WMBS Monitoring"
-config.WMBSMonitoring.description = "Monitoring of a WMBS instance"
-config.WMBSMonitoring.instance = "ReReco WMAGENT"
-## User specific parameter
-config.WMBSMonitoring.couchURL = "http://cmssrv52:5984/_utils/document.html?wmagent_commissioning/"
-config.WMBSMonitoring.section_('views')
-config.WMBSMonitoring.views.section_('active')
-config.WMBSMonitoring.views.active.section_('wmbs')
-config.WMBSMonitoring.views.active.wmbs.section_('model')
-config.WMBSMonitoring.views.active.wmbs.section_('formatter')
-config.WMBSMonitoring.views.active.wmbs.object = 'WMCore.WebTools.RESTApi'
-config.WMBSMonitoring.views.active.wmbs.templates = WMCore.WMInit.getWMBASE() + '/src/templates/WMCore/WebTools/'
-config.WMBSMonitoring.views.active.wmbs.model.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
-config.WMBSMonitoring.views.active.wmbs.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
+config.WorkQueueService.views.active.section_('wmbs')
+config.WorkQueueService.views.active.wmbs.section_('model')
+config.WorkQueueService.views.active.wmbs.section_('formatter')
+config.WorkQueueService.views.active.wmbs.object = 'WMCore.WebTools.RESTApi'
+config.WorkQueueService.views.active.wmbs.templates = WMCore.WMInit.getWMBASE() + '/src/templates/WMCore/WebTools/'
+config.WorkQueueService.views.active.wmbs.model.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
+config.WorkQueueService.views.active.wmbs.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
 
-wmbsmonitor = config.WMBSMonitoring.views.active.section_('wmbsmonitor')
+wmbsmonitor = config.WorkQueueService.views.active.section_('wmbsmonitor')
 wmbsmonitor.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSMonitorPage'
-wmbsmonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
+wmbsmonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/WMBS')
 wmbsmonitor.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript')
 wmbsmonitor.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html')
 
 # REST service for WMComponents running (WorkQueueManager in this case)
-wmagent = config.WMBSMonitoring.views.active.section_('wmagent')
+wmagent = config.WorkQueueService.views.active.section_('wmagent')
 # The class to load for this view/page
 wmagent.object = 'WMCore.WebTools.RESTApi'
 wmagent.templates = os.path.join( WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
@@ -234,7 +218,7 @@ wmagent.model.object = 'WMCore.HTTPFrontEnd.Agent.AgentRESTModel'
 wmagent.section_('formatter')
 wmagent.formatter.object = 'WMCore.WebTools.RESTFormatter'
 
-wmagentmonitor = config.WMBSMonitoring.views.active.section_('wmagentmonitor')
+wmagentmonitor = config.WorkQueueService.views.active.section_('wmagentmonitor')
 wmagentmonitor.object = 'WMCore.HTTPFrontEnd.Agent.AgentMonitorPage'
 wmagentmonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
 wmagentmonitor.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/')

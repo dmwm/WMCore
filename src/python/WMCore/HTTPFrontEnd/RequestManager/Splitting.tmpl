@@ -67,6 +67,40 @@ function generateProcessing(splitAlgo, splitParams) {
   return procStr;
 }  
 
+function generateSkim(splitAlgo, splitParams) {
+  var procStr = "<table><tr><td>";
+  procStr += "<input type=\"radio\" name=\"splittingAlgo\" value=\"FileBased\"";
+
+  if (splitAlgo == "FileBased") {
+    procStr += " checked";
+  }
+
+  procStr += ">File Based</input></td>\n";
+  procStr += "<td>Files per job:</td><td><input type=\"text\" name=\"files_per_job\"";
+
+  if ("files_per_job" in splitParams && splitAlgo == "FileBased") {
+    procStr += " value=" + splitParams["files_per_job"];
+  }
+
+  procStr += "></td></input><td></td></tr><tr><td>";
+  procStr += "<input type=\"radio\" name=\"splittingAlgo\" value=\"TwoFileBased\"";
+
+  if (splitAlgo == "TwoFileBased") {
+    procStr += " checked";
+  }
+
+  procStr += ">Two File Based</input></td>\n";
+  procStr += "<td>Files per job:</td><td><input type=\"text\" name=\"two_files_per_job\"";
+
+  if ("files_per_job" in splitParams && splitAlgo == "TwoFileBased") {
+    procStr += " value=" + splitParams["files_per_job"];
+  }
+
+  procStr += "></td></input><td></td></tr></table>";
+  procStr += "<input type=\"submit\" value=\"Update Parameters\">\n";
+  return procStr;
+}
+
 function generateCleanupLogCollect(splitParams) {
   var procStr = "<table><tr><td>";
   procStr += "<input type=\"hidden\" name=\"splittingAlgo\" value=\"FileBased\"></input>\n";
@@ -102,6 +136,8 @@ function generateForm(taskName, splitAlgo, splitParams, taskType) {
     frmStr += generateCleanupLogCollect(splitParams);
   } else if (taskType == "Merge") {
     frmStr += generateMerge(splitAlgo, splitParams);
+  } else if (taskType == "Skim") {
+    frmStr += generateSkim(splitAlgo, splitParams);
   }
 
   return frmStr;

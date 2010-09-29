@@ -74,9 +74,10 @@ class ReqMgrBrowser(TemplatedPage):
         helper, pfn = self.workloadHelper(request)
         splittingDict = helper.listJobSplittingParametersByTask()
         taskNames = splittingDict.keys()
+        taskNames.sort()
 
         splitInfo = []
-        for taskName in splittingDict.keys():
+        for taskName in taskNames:
             # We basically stringify the splitting params dictionary and pass
             # that to the splitting page as javascript.  We need to change
             # boolean values to strings as the javascript true is different from
@@ -105,6 +106,8 @@ class ReqMgrBrowser(TemplatedPage):
         splitParams = {}
         if splittingAlgo == "FileBased":
             splitParams["files_per_job"] = submittedParams["files_per_job"]
+        elif splittingAlgo == "TwoFileBased":
+            splitParams["files_per_job"] = submittedParams["two_files_per_job"]            
         elif splittingAlgo == "LumiBased":
             splitParams["lumis_per_job"] = submittedParams["lumis_per_job"]
             if str(submittedParams["split_files_between_job"]) == True:

@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1103, W6501, E1101, C0103
+#E1103: Use DB objects attached to thread
+#W6501: Allow string formatting in error messages
+#E1101: Create config sections
+#C0103: Internal methods start with _
 """
 _BossAirAPI_
 
@@ -52,6 +57,8 @@ class BossAirAPI(WMConnectionBase):
         BossAir should work with the standard config
         structure of WMAgent
         """
+
+        WMConnectionBase.__init__(self, daoPackage = "WMCore.BossAir")
 
         myThread = threading.currentThread()
 
@@ -418,14 +425,24 @@ class BossAirAPI(WMConnectionBase):
                 msg += "Ignoring the jobs for this plugin for now"
                 logging.error(msg)
             else:
-                pluginInst   = self.plugins[plugin]
-                jobsToSubmit = pluginDict.get(plugin, [])
-                localSuccess, localFailure = pluginInst.submit(jobs = jobsToSubmit,
+                try:
+                    pluginInst   = self.plugins[plugin]
+                    jobsToSubmit = pluginDict.get(plugin, [])
+                    localSuccess, localFailure = pluginInst.submit(jobs = jobsToSubmit,
                                                                info = info)
-                for job in localSuccess:
-                    successJobs.append(job.buildWMBSJob())
-                for job in localFailure:
-                    failureJobs.append(job.buildWMBSJob())
+                    for job in localSuccess:
+                        successJobs.append(job.buildWMBSJob())
+                        for job in localFailure:
+                            failureJobs.append(job.buildWMBSJob())
+                except WMException:
+                    raise
+                except Exception, ex:
+                    msg =  "Unhandled exception while submitting jobs to plugin %s\n" % plugin
+                    msg += str(ex)
+                    logging.error(msg)
+                    logging.debug("Jobs being submitted: %s\n" % (jobsToSubmit))
+                    logging.debug("Job info: %s\n" % (info))
+                    raise BossAirException(msg)
 
         # Create successful jobs in BossAir
         self.createNewJobs(wmbsJobs = successJobs)
@@ -442,10 +459,9 @@ class BossAirAPI(WMConnectionBase):
         Load job info from the cache (it should be there since we submitted the job)
 
         OPTIONAL: You can submit a list of jobs to check, based either on wmbsIDs or
-         on runjobIDs
+         on runjobIDs.  This takes a list of integer IDs.
         """
 
-        jobsToLoad     = []
         jobsToChange   = []
         loadedJobs     = []
         jobsToComplete = []
@@ -461,7 +477,7 @@ class BossAirAPI(WMConnectionBase):
                 if not job['id'] in runJobIDs:
                     runningJobs.remove(job)
         if wmbsIDs:
-            for job in runninbJobs:
+            for job in runningJobs:
                 if not job['jobid'] in wmbsIDs:
                     runningJobs.remove(job)
                 
@@ -487,14 +503,22 @@ class BossAirAPI(WMConnectionBase):
                 msg += "That's too strange to continue\n"
                 logging.error(msg)
                 raise BossAirException(msg)
-            else:
+            try:
                 # Then we send them to the plugins
-                # Shoudl give you a lit of jobs to change and jobs to complete
+                # Should give you a lit of jobs to change and jobs to complete
                 pluginInst = self.plugins[plugin]
                 localRunning, localChanges, localCompletes = pluginInst.track(jobs = jobsToTrack[plugin])
                 jobsToReturn.extend(localRunning)
                 jobsToChange.extend(localChanges)
                 jobsToComplete.extend(localCompletes)
+            except WMException:
+                raise
+            except Exception, ex:
+                msg =  "Unhandled Exception while tracking jobs for plugin %s!\n" % plugin
+                msg += str(ex)
+                logging.error(msg)
+                logging.debug("JobsToTrack: %s" % (jobsToTrack[plugin]))
+                raise BossAirException(msg)
 
         self._updateJobs(jobs = jobsToChange)
         self._complete(jobs = jobsToComplete)
@@ -533,7 +557,16 @@ class BossAirAPI(WMConnectionBase):
             idsToComplete.append(job['id'])
 
         for plugin in jobsToComplete.keys():
-            self.plugins[plugin].complete(jobsToComplete[plugin])
+            try:
+                self.plugins[plugin].complete(jobsToComplete[plugin])
+            except WMException:
+                raise
+            except Exception, ex:
+                msg =  "Exception while completing jobs for plugin %s!\n" % plugin
+                msg += str(ex)
+                logging.error(msg)
+                logging.debug("JobsToComplete: %s" % (jobsToComplete[plugin]))
+                raise BossAirException(msg)
 
         existingTransaction = self.beginTransaction()
 
@@ -594,13 +627,6 @@ class BossAirAPI(WMConnectionBase):
 
         self.check()
 
-
-        jobsToLoad     = []
-        jobsToChange   = []
-        loadedJobs     = []
-        jobsToComplete = []
-        jobsFound      = []
-
         jobsToKill = {}
 
         # Now get a list of which jobs are running
@@ -647,39 +673,6 @@ class BossAirAPI(WMConnectionBase):
         self._updateJobs(jobs = runJobs)
 
         return
-
-
-
-    def update(self, jobs):
-        """
-        _update_
-
-        Overwrite the database with whatever you put into
-        this function.
-        """
-
-        runJobs = self._buildRunningJobs(wmbsJobs = jobs)
-
-        self._updateJobs(jobs = runJobs)
-
-        return
-
-
-
-    def update(self, jobs):
-        """
-        _update_
-
-        Overwrite the database with whatever you put into
-        this function.
-        """
-
-        runJobs = self._buildRunningJobs(wmbsJobs = jobs)
-
-        self._updateJobs(jobs = runJobs)
-
-        return
-
 
 
 

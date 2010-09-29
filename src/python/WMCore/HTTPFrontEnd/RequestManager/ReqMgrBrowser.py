@@ -61,13 +61,71 @@ class ReqMgrBrowser(TemplatedPage):
         
     def getRequests(self):
         return self.jsonSender.get("/reqMgr/request")[0]
-        
+
+    def splitting(self, requestName):
+        """
+        _splitting_
+
+        Retrieve the current values for splitting parameters for all tasks in
+        the spec.  Format them in the manner that the splitting page expects
+        and pass them to the template.
+        """
+        request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
+        helper, pfn = self.workloadHelper(request)
+        splittingDict = helper.listJobSplittingParametersByTask()
+        taskNames = splittingDict.keys()
+
+        splitInfo = []
+        for taskName in splittingDict.keys():
+            # We basically stringify the splitting params dictionary and pass
+            # that to the splitting page as javascript.  We need to change
+            # boolean values to strings as the javascript true is different from
+            # the python True.
+            if "split_files_between_job" in splittingDict[taskName]:
+                splittingDict[taskName]["split_files_between_job"] = str(splittingDict[taskName]["split_files_between_job"])
+                
+            splitInfo.append({"splitAlgo": splittingDict[taskName]["algorithm"],
+                              "splitParams": str(splittingDict[taskName]),
+                              "taskType": splittingDict[taskName]["type"],
+                              "taskName": taskName})
+
+        return self.templatepage("Splitting", requestName = requestName,
+                                 taskInfo = splitInfo, taskNames = taskNames)
+    splitting.exposed = True
+            
+    def handleSplittingPage(self, requestName, splittingTask, splittingAlgo,
+                            **submittedParams):
+        """
+        _handleSplittingPage_
+
+        Parse job splitting parameters sent from the splitting parameter update
+        page.  Pull down the request and modify the new spec applying the
+        updated splitting parameters.
+        """
+        splitParams = {}
+        if splittingAlgo == "FileBased":
+            splitParams["files_per_job"] = submittedParams["files_per_job"]
+        elif splittingAlgo == "LumiBased":
+            splitParams["lumis_per_job"] = submittedParams["lumis_per_job"]
+            if str(submittedParams["split_files_between_job"]) == True:
+                splitParams["split_files_between_job"] = True
+            else:
+                splitParams["split_files_between_job"] = False                
+        elif splittingAlgo == "EventBased":
+            splitParams["events_per_job"] = submittedParams["events_per_job"]
+            
+        request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
+        helper, pfn = self.workloadHelper(request)
+        helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
+        helper.save(pfn)
+        return "Successfully updated splitting parameters for " + splittingTask \
+               + " " + self.detailsBackLink(requestName)
+    handleSplittingPage.exposed = True
+
     def requestDetails(self, requestName):
         result = ""
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
-        helper = WMWorkloadHelper()
-        pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
-        helper.load(pfn)
+        helper, pfn = self.workloadHelper(request)
 
         docId = None
         d = helper.data.request.schema.dictionary_()
@@ -78,7 +136,8 @@ class ReqMgrBrowser(TemplatedPage):
         assignments= self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0]
         adminHtml = self.statusMenu(requestName, request['RequestStatus']) \
                   + ' Priority ' + self.priorityMenu(requestName, request['ReqMgrRequestBasePriority'])
-        return self.templatepage("Request", detailsFields = self.detailsFields, requestSchema=d,
+        return self.templatepage("Request", requestName=requestName,
+                                detailsFields = self.detailsFields, requestSchema=d,
                                 workloadDir = self.workloadDir, 
                                 docId=docId, assignments=assignments,
                                 adminHtml = adminHtml,
@@ -266,15 +325,20 @@ class ReqMgrBrowser(TemplatedPage):
                    assignments=assignments, sites=self.sites, mergedLFNBases = self.mergedLFNBases[requestType])
     assignmentPage.exposed = True
     
+    def workloadHelper(self, request):
+        """ Returns a WMWorkloadHelper and a pfn for the workload in the request """
+        helper = WMWorkloadHelper()
+        pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
+        helper.load(pfn)
+        return helper, pfn
+
     def handleAssignmentPage(self, *args, **kwargs):
         """ handles some checkboxes """
         result = ""
         requestName = kwargs["RequestName"]
         assignments = self.jsonSender.get('/reqMgr/assignment?request=%s' % requestName)[0]
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
-        helper = WMWorkloadHelper()
-        pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
-        helper.load(pfn)
+        helper, pfn = self.workloadHelper(request)
         schema = helper.data.request.schema
         # look for teams
         teams = []

@@ -1,0 +1,118 @@
+<html><head>
+<title>Job Splitting Parameters for $requestName</title>
+</head>
+<body>
+
+#for $taskName in $taskNames
+<div id="$taskName"></div>
+#end for
+
+<script type="text/javascript">
+function generateProcessing(splitAlgo, splitParams) {
+  var procStr = "<table><tr><td>";
+  procStr += "<input type=\"radio\" name=\"splittingAlgo\" value=\"FileBased\"";
+
+  if (splitAlgo == "FileBased") {
+    procStr += " checked";
+  }
+
+  procStr += ">File Based</input></td>\n";
+  procStr += "<td>Files per job:</td><td><input type=\"text\" name=\"files_per_job\"";
+
+  if ("files_per_job" in splitParams) {
+    procStr += " value=" + splitParams["files_per_job"];
+  }
+
+  procStr += "></td></input><td></td></tr><tr><td>";
+  procStr += "<input type=\"radio\" name=\"splittingAlgo\" value=\"LumiBased\"";
+
+  if (splitAlgo == "LumiBased") {
+    procStr += " checked";
+  }
+
+  procStr += ">Lumi Based</input></td>\n";
+  procStr += "<td>Lumis per job:</td><td><input type=\"text\" name=\"lumis_per_job\"";
+
+  if ("lumis_per_job" in splitParams) {
+    procStr += " value=" + splitParams["lumis_per_job"];
+  }
+
+  procStr += "></td></input><td>Split files between jobs: <select name=\"split_files_between_job\">";
+  if ("split_files_between_job" in splitParams) {
+    if (splitParams["split_files_between_job"] == "True") {
+      procStr += "<option selected>True</option><option>False</option>\n";
+    } else {
+      procStr += "<option>True</option><option selected>False</option>\n";
+    }
+  } else {
+    procStr += "<option>True</option><option>False</option>\n";
+  }
+ 
+  procStr += "</select></input></td></tr>\n";
+  procStr += "<tr><td><input type=\"radio\" name=\"splittingAlgo\" value=\"EventBased\"";
+
+  if (splitAlgo == "EventBased") {
+    procStr += " checked";
+  }
+
+  procStr += ">Event Based</input></td>\n";
+  procStr += "<td>Events per job:</td><td><input type=\"text\" name=\"events_per_job\"";
+
+  if ("events_per_job" in splitParams) {
+    procStr += " value=" + splitParams["events_per_job"];
+  }
+
+  procStr += "></td></input><td></td></tr></table>\n";
+  procStr += "<input type=\"submit\" value=\"Update Parameters\">\n";
+  return procStr;
+}  
+
+function generateCleanupLogCollect(splitParams) {
+  var procStr = "<table><tr><td>";
+  procStr += "<input type=\"hidden\" name=\"splittingAlgo\" value=\"FileBased\"></input>\n";
+  procStr += "<table><tr><td>Files per job:</td><td><input type=\"text\" name=\"files_per_job\"";
+
+  if ("files_per_job" in splitParams) {
+    procStr += " value=" + splitParams["files_per_job"];
+  }
+
+  procStr += "></td></input></tr></table>\n";
+  procStr += "<input type=\"submit\" value=\"Update Parameters\">\n";
+  return procStr;
+}
+
+function generateMerge(splitAlgo, splitParams) {
+  var frmStr = "<table><tr><td>Merge algorithm:</td><td>" + splitAlgo + "</td></tr>\n";
+  frmStr += "<tr><td>Min merge size:</td><td>" + splitParams["min_merge_size"] + "</td></tr>\n";
+  frmStr += "<tr><td>Max merge size:</td><td>" + splitParams["max_merge_size"] + "</td></tr>\n";
+  frmStr += "<tr><td>Max merge events:</td><td>" + splitParams["max_merge_events"] + "</td></tr>\n";
+  frmStr += "</table>\n";
+  return frmStr;
+}
+
+function generateForm(taskName, splitAlgo, splitParams, taskType) {
+  var frmStr = "<form action=\"../handleSplittingPage\" method=\"POST\">\n";
+  frmStr += "<input type=\"hidden\" name=\"requestName\" VALUE=\"$requestName\"></input>\n"; 
+  frmStr += "<input type=\"hidden\" name=\"splittingTask\" VALUE=\"" + taskName + "\"></input>\n"; 
+  frmStr += "<b>" + taskName + ":</b><br>\n";
+
+  if (taskType == "Processing") {
+    frmStr += generateProcessing(splitAlgo, splitParams);
+  } else if (taskType == "LogCollect" || taskType == "Cleanup") {
+    frmStr += generateCleanupLogCollect(splitParams);
+  } else if (taskType == "Merge") {
+    frmStr += generateMerge(splitAlgo, splitParams);
+  }
+
+  return frmStr;
+}
+
+#for $task in $taskInfo
+document.getElementById("$task.taskName").innerHTML = generateForm("$task.taskName", "$task.splitAlgo", $task.splitParams, "$task.taskType");
+#end for
+
+</script>
+</form>
+
+</body></html>
+

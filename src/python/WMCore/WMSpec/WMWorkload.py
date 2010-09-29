@@ -597,6 +597,7 @@ class WMWorkloadHelper(PersistencyHelper):
             del taskParams["siteWhitelist"]
             del taskParams["siteBlacklist"]
             output[taskName] = taskParams
+            output[taskName]["type"] = task.taskType()
             output.update(self.listJobSplittingParametersByTask(task))
 
         return output

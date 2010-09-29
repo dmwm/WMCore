@@ -2,6 +2,10 @@ var overviewTable = function(divID){
     
 	var postfixLink = "/template/ElementSummaryByWorkflow?workflow=";
 	
+	var formatRequest = function(elCell, oRecord, oColumn, sData) { 
+            elCell.innerHTML = "<a href='" + oRecord.getData("host") +"/requestDetails/" + sData  + "' target='_blank'>" + sData + "</a>"; 
+        };
+    
 	var formatGlobalQ = function(elCell, oRecord, oColumn, sData) { 
             var host;
             if (!sData) {
@@ -105,7 +109,7 @@ var overviewTable = function(divID){
 				 {key: "couch_job_info_base"}]
         };
 
-        var dataTableCols = [{key: "request_name"},
+        var dataTableCols = [{key: "request_name", formatter:formatRequest},
                  {key: "status"},
                  {key: "type"},
                  {key: "global_queue", formatter:formatGlobalQ},

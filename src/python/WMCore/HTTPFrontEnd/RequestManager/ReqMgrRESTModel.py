@@ -33,7 +33,8 @@ class ReqMgrRESTModel(RESTModel):
         #self.dialect = config.dialect
         self.urlPrefix = '%s/download?filepath=' % config.model.reqMgrHost
         self.cache = WMWorkloadCache.WMWorkloadCache(config.model.workloadCache)
-
+        self.hostAddress = config.model.reqMgrHost
+        
         self.methods = {'GET':{'request' : {'call':self.getRequest, 'args':['requestName'], 'expires': 0},
                                'assignment' : {'call':self.getAssignment, 'args':['teamName', 'request'], 'expires': 0},
                                'user' :  {'call':self.getUser, 'args':['userName'], 'expires': 0},
@@ -80,7 +81,7 @@ class ReqMgrRESTModel(RESTModel):
         """ return summary data for requests from
             request manager, workqueue and couchDB"""
         self.initThread()
-        return getGlobalSummaryView()
+        return getGlobalSummaryView(self.hostAddress)
 
     def initThread(self):
         """ The ReqMgr expects the DBI to be contained in the Thread  """

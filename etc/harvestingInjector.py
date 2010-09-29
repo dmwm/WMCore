@@ -104,15 +104,37 @@ def injectTaskIntoWMBS(specUrl, workflowName, task, inputFileset, indent = 0):
     print "%sinjecting %s" % (doIndent(indent), task.getPathName())
     print "%s  input fileset: %s" % (doIndent(indent), inputFileset.name)
 
-    myWorkflow = Workflow(spec = specUrl, owner = "direyes@cern.ch",
+    myWorkflow = Workflow(spec = specUrl, owner = "sfoulkes@fnal.gov",
                           name = workflowName, task = task.getPathName())
     myWorkflow.create()
 
     mySubscription = Subscription(fileset = inputFileset, workflow = myWorkflow,
                                   split_algo = task.jobSplittingAlgorithm(),
                                   type = task.taskType())
-    print "%s  workflow id: %s" % (doIndent(indent), mySubscription["workflow"].id)
     mySubscription.create()
+
+    outputModules = task.getOutputModulesForTask()
+    for outputModule in outputModules:
+        for outputModuleName in outputModule.listSections_():
+            print "%s  configuring output module: %s" % (doIndent(indent), outputModuleName)
+            if task.taskType() == "Merge":
+                outputFilesetName = "%s/merged-%s" % (task.getPathName(),
+                                                      outputModuleName)
+            else:
+                outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
+                                                        outputModuleName)
+
+            print "%s    output fileset: %s" % (doIndent(indent), outputFilesetName)
+            outputFileset = Fileset(name = outputFilesetName)
+            outputFileset.create()
+
+            myWorkflow.addOutput(outputModuleName, outputFileset)
+
+            # See if any other steps run over this output.
+            print "%s    searching for child tasks..." % (doIndent(indent))
+            for childTask in task.childTaskIterator():
+                if childTask.data.input.outputModule == outputModuleName:
+                    injectTaskIntoWMBS(specUrl, workflowName, childTask, outputFileset, indent + 4)
 
 def injectFilesFromDBS(inputFileset, datasetPath, runsWhiteList=[]):
     """

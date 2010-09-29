@@ -44,21 +44,23 @@ WMCore.WebTools.createDefaultTableConfig = function(sortBy) {
 
 
 WMCore.WebTools.createDataTable = function (container, dataSource, columnDefs, 
-                                            tableConfig, pollingCycle) {
+                                            tableConfig, pollingCycle, myCallback) {
 	 
     var myDataTable = new YAHOO.widget.DataTable(container,
             columnDefs, dataSource, tableConfig);
     
-	 // Set up polling
-    var myCallback = {
-         success: myDataTable.onDataReturnInitializeTable,
-         failure: function() {
-                YAHOO.log("Polling failure", "error");
-            },
-         scope: myDataTable
-    };
-
-    dataSource.setInterval(pollingCycle, null, myCallback);
+	if (!myCallback) {
+		// Set up polling
+		myCallback = {
+			success: myDataTable.onDataReturnInitializeTable,
+			failure: function(){
+				YAHOO.log("Polling failure", "error");
+			},
+			scope: myDataTable
+		};
+		
+		dataSource.setInterval(pollingCycle, null, myCallback);
+	};
 	 
 	return myDataTable;
 };

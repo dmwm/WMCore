@@ -1,7 +1,7 @@
 var taskTable = function(oArgs){
 
 	var dataSchema = {
-        fields: [{key: "task"},
+        fields: [{key: "task", label: " Tasks for " + oArgs.workflow},
                  {key: "total_jobs", label: 'total'},
                  {key: "none"}, {key: "new"},
                  {key: "created"}, {key: "createfailed"},{key: "createcooloff"},
@@ -17,5 +17,7 @@ var taskTable = function(oArgs){
 	var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
 	//writeDebugObject(dataSource)
 	//writeEval(dataSource.responseType)
-	var dataTable = WMCore.WebTools.createDataTable(oArgs.divID, dataSource, WMCore.WebTools.createDefaultTableDef(dataSchema.fields), WMCore.WebTools.createDefaultTableConfig(), 100000)
+	var dataTable = WMCore.WebTools.createDataTable(oArgs.divID, dataSource, 
+	                           WMCore.WebTools.createDefaultTableDef(dataSchema.fields), 
+							   WMCore.WebTools.createDefaultTableConfig(), 1000000)
 }

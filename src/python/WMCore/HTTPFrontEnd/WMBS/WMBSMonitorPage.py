@@ -38,7 +38,7 @@ class WMBSMonitorPage(TemplatedPage):
             return self.index()
 
     @expose
-    def template(self, **kwargs):
+    def template(self, *args, **kwargs):
         """
         Show the documentation for a page or return the index
         """

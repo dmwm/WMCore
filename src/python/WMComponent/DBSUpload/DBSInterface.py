@@ -76,6 +76,9 @@ def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
 
     parents = []
 
+    if dataTier == 'RAW-RECO':
+        dataTier = ['RAW', 'RECO']
+
     if not type(dataTier) == list:
         dataTier = [dataTier]
 

@@ -93,7 +93,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                         self.reqMgr.reportRequestStatus(reqName, 'failed')
                         self.reqMgr.sendMessage(reqName, str(ex)) # now append error message
                     except Exception, ex:
-                        self.wq.logger("Unable to report to ReqMgr: %s" % str(ex))
+                        self.wq.logger.error("Unable to report failure to ReqMgr: %s" % str(ex))
 
                 except Exception, ex:
                     self.wq.logger.exception("Error processing request %s" % reqName)

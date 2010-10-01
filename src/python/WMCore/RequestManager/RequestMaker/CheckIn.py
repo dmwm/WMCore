@@ -38,9 +38,9 @@ def checkIn(request, workloadCache):
         request['RequestWorkflow'],
         )
     except Exception, ex:
-         msg = "Error creating new request:\n"
-         msg += str(ex)
-         raise RuntimeError, msg
+        msg = "Error creating new request:\n"
+        msg += str(ex)
+        raise RuntimeError, msg
     request['RequestID'] = reqId
     logging.info("Request %s created with request id %s" % (
         request['RequestName'], request['RequestID'])
@@ -51,7 +51,6 @@ def checkIn(request, workloadCache):
     #//
     try:
         if request['InputDatasetTypes'] != {}:
-            print "HAS TYPES?"
             for ds, dsType in request['InputDatasetTypes'].items():
                 MakeRequest.associateInputDataset(
                     request['RequestName'], ds, dsType)
@@ -95,7 +94,7 @@ def checkIn(request, workloadCache):
         if request["RequestSizeEvents"] != None:
             MakeRequest.updateRequestSize(request['RequestName'],
                                           request["RequestSizeEvents"],
-                                          request["RequestSizeFiles"]
+                                          request.get("RequestSizeFiles", 0)
                                           )
 
 

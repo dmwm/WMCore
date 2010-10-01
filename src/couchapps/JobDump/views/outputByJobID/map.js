@@ -12,7 +12,7 @@ function(doc) {
         for (var outputFileIndex in stepOutput[outputModuleName]) {
           var outputFile = stepOutput[outputModuleName][outputFileIndex];
           if (outputFile['lfn'] != '') {
-            emit(doc['jobid'], outputFile['lfn']);
+            emit(doc['jobid'], {'lfn': outputFile['lfn'], 'location': outputFile['location']});
           }
         }
       }

@@ -5,6 +5,6 @@ function(head, req) {
   send("Output Files:\n");
 
   while (row = getRow()) {
-    send("  " + row.value + "\n");
+    send("  " + row.value["location"] + " -> " + row.value["lfn"] + "\n");
   }
 };

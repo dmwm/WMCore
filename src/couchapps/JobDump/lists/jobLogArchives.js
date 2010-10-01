@@ -6,7 +6,7 @@ function(head, req) {
   send("Log Archive LFNs:\n");
 
   while (row = getRow()) {
-    send("  " + row.value["retrycount"] + " -> " + row.value["lfn"] + "\n");
+    send("  " + row.value["retrycount"] + " -> " + row.value["location"] + " -> " + row.value["lfn"] + "\n");
   }
 
   send("</pre></body></html>");

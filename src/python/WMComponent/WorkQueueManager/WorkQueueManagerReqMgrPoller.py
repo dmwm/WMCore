@@ -89,14 +89,11 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     # fatal error - report back to ReqMgr
                     self.wq.logger.error("Permanent failure processing request %s - %s" % (reqName, str(ex)))
                     self.wq.logger.error("Marking request %s as failed in ReqMgr" % reqName)
-                    try:
-                        self.reqMgr.reportRequestStatus(reqName, 'failed')
-                        self.reqMgr.sendMessage(reqName, str(ex)) # now append error message
-                    except Exception, ex:
-                        self.wq.logger.error("Unable to report failure to ReqMgr: %s" % str(ex))
-
+                    self.reportRequestStatusToReqMgr(reqName, 'failed', message = str(ex))
                 except Exception, ex:
+                    #TODO: Improve this to handle intermittent (dbs/phedex down etc.) failures
                     self.wq.logger.exception("Error processing request %s" % reqName)
+                    self.reportRequestStatusToReqMgr(reqName, 'failed', message = str(ex))
                 
             self.wq.logger.info("There is new work, update location info")     
             self.wq.updateLocationInfo(newDataOnly = True)
@@ -153,9 +150,8 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
             status = self.reqMgrStatus(ele)
 
             try:
-                if status:
-                    self.reqMgr.reportRequestStatus(ele['RequestName'],
-                                                    status)
+                self.reportRequestStatusToReqMgr(ele['RequestName'], status)
+
                 if ele['PercentComplete'] or ele['PercentSuccess']:
                     args = {'percent_complete' : ele['PercentComplete'],
                             'percent_success' : ele['PercentSuccess']}
@@ -170,6 +166,17 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
 
         if updated:
             self.wq.setReqMgrUpdate(now, *updated)
+
+    def reportRequestStatusToReqMgr(self, request, status, message = None):
+        """Change state in RequestManager
+           Optionally, take a message to append to the request"""
+        try:
+            if status:
+                self.reqMgr.reportRequestStatus(request, status)
+            if message:
+                self.reqMgr.sendMessage(request, str(message))
+        except Exception, ex:
+            self.wq.logger.error("Unable to report to ReqMgr: %s" % str(ex))
 
     def reqMgrStatus(self, ele):
         """Map WorkQueue Status to that reported to ReqMgr"""

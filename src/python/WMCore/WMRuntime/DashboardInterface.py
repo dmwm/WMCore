@@ -238,10 +238,9 @@ class DashboardInfo(dict):
 
         Fill with step-ending information
         """
-
-        stepSuccess = stepReport.stepSuccessful(stepName = helper.name())
-
         helper = WMStepHelper(step)
+        stepSuccess = stepReport.stepSuccessful(stepName = helper.name())
+        
         self['ExeEnd']        = helper.name()
         self['ExeFinishTime'] = time.time()
         self['ExeExitStatus'] = stepSuccess

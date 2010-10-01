@@ -141,6 +141,7 @@ class Watchdog(threading.Thread):
                 msg = "Error in notifyJobStart for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
+                logging.error(msg)
                 raise WatchdogException(msg)
         return
     #  //
@@ -158,6 +159,7 @@ class Watchdog(threading.Thread):
                 msg = "Error in notifyTaskStart for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
+                logging.error(msg)
                 raise WatchdogException(msg)
         return
 
@@ -176,6 +178,7 @@ class Watchdog(threading.Thread):
                 msg = "Error in notifyTaskEnd for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
+                logging.error(msg)
                 raise WatchdogException(msg)
         #print "Task Ended: %s with Exit Code:%s" % (task, exitCode)
         #self._MonMgr.taskEnd(task, exitCode)
@@ -216,6 +219,7 @@ class Watchdog(threading.Thread):
                 msg = "Error in notifyKillJob for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
+                logging.error(msg)
                 raise WatchdogException(msg)
         #self._MonMgr.jobKilled()
         self.shutdown()
@@ -234,6 +238,7 @@ class Watchdog(threading.Thread):
                 msg = "Error in notifyKillTask for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
+                logging.error(msg)
                 raise WatchdogException(msg)
         #self._MonMgr.taskKilled()
         

@@ -91,14 +91,13 @@ class StdBase(object):
         
         Add dashboard monitoring for the given task.
         """
-        return
         monitoring = task.data.section_("watchdog")
         monitoring.interval = 600
         monitoring.monitors = ["DashboardMonitor"]
         monitoring.section_("DashboardMonitor")
         monitoring.DashboardMonitor.softTimeOut = 300000
         monitoring.DashboardMonitor.hardTimeOut = 600000
-        monitoring.DashboardMonitor.destinationHost = "cms-pamon.cern.ch"
+        monitoring.DashboardMonitor.destinationHost = "bogus.fnal.gov"
         monitoring.DashboardMonitor.destinationPort = 8884
         return task
 

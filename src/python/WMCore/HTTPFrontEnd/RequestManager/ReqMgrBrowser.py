@@ -352,11 +352,8 @@ class ReqMgrBrowser(TemplatedPage):
                 team = key[4:]
                 if not team in assignments:
                     teams.append(team)
-                    try:
-                        self.jsonSender.put('/reqMgr/assignment/%s/%s' % (urllib.quote(team), requestName))
-                        result += "Assigned to team %S\n" % team
-                    except:
-                        result += "Cannot assign to team " + team + "\n"
+                    self.jsonSender.put('/reqMgr/assignment/%s/%s' % (urllib.quote(team), requestName))
+                    result += "Assigned to team %s\n" % team
         if teams == [] and assignments == []:
             raise cherrypy.HTTPError(400, "Must assign to one or more teams")
 

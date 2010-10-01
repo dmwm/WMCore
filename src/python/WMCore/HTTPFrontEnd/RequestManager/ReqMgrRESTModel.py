@@ -324,8 +324,7 @@ class ReqMgrRESTModel(RESTModel):
         # see if it's already assigned
         requestNamesAndIDs = ListRequests.listRequestsByTeam(urllib.unquote(team))
         if requestName in requestNamesAndIDs.keys():
-            cherrypy.response.status = 400
-            return "Already assigned to this team"
+            raise cherrypy.HTTPError(400,"Already assigned to this team")
         return ChangeState.assignRequest(requestName, urllib.unquote(team))
 
     def putUser(self, userName, email, dnName=None):

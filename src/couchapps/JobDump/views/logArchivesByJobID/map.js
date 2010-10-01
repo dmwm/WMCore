@@ -16,7 +16,8 @@ function(doc) {
             continue;
           }
 
-          if (step[stepAttribute][outputModule].length > 0) {
+          if (step[stepAttribute][outputModule].length > 0 &&
+              'location' in step['output']['logArchive'][0]) {
             emit([doc['jobid'], doc['retrycount']],
                 {'lfn': step["output"]["logArchive"][0]["lfn"],
                  'retrycount': doc['retrycount'],

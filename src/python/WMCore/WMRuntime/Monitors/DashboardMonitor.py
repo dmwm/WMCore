@@ -115,7 +115,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         Handles the monitor initiation
 
         """
-        print "In TestMonitor.initMonitor"
+        print "In DashboardMonitor.initMonitor"
 
         self.task = task
         self.job  = job
@@ -250,7 +250,7 @@ class DashboardMonitor(WMRuntimeMonitor):
                 os.kill(stepPID, signal.SIGTERM)
                 killedpid, stat = os.waitpid(pid, os.WNOHANG)
                 if killedpid == 0:
-                    os.kill(stepPID, signal.SIGKill)
+                    os.kill(stepPID, signal.SIGKILL)
                     killedpid, stat = os.waitpid(pid, os.WNOHANG)
                     if killedpid == 0:
                         logging.error("Can't kill job.  Out of options.  Waiting for system reboot.")

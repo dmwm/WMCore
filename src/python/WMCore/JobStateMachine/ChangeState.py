@@ -195,7 +195,7 @@ class ChangeState(WMObject, WMConnectionBase):
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),
                                 "type": "fwjr",
-                                "timestamp": int(time.time())}
+                                "timestamp": time.time()}
                 self.database.queue(fwjrDocument,
                                     viewlist = ["jobDump/jobsByJobID"])
 

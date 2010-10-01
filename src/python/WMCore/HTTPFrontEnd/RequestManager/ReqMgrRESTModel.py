@@ -15,9 +15,8 @@ import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
 import WMCore.RequestManager.RequestMaker.WMWorkloadCache as WMWorkloadCache
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
-import WMCore.RequestManager.RequestDB.Interface.ProdSystem.ProdMgrRetrieve as ProdMgrRetrieve
-from WMCore.RequestManager.RequestMaker.Processing.RecoRequest import *
-from WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest import *
+import WMCore.RequestManager.RequestMaker.Processing.RecoRequest 
+import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest 
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import cherrypy
@@ -28,48 +27,51 @@ import urllib
 from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.Overview import getGlobalSummaryView
 
 class ReqMgrRESTModel(RESTModel):
-    def __init__(self, config = {}):
+    """ The REST interface to the ReqMgr database.  Documentation may
+    be found at https://twiki.cern.ch/twiki/bin/viewauth/CMS/ReqMgrSystemDesign """
+    def __init__(self, config):
         RESTModel.__init__(self, config)
         #self.dialect = config.dialect
         self.urlPrefix = '%s/download?filepath=' % config.model.reqMgrHost
         self.cache = WMWorkloadCache.WMWorkloadCache(config.model.workloadCache)
         self.hostAddress = config.model.reqMgrHost
         
-        self.methods = {'GET':{'request' : {'call':self.getRequest, 'args':['requestName'], 'expires': 0},
-                               'assignment' : {'call':self.getAssignment, 'args':['teamName', 'request'], 'expires': 0},
-                               'user' :  {'call':self.getUser, 'args':['userName'], 'expires': 0},
-                               'group' :  {'call':self.getGroup, 'args':['group', 'user'], 'expires': 0},
-                               'version' :  {'call':self.getVersion, 'args':[], 'expires': 0},
-                               'team' :  {'call':self.getTeam, 'args':[], 'expires': 0},
-                               'workQueue' : {'call':self.getWorkQueue, 'args':['request', 'workQueue'], 'expires': 0},
-                               'message' : {'call':self.getMessage, 'args':['request'], 'expires': 0}
-                              },
-                        'PUT':{'request' : {'call':self.putRequest, 
-                                            'args':['requestName', 'status', 'priority']},
-                               'assignment' : {'call':self.putAssignment, 
-                                               'args':['team', 'requestName']},
-                               'user' :  {'call':self.putUser, 
-                                          'args':['userName', 'email', 'dnName']},
-                               'group' :  {'call':self.putGroup, 'args':['group', 'user']},
-                               'version' :  {'call':self.putVersion, 'args':['version']},
-                               'team' :  {'call':self.putTeam, 'args':['team']},
-                               'workQueue' : {'call':self.putWorkQueue, 'args':['request', 'url']},
-                               'message' : {'call':self.putMessage, 'args':['request']}
-                              },
-                        'POST':{'request' : {'call':self.postRequest,
-                                             'args':['requestName', 'events_written', 
-                                                     'events_merged', 'files_written',
-                                                     'files_merged', 'dataset']},
-                                'user' : {'call':self.postUser, 'args':['user', 'priority']},
-                                'group' : {'call':self.postUser, 'args':['group', 'priority']} 
-                               },
-                        'DELETE':{'request' : {'call':self.deleteRequest, 'args':['requestName']},
-                                  'user' :  {'call':self.deleteUser, 'args':['user']},
-                                  'group' :  {'call':self.deleteGroup, 'args':['group', 'user']},
-                                  'version' :  {'call':self.deleteVersion, 'args':['version']},
-                                  'team' :  {'call':self.deleteTeam, 'args':['team']}
-                                 }
-                       }
+        self.methods = {
+            'GET':{'request' : {'call':self.getRequest, 'args':['requestName'], 'expires': 0},
+                   'assignment' : {'call':self.getAssignment, 'args':['teamName', 'request'], 'expires': 0},
+                   'user' :  {'call':self.getUser, 'args':['userName'], 'expires': 0},
+                   'group' :  {'call':self.getGroup, 'args':['group', 'user'], 'expires': 0},
+                   'version' :  {'call':self.getVersion, 'args':[], 'expires': 0},
+                   'team' :  {'call':self.getTeam, 'args':[], 'expires': 0},
+                   'workQueue' : {'call':self.getWorkQueue, 'args':['request', 'workQueue'], 'expires': 0},
+                   'message' : {'call':self.getMessage, 'args':['request'], 'expires': 0}
+                   },
+            'PUT':{'request' : {'call':self.putRequest, 
+                                'args':['requestName', 'status', 'priority']},
+                   'assignment' : {'call':self.putAssignment, 
+                                   'args':['team', 'requestName']},
+                   'user' :  {'call':self.putUser, 
+                              'args':['userName', 'email', 'dnName']},
+                   'group' :  {'call':self.putGroup, 'args':['group', 'user']},
+                   'version' :  {'call':self.putVersion, 'args':['version']},
+                   'team' :  {'call':self.putTeam, 'args':['team']},
+                   'workQueue' : {'call':self.putWorkQueue, 'args':['request', 'url']},
+                   'message' : {'call':self.putMessage, 'args':['request']}
+                   },
+            'POST':{'request' : {'call':self.postRequest,
+                                 'args':['requestName', 'events_written', 
+                                         'events_merged', 'files_written',
+                                         'files_merged', 'dataset']},
+                    'user' : {'call':self.postUser, 'args':['user', 'priority']},
+                    'group' : {'call':self.postUser, 'args':['group', 'priority']} 
+                    },
+            'DELETE':{'request' : {'call':self.deleteRequest, 'args':['requestName']},
+                      'user' :  {'call':self.deleteUser, 'args':['user']},
+                      'group' :  {'call':self.deleteGroup, 'args':['group', 'user']},
+                      'version' :  {'call':self.deleteVersion, 'args':['version']},
+                      'team' :  {'call':self.deleteTeam, 'args':['team']}
+                      }
+            }
         # stop caching for all GET', PUT, POST, and DELETEs
         #for call in ['PUT', 'POST', 'DELETE']:
         #   for method, paramDict in self.methods[call].iteritems():
@@ -99,6 +101,7 @@ class ReqMgrRESTModel(RESTModel):
         return None
 
     def requestID(self, requestName):
+        """ Finds the ReqMgr database ID for a request """
         requests = ListRequests.listRequests()
         for request in requests:
             if request['RequestName'] == requestName:
@@ -106,15 +109,17 @@ class ReqMgrRESTModel(RESTModel):
         raise RuntimeError("No such request")
 
     def getRequest(self, requestName=None):
-    #def getRequest(self, *args, **kwargs):
+        """ If a request name is specified, return the details of the request. 
+        Otherwise, return an overview of all requests """
+      
         self.initThread()
         requests = ListRequests.listRequests()
         if requestName == None:
             # add some details
             result = []
             for request in requests:
-               requestName = request['RequestName']
-               result.append(self.fillRequest(requestName, request['RequestID']))
+                requestName = request['RequestName']
+                result.append(self.fillRequest(requestName, request['RequestID']))
             return result
         else:
             for request in requests:
@@ -125,8 +130,9 @@ class ReqMgrRESTModel(RESTModel):
 
     
     def fillRequest(self, requestName, requestID):
+        """ Return a dict with the intimate details of the request """
         request = GetRequest.getRequest(requestID)
-        assignments= GetRequest.getRequestAssignments(requestID)
+        assignments = GetRequest.getRequestAssignments(requestID)
         if assignments != []:
             request['Assignments'] = []
         for assignment in assignments:
@@ -142,13 +148,15 @@ class ReqMgrRESTModel(RESTModel):
         for update in request['RequestUpdates']:
             update['update_time'] = str(update['update_time'])
             if update.has_key('percent_complete'):
-               request['percent_complete'] = update['percent_complete']
+                request['percent_complete'] = update['percent_complete']
             if update.has_key('percent_success'):
-               request['percent_success'] = update['percent_success']
+                request['percent_success'] = update['percent_success']
         return request
 
 
     def getAssignment(self, teamName=None, request=None):
+        """ If a team name is passed in, get all assignments for that team.
+        If a request is passed in, return a list of teams the request is assigned to """
         self.initThread()
         result = []
         #self.init.setLogging()
@@ -165,7 +173,7 @@ class ReqMgrRESTModel(RESTModel):
             return result
         if request != None:
             reqID = self.requestID(request)
-            assignments= GetRequest.getRequestAssignments(reqID)
+            assignments = GetRequest.getRequestAssignments(reqID)
             result = [assignment['TeamName'] for assignment in assignments] 
         return result
 
@@ -188,24 +196,28 @@ class ReqMgrRESTModel(RESTModel):
             else:
                 # check if the user exists first
                 if not user in self.getUser():
-                   cherrypy.response.status = 400
-                   return "Cannot find user " + user + ".  Please add one using PUT user."
+                    cherrypy.response.status = 400
+                    return "Cannot find user " + user + ".  Please add one using PUT user."
                 return GroupInfo.groupsForUser(user).keys()
         else:
             try:
                 return GroupInfo.usersInGroup(group)
-            except Exception, ex:
+            except Exception:
                 raise RuntimeError, "Error finding group " + group
 
     def getVersion(self):
+        """ Returns a list of all CMSSW versions registered with ReqMgr """
         self.initThread()
         return SoftwareAdmin.listSoftware().keys()
       
     def getTeam(self):
+        """ Returns a list of all teams registered with ReqMgr """
         self.initThread()
         return ProdManagement.listTeams()
 
     def getWorkQueue(self, request=None, workQueue=None):
+        """ If a request is passed in, return the URl of the workqueue.
+        If a workqueue is passed in, return all requests acquired by it """
         self.initThread()
         if workQueue != None:
             return ProdMgrRetrieve.findAssignedRequests(workQueue)
@@ -213,19 +225,23 @@ class ReqMgrRESTModel(RESTModel):
             return ProdManagement.getProdMgr(request)
 
     def abortRequest(self, request):
+        """ Changes the state of the request to "aborted", and asks the work queue
+        to cancel its work """
         self.initThread()
         response = self.getWorkQueue(request=request)
         url = response[0]
         if url == None or url == "":
-             raise HTTPError(400, "Cannot find URL for request " + request)
+            raise cherrypy.HTTPError(400, "Cannot find URL for request " + request)
         workqueue = WorkQueue.WorkQueue({'endpoint': url})     
         workqueue.cancelWork([request])
    
     def getMessage(self, request=None):
+        """ Returns a list of messages attached to this request """
         self.initThread()
         return ChangeState.getMessages(request)
 
     def putWorkQueue(self, request, url):
+        """ Registers the request as "acquired" by the workqueue with the given URL """
         self.initThread()
         ChangeState.changeRequestStatus(request, "acquired")
         return ProdManagement.associateProdMgr(request, urllib.unquote(url))
@@ -261,14 +277,15 @@ class ReqMgrRESTModel(RESTModel):
                     self.abortRequest(requestName)
                 if priority != None:
                     ChangeState.changeRequestStatus(requestName, status, priority)
-                    self.updatePriorityInWorkflow(requestName, priority)
+                    self.updatePriorityInWorkload(requestName, priority)
                 else:
                     ChangeState.changeRequestStatus(requestName, status)
             else:
                 ChangeState.changeRequestStatus(requestName, oldStatus, priority) 
         return result
 
-    def updatePriorityInWorkflow(self, requestName, priority):
+    def updatePriorityInWorkload(self, requestName, priority):
+        """ Changes the priority that's stored in the workload """
         reqID = self.requestID(requestName)
         request = GetRequest.getRequest(reqID)
         assert(request != None)
@@ -281,6 +298,8 @@ class ReqMgrRESTModel(RESTModel):
  
         
     def makeRequest(self):
+        """ Creates a new request, with a JSON-encoded schema that is sent in the
+        body of the request """
         body = cherrypy.request.body.read()
         requestSchema = JsonWrapper.loads( body, encoding='latin-1' )
         maker = retrieveRequestMaker(requestSchema['RequestType'])
@@ -300,6 +319,7 @@ class ReqMgrRESTModel(RESTModel):
         return requestSchema
 
     def putAssignment(self, team, requestName):
+        """ Assigns this request to this team """
         self.initThread()
         # see if it's already assigned
         requestNamesAndIDs = ListRequests.listRequestsByTeam(urllib.unquote(team))
@@ -311,7 +331,6 @@ class ReqMgrRESTModel(RESTModel):
     def putUser(self, userName, email, dnName=None):
         """ Needs to be passed an e-mail address, maybe dnName """
         self.initThread()
-        print "PUTUSER"
         if Registration.isRegistered(userName):
             return "User already exists"
         result = Registration.registerUser(userName, email, dnName)
@@ -319,6 +338,7 @@ class ReqMgrRESTModel(RESTModel):
         return result
 
     def putGroup(self, group, user=None):
+        """ Creates a group, or if a user is passed, adds that user to the group """
         self.initThread()
         if(user != None):
             # assume group exists and add user to it
@@ -328,18 +348,20 @@ class ReqMgrRESTModel(RESTModel):
         return GroupAdmin.addGroup(group)
 
     def putVersion(self, version):
+        """ Registers a new CMSSW version with ReqMgr """
         self.initThread()
         return SoftwareAdmin.addSoftware(version)
 
     def putTeam(self, team):
+        """ Registers a team with ReqMgr """
         self.initThread()
         return ProdManagement.addTeam(urllib.unquote(team))
 
     def putMessage(self, request):
+        """ Attaches a message to this request """
         self.initThread()
         message = JsonWrapper.loads( cherrypy.request.body.read() )
         result = ChangeState.putMessage(request, message)
-        print "SENT " + str(result)
         return result
 
 #    def postRequest(self, requestName, events_written=None, events_merged=None, 
@@ -363,14 +385,15 @@ class ReqMgrRESTModel(RESTModel):
         return ChangeState.updateRequest(requestName, kwargs)
 
     def postUser(self, user, priority):
-        # Change the user's priority
+        """ Change the user's priority """
         pass
 
     def postGroup(self, group, priority):
-        # Change the group's priority
+        """ Change the group's priority """
         pass
 
     def deleteRequest(self, requestName):
+        """ Deletes a request from the ReqMgr """
         self.initThread()
         try:
             request = self.findRequest(requestName)
@@ -382,6 +405,8 @@ class ReqMgrRESTModel(RESTModel):
             return str(ex)
 
     def deleteUser(self, user):
+        """ Deletes a user, as well as deleting his requests and removing
+            him from all groups """
         self.initThread()
         if user in self.getUser():
             for request in self.getUser(user):
@@ -391,6 +416,7 @@ class ReqMgrRESTModel(RESTModel):
             return UserAdmin.deleteUser(user)
 
     def deleteGroup(self, group, user=None):
+        """ If no user is sent, delete the group.  Otherwise, delete the user from the group """
         self.initThread()
         if user == None:
             return GroupAdmin.deleteGroup(group)
@@ -398,10 +424,12 @@ class ReqMgrRESTModel(RESTModel):
             return GroupAdmin.removeUserFromGroup(user, group) 
 
     def deleteVersion(self, version):
+        """ Un-register this software version with ReqMgr """
         self.initThread()
         SoftwareAdmin.removeSoftware(version)
 
     def deleteTeam(self, team):
+        """ Delete this team from ReqMgr """
         self.initThread()
         ProdManagement.removeTeam(urllib.unquote(team))
 

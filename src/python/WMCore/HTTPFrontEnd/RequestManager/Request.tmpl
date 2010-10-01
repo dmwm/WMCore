@@ -10,6 +10,10 @@
 <a href="../showTweakFile/$docId" >TweakFile</a><br><br>
 #end if
 
+#def $textarea($name, $value)
+    <td><textarea name=$name rows="2" cols="80">$value</textarea></td></tr>
+#end def
+
 <FORM ACTION="../modifyWorkload" METHOD="POST">
 <hr><table>
 #for $key in $detailsFields
@@ -26,13 +30,13 @@
             <tr><td> $key </td><td> $value </td></tr>
             <INPUT TYPE="HIDDEN" NAME="requestName" VALUE=$value>
         #elif $key == 'RunWhitelist'
-            <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="runWhitelist"></INPUT>
+            <tr><td> $key </td> $textarea("runWhitelist", $value)
         #elif $key == 'RunBlacklist'
-            <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="runBlacklist"></INPUT>
+            <tr><td> $key </td> $textarea("runBlacklist", $value)
         #elif $key == 'BlockWhitelist'
-            <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="blockWhitelist"></INPUT>
+            <tr><td> $key </td> $textarea("blockWhitelist", $value)
         #elif $key == 'BlockBlacklist'
-            <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="blockBlacklist"></INPUT>
+            <tr><td> $key </td> $textarea("blockBlacklist", $value)
         #elif $key == 'CouchUrl'
             #pass 
         #else

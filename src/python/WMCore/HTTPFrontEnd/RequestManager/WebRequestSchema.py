@@ -4,6 +4,7 @@ from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
 from WMCore.RequestManager.RequestDB.Settings.RequestTypes import TypesList
 from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
 from WMCore.Services.Requests import JSONRequests
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList
 from WMCore.HTTPFrontEnd.RequestManager.CmsDriverWebRequest import CmsDriverWebRequest
 import WMCore.HTTPFrontEnd.RequestManager.Sites
 from httplib import HTTPException
@@ -92,14 +93,14 @@ class WebRequestSchema(TemplatedPage):
             schema["SkimConfigs"].append(d)
             skimNumber += 1
 
-        if kwargs.has_key("RunWhitelist") and kwargs["RunWhitelist"] != '':
-            schema["RunWhitelist"] = [int(n) for n in kwargs["RunWhitelist"].split(',')]
-        if kwargs.has_key("RunBlacklist") and kwargs["RunBlacklist"] != '':
-            schema["RunBlacklist"] = [int(n) for n in kwargs["RunBlacklist"].split(',')]
-        if kwargs.has_key("BlockWhitelist") and kwargs["BlockWhitelist"] != '':
-            schema["BlockWhitelist"] = kwargs["BlockWhitelist"].split(',')
-        if kwargs.has_key("BlockBlacklist") and kwargs["BlockBlacklist"] != '':
-            schema["BlockBlacklist"] = kwargs["BlockBlacklist"].split(',')
+        if kwargs.has_key("RunWhitelist"):
+            schema["RunWhitelist"] = parseRunList(kwargs["RunWhitelist"])
+        if kwargs.has_key("RunBlacklist"):
+            schema["RunBlacklist"] = parseRunList(kwargs["RunBlacklist"])
+        if kwargs.has_key("BlockWhitelist"):
+            schema["BlockWhitelist"] = parseBlockList(kwargs["BlockWhitelist"])
+        if kwargs.has_key("BlockBlacklist"):
+            schema["BlockBlacklist"] = parseBlockList(kwargs["BlockBlacklist"])
 
         schema['CmsPath'] = self.cmsswInstallation
         schema["CouchUrl"] = self.couchUrl

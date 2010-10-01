@@ -1,4 +1,7 @@
+#!/usr/bin/env python
+
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Cache.WMConfigCache import ConfigCache 
 from PSetTweaks.PSetTweak import PSetHolder, PSetTweak
@@ -394,7 +397,10 @@ class ReqMgrBrowser(TemplatedPage):
         return result
     handleAssignmentPage.exposed = True
 
-    def modifyWorkload(self, requestName, workload, requestType, runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None):
+    def modifyWorkload(self, requestName, workload, requestType,
+                       runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None):
+        """ handles the "Modify" button of the requestDetails page """
+        
         if workload == None or not os.path.exists(workload):
             raise RuntimeError, "Cannot find workload " + workload
         helper = WMWorkloadHelper()
@@ -403,29 +409,28 @@ class ReqMgrBrowser(TemplatedPage):
         message = ""
         #inputTask = helper.getTask(requestType).data.input.dataset
         if runWhitelist != "" and runWhitelist != None:
-           l = eval("[%s]"%runWhitelist)
+           l = parseRunList(runWhitelist)
            schema.RunWhitelist = l
            helper.setRunWhitelist(l)
-           message += 'Changed runWhiteList to ' + str(l)
+           message += 'Changed runWhiteList to %s<br>' % l
         if runBlacklist != "" and runBlacklist != None:
-           l = eval("[%s]"%runBlacklist)
+           l = parseRunList(runBlacklist)
            schema.RunBlacklist = l
            helper.setRunBlacklist(l)
-           message += 'Changed runBlackList to ' + str(l)
+           message += 'Changed runBlackList to %s<br>' % l
         if blockWhitelist != "" and blockWhitelist != None:
-           l = eval("[%s]"%blockWhitelist)
+           l = parseBlockList(blockWhitelist)
            schema.BlockWhitelist = l
            helper.setBlockWhitelist(l)
-           message += 'Changed blockWhiteList to ' + str(l)
+           message += 'Changed blockWhiteList to %s<br>' % l
         if blockBlacklist != "" and blockBlacklist != None:
-           l = eval("[%s]"%blockBlacklist)
+           l = parseBlockList(blockBlacklist)
            schema.BlockBlacklist = l
            helper.setBlockBlacklist(l)
-           message += 'Changed blockBlackList to ' + str(l)
+           message += 'Changed blockBlackList to %s<br>' % l
         helper.save(workload)
         return message + self.detailsBackLink(requestName)
     modifyWorkload.exposed = True
-
 
     def parseSite(self, kw, name):
         """ puts site whitelist & blacklists into nice format"""

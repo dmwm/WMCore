@@ -116,11 +116,16 @@ function addSkim() {
 </script>
 #end def
 
+#def $textarea($name)
+    <textarea name=$name rows="2" cols="80"></textarea><br>
+#end def
+
+
 #def runBlockBlock
-Run Whitelist (separated by commas): <input type="text" name="RunWhitelist" size=40/><br/>
-Run Blacklist (separated by commas): <input type="text" name="RunBlacklist" size=40/><br/>
-Block Whitelist (separated by commas): <input type="text" name="BlockWhitelist" size=40/><br/>
-Block Blocklist (separated by commas): <input type="text" name="BlockBlacklist" size=40/><br/>
+Run Whitelist (separated by commas): $textarea("RunWhitelist")
+Run Blacklist (separated by commas): $textarea("RunBlacklist")
+Block Whitelist (separated by commas): $textarea("BlockWhitelist")
+Block Blocklist (separated by commas): $textarea("BlockBlacklist")
 #end def
 
 #def emulatorBlock

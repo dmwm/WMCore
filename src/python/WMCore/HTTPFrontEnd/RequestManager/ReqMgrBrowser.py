@@ -110,7 +110,7 @@ class ReqMgrBrowser(TemplatedPage):
             splitParams["files_per_job"] = submittedParams["two_files_per_job"]            
         elif splittingAlgo == "LumiBased":
             splitParams["lumis_per_job"] = submittedParams["lumis_per_job"]
-            if str(submittedParams["split_files_between_job"]) == True:
+            if str(submittedParams["split_files_between_job"]) == "True":
                 splitParams["split_files_between_job"] = True
             else:
                 splitParams["split_files_between_job"] = False                

@@ -11,7 +11,7 @@ function(doc) {
       for (var outputModuleName in stepOutput) {
         for (var outputFileIndex in stepOutput[outputModuleName]) {
           var outputFile = stepOutput[outputModuleName][outputFileIndex];
-          if (outputFile['lfn'] != '') {
+          if (outputFile['lfn'] != '' && 'location' in outputFile) {
             emit(doc['jobid'], {'lfn': outputFile['lfn'], 'location': outputFile['location']});
           }
         }

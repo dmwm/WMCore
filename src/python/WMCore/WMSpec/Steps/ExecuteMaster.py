@@ -112,6 +112,7 @@ class ExecuteMaster:
             logging.error("Exception is %s" % ex)
             logging.error("Traceback: ")
             logging.error(traceback.format_exc())
+            executor.diagnostic(99109, executor, ex = ex)
             error = True
         #TODO: Handle generic Exception that indicates development/code errors
         executor.saveReport()

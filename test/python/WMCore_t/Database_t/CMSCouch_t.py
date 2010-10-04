@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 This unit test isn't really a unit test, more an explaination of how to use the 
 CMSCouch library to work with CouchDB. It currently assumes you have a running 
@@ -8,12 +9,13 @@ need to add Couch as an external, include it in start up scripts etc.
 from WMCore.Database.CMSCouch import CouchServer, Document, Database
 import random
 import unittest
+import os
 
 class CMSCouchTest(unittest.TestCase):
     test_counter = 0
     def setUp(self):
         # Make an instance of the server
-        self.server = CouchServer('http://admin:password@localhost:5984')
+        self.server = CouchServer(os.getenv("COUCHURL", 'http://admin:password@localhost:5984'))
         testname = self.id().split('.')[-1]
         # Create a database, drop an existing one first
         dbname = 'cmscouch_unittest_%s' % testname.lower()

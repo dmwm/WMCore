@@ -100,7 +100,8 @@ class WorkQueueManager(Harness):
         # ReqMgr params
         if not hasattr(wqManager, 'reqMgrConfig'):
             wqManager.reqMgrConfig = {}
-        wqManager.reqMgrConfig['monitorURL'] = monitorURL
+        wqManager.reqMgrConfig['QueueURL'] = qConfig['QueueURL']
+        wqManager.reqMgrConfig['MonitorURL'] = monitorURL
 
         return config
 

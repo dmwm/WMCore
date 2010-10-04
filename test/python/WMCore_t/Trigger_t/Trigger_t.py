@@ -61,7 +61,7 @@ class TriggerTest(unittest.TestCase):
 
         Test subscription of a component.
         """
-        raise nose.skipTest
+        raise nose.SkipTest
         factory = WMFactory("trigger", "WMCore.Trigger")
 
         # perpare trigger name tables if working in multi queue

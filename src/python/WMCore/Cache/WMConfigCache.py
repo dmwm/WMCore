@@ -251,7 +251,7 @@ class ConfigCache(WMObject):
 
         self.unwrapView(viewRes)
 
-        self.loadByID()
+        self.loadByID(self.id)
 
         return
 
@@ -265,7 +265,7 @@ class ConfigCache(WMObject):
 
         if self.id != None:
             # Then we should load by ID
-            self.loadByID()
+            self.loadByID(self.id)
             return
 
         # Otherwise we have to load by view

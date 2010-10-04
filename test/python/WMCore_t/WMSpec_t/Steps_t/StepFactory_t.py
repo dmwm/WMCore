@@ -33,7 +33,7 @@ class StepFactoryTest(unittest.TestCase):
 
     def testB(self):
         """bad template"""
-        self.assertRaises(StepFactory.StepFactoryException,
+        self.assertRaises(ImportError,
                           StepFactory.getStepTemplate, "UtterGuff")
 
 
@@ -51,7 +51,7 @@ class StepFactoryTest(unittest.TestCase):
 
     def testD(self):
         """bad buildere"""
-        self.assertRaises(StepFactory.StepFactoryException,
+        self.assertRaises(ImportError,
                           StepFactory.getStepBuilder, "UtterGuff")
 
 
@@ -69,7 +69,7 @@ class StepFactoryTest(unittest.TestCase):
 
     def testD(self):
         """bad executor"""
-        self.assertRaises(StepFactory.StepFactoryException,
+        self.assertRaises(ImportError,
                           StepFactory.getStepExecutor, "UtterGuff")
 
 
@@ -87,7 +87,7 @@ class StepFactoryTest(unittest.TestCase):
 
     def testG(self):
         """bad emu"""
-        self.assertRaises(StepFactory.StepFactoryException,
+        self.assertRaises(ImportError,
                           StepFactory.getStepEmulator, "UtterGuff")
 
 

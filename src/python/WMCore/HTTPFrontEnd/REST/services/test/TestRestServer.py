@@ -25,6 +25,7 @@ def restservice():
     verbose = 0
     rest = RestServer(model, formatter, url, verbose)
     conf = {'/':{'request.dispatch':cherrypy.dispatch.MethodDispatcher()}}
+    cherrypy.server.socket_port = 8089
     cherrypy.quickstart(rest, '/services', config=conf)
 #
 # Main

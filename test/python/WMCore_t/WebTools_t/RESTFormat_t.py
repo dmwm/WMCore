@@ -22,7 +22,7 @@ import urllib2
 
 from cherrypy import HTTPError
 from WMCore.WebTools.RESTFormatter import RESTFormatter
-from DummyRESTModel import DummyRESTModel
+from WMCore_t.WebTools_t.DummyRESTModel import DummyRESTModel
 
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTClientAPI import methodTest

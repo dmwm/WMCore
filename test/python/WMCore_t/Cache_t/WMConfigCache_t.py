@@ -12,6 +12,8 @@ import subprocess
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
+from WMCore.WMInit import getWMBASE
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 class testWMConfigCache(unittest.TestCase):
     """
@@ -24,6 +26,9 @@ class testWMConfigCache(unittest.TestCase):
         _setUp_
 
         """
+        self.testInit = TestInitCouchApp(__file__)
+        self.testInit.setLogging()
+        self.testInit.setupCouch("config_test", "ConfigCache")
         return
 
     def tearDown(self):
@@ -32,6 +37,7 @@ class testWMConfigCache(unittest.TestCase):
 
         Clear out the database.
         """
+        self.testInit.tearDownCouch()        
         return
 
     def testA_basicConfig(self):
@@ -87,9 +93,9 @@ class testWMConfigCache(unittest.TestCase):
         configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
+        psetPath = os.path.join(getWMBASE(), "test/python/WMCore_t/Cache_t/PSet.py")
+        configCache.addConfig(newConfig = psetPath, psetHash = None)
         configCache.save()
-
-        configCache.addConfig(newConfig = 'PSet.py', psetHash = None)
 
         configString1 = configCache.getConfig()
 
@@ -121,9 +127,9 @@ class testWMConfigCache(unittest.TestCase):
         configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
+        configCache.document['md5_hash'] = "somemd5"
+        configCache.addConfig(newConfig = 'PSet.py', psetHash = None)        
         configCache.save()
-
-        configCache.addConfig(newConfig = 'PSet.py', psetHash = None)
         
         configCache2 = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
         configCache2.document['md5_hash'] = configCache.document['md5_hash']

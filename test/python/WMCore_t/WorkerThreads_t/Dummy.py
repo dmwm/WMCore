@@ -5,14 +5,12 @@ _Dummy_
 A dummy class to mimic the component for tets.
 """
 
-
-
-
 import logging
+import os
 
 class DBCoreDummy:
     def __init__(self):
-        self.dialect = "mysql"
+        self.connectUrl = os.getenv("DATABASE")
 
 class ConfigDummy:
     def __init__(self):

@@ -246,13 +246,8 @@ class ConfigCache(WMObject):
             # Then we have a problem
             logging.error("Unable to load using view %s and value %s" % (view, str(value)))
 
-        if len(viewRes['rows']) > 0:
-            print viewRes
-
         self.unwrapView(viewRes)
-
         self.loadByID(self.id)
-
         return
 
 
@@ -357,9 +352,7 @@ class ConfigCache(WMObject):
 
         Get the currently active config
         """
-
         return self.attachments.get('configFile', None)
-
 
     def getCouchID(self):
         """

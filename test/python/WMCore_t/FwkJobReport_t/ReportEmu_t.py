@@ -16,6 +16,7 @@ from WMCore.DataStructs.Job import Job
 
 from WMCore.FwkJobReport.ReportEmu import ReportEmu
 from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
+from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
 
 class ReportEmuTest(unittest.TestCase):
     """
@@ -35,20 +36,7 @@ class ReportEmuTest(unittest.TestCase):
         self.acquisitionEra = "WMAgentCommissioining10"
         self.primaryDataset = "MinimumBias"
 
-        arguments = {
-            "OutputTiers" : ["RECO", "ALCARECO"],
-            "AcquisitionEra" : self.acquisitionEra,
-            "GlobalTag" : "GR09_R_34X_V5::All",
-            "LFNCategory" : self.mergedLFNBase,
-            "TemporaryLFNCategory": self.unmergedLFNBase,
-            "ProcessingVersion" : self.processingVersion,
-            "Scenario" : "cosmics",
-            "CMSSWVersion" : self.cmsswVersion,
-            "InputDatasets" : "/MinimumBias/BeamCommissioning09-v1/RAW",
-            "Emulate" : False,
-            }
-        
-        self.workload = rerecoWorkload("Tier1ReReco", arguments)
+        self.workload = rerecoWorkload("Tier1ReReco", getTestArguments())
         return
 
     def verifyOutputMetaData(self, outputFile, job):
@@ -149,7 +137,7 @@ class ReportEmuTest(unittest.TestCase):
                "Error: Run information wrong on input file."
 
         recoOutputFiles = report.getFilesFromOutputModule("cmsRun1", "outputRECORECO")
-        alcaOutputFiles = report.getFilesFromOutputModule("cmsRun1", "outputALCARECORECO")
+        alcaOutputFiles = report.getFilesFromOutputModule("cmsRun1", "outputALCARECOALCARECO")
 
         assert len(recoOutputFiles) == 1, \
                "Error: There should only be one RECO output file."
@@ -158,28 +146,18 @@ class ReportEmuTest(unittest.TestCase):
 
         assert recoOutputFiles[0]["module_label"] == "outputRECORECO", \
                "Error: RECO file has wrong output module."
-        assert alcaOutputFiles[0]["module_label"] == "outputALCARECORECO", \
+        assert alcaOutputFiles[0]["module_label"] == "outputALCARECOALCARECO", \
                "Error: ALCA file has wrong output module."
         
         self.verifyOutputMetaData(recoOutputFiles[0], processingJob)
         self.verifyOutputMetaData(alcaOutputFiles[0], processingJob)
 
-        # It seems there's no convention for processed dataset name so we won't
-        # verify that here...
-        lfnBase = "%s/%s/%s/" % (self.unmergedLFNBase, self.acquisitionEra, self.primaryDataset)
-        assert recoOutputFiles[0]["lfn"].startswith(lfnBase), \
-               "Error: LFN of RECO file is wrong."
-        assert alcaOutputFiles[0]["lfn"].startswith(lfnBase), \
-               "Error: LFN of ALCA file is wrong."
-
-        dataTierMap = {"outputRECORECO": "RECO", "outputALCARECORECO": "ALCARECO"}
+        dataTierMap = {"outputRECORECO": "RECO", "outputALCARECOALCARECO": "ALCARECO"}
         for outputFile in [recoOutputFiles[0], alcaOutputFiles[0]]:
             assert outputFile["dataset"]["applicationName"] == "cmsRun", \
                    "Error: Application name is incorrect."
             assert outputFile["dataset"]["primaryDataset"] == self.primaryDataset, \
                    "Error: Primary dataset is incorrect."
-            assert outputFile["dataset"]["applicationVersion"] == self.cmsswVersion, \
-                   "Error: Framework version is incorrect."
             assert outputFile["dataset"]["dataTier"] == dataTierMap[outputFile["module_label"]], \
                    "Error: Data tier is incorrect."
 

@@ -5,6 +5,7 @@ Unit tests for the ProcessPool class.
 """
 
 import unittest
+import nose
 
 from WMCore.ProcessPool.ProcessPool import ProcessPool
 from WMQuality.TestInit import TestInit
@@ -16,6 +17,18 @@ class ProcessPoolTest(unittest.TestCase):
 
         """
         self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ["WMCore.Agent.Database"],
+                                useDefault = False)
+        return
+
+    def tearDown(self):
+        """
+        _tearDown_
+
+        """
+        self.testInit.clearDatabase()
         return
 
     def testA_ProcessPool(self):
@@ -24,6 +37,7 @@ class ProcessPoolTest(unittest.TestCase):
 
         """
         config = self.testInit.getConfiguration()
+        config.Agent.useHeartbeat = False
         self.testInit.generateWorkDir(config)
                 
         processPool = ProcessPool("ProcessPool_t.ProcessPoolTestWorker",
@@ -53,6 +67,7 @@ class ProcessPoolTest(unittest.TestCase):
 
         """
         config = self.testInit.getConfiguration()
+        config.Agent.useHeartbeat = False        
         self.testInit.generateWorkDir(config)
                 
         processPool = ProcessPool("ProcessPool_t.ProcessPoolTestWorker",
@@ -83,8 +98,9 @@ class ProcessPoolTest(unittest.TestCase):
 
         Run a test with multiple workers
         """
-
+        raise nose.SkipTest
         config = self.testInit.getConfiguration()
+        config.Agent.useHeartbeat = False        
         self.testInit.generateWorkDir(config)
                 
         processPool = ProcessPool("ProcessPool_t.ProcessPoolTestWorker",

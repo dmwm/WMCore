@@ -215,7 +215,7 @@ class WMTaskTest(unittest.TestCase):
                                  run_whitelist = [1, 2, 3],
                                  run_blacklist = [4, 5])
 
-        assert testTask.inputDatasetPath() == "/PrimaryDataset/ProcessedDataset/DataTier", \
+        assert testTask.getInputDatasetPath() == "/PrimaryDataset/ProcessedDataset/DataTier", \
                "Error: Input dataset path is wrong."
         assert testTask.inputDatasetDBSURL() == "DBSURL", \
                "Error: Input DBS URL is wrong."

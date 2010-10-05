@@ -18,8 +18,7 @@ from wsgiref.handlers import format_date_time
 from WMQuality.TestInit import TestInit
 from WMCore.Configuration import Configuration
 from WMCore.WebTools.Page import make_rfc_timestamp
-from DummyRESTModel import DummyRESTModel
-#decorator import for RESTServer setup
+from WMCore_t.WebTools_t.DummyRESTModel import DummyRESTModel
 from WMQuality.WebTools.RESTServerSetup import setUpDAS, serverSetup, DefaultConfig
 from WMQuality.WebTools.RESTClientAPI import makeRequest, methodTest
 

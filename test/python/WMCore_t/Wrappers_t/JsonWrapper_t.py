@@ -3,23 +3,16 @@
 Unit tests for json wrapper.
 """
 
-
-
 import nose
-__test = False
-try:
-    import cjson
-    __test = True
-except:
-    pass
-
 import unittest
+import tempfile
+import os
+
 try:
     import simplejson as json
 except:
     import json
 
-import os
 import WMCore.Wrappers.JsonWrapper as json_wrap
 
 class TestWrapper(unittest.TestCase):
@@ -34,8 +27,11 @@ class TestWrapper(unittest.TestCase):
         """
         Test cjson implementation.
         """
-        if not __test:
+        try:
+            import cjson
+        except:
             raise nose.SkipTest
+        
         json_wrap._module = "cjson"
         result = json_wrap.dumps(self.record)
         expect = json.dumps(self.record)
@@ -66,8 +62,11 @@ class TestWrapper(unittest.TestCase):
         """
         Test that cjson and json libraries do the same thing.
         """
-        if not __test:
-            raise nose.SkipTest
+        try:
+            import cjson
+        except:
+            raise nose.SkipTest        
+
         json_wrap._module = "cjson"
         json_wrap._module = "cjson"
         cj_result = json_wrap.dumps(self.record)
@@ -84,40 +83,46 @@ class TestWrapper(unittest.TestCase):
         self.assertEqual(dj_result, cj_result)
         
     def test_file_compare(self):
-        # TODO: use python's mktmnam, don't just assume these paths exist
-        raise RuntimeError, "Don't write to hardcoded paths, buildbot dislikes it -- Melo"
-        testfile = '/tmp/jsonwrappertest'
-        if not __test:
-            raise nose.SkipTest
+        """
+        _test_file_compare_
+
+        """
+        try:
+            import cjson
+        except:
+            raise nose.SkipTest        
+
+        f = tempfile.NamedTemporaryFile()
+        f.delete = False
+
         json_wrap._module = "cjson"        
         #write self.record to a file via cjson
-        f = open(testfile, 'w')
         json_wrap._module = "cjson"
         json_wrap.dump(self.record, f)
         f.close()
         #read the file with the json
-        f = open(testfile, 'r')
+        f = open(f.name, 'r')
         json_wrap._module = "json" 
         data = json_wrap.load(f)
         f.close()
         self.assertEqual(data, self.record) 
         #Clean up
-        os.remove(testfile)
+        os.remove(f.name)
         
         #write self.record to a file via json
-        f = open(testfile, 'w')
+        f = tempfile.NamedTemporaryFile()
+        f.delete = False        
         json_wrap.dump(self.record, f)
         f.close()
         #read the file with cjson
-        f = open(testfile, 'r')
+        f = open(f.name, 'r')
         json_wrap._module = "cjson" 
         data = json_wrap.load(f)
         f.close()
         self.assertEqual(data, self.record)
         #Clean up
-        os.remove(testfile)
+        os.remove(f.name)
         
 if __name__ == "__main__":
-    if  __test:
-        unittest.main()
+    unittest.main()
 

@@ -9,14 +9,23 @@ function complete_job(doc, req) {
 
 
 function(doc) {
-  if (doc.type == "fwjr" && doc['fwjr'] && doc['fwjr']['steps'] && complete_job(doc)) {
-    emit(doc['timestamp'],
-          {'dn' : doc['fwjr']['userDN'],
-           'task' : doc['fwjr']['task'],
-           'jobid' : doc['jobid'],
-           'output': doc['fwjr']['steps']['cmsRun1']["output"]["output"][0]["guid"],
-           'source': doc['fwjr']['steps']['cmsRun1']["output"]["output"][0]["location"],
-           'destination': doc['fwjr']['asynDestination']}
-    );
+  if (doc.type == "fwjr" && doc['fwjr'] && doc['fwjr']['steps'] && doc['fwjr']['asynDestination'] && doc['fwjr']['asynSource'] && doc['fwjr']['task'] && doc['fwjr']['userDN'] && complete_job(doc)) {
+  var dn = doc['fwjr']['userDN'] || 'Fred';
+  var task = doc['fwjr']['task'] || 0;
+  var job = doc['jobid'];
+    for (step in doc['fwjr']['steps']) {
+      for (module in doc['fwjr']['steps'][step]["output"]) {
+        for (file in doc['fwjr']['steps'][step]["output"][module]) {
+          emit(doc['timestamp'],
+                {'dn' : dn,
+                 'task' : task,
+                 'jobid' : job,
+                 'lfn': doc['fwjr']['steps'][step]["output"][module][file]["lfn"],
+                 'source':  doc['fwjr']['asynSource'],
+                 'destination': doc['fwjr']['asynDestination']}
+          );  
+        }
+      }
+    }
   }
 }

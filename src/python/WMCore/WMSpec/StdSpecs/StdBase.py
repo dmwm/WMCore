@@ -251,6 +251,7 @@ class StdBase(object):
                                         primaryDataset = self.inputPrimaryDataset,
                                         processedDataset = processedDatasetName,
                                         dataTier = dataTier,
+                                        filterName = filterName,
                                         lfnBase = unmergedLFN,
                                         mergedLFNBase = mergedLFN)
 

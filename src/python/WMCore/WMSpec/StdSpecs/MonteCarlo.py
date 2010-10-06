@@ -63,6 +63,7 @@ class MonteCarloWorkloadFactory(StdBase):
             outputModuleInfo = outputMods[outputModuleName]
             self.addMergeTask(prodTask, self.prodJobSplitAlgo,
                               outputModuleName, outputModuleInfo["dataTier"],
+                              outputModuleInfo["filterName"],
                               outputModuleInfo["processedDataset"])
 
         return workload

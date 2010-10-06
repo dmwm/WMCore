@@ -255,7 +255,8 @@ class StdBase(object):
                                         lfnBase = unmergedLFN,
                                         mergedLFNBase = mergedLFN)
 
-        return {"dataTier": dataTier, "processedDataset": processedDatasetName}        
+        return {"dataTier": dataTier, "processedDataset": processedDatasetName,
+                "filterName": filterName}
 
     def addLogCollectTask(self, parentTask, taskName = "LogCollect"):
         """
@@ -279,7 +280,7 @@ class StdBase(object):
         return
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModule,
-                     dataTier, processedDatasetName):
+                     dataTier, filterName, processedDatasetName):
         """
         _addMergeTask_
     
@@ -325,6 +326,7 @@ class StdBase(object):
                                              primaryDataset = self.inputPrimaryDataset,
                                              processedDataset = processedDatasetName,
                                              dataTier = dataTier,
+                                             filterName = filterName,
                                              lfnBase = mergedLFN)
     
         parentTaskCmssw = parentTask.getStep("cmsRun1")

@@ -15,6 +15,7 @@ import unittest
 import os
 import tempfile
 import time
+import threading
 import unittest
 import shutil
 import copy
@@ -175,7 +176,9 @@ class otherStageOutTest(unittest.TestCase):
         for modname in modsToDelete:
             del sys.modules[modname]
         
-
+        myThread = threading.currentThread()
+        if hasattr(myThread, "factory"):
+            myThread.factory = {}
         self.testInit.delWorkDir()
      
     def testCPBackendStageOutAgainstReportNew(self):

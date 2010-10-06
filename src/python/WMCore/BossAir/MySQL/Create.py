@@ -59,6 +59,7 @@ class Create(DBCreator):
            sched_status  INT,
            retry_count   INT,
            status_time   INT,
+           location      VARCHAR(255),
            PRIMARY KEY (id),
            FOREIGN KEY (wmbs_id) REFERENCES wmbs_job(id) ON DELETE CASCADE,
            FOREIGN KEY (sched_status) REFERENCES bl_status(id)

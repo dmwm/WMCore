@@ -424,7 +424,8 @@ class BossAirAPI(WMConnectionBase):
         for job in jobs:
             rj = RunJob()
             rj.buildFromJob(job = job)
-            rj['location'] = job.get('custom', {}).get('location', None)
+            if not job.get('location', False):
+                rj['location'] = job.get('custom', {}).get('location', None)
             runJobs.append(rj)
             # Can't add to the cache in submit()
             # It's NOT the same bossAir instance

@@ -13,6 +13,7 @@ import os.path
 import logging
 import threading
 import subprocess
+import multiprocessing
 
 
 from WMCore.DAOFactory import DAOFactory
@@ -20,6 +21,48 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.WMInit import getWMBASE
 
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
+
+from WMCore.FwkJobReport.Report import Report
+
+
+def submitWorker(input, results):
+    """
+    _outputWorker_
+
+    Runs a subprocessed command.
+
+    This takes whatever you send it (a single ID)
+    executes the command
+    and then returns the stdout result
+
+    I planned this to do a glite-job-output command
+    in massive parallel, possibly using the bulkID
+    instead of the gridID.  Either way, all you have
+    to change is the command here, and what is send in
+    in the complete() function.
+    """
+
+    # Get this started
+    while True:
+        try:
+            work = input.get()
+        except (EOFError, IOError):
+            crashMessage = "Hit EOF/IO in getting new work\n"
+            crashMessage += "Assuming this is a graceful break attempt.\n"
+            logging.error(crashMessage)
+            break
+
+        if work == 'STOP':
+            # Put the brakes on
+            break        
+
+        command = work
+        pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
+                                stderr = subprocess.PIPE, shell = True)
+        stdout, stderr = pipe.communicate()
+        results.put({'stdout': stdout, 'stderr': stderr})
+
+    return 0
 
 
 def parseError(error):
@@ -81,14 +124,59 @@ class CondorPlugin(BasePlugin):
 
         self.locationAction = daoFactory(classname = "Locations.GetSiteInfo")
 
+
         self.packageDir = None
-        self.unpacker   = None
+        self.unpacker   = self.unpacker   = os.path.join(getWMBASE(),
+                                       'src/python/WMCore/WMRuntime/Unpacker.py')
         self.agent      = config.Agent.agentName
         self.sandbox    = None
         self.scriptFile = None
         self.submitDir  = None
 
 
+        # Build ourselves a pool
+        self.pool     = []
+        self.input    = multiprocessing.Queue()
+        self.result   = multiprocessing.Queue()
+        self.nProcess = getattr(self.config.BossAir, 'nCondorProcesses', 4)
+        
+
+
+        return
+
+
+    def __del__(self):
+        """
+        __del__
+        
+        Trigger a close of connections if necessary
+        """
+        self.close()
+
+
+    def close(self):
+        """
+        _close_
+
+        Kill all connections and terminate
+        """
+        terminate = False
+        for x in self.pool:
+            try:
+                self.input.put('STOP')
+            except Exception, ex:
+                msg =  "Hit some exception in deletion\n"
+                msg += str(ex)
+                logging.error(msg)
+                terminate = True
+        self.input.close()
+        self.result.close()
+        for proc in self.pool:
+            if terminate:
+                proc.terminate()
+            else:
+                proc.join()
+        return
 
 
 
@@ -99,6 +187,16 @@ class CondorPlugin(BasePlugin):
         
         Submit jobs for one subscription
         """
+
+        if len(self.pool) == 0:
+            # Starting things up
+            # This is obviously a submit API
+            for x in range(self.nProcess):
+                p = multiprocessing.Process(target = submitWorker,
+                                            args = (self.input, self.result))
+                p.start()
+                self.pool.append(p)
+
 
         # If we're here, then we have submitter components
         self.scriptFile = self.config.JobSubmitter.submitScript
@@ -115,42 +213,71 @@ class CondorPlugin(BasePlugin):
             # Then we have nothing to do
             return result
 
-        # Grab the master subscription info
-        self.sandbox    = info.get('sandbox', None)
-        index           = info.get('index', 0)
-        self.unpacker   = os.path.join(getWMBASE(),
-                                       'src/python/WMCore/WMRuntime/Unpacker.py')
 
 
-        jdlList = self.makeSubmit(jobList = jobs, index = index)
-        if not jdlList or jdlList == []:
-            # Then we got nothing
-            logging.error("No JDL file made!")
-            return {'NoResult': [0]}
-        jdlFile = "%s/submit_%i.jdl" % (self.submitDir, os.getpid())
-        handle = open(jdlFile, 'w')
-        handle.writelines(jdlList)
-        handle.close()
+        # Now assume that what we get is the following; a mostly
+        # unordered list of jobs with random sandboxes.
+        # We intend to sort them by sandbox.
 
-
-        # Now submit them
-        logging.info("About to submit %i jobs" %(len(jobs)))
-        command = ["condor_submit", jdlFile]
-        pipe = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)
-        output, error = pipe.communicate()
-
-
-        if not error == '':
-            logging.error("Printing out command stderr")
-            logging.error(error)
-            
-        errorCheck, errorMsg = parseError(error = error)
-
-        
+        submitDict = {}
+        nSubmits   = 0
         for job in jobs:
-            if job == {}:
-                continue
-            successfulJobs.append(job)
+            sandbox = job['sandbox']
+            if not sandbox in submitDict.keys():
+                submitDict[sandbox] = []
+            submitDict[sandbox].append(job)
+
+
+        # Now submit the bastards
+        for sandbox in submitDict.keys():
+            jobList = submitDict.get(sandbox, [])
+            while len(jobList) > 0:
+                jobsReady = jobList[:self.config.JobSubmitter.jobsPerWorker]
+                jobList   = jobList[self.config.JobSubmitter.jobsPerWorker:]
+                jdlList = self.makeSubmit(jobList = jobsReady)
+                if not jdlList or jdlList == []:
+                    # Then we got nothing
+                    logging.error("No JDL file made!")
+                    return {'NoResult': [0]}
+                jdlFile = "%s/submit_%i.jdl" % (self.submitDir, os.getpid())
+                handle = open(jdlFile, 'w')
+                handle.writelines(jdlList)
+                handle.close()
+
+            
+                # Now submit them
+                logging.info("About to submit %i jobs" %(len(jobsReady)))
+                command = "condor_submit %s" % jdlFile
+                self.input.put(command)
+                nSubmits += 1
+
+        # Now we should have sent all jobs to be submitted
+        # Going to do the rest of it now
+        for n in range(nSubmits):
+            res = self.result.get()
+            output = res['stdout']
+            error  = res['stderr']
+
+            if not error == '':
+                logging.error("Printing out command stderr")
+                logging.error(error)
+                
+            errorCheck, errorMsg = parseError(error = error)
+
+            if errorCheck:
+                condorErrorReport = Report()
+                condorErrorReport.addError("JobSubmit", 61202, "CondorError", errorMsg)
+                for job in jobs:
+                    if job == {}:
+                        continue
+                    job['fwjr'] = condorErrorReport
+                    failedJobs.append(job)
+            else:        
+                for job in jobs:
+                    if job == {}:
+                        continue
+                    successfulJobs.append(job)
+
 
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed
@@ -277,7 +404,7 @@ class CondorPlugin(BasePlugin):
 
 
 
-    def makeSubmit(self, jobList, index):
+    def makeSubmit(self, jobList):
         """
         _makeSubmit_
 
@@ -301,10 +428,10 @@ class CondorPlugin(BasePlugin):
                 continue
             jdl.append("initialdir = %s\n" % job['cache_dir'])
             jdl.append("transfer_input_files = %s, %s/%s, %s\n" \
-                       % (self.sandbox, job['packageDir'],
+                       % (job['sandbox'], job['packageDir'],
                           'JobPackage.pkl', self.unpacker))
             argString = "arguments = %s %i\n" \
-                        % (os.path.basename(self.sandbox), index)
+                        % (os.path.basename(job['sandbox']), job['id'])
             jdl.append(argString)
 
             jobCE = self.getCEName(jobSite = job['location'])
@@ -323,8 +450,6 @@ class CondorPlugin(BasePlugin):
         
             jdl.append("Queue 1\n")
 
-            index += 1
-        
         return jdl
 
 

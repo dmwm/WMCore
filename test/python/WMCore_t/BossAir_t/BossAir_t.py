@@ -125,6 +125,10 @@ class BossAirTest(unittest.TestCase):
                                        ceName = site, plugin = "CondorPlugin")
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             maxSlots = 10000)
+        resourceControl.insertSite(siteName = 'Xanadu', seName = 'se.Xanadu',
+                                   ceName = 'Xanadu', plugin = "TestPlugin")
+        resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
+                                        maxSlots = 10000)
 
 
         # We actually need the user name
@@ -174,13 +178,13 @@ class BossAirTest(unittest.TestCase):
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
 
 
-        config.component_("BossAir")
+        config.section_("BossAir")
         config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
         config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
 
         config.component_("JobSubmitter")
         config.JobSubmitter.logLevel      = 'INFO'
-        config.JobSubmitter.maxThreads    = 1
+        #config.JobSubmitter.maxThreads    = 1
         config.JobSubmitter.pollInterval  = 1
         config.JobSubmitter.pluginName    = 'AirPlugin'
         config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
@@ -201,13 +205,13 @@ class BossAirTest(unittest.TestCase):
         config.component_("JobTracker")
         config.JobTracker.logLevel      = 'INFO'
         config.JobTracker.pollInterval  = 1
-        config.JobTracker.trackerName   = 'AirTracker'
-        config.JobTracker.pluginDir     = 'WMComponent.JobTracker.Plugins'
-        config.JobTracker.componentDir  = os.path.join(os.getcwd(), 'Components')
-        config.JobTracker.runTimeLimit  = 7776000 #Jobs expire after 90 days
-        config.JobTracker.idleTimeLimit = 7776000
-        config.JobTracker.heldTimeLimit = 7776000
-        config.JobTracker.unknTimeLimit = 7776000
+        #config.JobTracker.trackerName   = 'AirTracker'
+        #config.JobTracker.pluginDir     = 'WMComponent.JobTracker.Plugins'
+        #config.JobTracker.componentDir  = os.path.join(os.getcwd(), 'Components')
+        #config.JobTracker.runTimeLimit  = 7776000 #Jobs expire after 90 days
+        #config.JobTracker.idleTimeLimit = 7776000
+        #config.JobTracker.heldTimeLimit = 7776000
+        #config.JobTracker.unknTimeLimit = 7776000
 
 
         # JobStateMachine
@@ -355,12 +359,15 @@ class BossAirTest(unittest.TestCase):
 
 
 
-    def createDummyJobs(self, nJobs):
+    def createDummyJobs(self, nJobs, location = None):
         """
         _createDummyJobs_
         
         Create some dummy jobs
         """
+
+        if not location:
+            location = self.sites[0]
 
         nameStr = makeUUID()
 
@@ -384,7 +391,7 @@ class BossAirTest(unittest.TestCase):
 
         for i in range(nJobs):
             testJob = Job(name = '%s-%i' % (nameStr, i))
-            testJob['location'] = self.sites[0]
+            testJob['location'] = location
             testJob.create(testJobGroup)
             jobList.append(testJob)
 
@@ -399,6 +406,8 @@ class BossAirTest(unittest.TestCase):
         This is a commissioning test that has very little to do
         with anything except loading the code.
         """
+        #return
+        
         myThread = threading.currentThread()
 
         config = self.getConfig()
@@ -503,7 +512,7 @@ class BossAirTest(unittest.TestCase):
         # Create some jobs
         nJobs = 10
 
-        jobDummies = self.createDummyJobs(nJobs = nJobs)
+        jobDummies = self.createDummyJobs(nJobs = nJobs, location = 'Xanadu')
 
         # Prior to building the job, each job must have a plugin
         # and user assigned
@@ -594,6 +603,7 @@ class BossAirTest(unittest.TestCase):
             tmpJob['plugin']      = 'CondorPlugin'
             tmpJob['owner']       = 'mnorman'
             tmpJob['packageDir']  = self.testDir
+            tmpJob['sandbox']     = sandbox
             jobList.append(tmpJob)
 
 
@@ -639,7 +649,7 @@ class BossAirTest(unittest.TestCase):
 
         Prototype the BossAir workflow
         """
-
+        
         #return
 
         myThread = threading.currentThread()
@@ -866,7 +876,7 @@ class BossAirTest(unittest.TestCase):
         Because I need a test for the monitoring DAO
         """
 
-        return
+        #return
 
         myThread = threading.currentThread()
 

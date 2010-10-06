@@ -20,7 +20,9 @@ class GetHeartbeatInfo(DBFormatter):
              INNER JOIN wm_components comp ON comp.id = worker.component_id
              INNER JOIN (SELECT component_id, MAX(last_updated) AS last_updated FROM wm_workers
                          GROUP BY component_id) max_result
-                        ON worker.last_updated = max_result.last_updated
+                        ON (worker.last_updated = max_result.last_updated
+                           AND max_result.component_id = comp.id)
+             ORDER BY worker.last_updated ASC
              """
     #sql = """select max(last_updated) from wm_workers"""
     

@@ -96,6 +96,7 @@ class ReRecoWorkloadFactory(StdBase):
             mergeTask = self.addMergeTask(procTask, self.procJobSplitAlgo,
                                           outputModuleName,
                                           outputModuleInfo["dataTier"],
+                                          outputModuleInfo["filterName"],
                                           outputModuleInfo["processedDataset"])
             procMergeTasks[outputModuleName] = mergeTask
 

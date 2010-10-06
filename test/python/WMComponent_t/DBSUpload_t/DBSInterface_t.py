@@ -232,6 +232,12 @@ class DBSInterfaceTest(unittest.TestCase):
         of the individual functions.
         """
 
+        # Skip this test due to block format change
+        # It's tested by DBSUploadPoller_t
+        # I'd like to keep it in the code so I can look
+        # at it, and maybe bring it back one day.
+        return
+
 
 
         config = self.createConfig()
@@ -293,6 +299,10 @@ class DBSInterfaceTest(unittest.TestCase):
         See if it opens blocks in multiple sites.
         """
 
+        # Skip this test as it is now obsolete
+        # keep it around for legacy value (i.e., I need to know what's in it)
+        return
+
 
         files = []
 
@@ -312,8 +322,8 @@ class DBSInterfaceTest(unittest.TestCase):
 
         algo, dataset = self.createAlgoDataset(name = name, datasetPath = datasetPath)
 
-        affectedBlocks = dbsInterface.runDBSBuffer(algo = algo, dataset = dataset,
-                                                   files = files)
+        affectedBlocks = dbsInterface.runDBSBuffer(algo = algo, dataset = dataset)
+        #files = files)
         result  = listAlgorithms(apiRef = localAPI, patternExe = name)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]['ExecutableName'], name)

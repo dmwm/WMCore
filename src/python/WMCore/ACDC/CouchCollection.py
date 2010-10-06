@@ -19,6 +19,16 @@ from WMCore.ACDC.CouchUtils import connectToCouch, requireOwner
 
 
 class CouchCollection(Collection):
+    """
+    Collection that can be stored in CouchDB.
+    
+    Required Args:
+    
+    - database - CouchDB database instance name
+    - url - CouchDB Server URL
+    - name - name of the collection
+    
+    """
     def __init__(self, **options):
         Collection.__init__(self, **options)
         self.url = options.get('url', None)

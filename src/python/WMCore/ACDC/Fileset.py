@@ -7,7 +7,6 @@ Created by Dave Evans on 2010-03-18.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-import unittest
 from WMCore.DataStructs.WMObject import WMObject 
 
 
@@ -101,16 +100,5 @@ class Fileset(dict, WMObject):
 
         
 
-class FilesetTest(unittest.TestCase):
-    def setUp(self):
-        pass
-        
-        
-    def testA(self):
-        """instantiation"""
-        
-        fs = Fileset()
 
     
-if __name__ == '__main__':
-    unittest.main()

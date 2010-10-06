@@ -7,9 +7,7 @@ Created by Dave Evans on 2010-03-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-import sys
-import os
-import unittest
+
 
 from WMCore.ACDC.Fileset import Fileset
 import WMCore.Database.CMSCouch as CMSCouch
@@ -57,7 +55,23 @@ def filePipeline(targets):
 
 
 class CouchFileset(Fileset):
+    """
+    _CouchFileset_
+    
+    Create a fileset that can be stored/read from Couch
+    
+    """
     def __init__(self, **options):
+        """
+        Required Options:
+        
+        url - couch db instance URL
+        database - couch db instance name
+        dataset - name/label for fileset
+        
+        Will also need to call setCollection with a valid collection before being able to create
+        a fileset in couch
+        """
         Fileset.__init__(self, **options)
         self.url = options.get('url', None)
         self.database = options.get('database', None)
@@ -246,76 +260,3 @@ class CouchFileset(Fileset):
         count = rows[0][u'value']
         return count
 
-import random
-from WMCore.GroupUser.User import makeUser
-from WMCore.ACDC.CouchCollection import CouchCollection
-from WMCore.DataStructs.File import File
-from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUID import makeUUID
-
-class CouchFilesetTests(unittest.TestCase):
-    def setUp(self):
-        self.url = "127.0.0.1:5984"
-        self.database = "acdc2"
-        self.owner = makeUser("DMWM", "evansde77", self.url, self.database)
-        self.owner.connect()
-        self.owner.create()
-        
-        self.collection = CouchCollection(database = self.database, url = self.url, name = "HellsBells2")
-        self.collection.setOwner(self.owner)
-        self.collection.create()
-        
-
-    def tearDown(self):
-        """
-        clean up
-        """
-        self.collection.drop()
-        self.owner.drop()
-        self.owner.group.drop()
-        
-    def testA(self):
-        """instantiation"""
-        fileset = CouchFileset(url = self.url, database = self.database, dataset = "/MinimumBias/BeamCommissioning09_v1/RAW")
-        fileset.setCollection(self.collection)
-        fileset.create()
-        
-        
-        
-        fileset.drop()
-        
-        
-        
-    def testB(self):
-        """populate with files"""
-        
-        files = []
-        run = Run(10000000, 1,2,3,4,5,6,7,8,9,10)
-        for i in range(0, 2):
-            f = File( lfn = "/store/test/some/dataset/%s.root" % makeUUID(), size = random.randint(100000000,50000000000), 
-                      events = random.randint(1000, 5000))
-            f.addRun(run)
-            files.append(f)
-            
-        fileset = CouchFileset(url = self.url, database = self.database, dataset = "/MinimumBias/BeamCommissioning09_v1/RAW")
-        fileset.setCollection(self.collection)
-        fileset.create()
-        fileset.add(*files)
-        
-        fileset.drop()
-        
-    def testC(self):
-        """read back files"""
-        fileset = CouchFileset(url = self.url, database = self.database, dataset = "/MinimumBias/BeamCommissioning09_v1/RAW")
-        fileset.setCollection(self.collection)
-        fileset.create()
-        
-        dsFileset = fileset.fileset()
-        print dsFileset
-        print fileset.filecount()
-        
-        fileset.drop()
-        
-        
-if __name__ == '__main__':
-    unittest.main()

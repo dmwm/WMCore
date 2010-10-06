@@ -65,6 +65,7 @@ class CouchService(Service):
              {'startkey' :[owner.group.name, owner.name],
                'endkey' : [owner.group.name, owner.name]}, []
             )
+
     
 
         for row in result[u'rows']:

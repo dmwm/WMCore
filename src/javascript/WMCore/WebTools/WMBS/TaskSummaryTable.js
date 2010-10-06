@@ -1,4 +1,6 @@
-var taskTable = function(oArgs){
+WMCore.namespace("WebTools.WMBS.TaskSummaryTable")
+
+WMCore.WebTools.WMBS.TaskSummaryTable.taskTable = function(oArgs){
 
 	var dataSchema = {
         fields: [{key: "task", label: " Tasks for " + oArgs.workflow},

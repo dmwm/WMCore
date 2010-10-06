@@ -244,12 +244,22 @@ body {
         
         layout.on('render', function() {
             YAHOO.util.Event.onContentReady("menubar", initTopMenu);
-			YAHOO.util.Event.onContentReady("statuschart", workloadStatusChart, "statuschart");
-			YAHOO.util.Event.onContentReady("jobchart", jobChart, "jobchart");
-			YAHOO.util.Event.onContentReady("elements", elementTable, "elements");
-			YAHOO.util.Event.onContentReady("workloadprogress", workloadTable, "workloadprogress");
+			YAHOO.util.Event.onContentReady("statuschart", 
+			                                 WMCore.WebTools.WorkQueue.WorkloadStausYUIPieChart.workloadStatusChart, 
+											"statuschart");
+			YAHOO.util.Event.onContentReady("jobchart", 
+			                                WMCore.WebTools.WorkQueue.JobYUIPieChart.jobChart, 
+											"jobchart");
+			YAHOO.util.Event.onContentReady("elements", 
+			                                WMCore.WebTools.WorkQueue.ElementInfoTable.elementTable, 
+											"elements");
+			YAHOO.util.Event.onContentReady("workloadprogress", 
+			                                WMCore.WebTools.WorkQueue.WorkloadInfoTable.workloadTable,
+			                               "workloadprogress");
             //YAHOO.util.Event.onContentReady("elements", elementTable, "elements");
-            YAHOO.util.Event.onContentReady("workqueuetree", workQueueTree, "workqueuetree");         
+            YAHOO.util.Event.onContentReady("workqueuetree", 
+			                                WMCore.WebTools.WorkQueue.WorkQueueTree.workQueueTree, 
+											"workqueuetree");         
         });
         
         layout.render();

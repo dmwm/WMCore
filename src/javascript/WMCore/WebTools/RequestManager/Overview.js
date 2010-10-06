@@ -1,4 +1,6 @@
-var overviewTable = function(divID){
+WMCore.namespace("WebTools.RequestManager.Overview")
+
+WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID){
     
 	var postfixLink = "/template/ElementSummaryByWorkflow?workflow=";
 	

@@ -1,4 +1,6 @@
-var elementTable = function(divID) {
+WMCore.namespace("WebTools.WorkQueue.ElementInfoTable")
+
+WMCore.WebTools.WorkQueue.ElementInfoTable.elementTable = function(divID) {
         
     var formatUrl = function(elCell, oRecord, oColumn, sData) { 
 	        var host;

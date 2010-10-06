@@ -1,4 +1,6 @@
-var elementTable = function(divID) {
+WMCore.namespace("WebTools.WorkQueue.ElementInfoWithPagination2")
+
+WMCore.WebTools.WorkQueue.ElementInfoWithPagination2.elementTable = function(divID) {
         
     var formatUrl = function(elCell, oRecord, oColumn, sData) {
 		    var host;

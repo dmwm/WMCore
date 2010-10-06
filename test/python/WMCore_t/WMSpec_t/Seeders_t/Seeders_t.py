@@ -70,14 +70,15 @@ class SeederTest(unittest.TestCase):
         """
         fileset1 = Fileset(name='EventBasedFiles1')
         for i in range(0, 100):
-            fileset1.addFile(
-            File("/store/MultipleFileSplit%s.root" % i, # lfn
+            f = File("/store/MultipleFileSplit%s.root" % i, # lfn
                  1000,   # size
                  100,   # events
                  10 + i, # run
                  12312   # lumi
                  )
-            )
+            f['locations'].add("BULLSHIT")
+
+            fileset1.addFile(f            )
 
         work = Workflow()
         subscription1 = Subscription(
@@ -140,8 +141,8 @@ class SeederTest(unittest.TestCase):
         randomDict = {"generator.initialSeed": None, "evtgenproducer.initialSeed": None, "MAXINT": 10000}
         lumiDict   = {"lumi_per_run": 5}
 
-        task1.addSeeder("RandomSeeder", randomDict)
-        task1.addSeeder("RunAndLumiSeeder", lumiDict)
+        task1.addGenerator("RandomSeeder", **randomDict)
+        task1.addGenerator("RunAndLumiSeeder", **lumiDict)
 
         manager = SeederManager(task = task1)
 
@@ -178,9 +179,10 @@ class SeederTest(unittest.TestCase):
         task1 = makeWMTask("task2")
 
         seederDict = {"generator.initialSeed": 1001, "evtgenproducer.initialSeed": 1001}
-        task1.addSeeder("PresetSeeder", seederDict)
-
+        task1.addGenerator("PresetSeeder", **seederDict)
+        
         manager = SeederManager(task = task1)
+
 
         jobs = self.oneHundredFiles()
 

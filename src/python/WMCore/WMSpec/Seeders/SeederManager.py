@@ -25,15 +25,15 @@ class SeederManager:
         if not hasattr(task, 'data'):
             #We don't have a WMTask
             return
-        if not hasattr(task.data, 'seeders'):
+        if not hasattr(task.data, 'generators'):
             #We have a blank task with no seeders
             return
         #Otherwise we have a fully formed task of some type
 
         configList = task.listGenerators()
 
-        for seederName in configList:
-            self.addSeeder(seederName, task.getGeneratorSettings(seederName))
+        for seeder in configList:
+            self.addSeeder(seeder, **task.getGeneratorSettings(seeder))
 
 
         return

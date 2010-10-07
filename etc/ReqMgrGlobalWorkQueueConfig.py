@@ -87,6 +87,7 @@ active.reqMgrBrowser.object = "WMCore.HTTPFrontEnd.RequestManager.ReqMgrBrowser"
 active.reqMgrBrowser.reqMgrHost = "http://%s:%s" % (serverHostName, reqMgrPort)
 active.reqMgrBrowser.workloadCache = active.download.dir
 active.reqMgrBrowser.configCacheUrl = config.ReqMgr.couchURL
+active.reqMgrBrowser.configDBName = configCacheDBName
 
 active.section_("reqMgr")
 active.reqMgr.object = "WMCore.WebTools.RESTApi"

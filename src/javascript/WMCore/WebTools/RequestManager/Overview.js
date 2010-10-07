@@ -5,7 +5,8 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID){
 	var postfixLink = "/template/ElementSummaryByWorkflow?workflow=";
 	
 	var formatRequest = function(elCell, oRecord, oColumn, sData) { 
-            elCell.innerHTML = "<a href='" + oRecord.getData("host") +"/requestDetails/" + sData  + "' target='_blank'>" + sData + "</a>"; 
+            elCell.innerHTML = "<a href='../reqMgrBrowser/requestDetails/" + sData  +
+			                            "' target='_blank'>" + sData + "</a>";
         };
     
 	var formatGlobalQ = function(elCell, oRecord, oColumn, sData) { 
@@ -32,10 +33,17 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID){
     
 	var formatCouchDB = function(elCell, oRecord, oColumn, sData) { 
             var host;
+			if (oRecord.getData("error")) {
+                 elCell.innerHTML = "<font color='red'> " + oRecord.getData("error") + "<font>";
+				 if (oRecord.getData("error2")) {
+					elCell.innerHTML += "<font color='red'> " + oRecord.getData("error2") + "<font>";
+				 }
+                 return;
+            };
 			if (!oRecord.getData("local_queue")) {
 			     elCell.innerHTML = "Not yet Assigned";
-				 return	
-			}
+				 return;
+			};
             if (!sData) {
                 elCell.innerHTML = "<font color='red'> Can't connect CouchDB <font>";
             } else {
@@ -108,7 +116,11 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID){
                  {key: "success"},
                  {key: "failure"},
                  {key: "couch_doc_base"},
-				 {key: "couch_job_info_base"}]
+				 {key: "couch_job_info_base"},
+				 {key: "host"},
+				 {key: "error2"},
+				 {key: "error"}
+                 ]
         };
 
         var dataTableCols = [{key: "request_name", formatter:formatRequest},

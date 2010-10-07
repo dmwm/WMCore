@@ -1,4 +1,6 @@
-var heartbeatTable = function(divID){
+WMCore.namespace("WebTools.Agent.heartbeat")
+
+WMCore.WebTools.Agent.heartbeat.heartbeatTable = function(divID){
 	var dateFormatter = function(elCell, oRecord, oColumn, oData){
 	
 		var oDate = new Date(oData * 1000);

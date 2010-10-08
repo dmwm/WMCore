@@ -9,6 +9,7 @@ from WMCore.Services.Requests import JSONRequests
 import WMCore.HTTPFrontEnd.RequestManager.Sites
 
 import cherrypy
+from cherrypy import expose
 import logging
 import os.path
 import pickle
@@ -23,7 +24,8 @@ class ReqMgrBrowser(TemplatedPage):
         self.urlPrefix = '%s/download/?filepath=' % config.reqMgrHost
         self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'ReqMgrRequestBasePriority', 'RequestStatus', 'Complete', 'Success']
         self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged', 'Complete':'percentComplete', 'Success' : 'percentSuccess'}
-        self.linkedFields = {'RequestName':'requestDetails'}
+        # entries in the table that show up as HTML links for that entry
+        self.linkedFields = {'Group':'group', 'Requestor':'user', 'RequestName':'requestDetails'}
         self.detailsFields = ['RequestName', 'RequestType', 'Requestor', 'CMSSWVersion', 'ScramArch', 'GlobalTag', 'RequestSizeEvents', 
             'InputDataset', 'PrimaryDataset', 'AcquisitionEra', 'ProcessingVersion', 
             'RunWhitelist', 'RunBlacklist', 'BlockWhitelist', 'BlockBlacklist', 
@@ -445,3 +447,24 @@ class ReqMgrBrowser(TemplatedPage):
         if not isinstance(value, list):
             value = [value]
         return value
+
+    @expose
+    def user(self, userName):
+        """ Web page of details about the user, and sets user priority """
+        groups = self.jsonSender.get('/reqMgr/group?user=%s' % userName)[0]
+        requests = self.jsonSender.get('/reqMgr/user/%s' % userName)[0]
+        return self.templatepage("User", user=userName, groups=groups, requests=requests)
+
+    @expose
+    def handleUserPriority(self, user=None, RequestUserPriority=None):
+        return "Not implemented"
+
+    @expose
+    def group(self, groupName):
+        """ Web page of details about the user, and sets user priority """
+        users = self.jsonSender.get('/reqMgr/group/%s' % groupName)[0]
+        return self.templatepage("Group", group=groupName, users=users)
+
+    @expose
+    def handleGroupPriority(self, group=None, RequestUserPriority=None):
+        return "Not implemented"

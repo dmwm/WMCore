@@ -1,0 +1,17 @@
+<head><title>Group $group</title></head>
+
+<body>
+Group $group <br><br>
+
+<b>Users:</b><br>
+#for $user in $users
+  <a href="../user/$user">$user</a><br>
+#end for
+<br>
+
+<form action="../handleGroupPriority">
+<b>Group Priority:</b><input type="text" name="RequestGroupPriority" size=2 value=1 />
+<input type="hidden" value=$group id="group" />
+<input type=submit>
+</form>
+</body>

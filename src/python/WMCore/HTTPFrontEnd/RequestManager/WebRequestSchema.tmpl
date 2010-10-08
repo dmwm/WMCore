@@ -147,7 +147,7 @@ Emulator:
         <LI CLASS="selected"><A HREF="#rereco"><EM>ReReco</EM></A></LI>
         <LI><A HREF="#mc"><EM>Monte Carlo</EM></A></LI>
         <LI><A HREF="#storeResults"><EM>StoreResults</EM></A></LI>
-        <LI><A HREF="#kungFuBear"><EM>Kung Fu Bear</EM></A></LI>
+        <LI><A HREF="#generic"><EM>Generic</EM></A></LI>
     </UL>
     <DIV CLASS="yui-content">
         <DIV ID="rereco">
@@ -176,8 +176,14 @@ Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
             $ioBlock
             $trailerBlock("StoreResults")
         </DIV>
-        <DIV ID="kungFuBear">
-            <object width="500" height="405"><param name="movie" value="http://www.youtube.com/v/Ghgg_fukbvU&amp;hl=en_US&amp;fs=1?rel=0&amp;border=1"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/Ghgg_fukbvU&amp;hl=en_US&amp;fs=1?rel=0&amp;border=1" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="500" height="405"></embed></object>
+        <DIV ID="generic">
+            $headerBlock
+            $softwareBlock
+# of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
+            $configBlock("inputMode", "Scenario", "ProdConfigCacheID")
+            $ioBlock
+            $runBlockBlock
+            $trailerBlock("FileProcessing")
         </DIV>
     </DIV>
 </DIV>

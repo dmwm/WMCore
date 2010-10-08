@@ -155,6 +155,7 @@ def getMessages(requestName):
 def putMessage(requestName, message):
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
+    #return factory(classname = "Progress.Message").execute(reqId, message)
     factory(classname = "Progress.Message").execute(reqId, message)
     return
 

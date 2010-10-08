@@ -1,5 +1,20 @@
 <form action="handleAssignmentPage" method="POST">
+<head>
 <TITLE> Request Assignment </TITLE>
+<!-- Hokey way to keep ENTER from submitting the form.  Ticket #401 -->
+<script type="text/javascript">
+
+function stopRKey(evt) {
+  var evt = (evt) ? evt : ((event) ? event : null);
+  var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement : null);
+  if ((evt.keyCode == 13) && (node.type=="text"))  {return false;}
+}
+
+document.onkeypress = stopRKey;
+
+</script>
+</head>
+
 ## pass the request name along silently
 <input type="HIDDEN" name="RequestName" value="$requestName">
 <B>Assign this request to teams</B><BR>

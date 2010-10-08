@@ -17,6 +17,7 @@ import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 import WMCore.RequestManager.RequestMaker.Processing.RecoRequest 
 import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest 
+import WMCore.RequestManager.RequestMaker.Processing.FileBasedRequest
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import cherrypy
@@ -360,8 +361,7 @@ class ReqMgrRESTModel(RESTModel):
         """ Attaches a message to this request """
         self.initThread()
         message = JsonWrapper.loads( cherrypy.request.body.read() )
-        result = ChangeState.putMessage(request, message)
-        return result
+        return ChangeState.putMessage(request, message)
 
 #    def postRequest(self, requestName, events_written=None, events_merged=None, 
 #                    files_written=None, files_merged = None, dataset=None):

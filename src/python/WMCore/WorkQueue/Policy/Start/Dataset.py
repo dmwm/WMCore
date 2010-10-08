@@ -29,9 +29,8 @@ class Dataset(StartPolicyInterface):
         # dataset splitting can't have its data selection overridden
         if (self.data and self.data != datasetPath):
             raise RuntimeError, "Can't provide different data to split with"
-        dataset = dbs.getDatasetInfo(datasetPath)
-        #TODO: use this one instead of above one line when dbs api is supported
-        #dataset = dbs.getDBSSummary(dataset = datasetPath)
+
+        dataset = dbs.getDBSSummaryInfo(dataset = datasetPath)
         
         # apply input dataset restrictions
         blockWhiteList = self.initialTask.inputBlockWhitelist()
@@ -98,11 +97,7 @@ class Dataset(StartPolicyInterface):
 
             # check run restrictions
             if runWhiteList or runBlackList:
-                lumis = sum([x['LumiList'] for x in \
-                            dbs.listFilesInBlock(block['Name'])], [])
-                runs = set([x['RunNumber'] for x in lumis])
-                #TODO: use this one instead of above three lines when dbs api is supported
-                #runs = dbs.listRuns(block = block['Name'])
+                runs = set(dbs.listRuns(block = block['Name']))
                 
                 # apply blacklist
                 runs = runs.difference(runBlackList)

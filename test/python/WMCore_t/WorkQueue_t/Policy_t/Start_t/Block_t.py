@@ -155,5 +155,22 @@ class BlockTestCase(unittest.TestCase):
             self.assertNotEqual(len(units),
                              len(dbs[inputDataset.dbsurl].blocks[dataset]))
 
+    def testLumiSplitTier1ReRecoWorkload(self):
+        """Tier1 Re-reco workflow"""
+        splitArgs = dict(SliceType = 'NumberOfLumis', SliceSize = 1)
+
+        Tier1ReRecoWorkload = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
+        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl, dataset)}
+        for task in Tier1ReRecoWorkload.taskIterator():
+            units = Block(**splitArgs)(Tier1ReRecoWorkload, task, dbs)
+            self.assertEqual(2, len(units))
+            blocks = [] # fill with blocks as we get work units for them
+            for unit in units:
+                self.assertEqual(2, unit['Jobs'])
+
 if __name__ == '__main__':
     unittest.main()

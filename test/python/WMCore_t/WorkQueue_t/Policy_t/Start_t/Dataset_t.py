@@ -156,5 +156,22 @@ class DatasetTestCase(unittest.TestCase):
             self.assertRaises(RuntimeError, Dataset(**self.splitArgs),
                               Tier1ReRecoWorkload, task, dbs, dataset + '1')
 
+    def testLumiSplitTier1ReRecoWorkload(self):
+        """Tier1 Re-reco workflow split by Lumi"""
+        splitArgs = dict(SliceType = 'NumberOfLumis', SliceSize = 2)
+
+        Tier1ReRecoWorkload = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
+        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl, dataset)}
+        for task in Tier1ReRecoWorkload.taskIterator():
+            units = Dataset(**splitArgs)(Tier1ReRecoWorkload, task, dbs)
+            self.assertEqual(1, len(units))
+            for unit in units:
+                self.assertEqual(2, unit['Jobs'])
+
+
 if __name__ == '__main__':
     unittest.main()

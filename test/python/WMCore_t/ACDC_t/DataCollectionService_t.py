@@ -12,12 +12,11 @@ import os
 import random
 
 
-
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.WMSpec.WMWorkload import newWorkload, WMWorkloadHelper
-from WMCore.DataStructs.Job import Job
-from WMCore.DataStructs.File import File
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.File import File
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUID import makeUUID
 
@@ -25,6 +24,10 @@ class DataCollectionService_t(unittest.TestCase):
     def setUp(self):
         """bootstrap tests"""
         self.testInit = TestInitCouchApp(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+                                useDefault = False)
         self.testInit.setupCouch("wmcore-acdc-datacollectionsvc", "GroupUser", "ACDC")
         
         self.workload = newWorkload("ACDCTest")
@@ -101,7 +104,7 @@ class DataCollectionService_t(unittest.TestCase):
             job.addFile(f)
         
         try:
-            dcs.failedJobs(job)
+            dcs.failedJobs([job])
         except Exception, ex:
             msg = "Error calling failedJobs method in DataCollectionService: %s" % str(ex)
             self.fail(msg)

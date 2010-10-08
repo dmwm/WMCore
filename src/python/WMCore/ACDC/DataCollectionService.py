@@ -10,6 +10,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 import sys
 import os
 import unittest
+import logging
 
 from WMCore.ACDC.CouchService import CouchService
 from WMCore.ACDC.CouchCollection import CouchCollection
@@ -18,6 +19,14 @@ import WMCore.ACDC.CouchUtils as CouchUtils
 import WMCore.ACDC.CollectionTypes as CollectionTypes
 
 from WMCore.WMSpec.Utilities import stepIdentifier
+
+from WMCore.WMException import WMException
+
+class ACDCDCSException(WMException):
+    """
+    Yet another dummy variable class
+
+    """
 
 class StepMap(dict):
     def __init__(self):
@@ -40,8 +49,10 @@ class StepMap(dict):
             
 
 class DataCollectionService(CouchService):
-    def __init__(self, **opts):
-        CouchService.__init__(self, **opts)
+    def __init__(self, url, database, **opts):
+        CouchService.__init__(self, url = url,
+                              database = database,
+                              **opts)
         
     @CouchUtils.connectToCouch
     def createCollection(self, wmSpec):
@@ -50,8 +61,8 @@ class DataCollectionService(CouchService):
         
         Create a DataCollection from the wmSpec instance provided
         """
-        groupName = getattr(wmSpec.data.request.schema, 'Requestor', None)
-        userName = getattr(wmSpec.data.request.schema, 'Group', None)
+        userName  = getattr(wmSpec.data.request.schema, 'Requestor', None)
+        groupName = getattr(wmSpec.data.request.schema, 'Group', None)
         
         user = self.newOwner(groupName, userName)
         collection = CouchCollection(
@@ -112,12 +123,17 @@ class DataCollectionService(CouchService):
             fileset.create()
         
     @CouchUtils.connectToCouch
-    def listDataCollections(self):
+    def yieldDataCollections(self):
         """
-        _listDataCollections_
+        _yieldDataCollections_
 
         List the collections by type, since for data collections we are looking them up
         by request/workloadspec ID instead of owner
+
+        This is meant to be done as an iterative loop, i.e.,
+
+        for collection in self.yieldDataCollections():
+          collection.doSomething()
 
         """
         result = self.couchdb.loadView("ACDC", 'data_collections',
@@ -134,6 +150,18 @@ class DataCollectionService(CouchService):
             coll.setOwner(owner)
             coll.get()
             yield coll
+
+
+    def listDataCollections(self):
+        """
+        _listDataCollections_
+
+        Use the yieldDataCollections() function to provide
+        a list of all data collections
+        """
+
+        return [x for x in self.yieldDataCollections()]
+            
     
     def getDataCollection(self, collName):
         """
@@ -171,16 +199,24 @@ class DataCollectionService(CouchService):
 
         
     @CouchUtils.connectToCouch
-    def failedJobs(self, *failedJobs):
+    def failedJobs(self, failedJobs):
         """
         _failedJobs_
         
         Given a list of failed jobs, sort them into Filesets and record them
+
+        NOTE: jobs must have a non-standard 'task' and 'workflow' key assigned
+        to them.
         """
         collections = {}
         for job in failedJobs:
-            taskName = job['task']
-            workflow = job['workflow']
+            try:
+                taskName = job['task']
+                workflow = job['workflow']
+            except KeyError, ex:
+                msg =  "Missing required, non-standard key %s in job in ACDC.DataCollectionService" % (str(ex))
+                logging.error(msg)
+                raise ACDCDCSException(msg)
             if not collections.has_key(workflow):
                 collections['workflow'] = self.getDataCollection(job['workflow'])
             coll = collections['workflow']

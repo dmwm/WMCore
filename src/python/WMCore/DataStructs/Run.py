@@ -108,3 +108,14 @@ class Run(WMObject):
         for lumi in self.lumis:
             value += lumi.__hash__()
         return value
+
+
+    def __to_json__(self, thunker = None):
+        """
+        __to_json__
+
+        This is the standard way we jsonize other objects.
+        Included here so we have a uniform method.
+        """
+
+        return self.json()

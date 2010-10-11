@@ -78,7 +78,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                                                             team)
                         try:
                             self.reqMgr.putWorkQueue(reqName, 
-                                            self.config.get('monitorURL', 'NoMonitor'))
+                                            self.config.get('QueueURL', 'No Queue'))
                         except Exception, ex:
                             self.wq.logger.error("Unable to update ReqMgr state: %s" % str(ex))
                             self.wq.logger.error('Request "%s" not queued' % reqName)

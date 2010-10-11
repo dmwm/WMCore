@@ -12,7 +12,7 @@ var overviewTable = function(divID){
                 elCell.innerHTML = "Not Assigned";
             } else {
                 host = sData.split('/')[2];
-				elCell.innerHTML = "<a href='" + sData + postfixLink + oRecord.getData("request_name") + "' target='_blank'>" + host + "</a>"; 
+				elCell.innerHTML = "<a href='" + sData  + "monitor" + postfixLink + oRecord.getData("request_name") + "' target='_blank'>" + host + "</a>";
             };
         };
 	

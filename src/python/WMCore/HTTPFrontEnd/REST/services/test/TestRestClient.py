@@ -106,7 +106,7 @@ class MsgManager(object):
 def restclient():
     """REST Client, a way to test REST service"""
     url = "services/rest/word"
-    mgr = MsgManager(server="http://localhost:8080", verbose=1)
+    mgr = MsgManager(server="http://localhost:8089", verbose=1)
     params = {'test':1}
     for ctype in ['application/xml', 'text/json', 'text/html']:
         for method in ['HEAD', 'GET', 'POST', 'DELETE']:

@@ -60,7 +60,7 @@ class BadFormatter(object):
 
 def badrestmodel():
     """REST service based on BadModel"""
-    url = 'http://localhost:8080/services/rest'
+    url = 'http://localhost:8089/services/rest'
     model = BadModel()
     formatter = TestFormatter()
     verbose = 0
@@ -70,7 +70,7 @@ def badrestmodel():
 
 def badrestformatter():
     """REST service based on BadModel"""
-    url = 'http://localhost:8080/services/rest'
+    url = 'http://localhost:8089/services/rest'
     model = TestModel()
     formatter = BadFormatter()
     verbose = 0

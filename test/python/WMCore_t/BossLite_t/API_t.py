@@ -154,7 +154,6 @@ class APITest(unittest.TestCase):
 
         # Can we save and load it?
         task.data['startDirectory']  = 'Cannae'
-        task.data['outputDirectory'] = 'Zama'
         task.data['user_proxy']      = 'Barca'
         testAPI.saveTask(task = task)
         task2 = testAPI.loadTask(taskId = task.exists(testAPI.db))

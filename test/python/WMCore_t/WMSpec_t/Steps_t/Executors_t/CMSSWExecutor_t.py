@@ -9,6 +9,8 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import unittest
 import sys, os, inspect
+import nose
+
 from WMQuality.TestInit import TestInit
 
 from WMCore.WMSpec.WMStep import WMStep
@@ -77,17 +79,12 @@ class CMSSWExecutor_t(unittest.TestCase):
         """
         instantiate the executor
         """
-    
+        raise nose.SkipTest
         executor = CMSSWExecutor()
-        
         executor.initialise(self.step, self.job)
-        
         executor.pre()
-        
         executor.execute()
-        
         executor.post()
-        
         print executor.report
 
     

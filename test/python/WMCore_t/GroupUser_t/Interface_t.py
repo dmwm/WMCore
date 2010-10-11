@@ -20,11 +20,7 @@ class Interface_t(unittest.TestCase):
          self.database = "groupuser"
     
     def testA(self):
-    
         guInt = Interface(self.url, self.database)
-    
-        print guInt.documentsOwned("DMWM", "evansde77")
-
     
 if __name__ == '__main__':
     unittest.main()

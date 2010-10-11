@@ -33,7 +33,6 @@ class ReproducibleSeedingTests(unittest.TestCase):
     def testA(self):
         """instantiate"""
         
-        print self.testInit.couch.couchServer
         document = Document()
         document[u'pset_tweak_details'] = {}
         document[u'pset_tweak_details'][u'process'] = {}
@@ -43,15 +42,9 @@ class ReproducibleSeedingTests(unittest.TestCase):
         document[u'pset_tweak_details'][u'process'][u'RandomNumberGeneratorService'][u'seed3'] = {}
         
         document = self.database.commitOne(document)[0]
-        try:
-            seeder = ReproducibleSeeding( CouchUrl = self.testInit.couchUrl,
-                                      CouchDBName = self.testInit.couchDbName,
-                                      ConfigCacheDoc = document[u'id'])
-        except Exception, ex:
-            msg = "Failed to instantiate ReproducibleSeeder:"
-            msg += str(ex)
-            self.fail(msg)
-            
+        seeder = ReproducibleSeeding(CouchUrl = self.testInit.couchUrl,
+                                     CouchDBName = self.testInit.couchDbName,
+                                     ConfigCacheDoc = document[u'id'])
             
         job = Job("testjob")
         seeder(job)

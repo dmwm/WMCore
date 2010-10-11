@@ -6,10 +6,6 @@ Unittest for TaskMaker class
 
 """
 
-
-
-
-
 import os
 import os.path
 import unittest
@@ -23,6 +19,7 @@ from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
+from WMCore.WMInit import getWMBASE
 
 
 
@@ -116,40 +113,6 @@ class TaskMakerTest(unittest.TestCase):
         self.assertEqual(result, True)
 
         return
-
-
-    def testB(self):
-
-        myThread = threading.currentThread()
-
-        tempdir  = tempfile.mkdtemp()
-
-        if not os.path.exists('basicWorkload.pcl'):
-            print "This test depends on a basicWorkload.pcl WMWorkload file"
-            print "One can be created using WMSpec_t/BasicProductionWorkload.py"
-            
-
-        TM     = TaskMaker('basicWorkload.pcl', tempdir)
-        result = TM.processWorkload()
-
-        self.assertEqual(result, True)
-
-        result = myThread.dbi.processData('SELECT * FROM wmbs_fileset')
-        self.assertEqual(result[0].fetchall()[0][1].find('Processing') != -1, True)
-        self.assertEqual(result[0].fetchall()[1][1].find('Merge')      != -1, True)
-
-
-        result = myThread.dbi.processData('SELECT * FROM wmbs_subscription')
-        self.assertEqual(len(result[0].fetchall()), 2)
-
-        result = myThread.dbi.processData('SELECT * FROM wmbs_workflow')
-        self.assertEqual(result[0].fetchall()[0][1].find('Processing') != -1, True)
-        self.assertEqual(result[0].fetchall()[1][1].find('Merge')      != -1, True)
-
-        return
-
-
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -8,6 +8,8 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
 import unittest
+import os
+
 from WMCore.Database.CMSCouch import Document
 from WMCore.GroupUser.User import User
 from WMCore.GroupUser.Group import Group

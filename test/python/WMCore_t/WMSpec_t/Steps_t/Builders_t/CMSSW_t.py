@@ -1,12 +1,7 @@
 #!/usr/bin/env python
-
-'''
+"""
 Unittest for CMSSW.py
-'''
-
-
-
-
+"""
 
 import unittest
 import tempfile
@@ -39,7 +34,7 @@ class CMSSWBuildTest(unittest.TestCase):
         mytemplate = StepFactory.getStepTemplate("CMSSW")
         mystep = WMStep.makeWMStep("DummyStagingStep")
         mytemplate(mystep.data)
-        self.testBuilder(mystep.data , self.tempDir)
+        self.testBuilder(mystep.data, "testTask", self.tempDir)
         self.assertTrue(os.path.exists(self.tempDir))
         self.assertTrue(os.path.exists("%s/DummyStagingStep/__init__.py" 
                                        % self.tempDir))
@@ -52,7 +47,7 @@ class CMSSWBuildTest(unittest.TestCase):
         helper = TemplateNS.Template.CoreHelper(mystep.data)
         helper.addDirectory( 'testdirectory1' )
         helper.addDirectory( 'testdirectory2/testsubdir' )
-        self.testBuilder(mystep.data , self.tempDir)
+        self.testBuilder(mystep.data, "testTask", self.tempDir)
         self.assertTrue(os.path.exists(self.tempDir))
         self.assertTrue(os.path.exists("%s/DummyStagingStep/__init__.py" 
                                        % self.tempDir))

@@ -93,7 +93,7 @@ class testWMConfigCache(unittest.TestCase):
         configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
-        psetPath = os.path.join(getWMBASE(), "test/python/WMCore_t/Cache_t/PSet.py")
+        psetPath = os.path.join(getWMBASE(), "test/python/WMCore_t/Cache_t/PSet.txt")
         configCache.addConfig(newConfig = psetPath, psetHash = None)
         configCache.save()
 
@@ -128,7 +128,8 @@ class testWMConfigCache(unittest.TestCase):
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
         configCache.document['md5_hash'] = "somemd5"
-        configCache.addConfig(newConfig = 'PSet.py', psetHash = None)        
+        psetPath = os.path.join(getWMBASE(), "test/python/WMCore_t/Cache_t/PSet.txt")        
+        configCache.addConfig(newConfig = psetPath, psetHash = None)        
         configCache.save()
         
         configCache2 = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')

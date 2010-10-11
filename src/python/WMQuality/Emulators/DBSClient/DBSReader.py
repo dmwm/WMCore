@@ -37,16 +37,40 @@ class DBSReader:
             "Files" : self.listFilesInBlock(block),
             "IsOpen" : False,
             }
-                   }
+                }
         return result
 
-    def getDatasetInfo(self, dataset):
+    def getDBSSummaryInfo(self, dataset=None, block=None):
+
         """Dataset summary"""
+        def getLumisectionsInBlock(b):
+            lumis = set()
+            for file in self.dataBlocks.getFiles(b):
+                for x in file['LumiList']:
+                    lumis.add(x['LumiSectionNumber'])
+            return lumis
+
         result = {}
-        result['NumberOfEvents'] = sum([x['NumberOfEvents'] 
+        if block:
+            result['NumberOfEvents'] = sum([x['NumberOfEvents']
+                                for x in self.dataBlocks.getFiles(block)])
+            result['NumberOfFiles'] = len(self.dataBlocks.getFiles(block))
+
+            result['NumberOfLumis'] = sum(getLumisectionsInBlock(block))
+
+            result['path'] = dataset
+
+        if dataset:
+            result['NumberOfEvents'] = sum([x['NumberOfEvents']
                                 for x in self.dataBlocks.getBlocks(dataset)])
-        result['NumberOfFiles'] = sum([x['NumberOfFiles'] 
+            result['NumberOfFiles'] = sum([x['NumberOfFiles']
                                 for x in self.dataBlocks.getBlocks(dataset)])
-        result['path'] = dataset
+            lumis = set()
+            for b in self.dataBlocks.getBlocks(dataset):
+                lumis.union(getLumisectionsInBlock(b['Name']))
+
+            result['NumberOfLumis'] = sum(lumis)
+            result['path'] = dataset
         return result
+
 # pylint: enable-msg=W0613,R0201

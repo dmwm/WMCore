@@ -181,36 +181,9 @@ class DBSReader:
         unknownFiles = setOfKnownLfns.difference(knownFiles)
         return list(unknownFiles)
 
-    def getDatasetInfo(self, dataset):
-        """
-        _getDatasetInfo_
-
-        Get dataset summary includes # of files, events, blocks and total size
-        """
-        self.checkDatasetPath(dataset)
-        try:
-            summary = self.dbs.listDatasetSummary(dataset)
-        except DbsException, ex:
-            msg = "Error in DBSReader.listDatasetSummary(%s)\n" % dataset
-            msg += "%s\n" % formatEx(ex)
-            raise DBSReaderError(msg)
-        # summary returns
-        # 'number_of_files', 'number_of_events', 'number_of_blocks', 'total_size', 'path'
-        # map that to syncronize with other dbs key
-        for k, v in summary.items():
-            if k == 'number_of_files':
-                summary['NumberOfFiles'] = v
-            if k == 'number_of_events':
-                summary['NumberOfEvents'] = v
-            #if k == 'number_of_blocks':
-            #    summary['NumberOfBlocks'] = v    
-        return summary
     
-    #TODO this will replace getDataset info from above once dbs api is supported
     def getDBSSummaryInfo(self, dataset = None, block = None):
         """
-        _getDatasetInfo_
-
         Get dataset summary includes # of files, events, blocks and total size
         """
         if dataset:

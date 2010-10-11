@@ -36,10 +36,7 @@ class ReproducibleSeeding(GeneratorInterface):
         self.couchDBName = options.get("CouchDBName")   
         self.couchConfigDoc = options.get("ConfigCacheDoc")   
         
-        config = ConfigSection("ConfigCache")
-        config.section_("CoreDatabase")
-        config.CoreDatabase.couchurl = self.couchUrl
-        confCache = ConfigCache(config = config, couchDBName= self.couchDBName, id = self.couchConfigDoc)
+        confCache = ConfigCache(dbURL = self.couchUrl, couchDBName = self.couchDBName, id = self.couchConfigDoc)
         confCache.load()
         seeds = confCache.document[u'pset_tweak_details'][u'process'][u'RandomNumberGeneratorService']
         self.seedTable = []
@@ -53,6 +50,4 @@ class ReproducibleSeeding(GeneratorInterface):
 
         for seed in self.seedTable:
             wmbsJob.addBaggageParameter(seed, newSeed())
-
-
 

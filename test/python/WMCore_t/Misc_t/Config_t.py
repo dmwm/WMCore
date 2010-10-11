@@ -5,13 +5,7 @@
 """
 Unittest to see if the main configs need updating
 
-
 """
-
-
-
-
-
 
 import re
 import os.path
@@ -98,6 +92,7 @@ class ConfigTest(unittest.TestCase):
 
 
         masterConfig = self.testInit.getConfiguration()
+        config.Agent.useHeartbeat = False
         config.CoreDatabase.socket     = masterConfig.CoreDatabase.socket
         config.CoreDatabase.connectUrl = masterConfig.CoreDatabase.connectUrl
 

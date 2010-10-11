@@ -341,8 +341,7 @@ cms::Exception caught in EventProcessor and rethrown
         cmsRunStep = jsonReport["steps"]["cmsRun1"]
 
         jsonReportSections = ["status", "errors", "logs", "parameters", "site",
-                              "analysis", "cleanup", "input", "output", "start",
-                              "end"]
+                              "analysis", "cleanup", "input", "output", "start"]
         for jsonReportSection in jsonReportSections:
             assert jsonReportSection in cmsRunStep.keys(), \
                 "Error: missing section: %s" % jsonReportSection

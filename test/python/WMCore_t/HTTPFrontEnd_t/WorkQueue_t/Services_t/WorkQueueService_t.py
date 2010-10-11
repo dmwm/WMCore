@@ -159,8 +159,37 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
                                contentType = contentType, output = output)
         
         # no workflow appear to the in the directory, don't know what else to test
-                
         
+
+
+    def testCancelWork(self):
+        #TODO: could try different spec or multiple spec
+        specName = "ProductionSpec1"
+        specUrl = self.specGenerator.createProductionSpec(specName, "file")
+        self.globalQueue.queueWork(specUrl, request = "test_request")
+        testName = inspect.stack()[0][3]
+        # inpt = [("elementIDs",  1),("elementIDs", 2)] not accepted ...
+        inpt = {"elementIDs": ["test_request"]}
+        #inpt =  [("elementIDs",  1),("elementIDs", 2)]
+        data, exp = self._tester(testName, "PUT", 200, "cancelwork/", inpt = inpt)
+        # WorkQueue.cancelWork returns element id which has been cancelled if all went fine
+        self.assertEqual(data, ["test_request"])
+
+
+
+    def testCancelWorkFailNoMatchingElements(self):
+        #TODO: could try different spec or multiple spec
+        specName = "ProductionSpec1"
+        specUrl = self.specGenerator.createProductionSpec(specName, "file")
+        self.globalQueue.queueWork(specUrl, request="test_request")
+        testName = inspect.stack()[0][3]
+        # inpt = [("elementIDs",  1),("elementIDs", 2)] not accepted ...
+        inpt = {"elementIDs":  [100]}
+        # "RuntimeError", "message": "Status not changed: No matching elements"
+        data, exp = self._tester(testName, "PUT", 500, "cancelwork/", inpt = inpt)
+        self.assertEqual(data["type"], "RuntimeError")
+
+
 
 if __name__ == '__main__':
     unittest.main()

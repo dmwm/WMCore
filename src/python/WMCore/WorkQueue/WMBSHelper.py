@@ -29,6 +29,8 @@ from WMCore.WMConnectionBase     import WMConnectionBase
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource.CouchDBConnectionBase \
+     import CouchDBConnectionBase
 
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
     """Function to return status of wmbs subscriptions
@@ -52,7 +54,7 @@ class WorkQueueWMBSException(WMException):
 
     pass
 
-def killWorkflow(workflowName, couchURL, couchDBName):
+def killWorkflow(workflowName):
     """
     _killWorkflow_
 
@@ -85,8 +87,8 @@ def killWorkflow(workflowName, couchURL, couchDBName):
 
     config = Configuration()
     config.section_("JobStateMachine")
-    config.JobStateMachine.couchurl = couchURL
-    config.JobStateMachine.couchDBName = couchDBName
+    config.JobStateMachine.couchurl = CouchDBConnectionBase.getCouchDBURL()
+    config.JobStateMachine.couchDBName = CouchDBConnectionBase.getCouchDBName()
     changeState = ChangeState(config)
 
     for liveJob in liveJobs:

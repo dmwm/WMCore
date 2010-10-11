@@ -29,6 +29,7 @@ from WMCore_t.WorkQueue_t.WorkQueue_t import TestMonteCarloFactory, mcArgs
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.WorkQueue_t import fakeSiteDB
+from WMQuality.Emulators import EmulatorSetup
 
 class WMBSHelperTest(WorkQueueTestCase):
     def setUp(self):
@@ -315,11 +316,18 @@ class WMBSHelperTest(WorkQueueTestCase):
 
         Verify that workflow killing works correctly.
         """
+
+
+        #set up WMAgent config file for couchdb
+        configFile = EmulatorSetup.setupWMAgentConfig()
+
         self.setupForKillTest()
-        killWorkflow("Main", os.getenv("COUCHURL"), "wmbshelper_t")
+        killWorkflow("Main")
 
         self.verifyFileKillStatus()
         self.verifyJobKillStatus()
+        EmulatorSetup.deleteConfig(configFile)
+
         return
     
     def createWMSpec(self, name = 'ReRecoWorkload', args = rerecoArgs):

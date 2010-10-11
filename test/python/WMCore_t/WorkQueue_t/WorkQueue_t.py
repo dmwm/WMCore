@@ -26,6 +26,7 @@ from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
 
 from WMCore.DAOFactory import DAOFactory
+from WMQuality.Emulators import EmulatorSetup
 
 class fakeSiteDB:
     """Fake sitedb interactions"""
@@ -102,6 +103,9 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         If we dont have a wmspec file create one
         """
+        #set up WMAgent config file for couchdb
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
+
         WorkQueueTestCase.setUp(self)
 
         # Basic production Spec
@@ -186,7 +190,8 @@ class WorkQueueTest(WorkQueueTestCase):
     def tearDown(self):
         """tearDown"""
         WorkQueueTestCase.tearDown(self)
-
+        #Delete WMBSAgent config file
+        EmulatorSetup.deleteConfig(self.configFile)
 
     def testProduction(self):
         """
@@ -612,6 +617,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
     def testGlobalDatsetSplitting(self):
         """Dataset splitting at global level"""
+
         # force global queue to split work on block
         self.globalQueue.params['SplittingMapping']['DatasetBlock']['name'] = 'Dataset'
         self.globalQueue.params['SplittingMapping']['Block']['name'] = 'Dataset'
@@ -641,7 +647,6 @@ class WorkQueueTest(WorkQueueTestCase):
         # elements in local deleted at end of update, only global ones left
         self.assertEqual(len(self.localQueue.status(status = 'Done')),
                          totalSpec)
-
 
     def testResetWork(self):
         """Reset work in global to different child queue"""

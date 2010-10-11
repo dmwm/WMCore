@@ -91,7 +91,7 @@ class WorkQueueTest(RESTBaseUnitTest):
         childUrl = "http://test.url"
         childResources = [{'ParentQueueId' : 1, 'Status' : 'Available'}]
         self.assertEqual(wqApi.synchronize(childUrl, childResources),
-                         {'Canceled': set([1])})
+                         {'Canceled': {'ids': set([1]), 'request_names': set([None])}})
         
         childUrl = "http://test.url"
         childResources = []
@@ -109,6 +109,16 @@ class WorkQueueTest(RESTBaseUnitTest):
         self.assertEqual(wqApi.cancelWork([1]), [1])
         #print wqApi.status()
         
+
+    def testCancelWorkWithRequest(self):
+        #TODO: could try different spec or multiple spec
+        specName = "ProductionSpec1"
+        specUrl = self.specGenerator.createProductionSpec(specName, "file")
+        self.globalQueue.queueWork(specUrl, request="test_request")
+        wqApi = WorkQueueDS(self.params)
+        self.assertEqual(wqApi.cancelWork(["test_request"]), ["test_request"])
+
+
 if __name__ == '__main__':
 
     unittest.main()

@@ -1,33 +1,75 @@
 #!/usr/bin/env python
+""" Main Module for browsing and modifying requests """
 
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, parseSite
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Cache.WMConfigCache import ConfigCache 
-from PSetTweaks.PSetTweak import PSetHolder, PSetTweak
 from WMCore.Services.Requests import JSONRequests
 import WMCore.HTTPFrontEnd.RequestManager.Sites
 
 import cherrypy
-from cherrypy import expose
 import json
-import logging
 import os.path
-import pickle
 import urllib
 from WMCore.WebTools.Page import TemplatedPage
 
+def detailsBackLink(requestName):
+    """ HTML to return to the details of this request """
+    return  ' <A HREF=requestDetails/%s>Details</A> <A HREF=".">Back</A><BR>' % requestName
+
+def linkedTableEntry(methodName, entry):
+    """ Makes an HTML table entry with the entry name, and a link to a
+    method with that entry as an argument"""
+    return '<a href="%s/%s">%s</a>' % (methodName, entry, entry)
+
+def statusMenu(requestName, defaultField):
+    """ Makes an HTML menu for setting the status """
+    html = defaultField + '&nbsp<SELECT NAME="%s:status"> <OPTION></OPTION>' % requestName
+    for field in RequestStatus.NextStatus[defaultField]:
+        html += '<OPTION>%s</OPTION>' % field
+    html += '</SELECT>'
+    return html
+
+def priorityMenu(requestName, defaultPriority):
+    """ Returns HTML for a box to set priority """
+    return '%s &nbsp<input type="text" size=2 name="%s:priority">' % (defaultPriority, requestName)
+
+def biggestUpdate(field, request):
+    """ Finds which of the updates has the biggest number """
+    biggest = 0
+    for update in request["RequestUpdates"]:
+        if update.has_key(field):
+            biggest = update[field]
+    return "%i%%" % biggest
+
+def addHtmlLinks(d):
+    """ Any entry that starts with http becomes an HTML link """
+    for key, value in d.iteritems():
+        if isinstance(value, str) and value.startswith('http'):
+            target = value
+            # assume CVS browsers need extra tags
+            if 'cvs' in target:
+                target += '&view=markup'
+            d[key] = '<a href="%s">%s</a>' % (target, value)
+
+
 class ReqMgrBrowser(TemplatedPage):
+    """ Main class for browsing and modifying requests """
     def __init__(self, config):
         TemplatedPage.__init__(self, config)
         # Take a guess
         self.templatedir = __file__.rsplit('/', 1)[0]
         self.urlPrefix = '%s/download/?filepath=' % config.reqMgrHost
-        self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'ReqMgrRequestBasePriority', 'RequestStatus', 'Complete', 'Success']
-        self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged', 'Complete':'percentComplete', 'Success' : 'percentSuccess'}
+        self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType',
+                       'ReqMgrRequestBasePriority', 'RequestStatus', 'Complete', 'Success']
+        self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged',
+                                 'Complete':'percentComplete', 'Success' : 'percentSuccess'}
         # entries in the table that show up as HTML links for that entry
         self.linkedFields = {'Group':'group', 'Requestor':'user', 'RequestName':'requestDetails'}
-        self.detailsFields = ['RequestName', 'RequestType', 'Requestor', 'CMSSWVersion', 'ScramArch', 'GlobalTag', 'RequestSizeEvents', 
+        self.detailsFields = ['RequestName', 'RequestType', 'Requestor', 'CMSSWVersion',
+                """ Main class for browsing and modifying requests """
+            'ScramArch', 'GlobalTag', 'RequestSizeEvents',
             'InputDataset', 'PrimaryDataset', 'AcquisitionEra', 'ProcessingVersion', 
             'RunWhitelist', 'RunBlacklist', 'BlockWhitelist', 'BlockBlacklist', 
             'RequestWorkflow', 'Scenario', 'PrimaryDataset']
@@ -46,28 +88,31 @@ class ReqMgrBrowser(TemplatedPage):
         self.mergedLFNBases = {"ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
                                "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}
 
+    @cherrypy.expose
     def index(self):
+        """ Main web page """
         requests = self.getRequests()
         print str(requests)
         tableBody = self.drawRequests(requests)
         return self.templatepage("ReqMgrBrowser", fields=self.fields, tableBody=tableBody)
-    index.exposed = True
 
+    @cherrypy.expose
     def search(self, value, field):
+        """ Search for a regular expression in a certain field of all requests """
         filteredRequests = []
         requests =  self.getRequests() 
         for request in requests:
-           if request[field].find(value) != -1:
-               filteredRequests.append(request)
+            if request[field].find(value) != -1:
+                filteredRequests.append(request)
         requests = filteredRequests
         tableBody = self.drawRequests(requests)
         return self.templatepage("ReqMgrBrowser", fields=self.fields, tableBody=tableBody)
         
-    search.exposed = True
-        
     def getRequests(self):
+        """ Get all requests """
         return self.jsonSender.get("/reqMgr/request")[0]
 
+    @cherrypy.expose
     def splitting(self, requestName):
         """
         _splitting_
@@ -98,8 +143,8 @@ class ReqMgrBrowser(TemplatedPage):
 
         return self.templatepage("Splitting", requestName = requestName,
                                  taskInfo = splitInfo, taskNames = taskNames)
-    splitting.exposed = True
             
+    @cherrypy.expose
     def handleSplittingPage(self, requestName, splittingTask, splittingAlgo,
                             **submittedParams):
         """
@@ -128,11 +173,11 @@ class ReqMgrBrowser(TemplatedPage):
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
         helper.save(pfn)
         return "Successfully updated splitting parameters for " + splittingTask \
-               + " " + self.detailsBackLink(requestName)
-    handleSplittingPage.exposed = True
+               + " " + detailsBackLink(requestName)
 
+    @cherrypy.expose
     def requestDetails(self, requestName):
-        result = ""
+        """ A page showing the details for the requests """
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
         helper, pfn = self.workloadHelper(request)
 
@@ -141,10 +186,10 @@ class ReqMgrBrowser(TemplatedPage):
         d['RequestWorkflow'] = request['RequestWorkflow']
         if d.has_key('ProdConfigCacheID') and d['ProdConfigCacheID'] != "":
             docId = d['ProdConfigCacheID']        
-        self.addHtmlLinks(d)
-        assignments= self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0]
-        adminHtml = self.statusMenu(requestName, request['RequestStatus']) \
-                  + ' Priority ' + self.priorityMenu(requestName, request['ReqMgrRequestBasePriority'])
+        addHtmlLinks(d)
+        assignments = self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0]
+        adminHtml = statusMenu(requestName, request['RequestStatus']) \
+                  + ' Priority ' + priorityMenu(requestName, request['ReqMgrRequestBasePriority'])
         return self.templatepage("Request", requestName=requestName,
                                 detailsFields = self.detailsFields, requestSchema=d,
                                 workloadDir = self.workloadDir, 
@@ -153,41 +198,34 @@ class ReqMgrBrowser(TemplatedPage):
                                 messages=request['RequestMessages'],
                                 updateDictList=request['RequestUpdates'])
                                  
-        return result
-    requestDetails.exposed = True
 
+    @cherrypy.expose
     def showOriginalConfig(self, docId):
+        """ Makes a link to the original text of the config """
         configCache = ConfigCache(self.configCacheUrl, self.configDBName)
         configCache.loadByID(docId)
         configString =  configCache.getConfig()
         if configString == None:
             return "Cannot find document " + str(docId) + " in Couch DB"
         return '<pre>' + configString + '</pre>'
-    showOriginalConfig.exposed = True
 
+    @cherrypy.expose
     def showTweakFile(self, docId):
+        """ Makes a link to the dump of the tweakfile """
         configCache = ConfigCache(self.configCacheUrl, self.configDBName)
         configCache.loadByID(docId)
         return str(configCache.getPSetTweaks()).replace('\n', '<br>')
-    showTweakFile.exposed = True
 
+    @cherrypy.expose
     def showWorkload(self, filepath):
+        """ Displays the workload """
         helper = WMWorkloadHelper()
         helper.load(filepath)
         return str(helper.data).replace('\n', '<br>')
-    showWorkload.exposed = True
  
-    def addHtmlLinks(self, d):
-        for key, value in d.iteritems():
-            if isinstance(value, str) and value.startswith('http'):
-                target = value
-                # assume CVS browsers need extra tags
-                if 'cvs' in target:
-                    target += '&view=markup'
-                d[key] = '<a href="%s">%s</a>' % (target, value)
-        print d
-
+    @cherrypy.expose
     def remakeWorkload(self, requestName):
+        """ Rebuild the workload from the stored schema """
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
         # Should really get by RequestType
         workloadMaker = WorkloadMaker(requestName)
@@ -196,19 +234,18 @@ class ReqMgrBrowser(TemplatedPage):
         workload = workloadMaker.makeWorkload()
         workloadCache = getWorkloadCache()
         request['RequestWorkflow'] = workloadCache.checkIn(workload)
-                
-    remakeWorkload.exposed = True
 
     def drawRequests(self, requests):
+        """ Display all requests """
         result = ""
         for request in requests:
             # see if this is slower
             #request = self.jsonSender.get("/reqMgr/request/"+request["RequestName"])[0]
             result += self.drawRequest(request)
-        return result;
+        return result
 
     def drawRequest(self, request):
-        # make a table row
+        """ make a table row with information from this request """
         html = '<tr>'
         requestName = request['RequestName']
         for field in self.fields:
@@ -218,7 +255,7 @@ class ReqMgrBrowser(TemplatedPage):
                 method = getattr(self, self.adminFields[field])
                 html += method(requestName, str(request[field]))
             elif self.linkedFields.has_key(field):
-                html += self.linkedTableEntry(self.linkedFields[field], str(request[field]))
+                html += linkedTableEntry(self.linkedFields[field], str(request[field]))
             elif self.calculatedFields.has_key(field):
                 method = getattr(self, self.calculatedFields[field])
                 html += method(request)
@@ -227,22 +264,6 @@ class ReqMgrBrowser(TemplatedPage):
             html += '</td>'
         html += '</tr>\n'
         return html
-
-    def linkedTableEntry(self, methodName, entry):
-        """ Makes an HTML table entry with the entry name, and a link to a
-        method with that entry as an argument"""
-        return '<a href="%s/%s">%s</a>' % (methodName, entry, entry)
-
-    def statusMenu(self, requestName, defaultField):
-        """ Makes an HTML menu for setting the status """
-        html = defaultField + '&nbsp<SELECT NAME="%s:status"> <OPTION></OPTION>' % requestName
-        for field in RequestStatus.NextStatus[defaultField]:
-	    html += '<OPTION>%s</OPTION>' % field
-        html += '</SELECT>'
-        return html
-
-    def priorityMenu(self, requestName, defaultPriority):
-        return '%s &nbsp<input type="text" size=2 name="%s:priority">' % (defaultPriority, requestName)
 
     def percentWritten(self, request):
         maxPercent = 0
@@ -280,19 +301,11 @@ class ReqMgrBrowser(TemplatedPage):
         pct = request.get('percent_success', 0)
         return "%i%%" % pct
 
-
-    def biggestUpdate(self, field, request):
-        max = 0
-        for update in request["RequestUpdates"]:
-            if update.has_key(field):
-                max = update[field]
-        return "%i%%" % max
-
-
+    @cherrypy.expose
     def doAdmin(self, **kwargs):
-        # format of kwargs is {'requestname:status' : 'approved', 'requestname:priority' : '2'}
+        """  format of kwargs is {'requestname:status' : 'approved', 'requestname:priority' : '2'} """
         message = ""
-        for k,v in kwargs.iteritems():
+        for k, v in kwargs.iteritems():
             if k.endswith(':status'): 
                 requestName = k.split(':')[0]
                 status = v
@@ -300,12 +313,9 @@ class ReqMgrBrowser(TemplatedPage):
                 if status != "" or priority != "":
                     message += self.updateRequest(requestName, status, priority)
         return message
-    doAdmin.exposed = True
-
-    def detailsBackLink(self, requestName):
-        return  ' <A HREF=requestDetails/%s>Details</A> <A HREF=".">Back</A><BR>' % requestName
 
     def updateRequest(self, requestName, status, priority):
+        """ Changes the status or priority """
         urd = '/reqMgr/request/' + requestName + '?'
         message = "Changed " + requestName
         if status != "":
@@ -318,10 +328,11 @@ class ReqMgrBrowser(TemplatedPage):
             message += ' priority='+priority
         self.jsonSender.put(urd)
         if status == "assigned":
-           # make a page to choose teams
-           return self.assignmentPage(requestName)
-        return message + self.detailsBackLink(requestName)
+            # make a page to choose teams
+            return self.assignmentPage(requestName)
+        return message + detailsBackLink(requestName)
 
+    @cherrypy.expose
     def assignmentPage(self, requestName):
         teams = self.jsonSender.get('/reqMgr/team')[0]
         requestType = self.jsonSender.get('/reqMgr/request/%s' % requestName)[0]["RequestType"]
@@ -331,8 +342,7 @@ class ReqMgrBrowser(TemplatedPage):
         if isinstance(assignments, dict):
             assignments = assignments.keys()
         return self.templatepage("Assign", requestName=requestName, teams=teams, 
-                   assignments=assignments, sites=self.sites, mergedLFNBases = self.mergedLFNBases[requestType])
-    assignmentPage.exposed = True
+                 assignments=assignments, sites=self.sites, mergedLFNBases = self.mergedLFNBases[requestType])
     
     def workloadHelper(self, request):
         """ Returns a WMWorkloadHelper and a pfn for the workload in the request """
@@ -341,7 +351,8 @@ class ReqMgrBrowser(TemplatedPage):
         helper.load(pfn)
         return helper, pfn
 
-    def handleAssignmentPage(self, *args, **kwargs):
+    @cherrypy.expose
+    def handleAssignmentPage(self, **kwargs):
         """ handles some checkboxes """
         result = ""
         requestName = kwargs["RequestName"]
@@ -364,44 +375,18 @@ class ReqMgrBrowser(TemplatedPage):
         if teams == [] and assignments == []:
             raise cherrypy.HTTPError(400, "Must assign to one or more teams")
 
-        if kwargs.has_key("StdJobSplitAlgo"):
-            schema["StdJobSplitAlgo"] = splitAlgo
-            d = {}
-            if splitAlgo == "FileBased":
-                 d = {'files_per_job' : kwargs["filesPerJob"] }
-            elif splitAlgo == "LumiBased":
-                 d = {'lumis_per_job' : kwargs["lumisPerJob"],
-                      'split_files_between_job':kwargs["splitFilesBetweenJob"]}
-            elif splitAlgo == "EventBased":
-                 d = {'events_per_job': kwargs["eventsPerJob"]}
-            else:
-                  raise RuntimeError("Cannot find splitting algo " + splitAlgo)
-            schema["StdJobSplitArgs"] = d
-
-        if kwargs.has_key("SkimJobSplitAlgo"):
-            skimSplitAlgo = kwargs["SkimJobSplitAlgo"]
-            schema["SkimJobSplitAlgo"] = skimSplitAlgo
-            files_per_job = 0
-            if skimSplitAlgo == "FileBased":
-               files_per_job = kwargs["skimFilesPerJob"]
-            elif skimSplitAlgo == "TwoFileBased":
-               files_per_job = kwargs["skimTwoFilesPerJob"]
-            else:
-                  raise RuntimeError("Cannot find splitting algo " + skimSplitAlgo)
-            schema["SkimJobSplitArgs"] = {'files_per_job': files_per_job}
-
-        helper.setSiteWhitelist(self.parseSite(kwargs,"SiteWhitelist"))
-        helper.setSiteBlacklist(self.parseSite(kwargs,"SiteBlacklist"))
+        helper.setSiteWhitelist(parseSite(kwargs,"SiteWhitelist"))
+        helper.setSiteBlacklist(parseSite(kwargs,"SiteBlacklist"))
         helper.setProcessingVersion(kwargs["ProcessingVersion"])
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
         helper.setMergeParameters(kwargs["MinMergeSize"], kwargs["MaxMergeSize"], kwargs["MaxMergeEvents"])
         helper.save(pfn)
-        result += self.detailsBackLink(requestName)
+        result += detailsBackLink(requestName)
         return result
-    handleAssignmentPage.exposed = True
 
-    def modifyWorkload(self, requestName, workload, requestType,
+    @cherrypy.expose
+    def modifyWorkload(self, requestName, workload,
                        runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None):
         """ handles the "Modify" button of the requestDetails page """
         
@@ -413,54 +398,44 @@ class ReqMgrBrowser(TemplatedPage):
         message = ""
         #inputTask = helper.getTask(requestType).data.input.dataset
         if runWhitelist != "" and runWhitelist != None:
-           l = parseRunList(runWhitelist)
-           schema.RunWhitelist = l
-           helper.setRunWhitelist(l)
-           message += 'Changed runWhiteList to %s<br>' % l
+            l = parseRunList(runWhitelist)
+            schema.RunWhitelist = l
+            helper.setRunWhitelist(l)
+            message += 'Changed runWhiteList to %s<br>' % l
         if runBlacklist != "" and runBlacklist != None:
-           l = parseRunList(runBlacklist)
-           schema.RunBlacklist = l
-           helper.setRunBlacklist(l)
-           message += 'Changed runBlackList to %s<br>' % l
+            l = parseRunList(runBlacklist)
+            schema.RunBlacklist = l
+            helper.setRunBlacklist(l)
+            message += 'Changed runBlackList to %s<br>' % l
         if blockWhitelist != "" and blockWhitelist != None:
-           l = parseBlockList(blockWhitelist)
-           schema.BlockWhitelist = l
-           helper.setBlockWhitelist(l)
-           message += 'Changed blockWhiteList to %s<br>' % l
+            l = parseBlockList(blockWhitelist)
+            schema.BlockWhitelist = l
+            helper.setBlockWhitelist(l)
+            message += 'Changed blockWhiteList to %s<br>' % l
         if blockBlacklist != "" and blockBlacklist != None:
-           l = parseBlockList(blockBlacklist)
-           schema.BlockBlacklist = l
-           helper.setBlockBlacklist(l)
-           message += 'Changed blockBlackList to %s<br>' % l
+            l = parseBlockList(blockBlacklist)
+            schema.BlockBlacklist = l
+            helper.setBlockBlacklist(l)
+            message += 'Changed blockBlackList to %s<br>' % l
         helper.save(workload)
-        return message + self.detailsBackLink(requestName)
-    modifyWorkload.exposed = True
+        return message + detailsBackLink(requestName)
 
-    def parseSite(self, kw, name):
-        """ puts site whitelist & blacklists into nice format"""
-        value = kw.get(name, [])
-        if value == None:
-            value = []
-        if not isinstance(value, list):
-            value = [value]
-        return value
-
-    @expose
+    @cherrypy.expose
     def user(self, userName):
         """ Web page of details about the user, and sets user priority """
         userDict = json.loads(self.jsonSender.get('/reqMgr/user/%s' % userName)[0])
-        print "USERDICT " + str(userDict)
         requests = userDict['requests']
         priority = userDict['priority']
         groups = userDict['groups']
         return self.templatepage("User", user=userName, groups=groups, requests=requests, priority=priority)
 
-    @expose
+    @cherrypy.expose
     def handleUserPriority(self, user, userPriority):
+        """ Handles setting user priority """
         self.jsonSender.post('/reqMgr/user/%s?priority=%s' % (user, userPriority))
         return "Updated user %s priority to %s" % (user, userPriority)
 
-    @expose
+    @cherrypy.expose
     def group(self, groupName):
         """ Web page of details about the user, and sets user priority """
         groupDict = json.loads(self.jsonSender.get('/reqMgr/group/%s' % groupName)[0])
@@ -468,8 +443,9 @@ class ReqMgrBrowser(TemplatedPage):
         priority = groupDict['priority']
         return self.templatepage("Group", group=groupName, users=users, priority=priority)
 
-    @expose
+    @cherrypy.expose
     def handleGroupPriority(self, group=None, groupPriority=None):
+        """ Handles setting group priority """
         self.jsonSender.post('/reqMgr/group/%s?priority=%s' % (group, groupPriority))
         return "Updated group %s priority to %s" % (group, groupPriority)
 

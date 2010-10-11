@@ -22,7 +22,7 @@ from Dummy import Dummy
 from WMQuality.TestInit import TestInit
 
 # local import
-from Dummy import Dummy
+from WMCore_t.WorkerThreads_t.Dummy import Dummy
 
 class DummyWorker1(BaseWorkerThread):
     """

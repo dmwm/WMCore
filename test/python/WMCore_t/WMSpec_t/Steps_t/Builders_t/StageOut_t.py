@@ -39,7 +39,7 @@ class StageOutTest(unittest.TestCase):
         mytemplate = StepFactory.getStepTemplate("StageOut")
         mystep = WMStep.makeWMStep("DummyStagingStep")
         mytemplate(mystep.data)
-        self.testBuilder(mystep.data , self.tempDir)
+        self.testBuilder(mystep.data, "testTask", self.tempDir)
         self.assertTrue(os.path.exists(self.tempDir))
         self.assertTrue(os.path.exists("%s/DummyStagingStep/__init__.py" 
                                        % self.tempDir))
@@ -52,7 +52,7 @@ class StageOutTest(unittest.TestCase):
         helper = TemplateNS.Template.CoreHelper(mystep.data)
         helper.addDirectory( 'testdirectory1' )
         helper.addDirectory( 'testdirectory2/testsubdir' )
-        self.testBuilder(mystep.data , self.tempDir)
+        self.testBuilder(mystep.data, "testTask", self.tempDir)
         self.assertTrue(os.path.exists(self.tempDir))
         self.assertTrue(os.path.exists("%s/DummyStagingStep/__init__.py" 
                                        % self.tempDir))

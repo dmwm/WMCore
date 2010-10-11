@@ -6,9 +6,6 @@ Verify that the whole FWJR chain works correctly:
   CMSSW XML -> XMLParser -> Report -> Pickle -> UnPickle -> Accountant
 """
 
-
-
-
 import unittest
 import os
 import xml.dom.minidom
@@ -28,21 +25,7 @@ from WMCore.WMBS.Workflow import Workflow
 
 from WMComponent.JobAccountant.JobAccountantPoller import JobAccountantPoller
 from WMCore.FwkJobReport.Report import Report
-
-def requiresPython26(testMethod, *args, **kwargs):
-    def skipTest(*args, **kwargs):
-        print "SKIPPING"
-        #raise nose.SkipTest
-        
-    import sys
-
-    majorVersion = sys.version_info[0]
-    minorVersion = sys.version_info[1]
-
-    if (majorVersion == 2 and minorVersion >= 6) or majorVersion > 2:
-        return testMethod
-
-    return skipTest
+from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
 class ReportIntegrationTest(unittest.TestCase):
     """
@@ -61,6 +44,13 @@ class ReportIntegrationTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database",
                                                  "WMCore.WMBS"],
                                 useDefault = False)
+
+        myThread = threading.currentThread()
+        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
+        locationAction = self.daofactory(classname = "Locations.New")
+        locationAction.execute(siteName = "site1", seName = "cmssrm.fnal.gov")
 
         inputFile = File(lfn = "/path/to/some/lfn", size = 10, events = 10,
                          locations = "cmssrm.fnal.gov")
@@ -294,7 +284,6 @@ class ReportIntegrationTest(unittest.TestCase):
 
         return
 
-    @requiresPython26
     def testReportHandling(self):
         """
         _testReportHandling_
@@ -302,7 +291,6 @@ class ReportIntegrationTest(unittest.TestCase):
         Verify that we're able to parse a CMSSW report, convert it to a Report()
         style report, pickle it and then have the accountant process it.
         """
-        raise RuntimeError, "Failing this test because it takes forever to run"
         self.procPath = os.path.join(WMCore.WMInit.getWMBASE(),
                                     "test/python/WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         
@@ -315,9 +303,19 @@ class ReportIntegrationTest(unittest.TestCase):
             fileRef.location = "cmssrm.fnal.gov"
 
         fwjrPath = os.path.join(self.tempDir, "ProcReport.pkl")
+        cmsRunStep = myReport.retrieveStep("cmsRun1")
+        cmsRunStep.status = 0
         myReport.persist(fwjrPath)
 
         self.setFWJRAction.execute(jobID = self.testJob["id"], fwjrPath = fwjrPath)
+
+        pFile = DBSBufferFile(lfn = "/path/to/some/lfn", size = 600000, events = 60000)
+        pFile.setAlgorithm(appName = "cmsRun", appVer = "UNKNOWN",
+                           appFam = "RECO", psetHash = "GIBBERISH",
+                           configContent = "MOREGIBBERISH")
+        pFile.setDatasetPath("/bogus/dataset/path")
+        #pFile.addRun(Run(1, *[45]))
+        pFile.create()
 
         config = self.createConfig(workerThreads = 1)
         accountant = JobAccountantPoller(config)
@@ -349,6 +347,8 @@ class ReportIntegrationTest(unittest.TestCase):
                                "dataTier": "RECO"}
 
         fwjrPath = os.path.join(self.tempDir, "MergeReport.pkl")
+        cmsRunStep = myReport.retrieveStep("mergeReco")
+        cmsRunStep.status = 0        
         myReport.persist(fwjrPath)
 
         self.setFWJRAction.execute(jobID = self.testMergeJob["id"], fwjrPath = fwjrPath)

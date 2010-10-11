@@ -70,8 +70,9 @@ class WorkerThreadManager:
         worker.terminateCallback = self.slaveTerminateCallback
         worker.notifyPause = self.pauseSlaves
         worker.notifyResume = self.resumeSlaves
-        if getattr(self.component.config.Agent, "useHeartbeat", True):
-            worker.heartbeatAPI = HeartbeatAPI(self.component.config.Agent.componentName)
+        if hasattr(self.component.config, "Agent"):
+            if getattr(self.component.config.Agent, "useHeartbeat", True):
+                worker.heartbeatAPI = HeartbeatAPI(self.component.config.Agent.componentName)
         
 
     def addWorker(self, worker, idleTime = 60, parameters = None):

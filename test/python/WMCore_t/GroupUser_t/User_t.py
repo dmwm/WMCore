@@ -16,7 +16,7 @@ from WMCore.GroupUser.Group import Group
 class User_t(unittest.TestCase):
     def setUp(self):
         self.database = "groupuser"
-        self.url = "http://127.0.0.1:5984"
+        self.url = os.getenv("COUCHURL", "http://127.0.0.1:5984")
 
     def testA(self):
         """instantiate & jsonise"""

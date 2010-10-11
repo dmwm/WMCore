@@ -24,10 +24,13 @@ def _globalQueueInfo(gQueues):
     cRequestInfo = []
     for queue in gQueues:
         globalQ = WorkQueue({'endpoint': queue + "/"})
-        #globalQ = WorkQueue({'endpoint': 'http://cmssrv75.fnal.gov:9991/workqueue%s' % '/'})
-        gRequestInfo.extend(globalQ.getChildQueuesByRequest())
-        cRequestInfo.extend(_localQueueInfo(globalQ))
-        print cRequestInfo
+        try:
+            gRequestInfo.extend(globalQ.getChildQueuesByRequest())
+        except:
+            gRequestInfo.extend([{"queue_error": queue}])
+        else:
+            cRequestInfo.extend(_localQueueInfo(globalQ))
+
     return gRequestInfo, cRequestInfo
 
 def _localQueueInfo(globalQ):
@@ -39,7 +42,12 @@ def _localQueueInfo(globalQ):
     for cQueue in cQueues:
         childQ = WorkQueue({'endpoint': cQueue + "/"})
         #childQ = WorkQueue({'endpoint': 'http://cmssrv75.fnal.gov:9991/workqueue%s' % '/'})
-        jobSummary.extend(childQ.getJobSummaryFromCouchDB())
+        try:
+            jobSummary.extend(childQ.getJobSummaryFromCouchDB())
+        except:
+            #pass
+            jobSummary.extend([{"queue_error": cQueue}])
+
     return jobSummary
 
 def _formatTable(requestInfo, gRequestInfo, cRequestInfo, host):
@@ -59,14 +67,26 @@ def _formatTable(requestInfo, gRequestInfo, cRequestInfo, host):
     for item in requestInfo:
         item['host'] = host
         for gItem in gRequestInfo:
-            if item['request_name'] == gItem['request_name']:
+
+            if gItem.has_key('queue_error'):
+                if item['global_queue'] == gItem['queue_error']:
+                    item['error'] = "Global Queue Down"
+
+            elif item['request_name'] == gItem['request_name']:
                 localQueueList = []
                 addToLocalQueueList(item, localQueueList)
                 addToLocalQueueList(gItem, localQueueList)
                 item.update(gItem)
                 item['local_queue'] = localQueueList
+
         for cItem in cRequestInfo:
-            if item['request_name'] == cItem['request_name']:
+
+            if cItem.has_key('queue_error'):
+                if item.has_key('local_queue') and (cItem['queue_error'] in item.get('local_queue')):
+                    item.setdefault('error', 'Local Queue Down')
+                    item['error'] += ", %s" % cItem['queue_error'].strip('http://').strip('/workqueue')
+
+            elif item['request_name'] == cItem['request_name']:
                 #Not just update items it should add the job numbers.
                 #When there is multiple couchDB
                 for status in ['pending', 'cooloff', 
@@ -74,7 +94,8 @@ def _formatTable(requestInfo, gRequestInfo, cRequestInfo, host):
                     jobs = item.pop(status, 0)
                     cJobs = cItem.pop(status, 0)
                     item[status] = jobs + cJobs
-                    
+
                 item.update(cItem)
+
 
     return requestInfo

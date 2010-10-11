@@ -20,7 +20,7 @@ function(doc) {
                 {'dn' : dn,
                  'task' : task,
                  'jobid' : job,
-                 'lfn': doc['fwjr']['steps'][step]["output"][module][file]["lfn"],
+                 '_id': doc['fwjr']['steps'][step]["output"][module][file]["lfn"],
                  'source':  doc['fwjr']['asynSource'],
                  'destination': doc['fwjr']['asynDestination']}
           );  

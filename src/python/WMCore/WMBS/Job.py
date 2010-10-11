@@ -108,6 +108,7 @@ class Job(WMBSBase, WMJob):
                            name = self["name"], couch_record = self["couch_record"],
                            location = self["location"], outcome = self["outcome"],
                            cache_dir = self["cache_dir"], fwjr = self['fwjr_path'],
+                           retry_count = self['retry_count'],
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 

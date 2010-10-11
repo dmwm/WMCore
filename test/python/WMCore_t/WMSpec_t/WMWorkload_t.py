@@ -578,14 +578,14 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertTrue("/TestWorkload/ProcessingTask/MergeTask/SkimTask" in results.keys(),
                         "Error: Task is missing.")
 
-        self.assertEqual(results["/TestWorkload/ProcessingTask"], {"files_per_job": 2, "algorithm": "TwoFileBased"},
+        self.assertEqual(results["/TestWorkload/ProcessingTask"], {"files_per_job": 2, "algorithm": "TwoFileBased", "type": "Processing"},
                          "Error: Wrong splitting parameters.")
         self.assertEqual(results["/TestWorkload/ProcessingTask/MergeTask/SkimTask"],
-                         {"max_files": 21, "algorithm": "RunBased", "some_other_param": "value"},
+                         {"max_files": 21, "algorithm": "RunBased", "some_other_param": "value", "type": "Skim"},
                          "Error: Wrong splitting parameters.")
         self.assertEqual(results["/TestWorkload/ProcessingTask/MergeTask"],
                          {"algorithm": "WMBSMergeBySize", "max_merge_size": 2,
-                          "max_merge_events": 2, "min_merge_size": 2},
+                          "max_merge_events": 2, "min_merge_size": 2, "type": "Merge"},
                          "Error: Wrong splitting parameters.")
 
         return

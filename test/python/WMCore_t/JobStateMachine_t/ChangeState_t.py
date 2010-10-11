@@ -28,6 +28,7 @@ from WMCore.DataStructs.Run import Run
 
 from WMCore.FwkJobReport.Report import Report
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
+from WMCore.WMInit import getWMBASE
 
 class TestChangeState(unittest.TestCase):
     def setUp(self):
@@ -387,6 +388,8 @@ class TestChangeState(unittest.TestCase):
 
         change.propagate([testJobA], 'created', 'new')
         myReport = Report()
+        reportPath = os.path.join(getWMBASE(),
+                                  "test/python/WMCore_t/JobStateMachine_t/Report.pkl")
         myReport.unpersist("Report.pkl")
         testJobA["fwjr"] = myReport
 

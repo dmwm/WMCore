@@ -95,7 +95,7 @@ class RestServer(object):
         cherrypy.server.socket_queue_size = 15
         mime_types = self.rest.supporttypes
         cache_flags =  \
-             'no-store, no-cache, must-revalidate,post-check=0, pre-check=0'
+              'no-store, no-cache, must-revalidate, post-check=0, pre-check=0'
         httpheader = [('Expires', 
                      time.strftime( "%a, %d %b %Y %H:%M:%S GMT",
                                     time.gmtime(time.time()+315360000))

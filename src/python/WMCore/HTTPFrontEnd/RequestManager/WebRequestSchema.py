@@ -65,16 +65,14 @@ class WebRequestSchema(TemplatedPage):
         schema['CouchURL'] = self.couchUrl
         schema['CouchDBName'] = self.couchDBName
 
-        #delete unnecessary parameters.
-        # is there a way to make these fields never appear?
-        if not 'inputMode' in kwargs:
-            raise cherrypy.HTTPError(400, "Please set the input mode")
-        inputMode = kwargs['inputMode']
-        inputValues = {'scenario':'Scenario',
-                       'couchDB':'ProdConfigCacheID'}
-        for n,v in inputValues.iteritems():
-            if n != inputMode:
-                schema[v] = ""
+        if 'Scenario' in kwargs and 'ProdConfigCacheID' in kwargs:
+            # Use input mode to delete the unused one
+            inputMode = kwargs['inputMode']
+            inputValues = {'scenario':'Scenario',
+                           'couchDB':'ProdConfigCacheID'}
+            for n,v in inputValues.iteritems():
+                if n != inputMode:
+                    schema[v] = ""
 
         if kwargs.has_key("InputDataset"):
             schema["InputDatasets"] = [kwargs["InputDataset"]]

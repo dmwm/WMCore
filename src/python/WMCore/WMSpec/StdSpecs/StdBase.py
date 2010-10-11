@@ -205,7 +205,6 @@ class StdBase(object):
         else:
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
-
         configOutput = self.determineOutputModules(scenarioName, scenarioArgs,
                                                    configDoc, couchURL, couchDBName)
         outputModules = {}

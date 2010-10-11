@@ -38,30 +38,18 @@ class FileBasedSchema(RequestSchema):
     """
     def __init__(self):
         RequestSchema.__init__(self)
-        self.setdefault("Activity", "Processing")
         self.setdefault("CMSSWVersion", None)
-        self.setdefault("Category", "Data")
         self.setdefault("ProcessingVersion", None)
-        self.setdefault("Configuration", None)
-        self.setdefault("Conditions", None)
-        self.setdefault("FinalDestination", None)
-        self.setdefault("PSetHash", None)
+        self.setdefault("ProdConfigCacheID", None)
+        self.setdefault("GlobalTag", None)
         self.setdefault("InputDataset", None)
-
-        self.setdefault("FilesPerJob", 1)
-        self.setdefault("DBSURL", None) # default to global?
-
-        self.setdefault("BlockList", [])
-        self.setdefault("SiteList",  [])
-
-
+        self.setdefault("DBSURL", None)
 
         self.validateFields = [
             "CMSSWVersion",
-            "Configuration",
-            "Conditions",
-            "PSetHash",
-            "InputDataset",
+            "ProdConfigCacheID",
+            "GlobalTag",
+            "InputDataset"
             ]
 
 

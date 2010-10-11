@@ -1,22 +1,20 @@
 from WMCore.Services.Requests import JSONRequests
+import WMCore_t.RequestManager_t.FakeRequests as FakeRequests
 import unittest
-try:
-    import json
-except:
-    import simplejson
-    json = simplejson
+import simplejson as json
 import WMCore.RequestManager.RequestMaker.WMWorkloadCache as WMWorkloadCache
 from httplib import HTTPException
 import urllib
-
+import time
 
 class TestReqMgr(unittest.TestCase):
     def setUp(self):
         reqMgrHost = 'http://cmssrv49.fnal.gov:8585'
         self.jsonSender = JSONRequests(reqMgrHost)
         self.jsonSender.delete('/reqMgr/user/me')
-        self.requestTypes = ['ReReco', 'StoreResults', 'CmsGen', 'Reco']
-        #self.requestTypes = ['ReReco']
+        #self.requestTypes = ['ReReco', 'StoreResults', 'CmsGen', 'Reco']
+        #self.requestTypes = ['ReReco', 'MonteCarlo']
+        self.requestTypes = ['ReReco', 'MonteCarlo', 'FileProcessing']
 
         self.assertFalse('me' in self.jsonSender.get('/reqMgr/user')[0])
         self.assertEqual(self.jsonSender.put('/reqMgr/user/me?email=me@my.com')[1], 200)
@@ -43,39 +41,9 @@ class TestReqMgr(unittest.TestCase):
 
     def testRequest(self):
         for requestType in self.requestTypes:
-            print requestType
-            requestName = 'Test'+requestType
-            requestSchema = {}
-            #requestSchema['Configuration'] = 'http://cmssrv52.fnal.gov:5984/idmwmwriter:PASSWORD3c0628fa51ef5a8d7874753e43acf336'
-            #requestSchema['Configuration'] =  "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8"
-            requestSchema['PSetHash'] = '37f7bf89a5814ffaba1a8c72eb9e14df'
-            requestSchema['RequestName'] = requestName
-            requestSchema['RequestType'] = requestType
-            requestSchema["Requestor"] = "me"
-            requestSchema["Group"] = "PeopleLikeMe"
-            # Can't really handle a list yet
-            requestSchema["InputDatasets"] = '/PRIM/PROC/TIER'
-            requestSchema["InputDataset"] = '/PRIM/PROC/TIER'
-            requestSchema["PileupDatasets"] = []
-            requestSchema["CMSSWVersion"] = 'CMSSW_3_5_8'
-            requestSchema["ProcessingVersion"] = 'CMSSW_3_5_8'
-            requestSchema['ProductionChannel'] = 'Comedy Central'
-            requestSchema['Label'] = "label"
-            requestSchema['FinalDestination'] = 'somewhere'
-            requestSchema['CmsGenConfiguration'] = "fake-cfg"
-            requestSchema['CmsGenParameters'] = 'params'
-            requestSchema['GlobalTag'] = 'V1::All'
-            requestSchema['LFNCategory'] = '/store/data'
-            requestSchema['AcquisitionEra'] = 'Now'
-            requestSchema['OutputTiers'] = ['RECO', 'AOD']
-            requestSchema['DBSURL'] = 'www.theonion.com'
-            requestSchema['ScramArch'] = 'slc5_ia32_gcc434'
-            requestSchema["ProcessingConfig"] = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8"
-            requestSchema["SkimConfig"] = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"          
-            requestSchema["SkimInput"] = "output"
-            requestSchema["CmsPath"] = "/uscmst1/prod/sw/cms"
-            requestSchema["Scenario"] = "pp"
-            requestSchema["Emulator"] = False
+            requestSchema = FakeRequests.fakeRequest(requestType)
+            print str(requestSchema)
+            requestName = requestSchema['RequestName']
             self.assertRaises(HTTPException, self.jsonSender.delete, '/reqMgr/request/'+requestName)
             self.assertEqual(self.jsonSender.put('/reqMgr/request/'+requestName, requestSchema)[1], 200)
 
@@ -100,9 +68,11 @@ class TestReqMgr(unittest.TestCase):
             self.assertEqual(workloadHelper.getOwner()['Requestor'], "me")
             self.assertTrue(self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0] == ['White Sox'])
 
-            agentUrl = 'http://cmssrv96.fnal.gov'
+            agentUrl = 'http://cmssrv96.fnal.gov/workqueue'
             self.jsonSender.put('/reqMgr/workQueue/%s?url=%s'% (requestName, urllib.quote(agentUrl)) )
             self.assertEqual(self.jsonSender.get('/reqMgr/workQueue/'+requestName)[0][0], agentUrl)
+            request = self.jsonSender.get('/reqMgr/request/'+requestName)[0]
+            self.assertEqual(request['RequestStatus'], 'acquired')
 
             self.jsonSender.post('/reqMgr/request/%s?events_written=10&files_merged=1' % requestName)
             self.jsonSender.post('/reqMgr/request/%s?events_written=20&files_merged=2&percent_success=99.9' % requestName)
@@ -113,10 +83,11 @@ class TestReqMgr(unittest.TestCase):
             self.assertEqual(request['RequestUpdates'][1]['percent_success'], 99.9)
 
             message = "The sheriff is near"
+            jsonMessage = json.dumps(message)
             self.jsonSender.put('/reqMgr/message/'+requestName, message)
-            messages = self.jsonSender.get('/reqMgr/message/'+requestName)
-            self.assertEqual(messages[0][0][0], message)
-            for status in ['running', 'aborted', 'rejected']:
+            #messages = self.jsonSender.get('/reqMgr/message/'+requestName)
+            #self.assertEqual(messages[0][0][0], message)
+            for status in ['running', 'completed']:
               self.jsonSender.put('/reqMgr/request/%s?status=%s' % (requestName, status))
 
 

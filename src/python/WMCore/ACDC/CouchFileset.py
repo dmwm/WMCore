@@ -179,7 +179,7 @@ class CouchFileset(Fileset):
         _add_
         
         Add Files to this fileset
-        files should be a list of WMCore.DataStruct.File objects
+        files should be a list of WMCore.WMBS.File objects
         """
         try:
             doc = self.couchdb.document(self['fileset_id'])
@@ -190,7 +190,7 @@ class CouchFileset(Fileset):
             
         
         jsonFiles = {}
-        [ jsonFiles.__setitem__(f['lfn'], f.json()) for f in files]
+        [ jsonFiles.__setitem__(f['lfn'], f.__to_json__(None)) for f in files]
         doc[u'fileset'][u'files'].update( jsonFiles)
         
         self.couchdb.commitOne(doc)

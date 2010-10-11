@@ -15,9 +15,9 @@ import unittest
 from WMComponent.ErrorHandler.ErrorHandlerPoller import ErrorHandlerPoller
 
 import WMCore.WMInit
-from WMQuality.TestInit   import TestInit
-from WMCore.DAOFactory    import DAOFactory
-from WMCore.Services.UUID import makeUUID
+from WMQuality.TestInitCouchApp import TestInitCouchApp
+from WMCore.DAOFactory          import DAOFactory
+from WMCore.Services.UUID       import makeUUID
 
 
 from WMCore.WMBS.Subscription import Subscription
@@ -27,9 +27,15 @@ from WMCore.WMBS.Fileset      import Fileset
 from WMCore.WMBS.Job          import Job
 from WMCore.WMBS.JobGroup     import JobGroup
 
-from WMCore.DataStructs.Run   import Run
+from WMCore.DataStructs.Run             import Run
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.Agent.Configuration import Configuration
+from WMCore.Agent.Configuration         import Configuration
+from WMCore.WMSpec.Makers.TaskMaker     import TaskMaker
+from WMCore.ACDC.DataCollectionService  import DataCollectionService
+
+from WMCore_t.WMSpec_t.TestSpec         import testWorkload
+
+
 
 class ErrorHandlerTest(unittest.TestCase):
     """
@@ -41,11 +47,12 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         
-        self.testInit = TestInit(__file__)
+        self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
                                 useDefault = False)
+        self.testInit.setupCouch("acdcdatacolltest22", "GroupUser", "ACDC")
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -56,6 +63,10 @@ class ErrorHandlerTest(unittest.TestCase):
         locationAction.execute(siteName = "malpaquet", seName = "malpaquet")
         self.testDir = self.testInit.generateWorkDir()
         self.nJobs = 10
+
+        self.dataCS = DataCollectionService(url = self.testInit.couchUrl,
+                                            database = self.testInit.couchDbName)
+        
         return
 
     def tearDown(self):
@@ -64,6 +75,7 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
+        self.testInit.tearDownCouch()
         return
 
     def getConfig(self):
@@ -99,9 +111,41 @@ class ErrorHandlerTest(unittest.TestCase):
         config.JobStateMachine.default_retries = 1
         config.JobStateMachine.couchDBName     = "errorhandler_t"
 
+
+        config.section_('ACDC')
+        config.ACDC.couchurl = self.testInit.couchUrl
+        config.ACDC.database = self.testInit.couchDbName
+
         return config
 
-    def createTestJobGroup(self, nJobs = 10, retry_count = 1):
+
+    def createWorkload(self, workloadName = 'Test', emulator = True):
+        """
+        _createTestWorkload_
+
+        Creates a test workload for us to run on, hold the basic necessities.
+        """
+
+        workload = testWorkload("Tier1ReReco")
+        rereco = workload.getTask("ReReco")
+
+        # Add RequestManager stuff
+        workload.data.request.section_('schema')
+        workload.data.request.schema.Requestor = 'nobody'
+        workload.data.request.schema.Group     = 'testers'
+        
+        
+        taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
+        taskMaker.skipSubscription = True
+        taskMaker.processWorkload()
+
+        workload.save(workloadName)
+
+        
+
+        return workload
+
+    def createTestJobGroup(self, nJobs = 10, retry_count = 1, workloadPath = 'test'):
         """
         Creates a group of several jobs
         """
@@ -109,8 +153,8 @@ class ErrorHandlerTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task="Test")
+        testWorkflow = Workflow(spec = workloadPath, owner = "Simon",
+                                name = "wf001", task="/TestWorkload/ReReco")
         testWorkflow.create()
         
         testWMBSFileset = Fileset(name = "TestFileset")
@@ -123,6 +167,10 @@ class ErrorHandlerTest(unittest.TestCase):
         testJobGroup = JobGroup(subscription = testSubscription)
         testJobGroup.create()
 
+        testFile0 = File(lfn = "/this/is/a/parent", size = 1024, events = 10)
+        testFile0.addRun(Run(10, *[12312]))
+        testFile0.setLocation('malpaquet')
+
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
         testFileA.addRun(Run(10, *[12312]))
         testFileA.setLocation('malpaquet')
@@ -130,9 +178,13 @@ class ErrorHandlerTest(unittest.TestCase):
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
         testFileB.addRun(Run(10, *[12312]))
         testFileB.setLocation('malpaquet')
-        
+
+        testFile0.create()
         testFileA.create()
         testFileB.create()
+
+        testFileA.addParent(lfn = "/this/is/a/parent")
+        testFileB.addParent(lfn = "/this/is/a/parent")
 
         for i in range(0, nJobs):
             testJob = Job(name = makeUUID())
@@ -161,7 +213,15 @@ class ErrorHandlerTest(unittest.TestCase):
         
         Mimics creation of component and test jobs failed in create stage.
         """
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
+
+        workloadName = 'TestWorkload'
+
+        workload = self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
+                                    'WMSandbox', 'WMWorkload.pkl')
+        
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
+                                               workloadPath = workloadPath)
         
         config = self.getConfig()
         changer = ChangeState(config)
@@ -179,6 +239,26 @@ class ErrorHandlerTest(unittest.TestCase):
 
         idList = self.getJobs.execute(state = 'CreateCooloff')
         self.assertEqual(len(idList), self.nJobs)
+
+        # Check that it showed up in ACDC
+        collList = self.dataCS.listDataCollections()
+
+        self.assertEqual(len(collList), 1)
+
+        collection = collList[0]
+        self.assertEqual(collection['database'], self.testInit.couchDbName)
+        self.assertEqual(collection['url'], self.testInit.couchUrl)
+        self.assertEqual(collection['collection_type'], 'ACDC.CollectionTypes.DataCollection')
+        self.assertEqual(collection['name'], workloadName)
+
+        # Now look at what's inside
+        for fileset in self.dataCS.listFilesets(collection):
+            for f in fileset.files():
+                self.assertTrue(f['lfn'] in ["/this/is/a/lfnA", "/this/is/a/lfnB"])
+                self.assertEqual(f['events'], 10)
+                self.assertEqual(f['size'], 1024)
+                self.assertEqual(f['parents'], [u'/this/is/a/parent'])
+        
         return
 
     def testSubmit(self):
@@ -187,7 +267,15 @@ class ErrorHandlerTest(unittest.TestCase):
         
         Mimics creation of component and test jobs failed in submit stage.
         """
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
+
+        workloadName = 'TestWorkload'
+
+        workload = self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
+                                    'WMSandbox', 'WMWorkload.pkl')
+        
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
+                                               workloadPath = workloadPath)
 
         config = self.getConfig()
         changer = ChangeState(config)
@@ -214,7 +302,16 @@ class ErrorHandlerTest(unittest.TestCase):
 
         Mimics creation of component and test jobs failed in execute stage.
         """
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
+
+
+        workloadName = 'TestWorkload'
+
+        workload = self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
+                                    'WMSandbox', 'WMWorkload.pkl')
+
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
+                                               workloadPath = workloadPath)
         
         config = self.getConfig()
         changer = ChangeState(config)
@@ -245,7 +342,15 @@ class ErrorHandlerTest(unittest.TestCase):
         Test that the system can exhaust jobs correctly
         """
 
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs, retry_count = 5)
+
+        workloadName = 'TestWorkload'
+
+        workload = self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
+                                    'WMSandbox', 'WMWorkload.pkl')
+
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs, retry_count = 5,
+                                               workloadPath = workloadPath)
 
         config = self.getConfig()
         config.ErrorHandler.maxRetries = 1

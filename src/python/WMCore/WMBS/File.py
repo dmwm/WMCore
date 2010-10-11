@@ -437,7 +437,12 @@ class File(WMBSBase, WMFile):
                     "parents": []}
 
         for parent in self["parents"]:
-            fileDict["parents"].append(thunker._thunk(parent))
+            if type(parent) == str:
+                # Then for some reason, we're passing strings
+                # Done specifically for ErrorHandler
+                fileDict['parents'].append(parent)
+            else:
+                fileDict["parents"].append(thunker._thunk(parent))
 
         for run in self["runs"]:
             runDict = {"run_number": run.run,

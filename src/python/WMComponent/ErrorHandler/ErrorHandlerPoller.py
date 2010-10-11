@@ -18,6 +18,9 @@ from WMCore.WMBS.Job          import Job
 from WMCore.DAOFactory        import DAOFactory
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.ACDC.DataCollectionService  import DataCollectionService
+from WMCore.WMSpec.WMWorkload           import WMWorkload, WMWorkloadHelper
+
 
 class ErrorHandlerPoller(BaseWorkerThread):
     """
@@ -38,6 +41,13 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.changeState = ChangeState(self.config)
 
         self.maxRetries = self.config.ErrorHandler.maxRetries
+
+        self.getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
+
+        self.dataCollection = DataCollectionService(url = config.ACDC.couchurl,
+                                                    database = config.ACDC.database)
+
+        self.specCache = {}
 
         return
     
@@ -73,6 +83,10 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
 	# Retries < max retry count
         for ajob in jobs:
+
+            
+
+            
             # Retries < max retry count
             if ajob['retry_count'] < self.maxRetries:
                 cooloffJobs.append(ajob)
@@ -85,7 +99,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
                               % (ajob['id'], str(ajob['retry_count'])))
 
         #Now to actually do something.
-
         self.changeState.propagate(exhaustJobs, 'exhausted', \
                                    '%sfailed' %(jobType))
         self.changeState.propagate(cooloffJobs, '%scooloff' %(jobType), \
@@ -94,6 +107,43 @@ class ErrorHandlerPoller(BaseWorkerThread):
         # Remove all the files in the exhausted jobs.
         for job in exhaustJobs:
             job.failInputFiles()
+
+
+    def handleACDC(self, jobList):
+        """
+        _handleACDC_
+
+        Do the ACDC creation and hope it works
+        """
+
+        collectionDict = {}
+
+        for job in jobList:
+            if not job['spec'] in collectionDict.keys():
+                collectionDict[job['spec']] = []
+            collectionDict[job['spec']].append(job)
+
+        for spec in collectionDict.keys():
+            
+            # Load spec if we have to:
+            if not spec in self.specCache.keys():
+                wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
+                wmWorkload.load(spec)
+                self.specCache[spec] = wmWorkload
+                wmSpec = wmWorkload
+            else:
+                wmSpec = self.specCache[spec]
+
+
+            self.dataCollection.createCollection(wmSpec = wmSpec)
+
+            failedJobs = collectionDict[spec]
+            self.dataCollection.failedJobs(failedJobs)
+
+        return
+
+
+            
 
     def handleErrors(self):
         """
@@ -105,33 +155,41 @@ class ErrorHandlerPoller(BaseWorkerThread):
         submitList = []
         jobList    = []
 
-        getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
+
 
         # Run over created jobs
-        idList = getJobs.execute(state = 'CreateFailed')
+        idList = self.getJobs.execute(state = 'CreateFailed')
         logging.info("Found %s failed jobs failed during creation" \
                      % len(idList))
         if len(idList) > 0:
             createList = self.loadJobsFromList(idList = idList)
 
         # Run over submitted jobs
-        idList = getJobs.execute(state = 'SubmitFailed')
+        idList = self.getJobs.execute(state = 'SubmitFailed')
         logging.info("Found %s failed jobs failed during submit" \
                      % len(idList))
         if len(idList) > 0:
             submitList = self.loadJobsFromList(idList = idList)
 
         # Run over executed jobs
-        idList = getJobs.execute(state = 'JobFailed')
+        idList = self.getJobs.execute(state = 'JobFailed')
         logging.info("Found %s failed jobs failed during execution" \
                      % len(idList))
         if len(idList) > 0:
             jobList = self.loadJobsFromList(idList = idList)
 
 
+        fullList = []
+        fullList.extend(jobList)
+        fullList.extend(submitList)
+        fullList.extend(createList)
+
         self.processRetries(createList, 'create')
         self.processRetries(submitList, 'submit')
         self.processRetries(jobList, 'job')
+
+        # Now do ACDC
+        self.handleACDC(jobList = fullList)
 
 
         return
@@ -144,7 +202,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         Load jobs in bulk
         """
 
-        loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
+        loadAction = self.daoFactory(classname = "Jobs.LoadForErrorHandler")
 
 
         binds = []

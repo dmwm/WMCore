@@ -7,9 +7,7 @@ Created by Dave Evans on 2010-03-11.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-import sys
-import os
-import unittest
+
 from WMCore.DataStructs.WMObject import WMObject
 import WMCore.ACDC.CollectionTypes as CollectionTypes
 
@@ -59,20 +57,5 @@ class Collection(dict, WMObject):
         Pull in all filesets & file entries
         
         """
-
-class CollectionTests(unittest.TestCase):
-    def setUp(self):
         pass
-
-    def testA(self):
-        """instantiation"""
-        try:
-            coll = Collection()
-        except Exception as  ex:
-            msg = "Unable to instantiate Collection with no args"
-            msg += "\n%s" % str(ex)
-            self.fail(msg)
         
-
-if __name__ == '__main__':
-    unittest.main()

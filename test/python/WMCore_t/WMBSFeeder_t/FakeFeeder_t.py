@@ -26,11 +26,9 @@ class BaseFakeFeederTestCase(unittest.TestCase):
         fileset = Fileset(name="FakeFeederTest")
         for i in range(1, 21):
             self.feeder([fileset])
-            print "iteration %s: %s new files (%s total)" % (i, len(fileset.listNewFiles()), len(fileset.listFiles())) 
-            set = fileset.listFiles()
+            set = fileset.getFiles(type = "set")
             if len(set) > 0:
                 file = set.pop()
-                print file.dict["locations"], file.dict["lfn"]        
             fileset.commit()
             
 class BaseUpdatingFakeFeederTestCase(BaseFakeFeederTestCase):

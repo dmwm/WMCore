@@ -15,4 +15,12 @@ def parseBlockList(l):
     # only one set of quotes
     return [str(tok.strip(' \'"')) for tok in toks]
 
+def parseSite(kw, name):
+    """ puts site whitelist & blacklists into nice format"""
+    value = kw.get(name, [])
+    if value == None:
+        value = []
+    if not isinstance(value, list):
+        value = [value]
+    return value
 

@@ -116,7 +116,7 @@ class ProcessPool:
         
         # heartbeat should be registered at this point
         if getattr(config.Agent, "useHeartbeat", True):
-            self.heartbeatAPI = HeartbeatAPI(config.Agent.componentName)
+            self.heartbeatAPI = HeartbeatAPI(getattr(config.Agent, "componentName", "ProcPoolSlave"))
             
         self.slaveClassName = slaveClassName
         self.componentDir   = componentDir
@@ -305,7 +305,6 @@ class ProcessPool:
 
             try:
                 output = worker.dequeue()
-                logging.error("dequeue: %s" % output)
                 self.runningWork -= 1
                 
                 if getattr(self.config.Agent, "useHeartbeat", True):

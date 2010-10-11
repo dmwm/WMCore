@@ -65,7 +65,7 @@ class Registration(Service):
         except HTTPException, he:
             # If the document is not found (404) we can refresh the cache to 
             # create it. Other statuses should be raised for handling higher up
-            if he.status == 404:
+            if str(he).find("404") != -1:
                 self.refreshCache()
             else:
                 raise he

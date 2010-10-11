@@ -202,6 +202,9 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(numUnit, len(self.queue))
 
         # try to get work
+        work = self.queue.getWork({'SiteDoesNotExist' : jobSlot[0]})
+        self.assertEqual([], work) # not in whitelist
+
         work = self.queue.getWork({'SiteA' : 0})
         self.assertEqual([], work)
         work = self.queue.getWork({'SiteA' : jobSlot[0]})

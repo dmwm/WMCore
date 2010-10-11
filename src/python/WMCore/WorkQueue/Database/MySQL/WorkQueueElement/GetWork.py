@@ -8,7 +8,6 @@ __all__ = []
 
 
 
-import random
 import time
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WorkQueue.Database import States
@@ -24,19 +23,16 @@ class GetWork(DBFormatter):
                     we.request_name, we.team_name
             FROM wq_element we
             LEFT JOIN  wq_data_site_assoc wbmap ON wbmap.data_id = we.input_id
-            LEFT JOIN wq_site wsite ON wbmap.site_id = wsite.id 
-            LEFT JOIN wq_element_site_validation wsv ON
-                    (we.id = wsv.element_id AND
-                     (we.input_id IS NULL OR (wbmap.site_id = wsv.site_id)))
+            LEFT JOIN wq_site wsite -- No constraint yet, as it may come from either whitelist or input data
+            LEFT JOIN wq_element_site_validation wsv ON (we.id = wsv.element_id AND wsite.id = wsv.site_id)
             WHERE we.status = :available AND
                   we.num_jobs <= :jobs AND
                   -- only check team restriction if both db and query restrict
                   (we.team_name IS NULL OR :team IS NULL OR
                                                   we.team_name = :team) AND
-                  -- If have input data release to site with that data,
-                  -- else can release to any site
-                  (wsite.name = :site OR
-                          (wsite.name IS NULL AND we.input_id is NULL)) AND
+                  -- site restriction from either whitelist or data location
+                  ((we.input_id is NULL OR wbmap.site_id = wsite.id) AND (wsv.element_id is NULL OR wsv.site_id = wsite.id)) AND
+                  wsite.name = :site AND
                   -- can release if white listed,
                   -- or not in black list and no white list for subscription
                   (wsv.valid = 1 OR (wsv.valid IS NULL AND we.id NOT IN
@@ -64,14 +60,9 @@ class GetWork(DBFormatter):
         # (in priority order) and limit to the job slots at each site.
         # Strip out duplicate elements (which can run at multiple sites.)
         for result in results:
-            # Work which requires input data must be assigned to a particular
-            # site. If this fails something has gone wrong with the sql call
-            assert (result['site_name'] is None) == \
-                   (result['input_id'] is None), \
-                   'Input data required but not released to a specific site'
-
-            # Production jobs (can run anywhere) are assigned to a random site
-            site = result['site_name'] or random.choice(resources.keys())
+            site = result['site_name']
+            if not site:
+                raise RuntimeError, 'Work not released to a site: %s' % result
 
             # sites removed from resources when their slots are allocated work
             if not resources.has_key(site):

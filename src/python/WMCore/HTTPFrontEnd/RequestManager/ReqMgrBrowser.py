@@ -466,5 +466,7 @@ class ReqMgrBrowser(TemplatedPage):
         return self.templatepage("Group", group=groupName, users=users)
 
     @expose
-    def handleGroupPriority(self, group=None, RequestUserPriority=None):
+    def handleGroupPriority(self, group=None, RequestGroupPriority=None):
         return "Not implemented"
+
+

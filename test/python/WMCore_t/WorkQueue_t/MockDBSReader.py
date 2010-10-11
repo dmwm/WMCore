@@ -19,11 +19,13 @@ class MockDBSReader:
             self.blocks[dataset] = [{'Name' : dataset + "#1",
                                      'NumberOfEvents' : 500,
                                      'NumberOfFiles' : 5,
+                                     'NumberOfLumis' : 2, # this is not real dbs property.
                                      'Size' : 100000,
                                      'Parents' : ()},
                                     {'Name' : dataset + "#2",
                                      'NumberOfEvents' : 1000,
                                      'NumberOfFiles' : 10,
+                                     'NumberOfLumis' : 2, # this is not real dbs property.
                                      'Size' : 300000,
                                      'Parents' : ()}
                                    ]
@@ -35,7 +37,8 @@ class MockDBSReader:
                         'NumberOfEvents': 1000,
                         'FileSize': 102400,
                         'ParentList': [],
-                        'LumiList': [{'RunNumber': 1, 'LumiSectionNumber': 1}, {'RunNumber': 1, 'LumiSectionNumber': 2}]
+                        'LumiList': [{'RunNumber': 1, 'LumiSectionNumber': 1},
+                                     {'RunNumber': 1, 'LumiSectionNumber': 2}]
                         }
 
             dbsFile2 = {'Checksum': "123456",
@@ -43,7 +46,8 @@ class MockDBSReader:
                         'NumberOfEvents': 1001,
                         'FileSize': 103400,
                         'ParentList': [dbsFile1],
-                        'LumiList': [{'RunNumber': 2, 'LumiSectionNumber': 3}, {'RunNumber': 3, 'LumiSectionNumber': 4}]
+                        'LumiList': [{'RunNumber': 2, 'LumiSectionNumber': 3},
+                                     {'RunNumber': 3, 'LumiSectionNumber': 4}]
                         }
 
             self.files = {dataset + "#1" : [dbsFile1],
@@ -76,11 +80,49 @@ class MockDBSReader:
                    }
         return result
 
-    def getDatasetInfo(self, dataset):
-        """Dataset summary"""
+    def listRuns(self, dataset = None, block = None):
+        def getRunsFromBlock(b):
+            results = []
+            for x in self.files[b]:
+                results.extend([y['RunNumber'] for y in x['LumiList']])
+            return results
+
+        if block:
+            return getRunsFromBlock(block)
+        if dataset:
+            runs = []
+            for block in self.blocks[dataset]:
+                runs.extend(getRunsFromBlock(block))
+            return runs
+        return None
+
+    def getDBSSummaryInfo(self, dataset=None, block=None):
+        """Dataset/Block summary"""
         result = {}
-        result['NumberOfEvents'] = sum([x['NumberOfEvents'] for x in self.blocks[dataset]])
-        result['NumberOfFiles'] = sum([x['NumberOfFiles'] for x in self.blocks[dataset]])
-        result['path'] = dataset
-        return result
+        if block:
+            #TODO: this is hardcoded since addition of file info doesn't
+            # match with block info
+            if block.endswith('#1'):
+                result['NumberOfEvents'] = 500
+                result['NumberOfFiles'] = 5
+                result['NumberOfLumis'] = 2
+                result['path'] = dataset
+
+            if block.endswith('#2'):
+                result['NumberOfEvents'] = 1000
+                result['NumberOfFiles'] = 10
+                result['NumberOfLumis'] = 2
+                result['path'] = dataset
+
+            return result
+
+        if dataset:
+            result['NumberOfEvents'] = sum([x['NumberOfEvents'] for x in self.blocks[dataset]])
+            result['NumberOfFiles'] = sum([x['NumberOfFiles'] for x in self.blocks[dataset]])
+
+            result['NumberOfLumis'] = sum([x['NumberOfLumis'] for x in self.blocks[dataset]])
+            result['path'] = dataset
+
+            return result
+
 # pylint: enable-msg=W0613,R0201

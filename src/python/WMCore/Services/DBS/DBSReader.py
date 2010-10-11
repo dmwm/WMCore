@@ -89,8 +89,23 @@ class DBSReader:
 
         return result
 
-    #TODO this is not supported by dbs yet (block case).
     def listRuns(self, dataset = None, block = None):
+        """
+        it gets list of DbsRun object but for our purpose
+        only list of number is collected.
+        DbsRun (RunNumber,
+                NumberOfEvents,
+                NumberOfLumiSections,
+                TotalLuminosity,
+                StoreNumber,
+                StartOfRungetLong,
+                EndOfRun,
+                CreationDate,
+                CreatedBy,
+                LastModificationDate,
+                LastModifiedBy
+                )
+        """
         try:
             if block:
                 results = self.dbs.listRuns(block = block)
@@ -100,8 +115,8 @@ class DBSReader:
             msg = "Error in DBSReader.listRuns(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-    
-        return results
+
+        return [x["RunNumber"] for x in results]
             
     def listProcessedDatasets(self, primary, dataTier = None):
         """

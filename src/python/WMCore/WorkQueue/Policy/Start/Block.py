@@ -30,17 +30,12 @@ class Block(StartPolicyInterface):
                     msg = "Parentage required but no parents found for %s"
                     raise RuntimeError, msg % block['Name']
             
-            #TODO: use this when dbs api is supported
-            #if self.args['SliceType'] == self.lumiType:
-                #blockSummary = dbs.getDBSSummary(block = block["Name"])
-                #block[self.lumiType] = blockSummary[self.lumiType]
                 
             self.newQueueElement(Data = block['Name'],
                                  ParentData = parents,
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
                                              float(self.args['SliceSize']))
                                  )
-                                 #Jobs = block[self.args['SliceType']])
 
 
     def validate(self):
@@ -77,13 +72,8 @@ class Block(StartPolicyInterface):
 
             # check run restrictions
             if runWhiteList or runBlackList:
-                lumis = sum([x['LumiList'] for x in \
-                            dbs.listFilesInBlock(block['Name'])], [])
-                runs = set([x['RunNumber'] for x in lumis])
-                
-                #TODO: use this one instead of above three lines when dbs api is supported
-                #runs = dbs.listRuns(block = block['Name'])
-                
+                runs = set(dbs.listRuns(block = block['Name']))
+
                 # apply blacklist
                 runs = runs.difference(runBlackList)
                 # if whitelist only accept listed runs
@@ -92,6 +82,10 @@ class Block(StartPolicyInterface):
                 # any runs left are ones we will run on, if none ignore block
                 if not runs:
                     continue
+
+            if self.args['SliceType'] == self.lumiType:
+                blockSummary = dbs.getDBSSummaryInfo(block = block["Name"])
+                block[self.lumiType] = blockSummary[self.lumiType]
 
             validBlocks.append(block)
         return validBlocks

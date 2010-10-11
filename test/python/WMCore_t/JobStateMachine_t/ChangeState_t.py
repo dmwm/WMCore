@@ -390,7 +390,7 @@ class TestChangeState(unittest.TestCase):
         myReport = Report()
         reportPath = os.path.join(getWMBASE(),
                                   "test/python/WMCore_t/JobStateMachine_t/Report.pkl")
-        myReport.unpersist("Report.pkl")
+        myReport.unpersist(reportPath)
         testJobA["fwjr"] = myReport
 
         change.propagate([testJobA], 'executing', 'created')

@@ -5,9 +5,6 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-
-
-
 import os
 import unittest
 import threading
@@ -18,8 +15,6 @@ from WMCore.Database.Transaction import Transaction
 from WMQuality.TestInit import TestInit
 
 class LocationsTest(unittest.TestCase):
-
-    
     def setUp(self):
         """
         _setUp_
@@ -49,7 +44,6 @@ class LocationsTest(unittest.TestCase):
 
         Test the creation, listing and deletion of locations in WMBS.
         """
-
         goldenLocations = ["goodse.cern.ch", "goodse.fnal.gov"]
         
         myThread = threading.currentThread()        
@@ -96,16 +90,12 @@ class LocationsTest(unittest.TestCase):
 
         return
 
-
     def testListSites(self):
         """
-
         _testListSites
 
         Test the ability to list all sites in the database.
-
         """
-
         myThread = threading.currentThread()        
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
@@ -142,16 +132,13 @@ class LocationsTest(unittest.TestCase):
 
         locationNew.execute("Satsuma", conn = myThread.transaction.conn, transaction = True)
         locationNew.execute("Choshu", conn = myThread.transaction.conn, transaction = True)
-        locationNew.execute("Tosa", conn = localTransaction.conn, transaction = True)
 
         listSites = daoFactory(classname = "Locations.ListSites")
         nonTransSites = listSites.execute(conn = localTransaction.conn, transaction = True)
         transSites = listSites.execute(conn = myThread.transaction.conn, transaction = True)
 
-        assert len(nonTransSites) == 1, \
+        assert len(nonTransSites) == 0, \
                "Error: Wrong number of sites in non transaction list."
-        assert "Tosa" in nonTransSites, \
-               "Error: Site missing in non transaction list."
         assert len(transSites) == 2, \
                "Error: Wrong number of sites in transaction list."
         assert "Satsuma" in transSites, \

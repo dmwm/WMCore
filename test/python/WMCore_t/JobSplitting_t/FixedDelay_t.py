@@ -2,11 +2,8 @@
 """
 _FixedDelay_t_
 
-Event based splitting test.
+Fixed Delay splitting test.
 """
-
-
-
 
 import unittest
 
@@ -21,13 +18,6 @@ from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
 
 class FixedDelayTest(unittest.TestCase):
-    """
-    _EventBasedTest_
-
-    Test event based job splitting.
-    """
-
-    
     def setUp(self):
         """
         _setUp_
@@ -91,23 +81,24 @@ class FixedDelayTest(unittest.TestCase):
     def testNone(self):
         """
         _testNone_
-        since the time hasn'tpassed, we shouldn't get any jobs back
+        
+        Since the time hasn'tpassed, we shouldn't get any jobs back.
         """
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
-        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
+        jobGroups = jobFactory(trigger_time = int(time.time()) * 2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
         jobFactory = splitter(self.multipleFileSubscription)
-        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
+        jobGroups = jobFactory(trigger_time = int(time.time()) * 2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
         jobFactory = splitter(self.multipleLumiSubscription)
-        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
+        jobGroups = jobFactory(trigger_time = int(time.time()) * 2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
 
         jobFactory = splitter(self.singleLumiSubscription)
-        jobGroups = jobFactory(trigger_time = time.gmtime()*2)
+        jobGroups = jobFactory(trigger_time = int(time.time()) * 2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
         
         return

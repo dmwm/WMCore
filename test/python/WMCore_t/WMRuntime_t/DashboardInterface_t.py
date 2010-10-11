@@ -1,10 +1,5 @@
 #!/usr/bin/env python
 
-
-
-
-
-
 import threading
 import logging
 import unittest
@@ -18,7 +13,7 @@ from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run  import Run
 
 # We're going to need one of these
-from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload
+from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
 from WMCore.FwkJobReport.Report     import Report
 
 
@@ -67,27 +62,9 @@ class DashboardInterfaceTest(unittest.TestCase):
         Create a workload in order to test things
 
         """
-
-        arguments = {
-            "OutputTiers" : ['RECO', 'ALCARECO', 'AOD'],
-            "AcquisitionEra" : "Teatime09",
-            "GlobalTag" :"GR09_P_V7::All",
-            "LFNCategory" : "/store/data",
-            "ProcessingVersion" : "v99",
-            "Scenario" : "cosmics",
-            "CMSSWVersion" : "CMSSW_3_3_5_patch3",
-            "InputDatasets" : "/MinimumBias/BeamCommissioning09-v1/RAW",
-            "Emulate" : "False",
-            }
-
-        workload = rerecoWorkload("Tier1ReReco", arguments)
-
-
+        workload = rerecoWorkload("Tier1ReReco", getTestArguments())
         rereco = workload.getTask("ReReco")
-
-
         return workload
-
 
     def createTestJob(self):
         """
@@ -163,10 +140,10 @@ class DashboardInterfaceTest(unittest.TestCase):
 
         # Check some defaults
         self.assertEqual(dbInfo.get('TaskType', None), task.taskType())
-        self.assertEqual(dbInfo.get('User', None), 'DataOps')
+        self.assertEqual(dbInfo.get('User', None), 'sfoulkes@fnal.gov')
         self.assertEqual(dbInfo.get('JSTool', None), 'WMAgent')
         self.assertEqual(dbInfo.get('jobName', None),
-                         'ProdAgent_WMAgentPrimary_ThisIsASillyName_0')
+                         'WMAgent_1_0_ThisIsASillyName')
         self.assertEqual(dbInfo.get('taskName', None),
                          'ProdAgent_-Tier1ReReco-ReReco_WMAgentPrimary')
 
@@ -184,13 +161,13 @@ class DashboardInterfaceTest(unittest.TestCase):
         dbInfo.stepStart(step = step.data)
         self.assertEqual(dbInfo.get('ExeStart', None), step.name())
         self.assertEqual(dbInfo.get('ApplicationVersion', None),
-                         'CMSSW_3_3_5_patch3')
+                         'CMSSW_3_5_8')
 
 
         # Do the step end
         dbInfo.stepEnd(step = step.data, stepReport = report)
         self.assertEqual(dbInfo.get('ExeEnd', None), step.name())
-        self.assertEqual(dbInfo.get('ExeExitStatus', None), 1)
+        self.assertEqual(dbInfo.get('ExeExitStatus', None), False)
 
 
 
@@ -244,10 +221,10 @@ class DashboardInterfaceTest(unittest.TestCase):
 
         # Do some basic checks
         self.assertEqual(dbInfo.get('TaskType', None), task.taskType())
-        self.assertEqual(dbInfo.get('User', None), 'DataOps')
+        self.assertEqual(dbInfo.get('User', None), 'sfoulkes@fnal.gov')
         self.assertEqual(dbInfo.get('JSTool', None), 'WMAgent')
         self.assertEqual(dbInfo.get('jobName', None),
-                         'ProdAgent_WMAgentPrimary_ThisIsASillyName_0')
+                         'WMAgent_1_0_ThisIsASillyName')
         self.assertEqual(dbInfo.get('taskName', None),
                          'ProdAgent_-Tier1ReReco-ReReco_WMAgentPrimary')
         
@@ -256,7 +233,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         
         self.assertEqual(dbInfo.get('ExeStart', None), step.name())
         self.assertEqual(dbInfo.get('ApplicationVersion', None),
-                         'CMSSW_3_3_5_patch3')
+                         'CMSSW_3_5_8')
 
 
         return

@@ -5,9 +5,6 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-
-
-
 import unittest
 import logging
 import os
@@ -804,11 +801,10 @@ class JobTest(unittest.TestCase):
         testJobA.failInputFiles()
         testJobB.failInputFiles()
 
-        # Before testJobB is 'done' nothing should happen
         self.assertEqual(len(testSubscription.filesOfStatus("Available")), 0)
         self.assertEqual(len(testSubscription.filesOfStatus("Acquired")), 0)
-        self.assertEqual(len(testSubscription.filesOfStatus("Failed")), 0)
-        self.assertEqual(len(testSubscription.filesOfStatus("Completed")), 3)
+        self.assertEqual(len(testSubscription.filesOfStatus("Failed")), 3)
+        self.assertEqual(len(testSubscription.filesOfStatus("Completed")), 0)
 
         changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
         testJobB["state"] = "cleanout"

@@ -91,7 +91,7 @@ class WorkQueueTest(RESTBaseUnitTest):
         childUrl = "http://test.url"
         childResources = [{'ParentQueueId' : 1, 'Status' : 'Available'}]
         self.assertEqual(wqApi.synchronize(childUrl, childResources),
-                         {'Canceled': {'ids': set([1]), 'request_names': set([None])}})
+                         {'Canceled': set([1])})
         
         childUrl = "http://test.url"
         childResources = []

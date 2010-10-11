@@ -17,6 +17,7 @@ class Dataset(StartPolicyInterface):
         StartPolicyInterface.__init__(self, **args)
         self.args.setdefault('SliceType', 'NumberOfFiles')
         self.args.setdefault('SliceSize', 1)
+        self.lumiType = "NumberOfLumis"
         
     def split(self):
         """Apply policy to spec"""
@@ -30,7 +31,6 @@ class Dataset(StartPolicyInterface):
         if (self.data and self.data != datasetPath):
             raise RuntimeError, "Can't provide different data to split with"
 
-        dataset = dbs.getDBSSummaryInfo(dataset = datasetPath)
         
         # apply input dataset restrictions
         blockWhiteList = self.initialTask.inputBlockWhitelist()
@@ -43,8 +43,18 @@ class Dataset(StartPolicyInterface):
                 raise RuntimeError, 'No blocks pass white/blacklist'
 
             for block in blocks:
-                work += block[self.args['SliceType']]
+                # even though getDBSSummaryInfo can use all the SliceType
+                # dbs call doesn't need to be made in NumOfFiles, and NumOfEvents
+                # type. so only for the performance reason lumi splitting was handled
+                # differently
+                if self.args['SliceType'] == self.lumiType:
+                    blockSummary = dbs.getDBSSummaryInfo(block = block['Name'])
+                    work += blockSummary[self.args['SliceType']]
+                else:
+                    work += block[self.args['SliceType']]
 
+
+        dataset = dbs.getDBSSummaryInfo(dataset = datasetPath)
         # parentage
         if self.initialTask.parentProcessingFlag():
             parents = dataset['Parents']

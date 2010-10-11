@@ -124,7 +124,7 @@ class StdBase(object):
         SplitAlgoToArgMap = {"NumberOfFiles" : "files_per_job",
                              "NumberOfEvents" : "events_per_job"}
 
-        sliceType = SplitAlgoToStartPolicy.get(splitAlgo, "FileBased")
+        sliceType = SplitAlgoToStartPolicy.get(splitAlgo, "NumberOfFiles")
         sliceSize = splitArgs.get(SplitAlgoToArgMap[sliceType], 1)
 
         workload.setStartPolicy(policyName, SliceType = sliceType, SliceSize = sliceSize)

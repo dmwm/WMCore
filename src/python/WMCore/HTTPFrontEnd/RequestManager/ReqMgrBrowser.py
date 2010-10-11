@@ -10,6 +10,7 @@ import WMCore.HTTPFrontEnd.RequestManager.Sites
 
 import cherrypy
 from cherrypy import expose
+import json
 import logging
 import os.path
 import pickle
@@ -351,13 +352,9 @@ class ReqMgrBrowser(TemplatedPage):
         # look for teams
         teams = []
         for key, value in kwargs.iteritems():
-            if type(value) == type(""):
+            if isinstance(value, str):
                 kwargs[key] = value.strip()
                 setattr(schema, key, value.strip())
-            else:
-                kwargs[key] = value
-                setattr(schema, key, value)
-                
             if key.startswith("Team"):
                 team = key[4:]
                 if not team in assignments:
@@ -451,22 +448,29 @@ class ReqMgrBrowser(TemplatedPage):
     @expose
     def user(self, userName):
         """ Web page of details about the user, and sets user priority """
-        groups = self.jsonSender.get('/reqMgr/group?user=%s' % userName)[0]
-        requests = self.jsonSender.get('/reqMgr/user/%s' % userName)[0]
-        return self.templatepage("User", user=userName, groups=groups, requests=requests)
+        userDict = json.loads(self.jsonSender.get('/reqMgr/user/%s' % userName)[0])
+        print "USERDICT " + str(userDict)
+        requests = userDict['requests']
+        priority = userDict['priority']
+        groups = userDict['groups']
+        return self.templatepage("User", user=userName, groups=groups, requests=requests, priority=priority)
 
     @expose
-    def handleUserPriority(self, user=None, RequestUserPriority=None):
-        return "Not implemented"
+    def handleUserPriority(self, user, userPriority):
+        self.jsonSender.post('/reqMgr/user/%s?priority=%s' % (user, userPriority))
+        return "Updated user %s priority to %s" % (user, userPriority)
 
     @expose
     def group(self, groupName):
         """ Web page of details about the user, and sets user priority """
-        users = self.jsonSender.get('/reqMgr/group/%s' % groupName)[0]
-        return self.templatepage("Group", group=groupName, users=users)
+        groupDict = json.loads(self.jsonSender.get('/reqMgr/group/%s' % groupName)[0])
+        users = groupDict['users']
+        priority = groupDict['priority']
+        return self.templatepage("Group", group=groupName, users=users, priority=priority)
 
     @expose
-    def handleGroupPriority(self, group=None, RequestGroupPriority=None):
-        return "Not implemented"
+    def handleGroupPriority(self, group=None, groupPriority=None):
+        self.jsonSender.post('/reqMgr/group/%s?priority=%s' % (group, groupPriority))
+        return "Updated group %s priority to %s" % (group, groupPriority)
 
 

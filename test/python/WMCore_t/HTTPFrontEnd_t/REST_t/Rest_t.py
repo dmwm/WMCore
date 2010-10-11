@@ -13,6 +13,7 @@ import threading
 from   threading import Thread
 import time
 import unittest
+import nose
 
 # load TestRestServer and TestRestClient
 from WMCore.HTTPFrontEnd.REST.services.test.TestRestServer import restservice
@@ -111,6 +112,7 @@ class RestTest(unittest.TestCase):
         Mimics start-up of RestServer in one thread and
         submission of requests from RestClient.
         """
+        raise nose.SkipTest
         # make a thread with RestServer
         print('--- Make a thread from RestServer\n')
         thr = MyThread()

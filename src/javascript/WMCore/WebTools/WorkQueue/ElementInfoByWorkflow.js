@@ -1,4 +1,6 @@
-var elementTable = function(args) {
+WMCore.namespace("WebTools.WorkQueue.ElementInfoByWorkflow")
+
+WMCore.WebTools.WorkQueue.ElementInfoByWorkflow.elementTable = function(args) {
         
     var formatUrl = function(elCell, oRecord, oColumn, sData) { 
             var postfixLink = "/template/ElementSummaryByWorkflow?workflow=";

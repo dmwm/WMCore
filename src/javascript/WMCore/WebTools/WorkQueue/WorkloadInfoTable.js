@@ -1,8 +1,9 @@
+WMCore.namespace("WebTools.WorkQueue.WorkloadInfoTable")
 /*
  * To do: Maybe needs to add YUI loader for the support library
  */
 
-var workloadTable = function(divID) {
+WMCore.WebTools.WorkQueue.WorkloadInfoTable.workloadTable = function(divID) {
 	
     var pbs = [];
     var progressFormatter = function (elLiner, oRecord, oColumn, oData) {
@@ -29,7 +30,7 @@ var workloadTable = function(divID) {
     tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 5});
     tableConfig.sortedBy ={
         key: "spec_id", dir:YAHOO.widget.DataTable.CLASS_ASC
-    }
+    };
     
     var dataTable = WMCore.WebTools.createDataTable(divID, dataSource, 
                                  WMCore.WebTools.createDefaultTableDef(dataSchema.fields),

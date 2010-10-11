@@ -1,4 +1,6 @@
-var workflowTable = function(oTArgs){
+WMCore.namespace("WebTools.WMBS.WorkflowSummaryTable")
+
+WMCore.WebTools.WMBS.WorkflowSummaryTable.workflowTable = function(oTArgs){
 	var postfixLink = "/wmbsmonitor/template/TaskSummary?workflow=";
 	
 	var formatUrl = function(elCell, oRecord, oColumn, sData){

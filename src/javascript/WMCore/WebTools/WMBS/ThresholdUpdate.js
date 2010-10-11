@@ -1,4 +1,7 @@
-resourceTable = function(divID){
+WMCore.namespace("WebTools.WMBS.ThresholdUpdate")
+
+WMCore.WebTools.WMBS.ThresholdUpdate.resourceTable = function(divID){
+	
 	var textBoxEditorOptions = {
 		asyncSubmitter: function(callback, maxSlots){
 			var record = this.getRecord(), column = this.getColumn(), oldValue = this.value, datatable = this.getDataTable();

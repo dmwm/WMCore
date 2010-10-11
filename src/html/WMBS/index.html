@@ -44,24 +44,12 @@ body {
 <!-- Optional dependency source file -->
 <script src="http://yui.yahooapis.com/2.8.0r4/build/animation/animation-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.0r4/build/progressbar/progressbar-min.js"></script>
-<script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/treeview/treeview-min.js"></script>
-
-<script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/swf/swf-min.js"></script>
-<script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/charts/charts-min.js"></script>
 
 <script src="javascript/namespace.js"></script>
 <script src="javascript/dataTable.js"></script>
-<script src="javascript/WorkQueue/WorkQueueTree.js"></script>
-<script src="javascript/WorkQueue/WorkloadStatusYUIPieChart.js"></script>
-<script src="javascript/WorkQueue/JobYUIPieChart.js"></script>
-<!--<script src="javascript/WorkQueue/ElementInfoWithPagination2.js"></script>
-<script src="javascript/WorkQueue/ElementInfoWithServerPagination.js"></script>
- This script uses client side pagination
--->
 <script src="javascript/WMBS/TaskSummaryTable.js"></script>
 <script src="javascript/WMBS/WorkflowSummaryTable.js"></script>
 
-<script src="javascript/debugging.js"></script>
 <style>
     /*
         For IE 6: trigger "haslayout" for the anchor elements in the root Menu by
@@ -243,9 +231,11 @@ body {
 			
 			var args = {};
 			args.divID = "workflowSummary";
-			args.task = taskTable
+			args.task = WMCore.WebTools.WMBS.TaskSummaryTable.taskTable
 			
-            YAHOO.util.Event.onContentReady("center1", workflowTable, args);	
+            YAHOO.util.Event.onContentReady("center1", 
+			          WMCore.WebTools.WMBS.WorkflowSummaryTable.workflowTable, 
+					  args);	
         };
 
         layout.on('render', wmbsDisplay);

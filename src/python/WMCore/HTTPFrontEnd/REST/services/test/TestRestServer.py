@@ -19,7 +19,7 @@ from WMCore.HTTPFrontEnd.REST.services.test.TestFormatter import TestFormatter
 
 def restservice():
     """REST service implementation in CherryPy web server"""
-    url = 'http://localhost:8080/services/rest'
+    url = 'http://localhost:8089/services/rest'
     model = TestModel()
     formatter = TestFormatter()
     verbose = 0

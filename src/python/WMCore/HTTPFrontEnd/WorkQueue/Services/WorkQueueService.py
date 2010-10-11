@@ -57,24 +57,20 @@ class WorkQueueService(ServiceInterface):
         self.model.addMethod('POST', 'getwork', partial(wrapGetWork, self.wq),
                              args=["siteJobs", "pullingQueueUrl", "team"])
         
-        #TODO: change this call to GET - Preferably Requeust.py in Service handle this automatically
-        # elementIDs -> convert elementID=1&elementID=2 but can be done upper level - responsible for 
-        # client api writer. For now just set as POST since GET breaks the code.
         self.model.addMethod('GET', 'status', self.wq.status, 
                              args = ["status", "before", "after", "elementIDs", "dictKey"],
                              validation = [self.statusValidation])
         self.model.addMethod('GET', 'wf', partial(serveWorkflow, self.wq), args = ['name'])
-        self.model.addMethod('PUT', 'synchronize', self.wq.synchronize, args = ["child_url", "child_report"])
+        self.model.addMethod('PUT', 'synchronize', self.wq.synchronize,
+                             args = ["child_url", "child_report"])
         
         self.model.addMethod('PUT', 'failwork', self.wq.failWork, args = ["elementIDs"])
         self.model.addMethod('PUT', 'donework', self.wq.doneWork, args = ["elementIDs"])
-        self.model.addMethod('PUT', 'cancelwork', self.wq.cancelWork, args = ["elementIDs"])
-        #TODO: this needs to be more clearly defined (current deleteWork doesn't do anything) 
-        #self.model.addMethod('DELETE', 'deletework', self.wq.deleteWork, args=["elementIDs"])
-        
+        self.model.addMethod('PUT', 'cancelwork', self.wq.cancelWork, args = ["elementIDs"],
+                             validation = [self.checkIDType])
     
     #TODO if it needs to be validated, add validation
-    #The only requirment of validation function is take input (dict) type return input.
+    #The only requirement of validation function is take input (dict) type return input.
             
     def statusValidation(self, input):
         """
@@ -91,4 +87,13 @@ class WorkQueueService(ServiceInterface):
                 input["elementIDs"] = [int(input["elementIDs"])]
             else:
                 input["elementIDs"] = map(int, input["elementIDs"])
+        return input
+
+    def checkIDType(self, input):
+        """
+        validate elementIDs input arguments
+        add id_type to override default 'id'
+        """
+        if type(input["elementIDs"][0]) == str:
+            input["id_type"] = "request_name"
         return input

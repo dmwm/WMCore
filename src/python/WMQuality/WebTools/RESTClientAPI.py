@@ -26,12 +26,12 @@ def makeRequest(url, values=None, verb='GET', accept="text/plain",
     if parser.query:
         uri += "?" + parser.query
         
-    if verb != 'POST' and data != None:
+    if verb == 'GET' and data != None:
         uri = '%s?%s' % (uri, data)
         
     # need to specify Content-length for POST method
     # TODO: this function needs refactoring - too verb-related branching
-    if verb == "POST":
+    if verb != 'GET':
         if data:
             print "POST method, data: '%s' len: '%s'" % (data, len(data))
             headers.update({"content-length": len(data)})

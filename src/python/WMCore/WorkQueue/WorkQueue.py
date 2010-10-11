@@ -185,6 +185,9 @@ class WorkQueue(WorkQueueBase):
         """
         _setStatus_, throws an exception if no elements are updated
 
+        id_type should be onle of ['parent_queue_id', 'id',
+                          'subscription_id', 'request_name']
+
         @param source - where a status update came from (remote queue)
                       - already knows the status so don't send it
         """
@@ -200,8 +203,23 @@ class WorkQueue(WorkQueueBase):
         affected = updateAction.execute(status, ids, id_type, source,
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
+
         if not affected:
             raise RuntimeError, "Status not changed: No matching elements"
+
+        if self.params['PopulateFilesets']:
+            from WMCore.WorkQueue.WMBSHelper import killWorkflow
+            if status == 'Canceled':
+                requestNameAction = self.daofactory(classname =
+                                       "WorkQueueElement.GetRequestNamesByIDs")
+                requestNames = requestNameAction.execute(ids, id_type,
+                                           conn = self.getDBConn(),
+                                           transaction = self.existingTransaction())
+                self.logger.info("""Canceling work in wmbs
+                                    Workflows: %s""" % (requestNames))
+
+                for workflow in requestNames:
+                    killWorkflow(workflow)
 
         #TODO: Do we need to message parents/children here?
         # Would be quicker than waiting for the next status updates
@@ -449,13 +467,18 @@ class WorkQueue(WorkQueueBase):
         return elementIDs
 
     def cancelWork(self, elementIDs, id_type = 'id'):
-        """Mark work as canceled"""
+        """Mark work as canceled
+           id_type defines type of elementIDs argument. if it is request_name,
+           elementIDs is a list of request names, if it is subscription_id it is the list of
+           subscription ids.
+        """
         try:
             self.setStatus('Canceled', elementIDs, id_type)
         except RuntimeError:
             if id_type == "subscription_id":
                 self.logger.info("""Cancel update: Only some subscription is 
-                                    updated Might be the child subscriptions: %s""" 
+                                    updated.
+                                    This might be the child subscriptions: %s"""
                                     % elementIDs)
                 return elementIDs
             else:
@@ -546,7 +569,10 @@ class WorkQueue(WorkQueueBase):
         #store elements we need to update grouped by status(reduce connections)
         to_update = defaultdict(set)
         # may need to change child status - i.e. if canceled in parent
-        child_update = defaultdict(set) # need to be set as have many children
+        child_update = defaultdict(set)
+
+        # when child state is change to canceled, we need mark all wmbs jobs
+        # as failed killWorkflow(workflow)
         # elements who need their progress updated
         progress_updates = []
 
@@ -802,6 +828,7 @@ class WorkQueue(WorkQueueBase):
                         for status, ids in result.items():
                             self.logger.info(msg % (status, list(ids)))
                             self.setStatus(status, ids, id_type = 'parent_queue_id')
+
 
                 # prune elements that are finished (after reporting to parent)
                 complete_results = [x for x in results if x.inEndState()]

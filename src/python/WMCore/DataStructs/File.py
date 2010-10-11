@@ -122,3 +122,13 @@ class File(WMObject, dict):
         d['locations'] = list(self['locations'])
         d['parents'] = list(self['parents'])
         return d
+
+    def __to_json__(self, thunker = None):
+        """
+        __to_json__
+
+        This is the standard way we jsonize other objects.
+        Included here so we have a uniform method.
+        """
+
+        return self.json()

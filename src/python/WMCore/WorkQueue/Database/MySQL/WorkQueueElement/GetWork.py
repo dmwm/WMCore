@@ -23,7 +23,7 @@ class GetWork(DBFormatter):
                     we.request_name, we.team_name
             FROM wq_element we
             LEFT JOIN  wq_data_site_assoc wbmap ON wbmap.data_id = we.input_id
-            LEFT JOIN wq_site wsite -- No constraint yet, as it may come from either whitelist or input data
+            JOIN wq_site wsite -- No constraint yet, as it may come from either whitelist or input data
             LEFT JOIN wq_element_site_validation wsv ON (we.id = wsv.element_id AND wsite.id = wsv.site_id)
             WHERE we.status = :available AND
                   -- only check team restriction if both db and query restrict

@@ -144,6 +144,8 @@ import os
 import threading
 import time
 import unittest
+import nose
+
 import WMCore.WMInit
 from WMComponent.Proxy.Proxy import Proxy
 from WMComponent.Proxy.ProxyMsgs import ProxyMsgs
@@ -194,6 +196,8 @@ class ProxyTest(unittest.TestCase):
         """
         Mimics creation of component and handles come messages.
         """
+        raise nose.SkipTest
+    
         # read the default config first.
         config = self.testInit.getConfiguration(os.path.join(WMCore.WMInit.getWMBASE(), \
             'src/python/WMComponent/Proxy/DefaultConfig.py'))

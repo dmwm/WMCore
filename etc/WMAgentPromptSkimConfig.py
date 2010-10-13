@@ -31,6 +31,10 @@ config.JobStateMachine.couchDBName = "promptskim_commissioning"
 config.JobStateMachine.configCacheDBName = "promptskim_config_cache"
 config.JobStateMachine.default_retries = 5
 
+config.section_('ACDC')
+config.ACDC.couchurl = "http://cmssrv52.fnal.gov:8570"
+config.ACDC.database = "promptskim_acdc"
+
 config.section_("CoreDatabase")
 config.CoreDatabase.socket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 config.CoreDatabase.connectUrl = "mysql://sfoulkes:@localhost/WMAgentDB_sfoulkes"

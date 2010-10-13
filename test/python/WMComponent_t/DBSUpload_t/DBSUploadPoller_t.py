@@ -18,6 +18,7 @@ import threading
 import time
 import unittest
 import cProfile, pstats
+import nose
 
 from WMComponent.DBSUpload.DBSUpload       import DBSUpload
 from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
@@ -40,8 +41,6 @@ from WMCore.Agent.HeartbeatAPI  import HeartbeatAPI
 from WMComponent.DBSUpload.DBSInterface import *
 
 from DBSAPI.dbsApi import DbsApi
-#import nose
-
 
 class DBSUploadTest(unittest.TestCase):
     """
@@ -61,11 +60,9 @@ class DBSUploadTest(unittest.TestCase):
         setUp function for unittest
 
         """
-        #raise Exception, "this test hangs buildbot. hard. someone (maybe me) needs to make sure that DBS is accessible";
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMCore.ThreadPool", "WMCore.MsgService"])
         self.testInit.setSchema(customModules = 
                                 ["WMCore.ThreadPool",
                                  "WMCore.MsgService",
@@ -343,6 +340,7 @@ class DBSUploadTest(unittest.TestCase):
         One with the same algo, but a different dataset
         See that they both get to global
         """
+        raise nose.SkipTest
 
         #return
 

@@ -42,6 +42,13 @@ config.JobStateMachine.couchDBName = "wmagent_commissioning"
 config.JobStateMachine.configCacheDBName = "wmagent_config_cache"
 config.JobStateMachine.default_retries = 5
 
+
+config.section_('ACDC')
+## User specific parameter
+config.ACDC.couchurl = "http://cmssrv52.fnal.gov:8570"
+## User specific parameter
+config.ACDC.database = "wmagent_acdc"
+
 config.section_("CoreDatabase")
 ## User specific parameter
 config.CoreDatabase.socket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"

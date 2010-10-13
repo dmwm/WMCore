@@ -5,11 +5,10 @@ _TrivialFileCatalog_t_
 Test the parsing of the TFC.
 """
 
-
-
-
 import os
 import unittest
+import nose
+
 from xml.dom.minidom import parseString
 from WMCore.WMInit import getWMBASE
 
@@ -80,6 +79,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         self.assertEqual(in_pfn, out_pfn)
         
     def testDataServiceXML(self):
+        raise nose.SkipTest
         phedex = PhEDEx(responseType='xml')
         
         site = 'T2_UK_SGrid_Bristol'

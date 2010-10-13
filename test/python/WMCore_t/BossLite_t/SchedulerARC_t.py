@@ -47,6 +47,7 @@ def fakeTask(db, numjob):
         jobParams['standardError'] = 'hostname-%s.err' % str(j)
         jobParams['standardOutput'] = 'hostname-%s.out' % str(j)
         jobParams['outputFiles'] = [ jobParams['standardOutput'] ]
+        jobParams['wmbsJobId'] = 0
         
         job = Job( parameters = jobParams )
         job.newRunningInstance(db)

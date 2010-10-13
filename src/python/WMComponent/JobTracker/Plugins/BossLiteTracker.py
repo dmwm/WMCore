@@ -142,7 +142,7 @@ class BossLiteTracker(TrackerPlugin):
         Kill a list of jobs based on the 
 
         """
-
+        return
         db = BossLiteDBWM()
 
         for name in killList:

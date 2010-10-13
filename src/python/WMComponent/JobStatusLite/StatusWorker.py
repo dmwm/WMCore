@@ -85,12 +85,12 @@ class StatusWorker:
         if type(parameters) == type(dict()):
             for k in parameters.keys():
                 logging.info("Received group " + str(k))
-                self.checkStatusByGroup(k)
+                self.checkStatusByGroup(int(k))
         else:
             for param in parameters:
                 for k in param.keys():
                     logging.info("Received group [%s]"%str(k))
-                    self.checkStatusByGroup(k)
+                    self.checkStatusByGroup(int(k))
 
         logging.debug(str(myThread) + ": finished StatusWorker.__call__")
         logging.debug("Returning [%s]"%str(parameters))

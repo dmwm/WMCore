@@ -82,7 +82,7 @@ class StatusScheduling(BaseWorkerThread):
         groups = []
         import time
         for i in groupstemp:
-            groups.append({i : '%s'%str(time.time())})
+            groups.append({str(i) : '%s'%str(time.time())})
 
         # any job to check?
         if len(groups) == 0:

@@ -155,12 +155,14 @@ class StageOut(Executor):
                        and hasattr(file, 'size') \
                        and not getattr(file, 'merged', False):
                     # We need both of those to continue, and we don't
-                    # direct-to-merge 
+                    # direct-to-merge
                     if file.size > self.step.output.minMergeSize:
                         # Then this goes direct to merge
                         try:
-                            file = self.handleLFNForMerge(file = file)
+                            file = self.handleLFNForMerge(mergefile = file, step = step)
                         except Exception, ex:
+                            logging.error("Encountered error while handling LFN for merge.\n")
+                            logging.error(str(ex))
                             stepReport.addError(self.stepName, 50011,
                                                 "DirectToMergeFailure", str(ex))
                 
@@ -257,7 +259,7 @@ class StageOut(Executor):
 
 
     # Accessory methods
-    def handleLFNForMerge(self, mergefile):
+    def handleLFNForMerge(self, mergefile, step):
         """
         _handleLFNForMerge_
 
@@ -269,17 +271,17 @@ class StageOut(Executor):
         # First get the output module
         # Do this by finding the name in the step report
         # And then finding that module in the WMStep Helper
-        outputRef = nodeParent(mergefile)
-        if not outputRef:
-            logging.error("Direct to merge failed: broken config")
-            return mergefile
-        outputName = nodeName(outputRef)
+
+        outputName = getattr(mergefile, 'module_label', None)
+        if not outputName:
+            logging.error("Attempt to merge directly failed due to " \
+                          + "No module_label in file.")
         if outputName.lower() == "merged":
             # Don't skip merge for merged files!
             return mergefile
-        helper     = getStepTypeHelper(self.step)
-        outputMod  = helper.getOutputModule(moduleName = outputName)
-
+        stepHelper = self.task.getStep(stepName = step)
+        outputMod  = stepHelper.getOutputModule(moduleName = outputName)
+        
         if not outputMod:
             # Then we couldn't get the output module
             logging.error("Attempt to directly merge failed " \

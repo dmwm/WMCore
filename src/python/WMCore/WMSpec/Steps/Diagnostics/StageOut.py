@@ -31,6 +31,8 @@ class SOMExceptionHandler(DiagnosticHandler):
         description = "Misc. StageOut error\n"
         if args.get('ex', None):
             description += str(args.get('ex'))
+        if args.get('ExceptionInstance', False):
+            msg += str(args.get('ExceptionInstance'))
         
         #jobRepXml = os.path.join(executor.step.builder.workingDir,
         #                         executor.step.output.jobReport)

@@ -33,6 +33,8 @@ class Exit126(DiagnosticHandler):
     """
     def __call__(self, errCode, executor, **args):
         msg = "Executable permissions not executable"
+        if args.get('ExceptionInstance', False):
+            msg += str(args.get('ExceptionInstance'))
         executor.report.addError(executor.step._internal_name,
                                  50111, "ExecutableBadPermissions", msg)
 
@@ -48,16 +50,61 @@ class Exit60515(DiagnosticHandler):
         Must fail job (since SCRAM didn't run)
 
         """
-        msg = "SCRAM scripts failed to run!"
+        msg = "SCRAM scripts failed to run!\n"
+        if args.get('ExceptionInstance', False):
+            msg += str(args.get('ExceptionInstance'))
         executor.report.addError(executor.step._internal_name,
                                  60515, "SCRAMScriptFailure", msg)
 
         # Then mark the job as failed
         if executor.report.report.status == 0:
             executor.report.report.status = 1
+
+class CMSDefaultHandler(DiagnosticHandler):
+    """
+    _CMSDefaultHandler_
+
+    Default handler for miscellaneous CMSSW errors.
+    """
+
+
+    def __call__(self, errCode, executor, **args):
+        print "%s Diagnostic Handler invoked" % self.__class__.__name__
+        msg = "Error in CMSSW: %s\n" % (errCode)
+        jobRepXml = os.path.join(executor.step.builder.workingDir,
+                                 executor.step.output.jobReport)
+
+        excepInst = args.get('ExceptionInstance', None)
+
+        description = "Misc. CMSSW error"
+        if excepInst:
+            if hasattr(excepInst, 'detail'):
+                description = excepInst.detail
+            msg += str(excepInst)
         
+        if os.path.exists(jobRepXml):
+            # job report XML exists, load the exception information from it
+            executor.report.parse(jobRepXml)
+            reportStep = executor.report.retrieveStep(executor.step._internal_name)
+            reportStep.status = self.code
 
 
+        errLog = os.path.join(os.path.dirname(jobRepXml),
+                              '%s-stderr.log' % (executor.step._internal_name))
+
+        if os.path.exists(errLog):
+            logTail = BasicAlgos.tail(errLog, 10)
+            msg += '\n Adding last ten lines of CMSSW stderr:\n'
+            msg += "".join(logTail)
+                
+        # make sure the report has the error in it
+        errSection = getattr(executor.report.report, "errors", None)
+        executor.report.addError(executor.step._internal_name,
+                                 errCode, description, msg)
+
+
+        return
+    
 class CMSRunHandler(DiagnosticHandler):
     """
     _CMSRunHandler_

@@ -34,6 +34,8 @@ class LAExceptionHandler(DiagnosticHandler):
         description = "Misc. LogArchive error"
         if args.get('ex', False):
             description += str(args.get('ex'))
+        if args.get('ExceptionInstance', False):
+            msg += str(args.get('ExceptionInstance'))
         
         jobRepXml = os.path.join(executor.step.builder.workingDir,
                                  executor.step.output.jobReport)

@@ -9,6 +9,7 @@ _SchedulerGLite_t_
 
 import unittest
 import time
+import nose
         
 # Import key features
 from WMQuality.TestInit import TestInit
@@ -103,18 +104,27 @@ class SchedulerGLite(unittest.TestCase):
     stoppingCriteria = 4
     toKill = 3
 
-    def testA_databaseStartup(self):
-        """
-        testA_databaseStartup
-        """
-        
+
+    def setUp(self):
+        testInit = TestInit(__file__)
+        testInit.setLogging()
+        testInit.setDatabaseConnection()
+
+        testInit.setSchema(customModules = ["WMCore.BossLite"],
+                                useDefault = False)
+
+    def tearDown(self):
         testInit = TestInit(__file__)
         testInit.setLogging()
         testInit.setDatabaseConnection()
         
-        testInit.setSchema(customModules = ["WMCore.BossLite"],
-                                useDefault = False)
-        
+        testInit.clearDatabase()        
+
+    def testA_databaseStartup(self):
+        """
+        testA_databaseStartup
+        """
+        raise nose.SkipTest
         # populate DB
         myBossLiteAPI = BossLiteAPI()
         fakeTask(myBossLiteAPI.db, numjob = self.numjob )
@@ -153,7 +163,7 @@ class SchedulerGLite(unittest.TestCase):
         """
         Simple status check operation
         """
-        
+        raise nose.SkipTest
         myBossLiteAPI = BossLiteAPI()
         mySchedConfig =  {'name' : 'SchedulerGLite' }
         
@@ -255,22 +265,7 @@ class SchedulerGLite(unittest.TestCase):
             printDebug(task, runningInstance = True)
         
         return
-    
-    ## TODO: use standard unit test behaviour
-    def testZ_dropDatabase(self):
-        """
-        Tear down db
-        """
-        
-        testInit = TestInit(__file__)
-        testInit.setLogging()
-        testInit.setDatabaseConnection()
-        
-        testInit.clearDatabase()
-        
-        return
-    
-    
+
 if __name__ == "__main__":
     GliteSuite = unittest.TestLoader().loadTestsFromTestCase(SchedulerGLite)
 

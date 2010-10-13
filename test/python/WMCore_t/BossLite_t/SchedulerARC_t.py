@@ -9,6 +9,7 @@ _SchedulerARC_t_
 
 import unittest
 import time
+import nose
         
 # Import key features
 from WMQuality.TestInit import TestInit
@@ -100,19 +101,27 @@ class SchedulerARC(unittest.TestCase):
     numjob = 8
     stoppingCriteria = 4
     toKill = 3
-    
-    def testA_databaseStartup(self):
-        """
-        testA_databaseStartup
-        """
-        
+
+    def setUp(self):
         testInit = TestInit(__file__)
         testInit.setLogging()
         testInit.setDatabaseConnection()
 
         testInit.setSchema(customModules = ["WMCore.BossLite"],
                                 useDefault = False)
+
+    def tearDown(self):
+        testInit = TestInit(__file__)
+        testInit.setLogging()
+        testInit.setDatabaseConnection()
         
+        testInit.clearDatabase()        
+    
+    def testA_databaseStartup(self):
+        """
+        testA_databaseStartup
+        """
+        raise nose.SkipTest
         # populate DB
         myBossLiteAPI = BossLiteAPI()
         fakeTask(myBossLiteAPI.db, numjob = self.numjob )
@@ -143,6 +152,7 @@ class SchedulerARC(unittest.TestCase):
         """
         Simple status check operation
         """
+        raise nose.SkipTest
         
         myBossLiteAPI = BossLiteAPI()
         mySchedConfig =  {'name' : 'SchedulerARC' }
@@ -227,20 +237,6 @@ class SchedulerARC(unittest.TestCase):
             
             #### DEBUG ####
             printDebug(task, runningInstance = True)
-        
-        return
-    
-    
-    def testZ_dropDatabase(self):
-        """
-        Simple submission through SchedulerARC
-        """
-        
-        testInit = TestInit(__file__)
-        testInit.setLogging()
-        testInit.setDatabaseConnection()
-        
-        testInit.clearDatabase()
         
         return
     

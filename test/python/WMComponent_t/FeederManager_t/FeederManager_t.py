@@ -12,6 +12,8 @@ import time
 import unittest
 import os
 import threading
+import nose
+
 #from WMComponent.FeederManager.FeederManager import FeederManager
 import WMCore.WMInit
 from WMQuality.TestInit import TestInit

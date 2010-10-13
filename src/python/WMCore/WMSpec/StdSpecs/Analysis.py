@@ -12,7 +12,7 @@ from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 def getTestArguments():
     """generate some test data"""
     args = {}
-    args['Requestor'] = "spiga"
+    args['Requestor'] = "riahi"
     args["ScramArch"] =  "slc5_ia32_gcc434"
     args["CouchUrl"] = "http://crab.pg.infn.it:5984"
     args["CouchDBName"] = "test"
@@ -38,7 +38,8 @@ class AnalysisWorkloadFactory(StdBase):
         outputMods = self.setupProcessingTask(analysisTask, "Analysis", inputDataset=self.inputDataset,
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.analysisConfigCacheID, splitAlgo = self.analysisJobSplitAlgo,
-                                              splitArgs = self.analysisJobSplitArgs) 
+                                              splitArgs = self.analysisJobSplitArgs, \
+                                           userDN = self.userDN, asyncDest = self.asyncDest)
         self.addLogCollectTask(analysisTask)
         return workload
 
@@ -81,5 +82,9 @@ class AnalysisWorkloadFactory(StdBase):
         self.analysisJobSplitAlgo  = arguments.get("ProdJobSplitAlgo", "EventBased")
         self.analysisJobSplitArgs  = arguments.get("ProdJobSplitArgs",
                                                {"events_per_job": 1000})
+        self.userDN = arguments.get("userDN",\
+ "/C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Hassen Riahi")
+        self.asyncDest = arguments.get("asyncDest","T2_IT_Pisa")
+
         return self.buildWorkload()
 

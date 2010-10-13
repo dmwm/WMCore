@@ -70,6 +70,24 @@ class WMStepHelper(TreeHelper):
             return None
         return WMStepHelper(node)
 
+    def setUserDN(self, userDN):
+        """
+        _setUserDN_
+
+        Set the user DN 
+
+        """
+        self.data.userDN = userDN 
+
+    def setAsyncDest(self, asyncDest):
+        """
+        _setAsyncDest_
+
+        Set the async. destination 
+
+        """
+        self.data.asyncDest = asyncDest 
+
     def getTypeHelper(self):
         """
         _getTypeHelper_
@@ -90,6 +108,8 @@ class WMStepHelper(TreeHelper):
         setattr(self.data.override, override, overrideValue)
 
         return
+
+
 
     def getOverrides(self):
         """

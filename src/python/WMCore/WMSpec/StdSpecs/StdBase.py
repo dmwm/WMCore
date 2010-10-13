@@ -135,7 +135,9 @@ class StdBase(object):
                             inputModule = None, scenarioName = None,
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "FileBased",
-                            splitArgs = {'files_per_job': 1}, seeding = None, totalEvents = None):
+                            splitArgs = {'files_per_job': 1}, seeding = None, totalEvents = None,
+                            userDN = None, asyncDest = None ):
+
         """
         _setupProcessingTask_
 
@@ -159,10 +161,18 @@ class StdBase(object):
         self.addDashboardMonitoring(procTask)
         procTaskCmssw = procTask.makeStep("cmsRun1")
         procTaskCmssw.setStepType("CMSSW")
+
+
         procTaskStageOut = procTaskCmssw.addStep("stageOut1")
         procTaskStageOut.setStepType("StageOut")
+        procTaskStageOut.setUserDN(userDN)
+        procTaskStageOut.setAsyncDest(asyncDest)
+
+
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
+
+
         procTask.applyTemplates()
 
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
@@ -205,6 +215,7 @@ class StdBase(object):
         else:
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
+
         configOutput = self.determineOutputModules(scenarioName, scenarioArgs,
                                                    configDoc, couchURL, couchDBName)
         outputModules = {}

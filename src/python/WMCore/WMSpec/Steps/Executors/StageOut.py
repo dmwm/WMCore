@@ -206,7 +206,6 @@ class StageOut(Executor):
         return
     
 
-
     def post(self, emulator = None):
         """
         _post_
@@ -217,13 +216,44 @@ class StageOut(Executor):
         #Another emulator check
         if (emulator != None):
             return emulator.emulatePost( self.step )
+
+        for step in self.stepSpace.taskSpace.stepSpaces():
+
+            if step == self.stepName:
+                #Don't try to parse your own report; it's not there yet
+                continue
+
+            stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
+            print "Beginning report processing for step %s" %step
+
+            reportLocation = os.path.join(stepLocation, 'Report.pkl')
+            if not os.path.isfile(reportLocation):
+                logging.error("Cannot find report for step %s in space %s" \
+                              % (step, stepLocation))
+                continue
+
+            # First, get everything from a file and 'unpersist' it
+            stepReport = Report(step)
+            stepReport.unpersist(reportLocation)
+
+            # Don't stage out files from bad steps.
+            if not stepReport.stepSuccessful(step):
+               continue
+
+            files = stepReport.getAllFileRefsFromStep(step = step)
+            for file in files:
+
+                if not hasattr(file, 'lfn') or not hasattr(\
+               file, 'location') or not hasattr(file, 'guid'):
+                    continue
+                    
+                file.user_dn = self.step.userDN
+                file.async_dest = self.step.asyncDest
+
+            stepReport.persist(reportLocation)
         
         print "Steps.Executors.StageOut.post called"
         return None
-
-
-
-
 
 
     # Accessory methods

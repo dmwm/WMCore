@@ -3,11 +3,14 @@
  * 
  */
 
-WMCore.WebTools.createDataSource = function (dataUrl, dataSchema) {
+WMCore.WebTools.createDataSource = function (dataUrl, dataSchema, type) {
 	
-	//var myDataSource = new YAHOO.util.DataSource(dataUrl);
-	//myDataSource.connXhrMode = "queueRequests"; 
-	var myDataSource = new YAHOO.util.XHRDataSource(dataUrl);
+	if (type == "Local") {
+	   var myDataSource = new YAHOO.util.LocalDataSource(dataUrl);
+	} else {
+		var myDataSource = new YAHOO.util.XHRDataSource(dataUrl);
+	};
+	
 	//var myDataSource = YAHOO.util.ScriptNodeDataSource(dataUrl);
     myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
     myDataSource.responseSchema = dataSchema;

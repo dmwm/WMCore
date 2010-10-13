@@ -29,12 +29,20 @@
 
 <!-- RequestManager javascript -->
 <script src="javascript/RequestManager/Overview.js"></script>
+<script src="javascript/RequestManager/Filter.js"></script>
 </head>
 <body class="yui-skin-sam">
 <h1>Workflow Overview </h1>
+<div class="markup">
+    <label for="filter">Filter by status:</label> <input type="text" id="statusFilter" value="">
+    <div id="tbl"></div>
+</div>
+<p></p>
 <div id="overview"></div>
 <script>
-WMCore.WebTools.RequestManager.Overview.overviewTable("overview")
+
+WMCore.WebTools.RequestManager.Overview.overviewTable("overview", "statusFilter",
+                                            WMCore.WebTools.RequestManager.Filter.addLocalFilter);
 
 </script>
 </body>

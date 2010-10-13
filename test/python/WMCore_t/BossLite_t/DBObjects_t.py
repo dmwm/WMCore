@@ -74,14 +74,12 @@ class DBObjectsTest(unittest.TestCase):
         self.assertTrue('Taginae' in taskInfo)
 
         task.data['startDirectory']  = 'Cannae'
-        task.data['outputDirectory'] = 'Zama'
         task.save(db)
         
         queryResult = db.executeSQL(query = """ SELECT * FROM bl_task """)
         taskInfo = queryResult[0].fetchall()[0].values()
         
         self.assertTrue('Cannae' in taskInfo)
-        self.assertTrue('Zama' in taskInfo)
 
         task2 = Task(parameters = {'id': 1})
         task2.load(db)
@@ -89,7 +87,6 @@ class DBObjectsTest(unittest.TestCase):
         self.assertEqual(task2.data['name'], 'Narses')
         self.assertEqual(task2.data['serverName'], 'Taginae')
         self.assertEqual(task2.data['startDirectory'], 'Cannae')
-        self.assertEqual(task2.data['outputDirectory'], 'Zama')
 
         task3 = Task(parameters = {'name': 'Narses'})
         task3.load(db)
@@ -97,7 +94,6 @@ class DBObjectsTest(unittest.TestCase):
         self.assertEqual(task3.data['name'], 'Narses')
         self.assertEqual(task3.data['serverName'], 'Taginae')
         self.assertEqual(task3.data['startDirectory'], 'Cannae')
-        self.assertEqual(task3.data['outputDirectory'], 'Zama')
 
         task4 = Task(parameters = {'id': 1})
         task4.load(db)
@@ -308,7 +304,6 @@ class DBObjectsTest(unittest.TestCase):
         taskId = task.exists(db)
         
         task.data['startDirectory']  = 'Ilithyia'
-        task.data['outputDirectory'] = 'Lucretia'
         
         i = 0
         for jobId in range(0, nTestJobs):
@@ -352,7 +347,6 @@ class DBObjectsTest(unittest.TestCase):
         taskId = task.exists(db)
         
         task.data['startDirectory']  = 'Ilithyia'
-        task.data['outputDirectory'] = 'Lucretia'
 
         i = 0
         for jobId in range(0, nTestJobs):

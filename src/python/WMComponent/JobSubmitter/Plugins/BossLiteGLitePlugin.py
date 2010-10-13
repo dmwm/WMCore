@@ -17,6 +17,7 @@ import logging
 import threading
 import subprocess
 import types
+import socket
 
 from WMCore.DAOFactory import DAOFactory
 #from WMCore.WMInit import getWMBASE
@@ -110,8 +111,7 @@ class BossLiteGLitePlugin(PluginBase):
             taskParams = {'name' : makeUUID(),
                           'globalSandbox' : inputsbstr,
                           'serverName': self.agent,
-                          'startDirectory' :  'gsiftp://' + \
-                                              os.getenv('HOSTNAME')
+                          'startDirectory' :  'gsiftp://' + socket.getfqdn()
                          }
 
             task = Task(taskParams)

@@ -67,6 +67,7 @@ class GetOutputPoller(BaseWorkerThread):
         """
         logging.debug("Thread [%s]"%str(self.myThread))
 
+
         ## processing done and aborted jobs..finished jobs!
         for statme in ['SD', 'A']:
             logging.info('Processing "%s" status...'%statme)
@@ -74,6 +75,7 @@ class GetOutputPoller(BaseWorkerThread):
             jobdata = self.getjobs.execute( statme,
                                            self.config.GetOutputLite.loadlimit
                                           )
+            logging.info("Having %i jobs to process" % len(jobdata) )
             ##   group jobs by task
             tasklist = []
             task = { 'taskId': None, 'status': statme, 'joblist': [] }
@@ -90,7 +92,7 @@ class GetOutputPoller(BaseWorkerThread):
             if task not in tasklist and task['taskId'] is not None:
                 tasklist.append(task)
             if len(tasklist) > 0:
-                logging.info("Having %i work to enqueue..."%len(tasklist))
+                logging.info("Having %i task to process. Starting enqueuing..."%len(tasklist))
                 #logging.info(str(tasklist))
                 ##     give work to the subprocess
                 for t in tasklist:

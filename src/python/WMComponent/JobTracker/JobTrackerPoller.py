@@ -197,6 +197,9 @@ class JobTrackerPoller(BaseWorkerThread):
 
         Dump those jobs that have failed
         """
+
+        myThread = threading.currentThread()
+
         if len(failedJobs) == 0:
             return
 

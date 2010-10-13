@@ -33,6 +33,8 @@ class Exit126(DiagnosticHandler):
     """
     def __call__(self, errCode, executor, **args):
         msg = "Executable permissions not executable"
+        if args.get('ExceptionInstance', False):
+            msg += str(args.get('ExceptionInstance'))
         executor.report.addError(executor.step._internal_name,
                                  50111, "ExecutableBadPermissions", msg)
 
@@ -48,7 +50,9 @@ class Exit60515(DiagnosticHandler):
         Must fail job (since SCRAM didn't run)
 
         """
-        msg = "SCRAM scripts failed to run!"
+        msg = "SCRAM scripts failed to run!\n"
+        if args.get('ExceptionInstance', False):
+            msg += str(args.get('ExceptionInstance'))
         executor.report.addError(executor.step._internal_name,
                                  60515, "SCRAMScriptFailure", msg)
 
@@ -77,6 +81,7 @@ class CMSDefaultHandler(DiagnosticHandler):
         if excepInst:
             if hasattr(excepInst, 'detail'):
                 description = excepInst.detail
+            msg += str(excepInst)
         
         if os.path.exists(jobRepXml):
             # job report XML exists, load the exception information from it

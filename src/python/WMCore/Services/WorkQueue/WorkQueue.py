@@ -72,7 +72,7 @@ class WorkQueue(Service):
 
         # can't pass the decoder here since refreshCache wright to file
         f = self.refreshCache(file, callname, args, encoder = self.encoder,
-                              verb = verb)
+                              verb = verb, contentType = contentType)
         result = f.read()
         f.close()
         result = self.decoder(result)

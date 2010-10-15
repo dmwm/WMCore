@@ -449,4 +449,6 @@ class ReqMgrBrowser(TemplatedPage):
         self.jsonSender.post('/reqMgr/group/%s?priority=%s' % (group, groupPriority))
         return "Updated group %s priority to %s" % (group, groupPriority)
 
-
+    @expose
+    def handleGroupPriority(self, group=None, RequestGroupPriority=None):
+        return "Not implemented"

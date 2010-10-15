@@ -31,6 +31,7 @@ class Dataset(StartPolicyInterface):
         if (self.data and self.data != datasetPath):
             raise RuntimeError, "Can't provide different data to split with"
 
+        dataset = dbs.getDBSSummaryInfo(dataset = datasetPath)
         
         # apply input dataset restrictions
         blockWhiteList = self.initialTask.inputBlockWhitelist()

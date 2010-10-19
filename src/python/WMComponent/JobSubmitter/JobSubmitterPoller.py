@@ -24,7 +24,10 @@ from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
 from WMCore.ProcessPool.ProcessPool           import ProcessPool
 from WMCore.ResourceControl.ResourceControl   import ResourceControl
 from WMCore.DataStructs.JobPackage            import JobPackage
-from WMCore.WMBase        import getWMBASE
+from WMCore.FwkJobReport.Report               import Report
+from WMCore.WMBase                            import getWMBASE
+from WMCore.WMException                       import WMException
+from WMCore.BossAir.BossAirAPI                import BossAirAPI
 
 def siteListCompare(a, b):
     """
@@ -40,6 +43,15 @@ def siteListCompare(a, b):
         return 0
 
     return -1
+
+
+class JobSubmitterPollerException(WMException):
+    """
+    _JobSubmitterPollerException_
+
+    This is the exception instance for
+    JobSubmitterPoller specific errors.
+    """
 
 class JobSubmitterPoller(BaseWorkerThread):
     """
@@ -62,40 +74,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         #Libraries
         self.resourceControl = ResourceControl()
 
-        configDict = {"submitDir": self.config.JobSubmitter.submitDir,
-                      "submitNode": self.config.JobSubmitter.submitNode,
-                      "agentName": self.config.Agent.agentName,
-                      'couchURL': self.config.JobStateMachine.couchurl, 
-                      'defaultRetries': self.config.JobStateMachine.default_retries,
-                      'couchDBName': self.config.JobStateMachine.couchDBName}
-        
-        if hasattr(self.config.JobSubmitter, "unpackerScript"):
-            configDict["unpackerScript"] = self.config.JobSubmitter.unpackerScript
-
-        if hasattr(self.config.JobSubmitter, "submitScript"):
-            configDict["submitScript"] = self.config.JobSubmitter.submitScript
-        else:
-            configDict["submitScript"] = os.path.join(getWMBASE(),
-                                                      "src/python/WMComponent/JobSubmitter/submit.sh")
-
-        if hasattr(self.config, 'BossAir'):
-            configDict['pluginNames'] = config.BossAir.pluginNames
-            configDict['pluginDir']   = config.BossAir.pluginDir
-            configDict['gLiteConf']   = config.JobSubmitter.gLiteConf
-
-        if hasattr(self.config.JobSubmitter, 'inputFile'):
-            configDict['inputFile'] = self.config.JobSubmitter.inputFile
-
-
-        workerName = "%s.%s" % (self.config.JobSubmitter.pluginDir, \
-                                self.config.JobSubmitter.pluginName)
-
-        self.processPool = ProcessPool(workerName,
-                                       totalSlaves = self.config.JobSubmitter.workerThreads,
-                                       componentDir = self.config.JobSubmitter.componentDir,
-                                       config = self.config, slaveInit = configDict,
-                                       namespace = getattr(self.config.JobSubmitter,
-                                                           "pluginNamespace", None))
+        # BossAir
+        self.bossAir = BossAirAPI(config = config)
 
         self.changeState = ChangeState(self.config)
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
@@ -106,6 +86,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.jobsToPackage  = {}
         self.sandboxPackage = {}
         self.siteKeys       = {}
+        self.locationDict   = {}
         self.packageSize    = getattr(self.config.JobSubmitter, 'packageSize', 100)
 
         self.packageDir = os.path.join(self.config.JobSubmitter.submitDir, "packages")
@@ -114,6 +95,12 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         self.listJobsAction = self.daoFactory(classname = "Jobs.ListForSubmitter")
         self.setLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
+
+
+        self.noSiteErrorReport = Report()
+        self.noSiteErrorReport.addError("JobSubmit", 61101, "SubmitFailed", "NoAvailableSites")
+
+        self.locationAction = self.daoFactory(classname = "Locations.GetSiteInfo")
 
         # Call once to fill the siteKeys
         # TODO: Make this less clumsy!
@@ -271,6 +258,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             logging.error("The following jobs have no possible sites to run at: %s" % badJobs)
             for job in badJobs:
                 job['couch_record'] = None
+                job['fwjr']         = self.noSiteErrorReport
             self.changeState.propagate(badJobs, "submitfailed", "created")
 
         # If there are any leftover jobs, we want to get rid of them.
@@ -414,7 +402,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                 jobDict = {'id': cachedJob[0],
                            'retry_count': cachedJob[1],
                            'custom': {'location': emptySite[0]},
-                           'cache_dir': cachedJob[4]}
+                           'cache_dir': cachedJob[4],
+                           'packageDir': package}
 
                 # Add to jobsToSubmit
                 jobsToSubmit[package].append(jobDict)
@@ -444,31 +433,42 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         agentName = self.config.Agent.agentName
         lenWork   = 0
+        jobList   = []
 
         for package in jobsToSubmit.keys():
             sandbox = self.sandboxPackage[package]
             jobs    = jobsToSubmit.get(package, [])
 
+            for job in jobs:
+                job['location'], job['plugin'] = self.getSiteInfo(job['custom']['location'])
+                job['sandbox'] = sandbox
+
             #Clean out the package reference
             del self.sandboxPackage[package]
-            
-            if len(jobs) == 0:
-                # No jobs in this package
-                continue
-            while len(jobs) > 0:
-                # Then we have to split a chunk off and submit it
-                jobsReady = jobs[:self.config.JobSubmitter.jobsPerWorker]
-                jobs      = jobs[self.config.JobSubmitter.jobsPerWorker:]
-                self.processPool.enqueue([{'jobs': jobsReady,
-                                           'packageDir': package,
-                                           'sandbox': sandbox,
-                                           'agentName': agentName}])
-                lenWork += 1
 
-        # And then, at the end of the day, we have to dequeue them.
-        result = []
-        result = self.processPool.dequeue(lenWork)
+            jobList.extend(jobs)
+
+        successList, failList = self.bossAir.submit(jobs = jobList)
+
+        self.changeState.propagate(successList, 'executing',    'created')
+        self.changeState.propagate(failList, 'submitfailed', 'created')
+
+        
         return
+
+
+    def getSiteInfo(self, jobSite):
+        """
+        _getSiteInfo_
+
+        This is how you get the name of a CE and the plugin for a job
+        """
+
+        if not jobSite in self.locationDict.keys():
+            siteInfo = self.locationAction.execute(siteName = jobSite)
+            self.locationDict[jobSite] = siteInfo[0]
+        return (self.locationDict[jobSite].get('ce_name'),
+                self.locationDict[jobSite].get('plugin'))
 
     def algorithm(self, parameters = None):
         """
@@ -483,13 +483,15 @@ class JobSubmitterPoller(BaseWorkerThread):
             self.refreshCache()
             jobsToSubmit = self.assignJobLocations()
             self.submitJobs(jobsToSubmit = jobsToSubmit)
+        except WMException:
+            raise
         except Exception, ex:
             msg = 'Fatal error in JobSubmitter:\n'
             msg += str(ex)
-            msg += str(traceback.format_exc())
+            #msg += str(traceback.format_exc())
             msg += '\n\n'
             logging.error(msg)
-            raise Exception(msg)
+            raise JobSubmitterPollerException(msg)
 
         # At the end we mark the locations of the jobs
         # This applies even to failed jobs, since the location
@@ -508,3 +510,13 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         return
 
+
+
+    def terminate(self, params):
+        """
+        _terminate_
+        
+        Kill the code after one final pass when called by the master thread.
+        """
+        logging.debug("terminating. doing one more pass before we die")
+        self.algorithm(params)

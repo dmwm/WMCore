@@ -47,7 +47,6 @@ class TestPlugin(BasePlugin):
         """
         Label the jobs as done
         
-
         """
 
         return [], [], jobs

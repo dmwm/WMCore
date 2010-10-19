@@ -104,7 +104,7 @@ class BossAirTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.tearDown()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database", "WMCore.MsgService"],
                                 useDefault = False)
 
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
@@ -125,6 +125,10 @@ class BossAirTest(unittest.TestCase):
                                        ceName = site, plugin = "CondorPlugin")
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             maxSlots = 10000)
+        resourceControl.insertSite(siteName = 'Xanadu', seName = 'se.Xanadu',
+                                   ceName = 'Xanadu', plugin = "TestPlugin")
+        resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
+                                        maxSlots = 10000)
 
 
         # We actually need the user name
@@ -147,7 +151,7 @@ class BossAirTest(unittest.TestCase):
         """
         Database deletion
         """
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"])
+        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database", "WMCore.MsgService"])
 
         self.testInit.delWorkDir()
 
@@ -167,20 +171,21 @@ class BossAirTest(unittest.TestCase):
         config.section_("Agent")
         config.Agent.agentName  = 'testAgent'
         config.Agent.componentName = 'test'
+        config.Agent.useHeartbeat = False
 
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
 
 
-        config.component_("BossAir")
+        config.section_("BossAir")
         config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
         config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
 
         config.component_("JobSubmitter")
         config.JobSubmitter.logLevel      = 'INFO'
-        config.JobSubmitter.maxThreads    = 1
-        config.JobSubmitter.pollInterval  = 10
+        #config.JobSubmitter.maxThreads    = 1
+        config.JobSubmitter.pollInterval  = 1
         config.JobSubmitter.pluginName    = 'AirPlugin'
         config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
         config.JobSubmitter.submitDir     = os.path.join(self.testDir, 'submit')
@@ -199,14 +204,14 @@ class BossAirTest(unittest.TestCase):
         # JobTracker
         config.component_("JobTracker")
         config.JobTracker.logLevel      = 'INFO'
-        config.JobTracker.pollInterval  = 10
-        config.JobTracker.trackerName   = 'AirTracker'
-        config.JobTracker.pluginDir     = 'WMComponent.JobTracker.Plugins'
-        config.JobTracker.componentDir  = os.path.join(os.getcwd(), 'Components')
-        config.JobTracker.runTimeLimit  = 7776000 #Jobs expire after 90 days
-        config.JobTracker.idleTimeLimit = 7776000
-        config.JobTracker.heldTimeLimit = 7776000
-        config.JobTracker.unknTimeLimit = 7776000
+        config.JobTracker.pollInterval  = 1
+        #config.JobTracker.trackerName   = 'AirTracker'
+        #config.JobTracker.pluginDir     = 'WMComponent.JobTracker.Plugins'
+        #config.JobTracker.componentDir  = os.path.join(os.getcwd(), 'Components')
+        #config.JobTracker.runTimeLimit  = 7776000 #Jobs expire after 90 days
+        #config.JobTracker.idleTimeLimit = 7776000
+        #config.JobTracker.heldTimeLimit = 7776000
+        #config.JobTracker.unknTimeLimit = 7776000
 
 
         # JobStateMachine
@@ -219,6 +224,11 @@ class BossAirTest(unittest.TestCase):
         # JobStatus
         config.component_('JobStatus')
         config.JobStatus.stateTimeouts  = {'Pending': 2, 'Running': 86400}
+        config.JobStatus.pollInterval   = 1
+
+        # JobStatusLite (LEGACY)
+        config.component_('JobStatusLite')
+        config.JobStatusLite.componentDir = os.path.join(os.getcwd(), 'Components')
 
 
 
@@ -349,12 +359,15 @@ class BossAirTest(unittest.TestCase):
 
 
 
-    def createDummyJobs(self, nJobs):
+    def createDummyJobs(self, nJobs, location = None):
         """
         _createDummyJobs_
         
         Create some dummy jobs
         """
+
+        if not location:
+            location = self.sites[0]
 
         nameStr = makeUUID()
 
@@ -378,7 +391,7 @@ class BossAirTest(unittest.TestCase):
 
         for i in range(nJobs):
             testJob = Job(name = '%s-%i' % (nameStr, i))
-            testJob['location'] = self.sites[0]
+            testJob['location'] = location
             testJob.create(testJobGroup)
             jobList.append(testJob)
 
@@ -393,6 +406,8 @@ class BossAirTest(unittest.TestCase):
         This is a commissioning test that has very little to do
         with anything except loading the code.
         """
+        #return
+        
         myThread = threading.currentThread()
 
         config = self.getConfig()
@@ -497,7 +512,7 @@ class BossAirTest(unittest.TestCase):
         # Create some jobs
         nJobs = 10
 
-        jobDummies = self.createDummyJobs(nJobs = nJobs)
+        jobDummies = self.createDummyJobs(nJobs = nJobs, location = 'Xanadu')
 
         # Prior to building the job, each job must have a plugin
         # and user assigned
@@ -586,12 +601,14 @@ class BossAirTest(unittest.TestCase):
             tmpJob['cache_dir']   = self.testDir
             tmpJob['retry_count'] = 0
             tmpJob['plugin']      = 'CondorPlugin'
-            tmpJob['owner']        = 'mnorman'
+            tmpJob['owner']       = 'mnorman'
+            tmpJob['packageDir']  = self.testDir
+            tmpJob['sandbox']     = sandbox
             jobList.append(tmpJob)
 
 
         info = {}
-        info['packageDir'] = self.testDir
+        #info['packageDir'] = self.testDir
         info['index']      = 0
         info['sandbox']    = sandbox
 
@@ -632,7 +649,7 @@ class BossAirTest(unittest.TestCase):
 
         Prototype the BossAir workflow
         """
-
+        
         #return
 
         myThread = threading.currentThread()
@@ -711,10 +728,6 @@ class BossAirTest(unittest.TestCase):
         newJobs = baAPI._loadByStatus(status = 'Idle')
         self.assertEqual(len(newJobs), 0)
 
-        print "About to do test that fails"
-        print myThread.dbi.processData("SELECT * FROM bl_status")[0].fetchall()
-        print myThread.dbi.processData("SELECT sched_status FROM bl_runjob")[0].fetchall()
-
         newJobs = baAPI._loadByStatus(status = 'Timeout', complete = '0')
         self.assertEqual(len(newJobs), nSubs * nJobs)
 
@@ -741,126 +754,30 @@ class BossAirTest(unittest.TestCase):
 
         return
 
-        
-
 
     @attr('integration')
-    def testE_gLiteBasics(self):
+    def testE_FullChain(self):
         """
-        _gLiteBasics_
+        _FullChain_
 
-        gLite basic test, partially to make sure the plugin works
+        Full test going through the chain; using polling cycles and everything
         """
 
-        return
+        #return
+
+        from WMComponent.JobSubmitter.JobSubmitter   import JobSubmitter
+        from WMComponent.JobStatusLite.JobStatusLite import JobStatusLite
+        from WMComponent.JobTracker.JobTracker       import JobTracker
+
+
+        myThread = threading.currentThread()
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+
 
         config = self.getConfig()
-        config.BossAir.pluginName = 'gLitePlugin'
-        config.JobSubmitter.gLiteConf = os.path.join(os.getcwd(), 'config.cfg')
-
-        nJobs = 10
-
-        jobDummies = self.createDummyJobs(nJobs = nJobs)
-
-
-        baAPI  = BossAirAPI(config = config)
-
-
-        jobPackage = os.path.join(self.testDir, 'JobPackage.pkl')
-        f = open(jobPackage, 'w')
-        f.write(' ')
-        f.close()
-
-        sandbox = os.path.join(self.testDir, 'sandbox.box')
-        f = open(sandbox, 'w')
-        f.write(' ')
-        f.close()
-
-        jobList = []
-        for j in jobDummies:
-            tmpJob = {'id': j['id']}
-            tmpJob['custom']      = {'location': 'malpaquet'}
-            tmpJob['name']        = j['name']
-            tmpJob['cache_dir']   = self.testDir
-            tmpJob['retry_count'] = 0
-            jobList.append(tmpJob)
-
-
-        info = {}
-        info['packageDir'] = self.testDir
-        info['index']      = 0
-        info['sandbox']    = sandbox
-
-
-        submit = baAPI.submit(jobs = jobList, info = info)
-
-        subList = submit.get('Success', None)
-
-        self.assertEqual(len(subList), nJobs)
-
-        baAPI.new(jobs = subList)
-
-
-        baList = baAPI.list()
-        self.assertEqual(len(baList), nJobs)
-        for job in baList:
-            # All should be in new state
-            self.assertEqual(job['status'], 'new')
-
-
-        # Now update the states
-        trackList = baAPI.track(jobs = jobList)
-
-        print "Have trackList"
-        print trackList
-
-
-        self.assertEqual(len(trackList), nJobs)
-        for job in trackList:
-            # Should all now be submitted or Ready
-            self.assertTrue(job['Status'] in ['Submitted', 'Ready', 'Waiting'])
-
-
-        baAPI.update(jobs = trackList)
-
-        upList = baAPI.list()
-
-        print upList
-
-
-
-
-        # Now see if we can kill them
-        baAPI.kill(jobs = jobList)
-
-        time.sleep(120)
-
-        trackList = baAPI.track(jobs = jobList)
-        print "Have trackList"
-        print trackList
-
-        # Remove them
-        baAPI.remove(jobs = jobList)
-
-        # Check and see if we can complete them
-        baAPI.complete(jobs = jobList)
-
-        return
-
-
-    @attr('integration')
-    def testF_gLiteSucks(self):
-        """
-        _gLiteSucks_
-
-        This attempts to test gLite.  Really.  Truly.
-        God is it painful.
-        """
-
-        return
-
-        config = self.getConfig()
-        config.BossAir.pluginName = 'gLitePlugin'
+        config.BossAir.pluginName = 'CondorPlugin'
 
         baAPI  = BossAirAPI(config = config)
 
@@ -883,87 +800,73 @@ class BossAirTest(unittest.TestCase):
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
 
-
-        jobSubmitter = JobSubmitterPoller(config = config)
-        jobTracker   = JobTrackerPoller(config = config)
-
-
-        jobSubmitter.algorithm()
-
-        time.sleep(10)
-
-        if os.path.exists('tmpDir'):
-            shutil.rmtree('tmpDir')
-
-        shutil.copytree(self.testDir, 'tmpDir')
+        jobSubmitter = JobSubmitter(config = config)
+        jobTracker   = JobTracker(config = config)
+        jobStatus    = JobStatusLite(config = config)
 
 
+        jobSubmitter.prepareToStart()
+        jobTracker.prepareToStart()
+        jobStatus.prepareToStart()
 
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-        baList = baAPI.list()
-        self.assertEqual(len(baList), nSubs * nJobs)
-
-        jobTracker.setup()
-        jobTracker.algorithm()
-
-        # Check WMBS
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-        baList = baAPI.list()
-        self.assertEqual(len(baList), nSubs * nJobs)
-
-
-        # Test jobStatus polling
-        protoStatus = ProtoStatus(config = config)
-        protoStatus.algorithm()
-
-        baList = baAPI.list()
-        self.assertEqual(len(baList), nSubs * nJobs)
-        for job in baList:
-            self.assertTrue(job['status'].lower() in ['submitted', 'waiting', 'ready'])
-
+        # What should happen here:
+        # 1) The JobSubmitter should submit the jobs
+        # 2) Because of the ridiculously short time on pending jobs
+        #     the JobStatus poller should mark the jobs as done
+        #     and kill them.
+        # 3) The JobTracker should realize there are finished jobs
+        #
+        # So at the end of several polling cycles, the jobs should all
+        # be done, but be in the failed status (they timed out)
 
         time.sleep(10)
 
 
-        return
-
-        # Now kill 'em and see what happens
-        baAPI.kill(jobs = baList)
+        myThread.workerThreadManager.terminateWorkers()
 
 
-        time.sleep(90)
-        protoStatus.algorithm()
-
-
-        baList = baAPI.list()
-        self.assertEqual(len(baList), nSubs * nJobs)
-        print "Have baList"
-        print baList
-
-
-        jobTracker.algorithm()
-
-        
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
         result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
         self.assertEqual(len(result), 0)
-        result = getJobsAction.execute(state = 'Complete', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
 
 
-        if os.path.exists('tmpDir'):
-            shutil.rmtree('tmpDir')
+        result = getJobsAction.execute(state = 'JobFailed', jobType = "Processing")
+        self.assertEqual(len(result), nJobs * nSubs)
 
-        shutil.copytree(self.testDir, 'tmpDir')
+        
 
 
         return
 
+
+
+
+    def testF_gLitePluginParallelization(self):
+        """
+        _gLitePluginParallelization_
+        
+        A simple test to see if I can successfully run commands
+        in parallel using multiprocessing in the gLite plugin
+        """
+
+        config = self.getConfig()
+        config.BossAir.pluginNames.append('gLitePlugin')
+
+        baAPI  = BossAirAPI(config = config)
+        
+        jobs = []
+
+        for x in range(10):
+            jobs.append({'gridid': 'job_%i' % (x)})
+
+        results = baAPI.plugins['gLitePlugin'].complete(jobs = jobs)
+        for result in results:
+            adjResult = result.rstrip('\n')
+            self.assertTrue(adjResult in [x['gridid'] for x in jobs])
+
+        
+        return
+        
 
 
     def testG_monitoringDAO(self):
@@ -973,7 +876,7 @@ class BossAirTest(unittest.TestCase):
         Because I need a test for the monitoring DAO
         """
 
-        return
+        #return
 
         myThread = threading.currentThread()
 
@@ -1011,96 +914,6 @@ class BossAirTest(unittest.TestCase):
 
 
 
-class ProtoStatus:
-    """
-    Prototype for the JobStatus for BossAir
-
-
-    """
-
-
-    def __init__(self, config, interface = None):
-        """
-        Initialize a bossAir interface        
-
-        """
-
-        if not interface:
-            self.bossAir = BossAirAPI(config = config)
-        else:
-            self.bossAir = interface
-
-
-    def algorithm(self, parameters = None):
-        """
-        _algorithm_
-        
-        Run some tracking code, figure out what's going on in the batch system
-        and then put it in the BossAir database
-        """
-
-        try:
-            self.trackJobs()
-        except:
-            msg = "General error in JobStatus polling"
-            msg += str(traceback.format_exc())
-            msg += "\n\n"
-            logging.error(msg)
-            raise Exception(msg)
-
-
-    def trackJobs(self):
-        """
-        _trackJobs_
-
-        Track the jobs in the BossAir system
-        """
-
-        # First, find out what jobs you need to track
-        jobList = self.bossAir.list()
-
-        
-        # Then you need to track job status
-        # Use the API and the Plugin functions
-        print "Have jobList"
-        print jobList
-        trackList = self.bossAir.track(jobs = jobList)
-
-        if len(trackList) == 0:
-            return
-
-        # Update the status
-        print "About to update"
-        print trackList
-        self.bossAir.update(jobs = trackList)
-
-        # Now you need to find the jobs that are done
-        doneList = []
-        for job in trackList:
-            if job['Status'] == 'Done':
-                doneList.append(job)
-
-        print "Have the doneList"
-        print doneList
-        if len(doneList) == 0:
-            # Then there's nothing left to do.
-            return
-
-        # Complete the done jobs
-        self.bossAir.complete(jobs = doneList)
-
-
-        # Now, change their status
-        for job in doneList:
-            job['Status'] = 'Complete'
-
-        # Change jobs that have finished the
-        # complete() step to complete
-        self.bossAir.update(jobs = doneList)
-
-
-        # And you're done
-        return
 
 
 

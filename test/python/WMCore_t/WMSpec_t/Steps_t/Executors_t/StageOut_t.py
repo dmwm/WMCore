@@ -176,6 +176,10 @@ class otherStageOutTest(unittest.TestCase):
             if modname.startswith('WMSandbox'):
                 modsToDelete.append(modname)
         for modname in modsToDelete:
+            try:
+                reload(sys.modules[modname])
+            except:
+                pass
             del sys.modules[modname]
         
         myThread = threading.currentThread()
@@ -198,8 +202,6 @@ class otherStageOutTest(unittest.TestCase):
         self.assertTrue( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
     
     def testCPBackendStageOutAgainstReportFailedStepNew(self):
-        raise nose.SkipTest
-    
         myReport = Report('cmsRun1')
         myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 1
@@ -214,6 +216,7 @@ class otherStageOutTest(unittest.TestCase):
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
         
     def testCPBackendStageOutAgainstReportOld(self):
+        
         myReport = Report('cmsRun1')
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 0

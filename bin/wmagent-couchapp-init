@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+# encoding: utf-8
+"""
+wmagent-couchapp-init.py
+
+Created by Dave Evans on 2010-10-19.
+Copyright (c) 2010 Fermilab. All rights reserved.
+"""
+
+import sys
+import getopt
+import os
+
+
+help_message = '''
+wmagent-couchapp-init <COUCHDBNAME/URL>
+'''
+
+from WMCore.WMInit import getWMBASE
+from WMQuality.TestInitCouchApp import CouchAppTestHarness
+
+class Usage(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+
+def main(argv=None):
+    url = None
+    database = None
+    
+
+    couchapps = "%s/src/couchapps" % getWMBASE()
+    
+    if argv is None:
+        argv = sys.argv
+    try:
+        try:
+            opts, args = getopt.getopt(argv[1:], "hud:v", ["help", "url=", "database="])
+        except getopt.error, msg:
+            raise Usage(msg)
+    
+        # option processing
+        for option, value in opts:
+            if option == "-v":
+                verbose = True
+            if option in ("-h", "--help"):
+                raise Usage(help_message)
+            if option in ("-u", "--url"):
+                url = value
+            if option in ("-d", "--database"):
+                database = value
+
+    
+    except Usage, err:
+        print >> sys.stderr, sys.argv[0].split("/")[-1] + ": " + str(err.msg)
+        print >> sys.stderr, "\t for help use --help"
+        return 2
+
+        
+    jobcache = "%s_jsm" % database
+    acdc     = "%s_acdc" % database
+    configs  = "%s_configcache" % database 
+    
+    harness1 = CouchAppTestHarness(jobcache, url)
+    harness1.create()
+    harness1.pushCouchapps("%s/JobDump" % couchapps)
+
+    harness2 = CouchAppTestHarness(acdc, url)
+    harness2.create()
+    harness2.pushCouchapps("%s/GroupUser" % couchapps, "%s/ACDC" % couchapps)
+
+    harness1 = CouchAppTestHarness(configs, url)
+    harness1.create()
+    harness1.pushCouchapps("%s/GroupUser" %couchapps, "%s/ConfigCache" % couchapps)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

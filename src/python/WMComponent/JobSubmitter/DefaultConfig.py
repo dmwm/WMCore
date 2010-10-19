@@ -38,6 +38,7 @@ config.JobSubmitter.componentDir  = os.path.join(os.getcwd(), 'Components')
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
 config.JobSubmitter.inputFile     = os.path.join(os.getcwd(), 'FrameworkJobReport-4540.xml')
+#config.JobSubmitter.matchMaking   = True
 
 jsm = config.component_('JobStateMachine')
 

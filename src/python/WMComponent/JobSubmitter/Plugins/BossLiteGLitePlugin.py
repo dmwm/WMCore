@@ -150,7 +150,8 @@ class BossLiteGLitePlugin(PluginBase):
                 # output_files - list of str
                 
                 ## Translating CMS names into ce name (through resource control)
-                dest = self.getDestinations( dest, job['custom']['location'] )
+                #dest = self.getDestinations( dest, job['custom']['location'] )
+                dest = job['custom']['location']
 
                 #jobParams['dlsDestination'] = dest
 

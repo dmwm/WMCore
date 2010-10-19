@@ -16,7 +16,7 @@ import threading
 from WMCore.Agent.Harness     import Harness
 
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
-
+from WMComponent.JobSubmitter.JobSubmitterPollerMatchMaking import JobSubmitterPollerMatchMaking
 
 class JobSubmitter(Harness):
     """
@@ -43,7 +43,20 @@ class JobSubmitter(Harness):
         
         pollInterval = self.config.JobSubmitter.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
-        myThread.workerThreadManager.addWorker(JobSubmitterPoller(self.config),
-                                               pollInterval)
+
+        matching = False
+        try:
+           matching = self.config.JobSubmitter.matchMaking
+        except:
+           pass
+
+        if matching is True:
+            logging.info('Starting match making poller')
+            myThread.workerThreadManager.addWorker(JobSubmitterPollerMatchMaking(self.config),
+                                                   pollInterval)
+        else:
+            logging.info('Starting resource control poller')
+            myThread.workerThreadManager.addWorker(JobSubmitterPoller(self.config),
+                                                   pollInterval)
 
         return

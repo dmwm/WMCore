@@ -4,9 +4,6 @@ _CompleteFiles_
 
 SQLite implementation of Subscription.CompleteFiles
 """
-__all__ = []
-
-
 
 from WMCore.WMBS.MySQL.Subscriptions.CompleteFiles import CompleteFiles \
      as CompleteFilesMySQL

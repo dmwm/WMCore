@@ -6,15 +6,11 @@ File based splitting test.
 """
 
 
-
-
 import unittest
 import os
 import threading
 import logging
 import time
-import hotshot, hotshot.stats
-import cProfile, pstats
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
@@ -282,44 +278,6 @@ class FileBasedTest(unittest.TestCase):
         
         return
     
-    #@attr('performance')
-    def testTiming(self):
-        """
-        _testTiming_
-
-        This is based off of test2FileSplit, but built for timing
-        """
-
-        #return
-        
-        myThread = threading.currentThread()
-
-        #profiler = hotshot.Profile('hotshot.stats')
-
-        subscript = self.createLargeFileBlock()
-
-        splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS", subscription = subscript)
-
-        #jobGroups = profiler.runcall(jobFactory, files_per_job = 2, jobs_per_group = 1)
-
-        #profiler.close()
-
-        jobGroups = cProfile.runctx("jobFactory(files_per_job = 1)", globals(), locals(), "cProfile.stats")
-
-        #self.assertEqual(len(jobGroups), 1)
-        #self.assertEqual(len(jobGroups[0].jobs), 2000)
-
-        p = pstats.Stats('cProfile.stats')
-        p.strip_dirs().sort_stats('cumulative').print_stats(.1)
-        p.strip_dirs().sort_stats('time').print_stats(.1)
-
-        #print myThread.dbi.processData("SELECT * FROM wmbs_jobgroup")[0].fetchall()
-
-
-        return
-
-
     def testLimit(self):
         """
         _testLimit_
@@ -329,10 +287,6 @@ class FileBasedTest(unittest.TestCase):
         creating one jobGroups with one job with one file
         (The limit argument tells it what to do)
         """
-
-        return
-
-
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
@@ -367,19 +321,11 @@ class FileBasedTest(unittest.TestCase):
                 try:
                     res = func.next()
                     self.jobGroups.extend(res)
-                    logging.error("Going through function")
                 except StopIteration:
-                    logging.error("Received StopIteration")
-                    logging.error("Halting iteration")
                     goFlag = False
                     
             stopTime  = time.time()
-
-            logging.error("Job took %f seconds" % (stopTime - startTime))
-
             return jobGroups
-
-        
 
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
@@ -388,8 +334,6 @@ class FileBasedTest(unittest.TestCase):
         jobFactory.open()
         jobGroups = []
 
-
-
         a = self.crazyAssFunction(jobFactory = jobFactory, file_load_limit = 2)
 
         for x in range(7):
@@ -397,12 +341,9 @@ class FileBasedTest(unittest.TestCase):
                 res = a.next()
                 jobGroups.extend(res)
             except StopIteration:
-                logging.error("Received StopIteration")
-                logging.error("Halting iteration")
+                continue
 
         jobFactory.close()
-
-        
 
         self.assertEqual(len(jobGroups), 6)
         for group in jobGroups:
@@ -430,9 +371,6 @@ class FileBasedTest(unittest.TestCase):
 
         jobGroups = self.jobGroups
         
-
-
-
         self.assertEqual(len(jobGroups), 10)
         for group in jobGroups:
             self.assertEqual(len(group.jobs), 500)
@@ -440,22 +378,13 @@ class FileBasedTest(unittest.TestCase):
 
 
         jobFactory.close()
-
-
-        #p = pstats.Stats('coroutine.stats')
-        #p.strip_dirs().sort_stats('cumulative').print_stats(.2)
-        #p.strip_dirs().sort_stats('time').print_stats(.1)
-
+        return
 
     def crazyAssFunction(self, jobFactory, file_load_limit = 1):
         groups = ['test']
         while groups != []:
             groups = jobFactory(files_per_job = 1, file_load_limit = file_load_limit)
             yield groups
-
-
-
-        
 
 if __name__ == '__main__':
     unittest.main()

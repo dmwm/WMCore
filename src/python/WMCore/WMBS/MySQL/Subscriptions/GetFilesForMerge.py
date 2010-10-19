@@ -5,10 +5,6 @@ _GetFilesForMerge_
 MySQL implementation of Subscription.GetFilesForMerge
 """
 
-__all__ = []
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetFilesForMerge(DBFormatter):
@@ -40,29 +36,19 @@ class GetFilesForMerge(DBFormatter):
                     MIN(wmbs_file_runlumi_map.lumi) AS file_lumi,
                     wmbs_location.se_name AS se_name
              FROM (
-               SELECT wmbs_fileset_files.file AS fileid,
+               SELECT wmbs_sub_files_available.file AS fileid,
                       MIN(wmbs_file_parent.parent) AS parent,
-                      COUNT(wmbs_fileset_files.file),
+                      COUNT(wmbs_sub_files_available.file),
                       COUNT(b.id)
-               FROM wmbs_fileset_files
+               FROM wmbs_sub_files_available
                INNER JOIN wmbs_subscription ON
-                 wmbs_subscription.fileset = wmbs_fileset_files.fileset AND
-                 wmbs_subscription.id = :p_1
-               LEFT OUTER JOIN wmbs_sub_files_acquired ON
-                 wmbs_fileset_files.file = wmbs_sub_files_acquired.file AND
-                 wmbs_sub_files_acquired.subscription = :p_1
-               LEFT OUTER JOIN wmbs_sub_files_complete ON
-                 wmbs_fileset_files.file = wmbs_sub_files_complete.file AND
-                 wmbs_sub_files_complete.subscription = :p_1
-               LEFT OUTER JOIN wmbs_sub_files_failed ON
-                 wmbs_fileset_files.file = wmbs_sub_files_failed.file AND
-                 wmbs_sub_files_failed.subscription = :p_1
+                 wmbs_sub_files_available.subscription = wmbs_subscription.id
                INNER JOIN wmbs_file_parent ON
-                 wmbs_file_parent.child = wmbs_fileset_files.file
+                 wmbs_file_parent.child = wmbs_sub_files_available.file
                INNER JOIN wmbs_job_assoc ON
                  wmbs_file_parent.parent = wmbs_job_assoc.file
                INNER JOIN wmbs_workflow_output ON
-                 wmbs_fileset_files.fileset = wmbs_workflow_output.output_fileset
+                 wmbs_subscription.fileset = wmbs_workflow_output.output_fileset
                INNER JOIN wmbs_subscription c ON
                  wmbs_workflow_output.workflow_id = c.workflow
                INNER JOIN wmbs_jobgroup ON
@@ -73,11 +59,9 @@ class GetFilesForMerge(DBFormatter):
                LEFT OUTER JOIN wmbs_job b ON
                  b.id = wmbs_job_assoc.job AND
                  b.outcome = 1
-               WHERE wmbs_sub_files_acquired.file IS NULL AND
-                     wmbs_sub_files_complete.file IS NULL AND
-                     wmbs_sub_files_failed.file IS NULL
-               GROUP BY wmbs_fileset_files.file, a.jobgroup
-               HAVING COUNT(wmbs_fileset_files.file) = COUNT(b.id)) merge_files
+               WHERE wmbs_sub_files_available.subscription = :p_1
+               GROUP BY wmbs_sub_files_available.file, a.jobgroup
+               HAVING COUNT(wmbs_sub_files_available.file) = COUNT(b.id)) merge_files
              INNER JOIN wmbs_file_details ON
                wmbs_file_details.id = merge_files.fileid
              INNER JOIN wmbs_file_runlumi_map ON

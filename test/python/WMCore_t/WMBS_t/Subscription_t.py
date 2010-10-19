@@ -2,6 +2,7 @@
 """
 _Subscription_t_
 
+Unit tests for the WMBS Subscription class and all it's DAOs.
 """
 
 import unittest
@@ -10,14 +11,16 @@ import random
 import threading
 
 from WMCore.DAOFactory import DAOFactory
+from WMQuality.TestInit import TestInit
+
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.Subscription import Subscription
-from WMQuality.TestInit import TestInit
-from WMCore.DataStructs.Run import Run
-from WMCore.WMBS.Job      import Job
+from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+
+from WMCore.DataStructs.Run import Run
 
 class SubscriptionTest(unittest.TestCase):
     def setUp(self):

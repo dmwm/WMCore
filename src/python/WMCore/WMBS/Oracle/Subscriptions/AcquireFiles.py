@@ -5,10 +5,6 @@ _AcquireFiles_
 Oracle implementation of Subscription.AcquireFiles
 """
 
-__all__ = []
-
-
-
 from WMCore.WMBS.MySQL.Subscriptions.AcquireFiles import AcquireFiles \
      as AcquireFilesMySQL
 
@@ -17,3 +13,7 @@ class AcquireFiles(AcquireFilesMySQL):
                SELECT :subscription, :fileid FROM dual WHERE NOT EXISTS
                  (SELECT fileid FROM wmbs_sub_files_acquired
                     WHERE fileid = :fileid AND subscription = :subscription)"""
+
+    availDel = """DELETE FROM wmbs_sub_files_available
+                  WHERE subscription = :subscription AND
+                        fileid = :fileid"""

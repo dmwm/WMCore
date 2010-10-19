@@ -25,10 +25,10 @@ class LoadFiles(LoadFilesMySQL):
         """
         _formatDict_
 
-        Cast the file attribute to an integer, 
+        Cast the file attribute to an integer,.
         """
         formattedResults = DBFormatter.formatDict(self, results)
-        
+
         dictResults = []
         for formattedResult in formattedResults:
             dictResult = {}

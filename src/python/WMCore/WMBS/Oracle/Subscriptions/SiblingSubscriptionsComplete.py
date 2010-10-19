@@ -10,23 +10,10 @@ from WMCore.WMBS.MySQL.Subscriptions.SiblingSubscriptionsComplete import \
 
 class SiblingSubscriptionsComplete(SiblingCompleteMySQL):
     sql = """SELECT wmbs_file_details.id, wmbs_file_details.events,
-                    wmbs_file_details.lfn, wmbs_location.se_name FROM wmbs_file_details
-               INNER JOIN
-                 (SELECT wmbs_fileset_files.fileid FROM wmbs_fileset_files
-                    LEFT OUTER JOIN wmbs_sub_files_acquired ON
-                      wmbs_fileset_files.fileid = wmbs_sub_files_acquired.fileid AND
-                      wmbs_sub_files_acquired.subscription = :subscription
-                    LEFT OUTER JOIN wmbs_sub_files_complete ON
-                      wmbs_fileset_files.fileid = wmbs_sub_files_complete.fileid AND
-                      wmbs_sub_files_complete.subscription = :subscription
-                    LEFT OUTER JOIN wmbs_sub_files_failed ON
-                      wmbs_fileset_files.fileid = wmbs_sub_files_failed.fileid AND
-                      wmbs_sub_files_failed.subscription = :subscription
-                  WHERE wmbs_sub_files_acquired.fileid IS Null AND
-                        wmbs_sub_files_complete.fileid IS Null AND
-                        wmbs_sub_files_failed.fileid IS Null AND
-                        wmbs_fileset_files.fileset = :fileset) available_files ON
-                 wmbs_file_details.id = available_files.fileid       
+                    wmbs_file_details.lfn, wmbs_location.se_name
+                    FROM wmbs_sub_files_available
+               INNER JOIN wmbs_file_details ON
+                 wmbs_sub_files_available.fileid = wmbs_file_details.id
                LEFT OUTER JOIN
                  (SELECT wmbs_sub_files_complete.fileid AS fileid, COUNT(fileid) AS complete_files
                     FROM wmbs_sub_files_complete

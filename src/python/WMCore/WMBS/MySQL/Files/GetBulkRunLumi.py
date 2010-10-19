@@ -5,9 +5,6 @@ _GetBulkRunLumi_
 MySQL implementation of GetBulkRunLumi
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetBulkRunLumi(DBFormatter):

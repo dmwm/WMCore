@@ -8,22 +8,16 @@ Return a list of files that are available for processing.
 Available means not acquired, complete or failed.
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAvailableFiles(DBFormatter):
-    sql = """SELECT wff.file, wl.se_name FROM wmbs_fileset_files wff 
-               INNER JOIN wmbs_subscription ws ON ws.fileset = wff.fileset 
-               INNER JOIN wmbs_file_location wfl ON wfl.file = wff.file
-               INNER JOIN wmbs_location wl ON wl.id = wfl.location 
-               LEFT OUTER JOIN  wmbs_sub_files_acquired wa ON ( wa.file = wff.file AND wa.subscription = ws.id )
-               LEFT OUTER JOIN  wmbs_sub_files_failed wf ON ( wf.file = wff.file AND wf.subscription = ws.id )
-               LEFT OUTER JOIN  wmbs_sub_files_complete wc ON ( wc.file = wff.file AND wc.subscription = ws.id )
-               WHERE ws.id=:subscription AND wa.file is NULL 
-                 AND wf.file is NULL AND wc.file is NULL 
-              """
+    sql = """SELECT wmbs_sub_files_available.file, wmbs_location.se_name
+                    FROM wmbs_sub_files_available
+               INNER JOIN wmbs_file_location ON
+                 wmbs_sub_files_available.file = wmbs_file_location.file
+               INNER JOIN wmbs_location ON
+                 wmbs_file_location.location = wmbs_location.id
+             WHERE wmbs_sub_files_available.subscription = :subscription"""
 
     def formatDict(self, results):
         """
@@ -59,7 +53,6 @@ class GetAvailableFiles(DBFormatter):
         return finalResults
            
     def execute(self, subscription, conn = None, transaction = False, returnCursor = False):
-
         if returnCursor:
             return self.dbi.processData(self.sql, {"subscription": subscription},
                                         conn = conn, transaction = transaction,

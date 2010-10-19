@@ -4,9 +4,6 @@ _FailFiles_
 
 SQLite implementation of Subscription.FailFiles
 """
-__all__ = []
-
-
 
 from WMCore.WMBS.MySQL.Subscriptions.FailFiles import FailFiles as FailFilesMySQL
 

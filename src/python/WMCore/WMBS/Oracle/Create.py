@@ -424,8 +424,6 @@ class Create(CreateWMBSBase):
         self.constraints["01_idx_wmbs_sub_jobgroup"] = \
           """CREATE INDEX idx_wmbs_jobgroup_sub ON wmbs_jobgroup(subscription) %s""" % tablespaceIndex
 
-
-             
         self.create["14wmbs_job_state"] = \
           """CREATE TABLE wmbs_job_state (
                id   INTEGER      NOT NULL,
@@ -489,6 +487,10 @@ class Create(CreateWMBSBase):
                job    INTEGER NOT NULL,
                fileid INTEGER NOT NULL
                ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_job_assoc"] = \
+          """ALTER TABLE wmbs_job_assoc ADD
+               (CONSTRAINT wmbs_job_assoc_pk PRIMARY KEY (job, fileid) %s)""" % tablespaceIndex
 
         self.constraints["01_fk_wmbs_job_assoc"] = \
           """ALTER TABLE wmbs_job_assoc ADD

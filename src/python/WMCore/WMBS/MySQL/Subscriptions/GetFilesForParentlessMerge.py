@@ -5,9 +5,6 @@ _GetFilesForParentlessMerge_
 MySQL implementation of Subscription.GetFilesForParentlessMerge
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetFilesForParentlessMerge(DBFormatter):
@@ -31,30 +28,16 @@ class GetFilesForParentlessMerge(DBFormatter):
                     MIN(wmbs_file_runlumi_map.run) AS file_run,
                     MIN(wmbs_file_runlumi_map.lumi) AS file_lumi,
                     wmbs_location.se_name AS se_name
-             FROM wmbs_file_details
+             FROM wmbs_sub_files_available
+               INNER JOIN wmbs_file_details ON
+                 wmbs_sub_files_available.file = wmbs_file_details.id
                INNER JOIN wmbs_file_runlumi_map ON
                  wmbs_file_details.id = wmbs_file_runlumi_map.file
                INNER JOIN wmbs_file_location ON
                  wmbs_file_details.id = wmbs_file_location.file
                INNER JOIN wmbs_location ON
                  wmbs_file_location.location = wmbs_location.id
-               INNER JOIN wmbs_fileset_files ON
-                 wmbs_file_details.id = wmbs_fileset_files.file
-               INNER JOIN wmbs_subscription ON
-                 wmbs_subscription.fileset = wmbs_fileset_files.fileset AND
-                 wmbs_subscription.id = :p_1
-               LEFT OUTER JOIN wmbs_sub_files_acquired ON
-                 wmbs_fileset_files.file = wmbs_sub_files_acquired.file AND
-                 wmbs_sub_files_acquired.subscription = :p_1
-               LEFT OUTER JOIN wmbs_sub_files_complete ON
-                 wmbs_fileset_files.file = wmbs_sub_files_complete.file AND
-                 wmbs_sub_files_complete.subscription = :p_1
-               LEFT OUTER JOIN wmbs_sub_files_failed ON
-                 wmbs_fileset_files.file = wmbs_sub_files_failed.file AND
-                 wmbs_sub_files_failed.subscription = :p_1
-             WHERE wmbs_sub_files_acquired.file IS NULL AND
-                   wmbs_sub_files_complete.file IS NULL AND
-                   wmbs_sub_files_failed.file IS NULL
+             WHERE wmbs_sub_files_available.subscription = :p_1
              GROUP BY wmbs_file_details.id, wmbs_file_details.events,
                       wmbs_file_details.size, wmbs_file_details.lfn,
                       wmbs_file_details.first_event, wmbs_location.se_name"""

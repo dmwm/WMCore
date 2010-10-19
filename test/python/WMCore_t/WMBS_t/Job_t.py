@@ -436,7 +436,7 @@ class JobTest(unittest.TestCase):
         goldenFiles = testJobA.getFiles()
         for testFile in testJobB.getFiles():
             assert testFile in goldenFiles, \
-                   "ERROR: Job loaded an unknown file"
+                   "ERROR: Job loaded an unknown file: %s" % testFile
             goldenFiles.remove(testFile)
 
         assert len(goldenFiles) == 0, \

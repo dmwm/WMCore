@@ -1,9 +1,8 @@
 #!/usr/bin/env python
+"""
+_JobFactory_
 
-
-
-
-
+"""
 
 import logging
 import threading
@@ -236,8 +235,7 @@ class JobFactory(WMObject):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
 
-
-        subAction = self.daoFactory(classname = "Subscriptions.GetAvailableFilesID")
+        subAction = self.daoFactory(classname = "Subscriptions.GetAvailableFilesNoLocations")
         results   = subAction.execute(subscription = self.subscription['id'],
                                       returnCursor = True)
 
@@ -247,15 +245,7 @@ class JobFactory(WMObject):
 
         # Activate everything so that we grab files by proxy
         self.grabByProxy  = True
-
-
-
         return
-
-
-
-
-
 
     def close(self):
         """
@@ -263,13 +253,9 @@ class JobFactory(WMObject):
 
         Close any leftover connections
         """
-
-
         self.proxies     = []
         self.grabByProxy = False
-
-
-
+        return
 
     def loadFiles(self, size = 10):
         """
@@ -311,13 +297,8 @@ class JobFactory(WMObject):
             # Nothing to do
             return set()
 
-
-        fileList = self.formatDict(results = rawResults, keys = keys)
-
-        # Why am I eliminating duplicates here?
-        # Steve seems to have found some
+        fileList = self.formatDict(results = rawResults, keys = keys)        
         fileIDs = list(set([x['fileid'] for x in fileList]))
-
 
         fileInfoAct  = self.daoFactory(classname = "Files.GetByID")
         fileInfoDict = fileInfoAct.execute(file = fileIDs)
@@ -335,10 +316,6 @@ class JobFactory(WMObject):
 
         return files
             
-
-
-
-
     def formatDict(self, results, keys):
         """
         _formatDict_
@@ -355,9 +332,7 @@ class JobFactory(WMObject):
             indivDict = {}
             for i in range(len(keys)):
                 # Assign each key to a value
-                indivDict[str(keys[i])] = entry[i]
+                indivDict[str(keys[i]).lower()] = entry[i]
             formattedResults.append(indivDict)
 
         return formattedResults
-                           
-

@@ -5,10 +5,6 @@ _AcquireFiles_
 SQLite implementation of Subscription.AcquireFiles
 """
 
-__all__ = []
-
-
-
 from WMCore.WMBS.MySQL.Subscriptions.AcquireFiles import AcquireFiles \
      as AcquireFilesMySQL
 

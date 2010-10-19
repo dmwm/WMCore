@@ -1,4 +1,7 @@
+#!/usr/bin/env python
 """
+_AddToFileset_
+
 MySQL implementation of Files.AddToFileset
 """
 
@@ -13,17 +16,27 @@ class AddToFileset(DBFormatter):
                WHERE wmbs_file_details.lfn = :lfn
                AND NOT EXISTS (SELECT file FROM wmbs_fileset_files wff2 WHERE
                                 wff2.file = wmbs_file_details.id
-                                AND wff2.fileset = :fileset)
-    """
+                                AND wff2.fileset = :fileset)"""
+
+    sqlAvail = """INSERT INTO wmbs_sub_files_available (subscription, file)
+                    SELECT wmbs_subscription.id AS subscription,
+                           wmbs_file_details.id AS file FROM wmbs_subscription
+                      INNER JOIN wmbs_file_details ON
+                        wmbs_file_details.lfn = :lfn
+                    WHERE wmbs_subscription.fileset = :fileset"""
         
     def execute(self, file = None, fileset = None, conn = None,
                 transaction = False):
         binds = []
+        availBinds = []
         timestamp = int(time.time())
         for fileLFN in file:
             binds.append({"lfn": fileLFN, "fileset": fileset,
-                          "insert_time": timestamp})        
-        
+                          "insert_time": timestamp})
+            availBinds.append({"lfn": fileLFN, "fileset": fileset})
+            
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
+        self.dbi.processData(self.sqlAvail, availBinds, conn = conn,
+                             transaction = transaction)        
         return

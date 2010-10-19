@@ -5,32 +5,17 @@ _GetAvailableFilesMeta_
 Oracle implementation of Subscription.GetAvailableFilesMeta
 """
 
-
-
-
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFilesMeta import \
      GetAvailableFilesMeta as GetAvailableFilesMetaMySQL
 
 class GetAvailableFilesMeta(GetAvailableFilesMetaMySQL):
     sql = """SELECT wmbs_file_details.id, wmbs_file_details.lfn, wmbs_file_details.filesize,
                     wmbs_file_details.events, MIN(wmbs_file_runlumi_map.run) AS run
-                    FROM wmbs_file_details
-               INNER JOIN wmbs_fileset_files
-                 ON wmbs_file_details.id = wmbs_fileset_files.fileid
+                    FROM wmbs_sub_files_available
+               INNER JOIN wmbs_file_details ON
+                 wmbs_sub_files_available.fileid = wmbs_file_details.id
                INNER JOIN wmbs_file_runlumi_map
                  ON wmbs_file_details.id = wmbs_file_runlumi_map.fileid
-               INNER JOIN wmbs_subscription
-                 ON wmbs_subscription.fileset = wmbs_fileset_files.fileset 
-               LEFT OUTER JOIN  wmbs_sub_files_acquired wa
-                 ON ( wa.fileid = wmbs_fileset_files.fileid AND wa.subscription = wmbs_subscription.id )
-               LEFT OUTER JOIN  wmbs_sub_files_failed wf
-                 ON ( wf.fileid = wmbs_fileset_files.fileid AND wf.subscription = wmbs_subscription.id )
-               LEFT OUTER JOIN  wmbs_sub_files_complete wc
-                 ON ( wc.fileid = wmbs_fileset_files.fileid AND wc.subscription = wmbs_subscription.id )
-               WHERE wmbs_subscription.id = :subscription
-                 AND wa.fileid is NULL 
-                 AND wf.fileid is NULL
-                 AND wc.fileid is NULL
+               WHERE wmbs_sub_files_available.subscription = :subscription
                GROUP BY wmbs_file_details.id, wmbs_file_details.lfn, wmbs_file_details.filesize,
-                        wmbs_file_details.events
-               """
+                        wmbs_file_details.events"""

@@ -133,7 +133,7 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitTransaction(existingTransaction)
         return
     
-    def filesOfStatus(self, status, limit=0, loadChecksums = True):
+    def filesOfStatus(self, status, limit = 0, loadChecksums = True):
         """
         _filesOfStatus_
         
@@ -171,7 +171,7 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitTransaction(existingTransaction)
         return files
     
-    def acquireFiles(self, files = None, deleteCheck = True):
+    def acquireFiles(self, files = None):
         """
         _acuireFiles_
         
@@ -181,7 +181,6 @@ class Subscription(WMBSBase, WMSubscription):
         """
         existingTransaction = self.beginTransaction()
 
-        deleteAction = self.daofactory(classname = "Subscriptions.ClearFileStatus")
         action = self.daofactory(classname = "Subscriptions.AcquireFiles")
 
         if not files:
@@ -194,12 +193,6 @@ class Subscription(WMBSBase, WMSubscription):
         if len(files) == 0:
             self.commitTransaction(existingTransaction)
             return
-
-        if deleteCheck:
-            deleteAction.execute(subscription = self["id"],
-                                 file = [x["id"] for x in files],
-                                 conn = self.getDBConn(),
-                                 transaction = self.existingTransaction())
 
         action.execute(self['id'], file = [x["id"] for x in files],
                        conn = self.getDBConn(),
@@ -221,12 +214,6 @@ class Subscription(WMBSBase, WMSubscription):
 
         files = self.makelist(files)
         
-        deleteAction = self.daofactory(classname = "Subscriptions.ClearFileStatus")
-        deleteAction.execute(subscription = self["id"],
-                             file = [x["id"] for x in files],
-                             conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
-
         completeAction = self.daofactory(classname = "Subscriptions.CompleteFiles")
         completeAction.execute(subscription = self["id"],
                                file = [x["id"] for x in files],
@@ -243,12 +230,6 @@ class Subscription(WMBSBase, WMSubscription):
         existingTransaction = self.beginTransaction()
 
         files = self.makelist(files)
-        
-        deleteAction = self.daofactory(classname = "Subscriptions.ClearFileStatus")
-        deleteAction.execute(subscription = self["id"],
-                             file = [x["id"] for x in files],
-                             conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
         
         failAction = self.daofactory(classname = "Subscriptions.FailFiles")
         failAction.execute(subscription = self["id"],
@@ -574,14 +555,10 @@ class Subscription(WMBSBase, WMSubscription):
         fileAction.execute(jobDict = fileDict, conn = self.getDBConn(), 
                            transaction = self.existingTransaction())
 
-
         fileList = []
         for job in jobList:
             fileList.extend(job['input_files'])
 
-        self.acquireFiles(files = fileList, deleteCheck = False)
-
-
+        self.acquireFiles(files = fileList)
         self.commitTransaction(existingTransaction)
-
         return

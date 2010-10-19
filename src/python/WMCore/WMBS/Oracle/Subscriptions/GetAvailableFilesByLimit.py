@@ -5,9 +5,6 @@ _GetAvailableFilesByLimit_
 Oracle implementation of Subscription.GetAvailableFilesByLimit
 """
 
-
-
-
 from WMCore.WMBS.Oracle.Subscriptions.GetAvailableFiles import GetAvailableFiles as GetAvailableFilesOracle
 
 class GetAvailableFilesByLimit(GetAvailableFilesOracle):

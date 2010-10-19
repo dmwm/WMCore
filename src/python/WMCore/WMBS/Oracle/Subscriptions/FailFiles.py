@@ -5,10 +5,6 @@ _FailFiles_
 Oracle implementation of Subscription.FailFiles
 """
 
-__all__ = []
-
-
-
 from WMCore.WMBS.MySQL.Subscriptions.FailFiles import FailFiles \
      as FailFilesMySQL
 
@@ -17,3 +13,15 @@ class FailFiles(FailFilesMySQL):
                SELECT :subscription, :fileid FROM dual WHERE NOT EXISTS
                  (SELECT fileid FROM wmbs_sub_files_failed
                     WHERE fileid = :fileid AND subscription = :subscription)"""
+
+    delAcq = """DELETE FROM wmbs_sub_files_acquired
+                WHERE subscription = :subscription AND
+                      fileid = :fileid"""
+
+    delAva = """DELETE FROM wmbs_sub_files_available
+                WHERE subscription = :subscription AND
+                      fileid = :fileid"""
+    
+    delCom = """DELETE FROM wmbs_sub_files_complete
+                WHERE subscription = :subscription AND
+                      fileid = :fileid"""

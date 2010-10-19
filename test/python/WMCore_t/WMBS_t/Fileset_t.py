@@ -5,9 +5,6 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-
-
-
 import unittest
 import logging
 import random
@@ -41,7 +38,14 @@ class FilesetTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
+
+        myThread = threading.currentThread()
+        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
         
+        locationAction = self.daofactory(classname = "Locations.New")
+        locationAction.execute(siteName = "site1", seName = "goodse.cern.ch")
         return
                                                                 
     def tearDown(self):
@@ -320,21 +324,33 @@ class FilesetTest(unittest.TestCase):
 
         Create several files and add them to the fileset.  Test to make sure
         that the commit() fileset method will add the files to the database
-        if they are not in the database.
+        if they are not in the database.  Also verify that files are correctly
+        marked as available.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, checksums = {'cksum': 3})
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, checksums = {'cksum': 3})
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))                         
         testFileB.addRun(Run( 1, *[45]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, checksums = {'cksum': 3})
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))                         
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
+        testWorkflowA = Workflow(spec = "spec1.xml", owner = "Hassen",
+                                 name = "wf001", task = "sometask")
+        testWorkflowA.create()
+
         testFilesetA = Fileset(name = "TestFileset")
         testFilesetA.create()
+
+        testSubscriptionA = Subscription(fileset = testFilesetA,
+                                         workflow = testWorkflowA)
+        testSubscriptionA.create()
 
         testFilesetA.addFile(testFileA)
         testFilesetA.addFile(testFileB)
@@ -362,6 +378,15 @@ class FilesetTest(unittest.TestCase):
                "ERROR: Fileset is missing files"
 
         goldenFiles = [testFileA, testFileB, testFileC]
+        for filesetFile in testSubscriptionA.filesOfStatus("Available"):
+            assert filesetFile["lfn"] in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile["lfn"])
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"        
+
+        goldenFiles = [testFileA, testFileB, testFileC]
         for filesetFile in testFilesetC.files:
             assert filesetFile in goldenFiles, \
                    "ERROR: Unknown file in fileset"
@@ -369,11 +394,8 @@ class FilesetTest(unittest.TestCase):
 
         assert len(goldenFiles) == 0, \
                "ERROR: Fileset is missing files"
-        
-        testFilesetA.delete()
-        testFileA.delete()
-        testFileB.delete()
-        testFileC.delete()
+
+        return
 
     def testFileCreateTransaction(self):
         """
@@ -886,27 +908,42 @@ class FilesetTest(unittest.TestCase):
         filesets.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, checksums = {'cksum': 3})
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))                         
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, checksums = {'cksum': 3})
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))                         
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, checksums = {'cksum': 3})
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))                         
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
-                         events = 20, checksums = {'cksum': 3})
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
         testFileD.addRun(Run( 1, *[45]))
         testFileD.create()        
+
+        testWorkflowA = Workflow(spec = "spec1.xml", owner = "Hassen",
+                                 name = "wf001", task = "sometask")
+        testWorkflowA.create()
 
         testFilesetA = Fileset(name = "TestFilesetA")
         testFilesetA.create()
         testFilesetB = Fileset(name = "TestFilesetB")
         testFilesetB.create()        
+
+        testSubscriptionA = Subscription(fileset = testFilesetA,
+                                         workflow = testWorkflowA)
+        testSubscriptionA.create()
+        testSubscriptionB = Subscription(fileset = testFilesetB,
+                                         workflow = testWorkflowA)
+        testSubscriptionB.create()
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -936,6 +973,15 @@ class FilesetTest(unittest.TestCase):
         assert len(goldenFiles) == 0, \
                "ERROR: Fileset is missing files"
 
+        goldenFiles = [testFileA, testFileB, testFileC]
+        for filesetFile in testSubscriptionA.filesOfStatus("Available"):
+            assert filesetFile["lfn"] in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile["lfn"])
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"        
+
         goldenFiles = [testFileB, testFileC, testFileD]
         for filesetFile in testFilesetB.files:
             assert filesetFile in goldenFiles, \
@@ -944,6 +990,15 @@ class FilesetTest(unittest.TestCase):
 
         assert len(goldenFiles) == 0, \
                "ERROR: Fileset is missing files"
+
+        goldenFiles = [testFileB, testFileC, testFileD]
+        for filesetFile in testSubscriptionB.filesOfStatus("Available"):
+            assert filesetFile["lfn"] in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile["lfn"])
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"        
 
         return
 
@@ -955,27 +1010,42 @@ class FilesetTest(unittest.TestCase):
         filesets.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, checksums = {'cksum': 3})
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, checksums = {'cksum': 3})
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))                         
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, checksums = {'cksum': 3})
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
-                         events = 20, checksums = {'cksum': 3})
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))                         
         testFileD.addRun(Run( 1, *[45]))
         testFileD.create()        
+
+        testWorkflowA = Workflow(spec = "spec1.xml", owner = "Hassen",
+                                 name = "wf001", task = "sometask")
+        testWorkflowA.create()
 
         testFilesetA = Fileset(name = "TestFilesetA")
         testFilesetA.create()
         testFilesetB = Fileset(name = "TestFilesetB")
         testFilesetB.create()        
+
+        testSubscriptionA = Subscription(fileset = testFilesetA,
+                                         workflow = testWorkflowA)
+        testSubscriptionA.create()
+        testSubscriptionB = Subscription(fileset = testFilesetB,
+                                         workflow = testWorkflowA)
+        testSubscriptionB.create()        
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -1005,11 +1075,29 @@ class FilesetTest(unittest.TestCase):
         assert len(goldenFiles) == 0, \
                "ERROR: Fileset is missing files"
 
+        goldenFiles = [testFileA, testFileB, testFileC]
+        for filesetFile in testSubscriptionA.filesOfStatus("Available"):
+            assert filesetFile["lfn"] in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile["lfn"])
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"        
+
         goldenFiles = [testFileB, testFileC, testFileD]
         for filesetFile in testFilesetB.files:
             assert filesetFile in goldenFiles, \
                    "ERROR: Unknown file in fileset"
             goldenFiles.remove(filesetFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+
+        goldenFiles = [testFileB, testFileC, testFileD]
+        for filesetFile in testSubscriptionB.filesOfStatus("Available"):
+            assert filesetFile["lfn"] in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile["lfn"])
 
         assert len(goldenFiles) == 0, \
                "ERROR: Fileset is missing files"

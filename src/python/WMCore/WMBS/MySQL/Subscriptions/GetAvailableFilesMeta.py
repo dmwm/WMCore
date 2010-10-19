@@ -7,34 +7,19 @@ the GetAvailabileFiles DAO in that it returns meta data about that file instead
 of just its ID.
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAvailableFilesMeta(DBFormatter):
     sql = """SELECT wmbs_file_details.id, wmbs_file_details.lfn, wmbs_file_details.size,
                     wmbs_file_details.events, MIN(wmbs_file_runlumi_map.run) AS run
-                    FROM wmbs_file_details
-               INNER JOIN wmbs_fileset_files
-                 ON wmbs_file_details.id = wmbs_fileset_files.file
-               INNER JOIN wmbs_subscription
-                 ON wmbs_subscription.fileset = wmbs_fileset_files.fileset
+                    FROM wmbs_sub_files_available
+               INNER JOIN wmbs_file_details ON
+                 wmbs_sub_files_available.file = wmbs_file_details.id
                INNER JOIN wmbs_file_runlumi_map
                  ON wmbs_file_details.id = wmbs_file_runlumi_map.file
-               LEFT OUTER JOIN  wmbs_sub_files_acquired wa
-                 ON ( wa.file = wmbs_fileset_files.file AND wa.subscription = wmbs_subscription.id )
-               LEFT OUTER JOIN  wmbs_sub_files_failed wf
-                 ON ( wf.file = wmbs_fileset_files.file AND wf.subscription = wmbs_subscription.id )
-               LEFT OUTER JOIN  wmbs_sub_files_complete wc
-                 ON ( wc.file = wmbs_fileset_files.file AND wc.subscription = wmbs_subscription.id )
-               WHERE wmbs_subscription.id = :subscription
-                 AND wa.file is NULL 
-                 AND wf.file is NULL
-                 AND wc.file is NULL
+               WHERE wmbs_sub_files_available.subscription = :subscription
                GROUP BY wmbs_file_details.id, wmbs_file_details.lfn, wmbs_file_details.size,
-                        wmbs_file_details.events
-               """
+                        wmbs_file_details.events"""
         
     def formatDict(self, results):
         """

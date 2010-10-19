@@ -5,9 +5,6 @@ _ParentlessMergeBySize_t_
 Unit tests for parentless WMBS merging.
 """
 
-
-
-
 import unittest
 import os
 import threading

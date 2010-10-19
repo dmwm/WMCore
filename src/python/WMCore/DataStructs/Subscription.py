@@ -146,7 +146,7 @@ class Subscription(Pickleable, dict):
         (e.g. not already in use)
         """
         if limit:
-            return self.filesOfStatus(status = "Available")[:limit]
+            return list(self.filesOfStatus(status = "Available"))[:limit]
         else:
             return self.filesOfStatus(status = "Available")
 

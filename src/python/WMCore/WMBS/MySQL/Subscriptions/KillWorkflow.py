@@ -43,9 +43,19 @@ class KillWorkflow(DBFormatter):
                          (SELECT id FROM wmbs_sub_types
                           WHERE name != 'Cleanup' AND name != 'LogCollect'))"""
 
+    delAva = """DELETE FROM wmbs_sub_files_available WHERE subscription IN
+                  (SELECT wmbs_subscription.id FROM wmbs_workflow
+                     INNER JOIN wmbs_subscription ON
+                       wmbs_workflow.id = wmbs_subscription.workflow AND
+                       wmbs_subscription.subtype IN
+                         (SELECT id FROM wmbs_sub_types
+                          WHERE name != 'Cleanup' AND name != 'LogCollect'))"""    
+
     def execute(self, workflowName, conn = None, transaction = False):
         self.dbi.processData(self.sql, {"workflowname": workflowName},
                              conn = conn, transaction = transaction)
         self.dbi.processData(self.delAcq, {"workflowname": workflowName},
-                             conn = conn, transaction = transaction)        
+                             conn = conn, transaction = transaction)
+        self.dbi.processData(self.delAva, {"workflowname": workflowName},
+                             conn = conn, transaction = transaction)                
         return

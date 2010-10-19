@@ -5,20 +5,29 @@ _AcquireFiles_
 MySQL implementation of Subscription.AcquireFiles
 """
 
-__all__ = []
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AcquireFiles(DBFormatter):
     sql = """INSERT INTO wmbs_sub_files_acquired (subscription, file)
-               SELECT :subscription, :fileid FROM dual WHERE NOT EXISTS
+               SELECT :subscription, :fileid FROM DUAL WHERE NOT EXISTS
                  (SELECT file FROM wmbs_sub_files_acquired
                     WHERE file = :fileid AND subscription = :subscription)"""
 
+    availDel = """DELETE FROM wmbs_sub_files_available
+                  WHERE subscription = :subscription AND
+                        file = :fileid"""
+
     def execute(self, subscription = None, file = None, conn = None,
                 transaction = False):
-        self.dbi.processData(self.sql, self.getBinds(subscription=subscription, fileid=file),
-                             conn = conn, transaction = transaction)
+        if type(file) == type([]):
+            binds = []
+            for fileid in file:
+                binds.append({"subscription": subscription, "fileid": fileid})
+        else:
+            binds = {"subscription": subscription, "fileid": file}
+            
+        self.dbi.processData(self.sql, binds, conn = conn,
+                             transaction = transaction)
+        self.dbi.processData(self.availDel, binds, conn = conn,
+                             transaction = transaction)        
         return

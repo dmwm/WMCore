@@ -5,9 +5,6 @@ _GetFinishedSubscriptions_
 MySQL implementation of Subscription.GetFinishedSubscriptions
 """
 
-
-
-
 import time
 import logging
 
@@ -26,7 +23,7 @@ class GetFinishedSubscriptions(DBFormatter):
                       FROM wmbs_sub_files_failed GROUP BY subscription) sub_failed ON
                       wmbs_sub.id = sub_failed.subscription
                LEFT OUTER JOIN
-                 (SELECT wmbs_subscription.id, COUNT(*) AS total FROM wmbs_subscription
+                 (SELECT wmbs_subscription.id AS id, COUNT(*) AS total FROM wmbs_subscription
                     LEFT OUTER JOIN wmbs_workflow_output ON
                       wmbs_subscription.workflow = wmbs_workflow_output.workflow_id
                     INNER JOIN wmbs_subscription child_subscriptions ON

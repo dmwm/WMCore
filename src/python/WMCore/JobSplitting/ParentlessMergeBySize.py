@@ -5,9 +5,6 @@ _ParentlessMergeBySize_
 WMBS merging that ignores file parents.
 """
 
-
-
-
 import threading
 
 from WMCore.WMBS.File import File

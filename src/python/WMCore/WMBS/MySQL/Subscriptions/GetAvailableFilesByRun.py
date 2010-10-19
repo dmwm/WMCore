@@ -5,21 +5,14 @@ _GetAvailableFilesByRun_
 MySQL implementation of Subscription.GetAvailableFilesByRun
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAvailableFilesByRun(DBFormatter):
-    sql = """SELECT distinct(wff.file) FROM wmbs_fileset_files wff 
-               INNER JOIN wmbs_subscription ws ON ws.fileset = wff.fileset
-               INNER JOIN wmbs_file_runlumi_map wm ON (wm.file = wff.file) 
-               INNER JOIN wmbs_file_location wfl ON wfl.file = wff.file
-               LEFT OUTER JOIN  wmbs_sub_files_acquired wa ON ( wa.file = wff.file AND wa.subscription = ws.id )
-               LEFT OUTER JOIN  wmbs_sub_files_failed wf ON ( wf.file = wff.file AND wf.subscription = ws.id )
-               LEFT OUTER JOIN  wmbs_sub_files_complete wc ON ( wc.file = wff.file AND wc.subscription = ws.id )
-             WHERE ws.id=:subscription AND wm.run = :run AND wa.file is NULL 
-                   AND wf.file is NULL AND wc.file is NULL"""
+    sql = """SELECT wmbs_sub_files_available.file FROM wmbs_sub_files_available
+               INNER JOIN wmbs_file_runlumi_map ON
+                 wmbs_sub_files_available.file = wmbs_file_runlumi_map.file
+             WHERE wmbs_sub_files_available.subscription = :subscription AND
+                   wmbs_file_runlumi_map.run = :run"""
 
     def formatDict(self, results):
         """

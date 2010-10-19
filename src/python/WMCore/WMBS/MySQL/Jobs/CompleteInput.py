@@ -5,9 +5,6 @@ _CompleteInput_
 MySQL implementation of Jobs.Complete
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class CompleteInput(DBFormatter):

@@ -5,9 +5,6 @@ _GetAvailableFilesByLimit_
 MySQL implementation of Subscription.GetAvailableFilesByLimit
 """
 
-
-
-
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import GetAvailableFiles as GetAvailableFilesMySQL
 
 class GetAvailableFilesByLimit(GetAvailableFilesMySQL):

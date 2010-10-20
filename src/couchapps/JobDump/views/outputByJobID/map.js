@@ -1,5 +1,9 @@
 function(doc) {
   if (doc['type'] == 'fwjr') {
+    if (doc['fwjr'].task == null) {
+      return;
+    }
+
     var specName = doc['fwjr'].task.split('/')[1]
 
     for (var stepName in doc['fwjr']['steps']) {

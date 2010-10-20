@@ -13,7 +13,7 @@ class AddFiles(DBFormatter):
     sql = """INSERT INTO wmbs_job_assoc (job, file)
                SELECT :jobid, :fileid FROM DUAL WHERE NOT EXISTS
                  (SELECT job FROM wmbs_job_assoc
-                  WHERE job = :jobid AND fileid = :fileid)"""
+                  WHERE job = :jobid AND file = :fileid)"""
     
     def getBinds(self, jobDict):
         binds = []

@@ -48,7 +48,7 @@ class MonteCarloWorkloadFactory(StdBase):
         config and merge tasks for each output module.
         """
         workload = self.createWorkload()
-        self.setWorkQueueSplitPolicy(workload, "MonteCarlo", self.prodJobSplitAlgo, self.prodJobSplitArgs)
+        workload.setWorkQueueSplitPolicy("MonteCarlo", self.prodJobSplitAlgo, self.prodJobSplitArgs)
         prodTask = workload.newTask("Production")
 
         outputMods = self.setupProcessingTask(prodTask, "Production", None,

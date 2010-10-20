@@ -764,6 +764,27 @@ class WMTaskHelper(TreeHelper):
         self.data.logBaseLFN = logBaseLFN
         return
 
+    def setTaskTimeOut(self, taskTimeOut):
+        """
+        _setTaskTimeOut_
+
+        Set the timeout for the task.
+        """
+        monitoring = self.data.section_("watchdog")
+        monitoring.monitors = ["DashboardMonitor"]
+        monitoring.section_("DashboardMonitor")
+        monitoring.DashboardMonitor.softTimeOut = taskTimeOut
+        monitoring.DashboardMonitor.hardTimeOut = taskTimeOut + 600
+        return
+
+    def getTaskTimeOut(self):
+        """
+        _getTaskTimeOut_
+
+        Get the timeout for the task.
+        """
+        return self.data.watchdog.DashboardMonitor.softTimeOut
+
 class WMTask(ConfigSectionTree):
     """
     _WMTask_

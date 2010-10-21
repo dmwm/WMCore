@@ -77,6 +77,10 @@ class Service(dict):
         netloc = ''
         path = ''
         
+        #if end point ends without '/', add that
+        if not dict['endpoint'].endswith('/'):
+            dict['endpoint'] = dict['endpoint'].strip() + '/'
+
         # then split the endpoint into netloc and basepath
         endpoint_components = urlparse(dict['endpoint'])
         

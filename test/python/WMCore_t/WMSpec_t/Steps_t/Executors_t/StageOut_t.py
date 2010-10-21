@@ -117,6 +117,30 @@ class otherStageOutTest(unittest.TestCase):
 
     def setUp(self):
         # stolen from CMSSWExecutor_t. thanks, dave
+        
+        # first, delete all the sandboxen and taskspaces
+        #    because of caching, this leaks from other tests in other files
+        #    this sucks because the other tests are using sandboxen that
+        #    are deleted after the test is over, which causes theses tests
+        #    to break
+        modsToDelete = []
+        # not sure what happens if you delete from
+        # an arrey you're iterating over. doing it in
+        # two steps
+        for modname in sys.modules.keys():
+            # need to blow away things in sys.modules, otherwise
+            # they are cached and we look at old taskspaces
+            if modname.startswith('WMTaskSpace'):
+                modsToDelete.append(modname)
+            if modname.startswith('WMSandbox'):
+                modsToDelete.append(modname)
+        for modname in modsToDelete:
+            try:
+                reload(sys.modules[modname])
+            except:
+                pass
+            del sys.modules[modname]
+            
         self.oldpath = sys.path[:]
         self.testInit = TestInit(__file__)
 
@@ -164,6 +188,10 @@ class otherStageOutTest(unittest.TestCase):
             
     def tearDown(self):
         sys.path = self.oldpath[:]
+        self.testInit.delWorkDir()
+
+
+        # making double sure WMTaskSpace and WMSandbox are gone
         modsToDelete = []
         # not sure what happens if you delete from
         # an arrey you're iterating over. doing it in
@@ -180,12 +208,10 @@ class otherStageOutTest(unittest.TestCase):
                 reload(sys.modules[modname])
             except:
                 pass
-            del sys.modules[modname]
-        
+            del sys.modules[modname]    
         myThread = threading.currentThread()
         if hasattr(myThread, "factory"):
             myThread.factory = {}
-        self.testInit.delWorkDir()
      
     def testCPBackendStageOutAgainstReportNew(self):
         myReport = Report('cmsRun1')
@@ -245,6 +271,7 @@ class otherStageOutTest(unittest.TestCase):
     
     @attr('workerNodeTest')
     def testOnWorkerNodes(self):
+        raise RuntimeError
         # Stage a file out, stage it back in, check it, delete it
         myReport = Report('cmsRun1')
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))

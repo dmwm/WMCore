@@ -109,7 +109,10 @@ if can_nose:
         def run(self):
             testPath = 'test/python'
             if self.testCertainPath:
+                print "Using the tests below: %s" % self.testCertainPath
                 testPath = self.testCertainPath
+            else:
+				print "Nose is scanning all tests"
             if self.reallyDeleteMyDatabaseAfterEveryTest:
                 print "#### WE ARE DELETING YOUR DATABASE. 3 SECONDS TO CANCEL ####"
                 print "#### buildbotmode is %s" % self.buildBotMode

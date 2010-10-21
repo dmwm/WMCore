@@ -1,7 +1,7 @@
 from WMCore.Services.Requests import JSONRequests
 import WMCore_t.RequestManager_t.FakeRequests as FakeRequests
 import unittest
-import simplejson as json
+from WMCore.Wrappers import JsonWrapper as json
 import WMCore.RequestManager.RequestMaker.WMWorkloadCache as WMWorkloadCache
 from httplib import HTTPException
 import urllib

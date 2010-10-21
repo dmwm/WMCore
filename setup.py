@@ -91,18 +91,25 @@ if can_nose:
                           'Are we running inside buildbot?'),
                          ('workerNodeTestsOnly=',
                           None,
-                          "Are we testing WN functionality? (Only runs WN-specific tests)")]
+                          "Are we testing WN functionality? (Only runs WN-specific tests)"),
+                         ('testCertainPath=',
+                          None,
+                          "Only runs tests below a certain path (i.e. test/python searches the whole test tree")]
 
         def initialize_options(self):
             self.reallyDeleteMyDatabaseAfterEveryTest = False
             self.buildBotMode = False
             self.workerNodeTestsOnly = False
+            self.testCertainPath = False
             pass
         
         def finalize_options(self):
             pass
     
         def run(self):
+            testPath = 'test/python'
+            if self.testCertainPath:
+                testPath = self.testCertainPath
             if self.reallyDeleteMyDatabaseAfterEveryTest:
                 print "#### WE ARE DELETING YOUR DATABASE. 3 SECONDS TO CANCEL ####"
                 print "#### buildbotmode is %s" % self.buildBotMode
@@ -111,10 +118,10 @@ if can_nose:
                 WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
                 time.sleep(4)
             if self.workerNodeTestsOnly:
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest'],
+                retval =  nose.run(argv=[__file__,'--with-xunit', '-v',testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest'],
                                     addplugins=[DetailedOutputter()])
             elif not self.buildBotMode:
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python', '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest'])
+                retval =  nose.run(argv=[__file__,'--with-xunit', '-v',testPath, '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest'])
             else:    
                 print "### We are in buildbot mode ###"
                 srcRoot = os.path.join(os.path.normpath(os.path.dirname(__file__)), 'src', 'python')
@@ -124,7 +131,7 @@ if can_nose:
                 modulesToCover.extend(get_subpackages(os.path.join(srcRoot,'WMQuality'), 'WMQuality'))
                 moduleList = ",".join(modulesToCover)
                 sys.stdout.flush()
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a',
+                retval =  nose.run(argv=[__file__,'--with-xunit', '-v',testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
                                          '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
                                          '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
                                          '--cover-package=' + moduleList, '--cover-inclusive'],

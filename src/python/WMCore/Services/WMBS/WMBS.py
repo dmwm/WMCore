@@ -45,7 +45,7 @@ class WMBS(Service):
                     filename=dict['cachepath'] + '/wmbs_service.log',
                     filemode='w')
             dict['logger'] = logging.getLogger('WMBSParser')
-        
+
         #TODO if service doesn't need to be authorized, have switch to use Service
         Service.__init__(self, dict)
 

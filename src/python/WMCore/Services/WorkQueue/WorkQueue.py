@@ -41,7 +41,7 @@ class WorkQueue(Service):
         dict.setdefault("accept_type", "application/json+thunker")
         dict.setdefault("content_type", "application/json")
         dict.setdefault('cacheduration', 0)
-
+            
         self.encoder = JsonWrapper.dumps
         self.decoder = self.jsonThunkerDecoder
         

@@ -25,12 +25,13 @@ class RequestOverview(TemplatedPage):
                           content_type='text/html')
 
     @expose
-    def default(self, *args, **kwargs):
+    def default(self, *args):
         """
         Show the documentation for a page or return the index
         """
         if len(args) > 0:
-            return self.templatepage(args[0], config=self.config)
+            return serve_file(os.path.join(self.config.html, 'RequestManager',
+                                           *args), content_type = 'text/html')
         else:
             return self.index()
 

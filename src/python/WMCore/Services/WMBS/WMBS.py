@@ -36,6 +36,8 @@ class WMBS(Service):
                     filemode='w')
             dict['logger'] = logging.getLogger('WMBSParser')
         
+        dict.setdefault("accept_type", "application/json")
+        dict.setdefault("content_type", "application/json")
         self.encoder = JsonWrapper.dumps
         self.decoder = JsonWrapper.loads
         

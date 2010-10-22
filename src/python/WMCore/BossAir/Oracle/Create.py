@@ -74,7 +74,8 @@ class Create(DBCreator):
            status        CHAR(1)   DEFAULT '1',
            sched_status  INTEGER,
            retry_count   INTEGER,
-           status_time   INTEGER
+           status_time   INTEGER,
+           location      VARCHAR(255) 
            ) %s  """ % (tablespaceTable)
 
 

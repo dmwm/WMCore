@@ -211,7 +211,7 @@ class CondorPlugin(BasePlugin):
 
         if len(jobs) == 0:
             # Then we have nothing to do
-            return result
+            return successfulJobs, failedJobs
 
 
 
@@ -434,7 +434,7 @@ class CondorPlugin(BasePlugin):
                         % (os.path.basename(job['sandbox']), job['id'])
             jdl.append(argString)
 
-            jobCE = self.getCEName(jobSite = job['location'])
+            jobCE = job['location']
             if not jobCE:
                 # Then we ended up with a site that doesn't exist?
                 logging.error("Job for non-existant site %s" \

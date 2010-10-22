@@ -451,7 +451,7 @@ class BossAirAPI(WMConnectionBase):
                     pluginInst   = self.plugins[plugin]
                     jobsToSubmit = pluginDict.get(plugin, [])
                     localSuccess, localFailure = pluginInst.submit(jobs = jobsToSubmit,
-                                                               info = info)
+                                                                   info = info)
                     for job in localSuccess:
                         successJobs.append(job.buildWMBSJob())
                         for job in localFailure:
@@ -511,6 +511,8 @@ class BossAirAPI(WMConnectionBase):
 
 
         loadedJobs = self._buildRunningJobs(wmbsJobs = runningJobs, doRunJobs = True)
+
+        logging.info("About to look for %i loadedJobs.\n" % len(loadedJobs))
         
         for runningJob in loadedJobs:
             plugin = runningJob['plugin']
@@ -533,6 +535,9 @@ class BossAirAPI(WMConnectionBase):
                 jobsToReturn.extend(localRunning)
                 jobsToChange.extend(localChanges)
                 jobsToComplete.extend(localCompletes)
+                logging.debug("Changing/completing %i/%i jobs in plugin %s.\n" % (len(localChanges),
+                                                                                  len(localCompletes),
+                                                                                  plugin))
             except WMException:
                 raise
             except Exception, ex:
@@ -541,6 +546,11 @@ class BossAirAPI(WMConnectionBase):
                 logging.error(msg)
                 logging.debug("JobsToTrack: %s" % (jobsToTrack[plugin]))
                 raise BossAirException(msg)
+
+        logging.info("About to change %i jobs\n" % len(jobsToChange))
+        logging.debug("JobsToChange: %s" % jobsToChange)
+        logging.info("About to complete %i jobs\n" % len(jobsToComplete))
+        logging.debug("JobsToComplete: %s" % jobsToComplete)
 
         self._updateJobs(jobs = jobsToChange)
         self._complete(jobs = jobsToComplete)

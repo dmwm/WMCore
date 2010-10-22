@@ -109,11 +109,19 @@ class JobTrackerPoller(BaseWorkerThread):
             # No jobs: do nothing
             return
 
+        logging.info("Have list of %i executing jobs" % len(jobList))
+        logging.debug(jobList)
+
 
         # Now get all jobs that BossAir thinks are complete
         completeJobs = self.bossAir.getComplete()
 
+        logging.info("%i jobs are complete in BossAir" % (len(completeJobs)))
+        logging.debug(completeJobs)
+
         for job in completeJobs:
+            if not job['id'] in jobList:
+                continue
             if job['status'].lower() == 'timeout':
                 failedJobs.append(job)
             else:
@@ -160,10 +168,8 @@ class JobTrackerPoller(BaseWorkerThread):
         myThread.transaction.begin()
         setFWJRAction.execute(binds = jrBinds)
 
-        print "Should be about to fail jobs"
-
-        
         self.changeState.propagate(failedJobs, 'jobfailed', 'executing')
+        logging.info("Failed %i jobs" % (len(failedJobs)))
         myThread.transaction.commit()
 
 
@@ -179,31 +185,23 @@ class JobTrackerPoller(BaseWorkerThread):
         if len(passedJobs) == 0:
             return
 
-        myThread = threading.currentThread()
-
-        #Get their stuff?
-        #I've got no idea how we want to do this.
-        
         #Mark 'em as complete
         loadAction    = self.daoFactory(classname = "Jobs.LoadFromID")
         setFWJRAction = self.daoFactory(classname = "Jobs.SetFWJRPath")
 
         jrBinds    = []
-
         for job in passedJobs:
             jrPath = os.path.join(job.getCache(),
                                   'Report.%i.pkl' % (job['retry_count']))
             jrBinds.append({'jobid': job['id'], 'fwjrpath': jrPath})
 
-        # Set all binds at once
-        myThread.transaction.begin()
-        setFWJRAction.execute(binds = jrBinds)
+        myThread = threading.currentThread()
+        setFWJRAction.execute(binds = jrBinds, conn = myThread.transaction.conn,
+                              transaction = True)
 
-
-        logging.debug("Propagating jobs in jobTracker")
         self.changeState.propagate(passedJobs, 'complete', 'executing')
-        myThread.transaction.commit()
-
+        logging.debug("Propagating jobs in jobTracker")
+        logging.info("Passed %i jobs" % len(passedJobs))
         return
                 
 

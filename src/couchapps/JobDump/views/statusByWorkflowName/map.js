@@ -1,6 +1,8 @@
 function(doc) {
+  log(doc);
+
   if (doc['type'] == 'job') {
-    lastTransition = doc['transitions'].pop();
+    lastTransition = doc['states'].pop();
 
     if (lastTransition['oldstate'] == 'new' && 
         lastTransition['newstate'] == 'created') {
@@ -32,6 +34,22 @@ function(doc) {
             {'jobid': doc['jobid'], 'state': 'failure', 'task': doc['task']});
     } else if (lastTransition['oldstate'] == 'createfailed' &&
                lastTransition['newstate'] == 'exhausted') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'failure', 'task': doc['task']});
+    } else if (lastTransition['oldstate'] == 'new' &&
+               lastTransition['newstate'] == 'killed') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'failure', 'task': doc['task']});
+    } else if (lastTransition['oldstate'] == 'created' &&
+               lastTransition['newstate'] == 'killed') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'failure', 'task': doc['task']});
+    } else if (lastTransition['oldstate'] == 'executing' &&
+               lastTransition['newstate'] == 'killed') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'failure', 'task': doc['task']});
+    } else if (lastTransition['oldstate'] == 'killed' &&
+               lastTransition['newstate'] == 'killed') {
       emit([doc['workflow'], doc['task'], doc['jobid']],
             {'jobid': doc['jobid'], 'state': 'failure', 'task': doc['task']});
     }

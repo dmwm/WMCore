@@ -109,7 +109,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('CacheDir', os.path.join(os.getcwd(), 'wf'))
         self.params.setdefault('NegotiationTimeout', 3600)
         self.params.setdefault('QueueURL', None) # url this queue is visible on
-        self.params.setdefault('FullReportInterval', 3600)
+        self.params.setdefault('FullReportInterval', 300)
         self.params.setdefault('ReportInterval', 300)
         self.params.setdefault('Teams', [''])
         self.params.setdefault('IgnoreDuplicates', True)
@@ -215,10 +215,10 @@ class WorkQueue(WorkQueueBase):
                 requestNames = requestNameAction.execute(ids, id_type,
                                            conn = self.getDBConn(),
                                            transaction = self.existingTransaction())
-                self.logger.info("""Canceling work in wmbs
+                self.logger.debug("""Canceling work in wmbs
                                     Workflows: %s""" % (requestNames))
 
-                for workflow in requestNames:
+                for workflow in set(requestNames):
                     killWorkflow(workflow)
 
         #TODO: Do we need to message parents/children here?
@@ -777,7 +777,7 @@ class WorkQueue(WorkQueueBase):
         now = time.time()
         if not full:
             full = self.lastFullReportToParent + \
-                            self.params['FullReportInterval'] < now
+                   self.params['FullReportInterval'] < now
         if full:
             since = None
         else:
@@ -825,7 +825,7 @@ class WorkQueue(WorkQueueBase):
 
                         msg = "Parent queue status override to %s for %s"
                         for status, ids in result.items():
-                            self.logger.info(msg % (status, list(ids)))
+                            self.logger.debug(msg % (status, list(ids)))
                             self.setStatus(status, ids, id_type = 'parent_queue_id')
 
 

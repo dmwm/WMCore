@@ -145,10 +145,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 jobDocument["workflow"] = job["workflow"]
                 jobDocument["task"] = job["task"]
                 jobDocument["owner"] = job["owner"]
-                jobDocument["transitions"] = [{"oldstate": oldstate,
-                                               "newstate": newstate,
-                                               "location": jobLocation,
-                                               "timestamp": timestamp}]
+
                 jobDocument["inputfiles"] = []
                 for inputFile in job["input_files"]:
                     docInputFile = {"lfn": inputFile["lfn"],
@@ -169,7 +166,11 @@ class ChangeState(WMObject, WMConnectionBase):
                         docInputFile["parents"].append({"lfn": parent["lfn"]})
 
                     jobDocument["inputfiles"].append(docInputFile)
-                        
+
+                jobDocument["states"] = [{"oldstate": oldstate,
+                                          "newstate": newstate,
+                                          "location": jobLocation,
+                                          "timestamp": timestamp}]
                 jobDocument["jobgroup"] = job["jobgroup"]
                 jobDocument["mask"] = {"firstevent": job["mask"]["FirstEvent"],
                                        "lastevent": job["mask"]["LastEvent"],

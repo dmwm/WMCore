@@ -89,6 +89,7 @@ def killWorkflow(workflowName):
     config.section_("JobStateMachine")
     config.JobStateMachine.couchurl = CouchDBConnectionBase.getCouchDBURL()
     config.JobStateMachine.couchDBName = CouchDBConnectionBase.getCouchDBName()
+
     changeState = ChangeState(config)
 
     for liveJob in liveJobs:

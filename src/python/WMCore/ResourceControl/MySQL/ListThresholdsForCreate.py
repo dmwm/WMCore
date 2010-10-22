@@ -6,9 +6,6 @@ Query the database to determine how many jobs are running so that we can
 determine whether or not to task for more work.  
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ListThresholdsForCreate(DBFormatter):
@@ -21,7 +18,8 @@ class ListThresholdsForCreate(DBFormatter):
                      WHERE wmbs_job_state.name != 'success' AND
                            wmbs_job_state.name != 'complete' AND
                            wmbs_job_state.name != 'exhausted' AND
-                           wmbs_job_state.name != 'cleanout'
+                           wmbs_job_state.name != 'cleanout' AND
+                           wmbs_job_state.name != 'killed'
                      GROUP BY wmbs_location.site_name, wmbs_location.job_slots"""
     
     unassignedSQL = """SELECT wmbs_location.site_name, wmbs_location.job_slots,
@@ -33,7 +31,10 @@ class ListThresholdsForCreate(DBFormatter):
                                 wmbs_job_assoc.file = wmbs_file_location.file
                               INNER JOIN wmbs_job ON
                                 wmbs_job_assoc.job = wmbs_job.id
-                            WHERE wmbs_job.location IS NULL) job_location ON
+                              INNER JOIN wmbs_job_state ON
+                                wmbs_job.state = wmbs_job_state.id
+                            WHERE wmbs_job.location IS NULL AND
+                                  wmbs_job_state.name != 'killed') job_location ON
                             wmbs_location.id = job_location.location
                        GROUP BY wmbs_location.site_name, wmbs_location.job_slots"""
     
@@ -72,10 +73,7 @@ class ListThresholdsForCreate(DBFormatter):
     
     def formatTable(self, formattedResults):
         """
-        _format_
-
-        Combine together the total we received from the assigned and unassigned
-        queries into a single datastructure.
+        _formatTable_
         """
         results = []
         for k, v in formattedResults.items():

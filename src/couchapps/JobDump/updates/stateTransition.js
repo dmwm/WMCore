@@ -4,6 +4,6 @@ function (doc, req) {
                        'location': req.query['location'],
                        'timestamp': req.query['timestamp']};
 
-  doc.transitions.push(newTransition);
+  doc.states.push(newTransition);
   return [doc, 'OK'];
 }

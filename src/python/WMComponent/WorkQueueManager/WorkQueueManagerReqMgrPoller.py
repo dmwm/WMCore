@@ -182,7 +182,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         """Map WorkQueue Status to that reported to ReqMgr"""
         statusMapping = {'Acquired' : 'running',
                          'Failed' : 'failed',
-                         'Canceled' : 'failed',
+                         'Canceled' : 'aborted',
                          'Done' : 'completed'
                          }
         if statusMapping.has_key(ele.status()):

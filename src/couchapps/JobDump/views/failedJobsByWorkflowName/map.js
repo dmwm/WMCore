@@ -1,6 +1,6 @@
 function(doc) {
   if (doc['type'] == 'job') {
-    lastTransition = doc['transitions'].pop();
+    lastTransition = doc['states'].pop();
 
     if (lastTransition['oldstate'] == 'jobfailed' &&
         lastTransition['newstate'] == 'exhausted') {

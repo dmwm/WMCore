@@ -23,7 +23,7 @@ class Transitions(dict):
         self.setdefault('jobcooloff', ['created', 'killed'])
         self.setdefault('success', ['cleanout'])
         self.setdefault('exhausted', ['cleanout'])
-        self.setdefault('killed', ['cleanout'])
+        self.setdefault('killed', ['cleanout', 'killed'])
 
     def states(self):
         """

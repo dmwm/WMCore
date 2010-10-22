@@ -187,31 +187,6 @@ class TestChangeState(unittest.TestCase):
                "Error: Input files parameter is incorrect."
 
         changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t")
-        options = {"startkey": testJobA["id"], "endkey": [testJobA["id"], {}]}
-        results = changeStateDB.loadView("JobDump", "stateTransitionsByJobID",
-                                         options)
-
-        assert len(results["rows"]) == 3, \
-               "Error: Wrong number of state transitions."
-
-        goldenNewStates = ["new", "created", "executing"]
-        for result in results["rows"]:
-            if result["value"]["oldstate"] == "none":
-                assert result["value"]["newstate"] == "new", \
-                       "Error: Wrong newstate."
-                goldenNewStates.remove("new")
-            elif result["value"]["oldstate"] == "new":
-                assert result["value"]["newstate"] == "created", \
-                       "Error: Wrong newstate."
-                goldenNewStates.remove("created")
-            elif result["value"]["oldstate"] == "created":
-                assert result["value"]["newstate"] == "executing", \
-                       "Error: Wrong newstate."
-                goldenNewStates.remove("executing")
-
-        assert len(goldenNewStates) == 0, \
-               "Error: Missing state transitions."
-
         options = {"startkey": testJobA["id"], "endkey": testJobA["id"],
                    "include_docs": True}
         results = changeStateDB.loadView("JobDump", "jobsByJobID", options)

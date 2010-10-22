@@ -30,11 +30,25 @@ function(doc, req) {
     }
   }
 
-  response += "\n";
-  response += "<div id=output></div>\n";
+  response += "\nState Transitions:\n";
+  for (var transitionIndex in doc["transitions"]) {
+    var transition = doc["transitions"][transitionIndex];
+    var transitionTimestamp = new Date(transition["timestamp"] * 1000);
+
+    if (transition["location"] == "Agent") {
+      response += "  " + transitionTimestamp.toDateString() + " ";
+      response += transitionTimestamp.toLocaleTimeString() + " ";
+      response += transition["oldstate"] + " -> " + transition["newstate"] + "\n";
+    } else {
+      response += "  " + transitionTimestamp.toDateString() + " ";
+      response += transitionTimestamp.toLocaleTimeString() + " ";
+      response += transition["oldstate"] + " -> " + transition["newstate"];
+      response += " (" + row.value["location"] + ")\n";
+    }
+  }
 
   response += "\n";
-  response += "<div id=stateTransitions></div>\n";
+  response += "<div id=output></div>\n";
 
   response += "\n<br>\n";
   response += "<div id=errors></div>\n";
@@ -44,9 +58,6 @@ function(doc, req) {
 
   response += "<script type=\"text/javascript\">\n";
   response += "xmlhttp = new XMLHttpRequest();\n";
-  response += "xmlhttp.open(\"GET\", \"../../_list/stateTransitions/stateTransitionsByJobID?startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]\", false);\n";
-  response += "xmlhttp.send();\n";
-  response += "document.getElementById(\"stateTransitions\").innerHTML=xmlhttp.responseText;\n";
 
   response += "xmlhttp.open(\"GET\", \"../../_list/jobOutput/outputByJobID?startkey=" + doc["jobid"] + "&endkey=" + doc["jobid"] + "\", false);\n";
   response += "xmlhttp.send();\n";

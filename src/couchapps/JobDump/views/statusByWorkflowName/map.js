@@ -1,40 +1,39 @@
 function(doc) {
-  if (doc['type'] == 'state') {
-    var output = {'pending': 0, 'running': 0, 'cooloff': 0, 'success': 0, 'failure': 0};
+  if (doc['type'] == 'job') {
+    lastTransition = doc['transitions'].pop();
 
-    if (doc['oldstate'] == 'new' && doc['newstate'] == 'created') {
-      output['pending'] += 1;
-    } else if(doc['oldstate'] == 'created' && doc['newstate'] == 'executing') {
-      output['pending'] -= 1;
-      output['running'] += 1;
-    } else if(doc['oldstate'] == 'created' && doc['newstate'] == 'submitfailed') {
-      output['pending'] -= 1;
-    } else if(doc['oldstate'] == 'jobfailed' && doc['newstate'] == 'jobcooloff') {
-      output['cooloff'] += 1;
-    } else if(doc['oldstate'] == 'submitfailed' && doc['newstate'] == 'submitcooloff') {
-      output['cooloff'] += 1;
-    } else if(doc['oldstate'] == 'createfailed' && doc['newstate'] == 'createcooloff') {
-      output['cooloff'] += 1;
-    } else if(doc['oldstate'] == 'jobcooloff' && doc['newstate'] == 'created') {
-      output['cooloff'] -= 1;
-      output['pending'] += 1;
-    } else if(doc['oldstate'] == 'submitcooloff' && doc['newstate'] == 'created') {
-      output['cooloff'] -= 1;
-      output['pending'] += 1;
-    } else if(doc['oldstate'] == 'createcooloff' && doc['newstate'] == 'new') {
-      output['cooloff'] -= 1;
-    } else if(doc['oldstate'] == 'executing' && doc['newstate'] == 'complete') {
-      output['running'] -= 1;
-    } else if (doc['oldstate'] == 'complete' && doc['newstate'] == 'success') {
-      output['success'] += 1;
-    } else if (doc['oldstate'] == 'jobfailed' && doc['newstate'] == 'exhausted') {
-      output['failure'] += 1;
-    } else if (doc['oldstate'] == 'submitfailed' && doc['newstate'] == 'exhausted') {
-      output['failure'] += 1;
-    } else if (doc['oldstate'] == 'createfailed' && doc['newstate'] == 'exhausted') {
-      output['failure'] += 1;
+    if (lastTransition['oldstate'] == 'new' && 
+        lastTransition['newstate'] == 'created') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'pending', 'task': doc['task']});
+    } else if(lastTransition['oldstate'] == 'created' && 
+              lastTransition['newstate'] == 'executing') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'running', 'task': doc['task']});
+    } else if(lastTransition['oldstate'] == 'jobfailed' &&
+              lastTransition['newstate'] == 'jobcooloff') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'cooloff', 'task': doc['task']});
+    } else if(lastTransition['oldstate'] == 'jobcooloff' &&
+              lastTransition['newstate'] == 'created') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'pending', 'task': doc['task']});
+    } else if (lastTransition['oldstate'] == 'complete' &&
+               lastTransition['newstate'] == 'success') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'success', 'task': doc['task']});
+    } else if (lastTransition['oldstate'] == 'jobfailed' &&
+               lastTransition['newstate'] == 'exhausted') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'failure', 'task': doc['task']});
+    } else if (lastTransition['oldstate'] == 'submitfailed' &&
+               lastTransition['newstate'] == 'exhausted') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'failure', 'task': doc['task']});
+    } else if (lastTransition['oldstate'] == 'createfailed' &&
+               lastTransition['newstate'] == 'exhausted') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'failure', 'task': doc['task']});
     }
-   
-    emit([doc['workflow'], doc['task'], doc['jobid']], output);
   }
 }

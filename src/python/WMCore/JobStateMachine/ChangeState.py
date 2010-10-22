@@ -7,6 +7,7 @@ Propagate a job from one state to another.
 
 import time
 import logging
+import traceback
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject
@@ -64,6 +65,7 @@ class ChangeState(WMObject, WMConnectionBase):
             self.recordInCouch(jobs, newstate, oldstate)
         except Exception, ex:
             logging.error("Error updating job in couch: %s" % str(ex))
+            logging.error(traceback.format_exc())
             
         # 3. Make the state transition
         self.persist(jobs, newstate, oldstate)
@@ -86,10 +88,9 @@ class ChangeState(WMObject, WMConnectionBase):
         """
         _recordInCouch_
 
-        Record relevant job information in couch.  This will always record the
-        state change information as a seperate document.  If the job does not
-        yet exist in couch it will be saved as a seperate document.  If the job
-        has a FWJR attached that will be saved as a seperate document.
+        Record relevant job information in couch. If the job does not yet exist
+        in couch it will be saved as a seperate document.  If the job has a FWJR
+        attached that will be saved as a seperate document.
         """
         if not self.database:
             return
@@ -128,25 +129,14 @@ class ChangeState(WMObject, WMConnectionBase):
             if newstate == "new":
                 oldstate = "none"
                 
-            transitionDocument = {"jobid": job["id"],
-                                  "oldstate": oldstate,
-                                  "newstate": newstate,
-                                  "timestamp": timestamp,
-                                  "workflow": job["workflow"],
-                                  "task": job["task"],
-                                  "type": "state"}
-
             if job.get("location", None):
                 if newstate == "executing":
-                    transitionDocument["location"] = job["location"]
+                    jobLocation = job["location"]
                 else:
-                    transitionDocument["location"] = "Agent"
+                    jobLocation = "Agent"
             else:
-                transitionDocument["location"] = "Agent"
+                jobLocation = "Agent"
                 
-            self.database.queue(transitionDocument,
-                                viewlist = ["jobDump/jobsByJobID"])
-
             if couchDocID == None:
                 jobDocument = {}
                 jobDocument["_id"] = str(job["id"])
@@ -155,6 +145,10 @@ class ChangeState(WMObject, WMConnectionBase):
                 jobDocument["workflow"] = job["workflow"]
                 jobDocument["task"] = job["task"]
                 jobDocument["owner"] = job["owner"]
+                jobDocument["transitions"] = [{"oldstate": oldstate,
+                                               "newstate": newstate,
+                                               "location": jobLocation,
+                                               "timestamp": timestamp}]
                 jobDocument["inputfiles"] = []
                 for inputFile in job["input_files"]:
                     docInputFile = {"lfn": inputFile["lfn"],
@@ -188,16 +182,29 @@ class ChangeState(WMObject, WMConnectionBase):
 
                 couchRecordsToUpdate.append({"jobid": job["id"],
                                              "couchid": jobDocument["_id"]})                
-                self.database.queue(jobDocument, viewlist = ["jobDump/jobsByJobID"])
-            elif job.get("fwjr", None):
+                self.database.queue(jobDocument)
+            else:
+                # We send a PUT request to the stateTransition update handler.
+                # Couch expects the parameters to be passed as arguments to in
+                # the URI while the Requests class will only encode arguments
+                # this way for GET requests.  Changing the Requests class to
+                # encode PUT arguments as couch expects broke a bunch of code so
+                # we'll just do our own encoding here.
+                updateUri = "/" + self.database.name + "/_design/JobDump/_update/stateTransition/" + couchDocID
+                updateUri += "?oldstate=%s&newstate=%s&location=%s&timestamp=%s" % (oldstate,
+                                                                                    newstate,
+                                                                                    jobLocation,
+                                                                                    timestamp)
+                self.database.makeRequest(uri = updateUri, type = "PUT", decode = False)
+
+            if job.get("fwjr", None):
                 job["fwjr"].setTaskName(job["task"])
                 fwjrDocument = {"jobid": job["id"],
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),
                                 "type": "fwjr",
                                 "timestamp": time.time()}
-                self.database.queue(fwjrDocument,
-                                    viewlist = ["jobDump/jobsByJobID"])
+                self.database.queue(fwjrDocument)
 
         if len(couchRecordsToUpdate) > 0:
             self.setCouchDAO.execute(bulkList = couchRecordsToUpdate,
@@ -205,6 +212,7 @@ class ChangeState(WMObject, WMConnectionBase):
                                      transaction = self.existingTransaction())
             
         self.database.commit()
+        self.database.loadView("JobDump", "jobsByJobID", {"limit": 0})
         return
 
     def createDatabase(self):

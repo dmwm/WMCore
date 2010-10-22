@@ -1,10 +1,18 @@
 function(doc) {
   if (doc['type'] == 'fwjr') {
+    if (doc['fwjr'].task == null) {
+      return;
+    }
+
     var specName = doc['fwjr'].task.split('/')[1]
 
     for (var stepName in doc['fwjr']['steps']) {
       if (stepName != 'cmsRun1') {
         continue;
+      }
+
+      if (doc['fwjr']['steps'][stepName].status != 0) {
+        return;
       }
 
       var stepOutput = doc['fwjr']['steps'][stepName]['output']

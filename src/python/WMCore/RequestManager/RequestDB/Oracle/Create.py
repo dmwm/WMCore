@@ -21,6 +21,42 @@ class Create(DBCreator):
     Implementation of ReqMgr DB for MySQL
 
     """
+    requiredTables = ['reqmgr_request_type', 
+                      'reqmgr_request_type_seq',
+                      'reqmgr_request_type_trg',
+                      'reqmgr_request_status',
+                      'reqmgr_request_status_seq',
+                      'reqmgr_request_status_trg',
+                      'reqmgr_group',
+                      'reqmgr_group_seq',
+                      'reqmgr_group_trg',
+                      'reqmgr_requestor',
+                      'reqmgr_requestor_seq',
+                      'reqmgr_requestor_trg',
+                      'reqmgr_group_association',
+                      'reqmgr_group_association_seq',
+                      'reqmgr_group_association_trg',
+                      'reqmgr_teams',
+                      'reqmgr_teams_seq',
+                      'reqmgr_teams_trg',
+                      'reqmgr_request',
+                      'reqmgr_request_seq',
+                      'reqmgr_request_trg',
+                      'reqmgr_assignment',
+                      'reqmgr_input_dataset',
+                      'reqmgr_input_dataset_seq',
+                      'reqmgr_input_dataset_trg',
+                      'reqmgr_output_dataset',
+                      'reqmgr_output_dataset_seq',
+                      'reqmgr_output_dataset_trg',
+                      'reqmgr_software',
+                      'reqmgr_software_seq',
+                      'reqmgr_software_trg',
+                      'reqmgr_software_dependency',
+                      'reqmgr_progress_update',
+                      'reqmgr_message',
+                      'reqmgr_assigned_prodmgr',
+                      'reqmgr_assigned_prodagent']
 
     def __init__(self, logger=None, dbi=None, param=None):
         if dbi == None:

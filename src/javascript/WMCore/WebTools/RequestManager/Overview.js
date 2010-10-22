@@ -21,7 +21,7 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
 	
 	var formatLocalQ = function(elCell, oRecord, oColumn, sData) { 
             var host;
-            if (!sData) {
+            if (!sData || ! sData.length) {
                 elCell.innerHTML = "Not Assigned";
             } else {
 				for (data in sData) {
@@ -34,15 +34,20 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
 	var formatCouchDB = function(elCell, oRecord, oColumn, sData) { 
             var host;
 			if (oRecord.getData("error")) {
-                 elCell.innerHTML = "<font color='red'> " + oRecord.getData("error") + "<font>";			
+                 elCell.innerHTML = "<font color='red'> " + oRecord.getData("error") + "<font>";
                  return;
             };
-			if (!oRecord.getData("local_queue")) {
-			     elCell.innerHTML = "Not yet Assigned";
+            localQueueList  = oRecord.getData("local_queue")
+			if (!localQueueList || !localQueueList.length) {
+			     elCell.innerHTML = "Not Assigned";
 				 return;
 			};
             if (!sData) {
-                elCell.innerHTML = "<font color='red'> Can't connect CouchDB <font>";
+                if (oRecord.getData("couch_error")) {
+                    elCell.innerHTML = "<font color='red'> Can't connect CouchDB <font>";
+                } else {
+                    elCell.innerHTML = "No jobs in CouchDB";
+                }
             } else {
                 host = "CouchDB Link";
 				elCell.innerHTML = "<a href='" + sData + "' target='_blank'>" + host + "</a>";
@@ -115,6 +120,7 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
                  {key: "couch_doc_base"},
 				 {key: "couch_job_info_base"},
 				 {key: "host"},
+				 {key: "couch_error"},
 				 {key: "error"}
                  ]
         };
@@ -135,23 +141,8 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
 		    
     var dataUrl = "/reqMgr/overview"
     var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-	
-	var tableInfo = {}
-        tableInfo.divID = divID;
-        tableInfo.conf = WMCore.WebTools.createDefaultTableConfig();
-        tableInfo.cols = WMCore.WebTools.createDefaultTableDef(dataTableCols);
-		
-	dataSource.doBeforeCallback = function (req,raw,res,cb) {
-            // This assigned parsed response to global var to create LocalDataSource
-            var data = res.results || [];
-			
-			filterFunction(filterDiv, data, dataSchema, tableInfo)
-            return res;
-    };
-	
-	
-		
-    var dataTable = WMCore.WebTools.createDataTable(tableInfo.divID, dataSource, 
-	                       tableInfo.cols, tableInfo.conf, 100000);
-						   
-};
+
+    //writeDebugObject(dataSource)
+    //writeEval(dataSource.responseType)
+    var dataTable = WMCore.WebTools.createDataTable(divID, dataSource, WMCore.WebTools.createDefaultTableDef(dataTableCols), WMCore.WebTools.createDefaultTableConfig(), 100000)
+}

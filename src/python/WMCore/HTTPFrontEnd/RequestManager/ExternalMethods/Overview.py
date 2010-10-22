@@ -2,6 +2,7 @@ from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
       import getOverview, getGlobalQueues
 
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+from WMCore.Database.CMSCouch import CouchError
 
 def getGlobalSummaryView(host):
     """
@@ -43,11 +44,19 @@ def _localQueueInfo(globalQ):
         childQ = WorkQueue({'endpoint': cQueue + "/"})
         #childQ = WorkQueue({'endpoint': 'http://cmssrv75.fnal.gov:9991/workqueue%s' % '/'})
         try:
-            jobSummary.extend(childQ.getJobSummaryFromCouchDB())
-        except:
-            #pass
-            jobSummary.extend([{"queue_error": cQueue}])
-
+            jobData = childQ.getJobSummaryFromCouchDB()
+        except CouchError, ce:
+            jobSummary.extend([{"queue_error": cQueue, 
+                                "error": ce.type}])
+        except Exception, ex:
+            jobSummary.extend([{"queue_error": cQueue,
+                                "error": str(ex)}])
+        else:
+            if len(jobData)  == 1 and jobData[0].has_key("error"):
+                jobSummary.extend([{"queue_error": cQueue,
+                                    "couch_error": jobData[0]['error']}])
+            else:
+                jobSummary.extend(jobData)
     return jobSummary
 
 def _formatTable(requestInfo, gRequestInfo, cRequestInfo, host):
@@ -82,9 +91,14 @@ def _formatTable(requestInfo, gRequestInfo, cRequestInfo, host):
         for cItem in cRequestInfo:
 
             if cItem.has_key('queue_error'):
-                if item.has_key('local_queue') and (cItem['queue_error'] in item.get('local_queue')):
-                    item.setdefault('error', 'Local Queue Down')
-                    item['error'] += ", %s" % cItem['queue_error'].strip('http://').strip('/workqueue')
+                if item.has_key('local_queue') and (
+                                    cItem['queue_error'] in item.get('local_queue')):
+                    item.setdefault('error', '')
+                    item['error'] += "%s: %s" % (
+                                cItem['queue_error'].strip('http://').strip('/workqueue'),
+                                cItem.get('error', 'Down'))
+                    if cItem.has_key('couch_error'):
+                        item['couch_error'] = cItem['couch_error']
 
             elif item['request_name'] == cItem['request_name']:
                 #Not just update items it should add the job numbers.

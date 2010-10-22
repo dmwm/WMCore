@@ -47,7 +47,7 @@ class RequestManager(Service):
                     filename = dict['cachepath'] + '/jsonparser.log',
                     filemode = 'w')
             dict['logger'] = logging.getLogger('RequestMgrParser')
-    
+
         dict['accept_type'] = 'text/json'
         dict.setdefault('cacheduration', 0)
 
@@ -97,8 +97,11 @@ class RequestManager(Service):
     def getAssignment(self, teamName = None, request = None):
 
         args = {}
-        args['teamName'] = teamName
-        args['request'] = request
+        # server only take teamname if both are specified.
+        if teamName:
+            args['teamName'] = teamName
+        elif request:
+            args['request'] = request
 
         callname = 'assignment'
         return self._getResult(callname, args = args, verb = "GET")

@@ -31,8 +31,8 @@ function(doc, req) {
   }
 
   response += "\nState Transitions:\n";
-  for (var transitionIndex in doc["transitions"]) {
-    var transition = doc["transitions"][transitionIndex];
+  for (var transitionIndex in doc["states"]) {
+    var transition = doc["states"][transitionIndex];
     var transitionTimestamp = new Date(transition["timestamp"] * 1000);
 
     if (transition["location"] == "Agent") {

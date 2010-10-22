@@ -25,7 +25,7 @@ class ReRecoRequest(RequestMakerInterface):
         RequestMakerInterface.__init__(self)
 
     def makeWorkload(self, schema):
-       return rerecoWorkload(schema['RequestName'], schema).data
+        return rerecoWorkload(schema['RequestName'], schema).data
 
         
 class ReRecoSchema(RequestSchema):

@@ -60,12 +60,12 @@ class WMBSRESTModel(RESTModel):
                                         logger = self, dbinterface = self.dbi)
 
         self.addDAO('GET', "listthresholdsforsubmit", "ListThresholdsForSubmit",
-                     args = ["tableFormatt"], 
+                     args = ["tableFormat"], 
                      validation = [self.setTableFormat],
                      daoFactory = resourceDAOFactory)
         
         self.addDAO('GET', "listthresholdsforcreate", "ListThresholdsForCreate",
-                     args = ["tableFormatt"], 
+                     args = ["tableFormat"], 
                      validation = [self.setTableFormat],
                      daoFactory = resourceDAOFactory)
         
@@ -162,7 +162,12 @@ class WMBSRESTModel(RESTModel):
         return input
     
     def setTableFormat(self, input):
-        input["tableFormat"] = True
+        input.setdefault("tableFormat", True)
+        if type(input['tableFormat']) == str:
+            if input['tableFormat'].lower() == 'false':
+                input["tableFormat"] = False
+            else:
+                input["tableFormat"] = True
         return input
 
     def processParams(self, args, kwargs):

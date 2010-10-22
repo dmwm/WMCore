@@ -2,28 +2,18 @@ import os
 import pwd
 import logging
 from WMCore.Services.Service import Service
-from WMCore.Services.AuthorisedService import AuthorisedService
-# This should be deprecated in preference to simplejson once SiteDB spits out
-# correct json
-from WMCore.Services.JSONParser.JSONParser import JSONParser
-#TODO: this should move to the AuthorisedService class
-try:
-    # Python 2.6
-    import json
-except ImportError:
-    # Prior to 2.6 requires simplejson
-    import simplejson as json
+from WMCore.Wrappers import JsonWrapper
+
 class WMBS(Service):
 
     """
     API for dealing with retrieving information from PhEDEx DataService
     """
 
-    def __init__(self, dict={}, responseType="xml"):
+    def __init__(self, dict={}):
         """
         responseType will be either xml or json
         """
-        self.responseType = responseType.lower()
         
         #if self.responseType == 'json':
             #self.parser = JSONParser()
@@ -46,11 +36,15 @@ class WMBS(Service):
                     filemode='w')
             dict['logger'] = logging.getLogger('WMBSParser')
         
-        #TODO if service doesn't need to be authorized, have switch to use Service
+        dict.setdefault("accept_type", "application/json")
+        dict.setdefault("content_type", "application/json")
+        self.encoder = JsonWrapper.dumps
+        self.decoder = JsonWrapper.loads
+        
         Service.__init__(self, dict)
 
     def _getResult(self, callname, clearCache = True,
-                   args = None, verb="POST"):
+                   args = None, verb="GET", contentType = None):
         """
         _getResult_
 
@@ -63,61 +57,20 @@ class WMBS(Service):
         # make base file name from call name.
         file = callname.replace("/", "_")
         if clearCache:
-            self.clearCache(file, args)
-        try:
-            print callname
-            f = self.refreshCache(file, verb, callname, args)
-            result = f.read()
-            f.close()
+            self.clearCache(file, args, verb)
 
-        except IOError, ex:
-            raise RuntimeError("URL not available: %s" % callname)
-
-        if self.responseType == "json":
-            decoder = json.JSONDecoder()
-            return decoder.decode(result)
+        # can't pass the decoder here since refreshCache wright to file
+        f = self.refreshCache(file, callname, args, encoder = self.encoder,
+                              verb = verb, contentType = contentType)
+        result = f.read()
+        f.close()
+        result = self.decoder(result)
 
         return result
-
-    def samplePOSTMethod(self, **args):
-
-        """
-        _samplePOSTMethod_
-
-        """
-
-        callname = 'samplePOSTMethod'
-        return self._getResult(callname, args = args, verb="POST")
-
-    def sampleGETMethod(self, **args):
-
-        """
-        _sampleGETMethod_
-
-        """
-
-        callname = 'sampleGETMethod'
-        
-        return self._getResult(callname, args = args, verb="GET")
     
-    def samplePUTTMethod(self, **args):
-
+    def getResourceInfo(self, tableFormat = True):
         """
-        _sampleGETMethod_
-
         """
-
-        callname = 'samplePUTMethod'
-        return self._getResult(callname, args = args, verb="PUT")
-
-    def sampleDELETEMethod(self, **args):
-
-        """
-        _sampleGETMethod_
-
-        """
-        print "DETEEEEEEE %s" % args
-        callname = 'sampleDELETEMethod'
-        
-        return self._getResult(callname, args = args, verb="DELETE")
-
+        callname = 'listthresholdsforcreate'
+        args = {'tableFormat': tableFormat}
+        return self._getResult(callname, args = args)

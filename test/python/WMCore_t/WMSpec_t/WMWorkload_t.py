@@ -426,6 +426,10 @@ class WMWorkloadTest(unittest.TestCase):
 
         testWorkload.setLFNBase("/store/temp/WMAgent/merged",
                                 "/store/temp/WMAgent/unmerged")
+        
+        self.assertEqual(testWorkload.getLFNBases(), ("/store/temp/WMAgent/merged",
+                                                      "/store/temp/WMAgent/unmerged"),
+                         "Error: Wrong LFN bases.")
 
         for outputModule in outputModules:
             self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
@@ -496,6 +500,13 @@ class WMWorkloadTest(unittest.TestCase):
                                                {"max_files": 21,
                                                 "some_other_param": "value"})
 
+        self.assertEqual(testWorkload.startPolicy(), "Block",
+                         "Error: Wrong start policy.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceType"], "NumberOfFiles",
+                         "Errror: Wrong slice type.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceSize"], 2,
+                         "Errror: Wrong slice size.")        
+
         procSplitParams = procTask.jobSplittingParameters()
         self.assertEqual(len(procSplitParams.keys()), 4,
                          "Error: Wrong number of params for proc task.")
@@ -522,6 +533,32 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(skimSplitParams["siteBlacklist"], [],
                          "Error: Site black list was updated.")
 
+        mergeSplitParams = mergeTask.jobSplittingParameters()
+        self.assertEqual(len(mergeSplitParams.keys()), 6,
+                         "Error: Wrong number of params for merge task.")
+        self.assertEqual(mergeSplitParams["algorithm"], "ParentlessMergeBySize",
+                         "Error: Wrong job splitting algo for merge task.")
+        self.assertEqual(mergeSplitParams["min_merge_size"], 2,
+                         "Error: Wrong min merge size.")
+        self.assertEqual(mergeSplitParams["max_merge_size"], 2,
+                         "Error: Wrong max merge size.")
+        self.assertEqual(mergeSplitParams["max_merge_events"], 2,
+                         "Error: Wrong max merge events.")        
+        self.assertEqual(mergeSplitParams["siteWhitelist"], [],
+                         "Error: Site white list was updated.")
+        self.assertEqual(mergeSplitParams["siteBlacklist"], [],
+                         "Error: Site black list was updated.")
+
+        testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask", "EventBased",
+                                               {"events_per_job": 4})
+
+        self.assertEqual(testWorkload.startPolicy(), "Block",
+                         "Error: Wrong start policy.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceType"], "NumberOfEvents",
+                         "Errror: Wrong slice type.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceSize"], 4,
+                         "Errror: Wrong slice size.")        
+        
         mergeSplitParams = mergeTask.jobSplittingParameters()
         self.assertEqual(len(mergeSplitParams.keys()), 6,
                          "Error: Wrong number of params for merge task.")
@@ -584,11 +621,34 @@ class WMWorkloadTest(unittest.TestCase):
                          {"max_files": 21, "algorithm": "RunBased", "some_other_param": "value", "type": "Skim"},
                          "Error: Wrong splitting parameters.")
         self.assertEqual(results["/TestWorkload/ProcessingTask/MergeTask"],
-                         {"algorithm": "WMBSMergeBySize", "max_merge_size": 2,
+                         {"algorithm": "ParentlessMergeBySize", "max_merge_size": 2,
                           "max_merge_events": 2, "min_merge_size": 2, "type": "Merge"},
                          "Error: Wrong splitting parameters.")
 
         return
+
+    def testUpdatingTimeouts(self):
+        """
+        _testUpdatingTimeouts_
+
+        Verify that task timeouts are set correctly.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setTaskType("Processing")
+        mergeTask = procTask.addTask("MergeTask")
+        mergeTask.setTaskType("Merge")
+
+        testWorkload.setTaskTimeOut("/TestWorkload/ProcessingTask", 60)
+        testWorkload.setTaskTimeOut("/TestWorkload/ProcessingTask/MergeTask", 30)
+
+        self.assertEqual(testWorkload.listTimeOutsByTask(),
+                         {"/TestWorkload/ProcessingTask": 60,
+                          "/TestWorkload/ProcessingTask/MergeTask": 30},
+                         "Error: Timeouts not set correctly.")
+        return
+
 
 if __name__ == '__main__':
     unittest.main()

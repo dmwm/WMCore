@@ -240,6 +240,14 @@ class TreeHelper:
         """
         self.data._internal_treetop = True
 
+    def isTopOfTree(self):
+        """
+        _isTopOfTree_
+
+        Determine if this section is the top of the tree.
+        """
+        return self.data._internal_treetop
+
     def listNodes(self):
         """list this node and all subnodes"""
         return listNodes(self.data)

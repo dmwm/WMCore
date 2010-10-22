@@ -79,7 +79,7 @@ class ReRecoWorkloadFactory(StdBase):
          self.inputDataTier) = self.inputDataset[1:].split("/")
 
         workload = self.createWorkload()
-        self.setWorkQueueSplitPolicy(workload, "Block", self.procJobSplitAlgo, self.procJobSplitArgs)
+        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         procTask = workload.newTask("ReReco")
 
         outputMods = self.setupProcessingTask(procTask, "Processing", self.inputDataset,

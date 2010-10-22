@@ -565,6 +565,28 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
+    def setWorkQueueSplitPolicy(self, policyName, splitAlgo, splitArgs):
+        """
+        _setWorkQueueSplitPolicy_
+        
+        Set the WorkQueue split policy.
+        policyName should be either 'DatasetBlock', 'Dataset', 'MonteCarlo' 'Block'
+        different policy could be added in the workqueue plug in.
+        """
+        SplitAlgoToStartPolicy = {"FileBased": "NumberOfFiles",
+                                  "EventBased": "NumberOfEvents",
+                                  "LumiBased": "NumberOfLumis" }
+        SplitAlgoToArgMap = {"NumberOfFiles": "files_per_job",
+                             "NumberOfEvents": "events_per_job",
+                             "NumberOfLumis": "lumis_per_job"}
+
+        sliceType = SplitAlgoToStartPolicy.get(splitAlgo, "NumberOfFiles")
+        sliceSize = splitArgs.get(SplitAlgoToArgMap[sliceType], 1)
+
+        self.setStartPolicy(policyName, SliceType = sliceType, SliceSize = sliceSize)
+        self.setEndPolicy("SingleShot")
+        return
+        
     def setJobSplittingParameters(self, taskPath, splitAlgo, splitArgs):
         """
         _setJobSplittingParameters_
@@ -575,8 +597,65 @@ class WMWorkloadHelper(PersistencyHelper):
         if taskHelper == None:
             return
 
+        if taskHelper.isTopOfTree():
+            if taskHelper.taskType() == "Production":
+                self.setWorkQueueSplitPolicy("MonteCarlo", splitAlgo, splitArgs)
+            else:
+                self.setWorkQueueSplitPolicy("Block", splitAlgo, splitArgs)                
+
+        # There are currently two merge algorithms in WMBS.  WMBSMergeBySize
+        # will reassemble the parent file.  This is only necessary for
+        # EventBased processing where we break up lumi sections.  Everything
+        # else can use ParentlessMergeBySize which won't reassemble parents.
+        # Everything defaults to ParentlessMergeBySize as it is much less load
+        # on the database.
+        for childTask in taskHelper.childTaskIterator():
+            if childTask.taskType() == "Merge":
+                if splitAlgo == "EventBased" and taskHelper.taskType() != "Production":
+                    mergeAlgo = "WMBSMergeBySize"
+                else:
+                    mergeAlgo = "ParentlessMergeBySize"
+
+                childSplitParams = childTask.jobSplittingParameters()
+                del childSplitParams["algorithm"]
+                del childSplitParams["siteWhitelist"]
+                del childSplitParams["siteBlacklist"]
+                childTask.setSplittingAlgorithm(mergeAlgo, **childSplitParams)
+
         taskHelper.setSplittingAlgorithm(splitAlgo, **splitArgs)
         return
+
+    def setTaskTimeOut(self, taskPath, taskTimeOut):
+        """
+        _setTaskTimeOut_
+
+        Set the timeout value for the given tasks in the workload.
+        """
+        taskHelper = self.getTaskByPath(taskPath)
+        if taskHelper == None:
+            return
+        
+        taskHelper.setTaskTimeOut(taskTimeOut)
+        return
+
+    def listTimeOutsByTask(self, initialTask = None):
+        """
+        _listTimeOutsByTask_
+
+        Create a dictionary that maps task names to timeouts.
+        """
+        output = {}
+        
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+            
+        for task in taskIterator:        
+            output[task.getPathName()] = task.getTaskTimeOut()
+            output.update(self.listTimeOutsByTask(task))
+
+        return output
 
     def listJobSplittingParametersByTask(self, initialTask = None):
         """
@@ -634,6 +713,16 @@ class WMWorkloadHelper(PersistencyHelper):
                     outputDatasets.append(anotherDataset)
 
         return outputDatasets
+
+    def getLFNBases(self):
+        """
+        _getLFNBases_
+
+        Retrieve the LFN bases.  They are returned as a tuple with the merged
+        LFN base first, followed by the unmerged LFN base.
+        """
+        return (self.data.properties.mergedLFNBase,
+                self.data.properties.unmergedLFNBase)
 
     def setRetryPolicy(self):
         """

@@ -2,6 +2,7 @@ from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
       import getOverview, getGlobalQueues
 
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+from WMCore.Database.CMSCouch import CouchError
 
 def getGlobalSummaryView(host):
     """
@@ -44,8 +45,10 @@ def _localQueueInfo(globalQ):
         #childQ = WorkQueue({'endpoint': 'http://cmssrv75.fnal.gov:9991/workqueue%s' % '/'})
         try:
             jobSummary.extend(childQ.getJobSummaryFromCouchDB())
+        except CouchError, ce:
+            jobSummary.extend([{"queue_error": cQueue, 
+                                "error": ce.type}])
         except:
-            #pass
             jobSummary.extend([{"queue_error": cQueue}])
 
     return jobSummary
@@ -83,8 +86,10 @@ def _formatTable(requestInfo, gRequestInfo, cRequestInfo, host):
 
             if cItem.has_key('queue_error'):
                 if item.has_key('local_queue') and (cItem['queue_error'] in item.get('local_queue')):
-                    item.setdefault('error', 'Local Queue Down')
-                    item['error'] += ", %s" % cItem['queue_error'].strip('http://').strip('/workqueue')
+                    item.setdefault('error', '')
+                    item['error'] += "%s: %s" % (
+                                cItem['queue_error'].strip('http://').strip('/workqueue'),
+                                cItem.get('error', 'Down'))
 
             elif item['request_name'] == cItem['request_name']:
                 #Not just update items it should add the job numbers.

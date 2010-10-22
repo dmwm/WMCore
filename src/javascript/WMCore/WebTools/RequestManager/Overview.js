@@ -21,7 +21,7 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID){
 	
 	var formatLocalQ = function(elCell, oRecord, oColumn, sData) { 
             var host;
-            if (!sData) {
+            if (!sData || ! sData.length) {
                 elCell.innerHTML = "Not Assigned";
             } else {
 				for (data in sData) {
@@ -35,17 +35,19 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID){
             var host;
 			if (oRecord.getData("error")) {
                  elCell.innerHTML = "<font color='red'> " + oRecord.getData("error") + "<font>";
-				 if (oRecord.getData("error2")) {
-					elCell.innerHTML += "<font color='red'> " + oRecord.getData("error2") + "<font>";
-				 }
                  return;
             };
-			if (!oRecord.getData("local_queue")) {
-			     elCell.innerHTML = "Not yet Assigned";
+            localQueueList  = oRecord.getData("local_queue")
+			if (!localQueueList || !localQueueList.length) {
+			     elCell.innerHTML = "Not Assigned";
 				 return;
 			};
             if (!sData) {
-                elCell.innerHTML = "<font color='red'> Can't connect CouchDB <font>";
+                if (oRecord.getData("couch_error")) {
+                    elCell.innerHTML = "<font color='red'> Can't connect CouchDB <font>";
+                } else {
+                    elCell.innerHTML = "No jobs in CouchDB";
+                }
             } else {
                 host = "CouchDB Link";
 				elCell.innerHTML = "<a href='" + sData + "' target='_blank'>" + host + "</a>";
@@ -118,7 +120,7 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID){
                  {key: "couch_doc_base"},
 				 {key: "couch_job_info_base"},
 				 {key: "host"},
-				 {key: "error2"},
+				 {key: "couch_error"},
 				 {key: "error"}
                  ]
         };

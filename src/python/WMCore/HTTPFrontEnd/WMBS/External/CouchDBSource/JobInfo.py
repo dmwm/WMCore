@@ -72,7 +72,7 @@ def getJobSummaryByWorkflow():
         #TODO log the error in the server
         #If the server is down it doesn't throw CouchError,
         #Need to distinquish between server down and CouchError
-        return [{"request_name": 'Couch not avaiable'}]
+        return [{"error": 'Couch connection error'}]
     
     options = {"group": True, "group_level": 1}
     result = changeStateDB.loadView("JobDump", "statusByWorkflowName",

@@ -21,7 +21,23 @@ class Create(DBCreator):
     Implementation of ReqMgr DB for MySQL
 
     """
-
+    requiredTables = ['reqmgr_request_type',
+                      'reqmgr_request_status',
+                      'reqmgr_group',
+                      'reqmgr_requestor',
+                      'reqmgr_group_association',
+                      'reqmgr_teams',
+                      'reqmgr_request',
+                      'reqmgr_assignment',
+                      'reqmgr_input_dataset',
+                      'reqmgr_output_dataset',
+                      'reqmgr_software',
+                      'reqmgr_software_dependency',
+                      'reqmgr_progress_update',
+                      'reqmgr_message',
+                      'reqmgr_assigned_prodmgr',
+                      'reqmgr_assigned_prodagent']
+    
     def __init__(self, logger=None, dbi=None, param=None):
         if dbi == None:
             myThread = threading.currentThread()

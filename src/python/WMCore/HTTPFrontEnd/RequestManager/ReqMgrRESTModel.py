@@ -311,7 +311,6 @@ class ReqMgrRESTModel(RESTModel):
         url = url[0:url.find('/request')]
         specificSchema.reqMgrURL = url
         specificSchema.validate()
-
         request = maker(specificSchema)
         # fill the WorkflowSpec's URL
         helper = WMWorkloadHelper(request['WorkflowSpec'])
@@ -334,7 +333,6 @@ class ReqMgrRESTModel(RESTModel):
         if Registration.isRegistered(userName):
             return "User already exists"
         result = Registration.registerUser(userName, email, dnName)
-        print self.getUser()
         return result
 
     def putGroup(self, group, user=None):

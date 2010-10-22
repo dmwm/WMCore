@@ -131,7 +131,7 @@ class Requests(dict):
         
         # There must be a better way to do this...
         def f(): pass
-        
+                
         if verb != 'GET' and data:
             if type(encoder) == type(self.get) or type(encoder) == type(f):
                 encoded_data = encoder(data)

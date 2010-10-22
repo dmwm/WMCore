@@ -263,9 +263,6 @@ class WMWorkloadHelper(PersistencyHelper):
         
         Get tasks matching the type provided
         """
-        for t in self.taskIterator():
-			print t
-			print t.taskType()
         return [ t for t in self.taskIterator() if t.taskType() == ttype ]
         
 

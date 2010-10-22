@@ -25,7 +25,10 @@ import threading
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import urllib
 
-from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.Overview import getGlobalSummaryView
+from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.Overview \
+     import getGlobalSummaryView
+from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.ResourceMonitor \
+     import getResourceOverview
 
 class ReqMgrRESTModel(RESTModel):
     """ The REST interface to the ReqMgr database.  Documentation may
@@ -79,13 +82,20 @@ class ReqMgrRESTModel(RESTModel):
         #       paramDict['expires'] = 0
 
         self.addMethod("GET", "overview", self.getGlobalSummary) #expires=16000
-
+        self.addMethod("GET", "resourceInfo", self.getResourceInfo)
+        
     def getGlobalSummary(self):
         """ return summary data for requests from
             request manager, workqueue and couchDB"""
         self.initThread()
         return getGlobalSummaryView(self.hostAddress)
 
+    def getResourceInfo(self):
+        """ return summary data for requests from
+            request manager, workqueue and couchDB"""
+        self.initThread()
+        return getResourceOverview()
+    
     def initThread(self):
         """ The ReqMgr expects the DBI to be contained in the Thread  """
         myThread = threading.currentThread()

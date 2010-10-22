@@ -48,8 +48,9 @@ def _localQueueInfo(globalQ):
         except CouchError, ce:
             jobSummary.extend([{"queue_error": cQueue, 
                                 "error": ce.type}])
-        except:
-            jobSummary.extend([{"queue_error": cQueue}])
+        except Exception, ex:
+            jobSummary.extend([{"queue_error": cQueue,
+                                "error": str(ex)}])
         else:
             if len(jobData)  == 1 and jobData[0].has_key("error"):
                 jobSummary.extend([{"queue_error": cQueue,

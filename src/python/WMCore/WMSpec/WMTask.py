@@ -186,7 +186,10 @@ class WMTaskHelper(TreeHelper):
         Get a list of all the step names contained in this task.        
         """
         step = self.steps()
-        return step.allNodeNames()
+        if step:
+            return step.allNodeNames()
+        else:
+            return []
     
     def getStep(self, stepName):
         """get a particular step from the workflow"""

@@ -606,6 +606,7 @@ class WMWorkloadHelper(PersistencyHelper):
         # else can use ParentlessMergeBySize which won't reassemble parents.
         # Everything defaults to ParentlessMergeBySize as it is much less load
         # on the database.
+        minMergeSize = None
         for childTask in taskHelper.childTaskIterator():
             if childTask.taskType() == "Merge":
                 if splitAlgo == "EventBased" and taskHelper.taskType() != "Production":
@@ -614,12 +615,23 @@ class WMWorkloadHelper(PersistencyHelper):
                     mergeAlgo = "ParentlessMergeBySize"
 
                 childSplitParams = childTask.jobSplittingParameters()
+                minMergeSize = childSplitParams["min_merge_size"]
                 del childSplitParams["algorithm"]
                 del childSplitParams["siteWhitelist"]
                 del childSplitParams["siteBlacklist"]
                 childTask.setSplittingAlgorithm(mergeAlgo, **childSplitParams)
 
+        # Set the splitting algorithm for the task.  If the split algo is
+        # EventBased, we need to disable straight to merge.  If this isn't an
+        # EventBased algo we need to enable straight to merge.
         taskHelper.setSplittingAlgorithm(splitAlgo, **splitArgs)
+        for stepName in taskHelper.listAllStepNames():
+            stepHelper = taskHelper.getStepHelper(stepName)
+            if stepHelper.stepType() == "CMSSW":
+                if splitAlgo != "EventBased" and minMergeSize:
+                    stepHelper.setMinMergeSize(minMergeSize)
+                else:
+                    stepHelper.disableStraightToMerge()
         return
 
     def setTaskTimeOut(self, taskPath, taskTimeOut):

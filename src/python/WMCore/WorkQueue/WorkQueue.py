@@ -483,6 +483,25 @@ class WorkQueue(WorkQueueBase):
                 return elementIDs
             else:
                 raise
+
+        # if it is not local queue,
+        if not self.params['PopulateFilesets'] and id_type == 'request_name':
+            # get list of child queue
+            qAction = self.daofactory(classname = "WorkQueueElement.ChildQueuesByRequest")
+            childQueues = qAction.execute(elementIDs, conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
+
+            for childQueue in childQueues:
+                try:
+                    childWQ = WorkQueueDS({'endpoint': childQueue})
+                    childWQ.cancelWork(elementIDs, id_type)
+                except:
+                    # if canceling fails just log the error message.
+                    # it will be picked up later when updateParent call occurs
+                    # in WorkQueueManager
+                    self.logger.error("canceling work failed on : %s for request %s" % (
+                                       childQueue, elementIDs))
+
         return elementIDs
 
     def deleteWork(self, elementIDs, id_type = 'id'):

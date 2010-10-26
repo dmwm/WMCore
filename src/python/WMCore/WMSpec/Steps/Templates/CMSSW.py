@@ -137,35 +137,6 @@ class CMSSWStepHelper(CoreHelper):
         self.data.application.configuration.arguments.globalTag = globalTag
         return
 
-    def disableStraightToMerge(self):
-        """
-        _disableStraightToMerge_
-
-        Disable straight to merge for this step.
-        """
-        if hasattr(self.data.output, "minMergeSize"):
-            delattr(self.data.output, "minMergeSize")
-
-        return
-
-    def setMinMergeSize(self, minMergeSize):
-        """
-        _setMinMergeSize_
-
-        Set the mininum size for promoting a file to merged status.
-        """
-        self.data.output.minMergeSize = minMergeSize
-        return
-
-    def minMergeSize(self):
-        """
-        _minMergeSize_
-
-        Retrieve the minimum size for promoting a file to merged status.  If
-        straight to merge is disabled -1 will be returned.
-        """
-        return getattr(self.data.output, "minMergeSize", -1)
-    
 class CMSSW(Template):
     """
     _CMSSW_

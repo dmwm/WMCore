@@ -224,14 +224,18 @@ class WMWorkloadTest(unittest.TestCase):
         procTask.setTaskType("Processing")
         procTaskCMSSW = procTask.makeStep("cmsRun1")
         procTaskCMSSW.setStepType("CMSSW")
-        procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
-        procTaskCMSSWHelper.setMinMergeSize(1)
+        procTaskStageOut = procTask.makeStep("StageOut1")
+        procTaskStageOut.setStepType("StageOut")
+        procTaskStageOutHelper = procTaskStageOut.getTypeHelper()
+        procTaskStageOutHelper.setMinMergeSize(1)
 
         mergeTask = procTask.addTask("MergeTask")
         mergeTask.setInputReference(procTaskCMSSW, outputModule = "output")
         mergeTask.setTaskType("Merge")
         mergeTask.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 2,
                                         max_merge_events = 2, min_merge_size = 2)
+        mergeTaskStageOut = mergeTask.makeStep("StageOut1")
+        mergeTaskStageOut.setStepType("StageOut")
         mergeTaskCMSSW = mergeTask.makeStep("cmsRun1")
         mergeTaskCMSSW.setStepType("CMSSW")
 
@@ -239,10 +243,10 @@ class WMWorkloadTest(unittest.TestCase):
         skimTask.setTaskType("Skim")
         skimTask.setInputReference(mergeTaskCMSSW, outputModule = "merged")
         skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)                
-        skimTaskCMSSW = skimTask.makeStep("cmsRun1")
-        skimTaskCMSSW.setStepType("CMSSW")
-        skimTaskCMSSWHelper = skimTaskCMSSW.getTypeHelper()
-        skimTaskCMSSWHelper.setMinMergeSize(3)
+        skimTaskStageOut = skimTask.makeStep("StageOut1")
+        skimTaskStageOut.setStepType("StageOut")
+        skimTaskStageOutHelper = skimTaskStageOut.getTypeHelper()
+        skimTaskStageOutHelper.setMinMergeSize(3)
 
         testWorkload.setMergeParameters(minSize = 10, maxSize = 100, maxEvents = 1000)
 
@@ -286,9 +290,18 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(mergeSplitParams["siteBlacklist"], [],
                          "Error: Site black list was updated.")
         
-        self.assertEqual(procTaskCMSSWHelper.minMergeSize(), 10,
+        self.assertEqual(procTaskStageOutHelper.minMergeSize(), 10,
                          "Error: Min merge size for proc task is wrong.")
-        self.assertEqual(skimTaskCMSSWHelper.minMergeSize(), 10,
+        self.assertEqual(skimTaskStageOutHelper.minMergeSize(), 10,
+                         "Error: Min merge size for skim task is wrong.")
+
+        testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask", "EventBased",
+                                               {"events_per_job": 2})
+        testWorkload.setMergeParameters(minSize = 20, maxSize = 100, maxEvents = 1000)
+
+        self.assertEqual(procTaskStageOutHelper.minMergeSize(), -1,
+                         "Error: Min merge size for proc task is wrong.")
+        self.assertEqual(skimTaskStageOutHelper.minMergeSize(), 20,
                          "Error: Min merge size for skim task is wrong.")        
         return
 
@@ -309,7 +322,6 @@ class WMWorkloadTest(unittest.TestCase):
         procTaskCMSSW = procTask.makeStep("cmsRun1")
         procTaskCMSSW.setStepType("CMSSW")
         procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
-        procTaskCMSSWHelper.setMinMergeSize(1)
         procTask.applyTemplates()
 
         procTaskCMSSWHelper.addOutputModule("OutputA",
@@ -485,7 +497,9 @@ class WMWorkloadTest(unittest.TestCase):
         procTask.setTaskType("Processing")
         procTaskCmssw = procTask.makeStep("cmsRun1")
         procTaskCmssw.setStepType("CMSSW")
-        procTaskCmssw.getTypeHelper().setMinMergeSize(2)
+        procTaskStageOut = procTask.makeStep("StageOut1")
+        procTaskStageOut.setStepType("StageOut")
+        procTaskStageOut.getTypeHelper().setMinMergeSize(2)
         procTask.applyTemplates()
         
         mergeTask = procTask.addTask("MergeTask")
@@ -525,7 +539,7 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(procSplitParams["siteBlacklist"], [],
                          "Error: Site black list was updated.")
 
-        stepHelper = procTask.getStepHelper("cmsRun1")
+        stepHelper = procTask.getStepHelper("StageOut1")
         self.assertEqual(stepHelper.minMergeSize(), 2,
                          "Error: Wrong min merge size: %s" % stepHelper.minMergeSize())
                 
@@ -569,11 +583,9 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(testWorkload.startPolicyParameters()["SliceSize"], 4,
                          "Errror: Wrong slice size.")        
 
-        for stepName in procTask.listAllStepNames():
-            stepHelper = procTask.getStepHelper(stepName)
-            if stepHelper.stepType() == "CMSSW":
-                self.assertEqual(stepHelper.minMergeSize(), -1,
-                                 "Error: Wrong min merge size.")
+        stepHelper = procTask.getStepHelper("StageOut1")
+        self.assertEqual(stepHelper.minMergeSize(), -1,
+                         "Error: Wrong min merge size.")
         
         mergeSplitParams = mergeTask.jobSplittingParameters()
         self.assertEqual(len(mergeSplitParams.keys()), 6,
@@ -594,11 +606,9 @@ class WMWorkloadTest(unittest.TestCase):
         testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask", "FileBased",
                                                {"files_per_job": 4})
 
-        for stepName in procTask.listAllStepNames():
-            stepHelper = procTask.getStepHelper(stepName)
-            if stepHelper.stepType() == "CMSSW":
-                self.assertEqual(stepHelper.minMergeSize(), 2,
-                                 "Error: Wrong min merge size.")        
+        stepHelper = procTask.getStepHelper("StageOut1")
+        self.assertEqual(stepHelper.minMergeSize(), 2,
+                         "Error: Wrong min merge size.")        
         return
 
     def testListJobSplittingParametersByTask(self):

@@ -37,6 +37,16 @@ class StageOutStepHelper(CoreHelper):
         self.data.retryCount = 1
         self.data.retryDelay = 0
 
+    def disableStraightToMerge(self):
+        """
+        _disableStraightToMerge_
+
+        Disable straight to merge for this step.
+        """
+        if hasattr(self.data.output, "minMergeSize"):
+            delattr(self.data.output, "minMergeSize")
+
+        return
 
     def setMinMergeSize(self, minMergeSize):
         """
@@ -47,7 +57,15 @@ class StageOutStepHelper(CoreHelper):
         self.data.output.minMergeSize = minMergeSize
         return
 
+    def minMergeSize(self):
+        """
+        _minMergeSize_
 
+        Retrieve the minimum size for promoting a file to merged status.  If
+        straight to merge is disabled -1 will be returned.
+        """
+        return getattr(self.data.output, "minMergeSize", -1)
+    
 class StageOut(Template):
     """
     _StageOut_

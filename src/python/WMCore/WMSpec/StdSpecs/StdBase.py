@@ -139,24 +139,18 @@ class StdBase(object):
         The seeding and totalEvents parameters are only used for production jobs.
         """
         self.addDashboardMonitoring(procTask)
+
         procTaskCmssw = procTask.makeStep("cmsRun1")
         procTaskCmssw.setStepType("CMSSW")
-
-
         procTaskStageOut = procTaskCmssw.addStep("stageOut1")
         procTaskStageOut.setStepType("StageOut")
         procTaskStageOut.setUserDN(userDN)
         procTaskStageOut.setAsyncDest(asyncDest)
-
-
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
-
-
         procTask.applyTemplates()
 
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
-
         procTask.setSiteWhitelist(self.siteWhitelist)
         procTask.setSiteBlacklist(self.siteBlacklist)
 

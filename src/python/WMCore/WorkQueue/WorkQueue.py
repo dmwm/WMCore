@@ -43,6 +43,7 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from DBSAPI.dbsApiException import DbsConfigurationError
+from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 
 #TODO: Scale test
 #TODO: Decide whether to move/refactor db functions
@@ -166,10 +167,15 @@ class WorkQueue(WorkQueueBase):
         if type(self.params['Teams']) in types.StringTypes:
             self.params['Teams'] = [x.strip() for x in \
                                     self.params['Teams'].split(',')]
-        #only import WMBSHelper when it needed
-#        if self.params['PopulateFilesets']:
-#            from WMCore.WMRuntime.SandboxCreator import SandboxCreator
-#            from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+
+        self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.dbi,
+                                                              dbses = self.dbsHelpers,
+                                                              phedex = self.phedexService,
+                                                              locationFrom = self.params['TrackLocationOrSubscription'],
+                                                              incompleteBlocks = self.params['ReleaseIncompleteBlocks'],
+                                                              requireBlocksSubscribed = not self.params['ReleaseIncompleteBlocks'],
+                                                              fullRefreshInterval = self.params['FullLocationRefreshInterval'],
+                                                              updateIntervalCoarseness = self.params['LocationRefreshInterval'])
 
     #  //
     # // External API
@@ -679,52 +685,7 @@ class WorkQueue(WorkQueueBase):
         """
         Update locations for elements
         """
-        mapping = {}
-        #TODO: fullResync is only needed to update the sites
-        # where data is deleted. Find the better way to update
-        # site with deleted data.
-        fullResync = False
-        if not newDataOnly:
-
-            #get data(dataset or blocks) and dbsurls (for now assume global!)
-            dataAction = self.daofactory(classname = "Data.GetActiveData")
-            data = dataAction.execute(conn = self.getDBConn(),
-                                      transaction = self.existingTransaction())
-            if data:
-                currentTime = time.time()
-                fullResync = currentTime > self.lastFullResync + \
-                            self.params['FullLocationRefreshInterval']
-                mapping, fullResync = self._getLocations(
-                                           [x['name'] for x in data], fullResync)
-                self.lastFullResync = currentTime
-        #get data(dataset or blocks) and dbsurls (for now assume global!)
-        newAction = self.daofactory(classname = "Data.GetDataWithoutSite")
-        newData = newAction.execute(conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
-
-        newMapping = {}
-        if newData:
-            # always update the location regardless last update
-            newMapping, fullResync = self._getLocations(
-                                [x['name'] for x in newData], True)
-
-        mapping.update(newMapping)
-        #query may not support partial update - allow them to change fullResync
-
-        if not mapping:
-            return 0
-
-        uniqueLocations = set(sum(mapping.values(), []))
-
-        with self.transactionContext():
-            if uniqueLocations:
-                self._insertSite(list(uniqueLocations))
-
-            mappingAct = self.daofactory(classname =
-                                         "Site.UpdateDataSiteMapping")
-            mappingAct.execute(mapping, fullResync, conn = self.getDBConn(),
-                               transaction = self.existingTransaction())
-        return len(mapping)
+        return self.dataLocationMapper(newDataOnly, dbses = self.dbsHelpers)
 
     def pullWork(self, resources = None):
         """
@@ -1070,56 +1031,6 @@ class WorkQueue(WorkQueueBase):
                                        conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
         return elements, unmatched
-
-
-    def _getLocations(self, dataNames, fullRefresh):
-        """
-        Return mapping of item to location as given by phedex
-        """
-        result = {}
-        if self.params['TrackLocationOrSubscription'] == 'subscription':
-            fullRefresh = True #subscription api doesn't support partial update
-            result = self.phedexService.getSubscriptionMapping(*dataNames)
-        elif self.params['TrackLocationOrSubscription'] == 'location':
-            args = {}
-            args['block'] = dataNames
-            if not self.params['ReleaseIncompleteBlocks']:
-                args['complete'] = 'y'
-            if not self.params['ReleaseRequireSubscribed']:
-                args['subscribed'] = 'y'
-            if not fullRefresh:
-                args['update_since'] = self.lastLocationUpdate
-            response = self.phedexService.getReplicaInfoForBlocks(**args)['phedex']
-            # only update self.lcation when update_since is applied
-            # this setting has to be after getting response since service all might
-            # fail
-            if not fullRefresh:
-                self.lastLocationUpdate = response['request_timestamp']
-
-            for block in response['block']:
-                result.setdefault(block['name'], [])
-                nodes = [se['node'] for se in block['replica']]
-                result[block['name']].extend(nodes)
-        else:
-            raise RuntimeError, "invalid selection"
-
-        # convert PhEDEx node name to CMS site name
-        for data in result:
-            sites = []
-            for nodeName in result[data]:
-                try:
-                    siteName = self.SiteDB.phEDExNodetocmsName(nodeName)
-                except ValueError, e:
-                    msg = """%s: Error is ignored 
-                            for missing site match: investigate""" % str(e) 
-                    self.logger.error(msg)
-                else:
-                    sites.append(siteName)     
-            result.__setitem__(data, sites)
-            
-
-        return result, fullRefresh
-
 
     def _get_remote_queue(self, queue):
         """

@@ -13,9 +13,10 @@ from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WorkQueue.Database import States
 
 class GetActiveData(DBFormatter):
-    sql = """SELECT wb.id, name
+    sql = """SELECT wb.id, wb.name, wt.dbs_url
                 FROM wq_data wb
                 INNER JOIN wq_element we ON we.input_id = wb.id
+                INNER JOIN wq_wmtask wt ON wt.id = we.wmtask_id
                 WHERE we.status = :available
           """
 

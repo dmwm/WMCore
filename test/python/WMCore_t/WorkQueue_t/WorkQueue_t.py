@@ -176,6 +176,7 @@ class WorkQueueTest(WorkQueueTestCase):
         for queue in (self.queue, self.localQueue,
                       self.localQueue2, self.globalQueue):
             queue.phedexService = MockPhedexService(dataset)
+            queue.dataLocationMapper.phedex = queue.phedexService
             queue.SiteDB = fakeSiteDB()
 
         # create relevant sites in wmbs

@@ -125,4 +125,7 @@ class MockDBSReader:
 
             return result
 
+    def getServerInfo(self):
+        """getServerInfo"""
+        return {'InstanceName' : 'GLOBAL'}
 # pylint: enable-msg=W0613,R0201

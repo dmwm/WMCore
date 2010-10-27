@@ -145,9 +145,11 @@ class WorkQueue(Service):
         callname = 'failwork'
         return self._getResult(callname, args = args, verb = "PUT")
     
-    def cancelWork(self, elementIDs):
+    def cancelWork(self, elementIDs, id_type = None):
         """
         _cancelWork_
+
+        id_type ignored, used for consistent signature with WorkQueue.cancelWork()
         """
         args = {}
         args['elementIDs'] = elementIDs

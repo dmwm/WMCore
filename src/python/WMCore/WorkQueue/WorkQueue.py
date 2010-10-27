@@ -499,14 +499,14 @@ class WorkQueue(WorkQueueBase):
 
             for childQueue in childQueues:
                 try:
-                    childWQ = WorkQueueDS({'endpoint': childQueue})
+                    childWQ = self._get_remote_queue(childQueue)
                     childWQ.cancelWork(elementIDs, id_type)
-                except:
+                except Exception, ex:
                     # if canceling fails just log the error message.
                     # it will be picked up later when updateParent call occurs
                     # in WorkQueueManager
-                    self.logger.error("canceling work failed on : %s for request %s" % (
-                                       childQueue, elementIDs))
+                    self.logger.warning("canceling work failed on : %s for request %s: %s" % (
+                                       childQueue, elementIDs, str(ex)))
 
         return elementIDs
 

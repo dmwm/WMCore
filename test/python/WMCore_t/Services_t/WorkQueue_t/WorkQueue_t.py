@@ -5,13 +5,7 @@ ConfigFile = emulatorSetup(phedex=True, dbs=True, siteDB=True, requestMgr=True)
 
 import os
 import unittest
-try:
-    # Python 2.6
-    import json
-except:
-    # Prior to 2.6 requires simplejson
-    import simplejson as json
-
+import shutil
 
 from WMCore.Wrappers import JsonWrapper
 from WMCore.WorkQueue.WorkQueue import globalQueue
@@ -27,17 +21,16 @@ class WorkQueueTest(RESTBaseUnitTest):
     """
     Test WorkQueue Service client
     It will start WorkQueue RESTService
-    Server DB is SQlite.
+    Server DB sets from environment variable.
     Client DB sets from environment variable. 
+
     This checks whether DS call makes without error and return the results.
-    TODO: check the correctness of the data (This will be double checking
-    since they will be check in workqueue unittest)
+    Not the correctness of functions. That will be tested in different module.
     """
     def initialize(self):
         self.config = DefaultConfig(
                 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
-        dbUrl = os.environ.get("DATABASE", None) \
-                or "sqlite:////tmp/resttest.db"
+        dbUrl = os.environ.get("DATABASE", None)
         self.config.setDBUrl(dbUrl)        
         self.config.setFormatter(
              'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter')
@@ -49,7 +42,8 @@ class WorkQueueTest(RESTBaseUnitTest):
         wqConfig = self.config.getModelConfig()
         wqConfig.queueParams = {}
         wqConfig.serviceModules = [
-            'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
+            'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
+            'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService']
         
     def setUp(self):
         """
@@ -71,56 +65,57 @@ class WorkQueueTest(RESTBaseUnitTest):
         RESTBaseUnitTest.tearDown(self)
         self.specGenerator.removeSpecs()
         
-    def testGetWork(self):
+        # following should be tearDownClass if we swithch to python 2.7
+        deleteConfig(ConfigFile)
+        try:
+            # clean up files created by cherrypy.
+            #TODO: this should be under tearDownClass class method.
+            #  howerver it is only support python 2.7 and newer
+            os.remove('trusted.caches')
+            shutil.rmtree('o..pacman..o')
+            shutil.rmtree('Global')
+            shutil.rmtree('wf')
+        except:
+            pass
+
+    def testWorkQueueService(self):
         
-        specName = "ProductionSpec"
-        self.globalQueue.queueWork(self.specGenerator.createProductionSpec(
-                                                            specName, "file"))
+        # test getWork
+        specName = "RerecoSpec"
+        specUrl = self.specGenerator.createReRecoSpec(specName, "file")
+        self.globalQueue.queueWork(specUrl, request="test_request")
         
         wqApi = WorkQueueDS(self.params)
 
-        data = wqApi.getWork({'SiteB' : 15, 'SiteA' : 15}, "http://test.url")
-        self.assertEqual( len(data) ,  1, 
-                          "only 1 element needs to be back. Got (%s)" % len(data) )
-        self.assertEqual(data[0]['wmspec_name'], specName)
+        data = wqApi.getWork({'SiteA' : 1000000}, "http://test.url")
         
-    def testSynchronize(self):
-        self.globalQueue.queueWork(self.specGenerator.createProcessingSpec(
-                                                 'ProcessingSpec', "file"))
-        wqApi = WorkQueueDS(self.params)
+        # testStatusChange
+        self.assertTrue(len(wqApi.status()) > 1)
+        self.assertEqual(wqApi.cancelWork([1]), [1])
+        self.assertEqual(wqApi.doneWork([1]), [1])
+        self.assertEqual(wqApi.failWork([1]), [1])
+
+
+
+        # testSynchronize
         childUrl = "http://test.url"
         childResources = [{'ParentQueueId' : 1, 'Status' : 'Available'}]
         self.assertEqual(wqApi.synchronize(childUrl, childResources),
                          {'Canceled': set([1])})
         
-        childUrl = "http://test.url"
-        childResources = []
-        #print wqApi.synchronize(childUrl, childResources)
-        
-    def testStatusChange(self):
-        
-        self.globalQueue.queueWork(self.specGenerator.createProcessingSpec(
-                                                  'ProcessingSpec', "file"))
-        wqApi = WorkQueueDS(self.params)
-        
-        self.assertEqual(len(wqApi.status()), 1)
-        self.assertEqual(wqApi.doneWork([1]), [1])
-        self.assertEqual(wqApi.failWork([1]), [1])
-        self.assertEqual(wqApi.cancelWork([1]), [1])
-        #print wqApi.status()
-        
-
-    def testCancelWorkWithRequest(self):
-        #TODO: could try different spec or multiple spec
-        specName = "ProductionSpec1"
-        specUrl = self.specGenerator.createProductionSpec(specName, "file")
-        self.globalQueue.queueWork(specUrl, request="test_request")
-        wqApi = WorkQueueDS(self.params)
+        # testCancelWorkWithRequest
         self.assertEqual(wqApi.cancelWork(["test_request"]), ["test_request"])
+        
+        # testGetChildQueues
+        self.assertTrue(wqApi.getChildQueues() > 0)
+        
+        # testGetChildQueuesByRequest
+        self.assertTrue(wqApi.getChildQueuesByRequest() > 0)
 
+        # testGetJobSummaryFromCouchDB
+        self.assertTrue(wqApi.getJobSummaryFromCouchDB() > 0)
 
 if __name__ == '__main__':
 
     unittest.main()
-    deleteConfig(ConfigFile)
     

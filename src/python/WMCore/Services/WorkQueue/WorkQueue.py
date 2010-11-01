@@ -180,3 +180,18 @@ class WorkQueue(Service):
         args = {}
         callname = 'jobsummary'
         return self._getResult(callname, args = args, verb = "GET")
+
+    def queueWork(self, wmspecUrl, team, request):
+        """
+        This service only provided by local queue
+        """
+        if not (wmspecUrl or team or request):
+            msg = "wmspecUrl, team, request should be specified"
+            raise TypeError, msg
+
+        args = {}
+        args['wmspecUrl'] = wmspecUrl
+        args['team'] = team
+        args['request'] = request
+        callname = 'queuework'
+        return self._getResult(callname, args = args, verb = "PUT")

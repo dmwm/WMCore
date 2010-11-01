@@ -53,11 +53,6 @@ class WorkQueueTest(RESTBaseUnitTest):
         self.params = {}
         self.params['endpoint'] = self.config.getServerUrl()
         
-        #cache location is set under current directory - Global
-        self.globalQueue = globalQueue(dbi = self.testInit.getDBInterface(),
-                                          CacheDir = 'Global',
-                                          NegotiationTimeout = 0,
-                                          QueueURL = self.config.getServerUrl())
         # original location of wmspec: under current directory - WMSpecs
         self.specGenerator = WMSpecGenerator("WMSpecs")
         
@@ -73,7 +68,6 @@ class WorkQueueTest(RESTBaseUnitTest):
             #  howerver it is only support python 2.7 and newer
             os.remove('trusted.caches')
             shutil.rmtree('o..pacman..o')
-            shutil.rmtree('Global')
             shutil.rmtree('wf')
         except:
             pass
@@ -83,9 +77,10 @@ class WorkQueueTest(RESTBaseUnitTest):
         # test getWork
         specName = "RerecoSpec"
         specUrl = self.specGenerator.createReRecoSpec(specName, "file")
-        self.globalQueue.queueWork(specUrl, request="test_request")
         
         wqApi = WorkQueueDS(self.params)
+
+        self.assertTrue(wqApi.queueWork(specUrl, "teamA", "test_request") > 0)
 
         data = wqApi.getWork({'SiteA' : 1000000}, "http://test.url")
         
@@ -114,6 +109,7 @@ class WorkQueueTest(RESTBaseUnitTest):
 
         # testGetJobSummaryFromCouchDB
         self.assertTrue(wqApi.getJobSummaryFromCouchDB() > 0)
+
 
 if __name__ == '__main__':
 

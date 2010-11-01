@@ -61,6 +61,13 @@ class WorkQueueService(ServiceInterface):
                              args = ["status", "before", "after", "elementIDs", "dictKey"],
                              validation = [self.statusValidation])
         self.model.addMethod('GET', 'wf', partial(serveWorkflow, self.wq), args = ['name'])
+
+        # All the service provided below need secure layer(OpenID for authentication)
+        # TODO: if it allows pass wmspec pickled file directly instead of url location.
+        # change the verb to post
+        self.model.addMethod('PUT', 'queuework', self.wq.queueWork,
+                             args = ["wmspecUrl", "team", "request"])
+
         self.model.addMethod('PUT', 'synchronize', self.wq.synchronize,
                              args = ["child_url", "child_report"])
         

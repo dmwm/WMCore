@@ -63,7 +63,6 @@ class TestWorkloadFactory(object):
 
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskCmsswHelper.setGlobalTag("TestGlobalTag::All")
-        procTaskCmsswHelper.setMinMergeSize(1)
         procTaskCmsswHelper.cmsswSetup("CMSSW_3_5_8_patch3", softwareEnvironment = "",
                                        scramArch = "slc5_amd64_gcc434")
         

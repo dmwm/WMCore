@@ -29,12 +29,14 @@ class RESTBaseUnitTest(unittest.TestCase):
         cherrypy.log.access_log.setLevel(logging.WARNING)
         
     def tearDown(self):
+
         print "Stopping Cherrypy server ..."
         self.rt.stop()
         
         if self.schemaModules:
             print "Cleaning up database ..."
             self.testInit.clearDatabase()
+
         self.config = None
         
     def initialize(self):

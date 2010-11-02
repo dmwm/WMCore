@@ -3,7 +3,15 @@
     Mocked DBS interface for Start Policy unit tests
 """
 
+class _MockDBSApi():
+    """Mock dbs api"""
+    def __init__(self, args):
+        self.args = args
+        self.url = args.get('url', '')
 
+    def getServerInfo(self):
+        """getServerInfo"""
+        return {'InstanceName' : 'GLOBAL'}
 
 
 #//     - ignore some params in dbs spec - silence pylint warnings
@@ -17,6 +25,9 @@ class DBSReader:
     def __init__(self, *args, **kwargs):
         print "Using DBS Emulator ..."
         self.dataBlocks = DataBlockGenerator()
+        url = args[0]
+        args = { "url" : url, "level" : 'ERROR', "version" : ''}
+        self.dbs = _MockDBSApi(args)
         
     def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True):
         """Fake block info"""

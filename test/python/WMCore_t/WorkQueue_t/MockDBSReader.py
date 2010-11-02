@@ -3,8 +3,15 @@
     Mocked DBS interface for Start Policy unit tests
 """
 
+class _MockDBSApi():
+    """Mock dbs api"""
+    def __init__(self, args):
+        self.args = args
+        self.url = args.get('url', '')
 
-
+    def getServerInfo(self):
+        """getServerInfo"""
+        return {'InstanceName' : 'GLOBAL'}
 
 #//     - ignore some params in dbs spec - silence pylint warnings
 # pylint: disable-msg=W0613,R0201
@@ -14,7 +21,8 @@ class MockDBSReader:
     """
     def __init__(self, url = '', *datasets):
         self.blocks = {}
-        self.url = url
+        args = { "url" : url, "level" : 'ERROR', "version" : ''}
+        self.dbs = _MockDBSApi(args)
         for dataset in datasets:
             self.blocks[dataset] = [{'Name' : dataset + "#1",
                                      'NumberOfEvents' : 500,
@@ -125,7 +133,4 @@ class MockDBSReader:
 
             return result
 
-    def getServerInfo(self):
-        """getServerInfo"""
-        return {'InstanceName' : 'GLOBAL'}
 # pylint: enable-msg=W0613,R0201

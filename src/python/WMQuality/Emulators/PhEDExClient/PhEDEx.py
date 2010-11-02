@@ -18,6 +18,8 @@ class PhEDEx(RealPhEDEx):
     """
     def __init__(self, *args, **kwargs):
         print "Using PhEDEx Emulator ...."
+        # add the end point to prevent the existence check fails.
+        self['endpoint'] = "phedex_emulator"
         self.dataBlocks = DataBlockGenerator()
 
     def injectBlocks(self, node, xmlData, verbose = 0, strict = 1):

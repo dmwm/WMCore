@@ -33,13 +33,18 @@ class DataBlockGenerator(object):
         
         for fileID in range(GlobalParams.numOfFilesPerBlock()):
            
-            fileName =  "/store/data/%s/file%s" % (blockName, fileID)
-            parentFileName = "/store/data/%s_parent/file%s_parent" % (blockName, fileID)
+            fileName =  "/store/data%s/file%s" % (blockName, fileID)
+            #Not sure why fileName is unit code - change to str
+            fileName = str(fileName)
+            parentFileName = "/store/data%s_parent/file%s_parent" % (blockName, fileID)
+            #Not sure why fileName is unit code - change to str
+            parentFileName = str(parentFileName)
+
             dbsFile = {'LogicalFileName': fileName, 
                        'ParentList' : [self.createDBSFile({'LogicalFileName':parentFileName})],
                       }
             self.files[blockName].append(self.createDBSFile(dbsFile))
-    
+
     def createDBSFile(self, dbsFile = {}):
         defaultDBSFile = {'Checksum': "123456",
                           'NumberOfEvents': GlobalParams.numOfEventsPerFile(),

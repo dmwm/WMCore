@@ -123,7 +123,7 @@ class PhEDEx(RealPhEDEx):
         elif args.has_key('block') and args['block']:
             
             for block in args['block']:
-                dataset = self.dataBlocks.getDataset('block')
+                dataset = self.dataBlocks.getDatasetName('block')
                 # TODO needs to add correct file numbers
                 data['phedex']['dataset'].append({'name' : dataset, 'files' : 5,
                                               'block' : []})

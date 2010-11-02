@@ -73,8 +73,8 @@ class WorkQueueService(ServiceInterface):
         
         self.model.addMethod('PUT', 'failwork', self.wq.failWork, args = ["elementIDs"])
         self.model.addMethod('PUT', 'donework', self.wq.doneWork, args = ["elementIDs"])
-        self.model.addMethod('PUT', 'cancelwork', self.wq.cancelWork, args = ["elementIDs"],
-                             validation = [self.checkIDType])
+        self.model.addMethod('PUT', 'cancelwork', self.wq.cancelWork,
+                             args = ["elementIDs", "id_type"])
     
     #TODO if it needs to be validated, add validation
     #The only requirement of validation function is take input (dict) type return input.
@@ -94,13 +94,4 @@ class WorkQueueService(ServiceInterface):
                 input["elementIDs"] = [int(input["elementIDs"])]
             else:
                 input["elementIDs"] = map(int, input["elementIDs"])
-        return input
-
-    def checkIDType(self, input):
-        """
-        validate elementIDs input arguments
-        add id_type to override default 'id'
-        """
-        if type(input["elementIDs"][0]) == str:
-            input["id_type"] = "request_name"
         return input

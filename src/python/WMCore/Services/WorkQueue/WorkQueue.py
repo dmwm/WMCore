@@ -145,7 +145,7 @@ class WorkQueue(Service):
         callname = 'failwork'
         return self._getResult(callname, args = args, verb = "PUT")
     
-    def cancelWork(self, elementIDs, id_type = None):
+    def cancelWork(self, elementIDs, id_type = "id"):
         """
         _cancelWork_
 
@@ -153,8 +153,9 @@ class WorkQueue(Service):
         """
         args = {}
         args['elementIDs'] = elementIDs
-        
+        args['id_type'] = id_type
         callname = 'cancelwork'
+
         return self._getResult(callname, args = args, verb = "PUT")
 
     def getChildQueues(self):

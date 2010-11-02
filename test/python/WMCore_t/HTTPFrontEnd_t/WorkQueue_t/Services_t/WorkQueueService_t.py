@@ -29,15 +29,5 @@ class WorkQueueServiceTest(unittest.TestCase):
         self.assertEqual(output, convertedInput)
         self.assertEqual(input, convertedInput)
 
-    def testCheckIDType(self):
-        input = {'elementIDs': ['abc_request']}
-        output = self.wqService.checkIDType(input)
-        convertedInput = {'elementIDs': ['abc_request'],
-                          'id_type': 'request_name'}
-        
-        self.assertEqual(output, convertedInput)
-        self.assertEqual(input, convertedInput)
-        
-        
 if __name__ == '__main__':
     unittest.main()

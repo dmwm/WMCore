@@ -244,7 +244,7 @@ class ReqMgrRESTModel(RESTModel):
         if url == None or url == "":
             raise cherrypy.HTTPError(400, "Cannot find URL for request " + request)
         workqueue = WorkQueue.WorkQueue({'endpoint': url})     
-        workqueue.cancelWork([request])
+        workqueue.cancelWork([request], "request_name")
    
     def getMessage(self, request=None):
         """ Returns a list of messages attached to this request """

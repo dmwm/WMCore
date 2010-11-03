@@ -510,14 +510,31 @@ class WorkQueue(WorkQueueBase):
 
         return elementIDs
 
-    def deleteWork(self, elementIDs, id_type = 'id'):
+    def deleteWork(self, elementIDs):
         """
         _deleteWork_
 
         this is called by JSM
         update the WorkQueue status table
         """
-        pass
+        action = self.daofactory(classname = "WorkQueueElement.Delete")
+        action.execute(ids = elementIDs,
+                       conn = self.getDBConn(),
+                       transaction = self.existingTransaction())
+
+    def deleteFinisedWork(self, elementResults):
+        """Delete complete work"""
+        complete_results = [x for x in elementResults if x.inEndState()]
+        if complete_results:
+            complete_ids = []
+            msg = 'Finished with task %s of workflow %s as it is %s'
+            for result in complete_results:
+                complete_ids.extend(x['Id'] for x in result['Elements'])
+                an_element = result['Elements'][0]
+                self.logger.info(msg % (an_element['Task'],
+                                        an_element['WMSpec'].name(),
+                                        result['Status']))
+            self.deleteWork(complete_ids)
 
     def queueWork(self, wmspecUrl, parentQueueId = None,
                   team = None, request = None):
@@ -811,20 +828,7 @@ class WorkQueue(WorkQueueBase):
 
 
                 # prune elements that are finished (after reporting to parent)
-                complete_results = [x for x in results if x.inEndState()]
-                if complete_results:
-                    action = self.daofactory(classname = "WorkQueueElement.Delete")
-                    complete_ids = []
-                    msg = 'Finished with task %s of workflow %s as it is %s'
-                    for result in complete_results:
-                        complete_ids.extend(x['Id'] for x in result['Elements'])
-                        an_element = result['Elements'][0]
-                        self.logger.info(msg % (an_element['Task'],
-                                                an_element['WMSpec'].name(),
-                                                result['Status']))
-                    action.execute(ids = complete_ids,
-                                  conn = self.getDBConn(),
-                                  transaction = self.existingTransaction())
+                self.deleteFinisedWork(results)
 
         # record update times
         if full:

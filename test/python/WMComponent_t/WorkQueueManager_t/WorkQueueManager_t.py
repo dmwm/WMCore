@@ -162,6 +162,8 @@ class WorkQueueManagerTest(unittest.TestCase):
         globalQ.setStatus('Done', 1)
         reqPoller.algorithm({})
         self.assertEqual(reqMgr.status[str(reqMgr.count)], 'completed')
+        # and removed from WorkQueue
+        self.assertEqual(len(globalQ.status()), 0)
 
         # reqMgr problems should not crash client
         reqPoller = WorkQueueManagerReqMgrPoller(None, globalQ, {})

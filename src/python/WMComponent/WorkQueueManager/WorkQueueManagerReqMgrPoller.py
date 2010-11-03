@@ -150,22 +150,26 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
             status = self.reqMgrStatus(ele)
 
             try:
-                self.reportRequestStatusToReqMgr(ele['RequestName'], status)
+                reported_back = self.reportRequestStatusToReqMgr(ele['RequestName'], status)
 
                 if ele['PercentComplete'] or ele['PercentSuccess']:
                     args = {'percent_complete' : ele['PercentComplete'],
                             'percent_success' : ele['PercentSuccess']}
                     self.reqMgr.reportRequestProgress(ele['RequestName'],
                                                       **args)
-                for eleItem in ele['Elements']:
-                    updated.append(eleItem['Id'])
 
             except Exception, ex:
                 msg = 'Error updating ReqMgr about request "%s": %s'
                 self.wq.logger.warning(msg % (ele['RequestName'], str(ex)))
+            else:
+                if reported_back:
+                    updated.append(ele)
 
         if updated:
-            self.wq.setReqMgrUpdate(now, *updated)
+            updated_elements = sum([], *[x['Elements'] for x in updated])
+            self.wq.setReqMgrUpdate(now, *[y['Id'] for y in updated_elements])
+
+            self.wq.deleteFinisedWork(updated)
 
     def reportRequestStatusToReqMgr(self, request, status, message = None):
         """Change state in RequestManager
@@ -177,6 +181,8 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                 self.reqMgr.sendMessage(request, str(message))
         except Exception, ex:
             self.wq.logger.error("Unable to report to ReqMgr: %s" % str(ex))
+            return False
+        return True
 
     def reqMgrStatus(self, ele):
         """Map WorkQueue Status to that reported to ReqMgr"""

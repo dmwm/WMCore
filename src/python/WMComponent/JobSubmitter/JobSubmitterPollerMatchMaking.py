@@ -175,17 +175,24 @@ class JobSubmitterPollerMatchMaking(JobSubmitterPoller):
                 jobSubmit = jobsReady[:self.config.JobSubmitter.jobsPerWorker]
                 jobsReady = jobsReady[self.config.JobSubmitter.jobsPerWorker:]
 
+#                package = ''
+#                loadedJob = None
+
+#                for jj in jobSubmit:
                 pickledJobPath = os.path.join(jobSubmit[0]['cache_dir'], "job.pkl")
                 jobHandle = open(pickledJobPath, "r")
                 loadedJob = cPickle.load(jobHandle)
-                package   = self.addJobsToPackage(loadedJob)
-                sandbox   = loadedJob['sandbox']
                 jobHandle.close()
+                package   = self.addJobsToPackage(loadedJob)
+                self.flushJobPackages()
+
+                sandbox   = loadedJob['sandbox']
 
                 self.processPool.enqueue([{'jobs':       jobSubmit,
                                            'packageDir': package,
                                            'sandbox':    sandbox,
                                            'agentName':  agentName,
+                                           'matching':   True
                                           }])
                 lenWork += 1
 

@@ -93,6 +93,7 @@ class BossLiteGLitePlugin(PluginBase):
             self.packageDir = entry.get('packageDir', None)
             self.sandbox    = entry.get('sandbox', None)
             self.agent      = entry.get('agentName', 'test')
+            self.matching   = entry.get('matching', False)
 
             logging.info("Got %i jobs to submit" %len(jobList) )
 
@@ -150,8 +151,10 @@ class BossLiteGLitePlugin(PluginBase):
                 # output_files - list of str
                 
                 ## Translating CMS names into ce name (through resource control)
-                #dest = self.getDestinations( dest, job['custom']['location'] )
-                dest = job['custom']['location']
+                if not self.matching:
+                    dest = self.getDestinations( dest, job['custom']['location'] )
+                else:
+                    dest = job['custom']['location']
 
                 #jobParams['dlsDestination'] = dest
 

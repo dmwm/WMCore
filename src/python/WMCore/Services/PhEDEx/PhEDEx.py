@@ -25,9 +25,7 @@ class PhEDEx(Service):
         dict["timeout"] = 300
 
         if not dict.has_key('endpoint'):
-            dict['endpoint'] = "%scmsweb.cern.ch/phedex/datasvc/%s/prod/" % \
-                                ((secure and "https://" or "http://"),
-                                 self.responseType)
+            dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % self.responseType
 
         if dict.has_key('cachepath'):
             pass

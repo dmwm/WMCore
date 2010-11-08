@@ -38,7 +38,7 @@ class DBSReader:
         if url.count('cmsdbsprod.cern.ch/cms_dbs_prod_global') or \
                         self.dbs.getServerInfo()['InstanceName'] == 'GLOBAL':
             dlsType = 'DLS_TYPE_PHEDEX'
-            dlsUrl = 'http://cmsweb.cern.ch/phedex/datasvc/xml/prod'
+            dlsUrl = 'https://cmsweb.cern.ch/phedex/datasvc/xml/prod'
         else:
             dlsType = 'DLS_TYPE_DBS'
             dlsUrl = url

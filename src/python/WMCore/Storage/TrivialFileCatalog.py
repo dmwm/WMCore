@@ -82,6 +82,9 @@ class TrivialFileCatalog(dict):
             if mapping['path-match'].match(path):
                 if mapping['chain'] != None:
                     path = self.matchLFN(mapping['chain'], path)
+                    # if path is None just continue
+                    if not path:
+                        continue
                 try:
                     splitPath = mapping['path-match'].split(path, 1)[1]
                 except IndexError:

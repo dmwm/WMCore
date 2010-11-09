@@ -2,8 +2,6 @@ function(head, req) {
   var row;
   start({"headers": {"Content-Type": "text/html"}});
 
-  send("<html><body><pre>\n");
-
   while (row = getRow()) {
     var numFiles = row.value["count"];
     var numEvents = row.value["events"];
@@ -34,8 +32,6 @@ function(head, req) {
       var bytesString = numBytes + " bytes";
     }
 
-    send("  " + dataset + " " + filesString + " " + eventsString + " " + bytesString + "\n");
+    send("  " + dataset + " " + filesString + " " + eventsString + " " + bytesString + "<br>\n");
   }
-
-  send("</pre></body></html>");
 };

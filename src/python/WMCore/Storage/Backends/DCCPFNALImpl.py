@@ -152,7 +152,7 @@ class DCCPFNALImpl(StageOutImpl):
             dirname = os.path.dirname(targetPFN)
             result = "#!/bin/sh\n"
             result += ". /opt/d-cache/dcap/bin/setenv-cmsprod.sh\n"
-            result += "dccp -o 86400  -d 0 -X -role=cmsprod %s %s %s" % ( optionsStr, sourcePFN, targetPFN)
+            result += "dccp -o 86400  -d 255 -X -role=cmsprod %s %s %s" % ( optionsStr, sourcePFN, targetPFN)
 
             result += \
 """
@@ -194,7 +194,7 @@ fi
                 result += " %s " % options
             result += " %s " % sourcePFN
             result += " %s " % targetPFN
-            result += "; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
+            result += "; sync; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
             return result
 
 

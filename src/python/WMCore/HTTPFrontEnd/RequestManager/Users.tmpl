@@ -1,0 +1,15 @@
+<head><title>Users</title></head>
+
+<body>
+
+<form action="handleAddUser">
+<b>Add User:</b><input type="text" name="user" size=20/> Email <input type="text" name="email" size=20/>
+<input type=submit><br>
+</form>
+
+#for $user in $users
+  <a href="user/$user">$user</a><br>
+#end for
+
+</body>
+

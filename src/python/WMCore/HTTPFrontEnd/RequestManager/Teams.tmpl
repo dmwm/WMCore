@@ -1,0 +1,15 @@
+<head><title>Teams</title></head>
+
+<body>
+
+<form action="handleAddTeam">
+<b>Add Team:</b><input type="text" name="team" size=20/>
+<input type=submit><br>
+</form>
+
+#for $team in $teams
+  <a href="team/$team">$team</a><br>
+#end for
+
+</body>
+

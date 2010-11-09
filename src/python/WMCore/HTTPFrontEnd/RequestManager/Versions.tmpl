@@ -1,0 +1,19 @@
+<head><title>Versions</title></head>
+
+<body>
+
+<form action="handleAddVersion">
+<b>Add Version:</b><input type="text" name="version" size=20/> 
+<input type=submit><br>
+</form>
+
+<form action="handleAllVersions">
+<input type="submit" value="Update from TC"><br>
+</form>
+
+#for $version in $versions
+  $version<br>
+#end for
+
+</body>
+

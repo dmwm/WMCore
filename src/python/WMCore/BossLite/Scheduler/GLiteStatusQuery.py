@@ -56,6 +56,7 @@ class myJSONEncoder(object):
         tmp = str(myString)
         tmp = tmp.replace('\'','"')
         tmp = tmp.replace('None','null')
+        tmp = tmp.replace('doesn"t', "doesn't")
 
         return tmp
 

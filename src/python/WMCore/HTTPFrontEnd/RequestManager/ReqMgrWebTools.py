@@ -1,4 +1,5 @@
 """ Functions to interpret lists that get sent in as text"""
+import urllib
 
 def parseRunList(l):
     """ Changes a string into a list of integers """
@@ -23,4 +24,15 @@ def parseSite(kw, name):
     if not isinstance(value, list):
         value = [value]
     return value
+
+def allSoftwareVersions():
+    result = []
+    f = urllib.urlopen("https://cmstags.cern.ch/cgi-bin/CmsTC/ReleasesXML")
+    for line in f:
+        for tok in line.split():
+            if tok.startswith("label="):
+                release = tok.split("=")[1].strip('"')
+                result.append(release)
+    return result
+
 

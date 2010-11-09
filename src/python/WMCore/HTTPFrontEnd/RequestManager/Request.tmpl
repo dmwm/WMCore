@@ -23,6 +23,8 @@
         #if $key == 'RequestWorkflow'
             <tr><td> $key </td><td>  <a href="../showWorkload?filepath=$workloadDir/$value">$value</a> </td></tr>
             <INPUT TYPE="HIDDEN" NAME="workload" VALUE=$workloadDir/$value>
+        #elif $key == 'Requestor'
+            <tr><td> $key </td><td>  <a href="../user/$value">$value</a> </td></tr>
         #elif $key == 'RequestType'
             <tr><td> $key </td><td> $value </td></tr>
             <INPUT TYPE="HIDDEN" NAME="requestType" VALUE=$value>

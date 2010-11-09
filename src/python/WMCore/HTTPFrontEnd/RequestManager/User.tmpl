@@ -9,9 +9,20 @@ User $user <br><br>
 #end for
 <br>
 
+<form action="../handleAddToGroup">
+<b> Add to Group: </b>
+<select name="group">
+#for $group in $allGroups
+  <option>$group</option>
+#end for
+</select>
+<input type="hidden" name="user" value=$user></input>
+<input type=submit>
+</form>
+
 <form action="../handleUserPriority">
-<b>User Priority:</b><input type="text" name="RequestUserPriority" size=2 value=1 />
-<input type="hidden" value=$user id="user" />
+<b>User Priority:</b><input type="text" name="userPriority" size=2 value=$priority />
+<input type="hidden" value=$user name="user"/>
 <input type=submit>
 </form>
 

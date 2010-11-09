@@ -6,7 +6,6 @@ API for manipulating user information in the database
 
 """
 
-import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 
 
@@ -24,24 +23,23 @@ def deleteUser(hnUsername):
     return result
 
 
-def increasePriority(hnUsername, priorityIncrease):
+def getPriority(hnUserName):
+    """ Set the user priority to the amount given """
+    factory = DBConnect.getConnection()
+    userPriority = factory(classname = "Requestor.GetPriority")
+    result = userPriority.execute(hnUserName)
+    return result
+
+
+def setPriority(hnUsername, priority):
     """
-    _increasePriority_
+    _setPriority_
 
-    Increase users priority by the integer amount specified
-
-    """
-    pass
-
-def decreasePriority(hnUsername, priorityDecrease):
-    """
-    _decreasePriority_
-
-    Decrease users priority by the integer amount specified
+    Sets user priority to the integer amount specified
 
     """
-    pass
-
-
-
+    factory = DBConnect.getConnection()
+    userPriority = factory(classname = "Requestor.SetPriority")
+    result = userPriority.execute(hnUsername, priority)
+    return result
 

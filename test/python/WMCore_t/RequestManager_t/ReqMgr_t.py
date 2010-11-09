@@ -8,28 +8,45 @@ import urllib
 import time
 
 class TestReqMgr(unittest.TestCase):
-    def setUp(self):
-        reqMgrHost = 'http://cmssrv49.fnal.gov:8585'
-        self.jsonSender = JSONRequests(reqMgrHost)
-        self.jsonSender.delete('/reqMgr/user/me')
-        #self.requestTypes = ['ReReco', 'StoreResults', 'CmsGen', 'Reco']
-        #self.requestTypes = ['ReReco', 'MonteCarlo']
-        self.requestTypes = ['ReReco', 'MonteCarlo', 'FileProcessing']
 
+    def cleanupRequests(self):
+        requests = self.jsonSender.get('/reqMgr/request')[0]
+        requestNames = [r['RequestName'] for r in requests]
+        for requestType in self.requestTypes:
+            requestName = 'Test%s'%requestType
+            if requestName in requestNames:
+                print "Deleting " + requestName
+                print  self.jsonSender.delete('/reqMgr/request/%s' % requestName)
+
+    def setUp(self):
+        reqMgrHost = 'http://cmssrv49.fnal.gov:8586'
+        self.jsonSender = JSONRequests(reqMgrHost)
+        self.requestTypes = ['ReReco', 'MonteCarlo', 'FileProcessing']
+        
+        self.cleanupRequests()
+
+        if 'me' in self.jsonSender.get('/reqMgr/user')[0]:
+            self.jsonSender.delete('/reqMgr/user/me')    
         self.assertFalse('me' in self.jsonSender.get('/reqMgr/user')[0])
         self.assertEqual(self.jsonSender.put('/reqMgr/user/me?email=me@my.com')[1], 200)
         self.assertTrue('me' in self.jsonSender.get('/reqMgr/user')[0])
 
-        self.jsonSender.delete('/reqMgr/group/PeopleLikeMe')
+        if 'PeopleLikeMe' in self.jsonSender.get('/reqMgr/group')[0]:
+            self.jsonSender.delete('/reqMgr/group/PeopleLikeMe')
         self.assertFalse('PeopleLikeMe' in self.jsonSender.get('/reqMgr/group')[0])
         self.assertEqual(self.jsonSender.put('/reqMgr/group/PeopleLikeMe')[1], 200)
         self.assertTrue( 'PeopleLikeMe' in self.jsonSender.get('/reqMgr/group')[0])
 
         self.jsonSender.put('/reqMgr/group/PeopleLikeMe/me')
-        self.assertTrue('me' in self.jsonSender.get('/reqMgr/group/PeopleLikeMe')[0])
-        self.assertTrue('PeopleLikeMe' in self.jsonSender.get('/reqMgr/group?user=me')[0])
+        users = json.loads(self.jsonSender.get('/reqMgr/group/PeopleLikeMe')[0])['users']
+        self.assertTrue('me' in users)
+        groups = json.loads(self.jsonSender.get('/reqMgr/user/me')[0])['groups']
+        self.assertTrue('PeopleLikeMe' in groups)
+        groups2 = self.jsonSender.get('/reqMgr/group?user=me')[0]
+        self.assertTrue('PeopleLikeMe' in groups2)
 
-        self.jsonSender.delete(urllib.quote('/reqMgr/team/White Sox'))
+        if 'White Sox' in self.jsonSender.get('/reqMgr/team')[0]:
+            self.jsonSender.delete(urllib.quote('/reqMgr/team/White Sox'))
         self.assertFalse('White Sox' in self.jsonSender.get('/reqMgr/team')[0])
         self.assertEqual(self.jsonSender.put(urllib.quote('/reqMgr/team/White Sox'))[1], 200)
         self.assertTrue('White Sox' in self.jsonSender.get('/reqMgr/team')[0])
@@ -50,11 +67,21 @@ class TestReqMgr(unittest.TestCase):
             self.assertEqual(self.jsonSender.get('/reqMgr/request/'+requestName)[0]['RequestName'], requestName)
             self.assertTrue(requestName in self.jsonSender.get('/reqMgr/user/me')[0])
 
-            # jusrt use the ReRecoRequest for these tests
-            self.assertTrue(self.jsonSender.put('/reqMgr/request/%s?priority=5' % requestName)[1] == 200)
-            # default priority of group and user of 1
-            self.assertEqual(self.jsonSender.get('/reqMgr/request/'+requestName)[0]['RequestPriority'], 5+2)
             self.jsonSender.put('/reqMgr/request/%s?status=assignment-approved' % requestName)
+            meJSON = self.jsonSender.get('/reqMgr/user/me')[0]
+            me = json.loads(meJSON)
+            self.assertTrue(requestName in me['requests'])
+            self.assertEqual(self.jsonSender.put('/reqMgr/request/%s?priority=5' % requestName)[1], 200)
+            self.assertEqual(self.jsonSender.post('/reqMgr/user/me?priority=6')[1], 200)
+            self.assertEqual(self.jsonSender.post('/reqMgr/group/PeopleLikeMe?priority=7')[1], 200)
+
+            # default priority of group and user of 1
+            request = self.jsonSender.get('/reqMgr/request/'+requestName)[0]
+            self.assertEqual(request['ReqMgrRequestBasePriority'], 5)
+            self.assertEqual(request['ReqMgrRequestorBasePriority'], 6)
+            self.assertEqual(request['ReqMgrGroupBasePriority'], 7)
+            self.assertEqual(request['RequestPriority'], 5+6+7)
+
             # only certain transitions allowed
             #self.assertEqual(self.jsonSender.put('/reqMgr/request/%s?status=running' % requestName)[1], 400)
             self.assertRaises(HTTPException, self.jsonSender.put,'/reqMgr/request/%s?status=running' % requestName)
@@ -85,19 +112,15 @@ class TestReqMgr(unittest.TestCase):
             message = "The sheriff is near"
             jsonMessage = json.dumps(message)
             self.jsonSender.put('/reqMgr/message/'+requestName, message)
-            #messages = self.jsonSender.get('/reqMgr/message/'+requestName)
+            messages = self.jsonSender.get('/reqMgr/message/'+requestName)
             #self.assertEqual(messages[0][0][0], message)
             for status in ['running', 'completed']:
               self.jsonSender.put('/reqMgr/request/%s?status=%s' % (requestName, status))
+            self.jsonSender.delete('/reqMgr/request/%s' % requestName)
 
 
     def tearDown(self):
-        for requestType in self.requestTypes:
-            try: 
-                self.jsonSender.delete('/reqMgr/request/Test'+requestType)
-            except Exception, ex:
-                print "EXCEPTION"
-                print ex.result
+        self.cleanupRequests()
         self.jsonSender.delete('/reqMgr/user/me')
         self.jsonSender.delete('/reqMgr/group/PeopleLikeMe')
         self.jsonSender.delete('/reqMgr/version/CMSSW_X_Y_Z')

@@ -89,6 +89,8 @@ def getList():
     return [GetRequest.getRequest(id) for id in ids]
 
 def doDelete():
+    if user != None:
+        pass
     requests = getList()
     for request in requests:
         if args == ['all'] or request['RequestName'] in args:

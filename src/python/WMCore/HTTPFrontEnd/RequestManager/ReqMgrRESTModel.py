@@ -6,8 +6,8 @@ import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListReq
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
 import WMCore.RequestManager.RequestDB.Interface.Admin.RequestManagement as RequestAdmin
 import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
-import WMCore.RequestManager.RequestDB.Interface.Admin.GroupManagement as GroupAdmin
-import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement as UserAdmin
+import WMCore.RequestManager.RequestDB.Interface.Admin.GroupManagement as GroupManagement
+import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement as UserManagement
 import WMCore.RequestManager.RequestDB.Interface.ProdSystem.ProdMgrRetrieve as ProdMgrRetrieve
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
@@ -21,6 +21,7 @@ import WMCore.RequestManager.RequestMaker.Processing.FileBasedRequest
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import cherrypy
+import json
 import threading
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import urllib
@@ -67,7 +68,7 @@ class ReqMgrRESTModel(RESTModel):
                                          'events_merged', 'files_written',
                                          'files_merged', 'dataset']},
                     'user' : {'call':self.postUser, 'args':['user', 'priority']},
-                    'group' : {'call':self.postUser, 'args':['group', 'priority']} 
+                    'group' : {'call':self.postGroup, 'args':['group', 'priority']} 
                     },
             'DELETE':{'request' : {'call':self.deleteRequest, 'args':['requestName']},
                       'user' :  {'call':self.deleteUser, 'args':['user']},
@@ -107,8 +108,10 @@ class ReqMgrRESTModel(RESTModel):
         """ Either returns the request object, or None """
         requests = ListRequests.listRequests()
         for request in requests:
+            print "FINDREA " + requestName + ' ' +  request['RequestName']
             if request['RequestName'] == requestName:
                 return request
+        print "NONE"
         return None
 
     def requestID(self, requestName):
@@ -189,32 +192,35 @@ class ReqMgrRESTModel(RESTModel):
         return result
 
 
-    def getUser(self, userName=None):
-        """ No args returns a list of all users.  Arg returs all request for this user """
+    def getUser(self, userName=None, group=None):
+        """ No args returns a list of all users.  Group returns groups this user is in.  Username
+            returs a JSON with information about the user """
         self.initThread()
-        if userName == None:
-            return Registration.listUsers()
+        if userName != None:
+            result = {}
+            result['groups'] = GroupInfo.groupsForUser(userName).keys()
+            result['requests'] = UserRequests.listRequests(userName).keys()
+            result['priority'] = UserManagement.getPriority(userName)
+            return json.dumps(result)
+        elif group != None:
+            GroupInfo.usersInGroup(group)    
         else:
-            return UserRequests.listRequests(userName).keys()
+            return Registration.listUsers()
+
         
 
     def getGroup(self, group=None, user=None):
-        """ No args lists all groups, one args lists users in group """
+        """ No args lists all groups, one args returns JSON with users and priority """
         self.initThread()
-        if group == None:
-            if user == None:
-                return GroupInfo.listGroups()
-            else:
-                # check if the user exists first
-                if not user in self.getUser():
-                    cherrypy.response.status = 400
-                    return "Cannot find user " + user + ".  Please add one using PUT user."
-                return GroupInfo.groupsForUser(user).keys()
+        if group != None:
+            result = {}
+            result['users'] =  GroupInfo.usersInGroup(group)
+            result['priority'] = GroupManagement.getPriority(group)
+            return json.dumps(result)
+        elif user != None:   
+            return GroupInfo.groupsForUser(user).keys()
         else:
-            try:
-                return GroupInfo.usersInGroup(group)
-            except Exception:
-                raise RuntimeError, "Error finding group " + group
+            return GroupInfo.listGroups()
 
     def getVersion(self):
         """ Returns a list of all CMSSW versions registered with ReqMgr """
@@ -350,10 +356,10 @@ class ReqMgrRESTModel(RESTModel):
         self.initThread()
         if(user != None):
             # assume group exists and add user to it
-            return GroupAdmin.addUserToGroup(user, group)
+            return GroupManagement.addUserToGroup(user, group)
         if GroupInfo.groupExists(group):
             return "Group already exists"
-        return GroupAdmin.addGroup(group)
+        return GroupManagement.addGroup(group)
 
     def putVersion(self, version):
         """ Registers a new CMSSW version with ReqMgr """
@@ -393,42 +399,41 @@ class ReqMgrRESTModel(RESTModel):
 
     def postUser(self, user, priority):
         """ Change the user's priority """
-        pass
+        self.initThread()
+        return UserManagement.setPriority(user, priority)
 
     def postGroup(self, group, priority):
         """ Change the group's priority """
-        pass
+        self.initThread()
+        return GroupManagement.setPriority(group, priority)
 
     def deleteRequest(self, requestName):
         """ Deletes a request from the ReqMgr """
         self.initThread()
-        try:
-            request = self.findRequest(requestName)
-            if request == None:
-                raise RuntimeError("No such request")
-            return RequestAdmin.deleteRequest(request['RequestID'])
-        except Exception, ex:
-            cherrypy.response.status = 400
-            return str(ex)
+        request = self.findRequest(requestName)
+        if request == None:
+            raise cherrypy.HTTPError(404, "No such request")
+        return RequestAdmin.deleteRequest(request['RequestID'])
 
     def deleteUser(self, user):
         """ Deletes a user, as well as deleting his requests and removing
             him from all groups """
         self.initThread()
         if user in self.getUser():
-            for request in self.getUser(user):
+            requests = json.loads(self.getUser(user))['requests']
+            for request in requests:
                 self.deleteRequest(request)
             for group in GroupInfo.groupsForUser(user).keys():
-                GroupAdmin.removeUserFromGroup(user, group)
-            return UserAdmin.deleteUser(user)
+                GroupManagement.removeUserFromGroup(user, group)
+            return UserManagement.deleteUser(user)
 
     def deleteGroup(self, group, user=None):
         """ If no user is sent, delete the group.  Otherwise, delete the user from the group """
         self.initThread()
         if user == None:
-            return GroupAdmin.deleteGroup(group)
+            return GroupManagement.deleteGroup(group)
         else:
-            return GroupAdmin.removeUserFromGroup(user, group) 
+            return GroupManagement.removeUserFromGroup(user, group) 
 
     def deleteVersion(self, version):
         """ Un-register this software version with ReqMgr """

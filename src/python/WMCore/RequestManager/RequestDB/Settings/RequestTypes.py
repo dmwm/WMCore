@@ -13,6 +13,6 @@ TypesList = [
     "CmsGen",
     "Reco",
     "ReReco",
-    "StoreResults"
-
+    "StoreResults",
+    "FileProcessing"
     ]

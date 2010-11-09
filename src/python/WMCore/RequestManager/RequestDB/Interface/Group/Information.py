@@ -63,3 +63,8 @@ def groupsForUser(userName):
     groups = getGroups.execute(userId)
     return groups;
 
+def priority(groupName):
+    """ returns the priority of the group """
+    factory = DBConnect.getConnection()
+    return factory(classname = "Group.GetPriority")
+

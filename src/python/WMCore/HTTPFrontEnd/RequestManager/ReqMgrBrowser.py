@@ -2,7 +2,7 @@
 """ Main Module for browsing and modifying requests """
 
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, parseSite
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, parseSite, allSoftwareVersions
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Cache.WMConfigCache import ConfigCache 
 from WMCore.Services.Requests import JSONRequests
@@ -427,7 +427,9 @@ class ReqMgrBrowser(TemplatedPage):
         requests = userDict['requests']
         priority = userDict['priority']
         groups = userDict['groups']
-        return self.templatepage("User", user=userName, groups=groups, requests=requests, priority=priority)
+        allGroups = self.jsonSender.get('/reqMgr/group')[0]
+        return self.templatepage("User", user=userName, groups=groups, 
+            allGroups=allGroups, requests=requests, priority=priority)
 
     @cherrypy.expose
     def handleUserPriority(self, user, userPriority):
@@ -449,4 +451,78 @@ class ReqMgrBrowser(TemplatedPage):
         self.jsonSender.post('/reqMgr/group/%s?priority=%s' % (group, groupPriority))
         return "Updated group %s priority to %s" % (group, groupPriority)
 
+    @cherrypy.expose
+    def users(self):
+        """ Lists all users.  Should be paginated later """
+        allUsers = self.jsonSender.get('/reqMgr/user')[0]
+        return self.templatepage("Users", users=allUsers)
+
+    @cherrypy.expose
+    def handleAddUser(self, user, email=None):
+        """ Handles setting user priority """
+        self.jsonSender.put('/reqMgr/user/%s?email=%s' % (user, email))
+        return "Added user %s" % user
+
+    @cherrypy.expose
+    def handleAddToGroup(self, user, group):
+        """ Adds a user to the group """
+        self.jsonSender.put('/reqMgr/group/%s/%s' % (group, user))
+        return "Added %s to %s " % (user, group)
+
+    @cherrypy.expose
+    def groups(self):
+        """ Lists all users.  Should be paginated later """
+        allGroups = self.jsonSender.get('/reqMgr/group')[0]
+        return self.templatepage("Groups", groups=allGroups)
+
+    @cherrypy.expose
+    def handleAddGroup(self, group):
+        """ Handles adding a group """
+        self.jsonSender.put('/reqMgr/group/%s' % group)
+        return "Added group %s " % group
+
+    @cherrypy.expose
+    def teams(self):
+        """ Lists all teams """
+        teams = self.jsonSender.get('/reqMgr/team')[0]
+        return self.templatepage("Teams", teams=teams)
+
+    @cherrypy.expose
+    def team(self, teamName):
+        """ Details for a team """
+        assignments = self.jsonSender.get('/reqMgr/assignment/%s' % teamName)[0]
+        return self.templatepage("Team", team=teamName, requests=assignments.keys())
+
+    @cherrypy.expose
+    def handleAddTeam(self, team):
+        """ Handles a request to add a team """
+        self.jsonSender.put('/reqMgr/team/%s' % team)
+        return "Added team %s" % team
+
+    @cherrypy.expose
+    def versions(self):
+        """ Lists all versions """
+        versions = self.jsonSender.get('/reqMgr/version')[0]
+        versions.sort()
+        return self.templatepage("Versions", versions=versions)
+
+    @cherrypy.expose
+    def handleAddVersion(self, version):
+        """ Registers a version """
+        self.jsonSender.put('/reqMgr/version/%s' % version)
+        return "Added version %s" % version
+
+    @cherrypy.expose
+    def handleAllVersions(self):
+        """ Registers all versions in the TC """
+        currentVersions = self.jsonSender.get('/reqMgr/version')[0]
+        allVersions = allSoftwareVersions()
+        result = ""
+        for version in allVersions:
+            if not version in currentVersions:
+               self.jsonSender.put('/reqMgr/version/%s' % version)
+               result += "Added version %s<br>" % version
+        if result == "":
+            result = "Version list is up to date"
+        return result
 

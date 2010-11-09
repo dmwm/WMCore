@@ -2,12 +2,8 @@
 """
 _Step.Executor.LogCollect_
 
-Implementation of an Executor for a StageOut step
-
+Implementation of an Executor for a StageOut step.
 """
-
-
-
 
 import os.path
 import logging
@@ -184,7 +180,8 @@ class LogCollect(Executor):
 
         Creates a tarball archive for log files
         """
-        tarName         = '%s-%i-logs.tar' % (self.report.data.workload, self.job["counter"])
+        taskName = self.report.getTaskName().split('/')[-1]
+        tarName         = '%s-%s-%i-logs.tar' % (self.report.data.workload, taskName, self.job["counter"])
         tarBallLocation = os.path.join(self.stepSpace.location, tarName)
         tarBall         = tarfile.open(tarBallLocation, 'w:')
         for f in fileList:

@@ -82,6 +82,9 @@ class LoadForErrorHandler(DBFormatter):
         """
 
         if type(jobID) == list:
+            if len(jobID) < 1:
+                # Nothing to do
+                return []
             binds = jobID
         else:
             binds = {"jobid": jobID}

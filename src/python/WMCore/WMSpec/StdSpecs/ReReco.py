@@ -119,6 +119,7 @@ class ReRecoWorkloadFactory(StdBase):
                 outputModuleInfo = outputMods[outputModuleName]
                 self.addMergeTask(skimTask, self.skimJobSplitAlgo,
                                   outputModuleName,
+                                  outputModuleInfo["filterName"],
                                   outputModuleInfo["dataTier"],
                                   outputModuleInfo["processedDataset"])
 

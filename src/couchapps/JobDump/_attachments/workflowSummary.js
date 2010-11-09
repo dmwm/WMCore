@@ -1,30 +1,66 @@
-function getFailedJobs(workflowName) {
+function getFailedJobs(workflowName, errorDiv) {
+  // Retrieve the list of failed jobs IDs from couch for the given workflow.
+  errorDiv.innerHTML = "Retrieving list of failed jobs from couch...";
   xmlhttp = new XMLHttpRequest();
   xmlhttp.open("GET", "../../_view/failedJobsByWorkflowName?startkey=[\"" + workflowName + "\"]&endkey=[\"" + workflowName + "\",{}]", false);
   xmlhttp.send();
+
+  errorDiv.innerHTML += "done.";
   return eval("(" + xmlhttp.responseText + ")")["rows"];
 };
 
 function getErrorInfoForJob(jobID) {
+  // Retrieve the error information from couch for the given jobs ID.
   xmlhttp = new XMLHttpRequest();
   xmlhttp.open("GET", "../../_view/errorsByJobID?startkey=[" + jobID + "]&endkey=[" + jobID + ",{}]", false);
   xmlhttp.send();
   return eval("(" + xmlhttp.responseText + ")")["rows"];
 };
 
-function collateFailureInfo(failedJobs) {
-  // first level - task name
-  // second level - step name
-  //  errors = [], {type, code, details}
-  //  jobs = []
-  //  input = []
-  //  runs = {}, {run: [lumis]} 
+function numericalCompare(a, b) {
+  return a - b;
+}
 
+function removeArrayDuplicates(someArray, compareFunc) {
+  // Given two arrays remove all duplicate entries and return a new array. If
+  // the compareFunc argument is "numberical" the returned array will be sorted
+  // in numerical order, otherwise it will be sorted in dictionary order.
+  var uniqueValues = new Array;
+  var prevValue = null;
+
+  if (compareFunc == "numerical") {
+    someArray.sort(numericalCompare);
+  } else {
+    someArray.sort();
+  }
+
+  for (var arrayIndex in someArray) {
+    if (prevValue != someArray[arrayIndex]) {
+      uniqueValues.push(someArray[arrayIndex]);
+      prevValue = someArray[arrayIndex];
+    };
+  };
+
+  return uniqueValues;
+}
+
+function collateFailureInfo(failedJobs, errorDiv) {
+  // Given a list of failed job IDs retrieve the frameworks job reports for all
+  // of the jobs and sort the failure information into a single object.  The 
+  // object will have the following form:
+  //  {taskName: {stepName: {"errors": [{"type": type, "exitCode": exitCode, "details": details}, ...],
+  //                         "jobs": [jobID, ...],
+  //                         "input": [lfn, ...],
+  //                         "runs": {runNumber: [lumi, ...]}}}}
   var workflowFailures = {};
 
+  failedJobs.sort(numericalCompare);
   for (failedJobIndex in failedJobs) {
     var jobID = failedJobs[failedJobIndex]["value"];
     var jobErrors = getErrorInfoForJob(jobID);
+
+    errorDiv.innerHTML = "Retrieving failure information for job " + jobID + " ";
+    errorDiv.innerHTML += "(" + failedJobIndex + " of " + failedJobs.length + ")";
 
     for (var errorIndex in jobErrors) {
       var workflowError = jobErrors[errorIndex]["value"]
@@ -45,8 +81,8 @@ function collateFailureInfo(failedJobs) {
         var fwjrError = workflowError["error"][fwjrErrorIndex];
         var errorExists = false;
         for (var detailsIndex in stepFailure["errors"]) {
-          var errorDetails = stepFailure["errors"][detailsIndex]["details"];
-          if (errorDetails == fwjrError["details"]) {
+          var exitCode = stepFailure["errors"][detailsIndex]["exitCode"];
+          if (exitCode == fwjrError["exitCode"]) {
             errorExists = true;
             break;
           }
@@ -73,133 +109,188 @@ function collateFailureInfo(failedJobs) {
 }
 
 function renderErrorDetails(errorInfo, stepDiv) {
+  // Insert the error information into the given div.
   for(var errorIndex in errorInfo) {
     stepError = errorInfo[errorIndex];
     var errorDiv = document.createElement("div");
 
     if (errorIndex == 0) {
-      errorDiv.style.margin = "0px 0px 0px 15px";
+      errorDiv.style.margin = "5px 0px 0px 15px";
     } else {
       errorDiv.style.margin = "10px 0px 0px 15px";
     }
 
-    errorDiv.innerHTML = "Error Type: " + stepError["type"] + "<br>";
-    errorDiv.innerHTML += "Error Code: " + stepError["exitCode"] + "<br>";
-    errorDiv.innerHTML += "Error Details:";
+    errorDiv.innerHTML = "<b>Error Type:</b> " + stepError["type"] + "<br>";
+    errorDiv.innerHTML += "<b>Error Code:</b> " + stepError["exitCode"] + "<br>";
+    errorDiv.innerHTML += "<b>Error Details:</b>";
     stepDiv.appendChild(errorDiv);
 
-    var errorDetailsDiv = document.createElement("div");
-    errorDetailsDiv.style.margin = "0px 0px 0px 15px";
-    errorDetailsDiv.innerHTML = stepError["details"];
-    errorDiv.appendChild(errorDetailsDiv);
+    var errorDetailsPre = document.createElement("pre");
+    errorDetailsPre.style.margin = "0px 0px 0px 15px";
+    errorDetailsPre.style.backgroundColor = "silver";
+    errorDetailsPre.style.marginTop = "0px";
+    errorDetailsPre.style.marginBottom = "0px";
+    errorDetailsPre.style.width = "100%";
+    errorDetailsPre.innerHTML = stepError["details"];
+    errorDiv.appendChild(errorDetailsPre);
   };
 };
 
-function removeArrayDuplicates(someArray) {
-  var uniqueValues = new Array;
-  var prevValue = null;
-
-  someArray.sort()
-  for (var arrayIndex in someArray) {
-    if (prevValue != someArray[arrayIndex]) {
-      uniqueValues.push(someArray[arrayIndex]);
-      prevValue = someArray[arrayIndex];
-    };
-  };
-
-  return uniqueValues;
-}
-
 function renderJobDetails(jobIDs, stepDiv) {
-  var uniqueJobIDs = removeArrayDuplicates(jobIDs) 
+  // Insert job information into the given div.
+  var uniqueJobIDs = removeArrayDuplicates(jobIDs, "numerical");
 
   var failedJobCountDiv = document.createElement("div");
   failedJobCountDiv.style.margin = "10px 0px 0px 15px";
   stepDiv.appendChild(failedJobCountDiv);
 
   if (uniqueJobIDs.length == 1) {
-    failedJobCountDiv.innerHTML = "1 job failed ";
+    var failedJobsLabel = "<b>" + "1 job failed ";
   } else {
-    failedJobCountDiv.innerHTML = uniqueJobIDs.length + " jobs failed ";
+    var failedJobsLabel = "<b>" + uniqueJobIDs.length + " jobs failed ";
   }
 
   if (jobIDs.length == 1) {
-    failedJobCountDiv.innerHTML += "1 time:";
+    failedJobsLabel += "1 time:</b>";
   } else {
-    failedJobCountDiv.innerHTML += jobIDs.length + " times:";
+    failedJobsLabel += jobIDs.length + " times:</b>";
   }
-  
+  failedJobCountDiv.innerHTML = failedJobsLabel;  
+
   var failedJobDiv = document.createElement("div");
-  failedJobDiv.innerHTML = "";
   failedJobDiv.style.margin = "0px 0px 0px 15px";
   failedJobCountDiv.appendChild(failedJobDiv);
   var jobCount = 0;
+  var failedJobHTML = ""
 
   for (uniqueJobIndex in uniqueJobIDs) {
-    failedJobDiv.innerHTML += "<a href=../../_show/jobSummary/" + uniqueJobIDs[uniqueJobIndex] + ">" + uniqueJobIDs[uniqueJobIndex] + "</a> ";
-  };  
+    failedJobHTML += "<a href=../../_show/jobSummary/" + uniqueJobIDs[uniqueJobIndex] + ">" + uniqueJobIDs[uniqueJobIndex] + "</a> ";
+  };
+
+  failedJobDiv.innerHTML = failedJobHTML;
+  return;
 };
 
 function renderInputDetails(inputLFNs, stepDiv) {
-  var uniqueLFNs = removeArrayDuplicates(inputLFNs) 
+  // Insert input information into the given div.
+  if (inputLFNs.length == 0) {
+    return;
+  }
+
+  var uniqueLFNs = removeArrayDuplicates(inputLFNs, "alphabetical");
 
   var failedInputCountDiv = document.createElement("div");
   failedInputCountDiv.style.margin = "10px 0px 0px 15px";
   stepDiv.appendChild(failedInputCountDiv);
 
   if (uniqueLFNs.length == 1) {
-    failedInputCountDiv.innerHTML = "1 file was used as input for jobs with this error:";
+    failedInputCountDiv.innerHTML = "<b>1 file was used as input for jobs with this error:</b>";
   } else {
-    failedInputCountDiv.innerHTML = uniqueLFNs.length + " files were used as input for jobs with this error:";
+    failedInputCountDiv.innerHTML = "<b>" + uniqueLFNs.length + " files were used as input for jobs with this error:</b>";
   }
 
   var failedInputDiv = document.createElement("div");
-  failedInputDiv.innerHTML = "";
   failedInputDiv.style.margin = "0px 0px 0px 15px";
   failedInputCountDiv.appendChild(failedInputDiv);
+  var failedInputList = "";
 
   for (uniqueInputIndex in uniqueLFNs) {
-    failedInputDiv.innerHTML += uniqueLFNs[uniqueInputIndex] + "<br>";
+    failedInputList += uniqueLFNs[uniqueInputIndex] + "<br>";
   };  
+
+  failedInputDiv.innerHTML = failedInputList;
+  return;
 };
 
 function renderRunLumiDetails(runLumiInfo, stepDiv) {
+  // Insert run and lumi information into the given div.
   var runLumiLabelDiv = document.createElement("div");
   runLumiLabelDiv.style.margin = "10px 0px 0px 15px";
-  runLumiLabelDiv.innerHTML = "Run Information:";
-  stepDiv.appendChild(runLumiLabelDiv);
+  runLumiLabelDiv.innerHTML = "<b>Run Information (all ranges inclusive):</b>";
 
   var runLumiDiv = document.createElement("div");
   runLumiStr = "";
   runLumiDiv.style.margin = "0px 0px 0px 15px";
-  runLumiLabelDiv.appendChild(runLumiDiv);
+  var displayRun = false;
 
   for (runNumber in runLumiInfo) {
-    uniqueLumis = removeArrayDuplicates(runLumiInfo[runNumber]);
+    displayRun = true;
     runLumiStr += runNumber + ": ";
+    var rangeBottom;
+    var rangeTop;
+    uniqueLumis = removeArrayDuplicates(runLumiInfo[runNumber], "numerical");
     for (lumiIndex in uniqueLumis) {
-      runLumiStr += uniqueLumis[lumiIndex] + " ";
+      currentLumi = uniqueLumis[lumiIndex];
+      if (lumiIndex == 0) {
+        rangeBottom = currentLumi;
+        rangeTop = currentLumi;
+      } else if (rangeTop + 1 == currentLumi) {
+        rangeTop = currentLumi;
+      } else {
+        if (rangeTop == rangeBottom) {
+          runLumiStr += rangeBottom + " ";
+        } else {
+          runLumiStr += rangeBottom + "-" + rangeTop + " ";
+        };
+
+      rangeTop = currentLumi;
+      rangeBottom = currentLumi;
+      };
     };
+
+    if (rangeTop == rangeBottom) {
+      runLumiStr += rangeBottom + " ";
+    } else {
+      runLumiStr += rangeBottom + "-" + rangeTop + " ";
+    };
+
     runLumiStr += "<br>";
   };  
 
-  runLumiDiv.innerHTML = runLumiStr;
+  if (displayRun) {
+    stepDiv.appendChild(runLumiLabelDiv);
+    runLumiLabelDiv.appendChild(runLumiDiv);
+    runLumiDiv.innerHTML = runLumiStr;
+  };
 };
 
 function renderWorkflowErrors(workflowName, errorDiv) {
-  failedJobs = getFailedJobs(workflowName);
-  workflowFailures = collateFailureInfo(failedJobs);
+  // Insert workflow error information into the given div.
+  errorDiv.style.width = "100%";
+  errorDiv.style.height = "100%";
+
+  statusDiv = document.createElement("div");
+  statusDiv.style.textAlign = "center";
+  statusDiv.style.marginTop = "50px";
+  errorDiv.appendChild(statusDiv);
+
+  failedJobs = getFailedJobs(workflowName, statusDiv);
+  workflowFailures = collateFailureInfo(failedJobs, statusDiv);
+  var firstTask = true;
 
   for (var taskName in workflowFailures) {
     var taskDiv = document.createElement("div");
-    taskDiv.style.margin = "0px 0px 0px 15px";
-    taskDiv.innerHTML = taskName + ":";
+    if (firstTask) {
+      firstTask = false;
+      taskDiv.style.margin = "0px 0px 0px 15px";
+    } else {
+      taskDiv.style.margin = "15px 0px 0px 15px";
+    };
+
+    taskDiv.innerHTML = "<b>" + taskName + ":</b>";
     errorDiv.appendChild(taskDiv);
+    var firstStep = true;
 
     for(var stepName in workflowFailures[taskName]) {
       var stepDiv = document.createElement("div");
-      stepDiv.style.margin = "0px 0px 0px 15px";
-      stepDiv.innerHTML = stepName + ":";
+
+      if (firstStep) {
+        firstStep = false;
+        stepDiv.style.margin = "0px 0px 0px 15px";
+      } else {
+        stepDiv.style.margin = "15px 0px 0px 15px";
+      };
+      stepDiv.innerHTML = "<b>" + stepName + ":</b>";
       taskDiv.appendChild(stepDiv);
       renderErrorDetails(workflowFailures[taskName][stepName]["errors"], stepDiv);
       renderJobDetails(workflowFailures[taskName][stepName]["jobs"], stepDiv);
@@ -208,5 +299,6 @@ function renderWorkflowErrors(workflowName, errorDiv) {
     };
   };
 
+  errorDiv.removeChild(statusDiv);
   return;
 };

@@ -1,6 +1,4 @@
 function(doc) {
-  log(doc);
-
   if (doc['type'] == 'job') {
     lastTransition = doc['states'].pop();
 
@@ -52,6 +50,14 @@ function(doc) {
                lastTransition['newstate'] == 'killed') {
       emit([doc['workflow'], doc['task'], doc['jobid']],
             {'jobid': doc['jobid'], 'state': 'failure', 'task': doc['task']});
+    } else if (lastTransition['oldstate'] == 'exhausted' &&
+               lastTransition['newstate'] == 'cleanout') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'failure', 'task': doc['task']});
+    } else if (lastTransition['oldstate'] == 'success' &&
+               lastTransition['newstate'] == 'cleanout') {
+      emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'success', 'task': doc['task']});
     }
   }
 }

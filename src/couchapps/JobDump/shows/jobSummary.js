@@ -43,7 +43,7 @@ function(doc, req) {
       response += "  " + transitionTimestamp.toDateString() + " ";
       response += transitionTimestamp.toLocaleTimeString() + " ";
       response += transition["oldstate"] + " -> " + transition["newstate"];
-      response += " (" + row.value["location"] + ")\n";
+      response += " (" + transition["location"] + ")\n";
     }
   }
 

@@ -1,10 +1,10 @@
 function(doc, req) {
   var response = "<html><head>\n";
   response += "<title>Summary for workflow " + req.docId + "</title>\n";
-  response += "</head><body><pre>\n";
+  response += "</head><body style=\"font-family: arial;\">\n";
   response += "<script src=../../workflowSummary.js></script>\n";
   response += "Output datasets:\n<br>\n";
-  response += "<div id=output></div>\n";
+  response += "<div id=output style=\"margin: 0px 0px 0px 15px;\"></div>\n";
 
   response += "\n<br>\n";
   response += "Failures:\n\n";
@@ -18,6 +18,6 @@ function(doc, req) {
   response += "document.getElementById(\"output\").innerHTML=xmlhttp.responseText;\n";
 
   response += "</script>\n";
-  response += "\n\n</pre></body></html>";
+  response += "</body></html>";
   return response;
 }

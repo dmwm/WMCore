@@ -13,7 +13,21 @@ from nose.plugins.attrib import attr
 class PhEDExTest(unittest.TestCase):
     """
     Provide setUp and tearDown for Reader package module
-
+    
+    How to run this unittest:
+    To run this unit test you have to have right authority to 
+    PhEDEx testbed.
+    
+    1. To check your authority to access - it will show whether you have the right authority
+    https://cmswttest.cern.ch/phedex/datasvc/perl/tbedi/auth?ability=datasvc_subscribe
+    If you don't contact your site db admin and update your related certificate.
+    
+    2. Also it is needed to make ssh tunnel to cern if you are not on site
+    In the machine, you are running the test. 
+    ssh -L 9999:cmsswttest.cern.ch:443 lxplus.cern.ch
+    
+    3. Test DBS server is version 2_0_9, so dbs client should be the same version or lower.
+    You can fake the dbs version by changing VERSION=DBS_2_0_9 in dbs.config file
     """
     def setUp(self):
         """
@@ -22,15 +36,13 @@ class PhEDExTest(unittest.TestCase):
         #dsUrl = "http://cmswttest.cern.ch:7701/phedex/datasvc/xml/tbedi/"
         #dsUrl = "https://cmsweb.cern.ch/phedex/datasvc/xml/tbedi/"
         #self.phedexTestDS = "http://cmswttest.cern.ch/phedex/datasvc/xml/tbedi/"
-        self.phedexTestDS = "https://cmswttest.cern.ch/phedex/datasvc/json/tbedi/"
+        #self.phedexTestDS = "https://cmswttest.cern.ch/phedex/datasvc/json/tbedi/"
 
-        #To check your authorithy to access
-        #https://cmswttest.cern.ch/phedex/datasvc/perl/tbedi/auth?ability=datasvc_subscribe
-
-        #self.phedexTestDS = "https://localhost:9999/phedex/datasvc/xml/tbedi/"
+        self.phedexTestDS = "https://localhost:9999/phedex/datasvc/json/tbedi/"
         self.dbsTestUrl = "http://cmssrv49.fnal.gov:8989/DBS209/servlet/DBSServlet"
         self.testNode = "TX_Test1_Buffer"
         self.testNode2 = "TX_Test2_Buffer"
+        
     @attr('integration')
     def testInjection(self):
         dict = {}

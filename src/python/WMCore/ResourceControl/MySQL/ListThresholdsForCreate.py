@@ -34,7 +34,8 @@ class ListThresholdsForCreate(DBFormatter):
                               INNER JOIN wmbs_job_state ON
                                 wmbs_job.state = wmbs_job_state.id
                             WHERE wmbs_job.location IS NULL AND
-                                  wmbs_job_state.name != 'killed') job_location ON
+                                  wmbs_job_state.name != 'killed' AND
+                                  wmbs_job_state.name != 'cleanout') job_location ON
                             wmbs_location.id = job_location.location
                        GROUP BY wmbs_location.site_name, wmbs_location.job_slots"""
     

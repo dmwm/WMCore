@@ -5,9 +5,6 @@ _ResourceControl_t_
 Unit tests for ResourceControl.
 """
 
-
-
-
 import unittest
 import threading
 
@@ -235,9 +232,15 @@ class ResourceControlTest(unittest.TestCase):
         testJobF.create(group = testJobGroupB)        
         testJobF["state"] = "new"
 
+        # Does not have a location and is in cleanout.
+        testJobG = Job(name = makeUUID(), files = [testFileB])
+        testJobG["couch_record"] = makeUUID()
+        testJobG.create(group = testJobGroupB)        
+        testJobG["state"] = "cleanout"
+
         changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
         changeStateAction.execute(jobs = [testJobA, testJobB, testJobC, testJobD,
-                                          testJobE, testJobF])
+                                          testJobE, testJobF, testJobG])
 
         setLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
         setLocationAction.execute(testJobA["id"], "testSite1")

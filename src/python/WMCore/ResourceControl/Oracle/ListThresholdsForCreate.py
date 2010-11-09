@@ -5,9 +5,6 @@ _ListThresholdsForCreate_
 Oracle implementation of ResourceControl.ListThresholdsForCreate
 """
 
-
-
-
 from WMCore.ResourceControl.MySQL.ListThresholdsForCreate \
      import ListThresholdsForCreate as MySQLListThresholdsForCreate
 
@@ -21,6 +18,8 @@ class ListThresholdsForCreate(MySQLListThresholdsForCreate):
                                 wmbs_job_assoc.fileid = wmbs_file_location.fileid
                               INNER JOIN wmbs_job ON
                                 wmbs_job_assoc.job = wmbs_job.id
-                            WHERE wmbs_job.location IS NULL) job_location ON
+                            WHERE wmbs_job.location IS NULL AND
+                                  wmbs_job_state.name != 'killed' AND
+                                  wmbs_job_state.name != 'cleanout') job_location ON                            
                             wmbs_location.id = job_location.location
                        GROUP BY wmbs_location.site_name, wmbs_location.job_slots"""

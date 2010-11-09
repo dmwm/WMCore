@@ -75,7 +75,7 @@ class DataCollectionService(CouchService):
         stepMap = StepMap()
         stepMap.fill(wmSpec)
 
-        
+        filesetsMade = []
         for t in wmSpec.listAllTaskPathNames():
             task = wmSpec.getTaskByPath(t)
             inpDataset = getattr(task.data.input, "dataset", None)
@@ -113,6 +113,7 @@ class DataCollectionService(CouchService):
             # create a fileset in the collection for each Task, add extra information
             # about the input dataset or step to the fileset
             if filesetName == None: continue
+            if filesetName in filesetsMade: continue
             fileset = CouchFileset(dataset = filesetName, url = self.url, database = self.database)
             fileset.setCollection(collection)
 
@@ -121,6 +122,7 @@ class DataCollectionService(CouchService):
             fileset['task'] = t
             fileset['metadata'] = metadata
             fileset.create()
+            filesetsMade.append(filesetName)
         
     @CouchUtils.connectToCouch
     def yieldDataCollections(self):

@@ -35,6 +35,7 @@ class DataCollectionService_t(unittest.TestCase):
         
     def tearDown(self):
         self.testInit.tearDownCouch()
+        self.testInit.clearDatabase()
         
 
 

@@ -555,7 +555,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                             max_merge_events = maxEvents)
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)                
-                if stepHelper.stepType() == "CMSSW":
+                if stepHelper.stepType() == "StageOut" and stepHelper.minMergeSize() != -1:
                     stepHelper.setMinMergeSize(minSize)
 
             self.setMergeParameters(minSize, maxSize, maxEvents, task)

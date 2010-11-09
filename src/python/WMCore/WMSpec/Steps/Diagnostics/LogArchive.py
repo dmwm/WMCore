@@ -31,9 +31,9 @@ class LAExceptionHandler(DiagnosticHandler):
 
         """
         msg         = "Error in LogArchive: %s\n" % (errCode)
-        description = "Misc. LogArchive error"
+        description = "Misc. LogArchive error: %s\n" % (errCode)
         if args.get('ex', False):
-            description += str(args.get('ex'))
+            msg += str(args.get('ex'))
         if args.get('ExceptionInstance', False):
             msg += str(args.get('ExceptionInstance'))
         

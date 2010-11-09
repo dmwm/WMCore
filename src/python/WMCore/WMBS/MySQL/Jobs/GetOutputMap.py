@@ -72,10 +72,11 @@ class GetOutputMap(DBFormatter):
             labelMap["fileset"] = result["wf_output_fset"]
 
             if result["child_sub_type"] != None:
-                childDict = {"child_sub_type": result["child_sub_type"],
-                             "child_sub_output_id": result["child_sub_output_id"],
-                             "child_sub_output_fset": result["child_sub_output_fset"]}
-                labelMap["children"].append(childDict)
+                if result["child_sub_output_id"] == "Merged":
+                    childDict = {"child_sub_type": result["child_sub_type"],
+                                 "child_sub_output_id": result["child_sub_output_id"],
+                                 "child_sub_output_fset": result["child_sub_output_fset"]}
+                    labelMap["children"].append(childDict)
 
         return outputMap
 

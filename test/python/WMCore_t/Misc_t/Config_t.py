@@ -51,14 +51,13 @@ class ConfigTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", 'WMCore.MsgService',
+        self.testInit.setSchema(customModules = ["WMCore.WMBS",
+                                                 "WMComponent.DBSBuffer.Database",
                                                  'WMCore.ResourceControl',
-                                                 'WMCore.BossLite'],
+                                                 'WMCore.BossAir'],
                                 useDefault = False)
 
-
         self.testDir = self.testInit.generateWorkDir()
-
         return
 
     def tearDown(self):
@@ -67,11 +66,7 @@ class ConfigTest(unittest.TestCase):
 
         Tear things down and go home
         """
-
         self.testInit.clearDatabase()
-
-        #self.testInit.delWorkDir()
-
         return
 
 

@@ -112,29 +112,32 @@ config.JobCreator.defaultJobType = "Processing"
 config.JobCreator.workerThreads = 2
 
 config.component_("JobSubmitter")
-config.JobSubmitter.namespace = "WMComponent.JobSubmitter.JobSubmitter"
-config.JobSubmitter.componentDir = config.General.workDir + "/JobSubmitter"
-config.JobSubmitter.logLevel = "DEBUG"
-config.JobSubmitter.maxThreads = 1
-config.JobSubmitter.pollInterval = 10
-config.JobSubmitter.pluginName = "CondorGlideInPlugin"
-config.JobSubmitter.pluginDir = "JobSubmitter.Plugins"
-config.JobSubmitter.submitNode = "cmssrv52.fnal.gov"
-config.JobSubmitter.submitDir = config.General.workDir + "/SubmitJDLs"
-config.JobSubmitter.workerThreads = 1
+config.JobSubmitter.namespace     = "WMComponent.JobSubmitter.JobSubmitter"
+config.JobSubmitter.componentDir  = config.General.workDir + "/JobSubmitter"
+config.JobSubmitter.logLevel      = "DEBUG"
+config.JobSubmitter.pollInterval  = 10
+config.JobSubmitter.submitNode    = "cmssrv52.fnal.gov"
+config.JobSubmitter.submitDir     = config.General.workDir + "/SubmitJDLs"
 config.JobSubmitter.jobsPerWorker = 100
+config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(),
+                                                'src/python/WMComponent/JobSubmitter',
+                                                'submit.sh')
+
+config.component_("JobStatusLite")
+config.JobStatusLite.namespace    = "WMComponent.JobStatusLite.JobStatusLite"
+config.JobStatusLite.componentDir = config.General.workDir + "/JobStatusLite"
+config.JobStatusLite.logLevel     = "DEBUG"
+config.JobStatusLite.pollInterval = 30
+
+config.section_("JobStatus")
+config.JobStatus.stateTimeouts = {'Pending': 86400, 'Running': 86400, 'Error': 86400}
+config.JobStatus.pollInterval  = 30
 
 config.component_("JobTracker")
 config.JobTracker.namespace = "WMComponent.JobTracker.JobTracker"
 config.JobTracker.componentDir  = config.General.workDir + "/JobTracker"
 config.JobTracker.logLevel = "DEBUG"
 config.JobTracker.pollInterval = 10
-config.JobTracker.trackerName = "CondorTracker"
-config.JobTracker.pluginDir = "WMComponent.JobTracker.Plugins"
-config.JobTracker.runTimeLimit = 7776000
-config.JobTracker.idleTimeLimit = 7776000
-config.JobTracker.heldTimeLimit = 7776000
-config.JobTracker.unknTimeLimit = 7776000
 
 config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
@@ -169,6 +172,10 @@ config.TaskArchiver.timeOut      = 3600
 # Or both ParentQueue and QueueURL need to be set (Although they are not used)
 config.TaskArchiver.WorkQueueParams = {}
 config.TaskArchiver.useWorkQueue = True
+
+config.section_("BossAir")
+config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
+config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
 
 config.webapp_('WorkQueueService')
 config.WorkQueueService.default_expires = 0

@@ -4,9 +4,6 @@ MySQL implementation of File.SetParentage
 
 Make the parentage link between two file lfns in bulk
 """
-__all__ = []
-
-
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -18,12 +15,7 @@ class SetParentage(DBFormatter):
              AND wfd2.lfn = :parent
     """
     
-    
-    def format(self, result):
-        return True
-    
     def execute(self, binds, conn = None, transaction = False):
-        
-        result = self.dbi.processData(self.sql, binds, 
-                         conn = conn, transaction = transaction)
-        return self.format(result)
+        self.dbi.processData(self.sql, binds, conn = conn,
+                             transaction = transaction)
+        return

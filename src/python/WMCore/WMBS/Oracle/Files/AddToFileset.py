@@ -21,4 +21,9 @@ class AddToFileset(AddFileToFilesetMySQL):
                            wmbs_file_details.id AS fileid FROM wmbs_subscription
                       INNER JOIN wmbs_file_details ON
                         wmbs_file_details.lfn = :lfn
-                    WHERE wmbs_subscription.fileset = :fileset"""    
+                    WHERE wmbs_subscription.fileset = :fileset AND NOT EXISTS
+                      (SELECT * FROM wmbs_sub_files_available
+                       WHERE fileid = (SELECT id FROM wmbs_file_details
+                                     WHERE lfn = :lfn) AND
+                             subscription = (SELECT id FROM wmbs_subscription
+                                             WHERE fileset = :fileset AND rownum = 1))"""

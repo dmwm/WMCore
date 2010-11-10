@@ -364,8 +364,6 @@ class JobGroupTest(unittest.TestCase):
                testJobGroupA.subscription["id"], \
                "ERROR: Job group did not load subscription correctly"
 
-
-
         goldenJobs = testJobGroupA.getJobs(type = "list")
         
         for job in testJobGroupB.getJobs(type = "list"):

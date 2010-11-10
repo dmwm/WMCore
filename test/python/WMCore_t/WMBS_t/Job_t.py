@@ -296,30 +296,6 @@ class JobTest(unittest.TestCase):
         testJobB.load()
         testJobC.load()
 
-        assert type(testJobB["id"]) == int or \
-               type(testJobB["id"]) == long, \
-               "ERROR: Job id is not an int."
-
-        assert type(testJobC["id"]) == int or \
-               type(testJobC["id"]) == long, \
-               "ERROR: Job id is not an int."
-
-        assert type(testJobB["jobgroup"]) == int or \
-               type(testJobB["jobgroup"]) == long, \
-               "ERROR: Job group id is not an int."
-
-        assert type(testJobC["jobgroup"]) == int or \
-               type(testJobC["jobgroup"]) == long, \
-               "ERROR: Job group id is not an int."        
-
-        assert type(testJobB["retry_count"]) == int or \
-               type(testJobB["retry_count"]) == long, \
-               "ERROR: retry_count is not an int."
-
-        assert type(testJobC["retry_count"]) == int or \
-               type(testJobC["retry_count"]) == long, \
-               "ERROR: retry_count is not an int."
-
         assert (testJobA["id"] == testJobB["id"]) and \
                (testJobA["name"] == testJobB["name"]) and \
                (testJobA["jobgroup"] == testJobB["jobgroup"]) and \
@@ -364,22 +340,6 @@ class JobTest(unittest.TestCase):
         testJobC = Job(name = testJobA["name"])
         testJobB.loadData()
         testJobC.loadData()
-
-        assert type(testJobB["id"]) == int or \
-               type(testJobB["id"]) == long, \
-               "ERROR: Job id is not an int."
-
-        assert type(testJobC["id"]) == int or \
-               type(testJobC["id"]) == long, \
-               "ERROR: Job id is not an int."        
-
-        assert type(testJobB["jobgroup"]) == int or \
-               type(testJobB["jobgroup"]) == long, \
-               "ERROR: Job group id is not an int."
-
-        assert type(testJobC["jobgroup"]) == int or \
-               type(testJobC["jobgroup"]) == long, \
-               "ERROR: Job group id is not an int."        
 
         assert (testJobA["id"] == testJobB["id"]) and \
                (testJobA["name"] == testJobB["name"]) and \
@@ -962,23 +922,31 @@ class JobTest(unittest.TestCase):
         recoOutputFileset = Fileset(name = "RECO")
         recoOutputFileset.create()
         mergedRecoOutputFileset = Fileset(name = "MergedRECO")
-        mergedRecoOutputFileset.create()        
+        mergedRecoOutputFileset.create()       
         alcaOutputFileset = Fileset(name = "ALCA")
-        alcaOutputFileset.create()
+        alcaOutputFileset.create() 
+        mergedAlcaOutputFileset = Fileset(name = "MergedALCA")
+        mergedAlcaOutputFileset.create()       
         dqmOutputFileset = Fileset(name = "DQM")
-        dqmOutputFileset.create()        
+        dqmOutputFileset.create()
+        mergedDqmOutputFileset = Fileset(name = "MergedDQM")
+        mergedDqmOutputFileset.create()
 
         testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                 name = "TestWF", task = "None")
         testWorkflow.create()
-        testWorkflow.addOutput("output", recoOutputFileset)
-        testWorkflow.addOutput("ALCARECOStreamCombined", alcaOutputFileset)
-        testWorkflow.addOutput("DQM", dqmOutputFileset)        
+        testWorkflow.addOutput("output", recoOutputFileset,
+                               mergedRecoOutputFileset)
+        testWorkflow.addOutput("ALCARECOStreamCombined", alcaOutputFileset,
+                               mergedAlcaOutputFileset)
+        testWorkflow.addOutput("DQM", dqmOutputFileset,
+                               mergedDqmOutputFileset)
 
         testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
                                          name = "TestRecoMergeWF", task = "None")
         testRecoMergeWorkflow.create()
-        testRecoMergeWorkflow.addOutput("anything", mergedRecoOutputFileset)
+        testRecoMergeWorkflow.addOutput("anything", mergedRecoOutputFileset,
+                                        mergedRecoOutputFileset)
 
         testRecoProcWorkflow = Workflow(spec = "wf004.xml", owner = "Steve",
                                          name = "TestRecoProcWF", task = "None")
@@ -1035,53 +1003,26 @@ class JobTest(unittest.TestCase):
         assert len(outputMap.keys()) == 3, \
                "Error: Wrong number of outputs for primary workflow."
 
-        assert outputMap.has_key("output"), \
-               "Error: Output map is missing 'output' key."
-        assert outputMap.has_key("ALCARECOStreamCombined"), \
-               "Error: Output map is missing 'ALCARECOStreamCombined' key."
-        assert outputMap.has_key("DQM"), \
-               "Error: Output map is missing 'DQM' key."        
+        goldenMap = {"output": (recoOutputFileset.id,
+                                mergedRecoOutputFileset.id),
+                     "ALCARECOStreamCombined": (alcaOutputFileset.id,
+                                                mergedAlcaOutputFileset.id),
+                     "DQM": (dqmOutputFileset.id,
+                             mergedDqmOutputFileset.id)}
+        for outputID in outputMap.keys():
+            self.assertTrue(outputID in goldenMap.keys(),
+                            "Error: Output identifier is missing.")
+            self.assertEqual(outputMap[outputID]["output_fileset"],
+                             goldenMap[outputID][0],
+                             "Error: Output fileset is wrong.")
+            self.assertEqual(outputMap[outputID]["merged_output_fileset"],
+                             goldenMap[outputID][1],
+                             "Error: Merged output fileset is wrong.")
+            del goldenMap[outputID]
 
-        dqmMap = outputMap["DQM"]
-        assert len(dqmMap["children"]) == 0, \
-               "Error: DQM output map shouldn't have any child workflows."
-        assert dqmMap["fileset"] == dqmOutputFileset.id
-
-        alcaMap = outputMap["ALCARECOStreamCombined"]
-        assert len(alcaMap["children"]) == 1, \
-               "Error: ALCA output map should have one child workflow."
-        assert alcaMap["fileset"] == alcaOutputFileset.id, \
-               "Error: Wrong output fileset for ALCA."
-
-        alcaChild = alcaMap["children"][0]
-        assert alcaChild["child_sub_output_id"] == None, \
-               "Error: ALCA workflow shouldn't have child subscription."
-        assert alcaChild["child_sub_output_fset"] == None, \
-               "Error: ALCA workflow shouldn't have child output fileset."
-        assert alcaChild["child_sub_type"] == "Processing", \
-               "Error: ALCA child subscription type should be processing."
-
-        recoMap = outputMap["output"]
-        assert len(recoMap["children"]) == 2, \
-               "Error: RECO output map should have two children."
-        assert recoMap["fileset"] == recoOutputFileset.id, \
-               "Error: Wrong output fileset for RECO."
-
-        goldenRecoOutput = [{"child_sub_output_id": None,
-                             "child_sub_output_fset": None,
-                             "child_sub_type": "Processing"},
-                            {"child_sub_output_id": "anything",
-                             "child_sub_output_fset": mergedRecoOutputFileset.id,
-                             "child_sub_type": "Merge"}]
-        for outputChild in recoMap["children"]:
-            assert outputChild in goldenRecoOutput, \
-                   "Error: Extra output for RECO: %s" % outputChild
-
-            goldenRecoOutput.remove(outputChild)
-
-        assert len(goldenRecoOutput) == 0, \
-               "Error: Missing outputs in output map for RECO."
-        
+        self.assertEqual(len(goldenMap.keys()), 0,
+                         "Error: Missing output maps.")
+                             
         return
 
 

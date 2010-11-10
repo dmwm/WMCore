@@ -71,10 +71,23 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return self.data._internal_name
 
+    def getTopLevelTask(self):
+        """
+        _getTopLevelTask_
+
+        Retrieve the top level task.
+        """
+        for task in self.taskIterator():
+            if task.isTopOfTree():
+                return task
+
+        return None
+
     def getOwner(self):
         """
         _getOwner_
-        return owner information
+
+        Retrieve the owner information.
         """
         return self.data.owner.dictionary_()
 
@@ -172,8 +185,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         _getTask_
 
-        Get Toplevel task by name
-
+        Retrieve a task with the given name.
         """
         task = getattr(self.data.tasks, taskName, None)
         if task == None:

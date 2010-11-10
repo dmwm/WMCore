@@ -212,9 +212,10 @@ class Create(CreateWMBSBase):
 
         self.create["09wmbs_workflow_output"] = \
           """CREATE TABLE wmbs_workflow_output (
-               workflow_id       INTEGER      NOT NULL,
-               output_identifier VARCHAR(255) NOT NULL,
-               output_fileset    INTEGER      NOT NULL
+               workflow_id           INTEGER      NOT NULL,
+               output_identifier     VARCHAR(255) NOT NULL,
+               output_fileset        INTEGER      NOT NULL,
+               merged_output_fileset INTEGER      NOT NULL               
                ) %s""" % tablespaceTable
 
         self.constraints["01_fk_wmbs_workflow_output"] = \
@@ -229,9 +230,17 @@ class Create(CreateWMBSBase):
           """ALTER TABLE wmbs_workflow_output ADD
               (CONSTRAINT fk_wfoutput_fileset FOREIGN KEY(output_fileset)
                  REFERENCES wmbs_fileset(id) ON DELETE CASCADE)"""
+
+        self.constraints["03_fk_wmbs_workflow_output"] = \
+          """ALTER TABLE wmbs_workflow_output ADD
+              (CONSTRAINT fk_wfoutput_mfileset FOREIGN KEY(merged_output_fileset)
+                 REFERENCES wmbs_fileset(id) ON DELETE CASCADE)"""
         
         self.constraints["02_idx_wmbs_workflow_output"] = \
           """CREATE INDEX idx_wmbs_workf_out_fileset ON wmbs_workflow_output(output_fileset) %s""" % tablespaceIndex
+
+        self.constraints["03_idx_wmbs_workflow_output"] = \
+          """CREATE INDEX idx_wmbs_workf_out_mfileset ON wmbs_workflow_output(merged_output_fileset) %s""" % tablespaceIndex        
         
         self.create["07wmbs_sub_types"] = \
           """CREATE TABLE wmbs_sub_types (

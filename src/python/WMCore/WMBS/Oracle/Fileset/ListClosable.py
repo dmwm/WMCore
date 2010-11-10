@@ -5,31 +5,24 @@ _ListClosable_
 Oracle implementation of Fileset.ListClosable
 """
 
-
-
-
 from WMCore.WMBS.MySQL.Fileset.ListClosable import ListClosable as ListFilesetClosableMySQL
 
 class ListClosable(ListFilesetClosableMySQL):
     sql = """SELECT fileset FROM
                (SELECT wmbs_fileset.id AS fileset, SUM(wmbs_parent_fileset.open) AS open_parent_filesets,
-                       SUM(fileset_size.total_files) AS total_input_files,
-                       SUM(files_complete.total_files) AS total_complete_files,
-                       SUM(files_failed.total_files) AS total_failed_files,
+                       SUM(files_acquired.total_files) AS total_acquired_files,
+                       SUM(files_available.total_files) AS total_available_files,
                        SUM(running_jobs.running_count) AS running_jobs FROM wmbs_fileset
                   INNER JOIN wmbs_workflow_output ON
                     wmbs_fileset.id = wmbs_workflow_output.output_fileset
                   INNER JOIN wmbs_subscription wmbs_parent_subscription ON
                     wmbs_workflow_output.workflow_id = wmbs_parent_subscription.workflow
-                  LEFT OUTER JOIN (SELECT fileset, COUNT(fileid) AS total_files
-                               FROM wmbs_fileset_files GROUP BY fileset) fileset_size ON
-                    wmbs_parent_subscription.fileset = fileset_size.fileset
                   LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT fileid) AS total_files
-                              FROM wmbs_sub_files_complete GROUP BY subscription) files_complete ON
-                    wmbs_parent_subscription.id = files_complete.subscription
+                              FROM wmbs_sub_files_acquired GROUP BY subscription) files_acquired ON
+                    wmbs_parent_subscription.id = files_acquired.subscription
                   LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT fileid) AS total_files
-                              FROM wmbs_sub_files_failed GROUP BY subscription) files_failed ON
-                    wmbs_parent_subscription.id = files_failed.subscription
+                              FROM wmbs_sub_files_available GROUP BY subscription) files_available ON
+                    wmbs_parent_subscription.id = files_available.subscription
                   LEFT OUTER JOIN (SELECT subscription, COUNT(wmbs_job.id) AS running_count
                               FROM wmbs_jobgroup
                               LEFT OUTER JOIN wmbs_job ON
@@ -44,6 +37,5 @@ class ListClosable(ListFilesetClosableMySQL):
                 WHERE wmbs_fileset.open = 1 GROUP BY wmbs_fileset.id) closeable_filesets
              WHERE closeable_filesets.open_parent_filesets = 0 AND
                    COALESCE(closeable_filesets.running_jobs, 0) = 0 AND
-                   COALESCE(closeable_filesets.total_input_files, 0) =
-                     COALESCE(closeable_filesets.total_complete_files, 0) +
-                     COALESCE(closeable_filesets.total_failed_files, 0)"""
+                   COALESCE(closeable_filesets.total_acquired_files, 0) = 0 AND
+                   COALESCE(closeable_filesets.total_available_files, 0) = 0"""

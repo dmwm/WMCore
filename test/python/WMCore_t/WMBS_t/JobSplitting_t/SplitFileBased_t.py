@@ -5,9 +5,6 @@ _SplitFileBased_t_
 Unit tests for the split file job splitting algorithm.
 """
 
-
-
-
 import unittest
 import os
 import threading
@@ -80,7 +77,12 @@ class SplitFileBasedTest(unittest.TestCase):
         self.mergeFileset = Fileset(name = "mergeFileset")
         self.mergeFileset.create()
         self.bogusFileset = Fileset(name = "bogusFileset")
-        self.bogusFileset.create()        
+        self.bogusFileset.create()
+
+        self.mergeMergedFileset = Fileset(name = "mergeMergedFileset")
+        self.mergeMergedFileset.create()
+        self.bogusMergedFileset = Fileset(name = "bogusMergedFileset")
+        self.bogusMergedFileset.create()        
 
         mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
                                  owner = "Steve", task="Test")
@@ -100,8 +102,10 @@ class SplitFileBasedTest(unittest.TestCase):
         inputWorkflow = Workflow(name = "inputWorkflow", spec = "input",
                                 owner = "Steve", task = "Test")
         inputWorkflow.create()
-        inputWorkflow.addOutput("someOutput", self.mergeFileset)
-        inputWorkflow.addOutput("someOutput2", self.bogusFileset)
+        inputWorkflow.addOutput("someOutput", self.mergeFileset,
+                                self.mergeMergedFileset)
+        inputWorkflow.addOutput("someOutput2", self.bogusFileset,
+                                self.bogusMergedFileset)
         
         inputSubscription = Subscription(fileset = inputFileset,
                                         workflow = inputWorkflow)

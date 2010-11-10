@@ -5,9 +5,6 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-
-
-
 import unittest
 import os
 import threading
@@ -33,7 +30,7 @@ class WorkflowTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-
+        return
                        
     def tearDown(self):
         """
@@ -41,15 +38,8 @@ class WorkflowTest(unittest.TestCase):
 
         Drop all the WMBS tables.
         """
-        myThread = threading.currentThread()
-
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
+        self.testInit.clearDatabase()
+        return
 
     def testCreateDeleteExists(self):
         """
@@ -62,19 +52,19 @@ class WorkflowTest(unittest.TestCase):
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task='Test')
 
-        assert testWorkflow.exists() == False, \
-               "ERROR: Workflow exists before it was created"
+        self.assertEqual(testWorkflow.exists(), False,
+                         "ERROR: Workflow exists before it was created")
 
         testWorkflow.create()
 
-        assert testWorkflow.exists() > 0, \
-               "ERROR: Workflow does not exist after it has been created"
+        self.assertTrue(testWorkflow.exists() > 0,
+                        "ERROR: Workflow does not exist after it has been created")
 
         testWorkflow.create()
         testWorkflow.delete()
 
-        assert testWorkflow.exists() == False, \
-               "ERROR: Workflow exists after it has been deleted"        
+        self.assertEqual(testWorkflow.exists(), False,
+                         "ERROR: Workflow exists after it has been deleted")
         return
 
     def testCreateTransaction(self):
@@ -92,18 +82,18 @@ class WorkflowTest(unittest.TestCase):
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task='Test')
 
-        assert testWorkflow.exists() == False, \
-               "ERROR: Workflow exists before it was created"
+        self.assertEqual(testWorkflow.exists(), False,
+                         "ERROR: Workflow exists before it was created")
 
         testWorkflow.create()
 
-        assert testWorkflow.exists() > 0, \
-               "ERROR: Workflow does not exist after it has been created"
+        self.assertTrue(testWorkflow.exists() > 0,
+                        "ERROR: Workflow does not exist after it has been created")
 
         myThread.transaction.rollback()
 
-        assert testWorkflow.exists() == False, \
-               "ERROR: Workflow exists after the transaction was rolled back."
+        self.assertEqual(testWorkflow.exists(), False,
+                         "ERROR: Workflow exists after the transaction was rolled back.")
         return
 
     def testDeleteTransaction(self):
@@ -120,26 +110,26 @@ class WorkflowTest(unittest.TestCase):
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task='Test')
 
-        assert testWorkflow.exists() == False, \
-               "ERROR: Workflow exists before it was created"
+        self.assertEqual(testWorkflow.exists(), False,
+                         "ERROR: Workflow exists before it was created")
 
         testWorkflow.create()
 
-        assert testWorkflow.exists() > 0, \
-               "ERROR: Workflow does not exist after it has been created"
+        self.assertTrue(testWorkflow.exists() > 0,
+                        "ERROR: Workflow does not exist after it has been created")
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
         testWorkflow.delete()
 
-        assert testWorkflow.exists() == False, \
-               "ERROR: Workflow exists after it has been deleted"
+        self.assertEqual(testWorkflow.exists(), False,
+                         "ERROR: Workflow exists after it has been deleted")
 
         myThread.transaction.rollback()
 
-        assert testWorkflow.exists() > 0, \
-               "ERROR: Workflow does not exist transaction was rolled back"
+        self.assertTrue(testWorkflow.exists() > 0,
+                        "ERROR: Workflow does not exist transaction was rolled back")
         
         return
 
@@ -160,41 +150,32 @@ class WorkflowTest(unittest.TestCase):
         testWorkflowB = Workflow(name = "wf001", task='Test')
         testWorkflowB.load()
 
-        assert type(testWorkflowB.id) == int, \
-               "ERROR: Workflow id is not an int."
-
-        assert (testWorkflowA.id == testWorkflowB.id) and \
-               (testWorkflowA.name == testWorkflowB.name) and \
-               (testWorkflowA.spec == testWorkflowB.spec) and \
-               (testWorkflowA.task == testWorkflowB.task) and \
-               (testWorkflowA.owner == testWorkflowB.owner), \
-               "ERROR: Workflow.LoadFromName Failed"
+        self.assertTrue((testWorkflowA.id == testWorkflowB.id) and
+                        (testWorkflowA.name == testWorkflowB.name) and
+                        (testWorkflowA.spec == testWorkflowB.spec) and
+                        (testWorkflowA.task == testWorkflowB.task) and
+                        (testWorkflowA.owner == testWorkflowB.owner),
+                        "ERROR: Workflow.LoadFromName Failed")
         
         testWorkflowC = Workflow(id = testWorkflowA.id)
         testWorkflowC.load()
 
-        assert type(testWorkflowC.id) == int, \
-               "ERROR: Workflow id is not an int."
-        
-        assert (testWorkflowA.id == testWorkflowC.id) and \
-               (testWorkflowA.name == testWorkflowC.name) and \
-               (testWorkflowA.spec == testWorkflowC.spec) and \
-               (testWorkflowA.task == testWorkflowC.task) and \
-               (testWorkflowA.owner == testWorkflowC.owner), \
-               "ERROR: Workflow.LoadFromID Failed"
+        self.assertTrue((testWorkflowA.id == testWorkflowC.id) and
+                        (testWorkflowA.name == testWorkflowC.name) and
+                        (testWorkflowA.spec == testWorkflowC.spec) and
+                        (testWorkflowA.task == testWorkflowC.task) and
+                        (testWorkflowA.owner == testWorkflowC.owner),
+                        "ERROR: Workflow.LoadFromID Failed")
         
         testWorkflowD = Workflow(spec = "spec.xml", owner = "Simon", task='Test')
         testWorkflowD.load()
 
-        assert type(testWorkflowD.id) == int, \
-               "ERROR: Workflow id is not an int."
-        
-        assert (testWorkflowA.id == testWorkflowD.id) and \
-               (testWorkflowA.name == testWorkflowD.name) and \
-               (testWorkflowA.spec == testWorkflowD.spec) and \
-               (testWorkflowA.task == testWorkflowD.task) and \
-               (testWorkflowA.owner == testWorkflowD.owner), \
-               "ERROR: Workflow.LoadFromSpecOwner Failed"
+        self.assertTrue((testWorkflowA.id == testWorkflowD.id) and
+                        (testWorkflowA.name == testWorkflowD.name) and
+                        (testWorkflowA.spec == testWorkflowD.spec) and
+                        (testWorkflowA.task == testWorkflowD.task) and
+                        (testWorkflowA.owner == testWorkflowD.owner),
+                        "ERROR: Workflow.LoadFromSpecOwner Failed")
 
         testWorkflowA.delete()
         return
@@ -207,9 +188,13 @@ class WorkflowTest(unittest.TestCase):
         stored to and loaded from the database correctly.
         """
         testFilesetA = Fileset(name = "testFilesetA")
+        testMergedFilesetA = Fileset(name = "testMergedFilesetA")
         testFilesetB = Fileset(name = "testFilesetB")
+        testMergedFilesetB = Fileset(name = "testMergedFilesetB")
         testFilesetA.create()
         testFilesetB.create()
+        testMergedFilesetA.create()
+        testMergedFilesetB.create()
         
         testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
                                  name = "wf001", task='Test')
@@ -218,35 +203,38 @@ class WorkflowTest(unittest.TestCase):
         testWorkflowB = Workflow(name = "wf001", task='Test')
         testWorkflowB.load()
 
-        assert len(testWorkflowB.outputMap.keys()) == 0, \
-            "ERROR: Output map exists before output is assigned"
+        self.assertEqual(len(testWorkflowB.outputMap.keys()), 0,
+                         "ERROR: Output map exists before output is assigned")
 
-        testWorkflowA.addOutput("outModOne", testFilesetA)
-        testWorkflowA.addOutput("outModTwo", testFilesetB)
+        testWorkflowA.addOutput("outModOne", testFilesetA, testMergedFilesetA)
+        testWorkflowA.addOutput("outModTwo", testFilesetB, testMergedFilesetB)
 
         testWorkflowC = Workflow(name = "wf001", task='Test')
         testWorkflowC.load()
 
-        assert len(testWorkflowC.outputMap.keys()) == 2, \
-               "ERROR: Incorrect number of outputs in output map"
-        assert "outModOne" in testWorkflowC.outputMap.keys(), \
-               "ERROR: Output modules missing from workflow output map"
-        assert "outModTwo" in testWorkflowC.outputMap.keys(), \
-               "ERROR: Output modules missing from workflow output map"        
+        self.assertEqual(len(testWorkflowC.outputMap.keys()), 2,
+                         "ERROR: Incorrect number of outputs in output map")
+        self.assertTrue("outModOne" in testWorkflowC.outputMap.keys(),
+                        "ERROR: Output modules missing from workflow output map")
+        self.assertTrue("outModTwo" in testWorkflowC.outputMap.keys(),
+                        "ERROR: Output modules missing from workflow output map")
 
-        assert testWorkflowC.outputMap["outModOne"]["output_fileset"].id == testFilesetA.id, \
-               "ERROR: Output map incorrectly maps filesets."
-        assert testWorkflowC.outputMap["outModTwo"]["output_fileset"].id == testFilesetB.id, \
-               "ERROR: Output map incorrectly maps filesets."
-
+        self.assertEqual(testWorkflowC.outputMap["outModOne"]["output_fileset"].id,
+                         testFilesetA.id, "ERROR: Output map incorrectly maps filesets.")
+        self.assertEqual(testWorkflowC.outputMap["outModOne"]["merged_output_fileset"].id,
+                         testMergedFilesetA.id, "ERROR: Output map incorrectly maps filesets.")
+        self.assertEqual(testWorkflowC.outputMap["outModTwo"]["output_fileset"].id,
+                         testFilesetB.id, "ERROR: Output map incorrectly maps filesets.")
+        self.assertEqual(testWorkflowC.outputMap["outModTwo"]["merged_output_fileset"].id,
+                         testMergedFilesetB.id, "ERROR: Output map incorrectly maps filesets.")
         return
 
     def testLoadFromTask(self):
         """
         _testLoadFromTask_
 
-        Verify that Workflow.LoadFromTask DAO correct turns
-        the workflow by task.
+        Verify that Workflow.LoadFromTask DAO correct loads the workflow by
+        task.
         """
         testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Hassen",
                                  name = "wf001", task = "sometask")
@@ -257,14 +245,12 @@ class WorkflowTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         loadFromTaskDAO = daoFactory(classname = "Workflow.LoadFromTask")
 
-        listFromTask = loadFromTaskDAO.execute(task=testWorkflow1.task)
+        listFromTask = loadFromTaskDAO.execute(task = testWorkflow1.task)
 
-        assert len(listFromTask) == 1, \
-               "ERROR: listFromTask should be 1."
-
-        assert listFromTask[0]['task'] == "sometask", \
-               "ERROR: task  should be sometask."
-
+        self.assertEqual(len(listFromTask), 1, 
+                          "ERROR: listFromTask should be 1.")
+        self.assertEqual(listFromTask[0]["task"], "sometask",
+                         "ERROR: task should be sometask.")
         return
 
 if __name__ == "__main__":

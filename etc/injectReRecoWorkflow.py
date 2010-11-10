@@ -23,6 +23,7 @@ from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload, getTestArguments
 from DBSAPI.dbsApi import DbsApi
 
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
+from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 
 # The default arguments are set in:
 #   WMCORE/src/python/WMCore/WMSpec/StdSpecs/ReReco.py
@@ -45,61 +46,16 @@ workloadName = "ReReco-%s" % arguments["ProcessingVersion"]
 workloadFile = "reReco-%s.pkl" % arguments["ProcessingVersion"]
 os.mkdir(workloadName)
 workload = rerecoWorkload(workloadName, arguments)
+workloadPath = os.path.join(workloadName, workloadFile)
+workload.setOwner("sfoulkes@fnal.gov")
+workload.setSpecUrl(workloadPath)
 
 # Build a sandbox using TaskMaker
 taskMaker = TaskMaker(workload, os.path.join(os.getcwd(), workloadName))
 taskMaker.skipSubscription = True
 taskMaker.processWorkload()
 
-workload.save(os.path.join(workloadName, workloadFile))
-
-def doIndent(level):
-    myStr = ""
-    while level > 0:
-        myStr = myStr + " "
-        level -= 1
-
-    return myStr
-
-def injectTaskIntoWMBS(specUrl, workflowName, task, inputFileset, indent = 0):
-    """
-    _injectTaskIntoWMBS_
-
-    """
-    print "%sinjecting %s" % (doIndent(indent), task.getPathName())
-    print "%s  input fileset: %s" % (doIndent(indent), inputFileset.name)
-
-    myWorkflow = Workflow(spec = specUrl, owner = "sfoulkes@fnal.gov",
-                          name = workflowName, task = task.getPathName())
-    myWorkflow.create()
-
-    mySubscription = Subscription(fileset = inputFileset, workflow = myWorkflow,
-                                  split_algo = task.jobSplittingAlgorithm(),
-                                  type = task.taskType())
-    mySubscription.create()
-
-    outputModules = task.getOutputModulesForTask()
-    for outputModule in outputModules:
-        for outputModuleName in outputModule.listSections_():
-            print "%s  configuring output module: %s" % (doIndent(indent), outputModuleName)
-            if task.taskType() == "Merge":
-                outputFilesetName = "%s/merged-%s" % (task.getPathName(),
-                                                      outputModuleName)
-            else:
-                outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
-                                                        outputModuleName)
-
-            print "%s    output fileset: %s" % (doIndent(indent), outputFilesetName)
-            outputFileset = Fileset(name = outputFilesetName)
-            outputFileset.create()
-
-            myWorkflow.addOutput(outputModuleName, outputFileset)
-
-            # See if any other steps run over this output.
-            print "%s    searching for child tasks..." % (doIndent(indent))
-            for childTask in task.childTaskIterator():
-                if childTask.data.input.outputModule == outputModuleName:
-                    injectTaskIntoWMBS(specUrl, workflowName, childTask, outputFileset, indent + 4)                
+workload.save(workloadPath)
 
 def injectFilesFromDBS(inputFileset, datasetPath):
     """
@@ -151,7 +107,7 @@ for workloadTask in workload.taskIterator():
                                       inputDataset.tier)
     injectFilesFromDBS(inputFileset, inputDatasetPath)
 
-    injectTaskIntoWMBS(os.path.join(os.getcwd(), workloadName, workloadFile),
-                       workloadName, workloadTask, inputFileset)
+    myWMBSHelper = WMBSHelper(workload)
+    myWMBSHelper.createSubscription(workloadTask.getPathName())
 
 myThread.transaction.commit()

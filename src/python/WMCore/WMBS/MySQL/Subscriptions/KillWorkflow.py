@@ -54,8 +54,6 @@ class KillWorkflow(DBFormatter):
     def execute(self, workflowName, conn = None, transaction = False):
         self.dbi.processData(self.sql, {"workflowname": workflowName},
                              conn = conn, transaction = transaction)
-        self.dbi.processData(self.delAcq, {"workflowname": workflowName},
-                             conn = conn, transaction = transaction)
-        self.dbi.processData(self.delAva, {"workflowname": workflowName},
-                             conn = conn, transaction = transaction)                
+        self.dbi.processData(self.delAcq, conn = conn, transaction = transaction)
+        self.dbi.processData(self.delAva, conn = conn, transaction = transaction)                
         return

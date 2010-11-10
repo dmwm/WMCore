@@ -5,9 +5,9 @@ _KillWorkflow_
 Oracle implementation of Subscriptions.KillWorkflow
 """
 
-from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.WMBS.MySQL.Subscriptions.KillWorkflow import KillWorkflow as MySQLKillWorkflow
 
-class KillWorkflow(DBFormatter):
+class KillWorkflow(MySQLKillWorkflow):
     """
     _KillWorkflow_
 

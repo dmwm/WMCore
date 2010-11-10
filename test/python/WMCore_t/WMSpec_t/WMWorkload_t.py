@@ -247,7 +247,6 @@ class WMWorkloadTest(unittest.TestCase):
         skimTaskStageOut.setStepType("StageOut")
         skimTaskStageOutHelper = skimTaskStageOut.getTypeHelper()
         skimTaskStageOutHelper.setMinMergeSize(3)
-
         testWorkload.setMergeParameters(minSize = 10, maxSize = 100, maxEvents = 1000)
 
         procSplitParams = procTask.jobSplittingParameters()

@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 """
-    WorkQueue tests
+_WorkQueue_t_
+
+WorkQueue tests
 """
-
-
-
 
 import unittest
 import os

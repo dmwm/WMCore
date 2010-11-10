@@ -544,7 +544,16 @@ class FilesetTest(unittest.TestCase):
         testOutputFileset3 = Fileset(name = "TestOutputFileset3")
         testOutputFileset3.create()
         testOutputFileset4 = Fileset(name = "TestOutputFileset4")
-        testOutputFileset4.create()        
+        testOutputFileset4.create()
+
+        testMergedOutputFileset1 = Fileset(name = "TestMergedOutputFileset1")
+        testMergedOutputFileset1.create()
+        testMergedOutputFileset2 = Fileset(name = "TestMergedOutputFileset2")
+        testMergedOutputFileset2.create()
+        testMergedOutputFileset3 = Fileset(name = "TestMergedOutputFileset3")
+        testMergedOutputFileset3.create()
+        testMergedOutputFileset4 = Fileset(name = "TestMergedOutputFileset4")
+        testMergedOutputFileset4.create()        
         
         testFilesetOpen = Fileset(name = "TestFilesetOpen", is_open = True)
         testFilesetOpen.create()
@@ -569,18 +578,18 @@ class FilesetTest(unittest.TestCase):
         testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
                                  name = "wf001", task = "sometask")
         testWorkflow1.create()
-        testWorkflow1.addOutput("out1", testOutputFileset1)
-        testWorkflow1.addOutput("out2", testOutputFileset2)
+        testWorkflow1.addOutput("out1", testOutputFileset1, testMergedOutputFileset1)
+        testWorkflow1.addOutput("out2", testOutputFileset2, testMergedOutputFileset2)
 
         testWorkflow2 = Workflow(spec = "spec2.xml", owner = "Steve",
                                  name = "wf002", task = "sometask")
         testWorkflow2.create()
-        testWorkflow2.addOutput("out3", testOutputFileset3)
+        testWorkflow2.addOutput("out3", testOutputFileset3, testMergedOutputFileset3)
 
         testWorkflow3 = Workflow(spec = "spec4.xml", owner = "Steve",
                                  name = "wf004", task = "sometask")
         testWorkflow3.create()
-        testWorkflow3.addOutput("out4", testOutputFileset4)
+        testWorkflow3.addOutput("out4", testOutputFileset4, testMergedOutputFileset4)
 
         testSubscription1 = Subscription(fileset = testFilesetClosed,
                                          workflow = testWorkflow1)
@@ -644,6 +653,11 @@ class FilesetTest(unittest.TestCase):
         testOutputFileset1.create()
         testOutputFileset2 = Fileset(name = "TestOutputFileset2")
         testOutputFileset2.create()
+
+        testMergedOutputFileset1 = Fileset(name = "TestMergedOutputFileset1")
+        testMergedOutputFileset1.create()
+        testMergedOutputFileset2 = Fileset(name = "TestMergedOutputFileset2")
+        testMergedOutputFileset2.create()
         
         testFilesetOpen = Fileset(name = "TestFilesetOpen", is_open = True)
         testFilesetOpen.create()
@@ -688,12 +702,12 @@ class FilesetTest(unittest.TestCase):
         testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
                                  name = "wf001", task = "sometask")
         testWorkflow1.create()
-        testWorkflow1.addOutput("out1", testOutputFileset1)
+        testWorkflow1.addOutput("out1", testOutputFileset1, testMergedOutputFileset1)
 
         testWorkflow2 = Workflow(spec = "spec2.xml", owner = "Steve",
                                  name = "wf002", task = "sometask")
         testWorkflow2.create()
-        testWorkflow2.addOutput("out2", testOutputFileset2)
+        testWorkflow2.addOutput("out2", testOutputFileset2, testMergedOutputFileset2)
 
         testSubscription1 = Subscription(fileset = testFilesetOpen,
                                          workflow = testWorkflow1)
@@ -745,6 +759,11 @@ class FilesetTest(unittest.TestCase):
         testOutputFileset1.create()
         testOutputFileset2 = Fileset(name = "TestOutputFileset2")
         testOutputFileset2.create()
+
+        testMergedOutputFileset1 = Fileset(name = "TestMergedOutputFileset1")
+        testMergedOutputFileset1.create()
+        testMergedOutputFileset2 = Fileset(name = "TestMergedOutputFileset2")
+        testMergedOutputFileset2.create()
         
         testFilesetOpen = Fileset(name = "TestFilesetOpen", is_open = False)
         testFilesetOpen.create()
@@ -789,12 +808,12 @@ class FilesetTest(unittest.TestCase):
         testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
                                  name = "wf001", task = "sometask")
         testWorkflow1.create()
-        testWorkflow1.addOutput("out1", testOutputFileset1)
+        testWorkflow1.addOutput("out1", testOutputFileset1, testMergedOutputFileset1)
 
         testWorkflow2 = Workflow(spec = "spec2.xml", owner = "Steve",
                                  name = "wf002", task = "sometask")
         testWorkflow2.create()
-        testWorkflow2.addOutput("out2", testOutputFileset2)
+        testWorkflow2.addOutput("out2", testOutputFileset2, testMergedOutputFileset2)
 
         testSubscription1 = Subscription(fileset = testFilesetOpen,
                                          workflow = testWorkflow1)
@@ -853,6 +872,13 @@ class FilesetTest(unittest.TestCase):
         testOutputFileset3 = Fileset(name = "TestOutputFileset3")
         testOutputFileset3.create()
 
+        testMergedOutputFileset1 = Fileset(name = "TestMergedOutputFileset1")
+        testMergedOutputFileset1.create()
+        testMergedOutputFileset2 = Fileset(name = "TestMergedOutputFileset2")
+        testMergedOutputFileset2.create()
+        testMergedOutputFileset3 = Fileset(name = "TestMergedOutputFileset3")
+        testMergedOutputFileset3.create()
+
         testOutputFileset1.markOpen(False)
         testOutputFileset2.markOpen(True)
         testOutputFileset3.markOpen(True)
@@ -864,17 +890,17 @@ class FilesetTest(unittest.TestCase):
         testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
                                  name = "wf001", task = "sometask")
         testWorkflow1.create()
-        testWorkflow1.addOutput("out1", testOutputFileset1)
+        testWorkflow1.addOutput("out1", testOutputFileset1, testMergedOutputFileset1)
 
         testWorkflow2 = Workflow(spec = "spec2.xml", owner = "Steve",
                                  name = "wf002", task = "sometask")
         testWorkflow2.create()
-        testWorkflow2.addOutput("out2", testOutputFileset2)
+        testWorkflow2.addOutput("out2", testOutputFileset2, testMergedOutputFileset2)
 
         testWorkflow3 = Workflow(spec = "spec3.xml", owner = "Steve",
                                  name = "wf003", task = "sometask")
         testWorkflow3.create()
-        testWorkflow3.addOutput("out3", testOutputFileset3)
+        testWorkflow3.addOutput("out3", testOutputFileset3, testMergedOutputFileset3)
 
         testSubscription1 = Subscription(fileset = testInputFileset,
                                          workflow = testWorkflow1)

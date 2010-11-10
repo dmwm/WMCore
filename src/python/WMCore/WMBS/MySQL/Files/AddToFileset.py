@@ -23,7 +23,12 @@ class AddToFileset(DBFormatter):
                            wmbs_file_details.id AS file FROM wmbs_subscription
                       INNER JOIN wmbs_file_details ON
                         wmbs_file_details.lfn = :lfn
-                    WHERE wmbs_subscription.fileset = :fileset"""
+                    WHERE wmbs_subscription.fileset = :fileset AND NOT EXISTS
+                      (SELECT * FROM wmbs_sub_files_available
+                       WHERE file = (SELECT id FROM wmbs_file_details
+                                     WHERE lfn = :lfn) AND
+                             subscription = (SELECT id FROM wmbs_subscription
+                                             WHERE fileset = :fileset LIMIT 1))"""
         
     def execute(self, file = None, fileset = None, conn = None,
                 transaction = False):

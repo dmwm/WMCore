@@ -30,10 +30,6 @@ class WMBSRESTModel(RESTModel):
         self.addDAO('GET', "listjobsbysub", "Monitoring.ListJobsBySub",
                     args = ["subscriptionId"], 
                     validation = [self.subscriptionIDValidate])
-        self.addDAO('GET', "listworkflowefficiency", 
-                    "Monitoring.ListWorkflowEfficiency",
-                    args = ["subscriptionId"], 
-                    validation = [self.subscriptionIDValidate])
         self.addDAO('GET', "subscriptionstatus", 
                     "Monitoring.SubscriptionStatus",
                     args = ["subscriptionType"],

@@ -5,9 +5,6 @@ _PromptSkimPoller_
 Poll T0AST for complete blocks and launch skims.
 """
 
-
-
-
 import time
 import threading
 import logging
@@ -246,15 +243,16 @@ class PromptSkimPoller(BaseWorkerThread):
         workloadName = "Run%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, skimConfig.SkimName)
 
         workload = self.promptSkimFactory(workloadName, wfParams)
+        workload.setOwner("CMSDataOps")
+        specPath = os.path.join(self.workloadCache, workloadName, "spec.pkl")        
+        workload.setSpecUrl(specPath)
+        
         taskMaker = TaskMaker(workload, os.path.join(self.workloadCache, workloadName))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
-
-        specPath = os.path.join(self.workloadCache, workloadName, "spec.pkl")
         workload.save(specPath)
 
-        myHelper = WMBSHelper(workload, specPath, "CMSDataOps", "PromptSkim",
-                              "Skim", None, None, None)
+        myHelper = WMBSHelper(workload)
         myHelper.createSubscription(self.inputFilesetName(blockInfo))
 
         if not self.workloads.has_key(blockInfo["RUN_ID"]):

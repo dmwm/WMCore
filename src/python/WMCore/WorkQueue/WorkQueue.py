@@ -9,10 +9,6 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-
-
-
-
 import time
 import os
 import types
@@ -404,30 +400,15 @@ class WorkQueue(WorkQueueBase):
         """
         """
         self.logger.info("Adding WMBS subscription")
-        wAction = self.daofactory(classname = "Site.GetWhiteListByElement")
-        whitelist = wAction.execute(match['id'], conn = self.getDBConn(),
-                                     transaction = self.existingTransaction())
-
-        bAction = self.daofactory(classname = "Site.GetBlackListByElement")
-        blacklist = bAction.execute(match['id'], conn = self.getDBConn(),
-                                     transaction = self.existingTransaction())
 
         mask = None
         if wmspecInfo.get('mask_url'):
             with open(wmspecInfo['mask_url']) as mask_file:
                 mask = pickle.load(mask_file)
-        #Warning: wmspec.specUrl might not be same as wmspecInfo['url']
-        #as well as wmspec.getOwner() != wmspecInfo['owner']
-        #Need to clean up
-        wmbsHelper = WMBSHelper(wmspec, wmspecInfo['url'],
-                                wmspecInfo['owner'], wmspecInfo['wmtask_name'],
-                                wmspecInfo['wmtask_type'],
-                                whitelist, blacklist, blockName, mask)
 
+        wmbsHelper = WMBSHelper(wmspec, blockName, mask)
 
-        
         sub = wmbsHelper.createSubscriptionAndAddFiles(dbsBlock = dbsBlock)
-        
         self.logger.info("Created top level Subscription %s" % sub['id'])
 
         updateSub = self.daofactory(classname = "WorkQueueElement.UpdateSubscription")

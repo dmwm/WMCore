@@ -5,9 +5,6 @@ _Monitoring_t_
 Unit tests for the WMBS Monitoring DAO objects.
 """
 
-
-
-
 import os
 import unittest
 import threading
@@ -155,61 +152,5 @@ class MonitoringTest(unittest.TestCase):
 
         return
 
-    def testListWorkflowEfficiency(self):
-        """
-        _testListWorkflowEfficiency_
-
-        """
-        testWorkflow = Workflow(spec = makeUUID(), owner = "Steve",
-                                name = makeUUID(), task="Test")
-        testWorkflow.create()
-
-        testInputFileset = Fileset(name = "TestInputFileset")
-        testInputFileset.create()
-
-        inputFileA = File(lfn = "/this/is/a/input/lfnA", size = 1024, events = 100)
-        inputFileB = File(lfn = "/this/is/a/input/lfnB", size = 1024, events = 100)
-        inputFileC = File(lfn = "/this/is/a/input/lfnC", size = 1024, events = 100)        
-        
-        testInputFileset.addFile(inputFileA)
-        testInputFileset.addFile(inputFileB)
-        testInputFileset.addFile(inputFileC)        
-        testInputFileset.commit()
-
-        testOutputFileset = Fileset(name = "TestOutputFileset")
-        testOutputFileset.create()        
-
-        outputFile = File(lfn = "/this/is/a/output/lfn", size = 1024, events = 50)
-        testOutputFileset.addFile(outputFile)
-        testOutputFileset.commit()
-
-        testWorkflow.addOutput("output", testOutputFileset)
-
-        testSubscription = Subscription(fileset = testInputFileset,
-                                        workflow = testWorkflow,
-                                        type = "Processing")
-        testSubscription.create()
-
-        efficiencyAction = self.daoFactory(classname = "Monitoring.ListWorkflowEfficiency")
-        wfEfficiency = efficiencyAction.execute(subscriptionId = testSubscription["id"])
-
-        assert len(wfEfficiency) == 1, \
-               "Error: Only one output module should be returned."
-
-        assert wfEfficiency[0]["output_files"] == 1, \
-               "Error: Wrong number of output files returned."
-        assert wfEfficiency[0]["output_events"] == 50, \
-               "Error: Wrong number of output events returned."
-        assert wfEfficiency[0]["efficiency"] == "16.67%", \
-               "Error: Wrong workflow efficiency calculated."
-        assert wfEfficiency[0]["input_events"] == 300, \
-               "Error: Wrong number of input events returned."
-        assert wfEfficiency[0]["output_module"] == "output", \
-               "Error: Wrong output module returned."
-        assert wfEfficiency[0]["input_files"] == 3, \
-               "Error: Wrong number of input files returned."
-
-        return
-        
 if __name__ == "__main__":
         unittest.main()

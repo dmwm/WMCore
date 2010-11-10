@@ -8,26 +8,18 @@ MySQL implementation of Workflow.LoadOutput
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadOutput(DBFormatter):
-    sql = """SELECT output_identifier, output_fileset FROM wmbs_workflow_output
+    sql = """SELECT output_identifier AS wf_output_id,
+                    output_fileset AS wf_output_fset,
+                    merged_output_fileset AS wf_output_mfset
+                    FROM wmbs_workflow_output
              WHERE workflow_id = :workflow"""
 
-    def formatDict(self, result):
-        """
-        _formatDict_
-
-        Cast the fileset id attribute to an int because the DBFormatter turns
-        everything into strings.
-        """
-        tempResults = DBFormatter.formatDict(self, result)
-
-        formattedResults = []
-        for tempResult in tempResults:
-            tempResult["output_fileset"] = int(tempResult["output_fileset"])
-            formattedResults.append(tempResult)
-
-        return formattedResults
-                                    
     def execute(self, workflow, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, {"workflow": workflow}, 
-                         conn = conn, transaction = transaction)
-        return self.formatDict(result)
+        results = self.dbi.processData(self.sql, {"workflow": workflow}, 
+                                       conn = conn, transaction = transaction)
+
+        outputMap = {}
+        for result in self.formatDict(results):
+            outputMap[result["wf_output_id"]] = {"output_fileset": result["wf_output_fset"],
+                                                 "merged_output_fileset": result["wf_output_mfset"]}
+        return outputMap

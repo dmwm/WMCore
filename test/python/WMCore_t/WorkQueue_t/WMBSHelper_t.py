@@ -2,6 +2,7 @@
 """
 _WMBSHelper_t_
 
+Unit tests for the WMBSHelper class.
 """
 
 import unittest
@@ -18,26 +19,38 @@ from WMCore.WMBS.Job import Job
 from WMCore.DataStructs.Mask import Mask
 
 from WMCore.DAOFactory import DAOFactory
+from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.WMBSHelper import killWorkflow
-
-from WorkQueueTestCase import WorkQueueTestCase
 
 from WMCore_t.WorkQueue_t.WorkQueue_t import TestReRecoFactory, rerecoArgs
 from WMCore_t.WorkQueue_t.WorkQueue_t import TestMonteCarloFactory, mcArgs
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.WorkQueue_t import fakeSiteDB
-from WMQuality.Emulators import EmulatorSetup
 
-class WMBSHelperTest(WorkQueueTestCase):
+from WMQuality.Emulators import EmulatorSetup
+from WMQuality.TestInitCouchApp import TestInitCouchApp
+
+class WMBSHelperTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
 
         """
-        WorkQueueTestCase.setUp(self)
+        self.testInit = TestInitCouchApp(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setupCouch("wmbshelper_t", "JobDump")
+        os.environ["COUCHDB"] = "wmbshelper_t"
+        self.testInit.setSchema(customModules = ["WMCore.WMBS",
+                                                 "WMComponent.DBSBuffer.Database",
+                                                 "WMCore.WorkQueue.Database"],
+                                useDefault = False)
+        
+        self.workDir = self.testInit.generateWorkDir()
+        
         self.wmspec = self.createWMSpec()
         self.topLevelTask = getFirstTask(self.wmspec)
         self.inputDataset = self.topLevelTask.inputDataset()
@@ -48,22 +61,15 @@ class WMBSHelperTest(WorkQueueTestCase):
                                      dbinterface = threading.currentThread().dbi)
         return
 
-    def setupMCWMSpec(self):
-        """Setup MC workflow"""
-        self.wmspec = self.createMCWMSpec()
-        self.topLevelTask = getFirstTask(self.wmspec)
-        self.inputDataset = self.topLevelTask.inputDataset()
-        self.dataset = self.topLevelTask.getInputDatasetPath()
-        self.dbs = None
-        self.siteDB = fakeSiteDB()
-
     def tearDown(self):
         """
         _tearDown_
 
         Clear out the database.
         """
-        WorkQueueTestCase.tearDown(self)
+        self.testInit.clearDatabase()
+        self.testInit.tearDownCouch()
+        self.testInit.delWorkDir()        
         return
 
     def setupForKillTest(self):
@@ -316,9 +322,6 @@ class WMBSHelperTest(WorkQueueTestCase):
 
         Verify that workflow killing works correctly.
         """
-
-
-        #set up WMAgent config file for couchdb
         configFile = EmulatorSetup.setupWMAgentConfig()
 
         self.setupForKillTest()
@@ -327,15 +330,211 @@ class WMBSHelperTest(WorkQueueTestCase):
         self.verifyFileKillStatus()
         self.verifyJobKillStatus()
         EmulatorSetup.deleteConfig(configFile)
-
         return
-    
+
+    def createTestWMSpec(self):
+        """
+        _createTestWMSpec_
+
+        Create a WMSpec that has a processing, merge and skims tasks that can
+        be used by the subscription creation test.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setOwner("sfoulkes@fnal.gov")
+        testWorkload.setSpecUrl("/path/to/workload")
+
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setTaskType("Processing")
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)        
+        procTaskCMSSW = procTask.makeStep("cmsRun1")
+        procTaskCMSSW.setStepType("CMSSW")
+        procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
+        procTask.setTaskType("Processing")
+        procTask.applyTemplates()
+
+        procTaskCMSSWHelper.addOutputModule("OutputA",
+                                            primaryDataset = "bogusPrimary",
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DataTierA",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None)
+
+        mergeTask = procTask.addTask("MergeTask")
+        mergeTask.setInputReference(procTaskCMSSW, outputModule = "OutputA")
+        mergeTask.setTaskType("Merge")
+        mergeTask.setSplittingAlgorithm("WMBSMergeBySize", min_merge_size = 1,
+                                        max_merge_size = 2, max_merge_events = 3)
+        mergeTaskCMSSW = mergeTask.makeStep("cmsRun1")
+        mergeTaskCMSSW.setStepType("CMSSW")
+        mergeTaskCMSSWHelper = mergeTaskCMSSW.getTypeHelper()
+        mergeTask.setTaskType("Merge")
+        mergeTask.applyTemplates()
+
+        mergeTaskCMSSWHelper.addOutputModule("Merged",
+                                             primaryDataset = "bogusPrimary",
+                                             processedDataset = "bogusProcessed",
+                                             dataTier = "DataTierA",
+                                             lfnBase = "bogusUnmerged",
+                                             mergedLFNBase = "bogusMerged",
+                                             filterName = None)        
+
+        skimTask = mergeTask.addTask("SkimTask")
+        skimTask.setTaskType("Skim")
+        skimTask.setInputReference(mergeTaskCMSSW, outputModule = "Merged")
+        skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)
+        skimTaskCMSSW = skimTask.makeStep("cmsRun1")
+        skimTaskCMSSW.setStepType("CMSSW")
+        skimTaskCMSSWHelper = skimTaskCMSSW.getTypeHelper()
+        skimTask.setTaskType("Skim")
+        skimTask.applyTemplates()
+
+        skimTaskCMSSWHelper.addOutputModule("SkimOutputA",
+                                            primaryDataset = "bogusPrimary",
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DataTierA",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None)
+
+        skimTaskCMSSWHelper.addOutputModule("SkimOutputB",
+                                            primaryDataset = "bogusPrimary",
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DataTierA",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None)
+        return testWorkload
+
+    def testCreateSubscription(self):
+        """
+        _testCreateSubscription_
+
+        Verify that the subscription creation code works correctly.
+        """
+        testWorkload = self.createTestWMSpec()
+        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
+        testWMBSHelper.createSubscription()
+
+        procWorkflow = Workflow(name = "TestWorkload",
+                                task = "/TestWorkload/ProcessingTask")
+        procWorkflow.load()
+
+        self.assertEqual(procWorkflow.owner, "sfoulkes@fnal.gov",
+                         "Error: Wrong owner.")
+        self.assertEqual(procWorkflow.spec, "/path/to/workload",
+                         "Error: Wrong spec URL")
+        self.assertEqual(len(procWorkflow.outputMap.keys()), 1,
+                         "Error: Wrong number of WF outputs.")
+
+        mergedProcOutput = procWorkflow.outputMap["OutputA"]["merged_output_fileset"]
+        unmergedProcOutput = procWorkflow.outputMap["OutputA"]["output_fileset"]
+
+        mergedProcOutput.loadData()
+        unmergedProcOutput.loadData()
+
+        self.assertEqual(mergedProcOutput.name, "/TestWorkload/ProcessingTask/MergeTask/merged-Merged",
+                         "Error: Merged output fileset is wrong.")
+        self.assertEqual(unmergedProcOutput.name, "/TestWorkload/ProcessingTask/unmerged-OutputA",
+                         "Error: Unmerged output fileset is wrong.")
+
+        mergeWorkflow = Workflow(name = "TestWorkload",
+                                 task = "/TestWorkload/ProcessingTask/MergeTask")
+        mergeWorkflow.load()
+
+        self.assertEqual(mergeWorkflow.owner, "sfoulkes@fnal.gov",
+                         "Error: Wrong owner.")
+        self.assertEqual(mergeWorkflow.spec, "/path/to/workload",
+                         "Error: Wrong spec URL")
+        self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
+                         "Error: Wrong number of WF outputs.")
+
+        mergedMergeOutput = mergeWorkflow.outputMap["Merged"]["merged_output_fileset"]
+        unmergedMergeOutput = mergeWorkflow.outputMap["Merged"]["output_fileset"]
+
+        mergedMergeOutput.loadData()
+        unmergedMergeOutput.loadData()
+
+        self.assertEqual(mergedMergeOutput.name, "/TestWorkload/ProcessingTask/MergeTask/merged-Merged",
+                         "Error: Merged output fileset is wrong.")
+        self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/ProcessingTask/MergeTask/merged-Merged",
+                         "Error: Unmerged output fileset is wrong.")
+
+        skimWorkflow = Workflow(name = "TestWorkload",
+                                task = "/TestWorkload/ProcessingTask/MergeTask/SkimTask")
+        skimWorkflow.load()
+
+        self.assertEqual(skimWorkflow.owner, "sfoulkes@fnal.gov",
+                         "Error: Wrong owner.")
+        self.assertEqual(skimWorkflow.spec, "/path/to/workload",
+                         "Error: Wrong spec URL")
+        self.assertEqual(len(skimWorkflow.outputMap.keys()), 2,
+                         "Error: Wrong number of WF outputs.")
+
+        mergedSkimOutputA = skimWorkflow.outputMap["SkimOutputA"]["merged_output_fileset"]
+        unmergedSkimOutputA = skimWorkflow.outputMap["SkimOutputA"]["output_fileset"]
+        mergedSkimOutputB = skimWorkflow.outputMap["SkimOutputB"]["merged_output_fileset"]
+        unmergedSkimOutputB = skimWorkflow.outputMap["SkimOutputB"]["output_fileset"]
+
+        mergedSkimOutputA.loadData()
+        unmergedSkimOutputA.loadData()
+        mergedSkimOutputB.loadData()
+        unmergedSkimOutputB.loadData()
+
+        self.assertEqual(mergedSkimOutputA.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputA",
+                         "Error: Merged output fileset is wrong.")
+        self.assertEqual(unmergedSkimOutputA.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputA",
+                         "Error: Unmerged output fileset is wrong.")
+        self.assertEqual(mergedSkimOutputB.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputB",
+                         "Error: Merged output fileset is wrong.")
+        self.assertEqual(unmergedSkimOutputB.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputB",
+                         "Error: Unmerged output fileset is wrong.")
+
+        topLevelFileset = Fileset(name = "TestWorkload-ProcessingTask-SomeBlock")
+        topLevelFileset.loadData()
+
+        procSubscription = Subscription(fileset = topLevelFileset, workflow = procWorkflow)
+        procSubscription.loadData()
+
+        self.assertEqual(procSubscription["type"], "Processing",
+                         "Error: Wrong subscription type.")
+        self.assertEqual(procSubscription["split_algo"], "FileBased",
+                         "Error: Wrong split algo.")
+
+        mergeSubscription = Subscription(fileset = unmergedProcOutput, workflow = mergeWorkflow)
+        mergeSubscription.loadData()
+
+        self.assertEqual(mergeSubscription["type"], "Merge",
+                         "Error: Wrong subscription type.")
+        self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
+                         "Error: Wrong split algo.")        
+
+        skimSubscription = Subscription(fileset = mergedMergeOutput, workflow = skimWorkflow)
+        skimSubscription.loadData()
+
+        self.assertEqual(skimSubscription["type"], "Skim",
+                         "Error: Wrong subscription type.")
+        self.assertEqual(skimSubscription["split_algo"], "TwoFileBased",
+                         "Error: Wrong split algo.")
+        return
+
+    def setupMCWMSpec(self):
+        """Setup MC workflow"""
+        self.wmspec = self.createMCWMSpec()
+        self.topLevelTask = getFirstTask(self.wmspec)
+        self.inputDataset = self.topLevelTask.inputDataset()
+        self.dataset = self.topLevelTask.getInputDatasetPath()
+        self.dbs = None
+        self.siteDB = fakeSiteDB()
+
     def createWMSpec(self, name = 'ReRecoWorkload', args = rerecoArgs):
         wmspec = TestReRecoFactory()(name, args)
+        wmspec.setSpecUrl("/path/to/workload")
         return wmspec 
 
     def createMCWMSpec(self, name = 'MonteCarloWorkload', args = mcArgs):
         wmspec = TestMonteCarloFactory()(name, args)
+        wmspec.setSpecUrl("/path/to/workload")        
         getFirstTask(wmspec).addProduction(totalevents = 10000)
         getFirstTask(wmspec).setSiteWhitelist(['SiteA', 'SiteB', 'SiteC'])
         return wmspec
@@ -348,15 +547,11 @@ class WMBSHelperTest(WorkQueueTestCase):
         #dbsDict = {self.inputDataset.dbsurl : self.dbs}
         return dbs
         
-        
     def createWMBSHelperWithTopTask(self, wmspec, block, mask = None):
         
         topLevelTask = getFirstTask(wmspec)
          
-        wmbs = WMBSHelper(wmspec, '/somewhere',
-                          "whatever", topLevelTask.name(), 
-                          topLevelTask.taskType(),
-                          [], [], block, mask)
+        wmbs = WMBSHelper(wmspec, block, mask)
         if block:
             block = self.dbs.getFileBlock(block)[block]
         wmbs.createSubscriptionAndAddFiles(dbsBlock = block)

@@ -15,9 +15,6 @@ bunch of data).
 workflow + fileset = subscription
 """
 
-
-
-
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
 from WMCore.WMBS.Fileset import Fileset
@@ -101,8 +98,8 @@ class Workflow(WMBSBase, WMWorkflow):
 
         Load a workflow from WMBS.  One of the following must be provided:
           - The workflow ID
-          - The workflow name
-          - The workflow spec and owner
+          - The workflow name and task
+          - The workflow spec and owner and task
         """
         existingTransaction = self.beginTransaction()
 
@@ -113,13 +110,13 @@ class Workflow(WMBSBase, WMWorkflow):
                                     transaction = self.existingTransaction())
         elif self.name != None:
             action = self.daofactory(classname = "Workflow.LoadFromName")
-            result = action.execute(workflow = self.name,
+            result = action.execute(workflow = self.name, task = self.task,
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
         else:
             action = self.daofactory(classname = "Workflow.LoadFromSpecOwner")
             result = action.execute(spec = self.spec, owner = self.owner,
-                                    conn = self.getDBConn(),
+                                    task = self.task, conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
 
         self.id = result["id"]
@@ -132,14 +129,17 @@ class Workflow(WMBSBase, WMWorkflow):
         results = action.execute(workflow = self.id, conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
 
-        for result in results:
-            outputFileset = Fileset(id = result["output_fileset"])
-            self.outputMap[result["output_identifier"]] = {"output_fileset": outputFileset}
+        for outputID in results.keys():
+            outputFileset = Fileset(id = results[outputID]["output_fileset"])
+            mergedOutputFileset = Fileset(id = results[outputID]["merged_output_fileset"])
+            self.outputMap[outputID] = {"output_fileset": outputFileset,
+                                        "merged_output_fileset": mergedOutputFileset}
             
         self.commitTransaction(existingTransaction)
         return
 
-    def addOutput(self, outputIdentifier, outputFileset):
+    def addOutput(self, outputIdentifier, outputFileset,
+                  mergedOutputFileset = None):
         """
         _addOutput_
 
@@ -149,14 +149,22 @@ class Workflow(WMBSBase, WMWorkflow):
 
         if self.id == False:
             self.create()
-        
-        self.outputMap[outputIdentifier] = {"output_fileset": outputFileset}
-        
+
         action = self.daofactory(classname = "Workflow.InsertOutput")
-        action.execute(workflowID = self.id, outputIdentifier = outputIdentifier,
-                       filesetID = outputFileset.id,
-                       conn = self.getDBConn(),
-                       transaction = self.existingTransaction())
-        
+        if mergedOutputFileset == None:
+            self.outputMap[outputIdentifier] = {"output_fileset": outputFileset,
+                                                "merged_output_fileset": outputFileset}
+            action.execute(workflowID = self.id, outputIdentifier = outputIdentifier,
+                           filesetID = outputFileset.id, mergedFilesetID = outputFileset.id,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction())            
+        else:
+            self.outputMap[outputIdentifier] = {"output_fileset": outputFileset,
+                                                "merged_output_fileset": mergedOutputFileset}        
+            action.execute(workflowID = self.id, outputIdentifier = outputIdentifier,
+                           filesetID = outputFileset.id, mergedFilesetID = mergedOutputFileset.id,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction())
+            
         self.commitTransaction(existingTransaction)
         return

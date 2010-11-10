@@ -102,33 +102,23 @@ def killWorkflow(workflowName):
 
 class WMBSHelper(WMConnectionBase):
     """
-    DAO equipped class that interfaces between the WorkQueue (and DBS),
-    and WMBS
+    _WMBSHelper_
 
+    Interface between the WorkQueue and WMBS.
     """
+    def __init__(self, wmSpec, blockName = None, mask = None):
+        """
+        _init_
 
-    def __init__(self, wmSpec, wmSpecUrl, wmSpecOwner, taskName, 
-                 taskType, whitelist, blacklist, blockName, mask):
-        #TODO: 
-        # 1. get the top level task.
-        # 2. get the top level step and input
-        # 3. generated the spec, owner, name from task
-        # 4. get input file list from top level step
-        # 5. generate the file set from work flow.
-        self.wmSpecName = wmSpec.name()
-        self.wmSpecUrl = wmSpecUrl
-        self.wmSpecOwner = wmSpecOwner
-        self.topLevelTaskName = taskName
-        self.topLevelTaskType = taskType
-        self.whitelist = whitelist
-        self.blacklist = blacklist
-        self.block = blockName or None
-        self.mask = mask or None
+        Initialize DAOs and other things needed.
+        """
+        self.block = blockName
+        self.mask = mask
+        self.wmSpec = wmSpec
+
         self.topLevelFileset = None
-        self.topLevelSubscription = None    
-        self.topLevelTask = wmSpec.getTask(self.topLevelTaskName)
-
-
+        self.topLevelSubscription = None
+        
         # Initiate the pieces you need to run your own DAOs
         WMConnectionBase.__init__(self, "WMCore.WMBS")
         myThread = threading.currentThread()
@@ -162,56 +152,7 @@ class WMBSHelper(WMConnectionBase):
         self.addedLocations       = []
         self.wmbsFilesToCreate    = []
         self.insertedBogusDataset = -1
-
-
         return
-
-    def createSubscription(self, topLevelFilesetName = None):
-        self.createTopLevelFileset(topLevelFilesetName)
-        return self._createChildSubscription(self.topLevelTask, self.topLevelFileset)
-        
-    def _createChildSubscription(self, task, fileset):
-        # create workflow
-        # make up workflow name from wmspec name
-        workflow = Workflow(self.wmSpecUrl, self.wmSpecOwner, 
-                                 self.wmSpecName,
-                                 task.getPathName())
-        workflow.create()
-        subs = Subscription(fileset = fileset, workflow = workflow,
-                            split_algo = task.jobSplittingAlgorithm(),
-                            type = task.taskType())
-        subs.create()
-        
-        if self.topLevelSubscription == None:
-            self.topLevelSubscription = subs
-            logging.info("Top level subscription created: %s" % subs['id'])
-        else:
-            logging.info("Child subscription created: %s" % subs['id'])
-        
-        # To do: check this is the right change
-        #outputModules =  task.getOutputModulesForStep(task.getTopStepName())
-        outputModules = task.getOutputModulesForTask()
-        for outputModule in outputModules:
-            for outputModuleName in outputModule.listSections_():
-                if task.taskType() == "Merge":
-                    outputFilesetName = "%s/merged-%s" % (task.getPathName(),
-                                                          outputModuleName)
-                else:
-                    outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
-                                                            outputModuleName)
-        
-                outputFileset = Fileset(name = outputFilesetName)
-                outputFileset.create()
-                # this will reopen child fileset every time 
-                # the fileset exist already 
-                outputFileset.markOpen(True)
-                workflow.addOutput(outputModuleName, outputFileset)
-        
-                for childTask in task.childTaskIterator():
-                    if childTask.data.input.outputModule == outputModuleName:
-                        self._createChildSubscription(childTask, outputFileset) 
-            
-        return self.topLevelSubscription
 
     def createTopLevelFileset(self, topLevelFilesetName = None):
         """
@@ -221,7 +162,8 @@ class WMBSHelper(WMConnectionBase):
         level fileset is not given create one.
         """
         if topLevelFilesetName == None:
-            filesetName = ("%s-%s" % (self.wmSpecName, self.topLevelTaskName))
+            filesetName = ("%s-%s" % (self.wmSpec.name(),
+                                      self.wmSpec.getTopLevelTask().name()))
             if self.block:
                 filesetName += "-%s" % self.block
             else:
@@ -234,16 +176,85 @@ class WMBSHelper(WMConnectionBase):
         self.topLevelFileset.create()
         return
 
+    def outputFilesetName(self, task, outputModuleName):
+        """
+        _outputFilesetName_
+
+        Generate an output fileset name for the given task and output module.
+        """
+        if task.taskType() == "Merge":
+            outputFilesetName = "%s/merged-%s" % (task.getPathName(),
+                                                  outputModuleName)
+        else:
+            outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
+                                                    outputModuleName)
+
+        return outputFilesetName
+
+    def createSubscription(self, topLevelFilesetName = None, task = None,
+                           fileset = None):
+        """
+        _createSubscription_
+
+        Create subscriptions in WMBS for all the tasks in the spec.  Thi
+        includes filesets, workflows and the output map for each task.
+        """
+        if task == None or fileset == None:
+            self.createTopLevelFileset(topLevelFilesetName)
+            return self.createSubscription(topLevelFilesetName,
+                                           self.wmSpec.getTopLevelTask(),
+                                           self.topLevelFileset)
+
+        workflow = Workflow(self.wmSpec.specUrl(), self.wmSpec.getOwner()["name"],
+                            self.wmSpec.name(), task.getPathName())
+        workflow.create()
+        subscription = Subscription(fileset = fileset, workflow = workflow,
+                                    split_algo = task.jobSplittingAlgorithm(),
+                                    type = task.taskType())
+        subscription.create()
+        
+        if self.topLevelSubscription == None:
+            self.topLevelSubscription = subscription
+            logging.info("Top level subscription created: %s" % subscription["id"])
+        else:
+            logging.info("Child subscription created: %s" % subscription["id"])
+        
+        outputModules = task.getOutputModulesForTask()
+        for outputModule in outputModules:
+            for outputModuleName in outputModule.listSections_():
+                outputFileset = Fileset(self.outputFilesetName(task, outputModuleName))
+                outputFileset.create()
+                outputFileset.markOpen(True)
+                mergedOutputFileset = None
+                
+                for childTask in task.childTaskIterator():
+                    if childTask.data.input.outputModule == outputModuleName:
+                        if childTask.taskType() == "Merge":
+                            mergedOutputFileset = Fileset(self.outputFilesetName(childTask, "Merged"))
+                            mergedOutputFileset.create()
+                            mergedOutputFileset.markOpen(True)
+                                                         
+                        self.createSubscription(topLevelFilesetName, childTask, outputFileset) 
+
+                if mergedOutputFileset != None:
+                    workflow.addOutput(outputModuleName, outputFileset,
+                                       mergedOutputFileset)
+                else:
+                    workflow.addOutput(outputModuleName, outputFileset,
+                                       outputFileset)
+            
+        return self.topLevelSubscription
+
     def addMCFakeFile(self):
         """Add a fake file for wmbs to run production over"""
         needed = ['FirstEvent', 'FirstLumi', 'FirstRun', 'LastEvent', 'LastLumi', 'LastRun']
         for key in needed:
             if self.mask and self.mask.get(key) is None:
                 raise RuntimeError, 'Invalid value "%s" for %s' % (self.mask.get(key), key)
-        if not self.topLevelTask.siteWhitelist():
+        if not self.wmSpec.getTopLevelTask().siteWhitelist():
             raise RuntimeError, "Site whitelist mandatory for MonteCarlo"
         locations = set()
-        for site in self.topLevelTask.siteWhitelist():
+        for site in self.wmSpec.getTopLevelTask().siteWhitelist():
             try:
                 siteInfo = self.getLocationInfo.execute(site, conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
@@ -588,8 +599,8 @@ class WMBSHelper(WMConnectionBase):
 
     def validFiles(self, files):
         """Apply run white/black list and return valid files"""
-        runWhiteList = self.topLevelTask.inputRunWhitelist()
-        runBlackList = self.topLevelTask.inputRunBlacklist()
+        runWhiteList = self.wmSpec.getTopLevelTask().inputRunWhitelist()
+        runBlackList = self.wmSpec.getTopLevelTask().inputRunBlacklist()
         results = []
         for f in files:
             if runWhiteList or runBlackList:

@@ -1111,7 +1111,6 @@ class SubscriptionTest(unittest.TestCase):
         
         Tests the delete function that should delete all component of a subscription
         """
-
         myThread = threading.currentThread()
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
@@ -1149,9 +1148,6 @@ class SubscriptionTest(unittest.TestCase):
         testFile1.create()
         testFileA.addChild(testFile1['lfn'])
 
-        
-        logging.info("About to test fileset deletes")
-
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
@@ -1166,8 +1162,12 @@ class SubscriptionTest(unittest.TestCase):
 
         testFilesetQ = Fileset(name = "TestFilesetQ")
         testFilesetQ.create()
-        # Put it in the workflow
-        testWorkflow.addOutput(outputIdentifier = 'a', outputFileset = testFilesetQ)
+        testMergedFilesetQ = Fileset(name = "TestMergedFilesetQ")
+        testMergedFilesetQ.create()        
+
+        testWorkflow.addOutput(outputIdentifier = 'a',
+                               outputFileset = testFilesetQ,
+                               mergedOutputFileset = testMergedFilesetQ)
 
         testFileset2.addFile(testFileD)
         testFileset2.commit()
@@ -1301,8 +1301,6 @@ class SubscriptionTest(unittest.TestCase):
         testFileC.create()
         testFileD.create()
 
-
-        
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
@@ -1314,7 +1312,6 @@ class SubscriptionTest(unittest.TestCase):
         testFileset.addFile(testFileC)
         testFileset.addFile(testFileD)
         testFileset.commit()
-
 
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
@@ -1604,6 +1601,13 @@ class SubscriptionTest(unittest.TestCase):
         testOutputFileset3 = Fileset(name = "TestOutputFileset3")
         testOutputFileset3.create()
 
+        testMergedOutputFileset1 = Fileset(name = "TestMergedOutputFileset1")
+        testMergedOutputFileset1.create()
+        testMergedOutputFileset2 = Fileset(name = "TestMergedOutputFileset2")
+        testMergedOutputFileset2.create()
+        testMergedOutputFileset3 = Fileset(name = "TestMergedOutputFileset3")
+        testMergedOutputFileset3.create()        
+
         testOutputFileset1.markOpen(False)
         testOutputFileset2.markOpen(False)
         testOutputFileset3.markOpen(False)
@@ -1615,17 +1619,17 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
                                  name = "wf001", task = "sometask")
         testWorkflow1.create()
-        testWorkflow1.addOutput("out1", testOutputFileset1)
+        testWorkflow1.addOutput("out1", testOutputFileset1, testMergedOutputFileset1)
 
         testWorkflow2 = Workflow(spec = "spec2.xml", owner = "Steve",
                                  name = "wf002", task = "sometask")
         testWorkflow2.create()
-        testWorkflow2.addOutput("out2", testOutputFileset2)
+        testWorkflow2.addOutput("out2", testOutputFileset2, testMergedOutputFileset2)
 
         testWorkflow3 = Workflow(spec = "spec3.xml", owner = "Steve",
                                  name = "wf003", task = "sometask")
         testWorkflow3.create()
-        testWorkflow3.addOutput("out3", testOutputFileset3)
+        testWorkflow3.addOutput("out3", testOutputFileset3, testMergedOutputFileset3)
 
         testSubscription1 = Subscription(fileset = testInputFileset,
                                          workflow = testWorkflow1)

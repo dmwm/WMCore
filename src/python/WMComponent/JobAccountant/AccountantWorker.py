@@ -55,7 +55,6 @@ class AccountantWorker(WMConnectionBase):
         self.bulkParentageAction     = self.daofactory(classname = "Files.AddBulkParentage")
         self.getJobTypeAction        = self.daofactory(classname = "Jobs.GetType")
         self.getParentInfoAction     = self.daofactory(classname = "Files.GetParentInfo")
-        self.getMergedChildrenAction = self.daofactory(classname = "Files.GetMergedChildren")
         self.setParentageByJob       = self.daofactory(classname = "Files.SetParentageByJob")
         self.setFileRunLumi          = self.daofactory(classname = "Files.AddRunLumi")
         self.setFileLocation         = self.daofactory(classname = "Files.SetLocationByLFN")
@@ -242,24 +241,15 @@ class AccountantWorker(WMConnectionBase):
         Determine if the file should be placed in any other fileset.  Note that
         this will not return the JobGroup output fileset as all jobs will have
         their output placed there.
-
-        If a file is merged and the output map has it going to a merge
-        subscription the file will be placed in the output fileset of the merge
-        subscription.
         """
         if not outputMap.has_key(moduleLabel):
             logging.info("Output module label missing from output map.")
             return None
 
         if merged == False:
-            return outputMap[moduleLabel]["fileset"]
+            return outputMap[moduleLabel]["output_fileset"]
 
-        if len(outputMap[moduleLabel]["children"]) == 1:
-            outputChild = outputMap[moduleLabel]["children"][0]
-            if outputChild["child_sub_type"] == "Merge":
-                return outputChild["child_sub_output_fset"]
-
-        return outputMap[moduleLabel]["fileset"]        
+        return outputMap[moduleLabel]["merged_output_fileset"]
 
     def addFileToDBS(self, jobReportFile):
         """

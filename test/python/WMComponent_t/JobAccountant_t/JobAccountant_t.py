@@ -17,7 +17,7 @@ import tempfile
 import WMCore.WMInit
 from WMCore.FwkJobReport.Report import Report
 
-from WMQuality.TestInit import TestInit
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.UUID import makeUUID
 
@@ -48,9 +48,10 @@ class JobAccountantTest(unittest.TestCase):
         Create the database connections, install the schemas and create the
         DAO objects.
         """
-        self.testInit = TestInit(__file__)
+        self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        self.testInit.setupCouch("jobaccountant_t", "JobDump")
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database",
                                                 "WMCore.WMBS"],
                                 useDefault = False)
@@ -90,6 +91,7 @@ class JobAccountantTest(unittest.TestCase):
         Clear out the WMBS and DBSBuffer database schemas.
         """
         self.testInit.clearDatabase()
+        self.testInit.tearDownCouch()        
         self.testInit.delWorkDir()
         return
 
@@ -107,7 +109,7 @@ class JobAccountantTest(unittest.TestCase):
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl = os.getenv("COUCHURL")
-        config.JobStateMachine.couchDBName = "job_accountant_t"
+        config.JobStateMachine.couchDBName = "jobaccountant_t"
 
         config.component_("JobAccountant")
         config.JobAccountant.pollInterval = 60
@@ -256,8 +258,10 @@ class JobAccountantTest(unittest.TestCase):
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
         self.testWorkflow.create()
-        self.testWorkflow.addOutput("FEVT", self.recoOutputFileset)
-        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.alcaOutputFileset)
+        self.testWorkflow.addOutput("FEVT", self.recoOutputFileset,
+                                    self.recoOutputFileset)
+        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.alcaOutputFileset,
+                                    self.alcaOutputFileset)
 
         inputFile = File(lfn = "/path/to/some/lfn", size = 600000, events = 60000,
                          locations = "cmssrm.fnal.gov")
@@ -475,7 +479,6 @@ class JobAccountantTest(unittest.TestCase):
             assert dbsFile.exists() != False, \
                    "Error: File is not in DBSBuffer: %s" % fwkJobReportFile["lfn"]
 
-
             dbsFile.load(parentage = 1)
 
             assert dbsFile["events"] == fwkJobReportFile["events"], \
@@ -659,8 +662,10 @@ class JobAccountantTest(unittest.TestCase):
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
         self.testWorkflow.create()
-        self.testWorkflow.addOutput("output", self.recoOutputFileset)
-        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.alcaOutputFileset)
+        self.testWorkflow.addOutput("output", self.recoOutputFileset,
+                                    self.mergedRecoOutputFileset)
+        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.alcaOutputFileset,
+                                    self.mergedAlcaOutputFileset)
 
         self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
                                               name = "TestRecoMergeWF", task = "None")
@@ -793,18 +798,22 @@ class JobAccountantTest(unittest.TestCase):
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
         self.testWorkflow.create()
-        self.testWorkflow.addOutput("output", self.recoOutputFileset)
-        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.aodOutputFileset)
+        self.testWorkflow.addOutput("output", self.recoOutputFileset,
+                                    self.mergedRecoOutputFileset)
+        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.aodOutputFileset,
+                                    self.mergedAodOutputFileset)
 
         self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
                                               name = "TestRecoMergeWF", task = "None")
         self.testRecoMergeWorkflow.create()
-        self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset)
+        self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset,
+                                             self.mergedRecoOutputFileset)
 
         self.testAodMergeWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
                                              name = "TestAodMergeWF", task = "None")
         self.testAodMergeWorkflow.create()
-        self.testAodMergeWorkflow.addOutput("Merged", self.mergedAodOutputFileset)        
+        self.testAodMergeWorkflow.addOutput("Merged", self.mergedAodOutputFileset,
+                                            self.mergedAodOutputFileset)
 
         inputFileA = File(lfn = "/path/to/some/lfnA", size = 600000, events = 60000,
                          locations = "cmssrm.fnal.gov", merged = createDBSParents)
@@ -1079,13 +1088,13 @@ class JobAccountantTest(unittest.TestCase):
         testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                 name = "TestWF", task = "None")
         testWorkflow.create()
-        testWorkflow.addOutput("write_A_Calo_RAW", caloFileset)
-        testWorkflow.addOutput("write_A_Cosmics_RAW", cosmicsFileset)
-        testWorkflow.addOutput("write_A_HcalHPDNoise_RAW", hcalFileset)
-        testWorkflow.addOutput("write_A_MinimumBias_RAW", minbiasFileset)
-        testWorkflow.addOutput("write_A_RandomTriggers_RAW", ranFileset)
-        testWorkflow.addOutput("write_A_Calibration_TestEnables_RAW", calFileset)
-        testWorkflow.addOutput("write_HLTDEBUG_Monitor_RAW", hltFileset)
+        testWorkflow.addOutput("write_A_Calo_RAW", caloFileset, caloFileset)
+        testWorkflow.addOutput("write_A_Cosmics_RAW", cosmicsFileset, cosmicsFileset)
+        testWorkflow.addOutput("write_A_HcalHPDNoise_RAW", hcalFileset, hcalFileset)
+        testWorkflow.addOutput("write_A_MinimumBias_RAW", minbiasFileset, minbiasFileset)
+        testWorkflow.addOutput("write_A_RandomTriggers_RAW", ranFileset, ranFileset)
+        testWorkflow.addOutput("write_A_Calibration_TestEnables_RAW", calFileset, calFileset)
+        testWorkflow.addOutput("write_HLTDEBUG_Monitor_RAW", hltFileset, hltFileset)
         
         self.testSubscription = Subscription(fileset = inputFileset,
                                              workflow = testWorkflow,
@@ -1215,18 +1224,22 @@ class JobAccountantTest(unittest.TestCase):
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
         self.testWorkflow.create()
-        self.testWorkflow.addOutput("output", self.recoOutputFileset)
-        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.aodOutputFileset)
+        self.testWorkflow.addOutput("output", self.recoOutputFileset,
+                                    self.mergedRecoOutputFileset)
+        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.aodOutputFileset,
+                                    self.mergedAodOutputFileset)
         
         self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
                                               name = "TestRecoMergeWF", task = "None")
         self.testRecoMergeWorkflow.create()
-        self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset)
+        self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset,
+                                             self.mergedRecoOutputFileset)
         
         self.testAodMergeWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
                                              name = "TestAodMergeWF", task = "None")
         self.testAodMergeWorkflow.create()
-        self.testAodMergeWorkflow.addOutput("Merged", self.mergedAodOutputFileset)
+        self.testAodMergeWorkflow.addOutput("Merged", self.mergedAodOutputFileset,
+                                            self.mergedAodOutputFileset)
         
         masterFile1 = File(lfn = "/path/to/some/lfn1", size = 600000, events = 60000,
                            locations = "cmssrm.fnal.gov", merged = True)
@@ -1399,7 +1412,8 @@ class JobAccountantTest(unittest.TestCase):
         for outputModuleName in outputModules:
             outputFileset = Fileset(name = outputModuleName)
             outputFileset.create()
-            testWorkflow.addOutput(outputModuleName, outputFileset)
+            testWorkflow.addOutput(outputModuleName, outputFileset,
+                                   outputFileset)
         
         self.testSubscription = Subscription(fileset = inputFileset,
                                              workflow = testWorkflow,
@@ -1515,18 +1529,22 @@ class JobAccountantTest(unittest.TestCase):
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
         self.testWorkflow.create()
-        self.testWorkflow.addOutput("output", self.recoOutputFileset)
-        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.alcaOutputFileset)
+        self.testWorkflow.addOutput("output", self.recoOutputFileset,
+                                    self.mergedRecoOutputFileset)
+        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.alcaOutputFileset,
+                                    self.mergedAlcaOutputFileset)
 
         self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
                                               name = "TestRecoMergeWF", task = "None")
         self.testRecoMergeWorkflow.create()
-        self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset)
+        self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset,
+                                             self.mergedRecoOutputFileset)
 
         self.testAlcaMergeWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
                                               name = "TestAlcaMergeWF", task = "None")
         self.testAlcaMergeWorkflow.create()
-        self.testAlcaMergeWorkflow.addOutput("Merged", self.mergedAlcaOutputFileset)        
+        self.testAlcaMergeWorkflow.addOutput("Merged", self.mergedAlcaOutputFileset,
+                                             self.mergedAlcaOutputFileset)
 
         inputFile = File(lfn = "/path/to/some/lfn", size = 600000, events = 60000,
                          locations = "cmssrm.fnal.gov")

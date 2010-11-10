@@ -5,9 +5,6 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-
-
-
 import unittest
 import os
 import threading
@@ -73,7 +70,12 @@ class WMBSMergeBySize(unittest.TestCase):
         self.mergeFileset = Fileset(name = "mergeFileset")
         self.mergeFileset.create()
         self.bogusFileset = Fileset(name = "bogusFileset")
-        self.bogusFileset.create()        
+        self.bogusFileset.create()
+
+        self.mergeMergedFileset = Fileset(name = "mergeMergedFileset")
+        self.mergeMergedFileset.create()
+        self.bogusMergedFileset = Fileset(name = "bogusMergedFileset")
+        self.bogusMergedFileset.create()
 
         mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
                                  owner = "Steve", task="Test")
@@ -93,8 +95,10 @@ class WMBSMergeBySize(unittest.TestCase):
         inputWorkflow = Workflow(name = "inputWorkflow", spec = "input",
                                 owner = "Steve", task = "Test")
         inputWorkflow.create()
-        inputWorkflow.addOutput("output", self.mergeFileset)
-        inputWorkflow.addOutput("output2", self.bogusFileset)
+        inputWorkflow.addOutput("output", self.mergeFileset,
+                                self.mergeMergedFileset)
+        inputWorkflow.addOutput("output2", self.bogusFileset,
+                                self.bogusMergedFileset)
         
         inputSubscription = Subscription(fileset = inputFileset,
                                         workflow = inputWorkflow)
@@ -795,6 +799,11 @@ class WMBSMergeBySize(unittest.TestCase):
         mergeFilesetA.create()
         mergeFilesetB.create()
 
+        mergeMergedFilesetA = Fileset(name = "mergeMergedFilesetA")
+        mergeMergedFilesetB = Fileset(name = "mergeMergedFilesetB")
+        mergeMergedFilesetA.create()
+        mergeMergedFilesetB.create()        
+
         mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bogus",
                                  owner = "Steve", task = "Test")
         mergeWorkflow.create()
@@ -819,11 +828,11 @@ class WMBSMergeBySize(unittest.TestCase):
         procWorkflowA = Workflow(name = "procWorkflowA", spec = "bunk2",
                                  owner = "Steve", task = "Test")
         procWorkflowA.create()
-        procWorkflowA.addOutput("output", mergeFilesetA)
+        procWorkflowA.addOutput("output", mergeFilesetA, mergeMergedFilesetA)
         procWorkflowB = Workflow(name = "procWorkflowB", spec = "bunk3",
                                  owner = "Steve", task = "Test2")
         procWorkflowB.create()
-        procWorkflowB.addOutput("output", mergeFilesetB)
+        procWorkflowB.addOutput("output", mergeFilesetB, mergeMergedFilesetB)
 
         procSubscriptionA = Subscription(fileset = inputFileset,
                                          workflow = procWorkflowA,

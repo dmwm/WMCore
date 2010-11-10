@@ -81,6 +81,8 @@ class WMWorkloadCache:
         msg = "Saving: %s \n" % pfn
         msg += "LFN: %s" % lfn
         logging.info(msg)
+        helper.setOwner(workload.owner.Requestor)
+        helper.setSpecUrl(pfn)
         helper.save(pfn)
         return lfn
 

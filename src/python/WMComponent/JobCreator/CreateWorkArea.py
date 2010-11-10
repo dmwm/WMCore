@@ -53,8 +53,12 @@ def createDirectories(dirList):
     logging.info('Executing makedir commands')
     for command in cmdList:
         pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.wait()
-        
+        stdout, stderr = pipe.communicate()
+        if not stderr == "":
+            msg = "Error in making directories: %s\n" % stderr
+            logging.error(msg)
+            logging.debug("Executing command %s\n" % command)
+            raise CreateWorkAreaException(msg)
         
     return
 

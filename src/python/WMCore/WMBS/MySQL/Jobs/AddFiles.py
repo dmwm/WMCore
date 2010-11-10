@@ -10,10 +10,9 @@ import logging
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AddFiles(DBFormatter):
+
     sql = """INSERT INTO wmbs_job_assoc (job, file)
-               SELECT :jobid, :fileid FROM DUAL WHERE NOT EXISTS
-                 (SELECT job FROM wmbs_job_assoc
-                  WHERE job = :jobid AND file = :fileid)"""
+               VALUES (:jobid, :fileid) """
     
     def getBinds(self, jobDict):
         binds = []

@@ -8,10 +8,8 @@ MySQL implementation of Subscription.AcquireFiles
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AcquireFiles(DBFormatter):
-    sql = """INSERT INTO wmbs_sub_files_acquired (subscription, file)
-               SELECT :subscription, :fileid FROM DUAL WHERE NOT EXISTS
-                 (SELECT file FROM wmbs_sub_files_acquired
-                    WHERE file = :fileid AND subscription = :subscription)"""
+    sql = """INSERT IGNORE INTO wmbs_sub_files_acquired (subscription, file)
+               VALUES (:subscription, :fileid)"""
 
     availDel = """DELETE FROM wmbs_sub_files_available
                   WHERE subscription = :subscription AND

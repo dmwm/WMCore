@@ -18,9 +18,19 @@ import traceback
 
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.DAOFactory                      import DAOFactory
+from WMCore.WMException                     import WMException
 
 from WMCore.WMSpec.Makers.Interface.CreateWorkArea      import CreateWorkArea
 from WMCore.ProcessPool.ProcessPool                     import ProcessPool
+
+
+class JobCreatorPollerException(WMException):
+    """
+    _JobCreatorPollerException_
+
+    Specific JobCreatorPoller exception handling.
+    If we ever need it.
+    """
 
 
 class JobCreatorPoller(BaseWorkerThread):
@@ -102,11 +112,11 @@ class JobCreatorPoller(BaseWorkerThread):
         logging.debug("Running JSM.JobCreator")
         try:
             self.pollSubscriptions()
+        except WMException:
+            raise
         except Exception, ex:
             msg = "Failed to execute JobCreator \n%s\n" % (ex)
-            msg += str(traceback.format_exc())
-            msg += "\n\n"
-            raise Exception(msg)
+            raise JobCreatorPollerException(msg)
 
         
 
@@ -136,6 +146,7 @@ class JobCreatorPoller(BaseWorkerThread):
             listOfWork.append({'subscription': subscription})
 
         logging.debug("Enqueuing the following work: %s" % listOfWork)
+
             
         if listOfWork != []:
             # Only enqueue if we have work to do!

@@ -4,6 +4,15 @@
 # W0142: Some people like ** magic
 """
 The actual taskArchiver algorithm
+
+Procedure:
+a) Takes as input all finished subscriptions
+      This is defined by the Subscriptions.GetFinishedSubscriptions DAO
+b) Calls the WMBS.Subscription.DeleteEverything() method on them.
+
+This should be a simple process.  Because of the long time between
+the submission of subscriptions projected and the short time to run
+this class, it should be run irregularly.
 """
 __all__ = []
 
@@ -19,10 +28,22 @@ from WMCore.WMBS.Subscription   import Subscription
 from WMCore.WMBS.Fileset        import Fileset
 from WMCore.DAOFactory          import DAOFactory
 from WMCore.WorkQueue.WorkQueue import localQueue
+from WMCore.WMException         import WMException
+
+class TaskArchiverPollerException(WMException):
+    """
+    _TaskArchiverPollerException_
+
+    This is the class that serves as the customized
+    Exception class for the TaskArchiverPoller
+
+    As if you couldn't tell that already
+    """
 
 class TaskArchiverPoller(BaseWorkerThread):
     """
-    Polls for Error Conditions, handles them
+    Polls for Ended jobs
+
     """
     def __init__(self, config):
         """
@@ -45,11 +66,6 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.timeout = getattr(self.config.TaskArchiver, "timeOut", 0)
         return        
     
-    def setup(self, parameters):
-        """
-        Load DB objects required for queries
-        """
-        return
 
     def terminate(self, params):
         """
@@ -72,18 +88,20 @@ class TaskArchiverPoller(BaseWorkerThread):
         logging.debug("Running algorithm for finding finished subscriptions")
         try:
             self.archiveTasks()
+        except WMException:
+            myThread = threading.currentThread()
+            if getattr(myThread, 'transaction', False) \
+                   and getattr(myThread.transaction, 'transaction', False):
+                myThread.transaction.rollback()
+            raise
         except Exception, ex:
             myThread = threading.currentThread()
             msg = "Caught exception in TaskArchiver\n"
             msg += str(ex)
-            msg += str(traceback.format_exc())
-            msg += "\n\n"
-            if hasattr(myThread, 'transaction') \
-                   and myThread.transaction != None \
-                   and hasattr(myThread.transaction, 'transaction') \
-                   and myThread.transaction.transaction != None:
+            if getattr(myThread, 'transaction', False) \
+                   and getattr(myThread.transaction, 'transaction', False):
                 myThread.transaction.rollback()
-            raise Exception(msg)
+            raise TaskArchiverPollerException(msg)
 
         return
 
@@ -92,7 +110,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         """
         _archiveTasks_
         
-        archiveTaks will handle the master task of looking for finished subscriptions,
+        archiveTasks will handle the master task of looking for finished subscriptions,
         checking to see if they've finished, and then notifying the workQueue and
         finishing things up.
         """
@@ -165,29 +183,15 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         for sub in doneList:
             logging.info("Deleting subscription %i" % sub['id'])
-            sub.deleteEverything()
+            try:
+                sub.deleteEverything()
+            except Exception, ex:
+                msg =  "Critical error while deleting subscription %i\n" % sub['id']
+                msg += str(ex)
+                logging.error(msg)
+                raise TaskArchiverPollerException(msg)
 
         return
 
 
-    def pollForClosable(self):
-        """
-        _pollForClosable_
 
-        Search WMBS for filesets that can be closed and mark them as closed.
-        """
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-
-        closableFilesetDAO = self.daoFactory(classname = "Fileset.ListClosable")
-        closableFilesets = closableFilesetDAO.execute()
-
-        for closableFileset in closableFilesets:
-            openFileset = Fileset(id = closableFileset)
-            openFileset.load()
-
-            logging.debug("Closing fileset %s" % openFileset.name)
-            openFileset.markOpen(False)
-
-        myThread.transaction.commit()
-        return

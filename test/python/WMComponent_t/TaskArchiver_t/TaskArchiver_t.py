@@ -361,7 +361,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(testWMBSFileset.exists(), False)
 
 
-        print "TaskArchiver took %f seconds" % (stopTime - startTime)
+        logging.info("TaskArchiver took %f seconds" % (stopTime - startTime))
 
 
         

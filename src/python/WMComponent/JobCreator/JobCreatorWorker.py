@@ -8,7 +8,24 @@
 # wants to move them outside the class
 #R0914: We just have too many variables to pass normally
 """
-The JobCreator Poller for the JSM
+The JobCreatorWorker is run by ProcessPool, and actually does
+most of the work associated with jobCreation.
+
+This includes:
+a) Loading the subscription out of the database
+b) Loading the spec using the location in wmbs_workflow
+c) Finding the splitting algo specified in the spec
+d) Creating the jobs with a call to JobSplitting
+e) Saving the jobs in JobFactory
+f) Creating the CacheDirs and pickled job objects for
+     each job.
+g) Updating the jobs in the database.
+
+Jobs exiting the worker should be in state 'Created'
+
+Note:  Jobs are split up by subscription, so having
+one long subscription can make the JobCreatorWorker
+wait for excessively long amounts of time while it runs.
 """
 __all__ = []
 

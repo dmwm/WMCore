@@ -23,6 +23,15 @@ from WMCore.JobStateMachine.ChangeState    import ChangeState
 from WMCore.WMBS.Job          import Job
 from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMBS.Fileset      import Fileset
+from WMCore.WMException       import WMException
+
+
+class JobArchiverPollerException(WMException):
+    """
+    _JobArchiverPollerException_
+
+    The Exception handler for the job archiver.
+    """
 
 class JobArchiverPoller(BaseWorkerThread):
     """
@@ -89,18 +98,21 @@ class JobArchiverPoller(BaseWorkerThread):
         try:
             self.archiveJobs()
             self.pollForClosable()
+        except WMException:
+            myThread = threading.currentThread()
+            if getattr(myThread, 'transaction', None) != None\
+                   and getattr(myThread.transaction, 'transaction', None) != None:
+                myThread.transaction.rollback()
+            raise
         except Exception, ex:
             myThread = threading.currentThread()
             msg = "Caught exception in JobArchiver\n"
             msg += str(ex)
-            msg += str(traceback.format_exc())
             msg += "\n\n"
-            if hasattr(myThread, 'transaction') \
-                   and myThread.transaction != None \
-                   and hasattr(myThread.transaction, 'transaction') \
-                   and myThread.transaction.transaction != None:
+            if getattr(myThread, 'transaction', None) != None\
+                   and getattr(myThread.transaction, 'transaction', None) != None:
                 myThread.transaction.rollback()
-            raise Exception(msg)
+            raise JobArchiverException(msg)
 
 
         return
@@ -215,24 +227,44 @@ class JobArchiverPoller(BaseWorkerThread):
             return
 
         # Now we need to set up a final destination
-        jobFolder = 'JobCluster_%i' \
-                    % (int(job['id']/self.numberOfJobsToCluster))
-        logDir = os.path.join(self.config.JobArchiver.logDir, jobFolder)
-        if not os.path.exists(logDir):
-            os.makedirs(logDir)
+        try:
+            jobFolder = 'JobCluster_%i' \
+                        % (int(job['id']/self.numberOfJobsToCluster))
+            logDir = os.path.join(self.config.JobArchiver.logDir, jobFolder)
+            if not os.path.exists(logDir):
+                os.makedirs(logDir)
+        except Exception, ex:
+            msg =  "Exception while trying to make output logDir\n"
+            msg += str("logDir: %s\n" % (logDir))
+            msg += str(ex)
+            logging.error(msg)
+            raise JobArchiverPollerException(msg)
 
         # Otherwise we have something in there
-        tarName = 'Job_%i.tar.bz2' % (job['id'])
+        try:
+            tarName = 'Job_%i.tar.bz2' % (job['id'])
+            tarball = tarfile.open(name = os.path.join(logDir, tarName),
+                                   mode = 'w:bz2')
+            for fileName in cacheDirList:
+                tarball.add(name = os.path.join(cacheDir, fileName),
+                            arcname = 'Job_%i/%s' %(job['id'], fileName))
+            tarball.close()
+        except Exception, ex:
+            msg =  "Exception while opening and adding to a tarfile\n"
+            msg += "Tarfile: %s\n" % os.path.join(logDir, tarName)
+            msg += str(ex)
+            logging.error(msg)
+            logging.debug("cacheDirList: %s" % (cacheDirList))
+            raise JobArchiverPollerException(msg)
 
-        tarball = tarfile.open(name = os.path.join(logDir, tarName),
-                               mode = 'w:bz2')
-        for fileName in cacheDirList:
-            tarball.add(name = os.path.join(cacheDir, fileName),
-                        arcname = 'Job_%i/%s' %(job['id'], fileName))
-        tarball.close()
-
-
-        shutil.rmtree('%s' % (cacheDir))
+        try:
+            shutil.rmtree('%s' % (cacheDir))
+        except Exception, ex:
+            msg =  "Error while removing the old cache dir.\n"
+            msg += "CacheDir: %s\n" % cacheDir
+            msg += str(ex)
+            logging.error(msg)
+            raise JobArchiverPollerException(msg)
 
         return
 

@@ -21,6 +21,7 @@ from WMCore.Agent.Configuration  import Configuration
 from WMCore.FwkJobReport.Report  import Report
 from WMCore.DAOFactory           import DAOFactory
 from WMCore.WMConnectionBase     import WMConnectionBase
+from WMCore.WMException          import WMException
 
 from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.File       import File
@@ -29,6 +30,14 @@ from WMCore.WMBS.JobGroup   import JobGroup
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+
+class AccountantWorkerException(WMException):
+    """
+    _AccountantWorkerException_
+
+    WMException based specific class
+    """
+
 
 class AccountantWorker(WMConnectionBase):
     """
@@ -463,26 +472,43 @@ class AccountantWorker(WMConnectionBase):
                                           'cktype' : entry})
 
 
-        self.dbsInsertLocation.execute(siteName = jobLocation,
-                                       conn = self.getDBConn(),
-                                       transaction = self.existingTransaction())
 
-        self.dbsCreateFiles.execute(files = dbsFileTuples,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+        try:
 
-        self.dbsSetLocation.execute(binds = dbsFileLoc,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
-
-        self.dbsSetChecksum.execute(bulkList = dbsCksumBinds,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
-
-        if len(runLumiBinds) > 0:
-            self.dbsSetRunLumi.execute(file = runLumiBinds,
-                                       conn = self.getDBConn(),
-                                       transaction = self.existingTransaction())
+            self.dbsInsertLocation.execute(siteName = jobLocation,
+                                           conn = self.getDBConn(),
+                                           transaction = self.existingTransaction())
+            
+            self.dbsCreateFiles.execute(files = dbsFileTuples,
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+            
+            self.dbsSetLocation.execute(binds = dbsFileLoc,
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+            
+            self.dbsSetChecksum.execute(bulkList = dbsCksumBinds,
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+            
+            if len(runLumiBinds) > 0:
+                self.dbsSetRunLumi.execute(file = runLumiBinds,
+                                           conn = self.getDBConn(),
+                                           transaction = self.existingTransaction())
+        except WMException:
+            raise
+        except Exception, ex:
+            msg =  "Got exception while inserting files into DBSBuffer!\n"
+            msg += str(ex)
+            logging.error(msg)
+            logging.debug("Listing binds:")
+            logging.debug("jobLocation: %s\n" % jobLocation)
+            logging.debug("dbsFiles: %s\n" % dbsFileTuples)
+            logging.debug("dbsFileLoc: %s\n" %dbsFileLoc)
+            logging.debug("Checksum binds: %s\n" % dbsCksumBinds)
+            logging.debug("RunLumi binds: %s\n" % runLumiBinds)
+            raise AccountantWorkerException(msg)
+            
 
         # Now that we've created those files, clear the list
         self.dbsFilesToCreate = []
@@ -529,27 +555,42 @@ class AccountantWorker(WMConnectionBase):
                                wmbsFile["last_event"],
                                wmbsFile['merged']])
 
-        self.addFileAction.execute(files = fileCreate,
-                                   conn = self.getDBConn(),
-                                   transaction = self.existingTransaction())
-        
-        self.setParentageByJob.execute(binds = parentageBinds,
+        try:
+
+            self.addFileAction.execute(files = fileCreate,
                                        conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
+            
+            self.setParentageByJob.execute(binds = parentageBinds,
+                                           conn = self.getDBConn(),
+                                           transaction = self.existingTransaction())
 
-        if runLumiBinds:
-            self.setFileRunLumi.execute(file = runLumiBinds,
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
+            if runLumiBinds:
+                self.setFileRunLumi.execute(file = runLumiBinds,
+                                            conn = self.getDBConn(),
+                                            transaction = self.existingTransaction())
 
-        self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
+            self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
+                                            conn = self.getDBConn(),
+                                            transaction = self.existingTransaction())
 
-        self.setFileLocation.execute(lfn = fileLocations,
-                                     location = self.fileLocation,
-                                     conn = self.getDBConn(),
-                                     transaction = self.existingTransaction())
+            self.setFileLocation.execute(lfn = fileLocations,
+                                         location = self.fileLocation,
+                                         conn = self.getDBConn(),
+                                         transaction = self.existingTransaction())
+        except WMException:
+            raise
+        except Exception, ex:
+            msg =  "Error while adding files to WMBS!\n"
+            msg += str(ex)
+            logging.error(msg)
+            logging.debug("Printing binds: \n")
+            logging.debug("FileCreate binds: %s\n" % fileCreate)
+            logging.debug("Parentage binds: %s\n" % parentageBinds)
+            logging.debug("Runlumi binds: %s\n" % runLumiBinds)
+            logging.debug("Checksum binds: %s\n" % fileCksumBinds)
+            logging.debug("FileLocation binds: %s\n" % fileLocations)
+            raise AccountantWorkerException(msg)
 
         # Clear out finished files
         self.wmbsFilesToBuild = []
@@ -602,7 +643,16 @@ class AccountantWorker(WMConnectionBase):
         logging.info(len(bindList))
 
         if len(bindList) > 0:
-            self.dbsLFNHeritage.execute(binds = bindList,
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
+            try:
+                self.dbsLFNHeritage.execute(binds = bindList,
+                                            conn = self.getDBConn(),
+                                            transaction = self.existingTransaction())
+            except WMException:
+                raise
+            except Exception, ex:
+                msg =  "Error while trying to handle the DBS LFN heritage\n"
+                msg += str(ex)
+                msg += "BindList: %s" % bindList
+                logging.error(msg)
+                raise AccountantWorkerException(msg)
         return

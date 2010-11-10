@@ -19,6 +19,17 @@ from WMCore.DAOFactory import DAOFactory
 
 from WMComponent.JobAccountant.AccountantWorker import AccountantWorker
 
+from WMCore.WMException import WMException
+
+class JobAccountantPollerException(WMException):
+    """
+    _JobAccountantPollerException_
+
+    JobAccountant error class for general
+    errors in the poller (used as a catchall
+    from the worker).
+    """
+
 class JobAccountantPoller(BaseWorkerThread):
     def __init__(self, config):
         BaseWorkerThread.__init__(self)
@@ -53,12 +64,34 @@ class JobAccountantPoller(BaseWorkerThread):
 
         if len(completeJobs) == 0:
             # Then we have no work to do.  Bye!
+            logging.debug("No work to do; exiting")
             return
 
         while len(completeJobs) > 25:
-            jobsSlice = completeJobs[0:25]
-            completeJobs = completeJobs[25:]
-            self.accountantWorker(jobsSlice)
+            try:
+                jobsSlice = completeJobs[0:25]
+                completeJobs = completeJobs[25:]
+                self.accountantWorker(jobsSlice)
+            except WMException:
+                raise
+            except Exception, ex:
+                msg =  "Hit general exception in JobAccountantPoller while using worker.\n"
+                msg += str(ex)
+                logging.error(msg)
+                logging.debug("jobsSlice:")
+                logging.debug(jobsSlice)
+                raise JobAccountantPollerException(msg)
 
-        self.accountantWorker(completeJobs)        
+        try:
+            self.accountantWorker(completeJobs)
+        except WMException:
+            raise
+        except Exception, ex:
+            msg =  "Hit general exception in JobAccountantPoller in last worker use.\n"
+            msg += str(ex)
+            logging.error(msg)
+            logging.debug("jobs left:")
+            logging.debug(completeJobs)
+            raise JobAccountantPollerException(msg)
+
         return

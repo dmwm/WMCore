@@ -14,6 +14,7 @@ General Exception class for WM modules
 import exceptions
 import inspect
 import logging
+import traceback
 
 class WMException(exceptions.Exception):
     """
@@ -74,6 +75,10 @@ class WMException(exceptions.Exception):
               self['ClassInstance'].__class__.__name__
 
 
+        # Determine the traceback at time of __init__
+        self.traceback = str(traceback.format_exc())
+
+
     def __getitem__(self, key):
         """
         make exception look like a dictionary
@@ -127,6 +132,9 @@ class WMException(exceptions.Exception):
         strg += "Message: %s\n" % self._message
         for key, value in self.data.items():
             strg += "\t%s : %s\n" % (key, value, )
+        strg += "\nTraceback: \n"
+        strg += self.traceback
+        strg += '\n'
         return strg
 
 

@@ -99,3 +99,13 @@ class MonteCarloWorkloadFactory(StdBase):
                                                {"events_per_job": 1000})
         
         return self.buildWorkload()
+
+def monteCarloWorkload(workloadName, arguments):
+    """
+    _monteCarloWorkload_
+
+    Instantiate the MonteCarloWorkflowFactory and have it generate a workload for
+    the given parameters.
+    """
+    myMonteCarloFactory = MonteCarloWorkloadFactory()
+    return myMonteCarloFactory(workloadName, arguments)

@@ -1,10 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0201, W0142, W0102
-# W0201: Steve defines all global vars in __call__
-#   I don't know why, but I'm not getting blamed for it
-# W0142: Dave loves the ** magic
-# W0102: Dangerous default values?  I live on danger!
-#   Allows us to use a dict as a default
 """
 _ReReco_
 
@@ -13,7 +7,7 @@ Standard ReReco workflow.
 
 import os
 
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessingWorkloadFactory
 
 def getTestArguments():
     """
@@ -27,7 +21,6 @@ def getTestArguments():
     will cause everything to crash/die/break, and we will be forced
     to hunt you down and kill you.
     """
-
     arguments = {
         "AcquisitionEra": "WMAgentCommissioning10",
         "Requestor": "sfoulkes@fnal.gov",
@@ -53,53 +46,31 @@ def getTestArguments():
 
     return arguments
 
-class ReRecoWorkloadFactory(StdBase):
+class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
     """
     _ReRecoWorkloadFactory_
 
     Stamp out ReReco workflows.
     """
     def __init__(self):
-        StdBase.__init__(self)
+        DataProcessingWorkloadFactory.__init__(self)
         return
 
-    def buildWorkload(self):
+    def addSkims(self, workload):
         """
-        _buildWorkload_
+        _addSkims_
 
-        Build the workload given all of the input parameters.  At the very least
-        this will create a processing task and merge tasks for all the outputs
-        of the processing task.  For each skim that is passed in, skim tasks
-        will be created and merge tasks will be created for each skim output.
+        Add skims to the standard dataprocessing workload that was given.
 
-        Not that there will be LogCollect tasks created for each processing
+        Note that there will be LogCollect tasks created for each processing
         task and Cleanup tasks created for each merge task.
         """
-        (self.inputPrimaryDataset, self.inputProcessedDataset,
-         self.inputDataTier) = self.inputDataset[1:].split("/")
-
-        workload = self.createWorkload()
-        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
-        procTask = workload.newTask("ReReco")
-
-        outputMods = self.setupProcessingTask(procTask, "Processing", self.inputDataset,
-                                              scenarioName = self.procScenario, scenarioFunc = "promptReco",
-                                              scenarioArgs = {"globalTag": self.globalTag, "writeTiers": ["RECO", "ALCARECO"]}, 
-                                              couchURL = self.couchURL, couchDBName = self.couchDBName,
-                                              configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs) 
-        self.addLogCollectTask(procTask)
-
         procMergeTasks = {}
-        for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
-            mergeTask = self.addMergeTask(procTask, self.procJobSplitAlgo,
-                                          outputModuleName,
-                                          outputModuleInfo["dataTier"],
-                                          outputModuleInfo["filterName"],
-                                          outputModuleInfo["processedDataset"])
-            procMergeTasks[outputModuleName] = mergeTask
-
+        procTask = workload.getTopLevelTask()
+        for mergeTask in procTask.childTaskIterator():
+            if mergeTask.taskType() == "Merge":
+                procMergeTasks[mergeTask.data.input.outputModule] = mergeTask
+        
         for skimConfig in self.skimConfigs:
             if not procMergeTasks.has_key(skimConfig["SkimInput"]):
                 error = "Processing config does not have the following output module: %s.  " % skimConfig["SkimInput"]
@@ -131,28 +102,7 @@ class ReRecoWorkloadFactory(StdBase):
 
         Create a ReReco workload with the given parameters.
         """
-        StdBase.__call__(self, workloadName, arguments)
-
-        # Required parameters that must be specified by the Requestor.
-        self.inputDataset = arguments["InputDataset"]
-        self.frameworkVersion = arguments["CMSSWVersion"]
-        self.globalTag = arguments["GlobalTag"]
-
-        # The CouchURL and name of the ConfigCache database must be passed in
-        # by the ReqMgr or whatever is creating this workflow.
-        self.couchURL = arguments["CouchURL"]
-        self.couchDBName = arguments["CouchDBName"]        
-
-        # One of these parameters must be set.
-        if arguments.has_key("ProdConfigCacheID"):
-            self.procConfigCacheID = arguments["ProdConfigCacheID"]
-        else:
-            self.procConfigCacheID = arguments.get("ProcConfigCacheID", None)
-
-        if arguments.has_key("Scenario"):
-            self.procScenario = arguments.get("Scenario", None)
-        else:
-            self.procScenario = arguments.get("ProcScenario", None)
+        workload = DataProcessingWorkloadFactory.__call__(self, workloadName, arguments)
 
         # The SkimConfig parameter must be a list of dictionaries where each
         # dictionary will have the following keys:
@@ -170,24 +120,13 @@ class ReRecoWorkloadFactory(StdBase):
         # that will be used as the input for the skim.
         self.skimConfigs = arguments.get("SkimConfigs", [])
 
-        # Optional arguments that default to something reasonable.
-        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.blockBlacklist = arguments.get("BlockBlacklist", [])
-        self.blockWhitelist = arguments.get("BlockWhitelist", [])
-        self.runBlacklist = arguments.get("RunBlacklist", [])
-        self.runWhitelist = arguments.get("RunWhitelist", [])
-        self.emulation = arguments.get("Emulation", False)
-
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
-        self.procJobSplitAlgo  = arguments.get("StdJobSplitAlgo", "FileBased")
-        self.procJobSplitArgs  = arguments.get("StdJobSplitArgs",
-                                               {"files_per_job": 1})
         self.skimJobSplitAlgo = arguments.get("SkimJobSplitAlgo", "TwoFileBased")
         self.skimJobSplitArgs = arguments.get("SkimJobSplitArgs",
                                               {"files_per_job": 1})
 
-        return self.buildWorkload()
+        return self.addSkims(workload)
 
 def rerecoWorkload(workloadName, arguments):
     """

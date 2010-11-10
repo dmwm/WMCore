@@ -288,7 +288,7 @@ class StdBase(object):
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
 
-        if parentTaskSplitting == "EventBased":
+        if parentTaskSplitting == "EventBased" and parentTask.taskType() != "Production":
             splitAlgo = "WMBSMergeBySize"
         else:
             splitAlgo = "ParentlessMergeBySize"

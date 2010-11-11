@@ -15,7 +15,7 @@ from WMCore.Configuration import Configuration
 config = Configuration()
 
 config.section_("Agent")
-config.Agent.hostName = "cmssrv52.fnal.gov"
+config.Agent.hostName = "localhost"
 config.Agent.contact = "sfoulkes@fnal.gov"
 config.Agent.teamName = "CMSDataOps"
 config.Agent.agentName = "PrompSkimming"
@@ -26,13 +26,13 @@ config.section_("General")
 config.General.workDir = "/storage/local/data1/wmagent/work"
 
 config.section_("JobStateMachine")
-config.JobStateMachine.couchurl = "http://cmssrv52.fnal.gov:8570"
+config.JobStateMachine.couchurl = "http://localhost:5984"
 config.JobStateMachine.couchDBName = "promptskim_commissioning"
 config.JobStateMachine.configCacheDBName = "promptskim_config_cache"
 config.JobStateMachine.default_retries = 5
 
 config.section_('ACDC')
-config.ACDC.couchurl = "http://cmssrv52.fnal.gov:8570"
+config.ACDC.couchurl = "http://localhost:5984"
 config.ACDC.database = "promptskim_acdc"
 
 config.section_("CoreDatabase")
@@ -113,7 +113,7 @@ config.JobSubmitter.namespace     = "WMComponent.JobSubmitter.JobSubmitter"
 config.JobSubmitter.componentDir  = config.General.workDir + "/JobSubmitter"
 config.JobSubmitter.logLevel      = "DEBUG"
 config.JobSubmitter.pollInterval  = 10
-config.JobSubmitter.submitNode    = "cmssrv52.fnal.gov"
+config.JobSubmitter.submitNode    = "localhost"
 config.JobSubmitter.submitDir     = config.General.workDir + "/SubmitJDLs"
 config.JobSubmitter.jobsPerWorker = 100
 config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(),

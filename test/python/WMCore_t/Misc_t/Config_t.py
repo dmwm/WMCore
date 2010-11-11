@@ -13,9 +13,9 @@ import logging
 import unittest
 import threading
 
+from nose.plugins.attrib import attr
+
 import WMCore.WMInit
-
-
 from WMQuality.TestInit import TestInit
 
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -177,7 +177,7 @@ class ConfigTest(unittest.TestCase):
 
         return
 
-
+    @attr('integration')
     def testB_WMAgentPromptSkimConfig(self):
         """
         _WMAgentConfig_

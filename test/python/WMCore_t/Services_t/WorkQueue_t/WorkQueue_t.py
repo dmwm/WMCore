@@ -14,8 +14,9 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
-from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
+from WMQuality.Emulators import EmulatorSetup
 
 class WorkQueueTest(RESTBaseUnitTest):
     """
@@ -55,9 +56,14 @@ class WorkQueueTest(RESTBaseUnitTest):
         
         # original location of wmspec: under current directory - WMSpecs
         self.specGenerator = WMSpecGenerator("WMSpecs")
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
+        os.environ["COUCHDB"] = "workqueue_t"
+        self.testInit.setupCouch("workqueue_t", "JobDump")
         
     def tearDown(self):
         RESTBaseUnitTest.tearDown(self)
+        EmulatorSetup.deleteConfig(self.configFile)        
+        self.testInit.tearDownCouch()
         self.specGenerator.removeSpecs()
         
         # following should be tearDownClass if we swithch to python 2.7
@@ -73,33 +79,31 @@ class WorkQueueTest(RESTBaseUnitTest):
             pass
 
     def testWorkQueueService(self):
-        
         # test getWork
         specName = "RerecoSpec"
         specUrl = self.specGenerator.createReRecoSpec(specName, "file")
-        
+
         wqApi = WorkQueueDS(self.params)
 
         self.assertTrue(wqApi.queueWork(specUrl, "teamA", "test_request") > 0)
 
         data = wqApi.getWork({'SiteA' : 1000000}, "http://test.url")
-        
+
         # testStatusChange
         self.assertTrue(len(wqApi.status()) > 1)
         self.assertEqual(wqApi.cancelWork([1]), [1])
         self.assertEqual(wqApi.doneWork([1]), [1])
         self.assertEqual(wqApi.failWork([1]), [1])
 
-
-
         # testSynchronize
         childUrl = "http://test.url"
         childResources = [{'ParentQueueId' : 1, 'Status' : 'Available'}]
         self.assertEqual(wqApi.synchronize(childUrl, childResources),
                          {'Canceled': set([1])})
-        
+
         # testCancelWorkWithRequest
-        self.assertEqual(wqApi.cancelWork(["test_request"]), ["test_request"])
+        self.assertEqual(wqApi.cancelWork(["test_request"], "request_name"),
+                                          ["test_request"])
         
         # testGetChildQueues
         self.assertTrue(wqApi.getChildQueues() > 0)

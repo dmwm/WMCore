@@ -3,7 +3,7 @@ import cherrypy
 import logging
 
 #decorator import for RESTServer setup
-from WMQuality.TestInit import TestInit
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig, configureServer
 
 class RESTBaseUnitTest(unittest.TestCase):
@@ -14,7 +14,7 @@ class RESTBaseUnitTest(unittest.TestCase):
         self.initialize()
         if self.schemaModules:
             print "Initializing schema : %s" % self.schemaModules
-            self.testInit = TestInit(__file__)
+            self.testInit = TestInitCouchApp(__file__)
             self.testInit.setLogging() # logLevel = logging.SQLDEBUG
             print "Database URL: %s" % self.config.getDBUrl()
             self.testInit.setDatabaseConnection(self.config.getDBUrl())

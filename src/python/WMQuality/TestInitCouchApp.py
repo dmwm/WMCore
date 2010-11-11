@@ -38,8 +38,7 @@ class CouchAppTestHarness:
     def create(self):
         """create couch db instance"""
         if self.dbName in self.couchServer.listDatabases():
-            msg = "Database already exists in couch instance. bailing..."
-            raise RuntimeError, msg
+            self.drop()
 
         self.couchServer.createDatabase(self.dbName)
 

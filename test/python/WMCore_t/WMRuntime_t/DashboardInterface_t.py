@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+"""
+_DashboardInterface_t_
+
+"""
 
 import threading
 import logging
@@ -19,9 +23,6 @@ from WMCore.FwkJobReport.Report     import Report
 
 from WMCore.WMRuntime.DashboardInterface import DashboardInfo
 from WMCore.WMRuntime.Bootstrap          import setupMonitoring
-
-
-
 
 class DashboardInterfaceTest(unittest.TestCase):
     """
@@ -63,7 +64,7 @@ class DashboardInterfaceTest(unittest.TestCase):
 
         """
         workload = rerecoWorkload("Tier1ReReco", getTestArguments())
-        rereco = workload.getTask("ReReco")
+        rereco = workload.getTask("DataProcessing")
         return workload
 
     def createTestJob(self):
@@ -128,7 +129,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         name     = 'testA'
         job      = self.createTestJob()
         workload = self.createWorkload()
-        task     = workload.getTask(taskName = "ReReco")
+        task     = workload.getTask(taskName = "DataProcessing")
         report   = self.createReport()
 
         # Fill the job environment
@@ -145,7 +146,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.assertEqual(dbInfo.get('jobName', None),
                          'WMAgent_1_0_ThisIsASillyName')
         self.assertEqual(dbInfo.get('taskName', None),
-                         'ProdAgent_-Tier1ReReco-ReReco_WMAgentPrimary')
+                         'ProdAgent_-Tier1ReReco-DataProcessing_WMAgentPrimary')
 
 
         dbInfo.jobStart()
@@ -191,7 +192,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         name     = 'testB'
         job      = self.createTestJob()
         workload = self.createWorkload()
-        task     = workload.getTask(taskName = "ReReco")
+        task     = workload.getTask(taskName = "DataProcessing")
         report   = self.createReport()
 
         # Fill the job environment
@@ -226,7 +227,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.assertEqual(dbInfo.get('jobName', None),
                          'WMAgent_1_0_ThisIsASillyName')
         self.assertEqual(dbInfo.get('taskName', None),
-                         'ProdAgent_-Tier1ReReco-ReReco_WMAgentPrimary')
+                         'ProdAgent_-Tier1ReReco-DataProcessing_WMAgentPrimary')
         
         self.assertEqual(dbInfo.get('GridJobID', None), name)
         self.assertEqual(dbInfo.get('SyncCE', None), name)

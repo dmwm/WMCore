@@ -5,9 +5,6 @@ _ReportEmu_t_
 Tests for the JobReport emulator.
 """
 
-
-
-
 import unittest
 
 from WMCore.DataStructs.File import File
@@ -91,7 +88,7 @@ class ReportEmuTest(unittest.TestCase):
         Setup a processing workflow and job and verify that the FWJR produced
         by the emulator is reasonable.
         """
-        rerecoTask = self.workload.getTask("ReReco")
+        rerecoTask = self.workload.getTask("DataProcessing")
         cmsRunStep = rerecoTask.getStep("cmsRun1")
 
         inputFile = File(lfn = "/path/to/test/lfn", size = 1048576, events = 1000, merged = True)

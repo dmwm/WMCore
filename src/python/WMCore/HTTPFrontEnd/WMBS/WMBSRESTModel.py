@@ -65,6 +65,14 @@ class WMBSRESTModel(RESTModel):
                      validation = [self.setTableFormat],
                      daoFactory = resourceDAOFactory)
         
+        self.addDAO('GET', "thresholdbysite", "ThresholdBySite",
+                     args = ["site"], 
+                     daoFactory = resourceDAOFactory)
+        
+        self.addDAO('GET', "listtaskbysite", "ListWorkloadsForTaskSite",
+                     args = ["taskType", "siteName"], 
+                     daoFactory = resourceDAOFactory)
+        
         self.addDAO('GET', "listthresholds", "ListThresholds",
                      daoFactory = resourceDAOFactory)
 

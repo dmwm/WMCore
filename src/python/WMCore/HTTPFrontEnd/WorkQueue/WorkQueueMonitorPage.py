@@ -57,7 +57,11 @@ class WorkQueueMonitorPage(TemplatedPage):
     
     @expose
     def css(self, *args):
-        return serve_file(os.path.join(self.config.css, *args),
+        if args[0] == "external":
+            return serve_file(os.path.join(self.config.css, *args),
+                              content_type='text/css')
+        return serve_file(os.path.join(self.config.css, 
+                                      'WMCore', 'WebTools', *args),
                               content_type='text/css')
 
     @expose

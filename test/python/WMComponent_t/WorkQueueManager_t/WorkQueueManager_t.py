@@ -123,8 +123,8 @@ class WorkQueueManagerTest(unittest.TestCase):
                            NegotiationTimeout = 0,
                            QueueURL = 'global.example.com',
                            DBSReaders = dbsHelpers,
+                           PhEDEx = MockPhedexService(dataset),
                            Teams = ["The A-Team", "some other bloke"])
-        globalQ.phedexService = MockPhedexService(dataset)
         return globalQ
 
     def createProcessingSpec(self, splitter = 'DatasetBlock'):

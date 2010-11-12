@@ -138,10 +138,18 @@ class WorkQueue(WorkQueueBase):
             if self.params['SplittingMapping']['DatasetBlock']['name'] != 'Block':
                 raise RuntimeError, 'Only blocks can be released on location'
 
-        phedexArgs = {}
-        if self.params.get('PhEDExEndpoint'):
-            phedexArgs['endpoint'] = self.params['PhEDExEndpoint']
-        self.phedexService = PhEDEx(phedexArgs)
+        if self.params.get('PhEDEx'):
+            self.phedexService = self.params['PhEDEx']
+        else:
+            phedexArgs = {}
+            if self.params.get('PhEDExEndpoint'):
+                phedexArgs['endpoint'] = self.params['PhEDExEndpoint']
+            self.phedexService = PhEDEx(phedexArgs)
+
+        if self.params.get('SiteDB'):
+            self.SiteDB = self.params['SiteDB']
+        else:
+            self.SiteDB = SiteDB()
 
         if self.params['CacheDir']:
             try:
@@ -157,8 +165,6 @@ class WorkQueue(WorkQueueBase):
         self.dbsHelpers.update(self.params.get('DBSReaders', {}))
         if self.params.get('GlobalDBS'):
             self._get_dbs(self.params["GlobalDBS"])
-
-        self.SiteDB = SiteDB()
 
         if type(self.params['Teams']) in types.StringTypes:
             self.params['Teams'] = [x.strip() for x in \

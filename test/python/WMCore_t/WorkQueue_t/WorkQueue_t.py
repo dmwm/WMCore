@@ -150,7 +150,9 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue = globalQueue(CacheDir = self.workDir,
                                        NegotiationTimeout = 0,
                                        QueueURL = 'global.example.com',
-                                       DBSReaders = dbsHelpers)
+                                       DBSReaders = dbsHelpers,
+                                       PhEDEx = MockPhedexService(dataset),
+                                       SiteDB = fakeSiteDB())
 #        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
 #                            PopulateFilesets = False,
 #                            ParentQueue = self.globalQueue,
@@ -160,23 +162,23 @@ class WorkQueueTest(WorkQueueTestCase):
                                      CacheDir = self.workDir,
                                      ReportInterval = 0,
                                      QueueURL = "local.example.com",
-                                     DBSReaders = dbsHelpers)
+                                     DBSReaders = dbsHelpers,
+                                     PhEDEx = MockPhedexService(dataset),
+                                     SiteDB = fakeSiteDB())
         self.localQueue2 = localQueue(ParentQueue = self.globalQueue,
                                      CacheDir = self.workDir,
                                      ReportInterval = 0,
                                      QueueURL = "local2.example.com",
                                      DBSReaders = dbsHelpers,
+                                     PhEDEx = MockPhedexService(dataset),
+                                     SiteDB = fakeSiteDB(),
                                      IgnoreDuplicates = False)
 
         # standalone queue for unit tests
         self.queue = WorkQueue(CacheDir = self.workDir,
-                               DBSReaders = dbsHelpers)
-
-        for queue in (self.queue, self.localQueue,
-                      self.localQueue2, self.globalQueue):
-            queue.phedexService = MockPhedexService(dataset)
-            queue.dataLocationMapper.phedex = queue.phedexService
-            queue.SiteDB = fakeSiteDB()
+                               DBSReaders = dbsHelpers,
+                               PhEDEx = MockPhedexService(dataset),
+                               SiteDB = fakeSiteDB())
 
         # create relevant sites in wmbs
         for site, se in self.queue.SiteDB.mapping.items():

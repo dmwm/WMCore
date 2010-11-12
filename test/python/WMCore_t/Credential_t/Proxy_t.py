@@ -1,5 +1,9 @@
+#!/usr/bin/env python
 """
+_Proxy_t_
+
 """
+
 import unittest
 import os
 import logging
@@ -7,7 +11,11 @@ import logging.config
 import socket
 import time
 import tempfile
-from Proxy import Proxy
+import subprocess
+
+from nose.plugins.attrib import attr
+
+from WMCore.Credential.Proxy import Proxy
 
 class ProxyTest(unittest.TestCase):
 
@@ -24,19 +32,39 @@ class ProxyTest(unittest.TestCase):
         logger_name = 'ProxyTest'
 
         self.logger = logging.getLogger(logger_name)
-        dict = { 'logger': self.logger,
-                'vo':'cms', 'myProxySvr':'myproxy.cern.ch',
-                'proxyValidity' : '192:00', 'min_time_left' : 36000, 
-#                'serverDN' : '/C=IT/O=INFN/OU=Host/L=Bari/CN=crab1.ba.infn.it', 
-                'serverDN' : '/C=IT/O=INFN/OU=Host/L=Pisa/CN=crabserv.pi.infn.it',
-                'userDN' : '/C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Hassen Riahi' }
+        dict = {'logger': self.logger,
+                'vo': 'cms', 'myProxySvr': 'myproxy.cern.ch',
+                'proxyValidity' : '192:00', 'min_time_left' : 36000}
 
-        self.userDN = '/C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Hassen Riahi' 
-        self.userName = 'Hassen Riahi'
         self.proxyPath = None
         self.proxy = Proxy( dict )
         self.serverKey = '/home/crab/.globus/hostcert.pem'
 
+    def tearDown(self):
+        """
+        _tearDown_
+
+        Tear down the proxy.
+        """
+        self.proxy.destroy()
+        return
+
+    def getUserIdentity(self):
+        """
+        _getUserIdentity_
+
+        Retrieve the user's subject from the voms-proxy-info call.
+        """
+        vomsProxyInfoCall = subprocess.Popen(["voms-proxy-info", "-identity"],
+                                             stdout = subprocess.PIPE,
+                                             stderr = subprocess.PIPE)
+        if vomsProxyInfoCall.wait() != 0:
+            return None
+        
+        (stdout, stderr) = vomsProxyInfoCall.communicate()
+        return stdout[0:-1]
+
+    @attr("integration")
     def testDestroyBeforeCreation(self ):
         """
         """
@@ -46,17 +74,17 @@ class ProxyTest(unittest.TestCase):
            self.proxyPath = self.proxy.getProxyFilename()
            assert not os.path.exists(self.proxyPath)
 
+    @attr("integration")
     def testCreateProxy( self ):
         """
         """
         if not os.path.exists( self.serverKey ):
+            self.proxy.create()
+            time.sleep( 5 )
+            proxyPath = self.proxy.getProxyFilename()
+            assert os.path.exists(proxyPath)
 
-           self.proxy.create()
-           time.sleep( 5 )
-           proxyPath = self.proxy.getProxyFilename()
-           assert os.path.exists(proxyPath)
-
-
+    @attr("integration")
     def testCheckProxyTimeLeft( self ):
         """
         """
@@ -65,6 +93,7 @@ class ProxyTest(unittest.TestCase):
            timeLeft = self.proxy.getTimeLeft()
            assert ( int(timeLeft) / 3600 ) == 191
 
+    @attr("integration")
     def testRenewProxy( self ):
         """
         """
@@ -78,6 +107,7 @@ class ProxyTest(unittest.TestCase):
 
            assert ( int(timeLeft) / 3600 ) == 191
 
+    @attr("integration")
     def testDestroyProxy(self ):
         """
         """
@@ -87,24 +117,43 @@ class ProxyTest(unittest.TestCase):
            self.proxyPath = self.proxy.getProxyFilename()
            assert not os.path.exists(self.proxyPath)
 
-    def testGetSubject( self ):
+    @attr("integration")
+    def testGetSubject(self):
         """
+        _testGetSubject_
+        
+        Verify that the getSubject() method works correctly.
         """
-        if not os.path.exists( self.serverKey ):
+        if os.path.exists(self.serverKey):
+            return
+        
+        self.testCreateProxy()
+        subject = self.proxy.getSubject( )
+        
+        self.assertEqual(subject, self.getUserIdentity(),
+                         "Error: Wrong subject.")
+        return
 
-           self.testCreateProxy()
-           subject = self.proxy.getSubject( )
-
-           assert subject == self.userDN 
-
+    @attr("integration")
     def testGetUserName( self ):
         """
+        _testGetUserName_
+
+        Verify that the getUserName() method correctly determines the user's
+        name.
         """
-        if not os.path.exists( self.serverKey ):
+        if os.path.exists( self.serverKey ):
+            return
 
-           user = self.proxy.getUserName( )
-           assert user == self.userName
+        self.testCreateProxy()
+        user = self.proxy.getUserName( )
+        identity = self.getUserIdentity().split("/")[4][3:]
 
+        self.assertEqual(user, identity,
+                         "Error: User name is wrong: |%s|\n|%s|" % (user, identity))
+        return
+
+    @attr("integration")
     def checkAttribute( self ):
         """
         """
@@ -113,7 +162,7 @@ class ProxyTest(unittest.TestCase):
            valid = self.proxy.checkAttribute( )
            assert valid == True 
 
-
+    @attr("integration")
     def testCheckTimeLeft( self ):
         """
         """
@@ -122,6 +171,7 @@ class ProxyTest(unittest.TestCase):
            valid = self.proxy.check( self.proxyPath )
            assert valid == True 
 
+    @attr("integration")
     def testDelegateMyProxy( self ):
         """
         """
@@ -131,6 +181,7 @@ class ProxyTest(unittest.TestCase):
            valid = self.proxy.checkMyProxy( )
            assert valid == True 
 
+    @attr("integration")
     def testDelegateServerAndMyProxy( self ):
         """
         """
@@ -140,6 +191,7 @@ class ProxyTest(unittest.TestCase):
            valid = self.proxy.checkMyProxy( checkRenewer = True )
            assert valid == True
 
+    @attr("integration")
     def testCheckMyProxy( self ):
         """
         """
@@ -149,6 +201,7 @@ class ProxyTest(unittest.TestCase):
            valid = self.proxy.checkMyProxy( )
            assert valid == True
 
+    @attr("integration")
     def testCheckMyProxyServer( self ):
         """
         """
@@ -158,7 +211,7 @@ class ProxyTest(unittest.TestCase):
            valid = self.proxy.checkMyProxy( checkRenewer = True )
            assert valid == True
 
-
+    @attr("integration")
     def testLogonRenewMyProxy( self ):
         """
        """
@@ -167,7 +220,7 @@ class ProxyTest(unittest.TestCase):
            proxyFile = self.proxy.logonRenewMyProxy( )
            assert os.path.exists( proxyFile )
         
-
+    @attr("integration")
     def testRenewMyProxy( self ):
         """
         """
@@ -178,22 +231,21 @@ class ProxyTest(unittest.TestCase):
            time.sleep( 5 )
            timeLeft = self.proxy.getMyProxyTimeLeft( proxy = self.proxyPath )
 
-           print ( int(timeLeft) / 3600 )
- 
            assert ( int(timeLeft) / 3600 ) == 167
 
+    @attr("integration")
     def testRenewMyProxyForServer( self ):
         """
         """
         if not os.path.exists( self.serverKey ):
+            
+            time.sleep( 70 )
+            self.proxy.renewMyProxy( proxy = self.proxyPath, serverRenewer = True )
+            time.sleep( 5 )
+            timeLeft = self.proxy.getMyProxyTimeLeft( proxy = self.proxyPath, serverRenewer = True )
+            assert ( int(timeLeft) / 3600 ) == 167
 
-           time.sleep( 70 )
-           self.proxy.renewMyProxy( proxy = self.proxyPath, serverRenewer = True )
-           time.sleep( 5 )
-           timeLeft = self.proxy.getMyProxyTimeLeft( proxy = self.proxyPath, serverRenewer = True )
-           print ( int(timeLeft) / 3600 ) 
-           assert ( int(timeLeft) / 3600 ) == 167
-
+    @attr("integration")
     def testRenewMyProxyByServer( self ):
         """
         """
@@ -202,7 +254,6 @@ class ProxyTest(unittest.TestCase):
            proxyPath = self.proxy.getProxyFilename( serverRenewer = True )
            self.proxy.logonRenewMyProxy( proxyPath )
            timeLeft = self.proxy.getTimeLeft( proxyPath )
-           print ( int(timeLeft) / 3600 ) 
            assert ( int(timeLeft) / 3600 ) > 120
 
 #    def testDestroyMyProxy( self ):

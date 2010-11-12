@@ -28,7 +28,7 @@ class testWMConfigCache(unittest.TestCase):
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setupCouch("config_test", "ConfigCache")
+        self.testInit.setupCouch("config_test", "GroupUser", "ConfigCache")
         return
 
     def tearDown(self):
@@ -95,6 +95,8 @@ class testWMConfigCache(unittest.TestCase):
         configCache.attachments['attach1'] = attach
         psetPath = os.path.join(getWMBASE(), "test/python/WMCore_t/Cache_t/PSet.txt")
         configCache.addConfig(newConfig = psetPath, psetHash = None)
+        configCache.setLabel("sample-label")
+        configCache.setDescription("describe this config here")
         configCache.save()
 
         configString1 = configCache.getConfig()
@@ -106,7 +108,7 @@ class testWMConfigCache(unittest.TestCase):
                                    rev = configCache.getCouchRev())
         configCache2.loadByID(configCache.getCouchID())
         configString2 = configCache2.getConfig()
-
+        
         self.assertEqual(configString1, configString2)
         self.assertEqual(configCache2.attachments.get('attach1', None), attach)
 

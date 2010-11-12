@@ -7,11 +7,23 @@ var groupuser = {
     // reference for the dataTable if used with the default click response
     dataTable : null,
     
+    // container for list of groups
+    groupsList : null,
+    
+    // container for list of users
+    usersList : null,
+    
+    logthis : function (log_txt) {
+        if (window.console != undefined) {
+            console.log(log_txt);
+        }
+    },
+    
     //
     // Use this to provide the couch db API instance that these tools will use 
     //
     setCouchDB: function(couchRef){
-        console.log("couchdb ref set...")
+        groupuser.logthis("couchdb ref set...")
         this.couchdb = couchRef;
     },
     
@@ -23,17 +35,17 @@ var groupuser = {
     // Group only does nothing at present, if it isnt a group or user, nothing happens on click
     //
     labelClickResponse: function(node){
-        console.log("label click for " + node['label']);
+        groupuser.logthis("label click for " + node['label']);
         var userName = node['GU_user_name'];
         var groupName = node['GU_group_name'];
         if (groupName == undefined){
             // not a group or user node
-            console.log('node is not a group/user node');
+            groupuser.logthis('node is not a group/user node');
             return;
         }
         if (userName == undefined){
             // its a group node, but cant think of anthing to do with the table...
-            console.log('node is a group node');
+            groupuser.logthis('node is a group node');
             return;
         }
         // user node, invoke the couch view
@@ -133,6 +145,90 @@ var groupuser = {
                 myColumnDefs, myDataSource, {});
         // set the groupuser.dataTable reference so that the onClick response can manipulate it
         groupuser.dataTable = myDataTable;
-    }
+    },
     
+    
+    // populate the list of groups
+    createGroupList : function(){
+        groupuser.groupsList = {};
+        groupuser.couchdb.view("GroupUser/groups", {
+            "success" : function(data){
+                groupuser.logthis("populated groupsList");
+                for (i in data.rows) { 
+                    var groupName = data.rows[i]['value'];
+                    var groupId = data.rows[i]['id'];
+                    groupuser.groupsList[groupName] = groupId;
+                }
+            }
+        }
+        );
+    },
+    
+    // populate the list of users
+    createUserList: function(){
+        groupuser.usersList = {};
+        groupuser.couchdb.view("GroupUser/users", {
+             "success" : function(data){
+                 groupuser.logthis("populated usersList");
+                 for (i in data.rows) { 
+                     var userName = data.rows[i]['value'];
+                     var userId = data.rows[i]['id'];
+                     groupuser.usersList[userName] = userId;
+                 }
+             }
+         }
+         );
+    },
+    
+    //
+    // check user exists in users view
+    //
+    userExists: function(userName){
+        groupuser.logthis("groupuser.userExists(" + userName + ")");
+        if (groupuser.usersList[userName] == null){
+            groupuser.logthis("==> false");
+            return false;
+        }
+        groupuser.logthis("==> true");
+        return true;
+    },
+    
+    //
+    // check group exists in groups view
+    //
+    groupExists: function(groupName){
+        groupuser.logthis("groupuser.groupExists(" + groupName + ")");
+        if (groupuser.groupsList[groupName] == null){
+            groupuser.logthis("==> false");
+            return false;
+        }
+        groupuser.logthis("==> true");
+        return true;
+
+    },
+    
+    createUser: function(groupName, userName){
+        groupuser.logthis("creating: " + groupName + "." + userName);
+        var doc = {};
+        doc['_id'] = "user-" + userName;
+        doc['user'] = {};
+        doc['user']['name'] = userName;
+        doc['user']['proxy'] = null;
+        doc['user']['group'] = groupName;
+        groupuser.couchdb.saveDoc(doc);
+        groupuser.createUserList();
+    },
+    
+    createGroup: function(groupName){
+        groupuser.logthis("creating: " + groupName);
+        var doc = {};
+        doc['_id'] = "group-" + groupName;
+        doc['group'] = {};
+        doc['group']['name'] = groupName;
+        doc['group']['administrators'] = {};
+        doc['group']['associated_sites'] = {};
+        groupuser.couchdb.saveDoc(doc);
+        groupuser.createGroupList();
+        
+    },
 }

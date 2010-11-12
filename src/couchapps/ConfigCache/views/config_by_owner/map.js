@@ -1,7 +1,11 @@
 function(doc) {
   if (doc.type){
      if (doc.type == "config"){
-        emit([doc.owner_id], { "config_doc" : doc._id, "config_label" : doc.config_label});
+        var label = "";
+        if (doc.description){
+           label = doc.description.config_label;
+        }
+        emit([doc.owner.group, doc.owner.user], { "config_doc" : doc._id, "config_label" : label}) 
      }
   }
 }

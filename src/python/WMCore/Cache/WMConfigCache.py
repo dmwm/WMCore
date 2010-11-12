@@ -73,7 +73,11 @@ class ConfigCache(WMObject):
         # Internal data structure
         self.document  = Document()
         self.attachments = {}
-
+        self.document['type'] = "config"
+        self.document['description'] = {}
+        self.document['description']['config_label'] = None
+        self.document['description']['config_desc'] = None
+        
         self.document['pset_tweak_details'] = None
         self.document['info']               = None
         self.document['config']             = None
@@ -107,13 +111,31 @@ class ConfigCache(WMObject):
         self.group = Group(name = name)
         self.group.setCouch(self.dburl, self.dbname)
         self.group.connect()
+        self.group.create()
         return
+
+    def setLabel(self, label):
+        """
+        _setLabel_
+        
+        Util to add a descriptive label to the configuration doc
+        """
+        self.document['description']['config_label'] = label
+        
+    def setDescription(self, desc):
+        """
+        _setDescription_
+        
+        Util to add a verbose description string to a configuration doc
+        """
+        self.document['description']['config_desc'] = desc
 
     @Decorators.requireGroup
     def createUser(self, username):
         self.owner = makeUser(self.group['name'], username,
                               couchUrl = self.dburl,
                               couchDatabase = self.dbname)
+        self.owner.create()
         self.owner.ownThis(self.document)
         return
 

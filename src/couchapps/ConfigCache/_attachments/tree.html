@@ -25,7 +25,8 @@
   
   <script>
     var tree;
-    $db = $.couch.db("configcache");
+    var dbname = document.location.href.split('/')[3];
+    $db = $.couch.db(dbname);
     
     
     //

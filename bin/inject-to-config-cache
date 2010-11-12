@@ -61,8 +61,8 @@ def loadConfig(configPath):
     return loadedConfig
 
 if __name__ == "__main__":
-    if len(sys.argv) != 6:
-        print "Usage: %s couchUrl database_name user_name group_name input_file" % sys.argv[0]
+    if len(sys.argv) != 8:
+        print "Usage: %s couchUrl database_name user_name group_name input_file label description" % sys.argv[0]
         sys.exit(1)
 
     if not os.path.exists(sys.argv[5]):
@@ -76,6 +76,8 @@ if __name__ == "__main__":
     configCache.createUserGroup(sys.argv[4], sys.argv[3])
     configCache.addConfig(sys.argv[5], psetHash)
     configCache.setPSetTweaks(makeTweak(loadedConfig.process).jsondictionary())
+    configCache.setLabel(sys.argv[6])
+    configCache.setDescription(sys.argv[7])
     configCache.save()
 
     print "Added file to the config cache:"

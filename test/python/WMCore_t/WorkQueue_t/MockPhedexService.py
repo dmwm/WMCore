@@ -18,7 +18,7 @@ class MockPhedexService:
         self.datasets = datasets
         for dataset in self.datasets:
             self.locations = {dataset + '#1' : ['SiteA'],
-                              dataset + '#2' : ['SiteA', 'SiteB']}
+                              dataset + '#2' : ['SiteA', 'SiteB_MSS']}
 
     def getReplicaInfoForBlocks(self, **args):
         """

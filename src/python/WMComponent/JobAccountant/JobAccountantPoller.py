@@ -43,8 +43,9 @@ class JobAccountantPoller(BaseWorkerThread):
         Instantiate the requisite number of accountant workers and create a
         processpool with them.  Also instantiate all the DAOs that we will use.
         """
-        self.accountantWorker = AccountantWorker(couchURL = self.config.JobStateMachine.couchurl,
-                                                 couchDBName = self.config.JobStateMachine.couchDBName)
+        #self.accountantWorker = AccountantWorker(couchURL = self.config.JobStateMachine.couchurl,
+        #                                         couchDBName = self.config.JobStateMachine.couchDBName)
+        self.accountantWorker = AccountantWorker(config = self.config)
 
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package = "WMCore.WMBS", logger = myThread.logger,

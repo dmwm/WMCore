@@ -1646,5 +1646,32 @@ class JobAccountantTest(unittest.TestCase):
                                      jobReport.getAllFilesFromStep("cmsRun1"))
         return
 
+
+
+    def testReportReturn(self):
+        """
+        _testReportReturn_
+
+        Test whether the report returns
+        """
+        self.setupDBForMergeSuccess()
+
+        config = self.createConfig()
+        config.JobAccountant.returnReportFromWorker = True
+        accountant = AccountantWorker(config = config)
+
+        # First job should be ready
+        job = Job(id = 1)
+        job.loadData()
+
+        result = accountant.__call__(parameters = [job])
+
+        self.assertTrue('jobReport' in result[0].keys())
+        report = result[0]['jobReport']
+
+        self.assertEqual(report.getJobID(), 1)
+
+        return
+
 if __name__ == '__main__':
     unittest.main()

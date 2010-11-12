@@ -366,6 +366,26 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertTrue(repTime["stopTime"] - localTime < timeDiff)
 
         return
+
+
+    def testTaskJobID(self):
+        """
+        _testTaskJobID_
+
+        Test the basic task and jobID functions
+        """
+
+
+        report = Report('fake')
+        self.assertEqual(report.getTaskName(), None)
+        self.assertEqual(report.getJobID(), None)
+        report.setTaskName('silly')
+        report.setJobID(100)
+        self.assertEqual(report.getTaskName(), 'silly')
+        self.assertEqual(report.getJobID(), 100)
+
+        return
+        
     
 if __name__ == "__main__":
     unittest.main()

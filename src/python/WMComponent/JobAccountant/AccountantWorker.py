@@ -44,7 +44,7 @@ class AccountantWorker(WMConnectionBase):
     Class that actually does the work of parsing FWJRs for the Accountant
     Run through ProcessPool
     """
-    def __init__(self, **kwargs):
+    def __init__(self, config):
         """
         __init__
 
@@ -88,12 +88,15 @@ class AccountantWorker(WMConnectionBase):
 
         self.dbsSetDatasetAlgoAction = self.uploadFactory(classname = "SetDatasetAlgo")
 
-        config = Configuration()
-        config.section_("JobStateMachine")
-        config.JobStateMachine.couchurl = kwargs["couchURL"]
-        config.JobStateMachine.couchDBName = kwargs["couchDBName"]
+        #config = Configuration()
+        #config.section_("JobStateMachine")
+        #config.JobStateMachine.couchurl = kwargs["couchURL"]
+        #config.JobStateMachine.couchDBName = kwargs["couchDBName"]
 
         self.stateChanger = ChangeState(config)
+
+        # Decide whether or not to attach jobReport to returned value
+        self.returnJobReport = getattr(config.JobAccountant, 'returnReportFromWorker', False)
 
         # Hold data for later commital
         self.dbsFilesToCreate  = []
@@ -193,8 +196,10 @@ class AccountantWorker(WMConnectionBase):
 
         for job in parameters:
             logging.info("Handling %s" % job["fwjr_path"])
-            
+
+            # Load the job and set the ID
             fwkJobReport = self.loadJobReport(job)
+            fwkJobReport.setJobID(job['id'])
             jobSuccess = None
             
             if not self.didJobSucceed(fwkJobReport):
@@ -207,8 +212,12 @@ class AccountantWorker(WMConnectionBase):
                                       fwkJobReport = fwkJobReport,
                                       fwkJobReportPath = job['fwjr_path'])
                 jobSuccess = True
-                
-            returnList.append({'id': job["id"], 'jobSuccess': jobSuccess})
+
+            if self.returnJobReport:
+                returnList.append({'id': job["id"], 'jobSuccess': jobSuccess,
+                                   'jobReport': fwkJobReport})
+            else:
+                returnList.append({'id': job["id"], 'jobSuccess': jobSuccess})
             self.count += 1
 
         # Now things done at the end of the job

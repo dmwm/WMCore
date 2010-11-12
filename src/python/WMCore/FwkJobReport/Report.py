@@ -864,6 +864,26 @@ class Report:
         Return the task name
         """
         return getattr(self.data, 'task', None)
+
+
+    def setJobID(self, jobID):
+        """
+        _setJobID_
+
+        Set the WMBS jobID
+        """
+
+        self.data.jobID = jobID
+        return
+
+    def getJobID(self):
+        """
+        _getJobID_
+
+        Get the WMBS job ID if attached
+        """
+
+        return getattr(self.data, 'jobID', None)
                 
 if __name__ == "__main__":
     myReport = Report("cmsRun1")

@@ -716,7 +716,8 @@ def getPackages(package_dirs = []):
 
 package_dir = {'WMCore': 'src/python/WMCore',
                'WMComponent' : 'src/python/WMComponent',
-               'WMQuality' : 'src/python/WMQuality'}
+               'WMQuality' : 'src/python/WMQuality',
+               'PSetTweaks' : 'src/python/PSetTweaks'}
 
 setup (name = 'wmcore',
        version = '1.0',

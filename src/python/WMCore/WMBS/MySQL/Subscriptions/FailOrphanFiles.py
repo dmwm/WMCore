@@ -13,7 +13,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class FailOrphanFiles(DBFormatter):
     sql = """INSERT INTO wmbs_sub_files_failed (subscription, file)
                SELECT DISTINCT :subscription, avail_files.fileid FROM
-                 (SELECT wmbs_fileset_files.file AS fileid, :fileset AS fileset
+                 (SELECT wmbs_fileset_files.file AS fileid, wmbs_fileset_files.fileset AS fileset
                          FROM wmbs_fileset_files
                     LEFT OUTER JOIN wmbs_sub_files_acquired ON
                       wmbs_fileset_files.file = wmbs_sub_files_acquired.file AND
@@ -24,7 +24,8 @@ class FailOrphanFiles(DBFormatter):
                     LEFT OUTER JOIN wmbs_sub_files_failed ON
                       wmbs_fileset_files.file = wmbs_sub_files_failed.file AND
                       wmbs_sub_files_failed.subscription = :subscription                 
-                  WHERE wmbs_sub_files_acquired.file IS Null AND
+                  WHERE wmbs_fileset_files.fileset = :fileset AND
+                        wmbs_sub_files_acquired.file IS Null AND
                         wmbs_sub_files_complete.file IS Null AND
                         wmbs_sub_files_failed.file IS Null) avail_files
                  INNER JOIN wmbs_file_parent ON
@@ -38,6 +39,7 @@ class FailOrphanFiles(DBFormatter):
                  INNER JOIN wmbs_jobgroup ON
                    wmbs_subscription.id = wmbs_jobgroup.subscription
                  INNER JOIN wmbs_job ON
+                   wmbs_jobgroup.id = wmbs_job.jobgroup AND
                    wmbs_job_assoc.job = wmbs_job.id AND
                    wmbs_job.outcome = 0"""
     

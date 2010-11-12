@@ -167,6 +167,7 @@ class WorkQueue(WorkQueueBase):
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.dbi,
                                                               dbses = self.dbsHelpers,
                                                               phedex = self.phedexService,
+                                                              sitedb = self.SiteDB,
                                                               locationFrom = self.params['TrackLocationOrSubscription'],
                                                               incompleteBlocks = self.params['ReleaseIncompleteBlocks'],
                                                               requireBlocksSubscribed = not self.params['ReleaseIncompleteBlocks'],

@@ -5,7 +5,6 @@ from collections import defaultdict
 import time
 
 from WMCore.WMConnectionBase import WMConnectionBase
-from WMCore.Services.DBS.DBSReader import DBSReader
 
 #TODO: Combine with existing dls so DBSreader can do this kind of thing transparently
 #TODO: Known Issue: Can't have same item in multiple dbs's at the same time.
@@ -108,6 +107,10 @@ class DataLocationMapper():
                 result[block['name']].update(nodes)
         else:
             raise RuntimeError, "shouldn't get here"
+
+        # convert from PhEDEx name to cms site name
+        for name, nodes in result.items():
+            result[name] = [self.sitedb.phEDExNodetocmsName(x) for x in nodes]
 
         return result, fullResync
 

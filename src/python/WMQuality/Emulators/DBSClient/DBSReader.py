@@ -7,7 +7,9 @@ class _MockDBSApi():
     """Mock dbs api"""
     def __init__(self, args):
         self.args = args
-        self.url = args.get('url', '')
+
+    def getServerUrl(self):
+        return self.args.get('url', '')
 
     def getServerInfo(self):
         """getServerInfo"""

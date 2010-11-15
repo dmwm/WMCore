@@ -48,10 +48,11 @@ function collateFailureInfo(failedJobs, errorDiv) {
   // Given a list of failed job IDs retrieve the frameworks job reports for all
   // of the jobs and sort the failure information into a single object.  The 
   // object will have the following form:
-  //  {taskName: {stepName: {"errors": [{"type": type, "exitCode": exitCode, "details": details}, ...],
-  //                         "jobs": [jobID, ...],
-  //                         "input": [lfn, ...],
-  //                         "runs": {runNumber: [lumi, ...]}}}}
+  //  {taskName: {stepName: {exitCode: {"errors": [{"type": type, "exitCode": exitCode,
+  //                                     "details": details}, ...],
+  //                                    "jobs": [jobID, ...],
+  //                                    "input": [lfn, ...],
+  //                                    "runs": {runNumber: [lumi, ...]}}}}
   var workflowFailures = {};
 
   failedJobs.sort(numericalCompare);
@@ -70,36 +71,29 @@ function collateFailureInfo(failedJobs, errorDiv) {
 
       var taskFailure = workflowFailures[workflowError["task"]]
       if (!taskFailure.hasOwnProperty(workflowError["step"])) {
-        taskFailure[workflowError["step"]] = {"errors": new Array(),
-                                              "jobs": new Array(),
-                                              "input": new Array(),
-                                              "runs": {}};
+        taskFailure[workflowError["step"]] = {};
       };
 
       var stepFailure = taskFailure[workflowError["step"]];
-      for (var fwjrErrorIndex in workflowError["error"]) {
-        var fwjrError = workflowError["error"][fwjrErrorIndex];
-        var errorExists = false;
-        for (var detailsIndex in stepFailure["errors"]) {
-          var exitCode = stepFailure["errors"][detailsIndex]["exitCode"];
-          if (exitCode == fwjrError["exitCode"]) {
-            errorExists = true;
-            break;
-          }
-        }
+      exitCode = workflowError["error"][0]["exitCode"] + "";
+      if (!stepFailure.hasOwnProperty(exitCode)) {
+        stepFailure[exitCode] = {"errors": new Array(),
+                                 "jobs": new Array(),
+                                 "input": new Array(),
+                                 "runs": {}};
 
-        if (!errorExists) {
-          stepFailure["errors"].push(fwjrError);
+        for (fwjrErrorIndex in workflowError["error"]) {
+          stepFailure[exitCode]["errors"].push(workflowError["error"][fwjrErrorIndex]);
         };
       };
 
-      stepFailure["input"] = stepFailure["input"].concat(workflowError["input"]);
-      stepFailure["jobs"].push(jobID);
+      stepFailure[exitCode]["input"] = stepFailure[exitCode]["input"].concat(workflowError["input"]);
+      stepFailure[exitCode]["jobs"].push(jobID);
       for(var runNumber in workflowError["runs"]) {
-        if (stepFailure["runs"].hasOwnProperty(runNumber)) {
-          stepFailure["runs"][runNumber] = stepFailure["runs"][runNumber].concat(workflowError["runs"][runNumber]);
+        if (stepFailure[exitCode]["runs"].hasOwnProperty(runNumber)) {
+          stepFailure[exitCode]["runs"][runNumber] = stepFailure[exitCode]["runs"][runNumber].concat(workflowError["runs"][runNumber]);
         } else {
-          stepFailure["runs"][runNumber] = workflowError["runs"][runNumber];
+          stepFailure[exitCode]["runs"][runNumber] = workflowError[exitCode]["runs"][runNumber];
         };
       };
     };
@@ -292,10 +286,13 @@ function renderWorkflowErrors(workflowName, errorDiv) {
       };
       stepDiv.innerHTML = "<b>" + stepName + ":</b>";
       taskDiv.appendChild(stepDiv);
-      renderErrorDetails(workflowFailures[taskName][stepName]["errors"], stepDiv);
-      renderJobDetails(workflowFailures[taskName][stepName]["jobs"], stepDiv);
-      renderInputDetails(workflowFailures[taskName][stepName]["input"], stepDiv);
-      renderRunLumiDetails(workflowFailures[taskName][stepName]["runs"], stepDiv);
+
+      for (var exitCode in workflowFailures[taskName][stepName]) {
+        renderErrorDetails(workflowFailures[taskName][stepName][exitCode]["errors"], stepDiv);
+        renderJobDetails(workflowFailures[taskName][stepName][exitCode]["jobs"], stepDiv);
+        renderInputDetails(workflowFailures[taskName][stepName][exitCode]["input"], stepDiv);
+        renderRunLumiDetails(workflowFailures[taskName][stepName][exitCode]["runs"], stepDiv);
+      };
     };
   };
 

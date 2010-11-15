@@ -124,6 +124,7 @@ class ReqMgrBrowser(TemplatedPage):
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
         helper, pfn = self.workloadHelper(request)
         splittingDict = helper.listJobSplittingParametersByTask()
+        timeOutDict = helper.listTimeOutsByTask()
         taskNames = splittingDict.keys()
         taskNames.sort()
 
@@ -132,7 +133,8 @@ class ReqMgrBrowser(TemplatedPage):
             # We basically stringify the splitting params dictionary and pass
             # that to the splitting page as javascript.  We need to change
             # boolean values to strings as the javascript true is different from
-            # the python True.
+            # the python True.  We'll also add the timeouts here.
+            splittingDict[taskName]["timeout"] = timeOutDict[taskName]
             if "split_files_between_job" in splittingDict[taskName]:
                 splittingDict[taskName]["split_files_between_job"] = str(splittingDict[taskName]["split_files_between_job"])
                 
@@ -171,6 +173,7 @@ class ReqMgrBrowser(TemplatedPage):
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
         helper, pfn = self.workloadHelper(request)
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
+        helper.setTaskTimeOut(splittingTask, int(submittedParams["timeout"]))
         helper.save(pfn)
         return "Successfully updated splitting parameters for " + splittingTask \
                + " " + detailsBackLink(requestName)

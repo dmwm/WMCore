@@ -62,7 +62,10 @@ function generateProcessing(splitAlgo, splitParams) {
     procStr += " value=" + splitParams["events_per_job"];
   }
 
-  procStr += "></td></input><td></td></tr></table>\n";
+  procStr += "></td></input><td></td></tr>\n"
+  procStr += " <tr><td colspan=\"2\">Max execution time (seconds):</td>\n";
+  procStr += "<td><input type=\"text\" name=\"timeout\" value=\"" + splitParams["timeout"];
+  procStr += "\"></td></tr></table>\n";
   procStr += "<input type=\"submit\" value=\"Update Parameters\">\n";
   return procStr;
 }  
@@ -96,7 +99,10 @@ function generateSkim(splitAlgo, splitParams) {
     procStr += " value=" + splitParams["files_per_job"];
   }
 
-  procStr += "></td></input><td></td></tr></table>";
+  procStr += "></td></input><td></td></tr>";
+  procStr += " <tr><td colspan=\"2\">Max execution time (seconds):</td>\n";
+  procStr += "<td><input type=\"text\" name=\"timeout\" value=\"" + splitParams["timeout"];
+  procStr += "\"></td></tr></table>\n";
   procStr += "<input type=\"submit\" value=\"Update Parameters\">\n";
   return procStr;
 }
@@ -110,7 +116,10 @@ function generateCleanupLogCollect(splitParams) {
     procStr += " value=" + splitParams["files_per_job"];
   }
 
-  procStr += "></td></input></tr></table>\n";
+  procStr += "></td></input></tr>\n";
+  procStr += "<tr><td>Max execution time (seconds):</td>\n";
+  procStr += "<td><input type=\"text\" name=\"timeout\" value=\"" + splitParams["timeout"];
+  procStr += "\"></td></tr></table>\n";
   procStr += "<input type=\"submit\" value=\"Update Parameters\">\n";
   return procStr;
 }
@@ -120,7 +129,10 @@ function generateMerge(splitAlgo, splitParams) {
   frmStr += "<tr><td>Min merge size:</td><td>" + splitParams["min_merge_size"] + "</td></tr>\n";
   frmStr += "<tr><td>Max merge size:</td><td>" + splitParams["max_merge_size"] + "</td></tr>\n";
   frmStr += "<tr><td>Max merge events:</td><td>" + splitParams["max_merge_events"] + "</td></tr>\n";
-  frmStr += "</table>\n";
+  frmStr += "<tr><td>Max execution time (seconds):</td>\n";
+  frmStr += "<td><input type=\"text\" name=\"timeout\" value=\"" + splitParams["timeout"];
+  frmStr += "\"></td></tr></table>\n";
+  frmStr += "<input type=\"submit\" value=\"Update Parameters\">\n";
   return frmStr;
 }
 
@@ -140,6 +152,7 @@ function generateForm(taskName, splitAlgo, splitParams, taskType) {
     frmStr += generateSkim(splitAlgo, splitParams);
   }
 
+  frmStr += "</form>";
   return frmStr;
 }
 

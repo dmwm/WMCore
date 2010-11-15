@@ -25,7 +25,7 @@ class ListThresholdsForCreate(DBFormatter):
     unassignedSQL = """SELECT wmbs_location.site_name, wmbs_location.job_slots,
                               COUNT(job_location.location) AS total FROM wmbs_location
                          LEFT OUTER JOIN
-                           (SELECT wmbs_job_assoc.job, wmbs_file_location.location AS location
+                           (SELECT DISTINCT wmbs_job_assoc.job, wmbs_file_location.location AS location
                                    FROM wmbs_job_assoc
                               INNER JOIN wmbs_file_location ON
                                 wmbs_job_assoc.file = wmbs_file_location.file

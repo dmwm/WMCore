@@ -43,4 +43,22 @@ def _wmAgentConfig(configFile):
     # set the real couchDB information here
     config.JobStateMachine.couchurl = os.getenv("COUCHURL")
     config.JobStateMachine.couchDBName = os.getenv("COUCHDB")
+
+    config.section_("Agent")
+    # User specific parameter
+    config.Agent.hostName = "cmssrv52.fnal.gov"
+    # User specific parameter
+    config.Agent.contact = "sfoulkes@fnal.gov"
+    # User specific parameter
+    config.Agent.teamName = "DMWM"
+    # User specific parameter
+    config.Agent.agentName = "WMAgentCommissioning"
+    config.Agent.useMsgService = False
+    config.Agent.useTrigger = False
+
+    # BossAir setup
+    config.section_("BossAir")
+    config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
+    config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
+    
     saveConfigurationFile(config, configFile)

@@ -32,6 +32,8 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource.CouchDBConnectionBase \
      import CouchDBConnectionBase
 
+from WMCore.BossAir.BossAirAPI    import BossAirAPI, BossAirException
+
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
     """Function to return status of wmbs subscriptions
     """
@@ -91,6 +93,30 @@ def killWorkflow(workflowName):
     config.JobStateMachine.couchDBName = CouchDBConnectionBase.getCouchDBName()
 
     changeState = ChangeState(config)
+
+    # Deal with any jobs that are running in the batch system
+    # only works if we can start the API
+    masterConfig = CouchDBConnectionBase.getWMAgentConfig()
+    if masterConfig:
+        bossAir = BossAirAPI(config = masterConfig, noSetup = True)
+        killableJobs = []
+        for liveJob in liveJobs:
+            if liveJob["state"].lower() == 'executing':
+                # Then we need to kill this on the batch system
+                killableJobs.append(liveJob)
+        # Now kill them
+        try:
+            bossAir.kill(jobs = killableJobs)
+        except BossAirException, ex:
+            # Something's gone wrong
+            # Jobs not killed!
+            logging.error("Error while trying to kill running jobs in workflow!\n")
+            logging.error(str(ex))
+            trace = getattr(ex, 'traceback', '')
+            logging.error(trace)
+            # But continue; we need to kill the jobs in the master
+            # the batch system will have to take care of itself.
+            pass
 
     for liveJob in liveJobs:
         liveWMBSJob = Job(id = liveJob["id"])
@@ -359,9 +385,10 @@ class WMBSHelper(WMConnectionBase):
             lfn           = wmbsFile['lfn']
 
             if wmbsFile['inFileset']:
-                fileLFNs.append(lfn)
-                for parent in wmbsFile['parents']:
-                    parentageBinds.append({'child': lfn, 'parent': parent['lfn']})
+                if not lfn in fileLFNs:
+                    fileLFNs.append(lfn)
+                    for parent in wmbsFile['parents']:
+                        parentageBinds.append({'child': lfn, 'parent': parent['lfn']})
             
             if wmbsFile.exists():
                 continue

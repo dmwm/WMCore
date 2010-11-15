@@ -51,7 +51,7 @@ class BossAirAPI(WMConnectionBase):
 
 
 
-    def __init__(self, config):
+    def __init__(self, config, noSetup = False):
         """
         __init__
 
@@ -97,13 +97,13 @@ class BossAirAPI(WMConnectionBase):
         self.monitorDAO    = self.daoFactory(classname = "LoadForMonitoring")
                                 
 
-        self.loadPlugin()
+        self.loadPlugin(noSetup)
 
         return
 
 
 
-    def loadPlugin(self):
+    def loadPlugin(self, noSetup = False):
         """
         _loadPlugin_
 
@@ -123,7 +123,11 @@ class BossAirAPI(WMConnectionBase):
         if not self.newState in states:
             states.append(self.newState)
 
-        self.addStates(states = states)
+        if not noSetup:
+            # Add states only if we're not
+            # doing a secondary instantiation
+            self.addStates(states = states)
+            
         self.states = states
 
         return

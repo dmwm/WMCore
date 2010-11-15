@@ -25,7 +25,8 @@ class WorkQueueTestCase(unittest.TestCase):
         self.testInit.setupCouch("workqueue_t", "JobDump")        
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
                                                  "WMComponent.DBSBuffer.Database",
-                                                 "WMCore.WorkQueue.Database"],
+                                                 "WMCore.WorkQueue.Database",
+                                                 "WMCore.BossAir"],
                                 useDefault = False)
         
         self.workDir = self.testInit.generateWorkDir()

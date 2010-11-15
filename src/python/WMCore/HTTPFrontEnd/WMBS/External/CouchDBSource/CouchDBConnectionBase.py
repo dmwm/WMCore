@@ -69,3 +69,8 @@ class CouchDBConnectionBase(object):
             else:
                 baseURL = "%s?%s" % (baseURL, data)
         return baseURL
+
+    @staticmethod
+    def getWMAgentConfig():
+        CouchDBConnectionBase.setCouchDBConfig()
+        return CouchDBConnectionBase.wmAgentConfig

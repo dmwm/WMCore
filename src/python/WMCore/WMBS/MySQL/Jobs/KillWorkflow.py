@@ -14,7 +14,8 @@ class KillWorkflow(DBFormatter):
     Find all jobs that belong don't belong to Cleanup and LogCollect
     subscriptions and return their state and id.
     """
-    sql = """SELECT wmbs_job.id, wmbs_job_state.name AS state
+    sql = """SELECT wmbs_job.id, wmbs_job_state.name AS state,
+               wmbs_job.retry_count AS retry_count
                     FROM wmbs_workflow
                INNER JOIN wmbs_subscription ON
                  wmbs_workflow.id = wmbs_subscription.workflow AND

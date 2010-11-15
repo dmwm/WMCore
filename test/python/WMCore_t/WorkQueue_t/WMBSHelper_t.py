@@ -46,7 +46,8 @@ class WMBSHelperTest(unittest.TestCase):
         os.environ["COUCHDB"] = "wmbshelper_t"
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
                                                  "WMComponent.DBSBuffer.Database",
-                                                 "WMCore.WorkQueue.Database"],
+                                                 "WMCore.WorkQueue.Database",
+                                                 "WMCore.BossAir"],
                                 useDefault = False)
         
         self.workDir = self.testInit.generateWorkDir()

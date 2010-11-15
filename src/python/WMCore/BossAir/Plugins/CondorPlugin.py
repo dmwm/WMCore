@@ -385,7 +385,7 @@ class CondorPlugin(BasePlugin):
         jdl.append("universe = vanilla\n")
         jdl.append("requirements = (Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_Site, DESIRED_Sites)\n")
         #jdl.append("should_transfer_executable = TRUE\n")
-        jdl.append("transfer_output_files = Report.pkl\n")
+
         jdl.append("should_transfer_files = YES\n")
         jdl.append("when_to_transfer_output = ON_EXIT\n")
         jdl.append("log_xml = True\n" )
@@ -443,8 +443,9 @@ class CondorPlugin(BasePlugin):
             jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
 
             # Transfer the output files into new names
-            jdl.append("transfer_output_remaps = \"Report.pkl = Report.%i.pkl\"\n" \
-                       % (job["retry_count"]))
+            jdl.append("transfer_output_files = Report.%i.pkl\n" % (job["retry_count"]))
+            #jdl.append("transfer_output_remaps = \"Report.pkl = Report.%i.pkl\"\n" \
+            #           % (job["retry_count"]))
 
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
         

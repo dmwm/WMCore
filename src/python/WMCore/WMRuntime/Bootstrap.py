@@ -133,6 +133,9 @@ def loadJobDefinition():
     Load the job package and pull out the indexed job, return
     WMBS Job instance
 
+    Although this will create a JobReport, it won't necessarily bring it back.
+    Report names are dependent on the retry_count, but if it fails unpacking the job
+    it doesn't know the retry_count and will create the wrong file
     """
     sandboxLoc = locateWMSandbox()
     package = JobPackage()
@@ -203,17 +206,20 @@ def loadTask(job):
     except KeyError, ex:
         msg =  "Task name not in job object"
         msg += str(ex)
-        createErrorReport(exitCode = 11103, errorType = "TaskNotInJob", errorDetails = msg)
+        createErrorReport(exitCode = 11103, errorType = "TaskNotInJob", errorDetails = msg,
+                          logLocation = "Report.%i.pkl" % job['retry_count'])
         raise BootstrapException, msg
     except Exception, ex:
         msg = "Error looking up task %s\n" % job['task']
         msg += str(ex)
-        createErrorReport(exitCode = 11101, errorType = "TaskLookupError", errorDetails = msg)
+        createErrorReport(exitCode = 11101, errorType = "TaskLookupError", errorDetails = msg,
+                          logLocation = "Report.%i.pkl" % job['retry_count'])
         raise BootstrapException, msg
     if task == None:
         msg = "Unable to look up task %s from Workload\n" % job['task']
         msg += "Task name not matched"
-        createErrorReport(exitCode = 11102, errorType = "TaskNotFound", errorDetails = msg)
+        createErrorReport(exitCode = 11102, errorType = "TaskNotFound", errorDetails = msg,
+                          logLocation = "Report.%i.pkl" % job['retry_count'])
         raise BootstrapException, msg
     return task
 
@@ -258,7 +264,7 @@ def createInitialReport(job, task, logLocation):
 
 
 def createErrorReport(exitCode, errorType, errorDetails = None,
-                      logLocation = "Report.pkl"):
+                      logLocation = "Report.0.pkl"):
     """
     _createErrorReport_
 

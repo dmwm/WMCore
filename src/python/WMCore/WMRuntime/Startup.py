@@ -16,7 +16,7 @@ if __name__ == '__main__':
     print "Startup.py : setting up monitoring"
     Bootstrap.createInitialReport(job = job,
                                   task = task,
-                                  logLocation = "Report.pkl")
+                                  logLocation = "Report.%i.pkl" % job['retry_count'])
     monitor = Bootstrap.setupMonitoring()
 
     print "Startup.py : setting up logging"
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     task.execute(job)
     print "Startup.py : completing task"
     task.completeTask(jobLocation = os.getcwd(),
-                      logLocation = "Report.pkl")
+                      logLocation = "Report.%i.pkl" % job['retry_count'])
     print "Startup.py : shutting down monitor"
     if monitor.isAlive():
         monitor.shutdown()

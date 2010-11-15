@@ -5,9 +5,6 @@ _SiblingProcessingBased_t_
 Test SiblingProcessing job splitting.
 """
 
-
-
-
 import unittest
 import os
 import threading
@@ -212,16 +209,8 @@ class SiblingProcessingBasedTest(unittest.TestCase):
 
         result = deleteFactoryB(files_per_job = 1)
 
-        assert len(result) == 1, \
-               "Error: One job group should have been created."
-        assert len(result[0].jobs) == 1, \
-               "Error: There should only be one job in the jobgroup."
-        assert len(result[0].jobs[0]["input_files"]) == 1, \
-               "Error: Job should only have one input file."
-        assert result[0].jobs[0]["input_files"][0]["lfn"] == "testFileD", \
-               "Error: Input file for job is wrong."
-        assert list(result[0].jobs[0]["input_files"][0]["locations"]) == ["somese.cern.ch"], \
-               "Error: File location is wrong."
+        assert len(result) == 0, \
+               "Error: No job groups should have been created."
 
         self.testSubscriptionB.completeFiles([self.testFileE, self.testFileF])
         self.testSubscriptionC.completeFiles([self.testFileE, self.testFileF])

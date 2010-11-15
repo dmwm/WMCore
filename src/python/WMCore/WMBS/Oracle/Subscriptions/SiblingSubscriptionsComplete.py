@@ -22,20 +22,11 @@ class SiblingSubscriptionsComplete(SiblingCompleteMySQL):
                       wmbs_subscription.fileset = :fileset
                   GROUP BY wmbs_sub_files_complete.fileid) complete_files ON
                  wmbs_file_details.id = complete_files.fileid
-               LEFT OUTER JOIN
-                 (SELECT wmbs_sub_files_failed.fileid AS fileid, COUNT(fileid) AS failed_files
-                    FROM wmbs_sub_files_failed
-                    INNER JOIN wmbs_subscription ON
-                      wmbs_sub_files_failed.subscription = wmbs_subscription.id AND
-                      wmbs_subscription.fileset = :fileset
-                  GROUP BY wmbs_sub_files_failed.fileid) failed_files ON
-                 wmbs_file_details.id = failed_files.fileid
                INNER JOIN wmbs_file_location ON
                  wmbs_file_details.id = wmbs_file_location.fileid
                INNER JOIN wmbs_location ON
                  wmbs_file_location.location = wmbs_location.id
-             WHERE COALESCE(complete_files.complete_files, 0) +
-                   COALESCE(failed_files.failed_files, 0) =
+             WHERE COALESCE(complete_files.complete_files, 0) =
                (SELECT COUNT(*) FROM wmbs_subscription
                 WHERE wmbs_subscription.id != :subscription AND
                       wmbs_subscription.fileset = :fileset)"""

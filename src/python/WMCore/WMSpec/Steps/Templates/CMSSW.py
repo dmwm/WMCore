@@ -137,23 +137,6 @@ class CMSSWStepHelper(CoreHelper):
         self.data.application.configuration.arguments.globalTag = globalTag
         return
 
-    def setMinMergeSize(self, minMergeSize):
-        """
-        _setMinMergeSize_
-
-        Set the mininum size for promoting a file to merged status.
-        """
-        self.data.output.minMergeSize = minMergeSize
-        return
-
-    def minMergeSize(self):
-        """
-        _minMergeSize_
-
-        Retrieve the minimum size for promoting a file to merged status.
-        """
-        return self.data.output.minMergeSize
-    
 class CMSSW(Template):
     """
     _CMSSW_

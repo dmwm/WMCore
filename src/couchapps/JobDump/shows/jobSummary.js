@@ -5,7 +5,7 @@ function(doc, req) {
 
   var response = "<html><head>\n";
   response += "<title>Summary for job " + doc["jobid"] + "</title>\n";
-  response += "</head><body><pre>\n";
+  response += "</head><body><script src=../../jobSummary.js></script><pre>\n";
   response += "Name: " + doc["name"] + "\n";
   response += "Owner: " + doc["owner"] + "\n";
   response += "Workflow: " + doc["workflow"] + "\n";
@@ -20,16 +20,17 @@ function(doc, req) {
   response += "  Last Run: " + doc["mask"]["lastrun"] + "\n";
 
   response += "\nInput Files:\n";
+  response += "<div id=\"inputfiles\"></div>\n";
+  response += "<script type=\"text/javascript\">\n";
+  response += "var inputFiles = new Array();\n";
+
   for (var inputFileIndex in doc["inputfiles"]) {
     var inputFile = doc["inputfiles"][inputFileIndex];
-    response += "  " + inputFile["lfn"] + "\n";
-
-    for(var inputFileParentIndex in inputFile["parents"]) {
-      var inputFileParent = inputFile["parents"][inputFileParentIndex];
-      response += "    " + inputFileParent["lfn"] + "\n";
-    }
+    response += "inputFiles.push(\"" + inputFile["lfn"] + "\");\n";
   }
 
+  response += "renderJobInputFiles(\"" + doc["workflow"] + "\", inputFiles, " + doc["jobid"] + ", document.getElementById(\"inputfiles\"));\n";
+  response += "</script>\n";
   response += "\nState Transitions:\n";
   for (var transitionIndex in doc["states"]) {
     var transition = doc["states"][transitionIndex];

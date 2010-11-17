@@ -8,17 +8,13 @@ function(doc) {
 
     var cmsRunFound = false;
     for (var stepName in doc['fwjr']['steps']) {
-      if (stepName == 'cmsRun1') {
-        cmsRunFound = true;
-      }
-
       if (doc['fwjr']['steps'][stepName].status != 0) {
         return;
       }
     }
 
-    if (cmsRunFound) {
-      var stepOutput = doc['fwjr']['steps']['cmsRun1']['output']
+    for (var stepName in doc['fwjr']['steps']) {
+      var stepOutput = doc['fwjr']['steps'][stepName]['output']
       for (var outputModuleName in stepOutput) {
         for (var outputFileIndex in stepOutput[outputModuleName]) {
           var outputFile = stepOutput[outputModuleName][outputFileIndex];

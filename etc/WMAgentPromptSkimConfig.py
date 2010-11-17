@@ -48,7 +48,7 @@ config.PromptSkimScheduler.maxMergeEvents = 100000
 config.PromptSkimScheduler.maxMergeSize = 4294967296
 config.PromptSkimScheduler.minMergeSize = 500000000
 config.PromptSkimScheduler.maxMergeFiles = 50
-config.PromptSkimScheduler.phedexURL = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/"
+config.PromptSkimScheduler.phedexURL = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
 config.PromptSkimScheduler.t0astURL = "oracle://sfoulkes:PASSWORD@cmscald:1521"
 
 

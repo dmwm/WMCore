@@ -82,7 +82,7 @@ class RunTransferNotifier(FeederImpl):
             return sitesWithRun - self.datasetCompletion[dataset]
             
     def __init__(self, startRun = None, purgeTime = 48,
-                 phedexUrl = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas",
+                 phedexUrl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas",
                  dbsHost = "cmsweb.cern.ch/dbs_discovery/",
                  dbsInstance = "cms_dbs_prod_global",
                  dbsPort = 443):

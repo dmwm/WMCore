@@ -40,8 +40,8 @@ namespace (package): %s """ % (name, str(namespace))
             myThread.factory = {}
         myThread.factory[name] = self
 
-    def loadObject(self, classname, args = None, storeInCache = True, \
-        getFromCache = False, listFlag = False):
+    def loadObject(self, classname, args = None, storeInCache = True,
+                   getFromCache = True, listFlag = False):
         """
         Dynamically loads the object from file.
         For this to work the class name has to

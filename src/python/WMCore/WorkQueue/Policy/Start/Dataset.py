@@ -97,7 +97,7 @@ class Dataset(StartPolicyInterface):
         runWhiteList = task.inputRunWhitelist()
         runBlackList = task.inputRunBlacklist()
 
-        for block in dbs.getFileBlocksInfo(datasetPath):
+        for block in dbs.getFileBlocksInfo(datasetPath, locations = False):
 
             # check block restrictions
             if blockWhiteList and block['Name'] not in blockWhiteList:

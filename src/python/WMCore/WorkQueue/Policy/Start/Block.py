@@ -58,9 +58,9 @@ class Block(StartPolicyInterface):
         # if a block has been passed take that instead of dataset in spec
         if self.data and self.data.find('#') > -1:
             datasetPath, self.data.split('#')[0]
-            blocks = dbs.getFileBlocksInfo(datasetPath, blockName = self.data)
+            blocks = dbs.getFileBlocksInfo(datasetPath, blockName = self.data, locations = False)
         else:
-            blocks = dbs.getFileBlocksInfo(datasetPath)
+            blocks = dbs.getFileBlocksInfo(datasetPath, locations = False)
 
         for block in blocks:
 

@@ -212,12 +212,12 @@ class DBSReader:
         return summary
 
     def getFileBlocksInfo(self, dataset, onlyClosedBlocks = False,
-                          blockName = '*'):
+                          blockName = '*', locations = True):
         """
         """
         self.checkDatasetPath(dataset)
         try:
-             blocks = self.dbs.listBlocks(dataset, blockName)
+             blocks = self.dbs.listBlocks(dataset, blockName, nosite = not locations)
         except DbsException, ex:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)
@@ -238,7 +238,7 @@ class DBSReader:
         """
         self.checkDatasetPath(dataset)
         try:
-             blocks = self.dbs.listBlocks(dataset, blockName)
+             blocks = self.dbs.listBlocks(dataset, blockName, nosite = True)
         except DbsException, ex:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)
@@ -264,7 +264,7 @@ class DBSReader:
         """
         self.checkDatasetPath(dataset)
         try:
-             blocks = self.dbs.listBlocks(dataset)
+             blocks = self.dbs.listBlocks(dataset, nosite = True)
         except DbsException, ex:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)
@@ -292,7 +292,7 @@ class DBSReader:
         self.checkBlockName(fileBlockName)
         try:
 
-            blocks = self.dbs.listBlocks(block_name = fileBlockName)
+            blocks = self.dbs.listBlocks(block_name = fileBlockName, nosite = True)
         except DbsException, ex:
             msg = "Error in "
             msg += "DBSReader.blockExists(%s)\n" % fileBlockName
@@ -481,7 +481,7 @@ class DBSReader:
 
         """
         self.checkBlockName(blockName)
-        blockInstance = self.dbs.listBlocks(block_name = blockName)
+        blockInstance = self.dbs.listBlocks(block_name = blockName, nosite = True)
         if len(blockInstance) == 0:
             return False
         blockInstance = blockInstance[0]
@@ -504,7 +504,7 @@ class DBSReader:
         """
         self.checkBlockName(blockName)
         try:
-            blocks = self.dbs.listBlocks(block_name = blockName)
+            blocks = self.dbs.listBlocks(block_name = blockName, nosite = True)
         except DbsException, ex:
             msg = "Error in "
             msg += "DBSReader.blockToDataset(%s)\n" % blockName

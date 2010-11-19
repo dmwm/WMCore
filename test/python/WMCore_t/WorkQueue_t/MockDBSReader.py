@@ -64,7 +64,7 @@ class MockDBSReader:
             self.files = {dataset + "#1" : [dbsFile1],
                           dataset + "#2" : [dbsFile2]}
 
-    def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True, blockName = '*'):
+    def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True, blockName = '*', locations = True):
         """Fake block info"""
         try:
             if blockName != '*':

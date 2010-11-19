@@ -920,7 +920,7 @@ class DBSWriter:
 
         """
         reader = DBSReader(sourceDBS)
-        inputBlocks = reader.getFileBlocksInfo(sourceDatasetPath, onlyClosed)
+        inputBlocks = reader.getFileBlocksInfo(sourceDatasetPath, onlyClosed, locations = False)
         for inputBlock in inputBlocks:
             block = inputBlock['Name']
             #  //
@@ -997,7 +997,7 @@ class DBSWriter:
                                                                                                               
         """
         reader = DBSReader(sourceDBS)
-        inputBlocks = reader.getFileBlocksInfo(sourceDatasetPath, onlyClosed)
+        inputBlocks = reader.getFileBlocksInfo(sourceDatasetPath, onlyClosed, locations = False)
         blkCounter=0
         for inputBlock in inputBlocks:
             block = inputBlock['Name']
@@ -1067,7 +1067,7 @@ class DBSWriter:
 
         """
         reader = DBSReader(sourceDBS)
-        inputBlocks = reader.getFileBlocksInfo(sourceDatasetPath, onlyClosed)
+        inputBlocks = reader.getFileBlocksInfo(sourceDatasetPath, onlyClosed, locations = False)
         for inputBlock in inputBlocks:
             block = inputBlock['Name']
             #  //

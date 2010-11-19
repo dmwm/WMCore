@@ -31,7 +31,7 @@ class DBSReader:
         args = { "url" : url, "level" : 'ERROR', "version" : ''}
         self.dbs = _MockDBSApi(args)
         
-    def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True):
+    def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True, blockName = '*', locations = True):
         """Fake block info"""
         return self.dataBlocks.getBlocks(dataset)
 

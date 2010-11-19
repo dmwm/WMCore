@@ -108,7 +108,7 @@ class TestInit:
         self.init.setLogging(self.testClassName, self.testClassName,
                              logExists = False, logLevel = logLevel)
     
-    def generateWorkDir(self, config = None, deleteOnDestruction = True):
+    def generateWorkDir(self, config = None, deleteOnDestruction = True, setTmpDir = False):
         self.testDir = tempfile.mkdtemp()
         if config:
             config.section_("General")
@@ -117,7 +117,9 @@ class TestInit:
         if os.getenv('WMCORE_KEEP_DIRECTORIES', False):
             deleteOnDestruction = True
             logging.info("Generated testDir - %s" % self.testDir)
-            
+        if setTmpDir:
+            os.environ['TMPDIR'] = self.testDir
+
         self.deleteTmp = deleteOnDestruction
         return self.testDir
         

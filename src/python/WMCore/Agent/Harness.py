@@ -140,7 +140,11 @@ class Harness:
                compSect.logLevel in self.logMsg.keys():
                 logging.getLogger().setLevel(self.logMsg[compSect.logLevel])   
             WMLogging.sqldebug("wmcore level debug:")
-             
+
+            # If not previously set, force wmcore cache to current path
+            if not os.environ.get('WMCORE_CACHE_DIR'):
+                os.environ['WMCORE_CACHE_DIR'] = os.path.join(compSect.componentDir, '.wmcore_cache')
+
             logging.info(">>>Starting: "+compName+'<<<')
             # check which backend to use: MySQL, Oracle, etc... for core 
             # services.
@@ -215,7 +219,7 @@ class Harness:
                 logging.info(">>>Instantiating trigger service")
                 WMFactory("trigger", "WMCore.Trigger")
                 myThread.trigger = myThread.factory['trigger'].loadObject("Trigger")
-                
+
             logging.info("Harness part constructor finished")
         except Exception,ex:
             logging.critical("Problem instantiating "+str(ex))

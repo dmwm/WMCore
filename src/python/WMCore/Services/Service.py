@@ -6,7 +6,7 @@ A Service talks to some http(s) accessible service that provides information and
 caches the result of these queries. The cache will be refreshed if the file is 
 older than a timeout set in the instance of Service. 
 
-It has a cache path (defaults to /tmp), cache duration, an endpoint (the url the 
+It has a cache path, cache duration, an endpoint (the url the 
 service exists on) a logger and an accept type (json, xml etc) and method 
 (GET/POST). 
 
@@ -65,12 +65,17 @@ from WMCore.Services.Requests import Requests
 from WMCore.WMException import WMException
 from WMCore.Wrappers import JsonWrapper as json
 import types
+import logging
+import stat
+import tempfile
+import shutil
+from WMCore.Algorithms import Permissions
 
 class Service(dict):
     
     def __init__(self, dict = {}):
         #The following should read the configuration class
-        for a in ['logger', 'endpoint']:
+        for a in ['endpoint']:
             assert a in dict.keys(), "Can't have a service without a %s" % a
 
         scheme = ''
@@ -94,32 +99,33 @@ class Service(dict):
 
         #set up defaults
         self.setdefault("inputdata", {})
-        self.setdefault("cachepath", '/tmp')
         self.setdefault("cacheduration", 0.5)
         self.setdefault("maxcachereuse", 24.0)
         self.supportVerbList = ('GET', 'POST', 'PUT', 'DELETE')
         # this value should be only set when whole service class uses
         # the same verb ('GET', 'POST', 'PUT', 'DELETE')
         self.setdefault("method", None)
-        
+
+        # object to store temporary directory - cleaned up on destruction
+        self['deleteCacheOnExit'] = None
+
         #Set a timeout for the socket
         self.setdefault("timeout", 30)
 
         # then update with the incoming dict
         self.update(dict)
 
-        # deal with multiple Services that have the same service running and
-        # with multiple users for a given Service
-        if netloc.find("@") == -1:
-            self["cachepath"] = '%s/%s' % (self["cachepath"], netloc)
-        else:
-            auth, server_url = netloc.split('@')
-            user = auth.split(':')[0]
-            self["cachepath"] = '%s/%s-%s' % (self["cachepath"], user,
-                                              server_url)
-
+        self['cachepath'] = self.cachePath(self.get('cachepath'), netloc)
         # we want the request object to cache to a known location
         dict['req_cache_path'] = self['cachepath'] + '/requests'
+
+        if 'logger' not in self:
+            logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename = os.path.join(self['cachepath'], '%s.log' % self.__class__.__name__.lower()),
+                    filemode='w')
+            self['logger'] = logging.getLogger(self.__class__.__name__)
 
         # Get the request class, to instantiate later
         # either passed as param to __init__, determine via scheme or default
@@ -145,7 +151,59 @@ class Service(dict):
                   (self, self["requests"]["host"], self["endpoint"],
                    self["requests"]["accept_type"], self["cachepath"],
                    self["cacheduration"], self["maxcachereuse"]))
-    
+
+
+    def cachePath(self, given_path, netlocoation):
+        """Return cache location"""
+        top = self.cacheTopPath(given_path)
+
+        # deal with multiple Services that have the same service running and
+        # with multiple users for a given Service
+        if netlocoation.find("@") == -1:
+            cachepath = os.path.join(top, netlocoation)
+        else:
+            auth, server_url = netlocoation.split('@')
+            user = auth.split(':')[0]
+            cachepath = os.path.join(top, '%s-%s' % (user, server_url))
+
+        try:
+            # only we should be able to write to this dir
+            os.makedirs(cachepath, stat.S_IRWXU)
+        except OSError:
+            if not os.path.isdir(cachepath):
+                raise
+            Permissions.owner_readwriteexec(cachepath)
+
+        return cachepath
+
+
+    def cacheTopPath(self, given_path):
+        """Where to cache results?
+
+        Logic:
+          o If passed in take that
+          o Is the environemnt variable "self.__class__".upper()_CACHE defined?
+          o Is WMCORE_CACHE_DIR set
+          o Generate a temporary directory
+          """
+        if given_path:
+            return given_path
+        user = str(os.getuid())
+        # append user id so users don't clobber each other
+        lastbit = os.path.join('.wmcore_cache_%s' % user, self.__class__.__name__.lower())
+        for var in ('%s_CACHE_DIR' % self.__class__.__name__.upper(),
+                    'WMCORE_CACHE_DIR'):
+            if os.environ.get(var):
+                firstbit = os.environ[var]
+                break
+        else:
+            dir = tempfile.mkdtemp(prefix='.wmcore_cache')
+            self['deleteCacheOnExit'] = TempDirectory(dir)
+            return dir
+
+        return os.path.join(firstbit, lastbit)
+
+
     def _makeHash(self, inputdata, hash):
         """
         Turn the input data into json and hash the string. This is simple and 
@@ -297,4 +355,12 @@ class Service(dict):
             return self['method'].upper()
         else:
             raise TypeError, 'verb parameter needs to be set'
-        
+
+
+class TempDirectory():
+    """Directory that cleans up after itself"""
+    def __init__(self, dir):
+        self.dir = dir
+
+    def __del__(self):
+        shutil.rmtree(self.dir, ignore_errors = True)

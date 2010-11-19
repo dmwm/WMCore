@@ -19,22 +19,6 @@ class WMBS(Service):
             #self.parser = JSONParser()
         #elif self.responseType == 'xml':
             #self.parser = XMLParser()
-            
-        if os.getenv('WMBS_SERV_CACHE_DIR'):
-            dict['cachepath'] = os.getenv('WMBS_SERV_CACHE_DIR') + '/.wmbs_service_cache'
-        elif os.getenv('HOME'):
-            dict['cachepath'] = os.getenv('HOME') + '/.wmbs_service_cache'
-        else:
-            dict['cachepath'] = '/tmp/wmbs_service_cache_' + pwd.getpwuid(os.getuid())[0]
-        if not os.path.isdir(dict['cachepath']):
-            os.mkdir(dict['cachepath'])
-        if 'logger' not in dict.keys():
-            logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename=dict['cachepath'] + '/wmbs_service.log',
-                    filemode='w')
-            dict['logger'] = logging.getLogger('WMBSParser')
         
         dict.setdefault("accept_type", "application/json")
         dict.setdefault("content_type", "application/json")

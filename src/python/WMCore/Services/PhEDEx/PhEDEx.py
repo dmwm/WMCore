@@ -27,24 +27,6 @@ class PhEDEx(Service):
         if not dict.has_key('endpoint'):
             dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % self.responseType
 
-        if dict.has_key('cachepath'):
-            pass
-        elif os.getenv('CMS_PHEDEX_CACHE_DIR'):
-            dict['cachepath'] = os.getenv('CMS_PHEDEX_CACHE_DIR') + '/.cms_phedexcache'
-        elif os.getenv('HOME'):
-            dict['cachepath'] = os.getenv('HOME') + '/.cms_phedexcache'
-        else:
-            dict['cachepath'] = '/tmp/phedex_' + pwd.getpwuid(os.getuid())[0]
-        if not os.path.isdir(dict['cachepath']):
-            os.makedirs(dict['cachepath'])
-        if 'logger' not in dict.keys():
-            logging.basicConfig(level = logging.DEBUG,
-                    format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt = '%m-%d %H:%M',
-                    filename = dict['cachepath'] + '/phedexdbjsonparser.log',
-                    filemode = 'w')
-            dict['logger'] = logging.getLogger('PhEDExParser')
-
         dict.setdefault('cacheduration', 0)
         Service.__init__(self, dict)
 

@@ -297,7 +297,7 @@ class JSONThunker:
                             value.__class__ = ourClass
                         except:
                             value = ourClass()
-                        value = ourClass.__from_json__(value, data, self)
+                        value = ourClass.__from_json__(value, jsondata, self)
                     elif ('thunker_encoded_json' in jsondata and
                                      'is_dict' in jsondata):
                         try:

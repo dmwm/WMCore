@@ -33,15 +33,6 @@ class Run(WMObject):
             return self.run < rhs.run
         return list(self.lumis) < list(rhs.lumis)
 
-    def json(self):
-        """
-            _json_
-            
-            convert to JSON friendly format
-        """
-        return { "Run" : self.run, "Lumis" : self.lumis}
-
-
     def __gt__(self, rhs):
         if self.run != rhs.run:
             return self.run > rhs.run
@@ -109,6 +100,15 @@ class Run(WMObject):
             value += lumi.__hash__()
         return value
 
+    def json(self):
+        """
+        _json_
+
+        Convert to JSON friendly format.  Include some information for the
+        thunker so that we can convert back.
+        """
+        return {"Run" : self.run, "Lumis" : self.lumis,
+                "thunker_encoded_json": True, "type": "WMCore.DataStructs.Run.Run"}
 
     def __to_json__(self, thunker = None):
         """
@@ -117,5 +117,14 @@ class Run(WMObject):
         This is the standard way we jsonize other objects.
         Included here so we have a uniform method.
         """
-
         return self.json()
+
+    def __from_json__(self, jsondata, thunker):
+        """
+        __from_json__
+
+        Conver JSON data back into a Run object.
+        """
+        self.run = jsondata["Run"]
+        self.lumis = jsondata["Lumis"]
+        return self

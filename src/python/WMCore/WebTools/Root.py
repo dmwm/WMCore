@@ -29,6 +29,7 @@ import sys
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WebTools.Welcome import Welcome
 from WMCore.Agent.Harness import Harness
+from WMCore.WebTools.FrontEndAuth import FrontEndAuth
 
 class Root(WMObject, Harness):
     def __init__(self, config, webApp = None):
@@ -104,7 +105,7 @@ class Root(WMObject, Harness):
         
         log.error_log.setLevel(configDict.get("error_log_level", logging.DEBUG))
         log.access_log.setLevel(configDict.get("access_log_level", logging.DEBUG))
-
+        
         cpconfig.update ({
                           'tools.expires.on': True,
                           'tools.response_headers.on':True,
@@ -113,31 +114,19 @@ class Root(WMObject, Harness):
                           'tools.encode.on': True,
                           'tools.gzip.on': True,
                           })
-
-        # SecurityModule config
-        if len(self.secconfig.listSections_()) > 0:
-            if self.secconfig.listSections_() == ["componentDir"]:
-                return
-            
-            from WMCore.WebTools.OidConsumer import OidConsumer
-            
-            cpconfig.update({'tools.sessions.on': True,
-                             'tools.sessions.name': 'oidconsumer_sid'})
-            tools.cernoid = OidConsumer(self.secconfig)
-            if hasattr(self.secconfig, "default"):
-                # The following will force the auth stuff to be called
-                # even for non-decorated methods
-                cpconfig.update({'tools.cernoid.on': True})
-                cpconfig.update({'tools.cernoid.role': self.secconfig.default.role})
-                cpconfig.update({'tools.cernoid.group': self.secconfig.default.group})
-                cpconfig.update({'tools.cernoid.site': self.secconfig.default.site})
-            pagecfg = self.secconfig
-            pagecfg.object = pagecfg.handler
-            self.mountPage(pagecfg, 
-                           pagecfg.mount_point, 
-                           self.appconfig.dictionary_(), 
-                           WMFactory('webtools_factory'))    
-            self.auth = tools.cernoid.defhandler
+                          
+        # SecurityModule config        
+        # Registers secmodv2 into cherrypy.tools so it can be used through
+        # decorators
+        if not self.secconfig.dictionary_().get('dangerously_insecure', False):
+            tools.secmodv2 = FrontEndAuth(self.secconfig)
+            if hasattr(self.secconfig,"default"):
+                # If the 'default' section is present, it will force the
+                # authn/z to be called even for non-decorated methods
+                cpconfig.update({'tools.secmodv2.on': True,
+                            'tools.secmodv2.role': self.secconfig.default.role,
+                            'tools.secmodv2.group': self.secconfig.default.group,
+                            'tools.secmodv2.site': self.secconfig.default.site})
 
         log("loading config: %s" % cpconfig, 
                                    context=self.app, 

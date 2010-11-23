@@ -19,7 +19,8 @@ import cPickle as pickle
 
 
 import WMCore.WMInit
-from WMQuality.TestInit             import TestInit
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+#from WMQuality.TestInit             import TestInit
 from WMCore.DAOFactory              import DAOFactory
 from WMCore.Services.UUID           import makeUUID
 from WMCore.Agent.Configuration     import Configuration
@@ -106,6 +107,7 @@ class BossAirTest(unittest.TestCase):
         #self.tearDown()
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database", "WMCore.MsgService"],
                                 useDefault = False)
+        self.testInit.setupCouch("bossair_t", "JobDump")
 
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -154,6 +156,8 @@ class BossAirTest(unittest.TestCase):
         self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database", "WMCore.MsgService"])
 
         self.testInit.delWorkDir()
+
+        self.testInit.tearDownCouch()
 
         return
 
@@ -223,7 +227,7 @@ class BossAirTest(unittest.TestCase):
 
         # JobStatus
         config.component_('JobStatus')
-        config.JobStatus.stateTimeouts  = {'Pending': 2, 'Running': 86400}
+        config.JobStatus.stateTimeouts  = {'Pending': 10, 'Running': 86400}
         config.JobStatus.pollInterval   = 1
 
         # JobStatusLite (LEGACY)
@@ -670,7 +674,7 @@ class BossAirTest(unittest.TestCase):
         changeState = ChangeState(config)
 
         nSubs = 1
-        nJobs = 2
+        nJobs = 200
         cacheDir = os.path.join(self.testDir, 'CacheDir')
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
@@ -704,7 +708,6 @@ class BossAirTest(unittest.TestCase):
 
         statusPoller.algorithm()
 
-
         newJobs = baAPI._loadByStatus(status = 'New')
         self.assertEqual(len(newJobs), 0)
 
@@ -720,7 +723,7 @@ class BossAirTest(unittest.TestCase):
 
 
         # Wait for jobs to timeout due to short Pending wait period
-        time.sleep(5)
+        time.sleep(12)
 
 
         statusPoller.algorithm()
@@ -763,7 +766,7 @@ class BossAirTest(unittest.TestCase):
         Full test going through the chain; using polling cycles and everything
         """
 
-        #return
+        return
 
         from WMComponent.JobSubmitter.JobSubmitter   import JobSubmitter
         from WMComponent.JobStatusLite.JobStatusLite import JobStatusLite

@@ -19,7 +19,8 @@ import pstats
 import cPickle
 import shutil
 
-from WMQuality.TestInit import TestInit
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+#from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
 
 
@@ -74,7 +75,8 @@ class JobCreatorTest(unittest.TestCase):
                                                  'WMCore.ThreadPool',
                                                  'WMCore.ResourceControl',
                                                  'WMCore.Agent.Database'], useDefault = False)
-                                                 #'WMCore.WorkQueue.Database'], useDefault = False)
+        self.testInit.setupCouch("jobcreator_t_0", "JobDump")
+                                                 
 
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
@@ -125,18 +127,15 @@ class JobCreatorTest(unittest.TestCase):
         
         myThread = threading.currentThread()
 
-        #self.testInit.clearDatabase(modules = ['WMCore.ThreadPool'])
         self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService',
                                                'WMCore.ThreadPool', 'WMCore.ResourceControl',
                                                'WMCore.Agent.Database'])
-                                               #'WMCore.WorkQueue.Database'])
-        #self.testInit.clearDatabase()
         
-        time.sleep(2)
-
         self.testInit.delWorkDir()
         
         self._teardown = True
+
+        self.testInit.tearDownCouch()
         
         
         return
@@ -327,8 +326,14 @@ class JobCreatorTest(unittest.TestCase):
         groupDirectory = os.path.join(testDirectory, 'JobCollection_1_0')
 
         # First job should be in here
-        self.assertTrue('job_1' in os.listdir(groupDirectory))
-        jobFile = os.path.join(groupDirectory, 'job_1', 'job.pkl')
+        listOfDirs = []
+        for tmpDirectory in os.listdir(testDirectory):
+            listOfDirs.extend(os.listdir(os.path.join(testDirectory, tmpDirectory)))
+        self.assertTrue('job_1' in listOfDirs)
+        self.assertTrue('job_2' in listOfDirs)
+        self.assertTrue('job_3' in listOfDirs)
+        jobDir = os.listdir(groupDirectory)[0]
+        jobFile = os.path.join(groupDirectory, jobDir, 'job.pkl')
         self.assertTrue(os.path.isfile(jobFile))
         f = open(jobFile, 'r')
         job = cPickle.load(f)

@@ -22,9 +22,10 @@ from subprocess import Popen, PIPE
 
 
 import WMCore.WMInit
-from WMQuality.TestInit import TestInit
-from WMCore.DAOFactory import DAOFactory
-from WMCore.WMInit import getWMBASE
+#from WMQuality.TestInit import TestInit
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMCore.DAOFactory          import DAOFactory
+from WMCore.WMInit              import getWMBASE
 
 from WMCore.WMBS.File         import File
 from WMCore.WMBS.Fileset      import Fileset
@@ -153,16 +154,17 @@ class JobSubmitterTest(unittest.TestCase):
 
     def setUp(self):
         """
-        Standard setup
-
-
+        Standard setup: Now with 100% more couch
         """
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService', 'WMCore.ResourceControl'])
-        self.testInit.setSchema(customModules = ["WMCore.WMBS",'WMCore.MsgService', 'WMCore.ResourceControl', 'WMCore.BossLite', 'WMCore.Agent.Database'],
+        #self.tearDown()
+        #self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService', 'WMCore.ResourceControl', 'WMCore.BossAir', 'WMCore.Agent.Database'])
+        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database", "WMCore.MsgService"],
                                 useDefault = False)
+        self.testInit.setupCouch("jobsubmitter_t_3", "JobDump")
         
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
@@ -180,15 +182,16 @@ class JobSubmitterTest(unittest.TestCase):
         #self.ceName = 'thisisnotarealserver.fnal.gov'
         self.ceName = '127.0.0.1'
 
-        for site in self.sites:
-            locationAction.execute(siteName = site, seName = 'se.%s' % (site), ceName = site)
-            locationSlots.execute(siteName = site, jobSlots = 1000)
+        #for site in self.sites:
+        #    locationAction.execute(siteName = site, seName = 'se.%s' % (site), ceName = site)
+        #    locationSlots.execute(siteName = site, jobSlots = 1000)
 
 
         #Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:
-            resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site), ceName = site)
+            resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
+                                       ceName = site, plugin = "CondorPlugin")
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             maxSlots = 10000)
 
@@ -207,10 +210,16 @@ class JobSubmitterTest(unittest.TestCase):
         Standard tearDown
 
         """
-        #self.testInit.clearDatabase(modules = ['WMCore.ResourceControl', 'WMCore.WMBS', 'WMCore.MsgService'])
-        self.testInit.clearDatabase()
+        self.testInit.clearDatabase(modules = ["WMCore.WMBS",'WMCore.MsgService',
+                                               'WMCore.ResourceControl', 'WMCore.BossAir',
+                                               'WMCore.Agent.Database'])
+        #self.testInit.clearDatabase()
 
         self.testInit.delWorkDir()
+
+        self.testInit.tearDownCouch()
+
+        return
 
 
 
@@ -330,6 +339,7 @@ class JobSubmitterTest(unittest.TestCase):
         config.Agent.WMSpecDirectory = self.testDir
         config.Agent.agentName       = 'testAgent'
         config.Agent.componentName   = self.componentName
+        config.Agent.useHeartbeat    = False
 
 
         #First the general stuff
@@ -342,6 +352,10 @@ class JobSubmitterTest(unittest.TestCase):
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
+
+        config.section_("BossAir")
+        config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
+        config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
 
         config.component_("JobSubmitter")
         config.JobSubmitter.logLevel      = 'INFO'
@@ -435,7 +449,7 @@ class JobSubmitterTest(unittest.TestCase):
                              'TestWorkload-Sandbox.tar.bz2 %i' % (index))
 
             if site:
-                self.assertEqual(job.get('globusscheduler', None), site)
+                self.assertEqual(job.get('+DESIRED_Sites', None), '\"%s\"' % site)
 
         # Now handle the head
         self.assertEqual(head.get('should_transfer_files', None), 'YES')
@@ -443,7 +457,8 @@ class JobSubmitterTest(unittest.TestCase):
         self.assertEqual(head.get('Error', None), 'condor.$(Cluster).$(Process).err')
         self.assertEqual(head.get('Output', None), 'condor.$(Cluster).$(Process).out')
         self.assertEqual(head.get('transfer_output_remaps', None),
-                         '\"Report.pkl = Report.$(Cluster).$(Process).pkl\"')
+                         '\"Report.pkl = Report.0.pkl\"')
+                         #'\"Report.pkl = Report.$(Cluster).$(Process).pkl\"')
         self.assertEqual(head.get('when_to_transfer_output', None), 'ON_EXIT')
         self.assertEqual(head.get('Executable', None), config.JobSubmitter.submitScript)
 
@@ -554,7 +569,7 @@ class JobSubmitterTest(unittest.TestCase):
         """
 
 
-        #return
+        return
 
 
         workloadName = "basicWorkload"
@@ -623,7 +638,7 @@ class JobSubmitterTest(unittest.TestCase):
         """
 
 
-        #return
+        return
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
@@ -811,7 +826,7 @@ class JobSubmitterTest(unittest.TestCase):
         Trust the jobCreator to get this in the job right
         """
 
-        #return
+        return
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
@@ -1026,7 +1041,7 @@ class JobSubmitterTest(unittest.TestCase):
         Then the sites can handle
         """
 
-        #return
+        return
 
         resourceControl = ResourceControl()
         for site in self.sites:
@@ -1097,7 +1112,7 @@ class JobSubmitterTest(unittest.TestCase):
         """
 
 
-        #return
+        return
 
 
         workloadName = "basicWorkload"

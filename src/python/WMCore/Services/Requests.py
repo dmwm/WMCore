@@ -38,7 +38,7 @@ class Requests(dict):
     def __init__(self, url = 'http://localhost', dict={}):
         """
         url should really be host - TODO fix that when have sufficient code 
-        coverage
+        coverage and change _getURLOpener if needed
         """
         #set up defaults
         self.setdefault("accept_type", 'text/html')
@@ -318,7 +318,10 @@ class SecureRequests(Requests):
         """
         key, cert = self.getKeyCert()
         http = httplib2.Http(self['req_cache_path'], self['timeout'])
-        http.add_certificate(key=key, cert=cert, domain=self['host'])
+
+        # Domain must be just a hostname and port. self[host] is a URL currently
+        domain = (self['host'].split('/'))[2]
+        http.add_certificate(key=key, cert=cert, domain=domain)
         return http
     
     def getKeyCert(self):

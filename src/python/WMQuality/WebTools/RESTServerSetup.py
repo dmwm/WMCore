@@ -2,12 +2,13 @@ import os
 import cherrypy
 import logging 
 from WMCore.Configuration import Configuration
-from WMCore.WebTools.Root import Root
 
 class DefaultConfig(Configuration):
     
     def __init__(self, model=None):
         Configuration.__init__(self)
+        self.component_('SecurityModule')
+        self.SecurityModule.dangerously_insecure = True
         
         self.component_('Webtools')
         self.Webtools.application = 'UnitTests'
@@ -24,7 +25,7 @@ class DefaultConfig(Configuration):
         self.UnitTests.admin ="UnitTestAdmin"
         self.UnitTests.templates = "/tmp"
         self.UnitTests.section_('views')
-
+        
         active = self.UnitTests.views.section_('active')
         active.section_('rest')
         active.rest.application = 'UnitTestRESTApp'
@@ -71,37 +72,4 @@ class DefaultConfig(Configuration):
         
     def getModelConfig(self):
         return self.UnitTests.views.active.rest
-        
-
-def configureServer(restModel=None, das=False, config=None):
-    """
-    either pass custom config or use default config,
-    if default config is used, rest model and format time can be rest.
-    """
-    if config:
-        dummycfg = config
-        if restModel:
-            dummycfg.setModel(restModel)
-    else:
-        dummycfg = DefaultConfig(restModel)
     
-    if das:
-        dummycfg.setFormatter('WMCore.WebTools.DASRESTFormatter')
-    rt = Root(dummycfg)
-    return rt
-
-def setUpDAS(func):
-    def wrap_function(self):
-        self.dasFlag = True
-        func(self)
-    return wrap_function
-
-def serverSetup(func):
-    def wrap_function(self):
-        rt = configureServer(restModel=self.restModel, das=self.dasFlag, config=self.config)
-        rt.start(blocking=False)
-        cherrypy.log.error_log.setLevel(logging.WARNING)
-        cherrypy.log.access_log.setLevel(logging.WARNING)
-        func(self)
-        rt.stop()
-    return wrap_function

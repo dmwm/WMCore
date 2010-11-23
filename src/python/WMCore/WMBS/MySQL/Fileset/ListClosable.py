@@ -17,10 +17,10 @@ class ListClosable(DBFormatter):
                     wmbs_fileset.id = wmbs_workflow_output.output_fileset
                   INNER JOIN wmbs_subscription wmbs_parent_subscription ON
                     wmbs_workflow_output.workflow_id = wmbs_parent_subscription.workflow
-                  LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT file) AS total_files
+                  LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT fileid) AS total_files
                               FROM wmbs_sub_files_acquired GROUP BY subscription) files_acquired ON
                     wmbs_parent_subscription.id = files_acquired.subscription
-                  LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT file) AS total_files
+                  LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT fileid) AS total_files
                               FROM wmbs_sub_files_available GROUP BY subscription) files_available ON
                     wmbs_parent_subscription.id = files_available.subscription
                   LEFT OUTER JOIN (SELECT subscription, COUNT(wmbs_job.id) AS running_count

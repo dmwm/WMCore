@@ -14,6 +14,3 @@ class AcquireFiles(AcquireFilesMySQL):
                  (SELECT fileid FROM wmbs_sub_files_acquired
                     WHERE fileid = :fileid AND subscription = :subscription)"""
 
-    availDel = """DELETE FROM wmbs_sub_files_available
-                  WHERE subscription = :subscription AND
-                        fileid = :fileid"""

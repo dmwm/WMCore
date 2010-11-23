@@ -11,7 +11,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class AddFiles(DBFormatter):
 
-    sql = """INSERT INTO wmbs_job_assoc (job, file)
+    sql = """INSERT INTO wmbs_job_assoc (job, fileid)
                VALUES (:jobid, :fileid) """
     
     def getBinds(self, jobDict):

@@ -11,9 +11,9 @@ MySQL implementation of File.GetLocationBulk
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetLocationBulk(DBFormatter):
-    sql = """select wl.se_name AS se_name, wfl.file AS id from wmbs_location wl
+    sql = """SELECT wl.se_name AS se_name, wfl.fileid AS id FROM wmbs_location wl
                 INNER JOIN wmbs_file_location wfl ON wfl.location = wl.id
-                WHERE wfl.file = :id
+                WHERE wfl.fileid = :id
                 """
                     
     

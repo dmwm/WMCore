@@ -4,7 +4,7 @@ MySQL implementation of File.Get
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetByID(DBFormatter):
-    sql = """SELECT id, lfn, size, events, first_event, last_event, merged
+    sql = """SELECT id, lfn, filesize, events, first_event, last_event, merged
              FROM wmbs_file_details WHERE id = :fileid"""
 
     def formatOneDict(self, result):

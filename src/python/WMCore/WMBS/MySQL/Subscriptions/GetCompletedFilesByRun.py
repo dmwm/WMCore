@@ -12,8 +12,8 @@ __all__ = []
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetCompletedFilesByRun(DBFormatter):
-    sql = """SELECT wc.file FROM wmbs_sub_files_complete wc
-               INNER JOIN wmbs_file_runlumi_map wm ON (wm.file = wc.file)
+    sql = """SELECT wc.fileid FROM wmbs_sub_files_complete wc
+               INNER JOIN wmbs_file_runlumi_map wm ON (wm.fileid = wc.fileid)
              WHERE wc.subscription = :subscription AND run = :run
              """
 

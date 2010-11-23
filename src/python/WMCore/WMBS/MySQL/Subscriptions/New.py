@@ -21,8 +21,8 @@ class New(DBFormatter):
                SELECT :fileset, :workflow, id, :split_algo, :timestamp
                       FROM wmbs_sub_types WHERE name = :subtype""" 
 
-    sqlAvail = """INSERT INTO wmbs_sub_files_available (subscription, file)
-                    SELECT wmbs_subscription.id, wmbs_fileset_files.file
+    sqlAvail = """INSERT INTO wmbs_sub_files_available (subscription, fileid)
+                    SELECT wmbs_subscription.id, wmbs_fileset_files.fileid
                            FROM wmbs_fileset_files
                       INNER JOIN wmbs_subscription ON
                         wmbs_subscription.workflow = :workflow AND

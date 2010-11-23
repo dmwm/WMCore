@@ -13,10 +13,10 @@ from WMCore.Database.DBFormatter import DBFormatter
 class GetFinishedSubscriptions(DBFormatter):
     sql = """SELECT DISTINCT wmbs_sub.id FROM wmbs_subscription wmbs_sub
                INNER JOIN wmbs_fileset ON wmbs_fileset.id = wmbs_sub.fileset
-               LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT file) AS total_files
+               LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT fileid) AS total_files
                       FROM wmbs_sub_files_acquired GROUP BY subscription) sub_acquired ON
                       wmbs_sub.id = sub_acquired.subscription
-               LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT file) AS total_files
+               LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT fileid) AS total_files
                       FROM wmbs_sub_files_available GROUP BY subscription) sub_available ON
                       wmbs_sub.id = sub_available.subscription
                LEFT OUTER JOIN

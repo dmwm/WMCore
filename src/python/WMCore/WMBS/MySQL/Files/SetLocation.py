@@ -11,7 +11,7 @@ MySQL implementation of Files.SetLocation
 from WMCore.Database.DBFormatter import DBFormatter
 
 class SetLocation(DBFormatter):
-    sql = """INSERT INTO wmbs_file_location (file, location) 
+    sql = """INSERT INTO wmbs_file_location (fileid, location) 
              SELECT :fileid, wmbs_location.id FROM wmbs_location 
              WHERE wmbs_location.se_name = :location"""
                 

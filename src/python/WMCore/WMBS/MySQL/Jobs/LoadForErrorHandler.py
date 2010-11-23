@@ -32,12 +32,12 @@ class LoadForErrorHandler(DBFormatter):
              WHERE wmbs_job.id = :jobid"""
 
 
-    fileSQL = """SELECT wfd.id, wfd.lfn, wfd.size, wfd.events, wfd.first_event,
+    fileSQL = """SELECT wfd.id, wfd.lfn, wfd.filesize AS size, wfd.events, wfd.first_event,
                    wfd.last_event, wfd.merged, wja.job AS jobid,
                    wl.se_name AS se_name
                  FROM wmbs_file_details wfd
-                 INNER JOIN wmbs_job_assoc wja ON wja.file = wfd.id
-                 INNER JOIN wmbs_file_location wfl ON wfl.file = wfd.id
+                 INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfd.id
+                 INNER JOIN wmbs_file_location wfl ON wfl.fileid = wfd.id
                  INNER JOIN wmbs_location wl ON wl.id = wfl.location
                  WHERE wja.job = :jobid"""
 

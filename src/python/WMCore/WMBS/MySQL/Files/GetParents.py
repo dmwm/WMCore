@@ -6,9 +6,9 @@ Return a list of lfn's which are parents for a file.
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetParents(DBFormatter):
-    sql = """select lfn from wmbs_file_details where id IN (
-            select parent from wmbs_file_parent where child = (
-                select id from wmbs_file_details where lfn = :lfn
+    sql = """SELECT lfn FROM wmbs_file_details WHERE id IN (
+              SELECT parent FROM wmbs_file_parent WHERE child = (
+                SELECT id FROM wmbs_file_details WHERE lfn = :lfn
             )
         )"""
         

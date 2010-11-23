@@ -18,7 +18,7 @@ class LoadFiles(DBFormatter):
     Retrieve all files that are associated with the given job from the
     database.
     """
-    sql = "SELECT DISTINCT FILE FROM wmbs_job_assoc WHERE JOB = :jobid"
+    sql = "SELECT DISTINCT fileid AS file FROM wmbs_job_assoc WHERE JOB = :jobid"
 
     def formatDict(self, results):
         """

@@ -11,9 +11,10 @@ MySQL implementation of GetRunLumiFile
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetRunLumiFile(DBFormatter):
-    sql = """select flr.run as run, flr.lumi as lumi
-		from wmbs_file_runlumi_map flr 
-			where flr.file in (select id from wmbs_file_details where lfn=:lfn)"""
+    sql = """SELECT flr.run AS run, flr.lumi AS lumi FROM wmbs_file_runlumi_map flr
+               INNER JOIN wmbs_file_details wfd ON wfd.id = flr.fileid
+               WHERE wfd.lfn = :lfn"""
+
 
     def getBinds(self, file=None):
         binds = []

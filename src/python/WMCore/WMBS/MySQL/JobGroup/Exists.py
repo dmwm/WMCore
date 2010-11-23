@@ -12,7 +12,7 @@ __all__ = []
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Exists(DBFormatter):
-    sql = "select id from wmbs_jobgroup where uid = :guid"
+    sql = "SELECT id FROM wmbs_jobgroup WHERE guid = :guid"
     
     def format(self, result):
         result = DBFormatter.format(self, result)

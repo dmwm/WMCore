@@ -18,14 +18,14 @@ class CompleteInput(DBFormatter):
     fileSelect = """SELECT job_files.subscriptionid, job_files.fileid,
                            COUNT(wmbs_job_assoc.job) AS total, SUM(wmbs_job.outcome) AS numsuccess FROM
                       (SELECT wmbs_jobgroup.subscription AS subscriptionid,
-                              wmbs_job_assoc.file AS fileid FROM wmbs_job_assoc
+                              wmbs_job_assoc.fileid AS fileid FROM wmbs_job_assoc
                          INNER JOIN wmbs_job ON
                            wmbs_job_assoc.job = wmbs_job.id
                          INNER JOIN wmbs_jobgroup ON
                            wmbs_job.jobgroup = wmbs_jobgroup.id
                        WHERE wmbs_job.id = :jobid) job_files
                       INNER JOIN wmbs_job_assoc ON
-                        job_files.fileid = wmbs_job_assoc.file
+                        job_files.fileid = wmbs_job_assoc.fileid
                       INNER JOIN wmbs_job ON
                         wmbs_job_assoc.job = wmbs_job.id
                       INNER JOIN wmbs_jobgroup ON
@@ -35,16 +35,16 @@ class CompleteInput(DBFormatter):
                     HAVING total = numsuccess"""    
 
     acquiredDelete = """DELETE FROM wmbs_sub_files_acquired
-                        WHERE subscription = :subid AND file = :fileid"""
+                        WHERE subscription = :subid AND fileid = :fileid"""
 
     failedDelete = """DELETE FROM wmbs_sub_files_failed
-                      WHERE subscription = :subid AND file = :fileid"""    
+                      WHERE subscription = :subid AND fileid = :fileid"""    
 
-    sql = """INSERT INTO wmbs_sub_files_complete (file, subscription)
+    sql = """INSERT INTO wmbs_sub_files_complete (fileid, subscription)
                SELECT :fileid, :subid FROM DUAL
                WHERE NOT EXISTS
                  (SELECT * FROM wmbs_sub_files_complete
-                  WHERE file = :fileid AND subscription = :subid)"""
+                  WHERE fileid = :fileid AND subscription = :subid)"""
     
     def execute(self, id, conn = None, transaction = False):
         if type(id) == list:

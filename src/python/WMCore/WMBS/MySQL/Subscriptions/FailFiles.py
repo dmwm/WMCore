@@ -8,22 +8,20 @@ MySQL implementation of Subscription.FailFiles
 from WMCore.Database.DBFormatter import DBFormatter
 
 class FailFiles(DBFormatter):
-    sql = """INSERT INTO wmbs_sub_files_failed (subscription, file)
-               SELECT :subscription, :fileid FROM dual WHERE NOT EXISTS
-                 (SELECT file FROM wmbs_sub_files_failed
-                    WHERE file = :fileid AND subscription = :subscription)"""    
+    sql = """INSERT INTO wmbs_sub_files_failed (subscription, fileid)
+               VALUES(:subscription, :fileid)"""
 
     delAcq = """DELETE FROM wmbs_sub_files_acquired
                 WHERE subscription = :subscription AND
-                      file = :fileid"""
+                      fileid = :fileid"""
 
     delAva = """DELETE FROM wmbs_sub_files_available
                 WHERE subscription = :subscription AND
-                      file = :fileid"""
+                      fileid = :fileid"""
     
     delCom = """DELETE FROM wmbs_sub_files_complete
                 WHERE subscription = :subscription AND
-                      file = :fileid"""    
+                      fileid = :fileid"""    
 
     def execute(self, subscription = None, file = None, conn = None,
                 transaction = False):

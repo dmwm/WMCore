@@ -11,7 +11,7 @@ MySQL implementation of Files.SetLocationByLFN
 from WMCore.Database.DBFormatter import DBFormatter
 
 class SetLocationByLFN(DBFormatter):
-    sql = """INSERT INTO wmbs_file_location (file, location) 
+    sql = """INSERT INTO wmbs_file_location (fileid, location) 
              SELECT wmbs_file_details.id, wmbs_location.id
                FROM wmbs_location, wmbs_file_details
                WHERE wmbs_location.se_name = :location

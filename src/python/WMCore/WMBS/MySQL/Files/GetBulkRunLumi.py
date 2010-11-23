@@ -13,9 +13,9 @@ class GetBulkRunLumi(DBFormatter):
     to lfn based.
 
     """
-    sql = """SELECT flr.run AS run, flr.lumi AS lumi, flr.file AS id
+    sql = """SELECT flr.run AS run, flr.lumi AS lumi, flr.fileid AS id
                FROM wmbs_file_runlumi_map flr
-               WHERE flr.file = :id
+               WHERE flr.fileid = :id
     """
 
     def getBinds(self, files = None):

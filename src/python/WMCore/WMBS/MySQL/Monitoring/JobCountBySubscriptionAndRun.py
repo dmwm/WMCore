@@ -21,7 +21,7 @@ class JobCountBySubscriptionAndRun(DefaultFormatter):
              FROM wmbs_job
               INNER JOIN wmbs_job_state ON wmbs_job_state.id = wmbs_job.state
               INNER JOIN wmbs_job_assoc ON wmbs_job_assoc.job = wmbs_job.id 
-              INNER JOIN wmbs_file_runlumi_map ON wmbs_file_runlumi_map.FILE = wmbs_job_assoc.FILE
+              INNER JOIN wmbs_file_runlumi_map ON wmbs_file_runlumi_map.fileid = wmbs_job_assoc.fileid
               INNER JOIN wmbs_jobgroup ON wmbs_jobgroup.id = wmbs_job.jobgroup 
               INNER JOIN wmbs_subscription ON wmbs_subscription.id = wmbs_jobgroup.subscription 
               INNER JOIN wmbs_fileset ON wmbs_fileset.id = wmbs_subscription.fileset 

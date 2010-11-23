@@ -27,3 +27,4 @@ class AddToFileset(AddFileToFilesetMySQL):
                                      WHERE lfn = :lfn) AND
                              subscription = (SELECT id FROM wmbs_subscription
                                              WHERE fileset = :fileset AND rownum = 1))"""
+

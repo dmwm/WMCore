@@ -17,5 +17,3 @@ class JobCountBySubscriptionAndRun(JobCountBySubscriptionAndRunMySQL):
     
     return the number of jobs grouped by their status and run for given a subscription (fileset, workflow pair)  
     """
-    #Oracle keyword replacement - not very good way.
-    sql = JobCountBySubscriptionAndRunMySQL.sql.replace('FILE', 'FILEID')

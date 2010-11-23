@@ -35,20 +35,20 @@ class Create(CreateWMBSBase):
              
         self.create["03wmbs_fileset_files"] = \
           """CREATE TABLE wmbs_fileset_files (
-             file        INT(11)   NOT NULL,
+             fileid      INT(11)   NOT NULL,
              fileset     INT(11)   NOT NULL,
              insert_time INT(11)   NOT NULL,
-             UNIQUE(file, fileset),
+             UNIQUE(fileid, fileset),
              FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
                ON DELETE CASCADE,
-             FOREIGN KEY(file)    REFERENCES wmbs_file_details(id)
+             FOREIGN KEY(fileid)  REFERENCES wmbs_file_details(id)
                ON DELETE CASCADE)"""
                      
         self.create["13wmbs_jobgroup"] = \
           """CREATE TABLE wmbs_jobgroup (
              id           INT(11)    NOT NULL AUTO_INCREMENT,
              subscription INT(11)    NOT NULL,
-             uid          VARCHAR(255),    
+             guid         VARCHAR(255),    
              output       INT(11),
              last_update  INT(11)    NOT NULL,
              location     INT(11),
@@ -63,7 +63,7 @@ class Create(CreateWMBSBase):
         
         self.constraints["uniquefilerunlumi"] = \
           """CREATE UNIQUE INDEX uniq_wmbs_file_run_lumi on
-             wmbs_file_runlumi_map (file, run, lumi)"""
+             wmbs_file_runlumi_map (fileid, run, lumi)"""
 
     def execute(self, conn = None, transaction = None):
         for i in self.create.keys():

@@ -12,5 +12,5 @@ __all__ = []
 from WMCore.WMBS.MySQL.JobGroup.Exists import Exists as ExistsJobGroupMySQL
 
 class Exists(ExistsJobGroupMySQL):
-    sql = "select id from wmbs_jobgroup where guid = :guid"
+    pass
     

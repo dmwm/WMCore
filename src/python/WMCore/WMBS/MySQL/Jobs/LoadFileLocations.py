@@ -22,7 +22,7 @@ class LoadFileLocations(DBFormatter):
 
     sql = """SELECT DISTINCT wl.site_name FROM wmbs_location wl
                INNER JOIN wmbs_file_location wfl ON wfl.location = wl.id
-               INNER JOIN wmbs_job_assoc wja ON wja.file = wfl.file
+               INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfl.fileid
                WHERE wja.job = :jobid
     """
 

@@ -11,9 +11,10 @@ MySQL implementation of File.GetLocation
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetLocation(DBFormatter):
-    sql = """select se_name from wmbs_location 
-                where id in (select location from wmbs_file_location 
-                    where file in (select id from wmbs_file_details where lfn=:lfn))"""
+    sql = """SELECT se_name FROM wmbs_location
+               INNER JOIN wmbs_file_location wfl ON wfl.location = wmbs_location.id
+               INNER JOIN wmbs_file_details wfd ON wfd.id = wfl.fileid
+               WHERE wfd.lfn = :lfn"""
                     
     
     def getBinds(self, file=None):

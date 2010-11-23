@@ -12,7 +12,7 @@ __all__ = []
 from WMCore.Database.DBFormatter import DBFormatter
 
 class New(DBFormatter):
-    sql = """INSERT INTO wmbs_jobgroup (subscription, uid, output,
+    sql = """INSERT INTO wmbs_jobgroup (subscription, guid, output,
              last_update) VALUES (:subscription, :guid, :output,
              unix_timestamp())"""
 

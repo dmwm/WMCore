@@ -12,8 +12,8 @@ __all__ = []
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadFromUID(DBFormatter):
-    sql = """SELECT id, subscription, uid, output, last_update
-             FROM wmbs_jobgroup WHERE uid = :guid"""
+    sql = """SELECT id, subscription, guid, output, last_update
+             FROM wmbs_jobgroup WHERE guid = :guid"""
 
     def formatDict(self, result):
         """
@@ -23,10 +23,12 @@ class LoadFromUID(DBFormatter):
         because formatDict() turns everything into strings.
         """
         formattedResult = DBFormatter.formatDict(self, result)[0]
-        formattedResult["id"] = int(formattedResult["id"])
+        formattedResult["id"]           = int(formattedResult["id"])
         formattedResult["subscription"] = int(formattedResult["subscription"])
-        formattedResult["output"] = int(formattedResult["output"])
-        formattedResult["last_update"] = int(formattedResult["last_update"])
+        formattedResult["output"]       = int(formattedResult["output"])
+        formattedResult["last_update"]  = int(formattedResult["last_update"])
+        formattedResult["uid"]          = formattedResult["guid"]
+        del formattedResult['guid']
         return formattedResult
 
     def execute(self, uid, conn = None, transaction = False):

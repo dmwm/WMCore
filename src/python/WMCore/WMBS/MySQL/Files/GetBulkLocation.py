@@ -13,7 +13,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class GetBulkLocation(DBFormatter):
     sql = """SELECT wmbs_location.se_name as site_name, :id as id  
                FROM wmbs_location
-               WHERE wmbs_location.id IN (SELECT location FROM wmbs_file_location WHERE file = :id)
+               WHERE wmbs_location.id IN (SELECT location FROM wmbs_file_location WHERE fileid = :id)
     """
     
     def getBinds(self, files=None):

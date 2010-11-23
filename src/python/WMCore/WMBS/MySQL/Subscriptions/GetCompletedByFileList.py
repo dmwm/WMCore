@@ -17,8 +17,8 @@ class GetCompletedByFileList(DBFormatter):
     returns list of file ids which are in complete status by given list of files
     If it returns the same list as input i
     """
-    sql = """SELECT file FROM wmbs_sub_files_complete 
-                  WHERE subscription = :subscription AND file = :fileid
+    sql = """SELECT fileid FROM wmbs_sub_files_complete 
+                  WHERE subscription = :subscription AND fileid = :fileid
            """
     
     def format(self, result):

@@ -18,8 +18,5 @@ class GetLocationBulk(GetLocationBulkMySQL):
 
     """
 
-    sql = """select wl.se_name AS se_name, wfl.fileid AS id from wmbs_location wl
-                INNER JOIN wmbs_file_location wfl ON wfl.location = wl.id
-                WHERE wfl.fileid = :id
-                """
+    pass
     

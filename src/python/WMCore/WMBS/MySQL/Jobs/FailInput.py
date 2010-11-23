@@ -19,23 +19,23 @@ class FailInput(DBFormatter):
     wmbs_sub_files_acquired and wmbs_sub_files_complete tables.
     """
     fileSelect = """SELECT wmbs_jobgroup.subscription AS subid,
-                           wmbs_job_assoc.file AS fileid FROM wmbs_job_assoc
+                           wmbs_job_assoc.fileid AS fileid FROM wmbs_job_assoc
                       INNER JOIN wmbs_job ON
                         wmbs_job_assoc.job = wmbs_job.id
                       INNER JOIN wmbs_jobgroup ON
                         wmbs_job.jobgroup = wmbs_jobgroup.id
                       LEFT OUTER JOIN wmbs_sub_files_failed ON
                         wmbs_jobgroup.subscription = wmbs_sub_files_failed.subscription AND
-                        wmbs_job_assoc.file = wmbs_sub_files_failed.file
-                    WHERE wmbs_job.id = :jobid AND wmbs_sub_files_failed.file IS Null"""
+                        wmbs_job_assoc.fileid = wmbs_sub_files_failed.fileid
+                    WHERE wmbs_job.id = :jobid AND wmbs_sub_files_failed.fileid IS Null"""
 
     acquiredDelete = """DELETE FROM wmbs_sub_files_acquired
-                        WHERE subscription = :subid AND file = :fileid"""
+                        WHERE subscription = :subid AND fileid = :fileid"""
 
     completeDelete = """DELETE FROM wmbs_sub_files_complete
-                      WHERE subscription = :subid AND file = :fileid"""    
+                      WHERE subscription = :subid AND fileid = :fileid"""    
 
-    sql = """INSERT INTO wmbs_sub_files_failed (file, subscription)
+    sql = """INSERT INTO wmbs_sub_files_failed (fileid, subscription)
                VALUES (:fileid, :subid)"""
 
     def execute(self, id, conn = None, transaction = False):

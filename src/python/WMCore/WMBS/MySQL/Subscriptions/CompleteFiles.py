@@ -8,22 +8,20 @@ MySQL implementation of Subscription.CompleteFiles
 from WMCore.Database.DBFormatter import DBFormatter
 
 class CompleteFiles(DBFormatter):
-    sql = """INSERT INTO wmbs_sub_files_complete (subscription, file)
-               SELECT :subscription, :fileid FROM dual WHERE NOT EXISTS
-                 (SELECT file FROM wmbs_sub_files_complete
-                    WHERE file = :fileid AND subscription = :subscription)"""
+    sql = """INSERT IGNORE INTO wmbs_sub_files_complete (subscription, fileid)
+               VALUES (:subscription, :fileid)"""
 
     delAcq = """DELETE FROM wmbs_sub_files_acquired
                 WHERE subscription = :subscription AND
-                      file = :fileid"""
+                      fileid = :fileid"""
 
     delAva = """DELETE FROM wmbs_sub_files_available
                 WHERE subscription = :subscription AND
-                      file = :fileid"""
+                      fileid = :fileid"""
     
     delFai = """DELETE FROM wmbs_sub_files_failed
                 WHERE subscription = :subscription AND
-                      file = :fileid"""
+                      fileid = :fileid"""
 
     def execute(self, subscription = None, file = None, conn = None,
                 transaction = False):

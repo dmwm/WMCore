@@ -17,10 +17,10 @@ class BulkAddByLFN(DBFormatter):
       lfn
       fileset
     """
-    sql = """INSERT INTO wmbs_fileset_files (file, fileset, insert_time)
+    sql = """INSERT INTO wmbs_fileset_files (fileid, fileset, insert_time)
                SELECT id, :fileset, :timestamp FROM wmbs_file_details WHERE lfn = :lfn"""    
 
-    sqlAvail = """INSERT INTO wmbs_sub_files_available (subscription, file)
+    sqlAvail = """INSERT INTO wmbs_sub_files_available (subscription, fileid)
                     SELECT wmbs_subscription.id AS subscription,
                            wmbs_file_details.id AS file FROM wmbs_subscription
                       INNER JOIN wmbs_file_details ON

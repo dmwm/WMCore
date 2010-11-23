@@ -22,11 +22,11 @@ class IsCompleteOnRun(DBFormatter):
     """
     sql = """SELECT count(*) FROM wmbs_fileset_files wff
                 INNER JOIN wmbs_subscription ws ON (ws.fileset = wff.fileset)
-                INNER JOIN wmbs_file_runlumi_map wrm ON (wrm.file = wff.file)
-                LEFT OUTER JOIN wmbs_sub_files_failed wf ON (wf.file = wff.file AND wf.subscription = ws.id)
-                LEFT OUTER JOIN wmbs_sub_files_complete wc ON (wc.file = wff.file AND wc.subscription = ws.id)
+                INNER JOIN wmbs_file_runlumi_map wrm ON (wrm.fileid = wff.fileid)
+                LEFT OUTER JOIN wmbs_sub_files_failed wf ON (wf.fileid = wff.fileid AND wf.subscription = ws.id)
+                LEFT OUTER JOIN wmbs_sub_files_complete wc ON (wc.fileid = wff.fileid AND wc.subscription = ws.id)
                 WHERE
-                 wf.file IS NULL AND wc.file IS NULL AND
+                 wf.fileid IS NULL AND wc.fileid IS NULL AND
                  ws.id = :subID AND wrm.run = :runID                 
           """
 

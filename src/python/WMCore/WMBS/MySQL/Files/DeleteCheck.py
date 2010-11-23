@@ -13,7 +13,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class DeleteCheck(DBFormatter):
     sql = """DELETE FROM wmbs_file_details WHERE id = :id AND
-           NOT EXISTS (SELECT fileset FROM wmbs_fileset_files WHERE file = :id
+           NOT EXISTS (SELECT fileset FROM wmbs_fileset_files WHERE fileid = :id
            AND fileset != :fileset)"""
     
         

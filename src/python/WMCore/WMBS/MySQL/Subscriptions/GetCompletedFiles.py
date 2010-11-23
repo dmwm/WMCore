@@ -12,8 +12,8 @@ __all__ = []
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import GetAvailableFiles
 
 class GetCompletedFiles(GetAvailableFiles):
-    sql = """SELECT wmsfc.file, wl.site_name FROM wmbs_sub_files_complete wmsfc
-             INNER JOIN wmbs_file_location wfl ON wfl.file = wmsfc.file
+    sql = """SELECT wmsfc.fileid, wl.site_name FROM wmbs_sub_files_complete wmsfc
+             INNER JOIN wmbs_file_location wfl ON wfl.fileid = wmsfc.fileid
              INNER JOIN wmbs_location wl ON wl.id = wfl.location
              WHERE wmsfc.subscription = :subscription
              """

@@ -8,12 +8,12 @@ MySQL implementation of Subscription.AcquireFiles
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AcquireFiles(DBFormatter):
-    sql = """INSERT IGNORE INTO wmbs_sub_files_acquired (subscription, file)
+    sql = """INSERT IGNORE INTO wmbs_sub_files_acquired (subscription, fileid)
                VALUES (:subscription, :fileid)"""
 
     availDel = """DELETE FROM wmbs_sub_files_available
                   WHERE subscription = :subscription AND
-                        file = :fileid"""
+                        fileid = :fileid"""
 
     def execute(self, subscription = None, file = None, conn = None,
                 transaction = False):

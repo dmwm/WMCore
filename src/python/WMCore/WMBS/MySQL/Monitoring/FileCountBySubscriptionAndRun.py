@@ -24,7 +24,7 @@ class FileCountBySubscriptionAndRun(DefaultFormatter):
               FROM wmbs_file_details 
               INNER JOIN wmbs_file_dataset_path_assoc ON wmbs_file_dataset_path_assoc.file_id = wmbs_file_details.id 
               INNER JOIN dataset_path ON wmbs_file_dataset_path_assoc.dataset_path_id = dataset_path.id
-              INNER JOIN data_tier ON dataset_path.data_tier = data_tier.id " +
+              INNER JOIN data_tier ON dataset_path.data_tier = data_tier.id
               INNER JOIN wmbs_file_runlumi_map ON wmbs_file_details.id = wmbs_file_runlumi_map.fileid
               LEFT OUTER JOIN wmbs_sub_files_acquired ON wmbs_file_details.id = wmbs_sub_files_acquired.fileid
               LEFT OUTER JOIN wmbs_sub_files_complete ON wmbs_file_details.id = wmbs_sub_files_complete.fileid

@@ -12,6 +12,6 @@ class AddRunLumi(AddRunLumiMySQL):
     To Check: might not need to overwrite if modifiy MySQL.Files.AddRunLumi.sql
     a bit to work with both  
     """
-    sql = """insert into wmbs_file_runlumi_map (fileid, run, lumi) 
-                values ((select id from wmbs_file_details where lfn = :lfn), 
-                        :run, :lumi)"""
+    sql = """INSERT INTO wmbs_file_runlumi_map (fileid, run, lumi) 
+                VALUES ((SELECT id from wmbs_file_details WHERE lfn = :lfn), 
+                :run, :lumi)"""

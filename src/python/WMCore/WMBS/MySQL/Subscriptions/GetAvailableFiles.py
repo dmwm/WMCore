@@ -11,10 +11,10 @@ Available means not acquired, complete or failed.
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAvailableFiles(DBFormatter):
-    sql = """SELECT wmbs_sub_files_available.file, wmbs_location.se_name
+    sql = """SELECT wmbs_sub_files_available.fileid, wmbs_location.se_name
                     FROM wmbs_sub_files_available
                INNER JOIN wmbs_file_location ON
-                 wmbs_sub_files_available.file = wmbs_file_location.file
+                 wmbs_sub_files_available.fileid = wmbs_file_location.fileid
                INNER JOIN wmbs_location ON
                  wmbs_file_location.location = wmbs_location.id
              WHERE wmbs_sub_files_available.subscription = :subscription"""

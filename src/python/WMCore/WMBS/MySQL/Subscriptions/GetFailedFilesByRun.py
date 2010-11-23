@@ -12,8 +12,8 @@ __all__ = []
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetFailedFilesByRun(DBFormatter):
-    sql = """SELECT wf.file FROM wmbs_sub_files_failed wf
-               INNER JOIN wmbs_file_runlumi_map wm ON (wm.file = wf.file)
+    sql = """SELECT wf.fileid FROM wmbs_sub_files_failed wf
+               INNER JOIN wmbs_file_runlumi_map wm ON (wm.fileid = wf.fileid)
              WHERE wf.subscription = :subscription AND run = :run
              """
              

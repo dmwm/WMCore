@@ -16,7 +16,7 @@ class Delete(DBFormatter):
     """
 
     """
-    sql = """delete from wmbs_subscription where id = :id"""
+    sql = """DELETE FROM wmbs_subscription WHERE id = :id"""
     
     def getBinds(self, id=None):
         return self.dbi.buildbinds(self.dbi.makelist(id), 'id')

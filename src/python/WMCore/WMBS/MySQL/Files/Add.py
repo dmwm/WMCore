@@ -4,9 +4,9 @@ MySQL implementation of AddFile
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Add(DBFormatter):
-    sql = """insert into wmbs_file_details (lfn, size, events, 
+    sql = """INSERT INTO wmbs_file_details (lfn, filesize, events, 
                                             first_event, last_event, merged)
-             values (:lfn, :filesize, :events, :first_event,
+             VALUES (:lfn, :filesize, :events, :first_event,
                      :last_event, :merged)"""
                 
     def getBinds(self, files = None, size = 0, events = 0, cksum = 0,

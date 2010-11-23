@@ -14,7 +14,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class AddRunLumi(DBFormatter):
 
-    sql = """INSERT IGNORE wmbs_file_runlumi_map (file, run, lumi) 
+    sql = """INSERT IGNORE wmbs_file_runlumi_map (fileid, run, lumi) 
             select id, :run, :lumi from wmbs_file_details 
             where lfn = :lfn"""
 

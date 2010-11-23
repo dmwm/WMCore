@@ -52,14 +52,10 @@ namespace (package): %s """ % (name, str(namespace))
         thread, you set cache to False.
         """
         if getFromCache:
-            logging.debug("Check cache")
             if self.objectList.has_key(classname):
                 logging.debug("Object in cache")
                 return self.objectList[classname]
-            logging.debug("Not in cache")
-        #logging.debug("Searching class name: "+ classname)
-        #try:
-        # check if we need to include the namespace
+
         if self.namespace == '':
             module = classname
             #FIXME: hoky way of doing this! Change this please!
@@ -67,7 +63,7 @@ namespace (package): %s """ % (name, str(namespace))
         else:
             module = "%s.%s" % (self.namespace, classname)
             errModule = "%s.%s" % (self.namespace, classname)
-        #logging.debug("Trying to load: "+module)
+
         module = __import__(module, globals(), locals(), [classname])
         obj = getattr(module, classname.split('.')[-1])
         if args == None:
@@ -85,9 +81,5 @@ namespace (package): %s """ % (name, str(namespace))
                 classinstance = obj(args)
         if storeInCache:
             self.objectList[classname] = classinstance
-        #logging.debug("Created instance for class: "+classname)
-        return classinstance
-        #except Exception,ex:
-        #    raise ex
-            #raise WMException(WMEXCEPTION['WMCORE-4']+' '+errModule+' : '+ str(ex), 'WMCORE-4')
 
+        return classinstance

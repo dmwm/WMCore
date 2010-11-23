@@ -24,14 +24,26 @@ from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.WMBSHelper import killWorkflow
 
-from WMCore_t.WorkQueue_t.WorkQueue_t import TestReRecoFactory, rerecoArgs
-from WMCore_t.WorkQueue_t.WorkQueue_t import TestMonteCarloFactory, mcArgs
-from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
-from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
-from WMCore_t.WorkQueue_t.WorkQueue_t import fakeSiteDB
+from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
+from WMQuality.Emulators.DBSClient.DBSReader import DBSReader as MockDBSReader
+from WMQuality.Emulators.SiteDBClient.SiteDB import SiteDBJSON as fakeSiteDB
+from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload, \
+                                          getTestArguments as getRerecoArgs
+
+from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload \
+    import monteCarloWorkload, getMCArgs
 
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.TestInitCouchApp import TestInitCouchApp
+
+rerecoArgs = getRerecoArgs()
+mcArgs = getMCArgs()
+
+def getFirstTask(wmspec):
+    """Return the 1st top level task"""
+    # http://www.logilab.org/ticket/8774
+    # pylint: disable-msg=E1101,E1103
+    return wmspec.taskIterator().next()
 
 class WMBSHelperTest(unittest.TestCase):
     def setUp(self):
@@ -56,7 +68,7 @@ class WMBSHelperTest(unittest.TestCase):
         self.topLevelTask = getFirstTask(self.wmspec)
         self.inputDataset = self.topLevelTask.inputDataset()
         self.dataset = self.topLevelTask.getInputDatasetPath()
-        self.dbs = MockDBSReader(self.inputDataset.dbsurl, self.dataset)
+        self.dbs = MockDBSReader(self.inputDataset.dbsurl)
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = threading.currentThread().logger,
                                      dbinterface = threading.currentThread().dbi)
@@ -528,13 +540,13 @@ class WMBSHelperTest(unittest.TestCase):
         self.dbs = None
         self.siteDB = fakeSiteDB()
 
-    def createWMSpec(self, name = 'ReRecoWorkload', args = rerecoArgs):
-        wmspec = TestReRecoFactory()(name, args)
+    def createWMSpec(self, name = 'ReRecoWorkload'):
+        wmspec = rerecoWorkload(name, rerecoArgs)
         wmspec.setSpecUrl("/path/to/workload")
         return wmspec 
 
-    def createMCWMSpec(self, name = 'MonteCarloWorkload', args = mcArgs):
-        wmspec = TestMonteCarloFactory()(name, args)
+    def createMCWMSpec(self, name = 'MonteCarloWorkload'):
+        wmspec = monteCarloWorkload(name, mcArgs)
         wmspec.setSpecUrl("/path/to/workload")        
         getFirstTask(wmspec).addProduction(totalevents = 10000)
         getFirstTask(wmspec).setSiteWhitelist(['SiteA', 'SiteB', 'SiteC'])
@@ -543,8 +555,7 @@ class WMBSHelperTest(unittest.TestCase):
     def getDBS(self, wmspec):
         topLevelTask = getFirstTask(wmspec)
         inputDataset = topLevelTask.inputDataset()
-        dataset = topLevelTask.getInputDatasetPath()
-        dbs = MockDBSReader(inputDataset.dbsurl, dataset)
+        dbs = MockDBSReader(inputDataset.dbsurl)
         #dbsDict = {self.inputDataset.dbsurl : self.dbs}
         return dbs
         
@@ -584,10 +595,10 @@ class WMBSHelperTest(unittest.TestCase):
     def testReRecoWhiteRunRestriction(self):
         block = self.dataset + "#2"
         # Run Whitelist
-        self.topLevelTask.setInputRunWhitelist([2, 3])
+        self.topLevelTask.setInputRunWhitelist([2])
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
         files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
-        self.assertEqual(len(files), 1)
+        self.assertEqual(len(files), GlobalParams.numOfFilesPerBlock())
         
     def testDuplicateFileInsert(self):
         # using default wmspec

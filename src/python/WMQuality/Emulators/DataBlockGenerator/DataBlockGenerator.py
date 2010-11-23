@@ -1,6 +1,17 @@
 from Globals import GlobalParams
 import Globals
 
+class NoDatasetError(StandardError):
+    """Standard error baseclass"""
+    def __init__(self, error):
+        StandardError.__init__(self, error)
+        self.msg = 'NoDatasetError'
+        self.error = error
+
+numOfFiles = GlobalParams.numOfFilesPerBlock()
+numOfEvents = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfEventsPerFile()
+numOfLumis = GlobalParams.numOfLumisPerBlock()
+
 class DataBlockGenerator(object):
     
     def __init__(self):
@@ -9,19 +20,20 @@ class DataBlockGenerator(object):
         self.files = {}
     
     def _blockGenerator(self, dataset):
+        if dataset.startswith('/' + Globals.NOT_EXIST_DATASET):
+            raise NoDatasetError, "no dataset"
         
         self.blocks[dataset] = []
         
         for i in range(GlobalParams.numOfBlocksPerDataset()):
-            blockName = "%s#%s" % (dataset, i)
-            numOfFiles = GlobalParams.numOfFilesPerBlock()
-            numOfEvents = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfEventsPerFile()
+            blockName = "%s#%s" % (dataset, i+1)
             size = GlobalParams.numOfFilesPerBlock() * GlobalParams.sizeOfFile()
             
             self.blocks[dataset].append(
                                     {'Name' : blockName,
                                      'NumberOfEvents' : numOfEvents,
                                      'NumberOfFiles' : numOfFiles,
+                                     'NumberOfLumis' : numOfLumis,
                                      'Size' : size,
                                      'Parents' : ()}
                                      )
@@ -41,17 +53,21 @@ class DataBlockGenerator(object):
             parentFileName = str(parentFileName)
 
             dbsFile = {'LogicalFileName': fileName, 
-                       'ParentList' : [self.createDBSFile({'LogicalFileName':parentFileName})],
+                       'ParentList' : [self._createDBSFile(blockName,
+                                                {'LogicalFileName':parentFileName})],
                       }
-            self.files[blockName].append(self.createDBSFile(dbsFile))
+            self.files[blockName].append(self._createDBSFile(blockName,
+                                                             dbsFile))
 
-    def createDBSFile(self, dbsFile = {}):
+    def _createDBSFile(self, blockName, dbsFile = {}):
+        run =  GlobalParams.getRunNumberForBlock(blockName)
         defaultDBSFile = {'Checksum': "123456",
                           'NumberOfEvents': GlobalParams.numOfEventsPerFile(),
                           'FileSize': GlobalParams.sizeOfFile(),
                           'ParentList': [],
-                          'LumiList': [{'RunNumber': 1, 'LumiSectionNumber': 1}, 
-                                       {'RunNumber': 1, 'LumiSectionNumber': 2}]
+                          'LumiList': [{'RunNumber': run,
+                                        'LumiSectionNumber': run*(numOfLumis) + lumi -1}
+                                       for lumi in range(numOfLumis)]
                           }
         defaultDBSFile.update(dbsFile)
         return defaultDBSFile
@@ -59,7 +75,10 @@ class DataBlockGenerator(object):
     def getBlocks(self, dataset):
         
         if not self.blocks.has_key(dataset):
-            self._blockGenerator(dataset)
+            try:
+                self._blockGenerator(dataset)
+            except NoDatasetError:
+                return []
         return  self.blocks[dataset]
         
     def getFiles(self, block):

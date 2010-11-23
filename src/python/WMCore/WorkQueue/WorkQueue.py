@@ -393,6 +393,7 @@ class WorkQueue(WorkQueueBase):
         block = blockLoader.execute(match['input_id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
+
         #TODO: move this out of the transactions
         dbs = self._get_dbs(dbs)
         if match['parent_flag']:

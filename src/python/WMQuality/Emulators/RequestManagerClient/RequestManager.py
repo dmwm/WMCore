@@ -1,38 +1,68 @@
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
+from WMCore.RequestManager.RequestDB.Settings.RequestStatus import NextStatus
 
 class RequestManager(object):
     
     def __init__(self, *args, **kwargs):
-        print "Using RequestManager Emulator ..."
+        """
+        all the private valuable is defined for test values
+        """
         self.specGenerator = WMSpecGenerator()
         self.count = 0
-        self.maxWmSpec = 2
+        self.maxWmSpec = kwargs.setdefault('numOfSpecs', 1)
+        self.type = kwargs.setdefault("type", 'ReReco')
+        if self.type not in ['ReReco', 'MonteCarlo']:
+            raise TypeError, 'unknown request type %s' % self.type
+        self.splitter = kwargs.setdefault('splitter', 'DatasetBlock')
+        self.inputDataset = kwargs.setdefault('inputDataset', None)
+        self.dbsUrl = kwargs.setdefault('dbsUrl', None)
+        self.status = {}
+        self.progress = {}
+        self.msg = {}
+        self.names = []
     
     def getAssignment(self, teamName=None, request=None):
         if self.count < self.maxWmSpec:
+            if self.type == 'ReReco':
+                specName = "ReRecoTest_v%sEmulator" % self.count
+                specUrl =self.specGenerator.createReRecoSpec(specName, "file",
+                                                             self.splitter,
+                                                             self.inputDataset,
+                                                             self.dbsUrl)
+            elif self.type == 'MonteCarlo':
+                specName = "MCTest_v%sEmulator" % self.count
+                specUrl =self.specGenerator.createMCSpec(specName, "file",
+                                                         self.splitter)
+            self.names.append(specName)
+            self.status[specName] = 'assigned'
             #specName = "FakeProductionSpec_%s" % self.count
             #specUrl =self.specGenerator.createProductionSpec(specName, "file")
-            specName = "FakeProcessingSpec_%s" % self.count
-            specUrl =self.specGenerator.createProcessingSpec(specName, "file")
+            #specName = "FakeProcessingSpec_%s" % self.count
+            #specUrl =self.specGenerator.createProcessingSpec(specName, "file")
         
-            #specName = "ReRecoTest_v%sEmulator" % self.count
-            #specUrl =self.specGenerator.createReRecoSpec(specName, "file")
             self.count += 1
             return {specName:specUrl}
         else:
             return {}
     
+    def putWorkQueue(self, reqName, prodAgentUrl=None):
+        self.status[reqName] = 'acquired'
+
+    def reportRequestStatus(self, name, status):
+        if status not in NextStatus[self.status[name]]:
+            raise RuntimeError, "Invalid status move: %s" % status
+        self.status[name] = status
+
+    def reportRequestProgress(self, name, **args):
+        self.progress.setdefault(name, {})
+        self.progress[name].update(args)
+
+    def sendMessage(self, request, msg):
+        self.msg[request] = msg
         
-        
-    def putWorkQueue(self, requestName, prodAgentUrl=None):
-        # do not thing or return success of fail massage 
-        return 
-    
-    def reportRequestProgress(self, requestName, **args):
-        # do not thing or return success of fail massage 
-        return
-    
-    def reportRequestStatus(self, requestName, status):
-        # do not thing or return success of fail massage 
-        return
+    def _removeSpecs(self):
+        """
+        This is just for clean up not part of emulated function
+        """
+        self.specGenerator.removeSpecs()
     

@@ -10,14 +10,17 @@
 
 #//     - ignore some params in dbs spec - silence pylint warnings
 # pylint: disable-msg=W0613,R0201
+from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx as RealPhEDEx
+
+filesInDataset = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfBlocksPerDataset()
+filesInBlock = GlobalParams.numOfFilesPerBlock()
 
 class PhEDEx(RealPhEDEx):
     """
     """
     def __init__(self, *args, **kwargs):
-        print "Using PhEDEx Emulator ...."
         # add the end point to prevent the existence check fails.
         self['endpoint'] = "phedex_emulator"
         self.dataBlocks = DataBlockGenerator()
@@ -90,57 +93,81 @@ class PhEDEx(RealPhEDEx):
         """
         Where are blocks located
         """
+        data = {"phedex":{"request_timestamp":1254762796.13538, "block" : []}}
         for block in args['block']:
-            data = {"phedex":{"request_timestamp":1254762796.13538, "block" : []}}
             blocks = data['phedex']['block']
             files = self.dataBlocks.getFiles(block)
             locations = self.dataBlocks.getLocation(block)
             blocks.append({"files": len(files), "name": block,
-                           'replica' : [{'node' : x } for x in locations]})
+                           'replica' : [{'node' : x + '_MSS' } for x in locations]})
         return data
 
     def subscriptions(self, **args):
         """
         Where is data subscribed - for now just replicate blockreplicas
         """
-        data = {'phedex' : {"request_timestamp" : 1254850198.15418,
-                            'dataset' : []}}
-        # different structure depending on whether we ask for dataset or blocks
-        
-        if args.has_key('dataset') and args['dataset']:
-            for dataset in args['dataset']:
-                # TODO needs to add correct file numbers
-                data['phedex']['dataset'].append({'name' : dataset, 'files' : 5,
-                                                  'subscription' : []})
-                subs = data['phedex']['dataset'][-1]['subscription']
-                    #FIXME: Take from self.locations
-                subs.append({'node': 'SiteA', 'custodial': 'n', 'suspend_until': None,
-                             'level': 'dataset', 'move': 'n', 'request': '47983',
-                             'time_created': '1232989000', 'priority': 'low',
-                             'time_update': None, 'node_id': '781',
-                             'suspended': 'n', 'group': None})
-            return data
-        elif args.has_key('block') and args['block']:
+        def _blockInfoGenerator(blockList):
             
-            for block in args['block']:
-                dataset = self.dataBlocks.getDatasetName('block')
+            for block in blockList:
+                if type(block) == dict:
+                    block = block['Name']
+                dataset = self.dataBlocks.getDatasetName(block)
                 # TODO needs to add correct file numbers
-                data['phedex']['dataset'].append({'name' : dataset, 'files' : 5,
-                                              'block' : []})
-                blocks = data['phedex']['dataset'][-1]['block']
+                datasetList = data['phedex']['dataset']
+                if datasetList:
+                    find = False
+                    for dataItem in datasetList:
+                        if dataItem['name'] == dataset:
+                            datasetSelected = dataItem
+                            find = True
+                            break
+
+                if not datasetList or find:
+                    data['phedex']['dataset'].append({'name' : dataset, 'files' : filesInDataset,
+                                                      'block' : []})
+
+
+                    datasetSelected = data['phedex']['dataset'][-1]
+                subs = []
+                subs.append({'node': 'SiteA_MSS', 'custodial': 'n', 'suspend_until': None,
+                                 'level': 'dataset', 'move': 'n', 'request': '47983',
+                                 'time_created': '1232989000', 'priority': 'low',
+                                 'time_update': None, 'node_id': '781',
+                                 'suspended': 'n', 'group': None})
+#                subs.append({'node': 'SiteB', 'custodial': 'n', 'suspend_until': None,
+#                                 'level': 'dataset', 'move': 'n', 'request': '47983',
+#                                 'time_created': '1232989000', 'priority': 'low',
+#                                 'time_update': None, 'node_id': '781',
+#                                 'suspended': 'n', 'group': None})
+                datasetSelected['subscription'] = subs
+
+                blocks = datasetSelected['block']
                 locations= self.dataBlocks.getLocation(block)
                         
-                blocks.append({"bytes":"10438786614", "files":"5", "is_open":"n",
-                               "name": args['block'],
+                blocks.append({"bytes":"10438786614",
+                               "files":filesInBlock,
+                               "is_open":"n",
+                               "name": block,
                                "id":"454370", "subscription"
-                                                  :[ {'node' : x } for x in locations]
+                                                  :[ {'node' : x + '_MSS', "suspended" : "n"} for x in locations]
                                                         #{"priority":"normal", "request":"51253", "time_created":"1245165314",
                                                         #   "move":"n", "suspend_until":None, "node":"SiteA",
                                                         #   "time_update":"1228905272", "group":None, "level":"block",
                                                         #   "node_id":"641", "custodial":"n", "suspended":"n"}]
                                                     })
-            return data
         
+        data = {'phedex' : {"request_timestamp" : 1254850198.15418,
+                            'dataset' : []}}
+        # different structure depending on whether we ask for dataset or blocks
+
+        if args.has_key('dataset') and args['dataset']:
+            for dataset in args['dataset']:
+                blockList = self.dataBlocks.getBlocks(dataset)
+                _blockInfoGenerator(blockList)
+        elif args.has_key('block') and args['block']:
+            _blockInfoGenerator(args['block'])
+
+        return data
 
 
     def emulator(self):

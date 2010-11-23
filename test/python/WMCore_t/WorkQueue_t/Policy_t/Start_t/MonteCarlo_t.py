@@ -3,15 +3,23 @@
     WorkQueue.Policy.Start.MonteCarlo tests
 """
 
-
-
-
 import unittest
 from WMCore.WorkQueue.Policy.Start.MonteCarlo import MonteCarlo
-from WMCore_t.WorkQueue_t.WorkQueue_t import TestMonteCarloFactory, mcArgs
-from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
-from WMCore_t.WMSpec_t.samples.MultiMergeProductionWorkload import workload as MultiMergeProductionWorkload
-from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload import workload as MultiTaskProductionWorkload
+from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload \
+    import monteCarloWorkload, getMCArgs
+
+from WMCore_t.WMSpec_t.samples.MultiMergeProductionWorkload \
+    import workload as MultiMergeProductionWorkload
+from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
+    import workload as MultiTaskProductionWorkload
+
+mcArgs = getMCArgs()
+
+def getFirstTask(wmspec):
+    """Return the 1st top level task"""
+    # http://www.logilab.org/ticket/8774
+    # pylint: disable-msg=E1101,E1103
+    return wmspec.taskIterator().next()
 
 class MonteCarloTestCase(unittest.TestCase):
 
@@ -22,7 +30,7 @@ class MonteCarloTestCase(unittest.TestCase):
         # change split defaults for this test
         splitArgs = dict(SliceType = 'NumEvents', SliceSize = 100, MaxJobsPerElement = 5)
 
-        BasicProductionWorkload = TestMonteCarloFactory()('MonteCarloWorkload', mcArgs)
+        BasicProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['SiteA', 'SiteB'])
         getFirstTask(BasicProductionWorkload).addProduction(totalevents = 1000)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['SiteA', 'SiteB'])

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 """
-JobArchiver test 
+WorkQueuManager test
 """
-
-
-
+#setup emulator for test, this needs to be at top of the file
+from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
+ConfigFile = emulatorSetup(phedex=True, dbs=True, siteDB=True, requestMgr=False)
 
 import os
 import logging
@@ -19,19 +19,23 @@ import types
 
 from WMCore.Agent.Configuration import loadConfigurationFile
 
-
-
-from WMQuality.TestInit   import TestInit
-
 from WMComponent.WorkQueueManager.WorkQueueManager import WorkQueueManager
-from WMComponent.WorkQueueManager.WorkQueueManagerReqMgrPoller import WorkQueueManagerReqMgrPoller
+from WMComponent.WorkQueueManager.WorkQueueManagerReqMgrPoller \
+    import WorkQueueManagerReqMgrPoller
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
-from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
-from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
-from WMCore_t.WorkQueue_t.WorkQueue_t import TestReRecoFactory, rerecoArgs
-from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 
-class WorkQueueManagerTest(unittest.TestCase):
+from WMQuality.Emulators.RequestManagerClient.RequestManager \
+    import RequestManager as fakeReqMgr
+
+from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
+
+def getFirstTask(wmspec):
+    """Return the 1st top level task"""
+    # http://www.logilab.org/ticket/8774
+    # pylint: disable-msg=E1101,E1103
+    return wmspec.taskIterator().next()
+
+class WorkQueueManagerTest(WorkQueueTestCase):
     """
     TestCase for WorkQueueManagerTest module 
     """
@@ -39,28 +43,9 @@ class WorkQueueManagerTest(unittest.TestCase):
 
     _maxMessage = 10
 
-    def setUp(self):
-        """
-        setup for test.
-        """
-
-        myThread = threading.currentThread()
-        
-        self.testInit = TestInit(__file__)
-        self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-        #self.tearDown()
-        self.testInit.setSchema(customModules = ["WMCore.WorkQueue.Database", "WMCore.WMBS", 
-                                                 "WMCore.MsgService", "WMCore.ThreadPool"],
-                                useDefault = False)
-        self.workDir = self.testInit.generateWorkDir()
-
-    def tearDown(self):
-        """
-        Database deletion
-        """
-
-        self.testInit.clearDatabase()
+    def setSchema(self):
+        self.schema = ["WMCore.WorkQueue.Database", "WMCore.WMBS",
+                        "WMCore.MsgService", "WMCore.ThreadPool"]
 
 
     def getConfig(self):
@@ -109,41 +94,21 @@ class WorkQueueManagerTest(unittest.TestCase):
 
         return
 
-    def setupGlobalWorkqueue(self, spec):
+    def setupGlobalWorkqueue(self):
         """Return a workqueue instance"""
-        dataset = getFirstTask(spec).getInputDatasetPath()
-        inputDataset = getFirstTask(spec).inputDataset()
-        mockDBS = MockDBSReader('http://example.com', dataset)
-        dbsHelpers = {'http://example.com' : mockDBS,
-                      'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet' : mockDBS,
-                      inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl, dataset),
-                      }
 
         globalQ = globalQueue(CacheDir = self.workDir,
                            NegotiationTimeout = 0,
                            QueueURL = 'global.example.com',
-                           DBSReaders = dbsHelpers,
-                           PhEDEx = MockPhedexService(dataset),
                            Teams = ["The A-Team", "some other bloke"])
         return globalQ
-
-    def createProcessingSpec(self, splitter = 'DatasetBlock'):
-        """Return a processing spec"""
-        wf = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
-        wf.setSpecUrl(os.path.join(self.workDir, 'testworkflow.spec'))
-        wf.setStartPolicy(splitter)
-        wf.save(wf.specUrl())
-        return wf
 
     def testReqMgrPollerAlgorithm(self):
         """ReqMgr reporting"""
         # don't actually talk to ReqMgr - mock it.
 
-
-
-        spec = self.createProcessingSpec()
-        globalQ = self.setupGlobalWorkqueue(spec)
-        reqMgr = fakeReqMgr(spec)
+        globalQ = self.setupGlobalWorkqueue()
+        reqMgr = fakeReqMgr()
         reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
 
         # 1st run should pull a request
@@ -156,25 +121,25 @@ class WorkQueueManagerTest(unittest.TestCase):
         globalQ.setStatus('Acquired', 1)
         self.assertEqual(len(globalQ), 0)
         reqPoller.algorithm({})
-        self.assertEqual(reqMgr.status[str(reqMgr.count)], 'running')
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running')
 
         # finish work
         globalQ.setStatus('Done', 1)
         reqPoller.algorithm({})
-        self.assertEqual(reqMgr.status[str(reqMgr.count)], 'completed')
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'completed')
         # and removed from WorkQueue
         self.assertEqual(len(globalQ.status()), 0)
 
         # reqMgr problems should not crash client
         reqPoller = WorkQueueManagerReqMgrPoller(None, globalQ, {})
         reqPoller.algorithm({})
+        reqMgr._removeSpecs()
 
 
     def testReqMgrBlockSplitting(self):
         """ReqMgr interaction with block level splitting"""
-        spec = self.createProcessingSpec(splitter = 'Block')
-        globalQ = self.setupGlobalWorkqueue(spec)
-        reqMgr = fakeReqMgr(spec)
+        globalQ = self.setupGlobalWorkqueue()
+        reqMgr = fakeReqMgr(splitter = 'Block')
         reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
 
         self.assertEqual(len(globalQ), 0)
@@ -191,77 +156,41 @@ class WorkQueueManagerTest(unittest.TestCase):
         self.assertEqual(elements[0]['PercentComplete'], 25)
         self.assertEqual(elements[1]['PercentComplete'], 75)
         reqPoller.algorithm({}) # report back to ReqMgr
-        self.assertEqual(reqMgr.progress[str(reqMgr.count)]['percent_complete'],
+        self.assertEqual(reqMgr.progress[reqMgr.names[0]]['percent_complete'],
                          50)
-        self.assertEqual(reqMgr.status[str(reqMgr.count)], 'running')
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running')
         globalQ.setStatus('Done', [1, 2])
         elements[0]['PercentComplete'] = 100
         elements[1]['PercentComplete'] = 100
         globalQ.setProgress(elements[0])
         globalQ.setProgress(elements[1])
         reqPoller.algorithm({}) # report back to ReqMgr
-        self.assertEqual(reqMgr.progress[str(reqMgr.count)]['percent_complete'],
+        self.assertEqual(reqMgr.progress[reqMgr.names[0]]['percent_complete'],
                          100)
-        self.assertEqual(reqMgr.status[str(reqMgr.count)], 'completed')
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'completed')
+        reqMgr._removeSpecs()
 
 
     def testInvalidSpec(self):
         """Report invalid spec back to ReqMgr"""
-        spec = self.createProcessingSpec(splitter = 'Block')
-        globalQ = self.setupGlobalWorkqueue(spec)
-        getFirstTask(spec).data.input.dataset.primary = 'thisdoesntexist'
-        spec.save(spec.specUrl())
-        reqMgr = fakeReqMgr(spec)
+        globalQ = self.setupGlobalWorkqueue()
+        reqMgr = fakeReqMgr(inputDataset = 'thisdoesntexist')
+        #reqMgr = fakeReqMgr()
+
         reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
         reqPoller.algorithm({})
-        self.assertEqual('failed', reqMgr.status[str(reqMgr.count)])
-        self.assertTrue('No work in spec:' in reqMgr.msg[str(reqMgr.count)])
+        self.assertEqual('failed', reqMgr.status[reqMgr.names[0]])
+        self.assertTrue('No work in spec:' in reqMgr.msg[reqMgr.names[0]])
+        reqMgr._removeSpecs()
 
-        spec = self.createProcessingSpec(splitter = 'Block')
-        globalQ = self.setupGlobalWorkqueue(spec)
-        getFirstTask(spec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
-        spec.save(spec.specUrl())
-        reqMgr = fakeReqMgr(spec)
+        globalQ = self.setupGlobalWorkqueue()
+        reqMgr = fakeReqMgr(dbsUrl = 'wrongprot://dbs.example.com')
         reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
         reqPoller.algorithm({})
-        self.assertEqual('failed', reqMgr.status[str(reqMgr.count)])
-        self.assertTrue('DBS config error' in reqMgr.msg[str(reqMgr.count)])
+        self.assertEqual('failed', reqMgr.status[reqMgr.names[0]])
+        self.assertTrue('DBS config error' in reqMgr.msg[reqMgr.names[0]])
+        reqMgr._removeSpecs()
 
-
-class fakeReqMgr():
-    """Fake ReqMgr stuff"""
-    from WMCore.RequestManager.RequestDB.Settings.RequestStatus import NextStatus
-
-    def __init__(self, spec):
-        self.spec = spec
-        self.count = 0
-        self.status = {}
-        self.progress = {}
-        self.msg = {}
-
-    def getAssignment(self, team):
-        assert(type(team) in types.StringTypes)
-        if not self.count and team == 'The A-Team':
-            self.count += 1
-            self.status[str(self.count)] = 'assigned'
-            return {str(self.count) : self.spec.specUrl()}
-        else:
-            return {}
-
-    def putWorkQueue(self, reqName, url):
-        self.status[reqName] = 'acquired'
-
-    def reportRequestStatus(self, name, status):
-        if status not in self.NextStatus[self.status[name]]:
-            raise RuntimeError, "Invalid status move: %s" % status
-        self.status[name] = status
-
-    def reportRequestProgress(self, name, **args):
-        self.progress.setdefault(name, {})
-        self.progress[name].update(args)
-
-    def sendMessage(self, request, msg):
-        self.msg[request] = msg
 
 if __name__ == '__main__':
     unittest.main()

@@ -53,8 +53,14 @@ class Dataset(StartPolicyInterface):
                 else:
                     work += block[self.args['SliceType']]
 
-
         dataset = dbs.getDBSSummaryInfo(dataset = datasetPath)
+
+        # If the dataset which is not in dbs is passed, just return.
+        # The exception will be created in upper level
+        # when there is no work created
+        if not dataset:
+            return
+
         # parentage
         if self.initialTask.parentProcessingFlag():
             parents = dataset['Parents']

@@ -4,6 +4,7 @@ Use this for only unit test
 import os
 import tempfile
 import sys
+import logging
 
 from WMCore.Configuration import Configuration, saveConfigurationFile
     
@@ -14,7 +15,10 @@ def emulatorSetup(phedex=False, dbs=False, siteDB=False, requestMgr=False):
     return configFile
     
 def deleteConfig(configFile):
-    os.remove(configFile)
+    if os.path.exists(configFile):
+        os.remove(configFile)
+    else:
+        pass
         
 def _emulatorConfig(phedex, dbs, siteDB, requestMgr, configFile):
     
@@ -25,8 +29,9 @@ def _emulatorConfig(phedex, dbs, siteDB, requestMgr, configFile):
     config.Emulator.RequestMgr = requestMgr
     config.Emulator.SiteDB = siteDB
     saveConfigurationFile(config, configFile)
-    print "create config file:%s, PhEDEx: %s, DBS: %s, RequestManager: %s, SiteDB %s with flag" \
+    msg = "create config file:%s, PhEDEx: %s, DBS: %s, RequestManager: %s, SiteDB %s with flag" \
            % (configFile, phedex, dbs, siteDB, requestMgr)
+    logging.info(msg)
            
 def setupWMAgentConfig():
     fd,configFile = tempfile.mkstemp(".py", "TESTAGENTConfig",)

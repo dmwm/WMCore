@@ -3,9 +3,13 @@
     Mocked DBS interface for Start Policy unit tests
 """
 
+from DBSAPI.dbsApi import DbsApi
+
 class _MockDBSApi():
     """Mock dbs api"""
     def __init__(self, args):
+        # just make sure args value complies with dbs args
+        DbsApi(args)
         self.args = args
 
     def getServerUrl(self):
@@ -24,16 +28,19 @@ class DBSReader:
     """
     Mock up dbs access
     """
-    def __init__(self, *args, **kwargs):
-        print "Using DBS Emulator ..."
+    def __init__(self, url, **contact):
         self.dataBlocks = DataBlockGenerator()
-        url = args[0]
         args = { "url" : url, "level" : 'ERROR', "version" : ''}
         self.dbs = _MockDBSApi(args)
         
     def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True, blockName = '*', locations = True):
+
         """Fake block info"""
-        return self.dataBlocks.getBlocks(dataset)
+        if blockName == '*':
+            return self.dataBlocks.getBlocks(dataset)
+        else:
+            return [x for x in self.dataBlocks.getBlocks(dataset)
+                    if x['Name'] == blockName]
 
     def listFileBlockLocation(self, block):
         """Fake locations"""
@@ -53,6 +60,23 @@ class DBSReader:
                 }
         return result
 
+    def listRuns(self, dataset = None, block = None):
+        def getRunsFromBlock(b):
+            results = []
+            for x in self.dataBlocks.getFiles(b):
+                results.extend([y['RunNumber'] for y in x['LumiList']])
+            return results
+
+        if block:
+            return getRunsFromBlock(block)
+        if dataset:
+            runs = []
+            for block in self.dataBlocks.getBlocks(dataset):
+                runs.extend(getRunsFromBlock(block))
+            return runs
+        return None
+
+
     def getDBSSummaryInfo(self, dataset=None, block=None):
 
         """Dataset summary"""
@@ -69,21 +93,23 @@ class DBSReader:
                                 for x in self.dataBlocks.getFiles(block)])
             result['NumberOfFiles'] = len(self.dataBlocks.getFiles(block))
 
-            result['NumberOfLumis'] = sum(getLumisectionsInBlock(block))
+            result['NumberOfLumis'] = len(getLumisectionsInBlock(block))
 
             result['path'] = dataset
 
         if dataset:
-            result['NumberOfEvents'] = sum([x['NumberOfEvents']
-                                for x in self.dataBlocks.getBlocks(dataset)])
-            result['NumberOfFiles'] = sum([x['NumberOfFiles']
-                                for x in self.dataBlocks.getBlocks(dataset)])
-            lumis = set()
-            for b in self.dataBlocks.getBlocks(dataset):
-                lumis.union(getLumisectionsInBlock(b['Name']))
+            if self.dataBlocks.getBlocks(dataset):
+                result['NumberOfEvents'] = sum([x['NumberOfEvents']
+                                    for x in self.dataBlocks.getBlocks(dataset)])
+                result['NumberOfFiles'] = sum([x['NumberOfFiles']
+                                    for x in self.dataBlocks.getBlocks(dataset)])
+                lumis = set()
+                for b in self.dataBlocks.getBlocks(dataset):
+                    lumis = lumis.union(getLumisectionsInBlock(b['Name']))
 
-            result['NumberOfLumis'] = sum(lumis)
-            result['path'] = dataset
+                result['NumberOfLumis'] = len(lumis)
+                result['path'] = dataset
+
         return result
 
 # pylint: enable-msg=W0613,R0201

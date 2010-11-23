@@ -10,9 +10,10 @@ class SiteDBJSON(object):
     """
     API for dealing with retrieving information from SiteDB
     """
+    mapping = {'SiteA' : 'a.example.com', 'SiteB' : 'b.example.com'}
+
 
     def __init__(self, dict={}):
-        print "Using RequestManager Emulator ..."
         pass
 
     def phEDExNodetocmsName(self, node):
@@ -26,3 +27,6 @@ class SiteDBJSON(object):
                             '').replace('_Buffer',
                                         '').replace('_Export', '')
         return name                                
+
+    def cmsNametoSE(self, name):
+        return self.mapping[name]

@@ -4,6 +4,9 @@ _WorkQueue_t_
 
 WorkQueue tests
 """
+#setup emulator for test, this needs to be at top of the file
+from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
+ConfigFile = emulatorSetup(phedex=True, dbs=True, siteDB=True, requestMgr=False)
 
 import unittest
 import os
@@ -12,80 +15,33 @@ import threading
 
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMCore.WorkQueue.WorkQueueExceptions import *
+
+from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload as rerecoWMSpec, \
+                                          getTestArguments as getRerecoArgs
+from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload \
+    import monteCarloWorkload, getMCArgs
+
+from WMQuality.Emulators.DataBlockGenerator import Globals
+from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator \
+     import DataBlockGenerator
+from WMCore.DAOFactory import DAOFactory
+from WMQuality.Emulators import EmulatorSetup
+
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 from WMCore_t.WMSpec_t.samples.BasicProductionWorkload \
                                     import workload as BasicProductionWorkload
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
                                 import workload as MultiTaskProductionWorkload
-from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
-from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
-from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
-from WMCore.WMSpec.StdSpecs.MonteCarlo import getTestArguments as getMCArgs
-from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
-from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
-
-from WMCore.DAOFactory import DAOFactory
-from WMQuality.Emulators import EmulatorSetup
-
-class fakeSiteDB:
-    """Fake sitedb interactions"""
-    mapping = mapping = {'SiteA' : 'a.example.com', 'SiteB' : 'b.example.com'}
-
-    def phEDExNodetocmsName(self, node):
-        """strip buffer/mss etc"""
-        return node.replace('_MSS',
-                            '').replace('_Buffer',
-                                        '').replace('_Export', '')
-
-    def cmsNametoSE(self, name):
-        return self.mapping[name]
 
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
-
-
-# update to not talk to couch
-# also see retrieveConfigUrl removal when creating workflow
-# find a better way to do this...
-rerecoArgs = getTestArguments()
-rerecoArgs.update({
-    "CouchURL": None,
-    "CouchDBName": None,
-    })
-
+rerecoArgs = getRerecoArgs()
 mcArgs = getMCArgs()
-mcArgs.update({
-    "CouchURL": None,
-    "CouchDBName": None,
-    "ConfigCacheDoc" : None
-    })
-mcArgs.pop('ConfigCacheDoc')
 
-class TestReRecoFactory(ReRecoWorkloadFactory):
-    """Override bits that talk to cmsssw"""
-
-    def determineOutputModules(self, *args, **kwargs):
-        "Don't talk to couch"
-        return {}
-
-    #TODO: Remove this when each queue can be isolated (i.e. separate db's)
-    def __call__(self, *args, **kwargs):
-        """Force DatasetBlock split for testing"""
-        workload = ReRecoWorkloadFactory.__call__(self, *args, **kwargs)
-        workload.setStartPolicy("DatasetBlock")
-        return workload
-
-class TestMonteCarloFactory(MonteCarloWorkloadFactory):
-    """Override bits that talk to cmsssw"""
-    def __call__(self, workflowName, args):
-        workload = MonteCarloWorkloadFactory.__call__(self, workflowName, args)
-        delattr(getFirstTask(workload).steps().data.application.configuration,
-                'retrieveConfigUrl')
-        return workload
-
-    def determineOutputModules(self, *args, **kwargs):
-        "Don't talk to couch"
-        return {}
+def rerecoWorkload(workloadName, arguments):
+    wmspec = rerecoWMSpec(workloadName, arguments)
+    wmspec.setStartPolicy("DatasetBlock")
+    return wmspec
 
 def getFirstTask(wmspec):
     """Return the 1st top level task"""
@@ -108,51 +64,41 @@ class WorkQueueTest(WorkQueueTestCase):
         WorkQueueTestCase.setUp(self)
 
         # Basic production Spec
-        mcFactory = TestMonteCarloFactory()
-        self.spec = mcFactory('testProduction', mcArgs)
+        self.spec = monteCarloWorkload('testProduction', mcArgs)
         getFirstTask(self.spec).setSiteWhitelist(['SiteA', 'SiteB'])
         getFirstTask(self.spec).addProduction(totalevents = 10000)
         self.spec.setSpecUrl(os.path.join(self.workDir, 'testworkflow.spec'))
         self.spec.save(self.spec.specUrl())
 
-        rerecoFactory = TestReRecoFactory()
         # Sample Tier1 ReReco spec
-        self.processingSpec = rerecoFactory('testProcessing', rerecoArgs)
+        self.processingSpec = rerecoWorkload('testProcessing', rerecoArgs)
         self.processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessing.spec'))
         self.processingSpec.save(self.processingSpec.specUrl())
 
         # ReReco spec with blacklist
-        self.blacklistSpec = rerecoFactory('blacklistSpec', rerecoArgs)
+        self.blacklistSpec = rerecoWorkload('blacklistSpec', rerecoArgs)
         self.blacklistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testBlacklist.spec'))
         getFirstTask(self.blacklistSpec).data.constraints.sites.blacklist = ['SiteA']
         self.blacklistSpec.save(self.blacklistSpec.specUrl())
 
         # ReReco spec with whitelist
-        self.whitelistSpec = rerecoFactory('whitelistlistSpec', rerecoArgs)
+        self.whitelistSpec = rerecoWorkload('whitelistlistSpec', rerecoArgs)
         self.whitelistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testWhitelist.spec'))
         getFirstTask(self.whitelistSpec).data.constraints.sites.whitelist = ['SiteB']
         self.whitelistSpec.save(self.whitelistSpec.specUrl())
-
         # setup Mock DBS and PhEDEx
         inputDataset = getFirstTask(self.processingSpec).inputDataset()
-        dataset = "/%s/%s/%s" % (inputDataset.primary,
+        self.dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)
-        mockDBS = MockDBSReader('http://example.com', dataset)
-        dbsHelpers = {'http://example.com' : mockDBS,
-                      'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet' : mockDBS,
-                      }
 
         # Create queues
         self.globalQueue = globalQueue(CacheDir = self.workDir,
                                        NegotiationTimeout = 0,
-                                       QueueURL = 'global.example.com',
-                                       DBSReaders = dbsHelpers,
-                                       PhEDEx = MockPhedexService(dataset),
-                                       SiteDB = fakeSiteDB())
+                                       QueueURL = 'global.example.com')
 #        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
 #                            PopulateFilesets = False,
 #                            ParentQueue = self.globalQueue,
@@ -161,24 +107,15 @@ class WorkQueueTest(WorkQueueTestCase):
         self.localQueue = localQueue(ParentQueue = self.globalQueue,
                                      CacheDir = self.workDir,
                                      ReportInterval = 0,
-                                     QueueURL = "local.example.com",
-                                     DBSReaders = dbsHelpers,
-                                     PhEDEx = MockPhedexService(dataset),
-                                     SiteDB = fakeSiteDB())
+                                     QueueURL = "local.example.com")
         self.localQueue2 = localQueue(ParentQueue = self.globalQueue,
                                      CacheDir = self.workDir,
                                      ReportInterval = 0,
                                      QueueURL = "local2.example.com",
-                                     DBSReaders = dbsHelpers,
-                                     PhEDEx = MockPhedexService(dataset),
-                                     SiteDB = fakeSiteDB(),
                                      IgnoreDuplicates = False)
 
         # standalone queue for unit tests
-        self.queue = WorkQueue(CacheDir = self.workDir,
-                               DBSReaders = dbsHelpers,
-                               PhEDEx = MockPhedexService(dataset),
-                               SiteDB = fakeSiteDB())
+        self.queue = WorkQueue(CacheDir = self.workDir)
 
         # create relevant sites in wmbs
         for site, se in self.queue.SiteDB.mapping.items():
@@ -194,6 +131,7 @@ class WorkQueueTest(WorkQueueTestCase):
         WorkQueueTestCase.tearDown(self)
         #Delete WMBSAgent config file
         EmulatorSetup.deleteConfig(self.configFile)
+        EmulatorSetup.deleteConfig(ConfigFile)
 
     def testProduction(self):
         """
@@ -328,11 +266,14 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(work), 0)
 
         # copy block over to SiteB (all dbsHelpers point to same instance)
-        fakeDBS = self.queue.dbsHelpers['http://example.com']
-        for block in fakeDBS.locations:
-            if block.endswith('1'):
-                fakeDBS.locations[block] = ['SiteA', 'SiteB', 'SiteAA']
-        self.queue.phedexService.locations.update(fakeDBS.locations)
+
+        blockLocations = {}
+        blocks = DataBlockGenerator().getBlocks(self.dataset)
+        for block in blocks:
+            if block['Name'].endswith('1'):
+                blockLocations[block['Name']] = ['SiteA', 'SiteB', 'SiteAA']
+
+        Globals.moveBlock(blockLocations)
         self.queue.updateLocationInfo()
 
         # SiteA still blacklisted for all blocks
@@ -347,12 +288,7 @@ class WorkQueueTest(WorkQueueTestCase):
         njobs = [5, 10] # array of jobs per block
         numBlocks = len(njobs)
         total = sum(njobs)
-        
-        fakeDBS = self.queue.dbsHelpers['http://example.com']
-        for block in fakeDBS.locations:
-            if block.endswith('1'):
-                fakeDBS.locations[block] = ['SiteA', 'SiteB', 'SiteAA']
-        self.queue.phedexService.locations.update(fakeDBS.locations)
+
         self.queue.updateLocationInfo()
 
         # Queue Work & check accepted
@@ -364,8 +300,6 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(work), 0)
 
         # Site B can run
-        #import pdb
-        #pdb.set_trace() 
         work = self.queue.getWork({'SiteB' : total, 'SiteAA' : total})
         self.assertEqual(len(work), 2)
 
@@ -387,6 +321,9 @@ class WorkQueueTest(WorkQueueTestCase):
         # put at correct site
         self.globalQueue.updateLocationInfo()
 
+        #import pdb
+        #pdb.set_trace()
+
         # check work isn't passed down to the wrong agent
         work = self.localQueue.getWork({'SiteB' : 1000}) # Not in subscription
         self.assertEqual(0, len(work))
@@ -400,7 +337,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # check work passed down to lower queue where it was acquired
         # work should have expanded and parent element marked as acquired
-        #import pdb; pdb.set_trace()
+
         self.assertEqual(len(self.localQueue.getWork({'SiteA' : 1000})), 0)
         # releasing on block so need to update locations
         self.localQueue.updateLocationInfo()
@@ -470,7 +407,6 @@ class WorkQueueTest(WorkQueueTestCase):
         # Add work to top most queue
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.assertEqual(1, len(self.globalQueue))
-        self.globalQueue.updateLocationInfo()
 
         # pull to local queue
         self.globalQueue.updateLocationInfo()
@@ -723,8 +659,7 @@ class WorkQueueTest(WorkQueueTestCase):
     def testInvalidSpecs(self):
         """Complain on invalid WMSpecs"""
         # invalid white list
-        mcFactory = TestMonteCarloFactory()
-        mcspec = mcFactory('testProductionInvalid', mcArgs)
+        mcspec = monteCarloWorkload('testProductionInvalid', mcArgs)
         getFirstTask(mcspec).setSiteWhitelist('ThisIsInvalid')
         mcspec.setSpecUrl(os.path.join(self.workDir, 'testProductionInvalid.spec'))
         mcspec.save(mcspec.specUrl())
@@ -743,8 +678,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, mcspec.specUrl())
 
         # no dataset
-        rerecoFactory = TestReRecoFactory()
-        processingSpec = rerecoFactory('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessingInvalid.spec'))
         processingSpec.save(processingSpec.specUrl())
@@ -753,8 +687,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, processingSpec.specUrl())
 
         # invalid dbs url
-        rerecoFactory = TestReRecoFactory()
-        processingSpec = rerecoFactory('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessingInvalid.spec'))
         getFirstTask(processingSpec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
@@ -762,11 +695,10 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, processingSpec.specUrl())
 
         # invalid dataset name
-        rerecoFactory = TestReRecoFactory()
-        processingSpec = rerecoFactory('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessingInvalid.spec'))
-        getFirstTask(processingSpec).data.input.dataset.primary = 'thisdoesntexist'
+        getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
         processingSpec.save(processingSpec.specUrl())
         self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
 

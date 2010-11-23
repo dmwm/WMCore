@@ -8,9 +8,14 @@ Unit tests for the WMBS File class.
 import unittest
 import os
 
-from WMQuality.TestInitCouchApp import TestInitCouchApp
+from WMQuality.TestInit import TestInit
 
 class WorkQueueTestCase(unittest.TestCase):
+
+    def setSchema(self):
+        "this can be override if the schema setting is different"
+        self.schema = ["WMCore.WMBS","WMComponent.DBSBuffer.Database",
+                      "WMCore.WorkQueue.Database"]
 
     def setUp(self):
         """
@@ -19,18 +24,14 @@ class WorkQueueTestCase(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also add some dummy locations.
         """
-        self.testInit = TestInitCouchApp(__file__)
+        self.setSchema()
+        self.testInit = TestInit()
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setupCouch("workqueue_t", "JobDump")        
-        self.testInit.setSchema(customModules = ["WMCore.WMBS",
-                                                 "WMComponent.DBSBuffer.Database",
-                                                 "WMCore.WorkQueue.Database",
-                                                 "WMCore.BossAir"],
+        self.testInit.setSchema(customModules = self.schema,
                                 useDefault = False)
         
         self.workDir = self.testInit.generateWorkDir()
-        os.environ["COUCHDB"] = "workqueue_t"
         return
 
     def tearDown(self):
@@ -39,7 +40,6 @@ class WorkQueueTestCase(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-        self.testInit.tearDownCouch()        
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
         

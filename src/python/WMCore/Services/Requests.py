@@ -8,17 +8,16 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set. 
 """
 
-
-
-
 import urllib
 from urlparse import urlunparse
 import os
 import base64
 import httplib2
 import socket
+import logging
 from urlparse import urlparse
 from httplib import HTTPException
+
 from WMCore.WMException import WMException
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
@@ -46,6 +45,7 @@ class Requests(dict):
         self.setdefault("host", url)
         self.setdefault("req_cache_path", '.cache')
         self.setdefault("timeout", 30)
+        self.setdefault("logger", logging)
         
         # then update with the incoming dict
         self.update(dict)

@@ -494,7 +494,7 @@ class Subscription(WMBSBase, WMSubscription):
             nameList.append(makeUUID())
 
         # Create filesets
-        action = self.daofactory( classname = "Fileset.BulkNewReturn" )
+        action = self.daofactory(classname = "Fileset.BulkNewReturn")
         fsIDs  = action.execute(nameList = nameList, open = True,
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
@@ -505,7 +505,7 @@ class Subscription(WMBSBase, WMSubscription):
                                  'uid': jobGroup.uid,
                                  'output': fsIDs.pop()})
 
-        action = self.daofactory( classname = "JobGroup.BulkNewReturn" )
+        action = self.daofactory(classname = "JobGroup.BulkNewReturn")
         jgIDs  = action.execute(bulkInput = jobGroupList,
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction())

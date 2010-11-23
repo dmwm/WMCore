@@ -359,17 +359,47 @@ class ResourceControlTest(unittest.TestCase):
 
         siteInfo = myResourceControl.listSiteInfo("testSite1")
 
-        assert siteInfo["job_slots"] == 10, \
-               "Error: Job slots is wrong."        
+        self.assertEqual(siteInfo["job_slots"], 10, "Error: Job slots is wrong.")
 
         myResourceControl.setJobSlotsForSite("testSite1", 20)
 
         siteInfo = myResourceControl.listSiteInfo("testSite1")
 
-        assert siteInfo["job_slots"] == 20, \
-               "Error: Job slots is wrong."
+        self.assertEqual(siteInfo["job_slots"], 20, "Error: Job slots is wrong.")
 
         return
+
+
+    def testThresholdsForSite(self):
+        """
+        _testThresholdsForSite_
+
+        Check that we can get the thresholds in intelligible form
+        for each site
+        """
+
+        myResourceControl = ResourceControl()
+        myResourceControl.insertSite("testSite1", 20, "testSE1", "testCE1")
+        myResourceControl.insertThreshold("testSite1", "Processing", 10)
+        myResourceControl.insertThreshold("testSite1", "Merge", 5)
+
+        result   = myResourceControl.thresholdBySite(siteName = "testSite1")
+        procInfo = {}
+        mergInfo = {}
+        for res in result:
+            if res['task_type'] == 'Processing':
+                procInfo = res
+            elif res['task_type'] == 'Merge':
+                mergInfo = res
+        self.assertEqual(procInfo.get('job_slots', None), 20)
+        self.assertEqual(procInfo.get('max_slots', None), 10)
+        self.assertEqual(mergInfo.get('job_slots', None), 20)
+        self.assertEqual(mergInfo.get('max_slots', None), 5)
+
+        return
+        
+
+        
 
 if __name__ == '__main__':
     unittest.main()

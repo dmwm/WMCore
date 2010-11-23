@@ -18,6 +18,8 @@ class ListThresholdsForCreate(MySQLListThresholdsForCreate):
                                 wmbs_job_assoc.fileid = wmbs_file_location.fileid
                               INNER JOIN wmbs_job ON
                                 wmbs_job_assoc.job = wmbs_job.id
+                              INNER JOIN wmbs_job_state ON
+                                wmbs_job.state = wmbs_job_state.id
                             WHERE wmbs_job.location IS NULL AND
                                   wmbs_job_state.name != 'killed' AND
                                   wmbs_job_state.name != 'cleanout') job_location ON                            

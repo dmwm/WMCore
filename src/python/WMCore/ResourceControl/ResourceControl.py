@@ -122,3 +122,16 @@ class ResourceControl(WMConnectionBase):
         slotsAction = self.daofactory(classname = "SetJobSlotsForSite")
         slotsAction.execute(siteName, jobSlots, conn = self.getDBConn(),
                             transaction = self.existingTransaction())
+
+
+    def thresholdBySite(self, siteName):
+        """
+        _thresholdBySite_
+        
+        List the thresholds of a single site
+        """
+
+        listActions = self.daofactory(classname = "ThresholdBySite")
+        return listActions.execute(site = siteName,
+                                   conn = self.getDBConn(),
+                                   transaction = self.existingTransaction())

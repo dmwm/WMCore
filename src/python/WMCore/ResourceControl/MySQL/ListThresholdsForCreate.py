@@ -28,7 +28,7 @@ class ListThresholdsForCreate(DBFormatter):
                            (SELECT DISTINCT wmbs_job_assoc.job, wmbs_file_location.location AS location
                                    FROM wmbs_job_assoc
                               INNER JOIN wmbs_file_location ON
-                                wmbs_job_assoc.file = wmbs_file_location.file
+                                wmbs_job_assoc.fileid = wmbs_file_location.fileid
                               INNER JOIN wmbs_job ON
                                 wmbs_job_assoc.job = wmbs_job.id
                               INNER JOIN wmbs_job_state ON

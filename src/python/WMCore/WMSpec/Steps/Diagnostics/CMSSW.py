@@ -53,6 +53,16 @@ class Exit60515(DiagnosticHandler):
         msg = "SCRAM scripts failed to run!\n"
         if args.get('ExceptionInstance', False):
             msg += str(args.get('ExceptionInstance'))
+
+        errLog = os.path.join(executor.step.builder.workingDir,
+                              executor.step.output.jobReport,
+                              'scramOutput.log')
+
+        if os.path.exists(errLog):
+            logTail = BasicAlgos.tail(errLog, 25)
+            msg += '\n Adding last ten lines of SCRAM error log:\n'
+            msg += "".join(logTail)
+            
         executor.report.addError(executor.step._internal_name,
                                  60515, "SCRAMScriptFailure", msg)
 
@@ -89,13 +99,22 @@ class CMSDefaultHandler(DiagnosticHandler):
             reportStep = executor.report.retrieveStep(executor.step._internal_name)
             reportStep.status = self.code
 
-
+        # Grab stderr log from CMSSW
         errLog = os.path.join(os.path.dirname(jobRepXml),
                               '%s-stderr.log' % (executor.step._internal_name))
 
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, 10)
             msg += '\n Adding last ten lines of CMSSW stderr:\n'
+            msg += "".join(logTail)
+
+        # If it exists, grab the SCRAM log
+        errLog = os.path.join(os.path.dirname(jobRepXml),
+                              'scramOutput.log')
+
+        if os.path.exists(errLog):
+            logTail = BasicAlgos.tail(errLog, 25)
+            msg += '\n Adding last ten lines of SCRAM error log:\n'
             msg += "".join(logTail)
                 
         # make sure the report has the error in it
@@ -230,6 +249,11 @@ class EDMExceptionHandler(DiagnosticHandler):
 
     
 class CMSSW(Diagnostic):
+    """
+    Master diagnostic class
+
+    Sets the default handler.
+    """
 
     def __init__(self):
         Diagnostic.__init__(self)

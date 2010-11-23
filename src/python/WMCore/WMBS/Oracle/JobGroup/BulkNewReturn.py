@@ -23,3 +23,4 @@ class BulkNewReturn(MySQLBulkNewReturn):
                    WHERE subscription = :subscription
                    AND guid = :guid
                    AND output = :output"""
+

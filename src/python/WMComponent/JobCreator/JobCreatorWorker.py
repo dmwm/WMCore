@@ -288,7 +288,7 @@ class JobCreatorWorker:
             # Create a function to hold it
             jobSplittingFunction = runSplitter(jobFactory = wmbsJobFactory,
                                                splitParams = splitParams)
-
+            myThread.transaction.begin()
             while continueSubscription:
                 # This loop runs over the jobFactory,
                 # using yield statements and a pre-existing proxy to
@@ -321,7 +321,9 @@ class JobCreatorWorker:
                     self.createWorkArea.processJobs(jobGroup = wmbsJobGroup,
                                                     startDir = self.jobCacheDir,
                                                     workflow = workflow,
-                                                    wmWorkload = wmWorkload)
+                                                    wmWorkload = wmWorkload,
+                                                    transaction = myThread.transaction,
+                                                    conn = myThread.transaction.conn)
 
                     
                     for job in wmbsJobGroup.jobs:
@@ -330,13 +332,14 @@ class JobCreatorWorker:
                                      wmTask = wmTask, jobNumber = jobNumber)
             
 
-                    self.createJobGroup(wmbsJobGroup)
+                    self.advanceJobGroup(wmbsJobGroup)
 
                     logging.debug("Finished call for jobGroup %i" \
                                  % (wmbsJobGroup.exists()))
 
 
-                # END: while loop over jobSplitter
+            # END: while loop over jobSplitter
+            myThread.transaction.commit()
 
 
 
@@ -383,6 +386,8 @@ class JobCreatorWorker:
         job['cache_dir'] = cacheDir
         output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
         cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
+        output.flush()
+        os.fsync(output.fileno())
         output.close()
 
 
@@ -391,25 +396,17 @@ class JobCreatorWorker:
     
 
 
-    def createJobGroup(self, wmbsJobGroup):
+    def advanceJobGroup(self, wmbsJobGroup):
         """
         Pass this on to the jobCreator, which actually does the work
         
         """
 
-        myThread = threading.currentThread()
-
-        myThread.transaction.begin()
-
-
-
         #Create the job
         self.changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
-        myThread.transaction.commit()
 
         logging.info("JobCreator has created jobGroup %i and is ending" \
                      % (wmbsJobGroup.id))
-
 
         return
 

@@ -151,7 +151,7 @@ class CreateWorkArea:
 
 
     def processJobs(self, jobGroup, startDir = None, wmWorkload = None,
-                    workflow = None):
+                    workflow = None, transaction = None, conn = None):
         """
         Process the work
 
@@ -159,9 +159,11 @@ class CreateWorkArea:
         WMBS workflow, to save loading time
         """
         self.reset()
-        self.wmWorkload = wmWorkload
-        self.workflow   = workflow
-        self.startDir   = startDir
+        self.wmWorkload  = wmWorkload
+        self.workflow    = workflow
+        self.startDir    = startDir
+        self.transaction = transaction
+        self.conn        = conn
         
         self.getNewJobGroup(jobGroup = jobGroup)
         self.createJobGroupArea()
@@ -258,8 +260,6 @@ class CreateWorkArea:
 
 
         #Now actually start to do things
-        myThread.transaction.begin()
-        #jobList = self.jobGroup.listJobIDs()
         for job in self.jobGroup.jobs:
             jid = job['id']
 
@@ -276,11 +276,12 @@ class CreateWorkArea:
             job['cache_dir'] = name
 
 
-        setBulkCache.execute(jobDictList = nameDictList)
+        setBulkCache.execute(jobDictList = nameDictList,
+                             conn = self.conn,
+                             transaction = self.transaction)
 
         createDirectories(nameList)
 
-        myThread.transaction.commit()
 
         return
 

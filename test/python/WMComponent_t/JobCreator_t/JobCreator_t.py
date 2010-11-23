@@ -261,9 +261,9 @@ class JobCreatorTest(unittest.TestCase):
         
         #JobStateMachine
         config.component_('JobStateMachine')
-        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'mnorman:theworst@cmssrv52.fnal.gov:5984')
+        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')
         config.JobStateMachine.default_retries = 1
-        config.JobStateMachine.couchDBName     = "mnorman_test"
+        config.JobStateMachine.couchDBName     = "jobcreator_t_0"
 
         return config
 

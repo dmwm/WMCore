@@ -13,10 +13,10 @@ class PhEDEx(Service):
     API for dealing with retrieving information from PhEDEx DataService
     
     according to documentation
-    http://cmsweb.cern.ch/phedex/datasvc/doc
+    https://cmsweb.cern.ch/phedex/datasvc/doc
     """
 
-    def __init__(self, dict = {}, responseType = "json", secure = False):
+    def __init__(self, dict = {}, responseType = "json", secure = True):
         """
         responseType will be either xml or json
         """

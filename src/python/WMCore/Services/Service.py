@@ -138,6 +138,7 @@ class Service(dict):
         except WMException, ex:
             msg = str(ex)
             self["logger"].exception(msg)
+            raise
 
         self['logger'].debug("""Service initialised (%s):
 \t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours, max reuse %s hours)""" %

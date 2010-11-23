@@ -92,7 +92,7 @@ class PhEDExTest(unittest.TestCase):
         node = 'T0_CH_CERN_MSS'
         dict = {}
         #dict['endpoint'] = self.phedexTestDS
-        dict['endpoint'] = 'http://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod/'
+        dict['endpoint'] = 'https://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod/'
         phedexApi = PhEDEx(dict)
 
         # dataset level subscriptions

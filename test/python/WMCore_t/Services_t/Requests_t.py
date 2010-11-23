@@ -88,7 +88,7 @@ class testRequestExceptions(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors = True)
 
     def test404Error(self):
-        endp = "http://cmsweb.cern.ch"
+        endp = "https://cmsweb.cern.ch"
         url = "/thispagedoesntexist/"
         req = Requests.Requests(endp, self.request_dict)
         for v in ['GET', 'POST']:

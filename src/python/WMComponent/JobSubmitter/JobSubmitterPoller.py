@@ -252,7 +252,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                                                       newJob["retry_count"],
                                                       batchDir,
                                                       loadedJob["sandbox"],
-                                                      loadedJob["cache_dir"]))
+                                                      loadedJob["cache_dir"],
+                                                      loadedJob["owner"]))
                 
         if len(badJobs) > 0:
             logging.error("The following jobs have no possible sites to run at: %s" % badJobs)
@@ -403,7 +404,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                            'retry_count': cachedJob[1],
                            'custom': {'location': emptySite[0]},
                            'cache_dir': cachedJob[4],
-                           'packageDir': package}
+                           'packageDir': package,
+                           'user': cachedJob[5]}
 
                 # Add to jobsToSubmit
                 jobsToSubmit[package].append(jobDict)

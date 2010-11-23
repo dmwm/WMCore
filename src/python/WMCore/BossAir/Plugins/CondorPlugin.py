@@ -82,22 +82,6 @@ def parseError(error):
     return errorCondition, errorMsg
 
 
-def stateMap(name):
-    """
-    For a given name, return a global state
-
-
-    """
-
-    stateDict = {'New': 'Pending',
-                 'Idle': 'Pending',
-                 'Running': 'Running',
-                 'Held': 'Running',
-                 'Complete': 'Complete',
-                 'Error': 'Error',
-                 'Timeout': 'Error'}
-
-    return stateDict.get(name, 'Error')
 
 
 
@@ -107,15 +91,34 @@ class CondorPlugin(BasePlugin):
 
     Condor plugin for glide-in submissions
     """
+    
+    @staticmethod
+    def stateMap():
+        """
+        For a given name, return a global state
+    
+    
+        """
+    
+        stateDict = {'New': 'Pending',
+                     'Idle': 'Pending',
+                     'Running': 'Running',
+                     'Held': 'Running',
+                     'Complete': 'Complete',
+                     'Error': 'Error',
+                     'Timeout': 'Error'}
+        
+        # This call is optional but needs to for testing
+        #BasePlugin.verifyState(stateDict)
+        
+        return stateDict
 
     def __init__(self, config):
 
         self.config = config
 
         BasePlugin.__init__(self, config)
-
-        self.states = ['New', 'Running', 'Idle', 'Complete', 'Held', 'Error', 'Timeout']
-
+        
         self.locationDict = {}
 
         myThread = threading.currentThread()        
@@ -327,7 +330,7 @@ class CondorPlugin(BasePlugin):
                     statName = 'Running'
 
                 # Get the global state
-                job['globalState'] = stateMap(statName)
+                job['globalState'] = CondorPlugin.stateMap()[statName]
 
                 if statName != job['status']:
                     # Then the status has changed

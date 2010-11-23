@@ -94,7 +94,8 @@ class BossAirAPI(WMConnectionBase):
         self.runningJobDAO = self.daoFactory(classname = "LoadRunning")
         self.loadJobsDAO   = self.daoFactory(classname = "LoadByStatus")
         self.completeDAO   = self.daoFactory(classname = "CompleteJob")
-        self.monitorDAO    = self.daoFactory(classname = "LoadForMonitoring")
+        #self.monitorDAO    = self.daoFactory(classname = "LoadForMonitoring")
+        self.monitorDAO    = self.daoFactory(classname = "JobStatusForMonitoring")
                                 
 
         self.loadPlugin(noSetup)
@@ -712,7 +713,7 @@ class BossAirAPI(WMConnectionBase):
 
 
 
-    def monitor(self):
+    def monitor(self, commonState = True):
         """
         _monitor_
 
@@ -725,7 +726,7 @@ class BossAirAPI(WMConnectionBase):
         existingTransaction = self.beginTransaction()
 
 
-        results = self.monitorDAO.execute(conn = self.getDBConn(),
+        results = self.monitorDAO.execute(commonState, conn = self.getDBConn(),
                                           transaction = self.existingTransaction())  
 
         self.commitTransaction(existingTransaction)

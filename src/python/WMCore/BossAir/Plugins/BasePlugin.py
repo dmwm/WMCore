@@ -28,15 +28,27 @@ class BasePlugin:
     """
 
 
-
+    # the common states which needs to be mapped from each plugIn states
+    globalState = ['Pending', 'Running', 'Complete','Error'] 
+    
+    @staticmethod
+    def verifyState(map):
+        for state in map.values():
+            if state not in BasePlugin.globalState:
+                raise BossAirPluginException, "not valid state %s" % state
+        return map
+    
+    @staticmethod
+    def stateMap():
+        raise NotImplementedError, "stateMap is not implemented"
+        
     def __init__(self, config):
 
         self.config = config
 
-        # NOTE: This MUST be overridden in the plugin
-        # MUST MUST MUST
-        # These are just the MANDATORY states
-        self.states = ['New', 'Timeout']
+        # NOTE: Don't overwrite this.
+        # However stateMap should be implemented in child class.
+        self.states = self.stateMap().keys()
 
 
 

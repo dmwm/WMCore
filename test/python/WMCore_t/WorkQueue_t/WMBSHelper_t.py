@@ -36,6 +36,10 @@ from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload \
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
+from WMCore.BossAir.BossAirAPI              import BossAirAPI
+from WMCore.Configuration                   import loadConfigurationFile
+from WMCore.ResourceControl.ResourceControl import ResourceControl
+
 rerecoArgs = getRerecoArgs()
 mcArgs = getMCArgs()
 
@@ -59,7 +63,8 @@ class WMBSHelperTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
                                                  "WMComponent.DBSBuffer.Database",
                                                  "WMCore.WorkQueue.Database",
-                                                 "WMCore.BossAir"],
+                                                 "WMCore.BossAir",
+                                                 "WMCore.ResourceControl"],
                                 useDefault = False)
         
         self.workDir = self.testInit.generateWorkDir()
@@ -85,7 +90,7 @@ class WMBSHelperTest(unittest.TestCase):
         self.testInit.delWorkDir()        
         return
 
-    def setupForKillTest(self):
+    def setupForKillTest(self, baAPI = None):
         """
         _setupForKillTest_
 
@@ -101,7 +106,11 @@ class WMBSHelperTest(unittest.TestCase):
 
         locationAction = daoFactory(classname = "Locations.New")
         changeStateAction = daoFactory(classname = "Jobs.ChangeState")
-        locationAction.execute(siteName = "site1", seName = "goodse.cern.ch")
+        resourceControl = ResourceControl()
+        resourceControl.insertSite(siteName = 'site1', seName = 'goodse.cern.ch',
+                                   ceName = 'site1', plugin = "TestPlugin")
+        resourceControl.insertThreshold(siteName = 'site1', taskType = 'Processing', \
+                                        maxSlots = 10000)
 
         inputFileset = Fileset("input")
         inputFileset.create()
@@ -154,10 +163,13 @@ class WMBSHelperTest(unittest.TestCase):
         procJobGroup.create()
         self.procJobA = Job(name = "ProcJobA")
         self.procJobA["state"] = "new"
+        self.procJobA["location"] = "site1"
         self.procJobB = Job(name = "ProcJobB")
         self.procJobB["state"] = "executing"
+        self.procJobB["location"] = "site1"
         self.procJobC = Job(name = "ProcJobC")
         self.procJobC["state"] = "complete"
+        self.procJobC["location"] = "site1"
         self.procJobA.create(procJobGroup)
         self.procJobB.create(procJobGroup)
         self.procJobC.create(procJobGroup)
@@ -173,10 +185,13 @@ class WMBSHelperTest(unittest.TestCase):
         mergeJobGroup.create()
         self.mergeJobA = Job(name = "MergeJobA")
         self.mergeJobA["state"] = "exhausted"
+        self.mergeJobA["location"] = "site1"
         self.mergeJobB = Job(name = "MergeJobB")
         self.mergeJobB["state"] = "cleanout"
+        self.mergeJobB["location"] = "site1"
         self.mergeJobC = Job(name = "MergeJobC")
         self.mergeJobC["state"] = "new"
+        self.mergeJobC["location"] = "site1"
         self.mergeJobA.create(mergeJobGroup)
         self.mergeJobB.create(mergeJobGroup)
         self.mergeJobC.create(mergeJobGroup)
@@ -192,17 +207,28 @@ class WMBSHelperTest(unittest.TestCase):
         cleanupJobGroup.create()
         self.cleanupJobA = Job(name = "CleanupJobA")
         self.cleanupJobA["state"] = "new"
+        self.cleanupJobA["location"] = "site1"
         self.cleanupJobB = Job(name = "CleanupJobB")
         self.cleanupJobB["state"] = "executing"
+        self.cleanupJobB["location"] = "site1"
         self.cleanupJobC = Job(name = "CleanupJobC")
         self.cleanupJobC["state"] = "complete"
+        self.cleanupJobC["location"] = "site1"
         self.cleanupJobA.create(cleanupJobGroup)
         self.cleanupJobB.create(cleanupJobGroup)
         self.cleanupJobC.create(cleanupJobGroup)
 
-        changeStateAction.execute([self.procJobA, self.procJobB, self.procJobC,
-                                   self.mergeJobA, self.mergeJobB, self.mergeJobC,
-                                   self.cleanupJobA, self.cleanupJobB, self.cleanupJobC])
+        jobList = [self.procJobA, self.procJobB, self.procJobC,
+                   self.mergeJobA, self.mergeJobB, self.mergeJobC,
+                   self.cleanupJobA, self.cleanupJobB, self.cleanupJobC]
+
+        changeStateAction.execute(jobList)
+
+        if baAPI:
+            for job in jobList:
+                job['plugin'] = 'TestPlugin'
+            baAPI.createNewJobs(wmbsJobs = jobList)
+            
         return
         
     def verifyFileKillStatus(self):
@@ -337,11 +363,19 @@ class WMBSHelperTest(unittest.TestCase):
         """
         configFile = EmulatorSetup.setupWMAgentConfig()
 
-        self.setupForKillTest()
+        config = loadConfigurationFile(configFile)
+
+        baAPI = BossAirAPI(config = config)
+
+        # Create nine jobs
+        self.setupForKillTest(baAPI = baAPI)
+        self.assertEqual(len(baAPI._listRunning()), 9)
+
         killWorkflow("Main")
 
         self.verifyFileKillStatus()
         self.verifyJobKillStatus()
+        self.assertEqual(len(baAPI._listRunning()), 8)
         EmulatorSetup.deleteConfig(configFile)
         return
 

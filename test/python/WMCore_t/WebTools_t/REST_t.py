@@ -155,7 +155,7 @@ class RESTTest(unittest.TestCase):
         self.stopCherryPy()
         
     def testList(self):
-        config = DefaultConfig('DummyRESTModel')
+        config = DefaultConfig('WMCore_t.WebTools_t.DummyRESTModel')
         self.startCherryPy(config)
         
        	verb ='GET'
@@ -208,7 +208,7 @@ class RESTTest(unittest.TestCase):
         Same as testSanitisePass but do it over http and check the returned http
         codes.
         """
-        self.startCherryPy(DefaultConfig('DummyRESTModel'))
+        self.startCherryPy(DefaultConfig('WMCore_t.WebTools_t.DummyRESTModel'))
         #TODO when url is /list/,,,, it returns success. should fail correct url is /rest/list...
         # also error message is html format although accept type is text/json
         # 2 positional args (e.g. url/arg1/arg2)
@@ -287,7 +287,7 @@ class RESTTest(unittest.TestCase):
         Same as testSanitisePass but do it over http and check the returned http
         codes.
         """
-        self.startCherryPy(DefaultConfig('DummyRESTModel'))
+        self.startCherryPy(DefaultConfig('WMCore_t.WebTools_t.DummyRESTModel'))
         # 2 positional args (e.g. url/arg1/arg2)
         url = self.urlbase + 'list/123/'
         response = makeRequest(url=url, accept='text/json')
@@ -340,7 +340,7 @@ class RESTTest(unittest.TestCase):
         Same as testSanitisePass but do it over http and check the returned http
         codes.
         """
-        self.startCherryPy(DefaultConfig('DummyRESTModel'))
+        self.startCherryPy(DefaultConfig('WMCore_t.WebTools_t.DummyRESTModel'))
         
         # 2 positional args (e.g. url/arg1/arg2)
         url = self.urlbase + 'data1/'
@@ -380,7 +380,7 @@ class RESTTest(unittest.TestCase):
     def testListTypeArgs(self):
         """
         """
-        self.startCherryPy(DefaultConfig('DummyRESTModel'))
+        self.startCherryPy(DefaultConfig('WMCore_t.WebTools_t.DummyRESTModel'))
         # 2 positional args (e.g. url/arg1/arg2)
         url = self.urlbase + 'listTypeArgs?aList=1'
         response = makeRequest(url=url)

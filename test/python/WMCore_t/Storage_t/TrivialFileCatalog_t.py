@@ -13,7 +13,6 @@ from xml.dom.minidom import parseString
 from WMCore.WMInit import getWMBASE
 
 from WMQuality.TestInit import TestInit
-from WMQuality.TestInit import requiresPython26
 
 from WMCore.Storage.TrivialFileCatalog import tfcFilename, tfcProtocol, readTFC, TrivialFileCatalog
 
@@ -26,7 +25,6 @@ class TrivialFileCatalogTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @requiresPython26
     def testA_TrivialFileCatalog(self):
         """
         Run some simple tests on reading a trivialFileCatalog

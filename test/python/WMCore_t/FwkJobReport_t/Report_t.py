@@ -5,9 +5,6 @@ _Report_t_
 Unit tests for the Report class.
 """
 
-
-
-
 import unittest
 import os
 import xml.dom.minidom
@@ -17,8 +14,6 @@ import WMCore.WMInit
 
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
-
-from WMQuality.TestInit import requiresPython26
 
 class ReportTest(unittest.TestCase):
     """
@@ -182,7 +177,6 @@ class ReportTest(unittest.TestCase):
 
         return    
 
-    @requiresPython26
     def testXMLParsing(self):
         """
         _testParsing_
@@ -198,7 +192,6 @@ class ReportTest(unittest.TestCase):
 
         return
 
-    @requiresPython26
     def testBadXMLParsing(self):
         """
         _testBadXMLParsing_
@@ -210,7 +203,6 @@ class ReportTest(unittest.TestCase):
         myReport.parse(self.badxmlPath)
         return    
 
-    @requiresPython26
     def testErrorReporting(self):
         """
         _testErrorReporting_
@@ -257,7 +249,6 @@ cms::Exception caught in EventProcessor and rethrown
         
         return
 
-    @requiresPython26
     def testMultipleInputs(self):
         """
         _testMultipleInputs_
@@ -316,7 +307,6 @@ cms::Exception caught in EventProcessor and rethrown
 
         return
 
-    @requiresPython26
     def testJSONEncoding(self):
         """
         _testJSONEncoding_

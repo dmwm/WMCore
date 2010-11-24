@@ -5,15 +5,10 @@ _SiteLocalConfig_t_
 Unit test for parsing the site local config file.
 """
 
-
-
-
 import os
 import unittest
 
 from WMQuality.TestInit import TestInit
-from WMQuality.TestInit import requiresPython26
-
 from WMCore.WMInit import getWMBASE
 
 from WMCore.Storage.SiteLocalConfig import SiteLocalConfig
@@ -25,7 +20,6 @@ class SiteLocalConfigTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @requiresPython26
     def testFNALSiteLocalConfig(self):
         """
         _testFNALSiteLocalConfig_
@@ -83,7 +77,6 @@ class SiteLocalConfigTest(unittest.TestCase):
                "Error: Fallback config is incorrect."
         return
 
-    @requiresPython26
     def testVanderbiltSiteLocalConfig(self):
         """
         _testFNALSiteLocalConfig_

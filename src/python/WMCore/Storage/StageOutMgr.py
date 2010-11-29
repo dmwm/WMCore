@@ -247,7 +247,7 @@ class StageOutMgr:
         impl.retryPause = self.retryPauseTime
 
         try:
-            impl(fbParams['command'], localPfn, pfn, fbParams['option'])
+            impl(fbParams['command'], localPfn, pfn, fbParams.get("option", None))
         except Exception, ex:
             msg = "Failure for fallback stage out:\n"
             msg += str(ex)

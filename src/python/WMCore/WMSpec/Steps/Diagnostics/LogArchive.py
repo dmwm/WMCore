@@ -3,16 +3,11 @@
 _LogArchive_
 
 Diagnostic implementation for a job's LogArchive step
-
-
 """
 
-
-
-
 import os
-from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 
+from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 
 class LAExceptionHandler(DiagnosticHandler):
     """
@@ -38,7 +33,7 @@ class LAExceptionHandler(DiagnosticHandler):
             msg += str(args.get('ExceptionInstance'))
         
         jobRepXml = os.path.join(executor.step.builder.workingDir,
-                                 executor.step.output.jobReport)
+                                 getattr(executor.step.output, "jobReport", ""))
 
         if not os.path.exists(jobRepXml):
             # no report => Error

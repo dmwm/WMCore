@@ -12,6 +12,8 @@ import cherrypy
 import json
 import os.path
 import urllib
+import types
+
 from WMCore.WebTools.Page import TemplatedPage
 
 def detailsBackLink(requestName):
@@ -46,7 +48,7 @@ def biggestUpdate(field, request):
 def addHtmlLinks(d):
     """ Any entry that starts with http becomes an HTML link """
     for key, value in d.iteritems():
-        if isinstance(value, str) and value.startswith('http'):
+        if isinstance(value, types.StringTypes) and value.startswith('http'):
             target = value
             # assume CVS browsers need extra tags
             if 'cvs' in target:
@@ -366,7 +368,7 @@ class ReqMgrBrowser(TemplatedPage):
         # look for teams
         teams = []
         for key, value in kwargs.iteritems():
-            if isinstance(value, str):
+            if isinstance(value, types.StringTypes):
                 kwargs[key] = value.strip()
                 setattr(schema, key, value.strip())
             if key.startswith("Team"):

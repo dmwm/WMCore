@@ -245,12 +245,12 @@ class StageOut(Executor):
             files = stepReport.getAllFileRefsFromStep(step = step)
             for file in files:
 
-                if not hasattr(file, 'lfn') or not hasattr(\
-               file, 'location') or not hasattr(file, 'guid'):
+                if not hasattr(file, 'lfn') or not hasattr(file, 'location') or \
+                       not hasattr(file, 'guid'):
                     continue
                     
-                file.user_dn = self.step.userDN
-                file.async_dest = self.step.asyncDest
+                file.user_dn = getattr(self.step, "userDN", None)
+                file.async_dest = getattr(self.step, "asyncDest", None)
 
             stepReport.persist(reportLocation)
         

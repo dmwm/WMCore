@@ -1,11 +1,13 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
-<HEAD>
-<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
-</HEAD>
-<TITLE>Request Details For $requestSchema['RequestName']</TITLE>
+<head>
+<meta HTTP-equiv="Pragma" content="no-cache">
+<title>Request Details For $requestSchema['RequestName']</title>
+</head>
+
 <body>
 #if $docId != None
-<B> Configuration </B><BR>
+<b> Configuration </b><br>
 <a href="../showOriginalConfig/$docId" >Original Config</a> &nbsp&nbsp&nbsp
 <a href="../showTweakFile/$docId" >TweakFile</a><br><br>
 #end if
@@ -14,7 +16,8 @@
     <td><textarea name=$name rows="2" cols="80">$value</textarea></td></tr>
 #end def
 
-<FORM ACTION="../modifyWorkload" METHOD="POST">
+<div id="values">
+<form action="../modifyWorkload" method="POST">
 <hr><table>
 #for $key in $detailsFields
     #if $key in $requestSchema
@@ -22,15 +25,15 @@
         ## make a hyperlink to workflow
         #if $key == 'RequestWorkflow'
             <tr><td> $key </td><td>  <a href="../showWorkload?filepath=$workloadDir/$value">$value</a> </td></tr>
-            <INPUT TYPE="HIDDEN" NAME="workload" VALUE=$workloadDir/$value>
+            <input type="HIDDEN" name="workload" value=$workloadDir/$value>
         #elif $key == 'Requestor'
             <tr><td> $key </td><td>  <a href="../user/$value">$value</a> </td></tr>
         #elif $key == 'RequestType'
             <tr><td> $key </td><td> $value </td></tr>
-            <INPUT TYPE="HIDDEN" NAME="requestType" VALUE=$value>
+            <input type="HIDDEN" NAME="requestType" value=$value>
         #elif $key == 'RequestName'
             <tr><td> $key </td><td> $value </td></tr>
-            <INPUT TYPE="HIDDEN" NAME="requestName" VALUE=$value>
+            <input type="HIDDEN" name="requestName" value=$value>
         #elif $key == 'RunWhitelist'
             <tr><td> $key </td> $textarea("runWhitelist", $value)
         #elif $key == 'RunBlacklist'
@@ -47,48 +50,51 @@
     #end if
 #end for
 </table>
-<INPUT TYPE=submit VALUE="Modify">
-</FORM>
-
+<input TYPE=submit value="Modify">
+</form>
+</div>
 <hr>
-<br><B>Assignments</B><br>
+
+<div id="assignments">
+<b>Assignments</b><br>
 <table>
 #if $assignments != None:
 #for $assignment in $assignments
      <tr><td>TeamName</td><td> $assignment</td></tr>
 #end for
 #end if
-
-
-Change the assignment or priority:<BR>
 </table>
+
 <form action="../doAdmin" method="POST">
+Change the assignment or priority:<br/>
 $adminHtml
 <input type=submit>
 </form>
+</div>
 
 <hr><br>
-<A href="../splitting/$requestName">Set Job Splitting and Task Timeout Parameters</A><BR>
+<a href="../splitting/$requestName">Set Job Splitting and Task Timeout Parameters</a><br>
 <hr>
-<br><B>Messages:</B><br>
+<div id="messages">
+<b>Messages:</b><br>
 #if $messages != None
 #for $message in $messages:
     $message[0]<br>
 #end for
 #end if
 ## Updates
-<br><hr>
+</div>
+<hr>
 <table>
 #if $updateDictList != None
 #for $updateDict in $updateDictList
-    <br>----------<br>
     #for $key in $updateDict
         <tr><td>$key</td><td>$updateDict[$key]</td></tr>
     #end for
 #end for
 #end if
-<BR><A HREF="..">Back</A><BR>
 </table>
+<br/><a href="..">Back</a><br/>
 </body>
 </html>
 

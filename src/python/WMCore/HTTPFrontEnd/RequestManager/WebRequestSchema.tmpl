@@ -1,4 +1,6 @@
-<HTML>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head> <title> Job request </title>
 
 <!-- Sam Skin CSS for TabView -->
 <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.1/build/tabview/assets/skins/sam/tabview.css">
@@ -10,7 +12,6 @@
 <!-- Source file for TabView -->
 <script src="http://yui.yahooapis.com/2.8.1/build/tabview/tabview-min.js"></script>
 
-<head> <title> Job request </title> 
 <!-- Hokey way to keep ENTER from submitting the form.  Ticket #401 -->
 <script type="text/javascript">
 
@@ -24,7 +25,7 @@ document.onkeypress = stopRKey;
 
 </script> 
 </head>
-<BODY CLASS="yui-skin-sam">
+<body class="yui-skin-sam">
 
 #def headerBlock
 <form action="makeSchema" method="post">
@@ -43,37 +44,37 @@ Request Priority: <input type="text" name="RequestPriority" size=2 value=1 /><br
 Software Release: <select name="CMSSWVersion">
 			#for $version in $versions
     				#if $version == $defaultVersion
-        				<OPTION SELECTED>$version</OPTION>
+        				<option selectED>$version</option>
     				#else
-        				<OPTION>$version</OPTION>
+        				<option>$version</option>
     				#end if
 			#end for
-		   </SELECT>
+		   </select>
 
-		   <SELECT NAME="ScramArch">
-    			<OPTION>slc4_ia32_gcc345</OPTION>
-    			<OPTION SELECTED>slc5_ia32_gcc434</OPTION>
-    			<OPTION>slc5_amd64_gcc434</OPTION>
-		   </SELECT><br/>
+		   <select name="ScramArch">
+    			<option>slc4_ia32_gcc345</option>
+    			<option selectED>slc5_ia32_gcc434</option>
+    			<option>slc5_amd64_gcc434</option>
+		   </select><br/>
 
 #end def 
 
 #def configBlock($radioName, $scenarioName, $cacheName)
-Configuration <BR>
-  <INPUT TYPE="radio" NAME=$radioName VALUE="scenario"> Scenario
+Configuration <br>
+  <input type="radio" NAME=$radioName value="scenario"> Scenario
     <select name="Scenario">
       <option selected> pp
       <option> cosmics
       <option> hcalnzs
-      <OPTION> preprodmc</OPTION>
-      <OPTION> prodmc </OPTION>
-      <OPTION> relvalmc </OPTION>
-      <OPTION> relvalmcfs </OPTION>
-    </select><BR>
-  </INPUT>
-  <INPUT TYPE="radio" NAME=$radioName VALUE="couchDB"> CouchDB ID
-    <INPUT TYPE=TEXT" NAME="ProdConfigCacheID" SIZE=80>
-  </INPUT><BR>
+      <option> preprodmc</option>
+      <option> prodmc </option>
+      <option> relvalmc </option>
+      <option> relvalmcfs </option>
+    </select><br>
+  </input>
+  <input type="radio" NAME=$radioName value="couchDB"> CouchDB ID
+    <input TYPE=TEXT" name="ProdConfigCacheID" SIZE=80>
+  </input><br>
 
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
 #end def
@@ -81,7 +82,7 @@ Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
 #def ioBlock
 Input Dataset: <input type="text" name="InputDataset" size=40 /><br/>
 
-DBS: <!--input type="text" name="dbs" VALUE="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" size=80/><br/-->
+DBS: <!--input type="text" name="dbs" value="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" size=80/><br/-->
 <select name="DbsUrl">
 		<option>http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet</option>
                 <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_01/servlet/DBSServlet</option>
@@ -90,9 +91,9 @@ DBS: <!--input type="text" name="dbs" VALUE="http://cmsdbsprod.cern.ch/cms_dbs_p
 #end def
 
 #def skimBlock($skimNum)
-Skim Name: <INPUT TYPE="text", NAME="SkimName$skimNum" SIZE=20 VALUE="skim"$skimNum/>
-Skim Input: <INPUT TYPE="text", NAME="SkimInput$skimNum" SIZE=20 VALUE="output"/><BR/>
-Skim Config: <INPUT TYPE="text" NAME="SkimConfig$skimNum" VALUE=$defaultSkimConfig size=80/><br>
+Skim Name: <input type="text", name="SkimName$skimNum" SIZE=20 value="skim"$skimNum/>
+Skim Input: <input type="text", name="SkimInput$skimNum" SIZE=20 value="output"/><BR/>
+Skim Config: <input type="text" name="SkimConfig$skimNum" VALUE=$defaultSkimConfig size=80/><br>
 #end def
 
 #def moreSkims($firstSkim)
@@ -108,9 +109,9 @@ function addSkim() {
   var newdiv = document.createElement('div');
   var divIdName = 'my'+num+'Div';
   newdiv.setAttribute('id',divIdName);
-  newdiv.innerHTML = 'Skim Name: <INPUT TYPE="text", NAME="SkimName'+num+'" SIZE=20 VALUE="skim'+num+'"/><BR>' 
-  + ' Skim Input '+num+': <INPUT TYPE="text", NAME="SkimInput'+num+'" SIZE=40 VALUE="output"/><BR/>' 
-  +'Skim Config ' + num +': <INPUT TYPE="text" NAME="SkimConfig'+num+'"/> <br>'
+  newdiv.innerHTML = 'Skim Name: <input type="text", name="SkimName'+num+'" SIZE=20 value="skim'+num+'"/><br>' 
+  + ' Skim Input '+num+': <input type="text", name="SkimInput'+num+'" SIZE=40 value="output"/><BR/>' 
+  +'Skim Config ' + num +': <input type="text" name="SkimConfig'+num+'"/> <br>'
   ni.appendChild(newdiv);
 }
 </script>
@@ -130,27 +131,27 @@ Block Blocklist (separated by commas): $textarea("BlockBlacklist")
 
 #def emulatorBlock
 Emulator:
-<SELECT NAME="Emulator">
-  <OPTION>True</OPTION>
-  <OPTION>False</OPTION>
-</SELECT><BR>
+<select name="Emulator">
+  <option>True</option>
+  <option>False</option>
+</select><br>
 #end def
 
 
 #def trailerBlock($requestType)
-    <INPUT TYPE="hidden" NAME="RequestType" VALUE=$requestType></INPUT>
+    <input type="hidden" name="RequestType" VALUE=$requestType></input>
      <p><input type="submit" value="Submit"/></p></form>
 #end def
 
-<DIV ID="tabby" CLASS="yui-navset">
-    <UL CLASS="yui-nav">
-        <LI CLASS="selected"><A HREF="#rereco"><EM>ReReco</EM></A></LI>
-        <LI><A HREF="#mc"><EM>Monte Carlo</EM></A></LI>
-        <LI><A HREF="#storeResults"><EM>StoreResults</EM></A></LI>
-        <LI><A HREF="#generic"><EM>Generic</EM></A></LI>
-    </UL>
-    <DIV CLASS="yui-content">
-        <DIV ID="rereco">
+<div id="tabby" class="yui-navset">
+    <ul class="yui-nav">
+        <li class="selected"><a href="#rereco"><em>ReReco</em></a></li>
+        <li><a href="#mc"><em>Monte Carlo</em></a></li>
+        <li><a href="#storeResults"><em>StoreResults</em></a></li>
+        <li><a href="#generic"><em>Generic</em></a></li>
+    </ul>
+    <div class="yui-content">
+        <div id="rereco">
             $headerBlock
             $softwareBlock
 # of Events: <input type="text" name="RequestSizeEvents" size=10 value=-1 />
@@ -160,8 +161,8 @@ Emulator:
             $moreSkims(0)
             $runBlockBlock
             $trailerBlock("ReReco")
-        </DIV>
-        <DIV ID="mc">
+        </div>
+        <div id="mc">
             $headerBlock
             $softwareBlock
 # of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
@@ -169,14 +170,14 @@ Emulator:
             $configBlock("inputMode", "Scenario", "ProdConfigCacheID")
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
             $trailerBlock("MonteCarlo")
-        </DIV>
-        <DIV ID="storeResults">
+        </div>
+        <div id="storeResults">
             $headerBlock
             $softwareBlock
             $ioBlock
             $trailerBlock("StoreResults")
-        </DIV>
-        <DIV ID="generic">
+        </div>
+        <div id="generic">
             $headerBlock
             $softwareBlock
 # of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
@@ -184,12 +185,12 @@ Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
             $ioBlock
             $runBlockBlock
             $trailerBlock("FileProcessing")
-        </DIV>
-    </DIV>
-</DIV>
-<SCRIPT TYPE="text/javascript">
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
    var tabView = new YAHOO.widget.TabView('tabby');
-</SCRIPT>
+</script>
   
 </body>
 </html>

@@ -25,7 +25,6 @@ class MonteCarloRequest(RequestMakerInterface):
         RequestMakerInterface.__init__(self)
 
     def makeWorkload(self, schema):
-       print schema
        factory = MonteCarloWorkloadFactory()
        return factory(schema['RequestName'], schema).data
 

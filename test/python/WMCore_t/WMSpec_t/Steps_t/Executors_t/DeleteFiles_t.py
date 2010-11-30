@@ -48,8 +48,8 @@ class deleteFileTest(unittest.TestCase):
         self.sandboxDir = "%s/UnitTests" % self.testDir
         
         self.task.build(self.testDir)
-        sys.path.append(self.testDir)
-        sys.path.append(self.sandboxDir)
+        sys.path.insert(0, self.testDir)
+        sys.path.insert(0, self.sandboxDir)
         
         
         self.job = Job(name = "/UnitTest/DeleterTask/DeleteTest-test-job")
@@ -105,10 +105,10 @@ class deleteFileTest(unittest.TestCase):
         self.setLocalOverride(self.step)
         self.step.override.newStageOut = True
         self.job['input_files'] = [ {'lfn': os.path.join(self.testDir, 'testfile') } ]
+        print sys.path
         self.executor.initialise(self.step, self.job)
         self.executor.execute()        
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
         
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

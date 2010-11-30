@@ -173,8 +173,8 @@ class otherStageOutTest(unittest.TestCase):
         
         self.task.build(os.path.join(self.testDir, 'UnitTests'))
 
-        sys.path.append(self.testDir)
-        sys.path.append(os.path.join(self.testDir, 'UnitTests'))
+        sys.path.insert(0, self.testDir)
+        sys.path.insert(0, os.path.join(self.testDir, 'UnitTests'))
 
         
 #        binDir = inspect.getsourcefile(ModuleLocator)

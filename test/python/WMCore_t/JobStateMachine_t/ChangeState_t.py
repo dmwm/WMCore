@@ -1,4 +1,8 @@
-#!/usr/bin/python
+#/usr/bin/env python
+"""
+_ChangeState_t_
+
+"""
 
 import unittest
 import sys
@@ -390,6 +394,91 @@ class TestChangeState(unittest.TestCase):
         assert "stageOut1" in fwjrDoc["fwjr"]["steps"].keys(), \
                "Error: stageOut1 step is missing from FWJR."        
 
+        return
+
+    def testDashboardTransitions(self):
+    	"""
+        _testDashboardTransitions_
+
+        Verify that the dashboard transitions code works correctly.
+    	"""
+        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
+        change = ChangeState(DefaultConfig.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", seName = "somese.cern.ch")
+        
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        split_algo = "FileBased")
+        testSubscription.create()
+        
+        testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
+                         locations = set(["somese.cern.ch"]))
+        testFileB = File(lfn = "SomeLFNB", events = 1025, size = 2049,
+                         locations = set(["somese.cern.ch"]))
+        testFileA.create()
+        testFileB.create()
+
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.commit()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        assert len(jobGroup.jobs) == 2, \
+               "Error: Splitting should have created two jobs."
+
+        testJobA = jobGroup.jobs[0]
+        testJobB = jobGroup.jobs[1]
+
+        change.propagate([testJobA, testJobB], "new", "none")
+        change.propagate([testJobA, testJobB], "created", "new")
+        change.propagate([testJobA], "executing", "created")
+        change.propagate([testJobB], "submitfailed", "created")
+        change.propagate([testJobB], "submitcooloff", "submitfailed")
+
+        transitions = change.listTransitionsForDashboard()
+
+        self.assertEqual(len(transitions), 1,
+                         "Error: Wrong number of transitions")
+        self.assertEqual(transitions[0]["name"], testJobA["name"],
+                         "Error: Wrong job name.")
+        self.assertEqual(transitions[0]["retryCount"], 0,
+                         "Error: Wrong retry count.")
+        self.assertEqual(transitions[0]["newState"], "executing",
+                         "Error: Wrong new state.")
+        self.assertEqual(transitions[0]["oldState"], "created",
+                         "Error: Wrong old state.")
+        self.assertEqual(transitions[0]["requestName"], "wf001",
+                         "Error: Wrong request name.")
+        
+        transitions = change.listTransitionsForDashboard()
+
+        self.assertEqual(len(transitions), 0,
+                         "Error: Wrong number of transitions")        
+
+        change.propagate([testJobB], "created", "submitcooloff")
+        change.propagate([testJobB], "executing", "created")
+        change.propagate([testJobA, testJobB], "complete", "executing")        
+        change.propagate([testJobB], "success", "complete")
+        change.propagate([testJobA], "jobfailed", "complete")        
+
+        transitions = change.listTransitionsForDashboard()
+        goldenTransitions = [{"name": testJobA["name"], "retryCount": 0, "newState": "jobfailed", "oldState": "complete", "requestName": "wf001"},
+                             {"name": testJobB["name"], "retryCount": 1, "newState": "executing", "oldState": "created", "requestName": "wf001"},
+                             {"name": testJobB["name"], "retryCount": 1, "newState": "success", "oldState": "complete", "requestName": "wf001"}]
+        self.assertEqual(transitions, goldenTransitions,
+                         "Error: Wrong transitions.")
+        
         return
 
 if __name__ == "__main__":

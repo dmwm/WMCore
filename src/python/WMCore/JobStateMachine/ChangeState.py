@@ -244,3 +244,33 @@ class ChangeState(WMObject, WMConnectionBase):
         dao = self.daofactory(classname = "Jobs.ChangeState")
         dao.execute(jobs, conn = self.getDBConn(),
                     transaction = self.existingTransaction())
+
+    def listTransitionsForDashboard(self):
+        """
+        _listTransitionsForDashboard_
+
+        List information about jobs that have made transitions that need to be
+        broadcast to bashboard.  This will return a list of dictionaries with
+        the following keys:
+          - name
+          - retryCount
+          - requestName
+          - newState
+          - oldState
+        """
+        updateBase = "/" + self.database.name + "/_design/JobDump/_update/dashboardReporting/"
+        viewResults = self.database.loadView("JobDump", "jobsToReport")
+        
+        jobsToReport = []
+        for viewResult in viewResults["rows"]:
+            jobReport = {}
+            jobReport.update(viewResult["value"])
+            del jobReport["index"]
+            del jobReport["id"]
+            jobsToReport.append(jobReport)
+
+            updateUri = updateBase + str(viewResult["value"]["id"])
+            updateUri += "?index=%s" % (viewResult["value"]["index"])
+            self.database.makeRequest(uri = updateUri, type = "PUT", decode = False)
+            
+        return jobsToReport

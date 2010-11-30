@@ -13,12 +13,6 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 
 """
 
-
-
-
-
-
-
 import os
 import shutil
 import inspect
@@ -378,4 +372,4 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         
 if __name__ == "__main__":
     unittest.main()
-    deleteConfig(ConfigFile)
+    

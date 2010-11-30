@@ -4,9 +4,6 @@ _WorkQueue_t_
 
 WorkQueue tests
 """
-#setup emulator for test, this needs to be at top of the file
-from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
-ConfigFile = emulatorSetup(phedex=True, dbs=True, siteDB=True, requestMgr=False)
 
 import unittest
 import os
@@ -33,6 +30,8 @@ from WMCore_t.WMSpec_t.samples.BasicProductionWorkload \
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
                                 import workload as MultiTaskProductionWorkload
 
+from WMQuality.Emulators.EmulatorSetup import EmulatorHelper, deleteConfig
+
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
 rerecoArgs = getRerecoArgs()
@@ -58,6 +57,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         If we dont have a wmspec file create one
         """
+        EmulatorHelper.setEmulators(phedex = True, dbs = True, 
+                                    siteDB = True, requestMgr = False)
         #set up WMAgent config file for couchdb
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
@@ -131,7 +132,7 @@ class WorkQueueTest(WorkQueueTestCase):
         WorkQueueTestCase.tearDown(self)
         #Delete WMBSAgent config file
         EmulatorSetup.deleteConfig(self.configFile)
-        EmulatorSetup.deleteConfig(ConfigFile)
+        EmulatorHelper.resetEmulators()
 
     def testProduction(self):
         """

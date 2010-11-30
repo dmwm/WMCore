@@ -12,19 +12,18 @@
 # pylint: disable-msg=W0613,R0201
 from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx as RealPhEDEx
 
 filesInDataset = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfBlocksPerDataset()
 filesInBlock = GlobalParams.numOfFilesPerBlock()
 
-class PhEDEx(RealPhEDEx):
+class PhEDEx(dict):
     """
     """
     def __init__(self, *args, **kwargs):
         # add the end point to prevent the existence check fails.
         self['endpoint'] = "phedex_emulator"
         self.dataBlocks = DataBlockGenerator()
-
+        
     def injectBlocks(self, node, xmlData, verbose = 0, strict = 1):
 
         """
@@ -168,6 +167,58 @@ class PhEDEx(RealPhEDEx):
             _blockInfoGenerator(args['block'])
 
         return data
+
+    def getSubscriptionMapping(self, *dataItems, **kwargs):
+        """
+        Similar basic functionality as self.subscriptions()
+        however: dataItems may be a combination of blocks or datasets and
+        kwargs is passed to PhEDEx; output is parsed and returned in the form
+        { 'dataItem1' : [Node1, Node2] } where dataItem is a block or dataset
+
+        The following cases are handled:
+          o Input is a block and subscription is a dataset
+          o Input is a block and subscription is a block
+          o Input is a dataset and subscription is a dataset
+
+        Not supported:
+          o Input is a dataset but only block subscriptions exist
+        """
+        from collections import defaultdict
+        result = defaultdict(set)
+        kwargs.setdefault('suspended', 'n') # require active subscription
+
+        dataItems = list(set(dataItems)) # force unique items
+
+        # Hard to query all at once in one GET call, POST not cacheable
+        # hence, query individually - use httplib2 caching to protect service
+        for item in dataItems:
+
+            # First query for a dataset level subscription (most common)
+            # this returns block level subscriptions also.
+            # Rely on httplib2 caching to not resend on every block in dataset
+            kwargs['dataset'], kwargs['block'] = [item.split('#')[0]], []
+            response = self.subscriptions(**kwargs)['phedex']
+
+            # iterate over response as can't jump to specific datasets
+            for dset in response['dataset']:
+                if dset['name'] != item.split('#')[0]:
+                        continue
+                if dset.has_key('subscription'):
+                    # dataset level subscription
+                    nodes = [x['node'] for x in dset['subscription']
+                             if x['suspended'] == 'n']
+                    result[item].update(nodes)
+
+                #if we have a block we must check for block level subscription also
+                # combine with original query when can give both dataset and block
+                if item.find('#') > -1 and dset.has_key('block'):
+                    for block in dset['block']:
+                        if block['name'] == item:
+                            nodes = [x['node'] for x in block['subscription']
+                                     if x['suspended'] == 'n']
+                            result[item].update(nodes)
+                            break
+        return result
 
 
     def emulator(self):

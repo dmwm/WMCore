@@ -7,32 +7,96 @@ import sys
 import logging
 
 from WMCore.Configuration import Configuration, saveConfigurationFile
+from WMQuality.Emulators import emulatorSwitch
+
+class EmulatorHelper(object):
+    """
+    Works as global value for the emulator switch.
+    WARNNING: This is not multi thread safe.
+    """
+    #DO not change default values
+    PhEDEx = None
+    DBSReader = None
+    SiteDBJSON = None
+    RequestManager = None
     
-def emulatorSetup(phedex=False, dbs=False, siteDB=False, requestMgr=False):
-    fd,configFile = tempfile.mkstemp(".py", "Emulator_Config",)
-    os.environ["EMULATOR_CONFIG"] = configFile
-    _emulatorConfig(phedex, dbs, siteDB, requestMgr, configFile)
-    return configFile
+    @staticmethod
+    def getEmulatorClass(clsName):
+        
+        if clsName == 'PhEDEx':
+            from WMQuality.Emulators.PhEDExClient.PhEDEx \
+                import PhEDEx as PhEDExEmulator
+            return PhEDExEmulator
+        
+        if clsName == 'DBSReader':
+            from WMQuality.Emulators.DBSClient.DBSReader \
+                import DBSReader as DBSEmulator
+            return DBSEmulator
+        
+        if clsName == 'SiteDBJSON':
+            from WMQuality.Emulators.SiteDBClient.SiteDB \
+                import SiteDBJSON as SiteDBEmulator
+            return SiteDBEmulator
+        
+        if clsName == 'RequestManager':
+            from WMQuality.Emulators.RequestManagerClient.RequestManager \
+                import RequestManager as RequestManagerEmulator
+            return RequestManagerEmulator
+        
+    @staticmethod
+    def setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=False):
+        EmulatorHelper.PhEDEx = phedex
+        EmulatorHelper.DBSReader = dbs
+        EmulatorHelper.SiteDBJSON = siteDB
+        EmulatorHelper.RequestManager = requestMgr
+    
+    @staticmethod
+    def resetEmulators():
+        EmulatorHelper.PhEDEx = None
+        EmulatorHelper.DBSReader = None
+        EmulatorHelper.SiteDBJSON = None
+        EmulatorHelper.RequestManager = None
+    
+    @staticmethod
+    def getClass(cls):
+        """
+        if emulator flag is set return emulator class
+        otherwise return original class.
+        if emulator flag is not initialized 
+            and EMULATOR_CONFIG environment variable is set,
+        r 
+        """
+        emFlag = getattr(EmulatorHelper, cls.__name__)
+        if emFlag:
+            return EmulatorHelper.getEmulatorClass(cls.__name__)
+        elif emFlag == None:
+            envFlag = emulatorSwitch(cls.__name__)
+            setattr(EmulatorHelper, cls.__name__, envFlag)
+                 
+        return cls
+        
+def emulatorHook(cls):
+    """
+    This is used as decorator to swap between Emulator and real Class
+    on instatnce creation.
+    """
+    class EmulatorWrapper:
+        def __init__(self, *args, **kwargs):
+            aClass = EmulatorHelper.getClass(cls)
+            self.wrapped = aClass(*args, **kwargs)
+            
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
+        
+    return EmulatorWrapper
+
     
 def deleteConfig(configFile):
     if os.path.exists(configFile):
         os.remove(configFile)
     else:
         pass
-        
-def _emulatorConfig(phedex, dbs, siteDB, requestMgr, configFile):
-    
-    config = Configuration()
-    config.section_("Emulator")
-    config.Emulator.PhEDEx = phedex
-    config.Emulator.DBSReader = dbs
-    config.Emulator.RequestMgr = requestMgr
-    config.Emulator.SiteDB = siteDB
-    saveConfigurationFile(config, configFile)
-    msg = "create config file:%s, PhEDEx: %s, DBS: %s, RequestManager: %s, SiteDB %s with flag" \
-           % (configFile, phedex, dbs, siteDB, requestMgr)
-    logging.info(msg)
-           
+                   
 def setupWMAgentConfig():
     fd,configFile = tempfile.mkstemp(".py", "TESTAGENTConfig",)
     os.environ["WMAGENT_CONFIG"] = configFile

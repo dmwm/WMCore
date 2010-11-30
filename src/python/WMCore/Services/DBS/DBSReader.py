@@ -14,8 +14,12 @@ from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx
 import dlsClient
 from dlsApi import DlsApiError
 
+from WMQuality.Emulators.EmulatorSetup import emulatorHook 
 
-
+# emulator hook is used to swap the class instance 
+# when emulator values are set. 
+# Look WMQuality.Emulators.EmulatorSetup module for the values
+@emulatorHook
 class DBSReader:
     """
     _DBSReader_
@@ -531,11 +535,3 @@ class DBSReader:
         """
         if blockName in ("", "*", None):
            raise DBSReaderError("Invalid Block name: => %s <=" % blockName)
-
-
-# TODO: find the better way to handle emulation:
-# hacky code: swap the namespace if emulator config is set 
-from WMQuality.Emulators import emulatorSwitch
-if emulatorSwitch("DBSReader"):
-    from WMQuality.Emulators.DBSClient.DBSReader import DBSReader
-

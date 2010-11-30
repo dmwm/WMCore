@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-#setup emulator for test, this needs to be at top of the file
-from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
-ConfigFile = emulatorSetup(phedex=True, dbs=True, siteDB=True, requestMgr=True)
-
 import os
 import unittest
 import shutil
@@ -17,6 +13,7 @@ from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMQuality.Emulators import EmulatorSetup
+from WMQuality.Emulators.EmulatorSetup import EmulatorHelper
 
 class WorkQueueTest(RESTBaseUnitTest):
     """
@@ -29,6 +26,7 @@ class WorkQueueTest(RESTBaseUnitTest):
     Not the correctness of functions. That will be tested in different module.
     """
     def initialize(self):
+        
         self.config = DefaultConfig(
                 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
         dbUrl = os.environ.get("DATABASE", None)
@@ -50,6 +48,9 @@ class WorkQueueTest(RESTBaseUnitTest):
         """
         setUP global values
         """
+        EmulatorHelper.setEmulators(phedex = True, dbs = True, 
+                                    siteDB = True, requestMgr = True)
+        
         RESTBaseUnitTest.setUp(self)
         self.params = {}
         self.params['endpoint'] = self.config.getServerUrl()
@@ -67,7 +68,6 @@ class WorkQueueTest(RESTBaseUnitTest):
         self.specGenerator.removeSpecs()
         
         # following should be tearDownClass if we swithch to python 2.7
-        deleteConfig(ConfigFile)
         try:
             # clean up files created by cherrypy.
             #TODO: this should be under tearDownClass class method.
@@ -77,6 +77,7 @@ class WorkQueueTest(RESTBaseUnitTest):
             shutil.rmtree('wf')
         except:
             pass
+        EmulatorHelper.resetEmulators()
 
     def testWorkQueueService(self):
         # test getWork

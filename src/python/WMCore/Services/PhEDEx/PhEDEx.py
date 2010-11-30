@@ -6,7 +6,12 @@ import pwd
 from xml.dom.minidom import parseString
 from WMCore.Services.Service import Service
 from WMCore.Wrappers import JsonWrapper
+from WMQuality.Emulators.EmulatorSetup import emulatorHook 
 
+# emulator hook is used to swap the class instance 
+# when emulator values are set. 
+# Look WMQuality.Emulators.EmulatorSetup module for the values
+@emulatorHook
 class PhEDEx(Service):
 
     """
@@ -306,10 +311,3 @@ class PhEDEx(Service):
 
 
         return result_dict
-
-# TODO: find the better way to handle emulation:
-# hacky code: swap the namespace if emulator config is set 
-from WMQuality.Emulators import emulatorSwitch
-if emulatorSwitch("PhEDEx"):
-    from WMQuality.Emulators.PhEDExClient.PhEDEx import PhEDEx
-    

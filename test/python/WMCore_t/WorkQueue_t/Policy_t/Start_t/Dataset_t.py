@@ -3,9 +3,6 @@
     WorkQueue.Policy.Start.Dataset tests
 """
 
-
-
-
 import unittest
 import shutil
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset

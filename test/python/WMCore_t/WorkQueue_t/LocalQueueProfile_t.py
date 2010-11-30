@@ -3,13 +3,6 @@
     WorkQueue tests
 """
 
-
-
-
-#setup emulator for test, this needs to be at top of the file
-from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
-ConfigFile = emulatorSetup(phedex=True, dbs=True, siteDB=True, requestMgr=True)
-
 import tempfile
 import unittest
 import cProfile
@@ -19,6 +12,8 @@ from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WorkQueueTestCase import WorkQueueTestCase
+
+from WMQuality.Emulators.EmulatorSetup import EmulatorHelper
     
 class WorkQueueProfileTest(WorkQueueTestCase):
     """
@@ -30,6 +25,9 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         """
         If we dont have a wmspec file create one
         """
+        EmulatorHelper.setEmulators(phedex = True, dbs = True, 
+                                    siteDB = True, requestMgr = True)
+        
         WorkQueueTestCase.setUp(self)
         
         #TODO: need to fix why always get the same number of blocks
@@ -55,6 +53,8 @@ class WorkQueueProfileTest(WorkQueueTestCase):
             self.specGenerator.removeSpecs()
         except:
             pass
+
+        EmulatorHelper.resetEmulators()
         
     def createReRecoSpec(self, numOfSpec, type = "spec"):
         specs = []    

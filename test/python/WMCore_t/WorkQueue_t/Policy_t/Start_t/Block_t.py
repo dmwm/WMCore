@@ -3,9 +3,6 @@
     WorkQueue.Policy.Start.Block tests
 """
 
-
-
-
 import unittest
 import shutil
 from WMCore.WorkQueue.Policy.Start.Block import Block

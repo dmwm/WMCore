@@ -23,7 +23,12 @@ from WMCore.Services.JSONParser.JSONParser import JSONParser
 #except:
     # Prior to 2.6 requires simplejson
     #import simplejson as json
+from WMQuality.Emulators.EmulatorSetup import emulatorHook 
 
+# emulator hook is used to swap the class instance 
+# when emulator values are set. 
+# Look WMQuality.Emulators.EmulatorSetup module for the values
+@emulatorHook
 class SiteDBJSON(SSLService):
 
     """
@@ -175,8 +180,3 @@ class SiteDBJSON(SSLService):
 #        # that. So simply raise an error
 #        raise ValueError, "Unable to find CMS name for \'%s\'" % node
 
-# TODO: find the better way to handle emulation:
-# hacky code: swap the namespace if emulator config is set 
-from WMQuality.Emulators import emulatorSwitch
-if emulatorSwitch("SiteDB"):
-    from WMQuality.Emulators.SiteDBClient.SiteDB import SiteDBJSON

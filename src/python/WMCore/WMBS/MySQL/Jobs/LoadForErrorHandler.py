@@ -68,10 +68,7 @@ class LoadForErrorHandler(DBFormatter):
 
             entry['input_files'] = []
 
-        if len(formattedResult) == 1:
-            return formattedResult[0]
-        else:
-            return formattedResult
+        return formattedResult
     
     def execute(self, jobID, conn = None, transaction = False):
         """

@@ -52,7 +52,7 @@ class ErrorHandlerTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
                                 useDefault = False)
-        self.testInit.setupCouch("acdcdatacolltest22", "GroupUser", "ACDC")
+        self.testInit.setupCouch("errorhandler_t", "GroupUser", "ACDC")
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,

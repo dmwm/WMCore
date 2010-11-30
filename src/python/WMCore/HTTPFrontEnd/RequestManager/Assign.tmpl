@@ -15,10 +15,11 @@ document.onkeypress = stopRKey;
 </script>
 </head>
 
+<h2> Request $requestName </h2>
 ## pass the request name along silently
 <form action="handleAssignmentPage" method="POST">
 <input type="HIDDEN" name="RequestName" value="$requestName">
-<b>Assign this request to teams</B><br/>
+<h4>Assign request to teams</h4>
 #for $team in $teams:
     #if $team in $assignments:
         <input type="checkbox" name="Team$team" CHECKED>$team</input><br/> 
@@ -26,8 +27,8 @@ document.onkeypress = stopRKey;
         <input type="checkbox" name="Team$team">$team</input><br/>
     #end if
 #end for
-<br/>
-<b> Site White/Black Lists </B><br/>
+
+<h4> Site White/Black Lists </h4>
 Site Whitelist:
 <select name="SiteWhitelist" multiple size=10>
    #for $site in $sites:
@@ -39,9 +40,8 @@ Site Blacklist:
    #for $site in $sites:
        <option>$site</option>
    #end for
-</select><BR/>
-<br/>
-<b>LFN Bases </B><br/>
+</select>
+<h4>LFN Bases</h4>
 Merged LFN Base: <select name="MergedLFNBase">
   #for $mergedLFNBase in $mergedLFNBases
     <option>$mergedLFNBase</option>
@@ -54,10 +54,9 @@ Unmerged LFN Base: <select name="UnmergedLFNBase">
   <option>/store/temp/unmerged</option>
   <option>/store/temp/WMAgent/unmerged</option>
   <option>/store/unmerged/lustre</option>
-</select><br/>
+</select>
 
-<br/>
-<b>Other Options</b><br/>
+<h4>Other Options</h4>
 Min Merge Size <input type="text" name="MinMergeSize" value=500000000 size=10/>
 Max Merge Size <input type="text" name="MaxMergeSize" value=4294967296 size=10/>
 Max Merge Events <input type="text" name="MaxMergeEvents" value=50000 size=10/><br/>

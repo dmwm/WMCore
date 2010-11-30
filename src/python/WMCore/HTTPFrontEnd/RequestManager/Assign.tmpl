@@ -1,6 +1,6 @@
-<form action="handleAssignmentPage" method="POST">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <head>
-<TITLE> Request Assignment </TITLE>
+<title> Request Assignment </title>
 <!-- Hokey way to keep ENTER from submitting the form.  Ticket #401 -->
 <script type="text/javascript">
 
@@ -16,55 +16,56 @@ document.onkeypress = stopRKey;
 </head>
 
 ## pass the request name along silently
+<form action="handleAssignmentPage" method="POST">
 <input type="HIDDEN" name="RequestName" value="$requestName">
-<B>Assign this request to teams</B><BR>
+<b>Assign this request to teams</B><br/>
 #for $team in $teams:
     #if $team in $assignments:
-        <input type="checkbox" name="Team$team" CHECKED>$team</INPUT><br> 
+        <input type="checkbox" name="Team$team" CHECKED>$team</input><br/> 
     #else
-        <input type="checkbox" name="Team$team">$team</INPUT><BR>
+        <input type="checkbox" name="Team$team">$team</input><br/>
     #end if
 #end for
-<BR>
-<B> Site White/Black Lists </B><BR>
+<br/>
+<b> Site White/Black Lists </B><br/>
 Site Whitelist:
-<SELECT NAME="SiteWhitelist" MULTIPLE SIZE=10>
+<select name="SiteWhitelist" multiple size=10>
    #for $site in $sites:
-     <OPTION>$site</OPTION>
+     <option>$site</option>
    #end for
-</SELECT> &nbsp&nbsp&nbsp&nbsp
+</select> &nbsp&nbsp&nbsp&nbsp
 Site Blacklist:
-<SELECT NAME="SiteBlacklist" MULTIPLE SIZE=10>
+<select name="SiteBlacklist" multiple size=10>
    #for $site in $sites:
-       <OPTION>$site</OPTION>
+       <option>$site</option>
    #end for
-</SELECT><BR/>
-<BR>
-<B>LFN Bases </B><BR>
-Merged LFN Base: <SELECT name="MergedLFNBase">
+</select><BR/>
+<br/>
+<b>LFN Bases </B><br/>
+Merged LFN Base: <select name="MergedLFNBase">
   #for $mergedLFNBase in $mergedLFNBases
-    <OPTION>$mergedLFNBase</OPTION>
+    <option>$mergedLFNBase</option>
   #end for
-</SELECT><BR>
-Unmerged LFN Base: <SELECT name="UnmergedLFNBase">
-  <OPTION>/store/unmerged</OPTION>
-  <OPTION>/store/backfill/1/unmerged</OPTION>
-  <OPTION>/store/backfill/1/test01/unmerged</OPTION>
-  <OPTION>/store/temp/unmerged</OPTION>
-  <OPTION>/store/temp/WMAgent/unmerged</OPTION>
-  <OPTION>/store/unmerged/lustre</OPTION>
-</SELECT><BR>
+</select><br/>
+Unmerged LFN Base: <select name="UnmergedLFNBase">
+  <option>/store/unmerged</option>
+  <option>/store/backfill/1/unmerged</option>
+  <option>/store/backfill/1/test01/unmerged</option>
+  <option>/store/temp/unmerged</option>
+  <option>/store/temp/WMAgent/unmerged</option>
+  <option>/store/unmerged/lustre</option>
+</select><br/>
 
-<BR>
-<B>Other Options</B><BR>
-Min Merge Size <INPUT TYPE="text" name="MinMergeSize" VALUE=500000000 size=10/>
-Max Merge Size <INPUT TYPE="text" name="MaxMergeSize" VALUE=4294967296 size=10/>
-Max Merge Events <INPUT TYPE="text" name="MaxMergeEvents" VALUE=50000 size=10/><br>
+<br/>
+<b>Other Options</b><br/>
+Min Merge Size <input type="text" name="MinMergeSize" value=500000000 size=10/>
+Max Merge Size <input type="text" name="MaxMergeSize" value=4294967296 size=10/>
+Max Merge Events <input type="text" name="MaxMergeEvents" value=50000 size=10/><br/>
 
-Acquisition Era: <INPUT TYPE="text" name="AcquisitionEra" SIZE=20></BR>
+Acquisition Era: <input type="text" name="AcquisitionEra" size=20></BR>
 ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 /><br/>
 
-<BR>
+<br/>
 <input type="submit"/>
 </form>
 

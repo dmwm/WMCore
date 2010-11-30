@@ -41,8 +41,7 @@ class ReRecoSchema(RequestSchema):
             "CMSSWVersion",
             "ScramArch",
             "GlobalTag",
-            "InputDataset",
-            "CmsPath",
+            "InputDataset"
             ]
         self.optionalFields = [
             "SiteWhitelist",
@@ -84,7 +83,6 @@ if __name__ == "__main__":
     schema["InputDataset"] = "/MinimumBias/BeamCommissioning09-v1/RAW"
     schema["SkimInput"] = "output"
     schema["DbsUrl"] = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
-    schema["CmsPath"] = "/uscmst1/prod/sw/cms"
     schema["Scenario"] = "pp"
     schema["ProcessingConfig"] = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8"
     schema["ProcessingVersion"] = "v0"

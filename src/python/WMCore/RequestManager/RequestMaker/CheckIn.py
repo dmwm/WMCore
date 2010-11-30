@@ -36,7 +36,7 @@ def checkIn(request, workloadCache):
         request['RequestName'],
         request['RequestType'],
         request['RequestWorkflow'],
-        )
+    )
     except Exception, ex:
         msg = "Error creating new request:\n"
         msg += str(ex)

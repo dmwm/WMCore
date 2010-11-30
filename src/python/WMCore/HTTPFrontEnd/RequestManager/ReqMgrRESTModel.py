@@ -25,6 +25,7 @@ import json
 import threading
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import urllib
+import logging
 
 from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.Overview \
      import getGlobalSummaryView

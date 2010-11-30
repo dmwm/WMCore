@@ -3,7 +3,6 @@ import WMCore.RequestManager.RequestMaker.Processing.StoreResultsRequest
 from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
 from WMCore.Services.Requests import JSONRequests
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList
-from WMCore.HTTPFrontEnd.RequestManager.CmsDriverWebRequest import CmsDriverWebRequest
 import WMCore.HTTPFrontEnd.RequestManager.Sites
 from httplib import HTTPException
 import cherrypy
@@ -18,17 +17,16 @@ class WebRequestSchema(TemplatedPage):
         # set the database to whatever the environment defines
         self.templatedir = __file__.rsplit('/', 1)[0]
         self.requestor = config.requestor
-        self.cmsswInstallation = config.cmsswInstallation
         self.cmsswVersion = config.cmsswDefaultVersion
         self.reqMgrHost = config.reqMgrHost
         self.jsonSender = JSONRequests(config.reqMgrHost)
-        self.cmsDriver = CmsDriverWebRequest(config)
         self.couchUrl = config.configCacheUrl
         self.couchDBName = config.configCacheDBName
         cherrypy.config.update({'tools.sessions.on': True, 'tools.encode.on':True, 'tools.decode.on':True})
 
         self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
 
+    @cherrypy.expose
     def index(self):
         """ Main web page for creating requests """
         self.versions = self.jsonSender.get('/reqMgr/version')[0]
@@ -46,7 +44,6 @@ class WebRequestSchema(TemplatedPage):
           groups=groups, reqTypes=reqTypes, 
           versions=self.versions, defaultVersion=self.cmsswVersion,
           defaultSkimConfig=self.defaultSkimConfig)
-    index.exposed = True
 
     @cherrypy.expose
     def makeSchema(self, **kwargs):
@@ -100,10 +97,8 @@ class WebRequestSchema(TemplatedPage):
         if kwargs.has_key("BlockBlacklist"):
             schema["BlockBlacklist"] = parseBlockList(kwargs["BlockBlacklist"])
 
-        schema['CmsPath'] = self.cmsswInstallation
         schema["CouchUrl"] = self.couchUrl
         schema["CouchDBName"] = self.couchDBName
-        #cherrypy.session['schema'] = schema
         try:
             self.jsonSender.put('/reqMgr/request/'+schema['RequestName'], schema)
         except HTTPException, ex:

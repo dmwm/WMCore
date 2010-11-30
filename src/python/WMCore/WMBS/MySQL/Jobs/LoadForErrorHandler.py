@@ -32,9 +32,9 @@ class LoadForErrorHandler(DBFormatter):
              WHERE wmbs_job.id = :jobid"""
 
 
-    fileSQL = """SELECT wfd.id, wfd.lfn, wfd.filesize AS size, wfd.events, wfd.first_event,
-                   wfd.last_event, wfd.merged, wja.job AS jobid,
-                   wl.se_name AS se_name
+    fileSQL = """SELECT wfd.id, wfd.lfn, wfd.filesize size, wfd.events, wfd.first_event,
+                   wfd.last_event, wfd.merged, wja.job jobid,
+                   wl.se_name se_name
                  FROM wmbs_file_details wfd
                  INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfd.id
                  INNER JOIN wmbs_file_location wfl ON wfl.fileid = wfd.id
@@ -68,10 +68,7 @@ class LoadForErrorHandler(DBFormatter):
 
             entry['input_files'] = []
 
-        if len(formattedResult) == 1:
-            return formattedResult[0]
-        else:
-            return formattedResult
+        return formattedResult
     
     def execute(self, jobID, conn = None, transaction = False):
         """

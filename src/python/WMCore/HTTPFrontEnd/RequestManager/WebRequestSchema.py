@@ -38,27 +38,31 @@ class WebRequestSchema(TemplatedPage):
         groups = self.jsonSender.get('/reqMgr/group?user='+self.requestor)[0]
         if groups == []:
             return "User " + self.requestor + " is not in any groups.  Contact a ReqMgr administrator."
-        #reqTypes = TypesList
-        reqTypes = ["ReReco"]
         return self.templatepage("WebRequestSchema", requestor=self.requestor,
-          groups=groups, reqTypes=reqTypes, 
-          versions=self.versions, defaultVersion=self.cmsswVersion,
-          defaultSkimConfig=self.defaultSkimConfig)
+                                 groups=groups, 
+                                 versions=self.versions, defaultVersion=self.cmsswVersion,
+                                 defaultSkimConfig=self.defaultSkimConfig)
 
     @cherrypy.expose
     def makeSchema(self, **kwargs):
         """ Handles the submission of requests """
-        current_time = time.strftime('%y%m%d_%H%M%S',
-                                 time.localtime(time.time()))
         # make sure no extra spaces snuck in
         for k, v in kwargs.iteritems():
             kwargs[k] = v.strip()
         maker = retrieveRequestMaker(kwargs["RequestType"])
         schema = maker.newSchema()
         print str(kwargs)
-        schema.update(kwargs)        
+        schema.update(kwargs)
+        current_time = time.strftime('%y%m%d_%H%M%S',
+                                 time.localtime(time.time()))
+
+        if schema.has_key('RequestString') and schema['RequestString'] != "":
+            schema['RequestName'] = "%s_%s_%s" % (self.requestor, schema['RequestString'],
+                                                  current_time)
+        else:
+            schema['RequestName'] = "%s_%s" % (self.requestor, current_time)
+            
         schema['Requestor'] = self.requestor
-        schema['RequestName'] = self.requestor + '_' + current_time
         schema['CouchURL'] = self.couchUrl
         schema['CouchDBName'] = self.couchDBName
 

@@ -55,11 +55,12 @@ WMCore.WebTools.createDataTable = function (container, dataSource, columnDefs,
 	if (!myCallback) {
 		// Set up polling
 		myCallback = {
-			success: myDataTable.onDataReturnInitializeTable,
-			failure: function(){
+			success: myDataTable.onDataReturnReplaceRows,
+            failure: function(){
 				YAHOO.log("Polling failure", "error");
 			},
-			scope: myDataTable
+			scope: myDataTable,
+			arguments: myDataTable.getState()
 		};
 		
 		dataSource.setInterval(pollingCycle, null, myCallback);

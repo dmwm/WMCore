@@ -5,11 +5,12 @@ _SetupCMSSWPset_
 Create a CMSSW PSet suitable for running a WMAgent job.
 """
 
+import os
 import types
 import socket
 
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
-
+from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog 
 from PSetTweaks.PSetTweak import PSetTweak
 from PSetTweaks.WMTweak import makeTweak, applyTweak
 from PSetTweaks.WMTweak import makeOutputTweak, makeJobTweak, makeTaskTweak
@@ -216,7 +217,7 @@ class SetupCMSSWPset(ScriptInterface):
         """
         _call_
 
-        Examine the step configuration and contruct a PSet from that.
+        Examine the step configuration and construct a PSet from that.
         """
         step = self.step.data
         self.process = None
@@ -238,10 +239,36 @@ class SetupCMSSWPset(ScriptInterface):
         # Apply task level tweaks
         taskTweak = makeTaskTweak(self.step.data)
         applyTweak(self.process, taskTweak)
+        
+        # Check if chained processing is enabled
+        # If not - apply the per job tweaks
+        # If so - create an override TFC (like done in PA) and then modify thePSet accordingly
+        if (hasattr(self.step.data.input, "chainedProcessing") and
+            self.step.data.input.chainedProcessing):
+            # first, create an instance of TrivialFileCatalog to override
+            tfc = TrivialFileCatalog()
+            # check the jobs input files
+            inputFile = ("../%s/%s.root" % (self.step.data.input.inputStepName,
+                                            self.step.data.input.inputOutputModule))
+            tfc.addMapping("direct", inputFile, inputFile,
+                           mapping_type = "lfn-to-pfn")
+            tfc.addMapping("direct", inputFile, inputFile,
+                           mapping_type = "pfn-to-lfn")
+            self.process.source.fileNames.setValue([inputFile])
 
-        # Apply per job PSet Tweaks
-        jobTweak = makeJobTweak(self.job)
-        applyTweak(self.process, jobTweak)
+            tfcName = "override_catalog.xml"
+            tfcPath = os.path.join(os.getcwd(), tfcName)            
+            print "Creating override TFC, contents below, saving into '%s'" % tfcPath
+            tfcStr = tfc.getXML()
+            print tfcStr
+            tfcFile = open(tfcPath, 'w')
+            tfcFile.write(tfcStr)
+            tfcFile.close()
+            step.application.overrideCatalog = tfcName
+        else:
+            # Apply per job PSet Tweaks
+            jobTweak = makeJobTweak(self.job)
+            applyTweak(self.process, jobTweak)
 
         # Apply per output module PSet Tweaks
         cmsswStep = self.step.getTypeHelper()

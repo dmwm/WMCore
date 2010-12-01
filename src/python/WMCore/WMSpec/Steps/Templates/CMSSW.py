@@ -20,6 +20,8 @@ class CMSSWStepHelper(CoreHelper):
     for CMSSW tasks
 
     """
+    
+    
     def addOutputModule(self, moduleName, **details):
         """
         _addOutputModule_
@@ -38,6 +40,7 @@ class CMSSWStepHelper(CoreHelper):
             setattr(module, key, value)
 
         return
+    
 
     def listOutputModules(self):
         """
@@ -47,7 +50,8 @@ class CMSSWStepHelper(CoreHelper):
 
         """
         return self.data.output.modules.dictionary_().keys()
-
+    
+    
     def getOutputModule(self, name):
         """
         _getOutputModule_
@@ -80,7 +84,6 @@ class CMSSWStepHelper(CoreHelper):
                                         "%s/configFile" % docUrl
 
 
-
     def setDataProcessingConfig(self, scenarioName, functionName, **args):
         """
         _setDataProcessingConfig_
@@ -95,7 +98,6 @@ class CMSSWStepHelper(CoreHelper):
         [ setattr(self.data.application.configuration.arguments, k, v)
           for k, v in args.items() ]
         return
-
 
 
     def cmsswSetup(self, cmsswVersion, **options):
@@ -119,6 +121,7 @@ class CMSSWStepHelper(CoreHelper):
             setattr(self.data.application.setup, k, v)
         return
 
+
     def getCMSSWVersion(self):
         """
         _getCMSSWVersion_
@@ -126,6 +129,8 @@ class CMSSWStepHelper(CoreHelper):
         Retrieve the version of the framework used for this step.
         """
         return self.data.application.setup.cmsswVersion
+    
+    
 
     def setGlobalTag(self, globalTag):
         """
@@ -136,6 +141,17 @@ class CMSSWStepHelper(CoreHelper):
         self.data.application.configuration.section_('arguments')
         self.data.application.configuration.arguments.globalTag = globalTag
         return
+
+
+    def setupChainedProcessing(self, inputStepName, inputOutputModule):
+        """
+        Set values to support chained CMSSW running.
+        """
+        self.data.input.chainedProcessing = True
+        self.data.input.inputStepName = inputStepName
+        self.data.input.inputOutputModule = inputOutputModule
+        
+        
 
 class CMSSW(Template):
     """

@@ -25,6 +25,7 @@ class CMSSWTemplate_t(unittest.TestCase):
     
     """
     
+    
     def testA(self):
         """
         instantiate & apply template
@@ -56,6 +57,7 @@ class CMSSWTemplate_t(unittest.TestCase):
         self.failUnless(
             hasattr(step.application, "setup"))
 
+
     def testB(self):
         """
         
@@ -85,7 +87,26 @@ class CMSSWTemplate_t(unittest.TestCase):
                     dataTier = 'Tier',
                     lfnBase = "/store/unmerged/whatever"
                 )
-            
+        
+        
+    def testChainedProcessing(self):
+        """
+        
+        check the chained processing set up is correct
+        
+        """
+        workload = newWorkload("UnitTests")
+        task = workload.newTask("CMSSWTemplate")
+        step = task.makeStep("TemplateTest")
+        template = CMSSWTemplate()
+        helper = template.helper(step.data)
+        inputStepName = "some_inputStepName"
+        inputOutputModule = "some_inputOutputModule"
+        helper.setupChainedProcessing(inputStepName, inputOutputModule)
+        
+        self.assertEqual(helper.data.input.chainedProcessing, True)
+        self.assertEqual(helper.data.input.inputStepName, "some_inputStepName")
+        self.assertEqual(helper.data.input.inputOutputModule, "some_inputOutputModule")
         
 
 if __name__ == '__main__':

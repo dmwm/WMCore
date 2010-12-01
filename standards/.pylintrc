@@ -31,8 +31,11 @@ include-ids=no
 
 [MESSAGES CONTROL]
 # disable F0401 - could not import module
+# disable E1103 - Allows attachment of dbi, logger to threading.currentThread()
+# disable W0142 - Allow use of * and ** magic (which we use a lot)
+# disable W6501 - I see no reason to not use string formatting in logging...
 
-disable-msg=F0401
+disable-msg=F0401, E1103, W0142, W6501
 
 
 # checks for :

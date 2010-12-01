@@ -61,8 +61,16 @@ class DataCollectionService(CouchService):
         
         Create a DataCollection from the wmSpec instance provided
         """
-        userName  = getattr(wmSpec.data.request.schema, 'Requestor', None)
-        groupName = getattr(wmSpec.data.request.schema, 'Group', None)
+        userName  = getattr(wmSpec.data.owner, 'name', None)
+        groupName = getattr(wmSpec.data.owner, 'group', None)
+        
+        if userName == None:
+            msg = "WMSpec does not contain an owner.name parameter"
+            raise RuntimeError(msg)
+        if groupName == None:
+            msg = "WMSpec does not contain an owner.group parameter"
+            raise RuntimeError(msg)
+            
         
         user = self.newOwner(groupName, userName)
         collection = CouchCollection(

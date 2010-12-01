@@ -104,15 +104,17 @@ class WMWorkloadTest(unittest.TestCase):
 
         workload = WMWorkloadHelper(WMWorkload("workload1"))
 
-        workload.setOwner(name = "Lumumba")
+        workload.setOwnerDetails(name = "Lumumba", group = "Hoodoo")
         self.assertEqual(workload.data.owner.name, "Lumumba")
+        self.assertEqual(workload.data.owner.group, "Hoodoo")
+        
         result = workload.getOwner()
 
         ownerProps = {'capital': 'Kinshasa',
                       'adversary': 'Katanga',
                       'removedby': 'Kabila'}
 
-        workload.setOwner(name = "Mobutu", ownerProperties = ownerProps)
+        workload.setOwnerDetails(name = "Mobutu", group = "DMWM", ownerProperties = ownerProps)
         result = workload.getOwner()
 
         for key in ownerProps.keys():

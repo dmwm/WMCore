@@ -98,6 +98,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Takes a name as a mandatory argument, and then a dictionary of properties
         """
         self.data.owner.name = name
+        self.data.owner.group = "undefined"
 
         if not type(ownerProperties) == dict:
             raise Exception("Someone is trying to setOwner without a dictionary")
@@ -107,6 +108,21 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
+    def setOwnerDetails(self, name, group, ownerProperties = {}):
+        """
+        _setOwnerDetails_
+        
+        Set the owner, explicitly requiring the group and user arguments
+        
+        """
+        self.data.owner.name = name
+        self.data.owner.group = group
+        if not type(ownerProperties) == dict:
+            raise Exception("Someone is trying to setOwnerDetails without a dictionary")
+        for key in ownerProperties.keys():
+            setattr(self.data.owner, key, ownerProperties[key])
+        return
+        
     def sandbox(self):
         """
         _sandbox_

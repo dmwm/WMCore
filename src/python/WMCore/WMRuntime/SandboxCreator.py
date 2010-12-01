@@ -17,6 +17,20 @@ import WMCore
 import PSetTweaks
 from WMCore.WMSpec.Steps.StepFactory import getFetcher
 
+
+def tarballExclusion(path):
+    """
+    _tarballExclusion_
+
+    Eliminates all unnecessary packages
+    """
+    patternList = ['.svn', '.git', '.pyc']
+
+    for pattern in patternList:
+        if re.search(pattern, path):
+            return True
+    return False
+
 class SandboxCreator:
 
     def __init__(self):
@@ -115,14 +129,17 @@ class SandboxCreator:
 
         pythonHandle = open(archivePath, 'w+b')
         archive = tarfile.open(None,'w:bz2', pythonHandle)
-        archive.add("%s/%s/" % (buildItHere, workloadName),'/')
+        archive.add("%s/%s/" % (buildItHere, workloadName), '/',
+                    exclude = tarballExclusion)
         if (self.packageWMCore):
             # package up the WMCore distribution
             # hopefully messing with this magic isn't a recipie for disaster
             wmcorePath = WMCore.__path__[0]
-            archive.add(wmcorePath, '/WMCore/', exclude = removePycFiles)
+            #archive.add(wmcorePath, '/WMCore/', exclude = removePycFiles)
+            archive.add(wmcorePath, '/WMCore/', exclude = tarballExclusion)
             psetTweaksPath = PSetTweaks.__path__[0]
-            archive.add(psetTweaksPath, '/PSetTweaks')
+            archive.add(psetTweaksPath, '/PSetTweaks',
+                        exclude = tarballExclusion)
         archive.close()
         pythonHandle.close()
 
@@ -130,6 +147,5 @@ class SandboxCreator:
 
         return archivePath
 
-def removePycFiles(fileName):
-    return (fileName[-4:] == '.pyc')
+
 

@@ -3,9 +3,6 @@
 """
 WorkQueuManager test
 """
-#setup emulator for test, this needs to be at top of the file
-from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
-ConfigFile = emulatorSetup(phedex=True, dbs=True, siteDB=True, requestMgr=False)
 
 import os
 import logging
@@ -28,6 +25,7 @@ from WMQuality.Emulators.RequestManagerClient.RequestManager \
     import RequestManager as fakeReqMgr
 
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
+from WMQuality.Emulators.EmulatorSetup import EmulatorHelper
 
 def getFirstTask(wmspec):
     """Return the 1st top level task"""
@@ -46,8 +44,15 @@ class WorkQueueManagerTest(WorkQueueTestCase):
     def setSchema(self):
         self.schema = ["WMCore.WorkQueue.Database", "WMCore.WMBS",
                         "WMCore.MsgService", "WMCore.ThreadPool"]
-
-
+    
+    def setUp(self):
+        WorkQueueTestCase.setUp(self)
+        EmulatorHelper.setEmulators(phedex = True, dbs = True, 
+                                    siteDB = True, requestMgr = False)
+    def tearDown(self):
+        WorkQueueTestCase.tearDown(self)
+        EmulatorHelper.resetEmulators()
+        
     def getConfig(self):
         """
         _createConfig_

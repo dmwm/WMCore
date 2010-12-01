@@ -217,7 +217,7 @@ class CreateWMBSBase(DBCreator):
              output       INTEGER,
              last_update  INTEGER      NOT NULL,
              location     INTEGER,
-             UNIQUE(uid),
+             UNIQUE(guid),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (output) REFERENCES wmbs_fileset(id)

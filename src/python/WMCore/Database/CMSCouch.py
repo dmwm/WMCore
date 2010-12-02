@@ -527,9 +527,14 @@ class CouchServer(CouchDBRequests):
         TODO: Improve source/destination handling - can't simply URL quote, 
         though, would need to decompose the URL and rebuild it.
         """
-        check_server_url(source)
-        check_server_url(destination)
-        data={"source":source,"target":destination}
+        if source not in self.listDatabases():
+          check_server_url(source)
+        if destination not in self.listDatabases():
+          if create_target:
+            check_name(destination)
+          else:
+            check_server_url(destination)
+          data={"source":source,"target":destination}
         #There must be a nicer way to do this, but I've not had coffee yet...
         if continuous: data["continuous"] = continuous
         if create_target: data["create_target"] = create_target

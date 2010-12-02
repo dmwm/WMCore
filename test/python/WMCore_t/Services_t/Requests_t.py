@@ -28,6 +28,7 @@ from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 from WMCore.WMInit import getWMBASE
+from functools import wraps
 
 def runboth(testcase):
     """
@@ -39,7 +40,8 @@ def runboth(testcase):
         implementations.append('cjson')
     except:
         print "No cjson module is found, only testing with json"
-        
+
+    @wraps(testcase)
     def decorated_test(self):
         import WMCore.Wrappers.JsonWrapper as json_wrap
         for impl in implementations:

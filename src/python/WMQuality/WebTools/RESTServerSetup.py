@@ -1,7 +1,29 @@
 import os
 import cherrypy
 import logging 
+from functools import wraps
+
+from WMCore.WebTools.Root import Root
 from WMCore.Configuration import Configuration
+
+#this function will be used for cherrypy set up for test
+def cherrypySetup(config = None):
+    if config == None:
+        config = DefaultConfig()
+    def chSetup(f):
+        @wraps(f)
+        def wrapper(self):
+            self.rt = Root(config)
+            self.rt.start(blocking=False)
+            cherrypy.log.error_log.setLevel(logging.WARNING)
+            cherrypy.log.access_log.setLevel(logging.WARNING)
+            self.urlbase = config.getServerUrl()
+            f(self)
+            self.rt.stop()
+        return wrapper
+
+    return chSetup
+
 
 class DefaultConfig(Configuration):
     

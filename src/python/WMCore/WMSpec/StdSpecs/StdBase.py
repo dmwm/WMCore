@@ -223,16 +223,18 @@ class StdBase(object):
             if filterName != None and filterName != "":
                 processedDatasetName = "%s-%s-%s" % (self.acquisitionEra, filterName,
                                                      self.processingVersion)
+                processingString = "%s-%s" % (filterName, self.processingVersion)
             else:
                 processedDatasetName = "%s-%s" % (self.acquisitionEra,
                                                   self.processingVersion)
+                processingString = "%s" % (self.processingVersion)                
             
             unmergedLFN = "%s/%s/%s/%s/%s" % (self.unmergedLFNBase, self.acquisitionEra,
                                               self.inputPrimaryDataset, dataTier,
-                                              self.processingVersion)
+                                              processingString)
             mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
                                             self.inputPrimaryDataset, dataTier,
-                                            self.processingVersion)
+                                            processingString)
 
         cmsswStep = parentTask.getStep("cmsRun1")
         cmsswStepHelper = cmsswStep.getTypeHelper()

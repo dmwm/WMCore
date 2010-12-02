@@ -11,6 +11,7 @@ import logging
 import threading
 import time
 import urllib
+import types
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
@@ -135,6 +136,10 @@ class TestChangeState(unittest.TestCase):
         change.propagate([testJobA, testJobB], "executing", "created")
 
         testJobADoc = change.database.document(testJobA["couch_record"])
+
+        for transition in testJobADoc["states"]:
+            self.assertTrue(type(transition["timestamp"] in (types.IntType,
+                                                             types.LongType)))
 
         assert testJobADoc["jobid"] == testJobA["id"], \
                "Error: ID parameter is incorrect."

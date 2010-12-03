@@ -221,7 +221,8 @@ config.WorkQueueService.templates = os.path.join(getWMBASE(), 'src/templates/WMC
 config.WorkQueueService.admin = config.Agent.contact
 config.WorkQueueService.title = 'WorkQueue Data Service'
 config.WorkQueueService.description = 'Provide WorkQueue related service call'
-
+config.WorkQueueService.section_("security")
+config.WorkQueueService.security.dangerously_insecure = True
 config.WorkQueueService.section_('views')
 active = config.WorkQueueService.views.section_('active')
 workqueue = active.section_('workqueue')

@@ -78,6 +78,9 @@ config.ReqMgr.description = "CMS Request Manager"
 config.ReqMgr.couchURL = couchURL
 config.ReqMgr.default_expires = 0
 
+config.ReqMgr.section_("security")
+config.ReqMgr.security.dangerously_insecure = True
+
 views = config.ReqMgr.section_('views')
 active = views.section_('active')
 
@@ -135,7 +138,8 @@ config.WorkQueueService.templates = os.path.join(getWMBASE(), 'src/templates/WMC
 config.WorkQueueService.admin = config.Agent.contact
 config.WorkQueueService.title = 'WorkQueue Data Service'
 config.WorkQueueService.description = 'Provide WorkQueue related service call'
-
+config.WorkQueueService.section_("security")
+config.WorkQueueService.security.dangerously_insecure = True
 config.WorkQueueService.section_('views')
 active = config.WorkQueueService.views.section_('active')
 workqueue = active.section_('workqueue')

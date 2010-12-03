@@ -85,17 +85,17 @@ class BossAirAPI(WMConnectionBase):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
 
-
-        self.deleteDAO     = self.daoFactory(classname = "DeleteJobs")
-        self.stateDAO      = self.daoFactory(classname = "NewState")
-        self.loadByWMBSDAO = self.daoFactory(classname = "LoadByWMBSID")
-        self.updateDAO     = self.daoFactory(classname = "UpdateJobs")
-        self.newJobDAO     = self.daoFactory(classname = "NewJobs")
-        self.runningJobDAO = self.daoFactory(classname = "LoadRunning")
-        self.loadJobsDAO   = self.daoFactory(classname = "LoadByStatus")
-        self.completeDAO   = self.daoFactory(classname = "CompleteJob")
-        self.monitorDAO    = self.daoFactory(classname = "LoadForMonitoring")
-                                
+        self.deleteDAO      = self.daoFactory(classname = "DeleteJobs")
+        self.stateDAO       = self.daoFactory(classname = "NewState")
+        self.loadByWMBSDAO  = self.daoFactory(classname = "LoadByWMBSID")
+        self.updateDAO      = self.daoFactory(classname = "UpdateJobs")
+        self.newJobDAO      = self.daoFactory(classname = "NewJobs")
+        self.runningJobDAO  = self.daoFactory(classname = "LoadRunning")
+        self.completeJobDAO = self.daoFactory(classname = "LoadComplete")
+        self.loadJobsDAO    = self.daoFactory(classname = "LoadByStatus")
+        self.completeDAO    = self.daoFactory(classname = "CompleteJob")
+        #self.monitorDAO     = self.daoFactory(classname = "LoadForMonitoring")
+        self.monitorDAO     = self.daoFactory(classname = "JobStatusForMonitoring")
 
         self.loadPlugin(noSetup)
 
@@ -179,22 +179,24 @@ class BossAirAPI(WMConnectionBase):
         return
 
 
-    def _listRunning(self, complete = '1'):
+    def _listRunJobs(self, active = True):
         """
-        _listRunningJobs_
+        _listRunJobs_
 
-        List all the currently running jobs
+        List runjobs, either active or complete
         """
 
         existingTransaction = self.beginTransaction()
 
-
-        runningJobDicts = self.runningJobDAO.execute(complete = complete,
-                                                     conn = self.getDBConn(),
+        if active:
+            runJobDicts = self.runningJobDAO.execute(conn = self.getDBConn(),
                                                      transaction = self.existingTransaction())
-
+        else:
+            runJobDicts = self.completeJobDAO.execute(conn = self.getDBConn(),
+                                                      transaction = self.existingTransaction())
+        
         runJobs = []
-        for jDict in runningJobDicts:
+        for jDict in runJobDicts:
             rj = RunJob()
             rj.update(jDict)
             runJobs.append(rj)
@@ -202,8 +204,6 @@ class BossAirAPI(WMConnectionBase):
         self.commitTransaction(existingTransaction)
 
         return runJobs
-
-
 
 
     def _loadByStatus(self, status, complete = '1'):
@@ -264,6 +264,7 @@ class BossAirAPI(WMConnectionBase):
         return loadedJobs
 
 
+    # FIXME : internal function that is unused => remove it ?
     def _completeJobs(self, jobs):
         """
         _completeJobs_
@@ -287,6 +288,7 @@ class BossAirAPI(WMConnectionBase):
         self.commitTransaction(existingTransaction)
 
         return
+
 
     def _updateJobs(self, jobs):
         """
@@ -496,7 +498,7 @@ class BossAirAPI(WMConnectionBase):
 
         jobsToTrack = {}
 
-        runningJobs = self._listRunning()
+        runningJobs = self._listRunJobs(active = True)
 
         if runJobIDs:
             for job in runningJobs:
@@ -507,17 +509,15 @@ class BossAirAPI(WMConnectionBase):
                 if not job['jobid'] in wmbsIDs:
                     runningJobs.remove(job)
                 
-            
-
         if len(runningJobs) < 1:
             # Then we have no running jobs
             return returnList
 
 
-        loadedJobs = self._buildRunningJobs(wmbsJobs = runningJobs, doRunJobs = True)
+        loadedJobs = self._buildRunningJobsFromRunJobs(runJobs = runningJobs)
 
         logging.info("About to look for %i loadedJobs.\n" % len(loadedJobs))
-        
+
         for runningJob in loadedJobs:
             plugin = runningJob['plugin']
             if not plugin in jobsToTrack.keys():
@@ -623,7 +623,7 @@ class BossAirAPI(WMConnectionBase):
 
         completeJobs = []
 
-        completeRunJobs = self._listRunning(complete = '0')
+        completeRunJobs = self._listRunJobs(active = False)
 
         for rj in completeRunJobs:
             job = rj.buildWMBSJob()
@@ -734,11 +734,47 @@ class BossAirAPI(WMConnectionBase):
         return results
 
 
+    def _buildRunningJobsFromRunJobs(self, runJobs): 
+        """ 
+        _buildRunningJobsFromRunJobs_ 
 
-    def _buildRunningJobs(self, wmbsJobs, doRunJobs = False):
+        Same as _buildRunningJobs_, but taking runJobs as input 
+        """ 
+        loadedJobs = [] 
+        jobsToLoad = [] 
+
+        for runJob in runJobs: 
+            foundJob = False 
+            for jCache in self.jobs: 
+                if jCache['id'] == runJob['id']: 
+                    # Then it's the same 
+                    for key in runJob.keys():
+                        if runJob[key] == None: 
+                            # Grab the key if missing 
+                            runJob[key] = jCache.get(key, None) 
+                    # Now delete the old entry and get out of the loop. 
+                    self.jobs.remove(jCache) 
+                    self.jobs.append(runJob) 
+                    loadedJobs.append(runJob) 
+                    foundJob = True 
+                    break 
+
+            # If we don't find it, we load it 
+            if not foundJob: 
+                jobsToLoad.append(runJob) 
+
+        # Once out of the loop, load any missing jobs 
+        if len(jobsToLoad) > 0: 
+            # Then we have jobs to load 
+            loadedJobs.extend(self._loadByID(jobs = jobsToLoad))      
+
+        return loadedJobs 
+
+
+    def _buildRunningJobs(self, wmbsJobs):
         """
         _buildRunningJobs_
-        
+
         This is a utility function that exists to build a runJob set,
         first by looking in the cache, then by loading it and
         putting it in the cache.
@@ -749,15 +785,8 @@ class BossAirAPI(WMConnectionBase):
         You can also use this to load running jobs from the cache automatically
         """
 
-        jobsToLoad = []
         loadedJobs = []
-
-        if doRunJobs:
-            # Then overwrite the id with the jobid so you
-            # can use the same search mechanism and load mechanism
-            # This makes it structurally identical to a wmbs job
-            for wmbsJob in wmbsJobs:
-                wmbsJob['id'] = wmbsJob['jobid']
+        jobsToLoad = []
 
         for wmbsJob in wmbsJobs:
             foundJob = False

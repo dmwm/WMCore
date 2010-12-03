@@ -2,7 +2,7 @@
 """
 _LoadRunning_
 
-MySQL implementation for loading a job by scheduler status
+MySQL implementation for loading bl_runjob records for active jobs
 """
 
 
@@ -12,31 +12,23 @@ class LoadRunning(DBFormatter):
     """
     _LoadRunning_
 
-    Load all jobs with a certain scheduler status
+    Load all bl_runjob that are active
+
     """
+    sql = """SELECT rj.wmbs_id AS jobid, rj.grid_id AS gridid, rj.bulk_id AS bulkid, 
+               st.name AS status, rj.retry_count AS retry_count, rj.id AS id, 
+               rj.status_time AS status_time 
+             FROM bl_runjob rj 
+             INNER JOIN bl_status st ON rj.sched_status = st.id
+             WHERE rj.status = 1
+             """
 
-
-    sql = """SELECT rj.wmbs_id AS jobid, rj.grid_id AS gridid, rj.bulk_id AS bulkid,
-               st.name AS status, rj.retry_count as retry_count, rj.id AS id,
-               rj.status_time as status_time
-               FROM bl_runjob rj
-               INNER JOIN bl_status st ON rj.sched_status = st.id
-               WHERE rj.status = :complete
-    """
-
-
-
-    def execute(self, complete = '1', conn = None, transaction = False):
+    def execute(self, conn = None, transaction = False):
         """
         _execute_
 
-        Load all jobs either running or not (running by default)
         """
-
-        binds = {'complete': complete}
-
-
-        result = self.dbi.processData(self.sql, binds, conn = conn,
+        result = self.dbi.processData(self.sql, binds = {}, conn = conn,
                                       transaction = transaction)
 
         return self.formatDict(result)

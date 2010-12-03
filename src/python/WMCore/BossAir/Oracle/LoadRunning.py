@@ -2,7 +2,7 @@
 """
 _LoadRunning_
 
-Oracle implementation for loading a job by scheduler status
+Oracle implementation for loading bl_runjob records for active jobs
 """
 
 
@@ -12,6 +12,5 @@ class LoadRunning(MySQLLoadRunning):
     """
     _LoadRunning_
 
-    Load all jobs with a certain scheduler status
     """
 

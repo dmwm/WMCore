@@ -228,7 +228,25 @@ class WMBSHelperTest(unittest.TestCase):
             for job in jobList:
                 job['plugin'] = 'TestPlugin'
             baAPI.createNewJobs(wmbsJobs = jobList)
-            
+
+        # We'll create an unrelated workflow to verify that it isn't affected
+        # by the killing code.
+        bogusFileset = Fileset("dontkillme")
+        bogusFileset.create()
+
+        bogusFileA = File("bogus/lfnA", locations = "goodse.cern.ch")
+        bogusFileA.create()
+        bogusFileset.addFile(bogusFileA)
+        bogusFileset.commit()
+        
+        bogusWorkflow = Workflow(spec = "spec2", owner = "Steve",
+                                 name = "Bogus", task = "Proc")
+        bogusWorkflow.create()
+        self.bogusSub = Subscription(fileset = bogusFileset,
+                                     workflow = bogusWorkflow,
+                                     type = "Processing")
+        self.bogusSub.create()
+        self.bogusSub.acquireFiles(bogusFileA)
         return
         
     def verifyFileKillStatus(self):
@@ -237,18 +255,22 @@ class WMBSHelperTest(unittest.TestCase):
 
         Verify that all files were killed correctly.  The status of files in
         Cleanup and LogCollect subscriptions isn't modified.  Status of
-        already completed and failed files is not modified.
+        already completed and failed files is not modified.  Also verify that
+        the bogus subscription is untouched.
         """
         failedFiles = self.mainProcSub.filesOfStatus("Failed")
         acquiredFiles = self.mainProcSub.filesOfStatus("Acquired")
         completedFiles = self.mainProcSub.filesOfStatus("Completed")
         availableFiles = self.mainProcSub.filesOfStatus("Available")
+        bogusAcquiredFiles = self.bogusSub.filesOfStatus("Acquired")
 
         self.assertEqual(len(availableFiles), 0, \
                          "Error: There should be no available files.")
         self.assertEqual(len(acquiredFiles), 0, \
                          "Error: There should be no acquired files.")
-
+        self.assertEqual(len(bogusAcquiredFiles), 1, \
+                         "Error: There should be one acquired file.")
+        
         self.assertEqual(len(completedFiles), 1, \
                          "Error: There should be only one completed file.")
         self.assertEqual(list(completedFiles)[0]["lfn"], "lfnB", \
@@ -369,13 +391,13 @@ class WMBSHelperTest(unittest.TestCase):
 
         # Create nine jobs
         self.setupForKillTest(baAPI = baAPI)
-        self.assertEqual(len(baAPI._listRunning()), 9)
+        self.assertEqual(len(baAPI._listRunJobs()), 9)
 
         killWorkflow("Main")
 
         self.verifyFileKillStatus()
         self.verifyJobKillStatus()
-        self.assertEqual(len(baAPI._listRunning()), 8)
+        self.assertEqual(len(baAPI._listRunJobs()), 8)
         EmulatorSetup.deleteConfig(configFile)
         return
 

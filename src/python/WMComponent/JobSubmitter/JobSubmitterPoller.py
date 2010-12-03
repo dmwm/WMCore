@@ -277,7 +277,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         for siteName in self.cachedJobs.keys():
             for taskType in self.cachedJobs[siteName].keys():
                 for workflow in self.cachedJobs[siteName][taskType].keys():
-                    for cachedJob in self.cachedJobs[siteName][taskType][workflow]:
+                    for cachedJob in list(self.cachedJobs[siteName][taskType][workflow]):
                         if cachedJob[0] in jobIDsToPurge:
                             self.cachedJobs[siteName][taskType][workflow].remove(cachedJob)
 

@@ -137,7 +137,10 @@ class ParentlessMergeBySize(JobFactory):
                                 dbinterface = myThread.dbi)
         
         mergeDAO = daoFactory(classname = "Subscriptions.GetFilesForParentlessMerge")
-        mergeableFiles = mergeDAO.execute(self.subscription["id"])
+        myThread = threading.currentThread()
+        mergeableFiles = mergeDAO.execute(self.subscription["id"],
+                                          conn = myThread.transaction.conn,
+                                          transaction = True)
 
         groupedFiles = self.defineFileGroups(mergeableFiles)
 

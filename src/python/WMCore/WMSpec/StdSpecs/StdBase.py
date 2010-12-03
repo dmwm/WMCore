@@ -227,10 +227,13 @@ class StdBase(object):
                 processedDatasetName = "%s-%s" % (self.acquisitionEra,
                                                   self.processingVersion)
             
-            unmergedLFN = "%s/%s/%s" % (self.unmergedLFNBase, dataTier,
-                                        processedDatasetName)
-            mergedLFN = "%s/%s/%s" % (self.mergedLFNBase, dataTier,
-                                      processedDatasetName)
+            unmergedLFN = "%s/%s/%s/%s/%s" % (self.unmergedLFNBase, self.acquisitionEra,
+                                              self.inputPrimaryDataset, dataTier,
+                                              self.processingVersion)
+            mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
+                                            self.inputPrimaryDataset, dataTier,
+                                            self.processingVersion)
+
         cmsswStep = parentTask.getStep("cmsRun1")
         cmsswStepHelper = cmsswStep.getTypeHelper()
         cmsswStepHelper.addOutputModule(outputModuleName,
@@ -307,7 +310,9 @@ class StdBase(object):
                                         scramArch = self.scramArch)
         mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
 
-        mergedLFN = "%s/%s/%s" % (self.mergedLFNBase, dataTier, processedDatasetName)    
+        mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
+                                        self.inputPrimaryDataset, dataTier,
+                                        self.processingVersion)
         mergeTaskCmsswHelper.addOutputModule("Merged",
                                              primaryDataset = self.inputPrimaryDataset,
                                              processedDataset = processedDatasetName,

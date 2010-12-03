@@ -84,6 +84,7 @@ def emulatorHook(cls):
         def __init__(self, *args, **kwargs):
             aClass = EmulatorHelper.getClass(cls)
             self.wrapped = aClass(*args, **kwargs)
+            self.__class__.__name__ = self.wrapped.__class__.__name__
             
         def __getattr__(self, name):
             return getattr(self.wrapped, name)

@@ -14,6 +14,7 @@ class EmulatorSetupTest(unittest.TestCase):
         self.globalDBS = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
     
     def testEmulator(self):
+
         EmulatorHelper.setEmulators(True, True, True, True)        
         self.assertEqual(PhEDEx().wrapped.__module__, 
                          'WMQuality.Emulators.PhEDExClient.PhEDEx')
@@ -24,6 +25,11 @@ class EmulatorSetupTest(unittest.TestCase):
         self.assertEqual(RequestManager().wrapped.__module__,
                          'WMQuality.Emulators.RequestManagerClient.RequestManager')
         
+        self.assertEqual(PhEDEx().__class__.__name__, 'PhEDEx')
+        self.assertEqual(DBSReader(self.globalDBS).__class__.__name__, 'DBSReader')
+        self.assertEqual(SiteDBJSON().__class__.__name__, 'SiteDBJSON')
+        self.assertEqual(RequestManager().__class__.__name__, 'RequestManager')
+
         EmulatorHelper.resetEmulators()
         self.assertEqual(PhEDEx().wrapped.__module__, 
                          'WMCore.Services.PhEDEx.PhEDEx')
@@ -34,5 +40,10 @@ class EmulatorSetupTest(unittest.TestCase):
         self.assertEqual(RequestManager().wrapped.__module__,
                          'WMCore.Services.RequestManager.RequestManager')
         
+        self.assertEqual(PhEDEx().__class__.__name__, 'PhEDEx')
+        self.assertEqual(DBSReader(self.globalDBS).__class__.__name__, 'DBSReader')
+        self.assertEqual(SiteDBJSON().__class__.__name__, 'SiteDBJSON')
+        self.assertEqual(RequestManager().__class__.__name__, 'RequestManager')
+
 if __name__ == "__main__":
     unittest.main()  

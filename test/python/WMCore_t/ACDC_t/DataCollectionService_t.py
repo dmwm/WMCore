@@ -45,9 +45,7 @@ class DataCollectionService_t(unittest.TestCase):
         """
         reco = self.workload.newTask("reco")
         skim1 = reco.addTask("skim1")
-        self.workload.data.request.section_("schema")
-        setattr(self.workload.data.request.schema, 'Requestor', "evansde77")
-        setattr(self.workload.data.request.schema, 'Group', "DMWM")
+        self.workload.setOwnerDetails("evansde77", "DMWM")
 
         # first task uses the input dataset
         reco.addInputDataset(primary = "PRIMARY", processed = "processed-v1", tier = "TIER1")

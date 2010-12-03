@@ -30,6 +30,7 @@ class StdBase(object):
         """
         self.workloadName = None
         self.owner = None
+        self.group = None
         self.acquisitionEra = None
         self.scramArch = None
         self.processingVersion = None
@@ -51,6 +52,7 @@ class StdBase(object):
         """
         self.workloadName = workloadName
         self.owner = arguments.get("Requestor", None)
+        self.group = arguments.get("Group", None)
         self.acquisitionEra = arguments.get("AcquisitionEra", None)
         self.scramArch = arguments.get("ScramArch", None)
         self.processingVersion = arguments.get("ProcessingVersion", None)
@@ -108,7 +110,7 @@ class StdBase(object):
         Create a new workload.
         """
         workload = newWorkload(self.workloadName)
-        workload.setOwner(self.owner)
+        workload.setOwnerDetails(self.owner, self.group)
         return workload
     
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,

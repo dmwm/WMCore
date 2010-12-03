@@ -50,7 +50,7 @@ class DataProcessingTest(unittest.TestCase):
         """
         testWorkload = dataProcessingWorkload("TestWorkload", getTestArguments())
         testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwner("sfoulkes@fnal.gov")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM")
         
         testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
         testWMBSHelper.createSubscription()

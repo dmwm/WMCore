@@ -82,7 +82,7 @@ class MonteCarloTest(unittest.TestCase):
 
         testWorkload = monteCarloWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwner("sfoulkes@fnal.gov")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
         testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
         testWMBSHelper.createSubscription()

@@ -90,7 +90,7 @@ class ReRecoTest(unittest.TestCase):
 
         testWorkload = rerecoWorkload("TestWorkload", dataProcArguments)
         testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwner("sfoulkes@fnal.gov")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM")
         
         testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
         testWMBSHelper.createSubscription()

@@ -4,7 +4,8 @@ import logging
 
 #decorator import for RESTServer setup
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMQuality.WebTools.RESTServerSetup import DefaultConfig, configureServer
+from WMQuality.WebTools.RESTServerSetup import DefaultConfig
+from WMCore.WebTools.Root import Root
 
 class RESTBaseUnitTest(unittest.TestCase):
     
@@ -23,7 +24,7 @@ class RESTBaseUnitTest(unittest.TestCase):
                                     useDefault = False)
         
         print "Starting Cherrypy server ..."
-        self.rt = configureServer(config = self.config)
+        self.rt = Root(self.config)
         self.rt.start(blocking=False)
         cherrypy.log.error_log.setLevel(logging.WARNING)
         cherrypy.log.access_log.setLevel(logging.WARNING)
@@ -39,6 +40,7 @@ class RESTBaseUnitTest(unittest.TestCase):
 
         self.config = None
         
+    
     def initialize(self):
         """
         i.e.

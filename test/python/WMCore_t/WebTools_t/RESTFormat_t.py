@@ -32,7 +32,7 @@ from WMCore.Wrappers import JsonWrapper
 class RESTFormatTest(RESTBaseUnitTest):
     
     def initialize(self):
-        self.config = DefaultConfig('WMCore_t.WebTools_t.DummyRESTModel')        
+        self.config = DefaultConfig('DummyRESTModel')        
         self.urlbase = self.config.getServerUrl()
     
     def testUnsupportedFormat(self):

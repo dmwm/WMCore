@@ -11,6 +11,9 @@ TODO: duplicate all direct call tests to ones that use HTTP
 
 
 import unittest
+import cherrypy
+import logging
+
 from WMCore.Wrappers import JsonWrapper
 
 from cherrypy import HTTPError
@@ -19,40 +22,37 @@ from WMQuality.TestInit import TestInit
 from WMCore.Configuration import Configuration
 from WMCore.WebTools.Page import make_rfc_timestamp
 from WMCore_t.WebTools_t.DummyRESTModel import DummyRESTModel
-from WMQuality.WebTools.RESTServerSetup import setUpDAS, serverSetup, DefaultConfig
-from WMQuality.WebTools.RESTClientAPI import makeRequest, methodTest
 
-def setUpDummyRESTModel(func):
-    """
-    Decorator which change the rest model
-    """
-    def wrap_function(self):
-        self.restModel = "DummyRESTModel"
-        func(self)
-    return wrap_function
+from WMQuality.WebTools.RESTServerSetup import DefaultConfig
+from WMQuality.WebTools.RESTClientAPI import makeRequest, methodTest
+from WMCore.WebTools.Root import Root
 
 class RESTTest(unittest.TestCase):
     
     def setUp(self):
         self.config = DefaultConfig()
-        self.dasFlag = False
-        self.restModel = 'WMCore.WebTools.RESTModel'
-        self.urlbase = self.config.getServerUrl()
-        
-    def tearDown(self):
-        self.dasFlag = None
-        self.restModel = None
-        self.urlbase = None
     
-    @serverSetup
-    def testUnsupportedFormat(self):
+    def startCherryPy(self, config = None):
+        if config == None:
+            config = self.config
+        self.rt = Root(config)
+        self.rt.start(blocking=False)
+        cherrypy.log.error_log.setLevel(logging.WARNING)
+        cherrypy.log.access_log.setLevel(logging.WARNING)
+        self.urlbase = config.getServerUrl()
+    
+    def stopCherryPy(self):
+        self.rt.stop()
         
+    def testUnsupportedFormat(self):
+        self.startCherryPy()
         # test not accepted type should return 406 error
         url = self.urlbase + 'ping'
         methodTest('GET', url, accept='text/das', output={'code':406})
+        self.stopCherryPy()
                 
-    @serverSetup
     def testGoodEcho(self):
+        self.startCherryPy()
         
         verb ='POST'
         url = self.urlbase + 'echo'
@@ -61,9 +61,10 @@ class RESTTest(unittest.TestCase):
                 'data':'{"args": [], "kwargs": {"data": "unit test"}}'}
         
         methodTest(verb, url, input, output=output)
+        self.stopCherryPy()
         
-    @serverSetup
     def testGoodEchoWithPosArg(self):
+        self.startCherryPy()
         
         verb ='POST'
         url = self.urlbase + 'echo/stuff'
@@ -72,9 +73,10 @@ class RESTTest(unittest.TestCase):
                 'data':'{"args": ["stuff"], "kwargs": {"data": "unit test"}}'}
         
         methodTest(verb, url, input, output=output)
+        self.stopCherryPy()        
         
-    @serverSetup        
     def testBadMethodEcho(self):
+        self.startCherryPy()
         
         verb ='GET'
         url = self.urlbase + 'echo'
@@ -83,8 +85,11 @@ class RESTTest(unittest.TestCase):
         
         methodTest(verb, url, input, output=output)
         
-    @serverSetup      
+        self.stopCherryPy()
+            
     def testBadVerbEcho(self):
+        self.startCherryPy()
+        
         url = self.urlbase + 'echo'
         input={'data': 'unit test'}
         output={'code':501, 'type':'text/json'}
@@ -92,8 +97,10 @@ class RESTTest(unittest.TestCase):
         for verb in ['DELETE', 'PUT']:
             methodTest(verb, url, input, output=output)
         
-    @serverSetup
+        self.stopCherryPy()
+        
     def testPing(self):
+        self.startCherryPy()
         
         verb ='GET'
         url = self.urlbase + 'ping'
@@ -102,9 +109,10 @@ class RESTTest(unittest.TestCase):
         
         methodTest(verb, url, output=output, expireTime=expireTime)
         
-    @serverSetup
+        self.stopCherryPy()
+        
     def testBadPing(self):
-       
+        self.startCherryPy()
         verb ='GET'
         
         url = self.urlbase + 'wrong'
@@ -120,10 +128,12 @@ class RESTTest(unittest.TestCase):
         output={'code':400}
         methodTest(verb, url, output=output)
         
+        self.stopCherryPy()
         
-    @setUpDAS
-    @serverSetup    
     def testDasPing(self):
+        config = DefaultConfig()
+        config.setFormatter('WMCore.WebTools.DASRESTFormatter')
+        self.startCherryPy(config)
         
         verb ='GET'
         url = self.urlbase + 'ping'
@@ -141,29 +151,37 @@ class RESTTest(unittest.TestCase):
         self.assertEqual( response_expires ,  expires, 'Expires DAS header incorrect (%s)' % response_expires )
         
         self.assertEqual( dict['results'] ,  'ping', 'got unexpected response %s' % dict['results'] )
-    
-    @setUpDummyRESTModel    
-    @serverSetup
+        
+        self.stopCherryPy()
+        
     def testList(self):
-    
+        config = DefaultConfig('DummyRESTModel')
+        self.startCherryPy(config)
+        
        	verb ='GET'
         url = self.urlbase + 'list/'
         input = {'int':123, 'str':'abc'}
         output={'code':200, 'type':'text/json', 'data':'{"int": 123, "str": "abc"}'}
         methodTest(verb, url, input=input, output=output)
         
+        self.stopCherryPy()
         
-    @serverSetup    
     def testA(self):
+        self.startCherryPy()
+        
         for t in ['GET', 'POST', 'PUT', 'DELETE', 'UPDATE']:
                 response = makeRequest(url=self.urlbase + '/', values={'value':1234})
                 assert response[1] == 200, \
                  'Got a return code != 200 (got %s)' % response[1]
-    
+        
+        self.stopCherryPy()
+        
     def testSanitisePass(self):
         """
         Emulate how CherryPy passes arguments to a method, check that the data
         returned is correct.
+        
+        No server setup required
         """     
         drm = DummyRESTModel(self.config.getModelConfig())
         
@@ -185,13 +203,12 @@ class RESTTest(unittest.TestCase):
         assert result == {'int':123, 'str':'abc'},\
                 'list with 1 positional, 1 keyword failed: %s' % result
 #    
-    @setUpDummyRESTModel
-    @serverSetup
     def testSanitisePassHTTP(self):
         """
         Same as testSanitisePass but do it over http and check the returned http
         codes.
         """
+        self.startCherryPy(DefaultConfig('DummyRESTModel'))
         #TODO when url is /list/,,,, it returns success. should fail correct url is /rest/list...
         # also error message is html format although accept type is text/json
         # 2 positional args (e.g. url/arg1/arg2)
@@ -226,10 +243,13 @@ class RESTTest(unittest.TestCase):
                 'list with 1 positional, 1 keyword failed: ' +\
                 '. Got a return code != 200 (got %s)' % response[1] +\
                 '. Returned data: %s' % response[0]
-    
-                 
-    def testSanitiseAssertFail(self):
         
+        self.stopCherryPy()
+          
+    def testSanitiseAssertFail(self):
+        """
+        No server set up required
+        """
                 
         drm = DummyRESTModel(self.config.getModelConfig())
         
@@ -262,14 +282,12 @@ class RESTTest(unittest.TestCase):
         self.assertRaises(HTTPError, func)
     
 
-    @setUpDummyRESTModel
-    @serverSetup
     def testSanitiseFailHTTP(self):
         """
         Same as testSanitisePass but do it over http and check the returned http
         codes.
         """
-        
+        self.startCherryPy(DefaultConfig('DummyRESTModel'))
         # 2 positional args (e.g. url/arg1/arg2)
         url = self.urlbase + 'list/123/'
         response = makeRequest(url=url, accept='text/json')
@@ -296,8 +314,10 @@ class RESTTest(unittest.TestCase):
                 'list with 1 positional, 1 keyword failed: ' +\
                 '. Got a return code != 400 (got %s)' % response[1] +\
                 '. Returned data: %s' % response[0]    
-
         
+        self.stopCherryPy()
+        
+    # don't need server set up    
     def testDAOBased(self):
                 
         drm = DummyRESTModel(self.config.getModelConfig())
@@ -315,13 +335,12 @@ class RESTTest(unittest.TestCase):
         self.assertEqual( result['num'] == 456 and result['thing'] ,  "TEST" )
         
     
-    @setUpDummyRESTModel
-    @serverSetup
     def testDAOBasedHTTP(self):
         """
         Same as testSanitisePass but do it over http and check the returned http
         codes.
         """
+        self.startCherryPy(DefaultConfig('DummyRESTModel'))
         
         # 2 positional args (e.g. url/arg1/arg2)
         url = self.urlbase + 'data1/'
@@ -356,12 +375,12 @@ class RESTTest(unittest.TestCase):
         #Should use encoded and decoded format
         self.assertEqual( response[0] ,  "{'thing': 'abc', 'num': '123'}", "should be {'thing': 'abc', 'num': '123'} but got %s" % response[0] )
         
-    
-    @setUpDummyRESTModel
-    @serverSetup
+        self.stopCherryPy()
+        
     def testListTypeArgs(self):
         """
         """
+        self.startCherryPy(DefaultConfig('DummyRESTModel'))
         # 2 positional args (e.g. url/arg1/arg2)
         url = self.urlbase + 'listTypeArgs?aList=1'
         response = makeRequest(url=url)
@@ -379,6 +398,7 @@ class RESTTest(unittest.TestCase):
                 '. Got a return code != 200 (got %s)' % response[1] +\
                 '. Returned data: %s' % response[0]
         
+        self.stopCherryPy()
         
 if __name__ == "__main__":
     unittest.main() 

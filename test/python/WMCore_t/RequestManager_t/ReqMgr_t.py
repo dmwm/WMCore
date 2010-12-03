@@ -3,6 +3,7 @@ import WMCore_t.RequestManager_t.FakeRequests as FakeRequests
 import unittest
 from WMCore.Wrappers import JsonWrapper as json
 import WMCore.RequestManager.RequestMaker.WMWorkloadCache as WMWorkloadCache
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from httplib import HTTPException
 import urllib
 import time
@@ -21,9 +22,10 @@ class TestReqMgr(unittest.TestCase):
     def setUp(self):
         reqMgrHost = 'http://cmssrv49.fnal.gov:8586'
         self.jsonSender = JSONRequests(reqMgrHost)
-        self.requestTypes = ['ReReco', 'MonteCarlo', 'FileProcessing']
-        
-        self.cleanupRequests()
+        self.jsonSender.delete('/reqMgr/user/me')
+        #self.requestTypes = ['ReReco', 'StoreResults', 'CmsGen', 'Reco']
+        #self.requestTypes = ['ReReco', 'MonteCarlo']
+        self.requestTypes = ['ReReco']
 
         if 'me' in self.jsonSender.get('/reqMgr/user')[0]:
             self.jsonSender.delete('/reqMgr/user/me')    
@@ -59,8 +61,13 @@ class TestReqMgr(unittest.TestCase):
     def testRequest(self):
         for requestType in self.requestTypes:
             requestSchema = FakeRequests.fakeRequest(requestType)
-            print str(requestSchema)
             requestName = requestSchema['RequestName']
+            del requestSchema['ProdConfigCacheID']
+            requestSchema['CouchDBName']= ""
+            requestSchema['CouchURL']= ""
+            requestSchema['CouchUrl'] = ""
+
+            requestSchema['Scenario'] = 'pp'
             self.assertRaises(HTTPException, self.jsonSender.delete, '/reqMgr/request/'+requestName)
             self.assertEqual(self.jsonSender.put('/reqMgr/request/'+requestName, requestSchema)[1], 200)
 
@@ -91,7 +98,10 @@ class TestReqMgr(unittest.TestCase):
             self.assertTrue(self.jsonSender.put(urllib.quote('/reqMgr/assignment/White Sox/'+requestName))[1] == 200)
             requestsAndSpecs = self.jsonSender.get(urllib.quote('/reqMgr/assignment/White Sox'))[0]
             self.assertTrue(requestName in requestsAndSpecs.keys())
-            workloadHelper = WMWorkloadCache.loadFromURL(requestsAndSpecs[requestName])
+            #workloadHelper = WMWorkloadCache.loadFromURL(requestsAndSpecs[requestName])
+            workloadHelper = WMWorkloadHelper()
+            workloadHelper.load(requestsAndSpecs[requestName]) 
+            print str(workloadHelper.data.owner)
             self.assertEqual(workloadHelper.getOwner()['Requestor'], "me")
             self.assertTrue(self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0] == ['White Sox'])
 

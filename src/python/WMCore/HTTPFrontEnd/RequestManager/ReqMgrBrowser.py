@@ -2,7 +2,7 @@
 """ Main Module for browsing and modifying requests """
 
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, parseSite, allSoftwareVersions
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, parseSite, allSoftwareVersions, saveWorkload
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Cache.WMConfigCache import ConfigCache 
 from WMCore.Services.Requests import JSONRequests
@@ -83,10 +83,8 @@ class ReqMgrBrowser(TemplatedPage):
         self.requests = []
         self.configCacheUrl = config.configCacheUrl
         self.configDBName = config.configDBName
-        self.workloadDir = config.workloadCache
         self.jsonSender = JSONRequests(config.reqMgrHost)
         self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
-
         self.mergedLFNBases = {"ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
                                "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}
 
@@ -94,7 +92,6 @@ class ReqMgrBrowser(TemplatedPage):
     def index(self):
         """ Main web page """
         requests = self.getRequests()
-        print str(requests)
         tableBody = self.drawRequests(requests)
         return self.templatepage("ReqMgrBrowser", fields=self.fields, tableBody=tableBody)
 
@@ -124,7 +121,8 @@ class ReqMgrBrowser(TemplatedPage):
         and pass them to the template.
         """
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
-        helper, pfn = self.workloadHelper(request)
+        helper = WMWorkloadHelper()
+        helper.load(request['RequestWorkflow'])
         splittingDict = helper.listJobSplittingParametersByTask()
         timeOutDict = helper.listTimeOutsByTask()
         taskNames = splittingDict.keys()
@@ -173,10 +171,11 @@ class ReqMgrBrowser(TemplatedPage):
             splitParams["events_per_job"] = submittedParams["events_per_job"]
             
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
-        helper, pfn = self.workloadHelper(request)
+        helper = WMWorkloadHelper()
+        helper.load(request['RequestWorkflow'])
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
         helper.setTaskTimeOut(splittingTask, int(submittedParams["timeout"]))
-        helper.save(pfn)
+        saveWorkload(helper, request['RequestWorkflow'])
         return "Successfully updated splitting parameters for " + splittingTask \
                + " " + detailsBackLink(requestName)
 
@@ -184,20 +183,18 @@ class ReqMgrBrowser(TemplatedPage):
     def requestDetails(self, requestName):
         """ A page showing the details for the requests """
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
-        helper, pfn = self.workloadHelper(request)
-
+        helper = WMWorkloadHelper()
+        helper.load(request['RequestWorkflow'])
         docId = None
         d = helper.data.request.schema.dictionary_()
         d['RequestWorkflow'] = request['RequestWorkflow']
         if d.has_key('ProdConfigCacheID') and d['ProdConfigCacheID'] != "":
             docId = d['ProdConfigCacheID']        
-        addHtmlLinks(d)
         assignments = self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0]
         adminHtml = statusMenu(requestName, request['RequestStatus']) \
                   + ' Priority ' + priorityMenu(requestName, request['ReqMgrRequestBasePriority'])
         return self.templatepage("Request", requestName=requestName,
                                 detailsFields = self.detailsFields, requestSchema=d,
-                                workloadDir = self.workloadDir, 
                                 docId=docId, assignments=assignments,
                                 adminHtml = adminHtml,
                                 messages=request['RequestMessages'],
@@ -222,10 +219,12 @@ class ReqMgrBrowser(TemplatedPage):
         return str(configCache.getPSetTweaks()).replace('\n', '<br>')
 
     @cherrypy.expose
-    def showWorkload(self, filepath):
+    def showWorkload(self, url):
         """ Displays the workload """
+        request = {}
+        request['RequestWorkflow'] = url
         helper = WMWorkloadHelper()
-        helper.load(filepath)
+        helper.load(request['RequestWorkflow'])
         return str(helper.data).replace('\n', '<br>')
  
     @cherrypy.expose
@@ -237,8 +236,8 @@ class ReqMgrBrowser(TemplatedPage):
         # I'm getting requests and requestSchema confused
         workloadMaker.loadRequestSchema(request)
         workload = workloadMaker.makeWorkload()
-        workloadCache = getWorkloadCache()
-        request['RequestWorkflow'] = workloadCache.checkIn(workload)
+        helper = WMWorkloadHelper(workload)
+        request['RequestWorkflow'] = saveWorkload(helper, request['RequestWorkflow'])
 
     def drawRequests(self, requests):
         """ Display all requests """
@@ -297,12 +296,10 @@ class ReqMgrBrowser(TemplatedPage):
         return "%i%%" % maxPercent
 
     def percentComplete(self, request):
-        #return self.biggestUpdate('percent_complete', request)
         pct = request.get('percent_complete', 0)
         return "%i%%" % pct
 
     def percentSuccess(self, request):
-        #return self.biggestUpdate('percent_success', request)
         pct = request.get('percent_success', 0)
         return "%i%%" % pct
 
@@ -349,13 +346,6 @@ class ReqMgrBrowser(TemplatedPage):
         return self.templatepage("Assign", requestName=requestName, teams=teams, 
                  assignments=assignments, sites=self.sites, mergedLFNBases = self.mergedLFNBases[requestType])
     
-    def workloadHelper(self, request):
-        """ Returns a WMWorkloadHelper and a pfn for the workload in the request """
-        helper = WMWorkloadHelper()
-        pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
-        helper.load(pfn)
-        return helper, pfn
-
     @cherrypy.expose
     def handleAssignmentPage(self, **kwargs):
         """ handles some checkboxes """
@@ -363,7 +353,8 @@ class ReqMgrBrowser(TemplatedPage):
         requestName = kwargs["RequestName"]
         assignments = self.jsonSender.get('/reqMgr/assignment?request=%s' % requestName)[0]
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
-        helper, pfn = self.workloadHelper(request)
+        helper = WMWorkloadHelper()
+        helper.load(request['RequestWorkflow'])
         schema = helper.data.request.schema
         # look for teams
         teams = []
@@ -386,7 +377,7 @@ class ReqMgrBrowser(TemplatedPage):
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
         helper.setMergeParameters(kwargs["MinMergeSize"], kwargs["MaxMergeSize"], kwargs["MaxMergeEvents"])
-        helper.save(pfn)
+        saveWorkload(helper, request['RequestWorkflow'])
         result += detailsBackLink(requestName)
         return result
 
@@ -395,8 +386,6 @@ class ReqMgrBrowser(TemplatedPage):
                        runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None):
         """ handles the "Modify" button of the requestDetails page """
         
-        if workload == None or not os.path.exists(workload):
-            raise RuntimeError, "Cannot find workload " + workload
         helper = WMWorkloadHelper()
         helper.load(workload)
         schema = helper.data.request.schema
@@ -422,7 +411,7 @@ class ReqMgrBrowser(TemplatedPage):
             schema.BlockBlacklist = l
             helper.setBlockBlacklist(l)
             message += 'Changed blockBlackList to %s<br>' % l
-        helper.save(workload)
+        saveWorkload(helper, workload)
         return message + detailsBackLink(requestName)
 
     @cherrypy.expose
@@ -501,7 +490,7 @@ class ReqMgrBrowser(TemplatedPage):
     @cherrypy.expose
     def handleAddTeam(self, team):
         """ Handles a request to add a team """
-        self.jsonSender.put('/reqMgr/team/%s' % team)
+        self.jsonSender.put('/reqMgr/team/%s' % urllib.quote(team))
         return "Added team %s" % team
 
     @cherrypy.expose

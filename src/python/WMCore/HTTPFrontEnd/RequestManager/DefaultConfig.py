@@ -4,11 +4,10 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-
-
+__revision__ = "$Id: DefaultConfig.py,v 1.3 2010/08/09 21:43:18 rpw Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
-import WMCore.WMInit
 
 from WMCore.Configuration import Configuration
 
@@ -16,7 +15,7 @@ cmsswInstallation =  '/uscmst1/prod/sw/cms'
 
 config = Configuration()
 #connectUrl = "mysql://rpw@localhost/reqmgr_rpw"
-connectUrl = "oracle://rpw:somepassword@cmscald"
+connectUrl = "oracle://rpw:PASSWORD@cmscald"
 dbsock = '/var/lib/mysql/mysql.sock'
 dbsock = ""
 config.section_("CoreDatabase")
@@ -45,9 +44,9 @@ config.ReqMgr.templates = os.environ['WTBASE'] + '/src/templates/WMCore/WebTools
 config.ReqMgr.admin = 'rickw@caltech.edu'
 config.ReqMgr.title = 'CMS Request Manager'
 config.ReqMgr.description = 'CMS Request manager'
-config.ReqMgr.couchURL = 'http://cmssrv52.fnal.gov:5984'
-
-config.ReqMgr.configDBName = 'wmagent_config_cache'
+config.ReqMgr.couchURL = os.environ['COUCHURL']
+config.ReqMgr.couchDBName = 'wmagent_config_cache'
+config.ReqMgr.workloadCouchDB = 'wmagent_spec_cache'
 
 reqMgrHost = '%s:%s' % (host, port)
 
@@ -62,21 +61,11 @@ config.Webtools.application = 'ReqMgr'
 views = config.ReqMgr.section_('views')
 active = views.section_('active')
 
-
-views = config.ReqMgr.section_('views')
-active = views.section_('active')
-
-# download workflows
-active.section_('download')
-active.download.object = 'WMCore.HTTPFrontEnd.Downloader'
-active.download.dir = config.ReqMgr.componentDir
-
 active.section_('reqMgrBrowser')
 active.reqMgrBrowser.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrBrowser'
 active.reqMgrBrowser.reqMgrHost = reqMgrHost
-active.reqMgrBrowser.workloadCache = active.download.dir
 active.reqMgrBrowser.configCacheUrl = config.ReqMgr.couchURL
-active.reqMgrBrowser.configDBName = config.ReqMgr.configDBName
+active.reqMgrBrowser.configDBName =  config.ReqMgr.couchDBName
 
 #active.section_('CmsDriverWebRequest')
 #active.CmsDriverWebRequest.object = 'ReqMgr.RequestInterface.WWW.CmsDriverWebRequest'
@@ -95,14 +84,12 @@ active.reqMgrBrowser.configDBName = config.ReqMgr.configDBName
 
 active.section_('reqMgr')
 active.reqMgr.object = 'WMCore.WebTools.RESTApi'
-#active.reqMgr. = config.ReqMgr.database.connectUrl
-#active.reqMgr.dialect = config.ReqMgr.dialect
-#active.reqMgr.database = 'mysql://rpw@localhost/reqmgr_rpw?unix_socket=/var/lib/mysql/mysql.sock'
 
 active.reqMgr.section_('model')
 active.reqMgr.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
-active.reqMgr.model.workloadCache = active.download.dir
 active.reqMgr.model.reqMgrHost = reqMgrHost
+active.reqMgr.model.couchUrl = config.ReqMgr.couchURL
+active.reqMgr.model.workloadCouchDB = config.ReqMgr.workloadCouchDB
 # no caching
 active.reqMgr.default_expires = 0
 active.reqMgr.section_('formatter') 
@@ -115,13 +102,7 @@ active.WebRequestSchema.requestor = 'rpw'
 active.WebRequestSchema.reqMgrHost = reqMgrHost
 active.WebRequestSchema.cmsswInstallation = cmsswInstallation
 active.WebRequestSchema.cmsswDefaultVersion = 'CMSSW_3_5_8'
-active.WebRequestSchema.configCacheUrl = "http://USERNAME:PASSWORD@cmssrv52.fnal.gov:5984"
+active.WebRequestSchema.configCacheUrl = config.ReqMgr.couchURL
 active.WebRequestSchema.configCacheDBName = "wmagent_config_cache"
 active.WebRequestSchema.templates = config.ReqMgr.templates
 active.WebRequestSchema.componentDir = config.ReqMgr.componentDir
-
-active.section_('RequestOverview')
-active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestMgr.RequestOverview'
-active.RequestOverview.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
-active.RequestOverview.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript')
-active.RequestOverview.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html')

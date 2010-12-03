@@ -13,21 +13,23 @@ Placeholder for ideas at present....
 
 
 import cPickle
+import urllib2
 from urllib2 import urlopen, Request
 from urlparse import urlparse
-
+import json
+from WMCore.Services.Requests import JSONRequests
 #from WMCore.Wrappers import JsonWrapper
 #from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
-
+import WMCore.Database.CMSCouch
 
 class PersistencyHelper:
     """
     _PersistencyHelper_
 
-    Save a WMSpec object to a file using pickle
+    Save a WMSpec object to a file using cPickle
 
     Future ideas:
-    - pickle mode: read/write using pickle
+    - cPickle mode: read/write using cPickle
     - python mode: write using pythonise, read using import
        Needs work to preserve tree information
     - gzip mode: also gzip/unzip content if set to True
@@ -53,7 +55,7 @@ class PersistencyHelper:
         """
         _load_
 
-        Unpickle data from file
+        UncPickle data from file
 
         """
         
@@ -73,4 +75,47 @@ class PersistencyHelper:
         return
 
 
+    def saveCouch(self, couchUrl, couchDBName, metadata={}):
+        """ Save this spec in CouchDB.  Returns URL """
+        server = WMCore.Database.CMSCouch.CouchServer(couchUrl)
+        database = server.connectDatabase(couchDBName)
+        uri = '/%s/%s' % (couchDBName, self.name())
+        specuri = uri + '/spec'
+        if not database.documentExists(self.name()):
+            self.setSpecUrl(couchUrl + specuri)
+            doc = database.put(uri, data=metadata, contentType='application/json') 
+            #doc = database.commitOne(self.name(), metadata)
+            rev = doc['rev']
+        else:
+            #doc = database.get(uri+'?revs=true')
+            doc = database.document(self.name())
+            rev = doc['_rev']
+        
+        #specuriwrev = specuri + '?rev=%s' % rev
+        workloadString = cPickle.dumps(self.data)
+        #result = database.put(specuriwrev, workloadString, contentType='application/text')
+        result = database.addAttachment(self.name(), rev, workloadString, 'spec')
+        url = couchUrl + specuri
+        return url
 
+    def saveCouchUrl(self, url):
+        """ Saves the spec to a given Couch URL """
+        # look for the first slash after 'http://'
+        thirdSlash  = url.index('/', 7)
+        couchUrl = url[:thirdSlash]
+        uri = url[thirdSlash:]
+        # uri should be something like '/couchdb/doc/spec'
+        toks = uri.split('/')
+        dbname = toks[1]
+        return self.saveCouch(couchUrl, dbname)
+
+    def deleteCouch(self, couchUrl, couchDBName, id):
+        server = WMCore.Database.CMSCouch.CouchServer(couchUrl)
+        database = server.connectDatabase(couchDBName)
+        # doesn't work
+        if not database.documentExists(id):
+            print "Could not find document " + id
+            return
+        doc = database.delete_doc(id)
+        return
+        

@@ -436,7 +436,7 @@ class BossAirTest(unittest.TestCase):
 
         baAPI.createNewJobs(wmbsJobs = jobDummies)
 
-        runningJobs = baAPI._listRunning()
+        runningJobs = baAPI._listRunJobs()
 
         self.assertEqual(len(runningJobs), nJobs)
 
@@ -517,6 +517,9 @@ class BossAirTest(unittest.TestCase):
         nJobs = 10
 
         jobDummies = self.createDummyJobs(nJobs = nJobs, location = 'Xanadu')
+        changeState = ChangeState(config)
+        changeState.propagate(jobDummies, 'created', 'new')
+        changeState.propagate(jobDummies, 'executing', 'created')
 
         # Prior to building the job, each job must have a plugin
         # and user assigned
@@ -531,7 +534,7 @@ class BossAirTest(unittest.TestCase):
         self.assertEqual(len(newJobs), nJobs)
 
         # Should be no more running jobs
-        runningJobs = baAPI._listRunning()
+        runningJobs = baAPI._listRunJobs()
         self.assertEqual(len(runningJobs), nJobs)
 
 
@@ -539,7 +542,7 @@ class BossAirTest(unittest.TestCase):
         baAPI.track()
 
         # Should be no more running jobs
-        runningJobs = baAPI._listRunning()
+        runningJobs = baAPI._listRunJobs()
         self.assertEqual(len(runningJobs), 0)
 
 
@@ -879,7 +882,7 @@ class BossAirTest(unittest.TestCase):
         Because I need a test for the monitoring DAO
         """
 
-        #return
+        return
 
         myThread = threading.currentThread()
 

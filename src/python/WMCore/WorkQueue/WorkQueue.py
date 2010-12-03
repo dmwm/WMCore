@@ -637,6 +637,10 @@ class WorkQueue(WorkQueueBase):
 
             # if status's the same no need to update anything
             if item['Status'] == my_item['Status']:
+                # In case it is canceled forcefully it will have the same status
+                # still need to pass the value to kill work.
+                if item['Status'] == 'Canceled':
+                    child_update[my_item['Status']].add(my_item['Id'])
                 continue
             # From here on either this queue or the child needs to be updated
 
@@ -816,7 +820,7 @@ class WorkQueue(WorkQueueBase):
 
 
                 # prune elements that are finished (after reporting to parent)
-                self.deleteFinisedWork(results)
+                #self.deleteFinisedWork(results)
 
         # record update times
         if full:

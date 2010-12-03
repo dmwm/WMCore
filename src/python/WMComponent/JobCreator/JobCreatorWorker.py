@@ -283,12 +283,12 @@ class JobCreatorWorker:
             myThread.transaction.commit()
 
             # Turn on the jobFactory
+            myThread.transaction.begin()            
             wmbsJobFactory.open()
 
             # Create a function to hold it
             jobSplittingFunction = runSplitter(jobFactory = wmbsJobFactory,
                                                splitParams = splitParams)
-            myThread.transaction.begin()
             while continueSubscription:
                 # This loop runs over the jobFactory,
                 # using yield statements and a pre-existing proxy to
@@ -307,7 +307,9 @@ class JobCreatorWorker:
 
                 # Now we get to find out what job they are.
                 countJobs = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
-                jobNumber = countJobs.execute(workflow = workflow.id)
+                jobNumber = countJobs.execute(workflow = workflow.id,
+                                              conn = myThread.transaction.conn,
+                                              transaction = True)
                 logging.debug("Have %i jobs for this workflow already" % (jobNumber))
                 
                 

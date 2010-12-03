@@ -6,9 +6,6 @@ Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
 
-
-
-
 import threading
 
 from WMCore.WMBS.File import File
@@ -207,16 +204,21 @@ class WMBSMergeBySize(JobFactory):
 
         self.subscription["fileset"].load()
 
+        myThread = threading.currentThread()
         if self.subscription["fileset"].open == True:
             self.forceMerge = False
         else:
             orphanDAO = daoFactory(classname = "Subscriptions.FailOrphanFiles")
             orphanDAO.execute(self.subscription["id"],
-                              self.subscription["fileset"].id)
+                              self.subscription["fileset"].id,
+                              conn = myThread.transaction.conn,
+                              transaction = True)
             self.forceMerge = True
         
         mergeDAO = daoFactory(classname = "Subscriptions.GetFilesForMerge")
-        mergeableFiles = mergeDAO.execute(self.subscription["id"])
+        mergeableFiles = mergeDAO.execute(self.subscription["id"],
+                                          conn = myThread.transaction.conn,
+                                          transaction = True)
 
         mergeUnits = self.defineMergeUnits(mergeableFiles)
 

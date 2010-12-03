@@ -237,7 +237,9 @@ class JobFactory(WMObject):
 
         subAction = self.daoFactory(classname = "Subscriptions.GetAvailableFilesNoLocations")
         results   = subAction.execute(subscription = self.subscription['id'],
-                                      returnCursor = True)
+                                      returnCursor = True,
+                                      conn = myThread.transaction.conn,
+                                      transaction = True)
 
         for proxy in results:
             self.proxies.append(proxy)
@@ -300,11 +302,16 @@ class JobFactory(WMObject):
         fileList = self.formatDict(results = rawResults, keys = keys)        
         fileIDs = list(set([x['fileid'] for x in fileList]))
 
+        myThread = threading.currentThread()
         fileInfoAct  = self.daoFactory(classname = "Files.GetByID")
-        fileInfoDict = fileInfoAct.execute(file = fileIDs)
+        fileInfoDict = fileInfoAct.execute(file = fileIDs,
+                                           conn = myThread.transaction.conn,
+                                           transaction = True)
 
         getLocAction = self.daoFactory(classname = "Files.GetLocationBulk")
-        getLocDict   = getLocAction.execute(files = fileIDs)
+        getLocDict   = getLocAction.execute(files = fileIDs,
+                                            conn = myThread.transaction.conn,
+                                            transaction = True)
 
         for fID in fileIDs:
             fl = WMBSFile(id = fID)

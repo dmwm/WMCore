@@ -39,6 +39,7 @@ class KillWorkflow(DBFormatter):
                   (SELECT wmbs_subscription.id FROM wmbs_workflow
                      INNER JOIN wmbs_subscription ON
                        wmbs_workflow.id = wmbs_subscription.workflow AND
+                       wmbs_workflow.name = :workflowname AND
                        wmbs_subscription.subtype IN
                          (SELECT id FROM wmbs_sub_types
                           WHERE name != 'Cleanup' AND name != 'LogCollect'))"""
@@ -47,6 +48,7 @@ class KillWorkflow(DBFormatter):
                   (SELECT wmbs_subscription.id FROM wmbs_workflow
                      INNER JOIN wmbs_subscription ON
                        wmbs_workflow.id = wmbs_subscription.workflow AND
+                       wmbs_workflow.name = :workflowname AND
                        wmbs_subscription.subtype IN
                          (SELECT id FROM wmbs_sub_types
                           WHERE name != 'Cleanup' AND name != 'LogCollect'))"""    
@@ -54,6 +56,8 @@ class KillWorkflow(DBFormatter):
     def execute(self, workflowName, conn = None, transaction = False):
         self.dbi.processData(self.sql, {"workflowname": workflowName},
                              conn = conn, transaction = transaction)
-        self.dbi.processData(self.delAcq, conn = conn, transaction = transaction)
-        self.dbi.processData(self.delAva, conn = conn, transaction = transaction)                
+        self.dbi.processData(self.delAcq, {"workflowname": workflowName},
+                             conn = conn, transaction = transaction)
+        self.dbi.processData(self.delAva, {"workflowname": workflowName},
+                             conn = conn, transaction = transaction)                
         return

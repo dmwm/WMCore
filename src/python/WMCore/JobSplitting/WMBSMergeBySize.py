@@ -139,6 +139,9 @@ class WMBSMergeBySize(JobFactory):
         Create a merge job for the given merge units.  All the files contained
         in the merge units will be associated to the job.
         """
+        if self.currentGroup == None:
+            self.newGroup()
+            
         self.newJob(name = self.getJobName())
         sortedFiles = sortedFilesFromMergeUnits(mergeUnits)
 
@@ -222,7 +225,6 @@ class WMBSMergeBySize(JobFactory):
 
         mergeUnits = self.defineMergeUnits(mergeableFiles)
 
-        self.newGroup()
         for seName in mergeUnits.keys():
             for runNumber in mergeUnits[seName].keys():
                 self.defineMergeJobs(mergeUnits[seName][runNumber])

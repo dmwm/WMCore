@@ -57,6 +57,9 @@ class ParentlessMergeBySize(JobFactory):
         Create a merge job for the given merge units.  All the files contained
         in the merge units will be associated to the job.
         """
+        if self.currentGroup == None:
+            self.newGroup()
+            
         self.newJob(name = self.getJobName())
         mergeableFiles.sort(fileCompare)
 
@@ -144,7 +147,6 @@ class ParentlessMergeBySize(JobFactory):
 
         groupedFiles = self.defineFileGroups(mergeableFiles)
 
-        self.newGroup()
         for seName in groupedFiles.keys():
             self.defineMergeJobs(groupedFiles[seName])
 

@@ -794,6 +794,7 @@ class BossAirAPI(WMConnectionBase):
                 if jCache['jobid'] == wmbsJob['id'] and jCache['retry_count'] == wmbsJob['retry_count']:
                     rj = RunJob()
                     rj.buildFromJob(wmbsJob)
+                    rj['id'] = jCache['id']
                     # Overwrite empty keys
                     for key in rj.keys():
                         if rj[key] == None:

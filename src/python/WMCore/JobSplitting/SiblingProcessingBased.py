@@ -34,7 +34,9 @@ class SiblingProcessingBased(JobFactory):
         
         fileAvail = daoFactory(classname = "Subscriptions.SiblingSubscriptionsComplete")
         completeFiles = fileAvail.execute(self.subscription["id"],
-                                          self.subscription["fileset"].id)
+                                          self.subscription["fileset"].id,
+                                          conn = myThread.transaction.conn,
+                                          transaction = True)
 
         self.subscription["fileset"].load()
         if self.subscription["fileset"].open == True:

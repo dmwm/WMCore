@@ -28,6 +28,7 @@ from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 arguments = {
             'Username' : "spiga",
             'Requestor' : "spiga",
+            "Group" : "CRAB-3 Analysis Devel",
             "CMSSWVersion" : "CMSSW_3_6_1_patch7",
             "ScramArch" : "slc5_ia32_gcc434",
             "InputDataset" : "/RelValProdTTbar/JobRobot-MC_3XY_V24_JobRobot-v1/GEN-SIM-DIGI-RECO",

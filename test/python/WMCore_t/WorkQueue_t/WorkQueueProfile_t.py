@@ -85,4 +85,3 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         
 if __name__ == "__main__":
     unittest.main()
-    deleteConfig(ConfigFile)

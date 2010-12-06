@@ -27,7 +27,7 @@ from WMQuality.WebTools.RESTServerSetup import DefaultConfig, cherrypySetup
 from WMQuality.WebTools.RESTClientAPI import makeRequest, methodTest
 
 defaultConfig = DefaultConfig()
-dummyConfig = DefaultConfig('DummyRESTModel')
+dummyConfig = DefaultConfig('WMCore_t.WebTools_t.DummyRESTModel')
 dasConfig = DefaultConfig()
 dasConfig.setFormatter('WMCore.WebTools.DASRESTFormatter')
 

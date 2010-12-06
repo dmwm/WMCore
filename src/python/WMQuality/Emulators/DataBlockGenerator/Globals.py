@@ -6,11 +6,6 @@ global _BLOCK_LOCATIONS
 
 _BLOCK_LOCATIONS = {}
 
-#def getSites(block):
-#    if _BLOCK_LOCATIONS.has_key(block):
-#        return _BLOCK_LOCATIONS[block]
-#    return SITES
-
 def getSites(block):
     if _BLOCK_LOCATIONS.has_key(block):
         return _BLOCK_LOCATIONS[block]
@@ -32,6 +27,14 @@ def moveBlock(blockSites):
 
 class GlobalParams(object):
     
+    # WARNING: do not change the default value:
+    # unittests will break.
+    # If they are needed to be changed in some unittests
+    # or other situation, use the setter.
+    # If they are changed in the unittest, reset to default values in tearDown
+    # (otherwise buildbot test will have unexpected result,
+    # since it will run several unittests in one process)
+
     _num_of_blocks_per_dataset = 2
     _num_of_files_per_block = 5
     _num_of_lumis_per_block = 2
@@ -83,4 +86,14 @@ class GlobalParams(object):
         #assumes blockName is contains number after '#'
         return int(blockName.split('#')[-1])
     
+    @staticmethod
+    def resetParams():
+        """
+        reset the parameter to default value
+        """
+        GlobalParams._num_of_blocks_per_dataset = 2
+        GlobalParams._num_of_files_per_block = 5
+        GlobalParams._num_of_lumis_per_block = 2
+        GlobalParams._num_of_events_per_file = 1000
+        GlobalParams._size_of_file = 20000000
         

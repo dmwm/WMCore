@@ -12,10 +12,9 @@ from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WorkQueueTestCase import WorkQueueTestCase
-
 from WMQuality.Emulators.EmulatorSetup import EmulatorHelper
-    
-class WorkQueueProfileTest(WorkQueueTestCase):
+
+class LocalWorkQueueProfileTest(WorkQueueTestCase):
     """
     _WorkQueueTest_
     
@@ -25,14 +24,10 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         """
         If we dont have a wmspec file create one
         """
+
         EmulatorHelper.setEmulators(phedex = True, dbs = True, 
                                     siteDB = True, requestMgr = True)
-        
         WorkQueueTestCase.setUp(self)
-        
-        #TODO: need to fix why always get the same number of blocks
-        GlobalParams.setNumOfBlocksPerDataset(1)
-        GlobalParams.setNumOfFilesPerBlock(100)
         
         self.specGenerator = WMSpecGenerator()
         self.specs = self.createReRecoSpec(1, "file")
@@ -53,7 +48,6 @@ class WorkQueueProfileTest(WorkQueueTestCase):
             self.specGenerator.removeSpecs()
         except:
             pass
-
         EmulatorHelper.resetEmulators()
         
     def createReRecoSpec(self, numOfSpec, type = "spec"):
@@ -75,6 +69,7 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         #p.strip_dirs().sort_stats('name').print_stats(10)
             
     def testGetWorkLocalQueue(self):
+
         for spec in self.specs:
             self.localQueue.queueWork(spec, team = "A-team")
         self.localQueue.updateLocationInfo()

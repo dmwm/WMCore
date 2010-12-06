@@ -39,14 +39,6 @@ class WorkQueueTest(RESTBaseUnitTest):
         
     def tearDown(self):
         RESTBaseUnitTest.tearDown(self)
-        try:
-            # clean up files created by cherrypy.
-            #TODO: this should be under tearDownClass class method.
-            #  howerver it is only support python 2.7 and newer 
-            os.remove('trusted.caches')
-            shutil.rmtree('o..pacman..o')
-        except:
-            pass
         
     def testWorkQueueService(self):
         

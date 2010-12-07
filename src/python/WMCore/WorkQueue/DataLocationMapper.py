@@ -89,7 +89,6 @@ class DataLocationMapper():
         if self.params['locationFrom'] == 'subscription':
             # subscription api doesn't support partial update
             result, fullResync = self.phedex.getSubscriptionMapping(*dataItems), True
-
         elif self.params['locationFrom'] == 'location':
             result = defaultdict(set)
             args = {}
@@ -119,7 +118,13 @@ class DataLocationMapper():
         """Get data location from dbs"""
         result = defaultdict(set)
         for item in dataItems:
-            result.update[item](dbs.listFileBlockLocation(item))
+            # TODO: need to speed up dbs call somehow. it takes ~0.5 sec per call
+            # or use generator to allow partial result to be updated.
+            # However this is not the normal path and will be deprecated if it is
+            # replaced by dbs 3
+            seNames = dbs.listFileBlockLocation(item)
+            result[item].update([self.sitedb.seToCMSName(x) for x in seNames])
+
         return result, True # partial dbs updates not supported
 
 
@@ -147,7 +152,6 @@ class WorkQueueDataLocationMapper(WMConnectionBase, DataLocationMapper):
         self.actions['NewSite'] = self.daofactory(classname = "Site.New")
 
     def __call__(self, newDataOnly = False, fullResync = False, dbses = {}):
-
         if newDataOnly:
             dataItems = self.actions['GetDataWithoutSite'].execute(conn = self.getDBConn(),
                                                                    transaction = self.existingTransaction())

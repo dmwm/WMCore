@@ -14,7 +14,7 @@ import traceback
 import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from ProdCommon.ThreadTools import WorkQueue
+from WMCore.ThreadPool.WorkQueue import ThreadPool 
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMFactory import WMFactory
 
@@ -35,7 +35,7 @@ class FeederManagerPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.queries = None
-        self.workq = WorkQueue.WorkQueue \
+        self.workq = ThreadPool \
               ([self.pollExternal for _ in range(threads)])
 
 

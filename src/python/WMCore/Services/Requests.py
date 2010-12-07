@@ -316,9 +316,18 @@ class SecureRequests(Requests):
         """
         method getting a secure (HTTPS) connection
         """
-        key, cert = self.getKeyCert()
+        # if we have a key/cert add to request, if not proceed as not all https connections require them
+        key, cert = None, None
+        try:
+            key, cert = self.getKeyCert()
+        except Exception, ex:
+            self['logger'].warning('No certificate or key found, authentication may fail')
+            self['logger'].debug(str(ex))
         http = httplib2.Http(self['req_cache_path'], self['timeout'])
-        http.add_certificate(key=key, cert=cert, domain=self['host'])
+        # Domain must be just a hostname and port. self[host] is a URL currently
+        if key or cert:
+            domain = (self['host'].split('/'))[2]
+            http.add_certificate(key=key, cert=cert, domain=domain)
         return http
     
     def getKeyCert(self):

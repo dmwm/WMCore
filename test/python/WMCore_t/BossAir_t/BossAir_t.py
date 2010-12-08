@@ -184,13 +184,11 @@ class BossAirTest(unittest.TestCase):
 
         config.component_("JobSubmitter")
         config.JobSubmitter.logLevel      = 'INFO'
-        #config.JobSubmitter.maxThreads    = 1
         config.JobSubmitter.pollInterval  = 1
         config.JobSubmitter.pluginName    = 'AirPlugin'
         config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
         config.JobSubmitter.submitDir     = os.path.join(self.testDir, 'submit')
         config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
-        #config.JobSubmitter.submitScript  = os.path.join(os.getcwd(), 'submit.sh')
         config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(),
                                                          'test/python/WMComponent_t/JobSubmitter_t',
                                                          'submit.sh')
@@ -205,13 +203,6 @@ class BossAirTest(unittest.TestCase):
         config.component_("JobTracker")
         config.JobTracker.logLevel      = 'INFO'
         config.JobTracker.pollInterval  = 1
-        #config.JobTracker.trackerName   = 'AirTracker'
-        #config.JobTracker.pluginDir     = 'WMComponent.JobTracker.Plugins'
-        #config.JobTracker.componentDir  = os.path.join(os.getcwd(), 'Components')
-        #config.JobTracker.runTimeLimit  = 7776000 #Jobs expire after 90 days
-        #config.JobTracker.idleTimeLimit = 7776000
-        #config.JobTracker.heldTimeLimit = 7776000
-        #config.JobTracker.unknTimeLimit = 7776000
 
 
         # JobStateMachine
@@ -223,7 +214,7 @@ class BossAirTest(unittest.TestCase):
 
         # JobStatus
         config.component_('JobStatus')
-        config.JobStatus.stateTimeouts  = {'Pending': 2, 'Running': 86400}
+        config.JobStatus.stateTimeouts  = {'Pending': 20, 'Running': 86400}
         config.JobStatus.pollInterval   = 1
 
         # JobStatusLite (LEGACY)
@@ -500,7 +491,7 @@ class BossAirTest(unittest.TestCase):
 
         There are only three plugin
         """
-
+        #return
 
         myThread = threading.currentThread()
 
@@ -634,6 +625,16 @@ class BossAirTest(unittest.TestCase):
         newJobs = baAPI._loadByStatus(status = 'Idle')
         self.assertEqual(len(newJobs), nJobs)
 
+        # Do a second time to make sure that the cache
+        # doesn't die on us
+        baAPI.track()
+
+        newJobs = baAPI._loadByStatus(status = 'New')
+        self.assertEqual(len(newJobs), 0)
+
+        newJobs = baAPI._loadByStatus(status = 'Idle')
+        self.assertEqual(len(newJobs), nJobs)
+
 
         baAPI.kill(jobs = jobList)
 
@@ -672,8 +673,8 @@ class BossAirTest(unittest.TestCase):
 
         changeState = ChangeState(config)
 
-        nSubs = 1
-        nJobs = 2
+        nSubs = 5
+        nJobs = 100
         cacheDir = os.path.join(self.testDir, 'CacheDir')
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
@@ -707,6 +708,8 @@ class BossAirTest(unittest.TestCase):
 
         statusPoller.algorithm()
 
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, nSubs * nJobs)
 
         newJobs = baAPI._loadByStatus(status = 'New')
         self.assertEqual(len(newJobs), 0)
@@ -885,6 +888,8 @@ class BossAirTest(unittest.TestCase):
 
         config = self.getConfig()
 
+        changeState = ChangeState(config)
+
         baAPI  = BossAirAPI(config = config)
 
 
@@ -912,9 +917,6 @@ class BossAirTest(unittest.TestCase):
 
 
         return
-
-
-
 
 
 

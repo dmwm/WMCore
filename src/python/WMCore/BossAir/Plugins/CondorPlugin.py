@@ -56,11 +56,15 @@ def submitWorker(input, results):
             # Put the brakes on
             break        
 
-        command = work
+        command = work.get('command', None)
+        idList  = work.get('idList', [])
+        if not command:
+            results.put({'stdout': '', 'stderr': '999100\n Got no command!', 'idList': idList})
+            continue
         pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
                                 stderr = subprocess.PIPE, shell = True)
         stdout, stderr = pipe.communicate()
-        results.put({'stdout': stdout, 'stderr': stderr})
+        results.put({'stdout': stdout, 'stderr': stderr, 'idList': idList})
 
     return 0
 
@@ -76,7 +80,11 @@ def parseError(error):
 
     if 'ERROR: proxy has expired\n' in error:
         errorCondition = True
-        errorMsg += 'CRITICAL ERROR: Your proxy has expired!'
+        errorMsg += 'CRITICAL ERROR: Your proxy has expired!\n'
+
+    if '999100\n' in error:
+        errorCondition = True
+        errorMsg += "CRITICAL ERROR: Failed to build submit command!\n"
 
 
     return errorCondition, errorMsg
@@ -231,15 +239,17 @@ class CondorPlugin(BasePlugin):
         # Now submit the bastards
         for sandbox in submitDict.keys():
             jobList = submitDict.get(sandbox, [])
+            idList = [x['jobid'] for x in jobList]
             while len(jobList) > 0:
                 jobsReady = jobList[:self.config.JobSubmitter.jobsPerWorker]
                 jobList   = jobList[self.config.JobSubmitter.jobsPerWorker:]
+                idList    = [x['id'] for x in jobsReady]
                 jdlList = self.makeSubmit(jobList = jobsReady)
                 if not jdlList or jdlList == []:
                     # Then we got nothing
                     logging.error("No JDL file made!")
                     return {'NoResult': [0]}
-                jdlFile = "%s/submit_%i.jdl" % (self.submitDir, os.getpid())
+                jdlFile = "%s/submit_%i_%i.jdl" % (self.submitDir, os.getpid(), idList[0])
                 handle = open(jdlFile, 'w')
                 handle.writelines(jdlList)
                 handle.close()
@@ -248,7 +258,7 @@ class CondorPlugin(BasePlugin):
                 # Now submit them
                 logging.info("About to submit %i jobs" %(len(jobsReady)))
                 command = "condor_submit %s" % jdlFile
-                self.input.put(command)
+                self.input.put({'command': command, 'idList': idList})
                 nSubmits += 1
 
         # Now we should have sent all jobs to be submitted
@@ -257,26 +267,29 @@ class CondorPlugin(BasePlugin):
             res = self.result.get()
             output = res['stdout']
             error  = res['stderr']
+            idList = res['idList']
 
             if not error == '':
                 logging.error("Printing out command stderr")
                 logging.error(error)
-                
+
             errorCheck, errorMsg = parseError(error = error)
 
             if errorCheck:
                 condorErrorReport = Report()
                 condorErrorReport.addError("JobSubmit", 61202, "CondorError", errorMsg)
-                for job in jobs:
-                    if job == {}:
-                        continue
-                    job['fwjr'] = condorErrorReport
-                    failedJobs.append(job)
-            else:        
-                for job in jobs:
-                    if job == {}:
-                        continue
-                    successfulJobs.append(job)
+                for jobID in idList:
+                    for job in jobs:
+                        if job.get('id', None) == jobID:
+                            job['fwjr'] = condorErrorReport
+                            failedJobs.append(job)
+                            break
+            else:
+                for jobID in idList:
+                    for job in jobs:
+                        if job.get('id', None) == jobID:
+                            successfulJobs.append(job)
+                            break
 
 
         # We must return a list of jobs successfully submitted,

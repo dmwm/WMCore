@@ -25,7 +25,7 @@ class LoadByID(DBFormatter):
                INNER JOIN wmbs_jobgroup wjg ON wjg.id = wj.jobgroup
                INNER JOIN wmbs_subscription ws ON ws.id = wjg.subscription
                INNER JOIN wmbs_workflow wf ON wf.id = ws.workflow
-               LEFT OUTER JOIN wmbs_location wl ON wl.id = wj.location
+               INNER JOIN wmbs_location wl ON wl.id = wj.location
                WHERE rj.id = :id
     """
 

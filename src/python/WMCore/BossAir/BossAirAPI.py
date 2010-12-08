@@ -95,7 +95,6 @@ class BossAirAPI(WMConnectionBase):
         self.completeJobDAO = self.daoFactory(classname = "LoadComplete")
         self.loadJobsDAO    = self.daoFactory(classname = "LoadByStatus")
         self.completeDAO    = self.daoFactory(classname = "CompleteJob")
-        #self.monitorDAO     = self.daoFactory(classname = "LoadForMonitoring")
         self.monitorDAO     = self.daoFactory(classname = "JobStatusForMonitoring")
                                 
 

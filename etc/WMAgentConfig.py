@@ -110,7 +110,6 @@ config.WorkQueueManager.pollInterval = 10
 config.WorkQueueManager.queueParams = {"PopulateFilesets": True,
                                        "ParentQueue": "http://%s/workqueue/" % config.WorkQueueManager.serviceUrl,
                                        "QueueURL": "http://%s:%s" % (serverHostName, localWorkQueuePort),
-                                       "JobSlotMultiplier": 1000,
                                        "Teams": agentTeams,
                                        "FullReportInterval": 300} 
 

@@ -11,7 +11,6 @@ http://wiki.apache.org/couchdb/API_Cheatsheet
 
 import time
 import urllib
-import datetime
 import re
 
 from httplib import HTTPException
@@ -169,11 +168,11 @@ class Database(CouchDBRequests):
             label = 'timestamp'
         
         if type(data) == type({}):
-            data[label] = str(datetime.datetime.now())
+            data[label] = int(time.time())
         else:
             for doc in data:
                 if label not in doc.keys():
-                    doc[label] = str(datetime.datetime.now())
+                    doc[label] = int(time.time())
         return data
 
     def queue(self, doc, timestamp = False, viewlist=[]):
@@ -221,11 +220,10 @@ class Database(CouchDBRequests):
         """
         Add doc and/or the contents of self._queue to the database. If
         returndocs is true, return document objects representing what has been 
-        committed. If timestamp is true timestamp all documents with a date 
-        formatted like: 2009/01/30 18:04:11 - this will be the timestamp of when
-        the commit was called, it will not override an existing timestamp field.
-        if timestamp is a string that string will be used as the label for the
-        timestamp.
+        committed. If timestamp is true timestamp all documents with a unix style
+        timestamp - this will be the timestamp of when the commit was called, it
+        will not override an existing timestamp field.  If timestamp is a string
+        that string will be used as the label for the timestamp.
         
         TODO: restore support for returndocs and viewlist
         

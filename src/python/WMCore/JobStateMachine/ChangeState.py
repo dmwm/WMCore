@@ -203,9 +203,8 @@ class ChangeState(WMObject, WMConnectionBase):
                 fwjrDocument = {"jobid": job["id"],
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),
-                                "type": "fwjr",
-                                "timestamp": time.time()}
-                self.database.queue(fwjrDocument)
+                                "type": "fwjr"}
+                self.database.queue(fwjrDocument, timestamp = True)
 
         if len(couchRecordsToUpdate) > 0:
             self.setCouchDAO.execute(bulkList = couchRecordsToUpdate,

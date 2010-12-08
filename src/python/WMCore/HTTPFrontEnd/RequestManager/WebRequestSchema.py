@@ -1,5 +1,8 @@
 import WMCore.RequestManager.RequestMaker.Production
 import WMCore.RequestManager.RequestMaker.Processing.StoreResultsRequest
+import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
+import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
+import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
 from WMCore.Services.Requests import JSONRequests
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList
@@ -7,35 +10,44 @@ import WMCore.HTTPFrontEnd.RequestManager.Sites
 from httplib import HTTPException
 import cherrypy
 import time
-from WMCore.WebTools.Page import TemplatedPage
+from WMCore.WebTools.WebAPI import WebAPI
+import threading
 
 
-class WebRequestSchema(TemplatedPage):
+class WebRequestSchema(WebAPI):
     """ Allows the user to submit a request to the RequestManager through a web interface """
     def __init__(self, config):
-        TemplatedPage.__init__(self, config)
+        WebAPI.__init__(self, config)
         # set the database to whatever the environment defines
         self.templatedir = __file__.rsplit('/', 1)[0]
         self.requestor = config.requestor
         self.cmsswVersion = config.cmsswDefaultVersion
         self.reqMgrHost = config.reqMgrHost
         self.jsonSender = JSONRequests(config.reqMgrHost)
-        self.couchUrl = config.configCacheUrl
+        self.couchUrl = config.couchUrl
         self.couchDBName = config.configCacheDBName
-        cherrypy.config.update({'tools.sessions.on': True, 'tools.encode.on':True, 'tools.decode.on':True})
+        #cherrypy.config.update({'tools.sessions.on': True, 'tools.encode.on':True, 'tools.decode.on':True})
 
         self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
+        cherrypy.engine.subscribe('start_thread', self.initThread)
+
+    def initThread(self, thread_index):
+        """ The ReqMgr expects the DBI to be contained in the Thread  """
+        myThread = threading.currentThread()
+        #myThread = cherrypy.thread_data
+        # Get it from the DBFormatter superclass
+        myThread.dbi = self.dbi
 
     @cherrypy.expose
     def index(self):
         """ Main web page for creating requests """
-        self.versions = self.jsonSender.get('/reqMgr/version')[0]
+        self.versions = SoftwareAdmin.listSoftware().keys()
         self.versions.sort()
 
-        if not self.requestor in self.jsonSender.get('/reqMgr/user')[0]:
+        if not self.requestor in Registration.listUsers():
             return "User " + self.requestor + " is not registered.  Contact a ReqMgr administrator."
 
-        groups = self.jsonSender.get('/reqMgr/group?user='+self.requestor)[0]
+        groups = GroupInfo.groupsForUser(self.requestor).keys()
         if groups == []:
             return "User " + self.requestor + " is not in any groups.  Contact a ReqMgr administrator."
         return self.templatepage("WebRequestSchema", requestor=self.requestor,
@@ -101,10 +113,8 @@ class WebRequestSchema(TemplatedPage):
         if kwargs.has_key("BlockBlacklist"):
             schema["BlockBlacklist"] = parseBlockList(kwargs["BlockBlacklist"])
 
-        schema["CouchUrl"] = self.couchUrl
-        schema["CouchDBName"] = self.couchDBName
         try:
             self.jsonSender.put('/reqMgr/request/'+schema['RequestName'], schema)
         except HTTPException, ex:
             return ex.reason+' '+ex.result
-        raise cherrypy.HTTPRedirect('/reqMgrBrowser/requestDetails/'+schema['RequestName'])
+        raise cherrypy.HTTPRedirect('/reqMgrBrowser/details/'+schema['RequestName'])

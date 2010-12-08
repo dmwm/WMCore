@@ -39,46 +39,83 @@ class ReqMgrRESTModel(RESTModel):
     def __init__(self, config):
         RESTModel.__init__(self, config)
         #self.dialect = config.dialect
-        self.urlPrefix = '%s/download?filepath=' % config.model.reqMgrHost
         self.hostAddress = config.model.reqMgrHost
         self.couchUrl = config.model.couchUrl
         self.workloadCouchDB = config.model.workloadCouchDB 
-        self.methods = {
-            'GET':{'request' : {'call':self.getRequest, 'args':['requestName'], 'expires': 0},
-                   'assignment' : {'call':self.getAssignment, 'args':['teamName', 'request'], 'expires': 0},
-                   'user' :  {'call':self.getUser, 'args':['userName'], 'expires': 0},
-                   'group' :  {'call':self.getGroup, 'args':['group', 'user'], 'expires': 0},
-                   'version' :  {'call':self.getVersion, 'args':[], 'expires': 0},
-                   'team' :  {'call':self.getTeam, 'args':[], 'expires': 0},
-                   'workQueue' : {'call':self.getWorkQueue, 'args':['request', 'workQueue'], 'expires': 0},
-                   'message' : {'call':self.getMessage, 'args':['request'], 'expires': 0}
-                   },
-            'PUT':{'request' : {'call':self.putRequest, 
-                                'args':['requestName', 'status', 'priority']},
-                   'assignment' : {'call':self.putAssignment, 
-                                   'args':['team', 'requestName']},
-                   'user' :  {'call':self.putUser, 
-                              'args':['userName', 'email', 'dnName']},
-                   'group' :  {'call':self.putGroup, 'args':['group', 'user']},
-                   'version' :  {'call':self.putVersion, 'args':['version']},
-                   'team' :  {'call':self.putTeam, 'args':['team']},
-                   'workQueue' : {'call':self.putWorkQueue, 'args':['request', 'url']},
-                   'message' : {'call':self.putMessage, 'args':['request']}
-                   },
-            'POST':{'request' : {'call':self.postRequest,
-                                 'args':['requestName', 'events_written', 
-                                         'events_merged', 'files_written',
-                                         'files_merged', 'dataset']},
-                    'user' : {'call':self.postUser, 'args':['user', 'priority']},
-                    'group' : {'call':self.postGroup, 'args':['group', 'priority']} 
-                    },
-            'DELETE':{'request' : {'call':self.deleteRequest, 'args':['requestName']},
-                      'user' :  {'call':self.deleteUser, 'args':['user']},
-                      'group' :  {'call':self.deleteGroup, 'args':['group', 'user']},
-                      'version' :  {'call':self.deleteVersion, 'args':['version']},
-                      'team' :  {'call':self.deleteTeam, 'args':['team']}
-                      }
-            }
+
+        self.addMethod('GET', 'request', self.getRequest, 
+                       args = ['requestName'],
+                       validation=[self.isalnum], expires = 0)
+        self.addMethod('GET', 'assignment', self.getAssignment,
+                       args = ['teamName', 'request'],
+                       validation = [self.isalnum], expires = 0)
+        self.addMethod('GET', 'user', self.getUser,
+                       args = ['userName'], 
+                       validation = [self.isalnum], expires = 0)
+        self.addMethod('GET', 'group', self.getGroup,
+                       args = ['group', 'user'], expires = 0)
+        self.addMethod('GET', 'version', self.getVersion, args = [], expires = 0)
+        self.addMethod('GET', 'team', self.getTeam, args = [], expires = 0)
+        self.addMethod('GET', 'workQueue', self.getWorkQueue,
+                       args = ['request', 'workQueue'], 
+                       validation = [self.isalnum], expires = 0)
+        self.addMethod('GET', 'message', self.getMessage,
+                       args = ['request'], 
+                       validation = [self.isalnum], expires = 0)
+
+        self.addMethod('PUT', 'request', self.putRequest,
+                       args = ['requestName', 'status', 'priority'],
+                       validation = [self.isalnum, self.intpriority])
+        self.addMethod('PUT', 'assignment', self.putAssignment,
+                       args = ['team', 'requestName'],
+                       validation = [self.isalnum])
+        self.addMethod('PUT', 'user', self.putUser,
+                       args = ['userName', 'email', 'dnName'],
+                       validation = [self.validateUser])
+        self.addMethod('PUT', 'group', self.putGroup,
+                       args = ['group', 'user'],
+                       validation = [self.isalnum])
+        self.addMethod('PUT', 'version', self.putVersion,
+                       args = ['version'],
+                       validation = [self.validateVersion])
+        self.addMethod('PUT', 'team', self.putTeam,
+                       args = ['team'],
+                       validation = [self.isalnum])
+        self.addMethod('PUT', 'workQueue', self.putWorkQueue, 
+                       args = ['request', 'url'],
+                       validation = [self.validatePutWorkQueue])
+        self.addMethod('PUT', 'message', self.putMessage,
+                       args = ['request'],
+                       validation = [self.isalnum])
+
+        self.addMethod('POST', 'request', self.postRequest,
+                        args = ['requestName', 'events_written', 
+                                'events_merged', 'files_written',
+                                'files_merged', 'percent_written', 
+                                'percent_success', 'dataset'],
+                                 validation = [self.validateUpdates])
+        self.addMethod('POST', 'user', self.postUser,
+                          args = ['user', 'priority'],
+                          validation = [self.isalnum, self.intpriority])
+        self.addMethod('POST',  'group', self.postGroup,
+                          args = ['group', 'priority'],
+                          validation = [self.isalnum, self.intpriority])
+
+        self.addMethod('DELETE', 'request', self.deleteRequest,
+                          args = ['requestName'],
+                          validation = [self.isalnum])
+        self.addMethod('DELETE', 'user', self.deleteUser,
+                          args = ['user'],
+                          validation = [self.isalnum])
+        self.addMethod('DELETE', 'group', self.deleteGroup,
+                          args = ['group', 'user'],
+                          validation = [self.isalnum])
+        self.addMethod('DELETE', 'version', self.deleteVersion,
+                          args = ['version'],
+                          validation = [self.validateVersion])
+        self.addMethod('DELETE', 'team', self.deleteTeam,
+                          args = ['team'],
+                          validation = [self.isalnum])
         # stop caching for all GET', PUT, POST, and DELETEs
         #for call in ['PUT', 'POST', 'DELETE']:
         #   for method, paramDict in self.methods[call].iteritems():
@@ -86,25 +123,50 @@ class ReqMgrRESTModel(RESTModel):
 
         self.addMethod("GET", "overview", self.getGlobalSummary) #expires=16000
         self.addMethod("GET", "resourceInfo", self.getResourceInfo)
+        cherrypy.engine.subscribe('start_thread', self.initThread)
         
     def getGlobalSummary(self):
         """ return summary data for requests from
             request manager, workqueue and couchDB"""
-        self.initThread()
         return getGlobalSummaryView(self.hostAddress)
 
     def getResourceInfo(self):
         """ return summary data for requests from
             request manager, workqueue and couchDB"""
-        self.initThread()
         return getResourceOverview()
     
-    def initThread(self):
+    def initThread(self, thread_index):
         """ The ReqMgr expects the DBI to be contained in the Thread  """
         myThread = threading.currentThread()
+        #myThread = cherrypy.thread_data
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
-        #myThread.dialect = self.dialect
+
+    def isalnum(self, index={}):
+        """ Validates that all input is alphanumeric, 
+            with spaces and underscores tolerated"""
+        for k, v in index.iteritems():
+            assert v.replace(' ','').replace('_','').replace('-','').isalnum(), "Bad input " + k
+        return index
+
+    def intpriority(self, index={}):
+        """ Casts priority to an integer """
+        if index.has_key('priority'):
+            index['priority'] = int(index['priority'])
+        return index 
+    
+    def validateUser(self, index={}):
+        assert index['userName'].isalnum()
+        assert '@' in index['email']
+        assert index['email'].replace('@','').replace('.','').isalnum()
+        if 'dnName' in index:
+            assert index['dnName'].replace(' ','').isalnum()
+        return index
+
+    def validateVersion(self, index={}):
+        """ Make sure it's a legitimate CMSSW version format """
+        assert index['version'].startswith('CMSSW_')
+        return index
 
     def findRequest(self, requestName):
         """ Either returns the request object, or None """
@@ -125,8 +187,6 @@ class ReqMgrRESTModel(RESTModel):
     def getRequest(self, requestName=None):
         """ If a request name is specified, return the details of the request. 
         Otherwise, return an overview of all requests """
-      
-        self.initThread()
         if requestName == None:
             return GetRequest.getAllRequestDetails()
         else:
@@ -135,7 +195,6 @@ class ReqMgrRESTModel(RESTModel):
     def getAssignment(self, teamName=None, request=None):
         """ If a team name is passed in, get all assignments for that team.
         If a request is passed in, return a list of teams the request is assigned to """
-        self.initThread()
         result = []
         #self.init.setLogging()
         #self.init.setDatabaseConnection()
@@ -147,7 +206,6 @@ class ReqMgrRESTModel(RESTModel):
             result = {}
             for reqID in requestIDs:
                 req = GetRequest.getRequest(reqID)
-                #result[req['RequestName']] = self.urlPrefix+req['RequestWorkflow']
                 result[req['RequestName']] = req['RequestWorkflow']
             return result
         if request != None:
@@ -158,7 +216,6 @@ class ReqMgrRESTModel(RESTModel):
     def getUser(self, userName=None, group=None):
         """ No args returns a list of all users.  Group returns groups this user is in.  Username
             returs a JSON with information about the user """
-        self.initThread()
         if userName != None:
             result = {}
             result['groups'] = GroupInfo.groupsForUser(userName).keys()
@@ -174,7 +231,6 @@ class ReqMgrRESTModel(RESTModel):
 
     def getGroup(self, group=None, user=None):
         """ No args lists all groups, one args returns JSON with users and priority """
-        self.initThread()
         if group != None:
             result = {}
             result['users'] =  GroupInfo.usersInGroup(group)
@@ -187,18 +243,15 @@ class ReqMgrRESTModel(RESTModel):
 
     def getVersion(self):
         """ Returns a list of all CMSSW versions registered with ReqMgr """
-        self.initThread()
         return SoftwareAdmin.listSoftware().keys()
       
     def getTeam(self):
         """ Returns a list of all teams registered with ReqMgr """
-        self.initThread()
         return ProdManagement.listTeams()
 
     def getWorkQueue(self, request=None, workQueue=None):
         """ If a request is passed in, return the URl of the workqueue.
         If a workqueue is passed in, return all requests acquired by it """
-        self.initThread()
         if workQueue != None:
             return ProdMgrRetrieve.findAssignedRequests(workQueue)
         if request != None:
@@ -207,7 +260,6 @@ class ReqMgrRESTModel(RESTModel):
     def abortRequest(self, request):
         """ Changes the state of the request to "aborted", and asks the work queue
         to cancel its work """
-        self.initThread()
         response = self.getWorkQueue(request=request)
         url = response[0]
         if url == None or url == "":
@@ -215,33 +267,28 @@ class ReqMgrRESTModel(RESTModel):
         workqueue = WorkQueue.WorkQueue({'endpoint': url})     
         workqueue.cancelWork([request], "request_name")
    
-    def getMessage(self, request=None):
+    def getMessage(self, request):
         """ Returns a list of messages attached to this request """
-        self.initThread()
         return ChangeState.getMessages(request)
 
     def putWorkQueue(self, request, url):
         """ Registers the request as "acquired" by the workqueue with the given URL """
-        self.initThread()
         ChangeState.changeRequestStatus(request, "acquired")
         return ProdManagement.associateProdMgr(request, urllib.unquote(url))
 
+    def validatePutWorkQueue(self, index={}):
+        assert index['request'].replace('_','').isalnum()
+        assert index['url'].startswith('http')
+        return index
 
     def putRequest(self, requestName, status=None, priority=None):
         """ Checks the request n the body with one arg, and changes the status with kwargs """
-        self.initThread()
         result = ""
         request = self.findRequest(requestName)
         if request == None:
-#            try:
-                request = self.makeRequest()
-#            except Exception, ex:
-#                cherrypy.response.status = 400
-#                print "putRequest Error " + str(ex)
-#                return str(ex)
+            request = self.makeRequest()
         # see if status & priority need to be upgraded
         if status != None or priority != None:
-            self.initThread()
             oldStatus = request['RequestStatus']
 
             if status != None:
@@ -272,7 +319,6 @@ class ReqMgrRESTModel(RESTModel):
         helper = WMWorkloadHelper()
         helper.load(request['RequestWorkflow'])
         helper.data.request.priority = int(priority)
-        print "SAVING " + request['RequestWorkflow']
         saveWorkload(helper, request['RequestWorkflow'])
  
         
@@ -304,7 +350,6 @@ class ReqMgrRESTModel(RESTModel):
 
     def putAssignment(self, team, requestName):
         """ Assigns this request to this team """
-        self.initThread()
         # see if it's already assigned
         requestNamesAndIDs = ListRequests.listRequestsByTeam(urllib.unquote(team))
         if requestName in requestNamesAndIDs.keys():
@@ -313,7 +358,6 @@ class ReqMgrRESTModel(RESTModel):
 
     def putUser(self, userName, email, dnName=None):
         """ Needs to be passed an e-mail address, maybe dnName """
-        self.initThread()
         if Registration.isRegistered(userName):
             return "User already exists"
         result = Registration.registerUser(userName, email, dnName)
@@ -321,7 +365,6 @@ class ReqMgrRESTModel(RESTModel):
 
     def putGroup(self, group, user=None):
         """ Creates a group, or if a user is passed, adds that user to the group """
-        self.initThread()
         if(user != None):
             # assume group exists and add user to it
             return GroupManagement.addUserToGroup(user, group)
@@ -331,17 +374,14 @@ class ReqMgrRESTModel(RESTModel):
 
     def putVersion(self, version):
         """ Registers a new CMSSW version with ReqMgr """
-        self.initThread()
         return SoftwareAdmin.addSoftware(version)
 
     def putTeam(self, team):
         """ Registers a team with ReqMgr """
-        self.initThread()
         return ProdManagement.addTeam(urllib.unquote(team))
 
     def putMessage(self, request):
         """ Attaches a message to this request """
-        self.initThread()
         message = JsonWrapper.loads( cherrypy.request.body.read() )
         result = ChangeState.putMessage(request, message)
         return result
@@ -350,7 +390,7 @@ class ReqMgrRESTModel(RESTModel):
 #                    files_written=None, files_merged = None, dataset=None):
     def postRequest(self, requestName, **kwargs):
         """
-        Add a progress update to teh request Id provided, params can
+        Add a progress update to the request Id provided, params can
         optionally contain:
         - *events_written* Int
         - *events_merged*  Int
@@ -360,25 +400,28 @@ class ReqMgrRESTModel(RESTModel):
         - *percent_complete float
         - *dataset*        string (dataset name)
         """
- #       try:
-        self.initThread()
-#        kwargs = self.sanitise_input(requestName, events_written, events_merged, 
-#                                     files_written,  files_merged, dataset)
         return ChangeState.updateRequest(requestName, kwargs)
+
+    def validateUpdates(self, index={}):
+        for k in ['events_written', 'events_merged', 
+                  'files_written', 'files_merged']:
+            if k in index:
+                index[k] = int(index[k])
+        for k in ['percent_success', 'percent_complete']:
+            if k in index:
+                index[k] = float(index[k])
+        return index
 
     def postUser(self, user, priority):
         """ Change the user's priority """
-        self.initThread()
         return UserManagement.setPriority(user, priority)
 
     def postGroup(self, group, priority):
         """ Change the group's priority """
-        self.initThread()
         return GroupManagement.setPriority(group, priority)
 
     def deleteRequest(self, requestName):
         """ Deletes a request from the ReqMgr """
-        self.initThread()
         request = self.findRequest(requestName)
         if request == None:
             raise cherrypy.HTTPError(404, "No such request")
@@ -387,7 +430,6 @@ class ReqMgrRESTModel(RESTModel):
     def deleteUser(self, user):
         """ Deletes a user, as well as deleting his requests and removing
             him from all groups """
-        self.initThread()
         if user in self.getUser():
             requests = json.loads(self.getUser(user))['requests']
             for request in requests:
@@ -398,7 +440,6 @@ class ReqMgrRESTModel(RESTModel):
 
     def deleteGroup(self, group, user=None):
         """ If no user is sent, delete the group.  Otherwise, delete the user from the group """
-        self.initThread()
         if user == None:
             return GroupManagement.deleteGroup(group)
         else:
@@ -406,13 +447,12 @@ class ReqMgrRESTModel(RESTModel):
 
     def deleteVersion(self, version):
         """ Un-register this software version with ReqMgr """
-        self.initThread()
         SoftwareAdmin.removeSoftware(version)
 
     def deleteTeam(self, team):
         """ Delete this team from ReqMgr """
-        self.initThread()
         ProdManagement.removeTeam(urllib.unquote(team))
+
 
     
 

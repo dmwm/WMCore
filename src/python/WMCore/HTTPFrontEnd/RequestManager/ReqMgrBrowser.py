@@ -1,7 +1,18 @@
 #!/usr/bin/env python
 """ Main Module for browsing and modifying requests """
-
+import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
+import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
+import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
+import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
+import WMCore.RequestManager.RequestDB.Interface.Admin.GroupManagement as GroupManagement
+import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement as UserManagement
+import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
+import WMCore.RequestManager.RequestDB.Interface.User.Requests as UserRequests
+import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
+import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
+
+
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, parseSite, allSoftwareVersions, saveWorkload
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Cache.WMConfigCache import ConfigCache 
@@ -12,9 +23,11 @@ import cherrypy
 import json
 import os.path
 import urllib
+import threading
 import types
 
 from WMCore.WebTools.Page import TemplatedPage
+from WMCore.WebTools.WebAPI import WebAPI
 
 def detailsBackLink(requestName):
     """ HTML to return to the details of this request """
@@ -56,10 +69,10 @@ def addHtmlLinks(d):
             d[key] = '<a href="%s">%s</a>' % (target, value)
 
 
-class ReqMgrBrowser(TemplatedPage):
+class ReqMgrBrowser(WebAPI):
     """ Main class for browsing and modifying requests """
     def __init__(self, config):
-        TemplatedPage.__init__(self, config)
+        WebAPI.__init__(self, config)
         # Take a guess
         self.templatedir = __file__.rsplit('/', 1)[0]
         self.urlPrefix = '%s/download/?filepath=' % config.reqMgrHost
@@ -83,23 +96,32 @@ class ReqMgrBrowser(TemplatedPage):
         self.requests = []
         self.configCacheUrl = config.configCacheUrl
         self.configDBName = config.configDBName
+        #FIXME try to remove this  
         self.jsonSender = JSONRequests(config.reqMgrHost)
         self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
         self.mergedLFNBases = {"ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
                                "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}
 
+    def initThread(self):
+        """ The ReqMgr expects the DBI to be contained in the Thread  """
+        myThread = threading.currentThread()
+        # Get it from the DBFormatter superclass
+        myThread.dbi = self.dbi
+
     @cherrypy.expose
     def index(self):
         """ Main web page """
-        requests = self.getRequests()
+        self.initThread()
+        requests = GetRequest.getAllRequestDetails()
         tableBody = self.drawRequests(requests)
         return self.templatepage("ReqMgrBrowser", fields=self.fields, tableBody=tableBody)
 
     @cherrypy.expose
     def search(self, value, field):
         """ Search for a regular expression in a certain field of all requests """
+        self.initThread()
         filteredRequests = []
-        requests =  self.getRequests() 
+        requests = GetRequest.getAllRequestDetails()
         for request in requests:
             if request[field].find(value) != -1:
                 filteredRequests.append(request)
@@ -107,10 +129,6 @@ class ReqMgrBrowser(TemplatedPage):
         tableBody = self.drawRequests(requests)
         return self.templatepage("ReqMgrBrowser", fields=self.fields, tableBody=tableBody)
         
-    def getRequests(self):
-        """ Get all requests """
-        return self.jsonSender.get("/reqMgr/request")[0]
-
     @cherrypy.expose
     def splitting(self, requestName):
         """
@@ -120,7 +138,8 @@ class ReqMgrBrowser(TemplatedPage):
         the spec.  Format them in the manner that the splitting page expects
         and pass them to the template.
         """
-        request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
+        self.initThread()
+        request = GetRequest.getRequestByName(requestName)
         helper = WMWorkloadHelper()
         helper.load(request['RequestWorkflow'])
         splittingDict = helper.listJobSplittingParametersByTask()
@@ -170,7 +189,8 @@ class ReqMgrBrowser(TemplatedPage):
         elif splittingAlgo == "EventBased":
             splitParams["events_per_job"] = submittedParams["events_per_job"]
             
-        request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
+        self.initThread()
+        request = GetRequest.getRequestByName(requestName)
         helper = WMWorkloadHelper()
         helper.load(request['RequestWorkflow'])
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
@@ -182,7 +202,8 @@ class ReqMgrBrowser(TemplatedPage):
     @cherrypy.expose
     def requestDetails(self, requestName):
         """ A page showing the details for the requests """
-        request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
+        self.initThread()
+        request = GetRequest.getRequestDetails(requestName)
         helper = WMWorkloadHelper()
         helper.load(request['RequestWorkflow'])
         docId = None
@@ -190,7 +211,7 @@ class ReqMgrBrowser(TemplatedPage):
         d['RequestWorkflow'] = request['RequestWorkflow']
         if d.has_key('ProdConfigCacheID') and d['ProdConfigCacheID'] != "":
             docId = d['ProdConfigCacheID']        
-        assignments = self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0]
+        assignments = GetRequest.getAssignmentsByName(requestName)
         adminHtml = statusMenu(requestName, request['RequestStatus']) \
                   + ' Priority ' + priorityMenu(requestName, request['ReqMgrRequestBasePriority'])
         return self.templatepage("Request", requestName=requestName,
@@ -230,7 +251,8 @@ class ReqMgrBrowser(TemplatedPage):
     @cherrypy.expose
     def remakeWorkload(self, requestName):
         """ Rebuild the workload from the stored schema """
-        request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
+        self.initThread()
+        request = GetRequest.getRequestByName(requestName)
         # Should really get by RequestType
         workloadMaker = WorkloadMaker(requestName)
         # I'm getting requests and requestSchema confused
@@ -244,7 +266,6 @@ class ReqMgrBrowser(TemplatedPage):
         result = ""
         for request in requests:
             # see if this is slower
-            #request = self.jsonSender.get("/reqMgr/request/"+request["RequestName"])[0]
             result += self.drawRequest(request)
         return result
 
@@ -336,10 +357,11 @@ class ReqMgrBrowser(TemplatedPage):
 
     @cherrypy.expose
     def assignmentPage(self, requestName):
-        teams = self.jsonSender.get('/reqMgr/team')[0]
-        requestType = self.jsonSender.get('/reqMgr/request/%s' % requestName)[0]["RequestType"]
+        self.initThread()
+        teams = ProdManagement.listTeams()
+        requestType = GetRequest.getRequestByName(requestName)["RequestType"]
         # get assignments
-        assignments = self.jsonSender.get('/reqMgr/assignment?request=%s' % requestName)[0]
+        assignments = GetRequest.getAssignmentsByName(requestName)
         # might be a list, or a dict team:priority
         if isinstance(assignments, dict):
             assignments = assignments.keys()
@@ -351,8 +373,9 @@ class ReqMgrBrowser(TemplatedPage):
         """ handles some checkboxes """
         result = ""
         requestName = kwargs["RequestName"]
-        assignments = self.jsonSender.get('/reqMgr/assignment?request=%s' % requestName)[0]
-        request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
+        self.initThread()
+        assignments = GetRequest.getAssignmentsByName(requestName)
+        request = GetRequest.getRequestByName(requestName)
         helper = WMWorkloadHelper()
         helper.load(request['RequestWorkflow'])
         schema = helper.data.request.schema
@@ -366,7 +389,7 @@ class ReqMgrBrowser(TemplatedPage):
                 team = key[4:]
                 if not team in assignments:
                     teams.append(team)
-                    self.jsonSender.put('/reqMgr/assignment/%s/%s' % (urllib.quote(team), requestName))
+                    ChangeState.assignRequest(requestName, team)
                     result += "Assigned to team %s\n" % team
         if teams == [] and assignments == []:
             raise cherrypy.HTTPError(400, "Must assign to one or more teams")
@@ -417,104 +440,116 @@ class ReqMgrBrowser(TemplatedPage):
     @cherrypy.expose
     def user(self, userName):
         """ Web page of details about the user, and sets user priority """
-        userDict = json.loads(self.jsonSender.get('/reqMgr/user/%s' % userName)[0])
-        requests = userDict['requests']
-        priority = userDict['priority']
-        groups = userDict['groups']
-        allGroups = self.jsonSender.get('/reqMgr/group')[0]
+        self.initThread()
+        groups = GroupInfo.groupsForUser(userName).keys()
+        requests = UserRequests.listRequests(userName).keys()
+        priority = UserManagement.getPriority(userName)
+        allGroups = GroupInfo.listGroups()
         return self.templatepage("User", user=userName, groups=groups, 
             allGroups=allGroups, requests=requests, priority=priority)
 
     @cherrypy.expose
     def handleUserPriority(self, user, userPriority):
         """ Handles setting user priority """
-        self.jsonSender.post('/reqMgr/user/%s?priority=%s' % (user, userPriority))
+        self.initThread()
+        UserManagement.setPriority(user, userPriority)
         return "Updated user %s priority to %s" % (user, userPriority)
 
     @cherrypy.expose
     def group(self, groupName):
         """ Web page of details about the user, and sets user priority """
-        groupDict = json.loads(self.jsonSender.get('/reqMgr/group/%s' % groupName)[0])
-        users = groupDict['users']
-        priority = groupDict['priority']
+        users = GroupInfo.usersInGroup(groupName)
+        priority = GroupManagement.getPriority(groupName)
         return self.templatepage("Group", group=groupName, users=users, priority=priority)
 
     @cherrypy.expose
-    def handleGroupPriority(self, group=None, groupPriority=None):
+    def handleGroupPriority(self, group, groupPriority):
         """ Handles setting group priority """
-        self.jsonSender.post('/reqMgr/group/%s?priority=%s' % (group, groupPriority))
+        self.initThread()
+        GroupManagement.setPriority(group, groupPriority)
         return "Updated group %s priority to %s" % (group, groupPriority)
 
     @cherrypy.expose
     def users(self):
         """ Lists all users.  Should be paginated later """
-        allUsers = self.jsonSender.get('/reqMgr/user')[0]
+        self.initThread()
+        allUsers = Registration.listUsers()
         return self.templatepage("Users", users=allUsers)
 
     @cherrypy.expose
     def handleAddUser(self, user, email=None):
         """ Handles setting user priority """
-        self.jsonSender.put('/reqMgr/user/%s?email=%s' % (user, email))
+        self.initThread()
+        result = Registration.registerUser(user, email)
         return "Added user %s" % user
 
     @cherrypy.expose
     def handleAddToGroup(self, user, group):
         """ Adds a user to the group """
-        self.jsonSender.put('/reqMgr/group/%s/%s' % (group, user))
+        self.initThread()
+        GroupManagement.addUserToGroup(user, group)
         return "Added %s to %s " % (user, group)
 
     @cherrypy.expose
     def groups(self):
         """ Lists all users.  Should be paginated later """
-        allGroups = self.jsonSender.get('/reqMgr/group')[0]
+        self.initThread()
+        allGroups = GroupInfo.listGroups()
         return self.templatepage("Groups", groups=allGroups)
 
     @cherrypy.expose
     def handleAddGroup(self, group):
         """ Handles adding a group """
-        self.jsonSender.put('/reqMgr/group/%s' % group)
+        self.initThread()
+        GroupManagement.addGroup(group)
         return "Added group %s " % group
 
     @cherrypy.expose
     def teams(self):
         """ Lists all teams """
-        teams = self.jsonSender.get('/reqMgr/team')[0]
+        self.initThread()
+        teams = ProdManagement.listTeams()
         return self.templatepage("Teams", teams=teams)
 
     @cherrypy.expose
     def team(self, teamName):
         """ Details for a team """
-        assignments = self.jsonSender.get('/reqMgr/assignment/%s' % teamName)[0]
+        self.initThread()
+        assignments = ListRequests.listRequestsByTeam(teamName)
         return self.templatepage("Team", team=teamName, requests=assignments.keys())
 
     @cherrypy.expose
     def handleAddTeam(self, team):
         """ Handles a request to add a team """
-        self.jsonSender.put('/reqMgr/team/%s' % urllib.quote(team))
+        self.initThread()
+        ProdManagement.addTeam(team)
         return "Added team %s" % team
 
     @cherrypy.expose
     def versions(self):
         """ Lists all versions """
-        versions = self.jsonSender.get('/reqMgr/version')[0]
+        self.initThread()
+        versions = SoftwareAdmin.listSoftware().keys()
         versions.sort()
         return self.templatepage("Versions", versions=versions)
 
     @cherrypy.expose
     def handleAddVersion(self, version):
         """ Registers a version """
-        self.jsonSender.put('/reqMgr/version/%s' % version)
+        self.initThread()
+        SoftwareAdmin.addSoftware(version)
         return "Added version %s" % version
 
     @cherrypy.expose
     def handleAllVersions(self):
         """ Registers all versions in the TC """
-        currentVersions = self.jsonSender.get('/reqMgr/version')[0]
+        self.initThread()
+        currentVersions = SoftwareAdmin.listSoftware().keys()
         allVersions = allSoftwareVersions()
         result = ""
         for version in allVersions:
             if not version in currentVersions:
-               self.jsonSender.put('/reqMgr/version/%s' % version)
+               SoftwareAdmin.addSoftware(version)
                result += "Added version %s<br>" % version
         if result == "":
             result = "Version list is up to date"

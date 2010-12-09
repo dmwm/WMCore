@@ -12,6 +12,7 @@ API to get requests from the DB
 import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
+import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 from WMCore.RequestManager.DataStructs.Request import Request
 
 
@@ -93,6 +94,33 @@ def getRequestByName(requestName):
     id = f.execute(requestName)
     return getRequest(id)
      
+def getRequestDetails(requestName):
+    """ Return a dict with the intimate details of the request """
+    request = getRequestByName(requestName)
+    request['Assignments'] = getAssignmentsByName(requestName)
+    # show the status and messages
+    request['RequestMessages'] = ChangeState.getMessages(requestName)
+    # updates
+    request['RequestUpdates'] = ChangeState.getProgress(requestName)
+    # it returns a datetime object, which I can't pass through
+    request['percent_complete'] = 0
+    request['percent_success'] = 0
+    for update in request['RequestUpdates']:
+        update['update_time'] = str(update['update_time'])
+        if update.has_key('percent_complete'):
+            request['percent_complete'] = update['percent_complete']
+        if update.has_key('percent_success'):
+            request['percent_success'] = update['percent_success']
+    return request
+
+def getAllRequestDetails():
+    requests = ListRequests.listRequests()
+    result = []
+    for request in requests:
+        requestName = request['RequestName']
+        result.append(getRequestDetails(requestName))
+    return result 
+
 
 def getRequestAssignments(requestId):
     """
@@ -105,6 +133,12 @@ def getRequestAssignments(requestId):
     getAssign = factory(classname = "Assignment.GetByRequest")
     result = getAssign.execute(requestId)
     return result
+
+def getAssignmentsByName(requestName):
+    request = getRequestByName(requestName)
+    reqID = request['ReqMgrRequestID']
+    assignments = getRequestAssignments(reqID)
+    return [assignment['TeamName'] for assignment in assignments]
 
 
 def getOverview():
@@ -133,5 +167,5 @@ def getGlobalQueues():
     queues = []
     for url in results:
         queues.append(url.replace('workqueuemonitor', 'workqueue'))
-
     return queues
+

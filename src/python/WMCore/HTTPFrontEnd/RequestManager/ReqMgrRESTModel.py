@@ -127,46 +127,10 @@ class ReqMgrRESTModel(RESTModel):
         Otherwise, return an overview of all requests """
       
         self.initThread()
-        requests = ListRequests.listRequests()
         if requestName == None:
-            # add some details
-            result = []
-            for request in requests:
-                requestName = request['RequestName']
-                result.append(self.fillRequest(requestName, request['RequestID']))
-            return result
+            return GetRequest.getAllRequestDetails()
         else:
-            for request in requests:
-                if request['RequestName'] == requestName:
-                    # add some details
-                    return self.fillRequest(requestName, request['RequestID'])
-            raise RuntimeError("Cannot find request" + requestName)
-
-    
-    def fillRequest(self, requestName, requestID):
-        """ Return a dict with the intimate details of the request """
-        request = GetRequest.getRequest(requestID)
-        assignments = GetRequest.getRequestAssignments(requestID)
-        if assignments != []:
-            request['Assignments'] = []
-        for assignment in assignments:
-            request['Assignments'].append(assignment['TeamName'])
-
-        # show the status and messages
-        request['RequestMessages'] = self.getMessage(requestName)
-        # updates
-        request['RequestUpdates'] = ChangeState.getProgress(requestName)
-        # it returns a datetime object, which I can't pass through
-        request['percent_complete'] = 0
-        request['percent_success'] = 0
-        for update in request['RequestUpdates']:
-            update['update_time'] = str(update['update_time'])
-            if update.has_key('percent_complete'):
-                request['percent_complete'] = update['percent_complete']
-            if update.has_key('percent_success'):
-                request['percent_success'] = update['percent_success']
-        return request
-
+            return GetRequest.getRequestDetails(requestName)
 
     def getAssignment(self, teamName=None, request=None):
         """ If a team name is passed in, get all assignments for that team.
@@ -187,9 +151,7 @@ class ReqMgrRESTModel(RESTModel):
                 result[req['RequestName']] = req['RequestWorkflow']
             return result
         if request != None:
-            reqID = self.requestID(request)
-            assignments = GetRequest.getRequestAssignments(reqID)
-            result = [assignment['TeamName'] for assignment in assignments] 
+            result = GetRequest.getAssignmentsByName(request)
         return result
 
 
@@ -307,7 +269,6 @@ class ReqMgrRESTModel(RESTModel):
         """ Changes the priority that's stored in the workload """
         # fill in all details
         request = GetRequest.getRequest(request['RequestID'])
-        print request
         helper = WMWorkloadHelper()
         helper.load(request['RequestWorkflow'])
         helper.data.request.priority = int(priority)

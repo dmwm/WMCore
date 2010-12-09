@@ -189,8 +189,11 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.processRetries(jobList, 'job')
 
         # Now do ACDC
-        self.handleACDC(jobList = fullList)
-
+        try:
+            self.handleACDC(jobList = fullList)
+        except Exception, ex:
+            logging.error("ACDC threw an exception: %s" % ex)
+            logging.error(str(traceback.format_exc()))
 
         return
 

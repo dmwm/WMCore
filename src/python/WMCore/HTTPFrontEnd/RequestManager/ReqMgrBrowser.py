@@ -86,7 +86,9 @@ class ReqMgrBrowser(WebAPI):
             'ScramArch', 'GlobalTag', 'RequestSizeEvents',
             'InputDataset', 'PrimaryDataset', 'AcquisitionEra', 'ProcessingVersion', 
             'RunWhitelist', 'RunBlacklist', 'BlockWhitelist', 'BlockBlacklist', 
-            'RequestWorkflow', 'Scenario', 'PrimaryDataset']
+            'RequestWorkflow', 'Scenario', 'PrimaryDataset',
+            'Acquisition Era', 'Processing Version', 'Merged LFN Base', 'Unmerged LFN Base',
+            'Site Whitelist', 'Site Blacklist']
 
         self.adminMode = True
         # don't allow mass editing.  Make people click one at a time.
@@ -213,9 +215,12 @@ class ReqMgrBrowser(WebAPI):
         request = GetRequest.getRequestDetails(requestName)
         helper = WMWorkloadHelper()
         helper.load(request['RequestWorkflow'])
+        task = helper.getTopLevelTask()
         docId = None
         d = helper.data.request.schema.dictionary_()
         d['RequestWorkflow'] = request['RequestWorkflow']
+        d['Site Whitelist'] = task.siteWhitelist()
+        d['Site Blacklist'] = task.siteBlacklist()
         if d.has_key('ProdConfigCacheID') and d['ProdConfigCacheID'] != "":
             docId = d['ProdConfigCacheID']        
         assignments = GetRequest.getAssignmentsByName(requestName)

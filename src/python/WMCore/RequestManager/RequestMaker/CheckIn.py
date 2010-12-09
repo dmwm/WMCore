@@ -14,8 +14,14 @@ import WMCore.RequestManager.RequestDB.Interface.Request.MakeRequest as MakeRequ
 import WMCore.RequestManager.RequestDB.Interface.Admin.RequestManagement as RequestAdmin
 
 
+def raiseCheckInError(request, ex, msg):
+    msg +='\n' + str(ex)
+    msg += "\nUnable to check in new request"
+    RequestAdmin.deleteRequest(request['RequestID'])
+    raise RuntimeError, msg
 
-def checkIn(request, workloadCache):
+
+def checkIn(request):
     """
     _CheckIn_
 
@@ -27,8 +33,6 @@ def checkIn(request, workloadCache):
     #  //
     # // First try and register the request in the DB
     #//
-    workload = request['WorkflowSpec']
-    request['RequestWorkflow'] = workloadCache.checkIn(workload)
     try:
         reqId = MakeRequest.createRequest(
         request['Requestor'],
@@ -60,36 +64,19 @@ def checkIn(request, workloadCache):
         else:
             MakeRequest.associateInputDataset(request['RequestName'], request['InputDatasets'])
     except Exception, ex:
-        msg = "Unable to Associate input datasets to request\n"
-        msg += str(ex)
-        msg += "\nUnable to check in new request"
-        RequestAdmin.deleteRequest(request['RequestID'])
-        workloadCache.remove(workload)
-        raise RuntimeError, msg
+        raiseCheckInError(request, ex, "Unable to Associate input datasets to request")
     try:
         for ds in request['OutputDatasets']:
             MakeRequest.associateOutputDataset(request['RequestName'], ds)
     except Exception, ex:
-        msg = "Unable to Associate output datasets to request\n"
-        msg += str(ex)
-        msg += "\nUnable to check in new request"
-        RequestAdmin.deleteRequest(request['RequestID'])
-        workloadCache.remove(workload)
-        raise RuntimeError, msg
-
+        raiseCheckInError(request, ex, "Unable to Associate output datasets to request")
 
     try:
         for sw in request['SoftwareVersions']:
             MakeRequest.associateSoftware(
                 request['RequestName'], sw)
     except Exception, ex:
-        msg = "Unable to associate software for this request\n"
-        msg += str(ex)
-        msg += "\nUnable to check in new request"
-        RequestAdmin.deleteRequest(request['RequestID'])
-        workloadCache.remove(workload)
-        raise RuntimeError, ex
-
+        raiseCheckInError(request, ex, "Unable to associate software for this request")
 
         if request["RequestSizeEvents"] != None:
             MakeRequest.updateRequestSize(request['RequestName'],

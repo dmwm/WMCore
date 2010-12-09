@@ -19,6 +19,7 @@ import WMCore.RequestManager.RequestMaker.Processing.RecoRequest
 import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest 
 import WMCore.RequestManager.RequestMaker.Processing.FileBasedRequest
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import saveWorkload, removePasswordFromUrl
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import cherrypy
 import json
@@ -39,9 +40,9 @@ class ReqMgrRESTModel(RESTModel):
         RESTModel.__init__(self, config)
         #self.dialect = config.dialect
         self.urlPrefix = '%s/download?filepath=' % config.model.reqMgrHost
-        self.cache = WMWorkloadCache.WMWorkloadCache(config.model.workloadCache)
         self.hostAddress = config.model.reqMgrHost
-        
+        self.couchUrl = config.model.couchUrl
+        self.workloadCouchDB = config.model.workloadCouchDB 
         self.methods = {
             'GET':{'request' : {'call':self.getRequest, 'args':['requestName'], 'expires': 0},
                    'assignment' : {'call':self.getAssignment, 'args':['teamName', 'request'], 'expires': 0},
@@ -109,10 +110,8 @@ class ReqMgrRESTModel(RESTModel):
         """ Either returns the request object, or None """
         requests = ListRequests.listRequests()
         for request in requests:
-            print "FINDREA " + requestName + ' ' +  request['RequestName']
             if request['RequestName'] == requestName:
                 return request
-        print "NONE"
         return None
 
     def requestID(self, requestName):
@@ -184,7 +183,8 @@ class ReqMgrRESTModel(RESTModel):
             result = {}
             for reqID in requestIDs:
                 req = GetRequest.getRequest(reqID)
-                result[req['RequestName']] = self.urlPrefix+req['RequestWorkflow']
+                #result[req['RequestName']] = self.urlPrefix+req['RequestWorkflow']
+                result[req['RequestName']] = req['RequestWorkflow']
             return result
         if request != None:
             reqID = self.requestID(request)
@@ -295,24 +295,24 @@ class ReqMgrRESTModel(RESTModel):
                     self.abortRequest(requestName)
                 if priority != None:
                     ChangeState.changeRequestStatus(requestName, status, priority)
-                    self.updatePriorityInWorkload(requestName, priority)
+                    self.updatePriorityInWorkload(request, priority)
                 else:
                     ChangeState.changeRequestStatus(requestName, status)
             else:
                 ChangeState.changeRequestStatus(requestName, oldStatus, priority) 
+                self.updatePriorityInWorkload(request, priority)
         return result
 
-    def updatePriorityInWorkload(self, requestName, priority):
+    def updatePriorityInWorkload(self, request, priority):
         """ Changes the priority that's stored in the workload """
-        reqID = self.requestID(requestName)
-        request = GetRequest.getRequest(reqID)
-        assert(request != None)
-        lfn = request['RequestWorkflow']
-        pfn = self.cache.cache  + '/' + lfn
+        # fill in all details
+        request = GetRequest.getRequest(request['RequestID'])
+        print request
         helper = WMWorkloadHelper()
-        helper.load(pfn)
-        helper.data.request.priority = priority
-        helper.save(pfn)
+        helper.load(request['RequestWorkflow'])
+        helper.data.request.priority = int(priority)
+        print "SAVING " + request['RequestWorkflow']
+        saveWorkload(helper, request['RequestWorkflow'])
  
         
     def makeRequest(self):
@@ -328,11 +328,17 @@ class ReqMgrRESTModel(RESTModel):
         url = url[0:url.find('/request')]
         specificSchema.reqMgrURL = url
         specificSchema.validate()
+
         request = maker(specificSchema)
-        # fill the WorkflowSpec's URL
         helper = WMWorkloadHelper(request['WorkflowSpec'])
-        helper.setSpecUrl(self.urlPrefix+self.cache.getLfn(helper.data))
-        CheckIn.checkIn(request, self.cache)
+        # can't save Request object directly, because it makes it hard to retrieve the _rev
+        metadata = {}
+        metadata.update(request)
+        # don't want to JSONify the whole workflow
+        del metadata['WorkflowSpec']
+        workloadUrl = helper.saveCouch(self.couchUrl, self.workloadCouchDB, metadata=metadata)
+        request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
+        CheckIn.checkIn(request)
         return requestSchema
 
     def putAssignment(self, team, requestName):
@@ -376,7 +382,8 @@ class ReqMgrRESTModel(RESTModel):
         """ Attaches a message to this request """
         self.initThread()
         message = JsonWrapper.loads( cherrypy.request.body.read() )
-        return ChangeState.putMessage(request, message)
+        result = ChangeState.putMessage(request, message)
+        return result
 
 #    def postRequest(self, requestName, events_written=None, events_merged=None, 
 #                    files_written=None, files_merged = None, dataset=None):

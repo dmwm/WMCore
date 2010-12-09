@@ -1,5 +1,7 @@
 """ Functions to interpret lists that get sent in as text"""
 import urllib
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+
 
 def parseRunList(l):
     """ Changes a string into a list of integers """
@@ -35,4 +37,19 @@ def allSoftwareVersions():
                 result.append(release)
     return result
 
+def saveWorkload(helper, workload):
+    """ Saves the changes to this workload """
+    if workload.startswith('http://'):
+        helper.saveCouchUrl(workload)
+    else:
+        helper.save(workload)
+
+def removePasswordFromUrl(url):
+    # where the @ symbol is at.
+    result = url
+    atat = url.find('@')
+    slashslashat = url.find('//')
+    if atat != -1 and slashslashat != -1 and slashslashat < atat:
+       result = url[:slashslashat+2] + url[atat+1:]
+    return result
 

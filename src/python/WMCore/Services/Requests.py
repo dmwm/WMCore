@@ -188,7 +188,7 @@ class Requests(dict):
             setattr(e, 'reason', response.reason)
             setattr(e, 'headers', response)
             raise e
-              
+
         if type(decoder) == type(self.makeRequest) or type(decoder) == type(f):
             result = decoder(result)
         elif decoder != False:

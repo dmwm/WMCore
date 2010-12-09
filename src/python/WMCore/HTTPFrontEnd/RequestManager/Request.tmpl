@@ -24,13 +24,8 @@
         #set $value = $requestSchema[$key]
         ## make a hyperlink to workflow
         #if $key == 'RequestWorkflow'
-            <tr><td> $key </td><td>  <a href="../showWorkload?filepath=$workloadDir/$value">$value</a> </td></tr>
-            <input type="HIDDEN" name="workload" value=$workloadDir/$value>
-        #elif $key == 'Requestor'
-            <tr><td> $key </td><td>  <a href="../user/$value">$value</a> </td></tr>
-        #elif $key == 'RequestType'
-            <tr><td> $key </td><td> $value </td></tr>
-            <input type="HIDDEN" NAME="requestType" value=$value>
+            <tr><td> $key </td><td>  <a href="../showWorkload?url=$value">Workload</a> </td></tr>
+            <input type="HIDDEN" name="workload" value=$value>
         #elif $key == 'RequestName'
             <tr><td> $key </td><td> $value </td></tr>
             <input type="HIDDEN" name="requestName" value=$value>

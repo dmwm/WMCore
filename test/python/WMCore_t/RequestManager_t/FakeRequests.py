@@ -6,7 +6,7 @@ def fakeRequest(requestType):
   return {
   'ProdConfigCacheID' : 'f821abc0fd7ee5c5a7c34f3b96c995dc',
    # MC
-  'ProdConfigCacheID' : '82c706f593ec15d7ddbd22f07b54b64f' ,
+  'ProdConfigCacheID' : 'f700c7fff9bac224f2d89ef9e419d363' ,
   'CouchURL' : couchUrl,
   'CouchUrl' : couchUrl,
   'CouchDBName' : "wmagent_config_cache",

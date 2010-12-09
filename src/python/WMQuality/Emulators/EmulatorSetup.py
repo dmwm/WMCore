@@ -72,7 +72,9 @@ class EmulatorHelper(object):
         elif emFlag == None:
             envFlag = emulatorSwitch(cls.__name__)
             setattr(EmulatorHelper, cls.__name__, envFlag)
-                 
+            if envFlag:
+                return EmulatorHelper.getEmulatorClass(cls.__name__)
+
         return cls
         
 def emulatorHook(cls):

@@ -9,36 +9,48 @@
 #end for
 
 <script type="text/javascript">
+
+function generateInputRow(label, key, d) {
+  return '<tr>' + generateInput(label, key, d) +'</tr>';
+}
+
+function generateInput(label, key, d) {
+  var procStr = '<tr><td>' + label + '</td><td><input type="text" name="' + key + '"';
+  if (key in d) {
+    procStr += ' value="' + d[key] + '"';
+  }
+  procStr += '></input></td>\n';
+  return procStr;
+}
+
+function generateInputRow(label, key, d) {
+  return '<tr>' + generateInput(label, key, d) +'</tr>';
+}
+
+function submitButton() {
+  return '<input type="submit" value="Update Parameters">\n';
+}
+
 function generateProcessing(splitAlgo, splitParams) {
   var procStr = "<table><tr><td>";
-  procStr += "<input type=\"radio\" name=\"splittingAlgo\" value=\"FileBased\"";
+  procStr += '<input type="radio" name="splittingAlgo" value="FileBased"';
 
   if (splitAlgo == "FileBased") {
     procStr += " checked";
   }
 
-  procStr += ">File Based</input></td>\n";
-  procStr += "<td>Files per job:</td><td><input type=\"text\" name=\"files_per_job\"";
-
-  if ("files_per_job" in splitParams) {
-    procStr += " value=" + splitParams["files_per_job"];
-  }
-
-  procStr += "></td></input><td></td></tr><tr><td>";
-  procStr += "<input type=\"radio\" name=\"splittingAlgo\" value=\"LumiBased\"";
+  procStr += ">File Based</input></td>";
+  procStr += generateInput("Files per job:", "files_per_job", splitParams);
+  procStr += "<td></td></tr><tr><td>";
+  procStr += '<input type="radio" name="splittingAlgo" value="LumiBased"';
 
   if (splitAlgo == "LumiBased") {
     procStr += " checked";
   }
 
   procStr += ">Lumi Based</input></td>\n";
-  procStr += "<td>Lumis per job:</td><td><input type=\"text\" name=\"lumis_per_job\"";
-
-  if ("lumis_per_job" in splitParams) {
-    procStr += " value=" + splitParams["lumis_per_job"];
-  }
-
-  procStr += "></td></input><td>Split files between jobs: <select name=\"split_files_between_job\">";
+  procStr += generateInput("Lumis per job:", "lumis_per_job", splitParams);
+  procStr += '<td>Split files between jobs: <select name="split_files_between_job">';
   if ("split_files_between_job" in splitParams) {
     if (splitParams["split_files_between_job"] == "True") {
       procStr += "<option selected>True</option><option>False</option>\n";
@@ -50,97 +62,78 @@ function generateProcessing(splitAlgo, splitParams) {
   }
  
   procStr += "</select></input></td></tr>\n";
-  procStr += "<tr><td><input type=\"radio\" name=\"splittingAlgo\" value=\"EventBased\"";
+  procStr += '<tr><td><input type="radio" name="splittingAlgo" value="EventBased"';
 
   if (splitAlgo == "EventBased") {
     procStr += " checked";
   }
 
   procStr += ">Event Based</input></td>\n";
-  procStr += "<td>Events per job:</td><td><input type=\"text\" name=\"events_per_job\"";
-
-  if ("events_per_job" in splitParams) {
-    procStr += " value=" + splitParams["events_per_job"];
-  }
-
-  procStr += "></td></input><td></td></tr>\n"
-  procStr += " <tr><td colspan=\"2\">Max execution time (seconds):</td>\n";
-  procStr += "<td><input type=\"text\" name=\"timeout\" value=\"" + splitParams["timeout"];
-  procStr += "\"></td></tr></table>\n";
-  procStr += "<input type=\"submit\" value=\"Update Parameters\">\n";
+  procStr += generateInput("Events per job:", "events_per_job", splitParams);
+  procStr += "<td></td></tr>\n"
+  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
+  procStr += "</table>\n";
+  procStr += submitButton();
   return procStr;
 }  
 
 function generateSkim(splitAlgo, splitParams) {
   var procStr = "<table><tr><td>";
-  procStr += "<input type=\"radio\" name=\"splittingAlgo\" value=\"FileBased\"";
+  procStr += '<input type="radio" name="splittingAlgo" value="FileBased"';
 
   if (splitAlgo == "FileBased") {
     procStr += " checked";
   }
 
   procStr += ">File Based</input></td>\n";
-  procStr += "<td>Files per job:</td><td><input type=\"text\" name=\"files_per_job\"";
+  procStr += '<td>Files per job:</td><td><input type="text" name="files_per_job"';
 
   if ("files_per_job" in splitParams && splitAlgo == "FileBased") {
     procStr += " value=" + splitParams["files_per_job"];
   }
 
-  procStr += "></td></input><td></td></tr><tr><td>";
-  procStr += "<input type=\"radio\" name=\"splittingAlgo\" value=\"TwoFileBased\"";
+  procStr += '></td></input><td></td></tr><tr><td>';
+  procStr += '<input type="radio" name="splittingAlgo" value="TwoFileBased"';
 
   if (splitAlgo == "TwoFileBased") {
     procStr += " checked";
   }
 
   procStr += ">Two File Based</input></td>\n";
-  procStr += "<td>Files per job:</td><td><input type=\"text\" name=\"two_files_per_job\"";
-
-  if ("files_per_job" in splitParams && splitAlgo == "TwoFileBased") {
-    procStr += " value=" + splitParams["files_per_job"];
-  }
-
-  procStr += "></td></input><td></td></tr>";
-  procStr += " <tr><td colspan=\"2\">Max execution time (seconds):</td>\n";
-  procStr += "<td><input type=\"text\" name=\"timeout\" value=\"" + splitParams["timeout"];
-  procStr += "\"></td></tr></table>\n";
-  procStr += "<input type=\"submit\" value=\"Update Parameters\">\n";
+  procStr += generateInput("Files per job:", "two_files_per_job", splitParams);
+  procStr += "</tr>";
+  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
+  procStr += "</table>\n";
+  procStr += submitButton();
   return procStr;
 }
 
 function generateCleanupLogCollect(splitParams) {
-  var procStr = "<table><tr><td>";
-  procStr += "<input type=\"hidden\" name=\"splittingAlgo\" value=\"FileBased\"></input>\n";
-  procStr += "<table><tr><td>Files per job:</td><td><input type=\"text\" name=\"files_per_job\"";
-
-  if ("files_per_job" in splitParams) {
-    procStr += " value=" + splitParams["files_per_job"];
-  }
-
-  procStr += "></td></input></tr>\n";
-  procStr += "<tr><td>Max execution time (seconds):</td>\n";
-  procStr += "<td><input type=\"text\" name=\"timeout\" value=\"" + splitParams["timeout"];
-  procStr += "\"></td></tr></table>\n";
-  procStr += "<input type=\"submit\" value=\"Update Parameters\">\n";
+  var procStr = '<input type="hidden" name="splittingAlgo" value="FileBased"></input>\n';
+  procStr += "<table>"
+  procStr += generateInputRow("Files per job:", "files_per_job", splitParams);
+  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
+  procStr += "</table>\n";
+  procStr += submitButton();
   return procStr;
 }
 
 function generateMerge(splitAlgo, splitParams) {
-  var frmStr = "<table><tr><td>Merge algorithm:</td><td>" + splitAlgo + "</td></tr>\n";
-  frmStr += "<tr><td>Min merge size:</td><td>" + splitParams["min_merge_size"] + "</td></tr>\n";
-  frmStr += "<tr><td>Max merge size:</td><td>" + splitParams["max_merge_size"] + "</td></tr>\n";
-  frmStr += "<tr><td>Max merge events:</td><td>" + splitParams["max_merge_events"] + "</td></tr>\n";
-  frmStr += "<tr><td>Max execution time (seconds):</td>\n";
-  frmStr += "<td><input type=\"text\" name=\"timeout\" value=\"" + splitParams["timeout"];
-  frmStr += "\"></td></tr></table>\n";
-  frmStr += "<input type=\"submit\" value=\"Update Parameters\">\n";
+  var frmStr = '<table><tr><td>Merge algorithm:</td>'
+  frmStr += '<td><select name="splittingAlgo"><option>' + splitAlgo + '</option></select></td></tr>\n';
+  frmStr += generateInputRow("Min merge size:", "min_merge_size", splitParams);
+  frmStr += generateInputRow("Max merge size:", "max_merge_size", splitParams);
+  frmStr += generateInputRow("Max merge events:", "max_merge_events", splitParams);
+  frmStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
+  frmStr += "</table>\n";
+  frmStr +=  submitButton();
   return frmStr;
 }
 
 function generateForm(taskName, splitAlgo, splitParams, taskType) {
-  var frmStr = "<form action=\"../handleSplittingPage\" method=\"POST\">\n";
-  frmStr += "<input type=\"hidden\" name=\"requestName\" VALUE=\"$requestName\"></input>\n"; 
-  frmStr += "<input type=\"hidden\" name=\"splittingTask\" VALUE=\"" + taskName + "\"></input>\n"; 
+  var frmStr = '<form action="../handleSplittingPage" method="POST">\n';
+  frmStr += '<input type="hidden" name="requestName" VALUE="$requestName"></input>\n'; 
+  frmStr += '<input type="hidden" name="splittingTask" VALUE="' + taskName + '"></input>\n'; 
   frmStr += "<b>" + taskName + ":</b><br>\n";
 
   if (taskType == "Processing") {

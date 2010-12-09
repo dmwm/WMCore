@@ -18,7 +18,7 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Cache.WMConfigCache import ConfigCache 
 from WMCore.Services.Requests import JSONRequests
 import WMCore.HTTPFrontEnd.RequestManager.Sites
-
+import logging
 import cherrypy
 import json
 import os.path
@@ -31,7 +31,7 @@ from WMCore.WebTools.WebAPI import WebAPI
 
 def detailsBackLink(requestName):
     """ HTML to return to the details of this request """
-    return  ' <A HREF=requestDetails/%s>Details</A> <A HREF=".">Back</A><BR>' % requestName
+    return  ' <A HREF=details/%s>Details</A> <A HREF=".">Browse</A><BR>' % requestName
 
 def linkedTableEntry(methodName, entry):
     """ Makes an HTML table entry with the entry name, and a link to a
@@ -68,7 +68,6 @@ def addHtmlLinks(d):
                 target += '&view=markup'
             d[key] = '<a href="%s">%s</a>' % (target, value)
 
-
 class ReqMgrBrowser(WebAPI):
     """ Main class for browsing and modifying requests """
     def __init__(self, config):
@@ -81,7 +80,7 @@ class ReqMgrBrowser(WebAPI):
         self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged',
                                  'Complete':'percentComplete', 'Success' : 'percentSuccess'}
         # entries in the table that show up as HTML links for that entry
-        self.linkedFields = {'Group':'group', 'Requestor':'user', 'RequestName':'requestDetails'}
+        self.linkedFields = {'Group':'group', 'Requestor':'user', 'RequestName':'details'}
         self.detailsFields = ['RequestName', 'RequestType', 'Requestor', 'CMSSWVersion',
                 """ Main class for browsing and modifying requests """
             'ScramArch', 'GlobalTag', 'RequestSizeEvents',
@@ -94,24 +93,29 @@ class ReqMgrBrowser(WebAPI):
         #self.adminFields = {'RequestStatus':'statusMenu', 'ReqMgrRequestBasePriority':'priorityMenu'}
         self.adminFields = {}
         self.requests = []
-        self.configCacheUrl = config.configCacheUrl
+        self.couchUrl = config.couchUrl
         self.configDBName = config.configDBName
         #FIXME try to remove this  
         self.jsonSender = JSONRequests(config.reqMgrHost)
         self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
         self.mergedLFNBases = {"ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
                                "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}
+        cherrypy.engine.subscribe('start_thread', self.initThread)
 
-    def initThread(self):
+    def initThread(self, thread_index):
         """ The ReqMgr expects the DBI to be contained in the Thread  """
         myThread = threading.currentThread()
+        #myThread = cherrypy.thread_data
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
+
+    def validate(self, v):
+       """ Checks if alphanumeric, tolerating spaces """
+       assert v.replace(' ','').replace('_','').isalnum(), "Bad value " + v
 
     @cherrypy.expose
     def index(self):
         """ Main web page """
-        self.initThread()
         requests = GetRequest.getAllRequestDetails()
         tableBody = self.drawRequests(requests)
         return self.templatepage("ReqMgrBrowser", fields=self.fields, tableBody=tableBody)
@@ -119,7 +123,6 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     def search(self, value, field):
         """ Search for a regular expression in a certain field of all requests """
-        self.initThread()
         filteredRequests = []
         requests = GetRequest.getAllRequestDetails()
         for request in requests:
@@ -138,7 +141,7 @@ class ReqMgrBrowser(WebAPI):
         the spec.  Format them in the manner that the splitting page expects
         and pass them to the template.
         """
-        self.initThread()
+        self.validate(requestName)
         request = GetRequest.getRequestByName(requestName)
         helper = WMWorkloadHelper()
         helper.load(request['RequestWorkflow'])
@@ -188,11 +191,15 @@ class ReqMgrBrowser(WebAPI):
                 splitParams["split_files_between_job"] = False                
         elif splittingAlgo == "EventBased":
             splitParams["events_per_job"] = submittedParams["events_per_job"]
+        elif 'Merg' in splittingTask:
+            for field in ['min_merge_size', 'max_merge_size', 'max_merge_events']:
+                splitParams[field] = submittedParams[field]
             
-        self.initThread()
         request = GetRequest.getRequestByName(requestName)
         helper = WMWorkloadHelper()
         helper.load(request['RequestWorkflow'])
+        logging.info("SetSplitting " + requestName + splittingTask + splittingAlgo + str(splitParams))
+        print "SetSplitting " + requestName + "TASK " + splittingTask + "ALGO " + splittingAlgo + str(splitParams)
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
         helper.setTaskTimeOut(splittingTask, int(submittedParams["timeout"]))
         saveWorkload(helper, request['RequestWorkflow'])
@@ -200,9 +207,9 @@ class ReqMgrBrowser(WebAPI):
                + " " + detailsBackLink(requestName)
 
     @cherrypy.expose
-    def requestDetails(self, requestName):
+    def details(self, requestName):
         """ A page showing the details for the requests """
-        self.initThread()
+        self.validate(requestName)
         request = GetRequest.getRequestDetails(requestName)
         helper = WMWorkloadHelper()
         helper.load(request['RequestWorkflow'])
@@ -225,7 +232,7 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     def showOriginalConfig(self, docId):
         """ Makes a link to the original text of the config """
-        configCache = ConfigCache(self.configCacheUrl, self.configDBName)
+        configCache = ConfigCache(self.couchUrl, self.configDBName)
         configCache.loadByID(docId)
         configString =  configCache.getConfig()
         if configString == None:
@@ -235,7 +242,7 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     def showTweakFile(self, docId):
         """ Makes a link to the dump of the tweakfile """
-        configCache = ConfigCache(self.configCacheUrl, self.configDBName)
+        configCache = ConfigCache(self.couchUrl, self.configDBName)
         configCache.loadByID(docId)
         return str(configCache.getPSetTweaks()).replace('\n', '<br>')
 
@@ -251,7 +258,7 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     def remakeWorkload(self, requestName):
         """ Rebuild the workload from the stored schema """
-        self.initThread()
+        self.validate(requestName)
         request = GetRequest.getRequestByName(requestName)
         # Should really get by RequestType
         workloadMaker = WorkloadMaker(requestName)
@@ -357,7 +364,7 @@ class ReqMgrBrowser(WebAPI):
 
     @cherrypy.expose
     def assignmentPage(self, requestName):
-        self.initThread()
+        self.validate(requestName)
         teams = ProdManagement.listTeams()
         requestType = GetRequest.getRequestByName(requestName)["RequestType"]
         # get assignments
@@ -373,7 +380,7 @@ class ReqMgrBrowser(WebAPI):
         """ handles some checkboxes """
         result = ""
         requestName = kwargs["RequestName"]
-        self.initThread()
+        self.validate(requestName)
         assignments = GetRequest.getAssignmentsByName(requestName)
         request = GetRequest.getRequestByName(requestName)
         helper = WMWorkloadHelper()
@@ -401,14 +408,14 @@ class ReqMgrBrowser(WebAPI):
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
         helper.setMergeParameters(kwargs["MinMergeSize"], kwargs["MaxMergeSize"], kwargs["MaxMergeEvents"])
         saveWorkload(helper, request['RequestWorkflow'])
-        result += detailsBackLink(requestName)
+        result += detailsBackLink(requestName) + '<a href="../../../RequestOverview">Overview</a>'
         return result
 
     @cherrypy.expose
     def modifyWorkload(self, requestName, workload,
                        runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None):
-        """ handles the "Modify" button of the requestDetails page """
-        
+        """ handles the "Modify" button of the details page """
+        self.validate(requestName) 
         helper = WMWorkloadHelper()
         helper.load(workload)
         schema = helper.data.request.schema
@@ -439,8 +446,8 @@ class ReqMgrBrowser(WebAPI):
 
     @cherrypy.expose
     def user(self, userName):
+        self.validate(userName)
         """ Web page of details about the user, and sets user priority """
-        self.initThread()
         groups = GroupInfo.groupsForUser(userName).keys()
         requests = UserRequests.listRequests(userName).keys()
         priority = UserManagement.getPriority(userName)
@@ -451,13 +458,14 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     def handleUserPriority(self, user, userPriority):
         """ Handles setting user priority """
-        self.initThread()
+        self.validate(user)
         UserManagement.setPriority(user, userPriority)
         return "Updated user %s priority to %s" % (user, userPriority)
 
     @cherrypy.expose
     def group(self, groupName):
         """ Web page of details about the user, and sets user priority """
+        self.validate(groupName)
         users = GroupInfo.usersInGroup(groupName)
         priority = GroupManagement.getPriority(groupName)
         return self.templatepage("Group", group=groupName, users=users, priority=priority)
@@ -465,70 +473,67 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     def handleGroupPriority(self, group, groupPriority):
         """ Handles setting group priority """
-        self.initThread()
+        self.validate(group)
         GroupManagement.setPriority(group, groupPriority)
         return "Updated group %s priority to %s" % (group, groupPriority)
 
     @cherrypy.expose
     def users(self):
         """ Lists all users.  Should be paginated later """
-        self.initThread()
         allUsers = Registration.listUsers()
         return self.templatepage("Users", users=allUsers)
 
     @cherrypy.expose
     def handleAddUser(self, user, email=None):
         """ Handles setting user priority """
-        self.initThread()
+        self.validate(user)
         result = Registration.registerUser(user, email)
         return "Added user %s" % user
 
     @cherrypy.expose
     def handleAddToGroup(self, user, group):
         """ Adds a user to the group """
-        self.initThread()
+        self.validate(user)
+        self.validate(group)
         GroupManagement.addUserToGroup(user, group)
         return "Added %s to %s " % (user, group)
 
     @cherrypy.expose
     def groups(self):
         """ Lists all users.  Should be paginated later """
-        self.initThread()
         allGroups = GroupInfo.listGroups()
         return self.templatepage("Groups", groups=allGroups)
 
     @cherrypy.expose
     def handleAddGroup(self, group):
         """ Handles adding a group """
-        self.initThread()
+        self.validate(group)
         GroupManagement.addGroup(group)
         return "Added group %s " % group
 
     @cherrypy.expose
     def teams(self):
         """ Lists all teams """
-        self.initThread()
         teams = ProdManagement.listTeams()
         return self.templatepage("Teams", teams=teams)
 
     @cherrypy.expose
     def team(self, teamName):
         """ Details for a team """
-        self.initThread()
+        self.validate(teamName)
         assignments = ListRequests.listRequestsByTeam(teamName)
         return self.templatepage("Team", team=teamName, requests=assignments.keys())
 
     @cherrypy.expose
     def handleAddTeam(self, team):
         """ Handles a request to add a team """
-        self.initThread()
+        self.validate(team)
         ProdManagement.addTeam(team)
         return "Added team %s" % team
 
     @cherrypy.expose
     def versions(self):
         """ Lists all versions """
-        self.initThread()
         versions = SoftwareAdmin.listSoftware().keys()
         versions.sort()
         return self.templatepage("Versions", versions=versions)
@@ -536,15 +541,14 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     def handleAddVersion(self, version):
         """ Registers a version """
-        self.initThread()
         SoftwareAdmin.addSoftware(version)
         return "Added version %s" % version
 
     @cherrypy.expose
     def handleAllVersions(self):
         """ Registers all versions in the TC """
-        self.initThread()
         currentVersions = SoftwareAdmin.listSoftware().keys()
+
         allVersions = allSoftwareVersions()
         result = ""
         for version in allVersions:

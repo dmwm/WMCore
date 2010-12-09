@@ -66,6 +66,7 @@ config.CoreDatabase.connectUrl = databaseUrl
 config.CoreDatabase.dbsock = databaseSocket
 
 config.webapp_("ReqMgr")
+reqMgrUrl = "http://%s:%s" % (serverHostName, reqMgrPort)
 config.ReqMgr.componentDir = os.path.join(config.General.workDir, "ReqMgr")
 config.ReqMgr.Webtools.host = serverHostName
 config.ReqMgr.Webtools.port = reqMgrPort
@@ -84,15 +85,10 @@ config.ReqMgr.security.dangerously_insecure = True
 views = config.ReqMgr.section_('views')
 active = views.section_('active')
 
-active.section_("download")
-active.download.object = "WMCore.HTTPFrontEnd.Downloader"
-active.download.dir = config.ReqMgr.componentDir
-
 active.section_("reqMgrBrowser")
 active.reqMgrBrowser.object = "WMCore.HTTPFrontEnd.RequestManager.ReqMgrBrowser"
-active.reqMgrBrowser.reqMgrHost = "http://%s:%s" % (serverHostName, reqMgrPort)
-active.reqMgrBrowser.workloadCache = active.download.dir
-active.reqMgrBrowser.configCacheUrl = config.ReqMgr.couchURL
+active.reqMgrBrowser.reqMgrHost = reqMgrUrl
+active.reqMgrBrowser.couchUrl = config.ReqMgr.couchURL
 active.reqMgrBrowser.configDBName = configCacheDBName
 
 active.section_('RequestOverview')
@@ -105,18 +101,16 @@ active.section_("reqMgr")
 active.reqMgr.object = "WMCore.WebTools.RESTApi"
 active.reqMgr.section_("model")
 active.reqMgr.model.object = "WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel"
-active.reqMgr.model.workloadCache = active.download.dir
-active.reqMgr.model.reqMgrHost = "http://%s:%s" % (serverHostName, reqMgrPort)
+active.reqMgr.model.reqMgrHost = reqMgrUrl
 active.reqMgr.section_("formatter") 
 active.reqMgr.formatter.object = "WMCore.WebTools.RESTFormatter"
 active.reqMgr.formatter.templates = config.ReqMgr.templates
 
 active.section_("WebRequestSchema")
 active.WebRequestSchema.object = "WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema"
-active.WebRequestSchema.reqMgrHost = "http://%s:%s" % (serverHostName, reqMgrPort)
-active.WebRequestSchema.cmsswInstallation = cmsPath
+active.WebRequestSchema.reqMgrHost = reqMgrUrl
 active.WebRequestSchema.cmsswDefaultVersion = "CMSSW_3_8_6"
-active.WebRequestSchema.configCacheUrl = couchURL
+active.WebRequestSchema.couchUrl = couchURL
 active.WebRequestSchema.configCacheDBName = configCacheDBName
 active.WebRequestSchema.templates = config.ReqMgr.templates
 
@@ -127,7 +121,7 @@ config.WorkQueueManager.level = "GlobalQueue"
 config.WorkQueueManager.pollInterval = 10
 config.WorkQueueManager.queueParams = {'LocationRefreshInterval': 1800}
 config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
-                                        'endpoint': "http://%s:%s/reqMgr/" % (serverHostName, reqMgrPort)}
+                                        'endpoint': "%s/reqMgr/" % reqMgrUrl}
 
 config.webapp_('WorkQueueService')
 config.WorkQueueService.default_expires = 0

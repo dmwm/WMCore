@@ -17,10 +17,6 @@ import urllib2
 from urllib2 import urlopen, Request
 from urlparse import urlparse
 import json
-from WMCore.Services.Requests import JSONRequests
-#from WMCore.Wrappers import JsonWrapper
-#from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
-import WMCore.Database.CMSCouch
 
 class PersistencyHelper:
     """
@@ -77,6 +73,7 @@ class PersistencyHelper:
 
     def saveCouch(self, couchUrl, couchDBName, metadata={}):
         """ Save this spec in CouchDB.  Returns URL """
+        import WMCore.Database.CMSCouch
         server = WMCore.Database.CMSCouch.CouchServer(couchUrl)
         database = server.connectDatabase(couchDBName)
         uri = '/%s/%s' % (couchDBName, self.name())
@@ -110,6 +107,7 @@ class PersistencyHelper:
         return self.saveCouch(couchUrl, dbname)
 
     def deleteCouch(self, couchUrl, couchDBName, id):
+        import WMCore.Database.CMSCouch
         server = WMCore.Database.CMSCouch.CouchServer(couchUrl)
         database = server.connectDatabase(couchDBName)
         # doesn't work

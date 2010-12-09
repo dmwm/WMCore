@@ -28,14 +28,12 @@ Usage: Given a TFC constact string: trivialcatalog_file:/path?protocol=proto
 import os
 import re
 import urlparse
-import xml.parsers.expat
-
-#from IMProv.IMProvLoader import loadIMProvFile
-#from IMProv.IMProvQuery import IMProvQuery
+from xml.dom.minidom import Element
 
 from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
 
 _TFCArgSplit = re.compile("\?protocol=")
+
 
 class TrivialFileCatalog(dict):
     """
@@ -62,16 +60,16 @@ class TrivialFileCatalog(dict):
         """
         entry = {}
         entry.setdefault("protocol", protocol)
-        entry.setdefault("path-match-expr", match)
-        entry.setdefault("path-match", re.compile(match))
+        entry.setdefault("path-match-expr", re.compile(match))
+        entry.setdefault("path-match", match)
         entry.setdefault("result", result)
         entry.setdefault("chain", chain)
         self[mapping_type].append(entry)
         
+        
     def doMatch(self, protocol, path, style):
         """
         _doMatch_
-        
         Generalised way of building up the mappings.
         
         Return None if no match
@@ -79,19 +77,26 @@ class TrivialFileCatalog(dict):
         for mapping in self[style]:
             if mapping['protocol'] != protocol:
                 continue
-            if mapping['path-match'].match(path):
+            if mapping['path-match-expr'].match(path):
+                # TODO
+                # fix chained mapping
+                """
                 if mapping['chain'] != None:
-                    path = self.matchLFN(mapping['chain'], path)
-                    # if path is None just continue
-                    if not path:
-                        continue
+                # this chain mapping is almost certainly not correct
+                # since this .matchLFN method will be called regardless
+                # of style = "lfn-to-pfn" or "pfn-to-lfn" (which is
+                # distinguished in the ProdCommon implementation)
+                path = self.matchLFN(mapping['chain'], path)
+                # if path is None just continue
+                if not path:
+                    continue
+                """
                 try:
-                    splitPath = mapping['path-match'].split(path, 1)[1]
+                    splitPath = mapping['path-match-expr'].split(path, 1)[1]
                 except IndexError:
                     continue
                 result = mapping['result'].replace("$1", splitPath)
                 return result
-  
         return None
 
 
@@ -106,6 +111,7 @@ class TrivialFileCatalog(dict):
         """
         return self.doMatch(protocol, lfn, 'lfn-to-pfn')
         
+        
     def matchPFN(self, protocol, pfn):
         """
         _matchLFN_
@@ -115,8 +121,35 @@ class TrivialFileCatalog(dict):
 
         Return None if no match
         """
-        return self.doMatch(protocol, pfn, 'pfn-to-lfn')
+        return self.doMatch(protocol, pfn, 'pfn-to-lfn')    
 
+            
+    def getXML(self):
+        """
+        Converts TFC implementation (dict) into a XML string representation.
+        The method reflects this class implementation - dictionary containing
+        list of mappings while each mapping (i.e. entry, see addMapping
+        method) is a dictionary of key, value pairs. 
+        
+        """
+        
+        def _getElementForMappingEntry(entry, mappingStyle):
+            e = Element(mappingStyle)
+            for k, v in entry.items():
+                # ignore empty, None or compiled regexp items into output
+                if not v or (k == "path-match-expr"):
+                    continue
+                e.setAttribute(k, str(v))
+            return e
+
+        root = Element("storage-mapping") # root element name
+        for mappingStyle, mappings in self.items():
+            for mapping in mappings:
+                mapElem = _getElementForMappingEntry(mapping, mappingStyle)
+                root.appendChild(mapElem)
+        return root.toprettyxml()
+
+    
     def __str__(self):
         result = ""
         for mapping in ['lfn-to-pfn', 'pfn-to-lfn']: 
@@ -128,10 +161,9 @@ class TrivialFileCatalog(dict):
                     item['result'])
                 if item['chain'] != None:
                     result += " chain=%s" % item['chain']
-                result += "\n"
-            
+                result += "\n"            
         return result
-    
+
 
 def tfcProtocol(contactString):
     """
@@ -145,6 +177,7 @@ def tfcProtocol(contactString):
     value = args.replace("protocol=", '')
     return value
 
+
 def tfcFilename(contactString):
     """
     _tfcFilename_
@@ -156,7 +189,6 @@ def tfcFilename(contactString):
     value = _TFCArgSplit.split(value)[0]
     path = os.path.normpath(value)
     return path
-
     
             
 def readTFC(filename):
@@ -170,7 +202,6 @@ def readTFC(filename):
     if not os.path.exists(filename):
         msg = "TrivialFileCatalog not found: %s" % filename
         raise RuntimeError, msg
-
 
     try:
         node = xmlFileToNode(filename)
@@ -191,7 +222,6 @@ def readTFC(filename):
             if True in (protocol, match == None):
                 continue
             tfcInstance.addMapping(str(protocol), str(match), str(result), chain, mapping)
-
     return tfcInstance
 
 
@@ -224,7 +254,6 @@ def coroutine(func):
     return start
 
 
-
 def nodeReader(node):
     """
     _nodeReader_
@@ -240,13 +269,9 @@ def nodeReader(node):
         }
 
     report = {'lfn-to-pfn': [], 'pfn-to-lfn': []}
-
     processSMT = processSMType(processLfnPfn)
-
     processor = expandPhEDExNode(processStorageMapping(processSMT))
-
     processor.send((report, node))
-
     return report
 
 
@@ -268,6 +293,7 @@ def expandPhEDExNode(target):
         if not sentPhedex:    
             target.send( (report, node) )
 
+
 @coroutine
 def processStorageMapping(target):
     """
@@ -280,10 +306,6 @@ def processStorageMapping(target):
             if subnode.name == 'storage-mapping':
                 target.send( (report, subnode))
 
-                    
-
-                             
-            
 
 @coroutine
 def processSMType(targets):
@@ -291,7 +313,6 @@ def processSMType(targets):
     Process the type of storage-mapping
 
     """
-
     while True:
         report, node = (yield)
         for subnode in node.children:
@@ -303,7 +324,6 @@ def processSMType(targets):
                 targets['chain'].send((tmpReport, subnode.attrs.get('chain', None)))
                 report[subnode.name].append(tmpReport)
         
-
                 
 @coroutine
 def processPathMatch():
@@ -311,11 +331,10 @@ def processPathMatch():
     Process path-match
     
     """
-
     while True:
         report, value = (yield)
         report['path-match'] = value
-
+        
 
 @coroutine
 def processProtocol():
@@ -323,10 +342,10 @@ def processProtocol():
     Process protocol
     
     """
-
     while True:
         report, value = (yield)
         report['protocol'] = value
+        
 
 @coroutine
 def processResult():
@@ -334,7 +353,6 @@ def processResult():
     Process result
     
     """
-
     while True:
         report, value = (yield)
         report['result'] = value
@@ -346,7 +364,6 @@ def processChain():
     Process chain
     
     """
-
     while True:
         report, value = (yield)
         if value == "":

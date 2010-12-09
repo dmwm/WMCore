@@ -57,12 +57,12 @@ class TrivialFileCatalogTest(unittest.TestCase):
                 self.assertEqual(x['protocol'] in ['direct', 'dcap', 'srm', 'srmv2'],
                                  True, 'Could not find protocol %s' % (x['protocol']))
                 self.assertEqual(x['chain'], None, 'Invalid chain %s' % (x['chain']))
-        return
     
     
     def testRoundTrip(self):
         """
         Test PFN, LFN matching upon an existing TFC XML file
+        
         """
         tfc_file = os.path.join(getWMBASE(),
                                 "test/python/WMCore_t/Storage_t",
@@ -71,12 +71,52 @@ class TrivialFileCatalogTest(unittest.TestCase):
         
         # Check that an lfn goes to an srmv2 pfn and comes back as the same lfn
         in_lfn = '/store/data/my/data'        
-        in_pfn = tfc.matchLFN('srmv2', in_lfn)
+        in_pfn = "srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/data/my/data" 
+        out_pfn = tfc.matchLFN('srmv2', in_lfn)
+        self.assertEqual(out_pfn, in_pfn)
         out_lfn = tfc.matchPFN('srmv2', in_pfn)
-        self.assertEqual(in_lfn, out_lfn)        
+        self.assertEqual(in_lfn, out_lfn)
         out_pfn = tfc.matchLFN('srmv2', out_lfn)
         self.assertEqual(in_pfn, out_pfn)
         
+        
+    def testRoundTripWithChain(self):
+        """
+        Test PFN, LFN conversion when rules are chained.
+        
+        """
+        tfc = TrivialFileCatalog()
+        
+        match = "/+(.*)"
+        result = "/castor/cern.ch/cms/$1"
+        tfc.addMapping("direct", match, result, mapping_type = "lfn-to-pfn")
+        
+        match = "(.*)"
+        result = "$1"
+        tfc.addMapping("stageout", match, result, chain = "direct",
+                       mapping_type = "lfn-to-pfn")
+                               
+        in_lfn = "/T0/hufnagel/store/t0temp/WMAgentTier0Commissioning/A/RECO/v1dh/0000/4CF196F9-E302-E011-8517-0030487CD716.root"
+        in_pfn = "/castor/cern.ch/cms" + in_lfn
+
+        out_pfn = tfc.matchLFN("stageout", in_lfn)
+        self.assertNotEqual(out_pfn, in_lfn)
+        self.assertEqual(out_pfn, in_pfn)
+
+        tfc = TrivialFileCatalog()
+        
+        match = "/+castor/cern\.ch/cms/(.*)"
+        result = "/$1"
+        tfc.addMapping("direct", match, result, mapping_type = "pfn-to-lfn")
+
+        match = "(.*)"
+        result = "$1"
+        tfc.addMapping("stageout", match, result, chain = "direct",
+                       mapping_type = "pfn-to-lfn")
+        
+        out_lfn = tfc.matchPFN("stageout", in_pfn)
+        self.assertEqual(out_lfn, in_lfn)
+                
         
     def testDataServiceXML(self):
         # asks for PEM pass phrase ...

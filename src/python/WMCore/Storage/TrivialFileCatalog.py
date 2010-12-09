@@ -67,36 +67,30 @@ class TrivialFileCatalog(dict):
         self[mapping_type].append(entry)
         
         
-    def doMatch(self, protocol, path, style):
+    def _doMatch(self, protocol, path, style, caller):
         """
-        _doMatch_
         Generalised way of building up the mappings.
+        caller is the method from there this method was called, it's used
+        for resolving chained rules
         
         Return None if no match
+        
         """
         for mapping in self[style]:
             if mapping['protocol'] != protocol:
                 continue
             if mapping['path-match-expr'].match(path):
-                # TODO
-                # fix chained mapping
-                """
-                if mapping['chain'] != None:
-                # this chain mapping is almost certainly not correct
-                # since this .matchLFN method will be called regardless
-                # of style = "lfn-to-pfn" or "pfn-to-lfn" (which is
-                # distinguished in the ProdCommon implementation)
-                path = self.matchLFN(mapping['chain'], path)
-                # if path is None just continue
-                if not path:
-                    continue
-                """
+                if mapping["chain"] != None:
+                    path = caller(mapping["chain"], path)
+                    if not path:
+                        continue                        
                 try:
                     splitPath = mapping['path-match-expr'].split(path, 1)[1]
                 except IndexError:
                     continue
                 result = mapping['result'].replace("$1", splitPath)
                 return result
+
         return None
 
 
@@ -108,8 +102,10 @@ class TrivialFileCatalog(dict):
         matches the path-match for that protocol
 
         Return None if no match
+        
         """
-        return self.doMatch(protocol, lfn, 'lfn-to-pfn')
+        result = self._doMatch(protocol, lfn, "lfn-to-pfn", self.matchLFN)
+        return result
         
         
     def matchPFN(self, protocol, pfn):
@@ -120,9 +116,11 @@ class TrivialFileCatalog(dict):
         matches the path-match for that protocol
 
         Return None if no match
+        
         """
-        return self.doMatch(protocol, pfn, 'pfn-to-lfn')    
-
+        result = self._doMatch(protocol, pfn, "pfn-to-lfn", self.matchPFN)
+        return result
+            
             
     def getXML(self):
         """

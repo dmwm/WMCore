@@ -118,7 +118,7 @@ class StdBase(object):
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "FileBased",
                             splitArgs = {'files_per_job': 1}, seeding = None, totalEvents = None,
-                            userDN = None, asyncDest = None ):
+                            userDN = None, asyncDest = None, stepType = "CMSSW" ):
 
         """
         _setupProcessingTask_
@@ -141,9 +141,8 @@ class StdBase(object):
         The seeding and totalEvents parameters are only used for production jobs.
         """
         self.addDashboardMonitoring(procTask)
-
         procTaskCmssw = procTask.makeStep("cmsRun1")
-        procTaskCmssw.setStepType("CMSSW")
+        procTaskCmssw.setStepType(stepType)
         procTaskStageOut = procTaskCmssw.addStep("stageOut1")
         procTaskStageOut.setStepType("StageOut")
         procTaskStageOut.setUserDN(userDN)

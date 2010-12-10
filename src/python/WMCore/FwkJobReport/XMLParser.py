@@ -271,7 +271,7 @@ def inputAssocHandler():
             data = {}
             [ data.__setitem__(subnode.name, subnode.text)
               for subnode in inputnode.children]
-            Report.addInputToFile(fileSection, data["LFN"])
+            Report.addInputToFile(fileSection, data["LFN"], data['PFN'])
 
 @coroutine
 def perfRepHandler(targets):
@@ -398,6 +398,7 @@ def xmlToJobReport(reportInstance, xmlFile):
     return
 childrenMatching = lambda node, nname: [x for x in node.children if x.name == nname]
 
+
 def multiXmlToJobReport(reportInstance, multiReportFile, directory = None):
     """
     _multiXmlToJobReport_
@@ -423,4 +424,6 @@ def multiXmlToJobReport(reportInstance, multiReportFile, directory = None):
                     fileName = "%s/%s" % (directory, fileName)
                 if os.path.exists(fileName):
                     xmlToJobReport(reportInstance, fileName)
+                else: 
+                    print "File %s not found" % fileName
 

@@ -75,7 +75,6 @@ class Executor:
         self.step = step
         self.job = job
         self.stepName = getStepName(self.step)
-        print "stepname %s" % self.stepName
         self.stepSpace = getStepSpace(self.stepName)
         self.task = self.stepSpace.getWMTask()
         self.report = Report(self.stepName)

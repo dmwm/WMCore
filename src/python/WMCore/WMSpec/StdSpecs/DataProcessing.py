@@ -36,6 +36,7 @@ def getTestArguments():
         
         "ProcScenario": "cosmics",
         #"ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
+        "Multicore" : 4,
         }
 
     return arguments
@@ -48,6 +49,8 @@ class DataProcessingWorkloadFactory(StdBase):
     """
     def __init__(self):
         StdBase.__init__(self)
+        self.multicore = False
+        self.multicoreNCores = 1
         return
 
     def buildWorkload(self):
@@ -68,13 +71,20 @@ class DataProcessingWorkloadFactory(StdBase):
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         procTask = workload.newTask("DataProcessing")
 
+        cmsswStepType = "CMSSW"
+        if self.multicore:
+            cmsswStepType = "MulticoreCMSSW"
         outputMods = self.setupProcessingTask(procTask, "Processing", self.inputDataset,
                                               scenarioName = self.procScenario, scenarioFunc = "promptReco",
                                               scenarioArgs = {"globalTag": self.globalTag, "writeTiers": ["RECO", "ALCARECO"]}, 
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs) 
+                                              splitArgs = self.procJobSplitArgs, stepType = cmsswStepType) 
         self.addLogCollectTask(procTask)
+        if self.multicore:
+            cmsswStep = procTask.getStep("cmsRun1")
+            multicoreHelper = cmsswStep.getTypeHelper()
+            multicoreHelper.setMulticoreCores(self.multicoreNCores)
 
         procMergeTasks = {}
         for outputModuleName in outputMods.keys():
@@ -117,6 +127,12 @@ class DataProcessingWorkloadFactory(StdBase):
         else:
             self.procScenario = arguments.get("ProcScenario", None)
 
+        if arguments.has_key("Multicore"):
+            numCores = arguments.get("Multicore")
+            if numCores > 1:
+                self.multicore = True
+                self.multicoreNCores = numCores
+
         # The SkimConfig parameter must be a list of dictionaries where each
         # dictionary will have the following keys:
         #  SkimName
@@ -157,3 +173,5 @@ def dataProcessingWorkload(workloadName, arguments):
     """
     myDataProcessingFactory = DataProcessingWorkloadFactory()
     return myDataProcessingFactory(workloadName, arguments)
+
+

@@ -45,7 +45,7 @@ def addBranchNamesToFile(fileSection, branchNames):
     setattr(fileSection, "branches", branchNames)
     return
 
-def addInputToFile(fileSection, inputLFN):
+def addInputToFile(fileSection, inputLFN, inputPFN):
     """
     _addInputToFile_
 
@@ -54,8 +54,11 @@ def addInputToFile(fileSection, inputLFN):
     """
     if not hasattr(fileSection, "input"):
         setattr(fileSection, "input", [])
+    if not hasattr(fileSection, "inputpfns"):
+        setattr(fileSection, "inputpfns", [])
 
     fileSection.input.append(inputLFN)
+    fileSection.inputpfns.append(inputPFN)
     return
 
 def addRunInfoToFile(fileSection, runInfo):
@@ -266,6 +269,10 @@ class Report:
         outMod.files.fileCount = 0
 
         return outMod
+    
+
+        
+
 
     def addOutputFile(self, outputModule, file = {}):
         """
@@ -343,10 +350,26 @@ class Report:
         fileSection = "file%s" % count
         srcMod.files.section_(fileSection)
         fileRef = getattr(srcMod.files, fileSection)
-        [ setattr(fileRef, k, v) for k, v in attrs.items()]
         srcMod.files.fileCount += 1
 
+        keyList = attrs.keys()
+        
         fileRef.section_("runs")
+        if attrs.has_key("runs"):
+            for run in attrs["runs"]:
+                addRunInfoToFile(fileRef, run)
+            keyList.remove('runs')
+
+        if attrs.has_key("parents"):
+            keyList.remove('parents')
+        if attrs.has_key("locations"):
+            keyList.remove('locations')
+
+        # All right, the rest should be JSONalizable python primitives
+        for entry in keyList:
+            setattr(fileRef, entry, attrs[entry])
+
+
 
         return fileRef
 
@@ -562,6 +585,7 @@ class Report:
         newFile["size"]         = int(getattr(fileRef, "size", 0))
         newFile["branches"]     = getattr(fileRef, "branches", [])
         newFile["input"]        = getattr(fileRef, "input", [])
+        newFile["inputpfns"]    = getattr(fileRef, "inputpfns", [])
         newFile["branch_hash"]  = getattr(fileRef, "branch_hash", None)
         newFile["catalog"]      = getattr(fileRef, "catalog", "")
         newFile["guid"]         = getattr(fileRef, "guid", "")
@@ -570,6 +594,7 @@ class Report:
         newFile["merged"]       = bool(getattr(fileRef, "merged", False))
         newFile["dataset"]      = getattr(fileRef, "dataset", {})
         newFile["outputModule"] = outputModule
+        
 
         return newFile
 
@@ -884,6 +909,29 @@ class Report:
         """
 
         return getattr(self.data, 'jobID', None)
+      
+def addFiles(file1, file2):
+    """
+    _addFiles_
+
+    Combine two files. Used for multicore report building
+    
+    #ToDo: parents & locations.
+    """
+    file1['events'] += file2['events']
+    f1runs = {}
+    [ f1runs.__setitem__(x.run, x) for x in file1['runs']]
+    for r in file2['runs']:
+        if r.run not in f1runs.keys():
+            file1['runs'].add(r)
+        else:
+            thisRun = f1runs[r.run] 
+            if r != thisRun:
+                for l in r.lumis:
+                    if l not in thisRun.lumis:
+                        thisRun.lumis.append(l)
+    return
+
                 
 if __name__ == "__main__":
     myReport = Report("cmsRun1")

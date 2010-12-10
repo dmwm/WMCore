@@ -128,7 +128,7 @@ class ReqMgrRESTModel(RESTModel):
     def getGlobalSummary(self):
         """ return summary data for requests from
             request manager, workqueue and couchDB"""
-        return getGlobalSummaryView(self.hostAddress)
+        return getGlobalSummaryView()
 
     def getResourceInfo(self):
         """ return summary data for requests from

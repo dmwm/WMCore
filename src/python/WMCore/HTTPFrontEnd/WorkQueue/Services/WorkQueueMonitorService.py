@@ -99,6 +99,7 @@ class WorkQueueMonitorService(ServiceInterface):
         self.model.addDAO("GET", "jobstatusstat", "Monitor.Summary.JobStatusStat")
         self.model.addDAO("GET", "childqueues", "Monitor.Summary.GetChildQueues")
         self.model.addDAO("GET", "childqueuesbyrequest", "Monitor.Summary.GetAssignedLocalQueueByRequest")
+        self.model.addDAO("GET", "jobstatusbyrequest", "Monitor.Summary.JobStatusByRequest")
         
         ###############################################
         ## external call to couchDB                  ##

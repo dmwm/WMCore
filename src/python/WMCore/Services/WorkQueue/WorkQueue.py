@@ -173,6 +173,14 @@ class WorkQueue(Service):
         args = {}
         callname = 'childqueuesbyrequest'
         return self._getResult(callname, args = args, verb = "GET")
+    
+    def getJobStatusByRequest(self):
+        """
+        This service only provided by global queue
+        """
+        args = {}
+        callname = 'jobstatusbyrequest'
+        return self._getResult(callname, args = args, verb = "GET")
 
     def getJobSummaryFromCouchDB(self):
         """

@@ -31,15 +31,15 @@ WMCore.WebTools.WorkQueue.ElementInfoTable.elementTable = function(divID) {
     }
 		
     var dataSchema = {
-        fields: [{key: "id"}, {key: "spec_name"}, {key: "task_name"}, {key: "element_name"}, 
+		fields: [{key: "id"}, {key: "spec_name"}, {key: "task_name"}, {key: "element_name"}, 
                  {key: "status"}, {key: "child_queue", formatter:formatUrl}, 
                  //{key: "parent_flag"},
-                 {key: "priority"}, {key: "num_jobs", label: "job estimation"},
+                 {key: "priority"}, {key: "num_jobs", label: "jobs"},
                  //{key: "parent_queue_id"}, 
-				 {key: "subscription_id"},
+				 //{key: "subscription_id", label: "sub id"},
 				 {key: "team_name"},
-                 {key: "events_written"}, 
-				 {key: "files_processed"},
+                 {key: "events_written", label: "events"}, 
+                 {key: "files_processed", label: "file"},
                  {key: "percent_complete", label: "complete", formatter:percentFormat}, 
                  {key: "percent_success", label: "success", formatter:percentFormat},
                  {key: "insert_time", formatter:dateFormatter},

@@ -17,9 +17,10 @@ class LoadRunning(DBFormatter):
     """
     sql = """SELECT rj.wmbs_id AS jobid, rj.grid_id AS gridid, rj.bulk_id AS bulkid, 
                st.name AS status, rj.retry_count AS retry_count, rj.id AS id, 
-               rj.status_time AS status_time 
+               rj.status_time AS status_time, wu.cert_dn AS user
              FROM bl_runjob rj 
              INNER JOIN bl_status st ON rj.sched_status = st.id
+             INNER JOIN wmbs_users wu ON wu.id = rj.user
              WHERE rj.status = 1
              """
 

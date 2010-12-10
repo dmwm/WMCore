@@ -75,7 +75,8 @@ class Create(DBCreator):
            sched_status  INTEGER,
            retry_count   INTEGER,
            status_time   INTEGER,
-           location      VARCHAR(255) 
+           location      VARCHAR(255),
+           user          INT
            ) %s  """ % (tablespaceTable)
 
 
@@ -101,7 +102,10 @@ class Create(DBCreator):
                REFERENCES bl_status(id) ON DELETE CASCADE)"""
 
 
-
+        self.constraints["02_fk_bl_runjob"] = \
+            """ALTER TABLE bl_runjob ADD
+               (CONSTRAINT bl_runjob_fk3 FOREIGN KEY(user)
+               REFERENCES wmbs_users(id) ON DELETE CASCADE)"""
 
         
 

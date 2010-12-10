@@ -57,9 +57,11 @@ class RunJob(dict):
         Build a RunJob from a WMBS Job
         """
 
+
         # These two are required
         self['jobid']       = job.get('id', None)
         self['retry_count'] = job.get('retry_count', None)
+        self['user']        = job.get('owner', None)
 
         # Update the job with all other shared keys
         for key in job.keys():
@@ -83,6 +85,7 @@ class RunJob(dict):
         job                 = Job(id = self['jobid'])
         job['retry_count']  = self['retry_count']
         job['couch_record'] = None
+        job['owner']        = self['user']
 
         for key in self.keys():
             if key != 'id':

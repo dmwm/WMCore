@@ -60,9 +60,11 @@ class Create(DBCreator):
            retry_count   INT,
            status_time   INT,
            location      VARCHAR(255),
+           user          INT,
            PRIMARY KEY (id),
            FOREIGN KEY (wmbs_id) REFERENCES wmbs_job(id) ON DELETE CASCADE,
            FOREIGN KEY (sched_status) REFERENCES bl_status(id),
+           FOREIGN KEY (user) REFERENCES wmbs_users(id) ON DELETE CASCADE,
            UNIQUE (retry_count, wmbs_id)
            )
            ENGINE = InnoDB DEFAULT CHARSET=latin1;

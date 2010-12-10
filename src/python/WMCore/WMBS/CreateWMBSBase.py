@@ -44,6 +44,7 @@ class CreateWMBSBase(DBCreator):
                                "06wmbs_location",
                                "07wmbs_file_location",
                                "07wmbs_sub_types",                               
+                               "07wmbs_users",
                                "07wmbs_workflow",
                                "09wmbs_workflow_output",
                                "08wmbs_subscription",
@@ -113,6 +114,13 @@ class CreateWMBSBase(DBCreator):
              plugin    VARCHAR(255),
              UNIQUE(site_name))"""
 
+        self.create["07wmbs_users"] = \
+          """CREATE TABLE wmbs_users (
+             id        INTEGER      PRIMARY KEY AUTO_INCREMENT,
+             cert_dn   VARCHAR(255) NOT NULL,
+             name_hn   VARCHAR(255),
+             UNIQUE(cert_dn))"""
+
         self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (
              file     INTEGER NOT NULL,
@@ -129,8 +137,10 @@ class CreateWMBSBase(DBCreator):
              spec         VARCHAR(500) NOT NULL,
              name         VARCHAR(255) NOT NULL,
              task         VARCHAR(255) NOT NULL,
-             owner        VARCHAR(255),
-             UNIQUE(name, task))"""
+             owner        INTEGER      NOT NULL,
+             UNIQUE(name, task),
+             FOREIGN KEY(owner)    REFERENCES wmbs_users(id)
+               ON DELETE CASCADE)"""
 
         self.create["09wmbs_workflow_output"] = \
           """CREATE TABLE wmbs_workflow_output (

@@ -253,5 +253,53 @@ class WorkflowTest(unittest.TestCase):
                          "ERROR: task should be sometask.")
         return
 
+    def testWorkflowOwner(self):
+        """
+        _testWorkflowOwner_
+
+        Verify that the user is being added and handled correctly
+        """
+
+        dn = "/C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Mattia " + \
+             "Cinquilli/CN=proxy"
+        testWorkflow1 = Workflow(spec = "spec1.xml", owner = dn,
+                                 name = "wf001", task = "MultiUser-support")
+        testWorkflow1.create()
+
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        loadFromOwnerDAO = daoFactory(classname = "Workflow.LoadFromSpecOwner")
+
+        listFromOwner1 = loadFromOwnerDAO.execute(task  = testWorkflow1.task,
+                                                  owner = testWorkflow1.owner,
+                                                  spec  = testWorkflow1.spec )
+
+        testWorkflow2 = Workflow(spec = "spec2.xml", owner = dn,
+                                 name = "wf002", task = "MultiUser-support")
+        testWorkflow2.create()
+
+        listFromOwner2 = loadFromOwnerDAO.execute(task  = testWorkflow2.task,
+                                                  owner = testWorkflow2.owner,
+                                                  spec  = testWorkflow2.spec )
+
+        testWorkflow3 = Workflow(spec = "spec3.xml", owner = "Ciccio",
+                                 name = "wf003", task = "MultiUser-support")
+        testWorkflow3.create()
+
+        listFromOwner3 = loadFromOwnerDAO.execute(task  = testWorkflow3.task,
+                                                  owner = testWorkflow3.owner,
+                                                  spec  = testWorkflow3.spec )
+
+
+        self.assertEqual(testWorkflow1.owner, dn)
+        self.assertEqual(listFromOwner1["owner"], dn)
+        self.assertEqual(listFromOwner2["owner"], dn)
+        self.assertEqual(listFromOwner1["owner"], listFromOwner2["owner"])
+        self.assertNotEqual(listFromOwner1["owner"], listFromOwner3["owner"])
+        self.assertNotEqual(listFromOwner2["owner"], listFromOwner3["owner"])
+        return
+
+
 if __name__ == "__main__":
     unittest.main()

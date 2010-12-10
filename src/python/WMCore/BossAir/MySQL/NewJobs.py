@@ -16,10 +16,12 @@ class NewJobs(DBFormatter):
     """
 
 
-    sql = """INSERT INTO bl_runjob (wmbs_id, grid_id, bulk_id, sched_status, retry_count)
+    sql = """INSERT INTO bl_runjob (wmbs_id, grid_id, bulk_id, sched_status, retry_count, user)
                VALUES (:jobid, :gridid, :bulkid,
-                 (SELECT id FROM bl_status WHERE name = :status),
-                 :retry_count)"""
+                 (SELECT id FROM bl_status WHERE name = :status), 
+                 :retry_count,
+                 (SELECT id FROM wmbs_users WHERE cert_dn = :user)
+          )"""
 
 
 
@@ -37,7 +39,7 @@ class NewJobs(DBFormatter):
         binds = []
         for job in jobs:
             binds.append({'jobid': job['jobid'], 'gridid': job.get('gridid', None), 'bulkid': job.get('bulkid', None),
-                          'status': job.get('status', None), 'retry_count': job['retry_count']})
+                          'status': job.get('status', None), 'retry_count': job['retry_count'], 'user': job['user']})
 
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)

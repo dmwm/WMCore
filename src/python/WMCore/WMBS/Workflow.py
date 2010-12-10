@@ -55,6 +55,33 @@ class Workflow(WMBSBase, WMWorkflow):
     
         return result
 
+
+    def insertUser(self, owner):
+        """
+        _insertUser_
+
+        Check if the user exists in the wmbs database and return the id to be added
+        in the workflow entry. If the user does not exists then it gets created.
+        """
+
+        existingTransaction = self.beginTransaction()
+
+        ## check if owner exists, if not add it
+        userfactory = self.daofactory(classname = "Users.GetUserId")
+        userid      = userfactory.execute( dn = owner,
+                                           conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
+        if not userid:
+            newuser = self.daofactory(classname = "Users.New")
+            userid  = newuser.execute( dn = owner,
+                                       conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
+
+        return userid
+
+
     def create(self):
         """
         _create_
@@ -62,6 +89,9 @@ class Workflow(WMBSBase, WMWorkflow):
         Write the workflow to the database.  If the workflow already exists in
         the database nothing will happen.
         """
+
+        userid = self.insertUser( self.owner )
+
         existingTransaction = self.beginTransaction()
 
         self.id = self.exists()
@@ -70,9 +100,9 @@ class Workflow(WMBSBase, WMWorkflow):
             self.load()
             self.commitTransaction(existingTransaction)
             return
-        
+
         action = self.daofactory(classname = "Workflow.New")
-        action.execute(spec = self.spec, owner = self.owner, name = self.name,
+        action.execute(spec = self.spec, owner = userid, name = self.name,
                        task = self.task, conn = self.getDBConn(),
                        transaction = self.existingTransaction())
         

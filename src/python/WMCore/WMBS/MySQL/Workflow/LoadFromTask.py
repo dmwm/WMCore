@@ -12,8 +12,11 @@ __all__ = []
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadFromTask(DBFormatter):
-    sql = """SELECT id, spec, name, owner, task FROM wmbs_workflow
-             WHERE task = :task"""
+    sql = """SELECT wmbs_workflow.id, wmbs_workflow.spec, wmbs_workflow.name, wmbs_users.cert_dn as owner, wmbs_workflow.task
+             FROM wmbs_workflow
+             INNER JOIN wmbs_users ON
+               wmbs_workflow.owner = wmbs_users.id
+             WHERE wmbs_workflow.task = :task"""
 
     def formatDict(self, result):
         """

@@ -13,7 +13,8 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class Exists(DBFormatter):
     sql = """select id from wmbs_workflow
-            where spec = :spec and owner = :owner and name = :name and task = :task"""
+            where spec = :spec and name = :name and task = :task and owner = 
+           (SELECT id FROM wmbs_users WHERE cert_dn = :owner)"""
     
     def format(self, result):
         result = DBFormatter.format(self, result)

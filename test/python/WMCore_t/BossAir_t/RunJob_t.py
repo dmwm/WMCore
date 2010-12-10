@@ -85,6 +85,7 @@ class RunJobTest(unittest.TestCase):
         # Create jobs
         for id in range(nJobs):
             testJob = Job(name = 'Job_%i' % (id))
+            testJob['owner'] = "mnorman"
             testJob.create(testJobGroup)
             testJobGroup.add(testJob)
 
@@ -113,6 +114,7 @@ class RunJobTest(unittest.TestCase):
         for job in jobGroup.jobs:
             runJob = RunJob(jobid = job.exists())
             runJob['status'] = 'New'
+            runJob['user']   = job['owner'] 
             runJobs.append(runJob)
 
 

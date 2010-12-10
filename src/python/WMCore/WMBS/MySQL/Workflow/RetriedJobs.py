@@ -11,8 +11,10 @@ MySQL implementation of Workflow.RetriedJobs
 from WMCore.Database.DBFormatter import DBFormatter
 
 class RetriedJobs(DBFormatter):
-    sql = """SELECT wmbs_workflow.owner, wmbs_workflow.task, wmbs_job.id
+    sql = """SELECT wmbs_users.cert_dn as owner, wmbs_workflow.task, wmbs_job.id
                     FROM wmbs_workflow
+               INNER JOIN wmbs_users ON 
+                 wmbs_workflow.owner = wmbs_users.id
                INNER JOIN wmbs_subscription ON
                  wmbs_workflow.id = wmbs_subscription.workflow
                LEFT OUTER JOIN wmbs_jobgroup ON

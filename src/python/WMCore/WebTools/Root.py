@@ -9,8 +9,6 @@ dynamically and can be turned on/off via configuration file.
 """
 
 
-
-
 # CherryPy
 import cherrypy
 from cherrypy import quickstart, expose, server, log, tree, engine, dispatch, tools
@@ -27,6 +25,7 @@ from WMCore.WMFactory import WMFactory
 # Logging
 import WMCore.WMLogging
 import logging 
+import sys
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WebTools.Welcome import Welcome
 from WMCore.Agent.Harness import Harness
@@ -249,9 +248,8 @@ class Root(WMObject, Harness):
         engine.stop()
         
 if __name__ == "__main__":
-    config = __file__.rsplit('/', 1)[0] + '/DefaultConfig.py'
     parser = OptionParser()
-    parser.add_option("-i", "--ini", dest="inifile", default=config,
+    parser.add_option("-i", "--ini", dest="inifile", default=False,
                       help="write the configuration to FILE", metavar="FILE")
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
@@ -269,6 +267,9 @@ if __name__ == "__main__":
                       action="store_true", dest="terminate", default=False,
                       help="Terminate the daemon (kill, wait, kill -9)")
     opts, args = parser.parse_args()
+    
+    if not opts.inifile:
+        sys.exit('No configuration specified')
     cfg = loadConfigurationFile(opts.inifile)
     
     component = cfg.Webtools.application

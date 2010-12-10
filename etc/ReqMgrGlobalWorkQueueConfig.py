@@ -39,6 +39,7 @@ cmsPath = "/uscmst1/prod/sw/cms"
 couchURL = "http://USERNAMEPASSWORD@COUCHSERVER:5984"
 configCacheDBName = "wmagent_configcache"
 jobDumpDBName = "wmagent_jobdump"
+reqMgrDBName = "reqmgrdb"
 
 # Nothing after this point should need to be changed.
 config = Configuration()
@@ -102,6 +103,8 @@ active.reqMgr.object = "WMCore.WebTools.RESTApi"
 active.reqMgr.section_("model")
 active.reqMgr.model.object = "WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel"
 active.reqMgr.model.reqMgrHost = reqMgrUrl
+active.reqMgr.model.couchUrl = couchURL
+active.reqMgr.model.workloadCouchDB = reqMgrDBName
 active.reqMgr.section_("formatter") 
 active.reqMgr.formatter.object = "WMCore.WebTools.RESTFormatter"
 active.reqMgr.formatter.templates = config.ReqMgr.templates

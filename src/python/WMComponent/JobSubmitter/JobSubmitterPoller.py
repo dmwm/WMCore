@@ -481,11 +481,28 @@ class JobSubmitterPoller(BaseWorkerThread):
         2) Find jobs for all the necessary sites
         3) Submit the jobs to the plugin
         """
+
+
         try:
+            myThread = threading.currentThread()
+            myThread.transaction.begin()
             self.refreshCache()
             jobsToSubmit = self.assignJobLocations()
             self.submitJobs(jobsToSubmit = jobsToSubmit)
+
+            # At the end we mark the locations of the jobs
+            # This applies even to failed jobs, since the location
+            # could be part of the failure reason.
+            idList = []
+            for package in jobsToSubmit.keys():
+                for job in jobsToSubmit.get(package, []):
+                    idList.append({'jobid': job['id'], 'location': job['custom']['location']})
+            self.setLocationAction.execute(bulkList = idList, conn = myThread.transaction.conn,
+                                           transaction = True)
+            myThread.transaction.commit()
         except WMException:
+            if getattr(myThread, 'transaction', None) != None:
+                myThread.transaction.rollback()
             raise
         except Exception, ex:
             msg = 'Fatal error in JobSubmitter:\n'
@@ -493,16 +510,11 @@ class JobSubmitterPoller(BaseWorkerThread):
             #msg += str(traceback.format_exc())
             msg += '\n\n'
             logging.error(msg)
+            if getattr(myThread, 'transaction', None) != None:
+                myThread.transaction.rollback()
             raise JobSubmitterPollerException(msg)
 
-        # At the end we mark the locations of the jobs
-        # This applies even to failed jobs, since the location
-        # could be part of the failure reason.
-        idList = []
-        for package in jobsToSubmit.keys():
-            for job in jobsToSubmit.get(package, []):
-                idList.append({'jobid': job['id'], 'location': job['custom']['location']})
-        self.setLocationAction.execute(bulkList = idList)
+        
 
 
 

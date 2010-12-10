@@ -4,7 +4,7 @@ from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Database.CMSCouch import CouchError
 
-def getGlobalSummaryView(host):
+def getGlobalSummaryView():
     """
     get summary view of workflow 
     getting information from global queue and localqueue
@@ -12,9 +12,9 @@ def getGlobalSummaryView(host):
     requestInfo = getOverview()
     #get information from global queue.
     gQueues = getGlobalQueues()
-    gRequestInfo, cRequestInfo = _globalQueueInfo(gQueues)
+    gRequestInfo, cRequestInfo, qRequestInfo = _globalQueueInfo(gQueues)
 
-    return _formatTable(requestInfo, gRequestInfo, cRequestInfo, host)
+    return _formatTable(requestInfo, gRequestInfo, cRequestInfo, qRequestInfo)
 
 
 def _globalQueueInfo(gQueues):
@@ -23,6 +23,7 @@ def _globalQueueInfo(gQueues):
     """
     gRequestInfo = []
     cRequestInfo = []
+    qRequestInfo = []
     for queue in gQueues:
         globalQ = WorkQueue({'endpoint': queue + "/"})
         try:
@@ -30,9 +31,11 @@ def _globalQueueInfo(gQueues):
         except:
             gRequestInfo.extend([{"queue_error": queue}])
         else:
-            cRequestInfo.extend(_localQueueInfo(globalQ))
+            cJobs, qJobs = _localQueueInfo(globalQ)
+            cRequestInfo.extend(cJobs)
+            qRequestInfo.extend(qJobs)
 
-    return gRequestInfo, cRequestInfo
+    return gRequestInfo, cRequestInfo, qRequestInfo
 
 def _localQueueInfo(globalQ):
     """
@@ -57,9 +60,17 @@ def _localQueueInfo(globalQ):
                                     "couch_error": jobData[0]['error']}])
             else:
                 jobSummary.extend(jobData)
-    return jobSummary
+                
+        queueJobSummary = []    
+        try:
+            queueJobSummary.extend(childQ.getJobStatusByRequest())
+        except:
+            queueJobSummary.extend([{"queue_error": cQueue,
+                                     "error": str(ex)}])
+            
+    return jobSummary, queueJobSummary
 
-def _formatTable(requestInfo, gRequestInfo, cRequestInfo, host):
+def _formatTable(requestInfo, gRequestInfo, cRequestInfo, qRequestInfo):
     """
     combine the results from different sources and format them
     """
@@ -74,7 +85,6 @@ def _formatTable(requestInfo, gRequestInfo, cRequestInfo, host):
     
         
     for item in requestInfo:
-        item['host'] = host
         for gItem in gRequestInfo:
 
             if gItem.has_key('queue_error'):
@@ -110,6 +120,18 @@ def _formatTable(requestInfo, gRequestInfo, cRequestInfo, host):
                     item[status] = jobs + cJobs
 
                 item.update(cItem)
+                
+        for queueItem in qRequestInfo:
 
+            if queueItem.has_key('queue_error'):
+                if item['global_queue'] == gItem['queue_error']:
+                    item['error'] = "Global Queue Down"
 
+            elif item['request_name'] == queueItem['request_name']:
+                #
+                for status in ['inQueue', 'inWMBS']:
+                    jobs = item.pop(status, 0)
+                    aJobs = queueItem.pop(status, 0)
+                    item[status] = jobs + aJobs
+                
     return requestInfo

@@ -15,7 +15,9 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
                 elCell.innerHTML = "Not Assigned";
             } else {
                 host = sData.split('/')[2];
-				elCell.innerHTML = "<a href='" + sData  + "monitor" + postfixLink + oRecord.getData("request_name") + "' target='_blank'>" + host + "</a>";
+				elCell.innerHTML = "<a href='" + sData  + "monitor" + postfixLink 
+									 + oRecord.getData("request_name") + "' target='_blank'>" 
+									 + host + "</a>";
             };
         };
 	
@@ -24,11 +26,13 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
             if (!sData || ! sData.length) {
                 elCell.innerHTML = "Not Assigned";
             } else {
-				for (data in sData) {
-					host = sData[data].split('/')[2];
-					elCell.innerHTML = "<a href='" + sData + "monitor" + postfixLink + oRecord.getData("request_name") + "' target='_blank'>" + host + "</a> <br>";
+			for (data in sData) {
+				host = sData[data].split('/')[2];
+				elCell.innerHTML = "<a href='" + sData + "monitor" + postfixLink 
+						 + oRecord.getData("request_name") + "' target='_blank'>" 
+						 + host + "</a> <br>";
 				};
-			}; 
+	    }; 
         };
     
 	var formatCouchDB = function(elCell, oRecord, oColumn, sData) { 
@@ -60,7 +64,8 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
                 elCell.innerHTML = 0;
             } else {
                 host = sData;
-                elCell.innerHTML = "<a href='" + oRecord.getData("couch_job_info_base").replace("replace_to_", type) + "' target='_blank'>" + host + "</a>";
+                elCell.innerHTML = "<a href='" + oRecord.getData("couch_job_info_base").replace("replace_to_", type) 
+									 + "' target='_blank'>" + host + "</a>";
             };
         };
 	var formatPending = function(elCell, oRecord, oColumn, sData) { 
@@ -82,6 +87,23 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
 	var formatFailure = function(elCell, oRecord, oColumn, sData) { 
             formatJobLink(elCell, oRecord, oColumn, sData, "failed")
     };
+
+	var createProgressBar = function(elLiner, result, total, container) {
+		//if total is 0 make 0% complete;
+		  if (total == 0) {
+		  	  total = 1;
+		  };
+		  elLiner.innerHTML = "<div class='percentDiv'>" + result/total*100 + "%" + "</div>";
+          var pb = new YAHOO.widget.ProgressBar({
+                     width:'100px',
+                     height:'8px',
+		      maxValue: total,
+                     //className:'some_other_image',
+                     value:result
+           });
+           pb.render(elLiner);
+		   container.push(pb);
+	};
 	
 	var pbs = [];
     var progressFormatter = function (elLiner, oRecord, oColumn, oData) {
@@ -91,20 +113,18 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
 					   
 		  var completed = oRecord.getData("success") + oRecord.getData("failure");
 		  
-		  //if total is 0 make 0% complete
-		  if (total == 0) {
-		  	  total = 1;
-		  };
-          var pb = new YAHOO.widget.ProgressBar({
-                     width:'90px',
-                    height:'11px',
-                    maxValue: total,
-                    //className:'some_other_image',
-                    value:completed
-           }).render(elLiner);
-                pbs.push(pb);
+		  createProgressBar(elLiner, completed, total, pbs);
     };
-		   
+	
+	var pbq = [];
+    var queueProgressFormatter = function (elLiner, oRecord, oColumn, oData) {
+		  var total = oRecord.getData("inQueue") + oRecord.getData("inWMBS");
+					   
+		  var inWMBS = oRecord.getData("inWMBS");
+		  
+		  createProgressBar(elLiner, inWMBS, total, pbq);
+    };
+
 		   
     var dataSchema = {
         fields: [{key: "request_name"},
@@ -117,12 +137,13 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
                  {key: "running"},
                  {key: "success"},
                  {key: "failure"},
+				 {key: "inQueue"},
+                 {key: "inWMBS"},
                  {key: "couch_doc_base"},
 				 {key: "couch_job_info_base"},
-				 {key: "host"},
 				 {key: "couch_error"},
 				 {key: "error"}
-                 ]
+				 ]
         };
 
    var dataTableCols = [{key: "request_name", formatter:formatRequest},
@@ -136,13 +157,14 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
                  {key: "success", formatter:formatSuccess},
                  {key: "failure", formatter:formatFailure},
                  {key: "couch_doc_base", label: "summary", formatter:formatCouchDB},
-				 {key: "progress", formatter:progressFormatter}
+				 {key: "job completion", formatter:progressFormatter},
+				 {key: "queue injection", formatter:queueProgressFormatter}
                  ];
 		    
     var dataUrl = "/reqMgr/overview"
     var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
 
-    //writeDebugObject(dataSource)
-    //writeEval(dataSource.responseType)
-    var dataTable = WMCore.WebTools.createDataTable(divID, dataSource, WMCore.WebTools.createDefaultTableDef(dataTableCols), WMCore.WebTools.createDefaultTableConfig(), 100000)
+    var dataTable = WMCore.WebTools.createDataTable(divID, dataSource, 
+						WMCore.WebTools.createDefaultTableDef(dataTableCols), 
+						WMCore.WebTools.createDefaultTableConfig(), 100000)
 }

@@ -163,15 +163,20 @@ class DashboardInfo(dict):
         self.setdefault("JSToolUI" , None) # Can't set here, see bug #64232
 
 
-        taskName, jobName = generateDashboardID(job = self.job,
-                                                workload = self.workload,
-                                                task = self.task)
+        #taskName, jobName = generateDashboardID(job = self.job,
+        #                                        workload = self.workload,
+        #                                        task = self.task)
 
-        self.taskName = taskName
-        self.jobName  = jobName
+        #self.taskName = taskName
+        #self.jobName  = jobName
 
-        self.setdefault("taskName", taskName)
-        self.setdefault("jobName", jobName)
+        #self.setdefault("taskName", taskName)
+        #self.setdefault("jobName", jobName)
+
+
+        self.taskName = self.workload.name()
+        self.jobName  = "%s/%s_%i" % (self.workload.name(), self.job['name'], self.job['retry_count'])
+        
 
 
         self.jobSuccess = 0
@@ -189,10 +194,21 @@ class DashboardInfo(dict):
         Fill with basic information upon job start
         """
 
-        self["JobStarted"] = time.time()
-        self["GridJobID"]  = getGridJobID()
-        self['SyncCE']     = getSyncCE()
-        self.publish()
+        #self["JobStarted"] = time.time()
+        #self["GridJobID"]  = getGridJobID()
+        #self['SyncCE']     = getSyncCE()
+
+        data = {}
+        data['MessageType']   = 'jobRuntime'
+        data['MessageTS']     = time.time()
+        data['taskId']        = self.taskName
+        data['jobId']         = self.jobName
+        data['SyncCE']        = getSyncCE()
+        data['GridFlavour']   = "NotAvailable"
+        data['WNHostName']    = socket.gethostname()
+
+        
+        self.publish(data = data)
 
         return
 
@@ -205,9 +221,12 @@ class DashboardInfo(dict):
         """
 
 
-        self['JobFinished'] = time.time()
-        self['JobExitStatus'] = self.jobSuccess
-        self.publish()
+        #self['JobFinished'] = time.time()
+        #self['JobExitStatus'] = self.jobSuccess
+        #self.publish()
+
+        # Under new paradigm, don't broadcast when finished
+        
         return
     
 
@@ -219,15 +238,24 @@ class DashboardInfo(dict):
         """
 
         helper = WMStepHelper(step)
-        self['ExeStart']     = helper.name()
-        self['ExeStartTime'] = time.time()
+        #self['ExeStart']     = helper.name()
+        #self['ExeStartTime'] = time.time()
+        #
+        ## Some absolute crap that's hard-coded in that we should get rid of.
+        #if helper.stepType().lower() == 'cmssw':
+        #    # Add the version, etc.
+        #    self["ApplicationVersion"] = getattr(step.application.setup,
+        #                                         'cmsswVersion', None)
 
-        # Some absolute crap that's hard-coded in that we should get rid of.
-        if helper.stepType().lower() == 'cmssw':
-            # Add the version, etc.
-            self["ApplicationVersion"] = getattr(step.application.setup,
-                                                 'cmsswVersion', None)
-        self.publish()
+        data = {}
+        data['MessageType']   = 'jobRuntime'
+        data['MessageTS']     = time.time()
+        data['taskId']        = self.taskName
+        data['jobId']         = self.jobName
+        data['retryCount']    = self.job['retry_count']
+        data['ExeStart']      = helper.name()
+        
+        self.publish(data = data)
 
         return
 
@@ -239,14 +267,31 @@ class DashboardInfo(dict):
         Fill with step-ending information
         """
         helper = WMStepHelper(step)
-        stepSuccess = stepReport.stepSuccessful(stepName = helper.name())
+
+        #stepSuccess = stepReport.stepSuccessful(stepName = helper.name())
+        #
+        #self['ExeEnd']        = helper.name()
+        #self['ExeFinishTime'] = time.time()
+        #self['ExeExitStatus'] = stepSuccess
+        #if not stepSuccess == 0:
+        #    self.jobSuccess = 1
+
+
+        data = {}
+        data['MessageType']              = 'jobRuntime'
+        data['MessageTS']                = time.time()
+        data['taskId']                   = self.taskName
+        data['jobId']                    = self.jobName
+        data['retryCount']               = self.job['retry_count']
+        data['ExeEnd']                   = helper.name()
+        data['StageOutExitStatusReason'] = 'NotAvailable'
+        data['StageOutSE']               = 'NotAvailable'
+        data['StageOutExitStatus']       = 'NotAvailable'
+        data['StageOutEnd']              = 'NotAvailable'
+        data['StageOutTime']             = 'NotAvailable'
+        data['JobExitCode']              = 'NotAvailable'
         
-        self['ExeEnd']        = helper.name()
-        self['ExeFinishTime'] = time.time()
-        self['ExeExitStatus'] = stepSuccess
-        if not stepSuccess == 0:
-            self.jobSuccess = 1
-        self.publish()
+        self.publish(data = data)
 
 
         return
@@ -260,12 +305,13 @@ class DashboardInfo(dict):
         """
 
         # Then the job failed
-        self['JobExitStatus'] = 99999
-        self['JobFinished']   = time.time()
-        self.publish()
+        #self['JobExitStatus'] = 99999
+        #self['JobFinished']   = time.time()
+        #self.publish()
+
+        # Under new paradigm, don't broadcast when finished
 
         return
-
 
     def stepKilled(self, step):
         """
@@ -275,10 +321,20 @@ class DashboardInfo(dict):
         """
 
         helper = WMStepHelper(step)
-        self['ExeEnd']        = helper.name()
-        self['ExeFinishTime'] = time.time()
-        self['ExeExitStatus'] = 99999
-        self.publish()
+        #self['ExeEnd']        = helper.name()
+        #self['ExeFinishTime'] = time.time()
+        #self['ExeExitStatus'] = 99999
+
+        data = {}
+        data['MessageType']   = 'jobRuntime'
+        data['MessageTS']     = time.time()
+        data['taskId']        = self.taskName
+        data['jobId']         = self.jobName
+        data['retryCount']    = self.job['retry_count']
+        data['ExeEnd']        = helper.name()
+        
+        
+        self.publish(data = data)
 
 
         return
@@ -292,7 +348,7 @@ class DashboardInfo(dict):
         But not yet
         """
 
-        self.publish()
+        #self.publish()
 
         return
 
@@ -311,7 +367,7 @@ class DashboardInfo(dict):
 
 
 
-    def publish(self, redundancy = 1):
+    def publish(self, redundancy = 1, data = None):
         """
         _publish_
 
@@ -328,7 +384,10 @@ class DashboardInfo(dict):
         
         self.publisher.connect()
         toPublish = {}
-        toPublish.update(self)
+        if data:
+            toPublish = data
+        else:
+            toPublish.update(self)
         for key, value in toPublish.items():
             if value == None:
                 del toPublish[key]

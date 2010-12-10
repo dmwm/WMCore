@@ -166,7 +166,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     updated.append(ele)
 
         if updated:
-            updated_elements = sum([], [x['Elements'] for x in updated])
+            updated_elements = sum([list(x['Elements']) for x in updated], [])
             self.wq.setReqMgrUpdate(now, *[y['Id'] for y in updated_elements])
 
             #self.wq.deleteFinisedWork(updated)

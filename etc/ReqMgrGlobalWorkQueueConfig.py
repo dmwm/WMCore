@@ -56,12 +56,6 @@ config.Agent.useHeartbeat = False
 config.section_("General")
 config.General.workDir = workDirectory
 
-config.section_("JobStateMachine")
-config.JobStateMachine.couchurl = couchURL
-config.JobStateMachine.couchDBName = jobDumpDBName
-config.JobStateMachine.configCacheDBName = configCacheDBName
-config.JobStateMachine.default_retries = 5
-
 config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl
 config.CoreDatabase.dbsock = databaseSocket

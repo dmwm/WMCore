@@ -80,7 +80,6 @@ config.General.workDir = workDirectory
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
 config.JobStateMachine.couchDBName = jobDumpDBName
-config.JobStateMachine.configCacheDBName = configCacheDBName
 config.JobStateMachine.default_retries = 5
 
 config.section_("ACDC")
@@ -99,6 +98,13 @@ config.JobStatus.pollInterval = 10
 config.section_("CoreDatabase")
 config.CoreDatabase.socket = databaseSocket
 config.CoreDatabase.connectUrl = databaseUrl
+
+config.component_("DashboardReporter")
+config.DashboardReporter.namespace = "WMComponent.DashboardReporter.DashboardReporter"
+config.DashboardReporter.componentDir = config.General.workDir + "/DashboardReporter"
+config.DashboardReporter.dashboardHost = "dashboard08.cern.ch"
+config.DashboardReporter.dashboardPort = 8884
+config.DashboardReporter.pollInterval = 60
 
 config.component_('WorkQueueManager')
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"

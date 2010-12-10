@@ -352,7 +352,8 @@ class BossAirAPI(WMConnectionBase):
 
         existingTransaction = self.beginTransaction()
 
-        jobList = self.loadByWMBSDAO.execute(jobs = wmbsJobs)
+        jobList = self.loadByWMBSDAO.execute(jobs = wmbsJobs, conn = self.getDBConn(),
+                                             transaction = self.existingTransaction())
 
         loadedJobs = []
         for job in jobList:
@@ -607,7 +608,8 @@ class BossAirAPI(WMConnectionBase):
 
         existingTransaction = self.beginTransaction()
 
-        self.completeDAO.execute(jobs = idsToComplete)    
+        self.completeDAO.execute(jobs = idsToComplete, conn = self.getDBConn(),
+                                 transaction = self.existingTransaction())    
 
         self.commitTransaction(existingTransaction)
 

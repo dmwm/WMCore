@@ -6,9 +6,7 @@ _Watchdog_
 This cleverly named object is the thread that handles the monitoring of individual jobs
 """
 
-
-
-
+import os
 import threading
 import logging
 import traceback
@@ -268,7 +266,13 @@ class Watchdog(threading.Thread):
                         msg = "Error in periodicUpdate for monitor class %s in Watchdog:\n" % monitor.__class__
                         msg += str(ex)
                         msg += str(traceback.format_exc())
-                        raise WatchdogException(msg)
+                        msg += "This is a CRITICAL error because this kills the monitoring.\n"
+                        msg += "Terminate thread and retry.\n"
+                        logging.error(msg)
+                        #raise WatchdogException(msg)
+                        # This one needs to be killed by itself
+                        # since it's run by thread
+                        os.abort()
                 #self._MonMgr.periodicUpdate()
 
             #time.sleep(self._Interval)

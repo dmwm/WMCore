@@ -160,7 +160,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         """
         self.currentStep      = step
         self.currentStepName  = getStepName(step)
-        #self.currentStepSpace = getStepSpace(self.currentStepName)
+        self.currentStepSpace = getStepSpace(self.currentStepName)
         self.startTime        = time.time()
         self.dashboardInfo.stepStart(step = step)
 
@@ -173,7 +173,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         """
         self.currentStep      = None
         self.currentStepName  = None
-        #self.currentStepSpace = None
+        self.currentStepSpace = None
         self.dashboardInfo.stepEnd(step = step,
                                    stepReport = stepReport)
 
@@ -229,6 +229,10 @@ class DashboardMonitor(WMRuntimeMonitor):
         if time.time() - self.startTime > self.softTimeOut:
             #Then we have to kill the process
 
+            # If our stepSpace is None, we're inbetween steps.  Nothing to kill!
+            if self.currentStepSpace == None:
+                return
+
             #First, get the PID
             stepPID = getStepPID(self.currentStepSpace, self.currentStepName)
         
@@ -239,6 +243,13 @@ class DashboardMonitor(WMRuntimeMonitor):
             msg += "Timeout: %s\n" % self.softTimeOut
             msg += "Killing Job...\n"
             msg += "Process ID is: %s\n" % stepPID
+            if stepPID == None or stepPID == os.getpid():
+                # Then we are supposed to kill things
+                # that don't exist in separate processes:
+                # Self-terminate
+                msg += "WARNING: No separate process.  Watchdog will attempt self-termination."
+                logging.error(msg)
+                os.abort()
             if time.time() - self.startTime < self.hardTimeOut or not self.killFlag:
                 msg += "WARNING: Soft Kill Timeout has Expired:"
                 logging.error(msg)

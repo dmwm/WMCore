@@ -44,9 +44,20 @@ class ExecuteMaster:
 
         myThread = threading.currentThread
 
-        myThread.watchdogMonitor.setupMonitors(task, wmbsJob)
-
-        myThread.watchdogMonitor.notifyJobStart(task)
+        try:
+            myThread.watchdogMonitor.setupMonitors(task, wmbsJob)
+            myThread.watchdogMonitor.notifyJobStart(task)
+        except WMException:
+            self.toTaskDirectory()
+            return
+        except Exception, ex:
+            msg =  "Encountered unhandled exception while starting monitors:\n"
+            msg += str(ex) + '\n'
+            msg += str(traceback.format_exc()) + '\n'
+            logging.error(msg)
+            self.toTaskDirectory()
+            return
+            
         
         for step in task.steps().nodeIterator():
             try:
@@ -66,7 +77,18 @@ class ExecuteMaster:
                 logging.error(msg)
                 break
 
-        myThread.watchdogMonitor.notifyJobEnd(task)
+
+        try:
+            myThread.watchdogMonitor.notifyJobEnd(task)
+        except WMException:
+            self.toTaskDirectory()
+        except Exception, ex:
+            msg =  "Encountered unhandled exception while ending the job:\n"
+            msg += str(ex) + '\n'
+            msg += str(traceback.format_exc()) + '\n'
+            logging.error(msg)
+            self.toTaskDirectory()
+            
         return
 
     def doExecution(self, executor, step, job):

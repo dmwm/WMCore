@@ -391,7 +391,7 @@ class BossAirTest(unittest.TestCase):
         for i in range(nJobs):
             testJob = Job(name = '%s-%i' % (nameStr, i))
             testJob['location'] = location
-            testJob['user']     = 'moron'
+            testJob['userdn']   = 'moron'
             testJob.create(testJobGroup)
             jobList.append(testJob)
 

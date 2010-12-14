@@ -405,7 +405,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                            'custom': {'location': emptySite[0]},
                            'cache_dir': cachedJob[4],
                            'packageDir': package,
-                           'user': cachedJob[5]}
+                           'userdn': cachedJob[5]}
 
                 # Add to jobsToSubmit
                 jobsToSubmit[package].append(jobDict)

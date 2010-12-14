@@ -21,6 +21,8 @@ from WMCore.WMBS.Workflow     import Workflow
 
 from WMCore.BossAir.RunJob    import RunJob
 
+from WMCore.ResourceControl.ResourceControl import ResourceControl
+
 
 class RunJobTest(unittest.TestCase):
     """
@@ -45,6 +47,12 @@ class RunJobTest(unittest.TestCase):
         self.daoFactory = DAOFactory(package = "WMCore.BossAir",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+
+        resourceControl = ResourceControl()
+        resourceControl.insertSite(siteName = 'Xanadu', seName = 'se.Xanadu',
+                                   ceName = 'Xanadu', plugin = "TestPlugin")
+        resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
+                                        maxSlots = 10000)
 
 
 
@@ -85,7 +93,8 @@ class RunJobTest(unittest.TestCase):
         # Create jobs
         for id in range(nJobs):
             testJob = Job(name = 'Job_%i' % (id))
-            testJob['owner'] = "mnorman"
+            testJob['owner']    = "mnorman"
+            testJob['location'] = 'Xanadu'
             testJob.create(testJobGroup)
             testJobGroup.add(testJob)
 
@@ -114,7 +123,7 @@ class RunJobTest(unittest.TestCase):
         for job in jobGroup.jobs:
             runJob = RunJob(jobid = job.exists())
             runJob['status'] = 'New'
-            runJob['user']   = job['owner'] 
+            runJob['userdn'] = job['owner'] 
             runJobs.append(runJob)
 
 

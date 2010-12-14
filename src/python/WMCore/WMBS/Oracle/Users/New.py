@@ -3,11 +3,7 @@
 _NewWorkflow_
 
 Oracle implementation of NewWorkflow
-
 """
-__all__ = []
-
-
 
 from WMCore.WMBS.MySQL.Users.New import New as NewUserMySQL
 

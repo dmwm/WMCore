@@ -20,7 +20,7 @@ class UpdateJobs(DBFormatter):
                bulk_id = :bulkid, status_time = :status_time,
                sched_status = (SELECT id FROM bl_status WHERE name = :status),
                retry_count = :retry_count,
-               user = (SELECT id FROM wmbs_users WHERE cert_dn = :owner)
+               user_id = (SELECT id FROM wmbs_users WHERE cert_dn = :owner)
                WHERE id = :id
                """
 
@@ -41,7 +41,7 @@ class UpdateJobs(DBFormatter):
         for job in jobs:
             binds.append({'jobid': job['jobid'], 'gridid': job.get('gridid', None), 'bulkid': job.get('bulkid', None),
                           'status': job.get('status', None), 'retry_count': job['retry_count'], 'id': job['id'],
-                          'status_time': job.get('status_time', None), 'owner': job['user']})
+                          'status_time': job.get('status_time', None), 'owner': job['userdn']})
 
 
         result = self.dbi.processData(self.sql, binds, conn = conn,

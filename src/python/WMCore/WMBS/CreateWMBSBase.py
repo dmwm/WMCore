@@ -43,11 +43,12 @@ class CreateWMBSBase(DBCreator):
                                "05wmbs_file_runlumi_map",
                                "06wmbs_location",
                                "07wmbs_file_location",
-                               "07wmbs_sub_types",                               
                                "07wmbs_users",
                                "07wmbs_workflow",
-                               "09wmbs_workflow_output",
-                               "08wmbs_subscription",
+                               "08wmbs_sub_types",                               
+                               "08wmbs_workflow_output",                               
+                               "09wmbs_subscription",
+                               "10wmbs_subscription_validation",
                                "10wmbs_sub_files_acquired",
                                "10wmbs_sub_files_available",
                                "11wmbs_sub_files_failed",
@@ -142,7 +143,7 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY(owner)    REFERENCES wmbs_users(id)
                ON DELETE CASCADE)"""
 
-        self.create["09wmbs_workflow_output"] = \
+        self.create["08wmbs_workflow_output"] = \
           """CREATE TABLE wmbs_workflow_output (
              workflow_id           INTEGER NOT NULL,
              output_identifier     VARCHAR(255) NOT NULL,
@@ -156,13 +157,13 @@ class CreateWMBSBase(DBCreator):
                ON DELETE CASCADE)               
              """
         
-        self.create["07wmbs_sub_types"] = \
+        self.create["08wmbs_sub_types"] = \
           """CREATE TABLE wmbs_sub_types (
                id   INTEGER      PRIMARY KEY AUTO_INCREMENT,
                name VARCHAR(255) NOT NULL,
                UNIQUE(name))"""
 
-        self.create["08wmbs_subscription"] = \
+        self.create["09wmbs_subscription"] = \
           """CREATE TABLE wmbs_subscription (
              id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
              fileset     INTEGER      NOT NULL,
@@ -175,7 +176,18 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
                ON DELETE CASCADE,
              FOREIGN KEY(subtype) REFERENCES wmbs_sub_types(id)
-               ON DELETE CASCADE)"""               
+               ON DELETE CASCADE)"""
+
+        self.create["10wmbs_subscription_validation"] = \
+          """CREATE TABLE wmbs_subscription_validation (
+             subscription_id INTEGER NOT NULL,
+             location_id     INTEGER NOT NULL,
+             valid           INTEGER,
+             UNIQUE (subscription_id, location_id),
+             FOREIGN KEY(subscription_id) REFERENCES wmbs_subscription(id)
+               ON DELETE CASCADE,
+             FOREIGN KEY(location_id) REFERENCES wmbs_location(id)
+               ON DELETE CASCADE)"""
 
         self.create["10wmbs_sub_files_acquired"] = \
           """CREATE TABLE wmbs_sub_files_acquired (

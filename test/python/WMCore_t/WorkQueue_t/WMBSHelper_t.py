@@ -227,6 +227,7 @@ class WMBSHelperTest(unittest.TestCase):
         if baAPI:
             for job in jobList:
                 job['plugin'] = 'TestPlugin'
+                job['userdn'] = 'Steve'
             baAPI.createNewJobs(wmbsJobs = jobList)
 
         # We'll create an unrelated workflow to verify that it isn't affected
@@ -419,6 +420,8 @@ class WMBSHelperTest(unittest.TestCase):
         procTaskCMSSW.setStepType("CMSSW")
         procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
         procTask.setTaskType("Processing")
+        procTask.setSiteWhitelist(["site1"])
+        procTask.setSiteBlacklist(["site2"])
         procTask.applyTemplates()
 
         procTaskCMSSWHelper.addOutputModule("OutputA",
@@ -481,6 +484,12 @@ class WMBSHelperTest(unittest.TestCase):
 
         Verify that the subscription creation code works correctly.
         """
+        resourceControl = ResourceControl()
+        resourceControl.insertSite(siteName = 'site1', seName = 'goodse.cern.ch',
+                                   ceName = 'site1', plugin = "TestPlugin")
+        resourceControl.insertSite(siteName = 'site2', seName = 'goodse2.cern.ch',
+                                   ceName = 'site2', plugin = "TestPlugin")        
+
         testWorkload = self.createTestWMSpec()
         testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
         testWMBSHelper.createSubscription()
@@ -565,6 +574,16 @@ class WMBSHelperTest(unittest.TestCase):
         procSubscription = Subscription(fileset = topLevelFileset, workflow = procWorkflow)
         procSubscription.loadData()
 
+        self.assertEqual(len(procSubscription.getWhiteBlackList()), 2,
+                         "Error: Wrong site white/black list for proc sub.")
+        for site in procSubscription.getWhiteBlackList():
+            if site["site_name"] == "site1":
+                self.assertEqual(site["valid"], 1,
+                                 "Error: Site should be white listed.")
+            else:
+                self.assertEqual(site["valid"], 0,
+                                 "Error: Site should be black listed.")                
+
         self.assertEqual(procSubscription["type"], "Processing",
                          "Error: Wrong subscription type.")
         self.assertEqual(procSubscription["split_algo"], "FileBased",
@@ -572,6 +591,9 @@ class WMBSHelperTest(unittest.TestCase):
 
         mergeSubscription = Subscription(fileset = unmergedProcOutput, workflow = mergeWorkflow)
         mergeSubscription.loadData()
+
+        self.assertEqual(len(mergeSubscription.getWhiteBlackList()), 0,
+                         "Error: Wrong white/black list for merge sub.")
 
         self.assertEqual(mergeSubscription["type"], "Merge",
                          "Error: Wrong subscription type.")

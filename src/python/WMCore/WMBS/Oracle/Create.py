@@ -26,7 +26,8 @@ class Create(CreateWMBSBase):
     sequence_tables.append('wmbs_job')
     sequence_tables.append('wmbs_job_state')
     sequence_tables.append('wmbs_checksum_type')
-    sequence_tables.append('wmbs_sub_types')    
+    sequence_tables.append('wmbs_sub_types')
+    sequence_tables.append('wmbs_users')    
     
     def __init__(self, logger = None, dbi = None, params = None):
         """
@@ -167,6 +168,17 @@ class Create(CreateWMBSBase):
           """ALTER TABLE wmbs_location ADD
                (CONSTRAINT wmbs_location_unique UNIQUE (site_name) %s)""" % tablespaceIndex        
 
+        self.create["07wmbs_users"] = \
+          """CREATE TABLE wmbs_users (
+             id        INTEGER      NOT NULL,
+             cert_dn   VARCHAR(255) NOT NULL,
+             name_hn   VARCHAR(255),
+             UNIQUE(cert_dn))"""
+
+        self.indexes["01_pk_wmbs_users"] = \
+          """ALTER TABLE wmbs_users ADD
+               (CONSTRAINT wmbs_users_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+        
         self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (
                fileid   INTEGER NOT NULL,
@@ -199,7 +211,7 @@ class Create(CreateWMBSBase):
                spec  VARCHAR(500) NOT NULL,
                name  VARCHAR(255) NOT NULL,
                task  VARCHAR(255) NOT NULL,
-               owner VARCHAR(255)
+               owner INTEGER      NOT NULL
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_workflow"] = \
@@ -210,7 +222,12 @@ class Create(CreateWMBSBase):
           """ALTER TABLE wmbs_workflow ADD
                (CONSTRAINT wmbs_workflow_unique UNIQUE (name, task) %s)""" % tablespaceIndex
 
-        self.create["09wmbs_workflow_output"] = \
+        self.indexes["02_fk_wmbs_workflow"] = \
+          """ALTER TABLE wmbs_workflow ADD
+              (CONSTRAINT fk_workflow_users FOREIGN KEY(owner)
+                 REFERENCES wmbs_users(id) ON DELETE CASCADE)"""
+
+        self.create["08wmbs_workflow_output"] = \
           """CREATE TABLE wmbs_workflow_output (
                workflow_id           INTEGER      NOT NULL,
                output_identifier     VARCHAR(255) NOT NULL,
@@ -242,7 +259,7 @@ class Create(CreateWMBSBase):
         self.constraints["03_idx_wmbs_workflow_output"] = \
           """CREATE INDEX idx_wmbs_workf_out_mfileset ON wmbs_workflow_output(merged_output_fileset) %s""" % tablespaceIndex        
         
-        self.create["07wmbs_sub_types"] = \
+        self.create["08wmbs_sub_types"] = \
           """CREATE TABLE wmbs_sub_types (
                id   INTEGER      NOT NULL,
                name VARCHAR(255) NOT NULL
@@ -256,7 +273,7 @@ class Create(CreateWMBSBase):
           """ALTER TABLE wmbs_sub_types ADD
                (CONSTRAINT wmbs_sub_types_uk UNIQUE (name) %s)""" % tablespaceIndex
              
-        self.create["08wmbs_subscription"] = \
+        self.create["09wmbs_subscription"] = \
           """CREATE TABLE wmbs_subscription (
                id          INTEGER      NOT NULL,
                fileset     INTEGER      NOT NULL,
@@ -293,6 +310,26 @@ class Create(CreateWMBSBase):
 
         self.constraints["03_idx_wmbs_subscription"] = \
           """CREATE INDEX idx_wmbs_subscription_workflow ON wmbs_subscription(workflow) %s""" % tablespaceIndex
+
+        self.create["10wmbs_subscription_validation"] = \
+          """CREATE TABLE wmbs_subscription_validation (
+             subscription_id INTEGER NOT NULL,
+             location_id     INTEGER NOT NULL,
+             valid           INTEGER)"""
+
+        self.indexes["01_pk_wmbs_sub_val"] = \
+          """ALTER TABLE wmbs_subscription_validation ADD
+               (CONSTRAINT wmbs_sub_val_pk PRIMARY KEY (subscription_id, location_id) %s)""" % tablespaceIndex
+
+        self.constraints["01_fk_wmbs_sub_val"] = \
+          """ALTER TABLE wmbs_subscription_validation ADD
+              (CONSTRAINT fk_sub_val FOREIGN KEY(subscription_id)
+                 REFERENCES wmbs_subscription(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_sub_val"] = \
+          """ALTER TABLE wmbs_subscription_validation ADD                      
+              (CONSTRAINT fk2_sub_val FOREIGN KEY(location_id)
+                 REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
 
         self.create["10wmbs_sub_files_acquired"] = \
           """CREATE TABLE wmbs_sub_files_acquired (

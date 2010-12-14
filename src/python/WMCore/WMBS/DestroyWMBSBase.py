@@ -42,6 +42,7 @@ class DestroyWMBSBase(DBCreator):
         self.delete["13wmbs_workflow_output"] = "DROP TABLE wmbs_workflow_output"
         self.delete["12wmbs_sub_types"] = "DROP TABLE wmbs_sub_types"
         self.delete["11wmbs_subscription"] = "DROP TABLE wmbs_subscription"
+        self.delete["10wmbs_subscription_validation"] = "DROP TABLE wmbs_subscription_validation"
         self.delete["10wmbs_sub_files_acquired"] = "DROP TABLE wmbs_sub_files_acquired"
         self.delete["10wmbs_sub_files_available"] = "DROP TABLE wmbs_sub_files_available"
         self.delete["09wmbs_sub_files_failed"] = "DROP TABLE wmbs_sub_files_failed"

@@ -21,7 +21,7 @@ class RunJob(dict):
 
     def __init__(self, id = None, jobid = -1, gridid = None,
                  bulkid = None, retry_count = 0, status = None,
-                 location = None, user = None, plugin = None,
+                 location = None, userdn = None, plugin = None,
                  cache_dir = None, status_time = None, packageDir = None,
                  sandbox = None):
         """
@@ -39,7 +39,7 @@ class RunJob(dict):
         self.setdefault('retry_count', retry_count)
         self.setdefault('status', status)
         self.setdefault('location', location)
-        self.setdefault('user', user)
+        self.setdefault('userdn', userdn)
         self.setdefault('plugin', plugin)
         self.setdefault('cache_dir', cache_dir)
         self.setdefault('status_time', status_time)
@@ -61,7 +61,7 @@ class RunJob(dict):
         # These two are required
         self['jobid']       = job.get('id', None)
         self['retry_count'] = job.get('retry_count', None)
-        self['user']        = job.get('owner', None)
+        self['userdn']      = job.get('owner', None)
 
         # Update the job with all other shared keys
         for key in job.keys():
@@ -85,7 +85,7 @@ class RunJob(dict):
         job                 = Job(id = self['jobid'])
         job['retry_count']  = self['retry_count']
         job['couch_record'] = None
-        job['owner']        = self['user']
+        job['owner']        = self['userdn']
 
         for key in self.keys():
             if key != 'id':

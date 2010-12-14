@@ -18,7 +18,8 @@ import unittest
 from WMComponent.RetryManager.RetryManagerPoller import RetryManagerPoller
 
 import WMCore.WMInit
-from WMQuality.TestInit   import TestInit
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+#from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
 
@@ -49,6 +50,7 @@ class RetryManagerTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
                                                  "WMCore.MsgService"],
                                 useDefault = False)
+        self.testInit.setupCouch("retry_manager_t_0", "JobDump")
         
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -65,6 +67,7 @@ class RetryManagerTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
+        self.testInit.tearDownCouch()
         return
 
     def getConfig(self):
@@ -91,7 +94,7 @@ class RetryManagerTest(unittest.TestCase):
         config.RetryManager.coolOffTime  = {'create': 120, 'submit': 120, 'job': 120}
         # Path to plugin directory
         config.RetryManager.pluginPath   = 'WMComponent.RetryManager.PlugIns'
-        config.RetryManager.pluginName   = ''
+        #config.RetryManager.pluginName   = ''
         config.RetryManager.WMCoreBase   = WMCore.WMInit.getWMBASE()
         config.RetryManager.componentDir = os.path.join(os.getcwd(), 'Components')
 
@@ -100,7 +103,7 @@ class RetryManagerTest(unittest.TestCase):
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', None)
         config.JobStateMachine.default_retries = 1
-        config.JobStateMachine.couchDBName     = "retry_manager_t"
+        config.JobStateMachine.couchDBName     = "retry_manager_t_0"
 
         return config
 
@@ -144,7 +147,7 @@ class RetryManagerTest(unittest.TestCase):
         testJobGroup.commit()
         return testJobGroup
 
-    def testCreate(self):
+    def testA_Create(self):
         """
         WMComponent_t.RetryManager_t.RetryManager_t:testCreate()
         
@@ -184,7 +187,7 @@ class RetryManagerTest(unittest.TestCase):
         self.assertEqual(len(idList), self.nJobs)
         return
 
-    def testSubmit(self):
+    def testB_Submit(self):
         """
         WMComponent_t.RetryManager_t.RetryManager_t:testSubmit()
         
@@ -227,7 +230,7 @@ class RetryManagerTest(unittest.TestCase):
         self.assertEqual(len(idList), self.nJobs)
         return
 
-    def testJob(self):
+    def testC_Job(self):
         """
         WMComponent_t.RetryManager_t.RetryManager_t:testJob()
         
@@ -236,6 +239,7 @@ class RetryManagerTest(unittest.TestCase):
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
         
         config = self.getConfig()
+        config.RetryManager.pluginName   = 'DefaultRetryAlgo'
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
@@ -270,6 +274,152 @@ class RetryManagerTest(unittest.TestCase):
         idList = self.getJobs.execute(state = 'Created')
         self.assertEqual(len(idList), self.nJobs)
         return
+
+
+
+    def testD_SquaredAlgo(self):
+        """
+        _testSquaredAlgo_
+
+        Test the squared algorithm to make sure it loads and works
+        """
+
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
+
+        config = self.getConfig()
+        config.RetryManager.pluginName   = 'SquaredAlgo'
+        config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
+        changer = ChangeState(config)
+        changer.propagate(testJobGroup.jobs, 'created', 'new')
+        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
+        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
+        changer.propagate(testJobGroup.jobs, 'created', 'submitcooloff')
+        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
+        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
+
+
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
+        self.assertEqual(len(idList), self.nJobs)
+
+        testRetryManager = RetryManagerPoller(config)
+        testRetryManager.setup(None)
+
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 5)
+
+        testRetryManager.algorithm(None)
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
+        self.assertEqual(len(idList), self.nJobs)
+
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 12)
+
+        testRetryManager.algorithm(None)
+        
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
+        self.assertEqual(len(idList), 0)
+
+        idList = self.getJobs.execute(state = 'Created')
+        self.assertEqual(len(idList), self.nJobs)
+
+
+
+    def testE_ExponentialAlgo(self):
+        """
+        _testExponentialAlgo_
+
+        Test the exponential algorithm to make sure it loads and works
+        """
+
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
+
+        config = self.getConfig()
+        config.RetryManager.pluginName   = 'ExponentialAlgo'
+        config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
+        changer = ChangeState(config)
+        changer.propagate(testJobGroup.jobs, 'created', 'new')
+        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
+        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
+        changer.propagate(testJobGroup.jobs, 'created', 'submitcooloff')
+        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
+        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
+
+
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
+        self.assertEqual(len(idList), self.nJobs)
+
+        testRetryManager = RetryManagerPoller(config)
+        testRetryManager.setup(None)
+
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 5)
+
+        testRetryManager.algorithm(None)
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
+        self.assertEqual(len(idList), self.nJobs)
+
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 12)
+
+        testRetryManager.algorithm(None)
+        
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
+        self.assertEqual(len(idList), 0)
+
+        idList = self.getJobs.execute(state = 'Created')
+        self.assertEqual(len(idList), self.nJobs)
+
+
+    def testF_LinearAlgo(self):
+        """
+        _testLinearAlgo_
+
+        Test the linear algorithm to make sure it loads and works
+        """
+
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
+
+        config = self.getConfig()
+        config.RetryManager.pluginName   = 'ExponentialAlgo'
+        config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
+        changer = ChangeState(config)
+        changer.propagate(testJobGroup.jobs, 'created', 'new')
+        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
+        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
+        changer.propagate(testJobGroup.jobs, 'created', 'submitcooloff')
+        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
+        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
+
+
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
+        self.assertEqual(len(idList), self.nJobs)
+
+        testRetryManager = RetryManagerPoller(config)
+        testRetryManager.setup(None)
+
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 5)
+
+        testRetryManager.algorithm(None)
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
+        self.assertEqual(len(idList), self.nJobs)
+
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 12)
+
+        testRetryManager.algorithm(None)
+        
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
+        self.assertEqual(len(idList), 0)
+
+        idList = self.getJobs.execute(state = 'Created')
+        self.assertEqual(len(idList), self.nJobs)
 
 
 

@@ -24,6 +24,8 @@ from WMCore.WMFactory         import WMFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.JobStateMachine.Transitions import Transitions
 
+from WMCore.WMException import WMException
+
 def convertdatetime(t):
     """
     Convert dates into useable format.
@@ -36,6 +38,13 @@ def timestamp():
     """
     t = datetime.datetime.now()
     return convertdatetime(t)
+
+class RetryManagerException(WMException):
+    """
+    _RetryManagerException_
+
+    It's totally awesome, except it's not.
+    """
 
 class RetryManagerPoller(BaseWorkerThread):
     """
@@ -62,10 +71,18 @@ class RetryManagerPoller(BaseWorkerThread):
         self.pluginFactory = WMFactory("plugins", pluginPath)
         
         self.changeState = ChangeState(self.config)
-        self.getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
+        self.getJobs     = self.daoFactory(classname = "Jobs.GetAllJobs")
 
-        # This will store loaded plugins so we don't have to reload them
-        self.retryInstances = {}
+        try:
+            pluginName  = getattr(self.config.RetryManager, 'pluginName', 'DefaultRetryAlgo')
+            self.plugin = self.pluginFactory.loadObject(classname = pluginName,
+                                                        args = config)
+        except Exception, ex:
+            msg =  "Error loading plugin %s on path %s\n" % (pluginName, pluginPath)
+            msg += str(ex)
+            logging.error(msg)
+            raise RetryManagerException(msg)
+
         return
 
     def terminate(self, params):
@@ -88,6 +105,11 @@ class RetryManagerPoller(BaseWorkerThread):
             myThread.transaction.begin()
             self.doRetries()
             myThread.transaction.commit()
+        except WMException, ex:
+            if getattr(myThread, 'transaction', None) and \
+               getattr(myThread.transaction, 'transaction', None):
+                myThread.transaction.rollback()
+            raise
         except Exception, ex:
             msg = "Caught exception in RetryManager\n"
             msg += str(ex)
@@ -176,28 +198,19 @@ class RetryManagerPoller(BaseWorkerThread):
         if len(jobList) == 0:
             return result
 
-        jT          = jobType.capitalize()
-        loadedClass = None
-
-        if jT in self.retryInstances.keys():
-            # Then we already have it
-            loadedClass = self.retryInstances.get(jT)
-
-        else:
-            pluginName = self.config.RetryManager.pluginName
-            if pluginName == '' or pluginName == None:
-                pluginName = 'RetryAlgo'
-            plugin = '%s%s' % (jT, pluginName)
-
-            loadedClass = self.pluginFactory.loadObject(classname = plugin)
-            loadedClass.setup(config = self.config)
-
-            # Then add it
-            self.retryInstances[jT] = loadedClass
 
         for job in jobList:
-            if loadedClass.isReady(job = job):
-                result.append(job)
+            try:
+                if self.plugin.isReady(job = job, jobType = jobType):
+                    result.append(job)
+            except Exception, ex:
+                msg =  "Exception while checking for cooloff timeout for job %i\n" % job['id']
+                msg += str(ex)
+                logging.error(msg)
+                logging.debug("Job: %s\n" % job)
+                logging.debug("jobType: %s\n" % jobType)
+                raise RetryManagerException(msg)
+            
 
         return result
 

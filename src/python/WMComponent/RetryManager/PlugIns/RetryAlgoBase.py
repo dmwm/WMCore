@@ -16,9 +16,9 @@ class RetryAlgoBase(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, config):
         object.__init__(self)
-        self.config = None
+        self.config = config
 
     def setup(self, config):
         """
@@ -27,7 +27,7 @@ class RetryAlgoBase(object):
         """
         self.config = config
 
-    def isReady(self, job):
+    def isReady(self, job, jobType):
         """
         Actual function that does the work
 

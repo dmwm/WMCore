@@ -31,7 +31,7 @@ class LoadComplete(DBFormatter):
                     bl_runjob.retry_count AS retry_count,
                     bl_runjob.id AS id, 
                     bl_runjob.status_time AS status_time,
-                    wmbs_users.cert_dn AS user
+                    wmbs_users.cert_dn AS userdn
              FROM bl_runjob
              INNER JOIN wmbs_users wu ON wmbs_user.id = bl_runjob.user
              INNER JOIN wmbs_job ON
@@ -41,7 +41,7 @@ class LoadComplete(DBFormatter):
              INNER JOIN bl_status ON
                bl_status.id = bl_runjob.sched_status
              INNER JOIN wmbs_users ON
-               bl_runjob.user = wmbs_users.id
+               bl_runjob.user_id = wmbs_users.id
              WHERE bl_runjob.status = 0
              """
 
@@ -52,7 +52,7 @@ class LoadComplete(DBFormatter):
                     bl_runjob.retry_count AS retry_count,
                     bl_runjob.id AS id, 
                     bl_runjob.status_time AS status_time,
-                    wmbs_users.cert_dn AS user
+                    wmbs_users.cert_dn AS userdn
              FROM wmbs_job
              INNER JOIN bl_runjob ON
                bl_runjob.wmbs_id = wmbs_job.id AND
@@ -60,7 +60,7 @@ class LoadComplete(DBFormatter):
                bl_runjob.status = 0
              INNER JOIN bl_status ON
                bl_status.id = bl_runjob.sched_status
-             INNER JOIN wmbs_users ON wmbs_users.id = bl_runjob.user
+             INNER JOIN wmbs_users ON wmbs_users.id = bl_runjob.user_id
              WHERE wmbs_job.state = (SELECT id FROM wmbs_job_state WHERE name = 'executing')
              """
 

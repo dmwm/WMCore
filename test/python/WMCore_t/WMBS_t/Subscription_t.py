@@ -1513,8 +1513,6 @@ class SubscriptionTest(unittest.TestCase):
 
         return
 
-
-
     def testSucceededJobs(self):
         """
         _testSucceededJobs_
@@ -1653,6 +1651,31 @@ class SubscriptionTest(unittest.TestCase):
         assert finishedSubs[0]["id"] == testSubscription3["id"], \
                "Error: Wrong subscription id."
 
+        return
+
+    def testWhitelistBlacklist(self):
+        """
+        _testWhitelistBlacklist_
+
+        Verify that the white list and black list code works.
+        """
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()        
+
+        testSubscription.create()
+        testSubscription.addWhiteBlackList([{"site_name": "site1", "valid": True},
+                                            {"site_name": "site2", "valid": True},
+                                            {"site_name": "site3", "valid": False}])
+
+        results = testSubscription.getWhiteBlackList()
+
+        self.assertEqual(len(results), 3,
+                         "Error: Wrong number of items returned")
+        for result in results:
+            if result["site_name"] == "site1" or result["site_name"] == "site2":
+                self.assertTrue(result["valid"], "Error: Valid should be True.")
+            else:
+                self.assertFalse(result["valid"], "Error: Valid should be False.")                
         return
 
 if __name__ == "__main__":

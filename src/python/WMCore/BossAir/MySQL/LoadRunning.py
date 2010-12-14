@@ -20,7 +20,7 @@ class LoadRunning(DBFormatter):
                rj.status_time AS status_time, wu.cert_dn AS user
              FROM bl_runjob rj 
              INNER JOIN bl_status st ON rj.sched_status = st.id
-             INNER JOIN wmbs_users wu ON wu.id = rj.user
+             INNER JOIN wmbs_users wu ON wu.id = rj.user_id
              WHERE rj.status = 1
              """
 

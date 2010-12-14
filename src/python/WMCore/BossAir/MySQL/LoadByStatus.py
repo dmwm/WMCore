@@ -17,10 +17,10 @@ class LoadByStatus(DBFormatter):
 
 
     sql = """SELECT rj.wmbs_id AS jobid, rj.grid_id AS gridid, rj.bulk_id AS bulkid,
-               st.name AS status, rj.retry_count as retry_count, rj.id AS id, wu.cert_dn AS user
+               st.name AS status, rj.retry_count as retry_count, rj.id AS id, wu.cert_dn AS userdn
                FROM bl_runjob rj
                INNER JOIN bl_status st ON rj.sched_status = st.id
-               INNER JOIN wmbs_users wu ON wu.id = rj.user
+               INNER JOIN wmbs_users wu ON wu.id = rj.user_id
                WHERE rj.status = :complete AND st.name = :status
     """
 

@@ -132,6 +132,43 @@ class Subscription(WMBSBase, WMSubscription):
 
         self.commitTransaction(existingTransaction)
         return
+
+    def addWhiteBlackList(self, sites):
+        """
+        _addWhiteBlackList_
+
+        Add a site white or black list for this transaction.  The sites
+        paremeter must be a list of dictionaries with the following keys:
+          site_name - The CMS name of the site
+          valid - A bool, True for a white list, False for a black list.
+        """
+        existingTransaction = self.beginTransaction()
+
+        for site in sites:
+            site["sub"] = self["id"]
+
+        action = self.daofactory(classname = "Subscriptions.AddValidation")
+        result = action.execute(sites = sites,
+                                conn = self.getDBConn(),
+                                transaction = self.existingTransaction())        
+
+        self.commitTransaction(existingTransaction)
+
+    def getWhiteBlackList(self):
+        """
+        _getWhiteBlackList_
+
+        Retrieve the white lists and black lists for this subscription.
+        """
+        existingTransaction = self.beginTransaction()
+
+        action = self.daofactory(classname = "Subscriptions.GetValidation")
+        result = action.execute(self["id"],
+                                conn = self.getDBConn(),
+                                transaction = self.existingTransaction())        
+
+        self.commitTransaction(existingTransaction)
+        return result
     
     def filesOfStatus(self, status, limit = 0, loadChecksums = True):
         """

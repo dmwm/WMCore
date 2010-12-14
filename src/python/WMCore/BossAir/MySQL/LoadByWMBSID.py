@@ -18,10 +18,10 @@ class LoadByWMBSID(DBFormatter):
 
     sql = """SELECT rj.wmbs_id AS jobid, rj.grid_id AS gridid, rj.bulk_id AS bulkid,
                st.name AS status, rj.retry_count as retry_count, rj.id AS id,
-               rj.status_time as status_time, wu.cert_dn AS user, wl.plugin AS plugin
+               rj.status_time as status_time, wu.cert_dn AS userdn, wl.plugin AS plugin
                FROM bl_runjob rj
                INNER JOIN bl_status st ON rj.sched_status = st.id
-               INNER JOIN wmbs_users wu ON wu.id = rj.user
+               INNER JOIN wmbs_users wu ON wu.id = rj.user_id
                INNER JOIN wmbs_job wj ON wj.id = rj.wmbs_id
                LEFT OUTER JOIN wmbs_location wl ON wl.id = wj.location
                WHERE rj.wmbs_id = :id AND rj.retry_count = :retry_count"""
@@ -44,7 +44,6 @@ class LoadByWMBSID(DBFormatter):
         binds = []
         for job in jobs:
             binds.append({'id': job['id'], 'retry_count': job['retry_count']})
-
 
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)

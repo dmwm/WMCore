@@ -238,6 +238,11 @@ class WMBSHelper(WMConnectionBase):
                                     split_algo = task.jobSplittingAlgorithm(),
                                     type = task.taskType())
         subscription.create()
+        for site in task.siteWhitelist():
+            subscription.addWhiteBlackList([{"site_name": site, "valid": True}])
+
+        for site in task.siteBlacklist():
+            subscription.addWhiteBlackList([{"site_name": site, "valid": False}])            
         
         if self.topLevelSubscription == None:
             self.topLevelSubscription = subscription

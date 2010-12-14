@@ -87,8 +87,8 @@ def miniStartup(dir = os.getcwd()):
     task = Bootstrap.loadTask(job)
     Bootstrap.createInitialReport(job = job,
                                   task = task,
-                                  logLocation = "Report.pkl")
-    monitor = Bootstrap.setupMonitoring()
+                                  logLocation = "Report.0.pkl")
+    monitor = Bootstrap.setupMonitoring(logPath = "Report.0.pkl")
 
     Bootstrap.setupLogging(dir)
     
@@ -97,7 +97,7 @@ def miniStartup(dir = os.getcwd()):
     task.execute(job)
 
     task.completeTask(jobLocation = os.path.join(dir, 'WMTaskSpace'),
-                      logLocation = "Report.pkl")
+                      logLocation = "Report.0.pkl")
 
     if monitor.isAlive():
         monitor.shutdown()
@@ -456,9 +456,9 @@ class RuntimeTest(unittest.TestCase):
         
 
         # At the end, copy the directory
-        if os.path.exists('tmpDir'):
-            shutil.rmtree('tmpDir')
-        shutil.copytree(self.testDir, 'tmpDir')
+        #if os.path.exists('tmpDir'):
+        #    shutil.rmtree('tmpDir')
+        #shutil.copytree(self.testDir, 'tmpDir')
 
         return
 
@@ -488,7 +488,7 @@ class RuntimeTest(unittest.TestCase):
         # Check the report
         taskDir = os.path.join(self.testDir, 'unpack/ReReco/job/WMTaskSpace')
         report = Report()
-        report.load(os.path.join(taskDir, 'Report.pkl'))
+        report.load(os.path.join(taskDir, 'Report.0.pkl'))
         cmsReport = report.data.cmsRun1
 
 
@@ -514,9 +514,9 @@ class RuntimeTest(unittest.TestCase):
 
 
         # At the end, copy the directory
-        if os.path.exists('tmpDir'):
-            shutil.rmtree('tmpDir')
-        shutil.copytree(self.testDir, 'tmpDir')
+        #if os.path.exists('tmpDir'):
+        #    shutil.rmtree('tmpDir')
+        #shutil.copytree(self.testDir, 'tmpDir')
 
         return
 

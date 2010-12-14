@@ -40,7 +40,7 @@ class WMRuntimeMonitor:
 
 
 
-    def initMonitor(self, task, job, args = {}):
+    def initMonitor(self, task, job, logPath, args = {}):
         return
 
 

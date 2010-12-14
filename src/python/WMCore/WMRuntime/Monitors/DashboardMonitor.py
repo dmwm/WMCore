@@ -21,6 +21,7 @@ from WMCore.WMRuntime.Monitors.WMRuntimeMonitor import WMRuntimeMonitor
 from WMCore.WMSpec.Steps.Executor               import getStepSpace
 from WMCore.WMSpec.WMStep                       import WMStepHelper
 from WMCore.Algorithms.SubprocessAlgos          import *
+from WMCore.FwkJobReport.Report                 import Report
 
 # Get the Dashboard information class
 from WMCore.WMRuntime.DashboardInterface        import DashboardInfo
@@ -110,19 +111,20 @@ class DashboardMonitor(WMRuntimeMonitor):
         WMRuntimeMonitor.__init__(self)
 
 
-    def initMonitor(self, task, job, args = {}):
+    def initMonitor(self, task, job, logPath, args = {}):
         """
         Handles the monitor initiation
 
         """
         print "In DashboardMonitor.initMonitor"
 
-        self.task = task
-        self.job  = job
+        self.task    = task
+        self.job     = job
+        self.logPath = logPath
 
         self.softTimeOut = args.get('softTimeOut', None)
         self.hardTimeOut = args.get('hardTimeOut', None)
-
+        
         destHost = args.get('destinationHost', None)
         destPort = args.get('destinationPort', None)
 
@@ -243,11 +245,29 @@ class DashboardMonitor(WMRuntimeMonitor):
             msg += "Timeout: %s\n" % self.softTimeOut
             msg += "Killing Job...\n"
             msg += "Process ID is: %s\n" % stepPID
+
+            # If possible, write a FWJR
+            report  = Report.Report()
+            try:
+                if os.path.isfile(self.logPath):
+                    # We should be able to find existant job report.
+                    # If not, we're in trouble
+                    report.load(self.logPath)
+                report.addError(stepName = self.currentStepName, exitCode = 99901,
+                                errorType = "JobTimeout", errorDetails = msg)
+                report.save(self.logPath)
+            except Exception, ex:
+                # Basically, we can't write a log report and we're hosed
+                # Kill anyway, and hope the logging file gets written out
+                pass
+
+            
             if stepPID == None or stepPID == os.getpid():
                 # Then we are supposed to kill things
                 # that don't exist in separate processes:
                 # Self-terminate
                 msg += "WARNING: No separate process.  Watchdog will attempt self-termination."
+                self.headCWD
                 logging.error(msg)
                 os.abort()
             if time.time() - self.startTime < self.hardTimeOut or not self.killFlag:

@@ -14,9 +14,9 @@ WMCore.WebTools.createDataSource = function (dataUrl, dataSchema, type) {
 	//var myDataSource = YAHOO.util.ScriptNodeDataSource(dataUrl);
     myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
     myDataSource.responseSchema = dataSchema;
-	
+				
 	//Always send accept type as text/json
-	YAHOO.util.Connect.initHeader("Accept", "text/json", true)
+	YAHOO.util.Connect.initHeader("Accept", "text/json", true);
 	
 	return myDataSource;
 };

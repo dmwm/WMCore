@@ -42,14 +42,17 @@
 <body class="yui-skin-sam">
 <h1>Request Overview </h1>
 <div class="markup">
-    <label for="filter">Filter by status:</label> <input type="text" id="statusFilter" value="">
+	<label for="filter">Filter by request:</label> <input type="text" id="requestFilter" value="">
+    <label for="filter"> status:</label> <input type="text" id="statusFilter" value="">
+	<label for="filter"> type:</label> <input type="text" id="typeFilter" value="">
     <div id="tbl"></div>
 </div>
 <p></p>
 <div id="overview"></div>
 <script>
 
-WMCore.WebTools.RequestManager.Overview.overviewTable("overview", "statusFilter",
+WMCore.WebTools.RequestManager.Overview.overviewTable("overview", 
+											["requestFilter", "statusFilter", "typeFilter"],
                                             WMCore.WebTools.RequestManager.Filter.addLocalFilter);
 
 </script>

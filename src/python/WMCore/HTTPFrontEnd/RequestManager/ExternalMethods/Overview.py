@@ -124,9 +124,8 @@ def _formatTable(requestInfo, gRequestInfo, cRequestInfo, qRequestInfo):
         for queueItem in qRequestInfo:
 
             if queueItem.has_key('queue_error'):
-                if item['global_queue'] == gItem['queue_error']:
-                    item['error'] = "Global Queue Down"
-
+                # the error message will be the same as cItem error
+                pass
             elif item['request_name'] == queueItem['request_name']:
                 #
                 for status in ['inQueue', 'inWMBS']:

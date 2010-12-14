@@ -380,7 +380,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
             if retcode > 0 :
                 msg = "Error while checking myproxy timeleft for \
-            % s from % s: % s since % s" % (proxy, self.myproxyServer,\
+            % s from % s: % s since % s" % (proxy, self.myproxyServer, \
                                  output, error)
                 raise Exception(msg)
 
@@ -504,7 +504,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
         # get the credential name for this retriever
         credServerName = sha1( \
-self.getSubjectFromCert('$HOME/.globus/hostcert.pem')\
+self.getSubjectFromCert( self.serverCert )\
              ).hexdigest()
 
         # compose the delegation or renewal commands 
@@ -512,8 +512,8 @@ self.getSubjectFromCert('$HOME/.globus/hostcert.pem')\
         cmdList = []
         cmdList.append('unset X509_USER_CERT X509_USER_KEY')
         cmdList.append('&& env')
-        cmdList.append('X509_USER_CERT=$HOME/.globus/hostcert.pem')
-        cmdList.append('X509_USER_KEY=$HOME/.globus/hostkey.pem')
+        cmdList.append('X509_USER_CERT=%s' % self.serverCert)
+        cmdList.append('X509_USER_KEY=%s' % self.serverKey)
 
         ## get a new delegated proxy
         proxyFilename = os.path.join(\

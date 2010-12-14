@@ -11,6 +11,8 @@ class Credential:
 
     def __init__( self, args ):
 
+        self.serverKey = args.get( "server_key", "$HOME/.globus/hostkey.pem")
+        self.serverCert = args.get( "server_cert", "$HOME/.globus/hostcert.pem")
         self.minTimeLeft = args.get( "min_time_left", 3600 )
         self.credServerPath = args.get( "cred_storage_path", '/tmp')
         self.userName = args.get( "userName", '')

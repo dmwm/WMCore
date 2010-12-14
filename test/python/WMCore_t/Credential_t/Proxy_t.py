@@ -33,12 +33,13 @@ class ProxyTest(unittest.TestCase):
 
         self.logger = logging.getLogger(logger_name)
         dict = {'logger': self.logger,
+                'server_key' : '/home/crab/.globus/hostkey.pem', 'server_cert' : '/home/crab/.globus/hostcert.pem',  
                 'vo': 'cms', 'myProxySvr': 'myproxy.cern.ch',
                 'proxyValidity' : '192:00', 'min_time_left' : 36000}
 
         self.proxyPath = None
         self.proxy = Proxy( dict )
-        self.serverKey = '/home/crab/.globus/hostcert.pem'
+        self.serverKey = dict['server_key']
 
     def tearDown(self):
         """

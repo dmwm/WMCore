@@ -5,9 +5,6 @@ _PhEDExInjectorPoller_
 Poll the DBSBuffer database and inject files as they are created.
 """
 
-
-
-
 import threading
 import logging
 
@@ -188,12 +185,15 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             if siteName in self.nodeNames:
                 location = siteName
             else:
-                if self.seMap.has_key("MSS"):
-                    if self.seMap["MSS"].has_key(siteName):
-                        location = self.seMap["MSS"][siteName]
-                elif self.seMap.has_key("Disk"):
-                    if self.seMap["Disk"].has_key(siteName):
-                        location = self.seMap["Disk"][siteName]
+                if self.seMap.has_key("Buffer") and \
+                       self.seMap["Buffer"].has_key(siteName):
+                    location = self.seMap["Buffer"][siteName]                    
+                elif self.seMap.has_key("MSS") and \
+                         self.seMap["MSS"].has_key(siteName):
+                    location = self.seMap["MSS"][siteName]
+                elif self.seMap.has_key("Disk") and \
+                         self.seMap["Disk"].has_key(siteName):
+                    location = self.seMap["Disk"][siteName]
 
             if location == None:
                 logging.error("Could not map SE %s to PhEDEx node." % \

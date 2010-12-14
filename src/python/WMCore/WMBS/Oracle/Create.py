@@ -454,7 +454,7 @@ class Create(CreateWMBSBase):
                couch_record VARCHAR(255),
                location     INTEGER,
                outcome      INTEGER       DEFAULT 0,
-               cache_dir    VARCHAR(255)  DEFAULT 'None',
+               cache_dir    VARCHAR(500)  DEFAULT 'None',
                fwjr_path    VARCHAR(500)
                ) %s""" % tablespaceTable
 

@@ -651,7 +651,7 @@ class BossAirAPI(WMConnectionBase):
 
 
 
-    def kill(self, jobs):
+    def kill(self, jobs, killMsg = None):
         """
         _kill_
         
@@ -689,7 +689,7 @@ class BossAirAPI(WMConnectionBase):
                 # Then we send them to the plugins
                 # Shoudl give you a lit of jobs to change and jobs to complete
                 pluginInst = self.plugins[plugin]
-                pluginInst.kill(jobs = jobsToKill[plugin])
+                pluginInst.kill(jobs = jobsToKill[plugin], killMsg = killMsg)
                 self._complete(jobs = jobsToKill[plugin])
 
 

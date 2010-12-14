@@ -15,14 +15,14 @@ import threading
 import subprocess
 import multiprocessing
 
+import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
-from WMCore.DAOFactory import DAOFactory
-
-from WMCore.WMInit import getWMBASE
-
+from WMCore.DAOFactory                 import DAOFactory
+from WMCore.WMInit                     import getWMBASE
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
+from WMCore.FwkJobReport.Report        import Report
 
-from WMCore.FwkJobReport.Report import Report
+
 
 
 def submitWorker(input, results):
@@ -356,11 +356,47 @@ class CondorPlugin(BasePlugin):
         return runningList, changeList, completeList
 
 
+    def complete(self, jobs):
+        """
+        Do any completion work required
+
+        In this case, look for a returned logfile
+        """
+
+        for job in jobs:
+            if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
+                # Then we can't do anything
+                continue
+            reportName = os.path.join(job['cache_dir'], 'Report.%i.pkl' % job['retry_count'])
+            if os.path.isfile(reportName) and os.path.getsize(reportName) > 0:
+                # Then we have a real report.
+                # Do nothing
+                continue
+            if os.path.isdir(reportName):
+                # Then something weird has happened.
+                # File error, do nothing
+                logging.error("Went to check on error report for job %i.  Found a directory instead.\n" % job['wmbs_id'])
+                logging.error("Ignoring this, but this is very strange.\n")
+
+            # If we're still here, we must not have a real error report
+            logOutput = 'Could not find jobReport'
+            logPath = os.path.join(job['cache_dir'], 'condor.log')
+            if os.path.isfile(logPath):
+                logTail = BasicAlgos.tail(errLog, 50)
+                logOutput += 'Adding end of condor.log to error message:\n'
+                logOutput += logTail
+            condorReport = Report()
+            condorReport.addError("NoJobReport", 61303, "NoJobReport", logOutput)
+
+
+        return
 
 
 
 
-    def kill(self, jobs, info = None):
+
+
+    def kill(self, jobs, killMsg = None, info = None):
         """
         Kill a list of jobs based on the WMBS job names
 
@@ -373,6 +409,20 @@ class CondorPlugin(BasePlugin):
             proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                     stdout = subprocess.PIPE, shell = True)
             out, err = proc.communicate()
+            
+            if killMsg and job.get('cache_dir', None) and job.get('retry_count', None) != None:
+                # Try to save an error report as the jobFWJR
+                condorErrorReport = Report()
+                condorErrorReport.addError("JobKilled", 61302, "JobKilled", killMsg)
+                if os.path.isdir(job['cache_dir']):
+                    reportName = os.path.join(job['cache_dir'],
+                                              'Report.%i.pkl' % job['retry_count'])
+                    if os.path.exists(reportName) and os.path.getsize(reportName) > 0:
+                        # Then there's already a report there.  Ignore this.
+                        logging.debug("Not writing report due to pre-existing report.")
+                        continue
+                    else:
+                        condorErrorReport.save(filename = reportName)
 
         return
 

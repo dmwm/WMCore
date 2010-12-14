@@ -56,7 +56,7 @@ dbsBlockTimeout = 21600
 # Job retry information.  This includes the number of times a job will tried and
 # how long it will sit in cool off.
 maxJobRetries = 3
-retryAlgo = "RetryAlgo"
+retryAlgo = "DefaultRetryAlgo"
 retryAlgoParams = {"create": 3600, "submit": 3600, "job": 3600}
 
 # The amount of time to wait after a workflow has completed before archiving it.

@@ -1,0 +1,37 @@
+#!/bin/env python
+
+
+"""
+_ExponentialAlgo_
+
+It keeps getting bigger and bigger
+"""
+
+from math import pow
+
+from WMComponent.RetryManager.PlugIns.RetryAlgoBase import RetryAlgoBase
+
+
+class ExponentialAlgo(RetryAlgoBase):
+    """
+    _ExponentialAlgo_
+
+    Delay more each retry by some exponential factor
+    """
+
+
+    def isReady(self, job, jobType):
+        """
+        Actual function that does the work
+
+        """
+
+        # Get the cooloff time
+        baseTimeout = self.config.RetryManager.coolOffTime.get(jobType.lower(), 10)
+        cooloffTime = pow(baseTimeout, job['retry_count'])
+                
+        currentTime = self.timestamp()
+        if currentTime - job['state_time'] > cooloffTime:
+            return True
+        else:
+            return False

@@ -14,11 +14,8 @@ import time
 import socket
 import os.path
 import logging
-import threading
 import subprocess
 
-
-from WMCore.DAOFactory import DAOFactory
 
 from WMCore.WMInit import getWMBASE
 
@@ -58,21 +55,20 @@ class LsfPlugin(BasePlugin):
 
         BasePlugin.__init__(self, config)
 
-        myThread = threading.currentThread()        
-        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-
-        self.packageDir = None
-        self.unpacker   = os.path.join(getWMBASE(),
-                                       'src/python/WMCore/WMRuntime/Unpacker.py')
-        self.agent      = config.Agent.agentName
-        self.sandbox    = None
-        self.scriptFile = None
+        self.packageDir  = None
+        self.unpacker    = os.path.join(getWMBASE(),
+                                        'src/python/WMCore/WMRuntime/Unpacker.py')
+        self.agent       = config.Agent.agentName
+        self.sandbox     = None
+        self.scriptFile  = None
+        self.queue       = None
+        self.resourceReq = None
+        self.jobGroup    = None
 
         return
 
 
-    def submit(self, jobs, info):
+    def submit(self, jobs, info = None):
         """
         _submit_
 
@@ -84,7 +80,7 @@ class LsfPlugin(BasePlugin):
         self.queue = self.config.JobSubmitter.LsfPluginQueue
         self.resourceReq =  getattr(self.config.JobSubmitter, 'LsfPluginResourceReq', None)
         self.jobGroup = self.config.JobSubmitter.LsfPluginJobGroup
-
+        self.batchOutput = getattr(self.config.JobSubmitter, 'LsfPluginBatchOutput', None)
 
         successfulJobs = []
         failedJobs     = []
@@ -143,8 +139,12 @@ class LsfPlugin(BasePlugin):
 
                     command += ' -g %s' % self.jobGroup
                     command += ' -J %s' % "WMAgentJob"
-                    command += ' -oo /dev/null'
-                    #command += ' -oo /afs/cern.ch/user/h/hufnagel/scratch0/logs'
+
+                    if self.batchOutput == None:
+                        command += ' -oo /dev/null'
+                    else:
+                        command += ' -oo %s' % self.batchOutput
+
                     command += ' < %s' % submitScriptFile
 
                     logging.info("Submitting LSF job: %s" % command)
@@ -152,7 +152,7 @@ class LsfPlugin(BasePlugin):
                     p = subprocess.Popen(command, shell = True,
                                          stdout = subprocess.PIPE,
                                          stderr = subprocess.STDOUT)
-                    stdout, stderr = p.communicate()
+                    stdout = p.communicate()[0]
                     returncode = p.returncode
 
                     if returncode == 0:
@@ -164,9 +164,9 @@ class LsfPlugin(BasePlugin):
                             successfulJobs.append(job)
                             continue
 
-                    condorErrorReport = Report()
-                    condorErrorReport.addError("JobSubmit", 61202, "CondorError", errorMsg)
-                    job['fwjr'] = condorErrorReport
+                    lsfErrorReport = Report()
+                    lsfErrorReport.addError("JobSubmit", 61202, "LsfError", stdout)
+                    job['fwjr'] = lsfErrorReport
                     failedJobs.append(job)
                     
         # We must return a list of jobs successfully submitted,
@@ -199,7 +199,7 @@ class LsfPlugin(BasePlugin):
         p = subprocess.Popen(command, shell = True,
                              stdout = subprocess.PIPE,
                              stderr = subprocess.PIPE)
-        stdout, stderr = p.communicate()
+        stdout = p.communicate()[0]
         returncode = p.returncode
 
         if returncode == 0:
@@ -253,7 +253,7 @@ class LsfPlugin(BasePlugin):
             p = subprocess.Popen(command, shell = True,
                                  stdout = subprocess.PIPE,
                                  stderr = subprocess.STDOUT)
-            stdout, stderr = p.communicate()
+            p.communicate()
 
         return
 
@@ -272,12 +272,12 @@ class LsfPlugin(BasePlugin):
         hostname = socket.getfqdn()
 
         # files needed to copied from head node to WN
-        jobInputFiles =[ job['sandbox'],
-                         "%s/JobPackage.pkl" % job['packageDir'],
-                         self.unpacker,
-                         self.scriptFile ]
+        jobInputFiles = [ job['sandbox'],
+                          "%s/JobPackage.pkl" % job['packageDir'],
+                          self.unpacker,
+                          self.scriptFile ]
         for filename in jobInputFiles:
-            script.append("rfcp %s:%s .\n" % (hostname,filename))
+            script.append("rfcp %s:%s .\n" % (hostname, filename))
 
         script.append("bash %s %s %s\n" % (os.path.basename(self.scriptFile),
                                            os.path.basename(job['sandbox']),

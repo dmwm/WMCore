@@ -7,6 +7,7 @@ This cleverly named object is the thread that handles the monitoring of individu
 """
 
 import os
+import os.path
 import threading
 import logging
 import traceback
@@ -34,7 +35,7 @@ class Watchdog(threading.Thread):
 
 
 
-    def __init__(self, config = None):
+    def __init__(self, logPath = None, config = None):
         threading.Thread.__init__(self)
         self.doMonitoring = True
         self._Finished    = threading.Event()
@@ -45,8 +46,12 @@ class Watchdog(threading.Thread):
         self._Interval    = 120.0
         self._Monitors    = []
 
-
-        self.factory    = WMFactory(self.__class__.__name__, "WMCore.WMRuntime.Monitors")
+        # Right now we join this, because we don't know
+        # Where we'll be when we need this.
+        self.logPath      = os.path.join(os.getcwd(), logPath)
+        
+        self.factory      = WMFactory(self.__class__.__name__,
+                                      "WMCore.WMRuntime.Monitors")
 
 
     def setupMonitors(self, task, wmbsJob):
@@ -73,7 +78,9 @@ class Watchdog(threading.Thread):
                 #This should be a config section
                 monitorArgs = getattr(task.data.watchdog, monitor)
                 args = monitorArgs.dictionary_()
-            mon.initMonitor(task = task, job = wmbsJob, args = args)
+            # Actually initialize the monitor variables
+            mon.initMonitor(task = task, job = wmbsJob,
+                            logPath = self.logPath, args = args)
             self._Monitors.append(mon)
 
         return

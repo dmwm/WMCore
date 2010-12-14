@@ -333,14 +333,14 @@ def setupLogging(logDir):
     return
 
 
-def setupMonitoring():
+def setupMonitoring(logPath):
     """
     Setup the basics of the watchdog monitoring.
     Attach it to a thread.
 
     """
     try:
-        monitor = Watchdog()
+        monitor = Watchdog(logPath = logPath)
         myThread = threading.currentThread
         myThread.watchdogMonitor = monitor
         return monitor

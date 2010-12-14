@@ -104,7 +104,7 @@ class TestMonitor(WMRuntimeMonitor):
         WMRuntimeMonitor.__init__(self)
 
 
-    def initMonitor(self, task, job, args = {}):
+    def initMonitor(self, task, job, logPath, args = {}):
         """
         Handles the monitor initiation
 

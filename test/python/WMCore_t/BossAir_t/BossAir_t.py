@@ -132,6 +132,10 @@ class BossAirTest(unittest.TestCase):
         resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
                                         maxSlots = 10000)
 
+        # Create user
+        newuser = self.daoFactory(classname = "Users.New")
+        newuser.execute(dn = "moron")
+
 
         # We actually need the user name
         self.user = getpass.getuser()
@@ -387,6 +391,7 @@ class BossAirTest(unittest.TestCase):
         for i in range(nJobs):
             testJob = Job(name = '%s-%i' % (nameStr, i))
             testJob['location'] = location
+            testJob['user']     = 'moron'
             testJob.create(testJobGroup)
             jobList.append(testJob)
 
@@ -430,7 +435,6 @@ class BossAirTest(unittest.TestCase):
         runningJobs = baAPI._listRunJobs()
 
         self.assertEqual(len(runningJobs), nJobs)
-
 
         newJobs = baAPI._loadByStatus(status = 'New')
         self.assertEqual(len(newJobs), nJobs)

@@ -40,6 +40,7 @@ acdcDBName = "wmagent_acdc"
 # for this agent.
 userEmail = "OP EMAIL"
 agentTeams = "team1,team2,cmsdataops"
+agentName = "WMAgentCommissioning"
 
 # List of BossAir plugins that this agent will use.
 bossAirPlugins = ["CondorPlugin"]
@@ -69,7 +70,7 @@ config.section_("Agent")
 config.Agent.hostName = serverHostName
 config.Agent.contact = userEmail
 config.Agent.teamName = agentTeams
-config.Agent.agentName = "WMAgentCommissioning"
+config.Agent.agentName = agentName
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 config.Agent.useHeartbeat = False

@@ -41,14 +41,18 @@ configCacheDBName = "wmagent_configcache"
 jobDumpDBName = "wmagent_jobdump"
 reqMgrDBName = "reqmgrdb"
 
+# Agent name and team name.
+agentName = "WMAgentCommissioning"
+teamName = "cmsdataops"
+
 # Nothing after this point should need to be changed.
 config = Configuration()
 
 config.section_("Agent")
 config.Agent.hostName = serverHostName
 config.Agent.contact = userEmail
-config.Agent.teamName = "cmsdataops"
-config.Agent.agentName = "WMAgentCommissioning"
+config.Agent.teamName = teamName
+config.Agent.agentName = agentName
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 config.Agent.useHeartbeat = False
@@ -58,7 +62,7 @@ config.General.workDir = workDirectory
 
 config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl
-config.CoreDatabase.dbsock = databaseSocket
+config.CoreDatabase.socket = databaseSocket
 
 config.webapp_("ReqMgr")
 reqMgrUrl = "http://%s:%s" % (serverHostName, reqMgrPort)

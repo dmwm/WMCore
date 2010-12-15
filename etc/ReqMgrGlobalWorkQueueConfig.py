@@ -140,6 +140,7 @@ workqueue.object = 'WMCore.WebTools.RESTApi'
 workqueue.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/')
 workqueue.section_('model')
 workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
+workqueue.level = config.WorkQueueManager.level
 workqueue.section_('formatter')
 workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
 workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
@@ -149,10 +150,8 @@ workqueue.queueParams.setdefault('CacheDir', config.General.workDir + '/WorkQueu
 workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (serverHostName,
                                                                   config.WorkQueueService.Webtools.port,
                                                                   'workqueue'))
-
 workqueuemonitor = active.section_('workqueuemonitor')
 workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
 workqueuemonitor.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/WorkQueue')
 workqueuemonitor.javascript = os.path.join(getWMBASE(), 'src/javascript/')
 workqueuemonitor.html = os.path.join(getWMBASE(), 'src/html/')
-workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})

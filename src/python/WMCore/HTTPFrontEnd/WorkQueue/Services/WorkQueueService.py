@@ -8,8 +8,8 @@ from WMCore.Wrappers import JsonWrapper
 from WMCore.HTTPFrontEnd.WorkQueue.Services.ServiceInterface import ServiceInterface
 from cherrypy import HTTPError
 
-#TODO: needs to point to the global workqueue if it can make it for the both
-from WMCore.WorkQueue.WorkQueue import WorkQueue
+from WMCore.WorkQueue.WorkQueue import globalQueue, localQueue
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueError
 
 from functools import partial
 from os import path
@@ -50,9 +50,22 @@ class WorkQueueService(ServiceInterface):
         if not hasattr(self.model.config, 'queueParams'):
             self.model.config.queueParams = {}
 
+
         # we don't populate wmbs - WorkQueueManager does (in the LocalQueue)
+        # in getWork (getWork REST call shouldn't be called
+        # to the localQueue Service since we can't force that added the trick here)
         self.model.config.queueParams['PopulateFilesets'] = False
-        self.wq = WorkQueue(logger=self.model, dbi=self.model.dbi, **self.model.config.queueParams)
+
+        if self.model.config.level == "GlobalQueue":
+            self.wq = globalQueue(logger=self.model, dbi=self.model.dbi,
+                                  **self.model.config.queueParams)
+        elif self.model.config.level == "LocalQueue":
+            self.wq = localQueue(logger=self.model, dbi=self.model.dbi,
+                                  **self.model.config.queueParams)
+        else:
+            raise WorkQueueError("%s workqueue level is unknown" %
+                                 self.model.config.level)
+
 
         self.model.addMethod('POST', 'getwork', partial(wrapGetWork, self.wq),
                              args=["siteJobs", "pullingQueueUrl", "team"])

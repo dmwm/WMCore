@@ -209,7 +209,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                         closedBlocks.append(blockName)
             else:
                 logging.error("Error injecting data %s: %s" % \
-                              (uninjectedFiles[siteName], injectRes["error"]))
+                              (migratedBlocks[siteName], injectRes["error"]))
 
         for closedBlock in closedBlocks:
             logging.debug("Closing block %s" % closedBlock)

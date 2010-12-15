@@ -220,15 +220,11 @@ class BossAirTest(unittest.TestCase):
         config.JobStateMachine.couchDBName     = "mnorman_test"
 
 
-        # JobStatus
-        config.component_('JobStatus')
-        config.JobStatus.stateTimeouts  = {'Pending': 20, 'Running': 86400}
-        config.JobStatus.pollInterval   = 1
-
-        # JobStatusLite (LEGACY)
+        # JobStatusLite
         config.component_('JobStatusLite')
         config.JobStatusLite.componentDir = os.path.join(os.getcwd(), 'Components')
-
+        config.JobStatusLite.stateTimeouts = {'Pending': 20, 'Running': 86400}
+        config.JobStatusLite.pollInterval = 1
 
 
         return config
@@ -833,7 +829,7 @@ class BossAirTest(unittest.TestCase):
         # So at the end of several polling cycles, the jobs should all
         # be done, but be in the failed status (they timed out)
 
-        time.sleep(10)
+        time.sleep(20)
 
 
         myThread.workerThreadManager.terminateWorkers()

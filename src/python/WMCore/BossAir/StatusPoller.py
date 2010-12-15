@@ -46,7 +46,7 @@ class StatusPoller(BaseWorkerThread):
         # With no timeouts, nothing ever happens
         # Otherwise we expect a dictionary with the keys representing
         # the states and the values the timeouts.
-        self.timeouts = getattr(config.JobStatus, 'stateTimeouts', {})
+        self.timeouts = getattr(config.JobStatusLite, 'stateTimeouts', {})
 
         return
 

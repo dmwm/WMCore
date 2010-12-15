@@ -64,10 +64,10 @@ class JobStatusLite(Harness):
         #                    )
 
         logging.info("Setting poll interval to %s seconds" \
-                      %str(self.config.JobStatus.pollInterval) )
+                      %str(self.config.JobStatusLite.pollInterval) )
         myThread.workerThreadManager.addWorker( \
                               StatusPoller(self.config), \
-                              self.config.JobStatus.pollInterval \
+                              self.config.JobStatusLite.pollInterval \
                             )
 
         return

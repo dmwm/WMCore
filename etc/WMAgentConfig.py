@@ -92,10 +92,6 @@ config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
 config.BossAir.pluginNames = bossAirPlugins
 config.BossAir.nCondorProcesses = 1
 
-config.section_("JobStatus")
-config.JobStatus.stateTimeouts = {}
-config.JobStatus.pollInterval = 10
-
 config.section_("CoreDatabase")
 config.CoreDatabase.socket = databaseSocket
 config.CoreDatabase.connectUrl = databaseUrl
@@ -185,6 +181,7 @@ config.JobStatusLite.namespace = "WMComponent.JobStatusLite.JobStatusLite"
 config.JobStatusLite.componentDir  = config.General.workDir + "/JobStatusLite"
 config.JobStatusLite.logLevel = "DEBUG"
 config.JobStatusLite.pollInterval = 10
+config.JobStatusLite.stateTimeouts = {}
 
 config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"

@@ -6,6 +6,8 @@ Query the database to determine how many jobs are running so that we can
 determine whether or not to task for more work.  
 """
 
+import copy
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ListThresholdsForCreate(DBFormatter):
@@ -69,6 +71,8 @@ class ListThresholdsForCreate(DBFormatter):
         # Bin jobs
         jobBin = {}
         for result in unassignedResults:
+            if not results.has_key(result["site_name"]):
+                results[result["site_name"]] = {"total_slots": result["job_slots"], "running_jobs": 0}
             if not jobBin.has_key(result["job"]):
                 jobBin[result["job"]] = []
 
@@ -82,19 +86,15 @@ class ListThresholdsForCreate(DBFormatter):
                     break
 
             if foundWhitelist:
-                for site in jobBin[jobID]:
+                for site in copy.copy(jobBin[jobID]):
                     if site["valid"] != 1:
                         jobBin[jobID].remove(site)
-        
+
         for jobID in jobBin.keys():
             for site in jobBin[jobID]:
-                if not results.has_key(site["site_name"]):
-                    results[site["site_name"]] = {"total_slots": 0, "running_jobs": 0}
-
                 if site["job"] != None:
                     results[site["site_name"]]["running_jobs"] += 1
-                results[site["site_name"]]["total_slots"] = site["job_slots"]
-
+                    
         return results
     
     def formatTable(self, formattedResults):

@@ -21,7 +21,8 @@ from WMCore.WMRuntime.Monitors.WMRuntimeMonitor import WMRuntimeMonitor
 from WMCore.WMSpec.Steps.Executor               import getStepSpace
 from WMCore.WMSpec.WMStep                       import WMStepHelper
 from WMCore.Algorithms.SubprocessAlgos          import *
-from WMCore.FwkJobReport.Report                 import Report
+
+import WMCore.FwkJobReport.Report as Report
 
 # Get the Dashboard information class
 from WMCore.WMRuntime.DashboardInterface        import DashboardInfo
@@ -267,7 +268,6 @@ class DashboardMonitor(WMRuntimeMonitor):
                 # that don't exist in separate processes:
                 # Self-terminate
                 msg += "WARNING: No separate process.  Watchdog will attempt self-termination."
-                self.headCWD
                 logging.error(msg)
                 os.abort()
             if time.time() - self.startTime < self.hardTimeOut or not self.killFlag:

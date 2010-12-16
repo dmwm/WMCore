@@ -689,8 +689,30 @@ class BossAirAPI(WMConnectionBase):
                 # Then we send them to the plugins
                 # Shoudl give you a lit of jobs to change and jobs to complete
                 pluginInst = self.plugins[plugin]
-                pluginInst.kill(jobs = jobsToKill[plugin], killMsg = killMsg)
+                pluginInst.kill(jobs = jobsToKill[plugin])
                 self._complete(jobs = jobsToKill[plugin])
+
+        if killMsg:
+            for job in jobs:
+                if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
+                    continue
+                # Try to save an error report as the jobFWJR
+                if not os.path.isdir(job['cache_dir']):
+                    # Then we have a bad cache directory
+                    logging.error("Could not write a kill FWJR due to non-existant cache_dir for job %i\n" % job['id'])
+                    logging.debug("cache_dir: %s\n" % job['cache_dir'])
+                    continue
+                condorErrorReport = Report()
+                condorErrorReport.addError("JobKilled", 61302, "JobKilled", killMsg)
+                reportName = os.path.join(job['cache_dir'],
+                                          'Report.%i.pkl' % job['retry_count'])
+                if os.path.exists(reportName) and os.path.getsize(reportName) > 0:
+                    # Then there's already a report there.  Ignore this.
+                    logging.debug("Not writing report due to pre-existing report for job %i.\n" % job['id'])
+                    logging.debug("ReportPath: %s\n" % reportName)
+                    continue
+                else:
+                    condorErrorReport.save(filename = reportName)
 
 
         return

@@ -75,7 +75,7 @@ class BasePlugin:
         return
 
 
-    def kill(self, jobs, killMsg = None):
+    def kill(self, jobs):
         """
         _kill_
         

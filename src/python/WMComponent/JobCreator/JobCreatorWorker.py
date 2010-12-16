@@ -375,15 +375,18 @@ class JobCreatorWorker:
 
         Actually do the mechanics of saving the job to a pickle file
         """
+        priority = None
 
         if wmTask:
             # If we managed to load the task,
             # so the url should be valid
             job['spec']    = workflow.spec
             job['task']    = wmTask.getPathName()
+            priority       = wmTask.getTaskPriority()
             if job.get('sandbox', None) == None:
                 job['sandbox'] = wmTask.data.input.sandbox
 
+        job['priority'] = priority
         job['counter']  = jobNumber
         cacheDir = job.getCache()
         job['cache_dir'] = cacheDir

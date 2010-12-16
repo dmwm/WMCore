@@ -302,6 +302,7 @@ class JobSubmitterTest(unittest.TestCase):
             testJob['mask']['FirstEvent'] = 101
             testJob["siteBlacklist"] = bl
             testJob["siteWhitelist"] = wl
+            testJob['priority']      = 101
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)
             testJob.create(jobGroup)
@@ -415,11 +416,7 @@ class JobSubmitterTest(unittest.TestCase):
             # Check each key
             index = int(job.get('+WMAgent_JobID', 0))
             self.assertTrue(index != 0)
-            #self.assertTrue('+WMAgent_JobName' in job.keys())
-            # TODO: Think of a better way to do this
-            #self.assertEqual(job.get('initialdir', None),
-            #                 os.path.join(cacheDir, 'Job_%i' % index))
-            #self.assertEqual(job.get('globusscheduler', None), self.ceName)
+
             argValue = index -1
             if indexFlag:
                 batch    = index - 1
@@ -436,6 +433,9 @@ class JobSubmitterTest(unittest.TestCase):
 
             if site:
                 self.assertEqual(job.get('globusscheduler', None), site)
+
+            # Check the priority
+            self.assertEqual(job.get('priority', None), '101')
 
         # Now handle the head
         self.assertEqual(head.get('should_transfer_files', None), 'YES')
@@ -523,17 +523,14 @@ class JobSubmitterTest(unittest.TestCase):
         self.checkJDL(config = config, cacheDir = cacheDir,
                       submitFile = submitFile, site = 'T2_US_UCSD')
 
-        if os.path.exists('CacheDir'):
-            shutil.rmtree('CacheDir')
-        shutil.copytree(self.testDir, 'CacheDir')
+        #if os.path.exists('CacheDir'):
+        #    shutil.rmtree('CacheDir')
+        #shutil.copytree(self.testDir, 'CacheDir')
 
 
         # Check to make sure we have running jobs
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, nJobs * nSubs)
-
-        
-
 
         # Now clean-up
         command = ['condor_rm', self.user]

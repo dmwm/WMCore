@@ -51,6 +51,12 @@ def submitWorker(input, results):
             crashMessage += "Assuming this is a graceful break attempt.\n"
             logging.error(crashMessage)
             break
+        except Exception, ex:
+            msg =  "Hit unidentified exception getting work\n"
+            msg += str(ex)
+            msg += "Assuming everything's totally hosed.  Killing process.\n"
+            logging.error(msg)
+            break
 
         if work == 'STOP':
             # Put the brakes on
@@ -491,10 +497,22 @@ class CondorPlugin(BasePlugin):
                 continue
             jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
 
-            # Transfer the output files into new names
+            # Transfer the output files
             jdl.append("transfer_output_files = Report.%i.pkl\n" % (job["retry_count"]))
-            #jdl.append("transfer_output_remaps = \"Report.pkl = Report.%i.pkl\"\n" \
-            #           % (job["retry_count"]))
+
+            # Add priority if necessary
+            if job.get('priority', None) != None:
+                try:
+                    prio = int(job['priority'])
+                    jdl.append("priority = %i\n" % prio)
+                except ValueError:
+                    logging.error("Priority for job %i not castable to an int\n" % job['id'])
+                    logging.error("Not setting priority")
+                    logging.debug("Priority: %s" % job['priority'])
+                except Exception, ex:
+                    logging.error("Got unhandled exception while setting priority for job %i\n" % job['id'])
+                    logging.error(str(ex))
+                    logging.error("Not setting priority")
 
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
         

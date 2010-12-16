@@ -35,7 +35,7 @@ class FailInput(DBFormatter):
     completeDelete = """DELETE FROM wmbs_sub_files_complete
                       WHERE subscription = :subid AND file = :fileid"""    
 
-    sql = """INSERT INTO wmbs_sub_files_failed (file, subscription)
+    sql = """INSERT IGNORE INTO wmbs_sub_files_failed (file, subscription)
                VALUES (:fileid, :subid)"""
 
     def execute(self, id, conn = None, transaction = False):

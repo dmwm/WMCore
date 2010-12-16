@@ -35,4 +35,7 @@ class FailInput(MySQLFailInput):
                       WHERE subscription = :subid AND fileid = :fileid"""    
 
     sql = """INSERT INTO wmbs_sub_files_failed (fileid, subscription)
-               VALUES (:fileid, :subid)"""
+               SELECT :fileid, :subid FROM dual
+               WHERE NOT EXISTS (SELECT fileid FROM wmbs_sub_files_failed wff2
+                                   WHERE wff2.fileid = :fileid
+                                   AND wff2.subscription = :subid)"""

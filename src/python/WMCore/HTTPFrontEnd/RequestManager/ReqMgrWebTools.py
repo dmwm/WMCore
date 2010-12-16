@@ -29,7 +29,7 @@ def parseSite(kw, name):
 
 def allSoftwareVersions():
     result = []
-    f = urllib.urlopen("https://cmstags.cern.ch/cgi-bin/CmsTC/ReleasesXML")
+    f = urllib.urlopen("https://cmstags.cern.ch/cgi-bin/CmsTC/ReleasesXML?anytype=1")
     for line in f:
         for tok in line.split():
             if tok.startswith("label="):

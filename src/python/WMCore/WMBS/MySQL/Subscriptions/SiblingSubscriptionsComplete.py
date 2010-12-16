@@ -19,7 +19,7 @@ class SiblingSubscriptionsComplete(DBFormatter):
                     FROM wmbs_sub_files_available
                INNER JOIN wmbs_file_details ON
                  wmbs_sub_files_available.file = wmbs_file_details.id
-               LEFT OUTER JOIN
+               INNER JOIN
                  (SELECT wmbs_sub_files_complete.file AS file, COUNT(file) AS complete_files
                     FROM wmbs_sub_files_complete
                     INNER JOIN wmbs_subscription ON
@@ -31,7 +31,7 @@ class SiblingSubscriptionsComplete(DBFormatter):
                  wmbs_file_details.id = wmbs_file_location.file
                INNER JOIN wmbs_location ON
                  wmbs_file_location.location = wmbs_location.id
-             WHERE COALESCE(complete_files.complete_files, 0) =
+             WHERE complete_files.complete_files =
                (SELECT COUNT(*) FROM wmbs_subscription
                 WHERE wmbs_subscription.id != :subscription AND
                       wmbs_subscription.fileset = :fileset)"""

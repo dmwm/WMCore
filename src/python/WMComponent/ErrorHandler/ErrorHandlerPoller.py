@@ -83,10 +83,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
 	# Retries < max retry count
         for ajob in jobs:
-
-            
-
-            
             # Retries < max retry count
             if ajob['retry_count'] < self.maxRetries:
                 cooloffJobs.append(ajob)
@@ -107,6 +103,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
         # Remove all the files in the exhausted jobs.
         for job in exhaustJobs:
             job.failInputFiles()
+
+        return exhaustJobs
 
 
     def handleACDC(self, jobList):
@@ -184,13 +182,15 @@ class ErrorHandlerPoller(BaseWorkerThread):
         fullList.extend(submitList)
         fullList.extend(createList)
 
-        self.processRetries(createList, 'create')
-        self.processRetries(submitList, 'submit')
-        self.processRetries(jobList, 'job')
+        exhaustList = []
+
+        exhaustList.extend(self.processRetries(createList, 'create'))
+        exhaustList.extend(self.processRetries(submitList, 'submit'))
+        exhaustList.extend(self.processRetries(jobList, 'job'))
 
         # Now do ACDC
         try:
-            self.handleACDC(jobList = fullList)
+            self.handleACDC(jobList = exhaustList)
         except Exception, ex:
             logging.error("ACDC threw an exception: %s" % ex)
             logging.error(str(traceback.format_exc()))

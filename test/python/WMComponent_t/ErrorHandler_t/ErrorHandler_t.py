@@ -53,6 +53,7 @@ class ErrorHandlerTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
                                 useDefault = False)
         self.testInit.setupCouch("errorhandler_t", "GroupUser", "ACDC")
+        #self.testInit.setupCouch("errorhandler_t", "JobDump")
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -101,7 +102,7 @@ class ErrorHandlerTest(unittest.TestCase):
         # with messages per pool.
         config.ErrorHandler.maxThreads = 30
         # maximum number of retries we want for job
-        config.ErrorHandler.maxRetries = 10
+        config.ErrorHandler.maxRetries = 5
         # The poll interval at which to look for failed jobs
         config.ErrorHandler.pollInterval = 60
 
@@ -240,6 +241,18 @@ class ErrorHandlerTest(unittest.TestCase):
         idList = self.getJobs.execute(state = 'CreateCooloff')
         self.assertEqual(len(idList), self.nJobs)
 
+        changer.propagate(testJobGroup.jobs, 'new', 'CreateCooloff')
+        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
+
+        # Now exhaust them
+        for job in testJobGroup.jobs:
+            job['retry_count'] = 6
+            job.save()
+        testErrorHandler.algorithm(None)
+
+        idList = self.getJobs.execute(state = 'Exhausted')
+        self.assertEqual(len(idList), self.nJobs)
+
         # Check that it showed up in ACDC
         collList = self.dataCS.listDataCollections()
 
@@ -267,6 +280,8 @@ class ErrorHandlerTest(unittest.TestCase):
         
         Mimics creation of component and test jobs failed in submit stage.
         """
+
+        #return
 
         workloadName = 'TestWorkload'
 
@@ -303,6 +318,7 @@ class ErrorHandlerTest(unittest.TestCase):
         Mimics creation of component and test jobs failed in execute stage.
         """
 
+        #return
 
         workloadName = 'TestWorkload'
 
@@ -342,6 +358,7 @@ class ErrorHandlerTest(unittest.TestCase):
         Test that the system can exhaust jobs correctly
         """
 
+        #return
 
         workloadName = 'TestWorkload'
 

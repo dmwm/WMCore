@@ -23,8 +23,24 @@ fi
 SANDBOX=$1
 INDEX=$2
 echo "WMAgent arguments validated..."
-# debugging, I guess
-ls
+
+### source the CMSSW stuff using either OSG or LCG style entry env. variables
+###    (incantations per oli's instructions)
+#   LCG style --
+if [ "x" != "x$VO_CMS_SW_DIR" ]
+then
+	. $VO_CMS_SW_DIR/cmsset_default.sh
+
+#   OSG style --
+elif [ "x" != "x$OSG_APP" ]
+then
+	. $OSG_APP/cmssoft/cms/cmsset_default.sh CMSSW_3_3_2
+else
+	echo "WMAgent Error: neither OSG_APP nor VO_CMS_SW_DIR environment variables were set" >&2
+	echo "WMAgent Error: Because of this, we can't load CMSSW. Not good." >&2
+	exit 2
+fi
+echo "WMAgent thinks it found the correct CMSSW setup script"
 
 
 # 2 steps for python2.6 bootstrapping -- first, see if it's there already
@@ -44,25 +60,6 @@ then
 else
 	echo "WMAgent found python2.6 without having to try"
 fi
-
-
-### source the CMSSW stuff using either OSG or LCG style entry env. variables
-###    (incantations per oli's instructions)
-#   LCG style --
-if [ "x" != "x$VO_CMS_SW_DIR" ]
-then
-	. $VO_CMS_SW_DIR/cmsset_default.sh
-
-#   OSG style --
-elif [ "x" != "x$OSG_APP" ]
-then
-	. $OSG_APP/cmssoft/cms/cmsset_default.sh CMSSW_3_3_2
-else
-	echo "WMAgent Error: neither OSG_APP nor VO_CMS_SW_DIR environment variables were set" >&2
-	echo "WMAgent Error: Because of this, we can't load CMSSW. Not good." >&2
-	exit 2
-fi
-echo "WMAgent thinks it found the correct CMSSW setup script"
 
 # Should be ready to unpack and run this
 echo "WMAgent is unpacking the job..."

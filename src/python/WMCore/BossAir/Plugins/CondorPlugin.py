@@ -399,7 +399,7 @@ class CondorPlugin(BasePlugin):
 
 
 
-    def kill(self, jobs, killMsg = None, info = None):
+    def kill(self, jobs, info = None):
         """
         Kill a list of jobs based on the WMBS job names
 
@@ -413,20 +413,6 @@ class CondorPlugin(BasePlugin):
                                     stdout = subprocess.PIPE, shell = True)
             out, err = proc.communicate()
             
-            if killMsg and job.get('cache_dir', None) and job.get('retry_count', None) != None:
-                # Try to save an error report as the jobFWJR
-                condorErrorReport = Report()
-                condorErrorReport.addError("JobKilled", 61302, "JobKilled", killMsg)
-                if os.path.isdir(job['cache_dir']):
-                    reportName = os.path.join(job['cache_dir'],
-                                              'Report.%i.pkl' % job['retry_count'])
-                    if os.path.exists(reportName) and os.path.getsize(reportName) > 0:
-                        # Then there's already a report there.  Ignore this.
-                        logging.debug("Not writing report due to pre-existing report.")
-                        continue
-                    else:
-                        condorErrorReport.save(filename = reportName)
-
         return
 
 

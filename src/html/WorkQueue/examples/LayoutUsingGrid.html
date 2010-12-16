@@ -81,12 +81,11 @@ var dataSchema = {
 
 var dataUrl = "/workqueue/workloadprogress"
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-var dataTable = WMCore.WebTools.createDataTable("workqueueprogress", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.defaultTableConfig, 100000)
-							 
-							 
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
+var dataTable = WMCore.createDataTable("workqueueprogress", dataSource, 
+                             WMCore.createDefaultTableDef(dataSchema.fields),
+                             WMCore.defaultTableConfig, 100000)
+
 var formatUrl = function(elCell, oRecord, oColumn, sData) { 
                 elCell.innerHTML = "<a href='" + oRecord.getData("child_queue") + "' target='_blank'>" + sData + "</a>"; 
             };
@@ -103,10 +102,10 @@ var dataSchema = {
 
 var dataUrl = "/workqueue/elementsinfo"
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-var dataTable = WMCore.WebTools.createDataTable("elements", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.defaultTableConfig, 100000)
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
+var dataTable = WMCore.createDataTable("elements", dataSource, 
+                             WMCore.createDefaultTableDef(dataSchema.fields),
+                             WMCore.defaultTableConfig, 100000)
 
 
 </script>

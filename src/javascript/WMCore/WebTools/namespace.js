@@ -21,5 +21,3 @@ WMCore.namespace = function(){
     }
     return E;
 };
-
-WMCore.namespace('WebTools')

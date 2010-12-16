@@ -31,25 +31,25 @@
 //enableDebug()
 // {key: state} is omitted
 var dataSchema = {
-        fields: [{key: "task"}, 
-                 {key: "total_jobs", label: 'total'},
-                 {key: "none"}, {key: "new"},
-				 {key: "created"}, {key: "createfailed"},{key: "createcooloff"},
-                 {key: "submitfailed"}, {key: "submitcooloff"},
-				 {key: "executing"}, {key: "complete"},
-                 {key: "jobfailed"}, {key: "jobcooloff"},
-                 {key: "real_fail", label: "fail"}, 
-                 {key: "real_success", label: "success"}]
-        };
+    fields: [{key: "task"}, 
+             {key: "total_jobs", label: 'total'},
+             {key: "none"}, {key: "new"},
+             {key: "created"}, {key: "createfailed"},{key: "createcooloff"},
+             {key: "submitfailed"}, {key: "submitcooloff"},
+             {key: "executing"}, {key: "complete"},
+             {key: "jobfailed"}, {key: "jobcooloff"},
+             {key: "real_fail", label: "fail"}, 
+             {key: "real_success", label: "success"}]
+};
 
 var dataUrl = "/wmbs/tasksummary/cmsdataops_100824_125612"
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
 //writeDebugObject(dataSource)
 //writeEval(dataSource.responseType)
-var dataTable = WMCore.WebTools.createDataTable("resourceInfo", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.createDefaultTableConfig(), 100000)
+var dataTable = WMCore.createDataTable("resourceInfo", dataSource, 
+                             WMCore.createDefaultTableDef(dataSchema.fields),
+                             WMCore.createDefaultTableConfig(), 100000)
 
 </script>
 </body>

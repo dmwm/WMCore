@@ -1,6 +1,7 @@
-WMCore.namespace("WebTools.RequestManager.Overview");
+WMCore.namespace("RequestManager.Overview");
 
-WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDiv, filterFunction){
+WMCore.RequestManager.Overview.overviewTable = function(divID, filterDiv,
+                                                        filterFunction){
     
     var postfixLink = "/template/ElementSummaryByWorkflow?workflow=";
     
@@ -163,12 +164,12 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
                  ];
             
     var dataUrl = "/reqMgr/overview";
-    var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema);
+    var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
         
     var tableInfo = {};
     tableInfo.divID = divID;
-    tableInfo.cols = WMCore.WebTools.createDefaultTableDef(dataTableCols);
-    tableInfo.conf = WMCore.WebTools.createDefaultTableConfig();
+    tableInfo.cols = WMCore.createDefaultTableDef(dataTableCols);
+    tableInfo.conf = WMCore.createDefaultTableConfig();
     
     dataSource.doBeforeCallback = function (req,raw,res,cb) {
             // This is the filter function
@@ -177,7 +178,7 @@ WMCore.WebTools.RequestManager.Overview.overviewTable = function(divID, filterDi
             return res;
     };
     
-    var dataTable = WMCore.WebTools.createDataTable(divID, dataSource, 
+    var dataTable = WMCore.createDataTable(divID, dataSource, 
                             tableInfo.cols, tableInfo.conf, 100000);
     
 }

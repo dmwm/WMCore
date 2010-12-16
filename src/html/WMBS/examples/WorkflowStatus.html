@@ -30,30 +30,30 @@
 <script type="text/javascript">
 //enableDebug()
 var dataFormatter = function(elCell, oRecord, oColumn, oData) {
-        
-        if (oData == 1) {
-            state = "Closed"
-        } else {
-			state = "<b>Open</b>"
-        }
-        elCell.innerHTML = state;
-    };
+    
+    if (oData == 1) {
+        state = "Closed"
+    } else {
+        state = "<b>Open</b>"
+    }
+    elCell.innerHTML = state;
+};
 
 // {key: state} is omitted
 var dataSchema = {
-        fields: [{key: "workflow"}, {key: "task"}, 
-		         {key: "jobs"}, {key: "success"}, {key: "owner"}, 
-				 {key: "open", formatter: dataFormatter}]
-        };
+    fields: [{key: "workflow"}, {key: "task"}, 
+             {key: "jobs"}, {key: "success"}, {key: "owner"}, 
+             {key: "open", formatter: dataFormatter}]
+};
 
 var dataUrl = "/wmbs/workflowstatus"
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
 //writeDebugObject(dataSource)
 writeEval(dataSource.responseType)
-var dataTable = WMCore.WebTools.createDataTable("resourceInfo", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.createDefaultTableConfig(), 100000)
+var dataTable = WMCore.createDataTable("resourceInfo", dataSource, 
+                             WMCore.createDefaultTableDef(dataSchema.fields),
+                             WMCore.createDefaultTableConfig(), 100000)
 
 </script>
 </body>

@@ -1,6 +1,6 @@
-WMCore.namespace("WebTools.WMBS.WorkflowSummaryWithTask")
+WMCore.namespace("WMBS.WorkflowSummaryWithTask")
 
-WMCore.WebTools.WMBS.WorkflowSummaryWithTask.taskTable = function(oArgs){
+WMCore.WMBS.WorkflowSummaryWithTask.taskTable = function(oArgs){
 
     var dataSchema = {
         fields: [{key: "task"},
@@ -16,12 +16,12 @@ WMCore.WebTools.WMBS.WorkflowSummaryWithTask.taskTable = function(oArgs){
     
     var dataUrl = "/wmbs/tasksummary/" + oArgs.workflow
     
-    var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+    var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
     //writeDebugObject(dataSource)
     //writeEval(dataSource.responseType)
-    var dataTable = WMCore.WebTools.createDataTable(oArgs.divID, dataSource, 
-                               WMCore.WebTools.createDefaultTableDef(dataSchema.fields), 
-                               WMCore.WebTools.createDefaultTableConfig(), 100000, true)
+    var dataTable = WMCore.createDataTable(oArgs.divID, dataSource, 
+                               WMCore.createDefaultTableDef(dataSchema.fields), 
+                               WMCore.createDefaultTableConfig(), 100000, true)
 	var callback = {
 		success: function(){
 			//workflowTable.onDataReturnInitializeTable();
@@ -55,13 +55,13 @@ var workflowTable = function(oArgs){
     };
     var dataUrl = "/wmbs/workflowsummary";
     
-    var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema);
+    var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
     //writeDebugObject(dataSource)
     //writeEval(dataSource.responseType)
 			
-    var dataTable = WMCore.WebTools.createDataTable(oArgs.divID, dataSource, 
-                               WMCore.WebTools.createDefaultTableDef(dataSchema.fields), 
-                               WMCore.WebTools.createDefaultTableConfig(), 100000, true);
+    var dataTable = WMCore..createDataTable(oArgs.divID, dataSource, 
+                               WMCore.createDefaultTableDef(dataSchema.fields), 
+                               WMCore.createDefaultTableConfig(), 100000, true);
     
 	var callback = {
         success: function (){

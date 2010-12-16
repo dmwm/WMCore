@@ -31,27 +31,27 @@
 //enableDebug()
 // {key: state} is omitted
 var dataSchema = {
-        fields: [{key: "request_name"},
-                 {key: "status"},
-				 {key: "type"},
-                 {key: "global_queue"},
-				 {key: "local_queue"},
-				 {key: "pending"},
-				 {key: "cooloff"},
-				 {key: "running"},
-				 {key: "success"},
-                 {key: "failure"},
-				 {key: "couch_doc_base", label: "summary"}]
-        };
+    fields: [{key: "request_name"},
+             {key: "status"},
+             {key: "type"},
+             {key: "global_queue"},
+             {key: "local_queue"},
+             {key: "pending"},
+             {key: "cooloff"},
+             {key: "running"},
+             {key: "success"},
+             {key: "failure"},
+             {key: "couch_doc_base", label: "summary"}]
+    };
 
 var dataUrl = "/reqMgr/overview"
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
 //writeDebugObject(dataSource)
 //writeEval(dataSource.responseType)
-var dataTable = WMCore.WebTools.createDataTable("resourceInfo", dataSource,
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.createDefaultTableConfig(), 100000)
+var dataTable = WMCore.createDataTable("resourceInfo", dataSource,
+                             WMCore.createDefaultTableDef(dataSchema.fields),
+                             WMCore.createDefaultTableConfig(), 100000)
 
 </script>
 </body>

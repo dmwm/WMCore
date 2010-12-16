@@ -37,10 +37,10 @@ var dataSchema = {
 
 var dataUrl = "/workqueue/sites"
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-var dataTable = WMCore.WebTools.createDataTable("site", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-							 WMCore.WebTools.createDefaultTableConfig(), 100000)
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
+var dataTable = WMCore.createDataTable("site", dataSource, 
+                         WMCore.createDefaultTableDef(dataSchema.fields),
+                         WMCore.createDefaultTableConfig(), 100000)
 
 </script>
 </body>

@@ -71,22 +71,22 @@ var colorRow = function(elTr, oRecord) {
 }; 
 
 var dataSchema = {
-        fields: [{key: "name", label: "component"}, {key:'pid'},
-		         {key: "worker_name", label:"worker"},
-				 {key: "ago", label: "last updated", formatter: dateFormatter} 
-		        ]
-        };
+    fields: [{key: "name", label: "component"}, {key:'pid'},
+             {key: "worker_name", label:"worker"},
+             {key: "ago", label: "last updated", formatter: dateFormatter}
+            ]
+    };
 
 var dataUrl = "/wmagent/heartbeat"
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
 //writeDebugObject(dataSource)
 //writeEval(dataSource.responseType)
-var tableConfig = WMCore.WebTools.createDefaultTableConfig()
+var tableConfig = WMCore.createDefaultTableConfig()
 tableConfig.formatRow = colorRow;
 tableConfig.paginator = {}
-var dataTable = WMCore.WebTools.createDataTable("resourceInfo", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
+var dataTable = WMCore.createDataTable("resourceInfo", dataSource, 
+                             WMCore.createDefaultTableDef(dataSchema.fields),
                              tableConfig, 60000)
 
 </script>

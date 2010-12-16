@@ -35,10 +35,10 @@ var dataSchema = {
 
 var dataUrl = "/wmbs/listthresholdsforcreate"
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-var dataTable = WMCore.WebTools.createDataTable("resourceInfo", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.createDefaultTableConfig('running_jobs'), 100000)
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
+var dataTable = WMCore.createDataTable("resourceInfo", dataSource, 
+                             WMCore.createDefaultTableDef(dataSchema.fields),
+                             WMCore.createDefaultTableConfig('running_jobs'), 100000)
 
 </script>
 </body>

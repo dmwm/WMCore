@@ -42,9 +42,9 @@ var formatUrl = function(elCell, oRecord, oColumn, sData) {
 var pbs = [];
 var progressFormatter = function (elLiner, oRecord, oColumn, oData) {
             writeDebugObject(oRecord)
-			writeDebug(oRecord.getData("total"))
-			writeDebug(oData)
-			var pb = new YAHOO.widget.ProgressBar({
+            writeDebug(oRecord.getData("total"))
+            writeDebug(oData)
+            var pb = new YAHOO.widget.ProgressBar({
                 width:'90px',
                 height:'11px',
                 maxValue:oRecord.getData("total"),
@@ -56,19 +56,19 @@ var progressFormatter = function (elLiner, oRecord, oColumn, oData) {
 
 var dataSchema = {
         fields: [{key: "spec_id"}, {key: "spec_name"}, {key: "owner"}, 
-		         {key: "total", label: "Total Elements"}, 
-				 {key: "done", label: "progress", formatter: progressFormatter}]
+                 {key: "total", label: "Total Elements"}, 
+                 {key: "done", label: "progress", formatter: progressFormatter}]
         };
 
 var dataUrl = "/workqueue/workloadprogress";
 
-var tableConfig = WMCore.WebTools.createDefaultTableConfig()
+var tableConfig = WMCore.createDefaultTableConfig()
 tableConfig.sortedBy ={
         key: "spec_id", dir:YAHOO.widget.DataTable.CLASS_ASC
     }
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-var dataTable = WMCore.WebTools.createDataTable("workloadprogress", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
+var dataTable = WMCore.createDataTable("workloadprogress", dataSource, 
+                             WMCore.createDefaultTableDef(dataSchema.fields),
                              tableConfig, 100000)
 
 </script>

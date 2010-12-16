@@ -1,6 +1,6 @@
-WMCore.namespace("WebTools.WorkQueue.JobYUIPieChart")
+WMCore.namespace("WorkQueue.JobYUIPieChart")
 
-WMCore.WebTools.WorkQueue.JobYUIPieChart.jobChart = function(divID) {
+WMCore.WorkQueue.JobYUIPieChart.jobChart = function(divID) {
     
 	YAHOO.widget.Chart.SWFURL = "http://yui.yahooapis.com/2.8.1/build/charts/assets/charts.swf";
     //--- data
@@ -11,7 +11,7 @@ WMCore.WebTools.WorkQueue.JobYUIPieChart.jobChart = function(divID) {
 
     var dataUrl = "/workqueue/jobstatusstat"
 
-    var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+    var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
 
     //--- chart
 

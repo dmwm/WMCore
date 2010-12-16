@@ -3,7 +3,7 @@
  * 
  */
 
-WMCore.WebTools.createDataSource = function (dataUrl, dataSchema, type) {
+WMCore.createDataSource = function (dataUrl, dataSchema, type) {
 	
 	if (type == "Local") {
 	   var myDataSource = new YAHOO.util.LocalDataSource(dataUrl);
@@ -21,7 +21,7 @@ WMCore.WebTools.createDataSource = function (dataUrl, dataSchema, type) {
 	return myDataSource;
 };
 
-WMCore.WebTools.createDefaultTableDef = function (tableDef) {
+WMCore.createDefaultTableDef = function (tableDef) {
 	var defaultDef = new Array();
 	for (var i in tableDef) {
 		defaultDef[i] = YAHOO.lang.merge(tableDef[i], {
@@ -32,7 +32,7 @@ WMCore.WebTools.createDefaultTableDef = function (tableDef) {
     return defaultDef;
 };
 
-WMCore.WebTools.createDefaultTableConfig = function(sortBy) {
+WMCore.createDefaultTableConfig = function(sortBy) {
 	
 	var defaultConfig = {};
 	// Set up pagination
@@ -46,7 +46,7 @@ WMCore.WebTools.createDefaultTableConfig = function(sortBy) {
 };
 
 
-WMCore.WebTools.createDataTable = function (container, dataSource, columnDefs, 
+WMCore.createDataTable = function (container, dataSource, columnDefs, 
                                             tableConfig, pollingCycle, myCallback) {
 	 
     var myDataTable = new YAHOO.widget.DataTable(container,

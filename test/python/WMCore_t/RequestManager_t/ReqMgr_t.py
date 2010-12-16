@@ -55,8 +55,8 @@ class TestReqMgr(unittest.TestCase):
 
         # some foreign key stuff to dealwith
         #self.assertFalse('CMSSW_X_Y_Z' in self.jsonSender.get('/reqMgr/version')[0])
-        self.assertTrue(self.jsonSender.put('/reqMgr/version/CMSSW_X_Y_Z')[1] == 200)
-        self.assertTrue('CMSSW_X_Y_Z' in self.jsonSender.get('/reqMgr/version')[0])
+        self.assertTrue(self.jsonSender.put('/reqMgr/version/CMSSW_3_4_9_pre11')[1] == 200)
+        self.assertTrue('CMSSW_3_4_9_pre11' in self.jsonSender.get('/reqMgr/version')[0])
 
     def testRequest(self):
         for requestType in self.requestTypes:
@@ -133,7 +133,7 @@ class TestReqMgr(unittest.TestCase):
         self.cleanupRequests()
         self.jsonSender.delete('/reqMgr/user/me')
         self.jsonSender.delete('/reqMgr/group/PeopleLikeMe')
-        self.jsonSender.delete('/reqMgr/version/CMSSW_X_Y_Z')
+        self.jsonSender.delete('/reqMgr/version/CMSSW_3_4_9_pre11')
 
 if __name__=='__main__':
     unittest.main()

@@ -45,6 +45,9 @@ reqMgrDBName = "reqmgrdb"
 agentName = "WMAgentCommissioning"
 teamName = "cmsdataops"
 
+# Root of the YUI javascript library.
+yuiRoot = "http://yui.yahooapis.com/2.8.0r4"
+
 # Nothing after this point should need to be changed.
 config = Configuration()
 
@@ -89,6 +92,7 @@ active.reqMgrBrowser.object = "WMCore.HTTPFrontEnd.RequestManager.ReqMgrBrowser"
 active.reqMgrBrowser.reqMgrHost = reqMgrUrl
 active.reqMgrBrowser.couchUrl = config.ReqMgr.couchURL
 active.reqMgrBrowser.configDBName = configCacheDBName
+active.reqMgrBrowser.yuiroot = yuiRoot
 
 active.section_('RequestOverview')
 active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestManager.RequestOverview'
@@ -114,6 +118,7 @@ active.WebRequestSchema.cmsswDefaultVersion = "CMSSW_3_8_6"
 active.WebRequestSchema.couchUrl = couchURL
 active.WebRequestSchema.configCacheDBName = configCacheDBName
 active.WebRequestSchema.templates = config.ReqMgr.templates
+active.WebRequestSchema.yuiroot = yuiRoot
 
 config.component_("WorkQueueManager")
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"

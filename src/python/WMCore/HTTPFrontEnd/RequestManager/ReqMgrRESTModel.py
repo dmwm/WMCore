@@ -20,6 +20,7 @@ import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest
 import WMCore.RequestManager.RequestMaker.Processing.FileBasedRequest
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import saveWorkload, removePasswordFromUrl
+import WMCore.Lexicon
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import cherrypy
 import json
@@ -146,7 +147,7 @@ class ReqMgrRESTModel(RESTModel):
         """ Validates that all input is alphanumeric, 
             with spaces and underscores tolerated"""
         for k, v in index.iteritems():
-            assert v.replace(' ','').replace('_','').replace('-','').isalnum(), "Bad input " + k
+            WMCore.Lexicon.identifier(v)
         return index
 
     def intpriority(self, index={}):
@@ -165,7 +166,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def validateVersion(self, index={}):
         """ Make sure it's a legitimate CMSSW version format """
-        assert index['version'].startswith('CMSSW_')
+        WMCore.Lexicon.cmsswversion(index['version'])
         return index
 
     def findRequest(self, requestName):

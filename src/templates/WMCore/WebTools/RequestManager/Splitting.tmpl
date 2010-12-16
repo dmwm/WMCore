@@ -1,6 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html><head>
 <title>Job Splitting Parameters for $requestName</title>
+<meta http-equiv="Pragma" content="no-cache">
 </head>
 <body>
 
@@ -10,12 +11,48 @@
 
 <script type="text/javascript">
 
+function postUpdate(formName) {
+  var taskLabelDiv = document.getElementById("label" + formName);
+  taskLabelDiv.innerHTML = " Updating..."
+
+  updatedForm = document.forms[formName];
+  var paramStr = "";
+  var paramCount = 0;
+  for (var elementIndex in updatedForm.elements) {
+    var formElement = updatedForm.elements[elementIndex];
+    if (formElement["type"] == "radio" && !formElement["checked"]) {
+      continue;
+    } else if (formElement["type"] != "text" && formElement["type"] != "select-one" &&
+               formElement["type"] != "hidden" && formElement["type"] != "radio") {
+      continue;
+    };
+
+    paramCount += 1;
+    paramStr += updatedForm.elements[elementIndex].name + "=";
+    paramStr += updatedForm.elements[elementIndex].value + "&";
+  };
+
+  var http = new XMLHttpRequest();
+  http.open("POST", "../handleSplittingPage", true);
+  http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  http.setRequestHeader("Content-length", paramStr.length);
+  http.setRequestHeader("Connection", "close");
+
+  http.onreadystatechange = function() {
+    if(http.readyState == 4 && http.status == 200) {
+      var taskLabelDiv = document.getElementById("label" + formName);
+      taskLabelDiv.innerHTML = " Updated!"
+    }
+  }
+  http.send(paramStr);
+}
+
 function generateInputRow(label, key, d) {
   return '<tr>' + generateInput(label, key, d) +'</tr>';
 }
 
 function generateInput(label, key, d) {
-  var procStr = '<tr><td>' + label + '</td><td><input type="text" name="' + key + '"';
+  var procStr = '<td>' + label + '</td><td><input type="text" name="' + key + '"';
   if (key in d) {
     procStr += ' value="' + d[key] + '"';
   }
@@ -27,8 +64,8 @@ function generateInputRow(label, key, d) {
   return '<tr>' + generateInput(label, key, d) +'</tr>';
 }
 
-function submitButton() {
-  return '<input type="submit" value="Update Parameters">\n';
+function submitButton(formID) {
+  return '<input type="button" value="Update Parameters" onclick=postUpdate("' + formID + '");>\n';
 }
 
 function generateProcessing(splitAlgo, splitParams) {
@@ -73,7 +110,6 @@ function generateProcessing(splitAlgo, splitParams) {
   procStr += "<td></td></tr>\n"
   procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   procStr += "</table>\n";
-  procStr += submitButton();
   return procStr;
 }  
 
@@ -104,7 +140,6 @@ function generateSkim(splitAlgo, splitParams) {
   procStr += "</tr>";
   procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   procStr += "</table>\n";
-  procStr += submitButton();
   return procStr;
 }
 
@@ -114,7 +149,6 @@ function generateCleanupLogCollect(splitParams) {
   procStr += generateInputRow("Files per job:", "files_per_job", splitParams);
   procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   procStr += "</table>\n";
-  procStr += submitButton();
   return procStr;
 }
 
@@ -126,15 +160,14 @@ function generateMerge(splitAlgo, splitParams) {
   frmStr += generateInputRow("Max merge events:", "max_merge_events", splitParams);
   frmStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   frmStr += "</table>\n";
-  frmStr +=  submitButton();
   return frmStr;
 }
 
 function generateForm(taskName, splitAlgo, splitParams, taskType) {
-  var frmStr = '<form action="../handleSplittingPage" method="POST">\n';
+  var frmStr = '<form name="' + taskName + '" action="../handleSplittingPage" method="POST">\n';
   frmStr += '<input type="hidden" name="requestName" VALUE="$requestName"></input>\n'; 
   frmStr += '<input type="hidden" name="splittingTask" VALUE="' + taskName + '"></input>\n'; 
-  frmStr += "<b>" + taskName + ":</b><br>\n";
+  frmStr += '<b>' + taskName + ':</b><b id="label' + taskName + '"></b><br>\n';
 
   if (taskType == "Processing") {
     frmStr += generateProcessing(splitAlgo, splitParams);
@@ -146,7 +179,8 @@ function generateForm(taskName, splitAlgo, splitParams, taskType) {
     frmStr += generateSkim(splitAlgo, splitParams);
   }
 
-  frmStr += "</form>";
+  frmStr += submitButton(taskName);
+  frmStr += "</form><br>";
   return frmStr;
 }
 

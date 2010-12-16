@@ -18,6 +18,7 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Cache.WMConfigCache import ConfigCache 
 from WMCore.Services.Requests import JSONRequests
 import WMCore.HTTPFrontEnd.RequestManager.Sites
+import WMCore.Lexicon
 import logging
 import cherrypy
 import json
@@ -73,7 +74,7 @@ class ReqMgrBrowser(WebAPI):
     def __init__(self, config):
         WebAPI.__init__(self, config)
         # Take a guess
-        self.templatedir = __file__.rsplit('/', 1)[0]
+        self.templatedir = config.templates
         self.urlPrefix = '%s/download/?filepath=' % config.reqMgrHost
         self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType',
                        'ReqMgrRequestBasePriority', 'RequestStatus', 'Complete', 'Success']
@@ -102,6 +103,7 @@ class ReqMgrBrowser(WebAPI):
         self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
         self.mergedLFNBases = {"ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
                                "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}
+        self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
     def initThread(self, thread_index):
@@ -113,14 +115,16 @@ class ReqMgrBrowser(WebAPI):
 
     def validate(self, v):
        """ Checks if alphanumeric, tolerating spaces """
-       assert v.replace(' ','').replace('_','').isalnum(), "Bad value " + v
+       WMCore.Lexicon.identifier(v)
+       return v
 
     @cherrypy.expose
     def index(self):
         """ Main web page """
         requests = GetRequest.getAllRequestDetails()
         tableBody = self.drawRequests(requests)
-        return self.templatepage("ReqMgrBrowser", fields=self.fields, tableBody=tableBody)
+        return self.templatepage("ReqMgrBrowser", yuiroot=self.yuiroot, 
+                                 fields=self.fields, tableBody=tableBody)
 
     @cherrypy.expose
     def search(self, value, field):
@@ -132,7 +136,8 @@ class ReqMgrBrowser(WebAPI):
                 filteredRequests.append(request)
         requests = filteredRequests
         tableBody = self.drawRequests(requests)
-        return self.templatepage("ReqMgrBrowser", fields=self.fields, tableBody=tableBody)
+        return self.templatepage("ReqMgrBrowser", yuiroot=self.yuiroot, 
+                                 fields=self.fields, tableBody=tableBody)
         
     @cherrypy.expose
     def splitting(self, requestName):
@@ -182,29 +187,30 @@ class ReqMgrBrowser(WebAPI):
         """
         splitParams = {}
         if splittingAlgo == "FileBased":
-            splitParams["files_per_job"] = submittedParams["files_per_job"]
+            splitParams["files_per_job"] = int(submittedParams["files_per_job"])
         elif splittingAlgo == "TwoFileBased":
-            splitParams["files_per_job"] = submittedParams["two_files_per_job"]            
+            splitParams["files_per_job"] = int(submittedParams["two_files_per_job"])
         elif splittingAlgo == "LumiBased":
-            splitParams["lumis_per_job"] = submittedParams["lumis_per_job"]
+            splitParams["lumis_per_job"] = int(submittedParams["lumis_per_job"])
             if str(submittedParams["split_files_between_job"]) == "True":
                 splitParams["split_files_between_job"] = True
             else:
                 splitParams["split_files_between_job"] = False                
         elif splittingAlgo == "EventBased":
-            splitParams["events_per_job"] = submittedParams["events_per_job"]
+            splitParams["events_per_job"] = int(submittedParams["events_per_job"])
         elif 'Merg' in splittingTask:
             for field in ['min_merge_size', 'max_merge_size', 'max_merge_events']:
-                splitParams[field] = submittedParams[field]
+                splitParams[field] = int(submittedParams[field])
             
         request = GetRequest.getRequestByName(requestName)
         helper = WMWorkloadHelper()
-        helper.load(request['RequestWorkflow'])
+        workloadUrl = request['RequestWorkflow']
+        WMCore.Lexicon.couchurl(workloadUrl)
+        helper.load(workloadUrl)
         logging.info("SetSplitting " + requestName + splittingTask + splittingAlgo + str(splitParams))
-        print "SetSplitting " + requestName + "TASK " + splittingTask + "ALGO " + splittingAlgo + str(splitParams)
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
         helper.setTaskTimeOut(splittingTask, int(submittedParams["timeout"]))
-        saveWorkload(helper, request['RequestWorkflow'])
+        saveWorkload(helper, workloadUrl)
         return "Successfully updated splitting parameters for " + splittingTask \
                + " " + detailsBackLink(requestName)
 
@@ -214,11 +220,13 @@ class ReqMgrBrowser(WebAPI):
         self.validate(requestName)
         request = GetRequest.getRequestDetails(requestName)
         helper = WMWorkloadHelper()
-        helper.load(request['RequestWorkflow'])
+        workloadUrl = request['RequestWorkflow']
+        WMCore.Lexicon.couchurl(workloadUrl)
+        helper.load(workloadUrl)
         task = helper.getTopLevelTask()
         docId = None
         d = helper.data.request.schema.dictionary_()
-        d['RequestWorkflow'] = request['RequestWorkflow']
+        d['RequestWorkflow'] = workloadUrl
         d['Site Whitelist'] = task.siteWhitelist()
         d['Site Blacklist'] = task.siteBlacklist()
         if d.has_key('ProdConfigCacheID') and d['ProdConfigCacheID'] != "":
@@ -255,9 +263,10 @@ class ReqMgrBrowser(WebAPI):
     def showWorkload(self, url):
         """ Displays the workload """
         request = {}
+        WMCore.Lexicon.couchurl(url)
         request['RequestWorkflow'] = url
         helper = WMWorkloadHelper()
-        helper.load(request['RequestWorkflow'])
+        helper.load(url)
         return str(helper.data).replace('\n', '<br>')
  
     @cherrypy.expose
@@ -344,8 +353,10 @@ class ReqMgrBrowser(WebAPI):
             if k.endswith(':status'): 
                 requestName = k.split(':')[0]
                 status = v
+                self.validate(status)
                 priority = kwargs[requestName+':priority']
                 if status != "" or priority != "":
+                    self.validate(requestName) 
                     message += self.updateRequest(requestName, status, priority)
         return message
 
@@ -357,10 +368,11 @@ class ReqMgrBrowser(WebAPI):
             urd += 'status='+status
             message += ' status='+status
         if priority != "":
+            priority = int(priority)
             if status != "":
                 urd += '&'
-            urd += 'priority='+priority
-            message += ' priority='+priority
+            urd += 'priority=%s' % priority
+            message += ' priority=%s' % priority
         self.jsonSender.put(urd)
         if status == "assigned":
             # make a page to choose teams
@@ -389,7 +401,9 @@ class ReqMgrBrowser(WebAPI):
         assignments = GetRequest.getAssignmentsByName(requestName)
         request = GetRequest.getRequestByName(requestName)
         helper = WMWorkloadHelper()
-        helper.load(request['RequestWorkflow'])
+        workloadUrl = request['RequestWorkflow']
+        WMCore.Lexicon.couchurl(workloadUrl)
+        helper.load(workloadUrl)
         schema = helper.data.request.schema
         # look for teams
         teams = []
@@ -408,11 +422,14 @@ class ReqMgrBrowser(WebAPI):
 
         helper.setSiteWhitelist(parseSite(kwargs,"SiteWhitelist"))
         helper.setSiteBlacklist(parseSite(kwargs,"SiteBlacklist"))
+        self.validate(kwargs["ProcessingVersion"])
         helper.setProcessingVersion(kwargs["ProcessingVersion"])
+        self.validate(kwargs["AcquisitionEra"])
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
+        #FIXME not validated
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
-        helper.setMergeParameters(kwargs["MinMergeSize"], kwargs["MaxMergeSize"], kwargs["MaxMergeEvents"])
-        saveWorkload(helper, request['RequestWorkflow'])
+        helper.setMergeParameters(int(kwargs["MinMergeSize"]), int(kwargs["MaxMergeSize"]), int(kwargs["MaxMergeEvents"]))
+        saveWorkload(helper, workloadUrl)
         result += detailsBackLink(requestName) + '<a href="../../../RequestOverview">Overview</a>'
         return result
 
@@ -546,6 +563,7 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     def handleAddVersion(self, version):
         """ Registers a version """
+        WMCore.Lexicon.cmsswversion(version)
         SoftwareAdmin.addSoftware(version)
         return "Added version %s" % version
 

@@ -19,7 +19,7 @@ class WebRequestSchema(WebAPI):
     def __init__(self, config):
         WebAPI.__init__(self, config)
         # set the database to whatever the environment defines
-        self.templatedir = __file__.rsplit('/', 1)[0]
+        self.templatedir = config.templates
         self.requestor = config.requestor
         self.cmsswVersion = config.cmsswDefaultVersion
         self.reqMgrHost = config.reqMgrHost
@@ -29,6 +29,7 @@ class WebRequestSchema(WebAPI):
         #cherrypy.config.update({'tools.sessions.on': True, 'tools.encode.on':True, 'tools.decode.on':True})
 
         self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
+        self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
     def initThread(self, thread_index):
@@ -50,7 +51,8 @@ class WebRequestSchema(WebAPI):
         groups = GroupInfo.groupsForUser(self.requestor).keys()
         if groups == []:
             return "User " + self.requestor + " is not in any groups.  Contact a ReqMgr administrator."
-        return self.templatepage("WebRequestSchema", requestor=self.requestor,
+        return self.templatepage("WebRequestSchema", yuiroot=self.yuiroot,
+                                 requestor=self.requestor,
                                  groups=groups, 
                                  versions=self.versions, defaultVersion=self.cmsswVersion,
                                  defaultSkimConfig=self.defaultSkimConfig)

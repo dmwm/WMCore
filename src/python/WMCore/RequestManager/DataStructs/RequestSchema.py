@@ -14,7 +14,7 @@ A RequestMaker Implementation should do the following.
 - Return a list of RequestSpec instances generated from the schema
 
 """
-
+import WMCore.Lexicon
 
 class RequestSchema(dict):
     """
@@ -65,6 +65,15 @@ class RequestSchema(dict):
             if self[field] == None:
                 msg = "Required Field %s not provided for %s" % (field, type(self).__name__)
                 raise RuntimeError, msg
+
+        for identifier in ['ScramArch', 'RequestName', 'Group', 'Requestor']:
+            if self.get(identifier, None) != None:
+                WMCore.Lexicon.identifier(self[identifier])
+        if 'CMSSWVersion' in self:
+            WMCore.Lexicon.cmsswversion(self['CMSSWVersion'])
+        for dataset in ['InputDataset', 'OutputDataset']:
+            if self.get(dataset, None) != None:
+                WMCore.Lexicon.dataset(self[dataset])
 
 
     def __to_json__(self, thunker):

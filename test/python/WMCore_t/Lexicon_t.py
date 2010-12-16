@@ -45,6 +45,37 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, cmsname, 'D2_UK_SGrid_Bristol')
         self.assertRaises(AssertionError, cmsname, 'T2asjkjhadshjkdashjkasdkjhdas')
         #self.assertRaises(AssertionError, cmsname, 'T2_UK')
+
+    def testGoodIdentifier(self):
+        assert identifier('__wil.1.am__')
+
+    def testBadIdentifier(self):
+        self.assertRaises(AssertionError, identifier, 'ke$ha')
+
+    def testGoodDataset(self):
+        assert dataset('/a/b/c')
+        assert dataset('/m000n/RIII-ver/wider_than_1.0_miles')
+
+    def testBadDataset(self):
+        for notok in ['/Sugar/Sugar', '/Oh/honey/honey!', '/You/are/my/candy/GIIIRRL']:
+           self.assertRaises(AssertionError, dataset, notok)
+
+    def testVersion(self):
+        for ok in ['CMSSW_3_8_0_pre1', 'CMSSW_1_2_0', 'CMSSW_4_0_0_patch11']:
+            assert cmsswversion(ok)
+
+    def testBadVersion(self):
+        for notok in ['ORCA_3_8_0', 'CMSSW_3_5']:
+            self.assertRaises(AssertionError, cmsswversion, notok)
+
+    def testGoodCouchUrl(self):
+        for ok in ['http://vittoria@antimatter.cern.ch:5984', 'http://fbi.fnal.gov:5984', 
+                   'http://fmulder:trustno1@fbi.fnal.gov:5984']:
+            assert couchurl(ok)
+
+    def testBadCouchUrl(self):
+        for notok in ['agent86@control.fnal.gov:5984', 'http://assange:password@interpol.cern.ch:5985']:
+            self.assertRaises(AssertionError, couchurl, notok)
             
 if __name__ == "__main__":
     unittest.main() 

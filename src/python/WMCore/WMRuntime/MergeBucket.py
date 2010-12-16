@@ -13,6 +13,7 @@ Utility to construct merge jobs for the different output modules produced in a M
 import sys
 import os
 import WMCore.FwkJobReport.XMLParser as ReportReader
+from WMCore.FwkJobReport.Report import Report
 
 class MergeBucket(list):
     """

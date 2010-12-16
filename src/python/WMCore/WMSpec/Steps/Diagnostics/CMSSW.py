@@ -77,7 +77,7 @@ class CMSDefaultHandler(DiagnosticHandler):
 
     Default handler for miscellaneous CMSSW errors.
     """
-
+    
 
     def __call__(self, errCode, executor, **args):
         print "%s Diagnostic Handler invoked" % self.__class__.__name__
@@ -97,7 +97,7 @@ class CMSDefaultHandler(DiagnosticHandler):
             # job report XML exists, load the exception information from it
             executor.report.parse(jobRepXml)
             reportStep = executor.report.retrieveStep(executor.step._internal_name)
-            reportStep.status = self.code
+            reportStep.status = errCode
 
         # Grab stderr log from CMSSW
         errLog = os.path.join(os.path.dirname(jobRepXml),

@@ -14,6 +14,7 @@ import subprocess
 import FWCore.ParameterSet.Config as cms
 
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
+eventcount = lambda x: sum( [j['events'] for j in x ]) 
 
 class SetupCMSSWMulticore(ScriptInterface):
     """
@@ -31,9 +32,16 @@ class SetupCMSSWMulticore(ScriptInterface):
         multicoreSettings = step.application.multicore
         self.jsonfile = None
         self.files = {}
-        
-        self.buildManifest()
-        self.readManifest()
+        try:
+            self.buildManifest()
+        except Exception, ex:
+            print 'Exception building manifest:\n%s' % str(ex)
+            return 1
+        try:
+            self.readManifest()
+        except Exception, ex:
+            print 'Exception reading manifest:\n%s' % str(ex)
+            return 2
         self.buildPSet()
         
         return 0
@@ -47,7 +55,8 @@ class SetupCMSSWMulticore(ScriptInterface):
         Generate the JSON file describing the input files
         """
         utilProcess = subprocess.Popen(
-            ["/bin/bash"], shell=True, cwd=self.step.data.builder.workingDir,
+            ["/bin/bash"], shell=True, cwd=self.stepSpace.location,
+            env = os.environ,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE,
@@ -55,12 +64,16 @@ class SetupCMSSWMulticore(ScriptInterface):
         utilProcess.stdin.write("%s\n" % self.step.data.application.multicore.edmFileUtil)
         stdout, stderr = utilProcess.communicate()
         retCode = utilProcess.returncode
-        print stdout, stderr
         if retCode != 0:
-            #ToDo: Raise exception
-            return retCode
+            msg = "Error running manifest builder:\n"
+            msg += "Executing command: \n%s\n" % self.step.data.application.multicore.edmFileUtil
+            msg += "In environment: \n%s\n" % os.environ
+            msg += "Stdout: \n%s\n" % stdout
+            msg += "Stderr: \n%s\n" % stderr
+            print msg
+            raise RuntimeError, msg
     
-        self.jsonfile = os.path.join(self.step.data.builder.workingDir, self.step.data.application.multicore.inputmanifest)
+        self.jsonfile = os.path.join(self.stepSpace.location, self.step.data.application.multicore.inputmanifest)
         if not os.path.exists(self.jsonfile):
             return 1000001
         return 0
@@ -71,7 +84,17 @@ class SetupCMSSWMulticore(ScriptInterface):
     
         Read the JSON manifest file and store the information about each input file
         """
-        jsondata = json.load(open(self.jsonfile, 'r'))
+        try:
+            jsondata = json.load(open(self.jsonfile, 'r'))
+        except Exception, ex:
+            msg = "Unable to read JSON Manifest file produced by edmFileUtil\n"
+            msg += str(ex)
+            msg += "\n manifest file contents:\n"
+            msg += open(self.jsonfile, 'r').read()
+            msg += "\n\n"
+            print msg
+            raise RuntimeError, msg
+            
         for x in jsondata:
             data = {}
             lfn = str(x[u'file'])
@@ -106,7 +129,9 @@ class SetupCMSSWMulticore(ScriptInterface):
             options.multiProcesses = cms.untracked.PSet()
             multiProcesses = getattr(options, "multiProcesses")
     
-        multiProcesses.maxSequentialEventsPerChild = cms.untracked.uint32(procCount)
+        #multiProcesses.maxSequentialEventsPerChild = cms.untracked.uint32(procCount)
+        #revlimiter
+        multiProcesses.maxSequentialEventsPerChild = cms.untracked.uint32(2)
         multiProcesses.maxChildProcesses = cms.untracked.int32(numCores)
     
         configFile = self.step.data.application.command.configuration

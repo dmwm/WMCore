@@ -32,7 +32,7 @@ class CMSSWFetcher(FetcherInterface):
             stepPath = "%s/%s" % (self.workingDirectory(), t.name())
 
             # the CMSSW has a special case with its ConfigCache argument
-            if not t.stepType() == "CMSSW": continue
+            if not t.stepType() in ("CMSSW", "MulticoreCMSSW"): continue
             if (hasattr(t.data.application.configuration,'retrieveConfigUrl')):
                 # main config file
                 fileTarget = "%s/%s" % (

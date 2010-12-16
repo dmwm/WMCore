@@ -161,7 +161,7 @@ class Scram:
         return proc.returncode
 
 
-    def __call__(self, command):
+    def __call__(self, command, hackLdLibPath = True, logName = "scramOutput.log", runtimeDir = None):
         """
         _operator(command)_
 
@@ -174,14 +174,16 @@ class Scram:
         if self.runtimeEnv == {}:
             msg = "Scram runtime environment is empty/runtime() not called"
             raise RuntimeError, msg
-        logName = 'scramOutput.log'
+        executeIn = runtimeDir
+        if runtimeDir == None:
+            executeIn = self.projectArea
         if not os.path.exists(logName):
             f = open(logName, 'w')
             f.write('Log for recording SCRAM command-line output\n')
             f.write('-------------------------------------------\n')
             f.close()
         logFile = open(logName, 'a')
-        proc = subprocess.Popen(["/bin/bash"], shell=True, cwd=self.projectArea,
+        proc = subprocess.Popen(["/bin/bash"], shell=True, cwd=executeIn,
                                 env = self.runtimeEnv,
                                 stdout=logFile,
                                 stderr=logFile,
@@ -191,12 +193,16 @@ class Scram:
             proc.stdin.write('export VO_CMS_SW_DIR=%s\n'%os.environ['VO_CMS_SW_DIR']) 
         if os.environ.get('OSG_APP', None) != None:
             proc.stdin.write('export VO_CMS_SW_DIR=%s/cmssoft/cms\n'%os.environ['OSG_APP'])
+        if os.environ.get('CMS_PATH', None) != None:
+            proc.stdin.write('export CMS_PATH=%s\n'%os.environ['CMS_PATH'])
         # BADPYTHON
-        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
+        if hackLdLibPath:
+            proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
         proc.stdin.write("%s\n" % self.preCommand())
         # scram fucks up the python environment from the parent shell
-        proc.stdin.write(
-            "export PYTHONPATH==%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
+        if hackLdLibPath:
+            proc.stdin.write(
+                "export PYTHONPATH==%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
         proc.stdin.write("%s\n" % command)
         proc.stdin.write("""if [ "$?" -ne "0" ]; then exit 5; fi\n""")
         self.stdout, self.stderr = proc.communicate()

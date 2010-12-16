@@ -117,7 +117,7 @@ class MulticoreCMSSW(Executor):
         
         
         #Todo:  Create input file list from job writing filelist one per line to
-        filelist = open(multicoreSettings.inputfilelist)
+        filelist = open(multicoreSettings.inputfilelist,'w')
         for inputFile in self.job['input_files']:
             filelist.write("%s\n" % inputFile['lfn'])
         filelist.close()
@@ -135,7 +135,7 @@ class MulticoreCMSSW(Executor):
             architecture = scramArch,
             )
         
-        logging.info("Runing SCRAM")
+        logging.info("Running SCRAM")
         try:
             projectOutcome = scram.project()
         except Exception, ex:
@@ -322,7 +322,8 @@ class MulticoreCMSSW(Executor):
             b.writeConfig()
             # run the merge as a scram enabled command
             logging.info("    Invoking command: %s" % b.merge_command)
-            retCode = scram(b.merge_command)
+            logfile = "%s.log" % b.merge_pset_file
+            retCode = scram(b.merge_command, False, logfile, self.step.builder.workingDir)
             if retCode > 0:
                 msg = "Error running merge job:\n%s\n" % b.merge_command
                 msg += "Merge Config:\n%s\n" % b.mergeConfig()

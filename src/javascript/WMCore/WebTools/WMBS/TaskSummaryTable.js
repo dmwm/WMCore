@@ -1,6 +1,6 @@
-WMCore.namespace("WebTools.WMBS.TaskSummaryTable")
+WMCore.namespace("WMBS.TaskSummaryTable")
 
-WMCore.WebTools.WMBS.TaskSummaryTable.taskTable = function(oArgs){
+WMCore.WMBS.TaskSummaryTable.taskTable = function(oArgs){
 
 	var dataSchema = {
         fields: [{key: "task", label: " Tasks for " + oArgs.workflow},
@@ -16,10 +16,10 @@ WMCore.WebTools.WMBS.TaskSummaryTable.taskTable = function(oArgs){
 	
 	var dataUrl = "/wmbs/tasksummary/" + oArgs.workflow
 	
-	var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+	var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
 	//writeDebugObject(dataSource)
 	//writeEval(dataSource.responseType)
-	var dataTable = WMCore.WebTools.createDataTable(oArgs.divID, dataSource, 
-	                           WMCore.WebTools.createDefaultTableDef(dataSchema.fields), 
-							   WMCore.WebTools.createDefaultTableConfig(), 1000000)
+	var dataTable = WMCore.createDataTable(oArgs.divID, dataSource, 
+	                           WMCore.createDefaultTableDef(dataSchema.fields), 
+							   WMCore.createDefaultTableConfig(), 1000000)
 }

@@ -190,10 +190,10 @@ var tree;
 		
 		var dataUrl = "/workqueue/workloadprogress";
 		
-		var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema);
-		var dataTable = WMCore.WebTools.createDataTable("workloadprogress", dataSource, 
-		                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-		                             WMCore.WebTools.createDefaultTableConfig(), 100000);
+		var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
+		var dataTable = WMCore.createDataTable("workloadprogress", dataSource, 
+		                             WMCore.createDefaultTableDef(dataSchema.fields),
+		                             WMCore.createDefaultTableConfig(), 100000);
 	};
 	
 	var elementTable = function() {
@@ -215,14 +215,14 @@ var tree;
 
         var dataUrl = "/workqueue/elementsinfo"
 
-        var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+        var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
         
-		tableConfig = WMCore.WebTools.createDefaultTableConfig();
+		tableConfig = WMCore.createDefaultTableConfig();
 		
 		tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 10});
 		
-        var dataTable = WMCore.WebTools.createDataTable("elements", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
+        var dataTable = WMCore.createDataTable("elements", dataSource, 
+                             WMCore.createDefaultTableDef(dataSchema.fields),
                              tableConfig, 100000);
     }
 

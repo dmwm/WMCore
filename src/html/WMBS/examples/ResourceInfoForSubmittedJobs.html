@@ -109,11 +109,11 @@
 				
 var dataUrl = "/wmbs/listthresholdsforsubmit"
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
 dataSource.responseType = YAHOO.util.DataSource.TYPE_JSON
-var dataTable = WMCore.WebTools.createDataTable("resourceInfo", dataSource, 
+var dataTable = WMCore.createDataTable("resourceInfo", dataSource, 
                              tableDef,
-                             WMCore.WebTools.createDefaultTableConfig(), 100000)
+                             WMCore.createDefaultTableConfig(), 100000)
 
 </script>
 </body>

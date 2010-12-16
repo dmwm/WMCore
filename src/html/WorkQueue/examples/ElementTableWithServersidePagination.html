@@ -47,16 +47,16 @@ var dataSchema = {
      };
 
 var dataUrl = "/workqueue/elementsinfowithlimit?";
-var tableConfig = WMCore.WebTools.createDefaultTableConfig();
+var tableConfig = WMCore.createDefaultTableConfig();
 tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 5});
 tableConfig.initialRequest = "startIndex=0&results=5";
 tableConfig.dynamicData =  true;
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema);
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
 //overwrite default JSARRAY type to JSON
 dataSource.responseType = YAHOO.util.DataSource.TYPE_JSON
-var dataTable = WMCore.WebTools.createDataTable("elements", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
+var dataTable = WMCore.createDataTable("elements", dataSource, 
+                             WMCore.createDefaultTableDef(dataSchema.fields),
                              tableConfig, 100000)
 
 dataTable.handleDataReturnPayload = function(oRequest, oResponse, oPayload) { 

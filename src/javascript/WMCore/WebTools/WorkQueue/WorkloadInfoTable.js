@@ -1,10 +1,10 @@
-WMCore.namespace("WebTools.WorkQueue.WorkloadInfoTable")
+WMCore.namespace("WorkQueue.WorkloadInfoTable")
 /*
  * To do: Maybe needs to add YUI loader for the support library
  */
 
-WMCore.WebTools.WorkQueue.WorkloadInfoTable.workloadTable = function(divID) {
-	
+WMCore.WorkQueue.WorkloadInfoTable.workloadTable = function(divID) {
+
     var pbs = [];
     var progressFormatter = function (elLiner, oRecord, oColumn, oData) {
                 var pb = new YAHOO.widget.ProgressBar({
@@ -25,15 +25,15 @@ WMCore.WebTools.WorkQueue.WorkloadInfoTable.workloadTable = function(divID) {
     
     var dataUrl = "/workqueue/workloadprogress";
     
-    var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema);
-    var tableConfig = WMCore.WebTools.createDefaultTableConfig();
+    var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
+    var tableConfig = WMCore.createDefaultTableConfig();
     tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 5});
     tableConfig.sortedBy ={
         key: "spec_id", dir:YAHOO.widget.DataTable.CLASS_ASC
     };
     
-    var dataTable = WMCore.WebTools.createDataTable(divID, dataSource, 
-                                 WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
+    var dataTable = WMCore.createDataTable(divID, dataSource, 
+                                 WMCore.createDefaultTableDef(dataSchema.fields),
                                  tableConfig, 100000);
 };
     

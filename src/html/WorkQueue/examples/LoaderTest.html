@@ -40,10 +40,10 @@ var siteTable = function () {
  
     var dataUrl = "http://cmssrv52.fnal.gov:9996/workqueue/sites"
 
-    var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-    var dataTable = WMCore.WebTools.createDataTable("site", dataSource, 
-                                    WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                                    WMCore.WebTools.defaultTableConfig, 100000)
+    var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
+    var dataTable = WMCore.createDataTable("site", dataSource, 
+                                    WMCore.createDefaultTableDef(dataSchema.fields),
+                                    WMCore.defaultTableConfig, 100000)
 }
 alert("Test1")
 loader = new YAHOO.util.YUILoader({

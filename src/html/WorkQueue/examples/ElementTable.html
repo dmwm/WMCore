@@ -29,25 +29,24 @@
 <script type="text/javascript">
 
 var formatUrl = function(elCell, oRecord, oColumn, sData) { 
-                elCell.innerHTML = "<a href='" + oRecord.getData("child_queue") + "' target='_blank'>" + sData + "</a>"; 
-            };
+    elCell.innerHTML = "<a href='" + oRecord.getData("child_queue") + "' target='_blank'>" + sData + "</a>"; 
+};
 var dataSchema = {
-        fields: [{key: "id"}, {key: "spec_name"}, {key: "task_name"}, {key: "element_name"}, 
-		         {key: "status"}, {key: "child_queue", formatter:formatUrl}, 
-				 {key: "parent_flag"},
-				 {key: "priority"}, {key: "num_jobs"},
-				 {key: "parent_queue_id"}, {key: "subscription_id"},
-				 {key: "insert_time", parser: "date", formatter:YAHOO.widget.DataTable.formatDate},
-				 {key: "update_time", parser: "date", formatter:YAHOO.widget.DataTable.formatDate}
-				 ]
-        };
+    fields: [{key: "id"}, {key: "spec_name"}, {key: "task_name"}, {key: "element_name"}, 
+             {key: "status"}, {key: "child_queue", formatter:formatUrl}, 
+             {key: "parent_flag"}, {key: "priority"}, {key: "num_jobs"},
+             {key: "parent_queue_id"}, {key: "subscription_id"},
+             {key: "insert_time", parser: "date", formatter:YAHOO.widget.DataTable.formatDate},
+             {key: "update_time", parser: "date", formatter:YAHOO.widget.DataTable.formatDate}
+            ]
+};
 
 var dataUrl = "/workqueue/elementsinfo"
 
-var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-var dataTable = WMCore.WebTools.createDataTable("elements", dataSource, 
-                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.createDefaultTableConfig(), 100000)
+var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
+var dataTable = WMCore.createDataTable("elements", dataSource, 
+                             WMCore.createDefaultTableDef(dataSchema.fields),
+                             WMCore.createDefaultTableConfig(), 100000)
 
 </script>
 </body>

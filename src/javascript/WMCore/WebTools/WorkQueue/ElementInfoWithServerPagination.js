@@ -1,6 +1,6 @@
-WMCore.namespace("WebTools.WorkQueue.ElementInfoWithServerPagination")
+WMCore.namespace("WorkQueue.ElementInfoWithServerPagination")
 
-WMCore.WebTools.WorkQueue.ElementInfoWithServerPagination = function(divID) {
+WMCore.WorkQueue.ElementInfoWithServerPagination = function(divID) {
         
     var formatUrl = function(elCell, oRecord, oColumn, sData) { 
             var host;
@@ -52,17 +52,17 @@ WMCore.WebTools.WorkQueue.ElementInfoWithServerPagination = function(divID) {
      };
 
     var dataUrl = "/workqueue/elementsinfowithlimit";
-    var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+    var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
     //overwrite default JSARRAY type to JSON
     dataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;    
 
-    var tableConfig = WMCore.WebTools.createDefaultTableConfig("id");
+    var tableConfig = WMCore.createDefaultTableConfig("id");
 	tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 10});
     tableConfig.initialRequest = "?startIndex=0&results=10";
     tableConfig.dynamicData =  true;
 	
-    var dataTable = WMCore.WebTools.createDataTable(divID, dataSource, 
-                         WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
+    var dataTable = WMCore.createDataTable(divID, dataSource, 
+                         WMCore.createDefaultTableDef(dataSchema.fields),
                          tableConfig, 100000);
 						 
 	dataTable.handleDataReturnPayload = function(oRequest, oResponse, oPayload) { 

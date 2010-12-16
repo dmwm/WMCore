@@ -1,6 +1,6 @@
-WMCore.namespace("WebTools.WorkQueue.WorkloadStausYUIPieChart")
+WMCore.namespace("WorkQueue.WorkloadStausYUIPieChart")
 
-WMCore.WebTools.WorkQueue.WorkloadStausYUIPieChart.workloadStatusChart = function(divID) {
+WMCore.WorkQueue.WorkloadStausYUIPieChart.workloadStatusChart = function(divID) {
     YAHOO.widget.Chart.SWFURL = "http://yui.yahooapis.com/2.8.1/build/charts/assets/charts.swf";
     //--- data
 
@@ -10,7 +10,7 @@ WMCore.WebTools.WorkQueue.WorkloadStausYUIPieChart.workloadStatusChart = functio
 
     var dataUrl = "/workqueue/statusstat"
 
-    var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+    var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
 
     //--- chart
 

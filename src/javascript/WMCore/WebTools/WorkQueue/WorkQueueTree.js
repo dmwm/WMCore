@@ -1,22 +1,22 @@
-WMCore.namespace("WebTools.WorkQueue.WorkQueueTree")
+WMCore.namespace("WorkQueue.WorkQueueTree")
 //Function  creates the tree and 
 //builds between 3 and 7 children of the root node:
 //var tree
-WMCore.WebTools.WorkQueue.WorkQueueTree.workQueueTree = function(divID) {
+WMCore.WorkQueue.WorkQueueTree.workQueueTree = function(divID) {
 
     //instantiate the tree:
-	var tree = WMCore.WebTools.WorkQueue.WorkQueueTree.tree
+	var tree = WMCore.WorkQueue.WorkQueueTree.tree
     tree = new YAHOO.widget.TreeView(divID);
 
     //function builds 10 children for the node you pass in:
     var buildLargeBranch = function (node) {
-                            if (node.depth < 5) {
-                                YAHOO.log("buildRandomTextBranch: " + node.index, "info", "example");
-                                for ( var i = 0; i < 5; i++ ) {
-						          new YAHOO.widget.TextNode("Local Queue -" + i, node, false);
-						        };
-						    };
-						   };
+        if (node.depth < 5) {
+            YAHOO.log("buildRandomTextBranch: " + node.index, "info", "example");
+            for ( var i = 0; i < 5; i++ ) {
+                new YAHOO.widget.TextNode("Local Queue -" + i, node, false);
+            };
+        };
+    };
 
     for (var i = 0; i < 2 ; i++) {
         var tmpNode = new YAHOO.widget.TextNode("Global Queue -" + i, tree.getRoot(), false);
@@ -44,4 +44,4 @@ WMCore.WebTools.WorkQueue.WorkQueueTree.workQueueTree = function(divID) {
 
     //The tree is not created in the DOM until this method is called:
     tree.draw();
-}
+};

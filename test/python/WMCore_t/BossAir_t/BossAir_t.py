@@ -602,6 +602,7 @@ class BossAirTest(unittest.TestCase):
             tmpJob['owner']       = 'mnorman'
             tmpJob['packageDir']  = self.testDir
             tmpJob['sandbox']     = sandbox
+            tmpJob['priority']    = None
             jobList.append(tmpJob)
 
 

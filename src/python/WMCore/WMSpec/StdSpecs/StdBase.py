@@ -29,6 +29,7 @@ class StdBase(object):
         the methods in the WMWorkloadHelper class.
         """
         self.workloadName = None
+        self.priority = 0
         self.owner = None
         self.group = None
         self.acquisitionEra = None
@@ -51,6 +52,7 @@ class StdBase(object):
         method and pull out any that are setup by this base class.
         """
         self.workloadName = workloadName
+        self.priority = arguments.get("Priority", 0)        
         self.owner = arguments.get("Requestor", None)
         self.group = arguments.get("Group", None)
         self.acquisitionEra = arguments.get("AcquisitionEra", None)
@@ -150,6 +152,7 @@ class StdBase(object):
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
         procTask.applyTemplates()
+        procTask.setTaskPriority(self.priority)
 
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         procTask.setSiteWhitelist(self.siteWhitelist)
@@ -293,6 +296,7 @@ class StdBase(object):
         mergeTask.addGenerator("BasicCounter")
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
+        mergeTask.setTaskPriority(self.priority + 5)
 
         if parentTaskSplitting == "EventBased" and parentTask.taskType() != "Production":
             splitAlgo = "WMBSMergeBySize"
@@ -343,4 +347,5 @@ class StdBase(object):
         cleanupStep = cleanupTask.makeStep("cleanupUnmerged%s" % parentOutputModuleName)
         cleanupStep.setStepType("DeleteFiles")
         cleanupTask.applyTemplates()
+        cleanupTask.setTaskPriority(self.priority + 5)
         return

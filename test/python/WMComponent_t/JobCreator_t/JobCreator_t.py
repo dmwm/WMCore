@@ -186,7 +186,7 @@ class JobCreatorTest(unittest.TestCase):
 
 
 
-    def createWorkload(self, workloadName = 'Test', emulator = True):
+    def createWorkload(self, workloadName = 'Test', emulator = True, priority = 1):
         """
         _createTestWorkload_
 
@@ -195,6 +195,7 @@ class JobCreatorTest(unittest.TestCase):
 
         workload = testWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
+        rereco.setTaskPriority(priority = 1)
 
         
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
@@ -343,6 +344,7 @@ class JobCreatorTest(unittest.TestCase):
         self.assertEqual(job['workflow'], name)
         self.assertEqual(len(job['input_files']), 1)
         self.assertEqual(os.path.basename(job['sandbox']), 'TestWorkload-Sandbox.tar.bz2')
+        self.assertEqual(job['priority'], 1)
 
 
         return

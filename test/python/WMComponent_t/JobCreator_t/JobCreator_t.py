@@ -24,11 +24,12 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMCore.DAOFactory import DAOFactory
 
 
-from WMCore.WMBS.File import File
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBS.File         import File
+from WMCore.WMBS.Fileset      import Fileset
+from WMCore.WMBS.Workflow     import Workflow
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.JobGroup     import JobGroup
+from WMCore.DataStructs.Run   import Run
 
 from WMCore.Agent.Configuration              import loadConfigurationFile, Configuration
 from WMComponent.JobCreator.JobCreator       import JobCreator
@@ -275,7 +276,7 @@ class JobCreatorTest(unittest.TestCase):
         Just test that everything works...more or less
         """
 
-        #return
+        return
 
         myThread = threading.currentThread()
 
@@ -483,9 +484,146 @@ class JobCreatorTest(unittest.TestCase):
         # Count database objects
         result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')[0].fetchall()
         self.assertEqual(len(result), nSubs * nFiles)
+
+        return
+
+
+    def stuffWMBS(self, workflowURL, name):
+        """
+        _stuffWMBS_
+
+        Insert some dummy jobs, jobgroups, filesets, files and subscriptions
+        into WMBS to test job creation.  Three completed job groups each
+        containing several files are injected.  Another incomplete job group is
+        also injected.  Also files are added to the "Mergeable" subscription as
+        well as to the output fileset for their jobgroups.
+        """
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute(siteName = "s1", seName = "somese.cern.ch")
+
+        changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
+
+        mergeFileset = Fileset(name = "mergeFileset")
+        mergeFileset.create()
+        bogusFileset = Fileset(name = "bogusFileset")
+        bogusFileset.create()        
+
+        mergeWorkflow = Workflow(spec = workflowURL, owner = "mnorman",
+                                 name = name, task="/TestWorkload/ReReco")
+        mergeWorkflow.create()
         
+        mergeSubscription = Subscription(fileset = mergeFileset,
+                                         workflow = mergeWorkflow,
+                                         split_algo = "ParentlessMergeBySize")
+        mergeSubscription.create()
+        bogusSubscription = Subscription(fileset = bogusFileset,
+                                         workflow = mergeWorkflow,
+                                         split_algo = "ParentlessMergeBySize")
+
+        file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0,
+                     locations = set(["somese.cern.ch"]))
+        file1.addRun(Run(1, *[45]))
+        file1.create()
+        file2 = File(lfn = "file2", size = 1024, events = 1024,
+                     first_event = 1024, locations = set(["somese.cern.ch"]))
+        file2.addRun(Run(1, *[45]))
+        file2.create()
+        file3 = File(lfn = "file3", size = 1024, events = 1024,
+                     first_event = 2048, locations = set(["somese.cern.ch"]))
+        file3.addRun(Run(1, *[45]))
+        file3.create()
+        file4 = File(lfn = "file4", size = 1024, events = 1024,
+                     first_event = 3072, locations = set(["somese.cern.ch"]))
+        file4.addRun(Run(1, *[45]))
+        file4.create()
+
+        fileA = File(lfn = "fileA", size = 1024, events = 1024,
+                     first_event = 0, locations = set(["somese.cern.ch"]))
+        fileA.addRun(Run(1, *[46]))
+        fileA.create()
+        fileB = File(lfn = "fileB", size = 1024, events = 1024,
+                     first_event = 1024, locations = set(["somese.cern.ch"]))
+        fileB.addRun(Run(1, *[46]))
+        fileB.create()
+        fileC = File(lfn = "fileC", size = 1024, events = 1024,
+                     first_event = 2048, locations = set(["somese.cern.ch"]))
+        fileC.addRun(Run(1, *[46]))
+        fileC.create()
+        
+        fileI = File(lfn = "fileI", size = 1024, events = 1024,
+                     first_event = 0, locations = set(["somese.cern.ch"]))
+        fileI.addRun(Run(2, *[46]))
+        fileI.create()
+        fileII = File(lfn = "fileII", size = 1024, events = 1024,
+                      first_event = 1024, locations = set(["somese.cern.ch"]))
+        fileII.addRun(Run(2, *[46]))
+        fileII.create()
+        fileIII = File(lfn = "fileIII", size = 1024, events = 102400,
+                       first_event = 2048, locations = set(["somese.cern.ch"]))
+        fileIII.addRun(Run(2, *[46]))
+        fileIII.create()
+        fileIV = File(lfn = "fileIV", size = 102400, events = 1024,
+                      first_event = 3072, locations = set(["somese.cern.ch"]))
+        fileIV.addRun(Run(2, *[46]))
+        fileIV.create()
+
+        for file in [file1, file2, file3, file4, fileA, fileB, fileC, fileI,
+                     fileII, fileIII, fileIV]:
+            mergeFileset.addFile(file)
+            bogusFileset.addFile(file)
+
+        mergeFileset.commit()
+        bogusFileset.commit()
+
+        return
 
 
+
+    def testE_TestNonProxySplitting(self):
+        """
+        _TestNonProxySplitting_
+
+        Test and see if we can split things without
+        a proxy.
+        """
+
+
+
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+        config.JobCreator.workerThreads = 1
+
+        name         = makeUUID()
+        workloadName = 'TestWorkload'
+
+
+        workload = self.createWorkload(workloadName = workloadName)
+
+        # Change the file splitting algo
+        procTask = workload.getTask("ReReco")
+        procTask.setSplittingAlgorithm("ParentlessMergeBySize", min_merge_size = 1, max_merge_size = 100000,
+                            max_merge_events = 200000)
+        workload.save(workloadName)        
+        
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
+
+
+        self.stuffWMBS(workflowURL = workloadPath, name = name)
+
+
+        testJobCreator = JobCreatorPoller(config = config)
+
+        testJobCreator.algorithm()
+
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        self.assertEqual(len(result), 1)       
+
+        result = getJobsAction.execute(state = 'Created', jobType = "Merge")
+        self.assertEqual(len(result), 0)
+
+        return
 
 
 if __name__ == "__main__":

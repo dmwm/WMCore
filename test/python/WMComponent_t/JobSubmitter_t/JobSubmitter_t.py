@@ -381,7 +381,7 @@ class JobSubmitterTest(unittest.TestCase):
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
         config.JobStateMachine.default_retries = 1
-        config.JobStateMachine.couchDBName     = "mnorman_test"
+        config.JobStateMachine.couchDBName     = "jobsubmitter_t_3"
 
 
         # Needed, because this is a test
@@ -456,9 +456,6 @@ class JobSubmitterTest(unittest.TestCase):
         self.assertEqual(head.get('Log', None), 'condor.$(Cluster).$(Process).log')
         self.assertEqual(head.get('Error', None), 'condor.$(Cluster).$(Process).err')
         self.assertEqual(head.get('Output', None), 'condor.$(Cluster).$(Process).out')
-        self.assertEqual(head.get('transfer_output_remaps', None),
-                         '\"Report.pkl = Report.0.pkl\"')
-                         #'\"Report.pkl = Report.$(Cluster).$(Process).pkl\"')
         self.assertEqual(head.get('when_to_transfer_output', None), 'ON_EXIT')
         self.assertEqual(head.get('Executable', None), config.JobSubmitter.submitScript)
 

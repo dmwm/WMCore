@@ -105,6 +105,7 @@ class JobArchiverTest(unittest.TestCase):
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl    = os.getenv("COUCHURL", "cmssrv48.fnal.gov:5984")
+        config.JobStateMachine.couchDBName = "taskarchiver_t_0"
 
         config.component_("JobArchiver")
         config.JobArchiver.pollInterval          = 60

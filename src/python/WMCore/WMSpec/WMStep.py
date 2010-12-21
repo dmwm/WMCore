@@ -133,8 +133,12 @@ class WMStepHelper(TreeHelper):
                 return getattr(self.data.output.modules, moduleName)
 
         return None
-    
 
+    def getUserSandboxes(self):
+        if hasattr(self.data, 'user'):
+            if hasattr(self.data.user, 'inputSandboxes'):
+                return self.data.user.inputSandboxes
+        return []
 
 class WMStep(ConfigSectionTree):
     """

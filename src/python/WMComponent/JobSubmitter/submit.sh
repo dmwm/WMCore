@@ -77,6 +77,7 @@ echo "WMAgent is unpacking the job..."
 python2.6 Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$INDEX
 
 cd job
+export WMAGENTJOBDIR=$PWD
 export PYTHONPATH=$PYTHONPATH:$PWD
 echo "WMAgent is now running the job..."
 python2.6 WMCore/WMRuntime/Startup.py

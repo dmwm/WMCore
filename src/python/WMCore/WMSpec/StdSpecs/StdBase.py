@@ -120,8 +120,7 @@ class StdBase(object):
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "FileBased",
                             splitArgs = {'files_per_job': 1}, seeding = None, totalEvents = None,
-                            userDN = None, asyncDest = None ):
-
+                            userDN = None, asyncDest = None, userSandbox = None):
         """
         _setupProcessingTask_
 
@@ -185,6 +184,7 @@ class StdBase(object):
 
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskStageHelper = procTaskStageOut.getTypeHelper()
+        procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setGlobalTag(self.globalTag)
         procTaskStageHelper.setMinMergeSize(self.minMergeSize)
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",

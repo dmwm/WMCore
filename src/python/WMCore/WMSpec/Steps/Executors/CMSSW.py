@@ -77,7 +77,9 @@ class CMSSW(Executor):
         cmsswCommand   = self.step.application.command.executable
         cmsswConfig    = self.step.application.command.configuration
         cmsswArguments = self.step.application.command.arguments
-        
+        userTarball    = ','.join(self.step.user.inputSandboxes)
+        logging.info('User sandboxes are %s' % userTarball)
+
         logging.info("Executing CMSSW step")
 
         #
@@ -187,11 +189,12 @@ class CMSSW(Executor):
                                          jobReportXML,
                                          cmsswCommand,
                                          cmsswConfig,
+                                         os.path.basename(userTarball),
                                          cmsswArguments]
         logging.info("Executing CMSSW. args: %s" % args)
         spawnedChild = subprocess.Popen( args, 0, None, None, stdoutHandle,
                                              stderrHandle )
-        
+
         #(stdoutData, stderrData) = spawnedChild.communicate()
         # the above line replaces the bottom block. I'm unsure of why
         # nobody used communicate(), but I'm leaving this just in case
@@ -264,7 +267,8 @@ CMSSW_VERSION=$5
 JOB_REPORT=$6
 EXECUTABLE=$7
 CONFIGURATION=$8
-shift;shift;shift
+USER_TARBALL=$9
+shift;shift;shift;shift
 shift;shift;shift;shift;shift;
 
 echo "Beginning CMSSW wrapper script"
@@ -282,6 +286,12 @@ $SCRAM_COMMAND project $SCRAM_PROJECT $CMSSW_VERSION
 if [ $? -ne 0 ]; then echo "Scram failed"; exit 71; fi
 cd $CMSSW_VERSION
 if [ $? -ne 0 ]; then echo "***\nCouldn't chdir: $?\n"; exit 72; fi
+
+if [ -n $USER_TARBALL ] && [ -f $WMAGENTJOBDIR/$USER_TARBALL ] ; then
+    echo "Unwinding $WMAGENTJOBDIR/$USER_TARBALL"
+    tar xfz $WMAGENTJOBDIR/$USER_TARBALL
+fi
+if [ $? -ne 0 ]; then echo "***\nCouldn't untar sandbox: $?\n"; exit 74; fi
 eval `$SCRAM_COMMAND runtime -sh`
 if [ $? -ne 0 ]; then echo "***\nCouldn't get scram runtime: $?\n*"; exit 73; fi
 echo "Completed SCRAM project"

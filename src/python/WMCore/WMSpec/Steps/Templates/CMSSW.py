@@ -142,6 +142,17 @@ class CMSSWStepHelper(CoreHelper):
         self.data.application.configuration.arguments.globalTag = globalTag
         return
 
+    def setUserSandbox(self, userSandbox):
+        """
+        _setUserSandbox_
+
+        Sets the userSandbox. Eventually may have to move this to a proper
+        list rather than a one element list
+        """
+        if userSandbox:
+            self.data.user.inputSandboxes = [userSandbox]
+        return
+
 
     def setupChainedProcessing(self, inputStepName, inputOutputModule):
         """

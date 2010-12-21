@@ -85,8 +85,8 @@ class SandboxCreator:
         archivePath = os.path.join(buildItHere, "%s/%s-Sandbox.tar.bz2" % (workloadName, workloadName))
         # Add sandbox path to workload
         workload.setSandbox(archivePath)
-        
-        for topLevelTask in workload.taskIterator():         
+        userSandboxes = []
+        for topLevelTask in workload.taskIterator():
             for taskNode in topLevelTask.nodeIterator():
                 task = WMTask.WMTaskHelper(taskNode)
                 
@@ -108,7 +108,8 @@ class SandboxCreator:
                     s = WMStep.WMStepHelper(s)
                     stepPath = "%s/%s" % (taskPath, s.name())
                     self._makePathonPackage(stepPath)
-                
+                    userSandboxes.extend(s.getUserSandboxes())
+
                 #  //
                 # // Execute the fetcher plugins
                 #//
@@ -140,6 +141,10 @@ class SandboxCreator:
             psetTweaksPath = PSetTweaks.__path__[0]
             archive.add(psetTweaksPath, '/PSetTweaks',
                         exclude = tarballExclusion)
+
+        for sb in userSandboxes:
+            archive.add(sb, os.path.basename(sb))
+
         archive.close()
         pythonHandle.close()
 

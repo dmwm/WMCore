@@ -16,7 +16,7 @@ from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSW as CMSSWTemplate
 
 
-class CMSSWTemplate_t(unittest.TestCase):
+class CMSSWTemplateTest(unittest.TestCase):
     """
     Unittest for CMSSW Template and Helper
     

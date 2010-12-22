@@ -206,13 +206,13 @@ class BossAirTest(unittest.TestCase):
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
         config.JobStateMachine.default_retries = 1
-        config.JobStateMachine.couchDBName     = "mnorman_test"
+        config.JobStateMachine.couchDBName     = "bossair_t"
 
 
         # JobStatusLite
         config.component_('JobStatusLite')
         config.JobStatusLite.componentDir = os.path.join(os.getcwd(), 'Components')
-        config.JobStatusLite.stateTimeouts = {'Pending': 20, 'Running': 86400}
+        config.JobStatusLite.stateTimeouts = {'Pending': 10, 'Running': 86400}
         config.JobStatusLite.pollInterval = 1
 
 
@@ -713,7 +713,8 @@ class BossAirTest(unittest.TestCase):
         changeState = ChangeState(config)
 
         nSubs = 5
-        nJobs = 100
+        nJobs = 10
+
         cacheDir = os.path.join(self.testDir, 'CacheDir')
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,

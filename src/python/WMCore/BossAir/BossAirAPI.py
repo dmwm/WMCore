@@ -17,7 +17,6 @@ Interfaces geared toward the outside expect WMBS objects.  Interfaces
 geared toward the inside expect RunJob objects.  Interior interfaces are
 marked by names starting with '_' such as '_listRunning'
 """
-
 import threading
 import logging
 import subprocess
@@ -171,6 +170,7 @@ class BossAirAPI(WMConnectionBase):
                 runJob['status'] = self.newState
             jobsToCreate.append(runJob)
 
+
         # Next insert them into the database
         self.newJobDAO.execute(jobs = jobsToCreate, conn = self.getDBConn(),
                                transaction = self.existingTransaction())  
@@ -195,7 +195,6 @@ class BossAirAPI(WMConnectionBase):
         else:
             runJobDicts = self.completeJobDAO.execute(conn = self.getDBConn(),
                                                       transaction = self.existingTransaction())
-        
         runJobs = []
         for jDict in runJobDicts:
             rj = RunJob()
@@ -257,8 +256,6 @@ class BossAirAPI(WMConnectionBase):
             rj = RunJob()
             rj.update(jDict)
             loadedJobs.append(rj)
-            if not rj in self.jobs:
-                self.jobs.append(rj)
 
         self.commitTransaction(existingTransaction)
 
@@ -333,22 +330,17 @@ class BossAirAPI(WMConnectionBase):
         self.commitTransaction(existingTransaction)
 
 
-        jobsToRemove = []
-        for jCache in self.jobs:
-            if jCache['id'] in idList:
-                jobsToRemove.append(jCache)
-
-        for jCache in jobsToRemove:
-            self.jobs.remove(jCache)
-
         return
 
-    def loadByWMBS(self, wmbsJobs, addToCache = False):
+    def loadByWMBS(self, wmbsJobs):
         """
         _loadByWMBS_
 
         Load BossAir info based on wmbs Jobs.
         """
+
+        if len(wmbsJobs) < 1:
+            return []
 
         existingTransaction = self.beginTransaction()
 
@@ -360,8 +352,6 @@ class BossAirAPI(WMConnectionBase):
             rj = RunJob()
             rj.update(job)
             loadedJobs.append(rj)
-            if addToCache:
-                self.jobs.append(rj)
         
         self.commitTransaction(existingTransaction)
 
@@ -427,6 +417,7 @@ class BossAirAPI(WMConnectionBase):
         #TODO: Add plugin and user to input via JobSubmitter
         # IMPORTANT IMPORTANT IMPORTANT
 
+
         # Put job into RunJob format
         runJobs = []
         for job in jobs:
@@ -458,6 +449,7 @@ class BossAirAPI(WMConnectionBase):
                 try:
                     pluginInst   = self.plugins[plugin]
                     jobsToSubmit = pluginDict.get(plugin, [])
+                    logging.debug("About to submit %i jobs to plugin %s" % (len(jobsToSubmit), plugin))
                     localSuccess, localFailure = pluginInst.submit(jobs = jobsToSubmit,
                                                                    info = info)
                     for job in localSuccess:
@@ -515,6 +507,7 @@ class BossAirAPI(WMConnectionBase):
             # Then we have no running jobs
             return returnList
 
+        logging.info("About to start building running jobs")
 
         loadedJobs = self._buildRunningJobsFromRunJobs(runJobs = runningJobs)
 
@@ -764,90 +757,62 @@ class BossAirAPI(WMConnectionBase):
         _buildRunningJobsFromRunJobs_ 
 
         Same as _buildRunningJobs_, but taking runJobs as input 
-        """ 
-        loadedJobs = [] 
-        jobsToLoad = [] 
+        """
+        finalJobs = []
 
-        for runJob in runJobs: 
-            foundJob = False 
-            for jCache in self.jobs: 
-                if jCache['id'] == runJob['id']: 
-                    # Then it's the same 
-                    for key in runJob.keys():
-                        if runJob[key] == None: 
-                            # Grab the key if missing 
-                            runJob[key] = jCache.get(key, None) 
-                    # Now delete the old entry and get out of the loop. 
-                    self.jobs.remove(jCache) 
-                    self.jobs.append(runJob) 
-                    loadedJobs.append(runJob) 
-                    foundJob = True 
-                    break 
+        loadedJobs = self._loadByID(jobs = runJobs)
 
-            # If we don't find it, we load it 
-            if not foundJob: 
-                jobsToLoad.append(runJob) 
+        for loadJob in loadedJobs:
+            runJob = None
+            for rj in runJobs:
+                if rj['id'] == loadJob['id']:
+                    runJob = rj
+                    break
+            # We should have two instances of the job
+            for key in runJob.keys():
+                # Fill one from the other
+                # runJob, being most recent, should be on top
+                if runJob[key] == None:
+                    runJob[key] = loadJob.get(key, None)
+            finalJobs.append(runJob)
 
-        # Once out of the loop, load any missing jobs 
-        if len(jobsToLoad) > 0: 
-            # Then we have jobs to load 
-            loadedJobs.extend(self._loadByID(jobs = jobsToLoad))      
-
-        return loadedJobs 
+        return finalJobs
 
 
     def _buildRunningJobs(self, wmbsJobs):
         """
         _buildRunningJobs_
 
-        This is a utility function that exists to build a runJob set,
-        first by looking in the cache, then by loading it and
-        putting it in the cache.
-
-        This is to unify the places where we have to deal with WMBS
-        input.
-
-        You can also use this to load running jobs from the cache automatically
+        Build running jobs by loading information from the database and
+        compiling it into a runJob object.  This overwrites any information
+        from the database with the info from the WMBS Job
         """
 
-        loadedJobs = []
-        jobsToLoad = []
+        finalJobs  = []
+        loadedJobs = self.loadByWMBS(wmbsJobs = wmbsJobs)
+
+        if len(wmbsJobs) != len(loadedJobs):
+            logging.error("Could not load all jobs in BossAir for WMBS input")
 
         for wmbsJob in wmbsJobs:
-            foundJob = False
-            for jCache in self.jobs:
-                if jCache['jobid'] == wmbsJob['id'] and jCache['retry_count'] == wmbsJob['retry_count']:
+            for runJob in loadedJobs:
+                if runJob['jobid'] == wmbsJob['id'] and runJob['retry_count'] == wmbsJob['retry_count']:
                     rj = RunJob()
                     rj.buildFromJob(wmbsJob)
-                    rj['id'] = jCache['id']
-                    # Overwrite empty keys
+                    rj['id'] = runJob['id']
                     for key in rj.keys():
                         if rj[key] == None:
-                            rj[key] = jCache.get(key, None)
-                    foundJob = True
-                    loadedJobs.append(rj)
-
-                    # Update the cache
-                    self.jobs.remove(jCache)
-                    self.jobs.append(rj)
-                    
+                            rj[key] = runJob.get(key, None)
+                    finalJobs.append(rj)
                     break
+                # If we get here, we're sort of screwed
+                # It means that although we sent for it, we couldn't find it.
+                # Possibly means that the job just isn't in there yet.
+                # Make a note of it, then do nothing
+                logging.debug("Could not successfully load a runJob for wmbsJob %i:%i\n" % (wmbsJob['id'], wmbsJob['retry_count']))
+                logging.debug("WMBS Job: %s\n" % wmbsJob)
 
-                
-            if not foundJob:
-                # Then we have a job that didn't enter through submit
-                # How the hell did that happen?
-                # Are we recovering?
-                jobsToLoad.append(wmbsJob)
-
-
-        if len(jobsToLoad) > 0:
-            # Then we have jobs to load
-            loadedJobs.extend(self.loadByWMBS(wmbsJobs = jobsToLoad, addToCache = True))
-            
-
-
-        return loadedJobs
+        return finalJobs
 
 
         

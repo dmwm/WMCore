@@ -171,7 +171,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
             updated_elements = sum([list(x['Elements']) for x in updated], [])
             self.wq.setReqMgrUpdate(now, *[y['Id'] for y in updated_elements])
 
-            #self.wq.deleteFinisedWork(updated)
+            self.wq.deleteFinisedWork(updated)
 
     def reportRequestStatusToReqMgr(self, request, status, message = None):
         """Change state in RequestManager

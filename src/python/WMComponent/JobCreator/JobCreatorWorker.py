@@ -290,7 +290,6 @@ class JobCreatorWorker:
             jobSplittingFunction = runSplitter(jobFactory = wmbsJobFactory,
                                                splitParams = splitParams)
             while continueSubscription:
-                continueSubscription = False
                 # This loop runs over the jobFactory,
                 # using yield statements and a pre-existing proxy to
                 # generate and process new jobs

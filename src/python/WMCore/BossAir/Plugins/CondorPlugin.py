@@ -120,7 +120,9 @@ class CondorPlugin(BasePlugin):
                      'Held': 'Running',
                      'Complete': 'Complete',
                      'Error': 'Error',
-                     'Timeout': 'Error'}
+                     'Timeout': 'Error',
+                     'Removed': 'Running',
+                     'Unknown': 'Error'}
         
         # This call is optional but needs to for testing
         #BasePlugin.verifyState(stateDict)
@@ -149,6 +151,7 @@ class CondorPlugin(BasePlugin):
         self.sandbox    = None
         self.scriptFile = None
         self.submitDir  = None
+        self.removeTime = getattr(config.BossAir, 'removeTime', 60)
 
 
         # Build ourselves a pool
@@ -326,14 +329,31 @@ class CondorPlugin(BasePlugin):
         changeList   = []
         completeList = []
         runningList  = []
+        noInfoFlag   = False
 
         # Get the job
         jobInfo = self.getClassAds()
+        if len(jobInfo.keys()) == 0:
+            noInfoFlag = True
 
         for job in jobs:
             # Now go over the jobs from WMBS and see what we have
             if not job['jobid'] in jobInfo.keys():
-                completeList.append(job)
+                # Two options here, either put in removed, or not
+                # Only cycle through Removed if condor_q is sending
+                # us no information
+                if noInfoFlag:
+                    if not job['status'] == 'Removed':
+                        # If the job is not in removed, move it to removed
+                        job['status']      = 'Removed'
+                        job['status_time'] = int(time.time())
+                        changeList.append(job)
+                    elif time.time() - float(job['status_time']) > self.removeTime:
+                        # If the job is in removed, and it's been missing for more
+                        # then self.removeTime, remove it.
+                        completeList.append(job)
+                else:
+                    completeList.append(job)
             else:
                 jobAd     = jobInfo.get(job['jobid'])
                 jobStatus = int(jobAd.get('JobStatus', 0))
@@ -347,6 +367,9 @@ class CondorPlugin(BasePlugin):
                 elif jobStatus == 2:
                     # Job is Running, doing what it was supposed to
                     statName = 'Running'
+                else:
+                    # What state are we in?
+                    logging.info("Job in unknown state %i" % jobStatus)
 
                 # Get the global state
                 job['globalState'] = CondorPlugin.stateMap()[statName]

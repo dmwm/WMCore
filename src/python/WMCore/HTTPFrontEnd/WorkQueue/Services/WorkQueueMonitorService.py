@@ -30,7 +30,7 @@ TODO:
 import os
 import time
 import logging # import WMCore.WMLogging
-from WMCore.WorkQueue.WorkQueue import WorkQueue
+
 from WMCore.HTTPFrontEnd.WorkQueue.Services.ServiceInterface import ServiceInterface
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WorkQueue.Database import States
@@ -47,8 +47,10 @@ class WorkQueueMonitorService(ServiceInterface):
 
         self.model.addMethod("GET", "test", self.testMethod)
 
-        # from WorkQueueService
-        self.wq = WorkQueue(logger = self.model, dbi = self.model.dbi, **self.model.config.queueParams)
+        # currently we don't need to distinguish the level of workqueue
+        # for monitoring service - might needs in the future if different
+        # api needs to be passed between global and local queue
+        # then use self.model.config.level.
         
         # DAO stuff
         # RESTModel.addDAO() see COMP/T0/src/python/T0/DAS/Tier0RESTModel.py

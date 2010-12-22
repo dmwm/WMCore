@@ -53,6 +53,7 @@ def globalQueue(logger = None, dbi = None, **kwargs):
     """
     defaults = {'SplitByBlock' : False,
                 'PopulateFilesets' : False,
+                'LocalQueueFlag': False,
                 'SplittingMapping' : {'DatasetBlock' : 
                                         {'name': 'Dataset', 
                                          'args': {}}
@@ -100,6 +101,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('ReleaseRequireSubscribed', True)
         self.params.setdefault('PhEDExEndpoint', None)
         self.params.setdefault('PopulateFilesets', True)
+        self.params.setdefault('LocalQueueFlag', True)
 
         #TODO: current directory as a default directory might not be a best choice.
         # Don't know where else though 
@@ -207,28 +209,29 @@ class WorkQueue(WorkQueueBase):
         except TypeError:
             ids = [ids]
 
-        updateAction = self.daofactory(classname =
-                                       "WorkQueueElement.UpdateStatus")
-        affected = updateAction.execute(status, ids, id_type, source,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+        with self.transactionContext():
+            updateAction = self.daofactory(classname =
+                                           "WorkQueueElement.UpdateStatus")
+            affected = updateAction.execute(status, ids, id_type, source,
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
 
-        if not affected:
-            raise RuntimeError, "Status not changed: No matching elements"
+            if not affected:
+                raise RuntimeError, "Status not changed: No matching elements"
 
-        if self.params['PopulateFilesets']:
-            from WMCore.WorkQueue.WMBSHelper import killWorkflow
-            if status == 'Canceled':
-                requestNameAction = self.daofactory(classname =
-                                       "WorkQueueElement.GetRequestNamesByIDs")
-                requestNames = requestNameAction.execute(ids, id_type,
-                                           conn = self.getDBConn(),
-                                           transaction = self.existingTransaction())
-                self.logger.debug("""Canceling work in wmbs
-                                    Workflows: %s""" % (requestNames))
+            if self.params['LocalQueueFlag']:
+                if status == 'Canceled':
+                    requestNameAction = self.daofactory(classname =
+                                           "WorkQueueElement.GetRequestNamesByIDs")
+                    requestNames = requestNameAction.execute(ids, id_type,
+                                               conn = self.getDBConn(),
+                                               transaction = self.existingTransaction())
+                    self.logger.debug("""Canceling work in wmbs
+                                        Workflows: %s""" % (requestNames))
 
-                for workflow in set(requestNames):
-                    killWorkflow(workflow)
+                    from WMCore.WorkQueue.WMBSHelper import killWorkflow
+                    for workflow in set(requestNames):
+                        killWorkflow(workflow)
 
         #TODO: Do we need to message parents/children here?
         # Would be quicker than waiting for the next status updates
@@ -479,7 +482,7 @@ class WorkQueue(WorkQueueBase):
                 raise
 
         # if it is not local queue,
-        if not self.params['PopulateFilesets'] and id_type == 'request_name':
+        if not self.params['LocalQueueFlag'] and id_type == 'request_name':
             # get list of child queue
             qAction = self.daofactory(classname = "WorkQueueElement.ChildQueuesByRequest")
             childQueues = qAction.execute(elementIDs, conn = self.getDBConn(),
@@ -510,7 +513,7 @@ class WorkQueue(WorkQueueBase):
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
 
-    def deleteFinisedWork(self, elementResults):
+    def deleteFinishedWork(self, elementResults):
         """Delete complete work"""
         complete_results = [x for x in elementResults if x.inEndState()]
         if complete_results:
@@ -772,7 +775,7 @@ class WorkQueue(WorkQueueBase):
             since = self.lastReportToParent
 
         # Get queue elements grouped by their parent with updated wmbs progress
-        useWMBS = not skipWMBS and self.params['PopulateFilesets']
+        useWMBS = not skipWMBS and self.params['LocalQueueFlag']
         elements = self.status(after = since, dictKey = "ParentQueueId",
                                syncWithWMBS = useWMBS)
         # filter elements that don't come from the parent
@@ -816,9 +819,8 @@ class WorkQueue(WorkQueueBase):
                             self.logger.debug(msg % (status, list(ids)))
                             self.setStatus(status, ids, id_type = 'parent_queue_id')
 
-
                 # prune elements that are finished (after reporting to parent)
-                self.deleteFinisedWork(results)
+                self.deleteFinishedWork(results)
 
         # record update times
         if full:
@@ -932,7 +934,7 @@ class WorkQueue(WorkQueueBase):
 
         if not exists:
             
-            if self.params['PopulateFilesets']:
+            if self.params['LocalQueueFlag']:
                 sandboxCreator = SandboxCreator()
                 sandboxCreator.makeSandbox(self.params['CacheDir'], wmspec)
             else:

@@ -536,7 +536,7 @@ class WorkQueue(WorkQueueBase):
         wmspec = WMWorkloadHelper()
         wmspec.load(wmspecUrl)
 
-        totalUnits = self._splitWork(wmspec, parentQueueId)
+        totalUnits = self._splitWork(wmspec, parentQueueId, team = team)
 
         # Do database stuff in one quick loop
         with self.transactionContext():
@@ -743,14 +743,16 @@ class WorkQueue(WorkQueueBase):
                             totalUnits.extend(self._splitWork(wmspec,
                                                         element['element_id'],
                                                         element.get('data'),
-                                                        mask))
+                                                        mask,
+                                                        element['team_name']))
                             self.logger.info("Getting element form parent queue: %s" % element.get('data'))
 
                         with self.transactionContext():
                             for unit in totalUnits:
+                                # spec name and request name should be always identical.
                                 self._insertWorkQueueElement(unit,
-                                                             element['request_name'],
-                                                             element['team_name'])
+                                                             unit['RequestName'],
+                                                             unit['TeamName'])
                         counter += len(totalUnits)
         return counter
 
@@ -834,7 +836,7 @@ class WorkQueue(WorkQueueBase):
     #//
 
     def _splitWork(self, wmspec, parentQueueId = None,
-                   data = None, mask = None):
+                   data = None, mask = None, team = None):
         """
         Split work into WorkQeueueElements
 
@@ -863,7 +865,7 @@ class WorkQueue(WorkQueueBase):
                 policy = startPolicy(policyName, self.params['SplittingMapping'])
                 self.logger.info("Using %s start policy with %s " % (policyName,
                                                 self.params['SplittingMapping']))
-                units = policy(wmspec, topLevelTask, self.dbsHelpers, data, mask)
+                units = policy(wmspec, topLevelTask, self.dbsHelpers, data, mask, team)
                 for unit in units:
                     unit['ParentQueueId'] = parentQueueId
                 self.logger.info("Queuing %s unit(s): wf: %s for task: %s" % (
@@ -887,7 +889,12 @@ class WorkQueue(WorkQueueBase):
         wmspec = unit['WMSpec']
         task = unit["Task"]
         parentQueueId = unit['ParentQueueId']
-
+        if wmspec.name() != requestName:
+            error = WorkQueueWMSpecError(wmspec, 
+                      "WMSpec Name error: %s doesn't match with request name %s" %
+                      (wmspec.name(), requestName))
+            raise error
+        
         self._insertWMSpec(wmspec)
         self._insertWMTask(wmspec.name(), task)
 

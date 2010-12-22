@@ -18,6 +18,7 @@ class StartPolicyInterface(PolicyInterface):
         PolicyInterface.__init__(self, **args)
         self.workQueueElements = []
         self.wmspec = None
+        self.team = None
         self.initialTask = None
         self.splitParams = None
         self.dbs_pool = {}
@@ -45,12 +46,15 @@ class StartPolicyInterface(PolicyInterface):
     def newQueueElement(self, **args):
         args.setdefault('WMSpec', self.wmspec)
         args.setdefault('Task', self.initialTask)
+        args.setdefault('RequestName', self.wmspec.name())
+        args.setdefault('TeamName', self.team)
         self.workQueueElements.append(WorkQueueElement(**args))
 
-    def __call__(self, wmspec, task, dbs_pool = None, data = None, mask = None):
+    def __call__(self, wmspec, task, dbs_pool = None, data = None, mask = None, team = None):
         self.wmspec = wmspec
         self.splitParams = self.wmspec.data.policies.start
         self.initialTask = task
+        self.team = team
         if dbs_pool:
             self.dbs_pool.update(dbs_pool)
         self.data = data

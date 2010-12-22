@@ -56,11 +56,12 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     continue
 
                 try:
-                    self.wq.logger.info("Processing request %s" % reqName)
+                    self.wq.logger.info("Processing request %s at %s" % 
+                                        (reqName, workLoadUrl))
                     wmspec = WMWorkloadHelper()
                     wmspec.load(workLoadUrl)
 
-                    units = self.wq._splitWork(wmspec)
+                    units = self.wq._splitWork(wmspec, team = team)
 
                     # Process each request in a transaction - isolate bad req's
                     with self.wq.transactionContext() as trans:
@@ -83,6 +84,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                             self.wq.logger.error("Unable to update ReqMgr state: %s" % str(ex))
                             self.wq.logger.error('Request "%s" not queued' % reqName)
                             self.wq.rollbackTransaction(trans)
+                            continue
 
                     work += len(units)
                 except (WorkQueueWMSpecError, WorkQueueNoWorkError), ex:

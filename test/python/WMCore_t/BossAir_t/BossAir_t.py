@@ -17,19 +17,18 @@ import subprocess
 import traceback
 import cPickle as pickle
 
+from subprocess import Popen, PIPE
 
 import WMCore.WMInit
-from WMQuality.TestInit             import TestInit
-from WMCore.DAOFactory              import DAOFactory
-from WMCore.Services.UUID           import makeUUID
-from WMCore.Agent.Configuration     import Configuration
-from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
-
-
-
+from WMQuality.TestInitCouchApp             import TestInitCouchApp as TestInit
+from WMCore.DAOFactory                      import DAOFactory
+from WMCore.Services.UUID                   import makeUUID
+from WMCore.Agent.Configuration             import Configuration
+from WMCore.WMSpec.Makers.TaskMaker         import TaskMaker
+from WMCore.WMSpec.StdSpecs.ReReco          import rerecoWorkload, getTestArguments
 from WMCore.JobStateMachine.ChangeState     import ChangeState
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Agent.HeartbeatAPI              import HeartbeatAPI
 
 from WMCore.WMBS.File         import File
 from WMCore.WMBS.Fileset      import Fileset
@@ -38,22 +37,13 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup     import JobGroup
 from WMCore.WMBS.Job          import Job
 
-
-from WMCore.WMBS.Job import Job
-
 from WMCore.BossAir.BossAirAPI   import BossAirAPI, BossAirException
 from WMCore.BossAir.StatusPoller import StatusPoller
 
-from WMCore.Agent.HeartbeatAPI              import HeartbeatAPI
-
-
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 
-
-
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
-from WMComponent.JobTracker.JobTrackerPoller import JobTrackerPoller
-
+from WMComponent.JobTracker.JobTrackerPoller     import JobTrackerPoller
 
 from nose.plugins.attrib import attr
 
@@ -568,7 +558,9 @@ class BossAirTest(unittest.TestCase):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
 
+        # Get the config and set the removal time to -10 for testing
         config = self.getConfig()
+        config.BossAir.removeTime = -10.0
 
         nJobs = 10
 
@@ -642,6 +634,49 @@ class BossAirTest(unittest.TestCase):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0)
 
+        # Try resubmission
+        for j in jobList:
+            j['retry_count'] = 1
+
+        baAPI.submit(jobs = jobList, info = info)
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, nJobs)
+
+        newJobs = baAPI._loadByStatus(status = 'New')
+        self.assertEqual(len(newJobs), nJobs)
+
+
+        # See where they are
+        baAPI.track()
+
+        newJobs = baAPI._loadByStatus(status = 'New')
+        self.assertEqual(len(newJobs), 0)
+
+        newJobs = baAPI._loadByStatus(status = 'Idle')
+        self.assertEqual(len(newJobs), nJobs)
+
+        # Now kill 'em manually
+        command = ['condor_rm', self.user]
+        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.communicate()
+
+        # See what happened
+        baAPI.track()
+
+        newJobs = baAPI._loadByStatus(status = 'Idle')
+        self.assertEqual(len(newJobs), 0)
+
+        newJobs = baAPI._loadByStatus(status = 'Removed')
+        self.assertEqual(len(newJobs), nJobs)
+
+        # Because removal time is -10.0, jobs should remove immediately
+        baAPI.track()
+
+        # Assert that jobs were listed as completed
+        myThread = threading.currentThread()
+        newJobs = baAPI._loadByStatus(status = 'Removed', complete = '0')
+        self.assertEqual(len(newJobs), nJobs)
 
         return
 

@@ -17,15 +17,18 @@ class JobStatusForMonitoring(DBFormatter):
     """
 
 
-    sql = """SELECT count(rj.wmbs_id) AS num_jobs, st.name AS status,
-                    wl.plugin AS plugin, wu.cert_dn AS owner
+    sql = """SELECT wwf.name as workflow, count(rj.wmbs_id) AS num_jobs, 
+                    st.name AS status, wl.plugin AS plugin, wu.cert_dn AS owner
                FROM bl_runjob rj
-               INNER JOIN wmbs_users wu ON wu.id = rj.user
+               INNER JOIN wmbs_users wu ON wu.id = rj.user_id
                INNER JOIN bl_status st ON rj.sched_status = st.id
                INNER JOIN wmbs_job wj ON wj.id = rj.wmbs_id
+               INNER JOIN wmbs_jobgroup wjg ON wjg.id = wj.jobgroup
+               INNER JOIN wmbs_subscription ws ON ws.id = wjg.subscription
+               INNER JOIN wmbs_workflow wwf ON wwf.id = ws.workflow
                LEFT OUTER JOIN wmbs_location wl ON wl.id = wj.location
                WHERE rj.status = :complete
-               GROUP BY plugin, status
+               GROUP BY wwf.name, plugin, st.name
     """
 
     def mappedStatusFormat(self, results):
@@ -45,11 +48,18 @@ class JobStatusForMonitoring(DBFormatter):
                                 globals(), locals(), [data['plugin']])
             plugIn = getattr(module, data['plugin'])
             state = plugIn.stateMap().get(data['status'])
-            commonStates.setdefault(state, 0)                             
-            commonStates[state] += data['num_jobs']
-        
-        return [{'status': status, 'num_jobs': numJobs} 
-                  for status, numJobs in commonStates.items()]
+            if not commonStates.has_key(data['workflow']):
+                commonStates[data['workflow']] = {}
+            
+            commonStates[data['workflow']].setdefault(state, 0)
+            commonStates[data['workflow']][state] += data['num_jobs']
+            
+        results = []
+        for key, value in commonStates.items():
+            reformedData = {'request_name': key}
+            reformedData.update(value)
+            results.append(reformedData)
+        return results
         
 
     def execute(self, commonFormat = True, conn = None, transaction = False):

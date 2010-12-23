@@ -34,7 +34,6 @@ import logging # import WMCore.WMLogging
 from WMCore.HTTPFrontEnd.WorkQueue.Services.ServiceInterface import ServiceInterface
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WorkQueue.Database import States
-from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfo
 
 class WorkQueueMonitorService(ServiceInterface):
     _myClass = "short cut to the class name for logging purposes"
@@ -43,15 +42,20 @@ class WorkQueueMonitorService(ServiceInterface):
         self._myClass = self.__class__.__name__ 
         
         
-        #self._testDbReadiness()
 
-        self.model.addMethod("GET", "test", self.testMethod)
-
-        # currently we don't need to distinguish the level of workqueue
-        # for monitoring service - might needs in the future if different
-        # api needs to be passed between global and local queue
-        # then use self.model.config.level.
-        
+        ###############################################
+        ## only in localqueue,  add these mehtods          ##
+        ###############################################
+        if self.model.config.level == "LocalQueue":
+            from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfo
+            #External couch call
+            self.model.addMethod("GET", "jobsummary", JobInfo.getJobSummaryByWorkflow)
+            # batch system status        
+            bossAirDAOFactory = DAOFactory(package = "WMCore.BossAir", 
+                                       logger = self.model, 
+                                       dbinterface = self.model.dbi)
+            self.model.addDAO('GET', 'batchjobstatus', "JobStatusForMonitoring",
+                        daoFactory = bossAirDAOFactory)
         # DAO stuff
         # RESTModel.addDAO() see COMP/T0/src/python/T0/DAS/Tier0RESTModel.py
         # (within WMCore no addDAO() example except for WebTools_t/DummyRESTModel.py ...)
@@ -102,11 +106,7 @@ class WorkQueueMonitorService(ServiceInterface):
         self.model.addDAO("GET", "childqueues", "Monitor.Summary.GetChildQueues")
         self.model.addDAO("GET", "childqueuesbyrequest", "Monitor.Summary.GetAssignedLocalQueueByRequest")
         self.model.addDAO("GET", "jobstatusbyrequest", "Monitor.Summary.JobStatusByRequest")
-        
-        ###############################################
-        ## external call to couchDB                  ##
-        ###############################################
-        self.model.addMethod("GET", "jobsummary", JobInfo.getJobSummaryByWorkflow)
+        self.model.addDAO("GET", "jobsbyrequest", "Monitor.Summary.TopLevelJobsByRequest")
         
         ###############################################
         ## To do:  Revisit this usage  related view  ##

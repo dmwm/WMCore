@@ -1,3 +1,4 @@
+import logging
 from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
       import getOverview, getGlobalQueues
 
@@ -12,9 +13,10 @@ def getGlobalSummaryView():
     requestInfo = getOverview()
     #get information from global queue.
     gQueues = getGlobalQueues()
-    gRequestInfo, cRequestInfo, qRequestInfo = _globalQueueInfo(gQueues)
+    gRequestInfo, cRequestInfo, qRequestInfo, bJobs = _globalQueueInfo(gQueues)
 
-    return _formatTable(requestInfo, gRequestInfo, cRequestInfo, qRequestInfo)
+    return _formatTable(requestInfo, gRequestInfo, cRequestInfo, 
+                        qRequestInfo, bJobs)
 
 
 def _globalQueueInfo(gQueues):
@@ -24,18 +26,22 @@ def _globalQueueInfo(gQueues):
     gRequestInfo = []
     cRequestInfo = []
     qRequestInfo = []
+    batchJobs = []
     for queue in gQueues:
         globalQ = WorkQueue({'endpoint': queue + "/"})
         try:
             gRequestInfo.extend(globalQ.getChildQueuesByRequest())
-        except:
+            gRequestInfo.extend(globalQ.getTopLevelJobsByRequest())
+        except Exception, ex:
             gRequestInfo.extend([{"queue_error": queue}])
+            logging.error("GlobalQueue Error: %s" % str(ex))
         else:
-            cJobs, qJobs = _localQueueInfo(globalQ)
+            cJobs, qJobs, bJobs= _localQueueInfo(globalQ)
             cRequestInfo.extend(cJobs)
             qRequestInfo.extend(qJobs)
-
-    return gRequestInfo, cRequestInfo, qRequestInfo
+            batchJobs.extend(bJobs)
+            
+    return gRequestInfo, cRequestInfo, qRequestInfo, batchJobs
 
 def _localQueueInfo(globalQ):
     """
@@ -43,6 +49,8 @@ def _localQueueInfo(globalQ):
     """
     cQueues = globalQ.getChildQueues()
     jobSummary = []
+    queueJobSummary = []    
+    batchJobs = []
     for cQueue in cQueues:
         childQ = WorkQueue({'endpoint': cQueue + "/"})
         #childQ = WorkQueue({'endpoint': 'http://cmssrv75.fnal.gov:9991/workqueue%s' % '/'})
@@ -61,16 +69,21 @@ def _localQueueInfo(globalQ):
             else:
                 jobSummary.extend(jobData)
                 
-        queueJobSummary = []    
         try:
             queueJobSummary.extend(childQ.getJobStatusByRequest())
-        except:
+        except Exception, ex:
             queueJobSummary.extend([{"queue_error": cQueue,
                                      "error": str(ex)}])
-            
-    return jobSummary, queueJobSummary
+        try:
+            batchJobs.extend(childQ.getBatchJobStatus())
+        except Exception, ex:
+            batchJobs.extend([{"queue_error": cQueue,
+                               "error": str(ex)}])
+         
+    return jobSummary, queueJobSummary, batchJobs
 
-def _formatTable(requestInfo, gRequestInfo, cRequestInfo, qRequestInfo):
+def _formatTable(requestInfo, gRequestInfo, cRequestInfo, 
+                 qRequestInfo, batchJobs):
     """
     combine the results from different sources and format them
     """
@@ -92,11 +105,15 @@ def _formatTable(requestInfo, gRequestInfo, cRequestInfo, qRequestInfo):
                     item['error'] = "Global Queue Down"
 
             elif item['request_name'] == gItem['request_name']:
-                localQueueList = []
-                addToLocalQueueList(item, localQueueList)
-                addToLocalQueueList(gItem, localQueueList)
-                item.update(gItem)
-                item['local_queue'] = localQueueList
+                if gItem.has_key('total_jobs'):
+                    item.setdefault('total_jobs', 0)
+                    item['total_jobs'] += gItem['total_jobs']
+                else:
+                    localQueueList = []
+                    addToLocalQueueList(item, localQueueList)
+                    addToLocalQueueList(gItem, localQueueList)
+                    item.update(gItem)
+                    item['local_queue'] = localQueueList
 
         for cItem in cRequestInfo:
 
@@ -132,5 +149,17 @@ def _formatTable(requestInfo, gRequestInfo, cRequestInfo, qRequestInfo):
                     jobs = item.pop(status, 0)
                     aJobs = queueItem.pop(status, 0)
                     item[status] = jobs + aJobs
-                
+        
+        for batchJob in batchJobs:
+
+            if batchJob.has_key('queue_error'):
+                # the error message will be the same as cItem error
+                pass
+            elif item['request_name'] == batchJob['request_name']:
+                #
+                for status in ['Pending', 'Running', 'Complete','Error']:
+                    jobs = item.pop(status, 0)
+                    bJobs = batchJob.pop(status, 0)
+                    item[status] = jobs + bJobs
+    
     return requestInfo

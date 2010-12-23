@@ -44,6 +44,7 @@ WMCore.RequestManager.Filter.addLocalFilter = function(filterDiv, data,
                 }
             }
             res.results = filtered;
+            tableInfo.conf.totalRecords = filtered.length;
         }
         
         return res;
@@ -51,6 +52,22 @@ WMCore.RequestManager.Filter.addLocalFilter = function(filterDiv, data,
     
     var dataTable = new YAHOO.widget.DataTable(tableInfo.divID, tableInfo.cols, 
                                                dataSource, tableInfo.conf);
+    
+    var requestString = ""
+    for (filter in filterDiv) {
+        requestString += YAHOO.util.Dom.get(filterDiv[filter]).value;
+        requestString += "&";
+    };
+        
+    // Get filtered data
+    dataSource.sendRequest(requestString, {
+        success: dataTable.onDataReturnReplaceRows,
+        failure:  function(){
+            YAHOO.log("Polling failure", "error");
+        },
+        scope: dataTable,
+        arguments: dataTable.getState()
+    });
     
     var filterTimeout = null;
     var updateFilter = function(){
@@ -65,8 +82,11 @@ WMCore.RequestManager.Filter.addLocalFilter = function(filterDiv, data,
         // Get filtered data
         dataSource.sendRequest(requestString, {
             success: dataTable.onDataReturnReplaceRows,
-            failure: dataTable.onDataReturnReplaceRows,
-            scope: dataTable
+            failure:  function(){
+                YAHOO.log("Polling failure", "error");
+            },
+            scope: dataTable,
+            arguments: dataTable.getState()
         });
     };
     

@@ -17,8 +17,11 @@ class DeleteParentCheck(DBFormatter):
            AND fileset != :fileset)"""
     
         
-    def execute(self, file = None, fileset = None, conn = None, transaction = False):
+    def execute(self, file, fileset, conn = None, transaction = False):
         if type(file) == list:
+            if len(file) < 1:
+                # Then we have nothing
+                return
             binds = []
             for entry in file:
                 binds.append({'id': entry, 'fileset': fileset})

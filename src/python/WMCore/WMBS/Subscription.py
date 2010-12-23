@@ -43,6 +43,8 @@ class Subscription(WMBSBase, WMSubscription):
                                 split_algo = split_algo, type = type)
 
         self.setdefault("id", id)
+
+        self.bulkDeleteLimit = 500
         return
         
     def create(self):
@@ -412,17 +414,32 @@ class Subscription(WMBSBase, WMSubscription):
         # Do the input fileset LAST!
         filesets.append(self['fileset'].id)
 
+        self.commitTransaction(existingTransaction)
 
         #First, jobs
+        # If there are too many jobs, delete them in separate
+        # transactions to reduce database load
         deleteAction = self.daofactory(classname = "Jobs.Delete")
         jobDeleteList = []
         for job in self.getJobs():
             jobDeleteList.append(job['id'])
         if len(jobDeleteList) > 0:
-            deleteAction.execute(id = jobDeleteList, conn = self.getDBConn(),
-                                 transaction = self.existingTransaction())
+            if len(jobDeleteList) <= self.bulkDeleteLimit:
+                existingTransaction = self.beginTransaction()
+                deleteAction.execute(id = jobDeleteList, conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
+                self.commitTransaction(existingTransaction)
+            else:
+                while len(jobDeleteList) > 0:
+                    existingTransaction = self.beginTransaction()
+                    toDelete = jobDeleteList[:self.bulkDeleteLimit]
+                    jobDeleteList = jobDeleteList[self.bulkDeleteLimit:]
+                    deleteAction.execute(id = toDelete, conn = self.getDBConn(),
+                                         transaction = self.existingTransaction())
 
+                    self.commitTransaction(existingTransaction)
 
+        existingTransaction = self.beginTransaction()
 
         #Next jobGroups
         deleteAction = self.daofactory(classname = "JobGroup.Delete")
@@ -430,9 +447,24 @@ class Subscription(WMBSBase, WMSubscription):
             deleteAction.execute(id = jobGroupID, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
+        self.commitTransaction(existingTransaction)
 
+        existingTransaction = self.beginTransaction()
 
-        for filesetID in filesets:
+        # Now, get the filesets that needs to be deleted
+        action  = self.daofactory(classname = "Fileset.CheckForDelete")
+        results = action.execute(fileids = filesets,
+                                 subid = self['id'],
+                                 conn = self.getDBConn(),
+                                 transaction = self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
+
+        deleteFilesets = [x['id'] for x in results]
+
+        # Delete files in sets
+        # Each set of files deleted in a separate transaction
+        for filesetID in deleteFilesets:
             fileset = Fileset(id = filesetID)
 
             # Load the files
@@ -445,27 +477,46 @@ class Subscription(WMBSBase, WMSubscription):
             for result in results:
                 filesetFiles.append(result['fileid'])
 
-
+            # Now get rid of unused files
+            if len(filesetFiles) < 1:
+                # if we have unused files, of course
+                continue
             
-            
-            action = self.daofactory(classname = "Fileset.DeleteCheck")
-            action.execute(fileid = fileset.id, subid = self["id"],
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
-            if not fileset.exists() and len(filesetFiles) > 0:
-                # If we got rid of the fileset
-                # If we did not delete the fileset, all files are still in use
-                # Now get rid of unused files
+            parent = self.daofactory(classname = "Files.DeleteParentCheck")
+            action = self.daofactory(classname = "Files.DeleteCheck")
 
-                parent = self.daofactory(classname = "Files.DeleteParentCheck")
-                action = self.daofactory(classname = "Files.DeleteCheck")
-                
+            if len(filesetFiles) <= self.bulkDeleteLimit:
+                existingTransaction = self.beginTransaction()
                 parent.execute(file = filesetFiles, fileset = fileset.id,
                                conn = self.getDBConn(),
                                transaction = self.existingTransaction())
                 action.execute(file = filesetFiles, fileset = fileset.id,
                                conn = self.getDBConn(),
                                transaction = self.existingTransaction())
+                self.commitTransaction(existingTransaction)
+            else:
+                while len(filesetFiles) > 0:
+                    existingTransaction = self.beginTransaction()
+                    toDelete     = filesetFiles[:self.bulkDeleteLimit]
+                    filesetFiles = filesetFiles[self.bulkDeleteLimit:]
+                    parent.execute(file = toDelete, fileset = fileset.id,
+                                   conn = self.getDBConn(),
+                                   transaction = self.existingTransaction())
+                    action.execute(file = toDelete, fileset = fileset.id,
+                                   conn = self.getDBConn(),
+                                   transaction = self.existingTransaction())
+                    self.commitTransaction(existingTransaction)
+
+
+        # Start a new transaction for filesets, workflow, and the subscription
+        existingTransaction = self.beginTransaction()
+        for filesetID in deleteFilesets:
+            # Now actually delete the filesets
+            action = self.daofactory(classname = "Fileset.DeleteCheck")
+            deleteFilesets = action.execute(fileid = filesetID,
+                                            subid = self['id'],
+                                            conn = self.getDBConn(),
+                                            transaction = self.existingTransaction())
 
         #Next Workflow
         action = self.daofactory(classname = "Workflow.DeleteCheck")

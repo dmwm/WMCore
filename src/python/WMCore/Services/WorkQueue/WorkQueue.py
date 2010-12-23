@@ -181,6 +181,14 @@ class WorkQueue(Service):
         args = {}
         callname = 'jobstatusbyrequest'
         return self._getResult(callname, args = args, verb = "GET")
+    
+    def getTopLevelJobsByRequest(self):
+        """
+        This service only provided by global queue
+        """
+        args = {}
+        callname = 'jobsbyrequest'
+        return self._getResult(callname, args = args, verb = "GET")
 
     def getJobSummaryFromCouchDB(self):
         """
@@ -188,6 +196,14 @@ class WorkQueue(Service):
         """
         args = {}
         callname = 'jobsummary'
+        return self._getResult(callname, args = args, verb = "GET")
+    
+    def getBatchJobStatus(self):
+        """
+        This service only provided by local queue
+        """
+        args = {}
+        callname = 'batchjobstatus'
         return self._getResult(callname, args = args, verb = "GET")
 
     def queueWork(self, wmspecUrl, team, request):

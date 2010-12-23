@@ -19,8 +19,9 @@ WMCore.WorkQueue.WorkloadInfoTable.workloadTable = function(divID) {
     
     var dataSchema = {
             fields: [{key: "spec_id"}, {key: "spec_name"}, 
-                     {key: "owner"}, {key: "total", label: "Total Elements"}, 
-                     {key: "done", label: "progress", formatter: progressFormatter, parser: "number"}]
+                     {key: "owner"}, {key: "total", label: "Top level Jobs"}, 
+                     {key: "done", label: "progress", 
+                      formatter: progressFormatter, parser: "number"}]
             };
     
     var dataUrl = "/workqueue/workloadprogress";

@@ -178,7 +178,7 @@ WMCore.RequestManager.Overview.overviewTable = function(divID, filterDiv,
                  {key: "local_queue", formatter:formatLocalQ},
                  {key: "pending", label: "queued", formatter:formatPending},
                  {key: "cooloff", label: "cool off", formatter:formatCoolOff},
-                 {key: "running", label: "submitted", formatter:formatRunning},
+                 //{key: "running", label: "submitted", formatter:formatRunning},
                  
                  //batch status for running (submitted jobs) needs to match the number
                  {key: "Pending", label: "pending", formatter:formatBatch},

@@ -26,7 +26,7 @@ dependencies = {
                         'statics': ['src/javascript/WMCore/WebTools/RequestManager',],
                         },
                'workqueue':{
-                        'packages': ['WMComponent.WorkQueue'],
+                        'packages': ['WMComponent.WorkQueueManager'],
                         'systems': ['wmc-web'],
                         'statics': ['src/templates/WMCore/WebTools/WorkQueue',]
                         },

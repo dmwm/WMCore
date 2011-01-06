@@ -4,7 +4,6 @@ from distutils.command.install import install
 import os, sys, os.path
 from setup_dependencies import dependencies
 
-
 def get_relative_path():
     return os.path.dirname(os.path.abspath(os.path.join(os.getcwd(), sys.argv[0])))
 
@@ -48,6 +47,9 @@ def walk_dep_tree(system):
     """
     packages = set()
     statics = set()
+    modules = set()
+    if 'modules' in system.keys():
+        modules = set(system.get('modules', set()))
     if 'packages' in system.keys():
         packages = set(system.get('packages', set()))
     if 'statics' in system.keys():
@@ -57,7 +59,8 @@ def walk_dep_tree(system):
             dependants = walk_dep_tree(dependencies[system])
             packages = packages | dependants.get('packages', set())
             statics = statics | dependants.get('statics', set())
-    return {'packages': packages, 'statics': statics}
+            modules = modules | dependants.get('modules', set())
+    return {'packages': packages, 'statics': statics, 'modules': modules}
 
 def list_packages(package_dirs = []):
     """
@@ -65,8 +68,8 @@ def list_packages(package_dirs = []):
     """
     packages = []
     ignore_these = set(['CVS', '.svn', 'svn', '.git', 'DefaultConfig.py'])
-    for dir in package_dirs:
-        for dirpath, dirnames, filenames in os.walk('./%s' % dir, topdown=True):
+    for a_dir in package_dirs:
+        for dirpath, dirnames, filenames in os.walk('./%s' % a_dir, topdown=True):
             pathelements = dirpath.split('/')
             # If any part of pathelements is in the ignore_these set skip the path
             if len(set(pathelements) & ignore_these) == 0:
@@ -106,19 +109,35 @@ class BuildCommand(Command):
    """
    Build a specific system, including it's dependencies. Run with --force to trigger a rebuild
    """
-   description = "Build a specific system, including it's dependencies"
+   description = "Build a specific system, including it's dependencies\n\n"
+   description += "\tAvailable sub-systems: \n"
+   description += "\t["
+   description += ", ".join(dependencies.keys())
+   description += "]\n"
 
    user_options = build.user_options
-   user_options.append(('system=', 's', 'build a specific system'))
+   user_options.append(('system=', 's', 'build the specified system'))
 
    def initialize_options(self):
        # and add our additional option
        self.system = None
 
    def finalize_options (self):
-       # build the list of dependencies
+       if self.system == None:
+           msg = "System not specified: -s option for install_system must be specified and provide one of:\n"
+           msg += ", ".join(dependencies.keys())
+           self.warn(msg)
+           sys.exit(1)
        if self.system in dependencies.keys():
-           packages_to_build = walk_dep_tree(dependencies[self.system])['packages']
+           # work out all the dependent packages
+           required_packages = walk_dep_tree(dependencies[self.system])['packages']
+           # and the corresponding source directories
+           src_dirs = []
+           for package in required_packages:
+               src_path = 'src/python/%s' % (package.replace('.','/'))
+               src_dirs.append(src_path)
+           packages_to_build = list_packages(src_dirs)
+
            # print some helpful information
            self.announce('%s requires the following packages:' % (self.system), 1)
            for package in packages_to_build:
@@ -127,10 +146,14 @@ class BuildCommand(Command):
                else:
                    self.announce('\t %s' % package, 1)
            # set what actually gets built
-           self.distribution.packages = list(packages_to_build)
+           self.distribution.packages = packages_to_build
+           self.distribution.py_modules = walk_dep_tree(dependencies[self.system])['modules']
        else:
-           self.warn('%s is not a known system' % self.system)
-           sys.exit()
+           msg = "Specified system [%s] is unknown:" % self.system
+           msg += " -s option for install_system must be specified and provide one of:\n"
+           msg += ", ".join(dependencies.keys())
+           self.warn(msg)
+           sys.exit(1)
 
    def run (self):
        # Have to get the build command here and set force, as the build plugins only refer to the
@@ -150,10 +173,14 @@ class InstallCommand(install):
     """
     Install a specific system, including it's dependencies.
     """
-    description = "Install a specific system, including it's dependencies"
+    description = "Install a specific system, including it's dependencies. \n\n"
+    description += "\tAvailable sub-systems: \n"
+    description += "\t["
+    description += ", ".join(dependencies.keys())
+    description += "]\n"
 
     user_options = install.user_options
-    user_options.append(('system=', 's', 'install a specific system'))
+    user_options.append(('system=', 's', 'install the specified system'))
 
     def initialize_options(self):
         # Call the base class
@@ -162,19 +189,25 @@ class InstallCommand(install):
         self.system = None
 
     def finalize_options(self):
-        #install.finalize_options(self)
-        print '### Prefix', self.prefix
         if self.system == None:
             msg = "System not specified: -s option for install_system must be specified and provide one of:\n"
-            msg += str(dependencies.keys())
+            msg += ", ".join(dependencies.keys())
             self.warn(msg)
-            sys.exit()
+            sys.exit(1)
         self.distribution.metadata.name = self.system
         assert self.distribution.get_name() == self.system
         # build the list of depndancies
         if self.system in dependencies.keys():
-            packages_to_build = walk_dep_tree(dependencies[self.system])['packages']
-            # print some helpful inormation
+            # work out all the dependent packages
+            required_packages = walk_dep_tree(dependencies[self.system])['packages']
+            # and the corresponding source directories
+            src_dirs = []
+            for package in required_packages:
+                src_path = 'src/python/%s' % (package.replace('.','/'))
+                src_dirs.append(src_path)
+            packages_to_build = list_packages(src_dirs)
+
+            # print some helpful information
             self.announce('%s requires the following packages:' % (self.system), 1)
             for package in packages_to_build:
                 if os.path.exists('./build/lib/%s' % package.replace('.','/')) and not self.force:
@@ -182,14 +215,15 @@ class InstallCommand(install):
                 else:
                     self.announce('\t %s' % package, 1)
             # set what actually gets built
-            self.distribution.packages = list(packages_to_build)
+            self.distribution.packages = packages_to_build
+            self.distribution.py_modules = walk_dep_tree(dependencies[self.system])['modules']
             self.distribution.data_files = list_static_files(dependencies[self.system])
         else:
-            msg = '%s is not a known system' % self.system
-            msg += "\n known systems: %s" % dependencies.keys()
+            msg = "Specified system [%s] is unknown:" % self.system
+            msg += " -s option for install_system must be specified and provide one of:\n"
+            msg += ", ".join(dependencies.keys())
             self.warn(msg)
-            
-            sys.exit()
+            sys.exit(1)
 
         install.finalize_options(self)
 

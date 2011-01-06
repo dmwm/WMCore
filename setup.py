@@ -16,7 +16,7 @@ import time
 from setup_build import BuildCommand, InstallCommand
 from setup_build import get_relative_path, list_packages, list_static_files
 from setup_test import LintCommand, ReportCommand, CoverageCommand, TestCommand
-from setup_dependancies import dependancies
+from setup_dependencies import dependencies
 
 # Build the package list automagically
 package_dir = {}

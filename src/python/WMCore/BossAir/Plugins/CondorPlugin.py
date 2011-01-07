@@ -96,22 +96,6 @@ def parseError(error):
     return errorCondition, errorMsg
 
 
-def stateMap(name):
-    """
-    For a given name, return a global state
-
-
-    """
-
-    stateDict = {'New': 'Pending',
-                 'Idle': 'Pending',
-                 'Running': 'Running',
-                 'Held': 'Running',
-                 'Complete': 'Complete',
-                 'Error': 'Error',
-                 'Timeout': 'Error'}
-
-    return stateDict.get(name, 'Error')
 
 
 
@@ -150,9 +134,7 @@ class CondorPlugin(BasePlugin):
         self.config = config
 
         BasePlugin.__init__(self, config)
-
-        self.states = ['New', 'Running', 'Idle', 'Complete', 'Held', 'Error', 'Timeout']
-
+        
         self.locationDict = {}
 
         myThread = threading.currentThread()        
@@ -390,7 +372,7 @@ class CondorPlugin(BasePlugin):
                     logging.info("Job in unknown state %i" % jobStatus)
 
                 # Get the global state
-                job['globalState'] = stateMap(statName)
+                job['globalState'] = CondorPlugin.stateMap()[statName]
 
                 if statName != job['status']:
                     # Then the status has changed

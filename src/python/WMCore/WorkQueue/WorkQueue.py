@@ -29,13 +29,6 @@ from WMCore.WorkQueue.Policy.End import endPolicy
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
-from WMCore.WMBS.Subscription import Subscription as WMBSSubscription
-from WMCore.WMBS.File import File as WMBSFile
-
-from WMCore.WMRuntime.SandboxCreator import SandboxCreator
-from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from DBSAPI.dbsApiException import DbsConfigurationError
@@ -417,6 +410,7 @@ class WorkQueue(WorkQueueBase):
             with open(wmspecInfo['mask_url']) as mask_file:
                 mask = pickle.load(mask_file)
 
+        from WMCore.WorkQueue.WMBSHelper import WMBSHelper
         wmbsHelper = WMBSHelper(wmspec, blockName, mask)
 
         sub = wmbsHelper.createSubscriptionAndAddFiles(dbsBlock = dbsBlock)
@@ -936,6 +930,7 @@ class WorkQueue(WorkQueueBase):
         if not exists:
             
             if self.params['LocalQueueFlag']:
+                from WMCore.WMRuntime.SandboxCreator import SandboxCreator
                 sandboxCreator = SandboxCreator()
                 sandboxCreator.makeSandbox(self.params['CacheDir'], wmspec)
             else:

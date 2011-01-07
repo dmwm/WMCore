@@ -1666,6 +1666,8 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.addWhiteBlackList([{"site_name": "site1", "valid": True},
                                             {"site_name": "site2", "valid": True},
                                             {"site_name": "site3", "valid": False}])
+        # try to add duplicate entry : should be ignored (shouldn't throw exception)
+        testSubscription.addWhiteBlackList([{"site_name": "site1", "valid": True}]),
 
         results = testSubscription.getWhiteBlackList()
 

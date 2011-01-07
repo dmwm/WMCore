@@ -33,6 +33,8 @@ from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.Overview \
      import getGlobalSummaryView
 from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.ResourceMonitor \
      import getResourceOverview
+from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.AgentMonitor \
+     import getAgentOverview
 
 class ReqMgrRESTModel(RESTModel):
     """ The REST interface to the ReqMgr database.  Documentation may
@@ -122,19 +124,11 @@ class ReqMgrRESTModel(RESTModel):
         #   for method, paramDict in self.methods[call].iteritems():
         #       paramDict['expires'] = 0
 
-        self.addMethod("GET", "overview", self.getGlobalSummary) #expires=16000
-        self.addMethod("GET", "resourceInfo", self.getResourceInfo)
+        self.addMethod("GET", "overview", getGlobalSummaryView) #expires=16000
+        self.addMethod("GET", "resourceInfo", getResourceOverview)
+        self.addMethod("GET", "agentoverview", getAgentOverview,
+                       args = ['detail'])
         cherrypy.engine.subscribe('start_thread', self.initThread)
-        
-    def getGlobalSummary(self):
-        """ return summary data for requests from
-            request manager, workqueue and couchDB"""
-        return getGlobalSummaryView()
-
-    def getResourceInfo(self):
-        """ return summary data for requests from
-            request manager, workqueue and couchDB"""
-        return getResourceOverview()
     
     def initThread(self, thread_index):
         """ The ReqMgr expects the DBI to be contained in the Thread  """

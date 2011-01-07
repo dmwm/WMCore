@@ -24,6 +24,7 @@ class AgentRESTModel(RESTModel):
 
         self.addDAO('GET', "heartbeatInfo", "GetHeartbeatInfo")
         self.addDAO('GET', "heartbeatInfoDetail", "GetAllHeartbeatInfo")
+        self.addDAO('GET', "agentstatus", "CheckComponentStatus")
         self.addMethod('GET', "heartbeat", self.getHeartBeatWarning)
         
     

@@ -48,3 +48,23 @@ class Interface:
         return output
         
 
+
+    def callUpdate(self, update, document, **args ):
+        """
+        _callUpdate_
+        
+        Wrapper primarily for calling/testing update methods on the groupuser couchapp
+        
+         * update - name of the update method in the couchapp
+         * document - ID of the document to be updated
+         * args  - key:value dict of args to be encoded in the PUT request
+        
+        """
+        updateUri = "/" + self.couch.name + "/_design/GroupUser/_update/"+ update + "/" + document
+        argsstr = "?"
+        for k, v in args.items():
+            argsstr += "%s=%s&" % (k, v)
+        updateUri += argsstr
+        updateUri= updateUri[:-1]
+        self.couch.makeRequest(uri = updateUri, type = "PUT", decode = False)
+        return

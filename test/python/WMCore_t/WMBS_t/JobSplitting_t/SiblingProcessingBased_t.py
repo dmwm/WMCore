@@ -239,6 +239,15 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         assert "testFileF" in lfns, \
                "Error: TestFileF missing from job input."
 
+        self.assertEqual(len(self.deleteSubscriptionB.availableFiles()), 0,
+                         "Error: There should be no available files.")
+
+        completeFiles = self.deleteSubscriptionB.filesOfStatus("Completed")
+        self.assertEqual(len(completeFiles), 1,
+                         "Error: There should only be one complete file.")
+        self.assertEqual(list(completeFiles)[0]["lfn"], "testFileD",
+                         "Error: Test file D should be complete.")
+
         return
 
     def testMultipleLocations(self):

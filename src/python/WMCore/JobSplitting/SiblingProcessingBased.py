@@ -6,9 +6,6 @@ Launch jobs to run over a file once all other subscriptions that process the fil
 have completed processing it.
 """
 
-
-
-
 import threading
 import logging
 
@@ -42,6 +39,11 @@ class SiblingProcessingBased(JobFactory):
         if self.subscription["fileset"].open == True:
             filesetClosed = False
         else:
+            fileFailed = daoFactory(classname = "Subscriptions.SiblingSubscriptionsFailed")
+            fileFailed.execute(self.subscription["id"],
+                               self.subscription["fileset"].id,
+                               conn = myThread.transaction.conn,
+                               transaction = True)
             filesetClosed = True
 
         fileSites = {}

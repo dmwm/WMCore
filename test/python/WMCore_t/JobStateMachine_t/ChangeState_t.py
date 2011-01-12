@@ -137,9 +137,9 @@ class TestChangeState(unittest.TestCase):
 
         testJobADoc = change.database.document(testJobA["couch_record"])
 
-        for transition in testJobADoc["states"]:
-            self.assertTrue(type(transition["timestamp"] in (types.IntType,
-                                                             types.LongType)))
+        for transition in testJobADoc["states"].itervalues():
+            self.assertTrue(type(transition["timestamp"]) in (types.IntType,
+                                                             types.LongType))
 
         assert testJobADoc["jobid"] == testJobA["id"], \
                "Error: ID parameter is incorrect."
@@ -454,7 +454,7 @@ class TestChangeState(unittest.TestCase):
         transitions = change.listTransitionsForDashboard()
 
         self.assertEqual(len(transitions), 1,
-                         "Error: Wrong number of transitions")
+                         "Error: Wrong number of transitions: %s" % transitions)
         self.assertEqual(transitions[0]["name"], testJobA["name"],
                          "Error: Wrong job name.")
         self.assertEqual(transitions[0]["retryCount"], 0,

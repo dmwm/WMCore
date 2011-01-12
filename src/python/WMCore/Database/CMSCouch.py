@@ -232,6 +232,9 @@ class Database(CouchDBRequests):
         """
         if (doc):
             self.queue(doc, timestamp, viewlist)
+
+        if len(self._queue) == 0:
+            return
             
         if timestamp:
             self.timestamp(self._queue, timestamp)
@@ -350,7 +353,7 @@ class Database(CouchDBRequests):
         encodedOptions = {}
         for k,v in options.iteritems():
             encodedOptions[k] = self.encode(v)
-        
+
         if len(keys):
             if (encodedOptions):
                 data = urllib.urlencode(encodedOptions)

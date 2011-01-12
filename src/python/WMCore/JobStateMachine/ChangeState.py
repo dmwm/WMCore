@@ -167,10 +167,11 @@ class ChangeState(WMObject, WMConnectionBase):
 
                     jobDocument["inputfiles"].append(docInputFile)
 
-                jobDocument["states"] = [{"oldstate": oldstate,
-                                          "newstate": newstate,
-                                          "location": jobLocation,
-                                          "timestamp": timestamp}]
+                jobDocument["states"] = {"0": {"oldstate": oldstate,
+                                               "newstate": newstate,
+                                               "location": jobLocation,
+                                               "timestamp": timestamp}}
+                
                 jobDocument["jobgroup"] = job["jobgroup"]
                 jobDocument["mask"] = {"firstevent": job["mask"]["FirstEvent"],
                                        "lastevent": job["mask"]["LastEvent"],
@@ -212,7 +213,6 @@ class ChangeState(WMObject, WMConnectionBase):
                                      transaction = self.existingTransaction())
             
         self.database.commit()
-        self.database.loadView("JobDump", "jobsByJobID", {"limit": 0})
         return
 
     def createDatabase(self):
@@ -259,7 +259,7 @@ class ChangeState(WMObject, WMConnectionBase):
         """
         updateBase = "/" + self.database.name + "/_design/JobDump/_update/dashboardReporting/"
         viewResults = self.database.loadView("JobDump", "jobsToReport")
-        
+
         jobsToReport = []
         for viewResult in viewResults["rows"]:
             jobReport = {}

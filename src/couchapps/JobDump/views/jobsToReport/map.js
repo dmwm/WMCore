@@ -10,7 +10,7 @@ function(doc) {
         transition['newstate'] == 'created') {
       retryCount += 1;
     }
- 
+
     if (transition.reported) {
       continue;
     } else if ((transition['oldstate'] == 'executing' &&

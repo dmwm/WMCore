@@ -10,8 +10,13 @@ function(doc) {
   }
 
   if (doc['type'] == 'job') {
-    doc['states'].sort(stateSort);
-    lastTransition = doc['states'].pop();
+    var stateList = new Array();
+    for (var transitionIndex in doc['states']) {
+      stateList.push(doc['states'][transitionIndex]);
+    }
+    
+    stateList.sort(stateSort);
+    lastTransition = stateList.pop();
 
     if (lastTransition['oldstate'] == 'new' && 
         lastTransition['newstate'] == 'created') {

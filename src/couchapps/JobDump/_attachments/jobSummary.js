@@ -2,7 +2,7 @@ function getParentJobForFile(requestName, fileLFN) {
   // Retrieve the ID of the job that produce this file.  If no parent job
   // exists, return null.
   xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", "../../_view/jobsByOutputLFN?startkey=[\"" + requestName + "\",\"" + fileLFN + "\"]&endkey=[\"" + requestName + "\",\"" + fileLFN + "\",{}]", false);
+  xmlhttp.open("GET", "../../_view/jobsByOutputLFN?stale=ok&startkey=[\"" + requestName + "\",\"" + fileLFN + "\"]&endkey=[\"" + requestName + "\",\"" + fileLFN + "\",{}]", false);
   xmlhttp.send();
 
   var results = eval("(" + xmlhttp.responseText + ")")["rows"];
@@ -17,7 +17,7 @@ function getSiblingJobsForFile(requestName, jobID, fileLFN) {
   // Retrieve the IDs of any jobs except the one in jobID that used this file as
   // input.
   xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", "../../_view/jobsByInputLFN?startkey=[\"" + requestName + "\",\"" + fileLFN + "\"]&endkey=[\"" + requestName + "\",\"" + fileLFN + "\",{}]", false);
+  xmlhttp.open("GET", "../../_view/jobsByInputLFN?stale=ok&startkey=[\"" + requestName + "\",\"" + fileLFN + "\"]&endkey=[\"" + requestName + "\",\"" + fileLFN + "\",{}]", false);
   xmlhttp.send();
 
   results = eval("(" + xmlhttp.responseText + ")")["rows"];

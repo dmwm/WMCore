@@ -60,15 +60,15 @@ function(doc, req) {
   response += "<script type=\"text/javascript\">\n";
   response += "xmlhttp = new XMLHttpRequest();\n";
 
-  response += "xmlhttp.open(\"GET\", \"../../_list/jobOutput/outputByJobID?startkey=" + doc["jobid"] + "&endkey=" + doc["jobid"] + "\", false);\n";
+  response += "xmlhttp.open(\"GET\", \"../../_list/jobOutput/outputByJobID?stale=ok&startkey=" + doc["jobid"] + "&endkey=" + doc["jobid"] + "\", false);\n";
   response += "xmlhttp.send();\n";
   response += "document.getElementById(\"output\").innerHTML=xmlhttp.responseText;\n";
 
-  response += "xmlhttp.open(\"GET\", \"../../_list/jobErrors/errorsByJobID?startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]\", false);\n";
+  response += "xmlhttp.open(\"GET\", \"../../_list/jobErrors/errorsByJobID?stale=ok&startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]\", false);\n";
   response += "xmlhttp.send();\n";
   response += "document.getElementById(\"errors\").innerHTML=xmlhttp.responseText;\n";
 
-  response += "xmlhttp.open(\"GET\", \"../../_list/jobLogArchives/logArchivesByJobID?startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]\", false);\n";
+  response += "xmlhttp.open(\"GET\", \"../../_list/jobLogArchives/logArchivesByJobID?stale=ok&startkey=[" + doc["jobid"] + "]&endkey=[" + doc["jobid"] + ",{}]\", false);\n";
   response += "xmlhttp.send();\n";
   response += "document.getElementById(\"logArchives\").innerHTML=xmlhttp.responseText;\n";
 

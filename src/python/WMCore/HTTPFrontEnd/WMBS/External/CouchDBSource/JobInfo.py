@@ -25,7 +25,7 @@ def getJobInfo(jobID):
     jobDoc = {}
     fwjrDocs = {}
     transitionDocs = {}
-    options = {"startkey": jobID, "endkey": jobID}
+    options = {"startkey": jobID, "endkey": jobID, "stale": "ok"}
     result = changeStateDB.loadView("JobDump",
                                     "stateTransitionsByJobID",
                                     options)
@@ -36,7 +36,7 @@ def getJobInfo(jobID):
 
         transitionDocs[row["value"]["timestamp"]].append(row["value"])
 
-    options = {"startkey": jobID, "endkey": jobID, "include_docs": True}
+    options = {"startkey": jobID, "endkey": jobID, "include_docs": True, "stale": "ok"}
     fwjrDocsResult = changeStateDB.loadView("JobDump", "fwjrsByJobID", options)
     jobDocResult = changeStateDB.loadView("JobDump", "jobsByJobID", options)
 
@@ -74,9 +74,9 @@ def getJobSummaryByWorkflow():
         #Need to distinquish between server down and CouchError
         return [{"error": 'Couch connection error'}]
     
-    options = {"group": True, "group_level": 1}
+    options = {"group": True, "group_level": 1, "stale": "ok"}
     result = changeStateDB.loadView("JobDump", "statusByWorkflowName",
-                                        options)    
+                                    options)    
         
 
     couchDocBase = CouchDBConnectionBase.getCouchDBHtmlBase(

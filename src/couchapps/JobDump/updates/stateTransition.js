@@ -4,6 +4,13 @@ function (doc, req) {
                        'location': req.query['location'],
                        'timestamp': parseInt(req.query['timestamp'])};
 
-  doc.states.push(newTransition);
+  var maxKey = 0;
+  for (key in doc.states) {
+    if (maxKey < parseInt(key)) {
+      maxKey = parseInt(key);
+    }
+  }
+
+  doc.states[(maxKey + 1) + ""] = newTransition;
   return [doc, 'OK'];
 }

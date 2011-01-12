@@ -12,7 +12,7 @@ WMCore.WorkQueue.ElementInfoWithServerPagination = function(divID) {
             elCell.innerHTML = "<a href='" + sData + "monitor' target='_blank'>" + host + "</a>"; 
         };
     
-	var percentFormat = function(elCell, oRecord, oColumn, sData) { 
+    var percentFormat = function(elCell, oRecord, oColumn, sData) { 
             if (!sData) {
                 percent = 0;
             } else {
@@ -20,7 +20,7 @@ WMCore.WorkQueue.ElementInfoWithServerPagination = function(divID) {
             }
             elCell.innerHTML =  sData + "%"; 
     };
-		
+
     var dateFormatter = function(elCell, oRecord, oColumn, oData) {
         
         var oDate = new Date(oData*1000);
@@ -31,22 +31,20 @@ WMCore.WorkQueue.ElementInfoWithServerPagination = function(divID) {
     };
     
     var dataSchema = {
-		resultsList: "data",
+        resultsList: "data",
         fields: [{key: "id"}, {key: "spec_name"}, {key: "task_name"}, {key: "element_name"}, 
                  {key: "status"}, {key: "child_queue", formatter:formatUrl}, 
                  //{key: "parent_flag"},
                  {key: "priority"}, {key: "num_jobs", label: "job estimation"},
                  //{key: "parent_queue_id"}, 
-				 {key: "subscription_id"},
-				 {key: "team_name"},
-                 {key: "events_written"}, 
-                 {key: "files_processed"},
+                 {key: "subscription_id"},
+                 {key: "team_name"},
                  {key: "percent_complete", label: "complete", formatter:percentFormat}, 
                  {key: "percent_success", label: "success", formatter:percentFormat},
                  {key: "insert_time", formatter:dateFormatter},
                  {key: "update_time", formatter:dateFormatter}
                 ],
-		metaFields: {
+        metaFields: {
             totalRecords: "totalRecords"
         }
      };
@@ -57,15 +55,15 @@ WMCore.WorkQueue.ElementInfoWithServerPagination = function(divID) {
     dataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;    
 
     var tableConfig = WMCore.createDefaultTableConfig("id");
-	tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 10});
+    tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 10});
     tableConfig.initialRequest = "?startIndex=0&results=10";
     tableConfig.dynamicData =  true;
-	
+
     var dataTable = WMCore.createDataTable(divID, dataSource, 
                          WMCore.createDefaultTableDef(dataSchema.fields),
                          tableConfig, 100000);
-						 
-	dataTable.handleDataReturnPayload = function(oRequest, oResponse, oPayload) { 
+
+    dataTable.handleDataReturnPayload = function(oRequest, oResponse, oPayload) { 
           oPayload.totalRecords = oResponse.meta.totalRecords; 
           return oPayload; 
     }; 

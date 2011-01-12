@@ -5,16 +5,15 @@ _DBSReader_
 Readonly DBS Interface
 
 """
+import dlsClient
+from dlsApi import DlsApiError
+
 from DBSAPI.dbsApi import DbsApi
 from DBSAPI.dbsException import *
 from DBSAPI.dbsApiException import *
 
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx
-
-import dlsClient
-from dlsApi import DlsApiError
-
-from WMQuality.Emulators.EmulatorSetup import emulatorHook 
+from WMCore.Services.EmulatorSwitch import emulatorHook
 
 # emulator hook is used to swap the class instance 
 # when emulator values are set. 

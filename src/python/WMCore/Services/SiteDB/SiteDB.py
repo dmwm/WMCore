@@ -10,24 +10,15 @@ API for dealing with retrieving information from SiteDB
 
 
 from WMCore.Services.SSLService import SSLService
-import urllib
-import logging
-import os
-import pwd
+
 # This should be deprecated in preference to simplejson once SiteDB spits out
 # correct json
 from WMCore.Services.JSONParser.JSONParser import JSONParser
-#try:
-    # Python 2.6
-    #import json
-#except:
-    # Prior to 2.6 requires simplejson
-    #import simplejson as json
-from WMQuality.Emulators.EmulatorSetup import emulatorHook 
+from WMCore.Services.EmulatorSwitch import emulatorHook
 
 # emulator hook is used to swap the class instance 
 # when emulator values are set. 
-# Look WMQuality.Emulators.EmulatorSetup module for the values
+# Look WMCore.Services.EmulatorSwitch module for the values
 @emulatorHook
 class SiteDBJSON(SSLService):
 

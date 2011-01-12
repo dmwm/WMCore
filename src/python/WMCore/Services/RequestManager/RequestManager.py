@@ -1,24 +1,11 @@
-import urllib
-import logging
-import os
-import pwd
-from urllib import urlencode
-
 from WMCore.Wrappers import JsonWrapper
 from WMCore.Services.Service import Service
 
-try:
-    # Python 2.6
-    import json
-except ImportError:
-    # Prior to 2.6 requires simplejson
-    import simplejson as json
-
-from WMQuality.Emulators.EmulatorSetup import emulatorHook 
+from WMCore.Services.EmulatorSwitch import emulatorHook
 
 # emulator hook is used to swap the class instance 
 # when emulator values are set. 
-# Look WMQuality.Emulators.EmulatorSetup module for the values
+# Look WMCore.Services.EmulatorSwitch module for the values
 @emulatorHook
 class RequestManager(Service):
 
@@ -111,7 +98,6 @@ class RequestManager(Service):
     def reportRequestProgress(self, requestName, **kargs):
         """Update ReqMgr with request progress"""
         callname = 'request'
-        args = {}
         args = {'requestName' : requestName}
         args.update(kargs)
 

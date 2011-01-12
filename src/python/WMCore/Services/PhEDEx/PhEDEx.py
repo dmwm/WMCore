@@ -1,16 +1,11 @@
-import urllib
-import logging
-import os
-import pwd
-
 from xml.dom.minidom import parseString
 from WMCore.Services.Service import Service
 from WMCore.Wrappers import JsonWrapper
-from WMQuality.Emulators.EmulatorSetup import emulatorHook 
+from WMCore.Services.EmulatorSwitch import emulatorHook
 
 # emulator hook is used to swap the class instance 
 # when emulator values are set. 
-# Look WMQuality.Emulators.EmulatorSetup module for the values
+# Look WMCore.Services.EmulatorSwitch module for the values
 @emulatorHook
 class PhEDEx(Service):
 

@@ -92,6 +92,13 @@ class DefaultConfig(Configuration):
     def setFormatter(self, formatter):
         self.UnitTests.views.active.rest.formatter.object = formatter
         
+    def setWorkQueueLevel(self, queueLevel):
+        """only set this for workqueue restmodel test
+           queueLevel should be 'GlobalQueue' or 'LocalQueue'
+        """
+
+        self.UnitTests.views.active.rest.level = queueLevel
+
     def getModelConfig(self):
         return self.UnitTests.views.active.rest
     

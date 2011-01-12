@@ -13,7 +13,7 @@ from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMQuality.Emulators import EmulatorSetup
-from WMQuality.Emulators.EmulatorSetup import EmulatorHelper
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
 class WorkQueueTest(RESTBaseUnitTest):
     """
@@ -33,7 +33,7 @@ class WorkQueueTest(RESTBaseUnitTest):
         self.config.setDBUrl(dbUrl)        
         self.config.setFormatter(
              'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter')
-
+        self.config.setWorkQueueLevel("GlobalQueue")
         # mysql example
         #self.config.setDBUrl('mysql://username@host.fnal.gov:3306/TestDB')
         #self.config.setDBSocket('/var/lib/mysql/mysql.sock')
@@ -76,13 +76,14 @@ class WorkQueueTest(RESTBaseUnitTest):
         EmulatorHelper.resetEmulators()
 
     def testWorkQueueService(self):
+        self.config.setWorkQueueLevel("GlobalQueue")
         # test getWork
         specName = "RerecoSpec"
         specUrl = self.specGenerator.createReRecoSpec(specName, "file")
 
         wqApi = WorkQueueDS(self.params)
 
-        self.assertTrue(wqApi.queueWork(specUrl, "teamA", "test_request") > 0)
+        self.assertTrue(wqApi.queueWork(specUrl, "teamA", "RerecoSpec") > 0)
 
         data = wqApi.getWork({'SiteA' : 1000000}, "http://test.url")
 
@@ -99,8 +100,8 @@ class WorkQueueTest(RESTBaseUnitTest):
                          {'Canceled': set([1])})
 
         # testCancelWorkWithRequest
-        self.assertEqual(wqApi.cancelWork(["test_request"], "request_name"),
-                                          ["test_request"])
+        self.assertEqual(wqApi.cancelWork(["RerecoSpec"], "request_name"),
+                                          ["RerecoSpec"])
         
         # testGetChildQueues
         self.assertTrue(wqApi.getChildQueues() > 0)
@@ -108,8 +109,9 @@ class WorkQueueTest(RESTBaseUnitTest):
         # testGetChildQueuesByRequest
         self.assertTrue(wqApi.getChildQueuesByRequest() > 0)
 
+        #TODO: this needs to be tested in separate localQueue service setting.
         # testGetJobSummaryFromCouchDB
-        self.assertTrue(wqApi.getJobSummaryFromCouchDB() > 0)
+        #self.assertTrue(wqApi.getJobSummaryFromCouchDB() > 0)
 
 
 if __name__ == '__main__':

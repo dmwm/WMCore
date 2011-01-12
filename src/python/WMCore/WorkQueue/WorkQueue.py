@@ -883,6 +883,9 @@ class WorkQueue(WorkQueueBase):
         wmspec = unit['WMSpec']
         task = unit["Task"]
         parentQueueId = unit['ParentQueueId']
+        # if requestName is not specified get the name from wmspec
+        if requestName == None:
+            requestName = wmspec.name()
         if wmspec.name() != requestName:
             error = WorkQueueWMSpecError(wmspec, 
                       "WMSpec Name error: %s doesn't match with request name %s" %

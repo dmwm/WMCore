@@ -12,7 +12,7 @@ from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WorkQueueTestCase import WorkQueueTestCase
-from WMQuality.Emulators.EmulatorSetup import EmulatorHelper
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
     
 class WorkQueueProfileTest(WorkQueueTestCase):
     """

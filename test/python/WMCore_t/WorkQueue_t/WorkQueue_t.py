@@ -29,8 +29,8 @@ from WMCore_t.WMSpec_t.samples.BasicProductionWorkload \
                                     import workload as BasicProductionWorkload
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
                                 import workload as MultiTaskProductionWorkload
-
-from WMQuality.Emulators.EmulatorSetup import EmulatorHelper, deleteConfig
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
+from WMQuality.Emulators.EmulatorSetup import deleteConfig
 
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
@@ -644,14 +644,14 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.queue.status(status='Canceled')), elements)
 
         # now cancel a request
-        self.queue.queueWork(self.spec.specUrl(), request = 'Request-1')
+        self.queue.queueWork(self.spec.specUrl(), request = 'testProduction')
         elements = len(self.queue)
         work = self.queue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
         self.assertEqual(len(self.queue), 0)
         self.assertEqual(len(self.queue.status(status='Acquired')), elements)
         ids = [x['element_id'] for x in work]
-        canceled = self.queue.cancelWork('Request-1', id_type = 'request_name')
-        self.assertEqual(canceled, 'Request-1')
+        canceled = self.queue.cancelWork('testProduction', id_type = 'request_name')
+        self.assertEqual(canceled, 'testProduction')
         self.assertEqual(len(self.queue), 0)
         self.assertEqual(len(self.queue.status(status='Canceled',
                                                elementIDs = ids)), elements)

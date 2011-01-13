@@ -86,8 +86,14 @@ class JobAccountantPoller(BaseWorkerThread):
         try:
             self.accountantWorker(completeJobs)
         except WMException:
+            myThread = threading.currentThread()
+            if getattr(myThread, 'transaction', None) != None:
+                myThread.transaction.rollback()
             raise
         except Exception, ex:
+            myThread = threading.currentThread()
+            if getattr(myThread, 'transaction', None) != None:
+                myThread.transaction.rollback()
             msg =  "Hit general exception in JobAccountantPoller in last worker use.\n"
             msg += str(ex)
             logging.error(msg)

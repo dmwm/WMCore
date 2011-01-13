@@ -351,8 +351,13 @@ class Database(CouchDBRequests):
         """
         encodedOptions = {}
         for k,v in options.iteritems():
-            encodedOptions[k] = self.encode(v)
-        
+            # We can't encode the stale option, as it will be converted to '"ok"'
+            # which couch barfs on.
+            if k == "stale":
+                encodedOptions[k] = v
+            else:
+                encodedOptions[k] = self.encode(v)
+
         if len(keys):
             if (encodedOptions):
                 data = urllib.urlencode(encodedOptions)

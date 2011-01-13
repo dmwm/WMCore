@@ -4,7 +4,7 @@ function(doc) {
       return;
     }
 
-    var specName = doc['fwjr'].task.split('/')[1]
+    var request = doc['fwjr'].task.split('/')[1]
 
     for (var stepName in doc['fwjr']['steps']) {
       var stepOutput = doc['fwjr']['steps'][stepName]['output']
@@ -12,7 +12,7 @@ function(doc) {
         for (var outputFileIndex in stepOutput[outputModuleName]) {
           var outputFile = stepOutput[outputModuleName][outputFileIndex];
           if (outputFile['lfn'] != '' && 'location' in outputFile) {
-            emit(doc['jobid'], {'lfn': outputFile['lfn'], 'location': outputFile['location']});
+            emit([request, outputFile['lfn']], doc['jobid']);
           }
         }
       }

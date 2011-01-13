@@ -20,6 +20,22 @@ class WMAgent(Service):
         #elif self.responseType == 'xml':
             #self.parser = XMLParser()
 
+        if os.getenv('WMAGENT_SERV_CACHE_DIR'):
+            dict['cachepath'] = os.getenv('WMAGENT_SERV_CACHE_DIR') + '/.wmagent_service_cache'
+        elif os.getenv('HOME'):
+            dict['cachepath'] = os.getenv('HOME') + '/.wmgent_service_cache'
+        else:
+            dict['cachepath'] = '/tmp/wmgent_service_cache_' + pwd.getpwuid(os.getuid())[0]
+        if not os.path.isdir(dict['cachepath']):
+            os.mkdir(dict['cachepath'])
+        if 'logger' not in dict.keys():
+            logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename=dict['cachepath'] + '/wmagent_service.log',
+                    filemode='w')
+            dict['logger'] = logging.getLogger('WMAgentParser')
+
         dict.setdefault("accept_type", "application/json")
         dict.setdefault("content_type", "application/json")
         self.encoder = JsonWrapper.dumps

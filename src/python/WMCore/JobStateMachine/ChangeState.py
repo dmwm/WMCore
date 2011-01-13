@@ -167,10 +167,10 @@ class ChangeState(WMObject, WMConnectionBase):
 
                     jobDocument["inputfiles"].append(docInputFile)
 
-                jobDocument["states"] = [{"oldstate": oldstate,
-                                          "newstate": newstate,
-                                          "location": jobLocation,
-                                          "timestamp": timestamp}]
+                jobDocument["states"] = {"0": {"oldstate": oldstate,
+                                               "newstate": newstate,
+                                               "location": jobLocation,
+                                               "timestamp": timestamp}}
                 jobDocument["jobgroup"] = job["jobgroup"]
                 jobDocument["mask"] = {"firstevent": job["mask"]["FirstEvent"],
                                        "lastevent": job["mask"]["LastEvent"],

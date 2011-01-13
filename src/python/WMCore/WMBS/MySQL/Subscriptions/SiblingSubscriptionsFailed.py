@@ -12,20 +12,20 @@ class SiblingSubscriptionsFailed(DBFormatter):
     # cleanup subscription.  These files should not be cleaned up as they may be
     # used to investigate why the job failed.  This should only be run after the
     # input fileset has been closed.
-    sql = """SELECT DISTINCT wmbs_fileset_files.fileid AS fileid,
+    sql = """SELECT DISTINCT wmbs_fileset_files.file AS fileid,
                              :subscription AS subscription FROM wmbs_fileset_files
                INNER JOIN wmbs_subscription ON
                  wmbs_fileset_files.fileset = wmbs_subscription.fileset
                INNER JOIN wmbs_sub_files_failed ON
-                 wmbs_fileset_files.fileid = wmbs_sub_files_failed.fileid AND
+                 wmbs_fileset_files.file = wmbs_sub_files_failed.file AND
                  wmbs_subscription.id = wmbs_sub_files_failed.subscription
              WHERE wmbs_fileset_files.fileset = :fileset"""
 
     delete = """DELETE FROM wmbs_sub_files_available
                 WHERE subscription = :subscription AND
-                      fileid = :fileid"""
+                      file = :fileid"""
 
-    insert = """INSERT INTO wmbs_sub_files_complete (subscription, fileid) VALUES
+    insert = """INSERT INTO wmbs_sub_files_complete (subscription, file) VALUES
                   (:subscription, :fileid)"""
 
     def execute(self, subscription, fileset, conn = None, transaction = False):

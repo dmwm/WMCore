@@ -2,7 +2,7 @@ function getFailedJobs(workflowName, errorDiv) {
   // Retrieve the list of failed jobs IDs from couch for the given workflow.
   errorDiv.innerHTML = "Retrieving list of failed jobs from couch...";
   xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", "../../_view/failedJobsByWorkflowName?startkey=[\"" + workflowName + "\"]&endkey=[\"" + workflowName + "\",{}]", false);
+  xmlhttp.open("GET", "../../_view/failedJobsByWorkflowName?stale=ok&startkey=[\"" + workflowName + "\"]&endkey=[\"" + workflowName + "\",{}]", false);
   xmlhttp.send();
 
   errorDiv.innerHTML += "done.";
@@ -12,7 +12,7 @@ function getFailedJobs(workflowName, errorDiv) {
 function getErrorInfoForJob(jobID) {
   // Retrieve the error information from couch for the given jobs ID.
   xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", "../../_view/errorsByJobID?startkey=[" + jobID + "]&endkey=[" + jobID + ",{}]", false);
+  xmlhttp.open("GET", "../../_view/errorsByJobID?stale=ok&startkey=[" + jobID + "]&endkey=[" + jobID + ",{}]", false);
   xmlhttp.send();
   return eval("(" + xmlhttp.responseText + ")")["rows"];
 };
@@ -93,7 +93,7 @@ function collateFailureInfo(failedJobs, errorDiv) {
         if (stepFailure[exitCode]["runs"].hasOwnProperty(runNumber)) {
           stepFailure[exitCode]["runs"][runNumber] = stepFailure[exitCode]["runs"][runNumber].concat(workflowError["runs"][runNumber]);
         } else {
-          stepFailure[exitCode]["runs"][runNumber] = workflowError[exitCode]["runs"][runNumber];
+          stepFailure[exitCode]["runs"][runNumber] = workflowError["runs"][runNumber];
         };
       };
     };

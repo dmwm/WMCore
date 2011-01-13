@@ -11,7 +11,8 @@ dependencies = {
                                     'WMCore.WMBase', 'WMCore.WMLogging']
                         },
                'wmc-database':{
-                        'packages': ['WMCore.Database'],
+                        'packages': ['WMCore.Wrappers', 'WMCore.GroupUser', 'WMCore.DataStructs', 'WMCore.Database',
+                                    'WMCore.Algorithms', 'WMCore.Services', 'WMCore.Cache'],
                         'modules': ['WMCore.Action', 'WMCore.WMConnectionBase', 'WMCore.DAOFactory', 'WMCore.WMInit'],
                         'systems':['wmc-base']
                         },
@@ -20,7 +21,7 @@ dependencies = {
                         'systems':['wmc-base']
                         },
                'wmc-web':{
-                        'packages': ['WMCore.WebTools'],
+                        'packages': ['WMCore.WebTools', 'WMCore.Agent', 'WMCore.WorkerThreads'],
                         'systems':['wmc-database', 'wmc-base'],
                         'statics': ['src/javascript/WMCore/WebTools',
                                 'src/javascript/external/yui',
@@ -31,10 +32,11 @@ dependencies = {
                                 'src/templates/WMCore/WebTools/Masthead',]
                         },
                'reqmgr':{
-                        'packages': ['WMCore.RequestManager'],
-                        'systems':['wmc-web'],
+                        'packages': ['WMCore.RequestManager', 'WMCore.HTTPFrontEnd'],
+                        'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/javascript/WMCore/WebTools/RequestManager',
-                                    'src/templates/WMCore/WebTools/RequestManager'],
+                                    'src/templates/WMCore/WebTools/RequestManager',
+                                    'src/html/RequestManager'],
                         },
                'workqueue':{
                         'packages': ['WMComponent.WorkQueueManager', 'WMCore.WorkQueue'],
@@ -42,7 +44,7 @@ dependencies = {
                         'statics': ['src/templates/WMCore/WebTools/WorkQueue',]
                         },
                'wmagent':{
-                        'packages': ['WMCore.Agent'],
+                        'packages': [],
                         'systems':['wmc-web', 'wmc-database', 'workqueue', 'wmc-runtime'],
                         'statics': ['src/javascript/WMCore/WebTools/Agent',
                                 'src/javascript/WMCore/WebTools/WMBS',

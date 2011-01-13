@@ -48,8 +48,8 @@ Actions:<select name="action">
 #for $request in $requests
 #set $requestName = $request['RequestName']
 <tr>
-<td align=center><input type="checkbox" $checked name = "checkbox$requestName"></input></td> 
-<td align=center><a href=/reqMgrBrowser/details/$requestName>$requestName</a></td>
+<td align=center><input type="checkbox" $checked name = "checkbox$requestName"/></td> 
+<td align=center><a href="/view/details/$requestName">$requestName</a></td>
 <td align=center>$request['RequestType']</td>
 <td align=center>$request['PriorityMenu']</td>
 <td align=center>$request['SoftwareVersions']</td>

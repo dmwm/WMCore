@@ -29,9 +29,6 @@ databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 userName = "OPERATOR NAME"
 userEmail = "OPERATOR EMAIL"
 
-# This is the path to the CMS software installation on the location machine.
-cmsPath = "/uscmst1/prod/sw/cms"
-
 # The couch username and password needs to be added.  The GroupUser and
 # ConfigCache couch apps need to be installed into the configcache couch
 # database.  The JobDump couchapp needs to be installed into the jobdump
@@ -73,13 +70,16 @@ config.ReqMgr.componentDir = os.path.join(config.General.workDir, "ReqMgr")
 config.ReqMgr.Webtools.host = serverHostName
 config.ReqMgr.Webtools.port = reqMgrPort
 config.ReqMgr.templates = os.path.join(getWMBASE(),
-                                       "src/templates/WMCore/WebTools")
+                                       "src/templates/WMCore/WebTools/RequestManager")
 config.ReqMgr.requestor = userName
 config.ReqMgr.admin = userEmail
 config.ReqMgr.title = "CMS Request Manager"
 config.ReqMgr.description = "CMS Request Manager"
 config.ReqMgr.couchURL = couchURL
 config.ReqMgr.default_expires = 0
+config.ReqMgr.yuiroot = yuiRoot
+config.ReqMgr.couchUrl = couchURL
+config.ReqMgr.configDBName = configCacheDBName
 
 config.ReqMgr.section_("security")
 config.ReqMgr.security.dangerously_insecure = True
@@ -87,38 +87,41 @@ config.ReqMgr.security.dangerously_insecure = True
 views = config.ReqMgr.section_('views')
 active = views.section_('active')
 
-active.section_("reqMgrBrowser")
-active.reqMgrBrowser.object = "WMCore.HTTPFrontEnd.RequestManager.ReqMgrBrowser"
-active.reqMgrBrowser.reqMgrHost = reqMgrUrl
-active.reqMgrBrowser.couchUrl = config.ReqMgr.couchURL
-active.reqMgrBrowser.configDBName = configCacheDBName
-active.reqMgrBrowser.yuiroot = yuiRoot
-
 active.section_('RequestOverview')
 active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestManager.RequestOverview'
 active.RequestOverview.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
 active.RequestOverview.javascript = os.path.join(getWMBASE(), 'src/javascript')
 active.RequestOverview.html = os.path.join(getWMBASE(), 'src/html')
 
-active.section_("reqMgr")
-active.reqMgr.object = "WMCore.WebTools.RESTApi"
-active.reqMgr.section_("model")
-active.reqMgr.model.object = "WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel"
+active.section_('view')
+active.view.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrBrowser'
+active.view.reqMgrHost = reqMgrUrl
+
+active.section_('admin')
+active.admin.object = 'WMCore.HTTPFrontEnd.RequestManager.Admin'
+
+active.section_('approve')
+active.approve.object = 'WMCore.HTTPFrontEnd.RequestManager.Approve'
+
+active.section_('assign')
+active.assign.object = 'WMCore.HTTPFrontEnd.RequestManager.Assign'
+
+active.section_('reqMgr')
+active.reqMgr.section_('model')
+active.reqMgr.section_('formatter')
+active.reqMgr.object = 'WMCore.WebTools.RESTApi'
+active.reqMgr.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
 active.reqMgr.model.reqMgrHost = reqMgrUrl
 active.reqMgr.model.couchUrl = couchURL
 active.reqMgr.model.workloadCouchDB = reqMgrDBName
-active.reqMgr.section_("formatter") 
-active.reqMgr.formatter.object = "WMCore.WebTools.RESTFormatter"
-active.reqMgr.formatter.templates = config.ReqMgr.templates
+active.reqMgr.default_expires = 0 # no caching
+active.reqMgr.formatter.object = 'WMCore.WebTools.RESTFormatter'
 
-active.section_("WebRequestSchema")
-active.WebRequestSchema.object = "WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema"
-active.WebRequestSchema.reqMgrHost = reqMgrUrl
-active.WebRequestSchema.cmsswDefaultVersion = "CMSSW_3_8_6"
-active.WebRequestSchema.couchUrl = couchURL
-active.WebRequestSchema.configCacheDBName = configCacheDBName
-active.WebRequestSchema.templates = config.ReqMgr.templates
-active.WebRequestSchema.yuiroot = yuiRoot
+active.section_('create')
+active.create.object = 'WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema'
+active.create.requestor = userName
+active.create.reqMgrHost = reqMgrUrl
+active.create.cmsswDefaultVersion = 'CMSSW_3_5_8'
 
 config.component_("WorkQueueManager")
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"

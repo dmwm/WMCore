@@ -18,13 +18,13 @@ document.onkeypress = stopRKey;
 </head>
 <body>
 <h2>Assign Request</h2>
-<form action="handleAssignmentPage" method="POST">
+<form action="/assign/handleAssignmentPage" method="POST">
 <h4>Assign request to teams</h4>
 #for $team in $teams:
     #if $team in $assignments:
-        <input type="checkbox" name="Team$team" CHECKED>$team</input><br/> 
+        <input type="checkbox" name="Team$team" CHECKED/>$team<br/> 
     #else
-        <input type="checkbox" name="Team$team">$team</input><br/>
+        <input type="checkbox" name="Team$team"/>$team<br/>
     #end if
 #end for
 
@@ -62,7 +62,7 @@ Min Merge Size <input type="text" name="MinMergeSize" value=500000000 size=10/>
 Max Merge Size <input type="text" name="MaxMergeSize" value=4294967296 size=10/>
 Max Merge Events <input type="text" name="MaxMergeEvents" value=50000 size=10/><br/>
 
-Acquisition Era: <input type="text" name="AcquisitionEra" size=20></BR>
+Acquisition Era: <input type="text" name="AcquisitionEra" size=20/><br/>
 ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 /><br/>
 </div>
 <br/>
@@ -95,12 +95,12 @@ Actions:<select name="action">
 #for $request in $requests
 #set $requestName = $request['RequestName']
 <tr>
-<td align=center><input type="checkbox" $checked name = "checkbox$requestName"></input></td> 
-<td align=center><a href=/reqMgrBrowser/details/$requestName>$requestName</a></td>
+<td align=center><input type="checkbox" $checked name = "checkbox$requestName"/></td> 
+<td align=center><a href="/view/details/$requestName">$requestName</a></td>
 <td align=center>$request['RequestType']</td>
-<td align=center>$request['PriorityMenu'] size=5></td>
+<td align=center>$request['PriorityMenu']</td>
 <td align=center>$request['Input']</td>
-<td align=center><a href=/reqMgrBrowser/splitting/$requestName>parameters</a></td>
+<td align=center><a href="/view/splitting/$requestName">parameters</a></td>
 </tr>
 #end for
 

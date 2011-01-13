@@ -1,78 +1,87 @@
 #!/usr/bin/env python
-# encoding: utf-8
 """
-wmagent-couchapp-init.py
+wmagent-couchapp-init
 
-Created by Dave Evans on 2010-10-19.
-Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-import sys
-import getopt
 import os
+import tempfile
+import sys
 
+from couchapp.commands import push as couchapppush
+from couchapp.config import Config
 
-help_message = '''
-wmagent-couchapp-init <COUCHDBNAME/URL>
-'''
-
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.Database.CMSCouch import CouchServer
 from WMCore.WMInit import getWMBASE
-from WMQuality.TestInitCouchApp import CouchAppTestHarness
 
-class Usage(Exception):
-    def __init__(self, msg):
-        self.msg = msg
+def installCouchApp(couchUrl, couchDBName, couchAppName):
+    """
+    _installCouchApp_
 
+    Install the given couch app on the given server in the given database.  If
+    the database already exists it will be deleted.
+    """
+    print "Installing %s into %s" % (couchAppName, couchDBName)
 
-def main(argv=None):
-    url = None
-    database = None
-    
+    couchServer = CouchServer(couchUrl)
+    couchappConfig = Config()
 
-    couchapps = "%s/src/couchapps" % getWMBASE()
-    
-    if argv is None:
-        argv = sys.argv
-    try:
-        try:
-            opts, args = getopt.getopt(argv[1:], "hud:v", ["help", "url=", "database="])
-        except getopt.error, msg:
-            raise Usage(msg)
-    
-        # option processing
-        for option, value in opts:
-            if option == "-v":
-                verbose = True
-            if option in ("-h", "--help"):
-                raise Usage(help_message)
-            if option in ("-u", "--url"):
-                url = value
-            if option in ("-d", "--database"):
-                database = value
+    if couchDBName in couchServer.listDatabases():
+        couchServer.deleteDatabase(couchDBName)
+    couchServer.createDatabase(couchDBName)
 
-    
-    except Usage, err:
-        print >> sys.stderr, sys.argv[0].split("/")[-1] + ": " + str(err.msg)
-        print >> sys.stderr, "\t for help use --help"
-        return 2
+    wmBase = getWMBASE()
+    couchapppush(couchappConfig, "%s/src/couchapps/%s" % (wmBase, couchAppName),
+                 "%s/%s" % (couchUrl, couchDBName))
+    return
 
-        
-    jobcache = "%s_jsm" % database
-    acdc     = "%s_acdc" % database
-    configs  = "%s_configcache" % database 
-    
-    harness1 = CouchAppTestHarness(jobcache, url)
-    harness1.create()
-    harness1.pushCouchapps("%s/JobDump" % couchapps)
+def setupCron(couchUrl, couchDBName):
+    """
+    _setupCron_
 
-    harness2 = CouchAppTestHarness(acdc, url)
-    harness2.create()
-    harness2.pushCouchapps("%s/GroupUser" % couchapps, "%s/ACDC" % couchapps)
+    Setup cron jobs to index and compact the JobDump.
+    """
+    print "Setting up cron jobs for the job dump."
+    index = 'curl -s -m 1 %s/%s/_design/JobDump/_view/jobsByJobID?limit=1 > /dev/null' % (couchUrl, couchDBName)
+    compact = 'curl -s -H "Content-Type: application/json" -X POST %s/%s/_compact > /dev/null' % (couchUrl, couchDBName)
 
-    harness1 = CouchAppTestHarness(configs, url)
-    harness1.create()
-    harness1.pushCouchapps("%s/GroupUser" %couchapps, "%s/ConfigCache" % couchapps)
+    tempDir = tempfile.mkdtemp()
+    os.system("crontab -l > %s/crontab" % tempDir)
+    os.system("grep -v '%s' %s/crontab > %s/crontab2" % (index, tempDir, tempDir))
+    os.system("grep -v '%s' %s/crontab2 > %s/crontab" % (compact, tempDir, tempDir))
 
+    cronTab = open("%s/crontab" % tempDir, "w+")
+    cronTab.write("* * * * * %s\n" % index)
+    cronTab.write("0 0 * * * %s\n" % compact)
+    cronTab.close()
+
+    os.system("crontab %s/crontab" % tempDir)
+    os.remove("%s/crontab" % tempDir)
+    os.remove("%s/crontab2" % tempDir)    
+    os.rmdir(tempDir)
+    return
 
 if __name__ == "__main__":
-    sys.exit(main())
+    if not os.environ.has_key("WMAGENT_CONFIG"):
+        print "The WMAGENT_CONFIG environment variable needs to be set before"
+        print "this can run."
+        sys.exit(1)
+
+    wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
+    
+    installCouchApp(wmagentConfig.JobStateMachine.couchurl,
+                    wmagentConfig.JobStateMachine.couchDBName, "JobDump")
+
+    installCouchApp(wmagentConfig.JobStateMachine.couchurl,
+                    wmagentConfig.JobStateMachine.configCacheDBName, "ConfigCache")
+    installCouchApp(wmagentConfig.JobStateMachine.couchurl,
+                    wmagentConfig.JobStateMachine.configCacheDBName, "GroupUser")
+
+    installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
+    installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")    
+
+    setupCron(wmagentConfig.JobStateMachine.couchurl,
+              wmagentConfig.JobStateMachine.couchDBName)
+
+    sys.exit(0)

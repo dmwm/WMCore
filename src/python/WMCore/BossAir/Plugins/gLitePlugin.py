@@ -19,7 +19,7 @@ import types
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.DAOFactory import DAOFactory
 import WMCore.WMInit
-
+from copy import deepcopy
 
 def processWorker(input, results):
     """
@@ -75,6 +75,8 @@ def processWorker(input, results):
             elif type == 'status':
                 jsout = stdout
                 #myJSONDecoder.decodeStatus( stdout )
+            elif type == 'output':
+                jsout = stdout
             else:
                 jsout = stdout
         except ValueError, val:
@@ -200,8 +202,7 @@ class gLitePlugin:
 
         Kill all connections and terminate
         """
-        terminate = False
-        logging.debug("Ready to close all %s " % str(self.pool))
+        logging.debug("Ready to close all %i started processes " % len(self.pool))
         for x in self.pool:
             try:
                 logging.debug("Shutting down %s " % str(x))
@@ -210,8 +211,7 @@ class gLitePlugin:
                 msg =  "Hit some exception in deletion\n"
                 msg += str(ex)
                 logging.error(msg)
-                terminate = True
-
+                
         for proc in self.pool:
             proc.terminate()
 
@@ -489,8 +489,9 @@ class gLitePlugin:
             workid = res['workid']
             # Check error
             if exit != 0:
-                raise Exception('Error executing %s: \n\texit code: %i\n\tstderr: %s\n\tjson: %s' % (cmdquerypath, exit, error, str(jsout.strip()) )
-                               )
+                logging.error('Error executing %s: \n\texit code: %i\n\tstderr: %s\n\tjson: %s' % (cmdquerypath, exit, error, str(jsout.strip()) )
+                              )
+                continue
             else:
                 # parse JSON output
                 out = None
@@ -532,13 +533,108 @@ class gLitePlugin:
                             jj['status_time'] = lbts
                             changeList.append(jj)
 
-                    ## TODO: change this and add to completeList
-                    runningList.append(jj)
+                    if status not in ['Done', 'Aborted']: 
+                        runningList.append(jj)
+                    else:
+                        completeList.append(jj)
 
         ## Shut down processes
         self.close(input, result)        
 
         return runningList, changeList, completeList
+
+
+    def getoutput(self, jobs):
+        """
+        _getoutput_
+
+        1) get finished jobs
+        2) retrieve job output
+        3) return done + failed to process list
+        """
+
+        logging.debug("Staring gLite getoutput method..")
+
+        command   = "glite-wms-job-output --json --noint"
+        outdiropt = "--dir"
+
+        workqueued  = {}
+        currentwork = len(workqueued)
+        
+        completedJobs = []
+        failedJobs    = []
+
+        ## Start up processes
+        input  = multiprocessing.Queue()
+        result = multiprocessing.Queue()
+        self.start(input, result)
+
+        #creates chunks of work per multi-processes 
+        # TODO: evaluate if passing just one job per work is too much overhead
+
+        for jj in jobs:
+            cmd = '%s %s %s %s' % (command, outdiropt, jj['cache_dir'], jj['gridid'])
+            logging.debug("Enqueuing getoutput for job %i" % jj['jobid'] )
+            workqueued[currentwork] = jj['jobid']
+            input.put( (currentwork, cmd, 'output') )
+            currentwork += 1
+
+        # Now we should have sent all jobs to be submitted
+        # Going to do the rest of it now
+        logging.debug("Waiting for %i works to finish..." % len(workqueued))
+        for n in xrange(len(workqueued)):
+            logging.debug("Waiting for work number %i to finish.." % n)
+            res = result.get()
+            jsout  = res['jsout']
+            error  = res['stderr']
+            exit   = res['exit']
+            workid = res['workid']
+            logging.info ('result : \n %s' % str(res) )
+            # Check error
+            if exit != 0:
+                logging.error('Error executing %s: \n\texit code: %i\n\tstderr: %s\n\tjson: %s' % (command, exit, error, str(jsout.strip()) )
+                               )
+                failedJobs.append(workqueued[workid])
+                continue
+            else:
+                # parse JSON output
+                out = None
+                try:
+                    out = json #.loads(jsout)
+                except ValueError, va:
+                    raise Exception('Error parsing JSON: \n\terror: %s\n\t:exception: %s' % (error, str(va)) )
+
+                ### out example
+                # {
+                # result: success 
+                # endpoint: https://wms202.cern.ch:7443/glite_wms_wmproxy_server
+                # jobid: https://wms202.cern.ch:9000/MwNUhRUsC2HaSfCFzxETVw {
+                # No output files to be retrieved for the job:
+                # https://wms202.cern.ch:9000/MwNUhRUsC2HaSfCFzxETVw
+                #
+                # }
+                #}
+                
+                if jsout is not None:
+                    jobid    = workqueued[workid]
+                    if jsout.find('success') != -1:
+                        completedJobs.append(jobid)
+                    else:
+                        failedJobs.append(jobid)
+                    """
+                    if not jsout.has_key('result'):
+                        failedJobs.extend(jobid)
+                        continue
+                    elif jsout['result'] != 'success':
+                        failedJobs.extend(jobid)
+                        continue
+                    else:
+                        completedJobs.extend(jobid)
+                    """
+        ## Shut down processes
+        self.close(input, result)
+
+        return completedJobs, failedJobs
 
 
     def complete(self, jobs):
@@ -561,7 +657,8 @@ class gLitePlugin:
         #                        chunksize = self.chunksize)
 
         #return results
-        return []
+        self.getoutput(jobs)
+        return
 
 
 
@@ -682,9 +779,8 @@ class gLitePlugin:
             jdl += 'OutputSandboxBaseDestURI = "%s%s";\n' \
                             % (startdir, job['cache_dir'])
 
-            jdl += 'OutputSandbox = {"Report.pkl",".BrokerInfo",' + \
-                   '"%s_%s.stdout","%s_%s.stderr"};\n' \
-                    % (jobid, jobretry, jobid, jobretry)
+            jdl += 'OutputSandbox = {"Report.%i.pkl",".BrokerInfo", "%i_%i.stdout","%i_%i.stderr"};\n' \
+                    % (jobretry, jobid, jobretry, jobid, jobretry)
 
             if len(commonFiles) > 0:
                 jdl += 'InputSandbox = {%s};\n' % commonFiles

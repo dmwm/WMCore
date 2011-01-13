@@ -192,7 +192,7 @@ class AccountantWorker(WMConnectionBase):
         ID and the path to the framework job report.
         """
         returnList = []
-        self.beginTransaction()
+        self.reset()
 
         for job in parameters:
             logging.info("Handling %s" % job["fwjr_path"])
@@ -219,6 +219,8 @@ class AccountantWorker(WMConnectionBase):
             else:
                 returnList.append({'id': job["id"], 'jobSuccess': jobSuccess})
             self.count += 1
+            
+        self.beginTransaction()
 
         # Now things done at the end of the job
         # Do what we can with WMBS files
@@ -249,7 +251,7 @@ class AccountantWorker(WMConnectionBase):
             self.handleDBSBufferParentage()
 
         self.commitTransaction(existingTransaction = False)
-        self.reset()
+
         return returnList
 
     def outputFilesetsForJob(self, outputMap, merged, moduleLabel):

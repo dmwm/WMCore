@@ -40,11 +40,9 @@ class CompleteInput(DBFormatter):
     failedDelete = """DELETE FROM wmbs_sub_files_failed
                       WHERE subscription = :subid AND file = :fileid"""    
 
-    sql = """INSERT INTO wmbs_sub_files_complete (file, subscription)
-               SELECT :fileid, :subid FROM DUAL
-               WHERE NOT EXISTS
-                 (SELECT * FROM wmbs_sub_files_complete
-                  WHERE file = :fileid AND subscription = :subid)"""
+    sql = """INSERT IGNORE INTO wmbs_sub_files_complete (file, subscription)
+               VALUES (:fileid, :subid)
+               """
     
     def execute(self, id, conn = None, transaction = False):
         if type(id) == list:

@@ -16,8 +16,8 @@ this class, it should be run irregularly.
 """
 __all__ = []
 
-
-
+import os.path
+import shutil
 import threading
 import logging
 import traceback
@@ -29,6 +29,8 @@ from WMCore.WMBS.Fileset        import Fileset
 from WMCore.DAOFactory          import DAOFactory
 from WMCore.WorkQueue.WorkQueue import localQueue
 from WMCore.WMException         import WMException
+
+from WMComponent.JobCreator.CreateWorkArea import getMasterName
 
 class TaskArchiverPollerException(WMException):
     """
@@ -56,7 +58,9 @@ class TaskArchiverPoller(BaseWorkerThread):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
 
-        self.config = config
+        self.config      = config
+        self.jobCacheDir = self.config.JobCreator.jobCacheDir
+        
         if getattr(self.config.TaskArchiver, "useWorkQueue", False) != False:
             wqp = self.config.TaskArchiver.WorkQueueParams
             self.workQueue = localQueue(**wqp)
@@ -185,6 +189,16 @@ class TaskArchiverPoller(BaseWorkerThread):
             logging.info("Deleting subscription %i" % sub['id'])
             try:
                 sub.deleteEverything()
+                workflow = sub['workflow']
+                if not workflow.exists():
+                    # Then we deleted the workflow
+                    # Now we have to delete the task area.
+                    workDir, taskDir = getMasterName(startDir = self.jobCacheDir,
+                                                     workflow = workflow)
+                    logging.error("About to delete work directory %s\n" % taskDir)
+                    if os.path.isdir(taskDir):
+                        # Remove the taskDir, because we're done
+                        shutil.rmtree(taskDir)
             except Exception, ex:
                 msg =  "Critical error while deleting subscription %i\n" % sub['id']
                 msg += str(ex)

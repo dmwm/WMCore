@@ -95,6 +95,34 @@ def makedirs(directory):
     return
 
 
+def getMasterName(startDir, wmWorkload = None, workflow = None):
+    """
+    Gets a universal name for the jobGroup directory
+    Return the uid as the name if none available (THIS SHOULD NEVER HAPPEN)
+    
+    """
+    
+    if wmWorkload != None:
+        workload = wmWorkload.name()
+    elif not os.path.exists(workflow.spec):
+        msg =  "Could not find Workflow spec %s: " % (workflow.spec)
+        msg += "Cannot create work area without spec!"
+        logging.error(msg)
+        raise CreateWorkAreaException(msg)
+    else:
+        wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
+        wmWorkload.load(workflow.spec)
+        
+        workload = wmWorkload.name()
+
+    task = workflow.task
+    if task.startswith("/" + workload + "/"):
+        task = task[len(workload) + 2:]
+            
+    return (os.path.join(startDir, workload),
+            os.path.join(startDir, workload, task))
+
+
 
 
 class CreateWorkAreaException(WMException):
@@ -217,7 +245,9 @@ class CreateWorkArea:
 
         """
 
-        workloadDir, taskDir = self.getMasterName()
+        workloadDir, taskDir = getMasterName(startDir = self.startDir,
+                                             wmWorkload = self.wmWorkload,
+                                             workflow = self.workflow)
 
         #Create the workload directory
         if not os.path.isdir(workloadDir):
@@ -252,7 +282,9 @@ class CreateWorkArea:
             logging.error(msg)
             raise CreateWorkAreaException(msg)
 
-        workloadDir, taskDir       = self.getMasterName()
+        workloadDir, taskDir       = getMasterName(startDir = self.startDir,
+                                                   wmWorkload = self.wmWorkload,
+                                                   workflow = self.workflow)
         jobCounter    = 0
         nameList      = []
 
@@ -339,32 +371,6 @@ class CreateWorkArea:
 
         return os.path.join(self.collectionDir, name)
 
-    def getMasterName(self):
-        """
-        Gets a universal name for the jobGroup directory
-        Return the uid as the name if none available (THIS SHOULD NEVER HAPPEN)
 
-        """
-
-        if self.wmWorkload != None:
-            workload = self.wmWorkload.name()
-        elif not os.path.exists(self.workflow.spec):
-            msg =  "Could not find Workflow spec %s: " % (self.workflow.spec)
-            msg += "labeling jobs by job ID only!"
-            logging.error(msg)
-            return (os.path.join(self.startDir, self.jobGroup.uid),
-                    os.path.join(self.startDir, self.jobGroup.uid))
-        else:
-            wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
-            wmWorkload.load(self.workflow.spec)
-
-            workload = wmWorkload.name()
-
-        task = self.workflow.task
-        if task.startswith("/" + workload + "/"):
-            task = task[len(workload) + 2:]
-            
-        return (os.path.join(self.startDir, workload),
-                os.path.join(self.startDir, workload, task))
 
 

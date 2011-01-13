@@ -16,8 +16,8 @@ import shutil
 
 from WMCore.Agent.Configuration import loadConfigurationFile
 
-
-from WMQuality.TestInit   import TestInit
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+#from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.WMFactory     import WMFactory
 from WMCore.Services.UUID import makeUUID
@@ -28,13 +28,15 @@ from WMCore.WMBS.Workflow     import Workflow
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup     import JobGroup
 from WMCore.WMBS.Job          import Job
-
 from WMCore.DataStructs.Run   import Run
 
 from WMComponent.TaskArchiver.TaskArchiver       import TaskArchiver
 from WMComponent.TaskArchiver.TaskArchiverPoller import TaskArchiverPoller
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
+
+from WMCore_t.WMSpec_t.TestSpec     import testWorkload
+from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
 
 class TaskArchiverTest(unittest.TestCase):
@@ -62,11 +64,14 @@ class TaskArchiverTest(unittest.TestCase):
                                                  "WMCore.ThreadPool", 'WMCore.WorkQueue.Database'],
 
                                 useDefault = False)
+        self.testInit.setupCouch("taskarchiver_t_0", "JobDump")
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
+
+        self.testDir = self.testInit.generateWorkDir()
 
 
         self.nJobs = 10
@@ -78,6 +83,8 @@ class TaskArchiverTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         self.testInit.clearDatabase()
+        self.testInit.delWorkDir()
+        self.testInit.tearDownCouch()
 
         return
 
@@ -98,19 +105,45 @@ class TaskArchiverTest(unittest.TestCase):
         config.JobStateMachine.couchurl     = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
         config.JobStateMachine.couchDBName  = "job_accountant_t"
 
+        config.component_("JobCreator")
+        config.JobCreator.jobCacheDir       = os.path.join(self.testDir, 'testDir')
+
         config.component_("TaskArchiver")
-        config.TaskArchiver.componentDir    = self.testInit.generateWorkDir()
+        config.TaskArchiver.componentDir    = self.testDir
         config.TaskArchiver.WorkQueueParams = {}
         config.TaskArchiver.pollInterval    = 60
         config.TaskArchiver.logLevel        = 'SQLDEBUG'
         config.TaskArchiver.timeOut         = 0
 
+        # Make the jobCacheDir
+        os.mkdir(config.JobCreator.jobCacheDir)
 
         return config
+
+
+    def createWorkload(self, workloadName = 'Test', emulator = True):
+        """
+        _createTestWorkload_
+
+        Creates a test workload for us to run on, hold the basic necessities.
+        """
+
+        workload = testWorkload("Tier1ReReco")
+        rereco = workload.getTask("ReReco")
+
+        
+        taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
+        taskMaker.skipSubscription = True
+        taskMaker.processWorkload()
+
+        workload.save(workloadName)
+
+        return workload
         
         
 
-    def createTestJobGroup(self, config, name = "TestWorkthrough"):
+    def createTestJobGroup(self, config, name = "TestWorkthrough",
+                           specLocation = "spec.xml"):
         """
         Creates a group of several jobs
 
@@ -118,7 +151,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+        testWorkflow = Workflow(spec = specLocation, owner = "Simon",
                                 name = name, task="Test")
         testWorkflow.create()
         
@@ -170,7 +203,8 @@ class TaskArchiverTest(unittest.TestCase):
         return testJobGroup
 
 
-    def createGiantJobSet(self, name, config, nSubs = 10, nJobs = 10, nFiles = 1):
+    def createGiantJobSet(self, name, config, nSubs = 10, nJobs = 10,
+                          nFiles = 1, spec = "spec.xml"):
         """
         Creates a massive set of jobs
 
@@ -184,7 +218,7 @@ class TaskArchiverTest(unittest.TestCase):
         for i in range(0, nSubs):
             # Make a bunch of subscriptions
             localName = '%s-%i' % (name, i)
-            testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+            testWorkflow = Workflow(spec = spec, owner = "Simon",
                                     name = localName, task="Test")
             testWorkflow.create()
             
@@ -262,8 +296,16 @@ class TaskArchiverTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         config = self.getConfig()
+        workloadPath = os.path.join(self.testDir, 'spec.pkl')
+        workload     = self.createWorkload(workloadName = workloadPath)
+        testJobGroup = self.createTestJobGroup(config = config,
+                                               name = workload.name(),
+                                               specLocation = workloadPath)
 
-        testJobGroup = self.createTestJobGroup(config = config)
+        cachePath = os.path.join(config.JobCreator.jobCacheDir,
+                                 "TestWorkload", "Test")
+        os.makedirs(cachePath)
+        self.assertTrue(os.path.exists(cachePath))
 
         
 
@@ -282,6 +324,9 @@ class TaskArchiverTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM wmbs_fileset")[0].fetchall()
         result = myThread.dbi.processData("SELECT * FROM wmbs_file_details")[0].fetchall()
         self.assertEqual(len(result), 0)
+
+        # Make sure we deleted the directory
+        self.assertFalse(os.path.exists(cachePath))
 
         testWMBSFileset = Fileset(id = 1)
         self.assertEqual(testWMBSFileset.exists(), False)

@@ -147,6 +147,7 @@ Emulator:
     <ul class="yui-nav">
         <li class="selected"><a href="#rereco"><em>ReReco</em></a></li>
         <li><a href="#mc"><em>Monte Carlo</em></a></li>
+        <li><a href="#relvalmc"><em>RelVal MC</em></a></li>
         <li><a href="#storeResults"><em>StoreResults</em></a></li>
         <li><a href="#generic"><em>Generic</em></a></li>
     </ul>
@@ -168,6 +169,17 @@ Emulator:
             $configBlock("inputMode", "Scenario", "ProdConfigCacheID")
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
             $trailerBlock("MonteCarlo")
+        </div>
+        <div id="relvalmc">
+            $headerBlock
+            $softwareBlock
+Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
+# of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 /><br/>
+Generation ConfigCache ID <input type="text" name="GenConfigCacheID" size=80 /><br/>
+Reco ConfigCache ID <input type="text" name="RecoConfigCacheID" size=80 /><br/>
+AlCaReco ConfigCache ID <input type="text" name="AlcaRecoConfigCacheID" size=80 /><br/>
+Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
+            $trailerBlock("RelValMC")
         </div>
         <div id="storeResults">
             $headerBlock

@@ -50,6 +50,13 @@ def changeRequestIDStatus(requestId, newState, priority = None):
 
     return
 
+def changeRequestPriority(requestName, priority):
+    factory = DBConnect.getConnection()
+    reqId = getRequestID(factory, requestName)
+    priorityChange = factory(classname = "Request.Priority")
+    priorityChange.execute(reqId, priority)
+    return
+
 
 def changeRequestStatus(requestName, newState, priority = None):
     """

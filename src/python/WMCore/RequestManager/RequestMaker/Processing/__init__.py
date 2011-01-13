@@ -9,3 +9,6 @@ Request maker and schema implementations for Data Processing Operations
 __all__ = []
 
 import FileBasedRequest
+import ReRecoRequest
+import RecoRequest
+import StoreResultsRequest

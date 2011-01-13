@@ -2,7 +2,6 @@ from WMCore.Services.Requests import JSONRequests
 import WMCore_t.RequestManager_t.FakeRequests as FakeRequests
 import unittest
 from WMCore.Wrappers import JsonWrapper as json
-import WMCore.RequestManager.RequestMaker.WMWorkloadCache as WMWorkloadCache
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from httplib import HTTPException
 import urllib
@@ -98,7 +97,6 @@ class TestReqMgr(unittest.TestCase):
             self.assertTrue(self.jsonSender.put(urllib.quote('/reqMgr/assignment/White Sox/'+requestName))[1] == 200)
             requestsAndSpecs = self.jsonSender.get(urllib.quote('/reqMgr/assignment/White Sox'))[0]
             self.assertTrue(requestName in requestsAndSpecs.keys())
-            #workloadHelper = WMWorkloadCache.loadFromURL(requestsAndSpecs[requestName])
             workloadHelper = WMWorkloadHelper()
             workloadHelper.load(requestsAndSpecs[requestName]) 
             print str(workloadHelper.data.owner)

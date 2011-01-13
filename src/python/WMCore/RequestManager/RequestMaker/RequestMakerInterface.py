@@ -17,7 +17,6 @@ A RequestMaker Implementation should do the following.
 
 
 from WMCore.RequestManager.DataStructs.Request import Request
-#import WMCore.RequestManager.RequestMaker.WorkloadMaker as WorkloadMaker
 from WMCore.WMSpec.WMWorkload import newWorkload
 import time
 
@@ -65,7 +64,6 @@ class RequestMakerInterface:
         request.update(schema)
         workload = self.makeWorkload(schema)
         self.loadRequestSchema(workload, schema)
-        #WorkloadMaker.loadRequestSchema(workload, schema) 
         request['WorkflowSpec'] = workload
         request['SoftwareVersions'].append(schema['CMSSWVersion'])
         return request

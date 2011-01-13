@@ -67,14 +67,17 @@ class RequestSchema(dict):
                 raise RuntimeError, msg
 
         for identifier in ['ScramArch', 'RequestName', 'Group', 'Requestor']:
-            if self.get(identifier, None) != None:
-                WMCore.Lexicon.identifier(self[identifier])
-        if 'CMSSWVersion' in self:
-            WMCore.Lexicon.cmsswversion(self['CMSSWVersion'])
+            self.lexicon(identifier, WMCore.Lexicon.identifier)
+        self.lexicon('CMSSWVersion', WMCore.Lexicon.cmsswversion)
         for dataset in ['InputDataset', 'OutputDataset']:
-            if self.get(dataset, None) != None:
-                WMCore.Lexicon.dataset(self[dataset])
+            self.lexicon(dataset, WMCore.Lexicon.dataset)
 
+    def lexicon(self, field, validator):
+        if self.get(field, None) != None:
+            try:
+                validator(self[field]) 
+            except AssertionError:
+                raise RuntimeError, "Bad value for %s" % field
 
     def __to_json__(self, thunker):
         """

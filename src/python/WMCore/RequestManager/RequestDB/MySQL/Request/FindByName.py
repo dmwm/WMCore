@@ -33,4 +33,7 @@ class FindByName(DBFormatter):
 
         result = self.dbi.processData(self.sql,
                                       conn = conn, transaction = trans)
-        return self.format(result)[0][0]
+        output = self.format(result)
+        if len(output) == 0:
+            return None
+        return output[0][0]

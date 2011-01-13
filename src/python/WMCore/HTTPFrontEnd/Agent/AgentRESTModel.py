@@ -10,6 +10,9 @@ import logging
 from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.Requests import JSONRequests
+from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource.CouchDBConnectionBase \
+    import CouchDBConnectionBase
+ 
 
 class AgentRESTModel(RESTModel):
     """
@@ -26,7 +29,11 @@ class AgentRESTModel(RESTModel):
         self.addDAO('GET', "heartbeatInfoDetail", "GetAllHeartbeatInfo")
         self.addDAO('GET', "agentstatus", "CheckComponentStatus")
         self.addMethod('GET', "heartbeat", self.getHeartBeatWarning)
-        
+         #External couch call
+        self.addMethod('GET', "acdclink", self.getACDCInfo)
+    
+    def getACDCInfo(self):
+        return {'url': CouchDBConnectionBase.getCouchACDCHtmlBase()}
     
     def getHeartBeatWarning(self):
         results = self.methods["GET"]["heartbeatInfo"]["call"]()

@@ -58,5 +58,5 @@ WMCore.WorkQueue.ElementInfoByWorkflow.elementTable = function(args) {
     
     var dataTable = WMCore.createDataTable(args.divID, dataSource, 
                          WMCore.createDefaultTableDef(dataSchema.fields),
-                         tableConfig, 50000);
+                         tableConfig, 600000);
 }

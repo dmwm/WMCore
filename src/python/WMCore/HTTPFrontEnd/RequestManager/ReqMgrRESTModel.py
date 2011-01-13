@@ -33,6 +33,8 @@ from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.ResourceMonitor \
      import getResourceOverview
 from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.AgentMonitor \
      import getAgentOverview
+from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.SiteMonitor \
+     import getSiteOverview
 
 class ReqMgrRESTModel(RESTModel):
     """ The REST interface to the ReqMgr database.  Documentation may
@@ -126,6 +128,8 @@ class ReqMgrRESTModel(RESTModel):
         self.addMethod("GET", "resourceInfo", getResourceOverview)
         self.addMethod("GET", "agentoverview", getAgentOverview,
                        args = ['detail'])
+        self.addMethod("GET", "siteoverview", getSiteOverview)
+        
         cherrypy.engine.subscribe('start_thread', self.initThread)
     
     def initThread(self, thread_index):

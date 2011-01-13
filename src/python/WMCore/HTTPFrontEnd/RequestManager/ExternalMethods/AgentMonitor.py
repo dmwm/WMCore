@@ -24,5 +24,6 @@ def getAgentOverview():
             agent = agentService.getAgentStatus(detail = False)
             agentInfo['url'] = agentUrl
             agentInfo['status'] = agent['status']
+            agentInfo['acdc'] = agentService.getACDCInfo()['url']
             agents.append(agentInfo)
     return agents

@@ -56,6 +56,8 @@ class WorkQueueMonitorService(ServiceInterface):
                                        dbinterface = self.model.dbi)
             self.model.addDAO('GET', 'batchjobstatus', "JobStatusForMonitoring",
                         daoFactory = bossAirDAOFactory)
+            self.model.addDAO('GET', 'batchjobstatusbysite', "JobStatusByLocation",
+                        daoFactory = bossAirDAOFactory)
         # DAO stuff
         # RESTModel.addDAO() see COMP/T0/src/python/T0/DAS/Tier0RESTModel.py
         # (within WMCore no addDAO() example except for WebTools_t/DummyRESTModel.py ...)

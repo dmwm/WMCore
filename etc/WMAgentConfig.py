@@ -73,7 +73,7 @@ config.Agent.teamName = agentTeams
 config.Agent.agentName = agentName
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
-config.Agent.useHeartbeat = False
+config.Agent.useHeartbeat = True 
 
 config.section_("General")
 config.General.workDir = workDirectory
@@ -81,6 +81,7 @@ config.General.workDir = workDirectory
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
 config.JobStateMachine.couchDBName = jobDumpDBName
+config.JobStateMachine.configCacheDBName = configCacheDBName
 config.JobStateMachine.default_retries = 5
 
 config.section_("ACDC")
@@ -253,3 +254,18 @@ workqueuemonitor.css = os.path.join(getWMBASE(), 'src/css/')
 workqueuemonitor.html = os.path.join(getWMBASE(), 'src/html/')
 
 workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
+
+wmagent = config.WorkQueueService.views.active.section_('wmagent')
+wmagent.object = 'WMCore.WebTools.RESTApi'
+wmagent.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/')
+wmagent.section_('model')
+wmagent.model.object = 'WMCore.HTTPFrontEnd.Agent.AgentRESTModel'
+wmagent.section_('formatter')
+wmagent.formatter.object = 'WMCore.WebTools.RESTFormatter'
+
+wmagentmonitor = config.WorkQueueService.views.active.section_('wmagentmonitor')
+wmagentmonitor.object = 'WMCore.HTTPFrontEnd.Agent.AgentMonitorPage'
+wmagentmonitor.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
+wmagentmonitor.javascript = os.path.join(getWMBASE(), 'src/javascript/')
+wmagentmonitor.css = os.path.join(getWMBASE(), 'src/css/')
+wmagentmonitor.html = os.path.join(getWMBASE(), 'src/html/')

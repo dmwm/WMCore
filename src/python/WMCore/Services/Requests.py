@@ -19,6 +19,11 @@ import httplib2
 import socket
 from urlparse import urlparse
 from httplib import HTTPException
+import tempfile
+import shutil
+import stat
+from WMCore.Algorithms import Permissions
+
 from WMCore.WMException import WMException
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
@@ -44,11 +49,23 @@ class Requests(dict):
         self.setdefault("accept_type", 'text/html')
         self.setdefault("content_type", 'application/x-www-form-urlencoded')
         self.setdefault("host", url)
-        self.setdefault("req_cache_path", '.cache')
-        self.setdefault("timeout", 30)
-        
+
         # then update with the incoming dict
         self.update(dict)
+
+        endpoint_components = urlparse(self['host'])
+        try:
+            #Only works on python 2.5 or above
+            self['scheme'] = endpoint_components.scheme
+            self['netloc'] = endpoint_components.netloc
+        except AttributeError:
+            self['scheme'], self['netloc'] = endpoint_components[:2]
+
+        cache_dir = (self.cachePath(dict.get('cachepath'), dict.get('service_name')))
+        self["cachepath"] = cache_dir
+        self["req_cache_path"] = os.path.join(cache_dir, '.cache')
+        self.setdefault("timeout", 30)
+        
         check_server_url(self['host'])
         # and then get the URL opener
         self.setdefault("conn", self._getURLOpener())
@@ -177,7 +194,7 @@ class Requests(dict):
             except AttributeError:
                 # socket/httplib really screwed up - nuclear option
                 self['conn'].connections = {}
-                raise socket.error, 'Error contacting: %s' % self['host']
+                raise socket.error, 'Error contacting: %s' % self.getDomainName()
         if response.status >= 400:
             e = HTTPException()
             setattr(e, 'req_data', encoded_data)
@@ -216,7 +233,77 @@ class Requests(dict):
         """
         return httplib2.Http(self['req_cache_path'], self['timeout'])
 
-                   
+    def cachePath(self, given_path, service_name):
+        """Return cache location"""
+        if not service_name:
+            service_name = 'REQUESTS'
+        top = self.cacheTopPath(given_path, service_name)
+
+        # deal with multiple Services that have the same service running and
+        # with multiple users for a given Service
+        if self.getUserName() is None:
+            cachepath = os.path.join(top, self['netloc'])
+        else:
+            cachepath = os.path.join(top, '%s-%s' % (self.getUserName(), self.getDomainName()))
+
+        try:
+            # only we should be able to write to this dir
+            os.makedirs(cachepath, stat.S_IRWXU)
+        except OSError:
+            if not os.path.isdir(cachepath):
+                raise
+            Permissions.owner_readwriteexec(cachepath)
+
+        return cachepath
+
+    def cacheTopPath(self, given_path, service_name):
+        """Where to cache results?
+
+        Logic:
+          o If passed in take that
+          o Is the environment variable "SERVICE_NAME"_CACHE_DIR defined?
+          o Is WMCORE_CACHE_DIR set
+          o Generate a temporary directory
+          """
+        if given_path:
+            return given_path
+        user = str(os.getuid())
+        # append user id so users don't clobber each other
+        lastbit = os.path.join('.wmcore_cache_%s' % user, service_name.lower())
+        for var in ('%s_CACHE_DIR' % service_name.upper(),
+                    'WMCORE_CACHE_DIR'):
+            if os.environ.get(var):
+                firstbit = os.environ[var]
+                break
+        else:
+            dir = tempfile.mkdtemp(prefix='.wmcore_cache_')
+            # object to store temporary directory - cleaned up on destruction
+            self['deleteCacheOnExit'] = TempDirectory(dir)
+            return dir
+
+        return os.path.join(firstbit, lastbit)
+
+    def getDomainName(self):
+        """Parse netloc info to get hostname"""
+        if self['netloc'].find("@") == -1:
+            return self['netloc']
+        else:
+            return self['netloc'].split('@')[1]
+
+    def getUserName(self):
+        """Parse netloc to get user"""
+        auth = self.getAuthString()
+        if auth is None:
+            return None
+        return auth.split(':')[0]
+
+    def getAuthString(self):
+        """get authorization string"""
+        if self['netloc'].find("@") == -1:
+            return None
+        else:
+            return self['netloc'].split('@')[0]
+
 class JSONRequests(Requests):
     """
     Example implementation of Requests that encodes data to/from JSON.
@@ -327,8 +414,7 @@ class SecureRequests(Requests):
 
         # Domain must be just a hostname and port. self[host] is a URL currently
         if key or cert:
-            domain = (self['host'].split('/'))[2]
-            http.add_certificate(key=key, cert=cert, domain=domain)
+            http.add_certificate(key=key, cert=cert, domain=self.getDomainName())
         return http
     
     def getKeyCert(self):
@@ -382,3 +468,11 @@ class SecureRequests(Requests):
   
         # All looks OK, still doesn't guarantee proxy's validity etc.
         return key, cert
+
+class TempDirectory():
+    """Directory that cleans up after itself"""
+    def __init__(self, dir):
+        self.dir = dir
+
+    def __del__(self):
+        shutil.rmtree(self.dir, ignore_errors = True)

@@ -59,12 +59,12 @@ import httplib2
 from httplib import InvalidURL
 from urlparse import urlparse
 import time
-import socket
 from httplib import HTTPException
 from WMCore.Services.Requests import Requests
 from WMCore.WMException import WMException
 from WMCore.Wrappers import JsonWrapper as json
 import types
+import logging
 
 class Service(dict):
     
@@ -87,10 +87,8 @@ class Service(dict):
         try:
             #Only works on python 2.5 or above
             scheme = endpoint_components.scheme
-            netloc = endpoint_components.netloc
-            path = endpoint_components.path
         except AttributeError:
-            scheme, netloc, path = endpoint_components[:3]
+            scheme = endpoint_components[0]
 
         #set up defaults
         self.setdefault("inputdata", {})
@@ -101,25 +99,14 @@ class Service(dict):
         # this value should be only set when whole service class uses
         # the same verb ('GET', 'POST', 'PUT', 'DELETE')
         self.setdefault("method", None)
-        
+
         #Set a timeout for the socket
         self.setdefault("timeout", 30)
 
         # then update with the incoming dict
         self.update(dict)
 
-        # deal with multiple Services that have the same service running and
-        # with multiple users for a given Service
-        if netloc.find("@") == -1:
-            self["cachepath"] = '%s/%s' % (self["cachepath"], netloc)
-        else:
-            auth, server_url = netloc.split('@')
-            user = auth.split(':')[0]
-            self["cachepath"] = '%s/%s-%s' % (self["cachepath"], user,
-                                              server_url)
-
-        # we want the request object to cache to a known location
-        dict['req_cache_path'] = self['cachepath'] + '/requests'
+        self['service_name'] = self.__class__.__name__ # used for cache naming
 
         # Get the request class, to instantiate later
         # either passed as param to __init__, determine via scheme or default
@@ -140,12 +127,24 @@ class Service(dict):
             self["logger"].exception(msg)
             raise
 
+        # cachepath will be modified - i.e. hostname added
+        self['cachepath'] = self["requests"]["cachepath"]
+
+        if 'logger' not in self:
+            logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename = os.path.join(self['cachepath'], '%s.log' % self.__class__.__name__.lower()),
+                    filemode='w')
+            self['logger'] = logging.getLogger(self.__class__.__name__)
+            self['requests']['logger'] = self['logger']
+
         self['logger'].debug("""Service initialised (%s):
 \t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours, max reuse %s hours)""" %
-                  (self, self["requests"]["host"], self["endpoint"],
+                  (self, self["requests"].getDomainName(), self["endpoint"],
                    self["requests"]["accept_type"], self["cachepath"],
                    self["cacheduration"], self["maxcachereuse"]))
-    
+
     def _makeHash(self, inputdata, hash):
         """
         Turn the input data into json and hash the string. This is simple and 
@@ -297,4 +296,3 @@ class Service(dict):
             return self['method'].upper()
         else:
             raise TypeError, 'verb parameter needs to be set'
-        

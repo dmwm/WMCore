@@ -49,7 +49,7 @@ def processWorker(input, results):
         try:
             #print "Waiting for new work..."
             workid, work, type = input.get()
-            #print " -> New work %i " % workid
+            #print " -> New work %s " % str(workid)
             t1 = time.time()
         except (EOFError, IOError):
             crashMessage = "Hit EOF/IO in getting new work\n"
@@ -67,6 +67,8 @@ def processWorker(input, results):
                                  stderr = subprocess.PIPE, shell = True)
         #print 'Waiting %s ' % str(time.time())
         stdout, stderr = pipe.communicate()
+        #print 'Error:  ', stderr
+        #print 'Output: ', stdout
 
         try:
             ## TODO: make this dynamic with a dictionary
@@ -216,6 +218,7 @@ class gLitePlugin:
             proc.terminate()
 
         self.pool = []
+        logging.debug('Slave stopped!')
         return
 
 
@@ -514,6 +517,7 @@ class gLitePlugin:
                 ##            'stopTime': None}
                 ##  }
                 for jj in jobs:
+                    status = None
                     if jj['gridid'] in out.keys():
                         logging.debug("Job scheduler id: %s " % (jj['gridid']))
                         jobStatus   = out[jj['gridid']]
@@ -533,12 +537,15 @@ class gLitePlugin:
                             jj['status_time'] = lbts
                             changeList.append(jj)
 
-                    if status not in ['Done', 'Aborted']: 
-                        runningList.append(jj)
-                    else:
-                        completeList.append(jj)
+                        if status not in ['Done', 'Aborted']: 
+                            runningList.append(jj)
+                        else:
+                            completeList.append(jj)
+                    #else:
+                    #    logging.error('Job %s not returned!' % jj['gridid'])
 
         ## Shut down processes
+        logging.debug("About to close the subprocesses...")
         self.close(input, result)        
 
         return runningList, changeList, completeList
@@ -550,7 +557,7 @@ class gLitePlugin:
 
         1) get finished jobs
         2) retrieve job output
-        3) return done + failed to process list
+        3) return done id + failed to process id + aborted jobs lists
         """
 
         logging.debug("Staring gLite getoutput method..")
@@ -563,6 +570,7 @@ class gLitePlugin:
         
         completedJobs = []
         failedJobs    = []
+        abortedJobs   = []
 
         ## Start up processes
         input  = multiprocessing.Queue()
@@ -573,6 +581,11 @@ class gLitePlugin:
         # TODO: evaluate if passing just one job per work is too much overhead
 
         for jj in jobs:
+
+            if jj['status'] in ['Aborted']:
+                abortedJobs.append( jj )
+                continue
+
             cmd = '%s %s %s %s' % (command, outdiropt, jj['cache_dir'], jj['gridid'])
             logging.debug("Enqueuing getoutput for job %i" % jj['jobid'] )
             workqueued[currentwork] = jj['jobid']
@@ -589,7 +602,6 @@ class gLitePlugin:
             error  = res['stderr']
             exit   = res['exit']
             workid = res['workid']
-            logging.info ('result : \n %s' % str(res) )
             # Check error
             if exit != 0:
                 logging.error('Error executing %s: \n\texit code: %i\n\tstderr: %s\n\tjson: %s' % (command, exit, error, str(jsout.strip()) )
@@ -632,6 +644,63 @@ class gLitePlugin:
                         completedJobs.extend(jobid)
                     """
         ## Shut down processes
+        logging.debug("About to close the subprocesses...")
+        self.close(input, result)
+
+        return completedJobs, failedJobs, abortedJobs
+
+
+    def postMortem(self, jobs):
+        """
+        _postMortem_
+        """
+        logging.debug("Staring gLite postMortem method..")
+
+        command   = "glite-wms-job-logging-info -v 3"
+
+        workqueued  = {}
+        currentwork = len(workqueued)
+
+        completedJobs = []
+        failedJobs    = []
+
+        ## Start up processes
+        input  = multiprocessing.Queue()
+        result = multiprocessing.Queue()
+        self.start(input, result)
+
+        #creates chunks of work per multi-processes 
+        # TODO: evaluate if passing just one job per work is too much overhead
+
+        for jj in jobs:
+
+            cmd = '%s %s > %s/loggingInfo.%i.log' % (command, jj['gridid'], jj['cache_dir'], jj['retry_count'])
+            logging.debug("Enqueuing logging info command for job %i" % jj['jobid'] )
+            workqueued[currentwork] = jj['jobid']
+            input.put( (currentwork, cmd, 'output') )
+            currentwork += 1
+
+        # Now we should have sent all jobs to be submitted
+        # Going to do the rest of it now
+        logging.debug("Waiting for %i works to finish..." % len(workqueued))
+        for n in xrange(len(workqueued)):
+            logging.debug("Waiting for work number %i to finish.." % n)
+            res = result.get()
+            jsout  = res['jsout']
+            error  = res['stderr']
+            exit   = res['exit']
+            workid = res['workid']
+            logging.debug ('result : \n %s' % str(res) )
+            # Check error
+            if exit != 0:
+                logging.error('Error executing %s: \n\texit code: %i\n\tstderr: %s\n\tjson: %s' % (command, exit, error, str(jsout.strip()) )
+                               )
+                failedJobs.append(workqueued[workid])
+            else:
+                completedJobs.append(workqueued[workid])
+
+        ## Shut down processes
+        logging.debug("About to close the subprocesses...")
         self.close(input, result)
 
         return completedJobs, failedJobs
@@ -657,7 +726,10 @@ class gLitePlugin:
         #                        chunksize = self.chunksize)
 
         #return results
-        self.getoutput(jobs)
+        completed, failed, aborted = self.getoutput(jobs)
+        if len( aborted ) > 0:
+            abortcompl, abortfail = self.postMortem( jobs = aborted )
+
         return
 
 

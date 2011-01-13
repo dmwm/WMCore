@@ -151,7 +151,7 @@ class CreateWorkArea:
 
 
     def processJobs(self, jobGroup, startDir = None, wmWorkload = None,
-                    workflow = None, transaction = None, conn = None):
+                    workflow = None, transaction = None, conn = None, cache = True):
         """
         Process the work
 
@@ -164,10 +164,12 @@ class CreateWorkArea:
         self.startDir    = startDir
         self.transaction = transaction
         self.conn        = conn
+
+        self.jobGroup = jobGroup
         
-        self.getNewJobGroup(jobGroup = jobGroup)
+        #self.getNewJobGroup(jobGroup = jobGroup)
         self.createJobGroupArea()
-        self.createWorkArea()
+        self.createWorkArea(cache = cache)
 
         return
 
@@ -187,19 +189,19 @@ class CreateWorkArea:
 
 
         #We need the workflow to get the spec
-        if self.workflow == None:
+        #if self.workflow == None:
             # If we have something in the workflow,
             # assume we were passed a loaded workflow
             # We need the subscription mostly to get the workflow
-            subscript = jobGroup.subscription
-            subscript.load()
-            self.workflow  = subscript['workflow']
-            self.workflow.load()
+            #subscript = jobGroup.subscription
+            #subscript.load()
+            #self.workflow  = subscript['workflow']
+            #self.workflow.load()
 
-        if not jobGroup.exists():
-            msg = 'JobMaker: Was passed a non-existant Job Group ID %i' % (self.jobGroupID)
-            logging.error(msg)
-            raise Exception(msg)
+        #if not jobGroup.exists():
+        #    msg = 'JobMaker: Was passed a non-existant Job Group ID %i' % (self.jobGroupID)
+        #    logging.error(msg)
+        #    raise Exception(msg)
 
         self.jobGroup = jobGroup
 
@@ -236,7 +238,7 @@ class CreateWorkArea:
 
 
 
-    def createWorkArea(self):
+    def createWorkArea(self, cache = True):
         """
         This should handle the master tasks of creating a working area
         It should take a valid jobGroup and call the
@@ -254,8 +256,9 @@ class CreateWorkArea:
         jobCounter    = 0
         nameList      = []
 
-        factory = DAOFactory("WMCore.WMBS", myThread.logger, myThread.dbi)
-        setBulkCache = factory(classname = "Jobs.SetCache")
+        if cache:
+            factory = DAOFactory("WMCore.WMBS", myThread.logger, myThread.dbi)
+            setBulkCache = factory(classname = "Jobs.SetCache")
         nameDictList = []
 
 
@@ -275,10 +278,10 @@ class CreateWorkArea:
             nameDictList.append({'jobid':jid, 'cacheDir':name})
             job['cache_dir'] = name
 
-
-        setBulkCache.execute(jobDictList = nameDictList,
-                             conn = self.conn,
-                             transaction = self.transaction)
+        if cache:
+            setBulkCache.execute(jobDictList = nameDictList,
+                                 conn = self.conn,
+                                 transaction = self.transaction)
 
         createDirectories(nameList)
 

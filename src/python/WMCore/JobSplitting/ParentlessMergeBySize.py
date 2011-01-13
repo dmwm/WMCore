@@ -123,6 +123,9 @@ class ParentlessMergeBySize(JobFactory):
           min_merge_size - The minimum size of merged files
           max_merge_events - The maximum number of events in a merge file
         """
+        # This doesn't use a proxy
+        self.grabByProxy = False
+        
         self.maxMergeSize = int(kwargs.get("max_merge_size", 1000000000))
         self.minMergeSize = int(kwargs.get("min_merge_size", 1048576))
         self.maxMergeEvents = int(kwargs.get("max_merge_events", 50000))

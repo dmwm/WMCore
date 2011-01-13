@@ -22,6 +22,9 @@ class SiblingProcessingBased(JobFactory):
 
         Run the discovery query and generate jobs if we find enough files.
         """
+        # This doesn't use a proxy
+        self.grabByProxy = False
+        
         filesPerJob = int(kwargs.get("files_per_job", 10))
 
         myThread = threading.currentThread()

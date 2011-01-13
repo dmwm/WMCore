@@ -3,7 +3,7 @@ WMCore.namespace("WorkQueue.ElementInfoWithPagination2")
 WMCore.WorkQueue.ElementInfoWithPagination2.elementTable = function(divID) {
         
     var formatUrl = function(elCell, oRecord, oColumn, sData) {
-		    var host;
+            var host;
             if (!sData) {
                 host = sData;
             } else {
@@ -12,7 +12,7 @@ WMCore.WorkQueue.ElementInfoWithPagination2.elementTable = function(divID) {
             elCell.innerHTML = "<a href='" + sData + "monitor' target='_blank'>" + host + " </a>"; 
         };
     
-	var percentFormat = function(elCell, oRecord, oColumn, sData) { 
+    var percentFormat = function(elCell, oRecord, oColumn, sData) { 
             if (!sData) {
                 percent = 0;
             } else {
@@ -20,7 +20,7 @@ WMCore.WorkQueue.ElementInfoWithPagination2.elementTable = function(divID) {
             }
             elCell.innerHTML =  sData + "%"; 
     };
-		  
+
     var dateFormatter = function(elCell, oRecord, oColumn, oData) {
         
         var oDate = new Date(oData*1000);
@@ -37,10 +37,8 @@ WMCore.WorkQueue.ElementInfoWithPagination2.elementTable = function(divID) {
                  //{key: "parent_flag"},
                  {key: "priority"}, {key: "num_jobs", label: "job estimation"},
                  //{key: "parent_queue_id"}, 
-				 {key: "subscription_id"},
-				 {key: "team_name"},
-                 {key: "events_written"}, 
-                 {key: "files_processed"},
+                 {key: "subscription_id"},
+                 {key: "team_name"},
                  {key: "percent_complete", label: "complete", formatter:percentFormat}, 
                  {key: "percent_success", label: "success", formatter:percentFormat},
                  {key: "insert_time", formatter:dateFormatter},
@@ -79,7 +77,7 @@ WMCore.WorkQueue.ElementInfoWithPagination2.elementTable = function(divID) {
             return (recs[0] + 1) + ' - ' + (recs[1] + 1);
         }
     })
-	
+
     tableConfig.initialRequest = "startIndex=0&results=10";
     tableConfig.dynamicData =  true;
     

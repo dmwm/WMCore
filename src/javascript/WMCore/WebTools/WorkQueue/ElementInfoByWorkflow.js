@@ -41,8 +41,6 @@ WMCore.WorkQueue.ElementInfoByWorkflow.elementTable = function(args) {
                  //{key: "parent_queue_id"}, 
                  //{key: "subscription_id", label: "sub id"},
                  {key: "team_name"},
-                 {key: "events_written", label: "events"}, 
-                 {key: "files_processed", label: "file"},
                  {key: "percent_complete", label: "complete", formatter:percentFormat}, 
                  {key: "percent_success", label: "success", formatter:percentFormat},
                  {key: "insert_time", formatter:dateFormatter},

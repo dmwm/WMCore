@@ -13,13 +13,9 @@ import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as Sof
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
-#import WMCore.RequestManager.RequestMaker.Processing.RecoRequest 
-#import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest 
-#import WMCore.RequestManager.RequestMaker.Processing.FileBasedRequest
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import saveWorkload, removePasswordFromUrl, changePriority, changeStatus
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import removePasswordFromUrl, changePriority, changeStatus
 import WMCore.Lexicon
-import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import cherrypy
 import json
 import threading
@@ -139,20 +135,20 @@ class ReqMgrRESTModel(RESTModel):
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
 
-    def isalnum(self, index={}):
+    def isalnum(self, index):
         """ Validates that all input is alphanumeric, 
             with spaces and underscores tolerated"""
-        for k, v in index.iteritems():
+        for v in index.values():
             WMCore.Lexicon.identifier(v)
         return index
 
-    def intpriority(self, index={}):
+    def intpriority(self, index):
         """ Casts priority to an integer """
         if index.has_key('priority'):
             index['priority'] = int(index['priority'])
         return index 
     
-    def validateUser(self, index={}):
+    def validateUser(self, index):
         assert index['userName'].isalnum()
         assert '@' in index['email']
         assert index['email'].replace('@','').replace('.','').isalnum()
@@ -160,7 +156,7 @@ class ReqMgrRESTModel(RESTModel):
             assert index['dnName'].replace(' ','').isalnum()
         return index
 
-    def validateVersion(self, index={}):
+    def validateVersion(self, index):
         """ Make sure it's a legitimate CMSSW version format """
         WMCore.Lexicon.cmsswversion(index['version'])
         return index
@@ -263,7 +259,7 @@ class ReqMgrRESTModel(RESTModel):
         changeStatus(request, "acquired")
         return ProdManagement.associateProdMgr(request, urllib.unquote(url))
 
-    def validatePutWorkQueue(self, index={}):
+    def validatePutWorkQueue(self, index):
         assert index['request'].replace('_','').isalnum()
         assert index['url'].startswith('http')
         return index
@@ -321,7 +317,6 @@ class ReqMgrRESTModel(RESTModel):
         if Registration.isRegistered(userName):
             return "User already exists"
         result = Registration.registerUser(userName, email, dnName)
-        return result
 
     def putGroup(self, group, user=None):
         """ Creates a group, or if a user is passed, adds that user to the group """
@@ -330,7 +325,7 @@ class ReqMgrRESTModel(RESTModel):
             return GroupManagement.addUserToGroup(user, group)
         if GroupInfo.groupExists(group):
             return "Group already exists"
-        return GroupManagement.addGroup(group)
+        GroupManagement.addGroup(group)
 
     def putVersion(self, version):
         """ Registers a new CMSSW version with ReqMgr """
@@ -362,7 +357,8 @@ class ReqMgrRESTModel(RESTModel):
         """
         return ChangeState.updateRequest(requestName, kwargs)
 
-    def validateUpdates(self, index={}):
+    def validateUpdates(self, index):
+        """ Check the values for the updates """
         for k in ['events_written', 'events_merged', 
                   'files_written', 'files_merged']:
             if k in index:

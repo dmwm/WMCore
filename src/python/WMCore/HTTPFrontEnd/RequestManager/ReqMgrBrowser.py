@@ -1,32 +1,14 @@
 #!/usr/bin/env python
 """ Main Module for browsing and modifying requests """
-import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
-import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
-import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
-import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
-import WMCore.RequestManager.RequestDB.Interface.Admin.GroupManagement as GroupManagement
-import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement as UserManagement
-import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
-import WMCore.RequestManager.RequestDB.Interface.User.Requests as UserRequests
-import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
-import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
-
-
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, parseSite, allSoftwareVersions, saveWorkload, loadWorkload, changePriority, changeStatus
+import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, saveWorkload, loadWorkload, changePriority, changeStatus, priorityMenu
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Cache.WMConfigCache import ConfigCache 
-import WMCore.HTTPFrontEnd.RequestManager.Sites
 import WMCore.Lexicon
 import logging
 import cherrypy
-import json
-import os.path
-import urllib
 import threading
-import types
-
-from WMCore.WebTools.Page import TemplatedPage
 from WMCore.WebTools.WebAPI import WebAPI
 
 def detailsBackLink(requestName):
@@ -46,13 +28,6 @@ def statusMenu(requestName, defaultField):
     html += '</SELECT>'
     return html
 
-def priorityMenu(request):
-    """ Returns HTML for a box to set priority """
-    return '(%su, %sg) %s &nbsp<input type="text" size=2 name="%s:priority">' % (
-            request['ReqMgrRequestorBasePriority'], request['ReqMgrGroupBasePriority'], 
-            request['ReqMgrRequestBasePriority'],
-            request['RequestName'])
-
 def biggestUpdate(field, request):
     """ Finds which of the updates has the biggest number """
     biggest = 0
@@ -61,23 +36,12 @@ def biggestUpdate(field, request):
             biggest = update[field]
     return "%i%%" % biggest
 
-def addHtmlLinks(d):
-    """ Any entry that starts with http becomes an HTML link """
-    for key, value in d.iteritems():
-        if isinstance(value, types.StringTypes) and value.startswith('http'):
-            target = value
-            # assume CVS browsers need extra tags
-            if 'cvs' in target:
-                target += '&view=markup'
-            d[key] = '<a href="%s">%s</a>' % (target, value)
-
 class ReqMgrBrowser(WebAPI):
-    """ Main class for browsing and modifying requests """
+    """ For browsing and modifying requests """
     def __init__(self, config):
         WebAPI.__init__(self, config)
         # Take a guess
         self.templatedir = config.templates
-        self.urlPrefix = '%s/download/?filepath=' % config.reqMgrHost
         self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType',
                        'ReqMgrRequestBasePriority', 'RequestStatus', 'Complete', 'Success']
         self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged',
@@ -97,13 +61,8 @@ class ReqMgrBrowser(WebAPI):
         # don't allow mass editing.  Make people click one at a time.
         #self.adminFields = {'RequestStatus':'statusMenu', 'ReqMgrRequestBasePriority':'priorityMenu'}
         self.adminFields = {}
-        self.requests = []
         self.couchUrl = config.couchUrl
         self.configDBName = config.configDBName
-        self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
-        self.allMergedLFNBases =  ["/store/backfill/1", "/store/backfill/2", "/store/data",  "/store/mc"]
-        self.mergedLFNBases = {"ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
-                               "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
@@ -115,12 +74,12 @@ class ReqMgrBrowser(WebAPI):
         myThread.dbi = self.dbi
 
     def validate(self, v, name=''):
-       """ Checks if alphanumeric, tolerating spaces """
-       try:
-          WMCore.Lexicon.identifier(v)
-       except AssertionError:
-          raise cherrypy.HTTPError(400, "Bad input %s" % name)
-       return v
+        """ Checks if alphanumeric, tolerating spaces """
+        try:
+            WMCore.Lexicon.identifier(v)
+        except AssertionError:
+            raise cherrypy.HTTPError(400, "Bad input %s" % name)
+        return v
 
     @cherrypy.expose
     def index(self):
@@ -210,7 +169,7 @@ class ReqMgrBrowser(WebAPI):
         logging.info("SetSplitting " + requestName + splittingTask + splittingAlgo + str(splitParams))
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
         helper.setTaskTimeOut(splittingTask, int(submittedParams["timeout"]))
-        saveWorkload(helper, workloadUrl)
+        saveWorkload(helper, request['RequestWorkflow'])
         return "Successfully updated splitting parameters for " + splittingTask \
                + " " + detailsBackLink(requestName)
 
@@ -293,6 +252,7 @@ class ReqMgrBrowser(WebAPI):
         return html
 
     def percentWritten(self, request):
+        """ Finds the biggest percentage among all the updates """
         maxPercent = 0
         for update in request["RequestUpdates"]:
             if update.has_key("events_written") and request["RequestSizeEvents"] != 0:
@@ -306,6 +266,7 @@ class ReqMgrBrowser(WebAPI):
         return "%i%%" % maxPercent
 
     def percentMerged(self, request):
+        """ Finds the biggest percentage among all the updates """
         maxPercent = 0
         for update in request["RequestUpdates"]:
             if update.has_key("events_merged") and request["RequestSizeEvents"] != 0:
@@ -344,122 +305,8 @@ class ReqMgrBrowser(WebAPI):
                     message += "Changed status for %s to %s\n" % (requestName, status)
                     if status == "assigned":
                         # make a page to choose teams
-                        return self.assignOne(requestName)
+                        raise cherrypy.HTTPRedirect('/assign/one/%s' % requestName)
         return message + detailsBackLink(requestName)
-
-    def assignOne(self,  requestName):
-        request =  GetRequest.getRequestByName(requestName)
-        requestType = request["RequestType"]
-        # get assignments
-        teams = ProdManagement.listTeams()
-        assignments = GetRequest.getAssignmentsByName(requestName)
-        # might be a list, or a dict team:priority
-        if isinstance(assignments, dict):
-            assignments = assignments.keys()
-        return self.templatepage("Assign", requests=[request], teams=teams, 
-                 assignments=assignments, sites=self.sites, mergedLFNBases = self.mergedLFNBases[requestType])
-
-    def requestsWhichCouldLeadTo(self, newStatus):
-        # see which status can lead to the new status
-        requestIds = []
-        for status, next in RequestStatus.NextStatus.iteritems():
-            if newStatus in next:
-                # returns dict of  name:id
-                theseIds = ListRequests.listRequestsByStatus(status).values()
-                requestIds.extend(theseIds)
-
-        requests = []
-        for requestId in requestIds:
-            request = GetRequest.getRequest(requestId)
-            if 'InputDataset' in request and request['InputDataset'] != '':
-                request['Input'] = request['InputDataset']
-            elif 'InputDatasets' in request and len(request['InputDatasets']) != 0:
-                request['Input'] = str(request['InputDatasets']).strip("[]'")
-            else:
-                request['Input'] = "Total Events: %s" % request['RequestSizeEvents']
-            if len(request.get('SoftwareVersions', [])) > 0:
-                # only show one version
-                request['SoftwareVersions'] = request['SoftwareVersions'][0]
-            request['PriorityMenu'] = priorityMenu(request)
-            requests.append(request)
-        return requests
-
-    @cherrypy.expose    
-    def assign(self):
-        # returns dict of  name:id
-        requests = self.requestsWhichCouldLeadTo('assigned')
-        teams = ProdManagement.listTeams()
-        return self.templatepage("Assign", requests=requests, teams=teams,
-                 assignments=[], sites=self.sites, mergedLFNBases = self.allMergedLFNBases)
-
-    @cherrypy.expose
-    def handleAssignmentPage(self, **kwargs):
-        # handle the checkboxes
-        teams = []
-        requests = []
-        for key, value in kwargs.iteritems():
-            if isinstance(value, types.StringTypes):
-                kwargs[key] = value.strip()
-            if key.startswith("Team"):
-                teams.append(key[4:])
-            if key.startswith("checkbox"):
-                requests.append(key[8:])
-        
-        for requestName in requests:
-            if kwargs['action'] == 'Reject':
-                ChangeState.changeRequestStatus(requestName, 'rejected') 
-            else:
-                assignments = GetRequest.getAssignmentsByName(requestName)
-                if teams == [] and assignments == []:
-                    raise cherrypy.HTTPError(400, "Must assign to one or more teams")
-                self.assignWorkload(requestName, kwargs)
-                for team in teams:
-                    if not team in assignments:
-                        ChangeState.assignRequest(requestName, team)
-                priority= kwargs.get(requestName+':priority', '')
-                if priority != '':
-                    changePriority(requestName, priority)
-        return self.templatepage("Acknowledge", participle=kwargs['action']+'ed', requests=requests)
-
-    def assignWorkload(self, requestName, kwargs):
-        request = GetRequest.getRequestByName(requestName)
-        helper = loadWorkload(request)
-        schema = helper.data.request.schema
-        for field in ["AcquisitionEra", "ProcessingVersion"]:
-            self.validate(kwargs[field], field)
-        helper.setSiteWhitelist(parseSite(kwargs,"SiteWhitelist"))
-        helper.setSiteBlacklist(parseSite(kwargs,"SiteBlacklist"))
-        helper.setProcessingVersion(kwargs["ProcessingVersion"])
-        helper.setAcquisitionEra(kwargs["AcquisitionEra"])
-        #FIXME not validated
-        helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
-        helper.setMergeParameters(int(kwargs["MinMergeSize"]), int(kwargs["MaxMergeSize"]), int(kwargs["MaxMergeEvents"]))
-        saveWorkload(helper, request['RequestWorkflow'])
- 
-    @cherrypy.expose
-    def approve(self):
-        requests = self.requestsWhichCouldLeadTo('assignment-approved')
-        return self.templatepage("Approve", requests=requests)
-
-    @cherrypy.expose
-    def handleApprovalPage(self, **kwargs):
-        # handle the checkboxes
-        requests = []
-        for key, value in kwargs.iteritems():
-            if isinstance(value, types.StringTypes):
-                kwargs[key] = value.strip()
-            if key.startswith("checkbox"):
-                requests.append(key[8:])
-        particple = ''
-        for requestName in requests:
-            if kwargs['action'] == 'Reject':
-                participle = 'rejected'
-                ChangeState.changeRequestStatus(requestName, 'rejected')
-            else:
-                participle = 'approved'
-                ChangeState.changeRequestStatus(requestName, 'assignment-approved')
-        return self.templatepage("Acknowledge", participle=participle, 
-                                 requests=requests)
 
 
     @cherrypy.expose
@@ -495,120 +342,4 @@ class ReqMgrBrowser(WebAPI):
             message += 'Changed blockBlackList to %s<br>' % l
         saveWorkload(helper, workload)
         return message + detailsBackLink(requestName)
-
-    @cherrypy.expose
-    def user(self, userName):
-        self.validate(userName)
-        """ Web page of details about the user, and sets user priority """
-        groups = GroupInfo.groupsForUser(userName).keys()
-        requests = UserRequests.listRequests(userName).keys()
-        priority = UserManagement.getPriority(userName)
-        allGroups = GroupInfo.listGroups()
-        return self.templatepage("User", user=userName, groups=groups, 
-            allGroups=allGroups, requests=requests, priority=priority)
-
-    @cherrypy.expose
-    def handleUserPriority(self, user, userPriority):
-        """ Handles setting user priority """
-        self.validate(user)
-        UserManagement.setPriority(user, userPriority)
-        return "Updated user %s priority to %s" % (user, userPriority)
-
-    @cherrypy.expose
-    def group(self, groupName):
-        """ Web page of details about the user, and sets user priority """
-        self.validate(groupName)
-        users = GroupInfo.usersInGroup(groupName)
-        priority = GroupManagement.getPriority(groupName)
-        return self.templatepage("Group", group=groupName, users=users, priority=priority)
-
-    @cherrypy.expose
-    def handleGroupPriority(self, group, groupPriority):
-        """ Handles setting group priority """
-        self.validate(group)
-        GroupManagement.setPriority(group, groupPriority)
-        return "Updated group %s priority to %s" % (group, groupPriority)
-
-    @cherrypy.expose
-    def users(self):
-        """ Lists all users.  Should be paginated later """
-        allUsers = Registration.listUsers()
-        return self.templatepage("Users", users=allUsers)
-
-    @cherrypy.expose
-    def handleAddUser(self, user, email=None):
-        """ Handles setting user priority """
-        self.validate(user)
-        result = Registration.registerUser(user, email)
-        return "Added user %s" % user
-
-    @cherrypy.expose
-    def handleAddToGroup(self, user, group):
-        """ Adds a user to the group """
-        self.validate(user)
-        self.validate(group)
-        GroupManagement.addUserToGroup(user, group)
-        return "Added %s to %s " % (user, group)
-
-    @cherrypy.expose
-    def groups(self):
-        """ Lists all users.  Should be paginated later """
-        allGroups = GroupInfo.listGroups()
-        return self.templatepage("Groups", groups=allGroups)
-
-    @cherrypy.expose
-    def handleAddGroup(self, group):
-        """ Handles adding a group """
-        self.validate(group)
-        GroupManagement.addGroup(group)
-        return "Added group %s " % group
-
-    @cherrypy.expose
-    def teams(self):
-        """ Lists all teams """
-        return self.templatepage("Teams", teams = ProdManagement.listTeams()
-)
-
-    @cherrypy.expose
-    def team(self, teamName):
-        """ Details for a team """
-        self.validate(teamName)
-        assignments = ListRequests.listRequestsByTeam(teamName)
-        return self.templatepage("Team", team=teamName, requests=assignments.keys())
-
-    @cherrypy.expose
-    def handleAddTeam(self, team):
-        """ Handles a request to add a team """
-        self.validate(team)
-        ProdManagement.addTeam(team)
-        return "Added team %s" % team
-
-    @cherrypy.expose
-    def versions(self):
-        """ Lists all versions """
-        versions = SoftwareAdmin.listSoftware().keys()
-        versions.sort()
-        return self.templatepage("Versions", versions=versions)
-
-    @cherrypy.expose
-    def handleAddVersion(self, version):
-        """ Registers a version """
-        WMCore.Lexicon.cmsswversion(version)
-        SoftwareAdmin.addSoftware(version)
-        return "Added version %s" % version
-
-    @cherrypy.expose
-    def handleAllVersions(self):
-        """ Registers all versions in the TC """
-        currentVersions = SoftwareAdmin.listSoftware().keys()
-
-        allVersions = allSoftwareVersions()
-        result = ""
-        for version in allVersions:
-            if not version in currentVersions:
-               SoftwareAdmin.addSoftware(version)
-               result += "Added version %s<br>" % version
-        if result == "":
-            result = "Version list is up to date"
-        return result
 

@@ -12,7 +12,7 @@ WMCore.RequestManager.Overview.overviewTable = function(divID, filterDiv,
     var postfixLink = "/template/ElementSummaryByWorkflow?workflow=";
     
     var formatRequest = function(elCell, oRecord, oColumn, sData) { 
-            elCell.innerHTML = "<a href='../reqMgrBrowser/requestDetails/" + sData  +
+            elCell.innerHTML = "<a href='../view/details/" + sData  +
                                         "' target='_blank'>" + sData + "</a>";
         };
     

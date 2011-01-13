@@ -1,12 +1,15 @@
 """ Functions to interpret lists that get sent in as text"""
 import urllib
+import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import cherrypy
 import WMCore.Lexicon
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
 import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
-import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
+import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
+import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 
 
 def parseRunList(l):
@@ -34,6 +37,7 @@ def parseSite(kw, name):
     return value
 
 def allSoftwareVersions():
+    """ Downloads a list of all software versions from the tag collector """
     result = []
     f = urllib.urlopen("https://cmstags.cern.ch/cgi-bin/CmsTC/ReleasesXML?anytype=1")
     for line in f:
@@ -44,6 +48,7 @@ def allSoftwareVersions():
     return result
 
 def loadWorkload(request):
+    """ Returns a WMWorkloadHelper for the workload contained in the request """
     url = request['RequestWorkflow']
     helper = WMWorkloadHelper()
     try:
@@ -65,12 +70,12 @@ def saveWorkload(helper, workload):
         helper.save(workload)
 
 def removePasswordFromUrl(url):
-    # where the @ symbol is at.
+    """ Gets rid of the stuff before the @ sign """
     result = url
     atat = url.find('@')
     slashslashat = url.find('//')
     if atat != -1 and slashslashat != -1 and slashslashat < atat:
-       result = url[:slashslashat+2] + url[atat+1:]
+        result = url[:slashslashat+2] + url[atat+1:]
     return result
 
 def changePriority(requestName, priority):
@@ -93,6 +98,7 @@ def abortRequest(request):
     workqueue.cancelWork([request], "request_name")
 
 def changeStatus(requestName, status):
+    """ Changes the status for this request """
     request = GetRequest.getRequestByName(requestName)
     oldStatus = request['RequestStatus']
     if not status in RequestStatus.StatusList:
@@ -107,4 +113,52 @@ def changeStatus(requestName, status):
     if status == 'aborted':
         # delete from the workqueue
         abortRequest(requestName)
+
+def prepareForTable(request):
+    """ Add some fields to make it easier to display a request """
+    if 'InputDataset' in request and request['InputDataset'] != '':
+        request['Input'] = request['InputDataset']
+    elif 'InputDatasets' in request and len(request['InputDatasets']) != 0:
+        request['Input'] = str(request['InputDatasets']).strip("[]'")
+    else:
+        request['Input'] = "Total Events: %s" % request['RequestSizeEvents']
+    if len(request.get('SoftwareVersions', [])) > 0:
+        # only show one version
+        request['SoftwareVersions'] = request['SoftwareVersions'][0]
+    request['PriorityMenu'] = priorityMenu(request)
+    return request
+
+def requestsWhichCouldLeadTo(newStatus):
+    """ returns a list of all statuses which can lead to the new status """
+    requestIds = []
+    for status, nextStatus in RequestStatus.NextStatus.iteritems():
+        if newStatus in nextStatus:
+            # returns dict of  name:id
+            theseIds = ListRequests.listRequestsByStatus(status).values()
+            requestIds.extend(theseIds)
+
+    requests = []
+    for requestId in requestIds:
+        request = GetRequest.getRequest(requestId)
+        request = prepareForTable(request)
+        requests.append(request)
+    return requests
+
+def priorityMenu(request):
+    """ Returns HTML for a box to set priority """
+    return '(%su, %sg) %s &nbsp<input type="text" size=2 name="%s:priority" />' % (
+            request['ReqMgrRequestorBasePriority'], request['ReqMgrGroupBasePriority'],
+            request['ReqMgrRequestBasePriority'],
+            request['RequestName'])
+
+def sites():
+    """ download a list of all the sites from siteDB """
+    url = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name'
+    data = JsonWrapper.loads(urllib.urlopen(url).read().replace("'", '"'))
+    # kill duplicates, then put in alphabetical order
+    siteset = set([d['name'] for d in data.values()])
+    # warning: alliteration
+    sitelist = list(siteset)
+    sitelist.sort()
+    return sitelist
 

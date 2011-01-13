@@ -1,3 +1,4 @@
+""" Pages for the creation of requests """
 import WMCore.RequestManager.RequestMaker.Production
 import WMCore.RequestManager.RequestMaker.Processing.StoreResultsRequest
 import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
@@ -6,7 +7,6 @@ import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
 from WMCore.Services.Requests import JSONRequests
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList
-import WMCore.HTTPFrontEnd.RequestManager.Sites
 from httplib import HTTPException
 import cherrypy
 import time
@@ -18,16 +18,12 @@ class WebRequestSchema(WebAPI):
     """ Allows the user to submit a request to the RequestManager through a web interface """
     def __init__(self, config):
         WebAPI.__init__(self, config)
-        # set the database to whatever the environment defines
         self.templatedir = config.templates
         self.requestor = config.requestor
         self.cmsswVersion = config.cmsswDefaultVersion
-        self.reqMgrHost = config.reqMgrHost
         self.jsonSender = JSONRequests(config.reqMgrHost, dict={'req_cache_path':config.componentDir})
         self.couchUrl = config.couchUrl
-        self.couchDBName = config.configCacheDBName
-        #cherrypy.config.update({'tools.sessions.on': True, 'tools.encode.on':True, 'tools.decode.on':True})
-
+        self.configDBName = config.configDBName
         self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
@@ -65,20 +61,19 @@ class WebRequestSchema(WebAPI):
             kwargs[k] = v.strip()
         maker = retrieveRequestMaker(kwargs["RequestType"])
         schema = maker.newSchema()
-        print str(kwargs)
         schema.update(kwargs)
-        current_time = time.strftime('%y%m%d_%H%M%S',
+        currentTime = time.strftime('%y%m%d_%H%M%S',
                                  time.localtime(time.time()))
 
         if schema.has_key('RequestString') and schema['RequestString'] != "":
             schema['RequestName'] = "%s_%s_%s" % (self.requestor, schema['RequestString'],
-                                                  current_time)
+                                                  currentTime)
         else:
-            schema['RequestName'] = "%s_%s" % (self.requestor, current_time)
+            schema['RequestName'] = "%s_%s" % (self.requestor, currentTime)
             
         schema['Requestor'] = self.requestor
         schema['CouchURL'] = self.couchUrl
-        schema['CouchDBName'] = self.couchDBName
+        schema['CouchDBName'] = self.configDBName
 
         if 'Scenario' in kwargs and 'ProdConfigCacheID' in kwargs:
             # Use input mode to delete the unused one
@@ -119,4 +114,4 @@ class WebRequestSchema(WebAPI):
             self.jsonSender.put('/reqMgr/request/'+schema['RequestName'], schema)
         except HTTPException, ex:
             return ex.reason+' '+ex.result
-        raise cherrypy.HTTPRedirect('/reqMgrBrowser/details/'+schema['RequestName'])
+        raise cherrypy.HTTPRedirect('/view/details/'+schema['RequestName'])

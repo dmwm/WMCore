@@ -62,7 +62,7 @@ Software Release: <select name="CMSSWVersion">
 
 #def configBlock($radioName, $scenarioName, $cacheName)
 Configuration <br>
-  <input type="radio" NAME=$radioName value="scenario"> Scenario
+  <input type="radio" NAME=$radioName value="scenario" /> Scenario
     <select name="Scenario">
       <option selected> pp
       <option> cosmics
@@ -71,11 +71,10 @@ Configuration <br>
       <option> prodmc </option>
       <option> relvalmc </option>
       <option> relvalmcfs </option>
-    </select><br>
-  </input>
-  <input type="radio" NAME=$radioName value="couchDB"> CouchDB ID
-    <input TYPE=TEXT" name="ProdConfigCacheID" SIZE=80>
-  </input><br>
+    </select><br/>
+  <input type="radio" NAME=$radioName value="couchDB" /> CouchDB ID
+    <input TYPE=TEXT" name="ProdConfigCacheID" SIZE=80 />
+  <br/>
 
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
 #end def
@@ -139,7 +138,7 @@ Emulator:
 
 
 #def trailerBlock($requestType)
-    <input type="hidden" name="RequestType" VALUE=$requestType></input>
+    <input type="hidden" name="RequestType" VALUE=$requestType />
      <p><input type="submit" value="Submit"/></p></form>
 #end def
 

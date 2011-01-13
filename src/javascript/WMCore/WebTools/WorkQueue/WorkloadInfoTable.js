@@ -35,6 +35,6 @@ WMCore.WorkQueue.WorkloadInfoTable.workloadTable = function(divID) {
     
     var dataTable = WMCore.createDataTable(divID, dataSource, 
                                  WMCore.createDefaultTableDef(dataSchema.fields),
-                                 tableConfig, 100000);
+                                 tableConfig, 600000);
 };
     

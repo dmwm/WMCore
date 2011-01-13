@@ -206,6 +206,14 @@ class WorkQueue(Service):
         callname = 'batchjobstatus'
         return self._getResult(callname, args = args, verb = "GET")
 
+    def getBatchJobStatusBySite(self):
+        """
+        This service only provided by local queue
+        """
+        args = {}
+        callname = 'batchjobstatusbysite'
+        return self._getResult(callname, args = args, verb = "GET")
+    
     def queueWork(self, wmspecUrl, team, request):
         """
         This service only provided by local queue

@@ -19,9 +19,18 @@ WMCore.RequestManager.AgentOverview.statusTable = function(divID){
             };
         };
 
+    var formatACDCLink = function(elCell, oRecord, oColumn, sData) {
+            if (!sData) {
+                elCell.innerHTML = "Not Available";
+            } else {
+                elCell.innerHTML = "<a href='" + sData  + "' target='_blank'> acdc </a>";
+            };
+        };
+
     var dataSchema = {
         fields: [{key: "url", label:"Agent Location", formatter:formatAgentLink},
-                 {key: "status"}]
+                 {key: "status"},
+                 {key: "acdc", formatter:formatACDCLink}]
         };
 
     var dataUrl = "/reqMgr/agentoverview";

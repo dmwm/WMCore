@@ -212,5 +212,5 @@ WMCore.RequestManager.Overview.overviewTable = function(divID, filterDiv,
             return res;
     };
     dataSource.sendRequest();
-    dataSource.setInterval(3000, null, {});
+    dataSource.setInterval(600000, null, {});
 };

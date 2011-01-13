@@ -58,3 +58,9 @@ class WMAgent(Service):
         callname = 'agentstatus'
         args = {'detail': detail}
         return self._getResult(callname, args = args)
+
+    def getACDCInfo(self):
+        """
+        """
+        callname = 'acdclink'
+        return self._getResult(callname)

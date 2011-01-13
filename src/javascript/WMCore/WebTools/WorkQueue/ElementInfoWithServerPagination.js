@@ -61,7 +61,7 @@ WMCore.WorkQueue.ElementInfoWithServerPagination = function(divID) {
 
     var dataTable = WMCore.createDataTable(divID, dataSource, 
                          WMCore.createDefaultTableDef(dataSchema.fields),
-                         tableConfig, 100000);
+                         tableConfig, 600000);
 
     dataTable.handleDataReturnPayload = function(oRequest, oResponse, oPayload) { 
           oPayload.totalRecords = oResponse.meta.totalRecords; 

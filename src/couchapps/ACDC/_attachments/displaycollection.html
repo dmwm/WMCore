@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>displaycollection</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Dave Evans">
+	<!-- Date: 2010-10-27 -->
+	<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.1/build/fonts/fonts-min.css" /> 
+   <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.1/build/container/assets/skins/sam/container.css" /> 
+   <script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+   <script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/container/container-min.js"></script> 
+
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.1/build/datatable/assets/skins/sam/datatable.css&2.8.1/build/logger/assets/skins/sam/logger.css">
+     <script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.1/build/yahoo/yahoo-debug.js&2.8.1/build/dom/dom-debug.js&2.8.1/build/event/event-debug.js&2.8.1/build/element/element-debug.js&2.8.1/build/datasource/datasource-debug.js&2.8.1/build/datatable/datatable-debug.js&2.8.1/build/logger/logger-debug.js"></script>
+	
+	<script src="/_utils/script/json2.js"></script>
+     <script src="/_utils/script/jquery.js?1.3.1"></script>
+     <script src="/_utils/script/jquery.couch.js?0.9.0"></script>
+     <script src="vendor/acdc/acdc.js"></script>
+     
+     <style>
+       #header  {
+           background: #fff;
+           position: absolute;
+           top: 0px;
+           left: 0px;
+           width: 950px;
+           height: 100px;
+        }
+       #collections {
+          background: #fff;
+           position: absolute;
+           top: 100px;
+           left: 0px;
+           width: 950px;
+           height: 800px;
+       }
+     </style>
+</head>
+<body class="yui-skin-sam">
+   <div id="header"><h1>Collection Details</h1></div>
+     <div id="collections">
+         <div id="displaypanel"></div>
+     </div>
+</body>
+
+<script>
+    var dbname = document.location.href.split('/')[3];
+    $db = $.couch.db(dbname);
+    // set up the acdc instance
+    acdc.setCouchDB($db);
+    acdc.buildFilesetSummaryDataTable("displaypanel"); 
+    acdc.displayCollection();
+    
+
+</script>
+
+</html>

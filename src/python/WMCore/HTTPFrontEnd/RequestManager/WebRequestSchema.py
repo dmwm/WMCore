@@ -23,7 +23,7 @@ class WebRequestSchema(WebAPI):
         self.requestor = config.requestor
         self.cmsswVersion = config.cmsswDefaultVersion
         self.reqMgrHost = config.reqMgrHost
-        self.jsonSender = JSONRequests(config.reqMgrHost)
+        self.jsonSender = JSONRequests(config.reqMgrHost, dict={'req_cache_path':config.componentDir})
         self.couchUrl = config.couchUrl
         self.couchDBName = config.configCacheDBName
         #cherrypy.config.update({'tools.sessions.on': True, 'tools.encode.on':True, 'tools.decode.on':True})

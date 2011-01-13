@@ -1,0 +1,66 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title> Request Approval </title>
+
+<!-- Hokey way to keep ENTER from submitting the form.  Ticket #401 -->
+<script type="text/javascript">
+
+function stopRKey(evt) {
+  var evt = (evt) ? evt : ((event) ? event : null);
+  var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement : null);
+  if ((evt.keyCode == 13) && (node.type=="text"))  {return false;}
+}
+
+document.onkeypress = stopRKey;
+
+</script>
+</head>
+<body>
+<h2>Approve Requests</h2>
+<form action="handleApprovalPage" method="POST">
+
+<div id="actions">
+Actions:<select name="action">
+  <option>Approve</option>
+  <option>Reject</option>
+</select>
+<input type="submit"/>
+</div>
+<br/>
+
+<div id="requests">
+<table>
+<tr>
+<th>Select</th>
+<th>Name</th>
+<th>Type</th>
+<th>Priority</th>
+<th>Version</th>
+<th>Input</th>
+</tr>
+
+#set $checked = ''
+#if len($requests) == 1
+  #set $checked = 'CHECKED'
+#end if
+
+#for $request in $requests
+#set $requestName = $request['RequestName']
+<tr>
+<td align=center><input type="checkbox" $checked name = "checkbox$requestName"></input></td> 
+<td align=center><a href=/reqMgrBrowser/details/$requestName>$requestName</a></td>
+<td align=center>$request['RequestType']</td>
+<td align=center>$request['PriorityMenu']</td>
+<td align=center>$request['SoftwareVersions']</td>
+<td align=center>$request['Input']</td>
+</tr>
+#end for
+
+</table>
+</div>
+
+</form>
+</body>
+</html>
+

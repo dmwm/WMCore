@@ -92,6 +92,8 @@ def getRequestByName(requestName):
     factory = DBConnect.getConnection()
     f =  factory(classname = "Request.FindByName")
     id = f.execute(requestName)
+    if id == None:
+        raise RuntimeError, "Cannot find request %s" % requestName
     return getRequest(id)
      
 def getRequestDetails(requestName):
@@ -118,7 +120,11 @@ def getAllRequestDetails():
     result = []
     for request in requests:
         requestName = request['RequestName']
-        result.append(getRequestDetails(requestName))
+        details = getRequestDetails(requestName)
+        # take out excessive information
+        del details['RequestUpdates']
+        del details['RequestMessages']
+        result.append(details)
     return result 
 
 

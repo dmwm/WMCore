@@ -29,7 +29,7 @@ class FindByStatus(DBFormatter):
          SELECT req.request_name, req.request_id from reqmgr_request req
            JOIN reqmgr_request_status stat
              ON req.request_status = stat.status_id
-           WHERE stat.status_name = "%s"
+           WHERE stat.status_name = '%s'
          """ % reqStatus
 
 

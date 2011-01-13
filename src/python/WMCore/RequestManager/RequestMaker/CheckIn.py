@@ -78,11 +78,11 @@ def checkIn(request):
     except Exception, ex:
         raiseCheckInError(request, ex, "Unable to associate software for this request")
 
-        if request["RequestSizeEvents"] != None:
-            MakeRequest.updateRequestSize(request['RequestName'],
-                                          request["RequestSizeEvents"],
-                                          request.get("RequestSizeFiles", 0)
-                                          )
+    if request["RequestSizeEvents"] != None:
+        MakeRequest.updateRequestSize(request['RequestName'],
+                                      request["RequestSizeEvents"],
+                                      request.get("RequestSizeFiles", 0)
+                                      )
 
 
     return

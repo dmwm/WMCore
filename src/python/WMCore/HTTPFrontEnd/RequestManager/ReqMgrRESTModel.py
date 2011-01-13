@@ -11,15 +11,13 @@ import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement as UserMan
 import WMCore.RequestManager.RequestDB.Interface.ProdSystem.ProdMgrRetrieve as ProdMgrRetrieve
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
-import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
-import WMCore.RequestManager.RequestMaker.WMWorkloadCache as WMWorkloadCache
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
-import WMCore.RequestManager.RequestMaker.Processing.RecoRequest 
-import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest 
-import WMCore.RequestManager.RequestMaker.Processing.FileBasedRequest
+#import WMCore.RequestManager.RequestMaker.Processing.RecoRequest 
+#import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest 
+#import WMCore.RequestManager.RequestMaker.Processing.FileBasedRequest
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import saveWorkload, removePasswordFromUrl
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import saveWorkload, removePasswordFromUrl, changePriority, changeStatus
 import WMCore.Lexicon
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import cherrypy
@@ -252,23 +250,13 @@ class ReqMgrRESTModel(RESTModel):
         if request != None:
             return ProdManagement.getProdMgr(request)
 
-    def abortRequest(self, request):
-        """ Changes the state of the request to "aborted", and asks the work queue
-        to cancel its work """
-        response = self.getWorkQueue(request=request)
-        url = response[0]
-        if url == None or url == "":
-            raise cherrypy.HTTPError(400, "Cannot find URL for request " + request)
-        workqueue = WorkQueue.WorkQueue({'endpoint': url})     
-        workqueue.cancelWork([request], "request_name")
-   
     def getMessage(self, request):
         """ Returns a list of messages attached to this request """
         return ChangeState.getMessages(request)
 
     def putWorkQueue(self, request, url):
         """ Registers the request as "acquired" by the workqueue with the given URL """
-        ChangeState.changeRequestStatus(request, "acquired")
+        changeStatus(request, "acquired")
         return ProdManagement.associateProdMgr(request, urllib.unquote(url))
 
     def validatePutWorkQueue(self, index={}):
@@ -283,45 +271,18 @@ class ReqMgrRESTModel(RESTModel):
         if request == None:
             request = self.makeRequest()
         # see if status & priority need to be upgraded
-        if status != None or priority != None:
-            oldStatus = request['RequestStatus']
-
-            if status != None:
-                if not status in RequestStatus.StatusList:
-                    raise RuntimeError, "Bad status code " + status
-                if not request.has_key('RequestStatus'):
-                    raise RuntimeError, "Cannot find status for request " + requestName
-                if not status in RequestStatus.NextStatus[oldStatus]:
-                    raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
-                           oldStatus, status,  RequestStatus.NextStatus[oldStatus])
-                if status == 'aborted':
-                    # delete from the workqueue
-                    self.abortRequest(requestName)
-                if priority != None:
-                    ChangeState.changeRequestStatus(requestName, status, priority)
-                    self.updatePriorityInWorkload(request, priority)
-                else:
-                    ChangeState.changeRequestStatus(requestName, status)
-            else:
-                ChangeState.changeRequestStatus(requestName, oldStatus, priority) 
-                self.updatePriorityInWorkload(request, priority)
+        if status != None:
+            changeStatus(requestName, status)
+        if priority != None:
+            changePriority(requestName, priority) 
         return result
 
-    def updatePriorityInWorkload(self, request, priority):
-        """ Changes the priority that's stored in the workload """
-        # fill in all details
-        request = GetRequest.getRequest(request['RequestID'])
-        helper = WMWorkloadHelper()
-        helper.load(request['RequestWorkflow'])
-        helper.data.request.priority = int(priority)
-        saveWorkload(helper, request['RequestWorkflow'])
- 
-        
     def makeRequest(self):
         """ Creates a new request, with a JSON-encoded schema that is sent in the
         body of the request """
         body = cherrypy.request.body.read()
         requestSchema = JsonWrapper.loads( body, encoding='latin-1' )
+        logging.info(requestSchema)
         maker = retrieveRequestMaker(requestSchema['RequestType'])
         specificSchema = maker.schemaClass()
         specificSchema.update(requestSchema)

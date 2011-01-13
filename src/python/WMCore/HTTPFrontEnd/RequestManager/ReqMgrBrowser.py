@@ -13,10 +13,9 @@ import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListReq
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 
 
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, parseSite, allSoftwareVersions, saveWorkload
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, parseSite, allSoftwareVersions, saveWorkload, loadWorkload, changePriority, changeStatus
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Cache.WMConfigCache import ConfigCache 
-from WMCore.Services.Requests import JSONRequests
 import WMCore.HTTPFrontEnd.RequestManager.Sites
 import WMCore.Lexicon
 import logging
@@ -47,9 +46,12 @@ def statusMenu(requestName, defaultField):
     html += '</SELECT>'
     return html
 
-def priorityMenu(requestName, defaultPriority):
+def priorityMenu(request):
     """ Returns HTML for a box to set priority """
-    return '%s &nbsp<input type="text" size=2 name="%s:priority">' % (defaultPriority, requestName)
+    return '(%su, %sg) %s &nbsp<input type="text" size=2 name="%s:priority">' % (
+            request['ReqMgrRequestorBasePriority'], request['ReqMgrGroupBasePriority'], 
+            request['ReqMgrRequestBasePriority'],
+            request['RequestName'])
 
 def biggestUpdate(field, request):
     """ Finds which of the updates has the biggest number """
@@ -98,9 +100,8 @@ class ReqMgrBrowser(WebAPI):
         self.requests = []
         self.couchUrl = config.couchUrl
         self.configDBName = config.configDBName
-        #FIXME try to remove this  
-        self.jsonSender = JSONRequests(config.reqMgrHost)
         self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
+        self.allMergedLFNBases =  ["/store/backfill/1", "/store/backfill/2", "/store/data",  "/store/mc"]
         self.mergedLFNBases = {"ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
                                "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}
         self.yuiroot = config.yuiroot
@@ -113,9 +114,12 @@ class ReqMgrBrowser(WebAPI):
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
 
-    def validate(self, v):
+    def validate(self, v, name=''):
        """ Checks if alphanumeric, tolerating spaces """
-       WMCore.Lexicon.identifier(v)
+       try:
+          WMCore.Lexicon.identifier(v)
+       except AssertionError:
+          raise cherrypy.HTTPError(400, "Bad input %s" % name)
        return v
 
     @cherrypy.expose
@@ -150,8 +154,7 @@ class ReqMgrBrowser(WebAPI):
         """
         self.validate(requestName)
         request = GetRequest.getRequestByName(requestName)
-        helper = WMWorkloadHelper()
-        helper.load(request['RequestWorkflow'])
+        helper = loadWorkload(request)
         splittingDict = helper.listJobSplittingParametersByTask()
         timeOutDict = helper.listTimeOutsByTask()
         taskNames = splittingDict.keys()
@@ -203,10 +206,7 @@ class ReqMgrBrowser(WebAPI):
                 splitParams[field] = int(submittedParams[field])
             
         request = GetRequest.getRequestByName(requestName)
-        helper = WMWorkloadHelper()
-        workloadUrl = request['RequestWorkflow']
-        WMCore.Lexicon.couchurl(workloadUrl)
-        helper.load(workloadUrl)
+        helper = loadWorkload(request)
         logging.info("SetSplitting " + requestName + splittingTask + splittingAlgo + str(splitParams))
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
         helper.setTaskTimeOut(splittingTask, int(submittedParams["timeout"]))
@@ -219,21 +219,18 @@ class ReqMgrBrowser(WebAPI):
         """ A page showing the details for the requests """
         self.validate(requestName)
         request = GetRequest.getRequestDetails(requestName)
-        helper = WMWorkloadHelper()
-        workloadUrl = request['RequestWorkflow']
-        WMCore.Lexicon.couchurl(workloadUrl)
-        helper.load(workloadUrl)
+        helper = loadWorkload(request)
         task = helper.getTopLevelTask()
         docId = None
         d = helper.data.request.schema.dictionary_()
-        d['RequestWorkflow'] = workloadUrl
+        d['RequestWorkflow'] = request['RequestWorkflow']
         d['Site Whitelist'] = task.siteWhitelist()
         d['Site Blacklist'] = task.siteBlacklist()
         if d.has_key('ProdConfigCacheID') and d['ProdConfigCacheID'] != "":
             docId = d['ProdConfigCacheID']        
         assignments = GetRequest.getAssignmentsByName(requestName)
         adminHtml = statusMenu(requestName, request['RequestStatus']) \
-                  + ' Priority ' + priorityMenu(requestName, request['ReqMgrRequestBasePriority'])
+                  + ' Priority ' + priorityMenu(request)
         return self.templatepage("Request", requestName=requestName,
                                 detailsFields = self.detailsFields, requestSchema=d,
                                 docId=docId, assignments=assignments,
@@ -262,26 +259,10 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     def showWorkload(self, url):
         """ Displays the workload """
-        request = {}
-        WMCore.Lexicon.couchurl(url)
-        request['RequestWorkflow'] = url
-        helper = WMWorkloadHelper()
-        helper.load(url)
+        request = {'RequestWorkflow':url}
+        helper = loadWorkload(request)
         return str(helper.data).replace('\n', '<br>')
  
-    @cherrypy.expose
-    def remakeWorkload(self, requestName):
-        """ Rebuild the workload from the stored schema """
-        self.validate(requestName)
-        request = GetRequest.getRequestByName(requestName)
-        # Should really get by RequestType
-        workloadMaker = WorkloadMaker(requestName)
-        # I'm getting requests and requestSchema confused
-        workloadMaker.loadRequestSchema(request)
-        workload = workloadMaker.makeWorkload()
-        helper = WMWorkloadHelper(workload)
-        request['RequestWorkflow'] = saveWorkload(helper, request['RequestWorkflow'])
-
     def drawRequests(self, requests):
         """ Display all requests """
         result = ""
@@ -352,90 +333,139 @@ class ReqMgrBrowser(WebAPI):
         for k, v in kwargs.iteritems():
             if k.endswith(':status'): 
                 requestName = k.split(':')[0]
+                self.validate(requestName)
                 status = v
-                self.validate(status)
                 priority = kwargs[requestName+':priority']
-                if status != "" or priority != "":
-                    self.validate(requestName) 
-                    message += self.updateRequest(requestName, status, priority)
-        return message
-
-    def updateRequest(self, requestName, status, priority):
-        """ Changes the status or priority """
-        urd = '/reqMgr/request/' + requestName + '?'
-        message = "Changed " + requestName
-        if status != "":
-            urd += 'status='+status
-            message += ' status='+status
-        if priority != "":
-            priority = int(priority)
-            if status != "":
-                urd += '&'
-            urd += 'priority=%s' % priority
-            message += ' priority=%s' % priority
-        self.jsonSender.put(urd)
-        if status == "assigned":
-            # make a page to choose teams
-            return self.assignmentPage(requestName)
+                if priority != '':
+                    changePriority(requestName, priority)
+                    message += "Changed priority for %s to %s\n" % (requestName, priority)
+                if status != "":
+                    changeStatus(requestName, status)
+                    message += "Changed status for %s to %s\n" % (requestName, status)
+                    if status == "assigned":
+                        # make a page to choose teams
+                        return self.assignOne(requestName)
         return message + detailsBackLink(requestName)
 
-    @cherrypy.expose
-    def assignmentPage(self, requestName):
-        self.validate(requestName)
-        teams = ProdManagement.listTeams()
-        requestType = GetRequest.getRequestByName(requestName)["RequestType"]
+    def assignOne(self,  requestName):
+        request =  GetRequest.getRequestByName(requestName)
+        requestType = request["RequestType"]
         # get assignments
+        teams = ProdManagement.listTeams()
         assignments = GetRequest.getAssignmentsByName(requestName)
         # might be a list, or a dict team:priority
         if isinstance(assignments, dict):
             assignments = assignments.keys()
-        return self.templatepage("Assign", requestName=requestName, teams=teams, 
+        return self.templatepage("Assign", requests=[request], teams=teams, 
                  assignments=assignments, sites=self.sites, mergedLFNBases = self.mergedLFNBases[requestType])
-    
+
+    def requestsWhichCouldLeadTo(self, newStatus):
+        # see which status can lead to the new status
+        requestIds = []
+        for status, next in RequestStatus.NextStatus.iteritems():
+            if newStatus in next:
+                # returns dict of  name:id
+                theseIds = ListRequests.listRequestsByStatus(status).values()
+                requestIds.extend(theseIds)
+
+        requests = []
+        for requestId in requestIds:
+            request = GetRequest.getRequest(requestId)
+            if 'InputDataset' in request and request['InputDataset'] != '':
+                request['Input'] = request['InputDataset']
+            elif 'InputDatasets' in request and len(request['InputDatasets']) != 0:
+                request['Input'] = str(request['InputDatasets']).strip("[]'")
+            else:
+                request['Input'] = "Total Events: %s" % request['RequestSizeEvents']
+            if len(request.get('SoftwareVersions', [])) > 0:
+                # only show one version
+                request['SoftwareVersions'] = request['SoftwareVersions'][0]
+            request['PriorityMenu'] = priorityMenu(request)
+            requests.append(request)
+        return requests
+
+    @cherrypy.expose    
+    def assign(self):
+        # returns dict of  name:id
+        requests = self.requestsWhichCouldLeadTo('assigned')
+        teams = ProdManagement.listTeams()
+        return self.templatepage("Assign", requests=requests, teams=teams,
+                 assignments=[], sites=self.sites, mergedLFNBases = self.allMergedLFNBases)
+
     @cherrypy.expose
     def handleAssignmentPage(self, **kwargs):
-        """ handles some checkboxes """
-        result = ""
-        requestName = kwargs["RequestName"]
-        self.validate(requestName)
-        assignments = GetRequest.getAssignmentsByName(requestName)
-        request = GetRequest.getRequestByName(requestName)
-        helper = WMWorkloadHelper()
-        workloadUrl = request['RequestWorkflow']
-        WMCore.Lexicon.couchurl(workloadUrl)
-        helper.load(workloadUrl)
-        schema = helper.data.request.schema
-        # look for teams
+        # handle the checkboxes
         teams = []
+        requests = []
         for key, value in kwargs.iteritems():
             if isinstance(value, types.StringTypes):
                 kwargs[key] = value.strip()
-                setattr(schema, key, value.strip())
             if key.startswith("Team"):
-                team = key[4:]
-                if not team in assignments:
-                    teams.append(team)
-                    ChangeState.assignRequest(requestName, team)
-                    result += "Assigned to team %s\n" % team
-        if teams == [] and assignments == []:
-            raise cherrypy.HTTPError(400, "Must assign to one or more teams")
+                teams.append(key[4:])
+            if key.startswith("checkbox"):
+                requests.append(key[8:])
+        
+        for requestName in requests:
+            if kwargs['action'] == 'Reject':
+                ChangeState.changeRequestStatus(requestName, 'rejected') 
+            else:
+                assignments = GetRequest.getAssignmentsByName(requestName)
+                if teams == [] and assignments == []:
+                    raise cherrypy.HTTPError(400, "Must assign to one or more teams")
+                self.assignWorkload(requestName, kwargs)
+                for team in teams:
+                    if not team in assignments:
+                        ChangeState.assignRequest(requestName, team)
+                priority= kwargs.get(requestName+':priority', '')
+                if priority != '':
+                    changePriority(requestName, priority)
+        return self.templatepage("Acknowledge", participle=kwargs['action']+'ed', requests=requests)
 
+    def assignWorkload(self, requestName, kwargs):
+        request = GetRequest.getRequestByName(requestName)
+        helper = loadWorkload(request)
+        schema = helper.data.request.schema
+        for field in ["AcquisitionEra", "ProcessingVersion"]:
+            self.validate(kwargs[field], field)
         helper.setSiteWhitelist(parseSite(kwargs,"SiteWhitelist"))
         helper.setSiteBlacklist(parseSite(kwargs,"SiteBlacklist"))
-        self.validate(kwargs["ProcessingVersion"])
         helper.setProcessingVersion(kwargs["ProcessingVersion"])
-        self.validate(kwargs["AcquisitionEra"])
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
         #FIXME not validated
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
         helper.setMergeParameters(int(kwargs["MinMergeSize"]), int(kwargs["MaxMergeSize"]), int(kwargs["MaxMergeEvents"]))
-        saveWorkload(helper, workloadUrl)
-        result += detailsBackLink(requestName) + '<a href="../../../RequestOverview">Overview</a>'
-        return result
+        saveWorkload(helper, request['RequestWorkflow'])
+ 
+    @cherrypy.expose
+    def approve(self):
+        requests = self.requestsWhichCouldLeadTo('assignment-approved')
+        return self.templatepage("Approve", requests=requests)
+
+    @cherrypy.expose
+    def handleApprovalPage(self, **kwargs):
+        # handle the checkboxes
+        requests = []
+        for key, value in kwargs.iteritems():
+            if isinstance(value, types.StringTypes):
+                kwargs[key] = value.strip()
+            if key.startswith("checkbox"):
+                requests.append(key[8:])
+        particple = ''
+        for requestName in requests:
+            if kwargs['action'] == 'Reject':
+                participle = 'rejected'
+                ChangeState.changeRequestStatus(requestName, 'rejected')
+            else:
+                participle = 'approved'
+                ChangeState.changeRequestStatus(requestName, 'assignment-approved')
+        return self.templatepage("Acknowledge", participle=participle, 
+                                 requests=requests)
+
 
     @cherrypy.expose
     def modifyWorkload(self, requestName, workload,
-                       runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None):
+                       runWhitelist=None, runBlacklist=None, 
+                       blockWhitelist=None, blockBlacklist=None):
         """ handles the "Modify" button of the details page """
         self.validate(requestName) 
         helper = WMWorkloadHelper()
@@ -536,8 +566,8 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     def teams(self):
         """ Lists all teams """
-        teams = ProdManagement.listTeams()
-        return self.templatepage("Teams", teams=teams)
+        return self.templatepage("Teams", teams = ProdManagement.listTeams()
+)
 
     @cherrypy.expose
     def team(self, teamName):

@@ -1,6 +1,8 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
 <head>
 <title> Request Assignment </title>
+
 <!-- Hokey way to keep ENTER from submitting the form.  Ticket #401 -->
 <script type="text/javascript">
 
@@ -14,11 +16,9 @@ document.onkeypress = stopRKey;
 
 </script>
 </head>
-
-<h2> Request $requestName </h2>
-## pass the request name along silently
+<body>
+<h2>Assign Request</h2>
 <form action="handleAssignmentPage" method="POST">
-<input type="HIDDEN" name="RequestName" value="$requestName">
 <h4>Assign request to teams</h4>
 #for $team in $teams:
     #if $team in $assignments:
@@ -56,6 +56,7 @@ Unmerged LFN Base: <select name="UnmergedLFNBase">
   <option>/store/unmerged/lustre</option>
 </select>
 
+<div id="otherOptions">
 <h4>Other Options</h4>
 Min Merge Size <input type="text" name="MinMergeSize" value=500000000 size=10/>
 Max Merge Size <input type="text" name="MaxMergeSize" value=4294967296 size=10/>
@@ -63,8 +64,50 @@ Max Merge Events <input type="text" name="MaxMergeEvents" value=50000 size=10/><
 
 Acquisition Era: <input type="text" name="AcquisitionEra" size=20></BR>
 ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 /><br/>
-
+</div>
 <br/>
+
+<div id="actions">
+Actions:<select name="action">
+  <option>Assign</option>
+  <option>Reject</option>
+</select>
 <input type="submit"/>
+</div>
+<br/>
+
+<div id="requests">
+<table>
+<tr>
+<th>Select</th>
+<th>Name</th>
+<th>Type</th>
+<th>Priority</th>
+<th>Input</th>
+<th>Splitting and Timeouts</th>
+</tr>
+
+#set $checked = ''
+#if len($requests) == 1
+  #set $checked = 'CHECKED'
+#end if
+
+#for $request in $requests
+#set $requestName = $request['RequestName']
+<tr>
+<td align=center><input type="checkbox" $checked name = "checkbox$requestName"></input></td> 
+<td align=center><a href=/reqMgrBrowser/details/$requestName>$requestName</a></td>
+<td align=center>$request['RequestType']</td>
+<td align=center>$request['PriorityMenu'] size=5></td>
+<td align=center>$request['Input']</td>
+<td align=center><a href=/reqMgrBrowser/splitting/$requestName>parameters</a></td>
+</tr>
+#end for
+
+</table>
+</div>
+
 </form>
+</body>
+</html>
 

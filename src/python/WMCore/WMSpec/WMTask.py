@@ -22,7 +22,6 @@ from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 import WMCore.WMSpec.Utilities as SpecUtils
 from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
-import WMCore.FwkJobReport.Report as Report
 
 def getTaskFromStep(stepRef):
     """
@@ -721,6 +720,7 @@ class WMTaskHelper(TreeHelper):
 
         If necessary, output to Dashboard
         """
+        import WMCore.FwkJobReport.Report as Report
 
         finalReport = Report.Report()
         # We left the master report somewhere way up at the top

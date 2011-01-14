@@ -3,7 +3,7 @@
 import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseSite, saveWorkload, loadWorkload, changePriority, requestsWhichCouldLeadTo, sites, prepareForTable
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseSite, saveWorkload, loadWorkload, changePriority, requestsWithStatus, sites, prepareForTable
 import WMCore.Lexicon
 import logging
 import cherrypy
@@ -21,7 +21,7 @@ class Assign(WebAPI):
         self.templatedir = config.templates
         self.couchUrl = config.couchUrl
         self.configDBName = config.configDBName
-        self.sites = sites()
+        self.sites = sites(config.sitedb)
         self.allMergedLFNBases =  [
             "/store/backfill/1", "/store/backfill/2", 
             "/store/data",  "/store/mc"]
@@ -66,7 +66,7 @@ class Assign(WebAPI):
     def index(self):
         """ Main page """
         # returns dict of  name:id
-        requests = requestsWhichCouldLeadTo('assigned')
+        requests = requestsWithStatus('assignment-approved')
         teams = ProdManagement.listTeams()
         return self.templatepage("Assign", requests=requests, teams=teams,
                  assignments=[], sites=self.sites, mergedLFNBases = self.allMergedLFNBases)
@@ -83,6 +83,8 @@ class Assign(WebAPI):
             if key.startswith("Team"):
                 teams.append(key[4:])
             if key.startswith("checkbox"):
+                requestName = key[8:]
+                self.validate(requestName)
                 requests.append(key[8:])
         
         for requestName in requests:

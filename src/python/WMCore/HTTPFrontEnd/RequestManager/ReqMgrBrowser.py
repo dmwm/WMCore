@@ -10,10 +10,11 @@ import logging
 import cherrypy
 import threading
 from WMCore.WebTools.WebAPI import WebAPI
+import cgi
 
 def detailsBackLink(requestName):
     """ HTML to return to the details of this request """
-    return  ' <A HREF=details/%s>Details</A> <A HREF=".">Browse</A><BR>' % requestName
+    return  ' <A HREF="details/%s">Details</A> <A HREF=".">Browse</A><BR>' % requestName
 
 def linkedTableEntry(methodName, entry):
     """ Makes an HTML table entry with the entry name, and a link to a
@@ -64,6 +65,7 @@ class ReqMgrBrowser(WebAPI):
         self.couchUrl = config.couchUrl
         self.configDBName = config.configDBName
         self.yuiroot = config.yuiroot
+        self.reqMgrHost = config.reqMgrHost
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
     def initThread(self, thread_index):
@@ -164,6 +166,7 @@ class ReqMgrBrowser(WebAPI):
             for field in ['min_merge_size', 'max_merge_size', 'max_merge_events']:
                 splitParams[field] = int(submittedParams[field])
             
+        self.validate(requestName)
         request = GetRequest.getRequestByName(requestName)
         helper = loadWorkload(request)
         logging.info("SetSplitting " + requestName + splittingTask + splittingAlgo + str(splitParams))
@@ -220,7 +223,8 @@ class ReqMgrBrowser(WebAPI):
         """ Displays the workload """
         request = {'RequestWorkflow':url}
         helper = loadWorkload(request)
-        return str(helper.data).replace('\n', '<br>')
+        workloadText = str(helper.data).replace('\n', '<br>')
+        return cgi.escape(workloadText)
  
     def drawRequests(self, requests):
         """ Display all requests """
@@ -236,18 +240,16 @@ class ReqMgrBrowser(WebAPI):
         requestName = request['RequestName']
         for field in self.fields:
             # hanole any fields that have functions linked to them
-            html += '<td>'
-            if self.adminMode and self.adminFields.has_key(field):
-                method = getattr(self, self.adminFields[field])
-                html += method(requestName, str(request[field]))
-            elif self.linkedFields.has_key(field):
-                html += linkedTableEntry(self.linkedFields[field], str(request[field]))
-            elif self.calculatedFields.has_key(field):
+            entry = cgi.escape(str(request.get(field, '')))
+            if field in self.calculatedFields:
                 method = getattr(self, self.calculatedFields[field])
-                html += method(request)
-            else:
-                html += str(request[field]) 
-            html += '</td>'
+                entry = method(request)
+            elif self.adminMode and self.adminFields.has_key(field):
+                method = getattr(self, self.adminFields[field])
+                entry = method(requestName, value)
+            elif self.linkedFields.has_key(field):
+                entry = linkedTableEntry(self.linkedFields[field], entry)
+            html += '<td>%s</td>' % entry
         html += '</tr>\n'
         return html
 
@@ -305,7 +307,7 @@ class ReqMgrBrowser(WebAPI):
                     message += "Changed status for %s to %s\n" % (requestName, status)
                     if status == "assigned":
                         # make a page to choose teams
-                        raise cherrypy.HTTPRedirect('/assign/one/%s' % requestName)
+                        raise cherrypy.HTTPRedirect('%s/assign/one/%s' % (self.reqMgrHost, requestName))
         return message + detailsBackLink(requestName)
 
 
@@ -317,27 +319,22 @@ class ReqMgrBrowser(WebAPI):
         self.validate(requestName) 
         helper = WMWorkloadHelper()
         helper.load(workload)
-        schema = helper.data.request.schema
         message = ""
         #inputTask = helper.getTask(requestType).data.input.dataset
         if runWhitelist != "" and runWhitelist != None:
             l = parseRunList(runWhitelist)
-            schema.RunWhitelist = l
             helper.setRunWhitelist(l)
             message += 'Changed runWhiteList to %s<br>' % l
         if runBlacklist != "" and runBlacklist != None:
             l = parseRunList(runBlacklist)
-            schema.RunBlacklist = l
             helper.setRunBlacklist(l)
             message += 'Changed runBlackList to %s<br>' % l
         if blockWhitelist != "" and blockWhitelist != None:
             l = parseBlockList(blockWhitelist)
-            schema.BlockWhitelist = l
             helper.setBlockWhitelist(l)
             message += 'Changed blockWhiteList to %s<br>' % l
         if blockBlacklist != "" and blockBlacklist != None:
             l = parseBlockList(blockBlacklist)
-            schema.BlockBlacklist = l
             helper.setBlockBlacklist(l)
             message += 'Changed blockBlackList to %s<br>' % l
         saveWorkload(helper, workload)

@@ -3,6 +3,7 @@ import urllib
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import cherrypy
 import WMCore.Lexicon
+import cgi
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
@@ -128,15 +129,8 @@ def prepareForTable(request):
     request['PriorityMenu'] = priorityMenu(request)
     return request
 
-def requestsWhichCouldLeadTo(newStatus):
-    """ returns a list of all statuses which can lead to the new status """
-    requestIds = []
-    for status, nextStatus in RequestStatus.NextStatus.iteritems():
-        if newStatus in nextStatus:
-            # returns dict of  name:id
-            theseIds = ListRequests.listRequestsByStatus(status).values()
-            requestIds.extend(theseIds)
-
+def requestsWithStatus(status):
+    requestIds = theseIds = ListRequests.listRequestsByStatus(status).values()
     requests = []
     for requestId in requestIds:
         request = GetRequest.getRequest(requestId)
@@ -144,21 +138,38 @@ def requestsWhichCouldLeadTo(newStatus):
         requests.append(request)
     return requests
 
+def requestsWhichCouldLeadTo(newStatus):
+    """ returns a list of all statuses which can lead to the new status """
+    requests = []
+    for status, nextStatus in RequestStatus.NextStatus.iteritems():
+        if newStatus in nextStatus:
+            requests.extend(requestsWithStatus(status))
+    return requests
+
 def priorityMenu(request):
     """ Returns HTML for a box to set priority """
-    return '(%su, %sg) %s &nbsp<input type="text" size=2 name="%s:priority" />' % (
+    return '(%iu, %ig) %i &nbsp<input type="text" size=2 name="%s:priority" />' % (
             request['ReqMgrRequestorBasePriority'], request['ReqMgrGroupBasePriority'],
             request['ReqMgrRequestBasePriority'],
             request['RequestName'])
 
-def sites():
+def sites(siteDbUrl):
     """ download a list of all the sites from siteDB """
-    url = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name'
-    data = JsonWrapper.loads(urllib.urlopen(url).read().replace("'", '"'))
+    data = JsonWrapper.loads(urllib.urlopen(siteDbUrl).read().replace("'", '"'))
     # kill duplicates, then put in alphabetical order
     siteset = set([d['name'] for d in data.values()])
     # warning: alliteration
     sitelist = list(siteset)
     sitelist.sort()
     return sitelist
+
+def quote(data):
+    """
+    Sanitize the data using cgi.escape.
+    """
+    if  isinstance(data, int) or isinstance(data, float):
+        res = data
+    else:
+        res = cgi.escape(str(data), quote=True)
+    return res
 

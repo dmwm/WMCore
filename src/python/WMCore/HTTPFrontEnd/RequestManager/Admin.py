@@ -32,10 +32,14 @@ class Admin(WebAPI):
 
     def validate(self, v, name=''):
         """ Checks if alphanumeric, tolerating spaces """
-        try:
-            WMCore.Lexicon.identifier(v)
-        except AssertionError:
-            raise cherrypy.HTTPError(400, "Bad input %s" % name)
+        if isinstance(v, list):
+            for entry in v:
+                 self.validate(entry)
+        else:
+            try:
+                WMCore.Lexicon.identifier(v)
+            except AssertionError:
+                raise cherrypy.HTTPError(400, "Bad input %s" % name)
         return v
 
     @cherrypy.expose
@@ -48,6 +52,7 @@ class Admin(WebAPI):
 <a href="versions">Versions</a>
          """
 
+    @cherrypy.expose
     def user(self, userName):
         """ Web page of details about the user, and sets user priority """
         self.validate(userName)
@@ -55,6 +60,9 @@ class Admin(WebAPI):
         requests = UserRequests.listRequests(userName).keys()
         priority = UserManagement.getPriority(userName)
         allGroups = GroupInfo.listGroups()
+        self.validate(groups)
+        self.validate(requests)
+        self.validate(allGroups)
         return self.templatepage("User", user=userName, groups=groups, 
             allGroups=allGroups, requests=requests, priority=priority)
 
@@ -84,6 +92,7 @@ class Admin(WebAPI):
     def users(self):
         """ Lists all users.  Should be paginated later """
         allUsers = Registration.listUsers()
+        self.validate(allUsers)
         return self.templatepage("Users", users=allUsers)
 
     @cherrypy.expose
@@ -105,6 +114,7 @@ class Admin(WebAPI):
     def groups(self):
         """ Lists all users.  Should be paginated later """
         allGroups = GroupInfo.listGroups()
+        self.validate(allGroups)
         return self.templatepage("Groups", groups=allGroups)
 
     @cherrypy.expose
@@ -117,14 +127,14 @@ class Admin(WebAPI):
     @cherrypy.expose
     def teams(self):
         """ Lists all teams """
-        return self.templatepage("Teams", teams = ProdManagement.listTeams()
-)
+        return self.templatepage("Teams", teams = ProdManagement.listTeams())
 
     @cherrypy.expose
     def team(self, teamName):
         """ Details for a team """
         self.validate(teamName)
         assignments = ListRequests.listRequestsByTeam(teamName)
+        self.validate(assignments)
         return self.templatepage("Team", team=teamName, requests=assignments.keys())
 
     @cherrypy.expose
@@ -139,6 +149,8 @@ class Admin(WebAPI):
         """ Lists all versions """
         versions = SoftwareAdmin.listSoftware().keys()
         versions.sort()
+        for version in versions:
+            WMCore.Lexicon.cmsswversion(version)
         return self.templatepage("Versions", versions=versions)
 
     @cherrypy.expose
@@ -157,6 +169,7 @@ class Admin(WebAPI):
         result = ""
         for version in allVersions:
             if not version in currentVersions:
+                WMCore.Lexicon.cmsswversion(version)
                 SoftwareAdmin.addSoftware(version)
                 result += "Added version %s<br>" % version
         if result == "":

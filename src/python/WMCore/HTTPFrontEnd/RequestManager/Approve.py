@@ -6,6 +6,7 @@ import types
 import logging
 import threading
 import cherrypy
+import WMCore.Lexicon
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import changePriority
 
@@ -40,6 +41,8 @@ class Approve(WebAPI):
             if isinstance(value, types.StringTypes):
                 kwargs[key] = value.strip()
             if key.startswith("checkbox"):
+                requestName = key[8:]
+                WMCore.Lexicon.identifier(requestName)
                 requests.append(key[8:])
         particple = ''
         for requestName in requests:

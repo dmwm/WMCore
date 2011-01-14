@@ -5,16 +5,39 @@
 
 <!-- Hokey way to keep ENTER from submitting the form.  Ticket #401 -->
 <script type="text/javascript">
-
 function stopRKey(evt) {
   var evt = (evt) ? evt : ((event) ? event : null);
   var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement : null);
   if ((evt.keyCode == 13) && (node.type=="text"))  {return false;}
 }
-
 document.onkeypress = stopRKey;
-
 </script>
+<style type="text/css">
+table {
+border-width: 1px;
+border-spacing: 0px;
+border-style: none;
+border-color: gray;
+border-collapse: separate;
+background-color: white;
+}
+table th {
+border-width: 1px;
+padding: 5px;
+border-style: solid;
+border-color: black;
+background-color: #3366FF;
+font-family: Arial;
+}
+table td {
+border-width: 1px;
+padding: 5px;
+border-style: solid;
+border-color: black;
+background-color: white;
+font-family: Arial;
+}
+</style>
 </head>
 <body>
 <h2>Assign Request</h2>

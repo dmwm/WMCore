@@ -1,3 +1,4 @@
+#from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import quote
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
@@ -21,7 +22,7 @@
 <hr><table>
 #for $key in $detailsFields
     #if $key in $requestSchema
-        #set $value = $requestSchema[$key]
+        #set $value = $quote($requestSchema[$key])
         ## make a hyperlink to workflow
         #if $key == 'RequestWorkflow'
             <tr><td> $key </td><td>  <a href="../showWorkload?url=$value">Workload</a> </td></tr>
@@ -40,7 +41,7 @@
         #elif $key == 'CouchUrl'
             #pass 
         #else
-            <tr><td> $key </td><td> $value </td></tr>
+            <tr><td> $quote($key) </td><td> $value </td></tr>
         #end if
     #end if
 #end for
@@ -78,7 +79,7 @@ $adminHtml
 <b>Messages:</b><br>
 #if $messages != None
 #for $message in $messages:
-    $message[0]<br>
+    $quote($message[0])<br>
 #end for
 #end if
 ## Updates
@@ -88,7 +89,7 @@ $adminHtml
 #if $updateDictList != None
 #for $updateDict in $updateDictList
     #for $key in $updateDict
-        <tr><td>$key</td><td>$updateDict[$key]</td></tr>
+        <tr><td>$quote($key)</td><td>$quote($updateDict[$key])</td></tr>
     #end for
 #end for
 #end if

@@ -48,7 +48,6 @@ class Update(DBFormatter):
                     values += " %s," % value
                 else:
                     values += " \'%s\'," % value
-                    print values
 
         #if params.get("events_written", None) != None:
         #    self.sql += "events_written, "

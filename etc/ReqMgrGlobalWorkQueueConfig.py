@@ -45,6 +45,9 @@ teamName = "cmsdataops"
 # Root of the YUI javascript library.
 yuiRoot = "http://yui.yahooapis.com/2.8.0r4"
 
+# URL of the list of sites from SiteDB
+SITEDB = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name'
+
 # Nothing after this point should need to be changed.
 config = Configuration()
 
@@ -105,6 +108,7 @@ active.approve.object = 'WMCore.HTTPFrontEnd.RequestManager.Approve'
 
 active.section_('assign')
 active.assign.object = 'WMCore.HTTPFrontEnd.RequestManager.Assign'
+active.assign.sitedb = SITEDB
 
 active.section_('reqMgr')
 active.reqMgr.section_('model')

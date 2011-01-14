@@ -1,4 +1,4 @@
-import unittest
+import unittest, logging
 from cherrypy import HTTPError
 
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
@@ -8,12 +8,21 @@ from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 class NestedModelTest(RESTBaseUnitTest):
     
     def initialize(self):
-        self.config = DefaultConfig('WMCore.WebTools.NestedModel')        
+        self.config = DefaultConfig('DummyNestedModel')
+        do_debug = False
+
+        if do_debug:
+            self.config.Webtools.environment = 'development'
+            self.config.Webtools.error_log_level = logging.DEBUG
+            self.config.Webtools.access_log_level = logging.DEBUG
+        else:
+            self.config.Webtools.environment = 'production'
+            self.config.Webtools.error_log_level = logging.WARNING
+            self.config.Webtools.access_log_level = logging.WARNING
+
         self.urlbase = self.config.getServerUrl()
     
     def testOuterFooPass(self):
-        print "test foo"
-        
         verb ='GET'
         url = self.urlbase + 'foo'
         output={'code':200, 'data':'"foo"'}
@@ -25,9 +34,9 @@ class NestedModelTest(RESTBaseUnitTest):
         methodTest(verb, url, output=output, expireTime=expireTime)
         
         url = self.urlbase + 'foo'
-        input = {'message': 'test'}
+        request_input = {'message': 'test'}
         output={'code':200, 'data':'"foo test"'}
-        methodTest(verb, url, input= input, output=output, expireTime=expireTime)
+        methodTest(verb, url, request_input=request_input, output=output, expireTime=expireTime)
         
     def testInnerPingPass(self):
         verb ='GET'

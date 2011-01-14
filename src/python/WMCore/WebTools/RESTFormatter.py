@@ -1,21 +1,20 @@
 #!/usr/bin/env python
 """
-_DASRESTFormatter_
+_RESTFormatter_
 
-A basic REST formatter.
+A basic REST formatter. The formatter takes the data from the API call, turns it into the 
+appropriate format and sets the CherryPy header appropriately.
 
 Could add YAML via http://pyyaml.org/
 """
-from WMCore.WebTools.Page import TemplatedPage
-from WMCore.WebTools.Page import exposejson, exposexml, exposeatom, exposetext
-from cherrypy import response, HTTPError, expose
 
-
-
+from WMCore.WebTools.Page import TemplatedPage, _setCherryPyHeaders
+from cherrypy import response, HTTPError, request
+from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+from WMCore.Wrappers import JsonWrapper
 
 class RESTFormatter(TemplatedPage):
     def __init__(self, config):
-        TemplatedPage.__init__(self, config)
         self.supporttypes = {'application/xml': self.xml,
                    'application/atom+xml': self.atom,
                    'text/json': self.json, 
@@ -24,40 +23,51 @@ class RESTFormatter(TemplatedPage):
                    'text/html': self.to_string,
                    'text/plain': self.to_string,
                    '*/*': self.to_string}
-    
-    @exposejson
+
+        TemplatedPage.__init__(self, config)
+     
     def json(self, data):
-        return data
+        thunker = JSONThunker()
+        data = thunker.thunk(data)
+        return JsonWrapper.dumps(data)
 
-    @exposexml
     def xml(self, data):
-        return data
+        return self.templatepage('XML', data = data,
+                                config = self.config,
+                                path = request.path_info)
 
-    @exposeatom
     def atom(self, data):
-        return data
+        return self.templatepage('Atom', data = data,
+                                config = self.config,
+                                path = request.path_info)
     
-    @exposetext
     def to_string(self, data):
-        return data
+        return str(data)
     
     def format(self, data, datatype, expires):
+        response_data = ''
         if datatype not in self.supporttypes.keys():
             response.status = 406
-            return self.supporttypes['text/plain']({'exception': 406,
+            expires=0
+            response_data = self.supporttypes['text/plain']({'exception': 406,
                                                 'type': 'HTTPError',
             'message': '%s is not supported. Valid accept headers are: %s' %\
                     (datatype, self.supporttypes.keys())})
         
         try:
-            return self.supporttypes[datatype](data, expires, datatype)
+            response_data = self.supporttypes[datatype](data)
         except HTTPError, h:
+            # This won't be triggered with a default formatter, but could be by a subclass
             response.status = h[0]
-            return self.supporttypes[datatype]({'exception': h[0],
+            expires=0
+            response_data = self.supporttypes[datatype]({'exception': h[0],
                                                 'type': 'HTTPError',
                                                 'message': h[1]}, expires=0)
         except Exception, e:
             response.status = 500
-            return self.supporttypes[datatype]({'exception': 500,
+            expires=0
+            response_data = self.supporttypes[datatype]({'exception': 500,
                                                 'type': e.__class__.__name__,
-                                                'message': str(e)}, expires=0)
+                                                'message': 'Server Error'})
+        _setCherryPyHeaders(response_data, datatype, expires)
+        return response_data

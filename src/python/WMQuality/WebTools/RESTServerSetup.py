@@ -1,7 +1,27 @@
 import os
 import cherrypy
 import logging 
+from functools import wraps
+
+from WMCore.WebTools.Root import Root
 from WMCore.Configuration import Configuration
+
+#this function will be used for cherrypy set up for test
+def cherrypySetup(config = None):
+    if config == None:
+        config = DefaultConfig()
+    def chSetup(f):
+        @wraps(f)
+        def wrapper(self):
+            self.rt = Root(config)
+            self.rt.start(blocking=False)
+            self.urlbase = config.getServerUrl()
+            f(self)
+            self.rt.stop()
+        return wrapper
+
+    return chSetup
+
 
 class DefaultConfig(Configuration):
     
@@ -13,8 +33,8 @@ class DefaultConfig(Configuration):
         self.component_('Webtools')
         self.Webtools.application = 'UnitTests'
         self.Webtools.log_screen = False
-        self.Webtools.access_file = '/tmp/webtools/log_access'
-        self.Webtools.error_file = '/tmp/webtools/log_error'
+        self.Webtools.error_log_level = logging.WARNING
+        self.Webtools.access_log_level = logging.DEBUG
         self.Webtools.port = 8888
         self.Webtools.host = "localhost"
         self.Webtools.expires = 300
@@ -70,6 +90,13 @@ class DefaultConfig(Configuration):
     def setFormatter(self, formatter):
         self.UnitTests.views.active.rest.formatter.object = formatter
         
+    def setWorkQueueLevel(self, queueLevel):
+        """only set this for workqueue restmodel test
+           queueLevel should be 'GlobalQueue' or 'LocalQueue'
+        """
+
+        self.UnitTests.views.active.rest.level = queueLevel
+
     def getModelConfig(self):
         return self.UnitTests.views.active.rest
     

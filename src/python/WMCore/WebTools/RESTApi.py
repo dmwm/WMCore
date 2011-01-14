@@ -34,13 +34,9 @@ class RESTApi(WebAPI):
     __version__ = 1
     def __init__(self, config = {}):
         
-        #formatterconfig = config.section_('formatter')
-        #formatterconfig.application = config.application
-        self.set_formatter(config)
+        self._set_formatter(config)
         
-        #modelconfig = config.section_('model')
-        #modelconfig.application = config.application
-        self.set_model(config)
+        self._set_model(config)
         
         self.__doc__ = self.model.__doc__
         
@@ -52,11 +48,17 @@ class RESTApi(WebAPI):
         # TODO: implement HEAD & TRACE
         self.supporttypes = self.formatter.supporttypes.keys()
         
-    def set_model(self, config):
+    def _set_model(self, config):
+        """
+        Load the model object, and assign it to the RESTAPI
+        """
         factory = WMFactory('webtools_factory')
         self.model = factory.loadObject(config.model.object, config)
         
-    def set_formatter(self, config):
+    def _set_formatter(self, config):
+        """
+        Load the formatter object, and assign it to the RESTAPI
+        """
         factory = WMFactory('webtools_factory')
         self.formatter = factory.loadObject(config.formatter.object, config)
 
@@ -65,21 +67,22 @@ class RESTApi(WebAPI):
         """
         Return the auto-generated documentation for the API
         """
-        return self.buildResponse()
+        return self._buildResponse()
     
     @expose
     def default(self, *args, **kwargs):
         """
         Return either the documentation or run the appropriate method.
         """
-        return self.buildResponse(args, kwargs)
+        return self._buildResponse(args, kwargs)
     
-    def buildResponse(self, args=[], kwargs={}):
+    def _buildResponse(self, args=[], kwargs={}):
         """
         Set the headers for the response appropriately and format the response 
         data (e.g. serialise to XML, JSON, RSS/ATOM) or return the documentation
         if no method is specified.
         """
+        args = list(args)
         if len(args) == 0 and len(kwargs) == 0:
             self.debug('returning REST documentation')
             types = []
@@ -96,29 +99,32 @@ class RESTApi(WebAPI):
         try:
             data, expires = self.methods['handler']['call'](request.method,
                                                             args, kwargs)
-            return self.formatResponse(data, expires,
+            return self._formatResponse(data, expires,
                                        kwargs.get('return_type', None))
             
         except HTTPError, h:
+            # If something raises an HTTPError assume it's something that should
+            # go to the client
             response.status = h[0]
-            
-            return self.formatResponse({'exception': h[0],
+            self.debug('call to %s with args: %s kwargs: %s resulted in %s' % (request.method, args, kwargs, h[1]))
+            return self._formatResponse({'exception': h[0],
                                         'type': 'HTTPError',
                                         'message': h[1]}, expires=0,
                                         format=kwargs.get('return_type', None))
         except Exception, e:
+            # If something raises a generic exception assume the details are private
+            # and should not go to the client
             response.status = 500
-            return self.formatResponse({'exception': 500,
+            self.debug('call to %s with args: %s kwargs: %s resulted in %s' % (request.method, args, kwargs, str(e)))
+            return self._formatResponse({'exception': 500,
                                         'type': e.__class__.__name__, 
-                                        'message': str(e)}, expires=0, 
+                                        'message': 'Server Error'}, expires=0, 
                                         format=kwargs.get('return_type', None))
     
-    def formatResponse(self, data, expires, format=None):
+    def _formatResponse(self, data, expires, format=None):
         """
-        
         data format can be anything API provides, but it will make sense 
         to have either dict format or list of dict format.
-        
         """
         
         acchdr = request.headers.elements('Accept')

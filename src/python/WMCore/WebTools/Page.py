@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-
-
-
+"""
+Some generic base classes for building web pages with.
+"""
 
 import urllib
 import cherrypy
@@ -9,27 +9,20 @@ from cherrypy import log as cplog
 from cherrypy import request
 from Cheetah.Template import Template
 from Cheetah import Version
-from WMCore.Wrappers import JsonWrapper
 
-try:
-    # with python 2.5
-    import hashlib
-except:
-    # prior python 2.5
-    import md5
-
+import hashlib
 import logging, os, types
-import time
-from datetime import datetime, timedelta
 import traceback
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WMFactory import WMFactory
+from WMCore.Wrappers import JsonWrapper
+from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 
 from wsgiref.handlers import format_date_time
 from datetime import datetime, timedelta
 from time import mktime
-from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+import time
 
 DEFAULT_EXPIRE = 5*60
 
@@ -37,34 +30,47 @@ class Page(WMObject):
     """
     __Page__
 
-    Page is a base class that holds a configuration
+    Page is a base class that holds a configuration and provides a logger.
     """
-    def warning(self, msg):
-        if  msg:
-            self.log(msg, logging.WARNING)
+    def warning(self, msg=None):
+        """
+        Log a warning
+        """
+        self.log(msg, logging.WARNING)
 
-    def exception(self, msg):
-        if  msg:
-            self.log(msg, logging.ERROR)
+    def exception(self, msg=None):
+        """
+        Log an exception
+        """
+        self.log(msg, logging.ERROR)
 
-    def error(self, msg):
-        if msg:
-            self.log(msg, logging.ERROR)
+    def error(self, msg=None):
+        """
+        Log an error
+        """
+        self.log(msg, logging.ERROR)
 
-    def debug(self, msg):
-        if  msg:
-            self.log(msg, logging.DEBUG)
+    def debug(self, msg=None):
+        """
+        Log a debug statement
+        """
+        self.log(msg, logging.DEBUG)
 
-    def info(self, msg):
-        if  msg:
-            self.log(msg, logging.INFO)
+    def info(self, msg=None):
+        """
+        Log some info
+        """
+        self.log(msg, logging.INFO)
 
-    def log(self, msg, severity):
+    def log(self, msg=None, severity=logging.INFO):
+        """
+        Do the logging using the CherryPy logger
+        """
+
         if type(msg) != str:
             msg = str(msg)
         if  msg:
-            cplog(msg, context=self.config.application,
-                    severity=severity, traceback=False)
+            cplog.error_log.log(severity, msg)
 
 class TemplatedPage(Page):
     """
@@ -73,17 +79,33 @@ class TemplatedPage(Page):
     TemplatedPage is a class that provides simple Cheetah templating
     """
     def __init__(self, config = {}):
+        """
+        Configure the Page base class then add in the location of the templates. If
+        this is not specified in the configuration take a guess based on the location
+        of the file.
+        """
         Page.__init__(self, config)
         self.templatedir = ''
         if hasattr(self.config, 'templates'):
             self.templatedir = self.config.templates
         else:
             # Take a guess
+            self.warning("Configuration doesn't specify template location, guessing %s" % self.templatedir)
             self.templatedir = '%s/%s' % (__file__.rsplit('/', 1)[0], 'Templates')
+
         self.debug("Templates are located in: %s" % self.templatedir)
         self.debug("Using Cheetah version: %s" % Version)
 
     def templatepage(self, file=None, *args, **kwargs):
+        """
+        Apply the cheetah template specified by file to the data in arg and kwargs.
+        The templates are compiled in memory and results do not get written to the
+        filesystem. The templates do not need to be compiled. Templates are located in
+        self.templatedir - this is specified in the configuration section 'templates'.
+
+        You should use cgi.escape to escape data going into the template if you are unsure
+        of it's provenance.
+        """
         searchList=[]
         if len(args) > 0:
             searchList.append(args)
@@ -94,30 +116,13 @@ class TemplatedPage(Page):
             template = Template(file=templatefile, searchList=searchList)
             return template.respond()
         else:
-            self.warning("%s not found at %s" % (file, self.templatedir))
-            return "Template %s/%s not known" % (self.templatedir, file)
-
-class SecuredPage(Page):
-    def authenticate(self):
-        pass
-
-    def authenticateviahn(self):
-        userdn = ""
-        return userdn
-
-    def authenticateviacert(self):
-        userdn = ""
-        try:
-            userdn  = cherrypy.request.headers['Cms-Client-S-Dn']
-            access  = cherrypy.request.headers['Cms-Auth-Status']
-            if  userdn != '(null)' and access == 'OK':
-                self.debug("Found user cert")
-        except:
-            self.debug("No cert found in a browser")
-        return userdn
+            self.warning("Template %s not found at %s" % (file, self.templatedir))
+            return "Template for page not found"
 
 def _setCherryPyHeaders(data, contentType, expires):
-    
+    """
+    Convenience function to set headers appropriately
+    """
     cherrypy.response.headers['Content-Type'] = contentType
     if data:
         cherrypy.response.headers['Content-Length'] = len(data)
@@ -128,6 +133,9 @@ def _setCherryPyHeaders(data, contentType, expires):
     cherrypy.response.headers['ETag'] = data.__str__().__hash__()
 
 def exposeatom (func):
+    """
+    Convenience decorator function to expose atom XML
+    """
     def wrapper (self, data, expires, contentType = "application/atom+xml"):
         data = func (self, data)
         _setCherryPyHeaders(data, contentType, expires)
@@ -140,6 +148,9 @@ def exposeatom (func):
     return wrapper
 
 def exposexml (func):
+    """
+    Convenience decorator function to expose XML
+    """
     def wrapper (self, data, expires, contentType = "application/xml"):
         data = func (self, data)
         _setCherryPyHeaders(data, contentType, expires)
@@ -153,7 +164,7 @@ def exposexml (func):
 
 def exposedasplist (func):
     """
-    Return data in XML plist format, 
+    Convenience decorator function to expose plist XML
     see http://docs.python.org/library/plistlib.html#module-plistlib
     """
     def wrapper (self, data, expires, contentType = "application/xml"):
@@ -170,6 +181,8 @@ def exposedasplist (func):
 
 def exposedasxml (func):
     """
+    Convenience decorator function to expose DAS XML
+
     This will prepend the DAS header to the data and calculate the checksum of
     the data to set the etag correctly
 
@@ -197,6 +210,9 @@ def exposedasxml (func):
 
 
 def exposetext (func):
+    """
+    Convenience decorator function to expose plain text
+    """
     def wrapper (self, data, expires, contentType = "text/plain"):
         data = func (self, data)
         data = str(data)
@@ -208,6 +224,9 @@ def exposetext (func):
     return wrapper
 
 def exposejson (func):
+    """
+    Convenience decorator function to expose json
+    """
     def wrapper (self, data, expires, contentType = "application/json"):
         data = func (self, data)
         try:
@@ -216,7 +235,7 @@ def exposejson (func):
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
-            raise 
+            raise
 	    #Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
 #        return data
     wrapper.__doc__ = func.__doc__
@@ -225,6 +244,9 @@ def exposejson (func):
     return wrapper
 
 def exposejsonthunker (func):
+    """
+    Convenience decorator function to expose thunked json
+    """
     def wrapper (self, data, expires, contentType = "application/json+thunk"):
         data = func (self, data)
         try:
@@ -234,7 +256,7 @@ def exposejsonthunker (func):
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
-            raise 
+            raise
 	    #Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
 #        return data
     wrapper.__doc__ = func.__doc__
@@ -244,6 +266,8 @@ def exposejsonthunker (func):
 
 def exposedasjson (func):
     """
+    Convenience decorator function to expose DAS json
+
     This will prepend the DAS header to the data and calculate the checksum of
     the data to set the etag correctly
 
@@ -254,14 +278,14 @@ def exposedasjson (func):
     """
     def wrapper (self, data, expires, contentType = "application/json"):
         data = runDas(self, func, data, expires)
-        
+
         try:
 #            jsondata = encoder.iterencode(data)
             jsondata = JsonWrapper.dumps(data)
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
-            raise 
+            raise
 	    #Exception("Failed to json-ify obj '%s' type '%s'" % (data, type(data)))
 
     wrapper.__doc__ = func.__doc__
@@ -270,6 +294,9 @@ def exposedasjson (func):
     return wrapper
 
 def exposejs (func):
+    """
+    Convenience decorator function to expose javascript
+    """
     def wrapper (self, data, expires, contentType = "application/javascript"):
         data = func (self, data)
         _setCherryPyHeaders(data, contentType, expires)
@@ -280,6 +307,9 @@ def exposejs (func):
     return wrapper
 
 def exposecss (func):
+    """
+    Convenience decorator function to expose css
+    """
     def wrapper (self, data, expires, contentType = "text/css"):
         data = func (self, data)
         _setCherryPyHeaders(data, contentType, expires)
@@ -312,16 +342,8 @@ def runDas(self, func, data, expires):
         res_version = object.version
     except:
         res_version = 'unknown'
-#        msg  = traceback.format_exc()
-#        msg += '\nThe application %s does not have version member data. '\
-#        % self.config.application
-#        msg += 'Unable to set the version.'
-#        raise Exception(msg)
 
-    try:
-        keyhash = hashlib.md5()
-    except:
-        keyhash = md5.new() # prior python 2.5
+    keyhash = hashlib.md5()
 
     keyhash.update(str(results))
     res_checksum = keyhash.hexdigest()
@@ -341,8 +363,14 @@ def runDas(self, func, data, expires):
     return dasdata
 
 def make_timestamp(seconds=0):
+    """
+    Convenience function to make a timestamp
+    """
     then = datetime.now() + timedelta(seconds=seconds)
     return mktime(then.timetuple())
 
 def make_rfc_timestamp(seconds=0):
+    """
+    Convenience function to make an rfc formatted timestamp
+    """
     return format_date_time(make_timestamp(seconds))

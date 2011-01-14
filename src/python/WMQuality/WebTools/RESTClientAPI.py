@@ -33,10 +33,8 @@ def makeRequest(url, values=None, verb='GET', accept="text/plain",
     # TODO: this function needs refactoring - too verb-related branching
     if verb != 'GET':
         if data:
-            print "POST method, data: '%s' len: '%s'" % (data, len(data))
             headers.update({"content-length": len(data)})
         else:
-            print "POST method, data: '%s'" % data
             headers.update({"content-length" : 0})
         
     conn = HTTPConnection(parser.netloc)
@@ -49,11 +47,11 @@ def makeRequest(url, values=None, verb='GET', accept="text/plain",
     cType = response.getheader('content-type').split(';')[0]
     return data, response.status, cType, response
 
-def methodTest(verb, url, input={}, accept='text/json', contentType = None, output={} , expireTime=0):
+def methodTest(verb, url, request_input={}, accept='text/json', contentType = None, output={} , expireTime=0):
     
-    data, code, type, response = makeRequest(url, input, verb, accept, contentType)
+    data, code, content_type, response = makeRequest(url, request_input, verb, accept, contentType)
     
-    keyMap = {'code': code, 'data': data, 'type': type, 'response': response}
+    keyMap = {'code': code, 'data': data, 'type': content_type, 'response': response}
     for key, value in output.items():
         assert keyMap[key] == value, \
             'Got a return %s != %s (got %s) (data %s)' % (key, value, keyMap[key], data)
@@ -61,8 +59,6 @@ def methodTest(verb, url, input={}, accept='text/json', contentType = None, outp
     expires = response.getheader('Expires')
     if expireTime != 0:
         timeStamp = make_rfc_timestamp(expireTime)
-        print expires
-        print timeStamp        
         assert expires == timeStamp,\
                  'Expires header incorrect (%s) != (%s)' % (expires % timeStamp)
         

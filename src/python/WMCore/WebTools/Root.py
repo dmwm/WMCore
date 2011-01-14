@@ -11,7 +11,8 @@ dynamically and can be turned on/off via configuration file.
 
 # CherryPy
 import cherrypy
-from cherrypy import quickstart, expose, server, log, tree, engine, dispatch, tools
+from cherrypy import quickstart, expose, server, tree, engine, dispatch, tools
+from cherrypy._cplogging import LogManager
 from cherrypy import config as cpconfig
 # configuration and arguments
 #FIXME
@@ -25,14 +26,85 @@ from WMCore.WMFactory import WMFactory
 # Logging
 import WMCore.WMLogging
 import logging 
-import sys
+import sys, socket, time
+
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WebTools.Welcome import Welcome
 from WMCore.Agent.Harness import Harness
 from WMCore.WebTools.FrontEndAuth import FrontEndAuth
 
-class Root(WMObject, Harness):
+def mytime():
+    """
+    Utility to time stamp start of request handling.
+    """
+    cherrypy.request.start_time = time.time()
+
+def myproxy(base=None):
+    """
+    Utility aid in request handling from behind a proxy.
+    """
+    request = cherrypy.request
+    scheme = request.headers.get('X-Forwarded-Proto', request.base[:request.base.find("://")])
+    base = request.headers.get('X-Forwarded-Host', base)
+    if not base:
+        port = cherrypy.request.local.port
+        if port == 80:
+            base = 'localhost'
+        else:
+            base = 'localhost:%s' % port
+
+    base = base.split(',')[0].strip()
+    if base.find("://") == -1:
+        base = scheme + "://" + base
+    request.base = base
+
+    xff = request.headers.get('X-Forwarded-For')
+    if xff:
+        xff = xff.split(',')[0].strip()
+        request.remote.ip = xff
+
+class WTLogger(LogManager):
+    """
+    A logger that logs how we want it to.
+    """
+    def __init__(self, *args, **kwargs):
+        self.host = socket.gethostname()
+        LogManager.__init__(self, *args, **kwargs)
+    
+    def access(self):
+        """
+        Record a client access
+        """
+        request = cherrypy.request
+        remote = request.remote
+        response = cherrypy.response
+        inheaders = request.headers
+        outheaders = response.headers
+        msg = ('%(t)s %(H)s %(h)s "%(r)s" %(s)s'
+           + ' [data: - in %(b)s out %(T).0f us ]'
+           + ' [auth: %(AS)s "%(AU)s" "%(AC)s" ]'
+           + ' [ref: "%(f)s" "%(a)s" ]') % { 't': self.time(),
+             'H': self.host,
+             'h': remote.name or remote.ip,
+             'r': request.request_line,
+             's': response.status.split(" ", 1)[0],
+             'b': outheaders.get('Content-Length', '') or "-",
+             'T': (time.time() - request.start_time)*1e6,
+             'AS': inheaders.get("CMS-Auth-Status", "-"),
+             'AU': inheaders.get("CMS-Auth-Cert", inheaders.get("CMS-Auth-Host", "")),
+             'AC': getattr(request.cookie.get("cms-auth", None), "value", ""),
+             'f': inheaders.get("Referer", ""),
+             'a': inheaders.get("User-Agent", "") }
+        self.access_log.log(logging.INFO, msg)
+
+class Root(Harness):
+    """
+    Create the appropriate cherrypy root object
+    """
     def __init__(self, config, webApp = None):
+        """
+        Initialise the object, pull out the necessary pieces of the configuration
+        """
         self.homepage = None        
         if webApp == None:
             Harness.__init__(self, config, compName = "Webtools")
@@ -49,18 +121,11 @@ class Root(WMObject, Harness):
             self.coreDatabase = config.section_("CoreDatabase")
 
         return
-
-    def startComponent(self):
-        """
-        _startComponent_
-
-        Called by the WMAgent harness code.  This will never return.
-        """
-        self.start()
-        return
     
-    def validateConfig(self):
-        # Check that the configuration has the required sections
+    def _validateConfig(self):
+        """
+        Check that the configuration has the required sections
+        """
         config_dict = self.appconfig.dictionary_()
         must_have_keys = ['admin', 'description', 'title']
         for key in must_have_keys:
@@ -68,52 +133,68 @@ class Root(WMObject, Harness):
                     % (self.app, key)
             assert config_dict.has_key(key), msg
 
-    def configureCherryPy(self):
+    def _configureCherryPy(self):
         """
         _configureCherryPy_
-
+        Configure the CherryPy server
         """
         configDict = self.serverConfig.dictionary_()
         
         configurables = ['engine', 'hooks', 'log', 'request', 'response', 
-                         'server', 'tools', 'wsgi', 'checker']
+                         'server', 'tools', 'wsgi', 'checker', 'proxy_base']
         # Deal with "long hand" configuration variables
         for i in configurables:
             if i in configDict.keys():
                 for k, v in configDict[i].dictionary_().items():
-                    cpconfig["%s.%s" % (i,k)] = v
+                    cpconfig["%s.%s" % (i, k)] = v
+        
         # which we then over write with short hand variables if necessary
         cpconfig["server.environment"] = configDict.get("environment", "production")
-        if cpconfig["server.environment"] == "production":
-            # If we're production these should be set regardless
-            cpconfig["request.show_tracebacks"] = False
-            cpconfig["engine.autoreload_on"] = False
-        else:
-            cpconfig["request.show_tracebacks"] = configDict.get("show_tracebacks", False)
-            cpconfig["engine.autoreload_on"] = configDict.get("autoreload", False)
         
-        cpconfig["server.thread_pool"] = configDict.get("thread_pool", 10)
-        cpconfig["server.socket_port"] = configDict.get("port", 8080)
-        cpconfig["server.socket_host"] = configDict.get("host", "localhost")
-        cpconfig["tools.expires.secs"] = configDict.get("expires", 300)
-        cpconfig["log.screen"] = bool(configDict.get("log_screen", True))
-        cpconfig["log.access_file"] = configDict.get("access_log_file", None)
-        cpconfig["log.error_file"] = configDict.get("error_log_file", None)
-        
-        #A little hacky way to pass the expire second to config
-        self.appconfig.default_expires = cpconfig["tools.expires.secs"]
-        
-        log.error_log.setLevel(configDict.get("error_log_level", logging.DEBUG))
-        log.access_log.setLevel(configDict.get("access_log_level", logging.DEBUG))
-        
+        #Set up the tools and the logging
+        tools.time = cherrypy.Tool('on_start_resource', mytime)
+        tools.proxy = cherrypy.Tool('before_request_body', myproxy, priority=30)
         cpconfig.update ({
                           'tools.expires.on': True,
+                          'tools.expires.secs': configDict.get("expires", 300),
                           'tools.response_headers.on':True,
                           'tools.etags.on':True,
                           'tools.etags.autotags':True,
                           'tools.encode.on': True,
                           'tools.gzip.on': True,
+                          'tools.proxy.on': True,
+                          'tools.proxy.base': configDict.get('proxy_base', socket.gethostname()),
+                          'tools.time.on': True,
                           })
+                                  
+        cherrypy.log = WTLogger()
+        cpconfig["log.screen"] = bool(configDict.get("log_screen", False))
+        
+        if cpconfig["server.environment"] == "production":
+            # If we're production these should be set regardless
+            cpconfig["request.show_tracebacks"] = False
+            cpconfig["engine.autoreload_on"] = False
+            # In production mode only allow errors at WARNING or greater to the log
+            err_lvl = max((configDict.get("error_log_level", logging.WARNING), logging.WARNING))
+            acc_lvl = max((configDict.get("access_log_level", logging.INFO), logging.INFO))
+            cherrypy.log.error_log.setLevel(err_lvl)
+            cherrypy.log.access_log.setLevel(acc_lvl)
+        else:
+            print
+            print 'THIS BETTER NOT BE A PRODUCTION SERVER'
+            print 
+            cpconfig["request.show_tracebacks"] = configDict.get("show_tracebacks", False)
+            cpconfig["engine.autoreload_on"] = configDict.get("autoreload", False)
+            # Allow debug output
+            cherrypy.log.error_log.setLevel(configDict.get("error_log_level", logging.DEBUG))
+            cherrypy.log.access_log.setLevel(configDict.get("access_log_level", logging.DEBUG))
+        
+        cpconfig["server.thread_pool"] = configDict.get("thread_pool", 10)
+        cpconfig["server.socket_port"] = configDict.get("port", 8080)
+        cpconfig["server.socket_host"] = configDict.get("host", "localhost")
+        
+        #A little hacky way to pass the expire second to config
+        self.appconfig.default_expires = cpconfig["tools.expires.secs"]
                           
         # SecurityModule config        
         # Registers secmodv2 into cherrypy.tools so it can be used through
@@ -128,13 +209,10 @@ class Root(WMObject, Harness):
                             'tools.secmodv2.group': self.secconfig.default.group,
                             'tools.secmodv2.site': self.secconfig.default.site})
 
-        log("loading config: %s" % cpconfig, 
-                                   context=self.app, 
-                                   severity=logging.DEBUG, 
-                                   traceback=False)
-        return
-
-    def loadPages(self):
+    def _loadPages(self):
+        """
+        Load up all the pages in the configuration
+        """
         factory = WMFactory('webtools_factory')
         
         globalconf = self.appconfig.dictionary_()
@@ -147,17 +225,17 @@ class Root(WMObject, Harness):
         for view in self.appconfig.views.active:
             #Iterate through each view's configuration and instantiate the class
             if view._internal_name != the_index:
-                self.mountPage(view, view._internal_name, globalconf, factory)
+                self._mountPage(view, view._internal_name, globalconf, factory)
                 
         if hasattr(self.appconfig.views, 'maintenance'):
-            for i in self.appconfig.views.maintenance:
-                #TODO: Show a maintenance page with a 503 Service Unavailable header
-                pass
+            #for i in self.appconfig.views.maintenance:
+            #TODO: Show a maintenance page with a 503 Service Unavailable header
+            pass
     
-    def mountPage(self, view, mount_point, globalconf, factory):
+    def _mountPage(self, view, mount_point, globalconf, factory):
         """
         _mountPage_
-
+        Add the page to the CherryPy tree.
         """
         config = Configuration()
         component = config.component_(view._internal_name)
@@ -167,62 +245,47 @@ class Root(WMObject, Harness):
             # Add the global config to the view
             component.__setattr__(k, globalconf[k])
         
-        dict = view.dictionary_()
-        for k in dict.keys():
-            component.__setattr__(k, dict[k])
+        view_dict = view.dictionary_()
+        for k in view_dict.keys():
+            component.__setattr__(k, view_dict[k])
 
         if component.dictionary_().has_key('database'):
             if not type(component.database) == str:
-                print component.database.listSections_()
                 if len(component.database.listSections_()) == 0:
                     if len(self.coreDatabase.listSections_()) > 0:
                         component.database.connectUrl = self.coreDatabase.connectUrl
                         if hasattr(self.coreDatabase, "socket"):
                             component.database.socket = self.coreDatabase.socket
 
-            print component.database
-
         # component now contains the full configuration (global + view)  
-        # use this throughout 
-        log("loading %s" % component._internal_name, context=self.app, 
-            severity=logging.INFO, traceback=False)
-        
-        log("configuration for %s: %s" % (component._internal_name, 
-                                component), 
-                                context=self.app, 
-                                severity=logging.INFO, traceback=False)
-                            
-        log("Loading %s" % (component._internal_name), 
-                                context=self.app,
-                                severity=logging.DEBUG, 
-                                traceback=False)
+        # use this throughout   
+
+        cherrypy.log.error_log.debug("Loading %s" % (component._internal_name))
         # Load the object
-        obj = factory.loadObject(component.object, component, getFromCache = False)
-        # Attach the object to cherrypy's tree, at the name of the component
-        tree.mount(obj, "/%s" % mount_point)         
-        log("%s available on %s/%s" % (component._internal_name, 
-                                       server.base(), 
-                                       component._internal_name), 
-                                       context=self.app, 
-                                       severity=logging.INFO, 
-                                       traceback=False)
+        obj = factory.loadObject(component.object, component)
+        # Attach the object to cherrypy's ok, at the name of the component
+        tree.mount(obj, "/%s" % mount_point)
+        msg = "%s available on %s/%s" % (component._internal_name, 
+                                            server.base(), 
+                                            component._internal_name)
+        cherrypy.log.error_log.info(msg)
             
-    def makeIndex(self):
-        # now make the index page
+    def _makeIndex(self):
+        """
+        Create an index page, either from the configured page or a generic default
+        welcome page.
+        """
         if hasattr(self.appconfig, 'index'):
             factory = WMFactory('webtools_factory')
             globalconf = self.appconfig.dictionary_()
             view = getattr(self.appconfig.views.active, globalconf['index'])
             del globalconf['views'] 
             del globalconf['index']
-            self.mountPage(view, '/', globalconf, factory)
+            self._mountPage(view, '/', globalconf, factory)
             
         else:
-            log("No index defined for %s - instantiating default Welcome page" 
-                                             % (self.app), 
-                                           context=self.app, 
-                                           severity=logging.INFO, 
-                                           traceback=False)
+            cherrypy.log.error_log.info("No index defined for %s - instantiating default Welcome page" 
+                                             % (self.app))
             namesAndDocstrings = []
             # make a default Welcome
             for view in self.appconfig.views.active:
@@ -234,16 +297,30 @@ class Root(WMObject, Harness):
             tree.mount(Welcome(namesAndDocstrings), "/")
     
     def start(self, blocking=True):
-        self.validateConfig()
-        # Configure and start the server 
-        self.configureCherryPy()
-        self.loadPages()        
-        self.makeIndex()
+        """
+        Configure and start the server 
+        """
+        self._validateConfig()
+        self._configureCherryPy()
+        self._loadPages()        
+        self._makeIndex()
         engine.start()
         if blocking:
             engine.block()
+
+    def startComponent(self):
+        """
+        _startComponent_
+
+        Called by the WMAgent harness code.  This will never return.
+        """
+        self.start()
+        return
             
     def stop(self):
+        """
+        Stop the server
+        """
         engine.exit()
         engine.stop()
         

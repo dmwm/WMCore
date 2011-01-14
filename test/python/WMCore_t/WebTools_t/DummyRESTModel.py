@@ -1,4 +1,4 @@
-from WMCore.WebTools.RESTModel import RESTModel
+from WMCore.WebTools.RESTModel import RESTModel, restexpose
 from cherrypy import HTTPError
 
 class DummyDAO1:
@@ -43,7 +43,28 @@ class DummyRESTModel(RESTModel):
         Initialise the RESTModel and add some methods to it.
         '''
         RESTModel.__init__(self, config)
-        self.addMethod('GET', 'list', self.list, args=['int', 'str'], 
+        self.defaultExpires = config.default_expires
+        
+        self.methods = {'GET':{
+                               'ping': {'default_data':1234, 
+                                        'call':self.ping,
+                                        'version': 1,
+                                        'args': [],
+                                        'expires': 3600,
+                                        'validation': []},
+                               #'list1': {'call':self.list1,
+                               #         'version': 1}
+                               },
+                        'POST':{
+                               'echo': {'call':self.echo,
+                                        'version': 1,
+                                        'args': ['message'],
+                                        'validation': []},
+                               }
+                         }
+
+
+        self._addMethod('GET', 'list', self.list, args=['input_int', 'input_str'], 
                               validation=[self.val_0,
                                           self.val_1,
                                           self.val_2, 
@@ -51,24 +72,39 @@ class DummyRESTModel(RESTModel):
                                           self.val_4 ], 
                               version=2)
         
-        self.addMethod('GET', 'list1', self.list1)
-        self.addMethod('GET', 'list2', self.list2, args=['num0', 'num1', 'num2'])
-        self.addMethod('GET', 'list3', self.list3, args=['a', 'b'])
-        self.addMethod('POST', 'list3', self.list3, args=['a', 'b'])
+        self._addMethod('GET', 'list1', self.list1)
+        self._addMethod('GET', 'list2', self.list2, args=['num0', 'num1', 'num2'])
+        self._addMethod('GET', 'list3', self.list3, args=['a', 'b'])
+        self._addMethod('POST', 'list3', self.list3, args=['a', 'b'])
         
         # a will take list of numbers. i.e. a[1,2,3]
-        self.addMethod('GET', 'listTypeArgs', self.listTypeArgs, args=['aList'],
+        self._addMethod('GET', 'listTypeArgs', self.listTypeArgs, args=['aList'],
                        validation = [self.listTypeValidate])
         
         self.daofactory = DummyDAOFac()
-        self.addDAO('GET', 'data1', 'DummyDAO1', [])
-        self.addDAO('GET', 'data2', 'DummyDAO2', ['num'])
-        self.addDAO('GET', 'data3', 'DummyDAO3', ['num', 'thing'])
+        self._addDAO('GET', 'data1', 'DummyDAO1', [])
+        self._addDAO('GET', 'data2', 'DummyDAO2', ['num'])
+        self._addDAO('GET', 'data3', 'DummyDAO3', ['num', 'thing'])
+      
+    @restexpose
+    def ping(self): 
+        """
+        Return a simple message
+        """
+        return 'ping' 
+
+    @restexpose
+    def echo(self, *args, **kwargs):
+        """
+        Echo back the arguments sent to the call. If sanitise needed to be called 
+        explicitly (e.g. method not added via _addMethod) method signature of callee
+        should be (*args, **kwargs).
+        """ 
+        input_data = self._sanitise_input(args, kwargs, 'echo')
+        return input_data
         
-    def list(self, int, str):
-        """ if sanitise needed to be called method signature of callee should be 
-            (*args, **kwargs) """
-        return {'int':int, 'str':str}
+    def list(self, input_int, input_str):
+        return {'input_int':input_int, 'input_str':input_str}
 
     def list1(self):
         """ test no argument case, return 'No argument' string """
@@ -87,56 +123,56 @@ class DummyRESTModel(RESTModel):
         """ test whether it handles ?aList=1&aList=2 types of query """
         return aList
         
-    def listTypeValidate(self, input):
-        if type(input["aList"]) != list:
-            input["aList"] = [int(input["aList"])]
+    def listTypeValidate(self, request_input):
+        if type(request_input["aList"]) != list:
+            request_input["aList"] = [int(request_input["aList"])]
         else:
-            input["aList"] = map(int, input["aList"])
-        return input
+            request_input["aList"] = map(int, request_input["aList"])
+        return request_input
         
-    def val_0(self, input):
-        # checks whether input is right number
-        if len(input) != 2:
-            raise HTTPError(404, 'val_0 failed: input length is not 2 -- (%s)' % len(input))
-        return input
+    def val_0(self, request_input):
+        # checks whether request_input is right number
+        if len(request_input) != 2:
+            raise HTTPError(400, 'val_0 failed: request_input length is not 2 -- (%s)' % len(request_input))
+        return request_input
     
-    def val_1(self, input):
-        # Convert the input data to an int (will be a string), ignore if it 
+    def val_1(self, request_input):
+        # Convert the request_input data to an int (will be a string), ignore if it 
         # fails as the next validation will kill that, and it makes the unit test
         # trickier...
         try:
-            input['int'] = int(input['int'])
+            request_input['input_int'] = int(request_input['input_int'])
         except:
             pass
-        # Checks its first input contains a int
+        # Checks its first request_input contains a int
         try:
-            assert type(input['int']) == type(123) 
+            assert type(request_input['input_int']) == type(123) 
         except AssertionError:
-            raise AssertionError, 'val_1 failed: %s not int' % type(input['int'])
-        return input
+            raise AssertionError, 'val_1 failed: %s not int' % type(request_input['input_int'])
+        return request_input
     
-    def val_2(self, input):
-        # Checks its second input is a string
+    def val_2(self, request_input):
+        # Checks its second request_input is a string
         try:
-            assert type(input['str']) == type('abc') 
+            assert type(request_input['input_str']) == type('abc') 
         except AssertionError:
-            raise HTTPError(400, 'val_2 failed: %s not str' % type(input['str']))
-        return input
+            raise HTTPError(400, 'val_2 failed: %s not str' % type(request_input['input_str']))
+        return request_input
     
-    def val_3(self, input):
+    def val_3(self, request_input):
         # Checks the int is 123
         try:
-            assert input['int'] == 123
+            assert request_input['input_int'] == 123
         except AssertionError:
-            raise HTTPError(400, 'val_3 failed: %s != 123' % input['int'])
+            raise HTTPError(400, 'val_3 failed: %s != 123' % request_input['input_int'])
         
-        return input
+        return request_input
     
-    def val_4(self, input):
+    def val_4(self, request_input):
         # Checks the str is 'abc'
         try:
-            assert input['str'] == 'abc'
+            assert request_input['input_str'] == 'abc'
         except AssertionError:
-            raise HTTPError(400, 'val_4 failed: %s != "abc"' % input['str'])
+            raise HTTPError(400, 'val_4 failed: %s != "abc"' % request_input['input_str'])
         
-        return input
+        return request_input

@@ -15,8 +15,6 @@ def cherrypySetup(config = None):
         def wrapper(self):
             self.rt = Root(config)
             self.rt.start(blocking=False)
-            cherrypy.log.error_log.setLevel(logging.WARNING)
-            cherrypy.log.access_log.setLevel(logging.WARNING)
             self.urlbase = config.getServerUrl()
             f(self)
             self.rt.stop()
@@ -35,8 +33,8 @@ class DefaultConfig(Configuration):
         self.component_('Webtools')
         self.Webtools.application = 'UnitTests'
         self.Webtools.log_screen = False
-        self.Webtools.access_file = '/tmp/webtools/log_access'
-        self.Webtools.error_file = '/tmp/webtools/log_error'
+        self.Webtools.error_log_level = logging.WARNING
+        self.Webtools.access_log_level = logging.DEBUG
         self.Webtools.port = 8888
         self.Webtools.host = "localhost"
         self.Webtools.expires = 300

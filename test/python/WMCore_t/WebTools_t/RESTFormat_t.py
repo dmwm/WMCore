@@ -7,16 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-
-
-
 import unittest
-try:
-    # Python 2.6
-    import json
-except:
-    # Prior to 2.6 requires simplejson
-    import simplejson as json
+import logging
 import urllib
 import urllib2
 
@@ -33,16 +25,25 @@ class RESTFormatTest(RESTBaseUnitTest):
     
     def initialize(self):
         self.config = DefaultConfig('WMCore_t.WebTools_t.DummyRESTModel')
+        do_debug = False
+
+        if do_debug:
+            self.config.Webtools.environment = 'development'
+            self.config.Webtools.error_log_level = logging.DEBUG
+            self.config.Webtools.access_log_level = logging.DEBUG
+        else:
+            self.config.Webtools.environment = 'production'
+            self.config.Webtools.error_log_level = logging.WARNING
+            self.config.Webtools.access_log_level = logging.WARNING
+            
         self.urlbase = self.config.getServerUrl()
     
     def testUnsupportedFormat(self):
-        
         # test not accepted type should return 406 error
         url = self.urlbase +'list1/'
         methodTest('GET', url, accept='text/das', output={'code':406})
     
     def testSupportedFormat(self):
-    
         rf = RESTFormatter(config=self.config.Webtools)
         url = self.urlbase +'list1/'
         
@@ -51,73 +52,40 @@ class RESTFormatTest(RESTBaseUnitTest):
             methodTest('GET', url, accept=type, output={'code':200})
     
     def testEncodedInput(self):
-        
         type = 'text/plain'
        
         url = self.urlbase + 'list3?a=a%&b=b'
-        print url
         methodTest('GET', url, accept=type, 
                          output={'code':200, 'data':"{'a': 'a%', 'b': 'b'}"})
        
-        input={'a':'%', 'b':'b'}  
+        request_input={'a':'%', 'b':'b'}  
            
         #methodTest encoded input with urlencode
         url = self.urlbase +'list3'
-        methodTest('GET', url, accept=type, input=input, 
-                         output={'code':200, 'data':"{'a': '%', 'b': 'b'}"})
-        
-       
-        # This is not supported: commented out for now in case it will get supported later
-        # auto parameter parsing on certain content type
-#        url = self.urlbase +'list3'
-#        data = JsonWrapper.dumps(input)
-#        methodTest('POST', url, accept=type, input=data,
-#                         contentType="text/json",
-#                         output={'code':200, 'data':"{'a': '%', 'b': 'b'}"}
-#                         )
-#       
-        
-        input={'a':'%', 'b':'b'}
-        url = self.urlbase +'list3'  
-        methodTest('POST', url, accept=type, input=input,
-                         output={'code':200, 'data':"{'a': '%', 'b': 'b'}"}
-                         )
+        methodTest('GET', url, accept=type, request_input=request_input, 
+                 output={'code':200, 'data':"{'a': '%', 'b': 'b'}"})
     
     def testReturnFormat(self):
-        
-        type = 'application/json'
+        return_type = 'application/json'
         
         url = self.urlbase +'list3?a=a%&b=b'
-        methodTest('GET', url, accept=type, 
+        methodTest('GET', url, accept=return_type, 
                          output={'code':200, 'data':'{"a": "a%", "b": "b"}'})
+                
+        url = self.urlbase + 'list?input_int=a&input_str=a'
+        expected_data = '''{"exception": 400, "message": "Invalid input", "type": "HTTPError"}'''
+        methodTest('GET', url, accept=return_type,
+                         output={'code':400, 'data':expected_data})
        
+    def testNoArgMethods(self):
+        """
+        list1 takes no arguments, it should raise an error if called with one. Require json output.
+        """
+        return_type = 'application/json'
         url = self.urlbase + 'list1?int=a'
-        try:
-            urllib.urlopen(url)
-            #urllib2.urlopen(url)
-        except urllib2.HTTPError, h:
-            print "Exception got cought %s" % h.read()
-        
-        # urllib2,urlopen raise the error but not urllib.urlopen
-        self.assertRaises(urllib2.HTTPError, urllib2.urlopen, url)
-        
-        methodTest('GET', url, accept=type, 
-                         output={'code':400, 
-                                 'data':"""{"exception": 400, "type": "HTTPError", "message": "list1() got an unexpected keyword argument 'int'"}"""})
-        url = self.urlbase + 'list?int=a&str=a'
-        methodTest('GET', url, accept=type,
-                         output={'code':400, 
-                                 'data':"""{"exception": 400, "type": "HTTPError", "message": "val_1 failed: <type 'str'> not int"}"""})
+        expected_data = """{"exception": 400, "message": "Invalid input", "type": "HTTPError"}"""
+        methodTest('GET', url, accept=return_type, output={'code':400, 'data':expected_data})
        
-    def testException(self):
-        
-        import urllib2
-        url = self.urlbase + 'list1?int=a'
-        self.assertRaises(urllib2.HTTPError, urllib2.urlopen, url)
-        
-        #TODO check urllib.open is raising HTTPError
-        #import urllib
-        #self.assertRaises(urllib2.HTTPError, urllib.urlopen, url)
         
 if __name__ == "__main__":
     unittest.main() 

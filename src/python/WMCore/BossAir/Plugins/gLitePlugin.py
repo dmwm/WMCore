@@ -8,16 +8,20 @@ gLite Plugin
 
 import logging
 import subprocess
+import threading
 import multiprocessing
-
-
+import socket
+import tempfile
+import os
+import re
+import time
+import types
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
-
 from WMCore.DAOFactory import DAOFactory
 import WMCore.WMInit
 from copy import deepcopy
 
-def outputWorker(jobID):
+def processWorker(input, results):
     """
     _outputWorker_
 
@@ -103,26 +107,78 @@ class gLitePlugin:
     Written so I can put the multiprocessing pool somewhere
     """
 
+    defaultjdl = {
+                  'myproxyhost': 'myproxy.cern.ch',
+                  'nodesarch'  : 'VO-cms-slc5_ia32_gcc434',
+                  'vo'         : 'cms',
+                  'gridftphost': socket.getfqdn(),
+                  'cestatus'   : 'Production',
+                  'sbtransfer' : 'gsiftp',
+                  'service'    : None
+                 }
 
 
     def __init__(self, config):
 
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+        self.locationAction = daoFactory(classname = "Locations.GetSiteSE")
+        self.locationDict = {}
+
+        self.delegationid = str(type(self).__name__)
 
         self.config = config
 
         # These are just the MANDATORY states
-        self.states = ['New', 'Timeout']
+        self.states = [ 'New',
+                        'Timeout',
+                        'Submitted',
+                        'Waiting', 
+                        'Ready', 
+                        'Scheduled', 
+                        'Running',
+                        'Done(failed)',
+                        'Done',
+                        'Aborted',           
+                        'Cleared', 
+                        'Cancelled by user',
+                        'Cancelled']
 
-        self.stateMap = []
 
         # These are the pool settings.
-        # I'm not sure what chunksize will buy you here, probably
-        # nothing if you don't have long lists of jobs
-        nProcess       = getattr(config.BossAir, 'gLiteProcesses', 10)
-        self.chunksize = getattr(config.BossAir, 'gLiteChunksize', 2)
+        self.nProcess       = getattr(self.config.BossAir, \
+                                          'gLiteProcesses', 10)
+        self.collectionsize = getattr(self.config.BossAir, \
+                                          'gLiteCollectionSize', 200)
+        self.trackmaxsize   = getattr(self.config.BossAir, \
+                                          'gLiteMaxTrackSize', 200)
+
+        self.pool     = []
+
+        self.submitFile   = getattr(self.config.JobSubmitter, \
+                                           'submitScript', None)
+        self.unpackerFile = getattr(self.config.JobSubmitter, \
+                                           'unpackerScript', None)
+        self.submitDir    = getattr(self.config.JobSubmitter, \
+                                           'submitDir', '/tmp/')
+        self.gliteConfig  = getattr(self.config.BossAir, \
+                                           'gLiteConf', None)
+        self.defaultjdl['service'] = getattr(self.config.BossAir, \
+                                           'gliteWMS', None)
 
         
-        self.pool = multiprocessing.Pool(processes = nProcess)
+        return
+
+
+    @staticmethod
+    def stateMap():
+        """
+        _stateMap_
+
+        For a given name, return a global state
+        """
 
         stateDict = {'New': 'Pending',
                      'Timeout': 'Error',
@@ -166,6 +222,22 @@ class gLitePlugin:
         return
 
 
+    def start( self, input, result ):
+        """
+        _start_
+
+        Start the mulitp. 
+        """
+
+        if len(self.pool) == 0:
+            # Starting things up
+            for x in range(self.nProcess):
+                logging.debug("Starting process %i" %x)
+                p = multiprocessing.Process(target = processWorker,
+                                            args = (input, result))
+                p.start()
+                self.pool.append(p)
+
 
     def submit(self, jobs, info = None):
         """
@@ -174,7 +246,170 @@ class gLitePlugin:
         Submits jobs
         """
 
-        return
+        input  = multiprocessing.Queue()
+        result = multiprocessing.Queue()
+        self.start( input, result )
+
+        if not os.path.exists(self.submitDir):
+            os.makedirs(self.submitDir)
+
+        successfulJobs = []
+        failedJobs     = []
+
+        if len(jobs) == 0:
+            # Then we have nothing to do
+            return {}
+
+        # Job sorting by sandbox.
+
+        workqueued = {}
+        submitDict = {}
+
+        for job in jobs:
+            sandbox = job['sandbox']
+            if not sandbox in submitDict.keys():
+                submitDict[sandbox] = []
+            submitDict[sandbox].append(job)
+
+        tounlink = []
+        # Now submit the bastards
+        currentwork = len(workqueued)
+        for sandbox in submitDict.keys():
+            jobList = submitDict.get(sandbox, [])
+            while len(jobList) > 0:
+                command = "glite-wms-job-submit --json "
+                jobsReady = jobList[:self.collectionsize]
+                jobList   = jobList[self.collectionsize:]
+                dest      = []
+                logging.debug("Getting location from %s" % str(jobsReady) )
+                try:
+                    dest = self.getDestinations( [], jobsReady[0]['location'] )
+                except Exception, ex:
+                    import traceback
+                    msg = str(traceback.format_exc())
+                    msg += str(ex)
+                    logging.error("Exception in site selection \n %s " % msg)
+                    return {'NoResult': [0]}
+
+                if len(dest) == 0:
+                    logging.error('No site selected, trying to submit without')
+
+                jdlReady  = self.makeJdl( jobList = jobsReady, 
+                                          dest = dest,
+                                          info = info
+                                        )
+                if not jdlReady or len(jdlReady) == 0:
+                    # Then we got nothing
+                    logging.error("No JDL file made!")
+                    return {'NoResult': [0]}
+
+                # write a jdl into tmpFile
+                tmp, fname = tempfile.mkstemp(suffix = '.jdl', prefix = 'glite',
+                                              dir = self.submitDir )
+                tmpFile = os.fdopen(tmp, "w")
+                tmpFile.write( jdlReady )
+                tmpFile.close()
+                tounlink.append( fname )
+
+                # delegate proxy
+                if self.delegationid != "" :
+                    command += " -d %s " % self.delegationid
+                    logging.debug("Delegating proxy...")
+                    self.delegateProxy( self.defaultjdl['service'] )
+                else :
+                    command += " -a "
+
+                if self.gliteConfig is not None:
+                    command += " -c " + self.gliteConfig
+                elif self.defaultjdl['service'] is not None:
+                    # eventual note: the '-e' override the ...
+                    command += ' -e ' + self.defaultjdl['service']
+
+                command += ' ' + fname
+
+                # Now submit them
+                logging.debug("About to submit %i jobs" % len(jobsReady) )
+                workqueued[currentwork] = jobsReady
+                input.put( (currentwork, command, 'submit') )
+                currentwork += 1
+
+        logging.debug("Waiting for %i works to finish.." % len(workqueued))
+        for n in xrange(len(workqueued)):
+            logging.debug("Waiting for work number %i to finish.." % n)
+            res = result.get()
+            jsout  = res['jsout']
+            error  = res['stderr']
+            exit   = res['exit']
+            workid = res['workid']
+            jobsub = workqueued[workid]
+            logging.debug("Retrieving id %i " %workid)
+
+            if not error == '':
+                logging.error("Printing out command stderr")
+                logging.error(error)
+            if not exit == 0:
+                logging.error("Exit code %s" % str(exit) )
+
+            # {
+            #  result: success
+            #  parent: https://XYZ
+            #  endpoint: https://X
+            #  children: {
+            #             NodeName_1_0: https://ABC
+            #             NodeName_2_0: https://DEF
+            #             NodeName_3_0: https://GHI
+            #            }
+            # }
+
+            if jsout is not None:
+                parent   = ''
+                endpoint = ''
+                if jsout.has_key('result'):
+                    if jsout['result'] != 'success':
+                        failedJobs.extend(jobsub)
+                        continue
+                else:
+                    failedJobs.extend(jobsub)
+                    continue
+                if jsout.has_key('parent'): 
+                    parent = jsout['parent']
+                else:
+                    failedJobs.extend(jobsub)
+                    continue
+                if jsout.has_key('endpoint'): 
+                    endpoint = jsout['endpoint']
+                else:
+                    failedJobs.extend(jobsub)
+                    continue
+                if jsout.has_key('children'): 
+                    for key in jsout['children'].keys():
+                        jobid, retrycount = (key.split('NodeName_')[-1]).split('_')
+                        job   = jobsub[int(jobid)-1]
+                        job['bulkid']       = parent
+                        job['gridid']       = jsout['children'][key]
+                        job['retry_count']  = int(retrycount)
+                        job['sched_status'] = 'Submitted'
+                        #job['endpoint'] = endpoint
+                        successfulJobs.append(job)
+                else:
+                    failedJobs.extend(jobsub)
+                    continue
+
+        logging.debug("Submission completed and processed at time %s " \
+                       % str(time.time()) )
+
+        # unlinking all the temporary files used for jdl
+        for tempf in tounlink:
+            os.unlink( tempf )
+
+        # need to shut down the subprocesses
+        logging.debug("About to close the subprocesses...")
+        self.close(input, result)
+
+        # We must return a list of jobs successfully submitted,
+        # and a list of jobs failed
+        logging.debug("Returning jobs..")
+        return successfulJobs, failedJobs
 
 
     def track(self, jobs):
@@ -484,8 +719,11 @@ class gLitePlugin:
 
         # NOTE: This is a blocking function
 
+        
+        #input = [x['gridid'] for x in jobs]
 
-        input = [x['gridid'] for x in jobs]
+        #results = self.pool.map(outputWorker, input,
+        #                        chunksize = self.chunksize)
 
         #return results
         completed, failed, aborted = self.getoutput(jobs)
@@ -505,6 +743,7 @@ class gLitePlugin:
 
 
         return
+
 
     def delegateProxy( self, wms = None ):
         """
@@ -747,3 +986,4 @@ class BossAirJsonDecoder(json.JSONDecoder):
         return parsedJson
 
 ##########################################################################
+

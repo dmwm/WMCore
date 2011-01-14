@@ -113,8 +113,10 @@ class StdBase(object):
         """
         workload = newWorkload(self.workloadName)
         workload.setOwnerDetails(self.owner, self.group)
+        workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
+        workload.setEndPolicy("SingleShot")
         return workload
-    
+
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
                             inputModule = None, scenarioName = None,
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,

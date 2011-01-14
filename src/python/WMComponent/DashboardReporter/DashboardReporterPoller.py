@@ -23,6 +23,7 @@ from WMCore.JobStateMachine.ChangeState     import ChangeState
 
 from WMComponent.DashboardReporter.DashboardInterface import DashboardInterface
 
+from WMComponent.DashboardReporter.DashboardAPI import apmonSend, apmonFree
 
 
 class DashboardReporterException(WMException):
@@ -54,11 +55,14 @@ class DashboardReporterPoller(BaseWorkerThread):
         destPort = config.DashboardReporter.dashboardPort
         destPass = getattr(config.DashboardReporter, 'dashboardPass', '')
 
-        self.changeState = ChangeState(self.config)
-        self.dashboard   = DashboardInterface(destHost = destHost,
-                                              destPort = destPort,
-                                              destPasswd = destPass)
+        self.serverreport = [destHost + ':' + str(destPort)]
 
+        self.changeState = ChangeState(self.config)
+        #self.dashboard   = DashboardInterface(destHost = destHost,
+        #                                      destPort = destPort,
+        #                                      destPasswd = destPass)
+
+        #self.apmonsender = ApmonIf() 
         self.taskCache = []
 
         return
@@ -141,10 +145,13 @@ class DashboardReporterPoller(BaseWorkerThread):
             taskName = job['requestName']
             if not taskName in self.taskCache:
                 self.addTask(name = taskName)
+            logging.info("Sending info for task %s" % str(job))
             
             package = {}
-            package['jobId']         = '%s/%s_%i' % (taskName, job['name'], job['retryCount'])
-            package['taskId']        = taskName
+            #package['jobId']         = 'wmagent_%s/%s_%i' % (taskName, job['name'], job['retryCount'])
+            package['jobId']         = '%s_%i' % (job['name'], job['retryCount'])
+            package['taskId']        = 'wmagent_%s' % taskName
+            package['GridJobID']     = 'NotAvailable'
             package['retryCount']    = job['retryCount']
             package['MessageTS']     = time.time()
             package['MessageType']   = 'JobMeta'
@@ -156,7 +163,10 @@ class DashboardReporterPoller(BaseWorkerThread):
             package['TargetSE']      = 'NotAvailable'
             package['TargetCE']      = 'NotAvailable'
             
-            result = self.dashboard.send(package = job)
+            #result = self.dashboard.send(package = job)
+            logging.info("Sending: %s" % str(package))
+            result = apmonSend( taskid = package['taskId'], jobid = package['jobId'], params = package, logr = logging, apmonServer = self.serverreport)
+            #sendToML(package)
 
             if result != 0:
                 msg =  "Error %i sending info for submitted job %s via UDP\n" % (result, job['name'])
@@ -167,7 +177,8 @@ class DashboardReporterPoller(BaseWorkerThread):
                               % (self.config.DashboardReporter.dashboardHost,
                                  self.config.DashboardReporter.dashboardPort,
                                  getattr(self.config.DashboardReporter, 'dashboardPass', '')))
-                
+            apmonFree()
+            #self.apmonsender.free()    
         return
 
 
@@ -182,8 +193,10 @@ class DashboardReporterPoller(BaseWorkerThread):
 
         for job in jobs:
             package = {}
-            package['jobId']             = '%s/%s_%i' % (job['requestName'], job['name'], job['retryCount'])
-            package['taskId']            = job['requestName']
+            #package['jobId']             = 'wmagent_%s/%s_%i' % (job['requestName'], job['name'], job['retryCount'])
+            package['jobId']         = '%s_%i' % (job['name'], job['retryCount'])
+            package['taskId']            = 'wmagent_%s' % job['requestName']
+            package['GridJobID']         = 'NotAvailable'
             package['retryCount']        = job['retryCount']
             package['MessageTS']         = time.time()
             package['MessageType']       = 'JobStatus'
@@ -192,7 +205,11 @@ class DashboardReporterPoller(BaseWorkerThread):
             package['StatusReason']      = 'NotAvailable'
             package['StatusEnterTime']   = 'NotAvailable'
             
-            result = self.dashboard.send(package = job)
+            #result = self.dashboard.send(package = job)
+            logging.info("Sending: %s" % str(package))
+            result = apmonSend( taskid = package['taskId'], jobid = package['jobId'], params = package, logr = logging, apmonServer = self.serverreport)
+
+            #result = self.apmonsender.sendToML(package)
 
             if result != 0:
                 msg =  "Error %i sending info for completed job %s via UDP\n" % (result, job['name'])
@@ -203,7 +220,8 @@ class DashboardReporterPoller(BaseWorkerThread):
                               % (self.config.DashboardReporter.dashboardHost,
                                  self.config.DashboardReporter.dashboardPort,
                                  getattr(self.config.DashboardReporter, 'dashboardPass', '')))
-                
+            #self.apmonsender.free()    
+            apmonFree()
         return
 
 
@@ -217,7 +235,7 @@ class DashboardReporterPoller(BaseWorkerThread):
         package = {}
         package['MessageType']        = 'TaskMeta'
         package['MessageTS']          = time.time()
-        package['taskId']             = name
+        package['taskId']             = 'wmagent_%s' % name
         package['jobId']              = 'taskMeta'
         package['ApplicationVersion'] = 'NotAvailable'
         package['datasetFull']        = 'NotAvailable'
@@ -233,8 +251,13 @@ class DashboardReporterPoller(BaseWorkerThread):
         package['Workflow']           = 'NotAvailable'
         package['ProductionTeam']     = 'NotAvailable'
 
+        logging.info("Sending info for task %s" % str(name))
 
-        result = self.dashboard.send(package = package)
+        #result = self.dashboard.send(package = package)
+        logging.info("Sending: %s" % str(package))
+        #result = self.apmonsender.sendToML(package)
+        result = apmonSend( taskid = package['taskId'], jobid = package['jobId'], params = package, logr = logging, apmonServer = self.serverreport)
+
 
         if result != 0:
             msg =  "Error %i sending info for new task %s via UDP\n" % (result, name)
@@ -248,4 +271,6 @@ class DashboardReporterPoller(BaseWorkerThread):
         else:
             self.taskCache.append(name)
         
+        #self.apmonsender.free()
+        apmonFree() 
         

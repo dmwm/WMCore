@@ -20,28 +20,11 @@ class WorkQueue(Service):
         if not dict.has_key('endpoint'):
             dict['endpoint'] = "%cmsweb.cern.ch/workqueue/" % \
                                 ((dict['secure'] and "https://" or "http://"))
-        if dict.has_key('cachepath'):
-            pass
-        elif os.getenv('WORKQUEUE_CACHE_DIR'):
-            dict['cachepath'] = os.getenv('WORKQUEUE_CACHE_DIR') + '/.workqueue_cache'
-        elif os.getenv('HOME'):
-            dict['cachepath'] = os.getenv('HOME') + '/.workqueue_cache'
-        else:
-            dict['cachepath'] = '/tmp/.workqueue_' + pwd.getpwuid(os.getuid())[0]
-        if not os.path.isdir(dict['cachepath']):
-            os.makedirs(dict['cachepath'])
-        if 'logger' not in dict.keys():
-            logging.basicConfig(level = logging.DEBUG,
-                    format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt = '%m-%d %H:%M',
-                    filename = dict['cachepath'] + '/jsonparser.log',
-                    filemode = 'w')
-            dict['logger'] = logging.getLogger('WorkQueueParser')
 
         dict.setdefault("accept_type", "application/json+thunker")
         dict.setdefault("content_type", "application/json")
         dict.setdefault('cacheduration', 0)
-            
+
         self.encoder = JsonWrapper.dumps
         self.decoder = self.jsonThunkerDecoder
         

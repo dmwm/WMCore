@@ -8,8 +8,10 @@ import socket
 import time
 import tempfile
 import shutil
+import stat
 from httplib import HTTPException
 from WMCore.Services.Service import Service
+from WMCore.Algorithms import Permissions
 
 class ServiceTest(unittest.TestCase):
     def setUp(self):
@@ -28,10 +30,10 @@ class ServiceTest(unittest.TestCase):
         
         self.logger = logging.getLogger(logger_name)
         
-        self.cache_path = tempfile.mkdtemp()
+        #self.cache_path = tempfile.mkdtemp()
         dict = {'logger': self.logger, 
-                'cachepath' : self.cache_path,
-                'req_cache_path': '%s/requests' % self.cache_path,
+                #'cachepath' : self.cache_path,
+                #'req_cache_path': '%s/requests' % self.cache_path,
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi'}
         
         self.myService = Service(dict)
@@ -42,7 +44,7 @@ class ServiceTest(unittest.TestCase):
 
     def tearDown(self):
         testname = self.id().split('.')[-1]
-        shutil.rmtree(self.cache_path, ignore_errors = True)
+        #shutil.rmtree(self.cache_path, ignore_errors = True)
 
         if self._exc_info()[0] == None:
             self.logger.info('test "%s" passed' % testname)
@@ -77,22 +79,56 @@ class ServiceTest(unittest.TestCase):
 
         
     def testCachePath(self):
-        dict = {'logger': self.logger, 
+        cache_path = tempfile.mkdtemp()
+        dict = {'logger': self.logger,
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
-                'cachepath' : self.cache_path,
-                'req_cache_path': '%s/requests' % self.cache_path}
+                'cachepath' : cache_path,
+                'req_cache_path': '%s/requests' % cache_path
+                }
         service = Service(dict)
         # We append hostname to the cachepath, so that we can talk to two
         # services on different hosts
         self.assertEqual(service['cachepath'], 
                          '%s/cmssw.cvs.cern.ch' % dict['cachepath'] )
-    
+        shutil.rmtree(cache_path, ignore_errors = True)
+
+    def testCacheLifetime(self):
+        """Cache deleted if created by Service - else left alone"""
+        dict = {'logger': self.logger, 
+                'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
+                'cacheduration': 100}
+        os.environ.pop('TMPDIR', None) # Mac sets this by default
+        service = Service(dict)
+        cache_path = service['cachepath']
+        self.assertTrue(os.path.isdir(cache_path))
+        del service
+        self.assertFalse(os.path.exists(cache_path))
+
+        cache_path = tempfile.mkdtemp()
+        dict['cachepath'] = cache_path
+        service = Service(dict)
+        del service
+        self.assertTrue(os.path.isdir(cache_path))
+        Permissions.owner_readwriteexec(cache_path)
+
+    def testCachePermissions(self):
+        """Raise error if pre-defined cache permission loose"""
+        cache_path = tempfile.mkdtemp()
+        sub_cache_path = os.path.join(cache_path, 'cmssw.cvs.cern.ch')
+        os.makedirs(sub_cache_path, 0777)
+        dict = {'logger': self.logger,
+                'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
+                'cacheduration': 100,
+                'cachepath' : cache_path}
+        self.assertRaises(AssertionError, Service, dict)
+
     def testCacheDuration(self):
         dict = {'logger': self.logger, 
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
                 'cacheduration': 100,
-                'cachepath' : self.cache_path,
-                'req_cache_path': '%s/requests' % self.cache_path}
+                #'cachepath' : self.cache_path,
+                #'req_cache_path': '%s/requests' % self.cache_path
+                }
         service = Service(dict)
         self.assertEqual( service['cacheduration'] ,  dict['cacheduration'] )
         
@@ -100,8 +136,9 @@ class ServiceTest(unittest.TestCase):
         dict = {'logger': self.logger, 
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
                 'cacheduration': None,
-                'cachepath' : self.cache_path,
-                'req_cache_path': '%s/requests' % self.cache_path}
+                #'cachepath' : self.cache_path,
+                #'req_cache_path': '%s/requests' % self.cache_path
+                }
         service = Service(dict)
         self.assertEqual( service['cacheduration'] ,  dict['cacheduration'] )
         
@@ -110,8 +147,9 @@ class ServiceTest(unittest.TestCase):
                 'endpoint':'http://cmssw.cvs.cern.ch/',
                 'cacheduration': None,
                 'timeout': 10,
-                'cachepath' : self.cache_path,
-                'req_cache_path': '%s/requests' % self.cache_path}
+                #'cachepath' : self.cache_path,
+                #'req_cache_path': '%s/requests' % self.cache_path
+                }
         service = Service(dict)
         deftimeout = socket.getdefaulttimeout()
         service.getData('/tmp/socketresettest', '/cgi-bin/cmssw.cgi')
@@ -125,8 +163,9 @@ class ServiceTest(unittest.TestCase):
                 'maxcachereuse': 0.001,
                 'timeout': 10,
                 'usestalecache': True,
-                'cachepath' : self.cache_path,
-                'req_cache_path': '%s/requests' % self.cache_path}
+                #'cachepath' : self.cache_path,
+                #'req_cache_path': '%s/requests' % self.cache_path
+                }
         service = Service(dict)
         cache = 'stalecachetest'
         

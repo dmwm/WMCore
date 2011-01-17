@@ -30,23 +30,6 @@ class RequestManager(Service):
             #TODO needs to change proper default location
             dict['endpoint'] = "%scmssrv49.fnal.gov:8585/reqMgr/" % \
                                 ((secure and "https://" or "http://"))
-        if dict.has_key('cachepath'):
-            pass
-        elif os.getenv('REQUESTMGR_CACHE_DIR'):
-            dict['cachepath'] = os.getenv('REQUESTMGR_CACHE_DIR') + '/.requestmgr_cache'
-        elif os.getenv('HOME'):
-            dict['cachepath'] = os.getenv('HOME') + '/.requestmgr_cache'
-        else:
-            dict['cachepath'] = '/tmp/.requestmgr_' + pwd.getpwuid(os.getuid())[0]
-        if not os.path.isdir(dict['cachepath']):
-            os.makedirs(dict['cachepath'])
-        if 'logger' not in dict.keys():
-            logging.basicConfig(level = logging.DEBUG,
-                    format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt = '%m-%d %H:%M',
-                    filename = dict['cachepath'] + '/jsonparser.log',
-                    filemode = 'w')
-            dict['logger'] = logging.getLogger('RequestMgrParser')
 
         dict['accept_type'] = 'text/json'
         dict.setdefault('cacheduration', 0)

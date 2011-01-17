@@ -65,12 +65,16 @@ from WMCore.WMException import WMException
 from WMCore.Wrappers import JsonWrapper as json
 import types
 import logging
+import stat
+import tempfile
+import shutil
+from WMCore.Algorithms import Permissions
 
 class Service(dict):
     
     def __init__(self, dict = {}):
         #The following should read the configuration class
-        for a in ['logger', 'endpoint']:
+        for a in ['endpoint']:
             assert a in dict.keys(), "Can't have a service without a %s" % a
 
         scheme = ''
@@ -92,13 +96,15 @@ class Service(dict):
 
         #set up defaults
         self.setdefault("inputdata", {})
-        self.setdefault("cachepath", '/tmp')
         self.setdefault("cacheduration", 0.5)
         self.setdefault("maxcachereuse", 24.0)
         self.supportVerbList = ('GET', 'POST', 'PUT', 'DELETE')
         # this value should be only set when whole service class uses
         # the same verb ('GET', 'POST', 'PUT', 'DELETE')
         self.setdefault("method", None)
+
+        # object to store temporary directory - cleaned up on destruction
+        self['deleteCacheOnExit'] = None
 
         #Set a timeout for the socket
         self.setdefault("timeout", 30)

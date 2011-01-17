@@ -34,20 +34,11 @@ class Registration(Service):
     def __init__(self, dict):
         defaultdict = {'endpoint': "https://cmsweb.cern.ch/registration/",
                        'cacheduration': 1,
-                       'cachepath': '/tmp'}
+                       }
         defaultdict.update(dict)
         defaultdict["method"] = 'PUT'
         defaultdict["content_type"] = "application/json"
         defaultdict['requests'] = BasicAuthJSONRequests
-        defaultdict['req_cache_path'] = defaultdict['cachepath']
-        
-        if 'logger' not in defaultdict.keys():
-            logging.basicConfig(level = logging.DEBUG,
-                    format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt = '%m-%d %H:%M',
-                    filename = defaultdict['cachepath'] + '/regsvc.log',
-                    filemode = 'w')
-            defaultdict['logger'] = logging.getLogger('RegService')
 
         Service.__init__(self, defaultdict)
         # Set correct internal state

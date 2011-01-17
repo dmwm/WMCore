@@ -34,23 +34,6 @@ class SiteDBJSON(SSLService):
         dict['endpoint'] = "https://cmsweb.cern.ch/sitedb/json/index/"
         self.parser = JSONParser()
 
-        if os.getenv('CMS_SITEDB_CACHE_DIR'):
-            dict['cachepath'] = os.getenv('CMS_SITEDB_CACHE_DIR') + '/.cms_sitedbcache'
-        elif os.getenv('HOME'):
-            dict['cachepath'] = os.getenv('HOME') + '/.cms_sitedbcache'
-        else:
-            dict['cachepath'] = '/tmp/sitedbjson_' + pwd.getpwuid(os.getuid())[0]
-            
-        if not os.path.isdir(dict['cachepath']):
-            os.mkdir(dict['cachepath'])
-            
-        if 'logger' not in dict.keys():
-            logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename=dict['cachepath'] + '/sitedbjsonparser.log',
-                    filemode='w')
-            dict['logger'] = logging.getLogger('SiteDBParser')
         SSLService.__init__(self, dict)
 
     def getJSON(self, callname, file = 'result.json', clearCache = False, verb = 'GET', **args):

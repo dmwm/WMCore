@@ -153,7 +153,12 @@ class Root(Harness):
         
         #Set up the tools and the logging
         tools.time = cherrypy.Tool('on_start_resource', mytime)
-        tools.proxy = cherrypy.Tool('before_request_body', myproxy, priority=30)
+
+        if configDict.get("proxy_base", False):
+            tools.proxy = cherrypy.Tool('before_request_body', myproxy, priority=30)
+            tools.proxy.on = True
+            tools.proxy.base = configDict["proxy_base"]
+            
         cpconfig.update ({
                           'tools.expires.on': True,
                           'tools.expires.secs': configDict.get("expires", 300),
@@ -162,8 +167,6 @@ class Root(Harness):
                           'tools.etags.autotags':True,
                           'tools.encode.on': True,
                           'tools.gzip.on': True,
-                          'tools.proxy.on': True,
-                          'tools.proxy.base': configDict.get('proxy_base', socket.gethostname()),
                           'tools.time.on': True,
                           })
                                   

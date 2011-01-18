@@ -1,0 +1,52 @@
+#!/bin/bash
+
+
+#
+# Global variables etc
+#
+PROJ_DIR=$(dirname $(dirname $0))
+ROOT_DIR=$(dirname $(dirname $(dirname $0)))
+echo dirname $0
+echo $PROJ_DIR $ROOT_DIR
+COUCHDB_DIR="$ROOT_DIR/couchdb"
+MYSQL_DIR="$ROOT_DIR/mysql"
+
+
+#
+# Environment
+#
+. $ROOT_DIR/couchdb/app/etc/profile.d/init.sh
+. $ROOT_DIR/mysql/app/etc/profile.d/init.sh
+. $PROJ_DIR/externals/externals/python/2.6.4-cmp7/etc/profile.d/init.sh
+. $PROJ_DIR/externals/externals/python/2.6.4-cmp7/etc/profile.d/init.sh
+
+
+start_couch(){
+   couchdb -b -a $COUCHDB_DIR/config/local.ini \
+           -p $COUCHDB_DIR/logs/couchdb.pid \
+           -e $COUCHDB_DIR/logs/stderr.log \
+           -o $COUCHDB_DIR/logs/stdout.log 
+   
+
+}
+
+start_mysql(){
+
+   # Start mysqld to install the database schemas
+   #  Mason's command is this, probably want to do something similar...
+   nohup mysqld_safe --defaults-extra-file=$MYSQL_DIR/config/my.cnf \
+                     --datadir=$MYSQL_DIR/database \
+                     --socket=$MYSQL_DIR/logs/mysql.sock \
+                     --skip-networking --log-error=$MYSQL_DIR/logs/error.log \
+                      --pid-file=$MYSQL_DIR/logs/mysqld.pid > /dev/null 2>&1 < /dev/null &
+
+}
+
+stop_couch(){
+   couchdb -k -d  -p /data/evansde/install2/projects/couchdb/logs/couch.pid
+}
+
+stop_mysql(){
+   true
+}
+

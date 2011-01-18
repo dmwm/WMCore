@@ -34,6 +34,8 @@ class JobAccountantPoller(BaseWorkerThread):
     def __init__(self, config):
         BaseWorkerThread.__init__(self)
         self.config = config
+        self.accountantWorkSize = getattr(self.config.JobAccountant,
+                                          'accountantWorkSize', 100)
         return
     
     def setup(self, parameters = None):
@@ -68,10 +70,10 @@ class JobAccountantPoller(BaseWorkerThread):
             logging.debug("No work to do; exiting")
             return
 
-        while len(completeJobs) > 25:
+        while len(completeJobs) > self.accountantWorkSize:
             try:
-                jobsSlice = completeJobs[0:25]
-                completeJobs = completeJobs[25:]
+                jobsSlice = completeJobs[:self.accountantWorkSize]
+                completeJobs = completeJobs[self.accountantWorkSize:]
                 self.accountantWorker(jobsSlice)
             except WMException:
                 raise

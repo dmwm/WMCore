@@ -25,73 +25,73 @@ class WMBSRESTModel(RESTModel):
         self.daofactory = DAOFactory(package = "WMCore.WMBS", logger = self,
                                      dbinterface = self.dbi)
 
-        self.addDAO('GET', "listsubtypes", "Monitoring.ListSubTypes")
-        self.addDAO('GET', "listjobstates", "Monitoring.ListJobStates")
-        self.addDAO('GET', "listjobsbysub", "Monitoring.ListJobsBySub",
+        self._addDAO('GET', "listsubtypes", "Monitoring.ListSubTypes")
+        self._addDAO('GET', "listjobstates", "Monitoring.ListJobStates")
+        self._addDAO('GET', "listjobsbysub", "Monitoring.ListJobsBySub",
                     args = ["subscriptionId"], 
                     validation = [self.subscriptionIDValidate])
-        self.addDAO('GET', "subscriptionstatus", 
+        self._addDAO('GET', "subscriptionstatus", 
                     "Monitoring.SubscriptionStatus",
                     args = ["subscriptionType"],
                     validation = [self.subTypeValidate])
-        self.addDAO('GET', "listrunningjobs", "Monitoring.ListRunningJobs")
-        self.addMethod('GET', "listjobstatus", self.listJobStatus,
+        self._addDAO('GET', "listrunningjobs", "Monitoring.ListRunningJobs")
+        self._addMethod('GET', "listjobstatus", self.listJobStatus,
                     args = ["jobState", "interval"],
                     validation = [self.jobStatusValidate])
         
-        self.addDAO('GET', "workflowstatus", "Workflow.Status")
-        self.addDAO('GET', "workflowsummary", "Monitoring.WorkflowSummary")
-        self.addDAO('GET', "tasksummary", "Monitoring.TaskSummaryByWorkflow",
+        self._addDAO('GET', "workflowstatus", "Workflow.Status")
+        self._addDAO('GET', "workflowsummary", "Monitoring.WorkflowSummary")
+        self._addDAO('GET', "tasksummary", "Monitoring.TaskSummaryByWorkflow",
                     args = ["workflowName"])
         
-        self.addDAO('GET', "failedjobsbyworkflow", "Monitoring.FailedJobsByWorkflow",
+        self._addDAO('GET', "failedjobsbyworkflow", "Monitoring.FailedJobsByWorkflow",
                     args = ["workflowName"])
 
-        self.addDAO('GET', "failedjobsbytask", "Monitoring.FailedJobsByTask",
+        self._addDAO('GET', "failedjobsbytask", "Monitoring.FailedJobsByTask",
                     args = ["taskID"])
 
-        self.addDAO('GET', "test", "Workflow.Test")
+        self._addDAO('GET', "test", "Workflow.Test")
         
         resourceDAOFactory = DAOFactory(package = "WMCore.ResourceControl", 
                                         logger = self, dbinterface = self.dbi)
 
-        self.addDAO('GET', "listthresholdsforsubmit", "ListThresholdsForSubmit",
+        self._addDAO('GET', "listthresholdsforsubmit", "ListThresholdsForSubmit",
                      args = ["tableFormat"], 
                      validation = [self.setTableFormat],
                      daoFactory = resourceDAOFactory)
         
-        self.addDAO('GET', "listthresholdsforcreate", "ListThresholdsForCreate",
+        self._addDAO('GET', "listthresholdsforcreate", "ListThresholdsForCreate",
                      args = ["tableFormat"], 
                      validation = [self.setTableFormat],
                      daoFactory = resourceDAOFactory)
         
-        self.addDAO('GET', "thresholdbysite", "ThresholdBySite",
+        self._addDAO('GET', "thresholdbysite", "ThresholdBySite",
                      args = ["site"], 
                      daoFactory = resourceDAOFactory)
         
-        self.addDAO('GET', "listtaskbysite", "ListWorkloadsForTaskSite",
+        self._addDAO('GET', "listtaskbysite", "ListWorkloadsForTaskSite",
                      args = ["taskType", "siteName"], 
                      daoFactory = resourceDAOFactory)
         
-        self.addDAO('GET', "listthresholds", "ListThresholds",
+        self._addDAO('GET', "listthresholds", "ListThresholds",
                      daoFactory = resourceDAOFactory)
 
-        #self.addDAO('GET', "updatethresholds", "UpdateThresholdsInBulk",
+        #self._addDAO('GET', "updatethresholds", "UpdateThresholdsInBulk",
         #             args = ['sitename', 'tasktype', 'maxslots'],
         #             daoFactory = resourceDAOFactory)
 
-        self.addDAO('GET', "updatethreshold", "InsertThreshold",
+        self._addDAO('GET', "updatethreshold", "InsertThreshold",
                      args = ['siteName', 'taskType', 'maxSlots'],
                      daoFactory = resourceDAOFactory)
 
         dbsDAOFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                   logger = self, dbinterface = self.dbi)
 
-        self.addDAO('GET', "dbsbufferstatus", "Status",
+        self._addDAO('GET', "dbsbufferstatus", "Status",
                     daoFactory = dbsDAOFactory)
 
 
-        self.addMethod('GET', 'jobinfobyid', JobInfoByID.getJobInfo,
+        self._addMethod('GET', 'jobinfobyid', JobInfoByID.getJobInfo,
                        args = ['jobID'])
 
         return
@@ -174,7 +174,7 @@ class WMBSRESTModel(RESTModel):
                 input["tableFormat"] = True
         return input
 
-    def processParams(self, args, kwargs):
+    def _processParams(self, args, kwargs):
         """
         overwrite base class processParams to handle encoding and decoding
         depending on the content type.

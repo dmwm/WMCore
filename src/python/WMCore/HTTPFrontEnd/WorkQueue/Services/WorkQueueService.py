@@ -67,26 +67,26 @@ class WorkQueueService(ServiceInterface):
                                  self.model.config.level)
 
 
-        self.model.addMethod('POST', 'getwork', partial(wrapGetWork, self.wq),
+        self.model._addMethod('POST', 'getwork', partial(wrapGetWork, self.wq),
                              args=["siteJobs", "pullingQueueUrl", "team"])
         
-        self.model.addMethod('GET', 'status', self.wq.status, 
+        self.model._addMethod('GET', 'status', self.wq.status, 
                              args = ["status", "before", "after", "elementIDs", "dictKey"],
                              validation = [self.statusValidation])
-        self.model.addMethod('GET', 'wf', partial(serveWorkflow, self.wq), args = ['name'])
+        self.model._addMethod('GET', 'wf', partial(serveWorkflow, self.wq), args = ['name'])
 
         # All the service provided below need secure layer(OpenID for authentication)
         # TODO: if it allows pass wmspec pickled file directly instead of url location.
         # change the verb to post
-        self.model.addMethod('PUT', 'queuework', self.wq.queueWork,
+        self.model._addMethod('PUT', 'queuework', self.wq.queueWork,
                              args = ["wmspecUrl", "team", "request"])
 
-        self.model.addMethod('PUT', 'synchronize', self.wq.synchronize,
+        self.model._addMethod('PUT', 'synchronize', self.wq.synchronize,
                              args = ["child_url", "child_report"])
         
-        self.model.addMethod('PUT', 'failwork', self.wq.failWork, args = ["elementIDs"])
-        self.model.addMethod('PUT', 'donework', self.wq.doneWork, args = ["elementIDs"])
-        self.model.addMethod('PUT', 'cancelwork', self.wq.cancelWork,
+        self.model._addMethod('PUT', 'failwork', self.wq.failWork, args = ["elementIDs"])
+        self.model._addMethod('PUT', 'donework', self.wq.doneWork, args = ["elementIDs"])
+        self.model._addMethod('PUT', 'cancelwork', self.wq.cancelWork,
                              args = ["elementIDs", "id_type"])
     
     #TODO if it needs to be validated, add validation

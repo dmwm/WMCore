@@ -21,7 +21,7 @@ class WorkQueue(Service):
             dict['endpoint'] = "%cmsweb.cern.ch/workqueue/" % \
                                 ((dict['secure'] and "https://" or "http://"))
 
-        dict.setdefault("accept_type", "application/json+thunker")
+        dict.setdefault("accept_type", "application/json")
         dict.setdefault("content_type", "application/json")
         dict.setdefault('cacheduration', 0)
 

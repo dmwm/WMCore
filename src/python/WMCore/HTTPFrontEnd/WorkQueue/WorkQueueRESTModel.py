@@ -27,12 +27,12 @@ class WorkQueueRESTModel(RESTModel):
                 service = factory.loadObject(module, self)
                 service.register()
                 
-    def processParams(self, args, kwargs):
+    def _processParams(self, args, kwargs):
         """
         overwrite base class processParams to handle encoding and decoding
         depending on the content type.
         
-        TODO: corrently it only works with cjson not json from python2.6.
+        TODO: currently it only works with cjson not json from python2.6.
         There is issues of converting unit code to string.
         """
         handler = ContentTypeHandler()

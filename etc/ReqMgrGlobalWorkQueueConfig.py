@@ -152,7 +152,7 @@ workqueue.section_('model')
 workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
 workqueue.level = config.WorkQueueManager.level
 workqueue.section_('formatter')
-workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
+workqueue.formatter.object = 'WMCore.WebTools.RESTFormatter'
 workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
                             'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService']
 workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})

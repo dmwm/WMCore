@@ -55,7 +55,7 @@ def cmsswversion(candidate):
     return check('CMSSW(_\d+){3}(_[a-z\d]+)?$', candidate)
 
 def couchurl(candidate):
-    return check('http\://(([a-zA-Z0-9\:\@\.\-_]){1,100})(fnal\.gov|cern\.ch)\:5984', candidate)
+    return check('http\://(([a-zA-Z0-9\:\@\.\-_]){1,100})(fnal\.gov|cern\.ch)\:\d+', candidate)
 
 def check(regexp, candidate):
     assert re.compile(regexp).match(candidate) != None , \

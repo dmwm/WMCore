@@ -587,24 +587,25 @@ class BossAirAPI(WMConnectionBase):
             jobsToComplete[job['plugin']].append(job)
             idsToComplete.append(job['id'])
 
-        for plugin in jobsToComplete.keys():
-            try:
+        try:
+            for plugin in jobsToComplete.keys():
                 self.plugins[plugin].complete(jobsToComplete[plugin])
-            except WMException:
-                raise
-            except Exception, ex:
-                msg =  "Exception while completing jobs for plugin %s!\n" % plugin
-                msg += str(ex)
-                logging.error(msg)
-                logging.debug("JobsToComplete: %s" % (jobsToComplete[plugin]))
-                raise BossAirException(msg)
-
-        existingTransaction = self.beginTransaction()
-
-        self.completeDAO.execute(jobs = idsToComplete, conn = self.getDBConn(),
-                                 transaction = self.existingTransaction())    
-
-        self.commitTransaction(existingTransaction)
+        except WMException:
+            raise
+        except Exception, ex:
+            msg =  "Exception while completing jobs!\n"
+            msg += str(ex)
+            logging.error(msg)
+            logging.debug("JobsToComplete: %s" % (jobsToComplete))
+            raise BossAirException(msg)
+        finally:
+            # If the complete code fails, label the jobs as finished anyway
+            # We want to avoid cyclic repetition of failed jobs
+            # If they don't have a FWJR, the Accountant will catch it.
+            existingTransaction = self.beginTransaction()
+            self.completeDAO.execute(jobs = idsToComplete, conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())    
+            self.commitTransaction(existingTransaction)
 
         return
 
@@ -650,9 +651,13 @@ class BossAirAPI(WMConnectionBase):
         """
         _kill_
         
-        Kill jobs using plugin functions
-        """
+        Kill jobs using plugin functions:
 
+        Only running jobs (status = 1) will be killed
+        An optional killMsg can be sent; this will be written
+        into the job FWJR if one does not exist.
+
+        """
         if len(jobs) < 1:
             # Nothing to do here
             return
@@ -665,8 +670,6 @@ class BossAirAPI(WMConnectionBase):
         # ONLY kill running jobs
         loadedJobs = self._buildRunningJobs(wmbsJobs = jobs)
 
-
-        
         for runningJob in loadedJobs:
             plugin = runningJob['plugin']
             if not plugin in jobsToKill.keys():
@@ -683,10 +686,21 @@ class BossAirAPI(WMConnectionBase):
             else:
                 # Then we send them to the plugins
                 # Shoudl give you a lit of jobs to change and jobs to complete
-                pluginInst = self.plugins[plugin]
-                pluginInst.kill(jobs = jobsToKill[plugin])
-                self._complete(jobs = jobsToKill[plugin])
+                try:
+                    pluginInst = self.plugins[plugin]
+                    pluginInst.kill(jobs = jobsToKill[plugin])
+                    self._complete(jobs = jobsToKill[plugin])
+                except WMException:
+                    raise
+                except Exception, ex:
+                    msg =  "Unhandled exception while calling kill method for plugin %s\n" % plugin
+                    msg += str(ex)
+                    logging.error(msg)
+                    logging.debug("Interrupted while killing following jobs: %s\n" % jobsToKill[plugin])
+                    raise BossAirException(msg)
 
+        # If there is a killMsg, pass it on to the accountant via a FWJR
+        # NOTE: If a job brings back a FWJR before it gets killed, that FWJR is preserved.
         if killMsg:
             for job in jobs:
                 if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
@@ -697,18 +711,17 @@ class BossAirAPI(WMConnectionBase):
                     logging.error("Could not write a kill FWJR due to non-existant cache_dir for job %i\n" % job['id'])
                     logging.debug("cache_dir: %s\n" % job['cache_dir'])
                     continue
-                condorErrorReport = Report()
-                condorErrorReport.addError("JobKilled", 61302, "JobKilled", killMsg)
                 reportName = os.path.join(job['cache_dir'],
-                                          'Report.%i.pkl' % job['retry_count'])
+                                              'Report.%i.pkl' % job['retry_count'])
                 if os.path.exists(reportName) and os.path.getsize(reportName) > 0:
                     # Then there's already a report there.  Ignore this.
                     logging.debug("Not writing report due to pre-existing report for job %i.\n" % job['id'])
                     logging.debug("ReportPath: %s\n" % reportName)
                     continue
                 else:
+                    condorErrorReport = Report()
+                    condorErrorReport.addError("JobKilled", 61302, "JobKilled", killMsg)
                     condorErrorReport.save(filename = reportName)
-
 
         return
 

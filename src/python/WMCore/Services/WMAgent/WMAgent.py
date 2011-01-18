@@ -56,7 +56,10 @@ class WMAgent(Service):
         """
         """
         callname = 'agentstatus'
-        args = {'detail': detail}
+        # TODO support detail flag if it is needed
+        # need to convert to boolean on serverside
+        #args = {'detail': detail}
+        args = {}
         return self._getResult(callname, args = args)
 
     def getACDCInfo(self):

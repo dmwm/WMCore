@@ -408,8 +408,7 @@ class SecureRequests(Requests):
         try:
             key, cert = self.getKeyCert()
         except Exception, ex:
-            self['logger'].warning('No certificate or key found, authentication may fail')
-            self['logger'].debug(str(ex))
+            pass
         http = httplib2.Http(self['req_cache_path'], self['timeout'])
 
         # Domain must be just a hostname and port. self[host] is a URL currently

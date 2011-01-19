@@ -410,13 +410,12 @@ class Subscription(WMBSBase, WMSubscription):
             if not wid in filesets:
                 filesets.append(wid)
 
-
         # Do the input fileset LAST!
         filesets.append(self['fileset'].id)
 
         self.commitTransaction(existingTransaction)
 
-        #First, jobs
+        # First, jobs
         # If there are too many jobs, delete them in separate
         # transactions to reduce database load
         deleteAction = self.daofactory(classname = "Jobs.Delete")
@@ -439,20 +438,20 @@ class Subscription(WMBSBase, WMSubscription):
 
                     self.commitTransaction(existingTransaction)
 
-        existingTransaction = self.beginTransaction()
 
-        #Next jobGroups
+
+        # Next jobGroups
         deleteAction = self.daofactory(classname = "JobGroup.Delete")
+        existingTransaction = self.beginTransaction()
         for jobGroupID in jobGroups:
             deleteAction.execute(id = jobGroupID, conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
-
+                                 transaction = self.existingTransaction())
         self.commitTransaction(existingTransaction)
 
-        existingTransaction = self.beginTransaction()
 
         # Now, get the filesets that needs to be deleted
         action  = self.daofactory(classname = "Fileset.CheckForDelete")
+        existingTransaction = self.beginTransaction()
         results = action.execute(fileids = filesets,
                                  subid = self['id'],
                                  conn = self.getDBConn(),

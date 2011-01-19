@@ -47,10 +47,12 @@ class LexiconTest(unittest.TestCase):
         #self.assertRaises(AssertionError, cmsname, 'T2_UK')
 
     def testGoodIdentifier(self):
-        assert identifier('__wil.1.am__')
+        for ok in ['__wil.1.am__', '.']:
+            assert identifier(ok)
 
     def testBadIdentifier(self):
-        self.assertRaises(AssertionError, identifier, 'ke$ha')
+        for notok in ['ke$ha', '<begin>']:
+            self.assertRaises(AssertionError, identifier, notok)
 
     def testGoodDataset(self):
         assert dataset('/a/b/c')
@@ -69,12 +71,14 @@ class LexiconTest(unittest.TestCase):
             self.assertRaises(AssertionError, cmsswversion, notok)
 
     def testGoodCouchUrl(self):
-        for ok in ['http://vittoria@antimatter.cern.ch:5984', 'http://fbi.fnal.gov:5984', 
-                   'http://fmulder:trustno1@fbi.fnal.gov:5984']:
+        for ok in ['http://vittoria@antimatter.cern.ch:5984',
+                   'http://fbi.fnal.gov:5984', 
+                   'http://fmulder:trustno1@fbi.fnal.gov:5984',
+                   'http://localhost:443']:
             assert couchurl(ok)
 
     def testBadCouchUrl(self):
-        for notok in ['agent86@control.fnal.gov:5984', 'http://assange:password@interpol.cern.ch:5985']:
+        for notok in ['agent86@control.fnal.gov:5984', 'http:/localhost:443', 'http://www.myspace.com']:
             self.assertRaises(AssertionError, couchurl, notok)
             
 if __name__ == "__main__":

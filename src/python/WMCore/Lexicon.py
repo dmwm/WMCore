@@ -36,11 +36,11 @@ def block(candidate):
 
 def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
-    return check('([a-zA-Z0-9\s\.\-_]){1,100}$', candidate)
+    return check(r'[a-zA-Z0-9\s\.\-_]{1,100}$', candidate)
 
 def dataset(candidate):
     """ A slash followed by an identifier,x3 """
-    return check('(/([a-zA-Z0-9\.\-_]){1,100}){3}$', candidate)
+    return check(r'(/[a-zA-Z0-9\.\-_]{1,100}){3}$', candidate)
 
 def procdataset(candidate):
     pass
@@ -55,7 +55,7 @@ def cmsswversion(candidate):
     return check('CMSSW(_\d+){3}(_[a-z\d]+)?$', candidate)
 
 def couchurl(candidate):
-    return check('http\://(([a-zA-Z0-9\:\@\.\-_]){1,100})(fnal\.gov|cern\.ch)\:\d+', candidate)
+    return check('http://(localhost|(([a-zA-Z0-9:@\.\-_]){1,100})(fnal\.gov|cern\.ch)):\d+', candidate)
 
 def check(regexp, candidate):
     assert re.compile(regexp).match(candidate) != None , \

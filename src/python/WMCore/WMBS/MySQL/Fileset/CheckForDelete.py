@@ -13,10 +13,11 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class CheckForDelete(DBFormatter):
     sql = """SELECT wf.id FROM wmbs_fileset wf
-               WHERE NOT EXISTS (SELECT id FROM wmbs_subscription ws
-                                   WHERE ws.fileset = :fileset
-                                   AND ws.id != :subscription)
-                                   """
+               WHERE wf.id = :fileset
+               AND NOT EXISTS (SELECT id FROM wmbs_subscription ws
+                               WHERE ws.fileset = :fileset
+                               AND ws.id != :subscription)
+                               """
     
     def execute(self, fileids = None, subid = None, conn = None, transaction = False):
         """

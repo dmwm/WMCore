@@ -266,8 +266,8 @@ class Root(Harness):
 
         cherrypy.log.error_log.debug("Loading %s" % (component._internal_name))
         # Load the object
-        obj = factory.loadObject(component.object, component)
-        # Attach the object to cherrypy's ok, at the name of the component
+        obj = factory.loadObject(component.object, component, getFromCache = False)
+        # Attach the object to cherrypy's tree, at the name of the component
         tree.mount(obj, "/%s" % mount_point)
         msg = "%s available on %s/%s" % (component._internal_name, 
                                             server.base(), 

@@ -1,17 +1,12 @@
 #!/usr/bin/env python
 """
-_WMLogging
+_WMLogging_
 
-Additional log levels used within wmcore.
-
+Logging facilities used in WMCore.
 """
-__all__ = []
-
-
-
-
 
 import logging
+import logging.handlers
 
 # a new log level which is lower than debug
 # to prevent a tsunami of log messages in debug
@@ -27,3 +22,12 @@ def sqldebug(msg):
     """
     logging.log(logging.SQLDEBUG, msg)
 
+def setupRotatingHandler(fileName, maxBytes = 200000000, backupCount = 3):
+    """
+    _setupRotatingHandler_
+
+    Create a rotating log handler with the given parameters.
+    """
+    handler = logging.handlers.RotatingFileHandler(fileName, "a", maxBytes, backupCount)
+    logging.getLogger().addHandler(handler)
+    return

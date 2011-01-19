@@ -26,7 +26,7 @@ from WMCore.WMFactory import WMFactory
 # Logging
 import WMCore.WMLogging
 import logging 
-import sys, socket, time
+import sys, socket, time, os
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WebTools.Welcome import Welcome
@@ -114,7 +114,8 @@ class Root(Harness):
             self.serverConfig = config.section_("Webtools")
         else:
             Harness.__init__(self, config, compName = webApp)            
-            self.appconfig = config.section_(webApp)            
+            self.appconfig = config.section_(webApp)
+            WMCore.WMLogging.setupRotatingHandler(os.path.join(self.appconfig.componentDir, "%s.log" % webApp))
             self.app = webApp
             self.secconfig = getattr(self.appconfig, "security")
             self.serverConfig = config.section_(webApp).section_("Webtools")

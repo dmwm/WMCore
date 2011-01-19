@@ -180,7 +180,6 @@ def connectionTest(configFile):
     socket = getattr(config.CoreDatabase, "socket", None)
 
     try:
-       wmInit.setLogging('wmcoreD', 'wmcoreD', logExists = False, logLevel = logging.DEBUG)
        wmInit.setDatabaseConnection(dbConfig = config.CoreDatabase.connectUrl,
                                     dialect = dialect,
                                     socketLoc = socket)

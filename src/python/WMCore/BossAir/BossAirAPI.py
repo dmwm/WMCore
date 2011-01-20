@@ -17,21 +17,17 @@ Interfaces geared toward the outside expect WMBS objects.  Interfaces
 geared toward the inside expect RunJob objects.  Interior interfaces are
 marked by names starting with '_' such as '_listRunning'
 """
+import os.path
 import threading
 import logging
 import subprocess
 
-from WMCore.DAOFactory        import DAOFactory
-from WMCore.WMFactory         import WMFactory
-
-from WMCore.BossAir.RunJob   import RunJob
-
-from WMCore.WMConnectionBase import WMConnectionBase
-
-from WMCore.WMException import WMException
-
-
-
+from WMCore.DAOFactory          import DAOFactory
+from WMCore.WMFactory           import WMFactory
+from WMCore.BossAir.RunJob      import RunJob
+from WMCore.WMConnectionBase    import WMConnectionBase
+from WMCore.WMException         import WMException
+from WMCore.FwkJobReport.Report import Report
 
 
 class BossAirException(WMException):
@@ -685,11 +681,9 @@ class BossAirAPI(WMConnectionBase):
                 raise BossAirException(msg)
             else:
                 # Then we send them to the plugins
-                # Shoudl give you a lit of jobs to change and jobs to complete
                 try:
                     pluginInst = self.plugins[plugin]
                     pluginInst.kill(jobs = jobsToKill[plugin])
-                    self._complete(jobs = jobsToKill[plugin])
                 except WMException:
                     raise
                 except Exception, ex:
@@ -698,6 +692,10 @@ class BossAirAPI(WMConnectionBase):
                     logging.error(msg)
                     logging.debug("Interrupted while killing following jobs: %s\n" % jobsToKill[plugin])
                     raise BossAirException(msg)
+                finally:
+                    # Even if kill fails, complete the jobs
+                    self._complete(jobs = jobsToKill[plugin])
+                    
 
         # If there is a killMsg, pass it on to the accountant via a FWJR
         # NOTE: If a job brings back a FWJR before it gets killed, that FWJR is preserved.

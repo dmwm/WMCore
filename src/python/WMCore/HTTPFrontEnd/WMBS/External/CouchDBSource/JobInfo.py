@@ -76,7 +76,7 @@ def getJobSummaryByWorkflow():
     
     options = {"group": True, "group_level": 1, "stale": "ok"}
     result = changeStateDB.loadView("JobDump", "statusByWorkflowName",
-                                        options)    
+                                    options)    
         
 
     couchDocBase = CouchDBConnectionBase.getCouchDBHtmlBase(

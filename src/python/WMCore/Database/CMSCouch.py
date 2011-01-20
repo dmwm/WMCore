@@ -234,6 +234,9 @@ class Database(CouchDBRequests):
         """
         if (doc):
             self.queue(doc, timestamp, viewlist)
+
+        if len(self._queue) == 0:
+            return
             
         if timestamp:
             self.timestamp(self._queue, timestamp)

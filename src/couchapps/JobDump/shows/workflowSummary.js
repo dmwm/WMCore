@@ -1,6 +1,6 @@
 function(doc, req) {
   var response = "<html><head>\n";
-  response += "<title>Summary for workflow " + req.docId + "</title>\n";
+  response += "<title>Summary for workflow " + req.id + "</title>\n";
   response += "</head><body style=\"font-family: arial;\">\n";
   response += "<script src=../../workflowSummary.js></script>\n";
   response += "Output datasets:\n<br>\n";
@@ -12,14 +12,8 @@ function(doc, req) {
 
   response += "<script type=\"text/javascript\">\n";
   response += "xmlhttp = new XMLHttpRequest();\n";
-  if (req.docId) {
-    response += "renderWorkflowErrors(\"" + req.docId + "\", document.getElementById(\"errors\"))\n";
-    response += "xmlhttp.open(\"GET\", \"../../_list/workflowOutput/outputByWorkflowName?stale=ok&group=true&group_level=2&startkey=[\\\"" + req.docId + "\\\"]&endkey=[\\\"" + req.docId + "\\\",{}]\", false);\n";
-  } else {
-    response += "renderWorkflowErrors(\"" + req.id + "\", document.getElementById(\"errors\"))\n";
-    response += "xmlhttp.open(\"GET\", \"../../_list/workflowOutput/outputByWorkflowName?stale=ok&group=true&group_level=2&startkey=[\\\"" + req.id + "\\\"]&endkey=[\\\"" + req.id + "\\\",{}]\", false);\n";
-  }
-
+  response += "renderWorkflowErrors(\"" + req.id + "\", document.getElementById(\"errors\"))\n";
+  response += "xmlhttp.open(\"GET\", \"../../_list/workflowOutput/outputByWorkflowName?stale=ok&group=true&group_level=2&startkey=[\\\"" + req.id + "\\\"]&endkey=[\\\"" + req.id + "\\\",{}]\", false);\n";
   response += "xmlhttp.send();\n";
   response += "document.getElementById(\"output\").innerHTML=xmlhttp.responseText;\n";
 

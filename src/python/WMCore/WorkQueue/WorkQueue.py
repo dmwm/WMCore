@@ -701,6 +701,7 @@ class WorkQueue(WorkQueueBase):
 
         If resources passed in get work for them, if not get from wmbs.
         """
+        wmspecCache = {}
         counter = 0
         if self.parent_queue:
             for team in self.params['Teams']:
@@ -727,9 +728,15 @@ class WorkQueue(WorkQueueBase):
                                                      team)
                     if work:
                         for element in work:
-                            wmspec = WMWorkloadHelper()
-                            wmspec.load(element['url'])
-                            
+                            # to prevent creating multiple instance of the same
+                            # spec, use the cache (cache with in the function)
+                            # id here is a unique spec id
+                            if not wmspecCache.has_key(element['id']):
+                                wmspec = WMWorkloadHelper()
+                                wmspec.load(element['url'])
+                                wmspecCache[element['id']] = wmspec
+                            else:
+                                wmspec = wmspecCache[element['id']]
                             # check we haven't seen this before
                             if self.params['IgnoreDuplicates'] and self.status(parentId = element['element_id']):
                                 self.logger.warning('Ignoring duplicate work: %s' % wmspec.name())
@@ -849,7 +856,6 @@ class WorkQueue(WorkQueueBase):
         # split each top level task into constituent work elements
         for topLevelTask in wmspec.taskIterator():
             dbs_url = topLevelTask.dbsUrl()
-            wmspec = getWorkloadFromTask(topLevelTask)
 
             try:
                 if dbs_url:

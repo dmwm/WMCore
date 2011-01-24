@@ -25,7 +25,7 @@ class SiblingSubscriptionsFailed(DBFormatter):
                 WHERE subscription = :subscription AND
                       fileid = :fileid"""
 
-    insert = """INSERT INTO wmbs_sub_files_complete (subscription, fileid) VALUES
+    insert = """INSERT IGNORE INTO wmbs_sub_files_complete (subscription, fileid) VALUES
                   (:subscription, :fileid)"""
 
     def execute(self, subscription, fileset, conn = None, transaction = False):

@@ -83,3 +83,4 @@ if __name__ == "__main__":
     print "Added file to the config cache:"
     print "  DocID:    %s" % configCache.id
     print "  Revision: %s" % configCache.rev
+    sys.exit(0)

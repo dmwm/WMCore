@@ -32,9 +32,16 @@ def installCouchApp(couchUrl, couchDBName, couchAppName):
     couchServer.createDatabase(couchDBName)
 
     wmBase = getWMBASE()
-    couchapppush(couchappConfig, "%s/src/couchapps/%s" % (wmBase, couchAppName),
+    develPath = "%s/src/couchapps" % wmBase
+    if not os.path.exists(develPath):
+        basePath = "%s/src/couchapps" % os.environ['WMCORE_ROOT']
+    else:
+        basePath = develPath
+    couchapppush(couchappConfig, "%s/%s" % (basePath, couchAppName),
                  "%s/%s" % (couchUrl, couchDBName))
     return
+    
+  
 
 def setupCron(couchUrl, couchDBName):
     """

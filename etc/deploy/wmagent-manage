@@ -4,12 +4,85 @@
 #
 # Global variables etc
 #
-PROJ_DIR=$(dirname $(dirname $0))
-ROOT_DIR=$(dirname $(dirname $(dirname $0)))
-echo dirname $0
-echo $PROJ_DIR $ROOT_DIR
+THIS_SCRIPT=$(readlink -f $0)
+PROJ_DIR=$(dirname $(dirname $THIS_SCRIPT))
+ROOT_DIR=$(dirname $(dirname $(dirname $THIS_SCRIPT)))
+
 COUCHDB_DIR="$ROOT_DIR/couchdb"
 MYSQL_DIR="$ROOT_DIR/mysql"
+WMCORE_DIR="$ROOT_DIR/wmcore"
+WMAGENT_DIR="$ROOT_DIR/wmagent"
+export WMCORE_ROOT="$WMCORE_DIR/app"
+
+MYSQL_INIT_DONE=0
+COUCH_INIT_DONE=0
+WMCORE_INIT_DONE=0
+WMAGENT_INIT_DONE=0
+
+MYSQL_USER=
+MYSQL_PASS=
+COUCH_USER=
+COUCH_PASS=
+
+COUCH_HOST=127.0.0.1
+COUCH_PORT=5984
+WMAGENT_DB="wmagentdb"
+WMAGENT_CONFIG=$WMAGENT_DIR/config/WMAgentConfig.py
+
+if [ -e $MYSQL_DIR/logs/.mysqlinitdb ]; then MYSQL_INIT_DONE=1; else MYSQL_INIT_DONE=0; fi;
+if [ -e $COUCHDB_DIR/logs/.couchinitdb ]; then COUCH_INIT_DONE=1; else COUCH_INIT_DONE=0; fi;    
+if [ -e $WMAGENT_DIR/config/.wmagentinit ]; then WMAGENT_INIT_DONE=1; else WMAGENT_INIT_DONE=0; fi;
+if [ -e $WMAGENT_DIR/config/.wmcoreinit ]; then WMCORE_INIT_DONE=1; else WMCORE_INIT_DONE=0; fi;
+
+#
+# Passwords/Secrets handling
+#
+load_secrets_file(){
+    if [ "x$WMAGENT_SECRETS_LOCATION" == "x" ]; then
+        WMAGENT_SECRETS_LOCATION=$HOME/WMAgent.secrets;
+    fi
+    if [ ! -e $WMAGENT_SECRETS_LOCATION ]; then
+        echo "Password file: $WMAGENT_SECRETS_LOCATION does not exist"
+        echo "Either set WMAGENT_SECRETS_LOCATION to a valid file or check that $HOME/WMAgent.secrets exists"
+        exit 1;
+    fi  
+    
+    local MATCH_MYSQL_USER=`cat $WMAGENT_SECRETS_LOCATION | grep MYSQL_USER | sed s/MYSQL_USER=//`
+    local MATCH_MYSQL_PASS=`cat $WMAGENT_SECRETS_LOCATION | grep MYSQL_PASS | sed s/MYSQL_PASS=//`
+    local MATCH_COUCH_USER=`cat $WMAGENT_SECRETS_LOCATION | grep COUCH_USER | sed s/COUCH_USER=//`
+    local MATCH_COUCH_PASS=`cat $WMAGENT_SECRETS_LOCATION | grep COUCH_PASS | sed s/COUCH_PASS=//`
+    local MATCH_COUCH_HOST=`cat $WMAGENT_SECRETS_LOCATION | grep COUCH_HOST | sed s/COUCH_HOST=//`
+    local MATCH_COUCH_PORT=`cat $WMAGENT_SECRETS_LOCATION | grep COUCH_PORT | sed s/COUCH_PORT=//`
+    
+    if [ "x$MATCH_MYSQL_USER" == "x" ]; then
+        MYSQL_USER=wmagentmysql;
+    else
+        MYSQL_USER=$MATCH_MYSQL_USER;
+    fi
+    if [ "x$MATCH_MYSQL_PASS" == "x" ]; then
+        echo "Secrets file doesnt contain MYSQL_PASS";
+        exit 1
+    else
+        MYSQL_PASS=$MATCH_MYSQL_PASS;
+    fi
+    if [ "x$MATCH_COUCH_USER" == "x" ]; then
+        COUCH_USER=wmagentcouch;
+    else
+        COUCH_USER=$MATCH_COUCH_USER;
+    fi
+    if [ "x$MATCH_COUCH_PASS" == "x" ]; then
+        echo "Secrets file doesnt contain COUCH_PASS";
+        exit 1
+    else
+        COUCH_PASS=$MATCH_COUCH_PASS;
+    fi
+    if [ ! "x$MATCH_COUCH_PORT" == "x" ]; then
+        COUCH_PORT=$MATCH_COUCH_PORT;
+    fi
+    if [ ! "x$MATCH_COUCH_HOST" == "x" ]; then
+        COUCH_HOST=$MATCH_COUCH_HOST;
+    fi
+}
 
 
 #
@@ -17,36 +90,342 @@ MYSQL_DIR="$ROOT_DIR/mysql"
 #
 . $ROOT_DIR/couchdb/app/etc/profile.d/init.sh
 . $ROOT_DIR/mysql/app/etc/profile.d/init.sh
-. $PROJ_DIR/externals/externals/python/2.6.4-cmp7/etc/profile.d/init.sh
-. $PROJ_DIR/externals/externals/python/2.6.4-cmp7/etc/profile.d/init.sh
+. $WMCORE_DIR/python2.6/etc/profile.d/init.sh
+. $WMCORE_DIR/py2-mysqldb/etc/profile.d/init.sh 
+. $WMCORE_DIR/app/etc/profile.d/init.sh
+. $PROJ_DIR/cheetah/etc/profile.d/init.sh
+. $PROJ_DIR/openid/etc/profile.d/init.sh
+. $PROJ_DIR/cherrypy/etc/profile.d/init.sh
+. $PROJ_DIR/py2-cjson/etc/profile.d/init.sh
+
+export PATH=$PATH:$WMCORE_DIR/app/bin
+export PYTHONPATH=$PYTHONPATH:$WMCORE_DIR/app/src/python
+export PYTHONPATH=$PYTHONPATH:$WMCORE_DIR/app/test/python
+export PYTHONPATH=$PYTHONPATH:$WMAGENT_DIR/dls-client/Client/lib
+export PYTHONPATH=$PYTHONPATH:$WMAGENT_DIR/dbs-client/lib
 
 
-start_couch(){
-   couchdb -b -a $COUCHDB_DIR/config/local.ini \
-           -p $COUCHDB_DIR/logs/couchdb.pid \
-           -e $COUCHDB_DIR/logs/stderr.log \
-           -o $COUCHDB_DIR/logs/stdout.log 
-   
 
+#########################
+#  MySQL                #
+#########################
+
+#
+# first time startup routines for mysql
+# pre gets called before startup, post called after it
+init_mysql_db_pre(){
+    echo "Installing the mysql database area..."
+    mysql_install_db --datadir=$MYSQL_DIR/database 
+    
+}
+init_mysql_db_post(){
+    #install the WMAgent stuff
+    echo "Installing the mysql schema..."
+    load_secrets_file;
+    local TIMEOUT=0;
+    while [ ! -e $MYSQL_DIR/logs/mysql.sock ]
+    do
+        sleep 2;
+        TIMEOUT=$(($TIMEOUT+2))
+        if [ $TIMEOUT -ge 300 ]; then
+            echo "Timeout waiting for mysqld to start."
+            exit 1;
+        fi
+    done
+    echo "Socket file exists, proceeding with schema install..."
+    mysqladmin -u root password $MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock 
+
+    touch $MYSQL_DIR/logs/.mysqlinitdb;
+    
+    local SQLUSER="CREATE USER '${MYSQL_USER}'@'localhost' IDENTIFIED BY '${MYSQL_PASS}';"
+    local SQLGRANT="GRANT ALL ON *.* TO $MYSQL_USER@localhost WITH GRANT OPTION;"
+
+    mysql -u root -p$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock --exec "$SQLUSER"
+    mysql -u root -p$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock --exec "$SQLGRANT"
+    mysql -u $MYSQL_USER -p$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock --exec "create database ${WMAGENT_DB}"    
+    
 }
 
-start_mysql(){
+status_of_mysql(){
+    echo "+ Status of MySQL"
+    if [ ! -e $MYSQL_DIR/logs/mysqld.pid ]; then
+        echo "++ MySQL process file not found"
+        return
+    fi
+    local MYSQL_PID=`cat $MYSQL_DIR/logs/mysqld.pid`
+    kill -0 $MYSQL_PID;
+    local MYSQL_STATUS=$?
+    if [ $MYSQL_STATUS -eq 0 ]; then
+        echo "++ MYSQL running with process: $MYSQL_PID";
+    else
+        echo "++ MYSQL process not running"
+    fi
+    
+    echo "++" `mysqladmin -u root --password=$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock status`
+}
 
+#
+# Main startup method for MySQL. 
+# Checks for initialisation 
+start_mysql(){
+   echo "Starting mysql..."
+   
+   if [ $MYSQL_INIT_DONE -eq 0 ]; then
+          echo "MySQL has not been initialised";
+          init_mysql_db_pre;
+   fi
+   
+   
    # Start mysqld to install the database schemas
-   #  Mason's command is this, probably want to do something similar...
+   #  
    nohup mysqld_safe --defaults-extra-file=$MYSQL_DIR/config/my.cnf \
                      --datadir=$MYSQL_DIR/database \
                      --socket=$MYSQL_DIR/logs/mysql.sock \
                      --skip-networking --log-error=$MYSQL_DIR/logs/error.log \
                       --pid-file=$MYSQL_DIR/logs/mysqld.pid > /dev/null 2>&1 < /dev/null &
+   if [ $MYSQL_INIT_DONE -eq 0 ]; then
+        echo "MySQL has not been initialised";
+        init_mysql_db_post;
+   fi
+
 
 }
 
-stop_couch(){
-   couchdb -k -d  -p /data/evansde/install2/projects/couchdb/logs/couch.pid
-}
-
+#
+# stop MySQL
+#
 stop_mysql(){
-   true
+   echo "stopping mysql..."
+   load_secrets_file;
+   mysqladmin -u root -p$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock shutdown &
+   wait $!
 }
 
+#
+# Wipe out MySQL
+# Will cause next start to recreate databases
+clean_mysql(){
+    echo "cleaning MySQL DB";
+    if [ -e $MYSQL_DIR/logs/mysql.pid ]; then stop_mysql; fi;
+        
+    /bin/rm -f $MYSQL_DIR/logs/.mysqlinitdb
+    /bin/rm -f $MYSQL_DIR/logs/mysql.sock
+    /bin/rm -f $MYSQL_DIR/logs/mysqld.pid
+    /bin/rm -rf $MYSQL_DIR/database/*
+}
+
+#########################
+#  CouchDB              #
+#########################
+
+#
+# first time startup for couch: disable admin party and create user based on secrets file
+#
+init_couch_pre(){
+
+    echo "Initialising CouchDB on $COUCH_HOST:$COUCH_PORT..."
+    echo $COUCH_USER $COUCH_PASS
+    perl -p -i -e "s{bind_address = 0.0.0.0}{bind_address = $COUCH_HOST}g" $COUCHDB_DIR/config/local.ini
+    perl -p -i -e "s{port = 5984}{port = $COUCH_PORT}g" $COUCHDB_DIR/config/local.ini
+    perl -p -i -e "s{;admin = mysecretpassword}{$COUCH_USER = $COUCH_PASS}g" $COUCHDB_DIR/config/local.ini
+}
+
+init_couch_post(){
+    touch $COUCHDB_DIR/logs/.couchinitdb    
+}
+
+status_of_couch(){
+    echo "+ Couch Status:"
+    if [ ! -e $COUCHDB_DIR/logs/couchdb.pid ]; then
+        echo "++ Couch process file not found"
+        return
+    fi
+    local COUCH_PID=`cat $COUCHDB_DIR/logs/couchdb.pid`
+    kill -0 $COUCH_PID;
+    local COUCH_STATUS=$?
+    if [ $COUCH_STATUS -eq 0 ]; then
+        echo "++ Couch running with process: $COUCH_PID";
+    else
+        echo "++ Couch process not running"
+    fi
+    echo "++" `curl -s $COUCH_HOST:$COUCH_PORT`
+}
+
+#
+# Startup couch
+#
+start_couch(){
+   load_secrets_file;
+   echo "starting couch..."
+   if [ $COUCH_INIT_DONE -eq 0 ]; then
+       echo "CouchDB has not been initialised";
+       init_couch_pre;
+   fi
+   couchdb -b -a $COUCHDB_DIR/config/local.ini \
+           -p $COUCHDB_DIR/logs/couchdb.pid \
+           -e $COUCHDB_DIR/logs/stderr.log \
+           -o $COUCHDB_DIR/logs/stdout.log 
+   if [ $COUCH_INIT_DONE -eq 0 ]; then
+       init_couch_post;
+   fi
+ 
+ 
+}
+
+#
+# shutdown couch
+#
+stop_couch(){
+   echo "stopping couch...";
+   couchdb  -d  -p $COUCHDB_DIR/logs/couchdb.pid;
+   
+}
+
+clean_couch(){
+    if [ -e $COUCHDB_DIR/logs/couchdb.pid ]; then stop_couch; fi;
+    rm -f $COUCHDB_DIR/logs/.couchinitdb
+    rm -rf $COUCHDB_DIR/database/*
+    
+}
+
+
+#
+# combined startup of all required services
+#
+start_services(){
+    echo "Starting Services..."
+    #start up the services required by the agent
+    start_couch;
+    start_mysql;
+}
+
+stop_services(){
+    #shut down all services
+    echo "Shutting down services..."
+    stop_couch;
+    stop_mysql;
+}
+
+##############################
+#  WMAgent                   #
+##############################
+
+init_wmcore(){
+    #echo "Initialising WMCore..."
+    #cant think of too much to actually do here...
+    #touch $WMCORE_DIR/configs/.wmcoreinit
+    true
+}
+
+# generate the agent config from the basic template
+init_wmagent(){
+    echo "Initialising WMAgent..."
+    load_secrets_file;
+    if [ ! -e $WMAGENT_DIR/install ]; then
+        mkdir $WMAGENT_DIR/install  
+    fi
+    wmagent-mod-config --input=$WMCORE_DIR/app/etc/WMAgentConfig.py \
+                       --output=$WMAGENT_CONFIG \
+                       --mysql_url=mysql://$MYSQL_USER:$MYSQL_PASS@localhost/$WMAGENT_DB \
+                       --mysql_socket=$MYSQL_DIR/logs/mysql.sock \
+                       --working_dir=$WMAGENT_DIR/install \
+                       --couch_url=http://$COUCH_USER:$COUCH_PASS@$COUCH_HOST:$COUCH_PORT
+    wmcore-db-init --config $WMAGENT_CONFIG --create --modules=WMCore.WMBS,WMCore.Agent.Database,WMComponent.DBSBuffer.Database,WMCore.WorkQueue.Database,WMCore.BossAir,WMCore.ResourceControl;
+    export WMAGENT_CONFIG
+
+    wmagent-couchapp-init;
+    
+    touch $WMAGENT_DIR/config/.wmagentinit
+    
+}
+
+start_agent(){
+    if [ $WMCORE_INIT_DONE -eq 0 ]; then
+           #echo "WMCore has not been initialised";
+           init_wmcore;
+    fi
+    if [ $WMAGENT_INIT_DONE -eq 0 ]; then
+           echo "WMAgent has not been initialised";
+           init_wmagent;
+    fi
+    
+    wmcoreD --start --config=$WMAGENT_CONFIG
+}
+
+stop_agent(){
+    
+    wmcoreD --shutdown --config=$WMAGENT_CONFIG
+}
+
+status_of_agent(){
+    wmcoreD --status --config=$WMAGENT_CONFIG
+}
+
+
+status(){
+    load_secrets_file;
+    status_of_couch;
+    status_of_mysql;
+    status_of_agent;
+    
+    
+}
+
+help(){
+    echo "there is no help, you are all alone";
+}
+
+# misc test commands
+dave_test(){
+    load_secrets_file;
+    couchdb -c
+
+}
+dave_test2(){
+    load_secrets_file;
+    
+}
+
+#######################################################
+# Main
+#######################################################
+
+case $1 in
+  start | restart)
+    echo "start or restart" ;;
+  status)
+    status ;;
+  stop)
+    echo "stop" ;;
+  start-services)
+    start_services;;
+  stop-services)
+    stop_services;;
+  start-mysql)
+    start_mysql;;
+  stop-mysql)
+    stop_mysql;;
+  clean-mysql)
+     clean_mysql;;
+  start-couch)
+     start_couch;;
+  stop-couch)
+     stop_couch;;
+  clean-couch)
+     clean_couch;;
+  start-agent)
+     start_agent;;
+  stop-agent)
+     stop_agent;;
+  test)
+     dave_test;;
+  test2)
+     dave_test2;;
+  help)
+    help ;;
+  version)
+    echo "Management script for WMAgent. No idea what version" ;;
+  * )
+    echo "$0: unknown action '$1', please try '$0 help' or documentation." 1>&2
+    exit 1 ;;
+esac

@@ -1,0 +1,131 @@
+#!/usr/bin/env python
+# encoding: utf-8
+"""
+wmagent-mod-config.py
+
+Created by Dave Evans on 2011-01-19.
+Copyright (c) 2011 Fermilab. All rights reserved.
+"""
+
+import sys
+import getopt
+import imp
+
+from WMCore.Configuration import saveConfigurationFile
+
+help_message = '''
+The help message goes here.
+'''
+
+
+class Usage(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+def importConfigTemplate(filename):
+    """
+    _importConfigTemplate_
+    
+    Given filename, load it and grab the configuration object from it
+    
+    """
+    mod = imp.load_module("wmcore_config_input", open(filename, 'r'), filename, (".py", "r", imp.PY_SOURCE)   )
+    config = getattr(mod, 'config', None)
+    if config == None:
+        msg = "No config attribute found in %s" % filename
+        raise RuntimeError, msg
+    return config
+
+def saveConfiguration(configObject, outputPath):
+    """
+    _saveConfiguration_
+    
+    Save the configuration to the output path provided
+    
+    """
+    saveConfigurationFile(configObject, outputPath)
+    
+def modifyConfiguration(config, **args):
+    """
+    _modifyConfiguration_
+    
+    Given the dictionary of key: value, look up the entry matching the key in the configuration
+    and set it to that value in the config
+    
+    """
+    mapping = {
+        "mysql_socket" : [("CoreDatabase", "socket") ],
+        "mysql_url" : [("CoreDatabase","connectUrl") ],
+        "couch_url" : [("JobStateMachine", "couchurl"), ("ACDC", "couchurl")],
+        "working_dir" : [("General", "workDir")],
+    }
+    
+    for k,v in args.items():
+        parameters = mapping.get(k, [])
+        for p in parameters:
+            section = getattr(config, p[0])
+            setattr(section, p[1], v)
+    for component in config.listComponents_():
+        compCfg = getattr(config, component)
+        compCfg.componentDir = "%s/%s" % (args['working_dir'], component)
+    
+    return config
+
+
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
+    
+    inputFile = None
+    outputFile = None
+    parameters = {}
+    
+    try:
+        try:
+            opts, args = getopt.getopt(argv[1:], "h", 
+            ["help", "input=", "output=", "mysql_socket=", "mysql_url=", "couch_url=", "working_dir="])
+        except getopt.error, msg:
+            raise Usage(msg)
+    
+        # option processing
+        for option, value in opts:
+            if option in ("-h", "--help"):
+                raise Usage(help_message)
+            if option == "--output":
+                outputFile = value
+            if option == "--input":
+                inputFile = value
+            if option in ('--mysql_socket', '--mysql_url', '--couch_url', '--working_dir' ):
+                parameters[option[2:]] = value
+    
+    
+    except Usage, err:
+        print >> sys.stderr, sys.argv[0].split("/")[-1] + ": " + str(err.msg)
+        print >> sys.stderr, "\t for help use --help"
+        return 2
+        
+    try:
+        cfg = importConfigTemplate(inputFile)
+    except Exception, ex:
+        msg = "Failed to import template config: %s\n" % inputFile
+        msg += str(ex)
+        print >> sys.stderr, msg
+        return 3
+    try:
+        cfg = modifyConfiguration(cfg, **parameters)
+    except Exception, ex:
+        msg = "Error modifying configuration:\n %s" % str(ex)
+        print >> sys.stderr, msg
+        return 4
+    try:
+        saveConfiguration(cfg, outputFile)
+    except Exception, ex:
+        msg = "Error saving output configuration file:\n %s\n" % outputFile
+        msg += str(ex)
+        print >> sys.stderr, msg
+        return 5 
+
+if __name__ == "__main__":
+    sys.exit(main())
+    
+  

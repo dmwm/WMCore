@@ -27,6 +27,9 @@ function(doc) {
     } else if (lastTransition['oldstate'] == 'createfailed' &&
                lastTransition['newstate'] == 'exhausted') {
       emit([doc['workflow'], doc['task']], doc['jobid']);
+    } else if (lastTransition['oldstate'] == 'exhausted' &&
+               lastTransition['newstate'] == 'cleanout') {
+      emit([doc['workflow'], doc['task']], doc['jobid']);
     }
   }
 }

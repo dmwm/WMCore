@@ -69,7 +69,7 @@ def determineSchema(remoteT0AST):
     columns where each column is a dictionary with information about the column.
     """
     sqlQuery = """SELECT table_name, column_id, column_name, data_type, data_length
-                  FROM all_tab_columns WHERE owner = 'CMS_T0AST_1'"""
+                  FROM all_tab_columns WHERE owner = 'CMS_T0AST_2'"""
     resultSets = remoteT0AST.processData(sqlQuery)
 
     results = []
@@ -250,7 +250,7 @@ for tableName in tableInfo.keys():
 copyData(remoteDbi, localDbi, tableInfo, runNum)
 
 blockSelect = """SELECT id, dataset_path_id, block_size, file_count, status,
-                        migrate_status, delete_status, name, export_start_time,
+                        migrate_status, name, export_start_time,
                         export_end_time FROM block
                    INNER JOIN block_run_assoc ON
                      block.id = block_run_assoc.block_id

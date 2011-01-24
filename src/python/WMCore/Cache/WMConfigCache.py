@@ -424,4 +424,14 @@ class ConfigCache(WMObject):
 
         return
 
-    
+    def getIDFromLabel(self, label):
+        """
+        _getIDFromLabel_
+
+        """
+        results = self.database.loadView("ConfigCache", "config_by_label")
+
+        if results["total_rows"] != 1:
+            return None
+
+        return results["rows"][0]["value"]

@@ -155,7 +155,7 @@ class Scram:
                     continue
                 l = l.replace("export ", "")
                 var, val = l.split("=", 1)
-                self.runtimeEnv[var] = val
+                self.runtimeEnv[var] = val                    
         self.code = proc.returncode
         self.lastExecuted = "eval `%s ru -sh`" % self.command
         return proc.returncode
@@ -184,11 +184,17 @@ class Scram:
             f.close()
         logFile = open(logName, 'a')
         proc = subprocess.Popen(["/bin/bash"], shell=True, cwd=executeIn,
-                                env = self.runtimeEnv,
                                 stdout=logFile,
                                 stderr=logFile,
                                 stdin=subprocess.PIPE,
                                 )
+
+        # Passing the environment in to the subprocess call results in all of
+        # the variables being quoted which causes problems for search paths.
+        # We'll setup the environment the hard way to avoid this.
+        for varName in self.runtimeEnv:
+            proc.stdin.write('export %s=%s\n' % (varName, self.runtimeEnv[varName]))
+
         if os.environ.get('VO_CMS_SW_DIR', None ) != None:
             proc.stdin.write('export VO_CMS_SW_DIR=%s\n'%os.environ['VO_CMS_SW_DIR']) 
         if os.environ.get('OSG_APP', None) != None:

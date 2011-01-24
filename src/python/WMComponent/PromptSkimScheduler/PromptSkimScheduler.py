@@ -6,9 +6,6 @@ PromptSkimScheduler harness.  Instantiate the PromptSkimPoller and have it poll
 T0AST for transfered blocks.
 """
 
-
-
-
 import threading
 
 from WMCore.Agent.Harness import Harness

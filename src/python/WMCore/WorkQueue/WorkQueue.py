@@ -788,9 +788,20 @@ class WorkQueue(WorkQueueBase):
         # filter elements that don't come from the parent
         elements.pop(None, None)
         # apply end policy to elements grouped by parent
-        results = [endPolicy(group,
-                             self.params['EndPolicySettings']) for \
-                             group in elements.values()]
+        wmspecCache = {}
+        results = []
+        for group in elements.values():
+            for ele in group:
+                if not wmspecCache.has_key(ele['RequestName']):
+                    wmspec = WMWorkloadHelper()
+                    # the url should be url from cache
+                    # (check whether that is updated correctly in DB)
+                    wmspec.load(ele['WMSpecUrl'])
+                    wmspecCache[ele['RequestName']] = wmspec
+                ele.__setitem__('WMSpec', wmspecCache[ele['RequestName']])
+
+            results.append(endPolicy(group, self.params['EndPolicySettings']))
+
         # Need to be in dict format for sending over the wire
         items = [x.formatForWire() for x in results]
 

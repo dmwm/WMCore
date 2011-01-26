@@ -3,7 +3,7 @@
 _Root_
 
 The root object for a webtools application. It loads all the different views and
-starts an appropriately configured CherryPy instance. Views are loaded 
+starts an appropriately configured CherryPy instance. Views are loaded
 dynamically and can be turned on/off via configuration file.
 
 """
@@ -25,7 +25,7 @@ from optparse import OptionParser
 from WMCore.WMFactory import WMFactory
 # Logging
 import WMCore.WMLogging
-import logging 
+import logging
 import sys, socket, time, os
 
 from WMCore.DataStructs.WMObject import WMObject
@@ -70,7 +70,7 @@ class WTLogger(LogManager):
     def __init__(self, *args, **kwargs):
         self.host = socket.gethostname()
         LogManager.__init__(self, *args, **kwargs)
-    
+
     def access(self):
         """
         Record a client access
@@ -105,7 +105,7 @@ class Root(Harness):
         """
         Initialise the object, pull out the necessary pieces of the configuration
         """
-        self.homepage = None        
+        self.homepage = None
         if webApp == None:
             Harness.__init__(self, config, compName = "Webtools")
             self.appconfig = config.section_(self.config.Webtools.application)
@@ -113,7 +113,7 @@ class Root(Harness):
             self.secconfig = config.component_("SecurityModule")
             self.serverConfig = config.section_("Webtools")
         else:
-            Harness.__init__(self, config, compName = webApp)            
+            Harness.__init__(self, config, compName = webApp)
             self.appconfig = config.section_(webApp)
             WMCore.WMLogging.setupRotatingHandler(os.path.join(self.appconfig.componentDir, "%s.log" % webApp))
             self.app = webApp
@@ -122,7 +122,7 @@ class Root(Harness):
             self.coreDatabase = config.section_("CoreDatabase")
 
         return
-    
+
     def _validateConfig(self):
         """
         Check that the configuration has the required sections
@@ -140,18 +140,18 @@ class Root(Harness):
         Configure the CherryPy server
         """
         configDict = self.serverConfig.dictionary_()
-        
-        configurables = ['engine', 'hooks', 'log', 'request', 'response', 
+
+        configurables = ['engine', 'hooks', 'log', 'request', 'response',
                          'server', 'tools', 'wsgi', 'checker', 'proxy_base']
         # Deal with "long hand" configuration variables
         for i in configurables:
             if i in configDict.keys():
                 for k, v in configDict[i].dictionary_().items():
                     cpconfig["%s.%s" % (i, k)] = v
-        
+
         # which we then over write with short hand variables if necessary
         cpconfig["server.environment"] = configDict.get("environment", "production")
-        
+
         #Set up the tools and the logging
         tools.time = cherrypy.Tool('on_start_resource', mytime)
 
@@ -159,7 +159,7 @@ class Root(Harness):
             tools.proxy = cherrypy.Tool('before_request_body', myproxy, priority=30)
             tools.proxy.on = True
             tools.proxy.base = configDict["proxy_base"]
-            
+
         cpconfig.update ({
                           'tools.expires.on': True,
                           'tools.expires.secs': configDict.get("expires", 300),
@@ -170,10 +170,10 @@ class Root(Harness):
                           'tools.gzip.on': True,
                           'tools.time.on': True,
                           })
-                                  
+
         cherrypy.log = WTLogger()
         cpconfig["log.screen"] = bool(configDict.get("log_screen", False))
-        
+
         if cpconfig["server.environment"] == "production":
             # If we're production these should be set regardless
             cpconfig["request.show_tracebacks"] = False
@@ -186,21 +186,21 @@ class Root(Harness):
         else:
             print
             print 'THIS BETTER NOT BE A PRODUCTION SERVER'
-            print 
+            print
             cpconfig["request.show_tracebacks"] = configDict.get("show_tracebacks", False)
             cpconfig["engine.autoreload_on"] = configDict.get("autoreload", False)
             # Allow debug output
             cherrypy.log.error_log.setLevel(configDict.get("error_log_level", logging.DEBUG))
             cherrypy.log.access_log.setLevel(configDict.get("access_log_level", logging.DEBUG))
-        
+
         cpconfig["server.thread_pool"] = configDict.get("thread_pool", 10)
         cpconfig["server.socket_port"] = configDict.get("port", 8080)
         cpconfig["server.socket_host"] = configDict.get("host", "localhost")
-        
+
         #A little hacky way to pass the expire second to config
         self.appconfig.default_expires = cpconfig["tools.expires.secs"]
-                          
-        # SecurityModule config        
+
+        # SecurityModule config
         # Registers secmodv2 into cherrypy.tools so it can be used through
         # decorators
         if not self.secconfig.dictionary_().get('dangerously_insecure', False):
@@ -218,24 +218,24 @@ class Root(Harness):
         Load up all the pages in the configuration
         """
         factory = WMFactory('webtools_factory')
-        
+
         globalconf = self.appconfig.dictionary_()
-        del globalconf['views'] 
+        del globalconf['views']
         the_index = ''
         if 'index' in globalconf.keys():
             the_index = globalconf['index']
             del globalconf['index']
-         
+
         for view in self.appconfig.views.active:
             #Iterate through each view's configuration and instantiate the class
             if view._internal_name != the_index:
                 self._mountPage(view, view._internal_name, globalconf, factory)
-                
+
         if hasattr(self.appconfig.views, 'maintenance'):
             #for i in self.appconfig.views.maintenance:
             #TODO: Show a maintenance page with a 503 Service Unavailable header
             pass
-    
+
     def _mountPage(self, view, mount_point, globalconf, factory):
         """
         _mountPage_
@@ -244,11 +244,11 @@ class Root(Harness):
         config = Configuration()
         component = config.component_(view._internal_name)
         component.application = self.app
-        
+
         for k in globalconf.keys():
             # Add the global config to the view
             component.__setattr__(k, globalconf[k])
-        
+
         view_dict = view.dictionary_()
         for k in view_dict.keys():
             component.__setattr__(k, view_dict[k])
@@ -261,19 +261,19 @@ class Root(Harness):
                         if hasattr(self.coreDatabase, "socket"):
                             component.database.socket = self.coreDatabase.socket
 
-        # component now contains the full configuration (global + view)  
-        # use this throughout   
+        # component now contains the full configuration (global + view)
+        # use this throughout
 
         cherrypy.log.error_log.debug("Loading %s" % (component._internal_name))
         # Load the object
         obj = factory.loadObject(component.object, component, getFromCache = False)
         # Attach the object to cherrypy's tree, at the name of the component
         tree.mount(obj, "/%s" % mount_point)
-        msg = "%s available on %s/%s" % (component._internal_name, 
-                                            server.base(), 
+        msg = "%s available on %s/%s" % (component._internal_name,
+                                            server.base(),
                                             component._internal_name)
         cherrypy.log.error_log.info(msg)
-            
+
     def _makeIndex(self):
         """
         Create an index page, either from the configured page or a generic default
@@ -283,12 +283,12 @@ class Root(Harness):
             factory = WMFactory('webtools_factory')
             globalconf = self.appconfig.dictionary_()
             view = getattr(self.appconfig.views.active, globalconf['index'])
-            del globalconf['views'] 
+            del globalconf['views']
             del globalconf['index']
             self._mountPage(view, '/', globalconf, factory)
-            
+
         else:
-            cherrypy.log.error_log.info("No index defined for %s - instantiating default Welcome page" 
+            cherrypy.log.error_log.info("No index defined for %s - instantiating default Welcome page"
                                              % (self.app))
             namesAndDocstrings = []
             # make a default Welcome
@@ -298,15 +298,15 @@ class Root(Harness):
                     viewObj = tree.apps['/%s' % viewName].root
                     docstring = viewObj.__doc__
                     namesAndDocstrings.append((viewName, docstring))
-            tree.mount(Welcome(namesAndDocstrings), "/")
-    
+            tree.mount(Welcome(server.base(), cpconfig["server.environment"], namesAndDocstrings), "/")
+
     def start(self, blocking=True):
         """
-        Configure and start the server 
+        Configure and start the server
         """
         self._validateConfig()
         self._configureCherryPy()
-        self._loadPages()        
+        self._loadPages()
         self._makeIndex()
         engine.start()
         if blocking:
@@ -320,14 +320,14 @@ class Root(Harness):
         """
         self.start()
         return
-            
+
     def stop(self):
         """
         Stop the server
         """
         engine.exit()
         engine.stop()
-        
+
 if __name__ == "__main__":
     parser = OptionParser()
     parser.add_option("-i", "--ini", dest="inifile", default=False,
@@ -348,11 +348,11 @@ if __name__ == "__main__":
                       action="store_true", dest="terminate", default=False,
                       help="Terminate the daemon (kill, wait, kill -9)")
     opts, args = parser.parse_args()
-    
+
     if not opts.inifile:
         sys.exit('No configuration specified')
     cfg = loadConfigurationFile(opts.inifile)
-    
+
     component = cfg.Webtools.application
     workdir = getattr(cfg.Webtools, 'componentDir', '/tmp/webtools')
     if workdir == None:
@@ -360,7 +360,7 @@ if __name__ == "__main__":
     root = Root(cfg)
     if opts.status:
         daemon = Details('%s/Daemon.xml' % workdir)
-        
+
         if not daemon.isAlive():
             print "Component:%s Not Running" % component
         else:
@@ -372,7 +372,7 @@ if __name__ == "__main__":
     elif opts.terminate:
         daemon = Details('%s/Daemon.xml' % workdir)
         daemon.killWithPrejudice()
-        daemon.removeAndBackupDaemonFile()  
+        daemon.removeAndBackupDaemonFile()
     elif opts.daemon:
         createDaemon(workdir)
         root.start(False)

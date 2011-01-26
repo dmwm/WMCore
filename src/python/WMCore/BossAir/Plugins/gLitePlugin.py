@@ -16,6 +16,8 @@ import os
 import re
 import time
 import types
+
+from WMCore.FwkJobReport.Report        import Report
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.DAOFactory import DAOFactory
 import WMCore.WMInit
@@ -582,8 +584,9 @@ class gLitePlugin:
 
         for jj in jobs:
 
-            if jj['status'] in ['Aborted']:
-                abortedJobs.append( jj )
+            if jj['status'] is not ['Done']:
+                if jj['status'] is in ['Aborted']:
+                    abortedJobs.append( jj )
                 continue
 
             cmd = '%s %s %s %s' % (command, outdiropt, jj['cache_dir'], jj['gridid'])
@@ -739,10 +742,61 @@ class gLitePlugin:
         _kill_
         
         Kill any and all jobs
-        """
+        """    
+        
+        workqueued  = {}
+        currentwork = len(workqueued)
 
+        completedJobs = []
+        failedJobs    = []
 
-        return
+        ## Start up processes
+        input  = multiprocessing.Queue()
+        result = multiprocessing.Queue()
+        self.start(input, result)
+        
+        for job in jobs:
+
+            gridID = job['gridid']
+            command = 'glite-wms-job-cancel --json --noint %s' % (gridID)
+            logging.debug("Enqueuing cancel command for gridID %s" % gridID )
+
+            workqueued[currentwork] = gridID
+            input.put( (currentwork, command, 'output') )
+  
+            currentwork += 1
+
+        # Now we should have sent all jobs to be submitted
+        # Waiting for results
+        logging.debug("Waiting for %i  JOBS to KILL..." % len(workqueued))
+
+        for n in xrange(len(workqueued)):
+
+            logging.debug("Waiting for job number %i to be killed.." % n)
+            res = result.get()
+            jsout  = res['jsout']
+            error  = res['stderr']
+            exit   = res['exit']
+            workid = res['workid']
+            logging.debug ('result : \n %s' % str(res) )
+            # Checking error
+            if exit != 0:
+                logging.error('Error executing %s: \n\texit code: %i\n\tstderr: %s\n\tjson: %s' % (command, exit, error, str(jsout.strip()) )
+                               )
+                failedJobs.append(workqueued[workid])
+            elif  jsout.find('success') != -1:
+                logging.debug('Succesfully killed job %s' % str(workqueued[workid]))
+                completedJobs.append(workqueued[workid]) 
+            else:
+                logging.error('Error success != -1')
+                failedJobs.append(workqueued[workid])
+
+        ## Shut down processes
+        logging.debug("Close the subprocesses...")
+        self.close(input, result)
+
+        return completedJobs, failedJobs
+
 
 
     def delegateProxy( self, wms = None ):

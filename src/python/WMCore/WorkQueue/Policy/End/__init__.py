@@ -20,10 +20,9 @@ def endPolicy(elements, args):
             return endFac.loadObject('EndPolicyInterface', {},
                                      storeInCache = False)(*elements)
 
+    # all the spec should be same in the elements
     # all elements finished processing load policy and apply
-    spec = WMWorkloadHelper()
-    spec.load(elements[0]['WMSpecUrl'])
-    [x.__setitem__('WMSpec', spec) for x in elements]
+    spec = elements[0]['WMSpec']
     name = spec.data.policies.end.policyName
     args = args.get(name, {})
     args.update(spec.data.policies.end.dictionary_())

@@ -15,29 +15,30 @@ WMCore.Agent.heartbeat.heartbeatTable = function(divID){
     var colorRow = function(elTr, oRecord){
         if (oRecord.getData('alarm') < 0) {
             YAHOO.util.Dom.addClass(elTr, 'mark');
-        }
-        else 
+        } else {
+            YAHOO.util.Dom.removeClass(elTr, 'mark');
             if (oRecord.getData('last_error') > 0) {
                 YAHOO.util.Dom.addClass(elTr, 'warning');
-            };
+            } else {
+                YAHOO.util.Dom.removeClass(elTr, 'warning');
+            }
+        };
         return true;
     };
     
     var dataSchema = {
-        fields: [{
-            key: "name",
-            label: "component"
-        }, {
-            key: 'pid'
-        }, {
-            key: "worker_name",
-            label: "worker"
-        }, {
-            key: "ago",
-            label: "last updated",
-            formatter: dateFormatter
-        }]
+        fields: [{key: "name"}, 
+                 {key: "pid"},
+                 {key: "worker_name"},
+                 {key: "ago"},
+                 {key: "alarm"},
+                 {key: "warning"}]
     };
+    
+    var tableDef = [{key: "name", label: "component"}, 
+                    {key: 'pid'}, 
+                    {key: "worker_name", label: "worker"}, 
+                    {key: "ago", label: "last updated", formatter: dateFormatter}]
     
     var dataUrl = "/wmagent/heartbeat";
     

@@ -16,6 +16,7 @@ import os
 import os.path
 import signal
 import subprocess
+import traceback
 
 from WMCore.WMRuntime.Monitors.WMRuntimeMonitor import WMRuntimeMonitor
 from WMCore.WMSpec.Steps.Executor               import getStepSpace
@@ -253,6 +254,7 @@ class DashboardMonitor(WMRuntimeMonitor):
                 if os.path.isfile(self.logPath):
                     # We should be able to find existant job report.
                     # If not, we're in trouble
+                    logging.debug("Found pre-existant error report in DashboardMonitor termination.")
                     report.load(self.logPath)
                 report.addError(stepName = self.currentStepName, exitCode = 99901,
                                 errorType = "JobTimeout", errorDetails = msg)
@@ -260,6 +262,11 @@ class DashboardMonitor(WMRuntimeMonitor):
             except Exception, ex:
                 # Basically, we can't write a log report and we're hosed
                 # Kill anyway, and hope the logging file gets written out
+                msg2 =  "Exception while writing out jobReport.\n"
+                msg2 += "Aborting job anyway: unlikely you'll get any error report.\n"
+                msg2 += str(ex)
+                msg2 += str(traceback.format_exc()) + '\n'
+                logging.error(msg2)
                 pass
 
             

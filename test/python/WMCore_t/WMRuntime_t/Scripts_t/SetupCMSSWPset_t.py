@@ -98,12 +98,6 @@ class SetupCMSSWPsetTest(unittest.TestCase):
                          "Error: Wrong input file.")
         self.assertEqual(fixedPSet.source.secondaryFileNames.value[1], "/some/parent/two",
                          "Error: Wrong input file.")
-        self.assertEqual(fixedPSet.source.skipEvents.value, 0,
-                         "Error: Wrong number of skip events.")
-        self.assertEqual(fixedPSet.source.firstRun.value, 0,
-                         "Error: Wrong first run")
-        self.assertEqual(fixedPSet.source.lumisToProcess, [],
-                         "Error: Wrong first run")        
         self.assertEqual(fixedPSet.maxEvents.input.value, -1,
                          "Error: Wrong maxEvents.")
 

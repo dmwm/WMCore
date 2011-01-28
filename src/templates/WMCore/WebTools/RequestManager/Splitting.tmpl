@@ -13,7 +13,7 @@
 
 function postUpdate(formName) {
   var taskLabelDiv = document.getElementById("label" + formName);
-  taskLabelDiv.innerHTML = " Updating..."
+  taskLabelDiv.innerHTML = " <font color=red>Updating...</font>"
 
   updatedForm = document.forms[formName];
   var paramStr = "";
@@ -41,7 +41,7 @@ function postUpdate(formName) {
   http.onreadystatechange = function() {
     if(http.readyState == 4 && http.status == 200) {
       var taskLabelDiv = document.getElementById("label" + formName);
-      taskLabelDiv.innerHTML = " Updated!"
+      taskLabelDiv.innerHTML = " <font color=red>Updated!</font>"
     }
   }
   http.send(paramStr);
@@ -58,10 +58,6 @@ function generateInput(label, key, d) {
   }
   procStr += '></input></td>\n';
   return procStr;
-}
-
-function generateInputRow(label, key, d) {
-  return '<tr>' + generateInput(label, key, d) +'</tr>';
 }
 
 function submitButton(formID) {
@@ -163,6 +159,15 @@ function generateMerge(splitAlgo, splitParams) {
   return frmStr;
 }
 
+function generateProduction(splitAlgo, splitParams) {
+  var procStr = '<input type="hidden" name="splittingAlgo" value="EventBased"></input>\n';
+  procStr += "<table>"
+  procStr += generateInputRow("Events per job:", "events_per_job", splitParams);
+  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
+  procStr += "</table>\n";
+  return procStr;
+}
+
 function generateForm(taskName, splitAlgo, splitParams, taskType) {
   var frmStr = '<form name="' + taskName + '" action="../handleSplittingPage" method="POST">\n';
   frmStr += '<input type="hidden" name="requestName" VALUE="$requestName"></input>\n'; 
@@ -177,6 +182,8 @@ function generateForm(taskName, splitAlgo, splitParams, taskType) {
     frmStr += generateMerge(splitAlgo, splitParams);
   } else if (taskType == "Skim") {
     frmStr += generateSkim(splitAlgo, splitParams);
+  } else if (taskType == "Production") {
+    frmStr += generateProduction(splitAlgo, splitParams);
   }
 
   frmStr += submitButton(taskName);

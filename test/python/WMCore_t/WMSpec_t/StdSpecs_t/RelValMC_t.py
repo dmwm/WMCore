@@ -31,7 +31,7 @@ class RelValMCTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         couchServer = CouchServer(os.environ["COUCHURL"])
-        self.configDatabase = couchServer.connectDatabase("rereco_t")        
+        self.configDatabase = couchServer.connectDatabase("relvalmc_t")        
 
 
     def tearDown(self):
@@ -68,8 +68,8 @@ class RelValMCTest(unittest.TestCase):
     
     def injectGenerationConfig(self):
         """        
-        Gen step - Will have one output module. Filter name can be anything,
-        the data tier must be "GEN-SIM-RAW"
+        Gen step - Will have one output module, data tier is configurable
+        in the workflow.
         
         """        
         config = self._getConfigBase()
@@ -420,11 +420,12 @@ class RelValMCTest(unittest.TestCase):
         """
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
-        defaultArguments["CouchDBName"] = "rereco_t"        
+        defaultArguments["CouchDBName"] = "relvalmc_t"
+        defaultArguments["GenDataTier"] = "GEN-SIM-RAW"
         defaultArguments["GenConfigCacheID"] = self.injectGenerationConfig()
         defaultArguments["RecoConfigCacheID"] = self.injectReconstructionConfig()
         defaultArguments["AlcaRecoConfigCacheID"] = self.injectAlcaRecoConfig() 
-
+        
         testWorkload = relValMCWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")

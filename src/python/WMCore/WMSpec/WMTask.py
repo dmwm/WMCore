@@ -680,7 +680,7 @@ class WMTaskHelper(TreeHelper):
         accessor for total events in the given dataset
         """
         #TODO: save the total events for  the production job
-        return self.data.production.totalEvents
+        return int(self.data.production.totalEvents)
         #return self.data.input.dataset.totalEvents
     
     def dbsUrl(self):

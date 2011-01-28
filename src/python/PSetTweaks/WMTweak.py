@@ -282,15 +282,22 @@ def makeTweak(process):
 
 
 
-def applyTweak(process, tweak):
+def applyTweak(process, tweak, fixup = None):
     """
     _applyTweak_
 
-    Add the changes contained in the tweak to the process to give
-    a job specific process
+    Add the changes contained in the tweak to the process to give a job specific
+    process.  The fixup parameters is a dictionary keyed by parameter name.  If
+    the tweak contains a parameter in the dictionary the value in the dict will
+    be calls and passed the process.
 
+    This is useful for preparing the process before the value is applied (ie-
+    making sure all the necessary PSets and configuration values exist).
     """
     for param, value in tweak:
+        if fixup and fixup.has_key(param):
+            fixup[param](process)
+             
         setParameter(process, param, value)
 
 

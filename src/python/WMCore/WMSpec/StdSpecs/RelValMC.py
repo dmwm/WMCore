@@ -42,6 +42,8 @@ def getTestArguments():
     args["GenConfigCacheID"] = "nonsence_id_gen"
     args["RecoConfigCacheID"] = "nonsence_id_reco"
     args["AlcaRecoConfigCacheID"] = "nonsence_id_alcareco"
+    # another additional argument - name of the datatier of the generatio task
+    args["GenDataTier"] = None
     return args
 
 
@@ -93,9 +95,10 @@ class RelValMCWorkloadFactory(StdBase):
         self.addLogCollectTask(genTask, "GenLogCollect")
         
         # 2 - merge task for the data produced by the generation task
-        # the subsequent rereco task will runsover the "GEN-SIM-RAW" output of the
-        # generation task. catch the merge task which is going to produce
-        # merged "GEN-SIM-RAW" output.
+        # the subsequent rereco task will runs either
+        #    1) over 'generationDataTier' name of it's specified by the user or
+        #    2) the first output module if generationDataTier is not specified
+        # can't no longer assume that the datatier will always be "GEN-SIM-RAW" 
         # dataTier - it specifies that content/format of the data
         genSimRawMergeTask = None
         for outputModuleName in genOutputMods.keys():
@@ -105,8 +108,13 @@ class RelValMCWorkloadFactory(StdBase):
                                      outputModuleInfo["dataTier"],
                                      outputModuleInfo["filterName"],
                                      outputModuleInfo["processedDataset"])
-            if outputModuleInfo["dataTier"] == "GEN-SIM-RAW":
+            if not self.genDataTier and not genSimRawMergeTask:
+                # generation task data tier has not been user-specified
+                # and genSimRawMergeTask has not been set yet - we're at first output module
                 genSimRawMergeTask = task
+            else:
+                if outputModuleInfo["dataTier"] == self.genDataTier:
+                    genSimRawMergeTask = task
                 
         # 3 - ReReco task to run reco on data produced by the MC generation task
         recoTask = genSimRawMergeTask.addTask("Reconstruction")
@@ -187,12 +195,13 @@ class RelValMCWorkloadFactory(StdBase):
         self.emulation = arguments.get("Emulation", False)
         # job splitting parameters (information for WorkQueue) for the
         # production / generation task
-        
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
-        self.genJobSplitAlgo  = arguments.get("GenJobSplitAlgo", "EventBased")
-        self.genJobSplitArgs  = arguments.get("GenJobSplitArgs",
+        self.genJobSplitAlgo = arguments.get("GenJobSplitAlgo", "EventBased")
+        self.genJobSplitArgs = arguments.get("GenJobSplitArgs",
                                                {"events_per_job": 1000})
+        # generation task data tier name is configurable and may be set by the user
+        self.genDataTier = arguments.get("GenDataTier", None)
         
         # reconstruction task
         self.recoConfig = arguments["RecoConfigCacheID"]        

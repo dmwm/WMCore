@@ -22,6 +22,90 @@ applyAlcaSkim = lambda s, a: s.alcaSkim(**a)
 applySkimming = lambda s, a: s.skimming(**a)
 applyDqmHarvesting = lambda s, a: s.dqmHarvesting(**a)
 
+def fixupGlobalTag(process):
+    """
+    _fixupGlobalTag_
+
+    Make sure that the process has a GlobalTag PSet and a globaltag string.
+    """
+    if not hasattr(process, "GlobalTag"):
+        process.GlobalTag = cms.PSet(globalTag = cms.string(""))
+    if not hasattr(process.GlobalTag, "globaltag"):
+        process.GlobalTag.globaltag = cms.string("")
+
+def fixupFirstRun(process):
+    """
+    _fixupFirstRun_
+
+    Make sure that the process has a firstRun parameter.
+    """
+    if not hasattr(process.source, "firstRun"):
+        process.source.firstRun = cms.untracked.uint32(0)
+
+def fixupLastRun(process):
+    """
+    _fixupLastRun_
+
+    Make sure that the process has a lastRun parameter.
+    """
+    if not hasattr(process.source, "lastRun"):
+        process.source.firstRun = cms.untracked.uint32(0)        
+
+def fixupLumisToProcess(process):
+    """
+    _fixupLumitsToProcess_
+
+    Make sure that the process has a lumisToProcess parameter.
+    """
+    if not hasattr(process.source, "lumisToProcess"):
+        process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange()
+
+def fixupSkipEvents(process):
+    """
+    _fixupSkipEvents_
+
+    Make sure that the process has a skip events parameter.
+    """
+    if not hasattr(process.source, "skipEvents"):
+        process.source.skipEvents = cms.untracked.uint32(0)
+
+def fixupMaxEvents(process):
+    """
+    _fixupMaxEvents_
+
+    Make sure that the process has a max events parameter.
+    """
+    if not hasattr(process, "maxEvents"):
+        process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+    if not hasattr(process.maxEvents, "input"):
+        process.maxEvents.input = cms.untracked.int32(-1)
+
+def fixupFileNames(process):
+    """
+    _fixupFileNames_
+
+    Make sure that the process has a fileNames parameter.  This will also
+    configure lazy download for the process.
+    """
+    if not process.services.has_key("AdaptorConfig"):
+        process.add_(cms.Service("AdaptorConfig"))
+
+    process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
+    process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")
+    process.source.cacheSize = cms.untracked.uint32(100000000)
+
+    if not hasattr(process.source, "fileNames"):
+        process.source.fileNames = cms.untracked.vstring()
+
+def fixupSecondaryFileNames(process):
+    """
+    _fixupSecondaryFileNames_
+
+    Make sure that the process has a secondaryFileNames parameter.
+    """
+    if not hasattr(process.source, "secondaryFileNames"):
+        process.source.secondaryFileNames = cms.untracked.vstring()
+
 class SetupCMSSWPset(ScriptInterface):
     """
     _SetupCMSSWPset_
@@ -33,6 +117,15 @@ class SetupCMSSWPset(ScriptInterface):
         "skimming": applySkimming,
         "dqmHarvesting": applyDqmHarvesting
         }
+
+    fixupDict = {"process.GlobalTag.globaltag": fixupGlobalTag,
+                 "process.source.fileNames": fixupFileNames,
+                 "process.source.secondaryFileNames": fixupSecondaryFileNames,
+                 "process.maxEvents.input": fixupMaxEvents,
+                 "process.source.skipEvents": fixupSkipEvents,
+                 "process.source.firstRun": fixupFirstRun,
+                 "process.source.lastRun": fixupLastRun,
+                 "process.source.lumisToProcess": fixupLumisToProcess}
     
     def createProcess(self, scenario, funcName, funcArgs):
         """
@@ -144,36 +237,6 @@ class SetupCMSSWPset(ScriptInterface):
             if not hasattr(outModRef, "logicalFileName"):
                 outModRef.logicalFileName = cms.untracked.string("")
 
-        # Make sure that the process object has the following attributes:
-        #    GlobtalTag.globaltag
-        #    source.firstRun
-        #    source.firstLuminosityBlock
-        #    source.skipEvents
-        #    maxEvents.input
-        #    source.fileNames
-        #    source.secondaryFileNames
-        #    The AdaptorConfig service
-        if not hasattr(self.process, "GlobalTag"):
-            self.process.GlobalTag = cms.PSet(globalTag = cms.string(""))
-        if not hasattr(self.process.GlobalTag, "globaltag"):
-            self.process.GlobalTag.globaltag = cms.string("")
-        if not hasattr(self.process.source, "firstRun"):
-            self.process.source.firstRun = cms.untracked.uint32(0)
-        if not hasattr(self.process.source, "lumisToProcess"):
-            self.process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange()
-        if not hasattr(self.process.source, "skipEvents"):
-            self.process.source.skipEvents = cms.untracked.uint32(0)
-        if not hasattr(self.process, "maxEvents"):
-            self.process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
-        if not hasattr(self.process.maxEvents, "input"):
-            self.process.maxEvents.input = cms.untracked.int32(-1)
-        if not hasattr(self.process.source, "fileNames"):
-            self.process.source.fileNames = cms.untracked.vstring()
-        if not hasattr(self.process.source, "secondaryFileNames"):
-            self.process.source.secondaryFileNames = cms.untracked.vstring()
-        if not self.process.services.has_key("AdaptorConfig"):
-            self.process.add_(cms.Service("AdaptorConfig"))
-
         return
 
     def applyTweak(self, setTweak):
@@ -184,7 +247,7 @@ class SetupCMSSWPset(ScriptInterface):
         """
         tweak = PSetTweak()
         tweak.unpersist(psetTweak)
-        applyTweak(self.process, tweak)
+        applyTweak(self.process, tweak, self.fixupDict)
         return
         
     def handleSeeding(self):
@@ -208,7 +271,7 @@ class SetupCMSSWPset(ScriptInterface):
             for x in randService:
                 parameter = "process.RandomNumberGeneratorService.%s.initialSeed" % x._internal_name
                 tweak.addParameter(parameter, x.initialSeed)
-            applyTweak(self.process, tweak)
+            applyTweak(self.process, tweak, self.fixupDict)
             return
         # still here means bad seeding algo name
         raise RuntimeError, "Bad Seeding Algorithm: %s" % seeding
@@ -234,11 +297,11 @@ class SetupCMSSWPset(ScriptInterface):
 
         psetTweak = getattr(step.application.command, "psetTweak", None)
         if psetTweak != None:
-            self.applyPSetTweak(psetTweak)
+            self.applyPSetTweak(psetTweak, self.fixupDict)
 
         # Apply task level tweaks
         taskTweak = makeTaskTweak(self.step.data)
-        applyTweak(self.process, taskTweak)
+        applyTweak(self.process, taskTweak, self.fixupDict)
         
         # Check if chained processing is enabled
         # If not - apply the per job tweaks
@@ -254,6 +317,8 @@ class SetupCMSSWPset(ScriptInterface):
                            mapping_type = "lfn-to-pfn")
             tfc.addMapping("direct", inputFile, inputFile,
                            mapping_type = "pfn-to-lfn")
+
+            fixupFileNames(self.process)
             self.process.source.fileNames.setValue([inputFile])
 
             tfcName = "override_catalog.xml"
@@ -268,14 +333,14 @@ class SetupCMSSWPset(ScriptInterface):
         else:
             # Apply per job PSet Tweaks
             jobTweak = makeJobTweak(self.job)
-            applyTweak(self.process, jobTweak)
+            applyTweak(self.process, jobTweak, self.fixupDict)
 
         # Apply per output module PSet Tweaks
         cmsswStep = self.step.getTypeHelper()
         for om in cmsswStep.listOutputModules():
             mod = cmsswStep.getOutputModule(om)
             outTweak = makeOutputTweak(mod, self.job)
-            applyTweak(self.process, outTweak)
+            applyTweak(self.process, outTweak, self.fixupDict)
             
         # revlimiter for testing
         #self.process.maxEvents.input = 2
@@ -298,10 +363,6 @@ class SetupCMSSWPset(ScriptInterface):
                     self.process.source.overrideCatalog = \
                         cms.untracked.string("trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage-test.xml?protocol=direct")
         
-        self.process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
-        self.process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")
-        self.process.source.cacheSize = cms.untracked.uint32(100000000)
-
         configFile = self.step.data.application.command.configuration
         workingDir = self.stepSpace.location
         handle = open("%s/%s" % (workingDir, configFile), 'w')

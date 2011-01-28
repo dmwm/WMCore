@@ -26,10 +26,18 @@ WMCore.RequestManager.AgentOverview.statusTable = function(divID){
                 elCell.innerHTML = "<a href='" + sData  + "' target='_blank'> acdc </a>";
             };
         };
+    
+    var formatStatus = function(elCell, oRecord, oColumn, sData) {
+            if (sData == "down") {
+                elCell.innerHTML = "<font color='red'> One or more componts down </font>";
+            } else {
+                elCell.innerHTML = sData;
+            };
+        };
 
     var dataSchema = {
         fields: [{key: "url", label:"Agent Location", formatter:formatAgentLink},
-                 {key: "status"},
+                 {key: "status", formatter: formatStatus},
                  {key: "acdc", formatter:formatACDCLink}]
         };
 

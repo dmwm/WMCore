@@ -23,8 +23,13 @@ import nose
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
-from WMCore.Database.DBFormatter import DBFormatter
-from WMCore.WMInit import WMInit
+hasDatabase = True
+try:
+    from WMCore.Database.DBFormatter import DBFormatter
+    from WMCore.WMInit import WMInit
+except ImportError:
+    print "NOTE: TestInit is being loaded without database support"
+    hasDatabase = False
 
 # Sorry for the global, but I think this should go here
 trashDatabases = False  # delete databases after every test?
@@ -75,7 +80,10 @@ class TestInit:
         self.testClassName = testClassName
         self.testDir = None
         self.currModules = []
-        self.init = WMInit()
+        global hasDatabase
+        self.hasDatabase = hasDatabase
+        if self.hasDatabase:
+            self.init = WMInit()
         self.deleteTmp = True
     
     def __del__(self):
@@ -135,6 +143,8 @@ class TestInit:
             raise RuntimeError, "Unrecognized dialect"
         
     def eraseEverythingInDatabase(self):
+        if not self.hasDatabase:
+            return
         if trashDatabases:
             dbi = self.getDBInterface()
             dialect = self.coreConfig.CoreDatabase.dialect
@@ -195,7 +205,9 @@ class TestInit:
         """
         Set up the database connection by retrieving the environment
         parameters.
-        """        
+        """
+        if not self.hasDatabase:
+            return        
         config = self.getConfiguration(connectUrl=connectUrl, socket=socket)
         self.coreConfig = config
         self.init.setDatabaseConnection(
@@ -220,6 +232,8 @@ class TestInit:
         if useDefault is set to False, it will not instantiate the
         schemas in the defaultModules array.
         """
+        if not self.hasDatabase:
+            return 
         defaultModules = ["WMCore.MsgService", "WMCore.ThreadPool", \
                           "WMCore.Trigger"]
         if not useDefault:
@@ -254,10 +268,14 @@ class TestInit:
         modules that have an execute method which contains
         arbitrary sql statements.
         """
+        if not self.hasDatabase:
+            return 
         self.init.initializeSchema(modules)
         
     def getDBInterface(self):
         "shouldbe called after connection is made"
+        if not self.hasDatabase:
+            return 
         myThread = threading.currentThread()
         return myThread.dbi
 
@@ -304,6 +322,8 @@ class TestInit:
         Database deletion. If no modules are specified
         it will clear the tables we added with setschema
         """
+        if not self.hasDatabase:
+            return 
         if modules == []:
             modules = self.currModules
 

@@ -205,13 +205,22 @@ stop_mysql(){
 # Wipe out MySQL
 # Will cause next start to recreate databases
 clean_mysql(){
-    echo "cleaning MySQL DB";
+    echo "cleaning MySQL DB...";
     if [ -e $MYSQL_DIR/logs/mysql.pid ]; then stop_mysql; fi;
         
     /bin/rm -f $MYSQL_DIR/logs/.mysqlinitdb
     /bin/rm -f $MYSQL_DIR/logs/mysql.sock
     /bin/rm -f $MYSQL_DIR/logs/mysqld.pid
     /bin/rm -rf $MYSQL_DIR/database/*
+}
+
+#
+# MySQL Prompt so that people can poke around in the db interactively
+#
+mysql_prompt(){
+    load_secrets_file;
+    mysql -u $MYSQL_USER -p$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock --database=${WMAGENT_DB};
+    
 }
 
 #########################
@@ -224,7 +233,6 @@ clean_mysql(){
 init_couch_pre(){
 
     echo "Initialising CouchDB on $COUCH_HOST:$COUCH_PORT..."
-    echo $COUCH_USER $COUCH_PASS
     perl -p -i -e "s{bind_address = 0.0.0.0}{bind_address = $COUCH_HOST}g" $COUCHDB_DIR/config/local.ini
     perl -p -i -e "s{port = 5984}{port = $COUCH_PORT}g" $COUCHDB_DIR/config/local.ini
     perl -p -i -e "s{;admin = mysecretpassword}{$COUCH_USER = $COUCH_PASS}g" $COUCHDB_DIR/config/local.ini
@@ -282,6 +290,7 @@ stop_couch(){
 }
 
 clean_couch(){
+    echo "cleaning couch installation..."
     if [ -e $COUCHDB_DIR/logs/couchdb.pid ]; then stop_couch; fi;
     rm -f $COUCHDB_DIR/logs/.couchinitdb
     rm -rf $COUCHDB_DIR/database/*
@@ -319,7 +328,6 @@ init_wmcore(){
 
 # generate the agent config from the basic template
 init_wmagent(){
-    echo "Initialising WMAgent..."
     load_secrets_file;
     if [ ! -e $WMAGENT_DIR/install ]; then
         mkdir $WMAGENT_DIR/install  
@@ -353,12 +361,39 @@ start_agent(){
 }
 
 stop_agent(){
-    
-    wmcoreD --shutdown --config=$WMAGENT_CONFIG
+    echo "Shutting down agent...";
+    wmcoreD --shutdown --config=$WMAGENT_CONFIG;
 }
 
 status_of_agent(){
     wmcoreD --status --config=$WMAGENT_CONFIG
+}
+
+init_agent(){
+    echo " + Initialising WMAgent"
+    if [ $WMCORE_INIT_DONE -eq 0 ]; then
+           #echo "WMCore has not been initialised";
+           init_wmcore;
+    fi
+    if [ $WMAGENT_INIT_DONE -eq 0 ]; then
+           echo " + WMAgent has not been initialised";
+           init_wmagent;
+    else
+        echo " + WMAgent has already been initialised"
+    fi
+    echo " + Agent Configuration file at $WMAGENT_CONFIG"
+}
+
+#
+# revert agent back to pre initialised state & wipe out 
+# everything currently in existence.
+clean_agent(){
+    echo "cleaning up agent installation"
+    stop_agent;
+    rm -rf  $WMAGENT_DIR/install ; 
+    rm -f $WMAGENT_CONFIG;
+    rm -f $WMAGENT_DIR/config/.wmagentinit;
+    
 }
 
 
@@ -371,32 +406,25 @@ status(){
     
 }
 
+clean_all(){
+    clean_mysql;
+    clean_couch;
+    clean_agent;
+}
+
 help(){
     echo "there is no help, you are all alone";
 }
 
-# misc test commands
-dave_test(){
-    load_secrets_file;
-    couchdb -c
 
-}
-dave_test2(){
-    load_secrets_file;
-    
-}
 
 #######################################################
 # Main
 #######################################################
 
 case $1 in
-  start | restart)
-    echo "start or restart" ;;
   status)
     status ;;
-  stop)
-    echo "stop" ;;
   start-services)
     start_services;;
   stop-services)
@@ -407,20 +435,24 @@ case $1 in
     stop_mysql;;
   clean-mysql)
      clean_mysql;;
+  mysql-prompt)
+     mysql_prompt;;
   start-couch)
      start_couch;;
   stop-couch)
      stop_couch;;
   clean-couch)
      clean_couch;;
+  init-agent)
+     init_agent;;
   start-agent)
      start_agent;;
   stop-agent)
      stop_agent;;
-  test)
-     dave_test;;
-  test2)
-     dave_test2;;
+  clean-agent)
+     clean_agent;;
+  clean-all)
+     clean_all;;
   help)
     help ;;
   version)

@@ -11,7 +11,24 @@ class Container():
 
     Empty class to emulate a PSet.
     """
-    pass
+    _type = None
+    
+    def setType(self, type):
+        """
+        _setType_
+
+        Set the type of the object.
+        """
+        self._type = type
+        return
+
+    def type_():
+        """
+        _type__
+
+        Retrieve the type of the object.
+        """
+        return self._type
 
 class ConfigObject():
     """

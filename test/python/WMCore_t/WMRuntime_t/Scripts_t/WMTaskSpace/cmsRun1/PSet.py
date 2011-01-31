@@ -6,6 +6,7 @@ Bogus CMSSW PSet for testing runtime code.
 """
 
 import pickle
+import FWCore.ParameterSet.Config as cms
 
 class Container():
     """
@@ -24,6 +25,27 @@ class Process():
     outputRECORECO = Container()
     source = Container()
     services = {}
+    producers = {}
+    filters = {}
+
+    def __init__(self):
+        """
+        __init__
+
+        """
+        mixing1 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
+        mixing1.setType("MixingModule")
+        mixing2 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
+        mixing2.setType("MixingModule")
+        notmixing1 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
+        notmixing1.setType("NotAMixingModule")
+        notmixing2 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
+        notmixing2.setType("NotAMixingModule")
+        
+        self.producers["mix1"] = mixing1
+        self.producers["notmix1"] = notmixing1
+        self.filters["mix2"] = mixing2
+        self.filters["notmix2"] = notmixing2
 
     def outputModules_(self):
         """

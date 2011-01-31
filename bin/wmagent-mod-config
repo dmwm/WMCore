@@ -10,6 +10,7 @@ Copyright (c) 2011 Fermilab. All rights reserved.
 import sys
 import getopt
 import imp
+import socket
 
 from WMCore.Configuration import saveConfigurationFile
 
@@ -68,7 +69,20 @@ def modifyConfiguration(config, **args):
     for component in config.listComponents_():
         compCfg = getattr(config, component)
         compCfg.componentDir = "%s/%s" % (args['working_dir'], component)
-    
+        
+        if component == "WorkQueueManager":
+            compCfg.queueParams['CacheDir'] = "%s/%s" % (args['working_dir'], component)
+            
+    for webapp in config.listWebapps_():
+        compCfg = getattr(config, webapp)
+        compCfg.componentDir = "%s/%s" % (args['working_dir'], webapp)
+        
+    # hostname locations
+    config.Agent.hostName = socket.gethostname()
+    config.WorkQueueService.Webtools.host = socket.gethostname()
+    config.WorkQueueManager.queueParams['QueueURL'] = 'http://%s:9997' % socket.gethostname()
+    config.WorkQueueService.views.active.workqueue.queueParams['QueueURL'] = 'http://%s:9997' % socket.gethostname()
+
     return config
 
 

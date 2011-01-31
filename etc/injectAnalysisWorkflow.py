@@ -26,19 +26,18 @@ from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
 
 arguments = {
-            'Username' : "spiga",
-            'Requestor' : "spiga",
-            "Group" : "CRAB-3 Analysis Devel",
-            "CMSSWVersion" : "CMSSW_3_6_1_patch7",
+            'Username' : "mcinquil",
+            'Requestor' : "/C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Mattia Cinquilli",
+            "Group" : "CRAB-3 Devel",
+            "CMSSWVersion" : "CMSSW_3_8_1",
             "ScramArch" : "slc5_ia32_gcc434",
             "InputDataset" : "/RelValProdTTbar/JobRobot-MC_3XY_V24_JobRobot-v1/GEN-SIM-DIGI-RECO",
             "JobSplittingAlgorithm": "EventBased",
             "JobSplittingArgs": {"events_per_job": 100000},
             "Emulate" : False,
-            "CouchUrl" : "http://crab.pg.infn.it:5984",
+            "CouchUrl" : "http://username:password@crab.pg.infn.it:5984",
             "CouchDBName": "test2",
-            "AnalysisConfigCacheDoc" : "f16f7ce213e7c01946f377b3080011a3"
-        #    "AnalysisConfigCacheDoc" : "ddc59c1d0112a259790e6b879903c568",
+            "AnalysisConfigCacheDoc" : "746e4e30f9b7545ba4303845ea006003"
         }
 
 if not os.environ.has_key("WMAGENT_CONFIG"):
@@ -79,6 +78,7 @@ taskMaker.processWorkload()
 
 workload.save(os.path.join(workloadName, workloadFile))
 
+
 def doIndent(level):
     myStr = ""
     while level > 0:
@@ -95,15 +95,17 @@ def injectTaskIntoWMBS(specUrl, workflowName, task, inputFileset, indent = 0):
     print "%sinjecting %s" % (doIndent(indent), task.getPathName())
     print "%s  input fileset: %s" % (doIndent(indent), inputFileset.name)
 
-    myWorkflow = Workflow(spec = specUrl, owner = "spiga@cern.ch",
+    
+    myWorkflow = Workflow(spec = specUrl, owner = arguments['Requestor'],
                           name = workflowName, task = task.getPathName())
     myWorkflow.create()
+
 
     mySubscription = Subscription(fileset = inputFileset, workflow = myWorkflow,
                                   split_algo = task.jobSplittingAlgorithm(),
                                   type = task.taskType())
     mySubscription.create()
-    
+
     outputModules =  task.getOutputModulesForStep(task.getTopStepName())
  
     for outputModuleName in outputModules.listSections_():
@@ -158,15 +160,17 @@ def injectFilesFromDBS(inputFileset, datasetPath):
         myFile.addRun(myRun)
         myFile.create()
         inputFileset.addFile(myFile)
-        
+
     inputFileset.commit()
     inputFileset.markOpen(False)
     return
 
 
 for workloadTask in workload.taskIterator():
+    print "Worload ", workloadTask
     inputFileset = Fileset(name = workloadTask.getPathName())
     inputFileset.create()
+
     inputDataset = workloadTask.inputDataset()
     
     inputDatasetPath = "/%s/%s/%s" % (inputDataset.primary,

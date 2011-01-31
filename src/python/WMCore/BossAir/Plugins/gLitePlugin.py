@@ -539,7 +539,7 @@ class gLitePlugin:
                             jj['status_time'] = lbts
                             changeList.append(jj)
 
-                        if status not in ['Done', 'Aborted']: 
+                        if status not in ['Done', 'Aborted', 'Cleared', 'Cancelled by user', 'Cancelled']: 
                             runningList.append(jj)
                         else:
                             completeList.append(jj)
@@ -585,7 +585,7 @@ class gLitePlugin:
         for jj in jobs:
 
             if jj['status'] is not ['Done']:
-                if jj['status'] is in ['Aborted']:
+                if jj['status'] in ['Aborted']:
                     abortedJobs.append( jj )
                 continue
 
@@ -768,7 +768,7 @@ class gLitePlugin:
 
         # Now we should have sent all jobs to be submitted
         # Waiting for results
-        logging.debug("Waiting for %i  JOBS to KILL..." % len(workqueued))
+        logging.debug("Waiting for %i JOBS to be killed..." % len(workqueued))
 
         for n in xrange(len(workqueued)):
 

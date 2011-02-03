@@ -14,7 +14,7 @@ import cgi
 
 def detailsBackLink(requestName):
     """ HTML to return to the details of this request """
-    return  ' <A HREF="details/%s">Details</A> <A HREF=".">Browse</A><BR>' % requestName
+    return  ' <a href="details/%s">Details</A> <a href=".">Browse</A><BR>' % requestName
 
 def linkedTableEntry(methodName, entry):
     """ Makes an HTML table entry with the entry name, and a link to a
@@ -23,10 +23,10 @@ def linkedTableEntry(methodName, entry):
 
 def statusMenu(requestName, defaultField):
     """ Makes an HTML menu for setting the status """
-    html = defaultField + '&nbsp<SELECT NAME="%s:status"> <OPTION></OPTION>' % requestName
+    html = defaultField + '&nbsp<select name="%s:status"> <option></option>' % requestName
     for field in RequestStatus.NextStatus[defaultField]:
-        html += '<OPTION>%s</OPTION>' % field
-    html += '</SELECT>'
+        html += '<option>%s</option>' % field
+    html += '</select>'
     return html
 
 def biggestUpdate(field, request):
@@ -48,7 +48,9 @@ class ReqMgrBrowser(WebAPI):
         self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged',
                                  'Complete':'percentComplete', 'Success' : 'percentSuccess'}
         # entries in the table that show up as HTML links for that entry
-        self.linkedFields = {'Group':'group', 'Requestor':'user', 'RequestName':'details'}
+        self.linkedFields = {'Group': '../admin/group', 
+                             'Requestor': '../admin/user', 
+                             'RequestName': 'details'}
         self.detailsFields = ['RequestName', 'RequestType', 'Requestor', 'CMSSWVersion',
                 """ Main class for browsing and modifying requests """
             'ScramArch', 'GlobalTag', 'RequestSizeEvents',

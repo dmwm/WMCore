@@ -71,22 +71,3 @@ class ReRecoSchema(RequestSchema):
 
 registerRequestType("ReReco", ReRecoRequest, ReRecoSchema)
 
-if __name__ == "__main__":
-    schema = ReRecoSchema()
-    schema["Label"] = "ReRe"
-    schema["CMSSWVersion"] = "CMSSW_3_5_6"
-    schema["ScramArch"] = "slc5_ia32_gcc434"
-    schema["GlobalTag"] = "31X_V1"
-    schema["AcquisitionEra"] = "PromSeason09"
-    schema["SiwteWhitelist"] = ["T1_CERN", "T1_FNAL"]
-    schema["RunBlacklist"] = [10, 11]
-    schema["InputDataset"] = "/MinimumBias/BeamCommissioning09-v1/RAW"
-    schema["SkimInput"] = "output"
-    schema["DbsUrl"] = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
-    schema["Scenario"] = "pp"
-    schema["ProcessingConfig"] = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8"
-    schema["ProcessingVersion"] = "v0"
-    schema["SkimConfig"] = ""
-    schema["SkimConfig"] = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"
-    request = ReRecoRequest()
-    print str(request.makeWorkload(schema))

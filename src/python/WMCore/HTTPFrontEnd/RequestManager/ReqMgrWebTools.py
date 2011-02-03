@@ -173,3 +173,13 @@ def quote(data):
         res = cgi.escape(str(data), quote=True)
     return res
 
+def unidecode(data):
+    if isinstance(data, unicode):
+        return str(data)
+    elif isinstance(data, dict):
+        return dict(map(unidecode, data.iteritems()))
+    elif isinstance(data, (list, tuple, set, frozenset)):
+        return type(data)(map(unidecode, data))
+    else:
+        return data
+

@@ -18,7 +18,7 @@ from cherrypy import config as cpconfig
 #FIXME
 from WMCore.Agent.Daemon.Create import createDaemon
 from WMCore.Agent.Daemon.Details import Details
-from WMCore.Configuration import Configuration
+from WMCore.Configuration import Configuration, ConfigSection
 from WMCore.Configuration import loadConfigurationFile
 from optparse import OptionParser
 # Factory to load pages dynamically
@@ -106,12 +106,14 @@ class Root(Harness):
         Initialise the object, pull out the necessary pieces of the configuration
         """
         self.homepage = None
+        self.mode = 'component'
         if webApp == None:
             Harness.__init__(self, config, compName = "Webtools")
             self.appconfig = config.section_(self.config.Webtools.application)
             self.app = self.config.Webtools.application
             self.secconfig = config.component_("SecurityModule")
             self.serverConfig = config.section_("Webtools")
+            self.mode = 'standalone'
         else:
             Harness.__init__(self, config, compName = webApp)
             self.appconfig = config.section_(webApp)
@@ -137,17 +139,26 @@ class Root(Harness):
     def _configureCherryPy(self):
         """
         _configureCherryPy_
-        Configure the CherryPy server
+        Configure the CherryPy server, ignoring items in the configuration file that
+        aren't CherryPy configurables.
         """
         configDict = self.serverConfig.dictionary_()
 
+        # If you add configurables update the testLongHandConfigurables in Root_t
         configurables = ['engine', 'hooks', 'log', 'request', 'response',
-                         'server', 'tools', 'wsgi', 'checker', 'proxy_base']
+                         'server', 'tools', 'wsgi', 'checker']
         # Deal with "long hand" configuration variables
         for i in configurables:
             if i in configDict.keys():
-                for k, v in configDict[i].dictionary_().items():
-                    cpconfig["%s.%s" % (i, k)] = v
+                for config_param, param_value in configDict[i].dictionary_().items():
+                    if isinstance(param_value, ConfigSection):
+                        # TODO: make this loads better
+                        for child_param, child_param_value in param_value.dictionary_().items():
+                            cpconfig["%s.%s.%s" % (i, config_param, child_param)] = child_param_value
+                    elif type(param_value) in [type('string'), type(123)]:
+                        cpconfig["%s.%s" % (i, config_param)] = param_value
+                    else:
+                        raise Exception("Unsupported configuration type: %s" % type(v))
 
         # which we then over write with short hand variables if necessary
         cpconfig["server.environment"] = configDict.get("environment", "production")
@@ -156,9 +167,12 @@ class Root(Harness):
         tools.time = cherrypy.Tool('on_start_resource', mytime)
 
         if configDict.get("proxy_base", False):
-            tools.proxy = cherrypy.Tool('before_request_body', myproxy, priority=30)
-            tools.proxy.on = True
-            tools.proxy.base = configDict["proxy_base"]
+            cpconfig.update ({
+                'tools.proxy': cherrypy.Tool('before_request_body', myproxy, priority=30),
+                'tools.proxy.on': True,
+                'tools.proxy.base': configDict["proxy_base"]
+            })
+
 
         cpconfig.update ({
                           'tools.expires.on': True,
@@ -193,8 +207,11 @@ class Root(Harness):
             cherrypy.log.error_log.setLevel(configDict.get("error_log_level", logging.DEBUG))
             cherrypy.log.access_log.setLevel(configDict.get("access_log_level", logging.DEBUG))
 
+        default_port = 8080
+        if "server.socket_port" in cpconfig.keys():
+            default_port = cpconfig["server.socket_port"]
         cpconfig["server.thread_pool"] = configDict.get("thread_pool", 10)
-        cpconfig["server.socket_port"] = configDict.get("port", 8080)
+        cpconfig["server.socket_port"] = configDict.get("port", default_port)
         cpconfig["server.socket_host"] = configDict.get("host", "localhost")
 
         #A little hacky way to pass the expire second to config
@@ -212,6 +229,7 @@ class Root(Harness):
                             'tools.secmodv2.role': self.secconfig.default.role,
                             'tools.secmodv2.group': self.secconfig.default.group,
                             'tools.secmodv2.site': self.secconfig.default.site})
+        cherrypy.log.error_log.debug('Application %s initialised in %s mode' % (self.app, self.mode))
 
     def _loadPages(self):
         """

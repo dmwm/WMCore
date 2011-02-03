@@ -225,3 +225,18 @@ class Fileset(WMBSBase, WMFileset):
         self.open = isOpen
 
         return
+
+
+    def __str__(self):
+        """
+        __str__
+
+        Write out something useful because Fileset doesn't
+        inherit from dict
+        """
+
+        st = {'name': self.name, 'files': self.files, 'id': self.id,
+              'open': self.open, 'parents': self.parents,
+              'lastUpdate': self.lastUpdate}
+
+        return str(st)

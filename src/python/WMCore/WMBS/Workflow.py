@@ -198,3 +198,16 @@ class Workflow(WMBSBase, WMWorkflow):
             
         self.commitTransaction(existingTransaction)
         return
+
+    def __str__(self):
+        """
+        __str__
+
+        Print out some useful info just because
+        this does not inherit from dict.
+        """
+
+        d = {'id': self.id, 'spec': self.spec, 'name': self.name,
+             'owner': self.owner, 'task': self.task}
+        
+        return str(d)

@@ -123,3 +123,15 @@ class Fileset(WMObject):
         representing whether or not the fileset is open.
         """
         self.open = isOpen
+
+
+    def __str__(self):
+        """
+        __str__
+
+        Write out something useful
+        """
+
+        st = {'name': self.name, 'files': self.files}
+
+        return str(st)

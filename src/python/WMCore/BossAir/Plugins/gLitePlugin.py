@@ -433,9 +433,14 @@ class gLitePlugin:
         if wmcoreBasedir  :
             cmdquerypath = wmcoreBasedir + \
                            '/src/python/WMCore/BossAir/Plugins/' + queryfilename
+            if not os.path.exists( cmdquerypath ):
+                raise Exception('Impossible to locate %s' % cmdquerypath)
         else :
             # Impossible to locate GLiteQueryStatus.py ...
-            raise Exception('Impossible to locate %s' % queryfilename )
+            raise Exception('Impossible to locate %s, WMBASE = %s ' % (queryfilename, str(wmcoreBasedir)) )
+
+        logging.debug("Using %s to check the status " % cmdquerypath)
+
 
         changeList   = []
         completeList = []

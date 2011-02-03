@@ -306,3 +306,18 @@ class JobGroup(WMBSBase, WMJobGroup):
                                 transaction = self.existingTransaction())
 
         return result
+
+
+    def __str__(self):
+        """
+        __str__
+
+        Print out some information about the jobGroup
+        as if jobGroup inherited from dict()
+        """
+
+        d = {'id': self.id, 'uid': self.uid, 'subscription': self.subscription,
+             'output': self.output, 'jobs': self.jobs,
+             'newjobs': self.newjobs}
+
+        return str(d)

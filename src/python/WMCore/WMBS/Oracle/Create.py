@@ -232,7 +232,7 @@ class Create(CreateWMBSBase):
                workflow_id           INTEGER      NOT NULL,
                output_identifier     VARCHAR(255) NOT NULL,
                output_fileset        INTEGER      NOT NULL,
-               merged_output_fileset INTEGER      NOT NULL               
+               merged_output_fileset INTEGER
                ) %s""" % tablespaceTable
 
         self.constraints["01_fk_wmbs_workflow_output"] = \

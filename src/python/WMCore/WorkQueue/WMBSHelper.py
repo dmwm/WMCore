@@ -267,12 +267,12 @@ class WMBSHelper(WMConnectionBase):
                                                          
                         self.createSubscription(topLevelFilesetName, childTask, outputFileset) 
 
-                if mergedOutputFileset != None:
-                    workflow.addOutput(outputModuleName, outputFileset,
-                                       mergedOutputFileset)
-                else:
+                if mergedOutputFileset == None:
                     workflow.addOutput(outputModuleName, outputFileset,
                                        outputFileset)
+                else:
+                    workflow.addOutput(outputModuleName, outputFileset,
+                                       mergedOutputFileset)
             
         return self.topLevelSubscription
 

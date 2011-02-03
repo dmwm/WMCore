@@ -64,8 +64,8 @@ class StoreResultsTest(unittest.TestCase):
 
         goldenOutputMods = ["Merged"]
         for goldenOutputMod in goldenOutputMods:
-            mergedOutput = testWorkflow.outputMap[goldenOutputMod]["merged_output_fileset"]
-            unmergedOutput = testWorkflow.outputMap[goldenOutputMod]["output_fileset"]
+            mergedOutput = testWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
+            unmergedOutput = testWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
 
             mergedOutput.loadData()
             unmergedOutput.loadData()
@@ -75,8 +75,8 @@ class StoreResultsTest(unittest.TestCase):
             self.assertEqual(unmergedOutput.name, "/TestWorkload/StoreResults/merged-%s" % goldenOutputMod,
                              "Error: Unmerged output fileset is wrong: %s."%unmergedOutput.name)
 
-        logArchOutput = testWorkflow.outputMap["logArchive"]["merged_output_fileset"]
-        unmergedLogArchOutput = testWorkflow.outputMap["logArchive"]["output_fileset"]
+        logArchOutput = testWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
+        unmergedLogArchOutput = testWorkflow.outputMap["logArchive"][0]["output_fileset"]
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
 

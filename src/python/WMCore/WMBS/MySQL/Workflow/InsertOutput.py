@@ -14,7 +14,9 @@ class InsertOutput(DBFormatter):
                  :fileset AS output_fileset, :mfileset AS merged_output_fileset
                  FROM DUAL WHERE NOT EXISTS
                (SELECT workflow_id FROM wmbs_workflow_output
-                 WHERE :workflow = workflow_id AND :output = output_identifier)"""
+                 WHERE :workflow = workflow_id AND
+                       :output = output_identifier AND
+                       :fileset = output_fileset)"""
 
     def execute(self, workflowID, outputIdentifier, filesetID, mergedFilesetID,
                 conn = None, transaction = False):

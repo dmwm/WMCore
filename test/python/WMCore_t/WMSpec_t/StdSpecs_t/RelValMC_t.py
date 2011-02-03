@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 
 Unit tests for the RelValMC workflow
@@ -125,8 +126,8 @@ class RelValMCTest(unittest.TestCase):
         goldenOutputMods = ["OutputA"]
         
         for o in goldenOutputMods:
-            mergedOutput = genTask.outputMap[o]["merged_output_fileset"]
-            unmergedOutput = genTask.outputMap[o]["output_fileset"]
+            mergedOutput = genTask.outputMap[o][0]["merged_output_fileset"]
+            unmergedOutput = genTask.outputMap[o][0]["output_fileset"]
             mergedOutput.loadData()
             unmergedOutput.loadData()
             self.assertEqual(mergedOutput.name, "/TestWorkload/Generation/GenerationMerge%s/merged-Merged" % o,
@@ -134,8 +135,8 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(unmergedOutput.name, "/TestWorkload/Generation/unmerged-%s" % o,
                              "Error: Unmerged output fileset is wrong.")
             
-        logArchOutput = genTask.outputMap["logArchive"]["merged_output_fileset"]
-        unmergedLogArchOutput = genTask.outputMap["logArchive"]["output_fileset"]
+        logArchOutput = genTask.outputMap["logArchive"][0]["merged_output_fileset"]
+        unmergedLogArchOutput = genTask.outputMap["logArchive"][0]["output_fileset"]
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
         self.assertEqual(logArchOutput.name, "/TestWorkload/Generation/unmerged-logArchive",
@@ -148,16 +149,16 @@ class RelValMCTest(unittest.TestCase):
                                  task = "/TestWorkload/Generation/GenerationMerge%s" % o)
             mergeTask.load()
             self.assertEqual(len(mergeTask.outputMap.keys()), 2, "Error: Wrong number of WF outputs.")
-            mergedMergeOutput = mergeTask.outputMap["Merged"]["merged_output_fileset"]
-            unmergedMergeOutput = mergeTask.outputMap["Merged"]["output_fileset"]
+            mergedMergeOutput = mergeTask.outputMap["Merged"][0]["merged_output_fileset"]
+            unmergedMergeOutput = mergeTask.outputMap["Merged"][0]["output_fileset"]
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
             self.assertEqual(mergedMergeOutput.name, "/TestWorkload/Generation/GenerationMerge%s/merged-Merged" % o,
                              "Error: Merged output fileset is wrong.")
             self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/Generation/GenerationMerge%s/merged-Merged" % o,
                              "Error: Unmerged output fileset is wrong.")
-            logArchOutput = mergeTask.outputMap["logArchive"]["merged_output_fileset"]
-            unmergedLogArchOutput = mergeTask.outputMap["logArchive"]["output_fileset"]
+            logArchOutput = mergeTask.outputMap["logArchive"][0]["merged_output_fileset"]
+            unmergedLogArchOutput = mergeTask.outputMap["logArchive"][0]["output_fileset"]
             logArchOutput.loadData()
             unmergedLogArchOutput.loadData()
             self.assertEqual(logArchOutput.name, "/TestWorkload/Generation/GenerationMerge%s/merged-logArchive" % o,
@@ -228,8 +229,8 @@ class RelValMCTest(unittest.TestCase):
         goldenOutputMods = ["RecoA", "RecoB"]
         
         for o in goldenOutputMods:
-            mergedOutput = recoTask.outputMap[o]["merged_output_fileset"]
-            unmergedOutput = recoTask.outputMap[o]["output_fileset"]
+            mergedOutput = recoTask.outputMap[o][0]["merged_output_fileset"]
+            unmergedOutput = recoTask.outputMap[o][0]["output_fileset"]
             mergedOutput.loadData()
             unmergedOutput.loadData()
             self.assertEqual(mergedOutput.name,
@@ -239,8 +240,8 @@ class RelValMCTest(unittest.TestCase):
                              "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/unmerged-%s" % o,
                              ("Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name))
             
-        logArchOutput = recoTask.outputMap["logArchive"]["merged_output_fileset"]
-        unmergedLogArchOutput = recoTask.outputMap["logArchive"]["output_fileset"]
+        logArchOutput = recoTask.outputMap["logArchive"][0]["merged_output_fileset"]
+        unmergedLogArchOutput = recoTask.outputMap["logArchive"][0]["output_fileset"]
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
         self.assertEqual(logArchOutput.name,
@@ -255,8 +256,8 @@ class RelValMCTest(unittest.TestCase):
                                  task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMerge%s" % o)
             mergeTask.load()
             self.assertEqual(len(mergeTask.outputMap.keys()), 2, "Error: Wrong number of WF outputs.")
-            mergedMergeOutput = mergeTask.outputMap["Merged"]["merged_output_fileset"]
-            unmergedMergeOutput = mergeTask.outputMap["Merged"]["output_fileset"]
+            mergedMergeOutput = mergeTask.outputMap["Merged"][0]["merged_output_fileset"]
+            unmergedMergeOutput = mergeTask.outputMap["Merged"][0]["output_fileset"]
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
             self.assertEqual(mergedMergeOutput.name,
@@ -265,8 +266,8 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(unmergedMergeOutput.name,
                              "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMerge%s/merged-Merged" % o,
                              ("Error: Unmerged output fileset is wrong: %s" % unmergedMergeOutput.name))
-            logArchOutput = mergeTask.outputMap["logArchive"]["merged_output_fileset"]
-            unmergedLogArchOutput = mergeTask.outputMap["logArchive"]["output_fileset"]
+            logArchOutput = mergeTask.outputMap["logArchive"][0]["merged_output_fileset"]
+            unmergedLogArchOutput = mergeTask.outputMap["logArchive"][0]["output_fileset"]
             logArchOutput.loadData()
             unmergedLogArchOutput.loadData()
             self.assertEqual(logArchOutput.name,
@@ -330,8 +331,8 @@ class RelValMCTest(unittest.TestCase):
         goldenOutputMods = ["AlcaRecoA", "AlcaRecoB"]
         
         for o in goldenOutputMods:
-            mergedOutput = alcaRecoTask.outputMap[o]["merged_output_fileset"]
-            unmergedOutput = alcaRecoTask.outputMap[o]["output_fileset"]
+            mergedOutput = alcaRecoTask.outputMap[o][0]["merged_output_fileset"]
+            unmergedOutput = alcaRecoTask.outputMap[o][0]["output_fileset"]
             mergedOutput.loadData()
             unmergedOutput.loadData()
             self.assertEqual(mergedOutput.name,
@@ -341,8 +342,8 @@ class RelValMCTest(unittest.TestCase):
                              "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/unmerged-%s" % o,
                              ("Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name))
             
-        logArchOutput = alcaRecoTask.outputMap["logArchive"]["merged_output_fileset"]
-        unmergedLogArchOutput = alcaRecoTask.outputMap["logArchive"]["output_fileset"]
+        logArchOutput = alcaRecoTask.outputMap["logArchive"][0]["merged_output_fileset"]
+        unmergedLogArchOutput = alcaRecoTask.outputMap["logArchive"][0]["output_fileset"]
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
         self.assertEqual(logArchOutput.name,
@@ -357,8 +358,8 @@ class RelValMCTest(unittest.TestCase):
                                  task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOMerge%s" % o)
             mergeTask.load()
             self.assertEqual(len(mergeTask.outputMap.keys()), 2, "Error: Wrong number of WF outputs.")
-            mergedMergeOutput = mergeTask.outputMap["Merged"]["merged_output_fileset"]
-            unmergedMergeOutput = mergeTask.outputMap["Merged"]["output_fileset"]
+            mergedMergeOutput = mergeTask.outputMap["Merged"][0]["merged_output_fileset"]
+            unmergedMergeOutput = mergeTask.outputMap["Merged"][0]["output_fileset"]
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
             self.assertEqual(mergedMergeOutput.name,
@@ -367,8 +368,8 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(unmergedMergeOutput.name,
                              "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOMerge%s/merged-Merged" % o,                             
                              ("Error: Unmerged output fileset is wrong: %s" % unmergedMergeOutput.name))
-            logArchOutput = mergeTask.outputMap["logArchive"]["merged_output_fileset"]
-            unmergedLogArchOutput = mergeTask.outputMap["logArchive"]["output_fileset"]
+            logArchOutput = mergeTask.outputMap["logArchive"][0]["merged_output_fileset"]
+            unmergedLogArchOutput = mergeTask.outputMap["logArchive"][0]["output_fileset"]
             logArchOutput.loadData()
             unmergedLogArchOutput.loadData()
             self.assertEqual(logArchOutput.name,
@@ -442,4 +443,4 @@ class RelValMCTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()    
+    unittest.main()

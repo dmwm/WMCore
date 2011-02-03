@@ -910,7 +910,7 @@ class FilesetTest(unittest.TestCase):
         testSubscription2.create()
         testSubscription3 = Subscription(fileset = testOutputFileset2,
                                          workflow = testWorkflow3)
-        testSubscription3.create()        
+        testSubscription3.create()
 
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
@@ -925,6 +925,172 @@ class FilesetTest(unittest.TestCase):
                "Error: Wrong fileset is marked as closable."
 
         return            
+
+    def testFilesetClosing5(self):
+        """
+        _testFilesetClosing5_
+
+        Verify that fileset closing works in the case where one cleanup
+        subscription is used to cleanup files from all the other merge
+        subscriptions in the request.
+        """
+        inputFileset = Fileset(name = "InputFileset")
+        inputFileset.create()
+        inputFileset.markOpen(False)
+        cleanupFileset = Fileset(name = "CleanupFileset")
+        cleanupFileset.create()
+        cleanupFileset.markOpen(True)
+
+        testOutputFileset1 = Fileset(name = "TestOutputFileset1")
+        testOutputFileset1.create()
+        testOutputFileset1.markOpen(True)
+        testOutputFileset2 = Fileset(name = "TestOutputFileset2")
+        testOutputFileset2.create()
+        testOutputFileset2.markOpen(True)
+        testOutputFileset3 = Fileset(name = "TestOutputFileset3")
+        testOutputFileset3.create()
+        testOutputFileset3.markOpen(True)
+
+        cleanupWorkflow = Workflow(spec = "spec1.xml", owner = "Steve",
+                                   name = "wf001", task = "cleanup")
+        cleanupWorkflow.create()
+
+        testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
+                                 name = "wf001", task = "sometask1")
+        testWorkflow1.create()
+        testWorkflow1.addOutput("out1", testOutputFileset1)
+        testWorkflow1.addOutput("out1", cleanupFileset)
+
+        testWorkflow2 = Workflow(spec = "spec1.xml", owner = "Steve",
+                                 name = "wf001", task = "sometask2")
+        testWorkflow2.create()
+        testWorkflow2.addOutput("out1", testOutputFileset2)
+        testWorkflow2.addOutput("out1", cleanupFileset)
+
+        testWorkflow3 = Workflow(spec = "spec1.xml", owner = "Steve",
+                                 name = "wf001", task = "sometask3")
+        testWorkflow3.create()
+        testWorkflow3.addOutput("out1", testOutputFileset3)
+        testWorkflow3.addOutput("out1", cleanupFileset)
+
+        cleanupSubscription = Subscription(fileset = cleanupFileset,
+                                           workflow = cleanupWorkflow)
+        cleanupSubscription.create()
+
+        testSubscription1 = Subscription(fileset = inputFileset,
+                                         workflow = testWorkflow1)
+        testSubscription1.create()
+        testSubscription2 = Subscription(fileset = testOutputFileset1,
+                                         workflow = testWorkflow2)
+        testSubscription2.create()
+        testSubscription3 = Subscription(fileset = testOutputFileset2,
+                                         workflow = testWorkflow3)
+        testSubscription3.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+        inputFileset.addFile(testFileA)
+        inputFileset.commit()
+
+        testJobGroupA = JobGroup(subscription = testSubscription1)
+        testJobGroupA.create()
+
+        testJobA = Job(name = "TestJobA", files = [testFileA])
+        testJobA.create(testJobGroupA)
+        testJobA["state"] = "executing"
+
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+        changeStateDAO = daoFactory(classname = "Jobs.ChangeState")
+        changeStateDAO.execute(jobs = [testJobA])
+
+        closableFilesetDAO = daoFactory(classname = "Fileset.ListClosable")
+        closableFilesets = closableFilesetDAO.execute()
+
+        self.assertEqual(len(closableFilesets), 0,
+                         "Error: There should be no closable filesets.")
+
+        testSubscription1.completeFiles(testFileA)
+        testJobA["state"] = "cleanout"
+        changeStateDAO.execute(jobs = [testJobA])
+
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
+        testFileB.addRun(Run( 1, *[45]))
+        testFileB.create()
+        testOutputFileset1.addFile(testFileB)
+        testOutputFileset1.commit()
+        cleanupFileset.addFile(testFileB)
+        cleanupFileset.commit()
+
+        closableFilesets = closableFilesetDAO.execute()
+        self.assertEqual(len(closableFilesets), 1,
+                         "Error: There should only be one closable fileset.")
+        self.assertEqual(closableFilesets[0], testOutputFileset1.id,
+                         "Error: Output fileset one should be closable.")
+
+        testOutputFileset1.markOpen(False)
+
+        testJobGroupB = JobGroup(subscription = testSubscription2)
+        testJobGroupB.create()
+
+        testJobB = Job(name = "TestJobB", files = [testFileB])
+        testJobB.create(testJobGroupB)
+        testJobB["state"] = "cleanout"
+        changeStateDAO.execute(jobs = [testJobB])
+
+        testSubscription2.completeFiles([testFileB])
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
+        testFileC.addRun(Run( 1, *[45]))
+        testFileC.create()
+        testOutputFileset2.addFile(testFileC)
+        testOutputFileset2.commit()
+        cleanupFileset.addFile(testFileC)
+        cleanupFileset.commit()
+
+        closableFilesets = closableFilesetDAO.execute()
+        self.assertEqual(len(closableFilesets), 1,
+                         "Error: There should only be one closable fileset.")
+        self.assertEqual(closableFilesets[0], testOutputFileset2.id,
+                         "Error: Output fileset two should be closable.")
+
+        testOutputFileset2.markOpen(False)
+
+        testJobGroupC = JobGroup(subscription = testSubscription3)
+        testJobGroupC.create()
+
+        testJobC = Job(name = "TestJobC", files = [testFileC])
+        testJobC.create(testJobGroupC)
+        testJobC["state"] = "cleanout"
+        changeStateDAO.execute(jobs = [testJobC])
+
+        testSubscription3.completeFiles([testFileC])
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
+        testFileD.addRun(Run( 1, *[45]))
+        testFileD.create()
+        testOutputFileset3.addFile(testFileD)
+        testOutputFileset3.commit()
+        cleanupFileset.addFile(testFileD)
+        cleanupFileset.commit()
+
+        closableFilesets = closableFilesetDAO.execute()
+        self.assertEqual(len(closableFilesets), 2,
+                         "Error: There should only be two closable filesets.")
+        self.assertTrue(testOutputFileset3.id in closableFilesets,
+                        "Error: Output fileset three should be closable.")
+        self.assertTrue(cleanupFileset.id in closableFilesets,
+                        "Error: Cleanup fileset should be closable.")
+        return
 
     def testBulkAddDAO(self):
         """

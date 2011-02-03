@@ -254,14 +254,18 @@ class JobAccountantTest(unittest.TestCase):
         self.recoOutputFileset.create()
         self.alcaOutputFileset = Fileset(name = "ALCA")
         self.alcaOutputFileset.create()
+        self.cleanupFileset = Fileset(name = "Cleanup")
+        self.cleanupFileset.create()
 
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
         self.testWorkflow.create()
         self.testWorkflow.addOutput("FEVT", self.recoOutputFileset,
                                     self.recoOutputFileset)
+        self.testWorkflow.addOutput("FEVT", self.cleanupFileset, None)
         self.testWorkflow.addOutput("ALCARECOStreamCombined", self.alcaOutputFileset,
                                     self.alcaOutputFileset)
+        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.cleanupFileset, None)
 
         inputFile = File(lfn = "/path/to/some/lfn", size = 600000, events = 60000,
                          locations = "cmssrm.fnal.gov")
@@ -577,8 +581,11 @@ class JobAccountantTest(unittest.TestCase):
 
         self.recoOutputFileset.loadData()
         self.alcaOutputFileset.loadData()
+        self.cleanupFileset.loadData()
 
         for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
+            assert fwjrFile["lfn"] in self.cleanupFileset.getFiles(type = "lfn"), \
+                   "Error: file is missing from cleanup output fileset."
             if fwjrFile["dataset"]["dataTier"] == "RECO":
                 assert fwjrFile["lfn"] in self.recoOutputFileset.getFiles(type = "lfn"), \
                        "Error: file is missing from reco output fileset."
@@ -658,14 +665,18 @@ class JobAccountantTest(unittest.TestCase):
         self.alcaOutputFileset.create()
         self.mergedAlcaOutputFileset = Fileset(name = "MergedALCA")
         self.mergedAlcaOutputFileset.create()        
+        self.cleanupFileset = Fileset(name = "Cleanup")
+        self.cleanupFileset.create()
 
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
         self.testWorkflow.create()
         self.testWorkflow.addOutput("output", self.recoOutputFileset,
                                     self.mergedRecoOutputFileset)
+        self.testWorkflow.addOutput("output", self.cleanupFileset, None)
         self.testWorkflow.addOutput("ALCARECOStreamCombined", self.alcaOutputFileset,
                                     self.mergedAlcaOutputFileset)
+        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.cleanupFileset, None)
 
         self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
                                               name = "TestRecoMergeWF", task = "None")
@@ -754,11 +765,14 @@ class JobAccountantTest(unittest.TestCase):
         self.mergedRecoOutputFileset.loadData()
         self.alcaOutputFileset.loadData()
         self.mergedAlcaOutputFileset.loadData()
+        self.cleanupFileset.loadData()
 
         assert len(self.recoOutputFileset.getFiles(type = "list")) == 0, \
                "Error: files should go straight to the merged reco fileset."
         assert len(self.alcaOutputFileset.getFiles(type = "list")) == 0, \
                "Error: files should go straight to the merged alca fileset."
+        assert len(self.cleanupFileset.getFiles(type = "list")) == 0, \
+               "Error: There should be no files in the cleanup fileset."
 
         assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 1, \
                "Error: Should be only one file in the merged reco fileset."

@@ -505,8 +505,8 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(len(procWorkflow.outputMap.keys()), 1,
                          "Error: Wrong number of WF outputs.")
 
-        mergedProcOutput = procWorkflow.outputMap["OutputA"]["merged_output_fileset"]
-        unmergedProcOutput = procWorkflow.outputMap["OutputA"]["output_fileset"]
+        mergedProcOutput = procWorkflow.outputMap["OutputA"][0]["merged_output_fileset"]
+        unmergedProcOutput = procWorkflow.outputMap["OutputA"][0]["output_fileset"]
 
         mergedProcOutput.loadData()
         unmergedProcOutput.loadData()
@@ -527,14 +527,9 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
                          "Error: Wrong number of WF outputs.")
 
-        mergedMergeOutput = mergeWorkflow.outputMap["Merged"]["merged_output_fileset"]
-        unmergedMergeOutput = mergeWorkflow.outputMap["Merged"]["output_fileset"]
-
-        mergedMergeOutput.loadData()
+        unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
         unmergedMergeOutput.loadData()
 
-        self.assertEqual(mergedMergeOutput.name, "/TestWorkload/ProcessingTask/MergeTask/merged-Merged",
-                         "Error: Merged output fileset is wrong.")
         self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/ProcessingTask/MergeTask/merged-Merged",
                          "Error: Unmerged output fileset is wrong.")
 
@@ -549,18 +544,18 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(len(skimWorkflow.outputMap.keys()), 2,
                          "Error: Wrong number of WF outputs.")
 
-        mergedSkimOutputA = skimWorkflow.outputMap["SkimOutputA"]["merged_output_fileset"]
-        unmergedSkimOutputA = skimWorkflow.outputMap["SkimOutputA"]["output_fileset"]
-        mergedSkimOutputB = skimWorkflow.outputMap["SkimOutputB"]["merged_output_fileset"]
-        unmergedSkimOutputB = skimWorkflow.outputMap["SkimOutputB"]["output_fileset"]
+        mergedSkimOutputA = skimWorkflow.outputMap["SkimOutputA"][0]["merged_output_fileset"]
+        unmergedSkimOutputA = skimWorkflow.outputMap["SkimOutputA"][0]["output_fileset"]
+        mergedSkimOutputB = skimWorkflow.outputMap["SkimOutputB"][0]["merged_output_fileset"]
+        unmergedSkimOutputB = skimWorkflow.outputMap["SkimOutputB"][0]["output_fileset"]
 
         mergedSkimOutputA.loadData()
-        unmergedSkimOutputA.loadData()
         mergedSkimOutputB.loadData()
+        unmergedSkimOutputA.loadData()
         unmergedSkimOutputB.loadData()
 
         self.assertEqual(mergedSkimOutputA.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputA",
-                         "Error: Merged output fileset is wrong.")
+                         "Error: Merged output fileset is wrong: %s" % mergedSkimOutputA.name)
         self.assertEqual(unmergedSkimOutputA.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputA",
                          "Error: Unmerged output fileset is wrong.")
         self.assertEqual(mergedSkimOutputB.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputB",
@@ -600,7 +595,7 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
                          "Error: Wrong split algo.")        
 
-        skimSubscription = Subscription(fileset = mergedMergeOutput, workflow = skimWorkflow)
+        skimSubscription = Subscription(fileset = unmergedMergeOutput, workflow = skimWorkflow)
         skimSubscription.loadData()
 
         self.assertEqual(skimSubscription["type"], "Skim",

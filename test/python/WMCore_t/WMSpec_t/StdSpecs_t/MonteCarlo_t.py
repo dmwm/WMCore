@@ -96,8 +96,8 @@ class MonteCarloTest(unittest.TestCase):
 
         goldenOutputMods = ["OutputA", "OutputB"]
         for goldenOutputMod in goldenOutputMods:
-            mergedOutput = prodWorkflow.outputMap[goldenOutputMod]["merged_output_fileset"]
-            unmergedOutput = prodWorkflow.outputMap[goldenOutputMod]["output_fileset"]
+            mergedOutput = prodWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
+            unmergedOutput = prodWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
 
             mergedOutput.loadData()
             unmergedOutput.loadData()
@@ -107,8 +107,8 @@ class MonteCarloTest(unittest.TestCase):
             self.assertEqual(unmergedOutput.name, "/TestWorkload/Production/unmerged-%s" % goldenOutputMod,
                              "Error: Unmerged output fileset is wrong.")
 
-        logArchOutput = prodWorkflow.outputMap["logArchive"]["merged_output_fileset"]
-        unmergedLogArchOutput = prodWorkflow.outputMap["logArchive"]["output_fileset"]
+        logArchOutput = prodWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
+        unmergedLogArchOutput = prodWorkflow.outputMap["logArchive"][0]["output_fileset"]
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
 
@@ -125,8 +125,8 @@ class MonteCarloTest(unittest.TestCase):
             self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
                              "Error: Wrong number of WF outputs.")
 
-            mergedMergeOutput = mergeWorkflow.outputMap["Merged"]["merged_output_fileset"]
-            unmergedMergeOutput = mergeWorkflow.outputMap["Merged"]["output_fileset"]
+            mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
+            unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
 
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
@@ -136,8 +136,8 @@ class MonteCarloTest(unittest.TestCase):
             self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/Production/ProductionMerge%s/merged-Merged" % goldenOutputMod,
                              "Error: Unmerged output fileset is wrong.")
 
-            logArchOutput = mergeWorkflow.outputMap["logArchive"]["merged_output_fileset"]
-            unmergedLogArchOutput = mergeWorkflow.outputMap["logArchive"]["output_fileset"]
+            logArchOutput = mergeWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
+            unmergedLogArchOutput = mergeWorkflow.outputMap["logArchive"][0]["output_fileset"]
             logArchOutput.loadData()
             unmergedLogArchOutput.loadData()
 

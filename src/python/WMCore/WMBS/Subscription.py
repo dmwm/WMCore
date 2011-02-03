@@ -406,9 +406,10 @@ class Subscription(WMBSBase, WMSubscription):
         # Get output filesets from the workflow
         self['workflow'].load()
         for entry in self['workflow'].outputMap:
-            wid = self['workflow'].outputMap[entry]["output_fileset"].id
-            if not wid in filesets:
-                filesets.append(wid)
+            for outputFilesets in self['workflow'].outputMap[entry]:
+                wid = outputFilesets["output_fileset"].id
+                if not wid in filesets:
+                    filesets.append(wid)
 
         # Do the input fileset LAST!
         filesets.append(self['fileset'].id)

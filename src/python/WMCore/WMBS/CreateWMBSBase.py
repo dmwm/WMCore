@@ -148,7 +148,7 @@ class CreateWMBSBase(DBCreator):
              workflow_id           INTEGER NOT NULL,
              output_identifier     VARCHAR(255) NOT NULL,
              output_fileset        INTEGER NOT NULL,
-             merged_output_fileset INTEGER NOT NULL,
+             merged_output_fileset INTEGER,
              FOREIGN KEY(workflow_id)  REFERENCES wmbs_workflow(id)
                ON DELETE CASCADE,
              FOREIGN KEY(output_fileset)  REFERENCES wmbs_fileset(id)

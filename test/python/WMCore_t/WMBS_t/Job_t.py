@@ -931,6 +931,8 @@ class JobTest(unittest.TestCase):
         dqmOutputFileset.create()
         mergedDqmOutputFileset = Fileset(name = "MergedDQM")
         mergedDqmOutputFileset.create()
+        cleanupFileset = Fileset(name = "Cleanup")
+        cleanupFileset.create()
 
         testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                 name = "TestWF", task = "None")
@@ -941,6 +943,9 @@ class JobTest(unittest.TestCase):
                                mergedAlcaOutputFileset)
         testWorkflow.addOutput("DQM", dqmOutputFileset,
                                mergedDqmOutputFileset)
+        testWorkflow.addOutput("output", cleanupFileset)
+        testWorkflow.addOutput("ALCARECOStreamCombined", cleanupFileset)
+        testWorkflow.addOutput("DQM", cleanupFileset)
 
         testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
                                          name = "TestRecoMergeWF", task = "None")
@@ -1009,22 +1014,29 @@ class JobTest(unittest.TestCase):
                                                 mergedAlcaOutputFileset.id),
                      "DQM": (dqmOutputFileset.id,
                              mergedDqmOutputFileset.id)}
+
         for outputID in outputMap.keys():
-            self.assertTrue(outputID in goldenMap.keys(),
-                            "Error: Output identifier is missing.")
-            self.assertEqual(outputMap[outputID]["output_fileset"],
-                             goldenMap[outputID][0],
-                             "Error: Output fileset is wrong.")
-            self.assertEqual(outputMap[outputID]["merged_output_fileset"],
-                             goldenMap[outputID][1],
-                             "Error: Merged output fileset is wrong.")
-            del goldenMap[outputID]
+            for outputFilesets in outputMap[outputID]:
+                if outputFilesets["merged_output_fileset"] == None:
+                    self.assertEqual(outputFilesets["output_fileset"],
+                                     cleanupFileset.id,
+                                     "Error: Cleanup fileset is wrong.")
+                    continue
+
+                self.assertTrue(outputID in goldenMap.keys(),
+                                "Error: Output identifier is missing.")
+                self.assertEqual(outputFilesets["output_fileset"],
+                                 goldenMap[outputID][0],
+                                 "Error: Output fileset is wrong.")
+                self.assertEqual(outputFilesets["merged_output_fileset"],
+                                 goldenMap[outputID][1],
+                                 "Error: Merged output fileset is wrong.")
+                del goldenMap[outputID]
 
         self.assertEqual(len(goldenMap.keys()), 0,
                          "Error: Missing output maps.")
                              
         return
-
 
     def testLocations(self):
         """

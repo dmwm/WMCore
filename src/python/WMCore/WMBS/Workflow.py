@@ -160,10 +160,18 @@ class Workflow(WMBSBase, WMWorkflow):
                                 transaction = self.existingTransaction())
 
         for outputID in results.keys():
-            outputFileset = Fileset(id = results[outputID]["output_fileset"])
-            mergedOutputFileset = Fileset(id = results[outputID]["merged_output_fileset"])
-            self.outputMap[outputID] = {"output_fileset": outputFileset,
-                                        "merged_output_fileset": mergedOutputFileset}
+            for outputMap in results[outputID]:
+                outputFileset = Fileset(id = outputMap["output_fileset"])
+                if outputMap["merged_output_fileset"] != None:
+                    mergedOutputFileset = Fileset(id = outputMap["merged_output_fileset"])
+                else:
+                    mergedOutputFileset = None
+
+                if not self.outputMap.has_key(outputID):
+                    self.outputMap[outputID] = []
+
+                self.outputMap[outputID].append({"output_fileset": outputFileset,
+                                                 "merged_output_fileset": mergedOutputFileset})
             
         self.commitTransaction(existingTransaction)
         return
@@ -180,21 +188,22 @@ class Workflow(WMBSBase, WMWorkflow):
         if self.id == False:
             self.create()
 
+        if not self.outputMap.has_key(outputIdentifier):
+            self.outputMap[outputIdentifier] = []
+
+        self.outputMap[outputIdentifier].append({"output_fileset": outputFileset,
+                                                 "merged_output_fileset": mergedOutputFileset})
+
         action = self.daofactory(classname = "Workflow.InsertOutput")
-        if mergedOutputFileset == None:
-            self.outputMap[outputIdentifier] = {"output_fileset": outputFileset,
-                                                "merged_output_fileset": outputFileset}
-            action.execute(workflowID = self.id, outputIdentifier = outputIdentifier,
-                           filesetID = outputFileset.id, mergedFilesetID = outputFileset.id,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction())            
+        if mergedOutputFileset != None:
+            mergedFilesetID = mergedOutputFileset.id
         else:
-            self.outputMap[outputIdentifier] = {"output_fileset": outputFileset,
-                                                "merged_output_fileset": mergedOutputFileset}        
-            action.execute(workflowID = self.id, outputIdentifier = outputIdentifier,
-                           filesetID = outputFileset.id, mergedFilesetID = mergedOutputFileset.id,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
+            mergedFilesetID = None
+
+        action.execute(workflowID = self.id, outputIdentifier = outputIdentifier,
+                       filesetID = outputFileset.id, mergedFilesetID = mergedFilesetID,
+                       conn = self.getDBConn(),
+                       transaction = self.existingTransaction())
             
         self.commitTransaction(existingTransaction)
         return

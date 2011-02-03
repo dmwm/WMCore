@@ -278,10 +278,15 @@ class AccountantWorker(WMConnectionBase):
             logging.info("Output module label missing from output map.")
             return None
 
-        if merged == False:
-            return outputMap[moduleLabel]["output_fileset"]
+        outputFilesets = []
+        for outputFileset in outputMap[moduleLabel]:
+            if merged == False:
+                outputFilesets.append(outputFileset["output_fileset"])
+            else:
+                if outputFileset["merged_output_fileset"] != None:
+                    outputFilesets.append(outputFileset["merged_output_fileset"])
 
-        return outputMap[moduleLabel]["merged_output_fileset"]
+        return outputFilesets
 
     def addFileToDBS(self, jobReportFile):
         """
@@ -411,8 +416,8 @@ class AccountantWorker(WMConnectionBase):
                 self.mergedOutputFiles.append(wmbsFile)
 
             self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputID})
-            outputFileset = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
-            if outputFileset != None:
+            outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
+            for outputFileset in outputFilesets:
                 self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
 
         # Only save once job is done, and we're sure we made it through okay

@@ -5,30 +5,31 @@ _Workflow_
 A class that describes some work to be undertaken on some files
 """
 
-__all__ = []
-
-
-
 from WMCore.DataStructs.Pickleable import Pickleable
 
 class Workflow(Pickleable):
-    def __init__(self, spec=None, owner=None, name='workflow', task=None):
-        #TODO: define a url-like scheme for spec's and enforce it here
-        # spec is a URL to the WMWorkload file
+    def __init__(self, spec = None, owner = None, name = None, task = None):
         self.spec = spec
-        # name is the name of this workflow instance
-        self.name = name #NEEDED? Redundant...
+        self.name = name
         # person making the request
         self.owner = owner
         # task is the name of the task within the Workload
         self.task = task
         self.outputMap = {}
 
-    def addOutput(self, outputIdentifier, outputFileset):
+    def addOutput(self, outputIdentifier, outputFileset,
+                  mergedOutputFileset = None):
         """
         _addOutput_
 
         Associate an output of this workflow with a particular fileset.
         """
-        self.outputMap[outputIdentifier] = outputFileset
+        mappingDict = {"output_fileset": outputFileset,
+                       "merged_output_fileset": mergedOutputFileset}
+
+        if self.outputMap.has_key(outputIdentifier):
+            self.outputMap[outputIdentifier].append(mappingDict)
+        else:
+            self.outputMap[outputIdentifier] = [mappingDict]
+
         return

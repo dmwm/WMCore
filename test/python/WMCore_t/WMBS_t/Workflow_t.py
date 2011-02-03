@@ -191,10 +191,14 @@ class WorkflowTest(unittest.TestCase):
         testMergedFilesetA = Fileset(name = "testMergedFilesetA")
         testFilesetB = Fileset(name = "testFilesetB")
         testMergedFilesetB = Fileset(name = "testMergedFilesetB")
+        testFilesetC = Fileset(name = "testFilesetC")
+        testMergedFilesetC = Fileset(name = "testMergedFilesetC")
         testFilesetA.create()
         testFilesetB.create()
+        testFilesetC.create()
         testMergedFilesetA.create()
         testMergedFilesetB.create()
+        testMergedFilesetC.create()
         
         testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
                                  name = "wf001", task='Test')
@@ -207,6 +211,7 @@ class WorkflowTest(unittest.TestCase):
                          "ERROR: Output map exists before output is assigned")
 
         testWorkflowA.addOutput("outModOne", testFilesetA, testMergedFilesetA)
+        testWorkflowA.addOutput("outModOne", testFilesetC, testMergedFilesetC)
         testWorkflowA.addOutput("outModTwo", testFilesetB, testMergedFilesetB)
 
         testWorkflowC = Workflow(name = "wf001", task='Test')
@@ -219,14 +224,25 @@ class WorkflowTest(unittest.TestCase):
         self.assertTrue("outModTwo" in testWorkflowC.outputMap.keys(),
                         "ERROR: Output modules missing from workflow output map")
 
-        self.assertEqual(testWorkflowC.outputMap["outModOne"]["output_fileset"].id,
-                         testFilesetA.id, "ERROR: Output map incorrectly maps filesets.")
-        self.assertEqual(testWorkflowC.outputMap["outModOne"]["merged_output_fileset"].id,
-                         testMergedFilesetA.id, "ERROR: Output map incorrectly maps filesets.")
-        self.assertEqual(testWorkflowC.outputMap["outModTwo"]["output_fileset"].id,
-                         testFilesetB.id, "ERROR: Output map incorrectly maps filesets.")
-        self.assertEqual(testWorkflowC.outputMap["outModTwo"]["merged_output_fileset"].id,
-                         testMergedFilesetB.id, "ERROR: Output map incorrectly maps filesets.")
+        for outputMap in testWorkflowC.outputMap["outModOne"]:
+            if outputMap["output_fileset"].id == testFilesetA.id:
+                self.assertEqual(outputMap["merged_output_fileset"].id,
+                                 testMergedFilesetA.id,
+                                 "Error: Output map incorrectly maps filesets.")
+            else:
+                self.assertEqual(outputMap["merged_output_fileset"].id,
+                                 testMergedFilesetC.id,
+                                 "Error: Output map incorrectly maps filesets.")
+                self.assertEqual(outputMap["output_fileset"].id,
+                                 testFilesetC.id,
+                                 "Error: Output map incorrectly maps filesets.")
+
+        self.assertEqual(testWorkflowC.outputMap["outModTwo"][0]["merged_output_fileset"].id,
+                         testMergedFilesetB.id,
+                         "Error: Output map incorrectly maps filesets.")
+        self.assertEqual(testWorkflowC.outputMap["outModTwo"][0]["output_fileset"].id,
+                         testFilesetB.id,
+                         "Error: Output map incorrectly maps filesets.")
         return
 
     def testLoadFromTask(self):
@@ -299,7 +315,6 @@ class WorkflowTest(unittest.TestCase):
         self.assertNotEqual(listFromOwner1["owner"], listFromOwner3["owner"])
         self.assertNotEqual(listFromOwner2["owner"], listFromOwner3["owner"])
         return
-
 
 if __name__ == "__main__":
     unittest.main()

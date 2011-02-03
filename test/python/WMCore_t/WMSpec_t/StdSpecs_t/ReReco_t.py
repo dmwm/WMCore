@@ -104,8 +104,8 @@ class ReRecoTest(unittest.TestCase):
 
         goldenOutputMods = ["SkimA", "SkimB"]
         for goldenOutputMod in goldenOutputMods:
-            mergedOutput = skimWorkflow.outputMap[goldenOutputMod]["merged_output_fileset"]
-            unmergedOutput = skimWorkflow.outputMap[goldenOutputMod]["output_fileset"]
+            mergedOutput = skimWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
+            unmergedOutput = skimWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
 
             mergedOutput.loadData()
             unmergedOutput.loadData()
@@ -115,8 +115,8 @@ class ReRecoTest(unittest.TestCase):
             self.assertEqual(unmergedOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/unmerged-%s" % goldenOutputMod,
                              "Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name)
 
-        logArchOutput = skimWorkflow.outputMap["logArchive"]["merged_output_fileset"]
-        unmergedLogArchOutput = skimWorkflow.outputMap["logArchive"]["output_fileset"]
+        logArchOutput = skimWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
+        unmergedLogArchOutput = skimWorkflow.outputMap["logArchive"][0]["output_fileset"]
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
 
@@ -133,8 +133,8 @@ class ReRecoTest(unittest.TestCase):
             self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
                              "Error: Wrong number of WF outputs.")
 
-            mergedMergeOutput = mergeWorkflow.outputMap["Merged"]["merged_output_fileset"]
-            unmergedMergeOutput = mergeWorkflow.outputMap["Merged"]["output_fileset"]
+            mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
+            unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
 
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
@@ -144,8 +144,8 @@ class ReRecoTest(unittest.TestCase):
             self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/SomeSkimMerge%s/merged-Merged" % goldenOutputMod,
                              "Error: Unmerged output fileset is wrong.")
 
-            logArchOutput = mergeWorkflow.outputMap["logArchive"]["merged_output_fileset"]
-            unmergedLogArchOutput = mergeWorkflow.outputMap["logArchive"]["output_fileset"]
+            logArchOutput = mergeWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
+            unmergedLogArchOutput = mergeWorkflow.outputMap["logArchive"][0]["output_fileset"]
             logArchOutput.loadData()
             unmergedLogArchOutput.loadData()
 

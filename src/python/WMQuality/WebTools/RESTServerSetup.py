@@ -1,6 +1,6 @@
 import os
 import cherrypy
-import logging 
+import logging
 from functools import wraps
 
 from WMCore.WebTools.Root import Root
@@ -24,12 +24,12 @@ def cherrypySetup(config = None):
 
 
 class DefaultConfig(Configuration):
-    
+
     def __init__(self, model=None):
         Configuration.__init__(self)
         self.component_('SecurityModule')
         self.SecurityModule.dangerously_insecure = True
-        
+
         self.component_('Webtools')
         self.Webtools.application = 'UnitTests'
         self.Webtools.log_screen = False
@@ -38,14 +38,14 @@ class DefaultConfig(Configuration):
         self.Webtools.port = 8888
         self.Webtools.host = "localhost"
         self.Webtools.expires = 300
-        
+
         self.component_('UnitTests')
         self.UnitTests.title = 'CMS WMCore/WebTools Unit Tests'
-        self.UnitTests.description = 'Dummy server for the running of unit tests' 
+        self.UnitTests.description = 'Dummy server for the running of unit tests'
         self.UnitTests.admin ="UnitTestAdmin"
         self.UnitTests.templates = "/tmp"
         self.UnitTests.section_('views')
-        
+
         active = self.UnitTests.views.section_('active')
         active.section_('rest')
         active.rest.application = 'UnitTestRESTApp'
@@ -62,34 +62,34 @@ class DefaultConfig(Configuration):
         #WARNING: need is not actual config - if cherrypy is started by Root.py
         #This will handled automatically - added here just for DummyModel test.
         active.rest.default_expires = self.Webtools.expires
-        
+
     def getServerUrl(self):
-        return "http://%s:%s/rest/" % (self.Webtools.host, self.Webtools.port)
-                                     
+        return "http://%s:%s/%s/rest/" % (self.Webtools.host, self.Webtools.port, self.Webtools.application.lower())
+
     def getDBUrl(self):
         return self.UnitTests.views.active.rest.database.connectUrl
-    
+
     def getDBSocket(self):
         return self.UnitTests.views.active.rest.database.socket
-    
+
     def setDBUrl(self, dbUrl):
-        self.UnitTests.views.active.rest.database.connectUrl = dbUrl 
-    
+        self.UnitTests.views.active.rest.database.connectUrl = dbUrl
+
     def setDBSocket(self, socket):
-        self.UnitTests.views.active.rest.database.socket = socket 
-        
+        self.UnitTests.views.active.rest.database.socket = socket
+
     def setModel(self, model):
         self.UnitTests.views.active.rest.model.object = model
-    
+
     def setHost(self, host):
         self.Webtools.host = host
-    
+
     def setPort(self, port):
         self.Webtools.port = port
-        
+
     def setFormatter(self, formatter):
         self.UnitTests.views.active.rest.formatter.object = formatter
-        
+
     def setWorkQueueLevel(self, queueLevel):
         """only set this for workqueue restmodel test
            queueLevel should be 'GlobalQueue' or 'LocalQueue'
@@ -99,4 +99,4 @@ class DefaultConfig(Configuration):
 
     def getModelConfig(self):
         return self.UnitTests.views.active.rest
-    
+

@@ -3,10 +3,6 @@
 A sane default welcome page
 """
 
-
-
-
-
 import time
 from cherrypy import expose
 from cherrypy import __version__ as cherrypy_version
@@ -17,11 +13,9 @@ class Welcome(Page):
     """
     A sane default welcome page
     """
-    def __init__(self, base, environment, namesAndDocstrings):
+    def __init__(self, namesAndDocstrings):
         Page.__init__(self, {})
         self.namesAndDocstrings = namesAndDocstrings
-        self.base = base
-        self.environment = environment
 
     @expose
     def index(self):
@@ -41,18 +35,10 @@ class Welcome(Page):
         html += '<th align="left"><h3>Description</h3></th></tr>\n'
         self.namesAndDocstrings.sort()
         for name, docstring in self.namesAndDocstrings:
-            html += '<tr><td><p><a href="%s/%s">%s</a></p></td>\n' \
-                % (self.base, name, name)
+            html += '<tr><td><p><a href="%s">%s</a></p></td>\n' \
+                % (name, name)
             html += '<td><p>%s</p></td></tr>\n' % docstring
         html += '</table><br />'
-        if self.environment == "development":
-            html += '<hr style="width:100%;border-top: 1px dotted #CCCCCC;" />'
-            html += '<div style="font-size: 12px; '
-            html += 'font-weight: normal;font-family: helvetica;">'
-            timestamp = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-            html += '<b>Server info:</b> CherryPy v%s, Cheetah: v%s, %s' \
-                    % (cherrypy_version, cheetah_version, timestamp)
-            html += '</div>'
         html += '</body>'
         html += '</html>'
         return html

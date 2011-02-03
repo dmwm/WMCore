@@ -11,9 +11,7 @@ dynamically and can be turned on/off via configuration file.
 
 # CherryPy
 import cherrypy
-from cherrypy import quickstart, expose, server, tree, engine, dispatch, tools
 from cherrypy._cplogging import LogManager
-from cherrypy import config as cpconfig
 # configuration and arguments
 #FIXME
 from WMCore.Agent.Daemon.Create import createDaemon
@@ -154,27 +152,30 @@ class Root(Harness):
                     if isinstance(param_value, ConfigSection):
                         # TODO: make this loads better
                         for child_param, child_param_value in param_value.dictionary_().items():
-                            cpconfig["%s.%s.%s" % (i, config_param, child_param)] = child_param_value
+                            cherrypy.config["%s.%s.%s" % (i, config_param, child_param)] = child_param_value
                     elif type(param_value) in [type('string'), type(123)]:
-                        cpconfig["%s.%s" % (i, config_param)] = param_value
+                        cherrypy.config["%s.%s" % (i, config_param)] = param_value
                     else:
                         raise Exception("Unsupported configuration type: %s" % type(v))
 
         # which we then over write with short hand variables if necessary
-        cpconfig["server.environment"] = configDict.get("environment", "production")
+        cherrypy.config["server.environment"] = configDict.get("environment", "production")
 
         #Set up the tools and the logging
-        tools.time = cherrypy.Tool('on_start_resource', mytime)
+        cherrypy.tools.time = cherrypy.Tool('on_start_resource', mytime)
+        cherrypy.config.update({'tools.time.on': True})
 
         if configDict.get("proxy_base", False):
-            cpconfig.update ({
-                'tools.proxy': cherrypy.Tool('before_request_body', myproxy, priority=30),
+            cherrypy.tools.proxy = cherrypy.Tool('before_request_body', myproxy, priority=30)
+            cherrypy.config.update ({
                 'tools.proxy.on': True,
                 'tools.proxy.base': configDict["proxy_base"]
             })
 
+        cherrypy.log = WTLogger()
+        cherrypy.config["log.screen"] = bool(configDict.get("log_screen", False))
 
-        cpconfig.update ({
+        cherrypy.config.update ({
                           'tools.expires.on': True,
                           'tools.expires.secs': configDict.get("expires", 300),
                           'tools.response_headers.on':True,
@@ -182,16 +183,12 @@ class Root(Harness):
                           'tools.etags.autotags':True,
                           'tools.encode.on': True,
                           'tools.gzip.on': True,
-                          'tools.time.on': True,
                           })
 
-        cherrypy.log = WTLogger()
-        cpconfig["log.screen"] = bool(configDict.get("log_screen", False))
-
-        if cpconfig["server.environment"] == "production":
+        if cherrypy.config["server.environment"] == "production":
             # If we're production these should be set regardless
-            cpconfig["request.show_tracebacks"] = False
-            cpconfig["engine.autoreload_on"] = False
+            cherrypy.config["request.show_tracebacks"] = False
+            cherrypy.config["engine.autoreload_on"] = False
             # In production mode only allow errors at WARNING or greater to the log
             err_lvl = max((configDict.get("error_log_level", logging.WARNING), logging.WARNING))
             acc_lvl = max((configDict.get("access_log_level", logging.INFO), logging.INFO))
@@ -201,31 +198,31 @@ class Root(Harness):
             print
             print 'THIS BETTER NOT BE A PRODUCTION SERVER'
             print
-            cpconfig["request.show_tracebacks"] = configDict.get("show_tracebacks", False)
-            cpconfig["engine.autoreload_on"] = configDict.get("autoreload", False)
+            cherrypy.config["request.show_tracebacks"] = configDict.get("show_tracebacks", False)
+            cherrypy.config["engine.autoreload_on"] = configDict.get("autoreload", False)
             # Allow debug output
             cherrypy.log.error_log.setLevel(configDict.get("error_log_level", logging.DEBUG))
             cherrypy.log.access_log.setLevel(configDict.get("access_log_level", logging.DEBUG))
 
         default_port = 8080
-        if "server.socket_port" in cpconfig.keys():
-            default_port = cpconfig["server.socket_port"]
-        cpconfig["server.thread_pool"] = configDict.get("thread_pool", 10)
-        cpconfig["server.socket_port"] = configDict.get("port", default_port)
-        cpconfig["server.socket_host"] = configDict.get("host", "localhost")
+        if "server.socket_port" in cherrypy.config.keys():
+            default_port = cherrypy.config["server.socket_port"]
+        cherrypy.config["server.thread_pool"] = configDict.get("thread_pool", 10)
+        cherrypy.config["server.socket_port"] = configDict.get("port", default_port)
+        cherrypy.config["server.socket_host"] = configDict.get("host", "0.0.0.0")
 
         #A little hacky way to pass the expire second to config
-        self.appconfig.default_expires = cpconfig["tools.expires.secs"]
+        self.appconfig.default_expires = cherrypy.config["tools.expires.secs"]
 
         # SecurityModule config
         # Registers secmodv2 into cherrypy.tools so it can be used through
         # decorators
         if not self.secconfig.dictionary_().get('dangerously_insecure', False):
-            tools.secmodv2 = FrontEndAuth(self.secconfig)
+            cherrypy.tools.secmodv2 = FrontEndAuth(self.secconfig)
             if hasattr(self.secconfig,"default"):
                 # If the 'default' section is present, it will force the
                 # authn/z to be called even for non-decorated methods
-                cpconfig.update({'tools.secmodv2.on': True,
+                cherrypy.config.update({'tools.secmodv2.on': True,
                             'tools.secmodv2.role': self.secconfig.default.role,
                             'tools.secmodv2.group': self.secconfig.default.group,
                             'tools.secmodv2.site': self.secconfig.default.site})
@@ -247,7 +244,7 @@ class Root(Harness):
         for view in self.appconfig.views.active:
             #Iterate through each view's configuration and instantiate the class
             if view._internal_name != the_index:
-                self._mountPage(view, view._internal_name, globalconf, factory)
+                self._mountPage(view, "/%s/%s" % (self.app.lower(), view._internal_name), globalconf, factory)
 
         if hasattr(self.appconfig.views, 'maintenance'):
             #for i in self.appconfig.views.maintenance:
@@ -259,37 +256,40 @@ class Root(Harness):
         _mountPage_
         Add the page to the CherryPy tree.
         """
+        if not mount_point.startswith("/%s" % self.app.lower()):
+            raise ValueError('%s is an invalid mount point' % mount_point)
         config = Configuration()
-        component = config.component_(view._internal_name)
-        component.application = self.app
+        view_config = config.component_(view._internal_name)
+        view_config.application = self.app
 
         for k in globalconf.keys():
             # Add the global config to the view
-            component.__setattr__(k, globalconf[k])
+            view_config.__setattr__(k, globalconf[k])
 
         view_dict = view.dictionary_()
         for k in view_dict.keys():
-            component.__setattr__(k, view_dict[k])
+            view_config.__setattr__(k, view_dict[k])
 
-        if component.dictionary_().has_key('database'):
-            if not type(component.database) == str:
-                if len(component.database.listSections_()) == 0:
+        if view_config.dictionary_().has_key('database'):
+            if not type(view_config.database) == str:
+                if len(view_config.database.listSections_()) == 0:
                     if len(self.coreDatabase.listSections_()) > 0:
-                        component.database.connectUrl = self.coreDatabase.connectUrl
+                        view_config.database.connectUrl = self.coreDatabase.connectUrl
                         if hasattr(self.coreDatabase, "socket"):
-                            component.database.socket = self.coreDatabase.socket
+                            view_config.database.socket = self.coreDatabase.socket
 
         # component now contains the full configuration (global + view)
         # use this throughout
 
-        cherrypy.log.error_log.debug("Loading %s" % (component._internal_name))
+        cherrypy.log.error_log.debug("Loading %s" % (view_config._internal_name))
         # Load the object
-        obj = factory.loadObject(component.object, component, getFromCache = False)
+        obj = factory.loadObject(view_config.object, view_config, getFromCache = False)
         # Attach the object to cherrypy's tree, at the name of the component
-        tree.mount(obj, "/%s" % mount_point)
-        msg = "%s available on %s/%s" % (component._internal_name,
-                                            server.base(),
-                                            component._internal_name)
+        cherrypy.tree.mount(obj, mount_point)
+        msg = "%s available on %s/%s/%s" % (view_config._internal_name,
+                                            cherrypy.server.base(),
+                                            self.app.lower(),
+                                            view_config._internal_name)
         cherrypy.log.error_log.info(msg)
 
     def _makeIndex(self):
@@ -303,7 +303,7 @@ class Root(Harness):
             view = getattr(self.appconfig.views.active, globalconf['index'])
             del globalconf['views']
             del globalconf['index']
-            self._mountPage(view, '/', globalconf, factory)
+            self._mountPage(view, "/%s" % self.app.lower(), globalconf, factory)
 
         else:
             cherrypy.log.error_log.info("No index defined for %s - instantiating default Welcome page"
@@ -313,10 +313,10 @@ class Root(Harness):
             for view in self.appconfig.views.active:
                 if not getattr(view, "hidden", False):
                     viewName = view._internal_name
-                    viewObj = tree.apps['/%s' % viewName].root
+                    viewObj = cherrypy.tree.apps['/%s/%s' % (self.app.lower(), viewName)].root
                     docstring = viewObj.__doc__
                     namesAndDocstrings.append((viewName, docstring))
-            tree.mount(Welcome(server.base(), cpconfig["server.environment"], namesAndDocstrings), "/")
+            cherrypy.tree.mount(Welcome(namesAndDocstrings), "/%s" % self.app.lower())
 
     def start(self, blocking=True):
         """
@@ -326,9 +326,9 @@ class Root(Harness):
         self._configureCherryPy()
         self._loadPages()
         self._makeIndex()
-        engine.start()
+        cherrypy.engine.start()
         if blocking:
-            engine.block()
+            cherrypy.engine.block()
 
     def startComponent(self):
         """
@@ -343,8 +343,8 @@ class Root(Harness):
         """
         Stop the server
         """
-        engine.exit()
-        engine.stop()
+        cherrypy.engine.exit()
+        cherrypy.engine.stop()
 
 if __name__ == "__main__":
     parser = OptionParser()

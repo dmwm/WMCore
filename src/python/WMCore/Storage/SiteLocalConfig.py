@@ -4,9 +4,8 @@ _SiteLocalConfig_
 
 Utility for reading a site local config XML file and converting it
 into an object with an API for getting info from it.
+
 """
-
-
 
 
 import os
@@ -15,11 +14,6 @@ from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
 
 from WMCore.Storage.TrivialFileCatalog import tfcFilename, tfcProtocol, readTFC
 
-class SiteConfigError(StandardError):
-    """
-    Exception class placeholder
-    """
-    pass
 
 
 def loadSiteLocalConfig():
@@ -31,15 +25,18 @@ def loadSiteLocalConfig():
     Requires that CMS_PATH is defined as an environment variable
 
     """
-    if os.getenv('WMAGENT_SITE_CONFIG_OVERRIDE', None):
-        overridePath = os.getenv('WMAGENT_SITE_CONFIG_OVERRIDE')
-        if os.path.exists(os.getenv('WMAGENT_SITE_CONFIG_OVERRIDE', None)):
-            logging.log("Using site-local-config.xml override due to $WMAGENT_SITE_CONFIG_OVERRIDE")
-            logging.log(" config at: %s" % overridePath)
+    overVarName = "WMAGENT_SITE_CONFIG_OVERRIDE"
+    if os.getenv(overVarName, None):
+        overridePath = os.getenv(overVarName)
+        if os.path.exists(os.getenv(overVarName, None)):
+            m = ("Using site-local-config.xml override due to set %s env. variable, "
+                 "loading: '%s'" % (overVarName, overridePath))
+            logging.log(logging.DEBUG, m)
             config = SiteLocalConfig(overridePath)
             return config
         else:
-            logging.log("$WMAGENT_SITE_CONFIG_OVERRIDE was provided but didn't point to an existing file. Ignoring")
+            logging.log(logging.ERROR, "%s env. var. provided but not pointing "
+                        "to an existing file, ignoring." % overVarName)
             
     defaultPath = "$CMS_PATH/SITECONF/local/JobConfig/site-local-config.xml"
     actualPath = os.path.expandvars(defaultPath)
@@ -55,6 +52,14 @@ def loadSiteLocalConfig():
 
     config = SiteLocalConfig(actualPath)
     return config
+
+
+class SiteConfigError(StandardError):
+    """
+    Exception class placeholder
+    
+    """
+    pass
     
 
 class SiteLocalConfig:

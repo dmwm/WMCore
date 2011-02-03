@@ -1,16 +1,16 @@
 #
 # This is an example configuration which loads the documentation classes for
-# the webtools package and shows you how to configure the various different 
+# the webtools package and shows you how to configure the various different
 # classes available. Your application should have it's own configuration in it's
 # CVS area and not use this, other than as a guideline. Applications deployed at
 # CERN will need to meet the CERN web service SLA:
-#     https://twiki.cern.ch/twiki/bin/view/CMS/DMWTServiceLevelAgreement 
+#     https://twiki.cern.ch/twiki/bin/view/CMS/DMWTServiceLevelAgreement
 # This includes committing configuration files to appropriate locations in CVS.
 #
 from WMCore.Configuration import Configuration
 from WMCore.WMBase import getWMBASE
 import os.path
-
+import logging
 config = Configuration()
 
 # This component has all the configuration of CherryPy
@@ -19,14 +19,16 @@ config.component_('Webtools')
 #config.Webtools.port = 8011
 #config.Webtools.show_tracebacks = True
 #config.Webtools.autoreload = True
-#config.Webtools.environment = development
+#config.Webtools.environment = 'development'
+#config.Webtools.log_screen = True
+#config.Webtools.error_log_level = logging.DEBUG
 #config.Webtools.thread_pool = 10
 # etc. Check Root.py for all configurables
 # The above short-hand can be replaced with explicit namespaced configuration
 # variables as described in http://www.cherrypy.org/wiki/ConfigAPI
 # for example
 config.Webtools.section_('server')
-config.Webtools.server.socket_timeout = 30 
+config.Webtools.server.socket_timeout = 30
 # Shorthand configurations take precedence over explicit ones, e.g. if you have
 #config.Webtools.server.socket_port = 8010
 #config.Webtools.port = 8011
@@ -44,20 +46,20 @@ config.WebtoolsDocs.description = 'Documentation on the WMCORE/WebTools'
 
 # We could define the class that is the applications index
 #config.WebtoolsDocs.index = 'welcome'
-# but instead we'll leave it blank and use the default (Welcome.py) which 
-# inspects the pages that are loaded and auto-generates a page based on the 
-# classes doc strings. You can hide a view from the welcome page by setting 
+# but instead we'll leave it blank and use the default (Welcome.py) which
+# inspects the pages that are loaded and auto-generates a page based on the
+# classes doc strings. You can hide a view from the welcome page by setting
 # hidden=True in its configuration - useful for "admin" pages.
 
-# Views are all pages 
+# Views are all pages
 config.WebtoolsDocs.section_('views')
-# These are all the active pages that Root.py should instantiate 
+# These are all the active pages that Root.py should instantiate
 active = config.WebtoolsDocs.views.section_('active')
 # This is the Security config the application will use
 config.component_('SecurityModule')
 # You can turn off security by setting
 #config.SecurityModule.dangerously_insecure = True
-# There should be a proper HMAC key file here, use this file as an 
+# There should be a proper HMAC key file here, use this file as an
 # example
 config.SecurityModule.key_file = os.path.join(getWMBASE(), 'src/python/WMCore/WebTools/DefaultConfig.py')
 #
@@ -79,7 +81,7 @@ active.documentation.object = 'WMCore.WebTools.Documentation'
 # I can reuse a class
 active.section_('secretdocumentation')
 active.secretdocumentation.object = 'WMCore.WebTools.Documentation'
-# I don't want the world to see the secret documents on the welcome page. 
+# I don't want the world to see the secret documents on the welcome page.
 active.secretdocumentation.hidden = True
 
 # I can use an openID secured class
@@ -100,7 +102,7 @@ maint = config.WebtoolsDocs.views.section_('maintenance')
 #active.rest.templates =os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools/' )
 # Dummy in memory SQLite DB
 #active.rest.database.connectUrl = 'sqlite://'
-# for more option check 
+# for more option check
 # http://www.sqlalchemy.org/docs/reference/sqlalchemy/connections.html
 #active.rest.database.engineParameters = {'pool_size': 10, 'max_overflow': 10, 'pool_timeout': 30}
 #active.rest.section_('model')

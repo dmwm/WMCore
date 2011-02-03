@@ -65,20 +65,3 @@ class RecoSchema(RequestSchema):
 
 registerRequestType("Reco", RecoRequest, RecoSchema)
 
-
-if __name__ == "__main__":
-    schema = RecoSchema()
-    schema["Label"] = "ReRe"
-    schema["CMSSWVersion"] = "CMSSW_3_1_6"
-    schema["GlobalTag"] = "31X_V1"
-    schema["AcquisitionEra"] = "PromSeason09"
-    schema["SiteWhitelist"] = ["T1_CERN", "T1_FNAL"]
-    schema["RunBlacklist"] = [10, 11]
-    schema["InputDatasets"] = "/MinimumBias/BeamCommissioning09-v1/RAW"
-    schema["OutputDataset"] = "BeamCommissioning09/MinimumBias/RECO"
-    schema["DBSURL"] = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
-    schema["LFNCategory"] = "/store/data"
-    schema['OutputTiers'] = ['RECO'] 
-
-    request = RecoRequest()
-    print str(request.makeWorkload(schema))

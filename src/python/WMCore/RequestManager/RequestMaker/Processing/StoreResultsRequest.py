@@ -40,21 +40,3 @@ class StoreResultsSchema(RequestSchema):
 
 registerRequestType("StoreResults", StoreResultsRequest, StoreResultsSchema)
 
-
-if __name__ == '__main__':
-   requestSchema = StoreResultsSchema()
-   requestSchema['InputDatasets'] = ['/PRIM/PROC/TIER']
-   requestSchema['RequestType'] = 'StoreResults'
-   requestSchema['OutputDataset'] = 'Output'
-   requestScheme['DbsUrl'] = 'http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_02/servlet/DBSServlet'
-   requestSchema['Requestor'] = 'Eric'
-   requestSchema['Group'] = 'PeopleSimilarToEric'
-   requestSchema['CMSSWVersion'] = 'CMSSW_3_6_2'
-   requestSchema['ScramArch'] = 'slc5_ia32_gcc434'
-   maker = retrieveRequestMaker(requestSchema['RequestType'])
-   request = maker(requestSchema)
-   requestSchema.validate()
-   from WMCore.RequestManager.RequestMaker import CheckIn
-   checkIn = CheckIn(request)
-   checkIn()
-

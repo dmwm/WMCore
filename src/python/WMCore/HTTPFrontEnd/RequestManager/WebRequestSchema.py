@@ -21,8 +21,8 @@ class WebRequestSchema(WebAPI):
         self.templatedir = config.templates
         self.requestor = config.requestor
         self.cmsswVersion = config.cmsswDefaultVersion
-        self.jsonSender = JSONRequests(config.reqMgrHost, dict={'req_cache_path':config.componentDir})
         self.couchUrl = config.couchUrl
+        self.componentDir = config.componentDir
         self.configDBName = config.configDBName
         self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
         self.yuiroot = config.yuiroot
@@ -58,7 +58,7 @@ class WebRequestSchema(WebAPI):
         """ Handles the submission of requests """
         # make sure no extra spaces snuck in
         for k, v in kwargs.iteritems():
-            kwargs[k] = v.strip()
+            kwargs[k] = str(v).strip()
         maker = retrieveRequestMaker(kwargs["RequestType"])
         schema = maker.newSchema()
         schema.update(kwargs)
@@ -110,8 +110,11 @@ class WebRequestSchema(WebAPI):
         if kwargs.has_key("BlockBlacklist"):
             schema["BlockBlacklist"] = parseBlockList(kwargs["BlockBlacklist"])
 
+        baseURL = cherrypy.request.base
+        senderOpts = {'req_cache_path':self.componentDir}
+        jsonSender = JSONRequests(baseURL, senderOpts)
         try:
-            self.jsonSender.put('/reqMgr/request/'+schema['RequestName'], schema)
+            jsonSender.put('/reqMgr/request/'+schema['RequestName'], schema)
         except HTTPException, ex:
             return ex.reason+' '+ex.result
-        raise cherrypy.HTTPRedirect('/view/details/'+schema['RequestName'])
+        raise cherrypy.HTTPRedirect('%s/view/details/%s' % (baseURL, schema['RequestName']))

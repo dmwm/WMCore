@@ -14,7 +14,7 @@ import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeSt
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import removePasswordFromUrl, changePriority, changeStatus
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import removePasswordFromUrl, changePriority, changeStatus, unidecode
 import WMCore.Lexicon
 import cherrypy
 import json
@@ -42,77 +42,77 @@ class ReqMgrRESTModel(RESTModel):
         self.couchUrl = config.model.couchUrl
         self.workloadCouchDB = config.model.workloadCouchDB 
 
-        self.addMethod('GET', 'request', self.getRequest, 
+        self._addMethod('GET', 'request', self.getRequest, 
                        args = ['requestName'],
                        validation=[self.isalnum], expires = 0)
-        self.addMethod('GET', 'assignment', self.getAssignment,
+        self._addMethod('GET', 'assignment', self.getAssignment,
                        args = ['teamName', 'request'],
                        validation = [self.isalnum], expires = 0)
-        self.addMethod('GET', 'user', self.getUser,
+        self._addMethod('GET', 'user', self.getUser,
                        args = ['userName'], 
                        validation = [self.isalnum], expires = 0)
-        self.addMethod('GET', 'group', self.getGroup,
+        self._addMethod('GET', 'group', self.getGroup,
                        args = ['group', 'user'], expires = 0)
-        self.addMethod('GET', 'version', self.getVersion, args = [], expires = 0)
-        self.addMethod('GET', 'team', self.getTeam, args = [], expires = 0)
-        self.addMethod('GET', 'workQueue', self.getWorkQueue,
+        self._addMethod('GET', 'version', self.getVersion, args = [], expires = 0)
+        self._addMethod('GET', 'team', self.getTeam, args = [], expires = 0)
+        self._addMethod('GET', 'workQueue', self.getWorkQueue,
                        args = ['request', 'workQueue'], 
                        validation = [self.isalnum], expires = 0)
-        self.addMethod('GET', 'message', self.getMessage,
+        self._addMethod('GET', 'message', self.getMessage,
                        args = ['request'], 
                        validation = [self.isalnum], expires = 0)
 
-        self.addMethod('PUT', 'request', self.putRequest,
+        self._addMethod('PUT', 'request', self.putRequest,
                        args = ['requestName', 'status', 'priority'],
                        validation = [self.isalnum, self.intpriority])
-        self.addMethod('PUT', 'assignment', self.putAssignment,
+        self._addMethod('PUT', 'assignment', self.putAssignment,
                        args = ['team', 'requestName'],
                        validation = [self.isalnum])
-        self.addMethod('PUT', 'user', self.putUser,
+        self._addMethod('PUT', 'user', self.putUser,
                        args = ['userName', 'email', 'dnName'],
                        validation = [self.validateUser])
-        self.addMethod('PUT', 'group', self.putGroup,
+        self._addMethod('PUT', 'group', self.putGroup,
                        args = ['group', 'user'],
                        validation = [self.isalnum])
-        self.addMethod('PUT', 'version', self.putVersion,
+        self._addMethod('PUT', 'version', self.putVersion,
                        args = ['version'],
                        validation = [self.validateVersion])
-        self.addMethod('PUT', 'team', self.putTeam,
+        self._addMethod('PUT', 'team', self.putTeam,
                        args = ['team'],
                        validation = [self.isalnum])
-        self.addMethod('PUT', 'workQueue', self.putWorkQueue, 
+        self._addMethod('PUT', 'workQueue', self.putWorkQueue, 
                        args = ['request', 'url'],
                        validation = [self.validatePutWorkQueue])
-        self.addMethod('PUT', 'message', self.putMessage,
+        self._addMethod('PUT', 'message', self.putMessage,
                        args = ['request'],
                        validation = [self.isalnum])
 
-        self.addMethod('POST', 'request', self.postRequest,
+        self._addMethod('POST', 'request', self.postRequest,
                         args = ['requestName', 'events_written', 
                                 'events_merged', 'files_written',
                                 'files_merged', 'percent_written', 
                                 'percent_success', 'dataset'],
                                  validation = [self.validateUpdates])
-        self.addMethod('POST', 'user', self.postUser,
+        self._addMethod('POST', 'user', self.postUser,
                           args = ['user', 'priority'],
                           validation = [self.isalnum, self.intpriority])
-        self.addMethod('POST',  'group', self.postGroup,
+        self._addMethod('POST',  'group', self.postGroup,
                           args = ['group', 'priority'],
                           validation = [self.isalnum, self.intpriority])
 
-        self.addMethod('DELETE', 'request', self.deleteRequest,
+        self._addMethod('DELETE', 'request', self.deleteRequest,
                           args = ['requestName'],
                           validation = [self.isalnum])
-        self.addMethod('DELETE', 'user', self.deleteUser,
+        self._addMethod('DELETE', 'user', self.deleteUser,
                           args = ['user'],
                           validation = [self.isalnum])
-        self.addMethod('DELETE', 'group', self.deleteGroup,
+        self._addMethod('DELETE', 'group', self.deleteGroup,
                           args = ['group', 'user'],
                           validation = [self.isalnum])
-        self.addMethod('DELETE', 'version', self.deleteVersion,
+        self._addMethod('DELETE', 'version', self.deleteVersion,
                           args = ['version'],
                           validation = [self.validateVersion])
-        self.addMethod('DELETE', 'team', self.deleteTeam,
+        self._addMethod('DELETE', 'team', self.deleteTeam,
                           args = ['team'],
                           validation = [self.isalnum])
         # stop caching for all GET', PUT, POST, and DELETEs
@@ -120,11 +120,11 @@ class ReqMgrRESTModel(RESTModel):
         #   for method, paramDict in self.methods[call].iteritems():
         #       paramDict['expires'] = 0
 
-        self.addMethod("GET", "overview", getGlobalSummaryView) #expires=16000
-        self.addMethod("GET", "resourceInfo", getResourceOverview)
-        self.addMethod("GET", "agentoverview", getAgentOverview,
+        self._addMethod("GET", "overview", getGlobalSummaryView) #expires=16000
+        self._addMethod("GET", "resourceInfo", getResourceOverview)
+        self._addMethod("GET", "agentoverview", getAgentOverview,
                        args = ['detail'])
-        self.addMethod("GET", "siteoverview", getSiteOverview)
+        self._addMethod("GET", "siteoverview", getSiteOverview)
         
         cherrypy.engine.subscribe('start_thread', self.initThread)
     
@@ -281,7 +281,7 @@ class ReqMgrRESTModel(RESTModel):
         """ Creates a new request, with a JSON-encoded schema that is sent in the
         body of the request """
         body = cherrypy.request.body.read()
-        requestSchema = JsonWrapper.loads( body, encoding='latin-1' )
+        requestSchema = unidecode(JsonWrapper.loads(body))
         logging.info(requestSchema)
         maker = retrieveRequestMaker(requestSchema['RequestType'])
         specificSchema = maker.schemaClass()

@@ -12,6 +12,7 @@ from WMQuality.TestInit import TestInit
 from WMCore.WMInit import getWMBASE
 
 from WMCore.Storage.SiteLocalConfig import SiteLocalConfig
+from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
 class SiteLocalConfigTest(unittest.TestCase):
     def setUp(self):
@@ -137,5 +138,24 @@ class SiteLocalConfigTest(unittest.TestCase):
                "Error: Incorrect fallback LFN prefix."
         return
 
+
+    def testLoadingConfigFromOverridenEnvVarriable(self):
+        """
+        test SiteLocalConfig module method loadSiteLocalConfig when loading
+        site config from location defined by WMAGENT_SITE_CONFIG_OVERRIDE
+        env. variable
+        
+        """        
+        vandyConfigFileName = os.path.join(getWMBASE(),
+                                           "test/python/WMCore_t/Storage_t",
+                                           "T3_US_Vanderbilt_SiteLocalConfig.xml")
+        os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = vandyConfigFileName
+        
+        mySiteConfig = loadSiteLocalConfig()
+        self.assertEqual(mySiteConfig.siteName, "T3_US_Vanderbilt", 
+                         "Error: Wrong site name.")
+
+
+
 if __name__ == "__main__":
-    unittest.main()  
+    unittest.main()

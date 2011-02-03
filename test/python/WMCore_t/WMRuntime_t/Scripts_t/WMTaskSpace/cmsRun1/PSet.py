@@ -35,17 +35,17 @@ class Process():
         """
         mixing1 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
         mixing1.setType("MixingModule")
-        mixing2 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
+        mixing2 = cms.PSet(secsource = cms.PSet(fileNames = cms.untracked.vstring()))
         mixing2.setType("MixingModule")
-        notmixing1 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
-        notmixing1.setType("NotAMixingModule")
-        notmixing2 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
-        notmixing2.setType("NotAMixingModule")
+        datamixing1 = cms.PSet(secsource = cms.PSet(fileNames = cms.untracked.vstring()))
+        datamixing1.setType("DataMixingModule")
+        datamixing2 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
+        datamixing2.setType("DataMixingModule")
         
         self.producers["mix1"] = mixing1
-        self.producers["notmix1"] = notmixing1
+        self.producers["datamix1"] = datamixing1
         self.filters["mix2"] = mixing2
-        self.filters["notmix2"] = notmixing2
+        self.filters["datamix2"] = datamixing2
 
     def outputModules_(self):
         """

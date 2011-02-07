@@ -18,10 +18,54 @@ import time
 import types
 
 from WMCore.FwkJobReport.Report        import Report
-from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
+from WMCore.BossAir.Plugins.BasePlugin import BasePlugin,BossAirPluginException
 from WMCore.DAOFactory import DAOFactory
 import WMCore.WMInit
 from copy import deepcopy
+
+
+def hackTheEnv(prependCommand = ''):
+    """
+    HaCk ThE eNv  *IMPORTANT NOTES* 
+    - the hack is necessary only for CLI which are python(2) script
+    - the hack reverts PATH & LD_LYBRARY_PATH if an external PYTHON is present
+    - during the hack, replicate entries will be dropped
+    - the hack MUST be placed between the 'proxyString'and the CLI command
+    """
+
+    newEnv = prependCommand + ' '
+
+    try :
+        pyVersionToRemove = ''
+        if os.environ.has_key('PYTHON_VERSION'):
+            pyVersionToRemove = os.environ['PYTHON_VERSION']
+        else:
+            import platform
+            pyVersionToRemove = "%s-cmp" % platform.python_version()
+
+        originalPath = os.environ['PATH']
+        originalLdLibPath = os.environ['LD_LIBRARY_PATH']
+
+        newPath = ''
+        newLdLibPath = ''
+
+        # build new PATH
+        for x in list(set(originalPath.split(':'))) :
+            if x.find(pyVersionToRemove) == -1 :
+                newPath += x + ':'
+        newEnv += 'PATH=' + newPath[:-1] + ' '
+
+        # build new LD_LIBRARY_PATH
+        for x in list(set(originalLdLibPath.split(':'))) :
+            if x.find(pyVersionToRemove) == -1 :
+                newLdLibPath += x + ':'
+        newEnv += 'LD_LIBRARY_PATH=' + newLdLibPath[:-1] + ' '
+
+    except :
+        # revert not necessary or something went wrong during the hacking
+        pass
+
+    return newEnv
 
 def processWorker(input, results):
     """
@@ -102,7 +146,7 @@ def processWorker(input, results):
     return 0
 
 
-class gLitePlugin:
+class gLitePlugin(BasePlugin):
     """
     Prototype for gLite Plugin
 
@@ -130,6 +174,12 @@ class gLitePlugin:
         self.locationDict = {}
 
         self.delegationid = str(type(self).__name__)
+
+        ## env check
+        if not self.checkUI():
+            raise BossAirPluginException("gLite environment has not been set properly!")
+        ## encapsulating env
+        self.hackEnv = hackTheEnv()
 
         self.config = config
 
@@ -332,7 +382,7 @@ class gLitePlugin:
                 # Now submit them
                 logging.debug("About to submit %i jobs" % len(jobsReady) )
                 workqueued[currentwork] = jobsReady
-                input.put( (currentwork, command, 'submit') )
+                input.put((currentwork, self.hackEnv + ' ' + command, 'submit'))
                 currentwork += 1
 
         logging.debug("Waiting for %i works to finish.." % len(workqueued))
@@ -434,10 +484,10 @@ class gLitePlugin:
             cmdquerypath = wmcoreBasedir + \
                            '/src/python/WMCore/BossAir/Plugins/' + queryfilename
             if not os.path.exists( cmdquerypath ):
-                raise Exception('Impossible to locate %s' % cmdquerypath)
+                raise BossAirPluginException('Impossible to locate %s' % cmdquerypath)
         else :
             # Impossible to locate GLiteQueryStatus.py ...
-            raise Exception('Impossible to locate %s, WMBASE = %s ' % (queryfilename, str(wmcoreBasedir)) )
+            raise BossAirPluginException('Impossible to locate %s, WMBASE = %s ' % (queryfilename, str(wmcoreBasedir)) )
 
         logging.debug("Using %s to check the status " % cmdquerypath)
 
@@ -484,7 +534,7 @@ class gLitePlugin:
                 jobList   = jobList[self.trackmaxsize:]
                 logging.debug("Status check for %i jobs" %len(jobsReady))
                 workqueued[currentwork] = jobsReady
-                input.put( (currentwork, command, 'status') )
+                input.put((currentwork, self.hackEnv + ' ' + command, 'status'))
                 currentwork += 1
 
         # Now we should have sent all jobs to be submitted
@@ -508,7 +558,7 @@ class gLitePlugin:
                 try:
                     out = json.loads(jsout)
                 except ValueError, va:
-                    raise Exception('Error parsing JSON: \n\terror: %s\n\t:exception: %s' % (error, str(va)) )
+                    raise BossAirPluginException('Error parsing JSON: \n\terror: %s\n\t:exception: %s' % (error, str(va)) )
                 ## out example
                 ##  {'https://cert-rb-01.cnaf.infn.it:9000/fucrLsxVXal9mzE3UaFBFg':
                 ##           {'status': 'K'
@@ -597,7 +647,7 @@ class gLitePlugin:
             cmd = '%s %s %s %s' % (command, outdiropt, jj['cache_dir'], jj['gridid'])
             logging.debug("Enqueuing getoutput for job %i" % jj['jobid'] )
             workqueued[currentwork] = jj['jobid']
-            input.put( (currentwork, cmd, 'output') )
+            input.put((currentwork, self.hackEnv + ' ' + cmd, 'output'))
             currentwork += 1
 
         # Now we should have sent all jobs to be submitted
@@ -622,7 +672,7 @@ class gLitePlugin:
                 try:
                     out = json #.loads(jsout)
                 except ValueError, va:
-                    raise Exception('Error parsing JSON: \n\terror: %s\n\t:exception: %s' % (error, str(va)) )
+                    raise BossAirPluginException('Error parsing JSON: \n\terror: %s\n\t:exception: %s' % (error, str(va)) )
 
                 ### out example
                 # {
@@ -685,7 +735,7 @@ class gLitePlugin:
             cmd = '%s %s > %s/loggingInfo.%i.log' % (command, jj['gridid'], jj['cache_dir'], jj['retry_count'])
             logging.debug("Enqueuing logging info command for job %i" % jj['jobid'] )
             workqueued[currentwork] = jj['jobid']
-            input.put( (currentwork, cmd, 'output') )
+            input.put( (currentwork, self.hackEnv + ' ' + cmd, 'output') )
             currentwork += 1
 
         # Now we should have sent all jobs to be submitted
@@ -767,7 +817,7 @@ class gLitePlugin:
             logging.debug("Enqueuing cancel command for gridID %s" % gridID )
 
             workqueued[currentwork] = gridID
-            input.put( (currentwork, command, 'output') )
+            input.put( (currentwork, self.hackEnv + ' ' + command, 'output') )
   
             currentwork += 1
 
@@ -1008,6 +1058,30 @@ class gLitePlugin:
             self.locationDict[jobSite] = siteInfo[0].get('se_name', None)
         return self.locationDict[jobSite]
 
+    def checkUI(self, requestedversion = '3.2'):
+        """
+        _checkUI_
+
+        check if the glite UI is setup
+        input: string
+        output: boolean
+        """
+
+        result = False
+
+        cmd = 'glite-version'
+        pipe = subprocess.Popen(cmd, stdout = subprocess.PIPE,
+                                stderr = subprocess.PIPE, shell = True)
+        stdout, stderr = pipe.communicate()
+        errcode = pipe.returncode
+
+        logging.info("gLite UI '%s' version detected" % stdout.strip() )
+        if len(stderr) == 0 and errcode == 0:
+            gliteversion = stdout.strip()
+            if gliteversion.find( str(requestedversion) ) == 0:
+                result = True
+
+        return result
 
 # manage json library using the appropriate WMCore wrapper
 from WMCore.Wrappers import JsonWrapper as json

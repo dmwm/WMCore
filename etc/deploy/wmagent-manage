@@ -7,11 +7,12 @@
 THIS_SCRIPT=$(readlink -f $0)
 PROJ_DIR=$(dirname $(dirname $THIS_SCRIPT))
 ROOT_DIR=$(dirname $(dirname $(dirname $THIS_SCRIPT)))
+PROJ_NAME=$(basename $PROJ_DIR)
 
 COUCHDB_DIR="$ROOT_DIR/couchdb"
 MYSQL_DIR="$ROOT_DIR/mysql"
 WMCORE_DIR="$ROOT_DIR/wmcore"
-WMAGENT_DIR="$ROOT_DIR/wmagent"
+WMAGENT_DIR=
 export WMCORE_ROOT="$WMCORE_DIR/app"
 
 MYSQL_INIT_DONE=0
@@ -19,6 +20,7 @@ COUCH_INIT_DONE=0
 WMCORE_INIT_DONE=0
 WMAGENT_INIT_DONE=0
 
+MYSQL_DATABASE=
 MYSQL_USER=
 MYSQL_PASS=
 COUCH_USER=
@@ -26,8 +28,20 @@ COUCH_PASS=
 
 COUCH_HOST=127.0.0.1
 COUCH_PORT=5984
-WMAGENT_DB="wmagentdb"
-WMAGENT_CONFIG=$WMAGENT_DIR/config/WMAgentConfig.py
+
+if [ "$PROJ_NAME" == "reqmgr"  ]; then
+    MYSQL_DATABASE="reqmgrdb"
+    WMAGENT_DIR="$ROOT_DIR/reqmgr"
+    WMAGENT_CONFIG=$WMAGENT_DIR/config/ReqMgrConfig.py
+elif [ "$PROJ_NAME" == "workqueue"  ]; then
+    MYSQL_DATABASE="workqueuedb"
+    WMAGENT_DIR="$ROOT_DIR/workqueue"
+    WMAGENT_CONFIG=$WMAGENT_DIR/config/WorkQueueConfig.py
+else
+    MYSQL_DATABASE="wmagentdb"
+    WMAGENT_DIR="$ROOT_DIR/wmagent"
+    WMAGENT_CONFIG=$WMAGENT_DIR/config/WMAgentConfig.py
+fi    
 
 if [ -e $MYSQL_DIR/logs/.mysqlinitdb ]; then MYSQL_INIT_DONE=1; else MYSQL_INIT_DONE=0; fi;
 if [ -e $COUCHDB_DIR/logs/.couchinitdb ]; then COUCH_INIT_DONE=1; else COUCH_INIT_DONE=0; fi;    
@@ -88,18 +102,18 @@ load_secrets_file(){
 #
 # Environment
 #
+. $WMCORE_DIR/app/etc/profile.d/init.sh
 . $ROOT_DIR/couchdb/app/etc/profile.d/init.sh
 . $ROOT_DIR/mysql/app/etc/profile.d/init.sh
 . $WMCORE_DIR/python2.6/etc/profile.d/init.sh
 . $WMCORE_DIR/py2-mysqldb/etc/profile.d/init.sh 
-. $WMCORE_DIR/app/etc/profile.d/init.sh
 . $PROJ_DIR/cheetah/etc/profile.d/init.sh
 . $PROJ_DIR/openid/etc/profile.d/init.sh
 . $PROJ_DIR/cherrypy/etc/profile.d/init.sh
 . $PROJ_DIR/py2-cjson/etc/profile.d/init.sh
 
 export PATH=$PATH:$WMCORE_DIR/app/bin
-export PYTHONPATH=$PYTHONPATH:$WMCORE_DIR/app/src/python
+export PYTHONPATH=$WMCORE_DIR/app/src/python:$PYTHONPATH
 export PYTHONPATH=$PYTHONPATH:$WMCORE_DIR/app/test/python
 export PYTHONPATH=$PYTHONPATH:$WMAGENT_DIR/dls-client/Client/lib
 export PYTHONPATH=$PYTHONPATH:$WMAGENT_DIR/dbs-client/lib
@@ -142,7 +156,7 @@ init_mysql_db_post(){
 
     mysql -u root -p$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock --exec "$SQLUSER"
     mysql -u root -p$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock --exec "$SQLGRANT"
-    mysql -u $MYSQL_USER -p$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock --exec "create database ${WMAGENT_DB}"    
+    mysql -u $MYSQL_USER -p$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock --exec "create database ${MYSQL_DATABASE}"    
     
 }
 
@@ -334,7 +348,7 @@ init_wmagent(){
     fi
     wmagent-mod-config --input=$WMCORE_DIR/app/etc/WMAgentConfig.py \
                        --output=$WMAGENT_CONFIG \
-                       --mysql_url=mysql://$MYSQL_USER:$MYSQL_PASS@localhost/$WMAGENT_DB \
+                       --mysql_url=mysql://$MYSQL_USER:$MYSQL_PASS@localhost/$MYSQL_DATABASE \
                        --mysql_socket=$MYSQL_DIR/logs/mysql.sock \
                        --working_dir=$WMAGENT_DIR/install \
                        --couch_url=http://$COUCH_USER:$COUCH_PASS@$COUCH_HOST:$COUCH_PORT
@@ -347,16 +361,61 @@ init_wmagent(){
     
 }
 
-start_agent(){
+
+init_reqmgr(){
+    load_secrets_file;
+    wmagent-mod-config --input=$WMCORE_DIR/app/etc/ReqMgrConfig.py \
+                       --output=$WMAGENT_CONFIG \
+                       --mysql_url=mysql://$MYSQL_USER:$MYSQL_PASS@localhost/$MYSQL_DATABASE \
+                       --mysql_socket=$MYSQL_DIR/logs/mysql.sock \
+                       --working_dir=$WMAGENT_DIR/install \
+                       --couch_url=http://$COUCH_USER:$COUCH_PASS@$COUCH_HOST:$COUCH_PORT
+    wmcore-db-init --config $WMAGENT_CONFIG --create --modules=WMCore.WorkQueue.Database,WMCore.Agent.Database,WMCore.RequestManager.RequestDB
+    export WMAGENT_CONFIG
+    touch $WMAGENT_DIR/config/.wmagentinit
+}
+
+init_workqueue(){
+    load_secrets_file;
+    wmagent-mod-config --input=$WMCORE_DIR/app/etc/GlobalWorkQueueConfig.py \
+                       --output=$WMAGENT_CONFIG \
+                       --mysql_url=mysql://$MYSQL_USER:$MYSQL_PASS@localhost/$MYSQL_DATABASE \
+                       --mysql_socket=$MYSQL_DIR/logs/mysql.sock \
+                       --working_dir=$WMAGENT_DIR/install \
+                       --couch_url=http://$COUCH_USER:$COUCH_PASS@$COUCH_HOST:$COUCH_PORT
+    wmcore-db-init --config $WMAGENT_CONFIG --create --modules=WMCore.WorkQueue.Database,WMCore.Agent.Database
+    export WMAGENT_CONFIG
+    touch $WMAGENT_DIR/config/.wmagentinit
+    
+}
+
+#
+# initialise the agent based on the project installed
+#
+init_agent(){
+    echo " + Initialising $PROJ_NAME"
     if [ $WMCORE_INIT_DONE -eq 0 ]; then
            #echo "WMCore has not been initialised";
            init_wmcore;
     fi
     if [ $WMAGENT_INIT_DONE -eq 0 ]; then
-           echo "WMAgent has not been initialised";
-           init_wmagent;
+        echo " + $PROJ_NAME has not been initialised";
+        case "$PROJ_NAME" in
+           "reqmgr")
+              init_reqmgr;;
+           "workqueue")
+              init_workqueue;;
+           "wmagent")
+              init_wmagent;;
+        esac;
+    else
+        echo " + $PROJ_NAME has already been initialised"
     fi
-    
+    echo " + $PROJ_NAME Configuration file at $WMAGENT_CONFIG"
+}
+
+start_agent(){
+    init_agent;
     wmcoreD --start --config=$WMAGENT_CONFIG
 }
 
@@ -369,30 +428,23 @@ status_of_agent(){
     wmcoreD --status --config=$WMAGENT_CONFIG
 }
 
-init_agent(){
-    echo " + Initialising WMAgent"
-    if [ $WMCORE_INIT_DONE -eq 0 ]; then
-           #echo "WMCore has not been initialised";
-           init_wmcore;
-    fi
-    if [ $WMAGENT_INIT_DONE -eq 0 ]; then
-           echo " + WMAgent has not been initialised";
-           init_wmagent;
-    else
-        echo " + WMAgent has already been initialised"
-    fi
-    echo " + Agent Configuration file at $WMAGENT_CONFIG"
-}
 
 #
 # revert agent back to pre initialised state & wipe out 
 # everything currently in existence.
 clean_agent(){
+    load_secrets_file;
     echo "cleaning up agent installation"
     stop_agent;
     rm -rf  $WMAGENT_DIR/install ; 
     rm -f $WMAGENT_CONFIG;
     rm -f $WMAGENT_DIR/config/.wmagentinit;
+    
+    #
+    # clean contents of mysql database
+    # uses a drop/create of the db
+    mysql -u $MYSQL_USER -p$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock --exec "drop database ${MYSQL_DATABASE}"
+    mysql -u $MYSQL_USER -p$MYSQL_PASS --socket=$MYSQL_DIR/logs/mysql.sock --exec "create database ${MYSQL_DATABASE}"
     
 }
 

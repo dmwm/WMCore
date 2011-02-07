@@ -22,7 +22,7 @@ class Container():
         self._type = type
         return
 
-    def type_():
+    def type_(self):
         """
         _type__
 

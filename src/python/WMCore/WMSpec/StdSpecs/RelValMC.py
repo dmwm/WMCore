@@ -13,6 +13,11 @@ https://svnweb.cern.ch/trac/CMSDMWM/ticket/655
 
 Detailed instructions given on the "RelValMC Support in WM System" wave.
 
+Support for pile up:
+normally, the generation task has no input. However, if there is a 
+pile up section defined in the configuration, the generation task
+fetches from DBS the information about pileup input.
+
 """
 
 
@@ -51,7 +56,7 @@ def getTestArguments():
 class RelValMCWorkloadFactory(StdBase):
     def __init__(self):
         StdBase.__init__(self)
-
+        
 
     def buildWorkload(self):
         """
@@ -78,11 +83,12 @@ class RelValMCWorkloadFactory(StdBase):
         # 1 - generation task
         # name of the task - important (e.g. when searching WMBS)
         genTask = workload.newTask("Generation")
-
+        
         # def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
         # method is defined in StdBase
         # second attribute (taskType), if it's != "Production", issues with inputDataset
         # value which needs to be set accordingly
+        # configDoc is in fact a config document ID in the couch
         genOutputMods = self.setupProcessingTask(genTask, "Production",
                                                  inputDataset = None,
                                                  couchURL = self.couchURL,
@@ -93,7 +99,15 @@ class RelValMCWorkloadFactory(StdBase):
                                                  seeding = self.seeding,
                                                  totalEvents = self.totalEvents)
         self.addLogCollectTask(genTask, "GenLogCollect")
-        
+
+        # pile up support implementation
+        # generation task will still take inputDataset = None but if
+        # there is pileup configuration supplied, it will be added
+        # to the first generation task (configuration of the generation task
+        # step helper)
+        if self.pileupConfig:
+            self.setupPileup(genTask, self.pileupConfig)
+
         # 2 - merge task for the data produced by the generation task
         # the subsequent rereco task will runs either
         #    1) over 'generationDataTier' name of it's specified by the user or
@@ -202,6 +216,8 @@ class RelValMCWorkloadFactory(StdBase):
                                                {"events_per_job": 1000})
         # generation task data tier name is configurable and may be set by the user
         self.genDataTier = arguments.get("GenDataTier", None)
+        # pileup configuration for the first generation task
+        self.pileupConfig = arguments.get("PileupConfig", None)
         
         # reconstruction task
         self.recoConfig = arguments["RecoConfigCacheID"]        

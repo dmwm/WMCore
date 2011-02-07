@@ -9,6 +9,7 @@ Template for a CMSSW Step
 from WMCore.WMSpec.Steps.Template import Template
 from WMCore.WMSpec.Steps.Template import CoreHelper
 from WMCore.WMSpec.ConfigSectionTree import nodeName
+from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree
 
 
 
@@ -163,6 +164,24 @@ class CMSSWStepHelper(CoreHelper):
         self.data.input.inputOutputModule = inputOutputModule
         
         
+    def setupPileup(self, pileupConfig, dbsUrl):
+        """
+        include pileup input configuration into this step configuration.
+        pileupConfig is initially specified as input to the workload
+        (user input) and here is available as a dict.
+        
+        """
+        # so, e.g. this "cosmics": {"/some/cosmics/dataset", "minbias": "/some/minbias/dataset"}
+        # would translate into
+        # self.data.pileup.comics.dataset = "/some/cosmics/dataset"
+        # self.data.pileup.minbias.dataset = "/some/minbias/dataset"
+        self.data.section_("pileup")
+        for pileupType, dataset in pileupConfig.items():
+            self.data.pileup.section_(pileupType)
+            setattr(getattr(self.data.pileup, pileupType), "dataset", dataset)
+        setattr(self.data, "dbsUrl", dbsUrl)    
+        
+
 
 class CMSSW(Template):
     """

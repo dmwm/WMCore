@@ -353,3 +353,14 @@ class StdBase(object):
         cleanupTask.applyTemplates()
         cleanupTask.setTaskPriority(self.priority + 5)
         return
+    
+    def setupPileup(self, task, pileupConfig):
+        """
+        Support for pileup input for MonteCarlo and RelValMC workloads
+        
+        """
+        # task is instance of WMTaskHelper (WMTask module)
+        # retrieve task helper (cmssw step helper), top step name is cmsRun1
+        stepName = task.getTopStepName()
+        stepHelper = task.getStepHelper(stepName)
+        stepHelper.setupPileup(pileupConfig, self.dbsUrl)

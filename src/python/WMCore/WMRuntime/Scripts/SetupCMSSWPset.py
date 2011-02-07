@@ -1,8 +1,8 @@
-#!/usr/bin/env python
 """
 _SetupCMSSWPset_
 
 Create a CMSSW PSet suitable for running a WMAgent job.
+
 """
 
 import os
@@ -12,8 +12,11 @@ import socket
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog 
 from PSetTweaks.PSetTweak import PSetTweak
+import WMCore.WMSpec.WMStep as WMStep
 from PSetTweaks.WMTweak import makeTweak, applyTweak
 from PSetTweaks.WMTweak import makeOutputTweak, makeJobTweak, makeTaskTweak
+from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
+from WMCore.Wrappers.JsonWrapper import JSONDecoder
 
 import FWCore.ParameterSet.Config as cms
 
@@ -22,63 +25,77 @@ applyAlcaSkim = lambda s, a: s.alcaSkim(**a)
 applySkimming = lambda s, a: s.skimming(**a)
 applyDqmHarvesting = lambda s, a: s.dqmHarvesting(**a)
 
+
+
 def fixupGlobalTag(process):
     """
     _fixupGlobalTag_
 
     Make sure that the process has a GlobalTag PSet and a globaltag string.
+    
     """
     if not hasattr(process, "GlobalTag"):
         process.GlobalTag = cms.PSet(globalTag = cms.string(""))
     if not hasattr(process.GlobalTag, "globaltag"):
         process.GlobalTag.globaltag = cms.string("")
+        
 
 def fixupFirstRun(process):
     """
     _fixupFirstRun_
 
     Make sure that the process has a firstRun parameter.
+    
     """
     if not hasattr(process.source, "firstRun"):
         process.source.firstRun = cms.untracked.uint32(0)
+
 
 def fixupLastRun(process):
     """
     _fixupLastRun_
 
     Make sure that the process has a lastRun parameter.
+    
     """
     if not hasattr(process.source, "lastRun"):
         process.source.firstRun = cms.untracked.uint32(0)        
+
 
 def fixupLumisToProcess(process):
     """
     _fixupLumitsToProcess_
 
     Make sure that the process has a lumisToProcess parameter.
+    
     """
     if not hasattr(process.source, "lumisToProcess"):
         process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange()
+
 
 def fixupSkipEvents(process):
     """
     _fixupSkipEvents_
 
     Make sure that the process has a skip events parameter.
+    
     """
     if not hasattr(process.source, "skipEvents"):
         process.source.skipEvents = cms.untracked.uint32(0)
+
 
 def fixupMaxEvents(process):
     """
     _fixupMaxEvents_
 
     Make sure that the process has a max events parameter.
+    
     """
     if not hasattr(process, "maxEvents"):
         process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
     if not hasattr(process.maxEvents, "input"):
         process.maxEvents.input = cms.untracked.int32(-1)
+
 
 def fixupFileNames(process):
     """
@@ -86,6 +103,7 @@ def fixupFileNames(process):
 
     Make sure that the process has a fileNames parameter.  This will also
     configure lazy download for the process.
+    
     """
     if not process.services.has_key("AdaptorConfig"):
         process.add_(cms.Service("AdaptorConfig"))
@@ -97,14 +115,18 @@ def fixupFileNames(process):
     if not hasattr(process.source, "fileNames"):
         process.source.fileNames = cms.untracked.vstring()
 
+
 def fixupSecondaryFileNames(process):
     """
     _fixupSecondaryFileNames_
 
     Make sure that the process has a secondaryFileNames parameter.
+    
     """
     if not hasattr(process.source, "secondaryFileNames"):
         process.source.secondaryFileNames = cms.untracked.vstring()
+
+
 
 class SetupCMSSWPset(ScriptInterface):
     """
@@ -127,18 +149,20 @@ class SetupCMSSWPset(ScriptInterface):
                  "process.source.lastRun": fixupLastRun,
                  "process.source.lumisToProcess": fixupLumisToProcess}
     
+    
     def createProcess(self, scenario, funcName, funcArgs):
         """
         _createProcess_
 
         Create a Configuration.DataProcessing PSet.
+        
         """
         if funcName == "merge":
             try:
                 from Configuration.DataProcessing.Merge import mergeProcess
                 self.process = mergeProcess([])
             except Exception, ex:
-                msg = "Filaed to create a merge process."
+                msg = "Failed to create a merge process."
                 print msg
                 return None
         else:
@@ -188,11 +212,13 @@ class SetupCMSSWPset(ScriptInterface):
             
         return
 
+
     def loadPSet(self):
         """
         _loadPSet_
 
         Load a PSet that was shipped with the job sandbox.
+        
         """
         psetModule = "WMTaskSpace.%s.PSet" % self.step.data._internal_name
 
@@ -207,12 +233,14 @@ class SetupCMSSWPset(ScriptInterface):
 
         return
 
+
     def fixupProcess(self):
         """
         _fixupProcess_
 
         Look over the process object and make sure that all of the attributes
         that we expect to exist actually exist.
+        
         """
         # Make sure that for each output module the following parameters exist
         # in the PSet returned from the framework:
@@ -239,22 +267,26 @@ class SetupCMSSWPset(ScriptInterface):
 
         return
 
+
     def applyTweak(self, setTweak):
         """
         _applyTweak_
 
         Apply a tweak to the process.
+        
         """
         tweak = PSetTweak()
         tweak.unpersist(psetTweak)
         applyTweak(self.process, tweak, self.fixupDict)
         return
         
+        
     def handleSeeding(self):
         """
         _handleSeeding_
         
         Handle Random Seed settings for the job
+        
         """
         baggage = self.job.getBaggage()
         seeding = getattr(baggage, "seeding", None)
@@ -275,27 +307,177 @@ class SetupCMSSWPset(ScriptInterface):
             return
         # still here means bad seeding algo name
         raise RuntimeError, "Bad Seeding Algorithm: %s" % seeding
+    
+    
+    def _handleChainedProcessing(self):
+        """
+        In order to handle chained processing it's necessary to feed
+        output of one step/task (nomenclature ambiguous) to another.
+        This method creates particular mapping in a working Trivial
+        File Catalog (TFC).
+        
+        """
+        # first, create an instance of TrivialFileCatalog to override
+        tfc = TrivialFileCatalog()
+        # check the jobs input files
+        inputFile = ("../%s/%s.root" % (self.step.data.input.inputStepName,
+                                        self.step.data.input.inputOutputModule))
+        tfc.addMapping("direct", inputFile, inputFile,
+                       mapping_type = "lfn-to-pfn")
+        tfc.addMapping("direct", inputFile, inputFile,
+                       mapping_type = "pfn-to-lfn")
+
+        fixupFileNames(self.process)
+        self.process.source.fileNames.setValue([inputFile])
+
+        tfcName = "override_catalog.xml"
+        tfcPath = os.path.join(os.getcwd(), tfcName)            
+        print "Creating override TFC, contents below, saving into '%s'" % tfcPath
+        tfcStr = tfc.getXML()
+        print tfcStr
+        tfcFile = open(tfcPath, 'w')
+        tfcFile.write(tfcStr)
+        tfcFile.close()
+        self.step.data.application.overrideCatalog = tfcName
+
+
+    def _handlePileup(self):
+        """
+        Handle pileup settings.
+                
+        """
+        # find out local site SE name
+        siteConfig = loadSiteLocalConfig()
+        seLocalName = siteConfig.localStageOut["se-name"]
+        print "Running on site '%s', local SE name: '%s'" % (siteConfig.siteName, seLocalName)
+
+        pileupDict = self._getPileupConfigFromJson()
+                
+        # 2011-02-03 according to the most recent version of instructions, we do
+        # want to differentiate between "MixingModule" and "DataMixingModule"
+        mixModules, dataMixModules = self._getPileupMixingModules()
+                
+        # 2011-02-03
+        # on the contrary to the initial instructions (wave), there are
+        # going to be only two types of pileup input datasets: "data" or "mc"
+        # unlike all previous places where pileupType handled in a flexible
+        # way as specified in the configuration passed by the user, here are
+        # the two pileupTypes hardcoded: and we are going to add the "mc"
+        # datasets to "MixingModule"s and only add the "data" datasets to the
+        # "DataMixingModule"s
+        
+        # if the user in the configuration specifies different pileup types
+        # than "data" or "mc", the following call will not modify anything
+        self._processPileupMixingModules(pileupDict, seLocalName, dataMixModules, "data")
+        self._processPileupMixingModules(pileupDict, seLocalName, mixModules, "mc")
+        
+        
+    def _processPileupMixingModules(self, pileupDict, seLocalName, modules,
+                                    requestedPileupType):
+        """
+        Iterates over all modules and over all pileup configuration types.
+        The only considered types are "data" and "mc" (input to this method).
+        If other pileup types are specified by the user, the method doesn't
+        modify anything.
+        
+        The method considers only files which are present on this local
+        SE (seLocalName). The job will use only those. Dataset, divided into
+        blocks, may not have all blocks present on a particular SE. However,
+        all files belonging into a block will be present when reported by DBS.
+        
+        The structure of the pileupDict: PileupFetcher._queryDbsAndGetPileupConfig
+        
+        2011-02-03:
+        According to the current implementation of helper testing module
+        WMCore_t/WMRuntime_t/Scripts_t/WMTaskSpace/cmsRun1/PSet.py
+        each type of modules instances can have either "secsource"
+        or "input" attribute, so need to probe both, one shall succeed.
+        
+        """
+        for m in modules:
+            for pileupType in self.step.data.pileup.listSections_():
+                # there should be either "input" or "secsource" attributes
+                # and both "MixingModule", "DataMixingModule" can have both
+                inputTypeAttrib = getattr(m, "input", None) or getattr(m, "secsource", None)                                
+                if pileupType == requestedPileupType:
+                    # not all blocks may be stored on the local SE, loop over
+                    # all blocks and consider only files stored locally                    
+                    filesToMixIn = []
+                    for blockDict in pileupDict[pileupType].values():
+                        if seLocalName in blockDict["StorageElementNames"]:
+                            filesToMixIn.extend(blockDict["FileList"])
+                    # now assuming that inputTypeAttrib will have "fileNames" attribute                        
+                    inputTypeAttrib.fileNames.setValue(filesToMixIn)
+                    
+                    
+    def _getPileupMixingModules(self):
+        """
+        Method returns two lists:
+            1) list of mixing modules ("MixingModule")
+            2) list of data mixing modules ("DataMixingModules")
+        The first gets added only pileup files of type "mc", the
+        second pileup files of type "data".
+                
+        """        
+        mixModules, dataMixModules = [], []
+        prodsAndFilters = {}
+        prodsAndFilters.update(self.process.producers)
+        prodsAndFilters.update(self.process.filters)
+        for key, value in prodsAndFilters.items():
+            if value.type_() == "MixingModule":
+                mixModules.append(value)
+            if value.type_() == "DataMixingModule":
+                dataMixModules.append(value)
+        return mixModules, dataMixModules
+    
+    
+    def _getPileupConfigFromJson(self):
+        """
+        There has been stored pileup configuration stored in a JSON file
+        as a result of DBS querrying when running PileupFetcher,
+        this method loads this configuration from sandbox and returns it
+        as dictionary.
+        
+        The PileupFetcher was called by WorkQueue which creates job's sandbox
+        and sandbox gets migrated to the worker node.
+        
+        """
+        workingDir = self.stepSpace.location
+        jsonPileupConfig = os.path.join(workingDir, self.step.name(), "pileupconf.json")
+        print "Pileup JSON configuration file: '%s'" % jsonPileupConfig
+        # load the JSON config file into a Python dictionary
+        decoder = JSONDecoder()
+        try:
+            f = open(jsonPileupConfig, 'r')
+            json = f.read()
+            pileupDict =  decoder.decode(json)
+            f.close()
+        except IOError:
+            m = "Could not read pileup JSON configuration file: '%s'" % jsonPileupConfig 
+            raise RuntimeError(m)
+        return pileupDict
+        
         
     def __call__(self):
         """
         _call_
 
         Examine the step configuration and construct a PSet from that.
+        
         """
-        step = self.step.data
         self.process = None
 
-        scenario = getattr(step.application.configuration, "scenario", None)
+        scenario = getattr(self.step.data.application.configuration, "scenario", None)
         if scenario != None and scenario != "":
-            funcName = getattr(step.application.configuration, "function", None)
-            funcArgs = getattr(step.application.configuration, "arguments", None)
+            funcName = getattr(self.step.data.application.configuration, "function", None)
+            funcArgs = getattr(self.step.data.application.configuration, "arguments", None)
             self.createProcess(scenario, funcName, funcArgs)
         else:
             self.loadPSet()
 
         self.fixupProcess()
 
-        psetTweak = getattr(step.application.command, "psetTweak", None)
+        psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
         if psetTweak != None:
             self.applyPSetTweak(psetTweak, self.fixupDict)
 
@@ -308,32 +490,16 @@ class SetupCMSSWPset(ScriptInterface):
         # If so - create an override TFC (like done in PA) and then modify thePSet accordingly
         if (hasattr(self.step.data.input, "chainedProcessing") and
             self.step.data.input.chainedProcessing):
-            # first, create an instance of TrivialFileCatalog to override
-            tfc = TrivialFileCatalog()
-            # check the jobs input files
-            inputFile = ("../%s/%s.root" % (self.step.data.input.inputStepName,
-                                            self.step.data.input.inputOutputModule))
-            tfc.addMapping("direct", inputFile, inputFile,
-                           mapping_type = "lfn-to-pfn")
-            tfc.addMapping("direct", inputFile, inputFile,
-                           mapping_type = "pfn-to-lfn")
-
-            fixupFileNames(self.process)
-            self.process.source.fileNames.setValue([inputFile])
-
-            tfcName = "override_catalog.xml"
-            tfcPath = os.path.join(os.getcwd(), tfcName)            
-            print "Creating override TFC, contents below, saving into '%s'" % tfcPath
-            tfcStr = tfc.getXML()
-            print tfcStr
-            tfcFile = open(tfcPath, 'w')
-            tfcFile.write(tfcStr)
-            tfcFile.close()
-            step.application.overrideCatalog = tfcName
+            self._handleChainedProcessing()
         else:
             # Apply per job PSet Tweaks
             jobTweak = makeJobTweak(self.job)
             applyTweak(self.process, jobTweak, self.fixupDict)
+            
+        # check for pileup settings presence, pileup support implementation
+        # and if enabled, process pileup configuration / settings
+        if hasattr(self.step.data, "pileup"):
+            self._handlePileup()        
 
         # Apply per output module PSet Tweaks
         cmsswStep = self.step.getTypeHelper()
@@ -349,10 +515,10 @@ class SetupCMSSWPset(ScriptInterface):
         self.handleSeeding()
         
         # accept an overridden TFC from the step
-        if hasattr(step.application,'overrideCatalog'):
-            print "Found a TFC override: %s" % step.application.overrideCatalog
+        if hasattr(self.step.data.application,'overrideCatalog'):
+            print "Found a TFC override: %s" % self.step.data.application.overrideCatalog
             self.process.source.overrideCatalog = \
-                cms.untracked.string(step.application.overrideCatalog)
+                cms.untracked.string(self.step.data.application.overrideCatalog)
 
         # If we're running on a FNAL worker node override the TFC so we can
         # test lustre.
@@ -368,5 +534,4 @@ class SetupCMSSWPset(ScriptInterface):
         handle = open("%s/%s" % (workingDir, configFile), 'w')
         handle.write(self.process.dumpPython())
         handle.close()
-        
         return 0

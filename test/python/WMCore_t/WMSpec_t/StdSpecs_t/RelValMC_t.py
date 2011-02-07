@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 """
-
 Unit tests for the RelValMC workflow
 
 """
-
 
 import unittest
 import os
@@ -18,7 +16,6 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
 
 
-
 class RelValMCTest(unittest.TestCase):
     def setUp(self):
         """
@@ -28,7 +25,7 @@ class RelValMCTest(unittest.TestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setupCouch("montecarlo_t", "ConfigCache")        
+        self.testInit.setupCouch("relvalmc_t", "ConfigCache")        
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         couchServer = CouchServer(os.environ["COUCHURL"])
@@ -80,7 +77,7 @@ class RelValMCTest(unittest.TestCase):
                                                  "dataTier": "GEN-SIM-RAW"}}}}
         result = self.configDatabase.commitOne(config)
         return result[0]["id"]
-    
+
     
     def injectReconstructionConfig(self):
         """
@@ -439,8 +436,46 @@ class RelValMCTest(unittest.TestCase):
         self._generationTaskTest()
         self._reconstructionTaskTest()
         self._alcaRecoTaskTest()
-        
 
+
+    def testRelValMCWithPileup(self):
+        """
+        Configure, instantiate, install into WMBS and check that the
+        subscriptions in WMBS are setup correctly.
+        
+        TODO:
+        once it's clear how exactly testing of pileup support will be done,
+        refactor the identical parts ...
+        
+        """
+        defaultArguments = getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "relvalmc_t"
+        # in this test, try not to define generation task datatier (first output module
+        # should be automatically picked up)
+        #defaultArguments["GenDataTier"] = "GEN-SIM-RAW"
+        defaultArguments["GenConfigCacheID"] = self.injectGenerationConfig()
+        defaultArguments["RecoConfigCacheID"] = self.injectReconstructionConfig()
+        defaultArguments["AlcaRecoConfigCacheID"] = self.injectAlcaRecoConfig()
+        
+        # add pile up information - for the generation task
+        defaultArguments["PileupConfig"] = {"cosmics": ["/some/cosmics/dataset1","/some/cosmics/dataset2"],
+                                            "minbias": ["/some/minbias/dataset3"]}
+        
+        testWorkload = relValMCWorkload("TestWorkload", defaultArguments)
+        testWorkload.setSpecUrl("somespec")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        
+        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
+        testWMBSHelper.createSubscription()
+        
+        # now run the tests on single workload instance installed into WMBS
+        # each of the subtests is dealing with specific tasks
+        self._generationTaskTest()
+        self._reconstructionTaskTest()
+        self._alcaRecoTaskTest()
+
+        
 
 if __name__ == "__main__":
     unittest.main()

@@ -464,6 +464,23 @@ clean_all(){
     clean_agent;
 }
 
+
+execute_command(){
+    shift;
+    local RUNTHIS=$1
+    local WMCORE_BIN_DIR=$WMCORE_DIR/app/bin
+    echo $RUNTHIS
+    if [ ! -e $WMCORE_BIN_DIR/$1 ]; then
+        echo "$RUNTHIS is not a binary in WMCore/bin"
+        exit 1
+    fi
+    shift;
+    load_secrets_file;
+    echo "Executing $RUNTHIS $@ ..."
+    $RUNTHIS $@;
+}
+
+
 help(){
     echo "there is no help, you are all alone";
 }
@@ -505,6 +522,8 @@ case $1 in
      clean_agent;;
   clean-all)
      clean_all;;
+  execute)
+     execute_command $@;;
   help)
     help ;;
   version)

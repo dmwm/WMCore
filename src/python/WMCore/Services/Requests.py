@@ -17,6 +17,7 @@ import os
 import base64
 import httplib2
 import socket
+import logging
 from urlparse import urlparse
 from httplib import HTTPException
 import tempfile
@@ -65,6 +66,7 @@ class Requests(dict):
         self["cachepath"] = cache_dir
         self["req_cache_path"] = os.path.join(cache_dir, '.cache')
         self.setdefault("timeout", 30)
+        self.setdefault("logger", logging)
         
         check_server_url(self['host'])
         # and then get the URL opener

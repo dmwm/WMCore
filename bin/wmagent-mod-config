@@ -64,7 +64,9 @@ def modifyConfiguration(config, **args):
     for k,v in args.items():
         parameters = mapping.get(k, [])
         for p in parameters:
-            section = getattr(config, p[0])
+            section = getattr(config, p[0], None)
+            if section == None:
+                continue
             setattr(section, p[1], v)
     for component in config.listComponents_():
         compCfg = getattr(config, component)

@@ -15,7 +15,7 @@ from WMCore.Configuration import Configuration
 # port numbers will not need to be changed unless there is more than one
 # ReqMgr/GlobalWorkQueue running on the machine.
 serverHostName = "SERVER_HOSTNAME"
-reqMgrHostName = "REQMGR_HOSTNAME
+reqMgrHostName = "REQMGR_HOSTNAME"
 reqMgrPort = 8687
 globalWorkQueuePort = 8571
 
@@ -28,6 +28,7 @@ databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 # Agent name and team name.
 agentName = "WMAgentCommissioning"
 teamName = "cmsdataops"
+contactName = "cmsdataops@cern.ch"
 
 # Nothing after this point should need to be changed.
 config = Configuration()
@@ -39,6 +40,7 @@ config.Agent.agentName = agentName
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 config.Agent.useHeartbeat = False
+config.Agent.contact = contactName
 
 config.section_("General")
 config.General.workDir = workDirectory

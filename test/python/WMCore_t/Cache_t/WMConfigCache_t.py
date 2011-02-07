@@ -60,9 +60,7 @@ class testWMConfigCache(unittest.TestCase):
 
         self.assertEqual(configCache2.getPSetTweaks(), PSetTweak)
 
-
         configCache2.delete()
-
         configCache3 = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test',
                                    id = configCache.getCouchID(),
                                    rev = configCache.getCouchRev())
@@ -88,20 +86,17 @@ class testWMConfigCache(unittest.TestCase):
         PSetTweak = "Hello, I am a PSetTweak.  It's nice to meet you."
         attach    = "Hello, I am an attachment"
 
-
         configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
         configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
         psetPath = os.path.join(getWMBASE(), "test/python/WMCore_t/Cache_t/PSet.txt")
         configCache.addConfig(newConfig = psetPath, psetHash = None)
+
         configCache.setLabel("sample-label")
         configCache.setDescription("describe this config here")
         configCache.save()
-
         configString1 = configCache.getConfig()
-
-
 
         configCache2 = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test',
                                    id = configCache.getCouchID(),
@@ -139,13 +134,6 @@ class testWMConfigCache(unittest.TestCase):
         configCache2.load()
         
         self.assertEqual(configCache2.attachments.get('attach1', None), attach)
-
-        # This shouldn't work yet.
-        configCache3 = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
-        configCache3.createUserGroup(groupname = "testGroup", username = 'testOps')
-        configCache3.load()
-
-        self.assertEqual(configCache3.id, None)
         configCache2.delete()
         return
 

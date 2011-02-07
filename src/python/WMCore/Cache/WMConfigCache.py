@@ -62,10 +62,6 @@ class ConfigCache(WMObject):
             logging.error(msg)
             raise ConfigCacheException(message = msg)
             
-        # Couch variables
-        self.id   = id  # Couch ID
-        self.rev  = rev # Couch Revision
-
         # UserGroup variables
         self.group = None
         self.owner = None
@@ -91,6 +87,19 @@ class ConfigCache(WMObject):
         database = self.couchdb.createDatabase(self.dbname)
         database.commit()
         return database
+
+    def connectUserGroup(self, groupname, username):
+        """
+        _connectUserGroup_
+
+        """
+        self.group = Group(name = groupname)
+        self.group.setCouch(self.dburl, self.dbname)
+        self.group.connect()
+        self.owner = makeUser(groupname, username,
+                              couchUrl = self.dburl,
+                              couchDatabase = self.dbname)        
+        return
 
     def createUserGroup(self, groupname, username):
         """
@@ -154,8 +163,8 @@ class ConfigCache(WMObject):
 
         try:
             commitResults = rawResults[-1]
-            self.rev = commitResults.get('rev')
-            self.id  = commitResults.get('id')
+            self.document["_rev"] = commitResults.get('rev')
+            self.document["_id"]  = commitResults.get('id')
         except KeyError, ex:
             msg  = "Document returned from couch without ID or Revision\n"
             msg += "Document probably bad\n"
@@ -181,8 +190,8 @@ class ConfigCache(WMObject):
         """
 
 
-        retval = self.database.addAttachment(self.id,
-                                             self.rev,
+        retval = self.database.addAttachment(self.document["_id"],
+                                             self.document["_rev"],
                                              attachment,
                                              name)
 
@@ -190,15 +199,13 @@ class ConfigCache(WMObject):
             # Then we have a problem
             msg = "Adding an attachment to document failed\n"
             msg += str(retval)
-            msg += "ID: %s, Rev: %s" % (self.id, self.rev)
+            msg += "ID: %s, Rev: %s" % (self.document["_id"], self.document["_rev"])
             logging.error(msg)
             raise ConfigCacheException(msg)
 
-        self.rev = retval['rev']
-        self.id  = retval['id']
-
+        self.document["_rev"] = retval['rev']
+        self.document["_id"]  = retval['id']
         self.attachments[name] = attachment
-
 
         return
 
@@ -209,20 +216,17 @@ class ConfigCache(WMObject):
 
         Load a document from the server given its couchID
         """
-        self.id = configID
-
         try:
-            doc = self.database.document(id = self.id)
-            if 'owner' in doc.keys():
-                self.createUserGroup(groupname = doc['owner'].get('group', None),
-                                     username  = doc['owner'].get('user', None))
-            if '_attachments' in doc.keys():
+            self.document = self.database.document(id = configID)
+            if 'owner' in self.document.keys():
+                self.connectUserGroup(groupname = self.document['owner'].get('group', None),
+                                      username  = self.document['owner'].get('user', None))
+            if '_attachments' in self.document.keys():
                 # Then we need to load the attachments
-                for key in doc['_attachments'].keys():
+                for key in self.document['_attachments'].keys():
                     self.loadAttachment(name = key)
-            self.document.update(doc)
         except CouchNotFoundError, ex:
-            msg =  "Document with id %s not found in couch\n" % (self.id)
+            msg =  "Document with id %s not found in couch\n" % (configID)
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
@@ -244,7 +248,7 @@ class ConfigCache(WMObject):
         """
 
 
-        attach = self.database.getAttachment(self.id, name)
+        attach = self.database.getAttachment(self.document["_id"], name)
 
         if not overwrite:
             if name in self.attachments.keys():
@@ -269,7 +273,7 @@ class ConfigCache(WMObject):
             logging.error("Unable to load using view %s and value %s" % (view, str(value)))
 
         self.unwrapView(viewRes)
-        self.loadByID(self.id)
+        self.loadByID(self.document["_id"])
         return
 
 
@@ -280,9 +284,9 @@ class ConfigCache(WMObject):
         Figure out how to load
         """
 
-        if self.id != None:
+        if self.document.get("_id", None) != None:
             # Then we should load by ID
-            self.loadByID(self.id)
+            self.loadByID(self.document["_id"])
             return
 
         # Otherwise we have to load by view
@@ -308,8 +312,8 @@ class ConfigCache(WMObject):
         Move view information into the main document
         """
 
-        self.id  = view['rows'][0].get('id')
-        self.rev = view['rows'][0].get('value').get('_rev')
+        self.document["_id"]  = view['rows'][0].get('id')
+        self.document["_rev"] = view['rows'][0].get('value').get('_rev')
 
         
 
@@ -383,7 +387,7 @@ class ConfigCache(WMObject):
         Return the document's couchID
         """
 
-        return self.id
+        return self.document["_id"]
 
 
     def getCouchRev(self):
@@ -394,7 +398,7 @@ class ConfigCache(WMObject):
         """
 
 
-        return self.rev
+        return self.document["_rev"]
 
 
     @Decorators.requireGroup
@@ -405,14 +409,13 @@ class ConfigCache(WMObject):
 
         Deletes the document with the current docid
         """
-        if not self.id:
+        if not self.document["_id"]:
             logging.error("Attempted to delete with no couch ID")
 
 
         # TODO: Delete without loading first
         try:
-            document = self.database.document(self.id)
-            self.database.queueDelete(document)
+            self.database.queueDelete(self.document)
             self.database.commit()
         except Exception, ex:
             msg =  "Error in deleting document from couch"

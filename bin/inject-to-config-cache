@@ -81,6 +81,6 @@ if __name__ == "__main__":
     configCache.save()
 
     print "Added file to the config cache:"
-    print "  DocID:    %s" % configCache.id
-    print "  Revision: %s" % configCache.rev
+    print "  DocID:    %s" % configCache.document["_id"]
+    print "  Revision: %s" % configCache.document["_rev"]
     sys.exit(0)

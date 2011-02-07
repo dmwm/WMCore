@@ -7,8 +7,8 @@ Implementation of StageOutImpl interface for FNAL
 """
 import os
 import commands
-from StageOut.Registry import registerStageOutImpl
-from StageOut.StageOutImpl import StageOutImpl
+from WMCore.StageOut.Registry import registerStageOutImpl
+from WMCore.StageOut.StageOutImpl import StageOutImpl
 
 
 _CheckExitCodeOption = True

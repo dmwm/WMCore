@@ -42,9 +42,9 @@ def pnfsPfn(pfn):
 
 
 
-class DCCPFNALImpl(StageOutImpl):
+class FNALImpl(StageOutImpl):
     """
-    _DCCPFNALImpl_
+    _FNALImpl_
 
     Implement interface for dcache door based dccp command
 

@@ -73,7 +73,7 @@ class EnvCommand(Command):
             print 'export DATABASE=sqlite://'
        if not os.getenv('COUCHURL', False):
            # Use the default localhost URL if none is configured.
-            print 'export COUCHURL=localhost:5984'
+            print 'export COUCHURL=http://localhost:5984'
        here = get_relative_path()
 
        tests = here + '/test/python'

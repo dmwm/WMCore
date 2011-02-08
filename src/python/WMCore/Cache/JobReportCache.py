@@ -38,11 +38,6 @@ class JobReportCache:
 
         """
         self.database = self.couch.createDatabase(self.name)
-        hashViewDoc = self.database.createDesignDoc('jobs')
-        hashViewDoc["views"] = { }
-        #TODO: Add views
-        self.database.queue( hashViewDoc )
-        self.database.commit()
         return
 
 

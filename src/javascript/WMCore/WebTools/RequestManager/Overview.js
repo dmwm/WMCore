@@ -66,13 +66,16 @@ WMCore.RequestManager.Overview.overviewTable = function(divID, filterDiv,
         };
         
     var formatJobLink = function(elCell, oRecord, oColumn, sData, type) { 
-            var host;
             if (!sData) {
                 elCell.innerHTML = 0;
             } else {
-                host = sData;
-                elCell.innerHTML = "<a href='" + oRecord.getData("couch_job_info_base").replace("replace_to_", type) +
-                                     "' target='_blank'>" + host + "</a>";
+                couchLink = oRecord.getData("couch_job_info_base");
+                if (couchLink) {
+                    elCell.innerHTML = "<a href='" + couchLink.replace("replace_to_", type) +
+                                     "' target='_blank'>" + sData + "</a>";
+                } else {
+                    elCell.innerHTML = sData;
+                };
             };
         };
     var formatPending = function(elCell, oRecord, oColumn, sData) { 

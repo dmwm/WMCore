@@ -58,6 +58,11 @@ config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 config.Agent.useHeartbeat = False
 
+config.section_("JobStateMachine")
+config.JobStateMachine.couchurl = couchURL
+config.JobStateMachine.configCacheDBName = configCacheDBName
+config.JobStateMachine.default_retries = 5
+
 config.section_("General")
 config.General.workDir = workDirectory
 

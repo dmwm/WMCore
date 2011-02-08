@@ -11,6 +11,7 @@ import sys
 import getopt
 import imp
 import socket
+import traceback
 
 from WMCore.Configuration import saveConfigurationFile
 
@@ -64,16 +65,21 @@ def modifyConfiguration(config, **args):
     for k,v in args.items():
         parameters = mapping.get(k, [])
         for p in parameters:
-            section = getattr(config, p[0], None)
-            if section == None:
-                continue
-            setattr(section, p[1], v)
+            if hasattr(config, p[0]):
+                section = getattr(config, p[0])
+                setattr(section, p[1], v)
     for component in config.listComponents_():
         compCfg = getattr(config, component)
         compCfg.componentDir = "%s/%s" % (args['working_dir'], component)
         
         if component == "WorkQueueManager":
             compCfg.queueParams['CacheDir'] = "%s/%s" % (args['working_dir'], component)
+        if component == "JobSubmitter":
+            compCfg.submitDir = "%s/SubmitJDLs" % args['working_dir']
+        if component == "JobArchiver":
+            compCfg.logDir = "%s/JobArchives" % args['working_dir']
+        if component == "JobCreator":
+            compCfg.jobCacheDir = "%s/JobCache" % args['working_dir']
             
     for webapp in config.listWebapps_():
         compCfg = getattr(config, webapp)
@@ -81,9 +87,37 @@ def modifyConfiguration(config, **args):
         
     # hostname locations
     config.Agent.hostName = socket.gethostname()
-    config.WorkQueueService.Webtools.host = socket.gethostname()
-    config.WorkQueueManager.queueParams['QueueURL'] = 'http://%s:9997' % socket.gethostname()
-    config.WorkQueueService.views.active.workqueue.queueParams['QueueURL'] = 'http://%s:9997' % socket.gethostname()
+
+    if hasattr(config, "ReqMgr"):
+        config.ReqMgr.Webtools.host = socket.gethostname()
+        config.ReqMgr.Webtools.port = 8687
+        config.ReqMgr.couchUrl = args["couch_url"]
+        config.ReqMgr.configDBName = "wmagent_configcache"
+        config.ReqMgr.requestor = "cmsdataops"
+        config.ReqMgr.views.active.create.requestor = "cmsdataops"
+        config.ReqMgr.admin = "gutsche@fnal.gov"
+        config.ReqMgr.views.active.reqMgr.model.couchUrl = args["couch_url"]
+
+    if args.get("local_workqueue_port", None) == None and args.get("global_workqueue_port", None) != None:
+        config.WorkQueueManager.reqMgrConfig = {"teamName": "cmsdataops",
+                                                "endpoint": "http://%s:8687/reqMgr/" % socket.gethostname()}
+        config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:%s/workqueue" % (socket.gethostname(),
+                                                                                      args["global_workqueue_port"])
+        config.WorkQueueService.Webtools.port = int(args["global_workqueue_port"])
+        config.WorkQueueService.Webtools.host = socket.gethostname()
+        config.WorkQueueService.views.active.workqueue.queueParams.setdefault("QueueURL",
+                                                                              "http://%s:%s/workqueue" % (socket.gethostname(),
+                                                                                                          args["global_workqueue_port"]))
+    elif args.get("local_workqueue_port", None) != None and args.get("global_workqueue_port", None) != None:
+        config.WorkQueueManager.serviceUrl = "%s:%s" % (socket.gethostname(),
+                                                        args["global_workqueue_port"])
+        config.WorkQueueManager.queueParams["ParentQueue"] = "http://%s/workqueue" % config.WorkQueueManager.serviceUrl
+        config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:%s" % (socket.gethostname(), args["local_workqueue_port"])
+        config.WorkQueueService.Webtools.port = int(args["local_workqueue_port"])
+        config.WorkQueueService.Webtools.host = socket.gethostname()
+        config.WorkQueueService.views.active.workqueue.queueParams.setdefault("QueueURL",
+                                                                              "http://%s:%s/workqueue" % (socket.gethostname(),
+                                                                                                          args["local_workqueue_port"]))
 
     return config
 
@@ -99,7 +133,8 @@ def main(argv=None):
     try:
         try:
             opts, args = getopt.getopt(argv[1:], "h", 
-            ["help", "input=", "output=", "mysql_socket=", "mysql_url=", "couch_url=", "working_dir="])
+            ["help", "input=", "output=", "mysql_socket=", "mysql_url=", "couch_url=",
+             "working_dir=", "global_workqueue_port=", "local_workqueue_port="])
         except getopt.error, msg:
             raise Usage(msg)
     
@@ -111,7 +146,8 @@ def main(argv=None):
                 outputFile = value
             if option == "--input":
                 inputFile = value
-            if option in ('--mysql_socket', '--mysql_url', '--couch_url', '--working_dir' ):
+            if option in ('--mysql_socket', '--mysql_url', '--couch_url', '--working_dir',
+                          '--global_workqueue_port', '--local_workqueue_port'):
                 parameters[option[2:]] = value
     
     
@@ -132,6 +168,7 @@ def main(argv=None):
     except Exception, ex:
         msg = "Error modifying configuration:\n %s" % str(ex)
         print >> sys.stderr, msg
+        print >> sys.stderr, traceback.format_exc()
         return 4
     try:
         saveConfiguration(cfg, outputFile)

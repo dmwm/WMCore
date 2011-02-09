@@ -201,7 +201,10 @@ class PhEDEx(Service):
         """
         from collections import defaultdict
         result = defaultdict(set)
-        kwargs.setdefault('suspended', 'n') # require active subscription
+
+        # Disable until problem with PhEDEx DataSvc is resolved:
+        #  https://hypernews.cern.ch/HyperNews/CMS/get/phedex/2224.html
+        #kwargs.setdefault('suspended', 'n') # require active subscription
 
         dataItems = list(set(dataItems)) # force unique items
 

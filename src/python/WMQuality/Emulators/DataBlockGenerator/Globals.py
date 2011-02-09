@@ -14,7 +14,7 @@ def getSites(block):
         sites  = ['SiteA']
         _BLOCK_LOCATIONS[block] = sites
     elif block.endswith('#2'):
-        sites = ['SiteA', 'SiteB_MSS']
+        sites = ['SiteA', 'SiteB']
         _BLOCK_LOCATIONS[block] = sites
     else:
          sites = ['SiteA', 'SiteB','SiteC']

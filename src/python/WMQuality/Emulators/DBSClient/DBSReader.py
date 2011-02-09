@@ -33,14 +33,16 @@ class DBSReader:
         args = { "url" : url, "level" : 'ERROR', "version" : ''}
         self.dbs = _MockDBSApi(args)
         
-    def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True, blockName = '*', locations = True):
+    def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True,
+                          blockName = '*', locations = True):
 
         """Fake block info"""
-        if blockName == '*':
-            return self.dataBlocks.getBlocks(dataset)
-        else:
-            return [x for x in self.dataBlocks.getBlocks(dataset)
-                    if x['Name'] == blockName]
+        blocks = [x for x in self.dataBlocks.getBlocks(dataset)
+                if x['Name'] == blockName or blockName == '*']
+        if locations:
+            [x.__setitem__('StorageElementList',
+                           self.listFileBlockLocation(x['Name']))]
+        return blocks
 
     def listFileBlockLocation(self, block):
         """Fake locations"""

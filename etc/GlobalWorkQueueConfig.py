@@ -66,7 +66,7 @@ config.WorkQueueService.componentDir = os.path.join(config.General.workDir, "Wor
 config.WorkQueueService.Webtools.port = globalWorkQueuePort
 config.WorkQueueService.Webtools.host = serverHostName
 config.WorkQueueService.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
-config.WorkQueueService.admin = config.Agent.contact
+config.WorkQueueService.admin = "cmsdataops@cern.ch"
 config.WorkQueueService.title = 'WorkQueue Data Service'
 config.WorkQueueService.description = 'Provide WorkQueue related service call'
 

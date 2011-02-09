@@ -24,7 +24,7 @@ from sqlalchemy.engine.url import make_url
 def usage():
 
     msg = """
-Usage: wmcore-db-init [--config] (--create | --clear )<options>
+Usage: wmcore-db-init [--config] --create <options>
 
 You must either set the WMAGENT_CONFIG environment variable or specify the config file with
 --config 
@@ -36,7 +36,7 @@ need to be created.
     print(msg)
 
 
-valid = ['config=', 'create', 'clear', 'modules=']
+valid = ['config=', 'create', 'modules=']
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
@@ -57,13 +57,6 @@ for opt, arg in opts:
             print msg
             sys.exit(1)
         command = "create"
-    if opt == "--clear":
-        if command != None:
-            msg = "Command specified twice:\n"
-            msg += usage()
-            print msg
-            sys.exit(1)
-        command = "clear"
     if opt == "--modules":
         modules = arg.split(',')
     if opt == "--config":
@@ -139,32 +132,7 @@ def executeCommand(command):
             print(line)
             line = x.read()
     
-
-def clear(config):
-    dbUrl = make_url(config.CoreDatabase.connectUrl)
-    
-    if dbUrl.drivername.lower() == 'mysql':
-        #TODO: if it is necessary for only master user perform this task,
-        #use master user account and grant permission to the user. 
-        #(currently commented out)    
-        if dbUrl.password == None:
-            dbUrl.password = ''
-        command1 = 'mysql -u '+ dbUrl.username + ' --password='+dbUrl.password+' -h '+ dbUrl.host + ' -P ' + str(dbUrl.port) + " --exec "
-        print command1
-        command = command1+' "drop database if exists '+ dbUrl.database +'"'
-        executeCommand(command)
-        command = command1+' "create database '+ dbUrl.database +'"'
-        executeCommand(command)
-        #command = command1+' "GRANT ALL PRIVILEGES ON '+ dbUrl.database +\
-        #    ".* TO '"+ dbUrl.username +"'@'"+ dbUrl.host +\
-        #    "' IDENTIFIED BY '"+ dbUrl.password+"' WITH GRANT OPTION"+'"'
-        #executeCommand(command)
-
 if command == "create":
     connectionTest(cfgObject)
     create(cfgObject)
-    sys.exit(0)
-
-elif command == "clear":
-    clear(cfgObject)
     sys.exit(0)

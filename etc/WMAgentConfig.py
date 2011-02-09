@@ -32,7 +32,6 @@ databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 # database.  The GroupUser and ACDC couchapps needs to be install into the
 # acdc database.
 couchURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984"
-configCacheDBName = "wmagent_configcache"
 jobDumpDBName = "wmagent_jobdump"
 acdcDBName = "wmagent_acdc"
 
@@ -81,7 +80,6 @@ config.General.workDir = workDirectory
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
 config.JobStateMachine.couchDBName = jobDumpDBName
-config.JobStateMachine.configCacheDBName = configCacheDBName
 config.JobStateMachine.default_retries = 5
 
 config.section_("ACDC")

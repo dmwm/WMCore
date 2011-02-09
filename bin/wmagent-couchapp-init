@@ -75,19 +75,21 @@ if __name__ == "__main__":
         sys.exit(1)
 
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
-    
-    installCouchApp(wmagentConfig.JobStateMachine.couchurl,
-                    wmagentConfig.JobStateMachine.couchDBName, "JobDump")
 
-    installCouchApp(wmagentConfig.JobStateMachine.couchurl,
-                    wmagentConfig.JobStateMachine.configCacheDBName, "ConfigCache")
-    installCouchApp(wmagentConfig.JobStateMachine.couchurl,
-                    wmagentConfig.JobStateMachine.configCacheDBName, "GroupUser")
+    if hasattr(wmagentConfig.JobStateMachine, "couchDBName"):
+        installCouchApp(wmagentConfig.JobStateMachine.couchurl,
+                        wmagentConfig.JobStateMachine.couchDBName, "JobDump")
+        setupCron(wmagentConfig.JobStateMachine.couchurl,
+                  wmagentConfig.JobStateMachine.couchDBName)
 
-    installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
-    installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")    
+    if hasattr(wmagentConfig.JobStateMachine, "configCacheDBName"):
+        installCouchApp(wmagentConfig.JobStateMachine.couchurl,
+                        wmagentConfig.JobStateMachine.configCacheDBName, "ConfigCache")
+        installCouchApp(wmagentConfig.JobStateMachine.couchurl,
+                        wmagentConfig.JobStateMachine.configCacheDBName, "GroupUser")
 
-    setupCron(wmagentConfig.JobStateMachine.couchurl,
-              wmagentConfig.JobStateMachine.couchDBName)
+    if hasattr(wmagentConfig, "ACDC"):
+        installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
+        installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")    
 
     sys.exit(0)

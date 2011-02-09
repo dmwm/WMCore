@@ -98,7 +98,7 @@ def list_static_files(system = None):
             add_static((static_dir.replace('src/', ''), data_files_for(static_dir)))
     else:
         for language in ['couchapps', 'css', 'html', 'javascript', 'templates']:
-            add_static((language, data_files_for('src/%s' % language)))
+            add_static((language, data_files_for('%s/src/%s' % (get_relative_path(), language))))
     # The contents of static_files will be copied at install time
     return static_files
 

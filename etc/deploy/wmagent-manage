@@ -362,7 +362,7 @@ init_wmagent(){
                        --couch_url=http://$COUCH_USER:$COUCH_PASS@$COUCH_HOST:$COUCH_PORT \
                        --global_workqueue_port=$GLOBAL_WORKQUEUE_PORT \
                        --local_workqueue_port=$LOCAL_WORKQUEUE_PORT
-    wmcore-db-init --config $WMAGENT_CONFIG --create --modules=WMCore.WMBS,WMCore.Agent.Database,WMComponent.DBSBuffer.Database,WMCore.WorkQueue.Database,WMCore.BossAir,WMCore.ResourceControl;
+    wmcore-db-init --config $WMAGENT_CONFIG --create --modules=WMCore.WMBS,WMCore.Agent.Database,WMComponent.DBS3Buffer,WMCore.WorkQueue.Database,WMCore.BossAir,WMCore.ResourceControl;
     export WMAGENT_CONFIG
 
     wmagent-couchapp-init;

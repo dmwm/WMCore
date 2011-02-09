@@ -29,7 +29,7 @@ from WMCore.WMBS.Job        import Job
 from WMCore.WMBS.JobGroup   import JobGroup
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 
 class AccountantWorkerException(WMException):
     """
@@ -52,10 +52,7 @@ class AccountantWorker(WMConnectionBase):
         """
         WMConnectionBase.__init__(self, "WMCore.WMBS")
         myThread = threading.currentThread()
-        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
-                                        logger = myThread.logger,
-                                        dbinterface = myThread.dbi)
-        self.uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                         logger = myThread.logger,
                                         dbinterface = myThread.dbi)
         
@@ -87,12 +84,7 @@ class AccountantWorker(WMConnectionBase):
         self.dbsExistsAction     = self.dbsDaoFactory(classname = "DBSBufferFiles.ExistsForAccountant")
         self.dbsLFNHeritage      = self.dbsDaoFactory(classname = "DBSBufferFiles.BulkHeritageParent")
 
-        self.dbsSetDatasetAlgoAction = self.uploadFactory(classname = "SetDatasetAlgo")
-
-        #config = Configuration()
-        #config.section_("JobStateMachine")
-        #config.JobStateMachine.couchurl = kwargs["couchURL"]
-        #config.JobStateMachine.couchDBName = kwargs["couchDBName"]
+        self.dbsSetDatasetAlgoAction = self.dbsDaoFactory(classname = "SetDatasetAlgo")
 
         self.stateChanger = ChangeState(config)
 
@@ -309,7 +301,10 @@ class AccountantWorker(WMConnectionBase):
         
         dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["primaryDataset"],
                                               datasetInfo["processedDataset"],
-                                              datasetInfo["dataTier"]))
+                                              datasetInfo["dataTier"])) 
+        dbsFile.setProcessingEra(era = datasetInfo.get('processingEra', None))
+        dbsFile.setAcquisitionEra(era = datasetInfo.get('acquisitionEra', None))
+        
         for run in jobReportFile["runs"]:
             newRun = Run(runNumber = run.run)
             newRun.extend(run.lumis)
@@ -478,7 +473,6 @@ class AccountantWorker(WMConnectionBase):
         runLumiBinds  = []
         selfChecksums = None
 
-        self.datasetAlgoID
         for dbsFile in self.dbsFilesToCreate:
             # Append a tuple in the format specified by DBSBufferFiles.Add
             # Also run insertDatasetAlgo
@@ -496,10 +490,18 @@ class AccountantWorker(WMConnectionBase):
 
             if not assocID:
                 # Then we have to get it ourselves
-                assocID = dbsFile.insertDatasetAlgo()
-                self.datasetAlgoPaths.append(datasetAlgoPath)
-                self.datasetAlgoID.append({'datasetAlgoPath': datasetAlgoPath,
-                                           'assocID': assocID})
+                try:
+                    assocID = dbsFile.insertDatasetAlgo()
+                    self.datasetAlgoPaths.append(datasetAlgoPath)
+                    self.datasetAlgoID.append({'datasetAlgoPath': datasetAlgoPath,
+                                               'assocID': assocID})
+                except WMException:
+                    raise
+                except Exception, ex:
+                    msg =  "Unhandled exception while inserting datasetAlgo: %s\n" % datasetAlgoPath
+                    msg += str(ex)
+                    logging.error(msg)
+                    raise AccountantWorkerException(msg)
 
             lfn           = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']

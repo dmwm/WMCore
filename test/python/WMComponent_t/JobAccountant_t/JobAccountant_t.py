@@ -52,7 +52,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("jobaccountant_t", "JobDump")
-        self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database",
+        self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer",
                                                 "WMCore.WMBS"],
                                 useDefault = False)
 

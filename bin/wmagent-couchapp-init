@@ -27,9 +27,8 @@ def installCouchApp(couchUrl, couchDBName, couchAppName):
     couchServer = CouchServer(couchUrl)
     couchappConfig = Config()
 
-    if couchDBName in couchServer.listDatabases():
-        couchServer.deleteDatabase(couchDBName)
-    couchServer.createDatabase(couchDBName)
+    if couchDBName not in couchServer.listDatabases():
+        couchServer.createDatabase(couchDBName)
 
     wmBase = getWMBASE()
     develPath = "%s/src/couchapps" % wmBase

@@ -283,11 +283,6 @@ class Requests(dict):
         """Parse netloc to get user"""
         return self['endpoint_components'].username
 
-    def getAuthString(self):
-        """Pull out the auth string from the URL"""
-        return '%s:%s' % (self['endpoint_components'].username,
-                          self['endpoint_components'].password)
-
 class JSONRequests(Requests):
     """
     Example implementation of Requests that encodes data to/from JSON.
@@ -348,8 +343,10 @@ class BasicAuthJSONRequests(JSONRequests):
 
         JSONRequests.__init__(self, url, dict)
         # Add the necessary auth information into the header
-        auth_string = "Basic %s" % base64.encodestring(self.getAuthString()).strip()
-        self.additionalHeaders["Authorization"] = auth_string
+        auth_string = "Basic %s" % base64.encodestring('%s:%s' % (endpoint_components.username,
+                                                                  endpoint_components.password)).strip()
+        if endpoint_components.username != None:
+            self.additionalHeaders["Authorization"] = auth_string
         return
 
 class SSLRequests(Requests):

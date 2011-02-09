@@ -42,29 +42,36 @@ class JobArchiverPoller(BaseWorkerThread):
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
-        self.config = config
+        self.config      = config
         self.changeState = ChangeState(self.config)
 
-        myThread = threading.currentThread()
-
+        myThread        = threading.currentThread()
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-
         self.loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
 
+        # Variables
         self.numberOfJobsToCluster = getattr(self.config.JobArchiver,
                                              "numberOfJobsToCluster", 1000)
 
-        if not os.path.isdir(config.JobArchiver.logDir):
-            if os.path.exists(config.JobArchiver.logDir):
-                # Then we have some weird file in the way
-                # FAIL
-                raise Exception("Pre-existing file at %s" \
-                                % (config.JobArchiver.logDir))
-            else:
-                # Create the directory
-                os.makedirs(config.JobArchiver.logDir) 
+
+        try:
+            self.logDir = getattr(config.JobArchiver, 'logDir',
+                                  os.path.join(config.JobArchiver.componentDir, 'logDir'))
+            if not os.path.isdir(self.logDir):
+                os.makedirs(self.logDir)
+        except Exception, ex:
+            msg =  "Unhandled exception while setting up logDir!\n"
+            msg += str(ex)
+            logging.error(msg)
+            try:
+                logging.debug("Directory: %s" % self.logDir)
+                logging.debug("Config: %s" % config)
+            except:
+                pass
+            raise JobArchiverPollerException(msg)
+
     
     def setup(self, parameters):
         """
@@ -230,7 +237,7 @@ class JobArchiverPoller(BaseWorkerThread):
         try:
             jobFolder = 'JobCluster_%i' \
                         % (int(job['id']/self.numberOfJobsToCluster))
-            logDir = os.path.join(self.config.JobArchiver.logDir, jobFolder)
+            logDir = os.path.join(self.logDir, jobFolder)
             if not os.path.exists(logDir):
                 os.makedirs(logDir)
         except Exception, ex:

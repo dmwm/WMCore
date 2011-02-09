@@ -74,8 +74,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         #Libraries
         self.resourceControl = ResourceControl()
 
-        # BossAir
-        self.bossAir = BossAirAPI(config = config)
+        
 
         self.changeState = ChangeState(self.config)
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
@@ -89,14 +88,33 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.locationDict   = {}
         self.packageSize    = getattr(self.config.JobSubmitter, 'packageSize', 100)
 
-        self.packageDir = os.path.join(self.config.JobSubmitter.submitDir, "packages")
-        if not os.path.exists(self.packageDir):
-            os.makedirs(self.packageDir)
+        try:
+            if not getattr(self.config.JobSubmitter, 'submitDir', None):
+                self.config.JobSubmitter.submitDir = self.config.JobSubmitter.componentDir
+            self.packageDir = os.path.join(self.config.JobSubmitter.submitDir, 'packages')
 
+            if not os.path.exists(self.packageDir):
+                os.makedirs(self.packageDir)
+        except Exception, ex:
+            msg =  "Error while trying to create packageDir %s\n!"
+            msg += str(ex)
+            logging.error(msg)
+            try:
+                logging.debug("PackageDir: %s" % self.packageDir)
+                logging.debug("Config: %s" % config)
+            except:
+                pass
+            raise JobSubmitterException(msg)
+
+        
+        # BossAir
+        self.bossAir = BossAirAPI(config = self.config)
+
+        # Now the DAOs
         self.listJobsAction = self.daoFactory(classname = "Jobs.ListForSubmitter")
         self.setLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
 
-
+        # Now the error report
         self.noSiteErrorReport = Report()
         self.noSiteErrorReport.addError("JobSubmit", 61101, "SubmitFailed", "NoAvailableSites")
 

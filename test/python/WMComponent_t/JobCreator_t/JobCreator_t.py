@@ -246,10 +246,10 @@ class JobCreatorTest(unittest.TestCase):
         config.JobCreator.maxThreads                = 1
         config.JobCreator.UpdateFromResourceControl = True
         config.JobCreator.pollInterval              = 10
-        config.JobCreator.jobCacheDir               = self.testDir
+        #config.JobCreator.jobCacheDir               = self.testDir
         config.JobCreator.defaultJobType            = 'processing' #Type of jobs that we run, used for resource control
         config.JobCreator.workerThreads             = 4
-        config.JobCreator.componentDir              = os.path.join(os.getcwd(), 'Components')
+        config.JobCreator.componentDir              = self.testDir
         config.JobCreator.useWorkQueue              = True
         config.JobCreator.WorkQueueParams           = {'emulateDBSReader': True}
         

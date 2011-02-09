@@ -74,12 +74,6 @@ def modifyConfiguration(config, **args):
         
         if component == "WorkQueueManager":
             compCfg.queueParams['CacheDir'] = "%s/%s" % (args['working_dir'], component)
-        if component == "JobSubmitter":
-            compCfg.submitDir = "%s/SubmitJDLs" % args['working_dir']
-        if component == "JobArchiver":
-            compCfg.logDir = "%s/JobArchives" % args['working_dir']
-        if component == "JobCreator":
-            compCfg.jobCacheDir = "%s/JobCache" % args['working_dir']
             
     for webapp in config.listWebapps_():
         compCfg = getattr(config, webapp)

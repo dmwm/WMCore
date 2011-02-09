@@ -20,8 +20,8 @@ from subprocess import Popen, PIPE
 from WMCore.Agent.Configuration import loadConfigurationFile, Configuration
 
 
-
-from WMQuality.TestInit   import TestInit
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+#from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
 
@@ -61,6 +61,7 @@ class JobArchiverTest(unittest.TestCase):
         #self.tearDown()
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
                                 useDefault = False)
+        self.testInit.setupCouch("jobarchiver_t_0", "JobDump")
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -79,7 +80,7 @@ class JobArchiverTest(unittest.TestCase):
         """
 
         self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"])
-
+        self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
 
         return
@@ -105,13 +106,13 @@ class JobArchiverTest(unittest.TestCase):
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl    = os.getenv("COUCHURL", "cmssrv48.fnal.gov:5984")
-        config.JobStateMachine.couchDBName = "taskarchiver_t_0"
+        config.JobStateMachine.couchDBName = "jobarchiver_t_0"
 
         config.component_("JobArchiver")
         config.JobArchiver.pollInterval          = 60
         config.JobArchiver.logLevel              = 'INFO'
-        config.JobArchiver.logDir                = os.path.join(self.testDir, 'logs')
-        config.JobArchiver.componentDir          = os.getcwd()
+        #config.JobArchiver.logDir                = os.path.join(self.testDir, 'logs')
+        config.JobArchiver.componentDir          = self.testDir
         config.JobArchiver.numberOfJobsToCluster = 1000
 
         return config        
@@ -185,8 +186,8 @@ class JobArchiverTest(unittest.TestCase):
         if not os.path.isdir(cacheDir):
             os.mkdir(cacheDir)
 
-        if os.path.isdir(config.JobArchiver.logDir):
-            shutil.rmtree(config.JobArchiver.logDir)
+        #if os.path.isdir(config.JobArchiver.logDir):
+        #    shutil.rmtree(config.JobArchiver.logDir)
 
         for job in testJobGroup.jobs:
             myThread.transaction.begin()
@@ -219,10 +220,10 @@ class JobArchiverTest(unittest.TestCase):
         for job in testJobGroup.jobs:
             self.assertEqual(job["name"] in dirList, False)
 
-        logList = os.listdir(os.path.join(config.JobArchiver.logDir, 'JobCluster_0'))
+        logList = os.listdir(os.path.join(config.JobArchiver.componentDir, 'logDir', 'JobCluster_0'))
         for job in testJobGroup.jobs:
             self.assertEqual('Job_%i.tar.bz2' %(job['id']) in logList, True, 'Could not find transferred tarball for job %i' %(job['id']))
-            pipe = Popen(['tar', '-jxvf', '%s/%s/Job_%i.tar.bz2' %(config.JobArchiver.logDir, 'JobCluster_0', job['id'])],
+            pipe = Popen(['tar', '-jxvf', '%s/%s/%s/Job_%i.tar.bz2' %(config.JobArchiver.componentDir, 'logDir', 'JobCluster_0', job['id'])],
                          stdout = PIPE, stderr = PIPE, shell = False)
             pipe.wait()
             #filename = '%s/%s/%s.out' %(cacheDir[1:], job['name'], job['name'])

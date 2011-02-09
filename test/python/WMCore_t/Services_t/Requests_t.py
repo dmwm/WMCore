@@ -21,6 +21,7 @@ from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
 from WMCore.JobStateMachine import DefaultConfig
 from WMCore.DataStructs.Mask import Mask
 from WMCore.DataStructs.Job import Job
+from WMCore.Services.Requests import BasicAuthJSONRequests
 from WMCore.WMBS.Job import Job as WMBSJob
 from WMQuality.TestInit import TestInit
 import WMCore.Database.CMSCouch as CMSCouch
@@ -54,30 +55,30 @@ class testThunking(unittest.TestCase):
     """
     def setUp(self):
         self.thunker = JSONThunker()
-        
+
     def roundTrip(self,data):
         encoded = self.thunker.thunk(data)
         decoded = self.thunker.unthunk(encoded)
         self.assertEqual( data, decoded )
-    
+
     @runboth
     def testStr(self):
         self.roundTrip('hello')
-    
+
     @runboth
     def testList(self):
         self.roundTrip([123, 456])
-    
+
     @runboth
     def testDict(self):
         self.roundTrip({'abc':123, 'def':456})
         self.roundTrip({'abc':123, 456:'def'})
-    
+
     @runboth
     def testSet(self):
         self.roundTrip(set([]))
         self.roundTrip(set([123, 'abc']))
-        
+
 class testRequestExceptions(unittest.TestCase):
 
     def setUp(self):
@@ -109,7 +110,7 @@ class testRequestExceptions(unittest.TestCase):
 #                          incoming_headers = {'cache-control': 'no-cache'})
 
 
-        
+
 class testRepeatCalls(RESTBaseUnitTest):
     def initialize(self):
         self.config = DefaultConfig()
@@ -121,11 +122,11 @@ class testRepeatCalls(RESTBaseUnitTest):
 
     def tearDown(self):
         shutil.rmtree(self.cache_path, ignore_errors = True)
-                
+
     def test10Calls(self):
         fail_count = 0
         req = Requests.Requests(self.urlbase, {'req_cache_path': self.cache_path})
-        
+
         for i in range(0, 5):
             time.sleep(i)
             print 'test %s starting at %s' % (i, time.time())
@@ -163,70 +164,70 @@ class testJSONRequests(unittest.TestCase):
         self.testInit.setLogging()
         if not os.getenv('DATABASE', False):
             # We don't care what the database is for these tests, so use an in
-            # memory sqlite one if none is configured. 
+            # memory sqlite one if none is configured.
             os.environ['DATABASE'] = 'sqlite://'
         self.testInit.setDatabaseConnection()
         tmp = self.testInit.generateWorkDir()
         self.request = Requests.JSONRequests(dict={'req_cache_path' : tmp})
-    
+
     def roundTrip(self,data):
         encoded = self.request.encode(data)
         #print encoded
         #print encoded.__class__.__name__
         decoded = self.request.decode(encoded)
         #print decoded.__class__.__name__
-        self.assertEqual( data, decoded ) 
-       
+        self.assertEqual( data, decoded )
+
     def roundTripLax(self,data):
         encoded = self.request.encode(data)
         decoded = self.request.decode(encoded)
         datakeys = data.keys()
-        
+
         for k in decoded.keys():
             assert k in datakeys
-            datakeys.pop(datakeys.index(k)) 
+            datakeys.pop(datakeys.index(k))
         #print 'the following keys were dropped\n\t',datakeys
-    
+
     @runboth
     def testSet1(self):
         self.roundTrip(set([]))
-    
-    @runboth    
+
+    @runboth
     def testSet2(self):
         self.roundTrip(set([1,2,3,4,Run(1)]))
-    
-    @runboth   
+
+    @runboth
     def testSet3(self):
         self.roundTrip(set(['a','b','c','d']))
-        
-    @runboth   
+
+    @runboth
     def testSet4(self):
         self.roundTrip(set([1,2,3,4,'a','b']))
-        
-    @runboth   
+
+    @runboth
     def testRun1(self):
         self.roundTrip(Run(1))
-        
-    @runboth   
+
+    @runboth
     def testRun2(self):
         self.roundTrip(Run(1,1))
-        
-    @runboth   
+
+    @runboth
     def testRun3(self):
         self.roundTrip(Run(1,2,3))
-        
-    @runboth   
+
+    @runboth
     def testMask1(self):
         self.roundTrip(Mask())
-        
-    @runboth   
+
+    @runboth
     def testMask2(self):
         mymask = Mask()
         mymask['FirstEvent'] = 9999
         mymask['LastEvent'] = 999
         self.roundTrip(mymask)
 
-    @runboth   
+    @runboth
     def testMask3(self):
         mymask = Mask()
         mymask['FirstEvent'] = 9999
@@ -235,12 +236,12 @@ class testJSONRequests(unittest.TestCase):
         myjob["mask"] = mymask
         self.roundTrip(myjob)
 
-    @runboth   
+    @runboth
     def testMask4(self):
-        self.roundTrip({'LastRun': None, 'FirstRun': None, 'LastEvent': None, 
+        self.roundTrip({'LastRun': None, 'FirstRun': None, 'LastEvent': None,
         'FirstEvent': None, 'LastLumi': None, 'FirstLumi': None})
-            
-    @runboth   
+
+    @runboth
     def testMask5(self):
         mymask = Mask()
         mymask['FirstEvent'] = 9999
@@ -248,83 +249,19 @@ class testJSONRequests(unittest.TestCase):
         myjob = WMBSJob()
         myjob["mask"] = mymask
         self.roundTripLax(myjob)
-    
-    @runboth   
+
+    @runboth
     def testMask6(self):
         mymask = Mask()
         myjob = WMBSJob()
         myjob["mask"] = mymask
         self.roundTripLax(myjob)
-#                
-#class TestWMBSJSON(unittest.TestCase):
-#    transitions = None
-#    change = None
-#    def setUp(self):
-#        """
-#        _setUp_
-#        """
-#
-#        self.transitions = Transitions()
-#        self.testInit = TestInit(__file__)
-#        self.testInit.setLogging()
-#        self.testInit.setDatabaseConnection()
-#    
-#        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-#                                useDefault = False)
-#
-#        myThread = threading.currentThread()
-#        daofactory = DAOFactory(package = "WMCore.WMBS",
-#                                logger = myThread.logger,
-#                                dbinterface = myThread.dbi)
-#        
-#        locationAction = daofactory(classname = "Locations.New")
-#        locationAction.execute(siteName = "goodse.cern.ch")
-#        locationAction.execute(siteName = "badse.cern.ch")
-#                                
-#        # if you want to keep from colliding with other people
-#        #self.uniqueCouchDbName = 'jsm_test-%i' % time.time()
-#        # otherwise
-#        self.uniqueCouchDbName = 'jsm_test'
-#        self.change = ChangeState(DefaultConfig.config, \
-#                                  couchDbName=self.uniqueCouchDbName)
-#        self.request = Requests.JSONRequests()
 
-#
-#    def tearDown(self):
-#        """
-#        _tearDown_
-#        """
-#
-#        myThread = threading.currentThread()
-#        factory = WMFactory("WMBS", "WMCore.WMBS")
-#        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-#        myThread.transaction.begin()
-#        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-#        server = CMSCouch.CouchServer(self.change.config.JobStateMachine.couchurl)
-#        server.deleteDatabase(self.uniqueCouchDbName)
-#        if not destroyworked:
-#            raise Exception("Could not complete WMBS tear down.")
-#        myThread.transaction.commit()
-        
-#    def testJob1(self):
-#        self.roundTrip(Job())
-#        
-#    def testJobPackage1(self):
-#        package = JobPackage()
-#        package.append(1)
-#        package.append(2)
-#        package.append(3)
-#        self.roundTrip(package)
-#    
-#    def roundTrip(self,data):
-#        encoded = self.request.encode(data)
-#        decoded = self.request.decode(encoded)
-#        pp = pprint.PrettyPrinter()
-#        datapp = pp.pformat(data)
-#        decodedpp = pp.pformat(decoded)
-#        encodedpp = pp.pformat(encoded)
-#        self.assertEqual( data, decoded, "%s \n\n!= %s \n\n(encoded is %s)" %(datapp,decodedpp,encodedpp) )
-#        
+    def testSpecialCharacterPasswords(self):
+        url = 'http://username:p@ssw:rd@localhost:6666'
+        req = BasicAuthJSONRequests(url)
+        self.assertEquals(req['host'], 'http://localhost:6666')
+        self.assertEquals(req.additionalHeaders['Authorization'], 'Basic Tm9uZTpOb25l')
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

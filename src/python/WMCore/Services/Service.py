@@ -3,12 +3,12 @@
 _Service_
 
 A Service talks to some http(s) accessible service that provides information and
-caches the result of these queries. The cache will be refreshed if the file is 
-older than a timeout set in the instance of Service. 
+caches the result of these queries. The cache will be refreshed if the file is
+older than a timeout set in the instance of Service.
 
-It has a cache path (defaults to /tmp), cache duration, an endpoint (the url the 
-service exists on) a logger and an accept type (json, xml etc) and method 
-(GET/POST). 
+It has a cache path, cache duration, an endpoint (the url the
+service exists on) a logger and an accept type (json, xml etc) and method
+(GET/POST).
 
 The Service satisfies two caching cases:
 
@@ -16,24 +16,24 @@ The Service satisfies two caching cases:
 2. use a changing query, cache results to a file depending on the query, poll
    for new ones
 
-Data maybe passed to the remote service either via adding the query string to 
+Data maybe passed to the remote service either via adding the query string to
 the URL (for GET's) or by passing a dictionary to either the service constructor
-(case 1.) or by passing the data as a dictionary to the refreshCache, 
+(case 1.) or by passing the data as a dictionary to the refreshCache,
 forceCache, clearCache calls. By default the cache lasts 30 minutes.
 
 Calling refreshCache/forceRefresh will return an open file object, the cache
 file. Once done with it you should close the object.
 
-The service has a default timeout to receive a response from the remote service 
-of 30 seconds. Over ride this by passing in a timeout via the configuration 
+The service has a default timeout to receive a response from the remote service
+of 30 seconds. Over ride this by passing in a timeout via the configuration
 dict, set to None if you want to turn off the timeout.
 
 If you just want to retrieve the data without caching use the Requests class
 directly.
 
 The Service class provides two layers of caching:
-    1. Caching from httplib2 is provided via Request, this respectsetag and 
-    expires, but the cache will be lost if the service raises an exception or 
+    1. Caching from httplib2 is provided via Request, this respectsetag and
+    expires, but the cache will be lost if the service raises an exception or
     similar.
     2. Internal caching which respects an internal cache duration. If the remote
     service fails to respond the second layer cache will be used until the cache
@@ -71,7 +71,7 @@ import shutil
 from WMCore.Algorithms import Permissions
 
 class Service(dict):
-    
+
     def __init__(self, dict = {}):
         #The following should read the configuration class
         for a in ['endpoint']:
@@ -80,19 +80,15 @@ class Service(dict):
         scheme = ''
         netloc = ''
         path = ''
-        
+
         #if end point ends without '/', add that
         if not dict['endpoint'].endswith('/'):
             dict['endpoint'] = dict['endpoint'].strip() + '/'
 
         # then split the endpoint into netloc and basepath
         endpoint_components = urlparse(dict['endpoint'])
-        
-        try:
-            #Only works on python 2.5 or above
-            scheme = endpoint_components.scheme
-        except AttributeError:
-            scheme = endpoint_components[0]
+
+        scheme = endpoint_components.scheme
 
         #set up defaults
         self.setdefault("inputdata", {})
@@ -153,17 +149,17 @@ class Service(dict):
 
     def _makeHash(self, inputdata, hash):
         """
-        Turn the input data into json and hash the string. This is simple and 
+        Turn the input data into json and hash the string. This is simple and
         means that the input data must be json-serialisable, which is good.
         """
         json_hash = json.dumps(inputdata)
-        return json_hash.__hash__()     
-        
+        return json_hash.__hash__()
+
     def cacheFileName(self, cachefile, verb='GET', inputdata = {}):
         """
         Calculate the cache filename for a given query.
         """
-        
+
         hash = 0
         if inputdata:
             hash = self._makeHash(inputdata, hash)
@@ -173,17 +169,17 @@ class Service(dict):
 
         return cachefile
 
-    def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True, 
+    def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True,
                      encoder = True, decoder = True, verb = 'GET', contentType = None):
         """
-        See if the cache has expired. If it has make a new request to the 
-        service for the input data. Return the cachefile as an open file object.  
+        See if the cache has expired. If it has make a new request to the
+        service for the input data. Return the cachefile as an open file object.
         """
         verb = self._verbCheck(verb)
-        
+
         t = datetime.datetime.now() - datetime.timedelta(hours = self['cacheduration'])
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
-        
+
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self['logger'].debug("%s expired, refreshing cache" % cachefile)
             self.getData(cachefile, url, inputdata, {}, encoder, decoder, verb, contentType)
@@ -196,15 +192,15 @@ class Service(dict):
     def forceRefresh(self, cachefile, url='', inputdata = {}, openfile=True,
                      encoder = True, decoder = True, verb = 'GET', contentType = None):
         """
-        Make a new request to the service for the input data, regardless of the 
-        cache state. Return the cachefile as an open file object.  
+        Make a new request to the service for the input data, regardless of the
+        cache state. Return the cachefile as an open file object.
         """
         verb = self._verbCheck(verb)
-        
+
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
-        self.getData(cachefile, url, inputdata, {'cache-control':'no-cache'}, 
+        self.getData(cachefile, url, inputdata, {'cache-control':'no-cache'},
                      encoder, decoder, verb, contentType)
         if openfile:
             return open(cachefile, 'r')
@@ -215,7 +211,7 @@ class Service(dict):
         """
         Delete the cache file and the httplib2 cache.
         """
-        
+
         verb = self._verbCheck(verb)
         os.system("/bin/rm -f %s/*" % self['requests']['req_cache_path'])
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
@@ -228,14 +224,14 @@ class Service(dict):
                 encoder = True, decoder = True,
                 verb = 'GET', contentType = None):
         """
-        Takes the already generated *full* path to cachefile and the url of the 
+        Takes the already generated *full* path to cachefile and the url of the
         resource. Don't need to call self.cacheFileName(cachefile, verb, inputdata)
         here.
         """
         verb = self._verbCheck(verb)
-        
-        # Nested form for version < 2.5 
-        
+
+        # Nested form for version < 2.5
+
         try:
             # Get the data
             if not inputdata:
@@ -254,14 +250,14 @@ class Service(dict):
                 # second cache, or do we?
                 self['logger'].debug('Data is from the httplib2 cache')
             else:
-                # Don't need to prepend the cachepath, the methods calling 
-                # getData have done that for us 
+                # Don't need to prepend the cachepath, the methods calling
+                # getData have done that for us
                 f = open(cachefile, 'w')
                 f.write(str(data))
                 f.close()
         except HTTPException, he:
             if not os.path.exists(cachefile):
-                
+
                 msg = 'The cachefile %s does not exist and the service at %s is'
                 msg += ' unavailable - it returned %s because %s'
                 msg = msg % (cachefile, he.url, he.status, he.reason)
@@ -270,12 +266,12 @@ class Service(dict):
             else:
                 cache_age = os.path.getmtime(cachefile)
                 t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
-                cache_dead = cache_age < time.mktime(t.timetuple())                
+                cache_dead = cache_age < time.mktime(t.timetuple())
                 if self.get('usestalecache', False) and not cache_dead:
-                    # If usestalecache is set the previous version of the cache file 
+                    # If usestalecache is set the previous version of the cache file
                     # should be returned, with a suitable message in the log
                     self['logger'].warning('Returning stale cache data')
-                    self['logger'].info('%s returned %s because %s' % (he.url, 
+                    self['logger'].info('%s returned %s because %s' % (he.url,
                                                                        he.status,
                                                                        he.reason))
                     self['logger'].info('cache file (%s) was created on %s' % (
@@ -294,7 +290,7 @@ class Service(dict):
                         msg = msg % (cachefile, he.url, he.status, he.reason)
                         self['logger'].warning(msg)
                     raise HTTPException(msg)
-            
+
     def _verbCheck(self, verb='GET'):
         if verb.upper() in self.supportVerbList:
             return verb.upper()

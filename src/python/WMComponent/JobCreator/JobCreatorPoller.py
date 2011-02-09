@@ -323,16 +323,24 @@ class JobCreatorPoller(BaseWorkerThread):
         #information
         self.config = config
 
-
         #Variables
-        self.jobCacheDir        = config.JobCreator.jobCacheDir
         self.defaultJobType     = config.JobCreator.defaultJobType
         self.limit              = getattr(config.JobCreator, 'fileLoadLimit', 500)
 
+        try:
+            self.jobCacheDir        = getattr(config.JobCreator, 'jobCacheDir',
+                                              os.path.join(config.JobCreator.componentDir, 'jobCacheDir'))
+            self.check()
+        except WMException:
+            raise
+        except Exception, ex:
+            msg =  "Unhandled exception while setting up jobCacheDir!\n"
+            msg += str(ex)
+            logging.error(msg)
+            raise JobCreatorException(msg)
+
         
         self.changeState = ChangeState(self.config)
-
-        self.check()
 
         return
 
@@ -348,7 +356,7 @@ class JobCreatorPoller(BaseWorkerThread):
             else:
                 msg = "Assigned a pre-existant cache object %s.  Failing!" \
                       % (self.jobCacheDir)
-                raise Exception (msg)
+                raise JobCreatorException (msg)
 
 
     def algorithm(self, parameters = None):

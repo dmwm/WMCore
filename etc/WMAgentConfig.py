@@ -156,7 +156,10 @@ config.JobCreator.logLevel = "DEBUG"
 config.JobCreator.maxThreads = 1
 config.JobCreator.UpdateFromResourceControl = True
 config.JobCreator.pollInterval = 10
-config.JobCreator.jobCacheDir = config.General.workDir + "/JobCache"
+# This is now OPTIONAL: It defaults to the componentDir
+# However: In a production instance, this should be run on a high performance
+# disk, and should probably NOT be run on the same disk as the JobArchiver
+#config.JobCreator.jobCacheDir = config.General.workDir + "/JobCache"
 config.JobCreator.defaultJobType = "Processing"
 config.JobCreator.workerThreads = 1
 
@@ -166,7 +169,6 @@ config.JobSubmitter.componentDir = config.General.workDir + "/JobSubmitter"
 config.JobSubmitter.logLevel = "DEBUG"
 config.JobSubmitter.maxThreads = 1
 config.JobSubmitter.pollInterval = 10
-config.JobSubmitter.submitDir = config.General.workDir + "/SubmitJDLs"
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
 config.JobSubmitter.submitScript = os.path.join(getWMBASE(), "src/python/WMComponent/JobSubmitter/submit.sh")
@@ -204,7 +206,10 @@ config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
 config.JobArchiver.componentDir  = config.General.workDir + "/JobArchiver"
 config.JobArchiver.pollInterval = 60
 config.JobArchiver.logLevel = "DEBUG"
-config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
+# This is now OPTIONAL, it defaults to the componentDir
+# HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
+# disk as the JobCreator
+#config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
 config.JobArchiver.numberOfJobsToCluster = 1000
 
 config.component_("TaskArchiver")

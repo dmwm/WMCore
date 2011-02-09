@@ -350,12 +350,11 @@ class JobSubmitterTest(unittest.TestCase):
         config.JobSubmitter.pollInterval  = 10
         config.JobSubmitter.pluginName    = 'CondorGlobusPlugin'
         config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
-        config.JobSubmitter.submitDir     = os.path.join(self.testDir, 'submit')
         config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
         config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(),
                                                          'test/python/WMComponent_t/JobSubmitter_t',
                                                          'submit.sh')
-        config.JobSubmitter.componentDir  = os.path.join(os.getcwd(), 'Components')
+        config.JobSubmitter.componentDir  = os.path.join(self.testDir, 'Components')
         config.JobSubmitter.workerThreads = 2
         config.JobSubmitter.jobsPerWorker = 200
         config.JobSubmitter.inputFile     = os.path.join(WMCore.WMInit.getWMBASE(),
@@ -371,7 +370,7 @@ class JobSubmitterTest(unittest.TestCase):
 
 
         # Needed, because this is a test
-        os.makedirs(config.JobSubmitter.submitDir)
+        os.makedirs(config.JobSubmitter.componentDir)
 
 
         return config
@@ -535,7 +534,9 @@ class JobSubmitterTest(unittest.TestCase):
         # Now clean-up
         command = ['condor_rm', self.user]
         pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()        
+        pipe.communicate()
+
+        del jobSubmitter
 
         
         return

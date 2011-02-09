@@ -24,49 +24,6 @@ import WMCore.WMInit
 from copy import deepcopy
 
 
-def hackTheEnv(prependCommand = ''):
-    """
-    HaCk ThE eNv  *IMPORTANT NOTES* 
-    - the hack is necessary only for CLI which are python(2) script
-    - the hack reverts PATH & LD_LYBRARY_PATH if an external PYTHON is present
-    - during the hack, replicate entries will be dropped
-    - the hack MUST be placed between the 'proxyString'and the CLI command
-    """
-
-    newEnv = prependCommand + ' '
-
-    try :
-        pyVersionToRemove = ''
-        if os.environ.has_key('PYTHON_VERSION'):
-            pyVersionToRemove = os.environ['PYTHON_VERSION']
-        else:
-            import platform
-            pyVersionToRemove = "%s-cmp" % platform.python_version()
-
-        originalPath = os.environ['PATH']
-        originalLdLibPath = os.environ['LD_LIBRARY_PATH']
-
-        newPath = ''
-        newLdLibPath = ''
-
-        # build new PATH
-        for x in list(set(originalPath.split(':'))) :
-            if x.find(pyVersionToRemove) == -1 :
-                newPath += x + ':'
-        newEnv += 'PATH=' + newPath[:-1] + ' '
-
-        # build new LD_LIBRARY_PATH
-        for x in list(set(originalLdLibPath.split(':'))) :
-            if x.find(pyVersionToRemove) == -1 :
-                newLdLibPath += x + ':'
-        newEnv += 'LD_LIBRARY_PATH=' + newLdLibPath[:-1] + ' '
-
-    except :
-        # revert not necessary or something went wrong during the hacking
-        pass
-
-    return newEnv
-
 def processWorker(input, results):
     """
     _outputWorker_
@@ -175,12 +132,6 @@ class gLitePlugin(BasePlugin):
 
         self.delegationid = str(type(self).__name__)
 
-        ## env check
-        if not self.checkUI():
-            raise BossAirPluginException("gLite environment has not been set properly!")
-        ## encapsulating env
-        self.hackEnv = hackTheEnv()
-
         self.config = config
 
         # These are just the MANDATORY states
@@ -220,6 +171,13 @@ class gLitePlugin(BasePlugin):
         self.defaultjdl['service'] = getattr(self.config.BossAir, \
                                            'gliteWMS', None)
 
+        self.setupScript = getattr(self.config.BossAir, 'UISetupScript', None)
+        if self.setupScript is None:
+            raise BossAirPluginException("Setup script not provided in the configuration: need to specify the 'UISetupScript' complete path.")
+        elif not os.path.exists( self.setupScript ):
+            raise BossAirPluginException("Setup script not found: check if '%s' is really there." % self.setupScript )
+        elif not self.checkUI():
+            raise BossAirPluginException("gLite environment has not been set properly through '%s'." % self.setupScript )
         
         return
 
@@ -382,7 +340,8 @@ class gLitePlugin(BasePlugin):
                 # Now submit them
                 logging.debug("About to submit %i jobs" % len(jobsReady) )
                 workqueued[currentwork] = jobsReady
-                input.put((currentwork, self.hackEnv + ' ' + command, 'submit'))
+                completecmd = 'source %s && %s' % (self.setupScript, command)
+                input.put((currentwork, completecmd, 'submit'))
                 currentwork += 1
 
         logging.debug("Waiting for %i works to finish.." % len(workqueued))
@@ -534,7 +493,8 @@ class gLitePlugin(BasePlugin):
                 jobList   = jobList[self.trackmaxsize:]
                 logging.debug("Status check for %i jobs" %len(jobsReady))
                 workqueued[currentwork] = jobsReady
-                input.put((currentwork, self.hackEnv + ' ' + command, 'status'))
+                completecmd = 'source %s && %s' % (self.setupScript, command)
+                input.put((currentwork, completecmd, 'status'))
                 currentwork += 1
 
         # Now we should have sent all jobs to be submitted
@@ -647,7 +607,8 @@ class gLitePlugin(BasePlugin):
             cmd = '%s %s %s %s' % (command, outdiropt, jj['cache_dir'], jj['gridid'])
             logging.debug("Enqueuing getoutput for job %i" % jj['jobid'] )
             workqueued[currentwork] = jj['jobid']
-            input.put((currentwork, self.hackEnv + ' ' + cmd, 'output'))
+            completecmd = 'source %s && %s' % (self.setupScript, cmd)
+            input.put((currentwork, completecmd, 'output'))
             currentwork += 1
 
         # Now we should have sent all jobs to be submitted
@@ -735,7 +696,8 @@ class gLitePlugin(BasePlugin):
             cmd = '%s %s > %s/loggingInfo.%i.log' % (command, jj['gridid'], jj['cache_dir'], jj['retry_count'])
             logging.debug("Enqueuing logging info command for job %i" % jj['jobid'] )
             workqueued[currentwork] = jj['jobid']
-            input.put( (currentwork, self.hackEnv + ' ' + cmd, 'output') )
+            completecmd = 'source %s && %s' % (self.setupScript, cmd)
+            input.put( (currentwork, completecmd, 'output') )
             currentwork += 1
 
         # Now we should have sent all jobs to be submitted
@@ -817,7 +779,8 @@ class gLitePlugin(BasePlugin):
             logging.debug("Enqueuing cancel command for gridID %s" % gridID )
 
             workqueued[currentwork] = gridID
-            input.put( (currentwork, self.hackEnv + ' ' + command, 'output') )
+            completecmd = 'source %s && %s' % (self.setupScript, command)
+            input.put( (currentwork, completecmd, 'output') )
   
             currentwork += 1
 
@@ -1069,7 +1032,7 @@ class gLitePlugin(BasePlugin):
 
         result = False
 
-        cmd = 'glite-version'
+        cmd = 'source %s && glite-version' % self.setupScript 
         pipe = subprocess.Popen(cmd, stdout = subprocess.PIPE,
                                 stderr = subprocess.PIPE, shell = True)
         stdout, stderr = pipe.communicate()

@@ -23,7 +23,7 @@ dependencies = {
                         'systems':['wmc-base']
                         },
                 'wmc-runtime':{
-                        'packages': ['WMCore.WMRuntime', 'WMCore.WMSpec', 'PSetTweaks', 'WMCore.FwkJobReport'],],
+                        'packages': ['WMCore.WMRuntime', 'WMCore.WMSpec', 'PSetTweaks', 'WMCore.FwkJobReport'],
                         'systems':['wmc-base']
                         },
                 'wmc-web':{

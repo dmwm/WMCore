@@ -261,7 +261,7 @@ class testJSONRequests(unittest.TestCase):
         url = 'http://username:p@ssw:rd@localhost:6666'
         req = BasicAuthJSONRequests(url)
         self.assertEquals(req['host'], 'http://localhost:6666')
-        self.assertEquals(req.additionalHeaders['Authorization'], 'Basic Tm9uZTpOb25l')
+        self.assertEquals(req.additionalHeaders['Authorization'], 'Basic dXNlcm5hbWU6cEBzc3c6cmQ=')
 
 if __name__ == "__main__":
     unittest.main()

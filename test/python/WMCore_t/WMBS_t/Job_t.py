@@ -1134,5 +1134,56 @@ class JobTest(unittest.TestCase):
 
         return
 
+
+    def testMask(self):
+        """
+        _testMask_
+
+        Test the new mask setup
+        """
+
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task="Test")
+
+        testWorkflow.create()
+
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+
+        testSubscription.create()
+
+        testFileA = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileB = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileA.create()
+        testFileB.create()
+                         
+        testFileset.addFile([testFileA, testFileB])
+        testFileset.commit()
+
+        testSubscription.acquireFiles([testFileA, testFileB])
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+
+        testJob = Job()
+        testJob['mask'].addRunAndLumis(run = 100, lumis = [101, 102])
+        testJob['mask'].addRunAndLumis(run = 200, lumis = [201, 202])
+        testJob.create(group = testJobGroup)
+
+
+        loadJob = Job(id = testJob.exists())
+        loadJob.loadData()
+
+        runs = loadJob['mask'].getRunAndLumis()
+        self.assertEqual(len(runs), 2)
+        self.assertEqual(runs[100], [101, 102])
+        self.assertEqual(runs[200], [201, 202])
+        
+
 if __name__ == "__main__":
     unittest.main() 

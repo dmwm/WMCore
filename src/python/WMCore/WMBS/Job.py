@@ -16,12 +16,13 @@ responsible for updating their state (and name).
 
 import datetime
 
-from WMCore.DataStructs.Job import Job as WMJob
+from WMCore.DataStructs.Job     import Job as WMJob
 from WMCore.DataStructs.Fileset import Fileset
-from WMCore.WMBS.File import File
-from WMCore.WMBS.Fileset import Fileset as WMBSFileset
-from WMCore.WMBS.WMBSBase import WMBSBase
-from WMCore.Services.UUID import makeUUID
+from WMCore.WMBS.File           import File
+from WMCore.WMBS.Fileset        import Fileset as WMBSFileset
+from WMCore.WMBS.Mask           import Mask
+from WMCore.WMBS.WMBSBase       import WMBSBase
+from WMCore.Services.UUID       import makeUUID
 
 class Job(WMBSBase, WMJob):
     """
@@ -44,6 +45,7 @@ class Job(WMBSBase, WMJob):
         self["cache_dir"]    = None
         self["sandbox"]      = None
         self['fwjr']         = None
+        self["mask"]         = Mask()
         self['custom']       = {}  # For local add-ons that we want to send to JSON
 
         return
@@ -74,9 +76,7 @@ class Job(WMBSBase, WMJob):
 
         self.exists()
 
-        maskAction = self.daofactory(classname = "Masks.New")
-        maskAction.execute(jobid = self["id"], conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
+        self['mask'].save(jobID = self['id'])
 
         self.associateFiles()
         self.commitTransaction(existingTransaction)
@@ -113,11 +113,7 @@ class Job(WMBSBase, WMJob):
                            transaction = self.existingTransaction())
 
         if MaskAndFiles:
-            maskAction = self.daofactory(classname = "Masks.Save")
-            maskAction.execute(jobid = self["id"], mask = self["mask"],
-                               conn = self.getDBConn(),
-                               transaction = self.existingTransaction())
-
+            self['mask'].save(jobID = self['id'])
             self.associateFiles()
             
         self.commitTransaction(existingTransaction)
@@ -195,11 +191,7 @@ class Job(WMBSBase, WMJob):
         
         Load the job mask from the database and return it.
         """
-        jobMaskAction = self.daofactory(classname = "Masks.Load")
-        jobMask = jobMaskAction.execute(self["id"], conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
-
-        self["mask"].update(jobMask)
+        self['mask'].load(jobID = self['id'])
         return self["mask"]
     
     def getFiles(self, type = "list"):

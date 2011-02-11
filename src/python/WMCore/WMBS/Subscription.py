@@ -635,8 +635,23 @@ class Subscription(WMBSBase, WMSubscription):
                 fileDict[job['id']].append(f['id'])
 
 
-        maskAction = self.daofactory(classname = "Masks.New")
-        maskAction.execute(jobList = jobList, conn = self.getDBConn(), 
+
+        
+            # Create a list of mask binds
+        maskList = []
+        for job in jobList:
+            mask = job['mask']
+            if len(mask['runAndLumis'].keys()) > 0:
+                # Then we have multiple binds
+                binds = mask.produceCommitBinds(jobID = job['id'])
+                maskList.extend(binds)
+            else:
+                mask['jobID'] = job['id']
+                maskList.append(mask)
+
+
+        maskAction = self.daofactory(classname = "Masks.Save")
+        maskAction.execute(jobid = None, mask = maskList, conn = self.getDBConn(), 
                            transaction = self.existingTransaction())
 
         fileAction = self.daofactory(classname = "Jobs.AddFiles")

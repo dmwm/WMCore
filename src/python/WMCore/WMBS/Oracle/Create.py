@@ -563,7 +563,7 @@ class Create(CreateWMBSBase):
                LastLumi      INTEGER,
                FirstRun      INTEGER,
                LastRun       INTEGER,
-               inclusivemask CHAR(1) CHECK (inclusivemask IN ('Y', 'N')) NOT NULL
+               inclusivemask CHAR(1) NOT NULL
                ) %s""" % tablespaceTable
 
         self.constraints["01_fk_wmbs_job_mask"] = \

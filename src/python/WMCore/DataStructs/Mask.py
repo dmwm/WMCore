@@ -26,12 +26,14 @@ class Mask(dict):
     def __init__(self, **kwargs):
         dict.__init__(self, **kwargs)
         self.inclusive = True
+        self.setdefault("inclusivemask", True)
         self.setdefault("FirstEvent", None)
         self.setdefault("LastEvent", None)
         self.setdefault("FirstLumi", None)
         self.setdefault("LastLumi", None)
         self.setdefault("FirstRun", None)
         self.setdefault("LastRun", None)
+        self.setdefault("runAndLumis", {})
 
 
     def setMaxAndSkipEvents(self, maxEvents, skipEvents):
@@ -98,6 +100,42 @@ class Mask(dict):
             return None
         return self['Last%s'%(type)] - self['First%s'%(type)]
 
+    def addRun(self, run):
+        """
+        _addRun_
+
+        Add a run object
+        """
+
+        self.runAndLumis[run.run] = run.lumis
+        return
+
+    def addRunAndLumis(self, run, lumis = []):
+        """
+        _addRunAndLumis_
+
+        Add runs and lumis directly
+        """
+
+        if not type(lumis) == list:
+            lumis = list(lumis)
+        
+        if not run in self['runAndLumis'].keys():
+            self['runAndLumis'][run] = []
+
+        self['runAndLumis'][run].extend(lumis)
+
+        return
+
+    def getRunAndLumis(self):
+        """
+        _getRunAndLumis_
+
+        Return list of active runs and lumis
+        """
+
+        return self['runAndLumis']
+
 
 
 
@@ -110,7 +148,7 @@ class InclusiveMask(Mask):
     """
     def __init__(self):
         Mask.__init__(self)
-        self.inclusive = True
+        self['inclusive'] = True
 
 class ExclusiveMask(Mask):
     """
@@ -121,6 +159,6 @@ class ExclusiveMask(Mask):
     """
     def __init__(self):
         Mask.__init__(self)
-        self.inclusive = False
+        self['inclusive'] = False
 
 

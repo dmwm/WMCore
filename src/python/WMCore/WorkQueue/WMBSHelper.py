@@ -386,15 +386,13 @@ class WMBSHelper(WMConnectionBase):
                     for parent in wmbsFile['parents']:
                         parentageBinds.append({'child': lfn, 'parent': parent['lfn']})
             
-            if wmbsFile.exists():
-                continue
-
-
             
 
             selfChecksums = wmbsFile['checksums']
-            #parentageBinds.append({'child': lfn, 'jobid': wmbsFile['id']})
             runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
+
+            if wmbsFile.exists():
+                continue
 
 
             if len(wmbsFile['newlocations']) < 1:
@@ -433,9 +431,7 @@ class WMBSHelper(WMConnectionBase):
             
             
             
-            self.setFileRunLumi.execute(file = runLumiBinds,
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
+            
             
             self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
                                             conn = self.getDBConn(),
@@ -446,7 +442,10 @@ class WMBSHelper(WMConnectionBase):
                                          conn = self.getDBConn(),
                                          transaction = self.existingTransaction())
 
-
+        if len(runLumiBinds) > 0:
+            self.setFileRunLumi.execute(file = runLumiBinds,
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
             
 
         if len(fileLFNs) > 0:

@@ -10,6 +10,7 @@ import os
 import pickle
 import threading
 
+from WMCore.Configuration import Configuration
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMCore.WorkQueue.WorkQueueExceptions import *
 
@@ -105,18 +106,38 @@ class WorkQueueTest(WorkQueueTestCase):
 #                            ParentQueue = self.globalQueue,
 #                            CacheDir = None)
         # ignore mid queue as it causes database duplication's
+        # copy jobStateMachine couchDB configuration here since we don't want/need to pass whole configuration
+        jobCouchConfig = Configuration()
+        jobCouchConfig.section_("JobStateMachine")
+        jobCouchConfig.JobStateMachine.couchurl = "http://blha.blha"
+        jobCouchConfig.JobStateMachine.couchDBName = "testCouchDB"
+        # copy bossAir configuration here since we don't want/need to pass whole configuration
+        bossAirConfig = Configuration()
+        bossAirConfig.section_("BossAir")
+        bossAirConfig.BossAir.pluginDir = "WMCore.BossAir.Plugins"
+        bossAirConfig.BossAir.pluginNames = ["CondorPlugin"]
+        bossAirConfig.section_("Agent")
+        bossAirConfig.Agent.agentName = "TestAgent"
+
         self.localQueue = localQueue(ParentQueue = self.globalQueue,
                                      CacheDir = self.workDir,
                                      ReportInterval = 0,
-                                     QueueURL = "local.example.com")
+                                     QueueURL = "local.example.com",
+                                     JobCouchConfig = jobCouchConfig,
+                                     BossAirConfig = bossAirConfig)
+
         self.localQueue2 = localQueue(ParentQueue = self.globalQueue,
                                      CacheDir = self.workDir,
                                      ReportInterval = 0,
                                      QueueURL = "local2.example.com",
-                                     IgnoreDuplicates = False)
+                                     IgnoreDuplicates = False,
+                                     JobCouchConfig = jobCouchConfig,
+                                     BossAirConfig = bossAirConfig)
 
         # standalone queue for unit tests
-        self.queue = WorkQueue(CacheDir = self.workDir)
+        self.queue = WorkQueue(CacheDir = self.workDir,
+                               JobCouchConfig = jobCouchConfig,
+                               BossAirConfig = bossAirConfig)
 
         # create relevant sites in wmbs
         for site, se in self.queue.SiteDB.mapping.items():

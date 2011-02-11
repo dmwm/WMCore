@@ -393,12 +393,12 @@ class WMBSHelperTest(unittest.TestCase):
         # Create nine jobs
         self.setupForKillTest(baAPI = baAPI)
         self.assertEqual(len(baAPI._listRunJobs()), 9)
-
-        killWorkflow("Main")
+        killWorkflow("Main", config, config)
 
         self.verifyFileKillStatus()
         self.verifyJobKillStatus()
         self.assertEqual(len(baAPI._listRunJobs()), 8)
+
         EmulatorSetup.deleteConfig(configFile)
         return
 

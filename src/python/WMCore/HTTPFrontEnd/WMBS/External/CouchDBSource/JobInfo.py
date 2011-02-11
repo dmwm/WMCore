@@ -13,14 +13,15 @@ from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource.CouchDBConnectionBase \
 
 from WMCore.Database.CMSCouch import CouchError
 
-def getJobInfo(jobID):
+def getJobInfo(jobID, couchConfig):
     """
     _getJobInfo_
 
     Retrieve all the job metadata out of couch.
     """
     jobID = int(jobID)
-    changeStateDB = CouchDBConnectionBase.getCouchDB()
+    couchDBBase = CouchDBConnectionBase(couchConfig)
+    changeStateDB = couchDBBase.getCouchDB()
 
     jobDoc = {}
     fwjrDocs = {}
@@ -54,7 +55,7 @@ def getJobInfo(jobID):
 
     return {'jobDoc' : jobDoc}
 
-def getJobSummaryByWorkflow():
+def getJobSummaryByWorkflow(couchConfig):
     """
     gets the job status information by workflow
 
@@ -67,7 +68,8 @@ def getJobSummaryByWorkflow():
      ]}
     """
     try:
-        changeStateDB = CouchDBConnectionBase.getCouchDB()
+        couchDBBase = CouchDBConnectionBase(couchConfig)
+        changeStateDB = couchDBBase.getCouchDB()
     except:
         #TODO log the error in the server
         #If the server is down it doesn't throw CouchError,
@@ -79,7 +81,7 @@ def getJobSummaryByWorkflow():
                                     options)    
         
 
-    couchDocBase = CouchDBConnectionBase.getCouchDBHtmlBase(
+    couchDocBase = couchDBBase.getCouchDBHtmlBase(
                                     "JobDump", "workflowSummary")
 
     # reformat to match other type. (not very performative)
@@ -93,7 +95,7 @@ def getJobSummaryByWorkflow():
                    'endkey':'["%s",{}]' % item['key'][0],
                    "reduce": "false"}
     
-        dictItem['couch_job_info_base'] = CouchDBConnectionBase.getCouchDBHtmlBase(
+        dictItem['couch_job_info_base'] = couchDBBase.getCouchDBHtmlBase(
                                     "JobDump", "replace_to_Jobs", 
                                     'statusByWorkflowName', options = options,
                                     type = "list")

@@ -30,9 +30,7 @@ class WorkQueueTest(RESTBaseUnitTest):
         self.config = DefaultConfig(
                 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
         dbUrl = os.environ.get("DATABASE", None)
-        self.config.setDBUrl(dbUrl)        
-        self.config.setFormatter(
-             'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter')
+        self.config.setDBUrl(dbUrl)
         self.config.setWorkQueueLevel("GlobalQueue")
         # mysql example
         #self.config.setDBUrl('mysql://username@host.fnal.gov:3306/TestDB')

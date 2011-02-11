@@ -109,11 +109,27 @@ config.WorkQueueManager.level = 'LocalQueue'
 config.WorkQueueManager.logLevel = 'DEBUG'
 config.WorkQueueManager.serviceUrl = "%s:%s" % (reqMgrServerHostName, globalWorkQueuePort)
 config.WorkQueueManager.pollInterval = 10
+
+# copy jobStateMachine couchDB configuration here since we don't want/need to pass whole configuration
+jobCouchConfig = Configuration()
+jobCouchConfig.section_("JobStateMachine")
+jobCouchConfig.JobStateMachine.couchurl = couchURL
+jobCouchConfig.JobStateMachine.couchDBName = jobDumpDBName
+# copy bossAir configuration here since we don't want/need to pass whole configuration
+bossAirConfig = Configuration()
+bossAirConfig.section_("BossAir")
+bossAirConfig.BossAir.pluginDir = config.BossAir.pluginDir
+bossAirConfig.BossAir.pluginNames = bossAirPlugins
+bossAirConfig.section_("Agent")
+bossAirConfig.Agent.agentName = agentName
+
 config.WorkQueueManager.queueParams = {"PopulateFilesets": True,
                                        "ParentQueue": "http://%s/workqueue/" % config.WorkQueueManager.serviceUrl,
                                        "QueueURL": "http://%s:%s" % (serverHostName, localWorkQueuePort),
                                        "Teams": agentTeams,
-                                       "FullReportInterval": 300} 
+                                       "FullReportInterval": 300,
+                                       "BossAirConfig": bossAirConfig,
+                                       "JobDumpConfig": jobCouchConfig}
 
 config.component_("DBSUpload")
 config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"
@@ -240,6 +256,10 @@ workqueue.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/'
 workqueue.section_('model')
 workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
 workqueue.level = config.WorkQueueManager.level
+workqueue.section_('couchConfig')
+workqueue.couchConfig.couchURL = couchURL
+workqueue.couchConfig.acdcDBName = acdcDBName
+workqueue.couchConfig.jobDumpDBName = jobDumpDBName
 workqueue.section_('formatter')
 workqueue.formatter.object = 'WMCore.WebTools.RESTFormatter'
 workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
@@ -265,6 +285,9 @@ wmagent.section_('model')
 wmagent.model.object = 'WMCore.HTTPFrontEnd.Agent.AgentRESTModel'
 wmagent.section_('formatter')
 wmagent.formatter.object = 'WMCore.WebTools.RESTFormatter'
+wmagent.section_('couchConfig')
+wmagent.couchConfig.couchURL = couchURL
+wmagent.couchConfig.acdcDBName = acdcDBName
 
 wmagentmonitor = config.WorkQueueService.views.active.section_('wmagentmonitor')
 wmagentmonitor.object = 'WMCore.HTTPFrontEnd.Agent.AgentMonitorPage'

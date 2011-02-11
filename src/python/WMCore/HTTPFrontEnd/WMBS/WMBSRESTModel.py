@@ -91,11 +91,14 @@ class WMBSRESTModel(RESTModel):
                     daoFactory = dbsDAOFactory)
 
 
-        self._addMethod('GET', 'jobinfobyid', JobInfoByID.getJobInfo,
+        self._addMethod('GET', 'jobinfobyid', self.jobInfoByID,
                        args = ['jobID'])
 
         return
     
+    def jobInfoByID(self):
+        return JobInfoByID.getJobInfo(self.config.couchConfig)
+
     def jobStatusValidate(self, input):
         """
         _listJobStatus_

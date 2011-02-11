@@ -47,13 +47,11 @@ class WorkQueueMonitorService(ServiceInterface):
         ## only in localqueue,  add these mehtods          ##
         ###############################################
         if self.model.config.level == "LocalQueue":
-            from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfo
             #External couch call
-            self.model._addMethod("GET", "jobsummary",
-                                  JobInfo.getJobSummaryByWorkflow)
-            # batch system status        
-            bossAirDAOFactory = DAOFactory(package = "WMCore.BossAir", 
-                                       logger = self.model, 
+            self.model._addMethod("GET", "jobsummary", self.getJobSummary)
+            # batch system status
+            bossAirDAOFactory = DAOFactory(package = "WMCore.BossAir",
+                                       logger = self.model,
                                        dbinterface = self.model.dbi)
 
             self.model._addDAO('GET', 'batchjobstatus', "JobStatusForMonitoring",
@@ -132,6 +130,10 @@ class WorkQueueMonitorService(ServiceInterface):
         
         logging.info("%s initialised." % self._myClass)        
         
+    def getJobSummary(self):
+        from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfo
+        return JobInfo.getJobSummaryByWorkflow(self.model.config.couchConfig)
+
     def validateInt(self, input):
         """
         validate status function and do the type conversion if the argument 

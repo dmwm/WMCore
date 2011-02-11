@@ -33,7 +33,8 @@ class AgentRESTModel(RESTModel):
         self._addMethod('GET', "acdclink", self.getACDCInfo)
     
     def getACDCInfo(self):
-        return {'url': CouchDBConnectionBase.getCouchACDCHtmlBase()}
+        couchDBBase = CouchDBConnectionBase(self.config.couchConfig)
+        return {'url': couchDBBase.getCouchACDCHtmlBase()}
     
     def getHeartBeatWarning(self):
         results = self.methods["GET"]["heartbeatInfo"]["call"]()

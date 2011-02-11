@@ -97,6 +97,15 @@ class DefaultConfig(Configuration):
 
         self.UnitTests.views.active.rest.level = queueLevel
 
+    def setWorkQueueCouchConfig(self):
+        """only set this for workqueue restmodel test
+           queueLevel should be 'GlobalQueue' or 'LocalQueue'
+        """
+        self.UnitTests.views.active.rest.section_('couchConfig')
+        self.UnitTests.views.active.rest.couchConfig.couchURL = "http://blah.blah"
+        self.UnitTests.views.active.rest.couchConfig.acdcDBName = "TestACDC"
+        self.UnitTests.views.active.rest.couchConfig.jobDumpDBName = "TestJobDB"
+
     def getModelConfig(self):
         return self.UnitTests.views.active.rest
 

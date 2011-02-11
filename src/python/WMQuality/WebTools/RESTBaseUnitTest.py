@@ -3,6 +3,7 @@ import cherrypy
 import logging
 
 #decorator import for RESTServer setup
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 from WMCore.WebTools.Root import Root
 
@@ -13,6 +14,7 @@ class RESTBaseUnitTest(unittest.TestCase):
         self.schemaModules = []
         self.initialize()
         if self.schemaModules:
+            self.testInit = TestInitCouchApp(__file__)
             self.testInit.setLogging() # logLevel = logging.SQLDEBUG
             self.testInit.setDatabaseConnection(self.config.getDBUrl())
             self.testInit.setSchema(customModules = self.schemaModules,

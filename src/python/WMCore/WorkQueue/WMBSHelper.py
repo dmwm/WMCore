@@ -26,11 +26,8 @@ from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 # Added to allow bulk commits
 from WMCore.DAOFactory           import DAOFactory
 from WMCore.WMConnectionBase     import WMConnectionBase
-
-from WMCore.Agent.Configuration import Configuration
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource.CouchDBConnectionBase \
-     import CouchDBConnectionBase
+
 
 from WMCore.BossAir.BossAirAPI    import BossAirAPI, BossAirException
 
@@ -56,7 +53,7 @@ class WorkQueueWMBSException(WMException):
 
     pass
 
-def killWorkflow(workflowName):
+def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
     """
     _killWorkflow_
 
@@ -87,18 +84,12 @@ def killWorkflow(workflowName):
                                       conn = myThread.transaction.conn,
                                       transaction = True)
 
-    config = Configuration()
-    config.section_("JobStateMachine")
-    config.JobStateMachine.couchurl = CouchDBConnectionBase.getCouchDBURL()
-    config.JobStateMachine.couchDBName = CouchDBConnectionBase.getCouchDBName()
-
-    changeState = ChangeState(config)
+    changeState = ChangeState(jobCouchConfig)
 
     # Deal with any jobs that are running in the batch system
     # only works if we can start the API
-    masterConfig = CouchDBConnectionBase.getWMAgentConfig()
-    if masterConfig:
-        bossAir = BossAirAPI(config = masterConfig, noSetup = True)
+    if bossAirConfig:
+        bossAir = BossAirAPI(config = bossAirConfig, noSetup = True)
         killableJobs = []
         for liveJob in liveJobs:
             if liveJob["state"].lower() == 'executing':

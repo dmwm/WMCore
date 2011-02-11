@@ -39,7 +39,8 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         self.config = DefaultConfig("WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel")
         # to provide DAS-compatible output
         self.config.setFormatter("WMCore.WebTools.DASRESTFormatter")
-
+        self.config.setWorkQueueLevel("GlobalQueue")
+        self.config.setWorkQueueCouchConfig()
         # set database
         dbUrl = os.environ.get("DATABASE", None)
         self.config.setDBUrl(dbUrl)
@@ -56,7 +57,6 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         
 
     def setUp(self):
-        print "setUp()"
         RESTBaseUnitTest.setUp(self) # calls self.initialize()         
         # TestInit stuff happens in RESTBaseUnitTest if self.schemaModules are set
       
@@ -113,7 +113,6 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
 
 
     def tearDown(self):
-        print "tearDown()"
 
         RESTBaseUnitTest.tearDown(self)
         # happens in RESTBaseUnitTest if self.schemaModules is set
@@ -157,7 +156,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         output = {"code": code, "type": accept}
 
         url = self.urlbase + partUrl
-        data, exp = methodTest(verb, url,  accept = accept, input = inpt,
+        data, exp = methodTest(verb, url,  accept = accept, request_input = inpt,
                                contentType = contentType, output = output)
         data = JsonWrapper.loads(data)
         print "\n\n"

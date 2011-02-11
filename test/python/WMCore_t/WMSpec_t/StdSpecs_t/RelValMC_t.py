@@ -443,10 +443,6 @@ class RelValMCTest(unittest.TestCase):
         Configure, instantiate, install into WMBS and check that the
         subscriptions in WMBS are setup correctly.
         
-        TODO:
-        once it's clear how exactly testing of pileup support will be done,
-        refactor the identical parts ...
-        
         """
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
@@ -474,7 +470,7 @@ class RelValMCTest(unittest.TestCase):
         self._generationTaskTest()
         self._reconstructionTaskTest()
         self._alcaRecoTaskTest()
-
+        
         
 
 if __name__ == "__main__":

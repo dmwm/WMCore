@@ -3,6 +3,7 @@
 _MonteCarlo_t_
 
 Unit tests for the Monte Carlo workflow.
+
 """
 
 import unittest
@@ -19,12 +20,14 @@ from WMCore.WMSpec.StdSpecs.MonteCarlo import getTestArguments, monteCarloWorklo
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
 
+
 class MonteCarloTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
 
         Initialize the database and couch.
+        
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
@@ -37,15 +40,18 @@ class MonteCarloTest(unittest.TestCase):
         self.configDatabase = couchServer.connectDatabase("rereco_t")        
         return
 
+
     def tearDown(self):
         """
         _tearDown_
 
         Clear out the database.
+        
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         return
+
 
     def injectMonteCarloConfig(self):
         """
@@ -53,6 +59,7 @@ class MonteCarloTest(unittest.TestCase):
 
         Create a bogus config cache document for the montecarlo generation and
         inject it into couch.  Return the ID of the document.
+        
         """
         newConfig = Document()
         newConfig["info"] = None
@@ -67,26 +74,13 @@ class MonteCarloTest(unittest.TestCase):
                                                                               "dataTier": "USER"}}}}
         result = self.configDatabase.commitOne(newConfig)
         return result[0]["id"]
-
-    def testMonteCarlo(self):
+    
+    
+    def _commonMonteCarloTest(self):
         """
-        _testMonteCarlo_
-
-        Create a Monte Carlo workflow and verify that it is injected correctly
-        into WMBS.
-        """
-        defaultArguments = getTestArguments()
-        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
-        defaultArguments["CouchDBName"] = "rereco_t"        
-        defaultArguments["ProdConfigCacheID"] = self.injectMonteCarloConfig()
-
-        testWorkload = monteCarloWorkload("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        Retrieve the workload from WMBS and test all its properties.
         
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
-
+        """
         prodWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/Production")
         prodWorkflow.load()
@@ -211,7 +205,55 @@ class MonteCarloTest(unittest.TestCase):
                              "Error: Wrong subscription type.")
             self.assertEqual(logCollectSub["split_algo"], "EndOfRun",
                              "Error: Wrong split algo.")
-        return
+        
+
+    def testMonteCarlo(self):
+        """
+        Create a Monte Carlo workflow and verify that it is injected correctly
+        into WMBS and invoke its detailed test.        
+        
+        """
+        defaultArguments = getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "rereco_t"        
+        defaultArguments["ProdConfigCacheID"] = self.injectMonteCarloConfig()
+
+        testWorkload = monteCarloWorkload("TestWorkload", defaultArguments)
+        testWorkload.setSpecUrl("somespec")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        
+        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
+        testWMBSHelper.createSubscription()
+        
+        self._commonMonteCarloTest()
+
+
+    def testRelValMCWithPileup(self):
+        """
+        Create a Monte Carlo workflow and verify that it is injected correctly
+        into WMBS and invoke its detailed test.
+        The input configuration includes pileup input files.        
+        
+        """
+        defaultArguments = getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "rereco_t"        
+        defaultArguments["ProdConfigCacheID"] = self.injectMonteCarloConfig()
+        
+        # add pile up configuration
+        defaultArguments["PileupConfig"] = {"mc": ["/some/cosmics/dataset1","/some/cosmics/dataset2"],
+                                            "data": ["/some/minbias/dataset3"]}
+
+        testWorkload = monteCarloWorkload("TestWorkload", defaultArguments)
+        testWorkload.setSpecUrl("somespec")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        
+        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
+        testWMBSHelper.createSubscription()
+        
+        self._commonMonteCarloTest()
+
+        
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,6 +4,12 @@ _MonteCarlo_
 
 Created by Dave Evans on 2010-08-17.
 Copyright (c) 2010 Fermilab. All rights reserved.
+
+Support for pile up:
+normally, the generation task has no input. However, if there is a 
+pile up section defined in the configuration, the generation task
+fetches from DBS the information about pileup input.
+
 """
 
 import os
@@ -31,14 +37,18 @@ def getTestArguments():
     args["ProdConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
     return args
 
+
 class MonteCarloWorkloadFactory(StdBase):
     """
     _MonteCarloWorkloadFactory_
 
     Stamp out Monte Carlo workflows.
+    
     """
+    
     def __init__(self):
         StdBase.__init__(self)
+
 
     def buildWorkload(self):
         """
@@ -46,6 +56,7 @@ class MonteCarloWorkloadFactory(StdBase):
 
         Build a workflow for a MonteCarlo request.  This means a production
         config and merge tasks for each output module.
+        
         """
         workload = self.createWorkload()
         workload.setWorkQueueSplitPolicy("MonteCarlo", self.prodJobSplitAlgo, self.prodJobSplitArgs)
@@ -57,7 +68,11 @@ class MonteCarloWorkloadFactory(StdBase):
                                               splitArgs = self.prodJobSplitArgs,
                                               seeding = self.seeding, totalEvents = self.totalEvents) 
         self.addLogCollectTask(prodTask)
-
+        
+        # pile up support
+        if self.pileupConfig:
+            self.setupPileup(prodTask, self.pileupConfig)
+        
         prodMergeTasks = {}
         for outputModuleName in outputMods.keys():
             outputModuleInfo = outputMods[outputModuleName]
@@ -67,6 +82,7 @@ class MonteCarloWorkloadFactory(StdBase):
                               outputModuleInfo["processedDataset"])
 
         return workload
+    
         
     def __call__(self, workloadName, arguments):
         """
@@ -82,6 +98,9 @@ class MonteCarloWorkloadFactory(StdBase):
         self.totalEvents = arguments["RequestSizeEvents"]
         self.seeding = arguments.get("Seeding", "AutomaticSeeding")
         self.prodConfigCacheID = arguments["ProdConfigCacheID"]
+
+        # pileup configuration for the first generation task
+        self.pileupConfig = arguments.get("PileupConfig", None)
 
         # The CouchURL and name of the ConfigCache database must be passed in
         # by the ReqMgr or whatever is creating this workflow.
@@ -100,12 +119,15 @@ class MonteCarloWorkloadFactory(StdBase):
         
         return self.buildWorkload()
 
+
+
 def monteCarloWorkload(workloadName, arguments):
     """
     _monteCarloWorkload_
 
     Instantiate the MonteCarloWorkflowFactory and have it generate a workload for
     the given parameters.
+    
     """
     myMonteCarloFactory = MonteCarloWorkloadFactory()
     return myMonteCarloFactory(workloadName, arguments)

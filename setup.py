@@ -18,19 +18,6 @@ from setup_build import get_relative_path, list_packages, list_static_files
 from setup_test import LintCommand, ReportCommand, CoverageCommand, TestCommand
 from setup_dependencies import dependencies
 
-# Build the package list automagically
-package_dir = {}
-# all_packages is the python package structure 'WMCore.ACDC' etc.
-top_level_packages = list_packages(['src/python/WMCore',
-                            'src/python/WMComponent',
-                            'src/python/WMQuality',
-                            'src/python/PSetTweaks'])
-
-for package in top_level_packages:
-    # If we need to go deeper increase this, or do something special for specific cases
-    if len(package.split('.')) <= 2:
-        package_dir[package] = 'src/python/%s' % package.replace('.', '/')
-
 class CleanCommand(Command):
    description = "Clean up (delete) compiled files"
    user_options = [ ]
@@ -104,6 +91,13 @@ class EnvCommand(Command):
 
 # The actual setup command, and the classes associated to the various options
 
+# Need all the packages we want to build by default, this will be overridden in sub-system builds.
+# Since it's a lot of code determine it by magic.
+default_packages = list_packages(['src/python/WMCore',
+                                'src/python/WMComponent',
+	                            'src/python/WMQuality',
+	                            'src/python/PSetTweaks'])
+
 setup (name = 'wmcore',
        version = '1.0',
        maintainer_email = 'hn-cms-wmDevelopment@cern.ch',
@@ -115,8 +109,7 @@ setup (name = 'wmcore',
                    'env': EnvCommand,
                    'build_system': BuildCommand,
                    'install_system': InstallCommand },
-       # dictionary of package name and path
-       package_dir = package_dir,
-       # need the base paths for what we want to build by default
-       packages = list_packages(package_dir.values()),
+       # base directory for all our packages
+       package_dir = {'': 'src/python/'},# % get_relative_path()},
+       packages = default_packages,
        data_files = list_static_files())

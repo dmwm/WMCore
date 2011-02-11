@@ -1,7 +1,7 @@
-from distutils.core import setup, Command
+from distutils.core import Command
 from distutils.command.build import build
 from distutils.command.install import install
-import os, sys, os.path
+import os, sys, os.path, shutil
 from setup_dependencies import dependencies
 
 def get_relative_path():
@@ -64,9 +64,10 @@ def walk_dep_tree(system):
 
 def list_packages(package_dirs = []):
     """
-    List all the packages in the source tree, skipping VCS files.
+    Take a list of directories and return a list of all packages under those directories, skipping VCS files.
     """
     packages = []
+    # Skip the following files
     ignore_these = set(['CVS', '.svn', 'svn', '.git', 'DefaultConfig.py'])
     for a_dir in package_dirs:
         for dirpath, dirnames, filenames in os.walk('./%s' % a_dir, topdown=True):
@@ -105,75 +106,115 @@ def list_static_files(system = None):
     # The contents of static_files will be copied at install time
     return static_files
 
+def check_system(command):
+    if command.system in dependencies.keys():
+        return
+    elif command.system == None:
+        msg = "System not specified: -s option for %s must be specified and provide one of:\n" % command.get_command_name()
+        msg += ", ".join(dependencies.keys())
+        print msg
+        sys.exit(1)
+    else:
+        msg = "Specified system [%s] is unknown:" % command.system
+        msg += " -s option for %s must be specified and provide one of:\n" % command.get_command_name()
+        msg += ", ".join(dependencies.keys())
+        print msg
+        sys.exit(1)
+
+def things_to_build(command):
+    """
+    Take a build/install command and determine all the packages and modules it needs to build/install.
+    """
+    # work out all the dependent packages
+    dependency_tree = walk_dep_tree(dependencies[command.system])
+    # and the corresponding source directories and files
+    package_src_dirs = []
+    module_src_files = []
+    for package in dependency_tree['packages']:
+        src_path = '%s/src/python/%s' % (get_relative_path(), package.replace('.','/'))
+        package_src_dirs.append(src_path)
+    for module in dependency_tree['modules']:
+        src_path = '%s/src/python/%s.py' % (get_relative_path(), module.replace('.','/'))
+        module_src_files.append(src_path)
+    packages_to_build = package_src_dirs
+    modules_to_build = module_src_files
+    return dependency_tree['packages'], dependency_tree['modules']
+
+def print_build_info(command):
+    # print some helpful information
+    if len(command.distribution.packages):
+        command.announce('Installing %s requires the following packages:' % (command.system), 1)
+        for package in command.distribution.packages:
+            if os.path.exists('./build/lib/%s' % package.replace('.','/')) and not command.force:
+                command.announce('\t %s \t - already built!' % package, 1)
+            else:
+                command.announce('\t %s' % package, 1)
+    if len(command.distribution.py_modules):
+        command.announce('Installing %s requires the following modules:' % (command.system), 1)
+        for modules in command.distribution.py_modules:
+            if os.path.exists('%s/build/lib/%s' % (get_relative_path(), modules.replace('.','/'))) and not command.force:
+                command.announce('\t %s \t - already built!' % modules)
+            else:
+                command.announce('\t %s' % modules)
+
+def force_rebuild():
+    """
+    When building sub-systems its a good idea to always start from a fresh build area, otherwise
+    sub-systems can merge up, worst case is doing a sub-system install after a full build/install -
+    you'll get the contents of all packages.
+
+    This method forcibly removes the build area, so that all sub-system builds/installs staart from
+    a clean sheet.
+    """
+    shutil.rmtree('%s/build' % get_relative_path())
+
 class BuildCommand(Command):
-   """
-   Build a specific system, including it's dependencies. Run with --force to trigger a rebuild
-   """
-   description = "Build a specific system, including it's dependencies\n\n"
-   description += "\tAvailable sub-systems: \n"
-   description += "\t["
-   description += ", ".join(dependencies.keys())
-   description += "]\n"
+    """
+    Build a specific system, including it's dependencies. Run with --force to trigger a rebuild
+    """
+    description = "Build a specific sub-system, including it's dependencies. Should be used with --force"
+    description = "to ensure a clean build of only the specified sub-system.\n\n"
+    description += "\tAvailable sub-systems: \n"
+    description += "\t["
+    description += ", ".join(dependencies.keys())
+    description += "]\n"
 
-   user_options = build.user_options
-   user_options.append(('system=', 's', 'build the specified system'))
+    user_options = build.user_options
+    user_options.append(('system=', 's', 'build the specified system'))
 
-   def initialize_options(self):
-       # and add our additional option
-       self.system = None
+    def initialize_options(self):
+        # and add our additional option
+        self.system = None
 
-   def finalize_options (self):
-       if self.system == None:
-           msg = "System not specified: -s option for install_system must be specified and provide one of:\n"
-           msg += ", ".join(dependencies.keys())
-           self.warn(msg)
-           sys.exit(1)
-       if self.system in dependencies.keys():
-           # work out all the dependent packages
-           required_packages = walk_dep_tree(dependencies[self.system])['packages']
-           # and the corresponding source directories
-           src_dirs = []
-           for package in required_packages:
-               src_path = 'src/python/%s' % (package.replace('.','/'))
-               src_dirs.append(src_path)
-           packages_to_build = list_packages(src_dirs)
+    def finalize_options (self):
+        # Check that the sub-system is valid
+        check_system(self)
+        # Set what to build
+        self.distribution.packages, self.distribution.py_modules = things_to_build(self)
+        print_build_info(self)
+        # Always do a rebuild
+        force_rebuild()
 
-           # print some helpful information
-           self.announce('%s requires the following packages:' % (self.system), 1)
-           for package in packages_to_build:
-               if os.path.exists('./build/lib/%s' % package.replace('.','/')) and not self.force:
-                   self.announce('\t %s \t - already built!' % package, 1)
-               else:
-                   self.announce('\t %s' % package, 1)
-           # set what actually gets built
-           self.distribution.packages = packages_to_build
-           self.distribution.py_modules = walk_dep_tree(dependencies[self.system])['modules']
-       else:
-           msg = "Specified system [%s] is unknown:" % self.system
-           msg += " -s option for install_system must be specified and provide one of:\n"
-           msg += ", ".join(dependencies.keys())
-           self.warn(msg)
-           sys.exit(1)
-
-   def run (self):
-       # Have to get the build command here and set force, as the build plugins only refer to the
-       # build command, not what calls them. The following is taken from the Distribution class,
-       # with the additional explicit setting of force
-       command = 'build'
-       if self.distribution.have_run.get(command):
+    def run (self):
+        # Have to get the build command here and set force, as the build plugins only refer to the
+        # build command, not what calls them. The following is taken from the Distribution class,
+        # with the additional explicit setting of force
+        command = 'build'
+        if self.distribution.have_run.get(command):
            return
-       cmd = self.distribution.get_command_obj(command)
-       # Forcibly set force
-       cmd.force = self.force
-       cmd.ensure_finalized()
-       cmd.run()
-       self.distribution.have_run[command] = 1
+        cmd = self.distribution.get_command_obj(command)
+        # Forcibly set force
+        cmd.force = self.force
+        cmd.ensure_finalized()
+        cmd.run()
+        self.distribution.have_run[command] = 1
 
 class InstallCommand(install):
     """
     Install a specific system, including it's dependencies.
     """
-    description = "Install a specific system, including it's dependencies. \n\n"
+    description = "Install a specific system, including it's dependencies. Should be used with --force"
+    description = "to ensure a clean build of only the specified sub-system.\n\n"
     description += "\tAvailable sub-systems: \n"
     description += "\t["
     description += ", ".join(dependencies.keys())
@@ -189,41 +230,17 @@ class InstallCommand(install):
         self.system = None
 
     def finalize_options(self):
-        if self.system == None:
-            msg = "System not specified: -s option for install_system must be specified and provide one of:\n"
-            msg += ", ".join(dependencies.keys())
-            self.warn(msg)
-            sys.exit(1)
+        # Check that the sub-system is valid
+        check_system(self)
+        # Set what actually gets installed
+        self.distribution.packages, self.distribution.py_modules = things_to_build(self)
+        self.distribution.data_files = list_static_files(dependencies[self.system])
+        print_build_info(self)
+        # Always do a rebuild
+        force_rebuild()
+
         self.distribution.metadata.name = self.system
         assert self.distribution.get_name() == self.system
-        # build the list of depndancies
-        if self.system in dependencies.keys():
-            # work out all the dependent packages
-            required_packages = walk_dep_tree(dependencies[self.system])['packages']
-            # and the corresponding source directories
-            src_dirs = []
-            for package in required_packages:
-                src_path = 'src/python/%s' % (package.replace('.','/'))
-                src_dirs.append(src_path)
-            packages_to_build = list_packages(src_dirs)
-
-            # print some helpful information
-            self.announce('%s requires the following packages:' % (self.system), 1)
-            for package in packages_to_build:
-                if os.path.exists('./build/lib/%s' % package.replace('.','/')) and not self.force:
-                    self.announce('\t %s \t - already built!' % package, 1)
-                else:
-                    self.announce('\t %s' % package, 1)
-            # set what actually gets built
-            self.distribution.packages = packages_to_build
-            self.distribution.py_modules = walk_dep_tree(dependencies[self.system])['modules']
-            self.distribution.data_files = list_static_files(dependencies[self.system])
-        else:
-            msg = "Specified system [%s] is unknown:" % self.system
-            msg += " -s option for install_system must be specified and provide one of:\n"
-            msg += ", ".join(dependencies.keys())
-            self.warn(msg)
-            sys.exit(1)
 
         install.finalize_options(self)
 

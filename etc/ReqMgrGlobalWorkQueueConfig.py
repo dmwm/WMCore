@@ -90,11 +90,21 @@ config.ReqMgr.security.dangerously_insecure = True
 views = config.ReqMgr.section_('views')
 active = views.section_('active')
 
-active.section_('RequestOverview')
-active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestManager.RequestOverview'
-active.RequestOverview.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
-active.RequestOverview.javascript = os.path.join(getWMBASE(), 'src/javascript')
-active.RequestOverview.html = os.path.join(getWMBASE(), 'src/html')
+active.section_('GlobalMonitor')
+active.GlobalMonitor.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorPage'
+active.GlobalMonitor.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
+active.GlobalMonitor.javascript = os.path.join(getWMBASE(), 'src/javascript')
+active.GlobalMonitor.html = os.path.join(getWMBASE(), 'src/html')
+
+active.section_('monitorSvc')
+active.monitorSvc.serviceURL = "%s/reqMgr" % reqMgrUrl
+active.monitorSvc.serviceLevel = 'RequestManager'
+active.monitorSvc.section_('model')
+active.monitorSvc.section_('formatter')
+active.monitorSvc.object = 'WMCore.WebTools.RESTApi'
+active.monitorSvc.model.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorRESTModel'
+active.monitorSvc.default_expires = 0 # no caching
+active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
 
 active.section_('view')
 active.view.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrBrowser'

@@ -70,6 +70,16 @@ class RequestManager(Service):
         callname = 'request'
         return self._getResult(callname, args = args, verb = "GET")
 
+    def getRequestNames(self):
+
+        """
+        _getRequestNames_
+
+        """
+
+        callname = 'requestnames'
+        return self._getResult(callname, verb = "GET")
+
     def getAssignment(self, teamName = None, request = None):
 
         args = {}
@@ -81,6 +91,12 @@ class RequestManager(Service):
 
         callname = 'assignment'
         return self._getResult(callname, args = args, verb = "GET")
+
+    def getWorkQueue(self):
+        "get list of workqueue urls from requestmanager"
+        callname = 'workQueue'
+        return self._getResult(callname, verb = "GET")
+
 
     def putWorkQueue(self, requestName, prodAgentUrl = None):
         args = {}

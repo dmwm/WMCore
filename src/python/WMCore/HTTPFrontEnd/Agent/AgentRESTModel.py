@@ -25,12 +25,12 @@ class AgentRESTModel(RESTModel):
         self.daofactory = DAOFactory(package = "WMCore.Agent.Database", 
                                      logger = self, dbinterface = self.dbi)
 
-        self.addDAO('GET', "heartbeatInfo", "GetHeartbeatInfo")
-        self.addDAO('GET', "heartbeatInfoDetail", "GetAllHeartbeatInfo")
-        self.addDAO('GET', "agentstatus", "CheckComponentStatus")
-        self.addMethod('GET', "heartbeat", self.getHeartBeatWarning)
+        self._addDAO('GET', "heartbeatInfo", "GetHeartbeatInfo")
+        self._addDAO('GET', "heartbeatInfoDetail", "GetAllHeartbeatInfo")
+        self._addDAO('GET', "agentstatus", "CheckComponentStatus")
+        self._addMethod('GET', "heartbeat", self.getHeartBeatWarning)
          #External couch call
-        self.addMethod('GET', "acdclink", self.getACDCInfo)
+        self._addMethod('GET', "acdclink", self.getACDCInfo)
     
     def getACDCInfo(self):
         return {'url': CouchDBConnectionBase.getCouchACDCHtmlBase()}

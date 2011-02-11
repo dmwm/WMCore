@@ -120,6 +120,9 @@ class ReqMgrRESTModel(RESTModel):
         #   for method, paramDict in self.methods[call].iteritems():
         #       paramDict['expires'] = 0
 
+        self._addMethod('GET', 'requestnames', self.getRequestNames,
+                       args = [], expires = 0)
+
         self._addMethod("GET", "overview", getGlobalSummaryView) #expires=16000
         self._addMethod("GET", "resourceInfo", getResourceOverview)
         self._addMethod("GET", "agentoverview", getAgentOverview,
@@ -185,6 +188,11 @@ class ReqMgrRESTModel(RESTModel):
         else:
             return GetRequest.getRequestDetails(requestName)
 
+    def getRequestNames(self):
+        """ return all the request names in RequestManager as list """
+        #TODO this could me combined with getRequest
+        return GetRequest.getOverview()
+
     def getAssignment(self, teamName=None, request=None):
         """ If a team name is passed in, get all assignments for that team.
         If a request is passed in, return a list of teams the request is assigned to """
@@ -249,6 +257,8 @@ class ReqMgrRESTModel(RESTModel):
             return ProdMgrRetrieve.findAssignedRequests(workQueue)
         if request != None:
             return ProdManagement.getProdMgr(request)
+        # return all the workqueue ulr
+        return GetRequest.getGlobalQueues()
 
     def getMessage(self, request):
         """ Returns a list of messages attached to this request """

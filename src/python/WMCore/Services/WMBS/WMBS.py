@@ -58,3 +58,9 @@ class WMBS(Service):
         callname = 'listthresholdsforcreate'
         args = {'tableFormat': tableFormat}
         return self._getResult(callname, args = args)
+
+    def getSiteList(self):
+        """
+        """
+        callname = 'listsites'
+        return self._getResult(callname)

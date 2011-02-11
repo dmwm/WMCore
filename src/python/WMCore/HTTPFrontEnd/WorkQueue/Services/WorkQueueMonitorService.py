@@ -49,15 +49,25 @@ class WorkQueueMonitorService(ServiceInterface):
         if self.model.config.level == "LocalQueue":
             from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfo
             #External couch call
-            self.model._addMethod("GET", "jobsummary", JobInfo.getJobSummaryByWorkflow)
+            self.model._addMethod("GET", "jobsummary",
+                                  JobInfo.getJobSummaryByWorkflow)
             # batch system status        
             bossAirDAOFactory = DAOFactory(package = "WMCore.BossAir", 
                                        logger = self.model, 
                                        dbinterface = self.model.dbi)
+
             self.model._addDAO('GET', 'batchjobstatus', "JobStatusForMonitoring",
                         daoFactory = bossAirDAOFactory)
-            self.model._addDAO('GET', 'batchjobstatusbysite', "JobStatusByLocation",
-                        daoFactory = bossAirDAOFactory)
+
+            self.model._addDAO('GET', 'batchjobstatusbysite',
+                               "JobStatusByLocation",
+                               daoFactory = bossAirDAOFactory)
+
+            wmbsDAOFactory = DAOFactory(package = "WMCore.WMBS",
+                                       logger = self.model,
+                                       dbinterface = self.model.dbi)
+            self.model._addDAO('GET', 'listsites', "Locations.List",
+                               daoFactory = wmbsDAOFactory)
         # DAO stuff
         # RESTModel._addDAO() see COMP/T0/src/python/T0/DAS/Tier0RESTModel.py
         # (within WMCore no addDAO() example except for WebTools_t/DummyRESTModel.py ...)

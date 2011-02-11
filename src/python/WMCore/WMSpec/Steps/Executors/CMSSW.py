@@ -298,7 +298,7 @@ echo "Completed SCRAM project"
 cd ..
 echo "Executing CMSSW"
 echo "$EXECUTABLE  -j $JOB_REPORT $CONFIGURATION"
-$EXECUTABLE  -j $JOB_REPORT $CONFIGURATION &
+$EXECUTABLE  -j $JOB_REPORT $CONFIGURATION 2>&1 &
 PROCID=$!
 echo $PROCID > process.id
 wait $PROCID

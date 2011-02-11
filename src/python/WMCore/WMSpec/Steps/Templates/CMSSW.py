@@ -83,6 +83,7 @@ class CMSSWStepHelper(CoreHelper):
         self.data.application.configuration.configUrl = docUrl
         self.data.application.configuration.retrieveConfigUrl = \
                                         "%s/configFile" % docUrl
+        
 
 
     def setDataProcessingConfig(self, scenarioName, functionName, **args):

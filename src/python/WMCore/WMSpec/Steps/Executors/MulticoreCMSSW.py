@@ -295,9 +295,9 @@ class MulticoreCMSSW(Executor):
             # // process the output modules from each subreport
             #//
             for f in o.getAllFiles():
-                lfn = f['lfn']
+                lfn = f['outputModule']
                 if not mergeBuckets.has_key(lfn):
-                    mergeBuckets[lfn] = MergeBucket(lfn, f['outputModule'], self.stepName, self.step.builder.workingDir)
+                    mergeBuckets[lfn] = MergeBucket(f['lfn'], f['outputModule'], self.stepName, self.step.builder.workingDir)
                 mergeBuckets[lfn].append(f)
 
         # clean up the master report from the template

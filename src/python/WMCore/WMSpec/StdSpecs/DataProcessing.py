@@ -129,7 +129,12 @@ class DataProcessingWorkloadFactory(StdBase):
 
         if arguments.has_key("Multicore"):
             numCores = arguments.get("Multicore")
-            if numCores > 1:
+            if numCores == None:
+                self.multicore = False
+            elif numCores == "auto":
+                self.multicore = True
+                self.multicoreNCores = "auto"
+            else:
                 self.multicore = True
                 self.multicoreNCores = numCores
 

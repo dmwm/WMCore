@@ -115,6 +115,14 @@ class SetupCMSSWMulticore(ScriptInterface):
         #ToDo: Adjust this if the job has an event mask
         eventTotal =  eventcount(self.files.values())
         numCores = self.step.data.application.multicore.numberOfCores
+        if numCores == "auto":
+            p1 = subprocess.Popen("egrep \"^processor\" /proc/cpuinfo", shell = True, 
+                                  stdout=subprocess.PIPE)
+            p2 = subprocess.Popen("wc -l", stdin=p1.stdout, stdout=subprocess.PIPE, shell = True)
+            output = p2.communicate()[0]
+            numCores = int(output)
+            
+            
         procCount = (eventTotal + numCores - 1) / numCores
     
     

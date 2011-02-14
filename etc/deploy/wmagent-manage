@@ -29,6 +29,14 @@ COUCH_PASS=
 COUCH_HOST=127.0.0.1
 COUCH_PORT=5984
 
+REQMGR_HOSTNAME=
+REQMGR_PORT=8687
+
+GLOBAL_WORKQUEUE_HOSTNAME=
+GLOBAL_WORKQUEUE_PORT=9996
+
+LOCAL_WORKQUEUE_PORT=9997
+
 if [ "$PROJ_NAME" == "reqmgr"  ]; then
     MYSQL_DATABASE="reqmgrdb"
     WMAGENT_DIR="$ROOT_DIR/reqmgr"
@@ -67,6 +75,9 @@ load_secrets_file(){
     local MATCH_COUCH_PASS=`cat $WMAGENT_SECRETS_LOCATION | grep COUCH_PASS | sed s/COUCH_PASS=//`
     local MATCH_COUCH_HOST=`cat $WMAGENT_SECRETS_LOCATION | grep COUCH_HOST | sed s/COUCH_HOST=//`
     local MATCH_COUCH_PORT=`cat $WMAGENT_SECRETS_LOCATION | grep COUCH_PORT | sed s/COUCH_PORT=//`
+    local MATCH_REQMGR_HOSTNAME=`cat $WMAGENT_SECRETS_LOCATION | grep REQMGR_HOSTNAME | sed s/REQMGR_HOSTNAME=//`
+    local MATCH_REQMGR_PORT=`cat $WMAGENT_SECRETS_LOCATION | grep REQMGR_PORT | sed s/REQMGR_PORT=//`
+    local MATCH_GLOBAL_WORKQUEUE_HOSTNAME=`cat $WMAGENT_SECRETS_LOCATION | grep GLOBAL_WORKQUEUE_HOSTNAME | sed s/GLOBAL_WORKQUEUE_HOSTNAME=//`
     local MATCH_GLOBAL_WORKQUEUE_PORT=`cat $WMAGENT_SECRETS_LOCATION | grep GLOBAL_WORKQUEUE_PORT | sed s/GLOBAL_WORKQUEUE_PORT=//`
     local MATCH_LOCAL_WORKQUEUE_PORT=`cat $WMAGENT_SECRETS_LOCATION | grep LOCAL_WORKQUEUE_PORT | sed s/LOCAL_WORKQUEUE_PORT=//`
     
@@ -97,6 +108,15 @@ load_secrets_file(){
     fi
     if [ ! "x$MATCH_COUCH_HOST" == "x" ]; then
         COUCH_HOST=$MATCH_COUCH_HOST;
+    fi
+    if [ ! "x$MATCH_REQMGR_HOSTNAME" == "x" ]; then
+        REQMGR_HOSTNAME=$MATCH_REQMGR_HOSTNAME;
+    fi
+    if [ ! "x$MATCH_REQMGR_PORT" == "x" ]; then
+        REQMGR_PORT=$MATCH_REQMGR_PORT;
+    fi
+    if [ ! "x$MATCH_GLOBAL_WORKQUEUE_HOSTNAME" == "x" ]; then
+        GLOBAL_WORKQUEUE_HOSTNAME=$MATCH_GLOBAL_WORKQUEUE_HOSTNAME;
     fi
     if [ ! "x$MATCH_GLOBAL_WORKQUEUE_PORT" == "x" ]; then
         GLOBAL_WORKQUEUE_PORT=$MATCH_GLOBAL_WORKQUEUE_PORT;
@@ -360,6 +380,7 @@ init_wmagent(){
                        --mysql_socket=$MYSQL_DIR/logs/mysql.sock \
                        --working_dir=$WMAGENT_DIR/install \
                        --couch_url=http://$COUCH_USER:$COUCH_PASS@$COUCH_HOST:$COUCH_PORT \
+                       --global_workqueue_hostname=$GLOBAL_WORKQUEUE_HOSTNAME \
                        --global_workqueue_port=$GLOBAL_WORKQUEUE_PORT \
                        --local_workqueue_port=$LOCAL_WORKQUEUE_PORT
     wmcore-db-init --config $WMAGENT_CONFIG --create --modules=WMCore.WMBS,WMCore.Agent.Database,WMComponent.DBSBuffer.Database,WMCore.WorkQueue.Database,WMCore.BossAir,WMCore.ResourceControl;
@@ -379,7 +400,9 @@ init_reqmgr(){
                        --mysql_url=mysql://$MYSQL_USER:$MYSQL_PASS@localhost/$MYSQL_DATABASE \
                        --mysql_socket=$MYSQL_DIR/logs/mysql.sock \
                        --working_dir=$WMAGENT_DIR/install \
-                       --couch_url=http://$COUCH_USER:$COUCH_PASS@$COUCH_HOST:$COUCH_PORT
+                       --couch_url=http://$COUCH_USER:$COUCH_PASS@$COUCH_HOST:$COUCH_PORT \
+                       --reqmgr_port=$REQMGR_PORT \
+                       --reqmgr_hostname=$REQMGR_HOSTNAME
     wmcore-db-init --config $WMAGENT_CONFIG --create --modules=WMCore.Agent.Database,WMCore.RequestManager.RequestDB
     export WMAGENT_CONFIG
     touch $WMAGENT_DIR/config/.wmagentinit
@@ -393,6 +416,9 @@ init_workqueue(){
                        --mysql_socket=$MYSQL_DIR/logs/mysql.sock \
                        --working_dir=$WMAGENT_DIR/install \
                        --couch_url=http://$COUCH_USER:$COUCH_PASS@$COUCH_HOST:$COUCH_PORT \
+                       --reqmgr_hostname=$REQMGR_HOSTNAME \
+                       --reqmgr_port=$REQMGR_PORT \
+                       --global_workqueue_hostname=$GLOBAL_WORKQUEUE_HOSTNAME \
                        --global_workqueue_port=$GLOBAL_WORKQUEUE_PORT
     wmcore-db-init --config $WMAGENT_CONFIG --create --modules=WMCore.WorkQueue.Database,WMCore.Agent.Database
     export WMAGENT_CONFIG

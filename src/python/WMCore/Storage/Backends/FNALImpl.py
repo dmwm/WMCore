@@ -7,16 +7,19 @@ Implementation of StageOutImpl interface for FNAL
 """
 import os
 import commands
-from WMCore.StageOut.Registry import registerStageOutImpl
-from WMCore.StageOut.StageOutImpl import StageOutImpl
+from WMCore.Storage.Registry import registerStageOutImpl
+from WMCore.Storage.StageOutImpl import StageOutImpl
 
 
 _CheckExitCodeOption = True
+checkPathsCount=4
+checkPaths = ['/lustre/unmerged/', '/lustre/temp/', '/store/unmerged/', '/store/temp/'] 
+checkPathsReplace = ['/lustre/unmerged/', '/lustre/temp/', '/lustre/unmerged/', '/lustre/temp/']
 
 
-def pnfsPfn(pfn):
+def pnfsPfn2(pfn):
     """
-    _pnfsPfn_
+    _pnfsPfn2_
 
     Convert a dcap PFN to a PNFS PFN
 
@@ -29,16 +32,11 @@ def pnfsPfn(pfn):
     filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
     
     # handle lustre location
-    if pfn.find('/store/unmerged/') != 0 and pfn.find('/store/temp/') != 0:
-        return filePath
-    else:
-        if pfn.find('/store/unmerged/') == 0:
-          pfnSplit = pfn.split("/store/unmerged/", 1)[1]
-	  filePath = "/lustre/unmerged/%s" % pfnSplit
-        elif pfn.find('/store/temp/') == 0:
-          pfnSplit = pfn.split("/store/temp/", 1)[1]
-          filePath = "/lustre/temp/%s" % pfnSplit
-        return filePath
+    for i in range(checkPathsCount):
+        if pfn.find(checkPaths[i]) != -1:
+          pfnSplit = pfn.split(checkPaths[i], 1)[1]
+	  filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
+    return filePath
 
 
 
@@ -64,13 +62,23 @@ class FNALImpl(StageOutImpl):
         We need to convert that into /pnfs/cms/WAX/11/store/blah, as it
         will be seen from the worker node
 
+        Unmerged PFN will be of the form:
+        /lustre/unmerged
+
+        we don't need to convert it, just mkdir.
+        
+
         """
 
         # handle dcache or lustre location
-        if targetPFN.find('/store/unmerged/') != 0 and targetPFN.find('/store/temp/') != 0:
-             # only create dir on remote storage
-	    if targetPFN.find('/pnfs/') == -1:
-               return
+        dcapLocation = 0
+        for i in range(checkPathsCount):
+            if targetPFN.find(checkPaths[i]) != -1:
+                dcapLocation = 1
+        if dcapLocation == 0:
+            # only create dir on remote storage
+            if targetPFN.find('/pnfs/') == -1:
+                return
 
             pfnSplit = targetPFN.split("WAX/11/store/", 1)[1]
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
@@ -82,38 +90,43 @@ class FNALImpl(StageOutImpl):
             command += "fi\n"
             self.executeCommand(command)
         else: 
-            if targetPFN.find('/store/unmerged/') == 0: 
-              pfnSplit = targetPFN.split("/store/unmerged/", 1)[1]
-	      filePath = "/lustre/unmerged/%s" % pfnSplit
-            elif targetPFN.find('/store/temp/') == 0:
-              pfnSplit = targetPFN.split("/store/temp/", 1)[1]
-              filePath = "/lustre/temp/%s" % pfnSplit
-            targetdir= os.path.dirname(filePath)
-            checkdircmd="/bin/ls %s > /dev/null " % targetdir
-            print "Check dir existence : %s" %checkdircmd 
-            try:
-                checkdirexitCode = self.executeCommand(checkdircmd)
-            except Exception, ex:
-                msg = "Warning: Exception while invoking command:\n"
-                msg += "%s\n" % checkdircmd
-                msg += "Exception: %s\n" % str(ex)
-                msg += "Go on anyway..."
-                print msg
-                pass
-            if checkdirexitCode:
-                mkdircmd = "/bin/mkdir -m 775 -p %s" % targetdir
-                print "=> creating the dir : %s" %mkdircmd
-                try:
-                    self.executeCommand(mkdircmd)
-                except Exception, ex:
-                    msg = "Warning: Exception while invoking command:\n"
-                    msg += "%s\n" % mkdircmd
-                    msg += "Exception: %s\n" % str(ex)
-                    msg += "Go on anyway..."
-                    print msg
-                    pass
-            else:
-                print "=> dir already exists... do nothing."
+            for i in range(checkPathsCount):
+                if targetPFN.find(checkPaths[i]) != -1:
+                    pfnSplit = targetPFN.split(checkPaths[i], 1)[1]
+                    filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
+                    targetdir= os.path.dirname(filePath)
+                    # checkdircmd="/bin/ls %s > /dev/null " % targetdir
+                    # print "Check dir existence : %s" %checkdircmd 
+                    # checkdirexitCode = 0
+                    # try:
+                    #     checkdirexitCode = self.executeCommand(checkdircmd)
+                    # except Exception, ex:
+                    #     msg = "Warning: Exception while invoking command:\n"
+                    #     msg += "%s\n" % checkdircmd
+                    #     msg += "Exception: %s\n" % str(ex)
+                    #     msg += "Go on anyway..."
+                    #     print msg
+                    #     pass
+                    # if checkdirexitCode != 0:
+                    #     mkdircmd = "/bin/mkdir -m 775 -p %s" % targetdir
+                    #     print "=> creating the dir : %s" %mkdircmd
+                    #     try:
+                    #         self.executeCommand(mkdircmd)
+                    #     except Exception, ex:
+                    #         msg = "Warning: Exception while invoking command:\n"
+                    #         msg += "%s\n" % mkdircmd
+                    #         msg += "Exception: %s\n" % str(ex)
+                    #         msg += "Go on anyway..."
+                    #         print msg
+                    #         pass
+                    # else:
+                    #     print "=> dir already exists... do nothing."
+                    command = "#!/bin/sh\n"
+                    command += "if [ ! -e \"%s\" ]; then\n" % targetdir
+                    command += "  mkdir -p %s\n" % targetdir
+                    command += "fi\n"
+                    self.executeCommand(command)
+
 
 
     def createSourceName(self, protocol, pfn):
@@ -126,21 +139,23 @@ class FNALImpl(StageOutImpl):
         if not pfn.startswith("srm"):
             return pfn
 
-        if pfn.find('/store/unmerged/') != 0 and pfn.find('/store/temp/') != 0:
+        dcapLocation = 0
+        for i in range(checkPathsCount):
+          if pfn.find(checkPaths[i]) != -1:
+            dcapLocation = 1
+        if dcapLocation == 0:
             print "Translating PFN: %s\n To use dcache door" % pfn
             dcacheDoor = commands.getoutput(
                 "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh")
             pfn = pfn.split("/store/")[1]
             pfn = "%s%s" % (dcacheDoor, pfn)
             print "Created Target PFN with dCache Door: ", pfn
-        else: 
-            if pfn.find('/store/unmerged/') == 0:
-              pfnSplit = pfn.split("/store/unmerged/", 1)[1]
-	      pfn = "/lustre/unmerged/%s" % pfnSplit
-            elif pfn.find('/store/temp/') == 0: 
-              pfnSplit = pfn.split("/store/temp/", 1)[1]
-              pfn = "/lustre/temp/%s" % pfnSplit
-
+        else:
+            print "Translating PFN: %s\n To use lustre" % pfn 
+    	    for i in range(checkPathsCount):
+              if pfn.find(checkPaths[i]) != -1:
+                pfnSplit = pfn.split(checkPaths[i], 1)[1]
+                pfn = "%s%s" % (checkPathsReplace[i],pfnSplit)
         return pfn
 
 
@@ -157,7 +172,11 @@ class FNALImpl(StageOutImpl):
             return self.buildStageInCommand(sourcePFN, targetPFN, options)
 
         
-        if targetPFN.find('/store/unmerged/') != 0 and targetPFN.find('/store/temp/') != 0:
+        dcapLocation = 0
+        for i in range(checkPathsCount):
+          if targetPFN.find(checkPaths[i]) != -1:
+            dcapLocation = 1
+        if dcapLocation == 0:
             optionsStr = ""
             if options != None:
                 optionsStr = str(options)
@@ -176,7 +195,7 @@ if [[ $EXIT_STATUS != 0 ]]; then
    /bin/rm -fv %s
    exit 60311
 fi
-"""  % pnfsPfn(targetPFN)
+"""  % pnfsPfn2(targetPFN)
 
             #  //
             # //  CRC check
@@ -193,7 +212,7 @@ if [[ $EXIT_STATUS != 0 ]]; then
    exit 60311
 fi
 
-""" % (pnfsPfn(targetPFN), sourcePFN, pnfsPfn(targetPFN))
+""" % (pnfsPfn2(targetPFN), sourcePFN, pnfsPfn2(targetPFN))
 
             print "Executing:\n", result
             return result
@@ -205,8 +224,8 @@ fi
             if options != None:
                 result += " %s " % options
             result += " %s " % sourcePFN
-            result += " %s " % pnfsPfn(targetPFN)
-            result += "; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (pnfsPfn(targetPFN),original_size)
+            result += " %s " % targetPFN
+            result += "; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
             return result
 
 
@@ -218,14 +237,17 @@ fi
         Create normal dccp commad for staging in files.
         """
 
-
-        if sourcePFN.find('/store/unmerged/') != 0 and sourcePFN.find('/store/temp/') != 0:
+        dcapLocation = 0
+        for i in range(checkPathsCount):
+          if sourcePFN.find(checkPaths[i]) != -1:
+            dcapLocation = 1
+        if dcapLocation == 0:
             optionsStr = ""
             if options != None:
                 optionsStr = str(options)
             dirname = os.path.dirname(targetPFN)
             result = "#!/bin/sh\n"
-            result += "dccp %s %s %s" % (optionsStr, pnfsPfn(sourcePFN), targetPFN)
+            result += "dccp %s %s %s" % (optionsStr, pnfsPfn2(sourcePFN), targetPFN)
             result += \
 """
 EXIT_STATUS=$?
@@ -263,21 +285,19 @@ if [ $FILE_SIZE != $DEST_SIZE ]; then
     /bin/rm -fv %s
     exit 60311
 fi
-""" % (pnfsPfn(targetPFN), pnfsPfn(sourcePFN),
-       '%s', pnfsPfn(targetPFN), '%s', pnfsPfn(sourcePFN),
-       pnfsPfn(targetPFN), pnfsPfn(sourcePFN),
-       pnfsPfn(targetPFN))
+""" % (pnfsPfn2(targetPFN), pnfsPfn2(sourcePFN),
+       '%s', pnfsPfn2(targetPFN), '%s', pnfsPfn2(sourcePFN),
+       pnfsPfn2(targetPFN), pnfsPfn2(sourcePFN),
+       pnfsPfn2(targetPFN))
 
             print "Executing:\n", result
             return result
 
         else:
-            if sourcePFN.find('/store/unmerged/') == 0:
-              pfnSplit = sourcePFN.split("/store/unmerged/", 1)[1]
-	      filePath = "/lustre/unmerged/%s" % pfnSplit
-            elif sourcePFN.find('/store/temp/') == 0: 
-              pfnSplit = sourcePFN.split("/store/temp/", 1)[1]
-              filePath = "/lustre/temp/%s" % pfnSplit
+    	    for i in range(checkPathsCount):
+              if sourcePFN.find(checkPaths[i]) != -1:
+                pfnSplit = sourcePFN.split(checkPaths[i], 1)[1]
+                filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
             original_size = os.stat(filePath)[6]
             print "Local File Size is: %s" % original_size
             result = "/bin/cp "
@@ -296,22 +316,24 @@ fi
         CleanUp pfn provided
 
         """
-        if pfnToRemove.find('/store/unmerged/') != 0 and pfnToRemove.find('/store/temp/') != 0:
-            pfnSplit = pfnToRemove.split("/store/", 1)[1]
+
+        dcapLocation = 0
+        for i in range(checkPathsCount):
+          if pfnToRemove.find(checkPaths[i]) != -1:
+            dcapLocation = 1
+        if dcapLocation == 0:
+            pfnSplit = pfnToRemove.split("/11/store/", 1)[1]
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
             command = "rm -fv %s" %filePath
             self.executeCommand(command)
         else: 
-            if pfnToRemove.find('/store/unmerged/') == 0: 
-              pfnSplit = pfnToRemove.split("/store/unmerged/", 1)[1]
-	      pfnToRemove = "/lustre/unmerged/%s" % pfnSplit
-            elif pfnToRemove.find('/store/temp/') == 0: 
-              pfnSplit = pfnToRemove.split("/store/temp/", 1)[1]
-              pfnToRemove = "/lustre/temp/%s" % pfnSplit
+            for i in range(checkPathsCount):
+              if pfnToRemove.find(checkPaths[i]) != -1:
+                pfnSplit = pfnToRemove.split(checkPaths[i], 1)[1]
+                pfnToRemove = "%s%s" % (checkPathsReplace[i],pfnSplit)
             command = "/bin/rm %s" % pfnToRemove
             self.executeCommand(command)
 
 
 
 registerStageOutImpl("stageout-fnal", FNALImpl)
-

@@ -586,6 +586,18 @@ class WorkQueue(WorkQueueBase):
         action = self.daofactory(classname = "WorkQueueElement.GetReqMgrUpdateNeeded")
         items = action.execute(conn = self.getDBConn(),
                                transaction = self.existingTransaction())
+        # This can be added inside of the if dictKey check to prevent going
+        # through one more loop since that is the only case this function is
+        # needed so far, but that is not general case.
+        wmspecCache = {}
+        for element in items:
+            if not wmspecCache.has_key(element['RequestName']):
+                wmspec = WMWorkloadHelper()
+                wmspec.load(element['WMSpecUrl'])
+                wmspecCache[element['RequestName']] = wmspec
+            else:
+                wmspec = wmspecCache[element['RequestName']]
+            element['WMSpec'] = wmspec
         # if dictKey given format as a dict with the appropriate key
         if dictKey:
             tmp = defaultdict(list)

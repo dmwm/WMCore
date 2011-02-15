@@ -168,7 +168,7 @@ class Database(CouchDBRequests):
         if label == True:
             label = 'timestamp'
 
-        if type(data) == type({}):
+        if isinstance(data, type({})):
             data[label] = int(time.time())
         else:
             for doc in data:

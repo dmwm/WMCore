@@ -138,6 +138,17 @@ class CMSCouchTest(unittest.TestCase):
         self.assertRaises(ValueError, self.server.connectDatabase, db_name)
         self.assertRaises(ValueError, Database, db_name)
 
+    def testDocumentSerialisation(self):
+        """
+        A document should be writable into the couchdb with a timestamp.
+        """
+        d = Document()
+        d['foo'] = 'bar'
+        doc_info = self.db.commit(doc=d, timestamp=True)[0]
+        d_from_db = self.db.document(doc_info['id'])
+        self.assertEquals(d['foo'], d_from_db['foo'])
+        self.assertEquals(d['timestamp'], d_from_db['timestamp'])
+
     def testAttachments(self):
         """
         Test uploading attachments with and without checksumming

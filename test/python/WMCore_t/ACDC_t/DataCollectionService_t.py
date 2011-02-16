@@ -34,7 +34,7 @@ class DataCollectionService_t(unittest.TestCase):
 
         
     def tearDown(self):
-        self.testInit.tearDownCouch()
+        #self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         
 
@@ -102,11 +102,19 @@ class DataCollectionService_t(unittest.TestCase):
             f.addRun(run)
             job.addFile(f)
         
-        try:
-            dcs.failedJobs([job])
-        except Exception, ex:
-            msg = "Error calling failedJobs method in DataCollectionService: %s" % str(ex)
-            self.fail(msg)
+        #try:
+        dcs.failedJobs([job])
+        #except Exception, ex:
+        #    msg = "Error calling failedJobs method in DataCollectionService: %s" % str(ex)
+        #    self.fail(msg)
+
+        res = dcs.filesetsByTask(coll, reco.getPathName())
+        nFiles = 0
+        for x in res:
+            for f in x.files():
+                nFiles += 1
+
+        self.assertEqual(nFiles, numberOfFiles)
         
         
         

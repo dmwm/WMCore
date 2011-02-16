@@ -19,8 +19,8 @@ import WMCore.ACDC.CouchUtils as CouchUtils
 import WMCore.ACDC.CollectionTypes as CollectionTypes
 
 from WMCore.WMSpec.Utilities import stepIdentifier
-
-from WMCore.WMException import WMException
+from WMCore.WMException      import WMException
+from WMCore.WMBS.File        import File
 
 class ACDCDCSException(WMException):
     """
@@ -161,7 +161,6 @@ class DataCollectionService(CouchService):
             coll.get()
             yield coll
 
-
     def listDataCollections(self):
         """
         _listDataCollections_
@@ -172,7 +171,7 @@ class DataCollectionService(CouchService):
 
         return [x for x in self.yieldDataCollections()]
             
-    
+    @CouchUtils.connectToCouch
     def getDataCollection(self, collName):
         """
         _getDataCollection_
@@ -203,8 +202,9 @@ class DataCollectionService(CouchService):
                  { 'startkey' : [collection['collection_id'], taskName], 'endkey': [collection['collection_id'], taskName] }, []
                 )
         for row in result[u'rows']:
-            doc = self.couchdb.document(row[u'value'])
-            yield doc
+            coll = CouchFileset(_id = row['value'], database = self.database, url = self.url)
+            coll.get()
+            yield coll
         
 
         
@@ -231,9 +231,90 @@ class DataCollectionService(CouchService):
                 collections['workflow'] = self.getDataCollection(job['workflow'])
             coll = collections['workflow']
             for fileset in self.filesetsByTask(coll, taskName):
-                cFileset = CouchFileset(database = self.database, url = self.url, fileset_id = fileset['_id'])
+                logging.debug("Inserting fileset into ACDC with failed jobs: %s" % fileset)
+                cFileset = CouchFileset(database = self.database, url = self.url, _id = fileset[u'_id'])
                 cFileset.setCollection(coll)
+                cFileset['task'] = taskName
                 cFileset.add(*job['input_files'])
+
+
+    @CouchUtils.connectToCouch
+    def chunkFileset(self, collection, taskName, chunkSize = 100):
+        """
+        _chunkFileset_
+
+        Split all of the fileset in a given collection/task into chunks.  This
+        will return a list of dictionaries that contain the offset into the
+        fileset and a summary of files/events/lumis that are in the fileset
+        chunk.
+        """
+        chunks        = []
+        fileLFNs      = []
+        collection_id = collection['collection_id']
+        results = self.couchdb.loadView("ACDC", "fileset_metadata",
+                                        {"startkey": [collection_id, taskName],
+                                         "endkey": [collection_id, taskName, {}]}, [])
+
+        currentBlockIndex = 0
+        numFilesInBlock = 0
+        numLumisInBlock = 0
+        numEventsInBlock = 0
+        
+        for row in results.get('rows', []):
+            resultRow = row['value']
+            if resultRow == None:
+                continue
+
+            # Check for duplicate LFNs
+            lfn = resultRow['lfn']
+            if lfn in fileLFNs:
+                # Then we already have this file
+                continue
+            fileLFNs.append(lfn)
+            
+            if numFilesInBlock == chunkSize:
+                chunks.append({"offset": currentBlockIndex, "files": numFilesInBlock,
+                               "events": numEventsInBlock, "lumis": numLumisInBlock})
+                currentBlockIndex += 1
+                numFilesInBlock    = 0
+                numLumisInBlock    = 0
+                numEventsInBlock   = 0
+
+            numFilesInBlock += 1
+            numLumisInBlock += resultRow["lumis"]
+            numEventsInBlock += resultRow["events"]
+            
+
+        if numFilesInBlock > 0:
+            chunks.append({"offset": currentBlockIndex, "files": numFilesInBlock,
+                           "events": numEventsInBlock, "lumis": numLumisInBlock})
+        return chunks
+
+    
+    @CouchUtils.connectToCouch            
+    def getChunkFiles(self, collection, taskName, chunkOffset, chunkSize = 100):
+        """
+        _getChunkFiles_
+
+        Retrieve a chunk of files from the given collection and task.
+        """
+        collection_id = collection['collection_id']
+        chunkFiles    = []
+        result = self.couchdb.loadView("ACDC", "fileset_files",
+                                       {"startkey": [collection_id, taskName],
+                                        "endkey": [collection_id, taskName, {}],
+                                        "limit": chunkSize,
+                                        "skip": chunkSize * chunkOffset
+                                        }, [])
+
+        for row in result["rows"]:
+            resultRow = row['value']
+            newFile = File(lfn = resultRow["lfn"], size = resultRow["size"],
+                           events = resultRow["events"], parents = resultRow["parents"],
+                           locations = resultRow["locations"])
+            chunkFiles.append(newFile)
+
+        return chunkFiles
         
     
 

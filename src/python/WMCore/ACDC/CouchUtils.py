@@ -10,6 +10,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 import sys
 import os
 import unittest
+import functools
 import WMCore.Database.CMSCouch as CMSCouch
 
 class CouchConnectionError(Exception):
@@ -46,9 +47,10 @@ def connectToCouch(funcRef):
     
     Decorator method to connect the function's class object to couch
     """
-    def wrapper(self, *args, **opts):
-        initialiseCouch(self)
-        return funcRef(self, *args, **opts)
+    @functools.wraps(funcRef)
+    def wrapper(x, *args, **opts):
+        initialiseCouch(x)
+        return funcRef(x, *args, **opts)
     return wrapper
     
 def requireOwner(func):

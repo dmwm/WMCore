@@ -768,6 +768,25 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         pass
 
+
+    def setResubmitFlag(self, value = True):
+        """
+        _setResubmitFlag_
+
+        Set the resubmit flag
+        """
+
+        setattr(self.data.properties, 'resubmit', value)
+
+    def getResubmitFlag(self):
+        """
+        _getResubmitFlag_
+
+        Get the value of the resubmit flag
+        """
+
+        return getattr(self.data.properties, 'resubmit', False)
+
 class WMWorkload(ConfigSection):
     """
     _WMWorkload_

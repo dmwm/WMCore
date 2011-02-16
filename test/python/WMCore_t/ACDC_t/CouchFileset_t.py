@@ -35,6 +35,7 @@ class CouchFileset_t(unittest.TestCase):
         self.owner.connect()
         self.owner.create()
         
+        
         # create a collection for the filesets in this test
         self.collection = CouchCollection(url = self.testInit.couchUrl, database = self.testInit.couchDbName, name = "Thunderstruck")
         self.collection.setOwner(self.owner)
@@ -45,60 +46,48 @@ class CouchFileset_t(unittest.TestCase):
         """Clean up couch instance"""
         self.testInit.tearDownCouch()
 
-        
+
+
     def testA(self):
-        """make a fileset"""
-        
-        fileset = CouchFileset(url = self.testInit.couchUrl, database = self.testInit.couchDbName, 
-                               dataset = "/MinimumBias/BeamCommissioning09_v1/RAW")
-        fileset.setCollection(self.collection)
-        
-        try:
-            fileset.create()
-        except Exception, ex:
-            msg = "Failed to create CouchFileset:\n%s" % str(ex)
-            self.fail(msg)
 
-        service = CouchService(url = self.testInit.couchUrl, database = self.testInit.couchDbName)
-        fsets = [ x for x in service.listFilesets(self.collection)]
-        self.assertEqual(len(fsets), 1)
-        self.assertEqual(fsets[0]['dataset'], fileset['dataset'])
+        fs1 = CouchFileset()
 
-        try:
-            fileset.drop()
-        except Exception, ex:
-            msg = "Failed to drop CouchFileset:\n%s" % str(ex)
-            self.fail(msg)
-        fsets = [ x for x in service.listFilesets(self.collection)]
-        self.assertEqual(len(fsets), 0)
-        
+        fs2 = CouchFileset(_id = "sample-fileset-id", database = self.testInit.couchDbName, url = self.testInit.couchUrl)
+        fs2.setCollection(self.collection)
+        self.assertEqual(fs2.exists(), False)
+        fs2.create()
+        self.assertEqual(fs2.exists(), True)
+
+        fs2.makeFilelist()
+        fs2.makeFilelist()
+        self.assertEqual(len(fs2.filelistDocuments()), 2)
+        fs2.drop()
+
+
     def testB(self):
-        """put files in the fileset"""
-        fileset = CouchFileset(url = self.testInit.couchUrl, database = self.testInit.couchDbName, 
-                               dataset = "/MinimumBias/BeamCommissioning09_v1/RAW")
-        fileset.setCollection(self.collection)
-        fileset.create()
-        
-        files = []
+        fs = CouchFileset(database = self.testInit.couchDbName, url = self.testInit.couchUrl)
+        fs.setCollection(self.collection)
+        fs.create()
+
+        files1 = []
+        files2 = []
         numberOfFiles = 10
         run = Run(10000000, 1,2,3,4,5,6,7,8,9,10)
         for i in range(0, numberOfFiles):
             f = File( lfn = "/store/test/some/dataset/%s.root" % makeUUID(), size = random.randint(100000000,50000000000), 
                       events = random.randint(1000, 5000))
             f.addRun(run)
-            files.append(f)
-        
-        fileset.add(*files)
+            files1.append(f)
+            f2 = File( lfn = "/store/test/some/dataset/%s.root" % makeUUID(), size = random.randint(100000000,50000000000), 
+                      events = random.randint(1000, 5000))
+            f2.addRun(run)
+            files2.append(f2)
 
-        self.assertEqual(fileset.filecount(), numberOfFiles)
-        # create DataStructs.Fileset from this fileset
-        try:
-            dsFileset = fileset.fileset()
-        except Exception, ex:
-            msg = "Failed to create DataStructs.Fileset from CouchFileset: %s" % str(ex)
-            self.fail(msg)
-        self.assertEqual(len(dsFileset.files), numberOfFiles)
-        
-         
+        fs.add(*files1)
+        fs.add(*files2)
+        print fs.filelistDocuments()
+        print len(fs.fileset())
+        fs.drop()
+
 if __name__ == '__main__':
     unittest.main()

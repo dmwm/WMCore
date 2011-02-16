@@ -1,9 +1,7 @@
 function(doc) {
-  if (doc.fileset){
-       var i=0;
-       for (var v in doc.fileset.files){
-           i++;
-       }
-       emit([doc._id], i);
-   }
+  if (doc.filelist) {
+    for (var filelistFile in doc.filelist.files) {
+      emit([doc.filelist.fileset_id], 1);
+    }
+  }
 }

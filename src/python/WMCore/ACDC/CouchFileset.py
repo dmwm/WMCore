@@ -7,7 +7,7 @@ Created by Dave Evans on 2010-03-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-
+import random
 
 from WMCore.ACDC.Fileset import Fileset
 import WMCore.Database.CMSCouch as CMSCouch
@@ -51,35 +51,35 @@ def filePipeline(targets):
  
 
     
-
-
-
 class CouchFileset(Fileset):
     """
-    _CouchFileset_
-    
-    Create a fileset that can be stored/read from Couch
-    
+    CouchFileset with 100% more awesomes than the first one
     """
     def __init__(self, **options):
-        """
-        Required Options:
-        
-        url - couch db instance URL
-        database - couch db instance name
-        dataset - name/label for fileset
-        
-        Will also need to call setCollection with a valid collection before being able to create
-        a fileset in couch
-        """
         Fileset.__init__(self, **options)
-        self.url = options.get('url', None)
+        self.url      = options.get('url', None)
         self.database = options.get('database', None)
-        self.server = None
-        self.couchdb = None
+        self.server   = None
+        self.couchdb  = None
 
 
+    @connectToCouch
+    def get(self):
+        """
+        _get_
+    
+        """
+        docid = dict.get(self, '_id', None)
+        filesetId = dict.get(self, 'fileset_id', None) 
+        if docid == None:
+            docid = filesetId
+        if docid == None:
+            msg = "No document ID set to load Fileset from Couch"
+            raise RuntimeError, msg
 
+        self.update(self.couchdb.document(docid))
+        return        
+        
     @connectToCouch
     @requireOwner
     @requireCollection
@@ -87,26 +87,29 @@ class CouchFileset(Fileset):
         """
         create this fileset
         """
-        check = self.get()
-        if check != None:
-            return check
-        document    = CMSCouch.Document()
-        document['fileset'] = self
-        del document['fileset']['database']
-        del document['fileset']['url']
+        if self.exists():
+            self.get()
+            return
+        filesetInfo = dict(self)
+        del filesetInfo['url']
+        del filesetInfo['database']
+        document    = CMSCouch.Document(None, {"fileset" : filesetInfo})
         commitInfo = self.couchdb.commitOne( document )
         self['fileset_id'] = commitInfo[0]['id']
-        document['_id'] = commitInfo[0]['id']
-        document['_rev'] = commitInfo[0]['rev']
+        self['_id'] = commitInfo[0]['id']
+        self['_rev'] = commitInfo[0]['rev']
+        document['_id'] = self['_id']
+        document['_rev'] = self['_rev']
         self.owner.ownThis(document)
         return
-        
+    
+    
     @connectToCouch
     @requireOwner
     @requireCollection
-    def getFilesetId(self):
-        """getFilesetId
-        
+    def exists(self):
+        """
+
         map owner/collection/dataset triplet to the document ID
         """
         result = self.couchdb.loadView("ACDC", 'fileset_owner_coll_dataset',
@@ -114,149 +117,108 @@ class CouchFileset(Fileset):
                'endkey' : [self.owner.group.name, self.owner.name, self['collection_id'], self['dataset']]}, []
             )
         if len(result['rows']) == 0:
-            doc = None
+            return False
         else:
-            doc = result['rows'][0]['value']
-        return
-        
-    @connectToCouch
-    @requireOwner
-    @requireCollection
-    def get(self):
-        """
-        _get_
-        
-        retrieve the fileset from Couch
-        """
-        doc = None
-        if self['fileset_id'] == None:
-            self.getFilesetId()
-            
-        result = self.couchdb.loadView("ACDC", 'fileset_id',
-                     {'startkey' :[self['fileset_id']],
-                       'endkey' : [self['fileset_id']]}, []
-                    )
-        if len(result['rows']) == 0:
-            doc = None
-            return None
-        else:
-            doc = result['rows'][0]['value']
-            self.unpackDoc(doc)
-            return self
-        
-    def unpackDoc(self, doc):
-        """
-        _unpackDoc_
+            self['_id'] = result['rows'][0]['id']
+            return True
 
-        Util to unpack 
-        """
-        leaveAlone = ['fileset_id', 'database', 'url']
-        [self.__setitem__(str(k), str(v)) for k,v in doc[u'fileset'].items() if k not in leaveAlone ]
-        self['fileset_id'] = str(doc[u'_id'])
-        
+
     @connectToCouch
-    @requireOwner
-    @requireCollection
-    @requireFilesetId   
     def drop(self):
         """
         _drop_
-        
+
         Remove this fileset
         """
-        self.getFilesetId()
-        if self['fileset_id'] == None:
-            #document doesnt exist, cant delete
-            return 
-        self.couchdb.delete_doc(self['fileset_id'])
+        if dict.get(self, '_id', None) != None: 
+            for d in self.filelistDocuments():
+                self.couchdb.delete_doc(d)
+            self.couchdb.delete_doc(self['_id'])
+
+
+    @connectToCouch
+    def makeFilelist(self, files = {}):
+        """
+        _makeFilelist_
+        
+        Create a new filelist document containing the id of the fileset
+        """
+        document = CMSCouch.Document(None, {"filelist" : { "fileset_id" : self['_id'], "files": files,
+                                                           "collection_id": self["collection_id"],
+                                                           "task": dict.get(self, "task", None)} })
+        commitInfo = self.couchdb.commitOne( document )
+        document['_id'] = commitInfo[0]['id']
+        document['_rev'] = commitInfo[0]['rev']
+        return document
         
     @connectToCouch
-    @requireOwner
-    @requireCollection
-    @requireFilesetId  
+    def filelistDocuments(self):
+        """
+        _filelistDocuments_
+        
+        Get a list of document ids corresponding to filelists in this fileset
+        """
+        result = self.couchdb.loadView("ACDC", 'fileset_filelist_ids', {'startkey' : [self['_id']], "endkey": [self['_id']]} )
+        docs = [ row[u'value'] for row in result[u'rows'] ]
+        return docs
+        
+    @connectToCouch  
     def add(self, *files):
         """
         _add_
         
-        Add Files to this fileset
-        files should be a list of WMCore.WMBS.File objects
+        Add files to this fileset
         """
-        try:
-            doc = self.couchdb.document(self['fileset_id'])
-        except CMSCouch.CouchNotFoundError as ex:
-            msg = "Document for fileset with ID: %s\n" % self['fileset_id']
-            msg += "not found, cannot add files to fileset"
-            raise RuntimeError, msg
-            
-        
         jsonFiles = {}
         [ jsonFiles.__setitem__(f['lfn'], f.__to_json__(None)) for f in files]
-        doc[u'fileset'][u'files'].update( jsonFiles)
-        
-        self.couchdb.commitOne(doc)
-    
-    @connectToCouch
-    @requireOwner
-    @requireCollection
-    @requireFilesetId 
+        filelist = self.makeFilelist(jsonFiles)
+        return filelist
+
+    @connectToCouch          
     def files(self):
         """
         _files_
-        
+
         return an iterator over the files contained in this document
-        
-        TODO: Look at paging this with a custom iterator object if possible, 
-        for now, just pull the doc and yield the files
-        
+
+
         """
-        try:
-            doc = self.couchdb.document(self['fileset_id'])
-        except CMSCouch.CouchNotFoundError as ex:
-            msg = "Unable to retrieve Couch Document for fileset"
-            msg += str(msg)
-            raise RuntimeError, msg
-        
-        files = doc[u'fileset'][u'files']
-        for d in files.values():
-            yield d
-        
-    @connectToCouch
-    @requireOwner
-    @requireCollection
-    @requireFilesetId  
+        for filelist in self.filelistDocuments():
+            try:
+                doc = self.couchdb.document(filelist)
+            except CMSCouch.CouchNotFoundError as ex:
+                msg = "Unable to retrieve Couch Document for fileset"
+                msg += str(msg)
+                raise RuntimeError, msg
+            
+            files = doc[u'filelist'][u'files']
+            for d in files.values():
+                yield d
+
+    @connectToCouch      
     def fileset(self):
         """
         _fileset_
-        
+    
         Make a WMCore.DataStruct.Fileset instance containing the files in this fileset
-        
+    
         """
         result = DataStructsFileset(self['dataset'])
         pipeline = filePipeline({'fileset' : result, 'run' : makeRun({}) })
         for f in self.files():
             pipeline.send(f)
         return result
-        
-    @connectToCouch
-    @requireOwner
-    @requireCollection
-    @requireFilesetId   
+         
+    @connectToCouch               
     def filecount(self):
         """
-        _filecount_
+        count files in fileset
         
-        Check how many files are in this fileset
-        
+        Todo: Update map/reduce for this & implement
         """
         result = self.couchdb.loadView("ACDC", 'fileset_file_count',
-             {'startkey' :[self['fileset_id']],
-               'endkey' : [self['fileset_id']]}, []
-            )
-        rows = result[u'rows']
-        if len(rows) == 0:
-            msg = "Cant find filecount for document id: %s" %self['fileset_id']
-            raise RuntimeError, msg
-            
-        count = rows[0][u'value']
-        return count
+                                       {'startkey' : [self['_id']], "endkey": [self['_id']]})
+ 
+        return result["rows"][0]["value"]
+         
 

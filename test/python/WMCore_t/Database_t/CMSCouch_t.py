@@ -6,7 +6,7 @@ CouchDB instance, and is not going to work in an automated way just yet - we'll
 need to add Couch as an external, include it in start up scripts etc.
 """
 
-from WMCore.Database.CMSCouch import CouchServer, Document, Database, CouchInternalServerError
+from WMCore.Database.CMSCouch import CouchServer, Document, Database, CouchInternalServerError, CouchNotFoundError
 import random
 import unittest
 import os
@@ -101,6 +101,18 @@ class CMSCouchTest(unittest.TestCase):
     def testWriteReadDocNoID(self):
         doc = {}
 
+    def testReplicate(self):
+        repl_db = self.server.connectDatabase(self.db.name + 'repl')
+
+        doc_id = self.db.commitOne({'foo':123}, timestamp=True, returndocs=True)[0]['id']
+        doc_v1 = self.db.document(doc_id)
+
+        #replicate
+        self.server.replicate(self.db.name, repl_db.name)
+
+        self.assertEqual(self.db.document(doc_id), repl_db.document(doc_id))
+        self.server.deleteDatabase(repl_db.name)
+
     def testSlashInDBName(self):
         """
         Slashes are a valid character in a database name, and are useful as it
@@ -172,6 +184,77 @@ class CMSCouchTest(unittest.TestCase):
         doc = self.db.addAttachment(doc['id'], doc['rev'], attachment5, checksum=attachment5_md5)
 
         self.assertRaises(CouchInternalServerError, self.db.addAttachment, doc['id'], doc['rev'], attachment6, checksum='123')
+
+    def testRevisionHandling(self):
+        # This test won't work from an existing database, conflicts will be preserved, so
+        # ruthlessly remove the databases to get a clean slate.
+        try:
+            self.server.deleteDatabase(self.db.name)
+        except CouchNotFoundError:
+            pass # Must have been deleted already
+
+        try:
+            self.server.deleteDatabase(self.db.name + 'repl')
+        except CouchNotFoundError:
+            pass # Must have been deleted already
+
+        # I'm going to create a conflict, so need a replica db
+        self.db = self.server.connectDatabase(self.db.name)
+        repl_db = self.server.connectDatabase(self.db.name + 'repl')
+
+        doc_id = self.db.commitOne({'foo':123}, timestamp=True, returndocs=True)[0]['id']
+        doc_v1 = self.db.document(doc_id)
+
+        #replicate
+        self.server.replicate(self.db.name, repl_db.name)
+
+        doc_v2 = self.db.document(doc_id)
+        doc_v2['bar'] = 456
+        doc_id_rev2 = self.db.commitOne(doc_v2, returndocs=True)[0]
+        doc_v2 = self.db.document(doc_id)
+
+        #now update the replica
+        conflict_doc = repl_db.document(doc_id)
+        conflict_doc['bar'] = 101112
+        repl_db.commitOne(conflict_doc)
+
+        #replicate, creating the conflict
+        self.server.replicate(self.db.name, repl_db.name)
+        conflict_view = {'map':"function(doc) {if(doc._conflicts) {emit(doc._conflicts, null);}}"}
+        data = repl_db.post('/%s/_temp_view' % repl_db.name, conflict_view)
+
+        # Should have one conflict in the repl database
+        self.assertEquals(data['total_rows'], 1)
+        # Should have no conflicts in the source database
+        self.assertEquals(self.db.post('/%s/_temp_view' % self.db.name, conflict_view)['total_rows'], 0)
+        self.assertTrue(repl_db.documentExists(data['rows'][0]['id'], rev=data['rows'][0]['key'][0]))
+
+        repl_db.delete_doc(data['rows'][0]['id'], rev=data['rows'][0]['key'][0])
+        data = repl_db.post('/%s/_temp_view' % repl_db.name, conflict_view)
+
+        self.assertEquals(data['total_rows'], 0)
+        self.server.deleteDatabase(repl_db.name)
+
+        #update it again
+        doc_v3 = self.db.document(doc_id)
+        doc_v3['baz'] = 789
+        doc_id_rev3 = self.db.commitOne(doc_v3, returndocs=True)[0]
+        doc_v3 = self.db.document(doc_id)
+
+        #test that I can pull out an old revision
+        doc_v1_test = self.db.document(doc_id, rev=doc_v1['_rev'])
+        self.assertEquals(doc_v1, doc_v1_test)
+
+        #test that I can check a revision exists
+        self.assertTrue(self.db.documentExists(doc_id, rev=doc_v2['_rev']))
+
+        self.assertFalse(self.db.documentExists(doc_id, rev='1'+doc_v2['_rev']))
+
+        #why you shouldn't rely on rev
+        self.db.compact(blocking=True)
+        self.assertFalse(self.db.documentExists(doc_id, rev=doc_v1['_rev']))
+        self.assertFalse(self.db.documentExists(doc_id, rev=doc_v2['_rev']))
+        self.assertTrue(self.db.documentExists(doc_id, rev=doc_v3['_rev']))
 
 if __name__ == "__main__":
     unittest.main()

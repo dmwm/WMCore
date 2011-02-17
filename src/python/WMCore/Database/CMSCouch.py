@@ -250,18 +250,25 @@ class Database(CouchDBRequests):
             self.loadView(design, view, {'limit': 0})
         return retval
 
-    def document(self, id):
+    def document(self, id, rev = None):
         """
-        Load a document identified by id
+        Load a document identified by id. You can specify a rev to see an older revision
+        of the document. This **should only** be used when resolving conflicts, relying
+        on CouchDB revisions for document history is not safe, as any compaction will
+        remove the older revisions.
         """
-        return Document(dict=self.get('/%s/%s' % (self.name,
-                                                  urllib.quote_plus(id))))
+        uri = '/%s/%s' % (self.name, urllib.quote_plus(id))
+        if rev:
+            uri += '?' + urllib.urlencode({'rev' : rev})
+        return Document(id = id, dict=self.get(uri))
 
-    def documentExists(self, id):
+    def documentExists(self, id, rev = None):
         """
-        Check if a document exists by ID
+        Check if a document exists by ID. If specified check that the revision rev exists.
         """
         uri = "/%s/%s" % (self.name, urllib.quote_plus(id))
+        if rev:
+            uri += '?' + urllib.urlencode({'rev' : rev})
         docExists = False
         try:
             self.makeRequest(uri, {}, 'HEAD')
@@ -269,11 +276,11 @@ class Database(CouchDBRequests):
         except:
             return False
 
-    def delete_doc(self, id):
+    def delete_doc(self, id, rev = None):
         """
-        Immediately delete a document identified by id
+        Immediately delete a document identified by id and rev.
         """
-        doc = self.document(id)
+        doc = self.document(id, rev)
         doc.delete()
         self.commitOne(doc)
 
@@ -548,7 +555,7 @@ class CouchServer(CouchDBRequests):
             check_name(destination)
           else:
             check_server_url(destination)
-          data={"source":source,"target":destination}
+        data={"source":source,"target":destination}
         #There must be a nicer way to do this, but I've not had coffee yet...
         if continuous: data["continuous"] = continuous
         if create_target: data["create_target"] = create_target

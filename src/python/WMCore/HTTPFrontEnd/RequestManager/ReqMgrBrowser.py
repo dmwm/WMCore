@@ -190,7 +190,7 @@ class ReqMgrBrowser(WebAPI):
         d['RequestWorkflow'] = request['RequestWorkflow']
         d['Site Whitelist'] = task.siteWhitelist()
         d['Site Blacklist'] = task.siteBlacklist()
-        if d.has_key('ProdConfigCacheID') and d['ProdConfigCacheID'] != "":
+        if d.get('ProdConfigCacheID', '') != '':
             docId = d['ProdConfigCacheID']        
         assignments = GetRequest.getAssignmentsByName(requestName)
         adminHtml = statusMenu(requestName, request['RequestStatus']) \

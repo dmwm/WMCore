@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_FileBasedRequest_
+_DataRequest_
 
 
 Single input processing request split by file
@@ -16,9 +16,9 @@ from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
 from WMCore.RequestManager.RequestMaker.Registry import registerRequestType
 
 
-class FileBasedRequest(RequestMakerInterface):
+class DataProcessingRequest(RequestMakerInterface):
     """
-    _FileBasedRequest_
+    _DataRequest_
 
     RequestMaker to create data processing requests and workflows
 
@@ -28,9 +28,9 @@ class FileBasedRequest(RequestMakerInterface):
 
 
 
-class FileBasedSchema(RequestSchema):
+class DataProcessingSchema(RequestSchema):
     """
-    _FileBased_
+    _Data_
 
     Data Required for a standard cmsRun dataset processing request that
     splits the input by file
@@ -44,7 +44,7 @@ class FileBasedSchema(RequestSchema):
         self.setdefault("GlobalTag", None)
         self.setdefault("InputDataset", None)
         self.setdefault("DBSURL", None)
-
+        self.setdefault("Multicore", None)
         self.validateFields = [
             "CMSSWVersion",
             "ProdConfigCacheID",
@@ -54,6 +54,6 @@ class FileBasedSchema(RequestSchema):
 
 
 
-registerRequestType("FileProcessing", FileBasedRequest, FileBasedSchema)
+registerRequestType("DataProcessing", DataProcessingRequest, DataProcessingSchema)
 
 

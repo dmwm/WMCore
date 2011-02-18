@@ -1,13 +1,13 @@
 import WMCore_t.RequestManager_t.FakeRequests as FakeRequests
 import WMCore.RequestManager.RequestMaker.Processing.RecoRequest
 import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest
-import WMCore.RequestManager.RequestMaker.Processing.FileBasedRequest
+import WMCore.RequestManager.RequestMaker.Processing.DataProcessingRequest
 import WMCore.RequestManager.RequestMaker.Production.MonteCarloRequest
 import WMCore.WMSpec.StdSpecs.ReReco as ReRecoSpec
 import WMCore.WMSpec.StdSpecs.RelValMC as RelValMCSpec
 import WMCore.WMSpec.StdSpecs.StoreResults as StoreResultsSpec
 import WMCore.WMSpec.StdSpecs.MonteCarlo as MonteCarloSpec
-
+import WMCore.WMSpec.StdSpecs.DataProcessing as DataProcessingSpec
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
 
 import unittest
@@ -19,6 +19,8 @@ class makeWorkload_t(unittest.TestCase):
     def do(self, name, schema):
         schema.update(self.baseSchema)
         schema['RequestName'] = name
+        schema['CouchDBName'] = 'reqmgr_config_cache'
+        schema['ProdConfigCacheID'] = '0582a460e28d54ce6b8f1a14845be0da'
         maker = retrieveRequestMaker(name)
         request = maker(schema)
 
@@ -33,6 +35,9 @@ class makeWorkload_t(unittest.TestCase):
 
     def testStoreResults(self):
         self.do('StoreResults', StoreResultsSpec.getTestArguments())
+
+    def testDataProcessing(self):
+        self.do('DataProcessing', DataProcessingSpec.getTestArguments())
 
     def tearDown(self):
         pass

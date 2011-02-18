@@ -62,18 +62,23 @@ Software Release: <select name="CMSSWVersion">
 
 #def configBlock($radioName, $scenarioName, $cacheName)
 Configuration <br>
-  <input type="radio" NAME=$radioName value="scenario" /> Scenario
+  <input type="radio" name=$radioName value="scenario" /> Scenario
     <select name="Scenario">
-      <option selected> pp
-      <option> cosmics
-      <option> hcalnzs
-      <option> preprodmc</option>
-      <option> prodmc </option>
-      <option> relvalmc </option>
-      <option> relvalmcfs </option>
+      <option selected> pp</option>
+      <option>cosmics</option>
+      <option>hcalnzs</option>
+      <option>preprodmc</option>
+      <option>prodmc</option>
+      <option>relvalmc</option>
+      <option>relvalmcfs</option>
     </select><br/>
-  <input type="radio" NAME=$radioName value="couchDB" /> CouchDB ID
-    <input TYPE=TEXT" name="ProdConfigCacheID" SIZE=80 />
+  <input type="radio" name=$radioName value="couchDB" /> CouchDB ID
+    <!--<input type="text" name="ProdConfigCacheID" size=80 />-->
+    <select name=$cacheName>
+    #for $doc in $alldocs
+      <option>$doc</option>
+    #end for
+    </select>
   <br/>
 
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
@@ -91,9 +96,9 @@ DBS: <!--input type="text" name="dbs" value="http://cmsdbsprod.cern.ch/cms_dbs_p
 #end def
 
 #def skimBlock($skimNum)
-Skim Name: <input type="text", name="SkimName$skimNum" SIZE=20 value="skim"$skimNum/>
-Skim Input: <input type="text", name="SkimInput$skimNum" SIZE=20 value="output"/><BR/>
-Skim Config: <input type="text" name="SkimConfig$skimNum" VALUE=$defaultSkimConfig size=80/><br>
+Skim Name: <input type="text", name="SkimName$skimNum" size=20 value="skim"$skimNum/>
+Skim Input: <input type="text", name="SkimInput$skimNum" size=20 value="output"/><BR/>
+Skim Config: <input type="text" name="SkimConfig$skimNum" value=$defaultSkimConfig size=80/><br>
 #end def
 
 #def moreSkims($firstSkim)
@@ -109,8 +114,8 @@ function addSkim() {
   var newdiv = document.createElement('div');
   var divIdName = 'my'+num+'Div';
   newdiv.setAttribute('id',divIdName);
-  newdiv.innerHTML = 'Skim Name: <input type="text", name="SkimName'+num+'" SIZE=20 value="skim'+num+'"/><br>' 
-  + ' Skim Input '+num+': <input type="text", name="SkimInput'+num+'" SIZE=40 value="output"/><BR/>' 
+  newdiv.innerHTML = 'Skim Name: <input type="text", name="SkimName'+num+'" size=20 value="skim'+num+'"/><br>' 
+  + ' Skim Input '+num+': <input type="text", name="SkimInput'+num+'" size=40 value="output"/><BR/>' 
   +'Skim Config ' + num +': <input type="text" name="SkimConfig'+num+'"/> <br>'
   ni.appendChild(newdiv);
 }
@@ -138,7 +143,7 @@ Emulator:
 
 
 #def trailerBlock($requestType)
-    <input type="hidden" name="RequestType" VALUE=$requestType />
+    <input type="hidden" name="RequestType" value=$requestType />
      <p><input type="submit" value="Submit"/></p></form>
 #end def
 
@@ -148,7 +153,7 @@ Emulator:
         <li><a href="#mc"><em>Monte Carlo</em></a></li>
         <li><a href="#relvalmc"><em>RelVal MC</em></a></li>
         <li><a href="#storeResults"><em>StoreResults</em></a></li>
-        <li><a href="#generic"><em>Generic</em></a></li>
+        <li><a href="#DataProcessing"><em>DataProcessing</em></a></li>
     </ul>
     <div class="yui-content">
         <div id="rereco">
@@ -187,14 +192,15 @@ Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
             $ioBlock
             $trailerBlock("StoreResults")
         </div>
-        <div id="generic">
+        <div id="DataProcessing">
             $headerBlock
             $softwareBlock
 # of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
+Multicore: <input type="text" name="Multicore" size=2 value="" /> <br/>
             $configBlock("inputMode", "Scenario", "ProdConfigCacheID")
             $ioBlock
             $runBlockBlock
-            $trailerBlock("FileProcessing")
+            $trailerBlock("DataProcessing")
         </div>
     </div>
 </div>

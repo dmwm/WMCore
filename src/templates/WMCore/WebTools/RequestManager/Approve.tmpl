@@ -45,6 +45,7 @@ font-family: Arial;
 <form action="handleApprovalPage" method="POST">
 
 <div id="actions">
+<a href='./?all=1'>Select All</a><br/>
 Actions:<select name="action">
   <option>Approve</option>
   <option>Reject</option>
@@ -65,7 +66,7 @@ Actions:<select name="action">
 </tr>
 
 #set $checked = ''
-#if len($requests) == 1
+#if len($requests) == 1 or $all
   #set $checked = 'CHECKED'
 #end if
 

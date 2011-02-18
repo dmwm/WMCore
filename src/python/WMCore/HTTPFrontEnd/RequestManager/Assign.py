@@ -64,12 +64,12 @@ class Assign(WebAPI):
                  assignments=assignments, sites=self.sites, mergedLFNBases = self.mergedLFNBases[requestType])
 
     @cherrypy.expose    
-    def index(self):
+    def index(self, all=0):
         """ Main page """
         # returns dict of  name:id
         requests = requestsWithStatus('assignment-approved')
         teams = ProdManagement.listTeams()
-        return self.templatepage("Assign", requests=requests, teams=teams,
+        return self.templatepage("Assign", all=all, requests=requests, teams=teams,
                  assignments=[], sites=self.sites, mergedLFNBases = self.allMergedLFNBases)
 
     @cherrypy.expose

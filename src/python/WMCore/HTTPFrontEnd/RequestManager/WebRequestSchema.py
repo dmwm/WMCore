@@ -11,6 +11,7 @@ from httplib import HTTPException
 import cherrypy
 import time
 from WMCore.WebTools.WebAPI import WebAPI
+import WMCore.Database.CMSCouch
 import threading
 
 
@@ -35,6 +36,18 @@ class WebRequestSchema(WebAPI):
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
 
+    def allDocs(self):
+        server = WMCore.Database.CMSCouch.CouchServer(self.couchUrl)
+        database = server.connectDatabase(self.configDBName)
+        docs = database.allDocs()
+        result = []
+        for row in docs["rows"]:
+           if row["id"].startswith('user') or row["id"].startswith('group'):
+               pass
+           else:
+               result.append(row["id"]) 
+        return result
+
     @cherrypy.expose
     def index(self):
         """ Main web page for creating requests """
@@ -48,10 +61,12 @@ class WebRequestSchema(WebAPI):
         if groups == []:
             return "User " + self.requestor + " is not in any groups.  Contact a ReqMgr administrator."
         return self.templatepage("WebRequestSchema", yuiroot=self.yuiroot,
-                                 requestor=self.requestor,
-                                 groups=groups, 
-                                 versions=self.versions, defaultVersion=self.cmsswVersion,
-                                 defaultSkimConfig=self.defaultSkimConfig)
+            requestor=self.requestor,
+            groups=groups, 
+            versions=self.versions, 
+            alldocs = self.allDocs(),
+            defaultVersion=self.cmsswVersion,
+            defaultSkimConfig=self.defaultSkimConfig)
 
     @cherrypy.expose
     def makeSchema(self, **kwargs):
@@ -66,8 +81,8 @@ class WebRequestSchema(WebAPI):
                                  time.localtime(time.time()))
 
         if schema.has_key('RequestString') and schema['RequestString'] != "":
-            schema['RequestName'] = "%s_%s_%s" % (self.requestor, schema['RequestString'],
-                                                  currentTime)
+            schema['RequestName'] = "%s_%s_%s" % (
+                self.requestor, schema['RequestString'], currentTime)
         else:
             schema['RequestName'] = "%s_%s" % (self.requestor, currentTime)
             
@@ -101,14 +116,12 @@ class WebRequestSchema(WebAPI):
             schema["SkimConfigs"].append(d)
             skimNumber += 1
 
-        if kwargs.has_key("RunWhitelist"):
-            schema["RunWhitelist"] = parseRunList(kwargs["RunWhitelist"])
-        if kwargs.has_key("RunBlacklist"):
-            schema["RunBlacklist"] = parseRunList(kwargs["RunBlacklist"])
-        if kwargs.has_key("BlockWhitelist"):
-            schema["BlockWhitelist"] = parseBlockList(kwargs["BlockWhitelist"])
-        if kwargs.has_key("BlockBlacklist"):
-            schema["BlockBlacklist"] = parseBlockList(kwargs["BlockBlacklist"])
+        for runlist in ["RunWhitelist", "RunBlacklist"]:
+            if runlist in kwargs:
+                schema[runlist] = parseRunList(kwargs[runlist])
+        for blocklist in ["BlockWhitelist", "BlockBlacklist"]:
+            if blocklist in kwargs:
+                schema[blocklist] = parseBlockList(kwargs[blocklist])
 
         baseURL = cherrypy.request.base
         senderOpts = {'req_cache_path':self.componentDir}

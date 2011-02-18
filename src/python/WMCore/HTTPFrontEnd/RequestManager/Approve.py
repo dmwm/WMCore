@@ -27,10 +27,10 @@ class Approve(WebAPI):
         myThread.dbi = self.dbi
 
     @cherrypy.expose
-    def index(self):
+    def index(self, all=0):
         """ Page for approving requests """
         requests = requestsWhichCouldLeadTo('assignment-approved')
-        return self.templatepage("Approve", requests=requests)
+        return self.templatepage("Approve", requests=requests, all=all)
 
     @cherrypy.expose
     def handleApprovalPage(self, **kwargs):

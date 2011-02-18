@@ -131,6 +131,8 @@ class DataCollectionService(CouchService):
             fileset['metadata'] = metadata
             fileset.create()
             filesetsMade.append(filesetName)
+
+        return collection
         
     @CouchUtils.connectToCouch
     def yieldDataCollections(self):
@@ -235,7 +237,7 @@ class DataCollectionService(CouchService):
                 cFileset = CouchFileset(database = self.database, url = self.url, _id = fileset[u'_id'])
                 cFileset.setCollection(coll)
                 cFileset['task'] = taskName
-                cFileset.add(*job['input_files'])
+                cFileset.add(files = job['input_files'], mask = job['mask'])
 
 
     @CouchUtils.connectToCouch
@@ -315,7 +317,55 @@ class DataCollectionService(CouchService):
             chunkFiles.append(newFile)
 
         return chunkFiles
-        
-    
 
+    @CouchUtils.connectToCouch
+    def getLumiWhitelist(self, collectionID, taskName):
+        """
+        _getLumiWhitelist_
 
+        Query ACDC for all of the files in the given collection and task.
+        Generate a run and lumi whitelist for the given files with the following
+        format:
+          {"run1": [[lumi1, lumi4], [lumi6, lumi10]],
+           "run3": [lumi5, lumi10]}
+
+        Note that the run numbers are strings.
+        """
+        results = self.couchdb.loadView("ACDC", "fileset_files",
+                                        {"startkey": [collectionID, taskName],
+                                         "endkey": [collectionID, taskName, {}]}, [])
+
+        allRuns = {}
+        whiteList = {}
+
+        for result in results["rows"]:
+            for run in result["value"]["runs"]:
+                if not allRuns.has_key(run["run_number"]):
+                    allRuns[run["run_number"]] = []
+                allRuns[run["run_number"]].extend(run["lumis"])
+
+        for run in allRuns.keys():
+            lumis = []
+            lumis.extend(set(allRuns[run]))
+            lumis.sort()
+
+            whiteList[str(run)] = []
+            lastLumi = None
+            currentSet = None
+
+            while len(lumis) > 0:
+                currentLumi = lumis.pop(0)
+                if currentLumi - 1 != lastLumi:
+                    if currentSet == None:
+                        currentSet = [currentLumi]
+                    else:
+                        currentSet.append(lastLumi)
+                        whiteList[str(run)].append(currentSet)
+                        currentSet = [currentLumi]
+
+                lastLumi = currentLumi
+
+            currentSet.append(lastLumi)
+            whiteList[str(run)].append(currentSet)
+            
+        return whiteList

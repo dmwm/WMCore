@@ -164,7 +164,7 @@ class JobFactory(WMObject):
                     job.save()
             self.subscription.save()
 
-        gc.collect()
+        #gc.collect()
         return
 
     def sortByLocation(self):

@@ -57,7 +57,7 @@ class Mask(WMBSBase, WMMask):
 
         maskList = []
         for run in self['runAndLumis'].keys():
-            for lumi in self['runAndLumis'][run]:
+            for lumiPair in self['runAndLumis'][run]:
                 tmpMask = WMMask()
                 tmpMask['jobID']      = jobID
                 tmpMask['inclusivemask']  = self['inclusivemask']
@@ -65,8 +65,8 @@ class Mask(WMBSBase, WMMask):
                 tmpMask['LastEvent']  = self['LastEvent']
                 tmpMask['FirstRun']   = run
                 tmpMask['LastRun']    = run
-                tmpMask['FirstLumi']  = lumi
-                tmpMask['LastLumi']   = lumi
+                tmpMask['FirstLumi']  = lumiPair[0]
+                tmpMask['LastLumi']   = lumiPair[1]
                 maskList.append(tmpMask)
 
 
@@ -121,14 +121,14 @@ class Mask(WMBSBase, WMMask):
 
         If multiple masks, combine them all
         """
-
-
         existingTransaction = self.beginTransaction()
 
         maskLoadAction = self.daofactory(classname = "Masks.Load")
 
         jobMask = maskLoadAction.execute(jobID, conn = self.getDBConn(),
                                          transaction = self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
 
         # Now we get a bit weird.
         # We assemble things into a list
@@ -164,12 +164,8 @@ class Mask(WMBSBase, WMMask):
             blankRunLumi = False
             if firstRun == lastRun:
                 blankRunLumi = True
-                if firstLumi == lastLumi:
-                    self.addRunAndLumis(run = firstRun, lumis = [firstLumi])
-                else:
-                    self.addRunAndLumis(run = firstRun, lumis = range(firstLumi, lastLumi))
+                self.addRunAndLumis(run = firstRun, lumis = [firstLumi, lastLumi])
 
-            if blankRunLumi:
                 # Then all the run and lumi info is in the RunAndLumis dict
                 mask['FirstRun']  = None
                 mask['LastRun']   = None
@@ -177,5 +173,5 @@ class Mask(WMBSBase, WMMask):
                 mask['LastLumi']  = None
             
         
-
-        self.commitTransaction(existingTransaction)
+        return
+        

@@ -12,7 +12,7 @@ __all__ = []
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Load(DBFormatter):
-    sql = """SELECT FirstEvent, LastEvent, FirstLumi, LastLumi, FirstRun,
+    sql = """SELECT DISTINCT FirstEvent, LastEvent, FirstLumi, LastLumi, FirstRun,
              LastRun FROM wmbs_job_mask WHERE job = :jobid"""
 
     def format(self, results):

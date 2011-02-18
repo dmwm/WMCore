@@ -123,7 +123,7 @@ class Mask(dict):
         if not run in self['runAndLumis'].keys():
             self['runAndLumis'][run] = []
 
-        self['runAndLumis'][run].extend(lumis)
+        self['runAndLumis'][run].append([min(lumis), max(lumis)])
 
         return
 

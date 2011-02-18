@@ -163,12 +163,31 @@ class CouchFileset(Fileset):
         return docs
         
     @connectToCouch  
-    def add(self, *files):
+    def add(self, files, mask):
         """
         _add_
         
         Add files to this fileset
         """
+        maskLumis = mask.getRunAndLumis()
+        if maskLumis != {}:
+            for f in files:
+                for r in f['runs']:
+                    newRun = Run()
+                    if not r.run in maskLumis.keys():
+                        # Then it's not in there
+                        continue
+                    newRun.run = r.run
+                    for lumi in r.lumis:
+                        if lumi in maskLumis[r.run]:
+                            # Then we add it
+                            newRun.lumis.append(lumi)
+                    f['runs'].remove(r)
+                    if len(newRun.lumis) > 0:
+                        # Add it
+                        f['runs'].append(newRun)
+                            
+                            
         jsonFiles = {}
         [ jsonFiles.__setitem__(f['lfn'], f.__to_json__(None)) for f in files]
         filelist = self.makeFilelist(jsonFiles)

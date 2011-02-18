@@ -157,6 +157,8 @@ class Job(WMBSBase, WMJob):
                                          transaction = self.existingTransaction())
 
         self.update(results)
+        if self['mask']['FirstRun'] != None and self['mask']['FirstRun'] == self['mask']['LastRun']:
+            self['mask'].load(jobID = self['id'])
         return
 
     def loadData(self):

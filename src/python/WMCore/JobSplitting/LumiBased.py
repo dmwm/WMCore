@@ -11,13 +11,54 @@ a set of jobs based on lumi sections
 
 
 import operator
+import logging
 import threading
+import traceback
 
 from WMCore.DataStructs.Run import Run
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset     import Fileset
 from WMCore.DAOFactory              import DAOFactory
+
+
+def isGoodLumi(goodRunList, run, lumi):
+    """
+    _isGoodLumi_
+
+    Checks to see if runs match a run-lumi combination in the goodRunList
+    This is a pain in the ass.
+    """
+    if goodRunList == None or goodRunList == {}:
+        return True
+    
+    if not isGoodRun(goodRunList = goodRunList, run = run):
+        return False
+
+    for runRange in goodRunList.get(str(run), [[]]):
+        # For each run range, which should have 2 elements
+        if not len(runRange) == 2:
+            # Then we're very confused and should exit
+            logging.error("Invalid run range!  Failing this lumi!")
+        elif runRange[0] <= lumi and runRange[1] >= lumi:
+            # If a lumi is within a particular runRange, return true.
+            return True
+    return False
+
+def isGoodRun(goodRunList, run):
+    """
+    _isGoodRun_
+
+    Tell if this is a good run
+    """
+    if goodRunList == None or goodRunList == {}:
+        return True
+
+    if str(run) in goodRunList.keys():
+        # @e can find a run
+        return True
+
+    return False
 
 class LumiBased(JobFactory):
     """
@@ -38,7 +79,29 @@ class LumiBased(JobFactory):
         myThread = threading.currentThread()
 
         lumisPerJob  = int(kwargs.get('lumis_per_job', 1))
-        splitFiles   = bool(kwargs.get('split_files_between_job', False))
+        splitOnFile  = bool(kwargs.get('split_files_between_job', False))
+        goodLumiURL  = kwargs.get('goodLumiListURL', None)
+        splitOnRun   = kwargs.get('splitOnRun', True)
+
+        goodRunList = {}
+        # If we have runLumi info, we need to load it from couch
+        if goodLumiURL:
+            # WARNING:  This is a piece of crap
+            try:
+                from WMCore.ACDC.DataCollectionService import DataCollectionService
+                couchURL = kwargs.get('couchURL')
+                couchDB  = kwargs.get('couchDB')
+                task     = kwargs.get('task')
+                DCS      = DataCollectionService(url = couchURL, database = couchDB)
+                goodRunList = DCS.getLumiWhitelist(collectionID = goodLumiURL,
+                                                   taskName = task)
+            except Exception, ex:
+                msg =  "Exception while trying to load goodRunList\n"
+                msg =  "Ditching goodRunList\n"
+                msg += str(ex)
+                msg += str(traceback.format_exc())
+                logging.error(msg)
+                goodRunList = {}
 
         lDict = self.sortByLocation()
         locationDict = {}
@@ -76,120 +139,62 @@ class LumiBased(JobFactory):
 
 
 
-        if splitFiles:
-            self.withFileSplitting(lumisPerJob = lumisPerJob,
-                                   locationDict = locationDict)
-        else:
-            self.noFileSplitting(lumisPerJob = lumisPerJob,
-                                 locationDict = locationDict)
+        #Split files into jobs with each job containing
+        #EXACTLY lumisPerJob number of lumis (except for maybe the last one)
 
-        return
-        
-
-                
-
-
-    def noFileSplitting(self, lumisPerJob, locationDict):
-        """
-        Split files into jobs by lumi without splitting files
-
-        Will create jobs with AT LEAST that number of lumis
-
-        if lumisPerJob = 3:
-        2 files of 3 lumis each  = 2 jobs
-        2 files of 2 lumis each  = 1 job
-        2 files of 1 lumi each   = 1 job
-        10 files of 1 lumi each  = 4 jobs
-        """
-
-        totalJobs    = 0
+        totalJobs  = 0
+        firstRun   = None
+        lastLumi   = None
+        firstLumi  = None
+        stopJob    = True
+        lastRun    = None
+        lumisInJob = 0
         for location in locationDict.keys():
 
-            # Create a new jobGroup
+            # For each location, we need a new jobGroup
             self.newGroup()
-
-            # Start this out high so we immediately create a new job
-            lumisInJob  = lumisPerJob + 100
-
-            # Hold the last lumi run
-            lastRun    = None
-
-            for f in locationDict[location]:
-                fileLength = sum([ len(run) for run in f['runs']])
-                if fileLength == 0:
-                    # Then we have no lumis
-                    # BORING.  Go home
-                    continue
-
-                fileRuns = list(f['runs'])
-                if lumisInJob >= lumisPerJob:
-                    # Then we need to close out this job
-                    # And start a new job
-                    if lastRun:
-                        self.currentJob["mask"]['LastRun']   = lastRun.run
-                        self.currentJob["mask"]['LastLumi']  = lastRun.lumis[-1]
-                    self.newJob(name = self.getJobName(length=totalJobs))
-                    firstRun = fileRuns[0]
-                    self.currentJob['mask']['FirstRun']  = firstRun.run
-                    self.currentJob['mask']['FirstLumi'] = firstRun.lumis[0]
-                    lumisInJob = 0
-                    totalJobs += 1
-
-
-                # Actually add the file to the job
-                self.currentJob.addFile(f)
-                lumisInJob += fileLength
-                lastRun = fileRuns[-1]
-
-            if self.currentJob:
-                # If we get to the end of the job, attach the last runs and lumis
-                if lastRun:
-                    self.currentJob["mask"]['LastRun']   = lastRun.run
-                    self.currentJob["mask"]['LastLumi']  = lastRun.lumis[-1]
-
-        return
-
-
-    def withFileSplitting(self, lumisPerJob, locationDict):
-        """
-        Split files into jobs allowing one file to be in multiple jobs
-
-        Creates jobs with EXACTLY lumisPerJob lumis
-        """
-
-
-        totalJobs = 0
-        lastLumi = None
-        lastRun = None
-        for location in locationDict.keys():
-
-            # Create a new jobGroup
-            self.newGroup()
-
-            # Start this out so we immediately create a new job
-            lumisInJob  = lumisPerJob
-
+            stopJob = True
             for f in locationDict[location]:
 
-                if self.currentJob and not lumisInJob == lumisPerJob:
-                        # Because merging can't handle multiple files in a job
-                        # We have to start a new job when we get a new lumi
-                        lumisInJob = lumisPerJob  # Do this so it auto-closes
+                if splitOnFile:
+                    # Then we have to split on every boundary
+                    stopJob = True
 
                 for run in f['runs']:
-                    
+                    if not isGoodRun(goodRunList = goodRunList, run = run.run):
+                        # Then skip this one
+                        continue
+                    firstLumi = None
+
+                    if splitOnRun and run.run != lastRun:
+                        # Then we need to kill this job and get a new one
+                        stopJob = True
+
+                    # Now loop over the lumis
                     for lumi in run:
-                        # Now we're running through lumis
-                        
+                        if not isGoodLumi(goodRunList, run = run.run, lumi = lumi):
+                            # Kill the chain of good lumis
+                            # Skip this lumi
+                            if firstLumi != None and firstLumi != lumi:
+                                self.currentJob['mask'].addRunAndLumis(run = run.run,
+                                                                       lumis = [firstLumi, lastLumi])
+                                firstLumi = None
+                                lastLumi  = None
+                            continue
+                        if firstLumi == None:
+                            # Set the first lumi in the run
+                            firstLumi = lumi
+
+                        # If we're full, end the job
                         if lumisInJob == lumisPerJob:
-                            # Then we need to close out this job
-                            # And start a new job
-                            if lastRun != None and lastLumi != None:
-                                self.currentJob["mask"]['LastRun']   = lastRun
-                                self.currentJob["mask"]['LastLumi']  = lastLumi
+                            stopJob = True
+                        # Actually do the new job creation
+                        if stopJob:
+                            if firstLumi != None and lastLumi != None and lastRun != None:
+                                self.currentJob['mask'].addRunAndLumis(run = lastRun,
+                                                                       lumis = [firstLumi, lastLumi])
                             self.newJob(name = self.getJobName(length=totalJobs))
-                            self.currentJob['mask']['FirstRun']  = run.run
-                            self.currentJob['mask']['FirstLumi'] = lumi
+                            firstLumi = lumi
                             lumisInJob = 0
                             totalJobs += 1
 
@@ -197,19 +202,21 @@ class LumiBased(JobFactory):
                             self.currentJob.addFile(f)
 
                         lumisInJob += 1
-
                         lastLumi = lumi
+                        stopJob = False
                         lastRun = run.run
-
-            if self.currentJob:
-                if lastRun and lastLumi:
-                    self.currentJob["mask"]['LastRun']   = lastRun
-                    self.currentJob["mask"]['LastLumi']  = lastLumi
-                                
-                        
-
+                    
+                    if firstLumi != None and lastLumi != None:
+                        # Add this run to the mask
+                        self.currentJob['mask'].addRunAndLumis(run = run.run,
+                                                               lumis = [firstLumi, lastLumi])
+                        firstLumi = None
+                        lastLumi  = None
 
         return
+                    
+
+
 
 
 

@@ -416,11 +416,12 @@ def makeJobTweak(job):
     runs = mask.getRunAndLumis()
     lumisToProcess = []
     for run in runs.keys():
-        lumis = runs[run]
-        if len(lumis) < 1:
-            # Do nothing
-            continue
-        lumisToProcess.append("%s:%s-%s:%s" % (run, lumis[0], run, lumis[-1]))
+        lumiPairs = runs[run]
+        for lumiPair in lumiPairs:
+            if len(lumiPair) != 2:
+                # Do nothing
+                continue
+            lumisToProcess.append("%s:%s-%s:%s" % (run, lumiPair[0], run, lumiPair[1]))
 
     result.addParameter("process.source.lumisToProcess", lumisToProcess)
                         

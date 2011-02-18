@@ -1181,8 +1181,8 @@ class JobTest(unittest.TestCase):
 
         runs = loadJob['mask'].getRunAndLumis()
         self.assertEqual(len(runs), 2)
-        self.assertEqual(runs[100], [101, 102])
-        self.assertEqual(runs[200], [201, 202])
+        self.assertEqual(runs[100], [[101, 102]])
+        self.assertEqual(runs[200], [[201, 202]])
         
 
 if __name__ == "__main__":

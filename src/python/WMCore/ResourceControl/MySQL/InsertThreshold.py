@@ -22,19 +22,19 @@ class InsertThreshold(DBFormatter):
                   site_id = (SELECT id FROM wmbs_location WHERE site_name = :sitename) AND
                   sub_type_id = (SELECT id FROM wmbs_sub_types WHERE name  = :tasktype)"""
 
-    updSQL = """UPDATE rc_threshold SET max_slots = :maxslots
+    updSQL = """UPDATE rc_threshold SET max_slots = :maxslots, priority = :priority
                 WHERE site_id = (SELECT id FROM wmbs_location WHERE site_name = :sitename) AND
                       sub_type_id = (SELECT id FROM wmbs_sub_types WHERE name  = :tasktype)"""
     
-    addSQL = """INSERT INTO rc_threshold (site_id, sub_type_id, max_slots) VALUES (
+    addSQL = """INSERT INTO rc_threshold (site_id, sub_type_id, max_slots, priority) VALUES (
                  (SELECT id FROM wmbs_location WHERE site_name = :sitename),
                  (SELECT id FROM wmbs_sub_types WHERE name  = :tasktype),
-                 :maxslots)"""
+                 :maxslots, :priority)"""
 
-    def execute(self, siteName, taskType, maxSlots, conn = None,
+    def execute(self, siteName, taskType, maxSlots, priority = 1, conn = None,
                 transaction = False):
         binds = {"sitename": siteName, "tasktype": taskType,
-                 "maxslots": maxSlots}
+                 "maxslots": maxSlots, "priority": priority}
         result = self.dbi.processData(self.selSQL, {"sitename": siteName, "tasktype": taskType},
                                       conn = conn, transaction = transaction)
         result = self.format(result)

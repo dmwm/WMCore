@@ -96,53 +96,64 @@ class ResourceControlTest(unittest.TestCase):
         site1Thresholds = thresholds["testSite1"]
         site2Thresholds = thresholds["testSite2"]
 
+        procThreshold1  = None
+        procThreshold2  = None
+        mergeThreshold1 = None
+        mergeThreshold2 = None
+        for threshold in site1Thresholds:
+            if threshold["task_type"] == "Merge":
+                mergeThreshold1 = threshold
+            elif threshold["task_type"] == "Processing":
+                procThreshold1  = threshold
+        for threshold in site2Thresholds:
+            if threshold["task_type"] == "Merge":
+                mergeThreshold2 = threshold
+            elif threshold["task_type"] == "Processing":
+                procThreshold2  = threshold
+
         assert len(site1Thresholds) == 2, \
                "Error: Wrong number of task types."
         assert len(site2Thresholds) == 2, \
                "Error: Wrong number of task types."
-        assert "Processing" in site1Thresholds.keys(), \
-               "Error: Processing task type missing from site1"
-        assert "Processing" in site2Thresholds.keys(), \
-               "Error: Processing task type missing from site2"
-        assert "Merge" in site1Thresholds.keys(), \
-               "Error: Merge task type missing from site1"
-        assert "Merge" in site2Thresholds.keys(), \
-               "Error: Merge task type missing from site2"
+        self.assertTrue(procThreshold1 != None)
+        self.assertTrue(procThreshold2 != None)
+        self.assertTrue(mergeThreshold1 != None)
+        self.assertTrue(mergeThreshold2 != None)
 
-        assert site1Thresholds["Processing"]["total_slots"] == 10, \
+        assert procThreshold1["total_slots"] == 10, \
                "Error: Site thresholds wrong"
-        assert site1Thresholds["Processing"]["total_running_jobs"] == 0, \
+        assert procThreshold1["total_running_jobs"] == 0, \
                "Error: Site thresholds wrong"
-        assert site1Thresholds["Processing"]["task_running_jobs"] == 0, \
+        assert procThreshold1["task_running_jobs"] == 0, \
                "Error: Site thresholds wrong"        
-        assert site1Thresholds["Processing"]["max_slots"] == 20, \
+        assert procThreshold1["max_slots"] == 20, \
                "Error: Site thresholds wrong"
 
-        assert site1Thresholds["Merge"]["total_slots"] == 10, \
+        assert mergeThreshold1["total_slots"] == 10, \
                "Error: Site thresholds wrong"
-        assert site1Thresholds["Merge"]["total_running_jobs"] == 0, \
+        assert mergeThreshold1["total_running_jobs"] == 0, \
                "Error: Site thresholds wrong"
-        assert site1Thresholds["Merge"]["task_running_jobs"] == 0, \
+        assert mergeThreshold1["task_running_jobs"] == 0, \
                "Error: Site thresholds wrong"        
-        assert site1Thresholds["Merge"]["max_slots"] == 250, \
+        assert mergeThreshold1["max_slots"] == 250, \
                "Error: Site thresholds wrong"
 
-        assert site2Thresholds["Processing"]["total_slots"] == 100, \
+        assert procThreshold2["total_slots"] == 100, \
                "Error: Site thresholds wrong"
-        assert site2Thresholds["Processing"]["total_running_jobs"] == 0, \
+        assert procThreshold2["total_running_jobs"] == 0, \
                "Error: Site thresholds wrong"
-        assert site2Thresholds["Processing"]["task_running_jobs"] == 0, \
+        assert procThreshold2["task_running_jobs"] == 0, \
                "Error: Site thresholds wrong"        
-        assert site2Thresholds["Processing"]["max_slots"] == 50, \
+        assert procThreshold2["max_slots"] == 50, \
                "Error: Site thresholds wrong"
 
-        assert site2Thresholds["Merge"]["total_slots"] == 100, \
+        assert mergeThreshold2["total_slots"] == 100, \
                "Error: Site thresholds wrong"
-        assert site2Thresholds["Merge"]["total_running_jobs"] == 0, \
+        assert mergeThreshold2["total_running_jobs"] == 0, \
                "Error: Site thresholds wrong"
-        assert site2Thresholds["Merge"]["task_running_jobs"] == 0, \
+        assert mergeThreshold2["task_running_jobs"] == 0, \
                "Error: Site thresholds wrong"        
-        assert site2Thresholds["Merge"]["max_slots"] == 135, \
+        assert mergeThreshold2["max_slots"] == 135, \
                "Error: Site thresholds wrong"
 
         return
@@ -297,23 +308,38 @@ class ResourceControlTest(unittest.TestCase):
         assert createThresholds["testSite2"]["running_jobs"] == 2, \
                "Error: Wrong number of running jobs for site 2"
 
-        assert submitThresholds["testSite1"]["Merge"]["total_running_jobs"] == 2, \
-               "Error: Wrong number of running jobs for submit thresholds."
-        assert submitThresholds["testSite1"]["Processing"]["total_running_jobs"] == 2, \
-               "Error: Wrong number of running jobs for submit thresholds."
-        assert submitThresholds["testSite2"]["Merge"]["total_running_jobs"] == 0, \
-               "Error: Wrong number of running jobs for submit thresholds."
-        assert submitThresholds["testSite2"]["Processing"]["total_running_jobs"] == 0, \
-               "Error: Wrong number of running jobs for submit thresholds."        
+        mergeThreshold1 = None
+        mergeThreshold2 = None
+        procThreshold1  = None
+        procThreshold2  = None
+        for threshold in submitThresholds["testSite1"]:
+            if threshold['task_type'] == "Merge":
+                mergeThreshold1 = threshold
+            elif threshold['task_type'] == "Processing":
+                procThreshold1 = threshold
+        for threshold in submitThresholds["testSite2"]:
+            if threshold['task_type'] == "Merge":
+                mergeThreshold2 = threshold
+            elif threshold['task_type'] == "Processing":
+                procThreshold2 = threshold
 
-        assert submitThresholds["testSite1"]["Merge"]["task_running_jobs"] == 0, \
-               "Error: Wrong number of task running jobs for submit thresholds."
-        assert submitThresholds["testSite1"]["Processing"]["task_running_jobs"] == 2, \
-               "Error: Wrong number of task running jobs for submit thresholds."        
-        assert submitThresholds["testSite2"]["Merge"]["task_running_jobs"] == 0, \
-               "Error: Wrong number of task running jobs for submit thresholds."
-        assert submitThresholds["testSite2"]["Processing"]["task_running_jobs"] == 0, \
-               "Error: Wrong number of task running jobs for submit thresholds."
+        self.assertEqual(mergeThreshold1["total_running_jobs"], 2,
+                         "Error: Wrong number of running jobs for submit thresholds.")
+        self.assertEqual(procThreshold1["total_running_jobs"], 2,
+                         "Error: Wrong number of running jobs for submit thresholds.")
+        self.assertEqual(mergeThreshold2["total_running_jobs"], 0,
+                         "Error: Wrong number of running jobs for submit thresholds.")
+        self.assertEqual(procThreshold2["total_running_jobs"], 0,
+                         "Error: Wrong number of running jobs for submit thresholds.")       
+
+        self.assertEqual(mergeThreshold1["task_running_jobs"], 0,
+                         "Error: Wrong number of task running jobs for submit thresholds.")
+        self.assertEqual(procThreshold1["task_running_jobs"], 2,
+                         "Error: Wrong number of task running jobs for submit thresholds.")      
+        self.assertEqual(mergeThreshold2["task_running_jobs"], 0,
+                         "Error: Wrong number of task running jobs for submit thresholds.")
+        self.assertEqual(procThreshold2["task_running_jobs"], 0,
+                         "Error: Wrong number of task running jobs for submit thresholds.")
 
         return
 
@@ -389,6 +415,51 @@ class ResourceControlTest(unittest.TestCase):
         self.assertEqual(mergInfo.get('max_slots', None), 5)
 
         return
+
+
+    def testThresholdPriority(self):
+        """
+        _testThresholdPriority_
+
+        Test that we get things back in priority order
+        """
+
+        myResourceControl = ResourceControl()
+        myResourceControl.insertSite("testSite1", 20, "testSE1", "testCE1")
+        myResourceControl.insertThreshold("testSite1", "Processing", 10, priority = 1)
+        myResourceControl.insertThreshold("testSite1", "Merge", 5, priority = 2)
+
+        result = myResourceControl.listThresholdsForSubmit()
+
+        self.assertEqual(result['testSite1'][0]['task_type'], 'Merge')
+        self.assertEqual(result['testSite1'][1]['task_type'], 'Processing')
+
+
+        myResourceControl.insertThreshold("testSite1", "Processing", 10, priority = 2)
+        myResourceControl.insertThreshold("testSite1", "Merge", 5, priority = 1)
+
+        # Should now be in reverse order
+        result = myResourceControl.listThresholdsForSubmit()
+        self.assertEqual(result['testSite1'][1]['task_type'], 'Merge')
+        self.assertEqual(result['testSite1'][0]['task_type'], 'Processing')
+
+        myResourceControl.insertSite("testSite2", 20, "testSE2", "testCE2")
+        myResourceControl.insertThreshold("testSite2", "Processing", 10, priority = 1)
+        myResourceControl.insertThreshold("testSite2", "Merge", 5, priority = 2)
+
+        # Should be in proper order for site 2
+        result = myResourceControl.listThresholdsForSubmit()
+        self.assertEqual(result['testSite2'][0]['task_type'], 'Merge')
+        self.assertEqual(result['testSite2'][1]['task_type'], 'Processing')
+
+        # Should now be in reverse order for site 1
+        self.assertEqual(result['testSite1'][1]['task_type'], 'Merge')
+        self.assertEqual(result['testSite1'][0]['task_type'], 'Processing')
+
+        
+        return
+
+    
 
 if __name__ == '__main__':
     unittest.main()

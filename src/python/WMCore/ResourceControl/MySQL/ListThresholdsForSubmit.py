@@ -6,9 +6,7 @@ Query WMBS and ResourceControl to determine how many jobs are still running so
 that we can schedule jobs that have just been created.
 """
 
-
-
-
+import logging
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ListThresholdsForSubmit(DBFormatter):
@@ -17,7 +15,8 @@ class ListThresholdsForSubmit(DBFormatter):
                     wmbs_location.job_slots,
                     rc_threshold.max_slots,
                     wmbs_sub_types.name AS task_type,
-                    job_count.total AS task_running_jobs
+                    job_count.total AS task_running_jobs,
+                    rc_threshold.priority
                     FROM wmbs_location
                INNER JOIN rc_threshold ON
                  wmbs_location.id = rc_threshold.site_id
@@ -35,7 +34,9 @@ class ListThresholdsForSubmit(DBFormatter):
                   WHERE wmbs_job_state.name = 'executing'
                   GROUP BY wmbs_job.location, wmbs_subscription.subtype) job_count ON
                   wmbs_location.id = job_count.location AND
-                  wmbs_sub_types.id = job_count.subtype"""
+                  wmbs_sub_types.id = job_count.subtype
+               ORDER BY rc_threshold.priority DESC"""
+
 
     def format(self, results):
         """
@@ -48,29 +49,44 @@ class ListThresholdsForSubmit(DBFormatter):
 
         formattedResults = {}
         totalRunning = {}
+        skipThreshold = False
         for result in results:
-            if not formattedResults.has_key(result["site_name"]):
-                formattedResults[result["site_name"]] = {}
-                totalRunning[result["site_name"]] = 0
-            if not formattedResults[result["site_name"]].has_key(result["task_type"]):
-                formattedResults[result["site_name"]][result["task_type"]] = {}
-
+            siteName = result['site_name']
+            taskType = result['task_type']
+            if not formattedResults.has_key(siteName):
+                formattedResults[siteName] = []
+                totalRunning[siteName]     = 0
+            for thresh in formattedResults[siteName]:
+                if thresh['task_type'] == taskType:
+                    # Then we have a problem
+                    logging.error("Skipping duplicate threshold type %s for site %s" % (taskType, siteName))
+                    logging.debug("Current site info: %s" % formattedResults[siteName])
+                    logging.debug("Current processing result: %s" % result)
+                    skipThreshold = True
+            if skipThreshold:
+                skipThreshold = False
+                continue
             if result["task_running_jobs"] == None:
                 result["task_running_jobs"] = 0
                 
-            totalRunning[result["site_name"]] += result["task_running_jobs"]
-            formattedResult = formattedResults[result["site_name"]][result["task_type"]]
-            formattedResult["total_slots"] = result["job_slots"]
-            formattedResult["task_running_jobs"] = result["task_running_jobs"]
-            formattedResult["max_slots"] = result["max_slots"]
-            formattedResult["se_name"]   = result["se_name"]
+            threshold = {}
+            threshold['task_type']         = taskType
+            threshold["total_slots"]       = result["job_slots"]
+            threshold["task_running_jobs"] = result["task_running_jobs"]
+            threshold["max_slots"]         = result["max_slots"]
+            threshold["se_name"]           = result["se_name"]
+            threshold["priority"]          = result["priority"]
+
+            totalRunning[siteName] += result["task_running_jobs"]
+            formattedResults[siteName].append(threshold)
 
         for siteName in totalRunning.keys():
-            for taskType in formattedResults[siteName].keys():
-                formattedResults[siteName][taskType]["total_running_jobs"] = totalRunning[siteName]
+            for threshold in formattedResults[siteName]:
+                threshold["total_running_jobs"] = totalRunning[siteName]
+
 
         return formattedResults
-    
+
     def formatTable(self, formattedResults):
         """
         _format_

@@ -49,7 +49,7 @@ class ResourceControl(WMConnectionBase):
             return None
         return result[0]
 
-    def insertThreshold(self, siteName, taskType, maxSlots):
+    def insertThreshold(self, siteName, taskType, maxSlots, priority = 1):
         """
         _insertThreshold_
 
@@ -64,6 +64,7 @@ class ResourceControl(WMConnectionBase):
         insertAction = self.daofactory(classname = "InsertThreshold")
         insertAction.execute(siteName = siteName, taskType = taskType,
                              maxSlots = maxSlots,
+                             priority = priority,
                              conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 

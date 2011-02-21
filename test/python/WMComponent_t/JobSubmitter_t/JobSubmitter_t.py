@@ -133,10 +133,6 @@ def getCondorRunningJobs(user):
 
     output = stdout.split('\n')[-2]
 
-    #output = pipe.stdout.readlines()
-
-    print output
-
     nJobs = int(output.split(';')[0].split()[0])
 
     return nJobs
@@ -177,21 +173,13 @@ class JobSubmitterTest(unittest.TestCase):
         # We actually need the user name
         self.user = getpass.getuser()
 
-        #self.ceName = 'cms-sleepgw.fnal.gov/jobmanager-condor'
-        #self.ceName = 'cmsosgce.fnal.gov/jobmanager-condor'
-        #self.ceName = 'thisisnotarealserver.fnal.gov'
         self.ceName = '127.0.0.1'
-
-        #for site in self.sites:
-        #    locationAction.execute(siteName = site, seName = 'se.%s' % (site), ceName = site)
-        #    locationSlots.execute(siteName = site, jobSlots = 1000)
-
 
         #Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:
             resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
-                                       ceName = site, plugin = "CondorPlugin")
+                                       ceName = site, plugin = "CondorPlugin", jobSlots = 10000)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             maxSlots = 10000)
 

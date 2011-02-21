@@ -122,7 +122,14 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Call once to fill the siteKeys
         # TODO: Make this less clumsy!
-        self.getThresholds()
+        #self.getThresholds()
+        rcThresholds = self.resourceControl.listThresholdsForSubmit()
+        for siteName in rcThresholds.keys():
+            for threshold in rcThresholds[siteName]:
+                seName = threshold["se_name"]
+                if not seName in self.siteKeys.keys():
+                    self.siteKeys[seName] = []
+                self.siteKeys[seName].append(siteName)
         return
 
     def addJobsToPackage(self, loadedJob):
@@ -347,93 +354,125 @@ class JobSubmitterPoller(BaseWorkerThread):
           - Path to cache directory
           - SE name of the site to run at
         """
-        submitThresholds = self.getThresholds()
+        #submitThresholds = self.getThresholds()
 
         jobsToSubmit = {}
         jobsToPrune = {}
 
-        for taskType in submitThresholds.keys():
-            logging.info("Assigning locations for task %s" % taskType)
+        rcThresholds = self.resourceControl.listThresholdsForSubmit()
 
-            siteList = submitThresholds[taskType]
-            while len(siteList) > 0:
-                # Sort the list of sites that have open slots for this task type
-                # and task the one that has the most free slots.
-                siteList.sort(siteListCompare)
-                emptySite = siteList.pop(0)
+        for siteName in rcThresholds.keys():
+            totalRunning = None
+            if not self.cachedJobs.has_key(siteName):
+                logging.debug("No jobs for site %s" % siteName)
+                continue
+            logging.debug("Have site %s" % siteName)
 
-                # If we don't have any jobs for this site then move on.
-                if not self.cachedJobs.has_key(emptySite[0]):
+            
+            for threshold in rcThresholds.get(siteName, []):
+                try:
+                    # Pull basic info for the threshold
+                    taskType     = threshold['task_type']
+                    seName       = threshold['se_name']
+                    maxSlots     = threshold['max_slots']
+                    totalSlots   = threshold['total_slots']
+                    taskRunning  = threshold["task_running_jobs"]
+                    if totalRunning == None:
+                        # Then we need to grab that too
+                        totalRunning = threshold["total_running_jobs"]
+                except KeyError, ex:
+                    msg =  "Had invalid threshold %s\n" % threshold
+                    msg += str(ex)
+                    logging.error(msg)
                     continue
-                if not self.cachedJobs[emptySite[0]].has_key(taskType):
+
+                # Ignore this threshold if we have no jobs
+                # for it
+                if not self.cachedJobs[siteName].has_key(taskType):
                     continue
 
-                # Pull a job out of the cache for the task/site.  Verify that we
-                # haven't already used this job in this polling cycle.
-                cachedJob = None
-                cachedJobWorkflow = None
+                taskCache = self.cachedJobs[siteName][taskType]
 
-                workflows = self.cachedJobs[emptySite[0]][taskType].keys()
-                workflows.sort()
+                # Calculate number of jobs we need
+                nJobsRequired = min((totalSlots - totalRunning), (maxSlots - taskRunning))
+                breakLoop = False
+                logging.debug("nJobsRequired for task %s: %i" % (taskType, nJobsRequired))
 
-                for workflow in workflows:
-                    while len(self.cachedJobs[emptySite[0]][taskType][workflow]) > 0:
-                        cachedJob = self.cachedJobs[emptySite[0]][taskType][workflow].pop()
+                while nJobsRequired > 0:
+                    # Do this until we have all the jobs for this threshold
 
-                        if cachedJob not in jobsToPrune.get(workflow, set()):
-                            cachedJobWorkflow = workflow
+                    # Pull a job out of the cache for the task/site.  Verify that we
+                    # haven't already used this job in this polling cycle.
+                    cachedJob = None
+                    cachedJobWorkflow = None
+
+                    workflows = taskCache.keys()
+                    workflows.sort()
+                    
+                    for workflow in workflows:
+                        while len(taskCache[workflow]) > 0:
+                            cachedJob = taskCache[workflow].pop()
+                            
+                            if cachedJob not in jobsToPrune.get(workflow, set()):
+                                cachedJobWorkflow = workflow
+                                break
+                            else:
+                                cachedJob = None
+
+                        # Remove the entry in the cache for the workflow if it is empty.
+                        if len(self.cachedJobs[siteName][taskType][workflow]) == 0:
+                            del self.cachedJobs[siteName][taskType][workflow]
+
+                        if cachedJob:
+                            # We found a job, bail out and handle it.
                             break
-                        else:
-                            cachedJob = None
 
-                    # Remove the entry in the cache for the workflow if it is empty.
-                    if len(self.cachedJobs[emptySite[0]][taskType][workflow]) == 0:
-                        del self.cachedJobs[emptySite[0]][taskType][workflow]
+                    # Check to see if we need to delete this site from the cache
+                    if len(self.cachedJobs[siteName][taskType].keys()) == 0:
+                        del self.cachedJobs[siteName][taskType]
+                        breakLoop = True
+                    if len(self.cachedJobs[siteName].keys()) == 0:
+                        del self.cachedJobs[siteName]
+                        breakLoop = True
 
-                    if cachedJob:
-                        # We found a job, bail out and handle it.
+                    if not cachedJob:
+                        # We didn't find a job, bail out.
+                        # This site and task type is done
                         break
 
-                if len(self.cachedJobs[emptySite[0]][taskType].keys()) == 0:
-                    del self.cachedJobs[emptySite[0]][taskType]
-                if len(self.cachedJobs[emptySite[0]].keys()) == 0:
-                    del self.cachedJobs[emptySite[0]]
+                    self.cachedJobIDs.remove(cachedJob[0])
 
-                if not cachedJob:
-                    # We didn't find a job, bail out.
-                    continue
-                
-                self.cachedJobIDs.remove(cachedJob[0])
-
-                if not jobsToPrune.has_key(cachedJobWorkflow):
-                    jobsToPrune[cachedJobWorkflow] = set()
-                    
-                jobsToPrune[cachedJobWorkflow].add(cachedJob)
+                    if not jobsToPrune.has_key(cachedJobWorkflow):
+                        jobsToPrune[cachedJobWorkflow] = set()
                         
-                # Sort jobs by jobPackage
-                package = cachedJob[2]
-                if not package in jobsToSubmit.keys():
-                    jobsToSubmit[package] = []
+                    jobsToPrune[cachedJobWorkflow].add(cachedJob)
 
-                # Add the sandbox to a global list
-                self.sandboxPackage[package] = cachedJob[3]
+                    # Sort jobs by jobPackage
+                    package = cachedJob[2]
+                    if not package in jobsToSubmit.keys():
+                        jobsToSubmit[package] = []
 
-                # Create a job dictionary object
-                jobDict = {'id': cachedJob[0],
-                           'retry_count': cachedJob[1],
-                           'custom': {'location': emptySite[0]},
-                           'cache_dir': cachedJob[4],
-                           'packageDir': package,
-                           'userdn': cachedJob[5],
-                           'priority': cachedJob[6]}
+                    # Add the sandbox to a global list
+                    self.sandboxPackage[package] = cachedJob[3]
+                    
+                    # Create a job dictionary object
+                    jobDict = {'id': cachedJob[0],
+                               'retry_count': cachedJob[1],
+                               'custom': {'location': siteName},
+                               'cache_dir': cachedJob[4],
+                               'packageDir': package,
+                               'userdn': cachedJob[5],
+                               'priority': cachedJob[6]}
 
-                # Add to jobsToSubmit
-                jobsToSubmit[package].append(jobDict)
+                    # Add to jobsToSubmit
+                    jobsToSubmit[package].append(jobDict)
 
-                # If we were able to pull down a job for the task/site and the
-                # site it not full we'll still add more jobs to it.
-                if emptySite[1] - 1 > 0:
-                    siteList.append((emptySite[0], emptySite[1] - 1))
+                    # Deal with accounting
+                    nJobsRequired -= 1
+                    totalRunning  += 1
+
+                    if breakLoop:
+                        break
 
         # Remove the jobs that we're going to submit from the cache.
         for siteName in self.cachedJobs.keys():
@@ -446,6 +485,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         logging.info("Done assigning site locations.")
         return jobsToSubmit
 
+                
     def submitJobs(self, jobsToSubmit):
         """
         _submitJobs_

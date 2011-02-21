@@ -37,6 +37,8 @@ def createOptionParser():
                            help = "Specify the name of the task to add/modify")
     myOptParser.add_option("--max-slots", dest = "maxSlots",
                            help = "Specify the maximum number of slots for the task type")
+    myOptParser.add_option("--priority", dest = "priority",
+                           help = "Specify the priority of the threshold at the site (higher is better)")
     myOptParser.add_option("--plugin", dest = "plugin",
                            help = "Specify submit plugin to use for specific site")
 
@@ -62,9 +64,9 @@ def printThresholds(resourceControl, desiredSiteName):
         print "%s - %d running, %d slots total:" % (siteName, siteJobs, siteSlots)
 
         for taskType in siteThresholds.keys():
-            print "  %s - %d running, %d max" % \
+            print "  %s - %d running, %d max, priority %i" % \
                   (taskType, siteThresholds[taskType]["task_running_jobs"],
-                   siteThresholds[taskType]["max_slots"])
+                   siteThresholds[taskType]["max_slots"], siteThresholds[taskType]["priority"])
             if siteThresholds[taskType]["task_running_jobs"] > 0:
                 tasks = myResourceControl.listWorkloadsForTaskSite(taskType, siteName)
                 for task in tasks:
@@ -110,7 +112,7 @@ def updateSiteInfo(resourceControl, siteName, jobSlots = None,
 
     return
 
-def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots):
+def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots, priority = 1):
     """
     _updateThresholdInfo_
 
@@ -130,7 +132,7 @@ def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots):
         sys.exit(1)
     
     resourceControl.insertThreshold(siteName = siteName, taskType = taskType,
-                                    maxSlots = int(maxSlots))
+                                    maxSlots = int(maxSlots), priority = priority)
     return
 
 myOptParser = createOptionParser()
@@ -152,5 +154,5 @@ else:
         sys.exit(0)
     else:
         updateThresholdInfo(myResourceControl, options.siteName,
-                            options.taskType, options.maxSlots)
+                            options.taskType, options.maxSlots, priority = options.priority)
         sys.exit(0)

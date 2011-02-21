@@ -140,14 +140,13 @@ class CondorPlugin(BasePlugin):
         myThread = threading.currentThread()        
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
-
         self.locationAction = daoFactory(classname = "Locations.GetSiteInfo")
 
 
         self.packageDir = None
         self.unpacker   = self.unpacker   = os.path.join(getWMBASE(),
-                                       'src/python/WMCore/WMRuntime/Unpacker.py')
-        self.agent      = config.Agent.agentName
+                                                         'src/python/WMCore/WMRuntime/Unpacker.py')
+        self.agent      = getattr(config.Agent, 'agentName', 'WMAgent')
         self.sandbox    = None
         self.scriptFile = None
         self.submitDir  = None

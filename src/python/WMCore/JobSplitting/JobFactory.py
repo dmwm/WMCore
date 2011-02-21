@@ -182,7 +182,7 @@ class JobFactory(WMObject):
             fileset = self.loadFiles(size = self.limit)
             logging.debug("Loaded %i files" % (len(fileset)))
         else:
-            fileset = self.subscription.availableFiles(limit = self.limit)
+            fileset = self.subscription.availableFiles(limit = self.limit, doingJobSplitting = True)
             logging.debug("About to load files by DAO")
 
         for file in fileset:
@@ -303,7 +303,7 @@ class JobFactory(WMObject):
         fileIDs = list(set([x['fileid'] for x in fileList]))
 
         myThread = threading.currentThread()
-        fileInfoAct  = self.daoFactory(classname = "Files.GetByID")
+        fileInfoAct  = self.daoFactory(classname = "Files.GetForJobSplittingByID")
         fileInfoDict = fileInfoAct.execute(file = fileIDs,
                                            conn = myThread.transaction.conn,
                                            transaction = True)

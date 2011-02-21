@@ -17,6 +17,7 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
+from WMCore.DataStructs.Run import Run
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
@@ -59,6 +60,7 @@ class FileBasedTest(unittest.TestCase):
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
                            locations = set(["somese.cern.ch"]))
+            newFile.addRun(Run(i, *[45]))
             newFile.create()
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
@@ -300,6 +302,24 @@ class FileBasedTest(unittest.TestCase):
 
         return
 
+    def testRespectRunBoundaries(self):
+        """
+        _testRespectRunBoundaries_
+
+        Test whether or not this thing will respect run boundaries
+        """
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleFileSubscription)
+
+        jobGroups = jobFactory(files_per_job = 10, respect_run_boundaries = True)
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 10)
+
+        return
+
 
 
     def testZ_randomCrapForGenerators(self):
@@ -307,7 +327,6 @@ class FileBasedTest(unittest.TestCase):
         Either this works, and all other tests are obsolete, or it doesn't and they aren't.
         Either way, don't screw around with this.
         """
-
 
         def runCode(self, jobFactory):
 

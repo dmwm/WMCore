@@ -120,7 +120,7 @@ class Subscription(Pickleable, dict):
                 self.acquired.files.remove(i)
             self.failed.addFile(i)
 
-    def filesOfStatus(self, status=None):
+    def filesOfStatus(self, status=None, doingJobSplitting = False):
         """
         _filesOfStatus_
 
@@ -138,7 +138,7 @@ class Subscription(Pickleable, dict):
         elif status == 'Failed':
             return self.failed.getFiles(type='set')
 
-    def availableFiles(self, limit = None):
+    def availableFiles(self, limit = None, doingJobSplitting = False):
         """
         _availableFiles_
 
@@ -146,9 +146,9 @@ class Subscription(Pickleable, dict):
         (e.g. not already in use)
         """
         if limit:
-            return list(self.filesOfStatus(status = "Available"))[:limit]
+            return list(self.filesOfStatus(status = "Available", doingJobSplitting = doingJobSplitting))[:limit]
         else:
-            return self.filesOfStatus(status = "Available")
+            return self.filesOfStatus(status = "Available", doingJobSplitting = doingJobSplitting)
 
     def acquiredFiles(self):
         """

@@ -26,10 +26,11 @@ class FileBased(JobFactory):
         passed in jobs will process a maximum of 10 files.
         """
 
-        filesPerJob  = int(kwargs.get("files_per_job", 10))
-        jobsPerGroup = int(kwargs.get("jobs_per_group", 0))
-        filesInJob   = 0
-        listOfFiles  = []
+        filesPerJob   = int(kwargs.get("files_per_job", 10))
+        jobsPerGroup  = int(kwargs.get("jobs_per_group", 0))
+        runBoundaries = kwargs.get("respect_run_boundaries", False)
+        filesInJob    = 0
+        listOfFiles   = []
 
         #Get a dictionary of sites, files
         locationDict = self.sortByLocation()
@@ -44,8 +45,10 @@ class FileBased(JobFactory):
                 #No files for this location
                 #This isn't supposed to happen, but better safe then sorry
                 continue
+            jobRun = None
             for file in fileList:
-                if filesInJob == 0 or filesInJob == filesPerJob:
+                fileRun = file.get('minrun', None)
+                if filesInJob == 0 or filesInJob == filesPerJob or (runBoundaries and fileRun != jobRun):
                     if jobsPerGroup:
                         if jobsInGroup > jobsPerGroup:
                             self.newGroup()
@@ -55,6 +58,7 @@ class FileBased(JobFactory):
                     
                     filesInJob   = 0
                     jobsInGroup += 1
+                    jobRun       = fileRun
                     
                 filesInJob += 1
                 self.currentJob.addFile(file)

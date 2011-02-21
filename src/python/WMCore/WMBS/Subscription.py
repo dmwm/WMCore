@@ -172,7 +172,7 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitTransaction(existingTransaction)
         return result
     
-    def filesOfStatus(self, status, limit = 0, loadChecksums = True):
+    def filesOfStatus(self, status, limit = 0, loadChecksums = True, doingJobSplitting = False):
         """
         _filesOfStatus_
         
@@ -191,12 +191,16 @@ class Subscription(WMBSBase, WMSubscription):
             action = self.daofactory(classname = "Subscriptions.Get%sFiles" % status)
             fileList = action.execute(self["id"], conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
-        
-        fileInfoAct  = self.daofactory(classname = "Files.GetByID")
+
+        if doingJobSplitting:
+            fileInfoAct  = self.daofactory(classname = "Files.GetForJobSplittingByID")
+        else:
+            fileInfoAct  = self.daofactory(classname = "Files.GetByID")
+            
         fileInfoDict = fileInfoAct.execute(file = [x["file"] for x in fileList],
                                            conn = self.getDBConn(),
                                            transaction = self.existingTransaction())
-        
+            
         #Run through all files
         for f in fileList:
             fl = File(id = f['file'])

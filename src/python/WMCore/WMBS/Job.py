@@ -18,6 +18,7 @@ import datetime
 
 from WMCore.DataStructs.Job     import Job as WMJob
 from WMCore.DataStructs.Fileset import Fileset
+from WMCore.DataStructs.Mask    import Mask as WMMask
 from WMCore.WMBS.File           import File
 from WMCore.WMBS.Fileset        import Fileset as WMBSFileset
 from WMCore.WMBS.Mask           import Mask
@@ -399,7 +400,6 @@ class Job(WMBSBase, WMJob):
 
         Returns the DataStructs version of this job
         """
-
         job = WMJob(name = self['name'])
 
         # Transfer all simple keys
@@ -411,10 +411,9 @@ class Job(WMBSBase, WMJob):
         for file in self['input_files']:
             job['input_files'].append(file.returnDataStructsFile())
 
-        job['mask'] = self['mask']
-
-        
-                
+        job['mask'] = WMMask()
+        for key in self["mask"].keys():
+            job["mask"][key] = self["mask"][key]
 
         return job
 

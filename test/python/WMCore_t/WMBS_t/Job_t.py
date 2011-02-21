@@ -1075,7 +1075,6 @@ class JobTest(unittest.TestCase):
 
         Test the ability to 'cast' as a DataStructs job type
         """
-
         testJob  = self.createTestJob()
         testJob['test'] = 'ThisIsATest'
         finalJob = testJob.getDataStructsJob()
@@ -1088,7 +1087,11 @@ class JobTest(unittest.TestCase):
             self.assertEqual(testJob[key], finalJob[key])
 
         self.assertEqual(str(finalJob.__class__), "<class 'WMCore.DataStructs.Job.Job'>")
+        self.assertEqual(str(finalJob["mask"].__class__), "<class 'WMCore.DataStructs.Mask.Mask'>")
 
+        for key in testJob["mask"]:
+            self.assertEqual(testJob["mask"][key], finalJob["mask"][key],
+                             "Error: The masks should be the same")
         return
 
 

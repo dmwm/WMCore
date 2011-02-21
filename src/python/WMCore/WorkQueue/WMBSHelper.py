@@ -541,9 +541,10 @@ class WMBSHelper(WMConnectionBase):
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
 
-        self.dbsSetChecksum.execute(bulkList = dbsCksumBinds,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+        if len(dbsCksumBinds) > 0:
+            self.dbsSetChecksum.execute(bulkList = dbsCksumBinds,
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
 
 
         # Now that we've created those files, clear the list

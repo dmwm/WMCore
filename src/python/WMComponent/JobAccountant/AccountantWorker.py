@@ -302,8 +302,8 @@ class AccountantWorker(WMConnectionBase):
         dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["primaryDataset"],
                                               datasetInfo["processedDataset"],
                                               datasetInfo["dataTier"])) 
-        dbsFile.setProcessingEra(era = datasetInfo.get('processingEra', None))
-        dbsFile.setAcquisitionEra(era = datasetInfo.get('acquisitionEra', None))
+        dbsFile.setProcessingEra(era = jobReportFile.get('processingEra', None))
+        dbsFile.setAcquisitionEra(era = jobReportFile.get('acquisitionEra', None))
         
         for run in jobReportFile["runs"]:
             newRun = Run(runNumber = run.run)
@@ -685,18 +685,16 @@ class AccountantWorker(WMConnectionBase):
         """
         outputLFNs = [f['lfn'] for f in self.mergedOutputFiles]
         bindList         = []
-        parentLFNs       = []
         for lfn in outputLFNs:
             newParents = self.findDBSParents(lfn = lfn)
             for parentLFN in newParents:
                 bindList.append({'child': lfn, 'parent': parentLFN})
-            parentLFNs.extend(list(newParents))
 
         # Now all the parents should exist
         # Commit them to DBSBuffer
         logging.info("About to commit all DBSBuffer Heritage information")
         logging.info(len(bindList))
-
+        
         if len(bindList) > 0:
             try:
                 self.dbsLFNHeritage.execute(binds = bindList,

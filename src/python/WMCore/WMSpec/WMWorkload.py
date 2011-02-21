@@ -551,6 +551,24 @@ class WMWorkloadHelper(PersistencyHelper):
         self.updateLFNsAndDatasets()
         return
 
+    def getAcquisitionEra(self):
+        """
+        _getAcquisitionEra_
+
+        Get the acquisition era
+        """
+
+        return getattr(self.data.properties, 'acquisitionEra', None)
+
+    def getProcessingVersion(self):
+        """
+        _getProcessingVersion_
+        
+        Get the processingVersion
+        """
+
+        return getattr(self.data.properties, 'processingVersion', None)
+
     def setLFNBase(self, mergedLFNBase, unmergedLFNBase):
         """
         _setLFNBase_

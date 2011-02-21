@@ -77,6 +77,7 @@ class Executor:
         self.stepName = getStepName(self.step)
         self.stepSpace = getStepSpace(self.stepName)
         self.task = self.stepSpace.getWMTask()
+        self.workload = self.stepSpace.taskSpace.workload
         self.report = Report(self.stepName)
         self.report.data.task = self.task.name()
         self.report.data.workload = self.stepSpace.taskSpace.workloadName()

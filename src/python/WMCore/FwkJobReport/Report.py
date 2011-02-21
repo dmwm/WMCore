@@ -579,21 +579,23 @@ class Report:
             newRun = Run(int(run), *lumis)
             newFile.addRun(newRun)
 
-        newFile["lfn"]          = getattr(fileRef, "lfn", None)
-        newFile["pfn"]          = getattr(fileRef, "pfn", None)
-        newFile["events"]       = int(getattr(fileRef, "events", 0))
-        newFile["size"]         = int(getattr(fileRef, "size", 0))
-        newFile["branches"]     = getattr(fileRef, "branches", [])
-        newFile["input"]        = getattr(fileRef, "input", [])
-        newFile["inputpfns"]    = getattr(fileRef, "inputpfns", [])
-        newFile["branch_hash"]  = getattr(fileRef, "branch_hash", None)
-        newFile["catalog"]      = getattr(fileRef, "catalog", "")
-        newFile["guid"]         = getattr(fileRef, "guid", "")
-        newFile["module_label"] = getattr(fileRef, "module_label", "")
-        newFile["checksums"]    = getattr(fileRef, "checksums", {})
-        newFile["merged"]       = bool(getattr(fileRef, "merged", False))
-        newFile["dataset"]      = getattr(fileRef, "dataset", {})
-        newFile["outputModule"] = outputModule
+        newFile["lfn"]            = getattr(fileRef, "lfn", None)
+        newFile["pfn"]            = getattr(fileRef, "pfn", None)
+        newFile["events"]         = int(getattr(fileRef, "events", 0))
+        newFile["size"]           = int(getattr(fileRef, "size", 0))
+        newFile["branches"]       = getattr(fileRef, "branches", [])
+        newFile["input"]          = getattr(fileRef, "input", [])
+        newFile["inputpfns"]      = getattr(fileRef, "inputpfns", [])
+        newFile["branch_hash"]    = getattr(fileRef, "branch_hash", None)
+        newFile["catalog"]        = getattr(fileRef, "catalog", "")
+        newFile["guid"]           = getattr(fileRef, "guid", "")
+        newFile["module_label"]   = getattr(fileRef, "module_label", "")
+        newFile["checksums"]      = getattr(fileRef, "checksums", {})
+        newFile["merged"]         = bool(getattr(fileRef, "merged", False))
+        newFile["dataset"]        = getattr(fileRef, "dataset", {})
+        newFile["acquisitionEra"] = getattr(fileRef, 'acquisitionEra', None)
+        newFile["processingEra"]  = getattr(fileRef, 'processingEra', None)
+        newFile["outputModule"]   = outputModule
         
 
         return newFile
@@ -909,6 +911,27 @@ class Report:
         """
 
         return getattr(self.data, 'jobID', None)
+
+    def setAcquisitionProcessing(self, acquisitionEra, processingEra):
+        """
+        _setAcquisitionProcessing_
+
+        Set the acquisition and processing era for every output file
+        ONLY run this after all files have been accumulated; it doesn't
+        set things for future files.
+        """
+        fileRefs = []
+        for step in self.data.steps:
+            tmpRefs = self.getAllFileRefsFromStep(step = step)
+            if len(tmpRefs) > 0:
+                fileRefs.extend(tmpRefs)
+
+        # Should now have all the fileRefs
+        for f in fileRefs:
+            f['acquisitionEra'] = acquisitionEra
+            f['processingEra']  = processingEra
+
+        return
       
 def addFiles(file1, file2):
     """

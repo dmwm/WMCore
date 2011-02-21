@@ -41,7 +41,7 @@ WMCore.RequestManager.AgentOverview.statusTable = function(divID){
                  {key: "acdc", formatter:formatACDCLink}]
         };
 
-    var dataUrl = "/reqMgr/agentoverview";
+    var dataUrl = "/reqmgr/reqMgr/agentoverview";
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
 
     var dataTable = WMCore.createDataTable(divID, dataSource,

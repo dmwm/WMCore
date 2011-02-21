@@ -24,7 +24,7 @@ WMCore.WorkQueue.WorkloadInfoTable.workloadTable = function(divID) {
                       formatter: progressFormatter, parser: "number"}]
             };
     
-    var dataUrl = "/workqueue/workloadprogress";
+    var dataUrl = "/workqueueservice/workqueue/workloadprogress";
     
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
     var tableConfig = WMCore.createDefaultTableConfig();

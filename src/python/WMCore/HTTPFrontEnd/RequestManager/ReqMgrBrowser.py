@@ -309,7 +309,7 @@ class ReqMgrBrowser(WebAPI):
                     message += "Changed status for %s to %s\n" % (requestName, status)
                     if status == "assigned":
                         # make a page to choose teams
-                        raise cherrypy.HTTPRedirect('%s/assign/one/%s' % (self.reqMgrHost, requestName))
+                        raise cherrypy.HTTPRedirect('%s/reqmgr/assign/one/%s' % (self.reqMgrHost, requestName))
         return message + detailsBackLink(requestName)
 
 

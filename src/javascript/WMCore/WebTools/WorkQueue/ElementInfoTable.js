@@ -45,7 +45,7 @@ WMCore.WorkQueue.ElementInfoTable.elementTable = function(divID) {
                 ]
         };
 
-    var dataUrl = "/workqueue/elementsinfo"
+    var dataUrl = "/workqueueservice/workqueue/elementsinfo"
 
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
     

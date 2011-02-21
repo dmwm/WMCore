@@ -48,7 +48,7 @@ WMCore.WorkQueue.ElementInfoByWorkflow.elementTable = function(args) {
                 ]
         };
 
-    var dataUrl = "/workqueue/elementsbyworkflow/" + args.workflow
+    var dataUrl = "/workqueueservice/workqueue/elementsbyworkflow/" + args.workflow
 
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
     

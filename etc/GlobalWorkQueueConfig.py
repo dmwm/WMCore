@@ -55,7 +55,7 @@ config.component_("WorkQueueManager")
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
 config.WorkQueueManager.componentDir = os.path.join(config.General.workDir, "WorkQueueManager")
 config.WorkQueueManager.level = "GlobalQueue"
-config.WorkQueueManager.pollInterval = 10
+config.WorkQueueManager.pollInterval = 120
 config.WorkQueueManager.queueParams = {'LocationRefreshInterval': 1800}
 config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
                                         'endpoint': "%s/reqMgr/" % reqMgrUrl}
@@ -86,7 +86,6 @@ workqueue.formatter.object = 'WMCore.WebTools.RESTFormatter'
 workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
                             'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService']
 workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
-workqueue.queueParams.setdefault('CacheDir', config.General.workDir + '/WorkQueueManager/wf')
 workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (serverHostName,
                                                                   config.WorkQueueService.Webtools.port,
                                                                   'workqueue'))

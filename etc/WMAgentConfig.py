@@ -108,18 +108,14 @@ config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManag
 config.WorkQueueManager.level = 'LocalQueue'
 config.WorkQueueManager.logLevel = 'DEBUG'
 config.WorkQueueManager.serviceUrl = "%s:%s" % (reqMgrServerHostName, globalWorkQueuePort)
-config.WorkQueueManager.pollInterval = 10
+config.WorkQueueManager.pollInterval = 120
 
-# copy jobStateMachine couchDB configuration here since we don't want/need to pass whole configuration
+# Make copies of the JSM and BosAir configs so we don't have to pass the entire
+# WMAgent config to the WorkQueue.
 jobCouchConfig = Configuration()
-jobCouchConfig.section_("JobStateMachine")
-jobCouchConfig.JobStateMachine.couchurl = couchURL
-jobCouchConfig.JobStateMachine.couchDBName = jobDumpDBName
-# copy bossAir configuration here since we don't want/need to pass whole configuration
+jobCouchConfig.JobStateMachine = config.JobStateMachine
 bossAirConfig = Configuration()
-bossAirConfig.section_("BossAir")
-bossAirConfig.BossAir.pluginDir = config.BossAir.pluginDir
-bossAirConfig.BossAir.pluginNames = bossAirPlugins
+bossAirConfig.BossAir = config.BossAir
 bossAirConfig.section_("Agent")
 bossAirConfig.Agent.agentName = agentName
 
@@ -161,7 +157,7 @@ config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
 config.JobAccountant.componentDir = config.General.workDir + "/JobAccountant"
 config.JobAccountant.logLevel = "DEBUG"
 config.JobAccountant.workerThreads = 1
-config.JobAccountant.pollInterval = 20
+config.JobAccountant.pollInterval = 60
 
 config.component_("JobCreator")
 config.JobCreator.namespace = "WMComponent.JobCreator.JobCreator"
@@ -169,7 +165,7 @@ config.JobCreator.componentDir = config.General.workDir + "/JobCreator"
 config.JobCreator.logLevel = "DEBUG"
 config.JobCreator.maxThreads = 1
 config.JobCreator.UpdateFromResourceControl = True
-config.JobCreator.pollInterval = 10
+config.JobCreator.pollInterval = 120
 # This is now OPTIONAL: It defaults to the componentDir
 # However: In a production instance, this should be run on a high performance
 # disk, and should probably NOT be run on the same disk as the JobArchiver
@@ -182,7 +178,7 @@ config.JobSubmitter.namespace = "WMComponent.JobSubmitter.JobSubmitter"
 config.JobSubmitter.componentDir = config.General.workDir + "/JobSubmitter"
 config.JobSubmitter.logLevel = "DEBUG"
 config.JobSubmitter.maxThreads = 1
-config.JobSubmitter.pollInterval = 10
+config.JobSubmitter.pollInterval = 120
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
 config.JobSubmitter.submitScript = os.path.join(getWMBASE(), "src/python/WMComponent/JobSubmitter/submit.sh")
@@ -191,13 +187,13 @@ config.component_("JobTracker")
 config.JobTracker.namespace = "WMComponent.JobTracker.JobTracker"
 config.JobTracker.componentDir  = config.General.workDir + "/JobTracker"
 config.JobTracker.logLevel = "DEBUG"
-config.JobTracker.pollInterval = 10
+config.JobTracker.pollInterval = 60
 
 config.component_("JobStatusLite")
 config.JobStatusLite.namespace = "WMComponent.JobStatusLite.JobStatusLite"
 config.JobStatusLite.componentDir  = config.General.workDir + "/JobStatusLite"
 config.JobStatusLite.logLevel = "DEBUG"
-config.JobStatusLite.pollInterval = 10
+config.JobStatusLite.pollInterval = 60
 config.JobStatusLite.stateTimeouts = {}
 
 config.component_("ErrorHandler")
@@ -205,20 +201,20 @@ config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
 config.ErrorHandler.componentDir  = config.General.workDir + "/ErrorHandler"
 config.ErrorHandler.logLevel = "DEBUG"
 config.ErrorHandler.maxRetries = maxJobRetries
-config.ErrorHandler.pollInterval = 10
+config.ErrorHandler.pollInterval = 240
 
 config.component_("RetryManager")
 config.RetryManager.namespace = "WMComponent.RetryManager.RetryManager"
 config.RetryManager.componentDir  = config.General.workDir + "/RetryManager"
 config.RetryManager.logLevel = "DEBUG"
-config.RetryManager.pollInterval = 10
+config.RetryManager.pollInterval = 240
 config.RetryManager.coolOffTime = retryAlgoParams
 config.RetryManager.pluginName = retryAlgo
 
 config.component_("JobArchiver")
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
 config.JobArchiver.componentDir  = config.General.workDir + "/JobArchiver"
-config.JobArchiver.pollInterval = 60
+config.JobArchiver.pollInterval = 240
 config.JobArchiver.logLevel = "DEBUG"
 # This is now OPTIONAL, it defaults to the componentDir
 # HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
@@ -230,7 +226,7 @@ config.component_("TaskArchiver")
 config.TaskArchiver.namespace = "WMComponent.TaskArchiver.TaskArchiver"
 config.TaskArchiver.componentDir  = config.General.workDir + "/TaskArchiver"
 config.TaskArchiver.logLevel = "DEBUG"
-config.TaskArchiver.pollInterval = 10
+config.TaskArchiver.pollInterval = 240
 config.TaskArchiver.timeOut      = workflowArchiveTimeout
 config.TaskArchiver.WorkQueueParams = {}
 config.TaskArchiver.useWorkQueue = True
@@ -265,7 +261,6 @@ workqueue.formatter.object = 'WMCore.WebTools.RESTFormatter'
 workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
                             'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService']
 workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
-workqueue.queueParams.setdefault('CacheDir', config.General.workDir + '/WorkQueueManager/wf')
 workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (serverHostName,
                                                                   config.WorkQueueService.Webtools.port,
                                                                   'workqueue'))

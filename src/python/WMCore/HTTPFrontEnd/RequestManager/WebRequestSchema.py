@@ -127,7 +127,7 @@ class WebRequestSchema(WebAPI):
         senderOpts = {'req_cache_path':self.componentDir}
         jsonSender = JSONRequests(baseURL, senderOpts)
         try:
-            jsonSender.put('/reqMgr/request/'+schema['RequestName'], schema)
+            jsonSender.put('/reqmgr/reqMgr/request/'+schema['RequestName'], schema)
         except HTTPException, ex:
             return ex.reason+' '+ex.result
-        raise cherrypy.HTTPRedirect('%s/view/details/%s' % (baseURL, schema['RequestName']))
+        raise cherrypy.HTTPRedirect('%s/reqmgr/view/details/%s' % (baseURL, schema['RequestName']))

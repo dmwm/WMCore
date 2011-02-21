@@ -12,7 +12,7 @@ WMCore.RequestManager.ResourceMonitor.resourceInfo = function(divID){
         }]
     };
     
-    var dataUrl = "/reqMgr/resourceInfo"
+    var dataUrl = "/reqmgr/reqMgr/resourceInfo"
     
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
     var dataTable = WMCore.createDataTable(divID, dataSource, 

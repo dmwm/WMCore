@@ -44,8 +44,8 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
                     import traceback
                     self.queue.logger.error("Unable to update Parent Status: %s\n%s" 
                                     % (str(ex), traceback.format_exc()))
-        except socket.error, (value, message):
-            self.queue.logger.error("Error %s opening connection to work queue: %s" % (value, message))
+        except socket.error, message:
+            self.queue.logger.error("Error opening connection to work queue: %s" % (message))
             return
         except StandardError, ex:
             import traceback

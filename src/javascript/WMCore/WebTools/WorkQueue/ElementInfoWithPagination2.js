@@ -49,7 +49,7 @@ WMCore.WorkQueue.ElementInfoWithPagination2.elementTable = function(divID) {
         }
      };
 
-    var dataUrl = "/workqueue/elementsinfowithlimit?";
+    var dataUrl = "/workqueueservice/workqueue/elementsinfowithlimit?";
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
     //overwrite default JSARRAY type to JSON
     dataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;    

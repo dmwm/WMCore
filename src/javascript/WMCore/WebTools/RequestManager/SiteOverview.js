@@ -28,7 +28,7 @@ WMCore.RequestManager.SiteOverview.statusTable = function(divID){
                  {key: "job_slots", label:"Job Slots"}]
         };
 
-    var dataUrl = "/reqMgr/siteoverview";
+    var dataUrl = "/reqmgr/reqMgr/siteoverview";
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
         
     var dataTable = WMCore.createDataTable(divID, dataSource, 

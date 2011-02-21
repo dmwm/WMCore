@@ -9,7 +9,7 @@ WMCore.WorkQueue.JobYUIPieChart.jobChart = function(divID) {
         fields: [{key: "status"}, {key: "jobs"}]
         };
 
-    var dataUrl = "/workqueue/jobstatusstat"
+    var dataUrl = "/workqueueservice/workqueue/jobstatusstat"
 
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
 

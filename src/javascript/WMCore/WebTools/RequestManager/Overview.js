@@ -196,7 +196,7 @@ WMCore.RequestManager.Overview.overviewTable = function(divID, filterDiv,
                  {key: "queue injection", formatter:queueProgressFormatter}
                  ];
             
-    var dataUrl = "/reqMgr/overview";
+    var dataUrl = "/reqmgr/reqMgr/overview";
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
         
     var tableInfo = {};

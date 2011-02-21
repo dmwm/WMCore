@@ -8,7 +8,7 @@ WMCore.WorkQueue.WorkloadStausYUIPieChart.workloadStatusChart = function(divID) 
         fields: [{key: "status"}, {key: "count"}]
         };
 
-    var dataUrl = "/workqueue/statusstat"
+    var dataUrl = "/workqueueservice/workqueue/statusstat"
 
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
 

@@ -76,14 +76,16 @@ class WorkQueueManager(Harness):
                     
                     if not queueFlag and hasattr(page, "model") \
                        and page.section_('model').object == WORKQUEUE_REST_NAMESPACE:
-                        qConfig['QueueURL'] = 'http://%s:%s/%s' % (webapp.Webtools.host,
+                        qConfig['QueueURL'] = 'http://%s:%s/%s/%s' % (webapp.Webtools.host,
                                                                   webapp.Webtools.port,
+                                                                  webapp._internal_name.lower(),
                                                                   page._internal_name)
                         queueFlag = True
                         
                     if page.object == WORKQUEUE_MONITOR_NAMESPACE:
-                        monitorURL = 'http://%s:%s/%s' % (webapp.Webtools.host,
+                        monitorURL = 'http://%s:%s/%s/%s' % (webapp.Webtools.host,
                                                           webapp.Webtools.port,
+                                                          webapp._internal_name.lower(),
                                                           page._internal_name)
             if not queueFlag:
                 raise RuntimeError

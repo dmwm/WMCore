@@ -16,15 +16,15 @@ class SingleShotTestCase(unittest.TestCase):
 
     def setUp(self):
         """Create workflow stuff"""
-        self.policy = SingleShot()
-        self.strict_policy = SingleShot(SuccessThreshold = 1.0)
+        self.policy = SingleShot(SuccessThreshold = 0.9)
+        self.strict_policy = SingleShot()
 
         # ones i made earlier
         self.available = WQE(Status = 'Available')
         self.acquired = WQE(Status = 'Acquired')
         self.negotiating = WQE(Status = 'Negotiating')
-        self.done = WQE(Status = 'Done')
-        self.failed = WQE(Status = 'Failed')
+        self.done = WQE(Status = 'Done', PercentComplete = 100, PercentSuccess = 100)
+        self.failed = WQE(Status = 'Failed', PercentComplete = 100, PercentSuccess = 0)
 
     def tearDown(self):
         pass
@@ -78,7 +78,8 @@ class SingleShotTestCase(unittest.TestCase):
             elements[i / 100.] = [self.done] * i + [self.failed] * (100 - i)
 
         # go through range, checking correct status for entire pre-seeded dict
-        for threshold in frange4(0., 1., 0.05):
+        # be careful of rounding errors here
+        for threshold in frange4(0., 1., 0.1):
             policy = SingleShot(SuccessThreshold = threshold)
             for value, items in elements.items():
                 if value >= threshold:

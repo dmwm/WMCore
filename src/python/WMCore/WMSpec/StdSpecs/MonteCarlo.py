@@ -60,6 +60,7 @@ class MonteCarloWorkloadFactory(StdBase):
         """
         workload = self.createWorkload()
         workload.setWorkQueueSplitPolicy("MonteCarlo", self.prodJobSplitAlgo, self.prodJobSplitArgs)
+        workload.setEndPolicy("SingleShot", SuccessThreshold = 0.9)
         prodTask = workload.newTask("Production")
 
         outputMods = self.setupProcessingTask(prodTask, "Production", None,

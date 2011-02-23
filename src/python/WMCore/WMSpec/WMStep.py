@@ -140,6 +140,12 @@ class WMStepHelper(TreeHelper):
                 return self.data.user.inputSandboxes
         return []
 
+    def getUserFiles(self):
+        if hasattr(self.data, 'user'):
+            if hasattr(self.data.user, 'userFiles'):
+                return self.data.user.userFiles
+        return []
+
 class WMStep(ConfigSectionTree):
     """
     _WMStep_

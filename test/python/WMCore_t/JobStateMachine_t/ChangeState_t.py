@@ -45,7 +45,8 @@ class TestChangeState(unittest.TestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setupCouch("changestate_t", "JobDump")
+        self.testInit.setupCouch("changestate_t/jobs", "JobDump")
+        self.testInit.setupCouch("changestate_t/fwjrs", "FWJRDump")        
 
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
@@ -135,7 +136,7 @@ class TestChangeState(unittest.TestCase):
         change.propagate([testJobA, testJobB], "created", "new")
         change.propagate([testJobA, testJobB], "executing", "created")
 
-        testJobADoc = change.database.document(testJobA["couch_record"])
+        testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
 
         for transition in testJobADoc["states"].itervalues():
             self.assertTrue(type(transition["timestamp"]) in (types.IntType,
@@ -170,7 +171,7 @@ class TestChangeState(unittest.TestCase):
         assert len(testJobADoc["inputfiles"]) == 1, \
                "Error: Input files parameter is incorrect."
         
-        testJobBDoc = change.database.document(testJobB["couch_record"])
+        testJobBDoc = change.jobsdatabase.document(testJobB["couch_record"])
 
         assert testJobBDoc["jobid"] == testJobB["id"], \
                "Error: ID parameter is incorrect."
@@ -195,15 +196,13 @@ class TestChangeState(unittest.TestCase):
         assert len(testJobBDoc["inputfiles"]) == 1, \
                "Error: Input files parameter is incorrect."
 
-        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t")
-        options = {"startkey": testJobA["id"], "endkey": testJobA["id"],
-                   "include_docs": True}
-        results = changeStateDB.loadView("JobDump", "jobsByJobID", options)
+        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t/jobs")
+        allDocs = changeStateDB.document("_all_docs")
 
-        assert len(results["rows"]) == 1, \
-               "Error: More than one job returned."
+        self.assertEqual(len(allDocs["rows"]), 3,
+                         "Error: Wrong number of documents.")
 
-        couchJobDoc = results["rows"][0]["doc"]
+        couchJobDoc = changeStateDB.document("1")
 
         assert couchJobDoc["name"] == testJobA["name"], \
                "Error: Name is wrong"
@@ -379,15 +378,16 @@ class TestChangeState(unittest.TestCase):
 
         change.propagate([testJobA], 'executing', 'created')
 
-        options = {"startkey": testJobA["id"], "endkey": testJobA["id"],
-                   "include_docs": True}
-        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t")        
-        results = changeStateDB.loadView("JobDump", "fwjrsByJobID", options)
+        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t/fwjrs")
+        allDocs = changeStateDB.document("_all_docs")
 
-        assert len(results["rows"]) == 1, \
-               "Error: Wrong number of FWJRs returned."
+        self.assertEqual(len(allDocs["rows"]), 2,
+                         "Error: Wrong number of documents")
 
-        fwjrDoc = results["rows"][0]["doc"]
+        for resultRow in allDocs["rows"]:
+            if resultRow["id"] != "_design/FWJRDump":
+                fwjrDoc = changeStateDB.document(resultRow["id"])
+                break
 
         assert fwjrDoc["retrycount"] == 0, \
                "Error: Retry count is wrong."

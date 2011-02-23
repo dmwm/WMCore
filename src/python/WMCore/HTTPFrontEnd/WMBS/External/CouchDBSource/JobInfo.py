@@ -69,21 +69,22 @@ def getJobSummaryByWorkflow(couchConfig):
     """
     try:
         couchDBBase = CouchDBConnectionBase(couchConfig)
-        changeStateDB = couchDBBase.getCouchDB()
+        changeStateDB = couchDBBase.getCouchJobsDB()
     except:
         #TODO log the error in the server
         #If the server is down it doesn't throw CouchError,
         #Need to distinquish between server down and CouchError
         return [{"error": 'Couch connection error'}]
-    
+
     options = {"group": True, "group_level": 1, "stale": "ok"}
     result = changeStateDB.loadView("JobDump", "statusByWorkflowName",
                                     options)    
-        
 
-    couchDocBase = couchDBBase.getCouchDBHtmlBase(
-                                    "JobDump", "workflowSummary")
-
+    quotedJobsDBName = couchDBBase.getCouchDBName() + "%2Fjobs"
+    quotedFWJRDBName = couchDBBase.getCouchDBName() + "%2Ffwjrs"
+    
+    couchDocBase = couchDBBase.getCouchDBHtmlBase(quotedFWJRDBName, "FWJRDump",
+                                                  "workflowSummary")
     # reformat to match other type. (not very performative)
     formatted = []
     for item in result['rows']:
@@ -95,10 +96,10 @@ def getJobSummaryByWorkflow(couchConfig):
                    'endkey':'["%s",{}]' % item['key'][0],
                    "reduce": "false"}
     
-        dictItem['couch_job_info_base'] = couchDBBase.getCouchDBHtmlBase(
-                                    "JobDump", "replace_to_Jobs", 
-                                    'statusByWorkflowName', options = options,
-                                    type = "list")
+        dictItem['couch_job_info_base'] = couchDBBase.getCouchDBHtmlBase(quotedJobsDBName,
+                                                                         "JobDump", "replace_to_Jobs", 
+                                                                         'statusByWorkflowName', options = options,
+                                                                         type = "list")
         
         formatted.append(dictItem)
 

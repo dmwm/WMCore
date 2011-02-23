@@ -87,6 +87,8 @@ class LogCollect(Executor):
             try:
                 output = stageInMgr(**file)
                 readyFiles.append(output)
+                self.report.addInputFile(sourceName = "logArchives",
+                                         lfn = file['LFN'])
             except Alarm:
                 msg = "Indefinite hang during stageIn of LogCollect"
                 logging.error(msg)
@@ -122,6 +124,7 @@ class LogCollect(Executor):
         signal.alarm(waitTime)
         try:
             stageOutMgr(tarInfo)
+            self.report.addOutputFile(outputModule = "LogCollect", file = tarInfo)
         except Alarm:
                 msg = "Indefinite hang during stageOut of LogCollect"
                 logging.error(msg)

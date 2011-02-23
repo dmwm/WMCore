@@ -268,11 +268,11 @@ class AccountantWorker(WMConnectionBase):
         """
         if not outputMap.has_key(moduleLabel):
             logging.info("Output module label missing from output map.")
-            return None
+            return []
 
         outputFilesets = []
         for outputFileset in outputMap[moduleLabel]:
-            if merged == False:
+            if merged == False and outputFileset["output_fileset"] != None:
                 outputFilesets.append(outputFileset["output_fileset"])
             else:
                 if outputFileset["merged_output_fileset"] != None:
@@ -586,11 +586,16 @@ class AccountantWorker(WMConnectionBase):
         
         for wmbsFile in self.wmbsFilesToBuild:
             lfn           = wmbsFile['lfn']
+            if lfn == None:
+                continue
+            
             selfChecksums = wmbsFile['checksums']
             parentageBinds.append({'child': lfn, 'jobid': wmbsFile['jid']})
             if wmbsFile['runs']:
                 runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
-            fileLocations.append({'lfn': lfn, 'location': wmbsFile.getLocations()[0]})
+
+            if len(wmbsFile.getLocations()) > 0:
+                fileLocations.append({'lfn': lfn, 'location': wmbsFile.getLocations()[0]})
 
             if selfChecksums:
                 # If we have checksums we have to create a bind
@@ -607,6 +612,8 @@ class AccountantWorker(WMConnectionBase):
                                wmbsFile["last_event"],
                                wmbsFile['merged']])
             
+        if len(fileCreate) == 0:
+            return
 
         try:
 
@@ -671,7 +678,9 @@ class AccountantWorker(WMConnectionBase):
             seName = file["locations"]
 
         wmbsFile["locations"] = set()
-        wmbsFile.setLocation(se = seName, immediateSave = False)
+
+        if seName != None:
+            wmbsFile.setLocation(se = seName, immediateSave = False)
         wmbsFile['jid'] = jobID
         self.wmbsFilesToBuild.append(wmbsFile)
 

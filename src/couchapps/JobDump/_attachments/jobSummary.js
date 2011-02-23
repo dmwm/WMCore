@@ -1,12 +1,38 @@
-function getParentJobForFile(requestName, fileLFN) {
+function getRootDBPath() {
+  // Figure out the root DB path given the current url of the page.  This will
+  // return just the hostname and the database name with /jobs or /fwjrs.
+  var urlParts = location.href.split('/');
+  var rootDBName = urlParts[3].split('%2F')[0];
+  return "http://" + urlParts[2] + "/" + rootDBName;
+}
+
+function getJobDocument(jobID) {
+  // Retrieve a job document given the jobID.
+  xmlhttp = new XMLHttpRequest();
+  xmlhttp.open("GET", "../../../../" + jobID, false);
+  xmlhttp.send();
+
+  return eval("(" + xmlhttp.responseText + ")");
+};
+
+function getJobOutput(jobID, outputType) {
+  // Retrieve the output of a job.
+  xmlhttp = new XMLHttpRequest();
+  xmlhttp.open("GET", getRootDBPath() + "%2Ffwjrs/_design/FWJRDump/_view/" + outputType + "ByJobID?stale=ok&startkey=" + jobID + "&endkey=" + jobID , false);
+  xmlhttp.send();
+
+  return eval("(" + xmlhttp.responseText + ")");
+};
+
+function getParentJobForFile(requestName, jobID, fileLFN) {
   // Retrieve the ID of the job that produce this file.  If no parent job
   // exists, return null.
   xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", "../../_view/jobsByOutputLFN?stale=ok&startkey=[\"" + requestName + "\",\"" + fileLFN + "\"]&endkey=[\"" + requestName + "\",\"" + fileLFN + "\",{}]", false);
+  xmlhttp.open("GET", getRootDBPath() + "%2Ffwjrs/_design/FWJRDump/_view/jobsByOutputLFN?stale=ok&startkey=[\"" + requestName + "\",\"" + fileLFN + "\"]&endkey=[\"" + requestName + "\",\"" + fileLFN + "\",{}]", false);
   xmlhttp.send();
 
   var results = eval("(" + xmlhttp.responseText + ")")["rows"];
-  if (results.length > 0) {
+  if (results && results.length > 0 && results[0]["value"] != jobID) {
     return results[0]["value"];
   }
 
@@ -31,37 +57,246 @@ function getSiblingJobsForFile(requestName, jobID, fileLFN) {
   return siblingJobIDs;
 };
 
-function renderJobInputFiles(requestName, inputFiles, jobID, inputDiv) {
-  // Render information about the input to this job, the jobs that produced the
-  // input and any of jobs that used the same input file.
-  var inputContent = "";
+function renderJobFiles(requestName, files, jobID, div) {
+  // Render information about the array of files passed into this function.
+  // If the jobID parameter is not null this will list the job that output
+  // a particular file.  
+  if (files.length == 0) {
+    div.innerHTML = "(none)";
+    return
+  };
 
-  for (var inputFileIndex in inputFiles) {
-    inputContent += "  " + inputFiles[inputFileIndex] + "\n";
-    var parentJob = getParentJobForFile(requestName, inputFiles[inputFileIndex]);
+  for (var fileIndex in files) {
+    var fileDiv = document.createElement("div");
+    fileDiv.style.margin = "3px 0px 0px 10px"; 
+    fileDiv.innerHTML = files[fileIndex]["lfn"];
+    div.appendChild(fileDiv);
+
+    var parentSiblingDiv = document.createElement("div");
+    parentSiblingDiv.style.margin = "0px 0px 0px 20px";
+    fileDiv.appendChild(parentSiblingDiv);
+
+    var parentJob = getParentJobForFile(requestName, jobID, files[fileIndex]["lfn"]);
 
     if (parentJob) {
-      inputContent += "    Parent: <a href=\"../jobSummary/" + parentJob + "\">" + parentJob + "</a>";
+      parentSiblingDiv.innerHTML = "Produced by: <a href=\"../jobSummary/" + parentJob + "\">" + parentJob + "</a>";
     };
 
-    var siblingJobs = getSiblingJobsForFile(requestName, jobID, inputFiles[inputFileIndex]);
+    var siblingJobs = getSiblingJobsForFile(requestName, jobID, files[fileIndex]);
     if (siblingJobs.length > 0) {
-      if (siblingJobs.length == 1) {
-        inputContent += " Sibling: ";
-      } else {
-        inputContent += " Siblings: ";
-      }
+      parentSiblingDiv.innerHTML += " Used by: ";
 
       for (var siblingJobIndex in siblingJobs) {
-        inputContent += "<a href=\"../jobSummary/" + siblingJobs[siblingJobIndex] + "\">" + siblingJobs[siblingJobIndex] + "</a>";
-        if (siblingJobIndex == siblingJobs.length - 1) {
-          inputContent += "\n";
-        } else {
-          inputContent += ", ";
+        parentSiblingDiv.innerHTML += "<a href=\"../jobSummary/" + siblingJobs[siblingJobIndex] + "\">" + siblingJobs[siblingJobIndex] + "</a>";
+        if (siblingJobIndex != siblingJobs.length - 1) {
+          parentSiblingDiv.innerHTML += ", ";
         };
       };
     };
   };
+};
 
-  inputDiv.innerHTML = inputContent;
+function renderJobOutputFiles(requestName, jobID) {
+  // Render information about the array of files passed into this function.
+  // If the jobID parameter is not null this will list the job that output
+  // a particular file.
+  jobOutput = getJobOutput(jobID, "output");
+  outputLabelDiv = document.getElementById("output");
+  outputLabelDiv.innerHTML = "Output Files:"
+  outputLabelDiv.style.margin = "10px 0px 0px 0px";
+  outputDiv = document.createElement("div");
+  outputDiv.style.margin = "0px 0px 0px 15px";
+  outputLabelDiv.appendChild(outputDiv);
+
+  if (jobOutput["rows"].length == 0) {
+    outputDiv.innerHTML = "(none)";
+    return
+  };
+
+  for (var fileIndex in jobOutput["rows"]) {
+    var fileDiv = document.createElement("div");
+    fileDiv.style.margin = "3px 0px 0px 10px"; 
+    fileDiv.innerHTML = jobOutput["rows"][fileIndex]["value"]["lfn"];
+    outputDiv.appendChild(fileDiv);
+
+    var parentSiblingDiv = document.createElement("div");
+    parentSiblingDiv.style.margin = "0px 0px 0px 20px";
+    fileDiv.appendChild(parentSiblingDiv);
+
+    var parentJob = getParentJobForFile(requestName, jobID, jobOutput["rows"][fileIndex]["value"]["lfn"]);
+
+    if (parentJob) {
+      parentSiblingDiv.innerHTML = "Produced by: <a href=\"../jobSummary/" + parentJob + "\">" + parentJob + "</a>";
+    };
+
+    var siblingJobs = getSiblingJobsForFile(requestName, jobID, jobOutput["rows"][fileIndex]["value"]["lfn"]);
+    if (siblingJobs.length > 0) {
+      parentSiblingDiv.innerHTML += " Used by: ";
+
+      for (var siblingJobIndex in siblingJobs) {
+        parentSiblingDiv.innerHTML += "<a href=\"../jobSummary/" + siblingJobs[siblingJobIndex] + "\">" + siblingJobs[siblingJobIndex] + "</a>";
+        if (siblingJobIndex != siblingJobs.length - 1) {
+          parentSiblingDiv.innerHTML += ", ";
+        };
+      };
+    };
+  };
+};
+
+function renderJobMetaData(jobDocument) {
+  // Add information about the job including the name, owner, task
+  // and workflow to the summary page.
+  infoDiv = document.getElementById("info");
+  infoDiv.innerHTML += "Name: " + jobDocument["name"] + "<br>";
+  infoDiv.innerHTML += "Owner: " + jobDocument["owner"] + "<br>";
+  infoDiv.innerHTML += "Workflow: " + jobDocument["workflow"] + "<br>";
+  infoDiv.innerHTML += "Task: " + jobDocument["task"] + "<br>";
+};
+
+function renderJobMask(jobDocument) {
+  // Add information from the job mask to the summary page.
+  var maskLabelDiv = document.getElementById("mask");
+  maskLabelDiv.innerHTML = "Mask:\n";
+  maskLabelDiv.style.margin = "10px 0px 0px 0px";
+
+  maskDiv = document.createElement("div");
+  maskDiv.style.margin = "0px 0px 0px 15px";
+
+  maskDiv.innerHTML += "First Event: " + jobDocument["mask"]["firstevent"] + "<br>";
+  maskDiv.innerHTML += "Last Event: " + jobDocument["mask"]["lastevent"] + "<br>";
+  maskDiv.innerHTML += "First Lumi: " + jobDocument["mask"]["firstlumi"] + "<br>";
+  maskDiv.innerHTML += "Last Lumi: " + jobDocument["mask"]["lastlumi"] + "<br>";
+  maskDiv.innerHTML += "First Run: " + jobDocument["mask"]["firstrun"] + "<br>";
+  maskDiv.innerHTML += "Last Run: " + jobDocument["mask"]["lastrun"] + "<br>";
+
+  maskLabelDiv.appendChild(maskDiv);
+};
+
+function renderJobTransitions(jobDocument) {
+  // Render all of the state transitions that the job has made.
+  var transitionLabelDiv = document.getElementById("transitions");
+  transitionLabelDiv.innerHTML = "State Transitions:\n";
+  transitionLabelDiv.style.margin = "10px 0px 0px 0px";
+
+  transitionDiv = document.createElement("div");
+  transitionDiv.style.margin = "0px 0px 0px 15px";
+
+  for (var transitionIndex in jobDocument["states"]) {
+    var transition = jobDocument["states"][transitionIndex];
+    var transitionTimestamp = new Date(transition["timestamp"] * 1000);
+
+    if (transition["location"] == "Agent") {
+      transitionDiv.innerHTML += "  " + transitionTimestamp.toDateString() + " ";
+      transitionDiv.innerHTML += transitionTimestamp.toLocaleTimeString() + " ";
+      transitionDiv.innerHTML += transition["oldstate"] + " -> " + transition["newstate"] + "<br>";
+    } else {
+      transitionDiv.innerHTML += "  " + transitionTimestamp.toDateString() + " ";
+      transitionDiv.innerHTML += transitionTimestamp.toLocaleTimeString() + " ";
+      transitionDiv.innerHTML += transition["oldstate"] + " -> " + transition["newstate"];
+      transitionDiv.innerHTML += " (" + transition["location"] + ")<br>";
+    }
+  }
+
+  transitionLabelDiv.appendChild(transitionDiv);
+};
+
+function renderErrorDetails(errorsDiv, errorInfo) {
+  // Insert the error information into the given div.
+  for(var errorIndex in errorInfo["error"]) {
+    stepError = errorInfo["error"][errorIndex];
+    var errorDiv = document.createElement("div");
+
+    if (errorIndex == 0) {
+      errorDiv.style.margin = "5px 0px 0px 15px";
+    } else {
+      errorDiv.style.margin = "10px 0px 0px 15px";
+    }
+
+    errorDiv.innerHTML = "<b>Retry:</b>" + errorInfo["retry"] + "<br>";
+    errorDiv.innerHTML += "<b>Type:</b> " + stepError["type"] + "<br>";
+    errorDiv.innerHTML += "<b>Exit Code:</b> " + stepError["exitCode"] + "<br>";
+    errorDiv.innerHTML += "<b>Details:</b>";
+    errorsDiv.appendChild(errorDiv);
+
+    var errorDetailsPre = document.createElement("pre");
+    errorDetailsPre.style.margin = "0px 0px 0px 15px";
+    errorDetailsPre.style.backgroundColor = "silver";
+    errorDetailsPre.style.marginTop = "0px";
+    errorDetailsPre.style.marginBottom = "0px";
+    errorDetailsPre.style.width = "100%";
+    errorDetailsPre.innerHTML = stepError["details"];
+    errorDiv.appendChild(errorDetailsPre);
+  };
+};
+
+function renderJobErrors(jobID) {
+  // Retrieve and render all of the errors from a given job.
+  errorsLabelDiv = document.getElementById("errors");
+  errorsLabelDiv.innerHTML = "Errors:"
+  errorsLabelDiv.style.margin = "10px 0px 0px 0px";
+  errorsDiv = document.createElement("div");
+  errorsDiv.style.margin = "0px 0px 0px 15px";
+  errorsLabelDiv.appendChild(errorsDiv);
+
+  xmlhttp = new XMLHttpRequest();
+  xmlhttp.open("GET", getRootDBPath() + "%2Ffwjrs/_design/FWJRDump/_view/errorsByJobID?stale=ok&startkey=[" + jobID + "]&endkey=[" + jobID + ",{}]", false);
+  xmlhttp.send();
+  jobErrors = eval("(" + xmlhttp.responseText + ")");
+
+  if (jobErrors["rows"].length == 0) {
+    errorsDiv.innerHTML = "(none)";
+    return;
+  };
+
+  for(rowIndex in jobErrors["rows"]) {
+    renderErrorDetails(errorsDiv, jobErrors["rows"][rowIndex]["value"]);
+  };
+};
+
+function renderLogArchives(jobID) {
+  // Render all of the logarchive information for the given job.
+  xmlhttp = new XMLHttpRequest();
+  xmlhttp.open("GET", getRootDBPath() + "%2Ffwjrs/_design/FWJRDump/_view/logArchivesByJobID?stale=ok&startkey=[" + jobID + "]&endkey=[" + jobID + ",{}]", false);
+  xmlhttp.send();
+  jobArchives = eval("(" + xmlhttp.responseText + ")");
+
+  archivesLabelDiv = document.getElementById("logArchives");
+  archivesLabelDiv.innerHTML = "Log Archives:"
+  archivesLabelDiv.style.margin = "10px 0px 0px 0px";
+  archivesDiv = document.createElement("div");
+  archivesDiv.style.margin = "0px 0px 0px 15px";
+  archivesLabelDiv.appendChild(archivesDiv);
+
+  if (jobArchives["rows"].length == 0) {
+    archivesDiv.innerHTML = "(none)";
+    return;
+  };
+
+  for (archiveIndex in jobArchives["rows"]) {
+    archivesDiv.innerHTML += jobArchives["rows"][archiveIndex]["value"]["retrycount"];
+    archivesDiv.innerHTML += " -> " + jobArchives["rows"][archiveIndex]["value"]["lfn"];
+    archivesDiv.innerHTML += "<br>";
+  }
+}
+
+function renderJobSummary(jobID) {
+  // Render the job summary.
+  var jobDoc = getJobDocument(jobID);
+
+  renderJobMetaData(jobDoc);
+  renderJobMask(jobDoc);
+
+  inputLabelDiv = document.getElementById("inputfiles");
+  inputLabelDiv.innerHTML = "Input Files:"
+  inputLabelDiv.style.margin = "10px 0px 0px 0px";
+  inputDiv = document.createElement("div");
+  inputDiv.style.margin = "0px 0px 0px 15px";
+  renderJobFiles(jobDoc["workflow"], jobDoc["inputfiles"], jobID, inputDiv);
+  inputLabelDiv.appendChild(inputDiv);
+
+  renderJobTransitions(jobDoc);
+  renderJobOutputFiles(jobDoc["workflow"], jobID);
+
+  renderJobErrors(jobID);
+  renderLogArchives(jobID);
 };

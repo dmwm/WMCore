@@ -7,6 +7,7 @@ wmagent-couchapp-init
 import os
 import tempfile
 import sys
+import urllib
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
@@ -22,13 +23,10 @@ def installCouchApp(couchUrl, couchDBName, couchAppName):
     Install the given couch app on the given server in the given database.  If
     the database already exists it will be deleted.
     """
-    print "Installing %s into %s" % (couchAppName, couchDBName)
+    print "Installing %s into %s" % (couchAppName, urllib.unquote_plus(couchDBName))
 
     couchServer = CouchServer(couchUrl)
     couchappConfig = Config()
-
-    if couchDBName not in couchServer.listDatabases():
-        couchServer.createDatabase(couchDBName)
 
     wmBase = getWMBASE()
     develPath = "%s/src/couchapps" % wmBase
@@ -40,31 +38,39 @@ def installCouchApp(couchUrl, couchDBName, couchAppName):
                  "%s/%s" % (couchUrl, couchDBName))
     return
     
-  
-
 def setupCron(couchUrl, couchDBName):
     """
     _setupCron_
 
-    Setup cron jobs to index and compact the JobDump.
+    Setup cron jobs to index and compact the JobDump.  Things get interesting as
+    the database names have a forward slash in them, which needs to be quoted
+    to function properly.  The percent character has a special meaning to cron,
+    so we need to employ a hacky sed command to filter out the quoting of the
+    quoted slash.
     """
     print "Setting up cron jobs for the job dump."
-    index = 'curl -s -m 1 %s/%s/_design/JobDump/_view/jobsByJobID?limit=1 > /dev/null' % (couchUrl, couchDBName)
-    compact = 'curl -s -H "Content-Type: application/json" -X POST %s/%s/_compact > /dev/null' % (couchUrl, couchDBName)
+    fwjrDumpName = urllib.quote_plus("%s/fwjrs" % couchDBName).replace("%", "\\%")
+    jobDumpName = urllib.quote_plus("%s/jobs" % couchDBName).replace("%", "\\%")
+
+    indexJobsUrl = "'%s/%s/_design/JobDump/_view/jobsToReport?limit=1'" % (couchUrl, jobDumpName)
+    indexFwjrUrl = "'%s/%s/_design/FWJRDump/_view/outputByJobID?limit=1'" % (couchUrl, fwjrDumpName)
+    indexCmd = "echo %s | sed -e 's|\\\\||g' | xargs curl -s -m 1 > /dev/null"
+
+    compactViewUrl = "'%s/%s/_compact/JobDump'" % (couchUrl, jobDumpName)
+    compactDBUrl = "'%s/%s/_compact'" % (couchUrl, jobDumpName)
+    compactCmd = "echo %s | sed -e 's|\\\\||g' | xargs curl -s -H 'Content-Type: application/json' -X POST > /dev/null"
 
     tempDir = tempfile.mkdtemp()
     os.system("crontab -l > %s/crontab" % tempDir)
-    os.system("grep -v '%s' %s/crontab > %s/crontab2" % (index, tempDir, tempDir))
-    os.system("grep -v '%s' %s/crontab2 > %s/crontab" % (compact, tempDir, tempDir))
-
-    cronTab = open("%s/crontab" % tempDir, "w+")
-    cronTab.write("* * * * * %s\n" % index)
-    cronTab.write("0 0 * * * %s\n" % compact)
+    cronTab = open("%s/crontab" % tempDir, "a")
+    cronTab.write("* * * * * %s\n" % (indexCmd % indexJobsUrl))
+    cronTab.write("* * * * * %s\n" % (indexCmd % indexFwjrUrl))
+    cronTab.write("0 0 * * * %s\n" % (compactCmd % compactViewUrl))
+    cronTab.write("0 0 * * * %s\n" % (compactCmd % compactDBUrl))
     cronTab.close()
 
     os.system("crontab %s/crontab" % tempDir)
     os.remove("%s/crontab" % tempDir)
-    os.remove("%s/crontab2" % tempDir)    
     os.rmdir(tempDir)
     return
 
@@ -77,8 +83,10 @@ if __name__ == "__main__":
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
 
     if hasattr(wmagentConfig.JobStateMachine, "couchDBName"):
-        installCouchApp(wmagentConfig.JobStateMachine.couchurl,
-                        wmagentConfig.JobStateMachine.couchDBName, "JobDump")
+        fwjrDumpName = urllib.quote_plus("%s/fwjrs" % wmagentConfig.JobStateMachine.couchDBName)
+        jobDumpName = urllib.quote_plus("%s/jobs" % wmagentConfig.JobStateMachine.couchDBName)
+        installCouchApp(wmagentConfig.JobStateMachine.couchurl, fwjrDumpName, "FWJRDump")
+        installCouchApp(wmagentConfig.JobStateMachine.couchurl, jobDumpName, "JobDump")
         setupCron(wmagentConfig.JobStateMachine.couchurl,
                   wmagentConfig.JobStateMachine.couchDBName)
 

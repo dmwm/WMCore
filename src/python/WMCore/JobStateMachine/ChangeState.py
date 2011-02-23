@@ -24,20 +24,18 @@ class ChangeState(WMObject, WMConnectionBase):
         WMConnectionBase.__init__(self, "WMCore.WMBS")
 
         if couchDbName == None:
-            self.dbname = getattr(self.config.JobStateMachine, "couchDBName",
-                                  "Unknown")
+            self.dbname = getattr(self.config.JobStateMachine, "couchDBName")
         else:
             self.dbname = couchDbName
 
         try:
             self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
-            if self.dbname not in self.couchdb.listDatabases():
-                self.createDatabase()
-
-            self.database = self.couchdb.connectDatabase(self.dbname)
+            self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname)
+            self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname)
         except Exception, ex:
             logging.error("Error connecting to couch: %s" % str(ex))
-            self.database = None
+            self.jobsdatabase = None
+            self.fwjrdatabase = None            
 
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
@@ -92,7 +90,7 @@ class ChangeState(WMObject, WMConnectionBase):
         in couch it will be saved as a seperate document.  If the job has a FWJR
         attached that will be saved as a seperate document.
         """
-        if not self.database:
+        if not self.jobsdatabase or not self.fwjrdatabase:
             return
         
         jobMap = {}
@@ -184,7 +182,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
                 couchRecordsToUpdate.append({"jobid": job["id"],
                                              "couchid": jobDocument["_id"]})                
-                self.database.queue(jobDocument)
+                self.jobsdatabase.queue(jobDocument)
             else:
                 # We send a PUT request to the stateTransition update handler.
                 # Couch expects the parameters to be passed as arguments to in
@@ -192,12 +190,12 @@ class ChangeState(WMObject, WMConnectionBase):
                 # this way for GET requests.  Changing the Requests class to
                 # encode PUT arguments as couch expects broke a bunch of code so
                 # we'll just do our own encoding here.
-                updateUri = "/" + self.database.name + "/_design/JobDump/_update/stateTransition/" + couchDocID
+                updateUri = "/" + self.jobsdatabase.name + "/_design/JobDump/_update/stateTransition/" + couchDocID
                 updateUri += "?oldstate=%s&newstate=%s&location=%s&timestamp=%s" % (oldstate,
                                                                                     newstate,
                                                                                     jobLocation,
                                                                                     timestamp)
-                self.database.makeRequest(uri = updateUri, type = "PUT", decode = False)
+                self.jobsdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
 
             if job.get("fwjr", None):
                 job["fwjr"].setTaskName(job["task"])
@@ -205,25 +203,16 @@ class ChangeState(WMObject, WMConnectionBase):
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),
                                 "type": "fwjr"}
-                self.database.queue(fwjrDocument, timestamp = True)
+                self.fwjrdatabase.queue(fwjrDocument, timestamp = True)
 
         if len(couchRecordsToUpdate) > 0:
             self.setCouchDAO.execute(bulkList = couchRecordsToUpdate,
                                      conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
             
-        self.database.commit()
+        self.jobsdatabase.commit()
+        self.fwjrdatabase.commit()        
         return
-
-    def createDatabase(self):
-        """
-        _createDatabase_
-
-        Create the couch database and install the views.
-        """
-        database = self.couchdb.createDatabase(self.dbname)
-        database.commit()
-        return database
 
     def persist(self, jobs, newstate, oldstate):
         """
@@ -257,8 +246,8 @@ class ChangeState(WMObject, WMConnectionBase):
           - newState
           - oldState
         """
-        updateBase = "/" + self.database.name + "/_design/JobDump/_update/dashboardReporting/"
-        viewResults = self.database.loadView("JobDump", "jobsToReport")
+        updateBase = "/" + self.jobsdatabase.name + "/_design/JobDump/_update/dashboardReporting/"
+        viewResults = self.jobsdatabase.loadView("JobDump", "jobsToReport")
 
         jobsToReport = []
         for viewResult in viewResults["rows"]:
@@ -270,6 +259,6 @@ class ChangeState(WMObject, WMConnectionBase):
 
             updateUri = updateBase + str(viewResult["value"]["id"])
             updateUri += "?index=%s" % (viewResult["value"]["index"])
-            self.database.makeRequest(uri = updateUri, type = "PUT", decode = False)
+            self.jobsdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
             
         return jobsToReport

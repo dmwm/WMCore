@@ -312,6 +312,15 @@ class Report:
         if file.has_key("locations"):
             fileRef.location = list(file["locations"])
             keyList.remove('locations')
+        elif file.has_key("SEName"):
+            fileRef.location = [file["SEName"]]
+
+        if file.has_key("LFN"):
+            fileRef.lfn = file["LFN"]
+            keyList.remove("LFN")
+        if file.has_key("PFN"):
+            fileRef.lfn = file["PFN"]
+            keyList.remove("PFN")            
 
         # All right, the rest should be JSONalizable python primitives
         for entry in keyList:

@@ -12,6 +12,8 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
 import os
+import urllib
+
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
 from WMCore.Database.CMSCouch import CouchServer
@@ -51,7 +53,7 @@ class CouchAppTestHarness:
         push a list of couchapps to the database
         """
         for couchappdir in  couchappdirs:
-            couchapppush(self.couchappConfig, couchappdir, "%s/%s" % (self.couchUrl, self.dbName))
+            couchapppush(self.couchappConfig, couchappdir, "%s/%s" % (self.couchUrl, urllib.quote_plus(self.dbName)))
 
 
 

@@ -30,6 +30,11 @@ class CouchDBConnectionBase(object):
         couchDB = couchServer.connectDatabase(dbname = self.jobDumpDB)
         return couchDB
 
+    def getCouchJobsDB(self):
+        couchServer = CouchServer(dburl = self.couchURL)
+        couchDB = couchServer.connectDatabase(dbname = self.jobDumpDB + "/jobs")
+        return couchDB
+
     def getCouchACDC(self):
 
         couchServer = CouchServer(dburl = self.couchURL)
@@ -49,7 +54,7 @@ class CouchDBConnectionBase(object):
 
         return baseURL
 
-    def getCouchDBHtmlBase(self, design, view, path = None, options = {},
+    def getCouchDBHtmlBase(self, database, design, view, path = None, options = {},
                            type = "show"):
         """
         type should be either 'show' or 'list'
@@ -57,7 +62,7 @@ class CouchDBConnectionBase(object):
         """
 
         baseURL = '%s/%s/_design/%s/_%s/%s' % \
-                        (self.couchURL, self.jobDumpDB, design, type, view)
+                        (self.couchURL, database, design, type, view)
 
         baseURL = re.sub('://.+:.+@', '://', baseURL, 1)
 
@@ -68,3 +73,4 @@ class CouchDBConnectionBase(object):
             else:
                 baseURL = "%s?%s" % (baseURL, data)
         return baseURL
+

@@ -22,7 +22,7 @@ from T0.State.Database.Reader import ListBlock
 from T0.State.Database.Writer import InsertBlock
 
 from T0.GenericTier0.Tier0DB import Tier0DB
-from T0.RunConfigCache.CacheManager import getRunConfigCache
+from T0.RunConfigCache.Cache import Cache
 
 from WMCore.WMSpec.StdSpecs.PromptSkim import PromptSkimWorkloadFactory
 from WMCore.WorkQueue.WorkQueue import WorkQueue
@@ -101,7 +101,8 @@ class PromptSkimPoller(BaseWorkerThread):
         Get a RunConfig instance for the given run number.
         """
         if not self.runConfigCache:
-            self.runConfigCache = getRunConfigCache(self.t0astDBConn, None)
+            self.runConfigCache = Cache(promptSkimming = True)
+            self.runConfigCache.t0astDBConn = self.t0astDBConn
             self.runConfigCache.configCache = os.path.join(self.config.PromptSkimScheduler.workloadCache,
                                                            "RunConfig")
 

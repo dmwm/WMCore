@@ -148,6 +148,15 @@ class CMSSWStepHelper(CoreHelper):
             self.data.user.inputSandboxes = [userSandbox]
         return
 
+    def setUserFiles(self, userFiles):
+        """
+        _setUserFiles_
+
+        Sets the list of extra files the user needs
+        """
+        if userFiles:
+            self.data.user.userFiles = userFiles
+        return
 
     def setupChainedProcessing(self, inputStepName, inputOutputModule):
         """
@@ -210,6 +219,7 @@ class CMSSW(Template):
         step.user.inputSandboxes = []
         step.user.script = None
         step.user.outputFiles = []
+        step.user.userFiles = []
 
         step.section_("monitoring")
 

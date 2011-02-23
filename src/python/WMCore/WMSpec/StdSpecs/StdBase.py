@@ -123,7 +123,7 @@ class StdBase(object):
                             couchDBName = None, configDoc = None, splitAlgo = "FileBased",
                             splitArgs = {'files_per_job': 1}, seeding = None, totalEvents = None,
                             userDN = None, asyncDest = None, stepType = "CMSSW",
-                            userSandbox = None):
+                            userSandbox = None, userFiles = []):
 
         """
         _setupProcessingTask_
@@ -189,6 +189,7 @@ class StdBase(object):
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskStageHelper = procTaskStageOut.getTypeHelper()
         procTaskCmsswHelper.setUserSandbox(userSandbox)
+        procTaskCmsswHelper.setUserFiles(userFiles)
         procTaskCmsswHelper.setGlobalTag(self.globalTag)
         procTaskStageHelper.setMinMergeSize(self.minMergeSize)
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",

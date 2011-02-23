@@ -39,7 +39,8 @@ class AnalysisWorkloadFactory(StdBase):
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.analysisConfigCacheID, splitAlgo = self.analysisJobSplitAlgo,
                                               splitArgs = self.analysisJobSplitArgs, \
-                                           userDN = self.userDN, asyncDest = self.asyncDest, userSandbox = self.userSandbox)
+                                              userDN = self.userDN, asyncDest = self.asyncDest,
+                                              userSandbox = self.userSandbox, userFiles = self.userFiles)
         self.addLogCollectTask(analysisTask)
         return workload
 
@@ -86,6 +87,7 @@ class AnalysisWorkloadFactory(StdBase):
  "/C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Hassen Riahi")
         self.asyncDest = arguments.get("asyncDest","T2_IT_Pisa")
         self.userSandbox = arguments.get("userSandbox", None)
+        self.userFiles   = arguments.get("userFiles", [])
 
         return self.buildWorkload()
 

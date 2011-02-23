@@ -78,6 +78,8 @@ class CMSSW(Executor):
         cmsswConfig    = self.step.application.command.configuration
         cmsswArguments = self.step.application.command.arguments
         userTarball    = ','.join(self.step.user.inputSandboxes)
+        userFiles      = ','.join(self.step.user.userFiles)
+        logging.info('User files are %s' % userFiles)
         logging.info('User sandboxes are %s' % userTarball)
 
         logging.info("Executing CMSSW step")
@@ -190,6 +192,7 @@ class CMSSW(Executor):
                                          cmsswCommand,
                                          cmsswConfig,
                                          os.path.basename(userTarball),
+                                         userFiles,
                                          cmsswArguments]
         logging.info("Executing CMSSW. args: %s" % args)
         spawnedChild = subprocess.Popen( args, 0, None, None, stdoutHandle,
@@ -253,7 +256,7 @@ REQUIRED_ARGUMENT_COUNT=5
 if [ $# -lt $REQUIRED_ARGUMENT_COUNT ]
 then
     echo "Usage: `basename $0` <SCRAM_SETUP>  <SCRAM_ARCH> <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION>\
-                 <JOB_REPORT> <EXECUTABLE> <CONFIG> [Arguments for cmsRun]"
+                 <JOB_REPORT> <EXECUTABLE> <CONFIG> <USER_TARBALLS> <USER_FILES> [Arguments for cmsRun]"
     exit 70
 fi
 
@@ -268,9 +271,11 @@ JOB_REPORT=$6
 EXECUTABLE=$7
 CONFIGURATION=$8
 USER_TARBALL=$9
-shift;shift;shift;shift
 shift;shift;shift;shift;shift;
-
+shift;shift;shift;shift;
+# Can only do nine parameters at a time
+USER_FILES=$1
+shift;
 echo "Beginning CMSSW wrapper script"
 echo "$SCRAM_SETUP $SCRAM_ARCHIT $SCRAM_COMMAND $SCRAM_PROJECT"
 
@@ -290,6 +295,8 @@ if [ $? -ne 0 ]; then echo "***\nCouldn't chdir: $?\n"; exit 72; fi
 if [ -n $USER_TARBALL ] && [ -f $WMAGENTJOBDIR/$USER_TARBALL ] ; then
     echo "Unwinding $WMAGENTJOBDIR/$USER_TARBALL"
     tar xfz $WMAGENTJOBDIR/$USER_TARBALL
+    $WMAGENTJOBDIR/WMCore/WMRuntime/Scripts/UnpackUserTarball.py $USER_TARBALL $USER_FILES
+    if [ $? -ne 0 ]; then echo "***\nCouldn't untar sandbox: $?\n"; exit 74; fi
 fi
 if [ $? -ne 0 ]; then echo "***\nCouldn't untar sandbox: $?\n"; exit 74; fi
 eval `$SCRAM_COMMAND runtime -sh`

@@ -417,41 +417,6 @@ class File(WMBSBase, WMFile):
 
         return
 
-    def __to_json__(self, thunker):
-        """
-        __to_json__
-
-        Serialize the file object.  This will convert all Sets() to lists and
-        weed out the internal data structures that don't need to be shared.
-        """
-        fileDict = {"last_event": self["last_event"],
-                    "first_event": self["first_event"],
-                    "lfn": self["lfn"],
-                    "locations": list(self["locations"]),
-                    "id": self["id"],
-                    "checksums": self["checksums"],
-                    "events": self["events"],
-                    "merged": self["merged"],
-                    "size": self["size"],
-                    "runs": [],
-                    "parents": []}
-
-        for parent in self["parents"]:
-            if type(parent) == str:
-                # Then for some reason, we're passing strings
-                # Done specifically for ErrorHandler
-                fileDict['parents'].append(parent)
-            else:
-                fileDict["parents"].append(thunker._thunk(parent))
-
-        for run in self["runs"]:
-            runDict = {"run_number": run.run,
-                       "lumis": run.lumis}
-            fileDict["runs"].append(runDict)
-                                                
-        return fileDict
-
-
     def setCksum(self, cksum, cktype):
         """
         _setCKType_

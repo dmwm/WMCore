@@ -26,6 +26,8 @@ class File(WMObject, dict):
         self.setdefault("checksums", checksums)
         self.setdefault('runs', set())
         self.setdefault('merged', merged)
+        self.setdefault('last_event', 0)
+        self.setdefault('first_event', 0)
 
         if locations == None:
             self.setdefault("locations", set())
@@ -109,19 +111,39 @@ class File(WMObject, dict):
         hash = self['lfn'].__hash__()
         return hash
 
-    def json(self):
+    def json(self, thunker = None):
         """
         _json_
-        
-        JSON friendly formatted file
 
+        Serialize the file object.  This will convert all Sets() to lists and
+        weed out the internal data structures that don't need to be shared.
         """
-        d = dict()
-        d.update(self)
-        d['runs'] = [ x.json() for x in self['runs'] ]
-        d['locations'] = list(self['locations'])
-        d['parents'] = list(self['parents'])
-        return d
+        fileDict = {"last_event": self["last_event"],
+                    "first_event": self["first_event"],
+                    "lfn": self["lfn"],
+                    "locations": list(self["locations"]),
+                    "id": self.get("id", None),
+                    "checksums": self["checksums"],
+                    "events": self["events"],
+                    "merged": self["merged"],
+                    "size": self["size"],
+                    "runs": [],
+                    "parents": []}
+
+        for parent in self["parents"]:
+            if type(parent) == str:
+                # Then for some reason, we're passing strings
+                # Done specifically for ErrorHandler
+                fileDict['parents'].append(parent)
+            else:
+                fileDict["parents"].append(thunker._thunk(parent))
+
+        for run in self["runs"]:
+            runDict = {"run_number": run.run,
+                       "lumis": run.lumis}
+            fileDict["runs"].append(runDict)
+                                                
+        return fileDict
 
     def __to_json__(self, thunker = None):
         """
@@ -130,5 +152,4 @@ class File(WMObject, dict):
         This is the standard way we jsonize other objects.
         Included here so we have a uniform method.
         """
-
-        return self.json()
+        return self.json(thunker)

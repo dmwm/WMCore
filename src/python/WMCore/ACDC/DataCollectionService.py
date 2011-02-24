@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+343#!/usr/bin/env python
 # encoding: utf-8
 """
 DataCollectionInterface.py
@@ -20,7 +20,8 @@ import WMCore.ACDC.CollectionTypes as CollectionTypes
 
 from WMCore.WMSpec.Utilities import stepIdentifier
 from WMCore.WMException      import WMException
-from WMCore.WMBS.File        import File
+from WMCore.DataStructs.File import File
+from WMCore.DataStructs.Run  import Run
 
 class ACDCDCSException(WMException):
     """
@@ -257,43 +258,36 @@ class DataCollectionService(CouchService):
                                         {"startkey": [collection_id, taskName],
                                          "endkey": [collection_id, taskName, {}]}, [])
 
-        currentBlockIndex = 0
+        totalFiles = 0
+        currentLocation = None
         numFilesInBlock = 0
         numLumisInBlock = 0
         numEventsInBlock = 0
-        
-        for row in results.get('rows', []):
-            resultRow = row['value']
-            if resultRow == None:
-                continue
 
-            # Check for duplicate LFNs
-            lfn = resultRow['lfn']
-            if lfn in fileLFNs:
-                # Then we already have this file
-                continue
-            fileLFNs.append(lfn)
-            
-            if numFilesInBlock == chunkSize:
-                chunks.append({"offset": currentBlockIndex, "files": numFilesInBlock,
-                               "events": numEventsInBlock, "lumis": numLumisInBlock})
-                currentBlockIndex += 1
-                numFilesInBlock    = 0
-                numLumisInBlock    = 0
-                numEventsInBlock   = 0
+        for row in results["rows"]:
+            if currentLocation == None:
+                currentLocation = row["key"][2]
+            if numFilesInBlock == chunkSize or currentLocation != row["key"][2]:
+                chunks.append({"offset": totalFiles, "files": numFilesInBlock,
+                               "events": numEventsInBlock, "lumis": numLumisInBlock,
+                               "locations": currentLocation})
+                totalFiles += numFilesInBlock
+                currentLocation = row["key"][2]
+                numFilesInBlock = 0
+                numLumisInBlock = 0
+                numEventsInBlock = 0
 
             numFilesInBlock += 1
-            numLumisInBlock += resultRow["lumis"]
-            numEventsInBlock += resultRow["events"]
+            numLumisInBlock += row["value"]["lumis"]
+            numEventsInBlock += row["value"]["events"]
             
-
         if numFilesInBlock > 0:
-            chunks.append({"offset": currentBlockIndex, "files": numFilesInBlock,
-                           "events": numEventsInBlock, "lumis": numLumisInBlock})
+            chunks.append({"offset": totalFiles, "files": numFilesInBlock,
+                           "events": numEventsInBlock, "lumis": numLumisInBlock,
+                           "locations": currentLocation})
         return chunks
-
     
-    @CouchUtils.connectToCouch            
+    @CouchUtils.connectToCouch
     def getChunkFiles(self, collection, taskName, chunkOffset, chunkSize = 100):
         """
         _getChunkFiles_
@@ -301,19 +295,24 @@ class DataCollectionService(CouchService):
         Retrieve a chunk of files from the given collection and task.
         """
         collection_id = collection['collection_id']
-        chunkFiles    = []
+        chunkFiles = []
         result = self.couchdb.loadView("ACDC", "fileset_files",
                                        {"startkey": [collection_id, taskName],
                                         "endkey": [collection_id, taskName, {}],
                                         "limit": chunkSize,
-                                        "skip": chunkSize * chunkOffset
+                                        "skip": chunkOffset,
                                         }, [])
 
         for row in result["rows"]:
             resultRow = row['value']
             newFile = File(lfn = resultRow["lfn"], size = resultRow["size"],
-                           events = resultRow["events"], parents = resultRow["parents"],
-                           locations = resultRow["locations"])
+                           events = resultRow["events"], parents = set(resultRow["parents"]),
+                           locations = set(resultRow["locations"]), merged = resultRow["merged"])
+            for run in resultRow["runs"]:
+                newRun = Run(run["run_number"])
+                newRun.extend(run["lumis"])
+                newFile.addRun(newRun)
+                
             chunkFiles.append(newFile)
 
         return chunkFiles

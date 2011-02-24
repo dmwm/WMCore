@@ -1,7 +1,9 @@
 function(doc) {
   if (doc.filelist) {
-    for (var filelistFile in doc.filelist.files) {
-      emit([doc.filelist.collection_id, doc.filelist.task, doc.filelist.fileset_id, doc._id, filelistFile], doc.filelist.files[filelistFile]);
+    for (var fileIndex in doc.filelist.files) {
+      filelistFile = doc.filelist.files[fileIndex];
+      filelistFile["locations"].sort();
+      emit([doc.filelist.collection_id, doc.filelist.task, filelistFile["locations"], filelistFile["lfn"]], filelistFile);
     }
   }
 }

@@ -7,15 +7,27 @@ WMCore.WorkQueue.WorkloadInfoTable.workloadTable = function(divID) {
 
     var pbs = [];
     var progressFormatter = function (elLiner, oRecord, oColumn, oData) {
-                var pb = new YAHOO.widget.ProgressBar({
-                    width:'90px',
-                    height:'11px',
-                    maxValue:100,
-                    //className:'some_other_image',
-                    value: oData / oRecord.getData("total")
-                }).render(elLiner);
-                pbs.push(pb);
-            };
+        total = oRecord.getData('total')
+        if (total === 0 || total === null) {
+            total = 1;
+            rTotal = 0;
+        } else {
+            rTotal = total;
+        };
+        if (oData  === null) {
+            oData = 0;
+        };
+        percent = oData/total*100;
+        elLiner.innerHTML = "<div class='percentDiv'>" + percent.toFixed(1) + 
+                                "% (" + oData + '/' + rTotal + ")</div>";
+        var pb = new YAHOO.widget.ProgressBar({
+                            width:'90px',
+                            height:'11px',
+                            maxValue:total,
+                            value: oData 
+                        }).render(elLiner);
+        pbs.push(pb);
+    };
     
     var dataSchema = {
             fields: [{key: "spec_id"}, {key: "spec_name"}, 

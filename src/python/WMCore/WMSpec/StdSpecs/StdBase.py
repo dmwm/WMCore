@@ -115,6 +115,8 @@ class StdBase(object):
         workload.setOwnerDetails(self.owner, self.group)
         workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
         workload.setEndPolicy("SingleShot")
+        workload.setAcquisitionEra(acquisitionEra = self.acquisitionEra)
+        workload.setProcessingVersion(processingVersion = self.processingVersion)
         return workload
 
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,

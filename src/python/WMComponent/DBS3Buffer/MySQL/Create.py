@@ -4,10 +4,6 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-
-
-
-
 import logging
 import threading
 
@@ -30,7 +26,7 @@ class Create(DBCreator):
 			(
 			   id              BIGINT UNSIGNED not null auto_increment,
 			   path            VARCHAR(500)    unique not null,
-                           processing_era  VARCHAR(255),
+                           processing_ver  VARCHAR(255),
                            acquisition_era VARCHAR(255),
                            subscribed int default 0,
 			   primary key(id)	

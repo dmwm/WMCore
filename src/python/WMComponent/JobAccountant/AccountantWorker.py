@@ -306,7 +306,7 @@ class AccountantWorker(WMConnectionBase):
         dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["primaryDataset"],
                                               datasetInfo["processedDataset"],
                                               datasetInfo["dataTier"])) 
-        dbsFile.setProcessingEra(era = jobReportFile.get('processingEra', None))
+        dbsFile.setProcessingVer(ver = jobReportFile.get('processingVer', None))
         dbsFile.setAcquisitionEra(era = jobReportFile.get('acquisitionEra', None))
         
         for run in jobReportFile["runs"]:

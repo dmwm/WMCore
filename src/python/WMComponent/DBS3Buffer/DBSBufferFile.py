@@ -36,7 +36,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.setdefault("psetHash", None)
         self.setdefault("configContent", None)
         self.setdefault("datasetPath", None)
-        self.setdefault("processingEra", None)
+        self.setdefault("processingVer", None)
         self.setdefault("acquisitionEra", None)
         
         if locations == None:
@@ -160,7 +160,7 @@ class DBSBufferFile(WMBSBase, WMFile):
                               transaction = True)
 
         newDatasetAction.execute(datasetPath = self["datasetPath"],
-                                 processingEra = self['processingEra'],
+                                 processingVer = self['processingVer'],
                                  acquisitionEra = self['acquisitionEra'],
                                  conn = self.getDBConn(),
                                  transaction = True)
@@ -377,14 +377,14 @@ class DBSBufferFile(WMBSBase, WMFile):
         self["configContent"] = configContent
         return
 
-    def setProcessingEra(self, era):
+    def setProcessingVer(self, ver):
         """
-        _setProcessingEra_
+        _setProcessingVer_
 
         Set the era
         """
 
-        self['processingEra'] = era
+        self['processingVer'] = ver
         return
 
     def setAcquisitionEra(self, era):

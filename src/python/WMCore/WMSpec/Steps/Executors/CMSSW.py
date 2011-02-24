@@ -5,9 +5,6 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step.
 """
 
-
-
-
 import tempfile
 import subprocess
 import sys
@@ -231,9 +228,9 @@ class CMSSW(Executor):
         self.report.parse(jobReportXML)
         try:
             acquisitionEra = self.workload.getAcquisitionEra()
-            processingEra  = self.workload.getProcessingVersion()
+            processingVer  = self.workload.getProcessingVersion()
             self.report.setAcquisitionProcessing(acquisitionEra = acquisitionEra,
-                                                 processingEra = processingEra)
+                                                 processingVer = processingVer)
         except Exception, ex:
             logging.error("Could not apply acquisition and processing Eras!")
             logging.error(str(ex))

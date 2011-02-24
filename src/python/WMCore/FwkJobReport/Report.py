@@ -603,7 +603,8 @@ class Report:
         newFile["merged"]         = bool(getattr(fileRef, "merged", False))
         newFile["dataset"]        = getattr(fileRef, "dataset", {})
         newFile["acquisitionEra"] = getattr(fileRef, 'acquisitionEra', None)
-        newFile["processingEra"]  = getattr(fileRef, 'processingEra', None)
+        newFile["processingVer"]  = getattr(fileRef, 'processingVer', None)
+        newFile["validStatus"]    = getattr(fileRef, 'validStatus', None)
         newFile["outputModule"]   = outputModule
         
 
@@ -921,7 +922,7 @@ class Report:
 
         return getattr(self.data, 'jobID', None)
 
-    def setAcquisitionProcessing(self, acquisitionEra, processingEra):
+    def setAcquisitionProcessing(self, acquisitionEra, processingVer):
         """
         _setAcquisitionProcessing_
 
@@ -938,7 +939,7 @@ class Report:
         # Should now have all the fileRefs
         for f in fileRefs:
             f['acquisitionEra'] = acquisitionEra
-            f['processingEra']  = processingEra
+            f['processingVer']  = processingVer
 
         return
       

@@ -5,9 +5,6 @@ _NewDataset_
 MySQL implementation of DBSBuffer.NewDataset
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class NewDataset(DBFormatter):
@@ -18,10 +15,10 @@ class NewDataset(DBFormatter):
     insert it
     """
     
-    sql = """INSERT IGNORE INTO dbsbuffer_dataset (path, processing_era, acquisition_era)
-               VALUES (:path, :processing_era, :acquisition_era)"""
+    sql = """INSERT IGNORE INTO dbsbuffer_dataset (path, processing_ver, acquisition_era)
+               VALUES (:path, :processing_ver, :acquisition_era)"""
 
-    def execute(self, datasetPath, acquisitionEra = None, processingEra = None,
+    def execute(self, datasetPath, acquisitionEra = None, processingVer = None,
                 conn = None, transaction = False):
         """
         _execute_
@@ -29,7 +26,7 @@ class NewDataset(DBFormatter):
         Insert new dataset
         """
         binds = {"path": datasetPath, 'acquisition_era': acquisitionEra,
-                 'processing_era': processingEra}
+                 'processing_ver': processingVer}
 
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)

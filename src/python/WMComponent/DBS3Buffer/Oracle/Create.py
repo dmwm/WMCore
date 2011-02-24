@@ -4,9 +4,6 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for Oracle.
 """
 
-
-
-
 import threading
 
 from WMCore.Database.DBCreator import DBCreator
@@ -37,7 +34,7 @@ class Create(DBCreator):
                (
 	         id   NUMBER(11)      NOT NULL ENABLE,
 	         path varchar2(500)   NOT NULL ENABLE,
-                 processing_era       VARCHAR2(255),
+                 processing_ver       VARCHAR2(255),
                  acquisition_era      VARCHAR2(255),
              subscribed int DEFAULT 0
                )"""

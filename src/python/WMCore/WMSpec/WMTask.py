@@ -436,6 +436,34 @@ class WMTaskHelper(TreeHelper):
         for entry in tempArgs.keys():
             args[entry.split('%s.' %generatorName)[1]] = tempArgs[entry]
         return args
+
+    def addInputACDC(self, serverUrl, databaseName, collectionName,
+                     filesetName):
+        """
+        _addInputACDC_
+
+        Set the ACDC input information for this task.
+        """
+        self.data.input.section_("acdc")
+        self.data.input.acdc.server = serverUrl
+        self.data.input.acdc.database = databaseName
+        self.data.input.acdc.collection = collectionName
+        self.data.input.acdc.fileset = filesetName
+        return
+
+    def getInputACDC(self):
+        """
+        _getInputACDC_
+
+        Retrieve the ACDC input configuration.
+        """
+        if not hasattr(self.data.input, "acdc"):
+            return None
+
+        return {"server": self.data.input.acdc.server,
+                "collection": self.data.input.acdc.collection,
+                "fileset": self.data.input.acdc.fileset,
+                "database": self.data.input.acdc.database}
     
     def addInputDataset(self, **options):
         """

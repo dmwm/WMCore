@@ -71,6 +71,15 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return self.data._internal_name
 
+    def setName(self, workloadName):
+        """
+        _setName_
+
+        Set the workload name.
+        """
+        self.data._internal_name = workloadName
+        return
+
     def getTopLevelTask(self):
         """
         _getTopLevelTask_
@@ -257,10 +266,11 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         result = []
         for t in self.taskIterator():
-            result.extend(t.listNodes())
+            if t != None:
+                result.extend(t.listNodes())
         return result
 
-    
+   
     def listAllTaskPathNames(self):
         """
         _listAllTaskPathNames_
@@ -804,6 +814,52 @@ class WMWorkloadHelper(PersistencyHelper):
         """
 
         return getattr(self.data.properties, 'resubmit', False)
+
+    def truncate(self, newWorkloadName, initialTaskPath, serverUrl,
+                 databaseName, collectionName, filesetName):
+        """
+        _truncate_
+
+        Truncate a workflow so that it can be used for resubmission.  This will
+        rename the workflow and set the task in the intitialTaskPath parameter
+        to be the top level task.  This modifies the workflow in place.
+        """
+        allTaskPaths = self.listAllTaskPathNames()
+        newTopLevelTask = self.getTaskByPath(initialTaskPath)
+
+        for taskPath in allTaskPaths:
+            if not taskPath.startswith(initialTaskPath):
+                taskName = taskPath.split("/")[-1]
+                if hasattr(self.data.tasks, taskName):
+                    delattr(self.data.tasks, taskName)
+                if taskName in self.data.tasks.tasklist:
+                    self.data.tasks.tasklist.remove(taskName)
+
+        self.setName(newWorkloadName)
+        self.addTask(newTopLevelTask)
+        self.setWorkQueueSplitPolicy("ResubmitBlock",
+                                     newTopLevelTask.jobSplittingAlgorithm(),
+                                     newTopLevelTask.jobSplittingParameters())
+        newTopLevelTask.setTopOfTree()
+        newTopLevelTask.addInputACDC(serverUrl, databaseName, collectionName,
+                                     filesetName)
+
+        def adjustPathsForTask(initialTask, parentPath):
+            """
+            _adjustPathsForTask_
+
+            Given an initial task and the path for that task set the path
+            correctly for all of the children tasks.
+            """
+            for childTask in initialTask.childTaskIterator():
+                childTask.setPathName("%s/%s" % (parentPath, childTask.name()))
+                adjustPathsForTask(childTask, childTask.getPathName())
+
+            return
+
+        adjustPathsForTask(newTopLevelTask, "/%s/%s" % (newWorkloadName,
+                                                        newTopLevelTask.name()))
+        return
 
 class WMWorkload(ConfigSection):
     """

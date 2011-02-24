@@ -685,6 +685,63 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Timeouts not set correctly.")
         return
 
+    def testTruncate(self):
+        """
+        _testTruncate_
+
+        Verify that the truncate method works correctly.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setTaskType("Processing")
+        procTaskCmssw = procTask.makeStep("cmsRun1")
+        procTaskCmssw.setStepType("CMSSW")
+        procTaskStageOut = procTask.makeStep("StageOut1")
+        procTaskStageOut.setStepType("StageOut")
+        procTaskStageOut.getTypeHelper().setMinMergeSize(2)
+        procTask.applyTemplates()
+        
+        mergeTask = procTask.addTask("MergeTask")
+        mergeTask.setTaskType("Merge")
+        mergeTask.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 2,
+                                        max_merge_events = 2, min_merge_size = 2)
+
+        skimTask = mergeTask.addTask("SkimTask")
+        skimTask.setTaskType("Skim")
+        skimTaskCmssw = skimTask.makeStep("cmsRun1")
+        skimTaskCmssw.setStepType("CMSSW")
+        skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)
+        skimTask.applyTemplates()        
+
+        testWorkload.truncate("TestWorkloadResubmit", "/TestWorkload/ProcessingTask/MergeTask",
+                              "somecouchurl", "somedatabase", "somecollection", "somefileset")
+
+        self.assertEqual(testWorkload.getTopLevelTask().getPathName(),
+                         mergeTask.getPathName(),
+                         "Error: Merge task should be the top level task.")
+        self.assertEqual(testWorkload.name(), "TestWorkloadResubmit",
+                         "Error: The workload name is wrong.")
+
+        self.assertEqual(len(testWorkload.listAllTaskPathNames()), 2,
+                         "Error: There should only be two tasks")
+        self.assertEqual(len(testWorkload.listAllTaskNames()), 2,
+                         "Error: There should only be two tasks")        
+        self.assertTrue("/TestWorkloadResubmit/MergeTask" in testWorkload.listAllTaskPathNames(),
+                        "Error: Merge task is missing.")
+        self.assertTrue("/TestWorkloadResubmit/MergeTask/SkimTask" in testWorkload.listAllTaskPathNames(),
+                        "Error: Skim task is missing.")
+        self.assertTrue("MergeTask" in testWorkload.listAllTaskNames(),
+                        "Error: Merge task is missing.")
+        self.assertTrue("SkimTask" in testWorkload.listAllTaskNames(),
+                        "Error: Skim task is missing.")
+        self.assertEqual("ResubmitBlock", testWorkload.startPolicy(),
+                         "Error: Start policy is wrong.")
+        self.assertEqual(mergeTask.getInputACDC(),
+                         {"database": "somedatabase", "fileset": "somefileset",
+                          "collection": "somecollection", "server": "somecouchurl"})
+
+        return
 
 if __name__ == '__main__':
     unittest.main()

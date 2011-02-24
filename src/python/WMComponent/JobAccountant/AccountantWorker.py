@@ -157,6 +157,10 @@ class AccountantWorker(WMConnectionBase):
             logging.debug("Failing job: %s\n" % parameters)
             return self.createMissingFWKJR(parameters, 99997, 'Cannot load jobReport')
 
+        if len(jobReport.listSteps()) == 0:
+            logging.error("FwkJobReport with no steps: %s" % jobReportPath)
+            return self.createMissingFWKJR(parameters, 99997, 'jobReport with no steps: %s ' % jobReportPath)
+
         return jobReport
 
     def didJobSucceed(self, jobReport):

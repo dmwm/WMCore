@@ -16,7 +16,7 @@ WMCore.GlobalMonitor.Filter.addLocalFilter = function(filterDiv, data,
                 filterFlag1 = true;
                 filterFlag2 = true;
                 if (reqA[0]) {
-                    if (!data[i].request_name.toLowerCase().indexOf(reqA[0].toLowerCase())) {
+                    if (data[i].request_name.toLowerCase().indexOf(reqA[0].toLowerCase()) != -1) {
                         filterFlag0 = true;
                     }
                     else {

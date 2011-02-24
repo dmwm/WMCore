@@ -325,15 +325,19 @@ class WMWorkloadTest(unittest.TestCase):
         procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
         procTask.applyTemplates()
 
+        acquisitionEra = "TestAcqEra"
+        primaryDataset = "bogusPrimary"
+        procEra        = "vTest"
+
         procTaskCMSSWHelper.addOutputModule("OutputA",
-                                            primaryDataset = "bogusPrimary",
+                                            primaryDataset = primaryDataset,
                                             processedDataset = "bogusProcessed",
                                             dataTier = "DataTierA",
                                             lfnBase = "bogusUnmerged",
                                             mergedLFNBase = "bogusMerged",
                                             filterName = None)
         procTaskCMSSWHelper.addOutputModule("OutputB",
-                                            primaryDataset = "bogusPrimary",
+                                            primaryDataset = primaryDataset,
                                             processedDataset = "bogusProcessed",
                                             dataTier = "DataTierB",
                                             lfnBase = "bogusUnmerged",
@@ -362,20 +366,23 @@ class WMWorkloadTest(unittest.TestCase):
         skimTaskCMSSWHelper = skimTaskCMSSW.getTypeHelper()        
         skimTask.applyTemplates()
 
+        
+
         skimTaskCMSSWHelper.addOutputModule("SkimA",
-                                            primaryDataset = "bogusPrimary",
+                                            primaryDataset = primaryDataset,
                                             processedDataset = "bogusProcessed",
                                             dataTier = "DataTierA",
                                             lfnBase = "bogusUnmerged",
                                             mergedLFNBase = "bogusMerged",
                                             filterName = "bogusFilter")
 
-        testWorkload.setAcquisitionEra("TestAcqEra")
+        testWorkload.setAcquisitionEra(acquisitionEra)
 
         outputModules = [procTaskCMSSWHelper.getOutputModule("OutputA"),
                          procTaskCMSSWHelper.getOutputModule("OutputB"),
                          mergeTaskCMSSWHelper.getOutputModule("Merged"),
                          skimTaskCMSSWHelper.getOutputModule("SkimA")]
+        
         for outputModule in outputModules:
             self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
                              "Error: Primary dataset was modified.")
@@ -383,29 +390,29 @@ class WMWorkloadTest(unittest.TestCase):
             filterName = outputModule.filterName
 
             if filterName == None:
-                procDataset = "TestAcqEra-None"
+                procDataset = "%s-None" % (acquisitionEra)
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
             else:
-                procDataset = "TestAcqEra-%s-None" % filterName
+                procDataset = "%s-%s-None" % (acquisitionEra, filterName)
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            mergedLFN = "/store/data/%s/%s" % (dataTier, procDataset)
-            unmergedLFN = "/store/unmerged/%s/%s" % (dataTier, procDataset)
+            mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'None')
+            unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'None')
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
-                                 "Error: Incorrect unmerged LFN.")
+                                 "Error: Incorrect unmerged LFN %s." % outputModule.lfnBase)
                 self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
-                                 "Error: Incorrect merged LFN.")
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
             else:
                 self.assertEqual(outputModule.lfnBase, unmergedLFN,
-                                 "Error: Incorrect unmerged LFN.")
+                                 "Error: Incorrect unmerged LFN %s." % outputModule.lfnBase)
                 self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
-                                 "Error: Incorrect merged LFN.")
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
 
-        testWorkload.setProcessingVersion("vTest")
+        testWorkload.setProcessingVersion(procEra)
 
         for outputModule in outputModules:
             self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
@@ -423,8 +430,8 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            mergedLFN = "/store/data/%s/%s" % (dataTier, procDataset)
-            unmergedLFN = "/store/unmerged/%s/%s" % (dataTier, procDataset)
+            mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, procEra)
+            unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, procEra)
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -433,9 +440,9 @@ class WMWorkloadTest(unittest.TestCase):
                                  "Error: Incorrect merged LFN.")
             else:
                 self.assertEqual(outputModule.lfnBase, unmergedLFN,
-                                 "Error: Incorrect unmerged LFN.")
+                                 "Error: Incorrect unmerged LFN %s." % outputModule.lfnBase)
                 self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
-                                 "Error: Incorrect merged LFN.")
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
 
         testWorkload.setLFNBase("/store/temp/WMAgent/merged",
                                 "/store/temp/WMAgent/unmerged")
@@ -460,8 +467,8 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            mergedLFN = "/store/temp/WMAgent/merged/%s/%s" % (dataTier, procDataset)
-            unmergedLFN = "/store/temp/WMAgent/unmerged/%s/%s" % (dataTier, procDataset)
+            mergedLFN = "/store/temp/WMAgent/merged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, procEra)
+            unmergedLFN = "/store/temp/WMAgent/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, procEra)
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,

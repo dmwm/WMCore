@@ -518,12 +518,16 @@ class WMWorkloadHelper(PersistencyHelper):
                             processedDataset = "%s-%s" % (self.data.properties.acquisitionEra,
                                                           self.data.properties.processingVersion)
 
-                        unmergedLFN = "%s/%s/%s" % (self.data.properties.unmergedLFNBase,
-                                                    getattr(outputModule, "dataTier"),
-                                                    processedDataset)
-                        mergedLFN = "%s/%s/%s" % (self.data.properties.mergedLFNBase,
-                                                  getattr(outputModule, "dataTier"),
-                                                  processedDataset)                        
+                        unmergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.unmergedLFNBase,
+                                                          self.data.properties.acquisitionEra,
+                                                          getattr(outputModule, "primaryDataset"),
+                                                          getattr(outputModule, "dataTier"),
+                                                          self.data.properties.processingVersion)
+                        mergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.mergedLFNBase,
+                                                        self.data.properties.acquisitionEra,
+                                                        getattr(outputModule, "primaryDataset"),
+                                                        getattr(outputModule, "dataTier"),
+                                                        self.data.properties.processingVersion)
                         setattr(outputModule, "processedDataset", processedDataset)
 
                         # For merge tasks, we want all output to go to the merged LFN base.

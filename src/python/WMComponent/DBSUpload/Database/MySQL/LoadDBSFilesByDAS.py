@@ -16,6 +16,7 @@ class LoadDBSFilesByDAS(DBFormatter):
     fileInfoSQL = """SELECT files.id AS id, files.lfn AS lfn, files.filesize AS filesize,
                     files.events AS events, 
                     files.status AS status,
+                    files.block_id AS block_id,
                     dbsbuffer_algo.app_name AS app_name, dbsbuffer_algo.app_ver AS app_ver,
                     dbsbuffer_algo.app_fam AS app_fam, dbsbuffer_algo.pset_hash AS pset_hash,
                     dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path 
@@ -26,11 +27,17 @@ class LoadDBSFilesByDAS(DBFormatter):
                dbsbuffer_algo_dataset_assoc.algo_id = dbsbuffer_algo.id
              INNER JOIN dbsbuffer_dataset ON
                dbsbuffer_algo_dataset_assoc.dataset_id = dbsbuffer_dataset.id
+             LEFT OUTER JOIN dbsbuffer_block dbb ON dbb.id = files.block_id
              WHERE dbsbuffer_algo_dataset_assoc.id = :das
-             AND files.status = :status
+             AND files.status = 'NOTUPLOADED'
+             AND (dbb.status = 'Open' OR dbb.status IS NULL)
              AND NOT EXISTS (SELECT parent FROM dbsbuffer_file_parent dbfp
                               INNER JOIN dbsbuffer_file dbf2 ON dbfp.parent = dbf2.id
-                              WHERE dbfp.child = files.id AND dbf2.status = :status)
+                              LEFT OUTER JOIN dbsbuffer_block dbb2 ON dbb2.id = dbf2.block_id
+                              WHERE dbfp.child = files.id AND (dbf2.status = 'NOTUPLOADED'
+                                                               OR (dbb2.status IS NOT NULL
+                                                                   AND dbb2.status != 'Closed'
+                                                                   AND dbb2.status != 'InGlobalDBS')))
              ORDER BY files.id"""
 
     getLocationSQL = """SELECT dbsbuffer_location.se_name as location, dbsbuffer_file.id as id
@@ -93,6 +100,8 @@ class LoadDBSFilesByDAS(DBFormatter):
             
             resultDict["size"] = resultDict["filesize"]
             del resultDict["filesize"]
+
+            resultDict['blockID'] = resultDict.get('block_id', None)
 
         return resultList
 
@@ -215,7 +224,7 @@ class LoadDBSFilesByDAS(DBFormatter):
         Use the first query to get the fileIDs
 
         """
-        result   = self.dbi.processData(self.fileInfoSQL, {'das': das, 'status': 'NOTUPLOADED'}, 
+        result   = self.dbi.processData(self.fileInfoSQL, {'das': das},
                                         conn = conn,
                                         transaction = transaction)
         fileInfo = self.formatFileInfo(result)

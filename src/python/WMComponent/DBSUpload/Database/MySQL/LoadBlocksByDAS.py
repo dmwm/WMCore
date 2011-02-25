@@ -14,7 +14,7 @@ class LoadBlocksByDAS(DBFormatter):
     sql = """SELECT DISTINCT dbb.blockname as blockname, dbb.create_time as create_time,
                 (SELECT COUNT(*) FROM dbsbuffer_file dbf WHERE dbf.block_id = dbb.id) AS nFiles,
                 (SELECT SUM(dbf2.filesize) FROM dbsbuffer_file dbf2 WHERE dbf2.block_id = dbb.id) AS blocksize,
-                dbl.se_name AS location
+                dbl.se_name AS location, dbb.id AS id
                 FROM dbsbuffer_block dbb
                 INNER JOIN dbsbuffer_file dbf3 ON dbf3.block_id = dbb.id
                 INNER JOIN dbsbuffer_location dbl ON dbl.id = dbb.location
@@ -27,6 +27,7 @@ class LoadBlocksByDAS(DBFormatter):
         blockList = []
         for tmp in tmpList:
             final = {}
+            final['ID']            = tmp['id']
             final['Name']          = tmp['blockname']
             final['CreationDate']  = tmp['create_time']
             final['NumberOfFiles'] = tmp['nfiles']

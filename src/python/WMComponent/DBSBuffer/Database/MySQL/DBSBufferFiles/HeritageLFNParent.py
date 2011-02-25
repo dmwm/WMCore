@@ -12,10 +12,9 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class HeritageLFNParent(DBFormatter):
     sql = """INSERT INTO dbsbuffer_file_parent (child, parent)
-               SELECT dfc.id, dfp.id FROM dbsbuffer_file dfc
-               INNER JOIN dbsbuffer_file dfp
-               WHERE dfc.lfn = :child
-               AND dfp.lfn = :lfn              
+               SELECT (SELECT id FROM dbsbuffer_file WHERE lfn = :child),
+                      (SELECT id FROM dbsbuffer_file WHERE lfn = :parent)
+               FROM DUAL
     """
 
     
@@ -29,7 +28,7 @@ class HeritageLFNParent(DBFormatter):
     def execute(self, parentLFNs, childLFN, conn = None, transaction = False):
         binds = []
         for parentLFN in parentLFNs:
-            binds.append({"lfn": parentLFN, "child": childLFN})
+            binds.append({"parent": parentLFN, "child": childLFN})
 
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)

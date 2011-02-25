@@ -25,7 +25,10 @@ class UploadToDBS (WMConnectionBase):
     """
 
     def __init__(self, logger=None, dbfactory = None):
-        pass
+        myThread = threading.currentThread()
+        self.factory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+                                  logger = myThread.logger,
+                                  dbinterface = myThread.dbi)
     
 
     def findAlgos(self, dataset):
@@ -226,4 +229,21 @@ class UploadToDBS (WMConnectionBase):
         self.commitTransaction(existingTransaction)
 
         return result
+
+
+    def closeBlockFiles(self, blockname):
+        """
+        _closeBlockFiles_
+
+        Given a blockname, close all the files associate with it.
+        """
         
+        closeBlocks = self.factory(classname = "CloseBlockFiles")
+
+        myThread = threading.currentThread()
+        existingTransaction = self.beginTransaction()
+        closeBlocks.execute(blockname = blockname,
+                            conn = self.getDBConn(),
+                            transaction=self.existingTransaction())
+        self.commitTransaction(existingTransaction)
+        return

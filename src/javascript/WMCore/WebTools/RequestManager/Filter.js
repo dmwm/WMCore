@@ -24,7 +24,7 @@ WMCore.RequestManager.Filter.addLocalFilter = function(filterDiv, data,
                     }
                 }
                 if (reqA[1]) {
-                    if (!data[i].status.toLowerCase().indexOf(reqA[1].toLowerCase())) {
+                    if (data[i].status.toLowerCase().indexOf(reqA[1].toLowerCase()) != -1) {
                         filterFlag1 = true;
                     }
                     else {
@@ -32,7 +32,7 @@ WMCore.RequestManager.Filter.addLocalFilter = function(filterDiv, data,
                     }
                 }
                 if (reqA[2]) {
-                    if (!data[i].type.toLowerCase().indexOf(reqA[2].toLowerCase())) {
+                    if (data[i].type.toLowerCase().indexOf(reqA[2].toLowerCase()) != -1) {
                         filterFlag2 = true;
                     }
                     else {

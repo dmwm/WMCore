@@ -9,15 +9,11 @@ __all__ = []
 
 
 import time
-import os
 import os.path
-import threading
 import logging
-import traceback
 
 
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
-from WMCore.DAOFactory                      import DAOFactory
 from WMCore.WMException                     import WMException
 from WMCore.JobStateMachine.ChangeState     import ChangeState
 
@@ -242,7 +238,7 @@ class DashboardReporterPoller(BaseWorkerThread):
         package['Executable']         = 'NotAvailable'
         package['JSTool']             = 'WMAgent'
         package['JSToolVersion']      = 'NotAvailable'
-        package['TaskType']           = 'NotAvailable'
+        package['TaskType']           = 'WMAgentTesting'
         package['GridName']           = 'NotAvailable'
         package['CMSUser']            = 'NotAvailable'
         package['user']               = 'NotAvailable'

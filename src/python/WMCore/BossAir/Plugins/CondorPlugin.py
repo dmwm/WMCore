@@ -366,6 +366,12 @@ class CondorPlugin(BasePlugin):
                 elif jobStatus == 2:
                     # Job is Running, doing what it was supposed to
                     statName = 'Running'
+                elif jobStatus == 3:
+                    # Job is in X-state: List as error
+                    statName = 'Error'
+                elif jobStatus == 4:
+                    # Job is completed
+                    statName = 'Complete'
                 else:
                     # What state are we in?
                     logging.info("Job in unknown state %i" % jobStatus)

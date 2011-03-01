@@ -12,10 +12,10 @@ class KillWorkflow(DBFormatter):
     _KillWorkflow_
 
     Mark all files that are not complete/failed and belong to a particular
-    workflow as failed.  Ignore Cleanup and LogCollect subscriptions as we
-    still want those to run.
+    workflow as complete so they get clean up.  Ignore Cleanup and
+    LogCollect subscriptions as we still want those to run.
     """
-    sql = """INSERT INTO wmbs_sub_files_failed (subscription, fileid)
+    sql = """INSERT INTO wmbs_sub_files_complete (subscription, fileid)
                SELECT wmbs_subscription.id, wmbs_fileset_files.fileid
                       FROM wmbs_workflow
                  INNER JOIN wmbs_subscription ON

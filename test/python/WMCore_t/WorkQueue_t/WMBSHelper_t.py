@@ -130,9 +130,9 @@ class WMBSHelperTest(unittest.TestCase):
         unmergedOutputFileset = Fileset("unmerged")        
         unmergedOutputFileset.create()
 
-        unmergedFileA = File("lfnA", locations = "goodse.cern.ch")
-        unmergedFileB = File("lfnB", locations = "goodse.cern.ch")
-        unmergedFileC = File("lfnC", locations = "goodse.cern.ch")
+        unmergedFileA = File("ulfnA", locations = "goodse.cern.ch")
+        unmergedFileB = File("ulfnB", locations = "goodse.cern.ch")
+        unmergedFileC = File("ulfnC", locations = "goodse.cern.ch")
         unmergedFileA.create()
         unmergedFileB.create()
         unmergedFileC.create()        
@@ -272,18 +272,16 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(len(bogusAcquiredFiles), 1, \
                          "Error: There should be one acquired file.")
         
-        self.assertEqual(len(completedFiles), 1, \
+        self.assertEqual(len(completedFiles), 3, \
                          "Error: There should be only one completed file.")
-        self.assertEqual(list(completedFiles)[0]["lfn"], "lfnB", \
-                         "Error: Wrong completed LFN.")
+        goldenLFNs = ["lfnA", "lfnB", "lfnC"]
+        for completedFile in completedFiles:
+            self.assertTrue(completedFile["lfn"] in goldenLFNs, \
+                          "Error: Extra completed file.")
+            goldenLFNs.remove(completedFile["lfn"])
 
-        self.assertEqual(len(failedFiles), 2, \
-                         "Error: There should be only two failed files.")
-        goldenLFNs = ["lfnA", "lfnC"]
-        for failedFile in failedFiles:
-            self.assertTrue(failedFile["lfn"] in goldenLFNs, \
-                          "Error: Extra failed file.")
-            goldenLFNs.remove(failedFile["lfn"])
+        self.assertEqual(len(failedFiles), 0, \
+                         "Error: There should be no failed files.")
 
         self.assertEqual(len(goldenLFNs), 0, \
                          "Error: Missing LFN")
@@ -297,16 +295,19 @@ class WMBSHelperTest(unittest.TestCase):
                          "Error: Merge subscription should have 0 acq files.")
         self.assertEqual(len(availableFiles), 0, \
                          "Error: Merge subscription should have 0 avail files.") 
-        self.assertEqual(len(completedFiles), 0, \
-                         "Error: Merge subscription should have 0 compl files.")
 
-        self.assertEqual(len(failedFiles), 3, \
-                         "Error: There should be only three failed files.")
-        goldenLFNs = ["lfnA", "lfnB", "lfnC"]
-        for failedFile in failedFiles:
-            self.assertTrue(failedFile["lfn"] in goldenLFNs, \
-                          "Error: Extra failed file.")
-            goldenLFNs.remove(failedFile["lfn"])
+        self.assertEqual(len(failedFiles), 1, \
+                         "Error: Merge subscription should have 1 failed files.")
+        self.assertEqual(list(failedFiles)[0]["lfn"], "ulfnB",
+                         "Error: Wrong failed file.")
+
+        self.assertEqual(len(completedFiles), 2, \
+                         "Error: Merge subscription should have 2 compl files.")
+        goldenLFNs = ["ulfnA", "ulfnC"]
+        for completedFile in completedFiles:
+            self.assertTrue(completedFile["lfn"] in goldenLFNs, \
+                          "Error: Extra complete file.")
+            goldenLFNs.remove(completedFile["lfn"])
 
         self.assertEqual(len(goldenLFNs), 0, \
                          "Error: Missing LFN")
@@ -321,17 +322,17 @@ class WMBSHelperTest(unittest.TestCase):
 
         self.assertEqual(len(acquiredFiles), 1, \
                          "Error: There should be only one acquired file.")
-        self.assertEqual(list(acquiredFiles)[0]["lfn"], "lfnA", \
-                         "Error: Wrong completed LFN.")
+        self.assertEqual(list(acquiredFiles)[0]["lfn"], "ulfnA", \
+                         "Error: Wrong acquired LFN.")
 
         self.assertEqual(len(completedFiles), 1, \
                          "Error: There should be only one completed file.")
-        self.assertEqual(list(completedFiles)[0]["lfn"], "lfnB", \
+        self.assertEqual(list(completedFiles)[0]["lfn"], "ulfnB", \
                          "Error: Wrong completed LFN.")
 
         self.assertEqual(len(availableFiles), 1, \
                          "Error: There should be only one available file.")
-        self.assertEqual(list(availableFiles)[0]["lfn"], "lfnC", \
+        self.assertEqual(list(availableFiles)[0]["lfn"], "ulfnC", \
                          "Error: Wrong completed LFN.")
 
         return
@@ -745,8 +746,6 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertFalse(fileset.open)
 
         file = list(fileset.files)[0]
-        self.assertEqual(file['first_event'], mask['FirstEvent'])
-        self.assertEqual(file['last_event'], mask['LastEvent'])
         self.assertEqual(file['events'], mask['LastEvent'] - mask['FirstEvent'] + 1) # inclusive range
         self.assertEqual(file['merged'], False) # merged files get added to dbs
         self.assertEqual(len(file['parents']), 0)

@@ -3,9 +3,6 @@
 Test case for SiteDB
 """
 
-
-
-
 import unittest
 
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
@@ -15,15 +12,11 @@ class SiteDBTest(unittest.TestCase):
     Unit tests for SiteScreening module
     """
 
-
     def setUp(self):
         """
         Setup for unit tests
         """
         self.mySiteDB = SiteDBJSON()
-
-
-
 
     def testCmsNametoPhEDExNode(self):
         """
@@ -32,7 +25,6 @@ class SiteDBTest(unittest.TestCase):
         target = ['T1_US_FNAL_MSS','T1_US_FNAL_Buffer']
         results = self.mySiteDB.cmsNametoPhEDExNode("T1_US_FNAL")
         self.failUnless(sorted(results) == sorted(target))
-
 
     def testPhEDExNodetocmsName(self):
         """
@@ -48,7 +40,6 @@ class SiteDBTest(unittest.TestCase):
         #self.assertRaises(ValueError, self.mySiteDB.phEDExNodetocmsName,
         #                  'T9_DOESNT_EXIST_Buffer')
 
-
     def testCmsNametoSE(self):
         """
         Tests CmsNametoSE
@@ -56,7 +47,6 @@ class SiteDBTest(unittest.TestCase):
         target = ['srm-cms.gridpp.rl.ac.uk']
         results = self.mySiteDB.cmsNametoSE("T1_UK_RAL")
         self.failUnless(sorted(results) == sorted(target))
-
 
     def testSEtoCmsName(self):
         """
@@ -66,17 +56,13 @@ class SiteDBTest(unittest.TestCase):
         results = self.mySiteDB.seToCMSName("cmssrm.fnal.gov")
         self.failUnless(results == target)
 
-
     def testCmsNametoCE(self):
         """
         Tests CmsNametoCE
         """
-        target = ['lcgce06.gridpp.rl.ac.uk', 'lcgce07.gridpp.rl.ac.uk']
-
+        target = ['lcgce06.gridpp.rl.ac.uk', 'lcgce07.gridpp.rl.ac.uk', 'lcgce09.gridpp.rl.ac.uk']
         results = self.mySiteDB.cmsNametoCE("T1_UK_RAL")
-
         self.failUnless(sorted(results) == target)
-
 
     def testJSONParser(self):
         """
@@ -88,18 +74,42 @@ class SiteDBTest(unittest.TestCase):
                                   name=cmsName)
         self.failUnless(results['0']['name'] == "T2_US_Wisconsin")
 
-
     def testDNUserName(self):
         """
         Tests DN to Username lookup
         """
-
-        testDn       = "/C=UK/O=eScience/OU=Bristol/L=IS/CN=simon metson"
+        testDn = "/C=UK/O=eScience/OU=Bristol/L=IS/CN=simon metson"
         testUserName = "metson"
         userName = self.mySiteDB.dnUserName(dn=testDn)
         self.failUnless(testUserName == userName)
 
+    def testDNWithApostrophe(self):
+        """
+        Tests a DN with an apostrophy in - will fail till SiteDB2 appears
+        """
+        testDn = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'"
+        testUserName = "liviof"
+        userName = self.mySiteDB.dnUserName(dn=testDn)
+        self.failUnless(testUserName == userName)
 
+    def testParsingJsonWithApostrophe(self):
+        """
+        Tests parsing a DN json with an apostrophe in
+        """
+        json = """{"dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'", "user": "liviof"}"""
+        d = self.mySiteDB.parser.dictParser(json)
+        self.assertEquals("/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'", d['dn'])
+
+    def testParsingInvalidJsonWithApostrophe(self):
+        """
+        Tests parsing a DN invalid json (from sitedb v1) with an apostrophe in
+        """
+        json = """{'dn': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio' Fano', 'user': 'liviof'}"""
+        d = self.mySiteDB.parser.dictParser(json)
+        self.assertEquals("/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio' Fano", d['dn'])
+        json = """{'dn': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'', 'user': 'liviof'}"""
+        d = self.mySiteDB.parser.dictParser(json)
+        self.assertEquals("/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'", d['dn'])
 
 if __name__ == '__main__':
     unittest.main()

@@ -27,9 +27,10 @@ from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.Policy.Start import startPolicy
 from WMCore.WorkQueue.Policy.End import endPolicy
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
-
+from WMCore.ACDC.DataCollectionService import DataCollectionService
+from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 from WMCore.Services.DBS.DBSReader import DBSReader
 from DBSAPI.dbsApiException import DbsConfigurationError
 from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
@@ -96,6 +97,9 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('PopulateFilesets', True)
         self.params.setdefault('LocalQueueFlag', True)
 
+        #This two params needs to be set for resubmission to work
+        self.params.setdefault('CouchURL', None)
+        self.params.setdefault('ACDCDB', None)
         #TODO: current directory as a default directory might not be a best choice.
         # Don't know where else though 
         self.params.setdefault('CacheDir', os.path.join(os.getcwd(), 'wf'))
@@ -121,6 +125,10 @@ class WorkQueue(WorkQueueBase):
                                                   )
         self.params['SplittingMapping'].setdefault('Block',
                                                    {'name': 'Block',
+                                                    'args': {}}
+                                                  )
+        self.params['SplittingMapping'].setdefault('ResubmitBlock',
+                                                   {'name': 'ResubmitBlock',
                                                     'args': {}}
                                                   )
         
@@ -347,7 +355,8 @@ class WorkQueue(WorkQueueBase):
                 if match['input_id']:
                     self.logger.info("Adding Processing work")
                     blockName, dbsBlock = self._getDBSBlock(match,
-                                                        wmspecInfo['dbs_url'])
+                                                wmspecInfo['dbs_url'],
+                                                wmspecCache[wmspecInfo['id']])
                 else:
                     self.logger.info("Adding Production work")
                     wmspecInfo['mask_url'] = None
@@ -388,25 +397,38 @@ class WorkQueue(WorkQueueBase):
 
         return results
     
-    def _getDBSBlock(self, match, dbs):
+    def _getDBSBlock(self, match, dbs, wmspec):
         
         blockLoader = self.daofactory(classname = "Data.LoadByID")
             
         block = blockLoader.execute(match['input_id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
-
-        #TODO: move this out of the transactions
-        dbs = self._get_dbs(dbs)
-        if match['parent_flag']:
-            dbsBlockDict = dbs.getFileBlockWithParents(block["name"])
-        else:
-            dbsBlockDict = dbs.getFileBlock(block["name"])
         
-        return block['name'], dbsBlockDict[block['name']]
+        acdcInfo = wmspec.getTopLevelTask().getInputACDC()
+        
+        
+        if acdcInfo:
+            acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
+            collection = acdc.getDataCollection(acdcInfo['collection'])
+            splitedBlockName = ACDCBlock.splitBlockName(block['name'])
+            fileLists = acdc.getChunkFiles(collection,
+                                           acdcInfo['fileset'],
+                                           splitedBlockName['Offset'],
+                                           splitedBlockName['NumOfFiles'])
+            return block['name'], fileLists
+        else:
+            #TODO: move this out of the transactions
+            dbs = self._get_dbs(dbs)
+            if match['parent_flag']:
+                dbsBlockDict = dbs.getFileBlockWithParents(block["name"])
+            else:
+                dbsBlockDict = dbs.getFileBlock(block["name"])
+            
+            return block['name'], dbsBlockDict[block['name']]
 
 
-    def _wmbsPreparation(self, match, wmspec, wmspecInfo, blockName, dbsBlock):
+    def _wmbsPreparation(self, match, wmspec, wmspecInfo, blockName, block):
         """
         """
         self.logger.info("Adding WMBS subscription")
@@ -419,7 +441,7 @@ class WorkQueue(WorkQueueBase):
         from WMCore.WorkQueue.WMBSHelper import WMBSHelper
         wmbsHelper = WMBSHelper(wmspec, blockName, mask)
 
-        sub = wmbsHelper.createSubscriptionAndAddFiles(dbsBlock = dbsBlock)
+        sub = wmbsHelper.createSubscriptionAndAddFiles(block = block)
         self.logger.info("Created top level Subscription %s" % sub['id'])
 
         updateSub = self.daofactory(classname = "WorkQueueElement.UpdateSubscription")
@@ -540,8 +562,14 @@ class WorkQueue(WorkQueueBase):
 
         # Do database stuff in one quick loop
         with self.transactionContext():
+            dataLocations = {}
             for unit in totalUnits:
                 self._insertWorkQueueElement(unit, request, team)
+                if unit['Sites'] != None:
+                    dataLocations[unit['Data']] = unit['Sites']
+                            
+            if len(dataLocations) > 0:
+                self.dataLocationMapper(dataLocations = dataLocations)
 
         return len(totalUnits)
 
@@ -766,12 +794,20 @@ class WorkQueue(WorkQueueBase):
                                                         element['team_name']))
                             self.logger.info("Getting element form parent queue: %s" % element.get('data'))
 
+                        dataLocations = []
                         with self.transactionContext():
                             for unit in totalUnits:
                                 # spec name and request name should be always identical.
                                 self._insertWorkQueueElement(unit,
                                                              unit['RequestName'],
                                                              unit['TeamName'])
+                                if unit['Sites'] != None:
+                                    dataLocations.append({'data': unit['Data'],
+                                                          'site': unit['Sites']})
+                            
+                            if len(dataLocations) > 0:
+                                self.dataLocationMapper(dataLocations = dataLocations)
+                                
                         counter += len(totalUnits)
         return counter
 
@@ -878,6 +914,7 @@ class WorkQueue(WorkQueueBase):
         totalUnits = []
 
         # split each top level task into constituent work elements
+        # get the acdc server and db name
         for topLevelTask in wmspec.taskIterator():
             dbs_url = topLevelTask.dbsUrl()
 

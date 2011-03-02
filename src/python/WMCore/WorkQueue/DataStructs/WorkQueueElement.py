@@ -44,6 +44,10 @@ class WorkQueueElement(dict):
         self.setdefault('TeamName', None)
         # Mask used to constrain MC run/lumi ranges
         self.setdefault('Mask', None)
+        # Sites is used in resubmit jobs (location from acdc)
+        # It is known at the time of getting block information
+        # and never changes
+        self.setdefault('Sites', None)
 
     def inEndState(self):
         """Have we finished processing"""

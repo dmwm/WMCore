@@ -721,8 +721,10 @@ class WMWorkloadTest(unittest.TestCase):
         skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)
         skimTask.applyTemplates()        
 
+        testWorkload.truncate("TestWorkload", "/TestWorkload/ProcessingTask",
+                              "somecouchurl", "somedatabase")
         testWorkload.truncate("TestWorkloadResubmit", "/TestWorkload/ProcessingTask/MergeTask",
-                              "somecouchurl", "somedatabase", "somecollection", "somefileset")
+                              "somecouchurl", "somedatabase")
 
         self.assertEqual(testWorkload.getTopLevelTask().getPathName(),
                          mergeTask.getPathName(),
@@ -745,8 +747,8 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual("ResubmitBlock", testWorkload.startPolicy(),
                          "Error: Start policy is wrong.")
         self.assertEqual(mergeTask.getInputACDC(),
-                         {"database": "somedatabase", "fileset": "somefileset",
-                          "collection": "somecollection", "server": "somecouchurl"})
+                         {"database": "somedatabase", "fileset": "/TestWorkload/ProcessingTask/MergeTask",
+                          "collection": "TestWorkload", "server": "somecouchurl"})
 
         return
 

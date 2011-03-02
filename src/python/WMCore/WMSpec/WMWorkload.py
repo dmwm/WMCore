@@ -820,7 +820,7 @@ class WMWorkloadHelper(PersistencyHelper):
         return getattr(self.data.properties, 'resubmit', False)
 
     def truncate(self, newWorkloadName, initialTaskPath, serverUrl,
-                 databaseName, collectionName, filesetName):
+                 databaseName):
         """
         _truncate_
 
@@ -830,9 +830,11 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         allTaskPaths = self.listAllTaskPathNames()
         newTopLevelTask = self.getTaskByPath(initialTaskPath)
+        newTopLevelTask.addInputACDC(serverUrl, databaseName, self.name(),
+                                     initialTaskPath)
 
         for taskPath in allTaskPaths:
-            if not taskPath.startswith(initialTaskPath):
+            if not taskPath.startswith(initialTaskPath) or taskPath == initialTaskPath:
                 taskName = taskPath.split("/")[-1]
                 if hasattr(self.data.tasks, taskName):
                     delattr(self.data.tasks, taskName)
@@ -845,8 +847,6 @@ class WMWorkloadHelper(PersistencyHelper):
                                      newTopLevelTask.jobSplittingAlgorithm(),
                                      newTopLevelTask.jobSplittingParameters())
         newTopLevelTask.setTopOfTree()
-        newTopLevelTask.addInputACDC(serverUrl, databaseName, collectionName,
-                                     filesetName)
 
         def adjustPathsForTask(initialTask, parentPath):
             """

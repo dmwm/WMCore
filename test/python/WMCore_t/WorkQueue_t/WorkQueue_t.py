@@ -26,12 +26,16 @@ from WMCore.DAOFactory import DAOFactory
 from WMQuality.Emulators import EmulatorSetup
 
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
-from WMCore_t.WMSpec_t.samples.BasicProductionWorkload \
-                                    import workload as BasicProductionWorkload
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
                                 import workload as MultiTaskProductionWorkload
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
-from WMQuality.Emulators.EmulatorSetup import deleteConfig
+
+from WMCore.ACDC.DataCollectionService import DataCollectionService
+from WMCore.DataStructs.Run import Run
+from WMCore.Services.UUID import makeUUID
+from WMCore.WMBS.Job import Job
+from WMCore.DataStructs.File import File as WMFile
+from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
@@ -109,8 +113,8 @@ class WorkQueueTest(WorkQueueTestCase):
         # copy jobStateMachine couchDB configuration here since we don't want/need to pass whole configuration
         jobCouchConfig = Configuration()
         jobCouchConfig.section_("JobStateMachine")
-        jobCouchConfig.JobStateMachine.couchurl = "http://blha.blha"
-        jobCouchConfig.JobStateMachine.couchDBName = "testCouchDB"
+        jobCouchConfig.JobStateMachine.couchurl = os.environ["COUCHURL"]
+        jobCouchConfig.JobStateMachine.couchDBName = "testcouchdb"
         # copy bossAir configuration here since we don't want/need to pass whole configuration
         bossAirConfig = Configuration()
         bossAirConfig.section_("BossAir")
@@ -154,6 +158,59 @@ class WorkQueueTest(WorkQueueTestCase):
         #Delete WMBSAgent config file
         EmulatorSetup.deleteConfig(self.configFile)
         EmulatorHelper.resetEmulators()
+        
+    
+    def createResubmitSpec(self, serverUrl, couchDB):
+        """
+        _createResubmitSpec_
+        Create a bogus resubmit workload.
+        """
+        self.site = "cmssrm.fnal.gov"
+        workload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        reco = workload.newTask("reco")
+        workload.setOwnerDetails("evansde77", "DMWM")
+
+        # first task uses the input dataset
+        reco.addInputDataset(primary = "PRIMARY", processed = "processed-v1", tier = "TIER1")
+        reco.data.input.splitting.algorithm = "File"
+        reco.setTaskType("Processing")
+        cmsRunReco = reco.makeStep("cmsRun1")
+        cmsRunReco.setStepType("CMSSW")
+        reco.applyTemplates()
+        cmsRunRecoHelper = cmsRunReco.getTypeHelper()
+        cmsRunRecoHelper.addOutputModule("outputRECO",
+                                        primaryDataset = "PRIMARY",
+                                        processedDataset = "processed-v2",
+                                        dataTier = "TIER2",
+                                        lfnBase = "/store/dunkindonuts",
+                                        mergedLFNBase = "/store/kfc")
+        
+        dcs = DataCollectionService(url = serverUrl, database = couchDB)
+        dcs.createCollection(workload)        
+
+        def getJob(workload):
+            job = Job()
+            job["task"] = workload.getTask("reco").getPathName()
+            job["workflow"] = workload.name()
+            job["location"] = self.site
+            return job
+
+        testFileA = WMFile(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileA.setLocation([self.site])
+        testFileA.addRun(Run(1, 1, 2))
+        testFileB = WMFile(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileB.setLocation([self.site])
+        testFileB.addRun(Run(1, 3, 4))
+        testJobA = getJob(workload)
+        testJobA.addFile(testFileA)
+        testJobA.addFile(testFileB)
+        
+        dcs.failedJobs([testJobA])
+        topLevelTask = workload.getTopLevelTask()
+        workload.truncate("Resubmit_TestWorkload", topLevelTask.getPathName(), 
+                          serverUrl, couchDB)
+                                  
+        return workload
 
     def testProduction(self):
         """
@@ -742,6 +799,20 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(work, 0)
         self.assertEqual(2, len(self.globalQueue.status())) # 1 in local & 1 in global
         
-
+    
+    def testResubmissionWorkflow(self):
+        from WMQuality.TestInitCouchApp import TestInitCouchApp
+        self.couchInit = TestInitCouchApp(__file__)
+        self.couchInit.setupCouch("sryu_acdc_test", "GroupUser", "ACDC")
+        
+        spec = self.createResubmitSpec(self.couchInit.couchUrl, 
+                                       self.couchInit.couchDbName)
+        spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
+        spec.save(spec.specUrl())
+        self.localQueue.queueWork(spec.specUrl())
+        self.localQueue.getWork({self.site: 100})
+        
+        self.couchInit.tearDownCouch()
+        
 if __name__ == "__main__":
     unittest.main()

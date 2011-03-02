@@ -22,14 +22,13 @@ from WMCore.Services.UUID import makeUUID
 from WMCore.DataStructs.Run import Run
 
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
-
 # Added to allow bulk commits
 from WMCore.DAOFactory           import DAOFactory
 from WMCore.WMConnectionBase     import WMConnectionBase
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
-
 from WMCore.BossAir.BossAirAPI    import BossAirAPI, BossAirException
+
 
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
     """Function to return status of wmbs subscriptions
@@ -169,6 +168,7 @@ class WMBSHelper(WMConnectionBase):
         self.addedLocations       = []
         self.wmbsFilesToCreate    = []
         self.insertedBogusDataset = -1
+
         return
 
     def createTopLevelFileset(self, topLevelFilesetName = None):
@@ -296,6 +296,7 @@ class WMBSHelper(WMConnectionBase):
                         locations = locations,
                         merged = False, # merged causes dbs parentage relation
                         )
+
         if self.mask:
             lumis = range(self.mask['FirstLumi'], self.mask['LastLumi'] + 1) # inclusive range
             wmbsFile.addRun(Run(self.mask['FirstRun'], *lumis)) # assume run number static
@@ -311,7 +312,7 @@ class WMBSHelper(WMConnectionBase):
         self.topLevelFileset.markOpen(False)
         return totalFiles
 
-    def createSubscriptionAndAddFiles(self, dbsBlock):
+    def createSubscriptionAndAddFiles(self, block):
         """
         _createSubscriptionAndAddFiles_
         
@@ -319,13 +320,12 @@ class WMBSHelper(WMConnectionBase):
         put everything in one transaction.
 
         """
-
         self.beginTransaction()
         
         sub = self.createSubscription()
         
-        if dbsBlock != None:
-            self.addFiles(dbsBlock)
+        if block != None:
+            self.addFiles(block)
         #For MC case
         else:
             self.addMCFakeFile()
@@ -334,16 +334,20 @@ class WMBSHelper(WMConnectionBase):
 
         return sub
     
-    def addFiles(self, dbsBlock):
+    def addFiles(self, block):
         """
         _createFiles_
         
         create wmbs files from given dbs block.
         as well as run lumi update
         """
-
-        for dbsFile in self.validFiles(dbsBlock['Files']):
-            self._convertDBSFileToWMBSFile(dbsFile, dbsBlock['StorageElements'])
+                
+        if self.wmSpec.getTopLevelTask().getInputACDC():
+            for acdcFile in self.validFiles(block):
+                self._addACDCFileToWMBSFile(acdcFile)
+        else:
+            for dbsFile in self.validFiles(block['Files']):
+                self._addDBSFileToWMBSFile(dbsFile, block['StorageElements'])
 
 
         # Add files to WMBS
@@ -572,7 +576,7 @@ class WMBSHelper(WMConnectionBase):
         #dbsBuffer.create()
         return
     
-    def _convertDBSFileToWMBSFile(self, dbsFile, storageElements, inFileset = True):
+    def _addDBSFileToWMBSFile(self, dbsFile, storageElements, inFileset = True):
         """
         There are two assumptions made to make this method behave properly,
         1. DBS returns only one level of ParentList.
@@ -585,7 +589,8 @@ class WMBSHelper(WMConnectionBase):
         wmbsParents = []
         
         for parent in dbsFile["ParentList"]:
-            wmbsParents.append(self._convertDBSFileToWMBSFile(parent, storageElements, inFileset = False))
+            wmbsParents.append(self._addDBSFileToWMBSFile(parent, 
+                                            storageElements, inFileset = False))
         
         checksums = {}
         if dbsFile.get('Checksum'):
@@ -618,7 +623,51 @@ class WMBSHelper(WMConnectionBase):
         self.wmbsFilesToCreate.append(wmbsFile)
         
         return wmbsFile
+
+    def _convertACDCFileToDBSFile(self, acdcFile):
+        """
+        convert ACDCFiles to dbs file format
+        """
+        dbsFile = {}
+        dbsFile["LogicalFileName"] = acdcFile["lfn"]
+        dbsFile["FileSize"] = acdcFile["size"]
+        dbsFile["NumberOfEvents"] = acdcFile["events"]
+        return dbsFile
         
+    def _addACDCFileToWMBSFile(self, acdcFile, inFileset = True):
+        """
+        """
+        wmbsParents = []
+        #pass empty check sum since it won't be updated to dbs anyway
+        checksums = {}
+        wmbsFile = File(lfn = str(acdcFile["lfn"]),
+                        size = acdcFile["size"],
+                        events = acdcFile["events"],
+                        checksums = checksums,
+                        #TODO: need to get list of parent lfn
+                        parents = acdcFile["parents"],
+                        locations = acdcFile["locations"])
+
+        ## TODO need to get the lumi lists
+        for run in acdcFile['runs']:
+            wmbsFile.addRun(run)
+        
+
+        dbsFile = self._convertACDCFileToDBSFile(acdcFile)
+        self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
+            
+        logging.info("WMBS File: %s\n on Location: %s" 
+                     % (wmbsFile['lfn'], wmbsFile['locations']))
+
+        if inFileset:
+            wmbsFile['inFileset'] = True
+        else:
+            wmbsFile['inFileset'] = False
+            
+        self.wmbsFilesToCreate.append(wmbsFile)
+        
+        return wmbsFile
+
 
     def validFiles(self, files):
         """Apply run white/black list and return valid files"""

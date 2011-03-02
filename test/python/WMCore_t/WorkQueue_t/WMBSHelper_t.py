@@ -640,7 +640,7 @@ class WMBSHelperTest(unittest.TestCase):
         wmbs = WMBSHelper(wmspec, block, mask)
         if block:
             block = self.dbs.getFileBlock(block)[block]
-        wmbs.createSubscriptionAndAddFiles(dbsBlock = block)
+        wmbs.createSubscriptionAndAddFiles(block = block)
         return wmbs
 
 #    def testProduction(self):

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#pylint: disable-msg=C0103
 """
 wmagent-resource-control
 
@@ -6,7 +7,6 @@ Utility script for manipulating resource control.
 """
 
 import sys
-import os
 
 from optparse import OptionParser
 
@@ -52,25 +52,30 @@ def printThresholds(resourceControl, desiredSiteName):
     """
     print "Thresholds and current status for all sites:\n"
 
-    thresholds = myResourceControl.listThresholdsForSubmit()
+    thresholds = resourceControl.listThresholdsForSubmit()
 
     for siteName in thresholds.keys():
         if desiredSiteName and desiredSiteName != siteName:
             continue
         siteThresholds = thresholds[siteName]
 
-        siteSlots = siteThresholds[siteThresholds.keys()[0]]["total_slots"]
-        siteJobs = siteThresholds[siteThresholds.keys()[0]]["total_running_jobs"]        
+        if len(siteThresholds) < 1:
+            # No thresholds
+            print("No thresholds for site %s" % siteName)
+            continue
+
+        siteSlots = siteThresholds[0]["total_slots"]
+        siteJobs = siteThresholds[0]["total_running_jobs"]        
         print "%s - %d running, %d slots total:" % (siteName, siteJobs, siteSlots)
 
-        for taskType in siteThresholds.keys():
-            print "  %s - %d running, %d max, priority %i" % \
-                  (taskType, siteThresholds[taskType]["task_running_jobs"],
-                   siteThresholds[taskType]["max_slots"], siteThresholds[taskType]["priority"])
-            if siteThresholds[taskType]["task_running_jobs"] > 0:
-                tasks = myResourceControl.listWorkloadsForTaskSite(taskType, siteName)
-                for task in tasks:
-                    print "    %d - %s" % (task["running"], task["task"])
+        for task in siteThresholds:
+            print "  %s - %d running, %d max, priority %s" % \
+                  (task['task_type'], task["task_running_jobs"],
+                   task["max_slots"], str(task.get("priority", 1)))
+            if task["task_running_jobs"] > 0:
+                taskWorkloads = resourceControl.listWorkloadsForTaskSite(task['task_type'], siteName)
+                for t in taskWorkloads:
+                    print "    %d - %s" % (t["running"], t["task"])
             
         print ""    
 

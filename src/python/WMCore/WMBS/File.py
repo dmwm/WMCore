@@ -25,7 +25,7 @@ class File(WMBSBase, WMFile):
                  parents = None, locations = None, first_event = 0,
                  last_event = 0, merged = True):
         WMBSBase.__init__(self)
-        WMFile.__init__(self, lfn = lfn, size = size, events = events, 
+        WMFile.__init__(self, lfn = lfn, size = size, events = events,
                         checksums = checksums, parents = parents, merged = merged)
 
         if locations == None:
@@ -36,9 +36,10 @@ class File(WMBSBase, WMFile):
                 self['newlocations'].add(locations)
             else:
                 self.setdefault("newlocations", locations)
-
-        self.setdefault("first_event", first_event)
-        self.setdefault("last_event", last_event)
+        
+        # overwrite the default value set from the WMFile
+        self["first_event"] =  first_event
+        self["last_event"] = last_event
         self.setdefault("id", id)
         self['locations'] = set()
 

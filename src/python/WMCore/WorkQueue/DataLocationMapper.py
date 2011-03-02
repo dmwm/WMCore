@@ -5,6 +5,7 @@ from collections import defaultdict
 import time
 
 from WMCore.WMConnectionBase import WMConnectionBase
+from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 
 #TODO: Combine with existing dls so DBSreader can do this kind of thing transparently
 #TODO: Known Issue: Can't have same item in multiple dbs's at the same time.
@@ -70,7 +71,6 @@ class DataLocationMapper():
         dataByDbs = self.organiseByDbs(dataItems)
 
         for dbs, dataItems in dataByDbs.items():
-
             # if global use phedex (not dls yet), else use dbs
             if isGlobalDBS(dbs):
                 output, fullResync = self.locationsFromPhEDEx(dataItems, fullResync)
@@ -132,6 +132,10 @@ class DataLocationMapper():
         """Sort items by dbs instances - return dict with DBSReader as key & data items as values"""
         itemsByDbs = defaultdict(list)
         for item in dataItems:
+            if ACDCBlock.checkBlockName(item['name']):
+                # if it is acdc block don't update location. location should be
+                # inserted when block is queued and not supposed to change
+                continue
             if item['dbs_url'] not in self.dbses:
                 raise RuntimeError, 'No DBSReader for %s' % item['dbs_url']
             itemsByDbs[self.dbses[item['dbs_url']]].append(item['name'])
@@ -151,15 +155,25 @@ class WorkQueueDataLocationMapper(WMConnectionBase, DataLocationMapper):
         self.actions['UpdateDataSiteMapping'] = self.daofactory(classname = "Site.UpdateDataSiteMapping")
         self.actions['NewSite'] = self.daofactory(classname = "Site.New")
 
-    def __call__(self, newDataOnly = False, fullResync = False, dbses = {}):
-        if newDataOnly:
-            dataItems = self.actions['GetDataWithoutSite'].execute(conn = self.getDBConn(),
-                                                                   transaction = self.existingTransaction())
-        else:
-            dataItems = self.actions['ActiveData'].execute(conn = self.getDBConn(),
-                                                           transaction = self.existingTransaction())
+    def __call__(self, newDataOnly = False, fullResync = False, dbses = {}, 
+                 dataLocations = []):
+        """
+        if dataLocations [{'data': .. , sites: [....]}] are passed 
+        just update the location without contacting PhEDEx or DBS
+        """
+        if not dataLocations:
+            if newDataOnly:
+                dataItems = self.actions['GetDataWithoutSite'].execute(
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+            else:
+                dataItems = self.actions['ActiveData'].execute(
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
 
-        dataLocations, fullResync = DataLocationMapper.__call__(self, dataItems, newDataOnly, fullResync, dbses)
+            dataLocations, fullResync = DataLocationMapper.__call__(self, 
+                                                         dataItems, newDataOnly,
+                                                         fullResync, dbses)
 
         if dataLocations:
             with self.transactionContext() as trans:

@@ -386,6 +386,10 @@ class JobSubmitterPoller(BaseWorkerThread):
                     logging.error(msg)
                     continue
 
+                # Ignore this threshold if we've cleaned out the site
+                if not self.cachedJobs.has_key(siteName):
+                    continue
+
                 # Ignore this threshold if we have no jobs
                 # for it
                 if not self.cachedJobs[siteName].has_key(taskType):

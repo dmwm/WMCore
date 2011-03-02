@@ -12,3 +12,4 @@ import DataProcessingRequest
 import ReRecoRequest
 import RecoRequest
 import StoreResultsRequest
+import AnalysisRequest

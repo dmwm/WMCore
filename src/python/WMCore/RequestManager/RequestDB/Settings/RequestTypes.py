@@ -15,5 +15,6 @@ TypesList = [
     "Reco",
     "ReReco",
     "StoreResults",
-    "DataProcessing"
+    "DataProcessing",
+    "Analysis"
     ]

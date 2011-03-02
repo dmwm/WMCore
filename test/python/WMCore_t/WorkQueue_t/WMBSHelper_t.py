@@ -407,8 +407,8 @@ class WMBSHelperTest(unittest.TestCase):
         """
         _createTestWMSpec_
 
-        Create a WMSpec that has a processing, merge and skims tasks that can
-        be used by the subscription creation test.
+        Create a WMSpec that has a processing, merge, cleanup and skims tasks that
+        can be used by the subscription creation test.
         """
         testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
         testWorkload.setOwner("sfoulkes@fnal.gov")
@@ -451,6 +451,16 @@ class WMBSHelperTest(unittest.TestCase):
                                              lfnBase = "bogusUnmerged",
                                              mergedLFNBase = "bogusMerged",
                                              filterName = None)        
+
+        cleanupTask = procTask.addTask("CleanupTask")
+        cleanupTask.setInputReference(procTaskCMSSW, outputModule = "OutputA")
+        cleanupTask.setTaskType("Merge")
+        cleanupTask.setSplittingAlgorithm("SiblingProcessingBase", files_per_job = 50)
+        cleanupTaskCMSSW = cleanupTask.makeStep("cmsRun1")
+        cleanupTaskCMSSW.setStepType("CMSSW")
+        cleanupTaskCMSSWHelper = cleanupTaskCMSSW.getTypeHelper()
+        cleanupTask.setTaskType("Cleanup")
+        cleanupTask.applyTemplates()
 
         skimTask = mergeTask.addTask("SkimTask")
         skimTask.setTaskType("Skim")
@@ -528,6 +538,17 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
                          "Error: Wrong number of WF outputs.")
 
+        cleanupWorkflow = Workflow(name = "TestWorkload",
+                                 task = "/TestWorkload/ProcessingTask/CleanupTask")
+        cleanupWorkflow.load()
+
+        self.assertEqual(cleanupWorkflow.owner, "sfoulkes@fnal.gov",
+                         "Error: Wrong owner.")
+        self.assertEqual(cleanupWorkflow.spec, "/path/to/workload",
+                         "Error: Wrong spec URL")
+        self.assertEqual(len(cleanupWorkflow.outputMap.keys()), 0,
+                         "Error: Wrong number of WF outputs.")        
+
         unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
         unmergedMergeOutput.loadData()
 
@@ -603,6 +624,108 @@ class WMBSHelperTest(unittest.TestCase):
                          "Error: Wrong subscription type.")
         self.assertEqual(skimSubscription["split_algo"], "TwoFileBased",
                          "Error: Wrong split algo.")
+        return
+
+    def testTruncatedWFInsertion(self):
+        """
+        _testTruncatedWFInsertion_
+
+        """
+        resourceControl = ResourceControl()
+        resourceControl.insertSite(siteName = 'site1', seName = 'goodse.cern.ch',
+                                   ceName = 'site1', plugin = "TestPlugin")
+        resourceControl.insertSite(siteName = 'site2', seName = 'goodse2.cern.ch',
+                                   ceName = 'site2', plugin = "TestPlugin")        
+
+        testWorkload = self.createTestWMSpec()
+        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
+        testWMBSHelper.createSubscription()
+
+        testWorkload.truncate("ResubmitTestWorkload", "/TestWorkload/ProcessingTask/MergeTask",
+                              "someserver", "somedatabase")
+        testResubmitWMBSHelper = WMBSHelper(testWorkload, "SomeBlock2")
+        testResubmitWMBSHelper.createSubscription()
+
+        mergeWorkflow = Workflow(name = "ResubmitTestWorkload",
+                                 task = "/ResubmitTestWorkload/MergeTask")
+        mergeWorkflow.load()
+
+        self.assertEqual(mergeWorkflow.owner, "sfoulkes@fnal.gov",
+                         "Error: Wrong owner.")
+        self.assertEqual(mergeWorkflow.spec, "/path/to/workload",
+                         "Error: Wrong spec URL")
+        self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
+                         "Error: Wrong number of WF outputs.")
+
+        cleanupWorkflow = Workflow(name = "ResubmitTestWorkload",
+                                 task = "/ResubmitTestWorkload/CleanupTask")
+        cleanupWorkflow.load()
+
+        self.assertEqual(cleanupWorkflow.owner, "sfoulkes@fnal.gov",
+                         "Error: Wrong owner.")
+        self.assertEqual(cleanupWorkflow.spec, "/path/to/workload",
+                         "Error: Wrong spec URL")
+        self.assertEqual(len(cleanupWorkflow.outputMap.keys()), 0,
+                         "Error: Wrong number of WF outputs.")        
+
+        unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
+        unmergedMergeOutput.loadData()
+
+        self.assertEqual(unmergedMergeOutput.name, "/ResubmitTestWorkload/MergeTask/merged-Merged",
+                         "Error: Unmerged output fileset is wrong.")
+
+        skimWorkflow = Workflow(name = "ResubmitTestWorkload",
+                                task = "/ResubmitTestWorkload/MergeTask/SkimTask")
+        skimWorkflow.load()
+
+        self.assertEqual(skimWorkflow.owner, "sfoulkes@fnal.gov",
+                         "Error: Wrong owner.")
+        self.assertEqual(skimWorkflow.spec, "/path/to/workload",
+                         "Error: Wrong spec URL")
+        self.assertEqual(len(skimWorkflow.outputMap.keys()), 2,
+                         "Error: Wrong number of WF outputs.")
+
+        mergedSkimOutputA = skimWorkflow.outputMap["SkimOutputA"][0]["merged_output_fileset"]
+        unmergedSkimOutputA = skimWorkflow.outputMap["SkimOutputA"][0]["output_fileset"]
+        mergedSkimOutputB = skimWorkflow.outputMap["SkimOutputB"][0]["merged_output_fileset"]
+        unmergedSkimOutputB = skimWorkflow.outputMap["SkimOutputB"][0]["output_fileset"]
+
+        mergedSkimOutputA.loadData()
+        mergedSkimOutputB.loadData()
+        unmergedSkimOutputA.loadData()
+        unmergedSkimOutputB.loadData()
+
+        self.assertEqual(mergedSkimOutputA.name, "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputA",
+                         "Error: Merged output fileset is wrong: %s" % mergedSkimOutputA.name)
+        self.assertEqual(unmergedSkimOutputA.name, "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputA",
+                         "Error: Unmerged output fileset is wrong.")
+        self.assertEqual(mergedSkimOutputB.name, "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputB",
+                         "Error: Merged output fileset is wrong.")
+        self.assertEqual(unmergedSkimOutputB.name, "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputB",
+                         "Error: Unmerged output fileset is wrong.")
+
+        topLevelFileset = Fileset(name = "ResubmitTestWorkload-MergeTask-SomeBlock2")
+        topLevelFileset.loadData()
+
+        mergeSubscription = Subscription(fileset = topLevelFileset, workflow = mergeWorkflow)
+        mergeSubscription.loadData()
+
+        self.assertEqual(len(mergeSubscription.getWhiteBlackList()), 0,
+                         "Error: Wrong white/black list for merge sub.")
+
+        self.assertEqual(mergeSubscription["type"], "Merge",
+                         "Error: Wrong subscription type.")
+        self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
+                         "Error: Wrong split algo.")        
+
+        skimSubscription = Subscription(fileset = unmergedMergeOutput, workflow = skimWorkflow)
+        skimSubscription.loadData()
+
+        self.assertEqual(skimSubscription["type"], "Skim",
+                         "Error: Wrong subscription type.")
+        self.assertEqual(skimSubscription["split_algo"], "TwoFileBased",
+                         "Error: Wrong split algo.")
+
         return
 
     def setupMCWMSpec(self):

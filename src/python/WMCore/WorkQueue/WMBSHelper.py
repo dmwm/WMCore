@@ -180,7 +180,7 @@ class WMBSHelper(WMConnectionBase):
         """
         if topLevelFilesetName == None:
             filesetName = ("%s-%s" % (self.wmSpec.name(),
-                                      self.wmSpec.getTopLevelTask().name()))
+                                      self.wmSpec.getTopLevelTask()[0].name()))
             if self.block:
                 filesetName += "-%s" % self.block
             else:
@@ -188,7 +188,7 @@ class WMBSHelper(WMConnectionBase):
                 filesetName += "-%s" % makeUUID()
         else:
             filesetName = topLevelFilesetName
-            
+
         self.topLevelFileset = Fileset(filesetName)
         self.topLevelFileset.create()
         return
@@ -213,14 +213,17 @@ class WMBSHelper(WMConnectionBase):
         """
         _createSubscription_
 
-        Create subscriptions in WMBS for all the tasks in the spec.  Thi
+        Create subscriptions in WMBS for all the tasks in the spec.  This
         includes filesets, workflows and the output map for each task.
         """
         if task == None or fileset == None:
             self.createTopLevelFileset(topLevelFilesetName)
-            return self.createSubscription(topLevelFilesetName,
-                                           self.wmSpec.getTopLevelTask(),
-                                           self.topLevelFileset)
+            sub = None
+            for topLevelTask in self.wmSpec.getTopLevelTask():
+                sub = self.createSubscription(topLevelFilesetName,
+                                              topLevelTask,
+                                              self.topLevelFileset)
+            return sub
 
         workflow = Workflow(self.wmSpec.specUrl(), self.wmSpec.getOwner()["name"],
                             self.wmSpec.name(), task.getPathName())
@@ -273,10 +276,10 @@ class WMBSHelper(WMConnectionBase):
         for key in needed:
             if self.mask and self.mask.get(key) is None:
                 raise RuntimeError, 'Invalid value "%s" for %s' % (self.mask.get(key), key)
-        if not self.wmSpec.getTopLevelTask().siteWhitelist():
+        if not self.wmSpec.getTopLevelTask()[0].siteWhitelist():
             raise RuntimeError, "Site whitelist mandatory for MonteCarlo"
         locations = set()
-        for site in self.wmSpec.getTopLevelTask().siteWhitelist():
+        for site in self.wmSpec.getTopLevelTask()[0].siteWhitelist():
             try:
                 siteInfo = self.getLocationInfo.execute(site, conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
@@ -342,7 +345,7 @@ class WMBSHelper(WMConnectionBase):
         as well as run lumi update
         """
                 
-        if self.wmSpec.getTopLevelTask().getInputACDC():
+        if self.wmSpec.getTopLevelTask()[0].getInputACDC():
             for acdcFile in self.validFiles(block):
                 self._addACDCFileToWMBSFile(acdcFile)
         else:
@@ -390,14 +393,12 @@ class WMBSHelper(WMConnectionBase):
                     for parent in wmbsFile['parents']:
                         parentageBinds.append({'child': lfn, 'parent': parent['lfn']})
             
-            
-
             selfChecksums = wmbsFile['checksums']
-            runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
+            if len(wmbsFile['runs']) > 0:
+                runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
 
             if wmbsFile.exists():
                 continue
-
 
             if len(wmbsFile['newlocations']) < 1:
                 # Then we're in trouble
@@ -424,24 +425,13 @@ class WMBSHelper(WMConnectionBase):
                                wmbsFile["last_event"],
                                wmbsFile['merged']])
 
-
-        
-
-
         if len(fileCreate) > 0:
             self.addFileAction.execute(files = fileCreate,
                                        conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
-            
-            
-            
-            
-            
             self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
                                             conn = self.getDBConn(),
                                             transaction = self.existingTransaction())
-            
-            
             self.setFileLocation.execute(lfn = fileLocations,
                                          conn = self.getDBConn(),
                                          transaction = self.existingTransaction())
@@ -671,10 +661,14 @@ class WMBSHelper(WMConnectionBase):
 
     def validFiles(self, files):
         """Apply run white/black list and return valid files"""
-        runWhiteList = self.wmSpec.getTopLevelTask().inputRunWhitelist()
-        runBlackList = self.wmSpec.getTopLevelTask().inputRunBlacklist()
+        runWhiteList = self.wmSpec.getTopLevelTask()[0].inputRunWhitelist()
+        runBlackList = self.wmSpec.getTopLevelTask()[0].inputRunBlacklist()
+
         results = []
         for f in files:
+            if not f.has_key("LumiList"):
+                results.append(f)
+                continue
             if runWhiteList or runBlackList:
                 runs = set([x['RunNumber'] for x in f['LumiList']])
                 # apply blacklist

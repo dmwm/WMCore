@@ -13,3 +13,4 @@ import ReRecoRequest
 import RecoRequest
 import StoreResultsRequest
 import AnalysisRequest
+import ResubmissionRequest

@@ -405,7 +405,7 @@ class WorkQueue(WorkQueueBase):
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
         
-        acdcInfo = wmspec.getTopLevelTask().getInputACDC()
+        acdcInfo = wmspec.getTopLevelTask()[0].getInputACDC()
         
         
         if acdcInfo:
@@ -794,7 +794,7 @@ class WorkQueue(WorkQueueBase):
                                                         element['team_name']))
                             self.logger.info("Getting element form parent queue: %s" % element.get('data'))
 
-                        dataLocations = []
+                        dataLocations = {}
                         with self.transactionContext():
                             for unit in totalUnits:
                                 # spec name and request name should be always identical.
@@ -802,10 +802,10 @@ class WorkQueue(WorkQueueBase):
                                                              unit['RequestName'],
                                                              unit['TeamName'])
                                 if unit['Sites'] != None:
-                                    dataLocations.append({'data': unit['Data'],
-                                                          'site': unit['Sites']})
+                                    dataLocations[unit['Data']] = unit['Sites']
                             
                             if len(dataLocations) > 0:
+                                self.logger.info("acdc block location %s" % dataLocations)
                                 self.dataLocationMapper(dataLocations = dataLocations)
                                 
                         counter += len(totalUnits)

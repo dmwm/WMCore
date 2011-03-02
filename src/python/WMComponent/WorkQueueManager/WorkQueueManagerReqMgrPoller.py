@@ -54,7 +54,8 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                         Unable to update ReqMgr state to negotiating: %s
                         Ignoring this request: %s""" % (str(ex), reqName))
                     continue
-
+               
+                dataLocations = {}
                 try:
                     self.wq.logger.info("Processing request %s at %s" % 
                                         (reqName, workLoadUrl))
@@ -77,6 +78,11 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                         for unit in units:
                             self.wq._insertWorkQueueElement(unit, reqName,
                                                             team)
+                            if unit['Sites'] != None:
+                                dataLocations[unit['Data']] = unit['Sites']
+                        if len(dataLocations) > 0:
+                            self.wq.dataLocationMapper(dataLocations = dataLocations)
+
                         try:
                             self.reqMgr.putWorkQueue(reqName, 
                                             self.config.get('QueueURL', 'No Queue'))

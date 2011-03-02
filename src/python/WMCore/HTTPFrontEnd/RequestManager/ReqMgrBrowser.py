@@ -184,7 +184,7 @@ class ReqMgrBrowser(WebAPI):
         self.validate(requestName)
         request = GetRequest.getRequestDetails(requestName)
         helper = loadWorkload(request)
-        task = helper.getTopLevelTask()
+        task = helper.getTopLevelTask()[0]
         docId = None
         d = helper.data.request.schema.dictionary_()
         d['RequestWorkflow'] = request['RequestWorkflow']

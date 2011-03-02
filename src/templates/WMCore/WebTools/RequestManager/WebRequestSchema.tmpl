@@ -154,6 +154,7 @@ Emulator:
         <li><a href="#relvalmc"><em>RelVal MC</em></a></li>
         <li><a href="#storeResults"><em>StoreResults</em></a></li>
         <li><a href="#DataProcessing"><em>DataProcessing</em></a></li>
+        <li><a href="#Resubmission"><em>Resubmission</em></a></li>
     </ul>
     <div class="yui-content">
         <div id="rereco">
@@ -201,6 +202,14 @@ Multicore: <input type="text" name="Multicore" size=2 value="" /> <br/>
             $ioBlock
             $runBlockBlock
             $trailerBlock("DataProcessing")
+        </div>
+        <div id="Resubmission">
+            $headerBlock
+Original Request Name: <input type="text" name="OriginalRequestName" size=30/> <br/>
+Initial Task Path: <input type="text" name="InitialTaskPath" size=30/><br/>
+ACDC Server URL: <input type="text" name="ACDCServer" size=30/><br/>
+ACDC Database Name: <input type="text" name="ACDCDatabase" size=30/><br/>
+            $trailerBlock("Resubmission")
         </div>
     </div>
 </div>

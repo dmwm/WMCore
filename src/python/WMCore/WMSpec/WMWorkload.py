@@ -86,11 +86,12 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Retrieve the top level task.
         """
+        topLevelTasks = []
         for task in self.taskIterator():
             if task.isTopOfTree():
-                return task
+                topLevelTasks.append(task)
 
-        return None
+        return topLevelTasks
 
     def getOwner(self):
         """
@@ -800,25 +801,6 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         pass
 
-
-    def setResubmitFlag(self, value = True):
-        """
-        _setResubmitFlag_
-
-        Set the resubmit flag
-        """
-
-        setattr(self.data.properties, 'resubmit', value)
-
-    def getResubmitFlag(self):
-        """
-        _getResubmitFlag_
-
-        Get the value of the resubmit flag
-        """
-
-        return getattr(self.data.properties, 'resubmit', False)
-
     def truncate(self, newWorkloadName, initialTaskPath, serverUrl,
                  databaseName):
         """
@@ -833,6 +815,16 @@ class WMWorkloadHelper(PersistencyHelper):
         newTopLevelTask.addInputACDC(serverUrl, databaseName, self.name(),
                                      initialTaskPath)
 
+        cleanupTask = None
+        if not newTopLevelTask.isTopOfTree():
+            parentTaskPath = "/".join(initialTaskPath.split("/")[:-1])
+            parentTask = self.getTaskByPath(parentTaskPath)
+            for childTask in parentTask.childTaskIterator():
+                if childTask.taskType() == "Cleanup" and \
+                       childTask.data.input.outputModule == newTopLevelTask.data.input.outputModule:
+                    cleanupTask = childTask
+                    break
+
         for taskPath in allTaskPaths:
             if not taskPath.startswith(initialTaskPath) or taskPath == initialTaskPath:
                 taskName = taskPath.split("/")[-1]
@@ -843,10 +835,14 @@ class WMWorkloadHelper(PersistencyHelper):
 
         self.setName(newWorkloadName)
         self.addTask(newTopLevelTask)
+        newTopLevelTask.setTopOfTree()        
+        if cleanupTask:
+            self.addTask(cleanupTask)
+            cleanupTask.setTopOfTree()
+            
         self.setWorkQueueSplitPolicy("ResubmitBlock",
                                      newTopLevelTask.jobSplittingAlgorithm(),
                                      newTopLevelTask.jobSplittingParameters())
-        newTopLevelTask.setTopOfTree()
 
         def adjustPathsForTask(initialTask, parentPath):
             """

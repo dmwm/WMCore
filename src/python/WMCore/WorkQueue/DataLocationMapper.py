@@ -156,7 +156,7 @@ class WorkQueueDataLocationMapper(WMConnectionBase, DataLocationMapper):
         self.actions['NewSite'] = self.daofactory(classname = "Site.New")
 
     def __call__(self, newDataOnly = False, fullResync = False, dbses = {}, 
-                 dataLocations = []):
+                 dataLocations = {}):
         """
         if dataLocations [{'data': .. , sites: [....]}] are passed 
         just update the location without contacting PhEDEx or DBS
@@ -174,6 +174,8 @@ class WorkQueueDataLocationMapper(WMConnectionBase, DataLocationMapper):
             dataLocations, fullResync = DataLocationMapper.__call__(self, 
                                                          dataItems, newDataOnly,
                                                          fullResync, dbses)
+        else:
+            self.convertSENameToCMSName(dataLocations)
 
         if dataLocations:
             with self.transactionContext() as trans:
@@ -188,3 +190,11 @@ class WorkQueueDataLocationMapper(WMConnectionBase, DataLocationMapper):
                                                               transaction = trans)
 
         return len(dataLocations) # probably not quite what we want, but will indicate whether some mappings were added or not
+
+
+    def convertSENameToCMSName(self, dataLocations):
+        for key, locs in dataLocations.items():
+            cmsLocs = []
+            for location in locs:
+                cmsLocs.append(self.sitedb.seToCMSName(location))
+                dataLocations[key] = cmsLocs

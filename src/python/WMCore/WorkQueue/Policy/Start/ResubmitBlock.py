@@ -65,7 +65,7 @@ class ResubmitBlock(StartPolicyInterface):
             dbsBlock['NumberOfFiles'] = block['files']
             dbsBlock['NumberOfEvents'] = block['events']
             #TODO: needs this for lumi splitting
-            #dbsBlock['NumberOfLumis']
+            dbsBlock['NumberOfLumis'] = block['lumis']
             dbsBlock["Sites"] = block["locations"]
             validBlocks.append(dbsBlock)
             

@@ -66,7 +66,7 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
         task and Cleanup tasks created for each merge task.
         """
         procMergeTasks = {}
-        procTask = workload.getTopLevelTask()
+        procTask = workload.getTopLevelTask()[0]
         for mergeTask in procTask.childTaskIterator():
             if mergeTask.taskType() == "Merge":
                 procMergeTasks[mergeTask.data.input.outputModule] = mergeTask

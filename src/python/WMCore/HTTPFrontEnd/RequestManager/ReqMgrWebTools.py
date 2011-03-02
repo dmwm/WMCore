@@ -40,7 +40,7 @@ def parseSite(kw, name):
 def allSoftwareVersions():
     """ Downloads a list of all software versions from the tag collector """
     result = []
-    f = urllib.urlopen("https://cmstags.cern.ch/cgi-bin/CmsTC/ReleasesXML?anytype=1")
+    f = urllib.urlopen("https://cmstags.cern.ch/cgi-bin/CmsTC/ReleasesXML")
     for line in f:
         for tok in line.split():
             if tok.startswith("label="):

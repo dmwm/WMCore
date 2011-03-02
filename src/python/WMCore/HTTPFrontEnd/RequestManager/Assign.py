@@ -28,7 +28,8 @@ class Assign(WebAPI):
         self.mergedLFNBases = {
              "ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
              "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
-             "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}             
+             "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
+             "Resubmission" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"]}
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
 

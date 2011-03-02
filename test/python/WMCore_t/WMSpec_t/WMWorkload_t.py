@@ -704,6 +704,16 @@ class WMWorkloadTest(unittest.TestCase):
         procTask.setTaskType("Processing")
         procTaskCmssw = procTask.makeStep("cmsRun1")
         procTaskCmssw.setStepType("CMSSW")
+        procTask.applyTemplates()
+        procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
+        procTaskCmsswHelper.addOutputModule("output",
+                                            primaryDataset = "primary",
+                                            processedDataset = "processed",
+                                            dataTier = "tier",
+                                            filterName = "filter",
+                                            lfnBase = "/store/data",
+                                            mergedLFNBase = "/store/unmerged")
+        
         procTaskStageOut = procTask.makeStep("StageOut1")
         procTaskStageOut.setStepType("StageOut")
         procTaskStageOut.getTypeHelper().setMinMergeSize(2)
@@ -713,6 +723,18 @@ class WMWorkloadTest(unittest.TestCase):
         mergeTask.setTaskType("Merge")
         mergeTask.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 2,
                                         max_merge_events = 2, min_merge_size = 2)
+        mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
+        mergeTaskCmssw.setStepType("CMSSW")
+        mergeTask.applyTemplates()
+        mergeTask.setInputReference(procTask, outputModule = "output")
+
+        cleanupTask = procTask.addTask("CleanupTask")
+        cleanupTask.setTaskType("Cleanup")
+        cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
+        cleanupTaskCmssw = cleanupTask.makeStep("cmsRun1")
+        cleanupTaskCmssw.setStepType("CMSSW")
+        cleanupTask.applyTemplates()
+        cleanupTask.setInputReference(procTask, outputModule = "output")
 
         skimTask = mergeTask.addTask("SkimTask")
         skimTask.setTaskType("Skim")
@@ -726,22 +748,31 @@ class WMWorkloadTest(unittest.TestCase):
         testWorkload.truncate("TestWorkloadResubmit", "/TestWorkload/ProcessingTask/MergeTask",
                               "somecouchurl", "somedatabase")
 
-        self.assertEqual(testWorkload.getTopLevelTask().getPathName(),
-                         mergeTask.getPathName(),
-                         "Error: Merge task should be the top level task.")
+        self.assertEqual(len(testWorkload.getTopLevelTask()), 2,
+                         "Error: There should be two top level tasks.")
+        goldenTasks = [mergeTask.getPathName(), cleanupTask.getPathName()]
+        for topLevelTask in testWorkload.getTopLevelTask():
+            self.assertTrue(topLevelTask.getPathName() in goldenTasks,
+                            "Error: Extra top level task.")
+            goldenTasks.remove(topLevelTask.getPathName())
+            
         self.assertEqual(testWorkload.name(), "TestWorkloadResubmit",
                          "Error: The workload name is wrong.")
 
-        self.assertEqual(len(testWorkload.listAllTaskPathNames()), 2,
-                         "Error: There should only be two tasks")
-        self.assertEqual(len(testWorkload.listAllTaskNames()), 2,
-                         "Error: There should only be two tasks")        
+        self.assertEqual(len(testWorkload.listAllTaskPathNames()), 3,
+                         "Error: There should only be three tasks")
+        self.assertEqual(len(testWorkload.listAllTaskNames()), 3,
+                         "Error: There should only be three tasks")        
         self.assertTrue("/TestWorkloadResubmit/MergeTask" in testWorkload.listAllTaskPathNames(),
                         "Error: Merge task is missing.")
+        self.assertTrue("/TestWorkloadResubmit/CleanupTask" in testWorkload.listAllTaskPathNames(),
+                        "Error: Cleanup task is missing.")
         self.assertTrue("/TestWorkloadResubmit/MergeTask/SkimTask" in testWorkload.listAllTaskPathNames(),
                         "Error: Skim task is missing.")
         self.assertTrue("MergeTask" in testWorkload.listAllTaskNames(),
                         "Error: Merge task is missing.")
+        self.assertTrue("CleanupTask" in testWorkload.listAllTaskNames(),
+                        "Error: Cleanup task is missing.")
         self.assertTrue("SkimTask" in testWorkload.listAllTaskNames(),
                         "Error: Skim task is missing.")
         self.assertEqual("ResubmitBlock", testWorkload.startPolicy(),

@@ -12,3 +12,4 @@ import FileBasedRequest
 import ReRecoRequest
 import RecoRequest
 import StoreResultsRequest
+import AnalysisRequest

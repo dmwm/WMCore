@@ -71,11 +71,25 @@ class Proxy(Credential):
   
         self.logger = args.get( "logger", '')
 
+        ## adding ui script to source 
+        self.uisource = args.get("uisource", '')
+
+        ## adding credential path
+        self.credServerPath = args.get("credServerPath", '/tmp')
+
         self.group = '' 
         self.role = '' 
         self.vo = 'cms' 
 
         self.args = args
+
+    def setUI(self):
+        """
+        Return the source command to be pre added to each command to be executed
+        """
+        if self.uisource is not None and len(self.uisource) > 0:
+            return 'source ' + self.uisource + ' && '
+        return ''
 
 #################### Proxy specific stuff
 
@@ -103,7 +117,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
         getSubjectCmd = "voms-proxy-info -file "+proxy+" -identity"
 
-        subject, error, retcode = execute_command(getSubjectCmd)
+        subject, error, retcode = execute_command(self.setUI() + getSubjectCmd)
 
         if retcode != 0 :
             msg = "Error while checking proxy subject for %s since %s"\
@@ -124,7 +138,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
         subjFromCertCmd = 'openssl x509 -in '+certFile+' -subject -noout'
 
-        subjectResult, error, retcode = execute_command(subjFromCertCmd)
+        subjectResult, error, retcode = execute_command(self.setUI() + subjFromCertCmd)
         if retcode != 0 :
             msg = "Error while checking proxy subject for %s since %s"\
                % (certFile, error)
@@ -165,7 +179,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
             claimed += self.group
         if self.role: claimed += "/Role=%s" % self.role
 
-        attribute, error, retcode = execute_command( checkAttCmd )
+        attribute, error, retcode = execute_command(self.setUI() +  checkAttCmd )
 
         if retcode != 0 :
             msg = "Error while checking attribute for %s since %s"\
@@ -195,7 +209,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
         createCmd += ' -valid ' + self.proxyValidity
 
         self.logger.debug(createCmd)
-        output, error, retcode = execute_command( createCmd )
+        output, error, retcode = execute_command(self.setUI() +  createCmd )
 
         if retcode != 0 : 
             raise Exception(\
@@ -257,7 +271,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                 myproxyDelegCmd += ' -x -R \'%s\' -Z \'%s\' -k %s -t 168:00 ' \
                     % (self.serverDN, self.serverDN, serverCredName )
 
-            output, error, retcode = execute_command( myproxyDelegCmd )
+            output, error, retcode = execute_command(self.setUI() +  myproxyDelegCmd )
 
             self.logger.info('MyProxy delegation :\n command: %s\n output:\
                      %s\n ret: %s'%( myproxyDelegCmd, output, retcode ) )
@@ -285,7 +299,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
             checkMyProxyCmd = 'myproxy-info -d -s ' + self.myproxyServer
 
-            output, error, retcode = execute_command( checkMyProxyCmd )
+            output, error, retcode = execute_command(self.setUI() +  checkMyProxyCmd )
 
             self.logger.info( \
  'Checking myproxy for %s...command : %s\n output : %s\n retcode : %s\n'\
@@ -374,7 +388,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
             checkMyProxyCmd = 'myproxy-info -d -s ' + self.myproxyServer
     
-            output, error, retcode = execute_command( checkMyProxyCmd )
+            output, error, retcode = execute_command(self.setUI() +  checkMyProxyCmd )
             self.logger.info( 'Checking myproxy...command \
 : %s\n output : %s\n retcode : %s\n' %(checkMyProxyCmd, output, retcode) ) 
 
@@ -476,7 +490,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
             # get vo, group and role from the current certificate
             getVoCmd = 'env X509_USER_PROXY=%s voms-proxy-info -vo' \
                             % proxyFilename
-            attribute, error, retcode = execute_command(getVoCmd)
+            attribute, error, retcode = execute_command(self.setUI() + getVoCmd)
             if retcode != 0:
                 raise Exception("Unable to get VO for proxy \
                   %s! Exit code:%s"%(proxyFilename, retcode) )
@@ -485,7 +499,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
             # at least /cms/Role=NULL/Capability=NULL
             roleCapCmd = 'env X509_USER_PROXY=%s voms-proxy-info -fqan' \
                         % proxyFilename
-            attribute, error, retcode = execute_command(roleCapCmd)
+            attribute, error, retcode = execute_command(self.setUI() + roleCapCmd)
             if retcode != 0:
                 raise Exception(\
   "Unable to get FQAN for proxy %s! Exit code:%s since %s"\
@@ -524,7 +538,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
   (self.myproxyServer, proxyFilename, self.userDN, credServerName) )
 
         logonCmd = ' '.join(cmdList)
-        msg, error, retcode = execute_command(logonCmd)
+        msg, error, retcode = execute_command(self.setUI() + logonCmd)
 
         self.logger.debug('MyProxy logon - retrieval:\n%s'%logonCmd)
 
@@ -546,7 +560,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
         cmd = 'grid-proxy-info -file '\
        + proxy + ' -timeleft'
 
-        timeLeft, error, retcode = execute_command(cmd)
+        timeLeft, error, retcode = execute_command(self.setUI() + cmd)
 
         if retcode != 0 and retcode != 1:
             raise Exception(\
@@ -561,6 +575,8 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
         self.logger.debug( \
 'Timeleft for retrieved proxy: (exit code %s) %s'\
       %(retcode, timeLeft) )
+
+        vomsValid = ''
 
         if timeLeft > 0:
 
@@ -580,7 +596,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
         (voAttribute, proxy, proxy, proxy, vomsValid) )
 
         cmd = ' '.join(cmdList)
-        msg, error, retcode = execute_command(cmd)
+        msg, error, retcode = execute_command(self.setUI() + cmd)
         self.logger.debug('Voms extension:\n%s'%cmd)
 
         if retcode > 0:
@@ -613,7 +629,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
 
         timeLeftCmd = 'voms-proxy-info -file '+proxy+' -timeleft'
 
-        timeLeftLocal, error, retcode = execute_command( timeLeftCmd )
+        timeLeftLocal, error, retcode = execute_command(self.setUI() + timeLeftCmd )
 
         if retcode != 0 and retcode != 1:
             msg = "Error while checking proxy timeleft for %s since %s"\
@@ -666,7 +682,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
         """
         cmd = 'voms-proxy-info -file '+proxy+' -actimeleft'
 
-        ACtimeLeftLocal, error, retcode = execute_command(cmd)
+        ACtimeLeftLocal, error, retcode = execute_command(self.setUI() + cmd)
 
         if retcode != 0 and retcode != 1:
             msg = "Error while checking proxy actimeleft for %s since %s"\

@@ -405,10 +405,9 @@ class SetupCMSSWPset(ScriptInterface):
                     filesToMixIn = []
                     for blockDict in pileupDict[pileupType].values():
                         if seLocalName in blockDict["StorageElementNames"]:
+                            for fileLFN in blockDict["FileList"]:
+                                inputTypeAttrib.fileNames.append(str(fileLFN))
                             filesToMixIn.extend(blockDict["FileList"])
-                    # now assuming that inputTypeAttrib will have "fileNames" attribute                        
-                    inputTypeAttrib.fileNames.setValue(filesToMixIn)
-                    
                     
     def _getPileupMixingModules(self):
         """
@@ -443,7 +442,7 @@ class SetupCMSSWPset(ScriptInterface):
         
         """
         workingDir = self.stepSpace.location
-        jsonPileupConfig = os.path.join(workingDir, self.step.name(), "pileupconf.json")
+        jsonPileupConfig = os.path.join(workingDir, "pileupconf.json")
         print "Pileup JSON configuration file: '%s'" % jsonPileupConfig
         # load the JSON config file into a Python dictionary
         decoder = JSONDecoder()

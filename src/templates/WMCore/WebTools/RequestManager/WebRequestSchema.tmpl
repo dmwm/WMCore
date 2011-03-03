@@ -170,9 +170,10 @@ Emulator:
             $headerBlock
             $softwareBlock
 # of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
-            $emulatorBlock
             $configBlock("inputMode", "Scenario", "ProdConfigCacheID")
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
+Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
+MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
             $trailerBlock("MonteCarlo")
         </div>
         <div id="relvalmc">
@@ -185,6 +186,8 @@ Gen Data Tier: <input type="text" name="GenDataTier" size=40 /><br/>
 Reco ConfigCache ID <input type="text" name="RecoConfigCacheID" size=80 /><br/>
 AlCaReco ConfigCache ID <input type="text" name="AlcaRecoConfigCacheID" size=80 /><br/>
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
+Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
+MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
             $trailerBlock("RelValMC")
         </div>
         <div id="storeResults">

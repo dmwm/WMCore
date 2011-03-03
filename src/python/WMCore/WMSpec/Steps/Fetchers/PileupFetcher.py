@@ -9,7 +9,6 @@ from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 from WMCore.Services.DBS.DBSReader import DBSReader
 import WMCore.WMSpec.WMStep as WMStep
 from DBSAPI.dbsApi import DbsApi
-from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
 
 
@@ -60,15 +59,16 @@ class PileupFetcher(FetcherInterface):
                 dbsFileBlocks = dbsApi.listBlocks(dataset = dataset)
                 # DBS listBlocks returns list of DbsFileBlock objects for each dataset,
                 # iterate over and query each block to get list of files
-                fileList = [] # list of files in the block (dbsFile["LogicalFileName"])
-                seNames = [] # list of StorageElementName
                 for dbsFileBlock in dbsFileBlocks:
+                    fileList = [] # list of files in the block (dbsFile["LogicalFileName"])
+                    seNames = [] # list of StorageElementName
                     dbsBlockName = dbsFileBlock["Name"]
                     # each DBS block has a list under 'StorageElementList', iterate over
                     for storElem in dbsFileBlock["StorageElementList"]:
                         # this entry contains the site name, e.g.:
                         # 'StorageElementList': [{'Role': '', 'Name': 'storm-fe-cms.cr.cnaf.infn.it'}]
-                        seNames.append(storElem["Name"])
+                        if storElem["Name"] not in seNames:
+                            seNames.append(storElem["Name"])
                     # now get list of files in the block
                     dbsFiles = dbsApi.listFiles(blockName = dbsBlockName)
                     for dbsFile in dbsFiles:
@@ -85,7 +85,6 @@ class PileupFetcher(FetcherInterface):
         
         """
         encoder = JSONEncoder()
-        thunker = JSONThunker()
         args = {}
         # this should have been set in CMSSWStepHelper along with
         # the pileup configuration
@@ -93,15 +92,15 @@ class PileupFetcher(FetcherInterface):
         args["version"] = "DBS_2_0_9"
         args["mode"] = "GET"
         dbsApi = DbsApi(args)
-        
+
         configDict = self._queryDbsAndGetPileupConfig(helper, dbsApi)
         
         # create JSON and save into a file
-        thunked = thunker.thunk(configDict)
-        json = encoder.encode(thunked)
+        json = encoder.encode(configDict)
         
         stepPath = "%s/%s" % (self.workingDirectory(), helper.name())
-        os.mkdir(stepPath)
+        if not os.path.exists(stepPath):
+            os.mkdir(stepPath)
         try:
             fileName = "%s/%s" % (stepPath, "pileupconf.json") 
             f = open(fileName, 'w')

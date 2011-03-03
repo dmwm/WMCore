@@ -47,6 +47,9 @@ class CMSSW(Executor):
             if psetTweak:
                 self.stepSpace.getFromSandbox(psetTweak)
 
+        if hasattr(self.step, "pileup"):
+            self.stepSpace.getFromSandbox("pileupconf.json")
+
         self.step.runtime.scramPreScripts.append("SetupCMSSWPset")
         return None
 

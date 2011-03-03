@@ -388,12 +388,16 @@ def makeJobTweak(job):
     primaryFiles = []
     secondaryFiles = []
     for inputFile in job["input_files"]:
+        if inputFile["lfn"].startswith("MCFakeFile"):
+            continue
+        
         primaryFiles.append(inputFile["lfn"])
         for secondaryFile in inputFile["parents"]:
             secondaryFiles.append(secondaryFile["lfn"])
-            
-    result.addParameter("process.source.fileNames", primaryFiles)
-    result.addParameter("process.source.secondaryFileNames", secondaryFiles)    
+
+    if len(primaryFiles) > 0:
+        result.addParameter("process.source.fileNames", primaryFiles)
+        result.addParameter("process.source.secondaryFileNames", secondaryFiles)    
 
     mask =  job['mask']
 
@@ -402,16 +406,18 @@ def makeJobTweak(job):
     if maxEvents == None: maxEvents = -1
     result.addParameter("process.maxEvents.input", maxEvents)
 
+    # We don't want to set skip events for MonteCarlo jobs which have
+    # no input files.
     firstEvent = mask['FirstEvent']
-    if firstEvent != None:
+    if firstEvent != None and firstEvent > 0 and len(primaryFiles) > 0:
         result.addParameter("process.source.skipEvents", firstEvent)
 
     firstRun = mask['FirstRun']
     if firstRun != None:
         result.addParameter("process.source.firstRun", firstRun)
-    lastRun = mask['LastRun']
-    if lastRun != None:
-        result.addParameter("process.source.lastRun", lastRun)
+    #lastRun = mask['LastRun']
+    #if lastRun != None:
+    #    result.addParameter("process.source.lastRun", lastRun)
 
     runs = mask.getRunAndLumis()
     lumisToProcess = []
@@ -423,14 +429,9 @@ def makeJobTweak(job):
                 continue
             lumisToProcess.append("%s:%s-%s:%s" % (run, lumiPair[0], run, lumiPair[1]))
 
-    result.addParameter("process.source.lumisToProcess", lumisToProcess)
+    if len(lumisToProcess) > 0:
+        result.addParameter("process.source.lumisToProcess", lumisToProcess)
                         
-
-    #if mask["FirstLumi"]:
-    #    result.addParameter("process.source.lumisToProcess",
-    #                        ["%s:%s-%s:%s" % (mask["FirstRun"], mask["FirstLumi"],
-    #                                          mask["LastRun"], mask["LastLumi"])])
-
     # install any settings from the per job baggage
     baggage = job.getBaggage()
     procSection = getattr(baggage, "process", None)

@@ -193,16 +193,7 @@ def getFetcher(fetcherName):
     Get an instance of the named Fetcher implementation
 
     """
-    #try:
     return _FetcherFactory.loadObject(fetcherName)
-
-#    except WMException, wmEx:
-#        msg = "FetcherFactory Unable to load Object: %s" % fetcherName
-#        raise StepFactoryException(msg)
-#    except Exception, ex:
-#        msg = "Error creating object %s in FetcherFactory:\n" % fetcherName
-#        msg += str(ex)
-#        raise StepFactoryException(msg)
 
 def getDiagnostic(stepType):
     """

@@ -74,7 +74,7 @@ class SandboxCreator:
         #  //
         # // Set up Fetcher plugins, use default list for maintaining
         #//  compatibility
-        commonFetchers = [ "CMSSWFetcher", "URLFetcher" ]
+        commonFetchers = [ "CMSSWFetcher", "URLFetcher", "PileupFetcher" ]
         
         # generate the real path and make it
         workloadName = workload.name()
@@ -90,7 +90,7 @@ class SandboxCreator:
             for taskNode in topLevelTask.nodeIterator():
                 task = WMTask.WMTaskHelper(taskNode)
                 
-                fetcherNames = commonFetchers[:]            
+                fetcherNames = commonFetchers[:]
                 taskFetchers = getattr(task.data, "fetchers", [])
                 fetcherNames.extend(taskFetchers)
                 fetcherInstances = map(getFetcher, fetcherNames)

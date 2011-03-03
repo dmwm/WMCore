@@ -180,7 +180,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
-        setupScript.stepSpace.location = self.testDir
+        setupScript.stepSpace.location = os.path.join(self.testDir, "cmsRun1")
         setupScript.job = self.createTestJob()
         # define pileup configuration
         # despite of the implementation considering whichever type of pileup,
@@ -243,6 +243,8 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         for m in modules:
             inputTypeAttrib = getattr(m, "input", None) or getattr(m, "secsource", None)
             fileNames = inputTypeAttrib.fileNames.value
+            if fileNames == None:
+                fileNames = []
             m = ("Pileup configuration file list '%s' and mixing modules input "
                  "filelist '%s' are not identical." % (filesInConfigDict, fileNames)) 
             self.assertEqual(filesInConfigDict, fileNames, m)

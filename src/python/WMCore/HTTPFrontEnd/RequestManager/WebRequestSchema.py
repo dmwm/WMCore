@@ -116,6 +116,13 @@ class WebRequestSchema(WebAPI):
             schema["SkimConfigs"].append(d)
             skimNumber += 1
 
+        if kwargs.has_key("DataPileup") or kwargs.has_key("MCPileup"):
+            schema["PileupConfig"] = {}
+            if kwargs.has_key("DataPileup") and kwargs["DataPileup"] != "":
+                schema["PileupConfig"]["data"] = [kwargs["DataPileup"]]
+            if kwargs.has_key("MCPileup") and kwargs["MCPileup"] != "":
+                schema["PileupConfig"]["mc"] = [kwargs["MCPileup"]]
+                
         for runlist in ["RunWhitelist", "RunBlacklist"]:
             if runlist in kwargs:
                 schema[runlist] = parseRunList(kwargs[runlist])

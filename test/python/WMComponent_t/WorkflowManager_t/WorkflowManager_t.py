@@ -15,6 +15,7 @@ import threading
 import nose
 
 from WMComponent.WorkflowManager.WorkflowManager import WorkflowManager
+from WMCore.WMBS.Workflow import Workflow
 
 from WMQuality.TestInit import TestInit
 
@@ -25,26 +26,27 @@ class WorkflowManagerTest(unittest.TestCase):
     """
 
     _maxMessage = 10
- 
+
     def setUp(self):
         """
         _setUp_
 
-        Setup the database and logging connection.  Try to create all needed 
-        WMBS tables.  
+        Setup the database and logging connection.  Try to create all needed
+        WMBS tables.
         """
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        return
         self.testInit.setSchema(customModules = \
-                     ['WMComponent.WorkflowManager.Database',
+                     ['WMCore.Agent.Database',
+                      'WMComponent.WorkflowManager.Database',
                       'WMCore.ThreadPool',
                       'WMCore.MsgService',
                       'WMCore.WMBS'],
                     useDefault = False)
 
+        return
 
     def tearDown(self):
         """
@@ -52,11 +54,9 @@ class WorkflowManagerTest(unittest.TestCase):
 
         Database deletion
         """
+        self.testInit.clearDatabase()
+
         return
-        self.testInit.clearDatabase([\
-    'WMComponent.WorkflowManager.Database', 
-    'WMCore.ThreadPool', 'WMCore.MsgService', 
-         'WMCore.WMBS'])
 
     def getConfig(self):
         """
@@ -74,9 +74,8 @@ class WorkflowManagerTest(unittest.TestCase):
         """
         _testA_
 
-        Handle malformed AddWorkflowToManage events  
+        Handle AddWorkflowToManage events
         """
-        raise nose.SkipTest        
         myThread = threading.currentThread()
         config = self.getConfig()
 
@@ -84,9 +83,14 @@ class WorkflowManagerTest(unittest.TestCase):
         testWorkflowManager.prepareToStart()
 
         for i in xrange(0, WorkflowManagerTest._maxMessage):
+
+            workflow = Workflow(spec = "testSpec.xml", owner = "riahi", \
+               name = "testWorkflow" + str(i), task = "testTask")
+            workflow.create()
+
             for j in xrange(0, 3):
-                workflowManagerdict = {'payload':{'WorkflowId' : 'NO ID' \
-          , 'FilesetMatch': 'NO FILESET' ,'SplitAlgo':'NO SPLITALGO' }} 
+                workflowManagerdict = {'payload':{'WorkflowId' : workflow.id \
+          , 'FilesetMatch': 'FILESET_' + str(j) ,'SplitAlgo':'NO SPLITALGO', 'Type':'NO TYPE' }}
                 testWorkflowManager.handleMessage( \
       type = 'AddWorkflowToManage' , payload = workflowManagerdict )
 
@@ -102,4 +106,4 @@ class WorkflowManagerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-        
+

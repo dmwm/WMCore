@@ -5,12 +5,11 @@ Default slave, handles loading of shared DB code
 
 __all__ = []
 
-
 import threading
 import pickle
 
-from WMCore.WMFactory import WMFactory
 from WMCore.ThreadPool.ThreadSlave import ThreadSlave
+from WMCore.DAOFactory import DAOFactory
 
 class DefaultSlave(ThreadSlave):
     """
@@ -22,7 +21,6 @@ class DefaultSlave(ThreadSlave):
         """
         ThreadSlave.__init__(self)
         self.messageArgs = None
-        self.queries = None
 
     def initInThread(self):
         """
@@ -30,12 +28,17 @@ class DefaultSlave(ThreadSlave):
         """
         # Call superclass setup
         ThreadSlave.initInThread(self)
-        
+
         # Load DB queries
         myThread = threading.currentThread()
-        factory = WMFactory("default", \
-                "WMComponent.WorkflowManager.Database." + myThread.dialect)
-        self.queries = factory.loadObject("Queries")
+        daofactory = DAOFactory(package = "WMComponent.WorkflowManager.Database" , \
+              logger = myThread.logger, \
+              dbinterface = myThread.dbi)
+
+        self.addManagedWorkflow = daofactory(classname = "AddManagedWorkflow")
+        self.markLocation = daofactory(classname = "MarkLocation")
+        self.unmarkLocation = daofactory(classname = "UnmarkLocation")
+        self.removeManagedWorkflow = daofactory(classname = "RemoveManagedWorkflow")
 
     def __call__(self, parameters):
         """

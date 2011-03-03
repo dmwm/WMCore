@@ -1,11 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python 
 #pylint: disable-msg=C0301
 """
 Slave used for RemoveWorkflowFromManagement handler
 """
-
 __all__ = []
-
 
 import logging
 import threading
@@ -25,13 +23,16 @@ class RemoveWorkflowFromManagementSlave(DefaultSlave):
         logging.debug("Handling RmoveWorkflowFromManagement message: %s" % \
                                                                     str(args))
         myThread = threading.currentThread()
-        
+
         # Validate arguments
         if args.has_key("FilesetMatch") and args.has_key("WorkflowId"):
             try:
                 myThread.transaction.begin()
-                self.queries.removeManagedWorkflow(args['WorkflowId'], \
-                                                   args['FilesetMatch'])
+                self.removeManagedWorkflow.execute(workflow = args['WorkflowId'], \
+                                                   fileset_match = args['FilesetMatch'], \
+                                                   conn = myThread.transaction.conn, \
+                                                   transaction = True)
+
                 myThread.transaction.commit()
             except:
                 myThread.transaction.rollback()

@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 #pylint: disable-msg=C0301,R0903
 """
-Handler for add workflow
+Handler for adding workflow
 """
 __all__ = []
-
-
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool
@@ -17,7 +15,7 @@ class AddWorkflowToManage(BaseHandler):
 
     def __init__(self, component):
         BaseHandler.__init__(self, component)
-        
+
         # Define a slave threadpool
         self.threadpool = ThreadPool(\
             "WMComponent.WorkflowManager.Handler.AddWorkflowToManageSlave", \

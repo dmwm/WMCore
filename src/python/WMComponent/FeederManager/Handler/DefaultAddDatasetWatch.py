@@ -4,9 +4,6 @@ Default handler for add dataset to watch
 """
 __all__ = []
 
-
-
-
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool
 

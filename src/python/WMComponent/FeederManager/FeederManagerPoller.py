@@ -6,56 +6,60 @@ Filesets and Feeders manager
 
 __all__ = []
 
-
-
 import threading
 import logging
 import traceback
 import time
 
+from WMCore.DAOFactory import DAOFactory
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.ThreadPool.WorkQueue import ThreadPool 
+from WMCore.ThreadPool.WorkQueue import ThreadPool
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMFactory import WMFactory
 
-# Tracks filesets watched:{filesetName:filesetObject}
+# Tracks filesets in dict. using this format filesetName:filesetObject}
 FILESET_WATCH = {}
 FILESET_NEW = {}
-LONG_SLEEP = time.time()/60 
+LONG_SLEEP = time.time()/60
 
 class FeederManagerPoller(BaseWorkerThread):
     """
     Regular managed fileset poller, instantiate feeder
     by fileset
     """
-   
+
     def __init__(self, threads=8):
         """
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
-        self.queries = None
         self.workq = ThreadPool \
               ([self.pollExternal for _ in range(threads)])
-
 
     def setup(self, parameters):
         """
         Load DB objects required for queries
-        """ 
+        """
         myThread = threading.currentThread()
-        factory = WMFactory("default", \
-            "WMComponent.FeederManager.Database." + myThread.dialect)
-        self.queries = factory.loadObject("Queries")
+
+        daofactory = DAOFactory(package = "WMComponent.FeederManager.Database" , \
+              logger = myThread.logger, \
+              dbinterface = myThread.dbi)
+
+        self.getAllManagedFilesets = daofactory(classname = "GetAllManagedFilesets")
+        self.getFeederId = daofactory(classname = "GetFeederId")
+        self.removeManagedFilesets = daofactory(classname = "RemoveManagedFilesets")
+
 
     def databaseWork(self):
         """
         completed, set the fileset to close (Not implemented yet)
         """
-        # Global variable shared between threads 
-        global FILESET_WATCH 
+        # Global variable shared between threads
+        # We don't need global variables anymore - see ticket #875
+        global FILESET_WATCH
         global FILESET_NEW
-        global LONG_SLEEP 
+        global LONG_SLEEP
 
         FILESET_WATCH_temp = []
         listFileset = {}
@@ -64,8 +68,10 @@ class FeederManagerPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
-        # Get All managed filesets 
-        managedFilesets = self.queries.getAllManagedFilesets()
+        # Get All managed filesets
+        managedFilesets = self.getAllManagedFilesets.execute(\
+        conn = myThread.transaction.conn, transaction = True)
+
         myThread.transaction.commit()
 
         logging.debug("Found %s managed filesets" % len(managedFilesets))
@@ -74,10 +80,10 @@ class FeederManagerPoller(BaseWorkerThread):
 
             logging.debug("Processing %s %s" % \
   ( managedFilesets[fileset]['id'] , managedFilesets[fileset]['name'] ) )
+
             filesetToUpdate = Fileset(id=managedFilesets[fileset]['id'])
             filesetToUpdate.load()
 
-            # lock me!
             if managedFilesets[fileset]['name'] not in FILESET_WATCH:
 
                 FILESET_WATCH[filesetToUpdate.name] = filesetToUpdate
@@ -91,15 +97,15 @@ class FeederManagerPoller(BaseWorkerThread):
             if oldFileset not in listFileset:
 
                 FILESET_WATCH_temp.append(oldFileset)
- 
-        for oldTempFileset in FILESET_WATCH_temp: 
+
+        for oldTempFileset in FILESET_WATCH_temp:
             del FILESET_WATCH[oldTempFileset]
 
-        logging.debug("NEW FILESETS %s" %FILESET_NEW)
-        logging.debug("OLD FILESETS %s" %FILESET_WATCH)
+        logging.debug("NEW FILESETS %s" % FILESET_NEW)
+        logging.debug("OLD FILESETS %s" % FILESET_WATCH)
 
 
-        # WorkQueue worker
+        # WorkQueue work
         for name, fileset in FILESET_NEW.items():
 
             logging.debug("Will poll %s : %s" % (name, fileset.id))
@@ -110,28 +116,36 @@ class FeederManagerPoller(BaseWorkerThread):
             fileset = FILESET_WATCH[key]
 
             logging.debug \
-      ("the poll key %s result %s is ready !" % (key,str(fileset.id)))
+      ("the poll key %s result %s is ready !" % (key, str(fileset.id)))
 
             myThread.transaction.begin()
-            feederId = self.queries.getFeederId((fileset.name).split(":")[1])
+
+            feederId = self.getFeederId.execute( \
+    feederType = (fileset.name).split(":")[1], \
+conn = myThread.transaction.conn, transaction = True )
+
             myThread.transaction.commit()
 
             logging.debug("the Feeder %s has processed %s and is \
-                  removing it if closed" % (feederId , fileset.name ) ) 
+                  removing it if closed" % (feederId, fileset.name) )
 
 
-            # Finally delete fileset 
+            # Finally delete fileset
             # If the fileset is closed remove it
             fileset.load()
-            if fileset.open == False: 
+            if fileset.open == False:
 
                 myThread.transaction.begin()
-                self.queries.removeManagedFilesets(fileset.id, feederId)
+                self.removeManagedFilesets.execute( \
+filesetId = fileset.id, feederType = feederId, \
+        conn = myThread.transaction.conn, transaction = True )
                 myThread.transaction.commit()
 
+        # Handles old filesets. We update old filesets every 10 mn
+        # We need to make old filesets update cycle configurable
         if ((time.time()/60) - LONG_SLEEP) > 10 :
 
-            # WorkQueue workerold filesets
+            # WorkQueue handles old filesets
             for name, fileset in FILESET_WATCH.items():
 
                 logging.debug("Will poll %s : %s" % (name, fileset.id))
@@ -142,15 +156,16 @@ class FeederManagerPoller(BaseWorkerThread):
                 fileset = FILESET_WATCH[key]
 
                 logging.debug \
-          ("the poll key %s result %s is ready !" % (key,str(fileset.id)))
+          ("the poll key %s result %s is ready !" % (key, str(fileset.id)))
 
                 myThread.transaction.begin()
-                feederId = self.queries.getFeederId(\
-                    (fileset.name).split(":")[1])
+                feederId = self.getFeederId.execute(\
+           feederType = (fileset.name).split(":")[1], \
+     conn = myThread.transaction.conn, transaction = True )
                 myThread.transaction.commit()
 
                 logging.debug("the Feeder %s has processed %s and is \
-                      removing it if closed" % (feederId , fileset.name ) )
+                      removing it if closed" % (feederId, fileset.name) )
 
 
                 # Finally delete fileset
@@ -159,10 +174,12 @@ class FeederManagerPoller(BaseWorkerThread):
                 if fileset.open == False:
 
                     myThread.transaction.begin()
-                    self.queries.removeManagedFilesets(fileset.id, feederId)
+                    self.removeManagedFilesets.execute(\
+        filesetId = fileset.id, feederType = feederId, \
+    conn = myThread.transaction.conn, transaction = True )
                     myThread.transaction.commit()
 
-            # Update short_sleep var
+            # Update the last update time of old filesets
             LONG_SLEEP = time.time()/60
 
     # Switch to static method if needed
@@ -171,9 +188,9 @@ class FeederManagerPoller(BaseWorkerThread):
         Call relevant external source and get file details
         """
 
-        logging.debug("Feeder name %s" %(fileset.name).split(":")[1])
+        logging.debug("Feeder name %s" % (fileset.name).split(":")[1])
         try:
- 
+
             factory = WMFactory("default", \
                 "WMCore.WMBSFeeder." + (fileset.name).split(":")[1])
             feeder = factory.loadObject("Feeder")
@@ -182,7 +199,7 @@ class FeederManagerPoller(BaseWorkerThread):
         except Exception,e :
 
             msg = "Feeder plugin \'%s\' unknown" \
-              % (fileset.name).split(":")[1] 
+              % (fileset.name).split(":")[1]
             logging.info(msg)
             logging.info(e)
             logging.info( traceback.format_exc() )
@@ -190,7 +207,7 @@ class FeederManagerPoller(BaseWorkerThread):
             fileset.markOpen(False)
             fileset.commit()
 
-        return fileset 
+        return fileset
 
     def algorithm(self, parameters):
         """
@@ -206,6 +223,3 @@ class FeederManagerPoller(BaseWorkerThread):
         except:
             myThread.transaction.rollback()
             raise
-
-
-

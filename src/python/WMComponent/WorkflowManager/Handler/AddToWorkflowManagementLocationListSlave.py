@@ -3,9 +3,7 @@
 """
 Slave used for AddWorkflowToManagementLocationList handler
 """
-
 __all__ = []
-
 
 import logging
 import threading
@@ -34,10 +32,12 @@ class AddToWorkflowManagementLocationListSlave(DefaultSlave):
             try:
                 myThread.transaction.begin()
                 for loc in locations:
-                    self.queries.markLocation(args['WorkflowId'], \
-                                              args['FilesetMatch'], \
-                                              loc, \
-                                              args['Valid'])
+                    self.markLocation.execute(workflow = args['WorkflowId'], \
+                                              fileset_match = args['FilesetMatch'], \
+                                              location = loc, \
+                                              valid = args['Valid'], \
+                                              conn = myThread.transaction.conn, \
+                                              transaction = True)
                 myThread.transaction.commit()
             except:
                 myThread.transaction.rollback()

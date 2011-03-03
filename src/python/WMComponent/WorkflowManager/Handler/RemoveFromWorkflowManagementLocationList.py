@@ -5,8 +5,6 @@ Handler for remove workflow location info
 """
 __all__ = []
 
-
-
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool
 
@@ -18,7 +16,7 @@ class RemoveFromWorkflowManagementLocationList(BaseHandler):
 
     def __init__(self, component):
         BaseHandler.__init__(self, component)
-        
+
         # Define a slave threadpool
         self.threadpool = ThreadPool(\
             "WMComponent.WorkflowManager.Handler.RemoveFromWorkflowManagementLocationListSlave", \

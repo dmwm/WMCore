@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 #pylint: disable-msg=C0301
 """
-Slave used for RemoveFromWorkflowManagementLocationList handler
+Slave used by RemoveFromWorkflowManagementLocationList handler
 """
 
 __all__ = []
-
-
 
 import logging
 import threading
@@ -16,7 +14,7 @@ from WMComponent.WorkflowManager.Handler.DefaultSlave import DefaultSlave
 
 class RemoveFromWorkflowManagementLocationListSlave(DefaultSlave):
     """
-    The default slave for a RemoveFromWorkflowManagementLocationList message
+    The default slave for RemoveFromWorkflowManagementLocationList message
     """
 
     def __call__(self, parameters):
@@ -36,9 +34,11 @@ class RemoveFromWorkflowManagementLocationListSlave(DefaultSlave):
             try:
                 myThread.transaction.begin()
                 for loc in locations:
-                    self.queries.unmarkLocation(args['WorkflowId'], \
-                                                args['FilesetMatch'], \
-                                                loc)
+                    self.unmarkLocation.execute(workflow = args['WorkflowId'], \
+                                                fileset_match = args['FilesetMatch'], \
+                                                location = loc, \
+                                                conn = myThread.transaction.conn, \
+                                                transaction = True)
                 myThread.transaction.commit()
             except:
                 myThread.transaction.rollback()

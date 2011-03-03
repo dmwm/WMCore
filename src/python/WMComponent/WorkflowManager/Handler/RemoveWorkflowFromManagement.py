@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 #pylint: disable-msg=C0301,R0903
 """
-Handler for remove workflow
+Handler to remove workflow
 """
 __all__ = []
-
-
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool
@@ -17,7 +15,7 @@ class RemoveWorkflowFromManagement(BaseHandler):
 
     def __init__(self, component):
         BaseHandler.__init__(self, component)
-        
+
         # Define a slave threadpool
         self.threadpool = ThreadPool(\
             "WMComponent.WorkflowManager.Handler.RemoveWorkflowFromManagementSlave", \
@@ -31,4 +29,3 @@ class RemoveWorkflowFromManagement(BaseHandler):
         """
         # Add item to the thread pool and return
         self.threadpool.enqueue(event, {'event' : event, 'payload' :payload['payload']})
-

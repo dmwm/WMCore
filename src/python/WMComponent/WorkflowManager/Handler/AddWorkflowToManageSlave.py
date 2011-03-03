@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 """
-Slave used for AddWorkflowToManage handler
+Slave used by AddWorkflowToManage handler
 """
-
 __all__ = []
-
-
 
 import logging
 import threading
@@ -30,10 +27,12 @@ class AddWorkflowToManageSlave(DefaultSlave):
         and args.has_key("SplitAlgo") and args.has_key("Type"):
             try:
                 myThread.transaction.begin()
-                self.queries.addManagedWorkflow(args['WorkflowId'], \
-                                                args['FilesetMatch'], \
-                                                args['SplitAlgo'], \
-                                                args['Type'])
+                self.addManagedWorkflow.execute(workflow = args['WorkflowId'], \
+                                                fileset_match =  args['FilesetMatch'], \
+                                                split_algo =  args['SplitAlgo'], \
+                                                type =  args['Type'], \
+                                                conn = myThread.transaction.conn, \
+                                                transaction = True)
                 myThread.transaction.commit()
             except:
                 myThread.transaction.rollback()

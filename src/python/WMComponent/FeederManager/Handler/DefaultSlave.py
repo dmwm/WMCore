@@ -2,22 +2,19 @@
 """
 Default slave for FeederManager
 """
-
 __all__ = []
-
-
 
 import threading
 import pickle
 
 from WMCore.ThreadPool.ThreadSlave import ThreadSlave
-from WMCore.WMFactory import WMFactory
+from WMCore.DAOFactory import DAOFactory
 
 class DefaultSlave(ThreadSlave):
     """
     The default slave for FeederManager messages
     """
-    
+
     def __init__(self):
         """
         Initialise the slave
@@ -27,8 +24,6 @@ class DefaultSlave(ThreadSlave):
         self.runningFeedersLock = myThread.runningFeedersLock
         self.runningFeeders = myThread.runningFeeders
         self.messageArgs = None
-        self.queries = None
-
 
     def initInThread(self):
         """
@@ -36,12 +31,18 @@ class DefaultSlave(ThreadSlave):
         """
         # Call parent initialisation
         ThreadSlave.initInThread(self)
-        
-        # Load backend queries
+
         myThread = threading.currentThread()
-        factory = WMFactory("default", \
-            "WMComponent.FeederManager.Database." + myThread.dialect)
-        self.queries = factory.loadObject("Queries")
+
+        daofactory = DAOFactory(package = "WMComponent.FeederManager.Database" , \
+              logger = myThread.logger, \
+              dbinterface = myThread.dbi)
+
+        # Load queries objects
+        self.checkFeeder = daofactory(classname = "CheckFeeder")
+        self.getFeederId = daofactory(classname = "GetFeederId")
+        self.addFeeder = daofactory(classname = "AddFeeder")
+        self.addFilesetToManage = daofactory(classname = "AddFilesetToManage")
 
         # Get feeder objects
         myThread.runningFeedersLock = self.runningFeedersLock
@@ -55,5 +56,3 @@ class DefaultSlave(ThreadSlave):
             self.messageArgs = pickle.loads(parameters['payload'])
         except:
             self.messageArgs = parameters['payload']
-
-

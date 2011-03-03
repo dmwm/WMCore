@@ -1,8 +1,16 @@
+function getRootDBPath() {
+  // Figure out the root DB path given the current url of the page.  This will
+  // return just the hostname and the database name with /jobs or /fwjrs.
+  var urlParts = location.href.split('/');
+  var rootDBName = urlParts[3].split('%2F')[0];
+  return "http://" + urlParts[2] + "/" + rootDBName;
+}
+
 function getFailedJobs(workflowName, errorDiv) {
   // Retrieve the list of failed jobs IDs from couch for the given workflow.
   errorDiv.innerHTML = "Retrieving list of failed jobs from couch...";
   xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", "../../_view/failedJobsByWorkflowName?stale=ok&startkey=[\"" + workflowName + "\"]&endkey=[\"" + workflowName + "\",{}]", false);
+  xmlhttp.open("GET", getRootDBPath() + "%2Fjobs/_design/JobDump/_view/failedJobsByWorkflowName?stale=ok&startkey=[\"" + workflowName + "\"]&endkey=[\"" + workflowName + "\",{}]", false);
   xmlhttp.send();
 
   errorDiv.innerHTML += "done.";
@@ -12,7 +20,7 @@ function getFailedJobs(workflowName, errorDiv) {
 function getErrorInfoForJob(jobID) {
   // Retrieve the error information from couch for the given jobs ID.
   xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", "../../_view/errorsByJobID?stale=ok&startkey=[" + jobID + "]&endkey=[" + jobID + ",{}]", false);
+  xmlhttp.open("GET", getRootDBPath() + "%2Ffwjrs/_design/FWJRDump/_view/errorsByJobID?stale=ok&startkey=[" + jobID + "]&endkey=[" + jobID + ",{}]", false);
   xmlhttp.send();
   return eval("(" + xmlhttp.responseText + ")")["rows"];
 };
@@ -158,7 +166,7 @@ function renderJobDetails(jobIDs, stepDiv) {
   var failedJobHTML = ""
 
   for (uniqueJobIndex in uniqueJobIDs) {
-    failedJobHTML += "<a href=../../_show/jobSummary/" + uniqueJobIDs[uniqueJobIndex] + ">" + uniqueJobIDs[uniqueJobIndex] + "</a> ";
+    failedJobHTML += "<a href=" + getRootDBPath() + "%2Fjobs/_design/JobDump/_show/jobSummary/" + uniqueJobIDs[uniqueJobIndex] + ">" + uniqueJobIDs[uniqueJobIndex] + "</a> ";
   };
 
   failedJobDiv.innerHTML = failedJobHTML;

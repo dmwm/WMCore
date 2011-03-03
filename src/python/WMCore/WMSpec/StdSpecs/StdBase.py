@@ -10,6 +10,7 @@ from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 
 from WMCore.Cache.WMConfigCache import ConfigCache
+from WMCore.Lexicon import lfnBase
 
 class StdBase(object):
     """
@@ -52,7 +53,7 @@ class StdBase(object):
         method and pull out any that are setup by this base class.
         """
         self.workloadName = workloadName
-        self.priority = arguments.get("Priority", 0)        
+        self.priority = arguments.get("Priority", 0)
         self.owner = arguments.get("Requestor", None)
         self.group = arguments.get("Group", None)
         self.acquisitionEra = arguments.get("AcquisitionEra", None)
@@ -88,11 +89,11 @@ class StdBase(object):
                                                    "filterName": None}
 
         return outputModules
-    
+
     def addDashboardMonitoring(self, task):
         """
         _addDashboardMonitoring_
-        
+
         Add dashboard monitoring for the given task.
         """
         monitoring = task.data.section_("watchdog")
@@ -166,7 +167,7 @@ class StdBase(object):
         newSplitArgs = {}
         for argName in splitArgs.keys():
             newSplitArgs[str(argName)] = splitArgs[argName]
-        
+
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
         procTask.setTaskType(taskType)
         procTask.addGenerator("BasicNaming")
@@ -215,20 +216,20 @@ class StdBase(object):
     def addOutputModule(self, parentTask, outputModuleName, dataTier, filterName):
         """
         _addOutputModule_
-        
+
         Add an output module to the given processing task.
         """
         if parentTask.name() == 'Analysis':
-            # TODO in case of user data need to implement policy to define 
-            #  1  processedDatasetName 
+            # TODO in case of user data need to implement policy to define
+            #  1  processedDatasetName
             #  2  primaryDatasetName
-            #  ( 3  dataTier should be always 'USER'.) 
+            #  ( 3  dataTier should be always 'USER'.)
             #  4 then we'll know how to deal with Merge
             dataTier = 'USER'
             processedDatasetName = None
             unmergedLFN = self.userUnmergedLFN
             mergedLFN = None
-        else: 
+        else:
             if filterName != None and filterName != "":
                 processedDatasetName = "%s-%s-%s" % (self.acquisitionEra, filterName,
                                                      self.processingVersion)
@@ -236,14 +237,16 @@ class StdBase(object):
             else:
                 processedDatasetName = "%s-%s" % (self.acquisitionEra,
                                                   self.processingVersion)
-                processingString = "%s" % (self.processingVersion)                
-            
+                processingString = "%s" % (self.processingVersion)
+
             unmergedLFN = "%s/%s/%s/%s/%s" % (self.unmergedLFNBase, self.acquisitionEra,
                                               self.inputPrimaryDataset, dataTier,
                                               processingString)
             mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
                                             self.inputPrimaryDataset, dataTier,
                                             processingString)
+            lfnBase(unmergedLFN)
+            lfnBase(mergedLFN)
 
         cmsswStep = parentTask.getStep("cmsRun1")
         cmsswStepHelper = cmsswStep.getTypeHelper()
@@ -261,12 +264,12 @@ class StdBase(object):
     def addLogCollectTask(self, parentTask, taskName = "LogCollect"):
         """
         _addLogCollectTask_
-        
+
         Create a LogCollect task for log archives that are produced by the
         parent task.
         """
         logCollectTask = parentTask.addTask(taskName)
-        self.addDashboardMonitoring(logCollectTask)        
+        self.addDashboardMonitoring(logCollectTask)
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
         logCollectTask.applyTemplates()
@@ -274,7 +277,7 @@ class StdBase(object):
         logCollectTask.addGenerator("BasicNaming")
         logCollectTask.addGenerator("BasicCounter")
         logCollectTask.setTaskType("LogCollect")
-    
+
         parentTaskLogArch = parentTask.getStep("logArch1")
         logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")
         return
@@ -283,22 +286,22 @@ class StdBase(object):
                      dataTier, filterName, processedDatasetName):
         """
         _addMergeTask_
-    
+
         Create a merge task for files produced by the parent task.
         """
         mergeTask = parentTask.addTask("%sMerge%s" % (parentTask.name(), parentOutputModule))
         self.addDashboardMonitoring(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
-        
+
         mergeTaskStageOut = mergeTaskCmssw.addStep("stageOut1")
         mergeTaskStageOut.setStepType("StageOut")
         mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
         mergeTaskLogArch.setStepType("LogArchive")
 
-        mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)        
+        mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModule))
-        
+
         mergeTask.addGenerator("BasicNaming")
         mergeTask.addGenerator("BasicCounter")
         mergeTask.setTaskType("Merge")
@@ -309,14 +312,14 @@ class StdBase(object):
             splitAlgo = "WMBSMergeBySize"
         else:
             splitAlgo = "ParentlessMergeBySize"
-            
+
         mergeTask.setSplittingAlgorithm(splitAlgo,
                                         max_merge_size = self.maxMergeSize,
                                         min_merge_size = self.minMergeSize,
                                         max_merge_events = self.maxMergeEvents,
                                         siteWhitelist = self.siteWhitelist,
                                         siteBlacklist = self.siteBlacklist)
-    
+
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                         scramArch = self.scramArch)
@@ -331,7 +334,7 @@ class StdBase(object):
                                              dataTier = dataTier,
                                              filterName = filterName,
                                              lfnBase = mergedLFN)
-    
+
         parentTaskCmssw = parentTask.getStep("cmsRun1")
         mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModule)
         self.addCleanupTask(parentTask, parentOutputModule)
@@ -340,27 +343,27 @@ class StdBase(object):
     def addCleanupTask(self, parentTask, parentOutputModuleName):
         """
         _addCleanupTask_
-        
+
         Create a cleanup task to delete files produces by the parent task.
         """
         cleanupTask = parentTask.addTask("%sCleanupUnmerged%s" % (parentTask.name(), parentOutputModuleName))
-        self.addDashboardMonitoring(cleanupTask)        
+        self.addDashboardMonitoring(cleanupTask)
         cleanupTask.setTaskType("Cleanup")
 
         parentTaskCmssw = parentTask.getStep("cmsRun1")
         cleanupTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
         cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
-       
+
         cleanupStep = cleanupTask.makeStep("cleanupUnmerged%s" % parentOutputModuleName)
         cleanupStep.setStepType("DeleteFiles")
         cleanupTask.applyTemplates()
         cleanupTask.setTaskPriority(self.priority + 5)
         return
-    
+
     def setupPileup(self, task, pileupConfig):
         """
         Support for pileup input for MonteCarlo and RelValMC workloads
-        
+
         """
         # task is instance of WMTaskHelper (WMTask module)
         # retrieve task helper (cmssw step helper), top step name is cmsRun1

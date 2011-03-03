@@ -13,6 +13,7 @@ from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
+from WMCore.Lexicon import lfnBase
 
 parseTaskPath = lambda p: [ x for x in p.split('/') if x.strip() != '' ]
 
@@ -121,9 +122,9 @@ class WMWorkloadHelper(PersistencyHelper):
     def setOwnerDetails(self, name, group, ownerProperties = {}):
         """
         _setOwnerDetails_
-        
+
         Set the owner, explicitly requiring the group and user arguments
-        
+
         """
         self.data.owner.name = name
         self.data.owner.group = group
@@ -132,20 +133,20 @@ class WMWorkloadHelper(PersistencyHelper):
         for key in ownerProperties.keys():
             setattr(self.data.owner, key, ownerProperties[key])
         return
-        
+
     def sandbox(self):
         """
         _sandbox_
         """
         return self.data.sandbox
-    
+
     def setSandbox(self, sandboxPath):
         """
         _sandbox_
         """
         self.data.sandbox = sandboxPath
-        
-    
+
+
     def priority(self):
         """
         _priority_
@@ -261,7 +262,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         for i in self.data.tasks.tasklist:
             yield self.getTask(i)
-    
+
     def listAllTaskNodes(self):
         """
         """
@@ -271,7 +272,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 result.extend(t.listNodes())
         return result
 
-   
+
     def listAllTaskPathNames(self):
         """
         _listAllTaskPathNames_
@@ -299,11 +300,11 @@ class WMWorkloadHelper(PersistencyHelper):
     def listTasksOfType(self, ttype):
         """
         _listTasksOfType_
-        
+
         Get tasks matching the type provided
         """
         return [ t for t in self.taskIterator() if t.taskType() == ttype ]
-        
+
 
     def addTask(self, wmTask):
         """
@@ -354,9 +355,9 @@ class WMWorkloadHelper(PersistencyHelper):
     def removeTask(self, taskName):
         """
         _removeTask_
-        
+
         Remove given task with given name
-        
+
         """
         self.data.tasks.__delattr__(taskName)
         self.data.tasks.tasklist.remove(taskName)
@@ -370,12 +371,12 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         if type(siteWhitelist) != type([]):
             siteWhitelist = [siteWhitelist]
-            
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-        
+
         for task in taskIterator:
             task.setSiteWhitelist(siteWhitelist)
             self.setSiteWhitelist(siteWhitelist, task)
@@ -390,16 +391,16 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         if type(siteBlacklist) != type([]):
             siteBlacklist = [siteBlacklist]
-            
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-        
+
         for task in taskIterator:
             task.setSiteBlacklist(siteBlacklist)
             self.setSiteBlacklist(siteBlacklist, task)
-            
+
         return
 
     def setBlockWhitelist(self, blockWhitelist, initialTask = None):
@@ -411,17 +412,17 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         if type(blockWhitelist) != type([]):
             blockWhitelist = [blockWhitelist]
-            
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-            
+
         for task in taskIterator:
             if task.getInputDatasetPath():
                 task.setInputBlockWhitelist(blockWhitelist)
-            self.setBlockWhitelist(blockWhitelist, task)                
-                
+            self.setBlockWhitelist(blockWhitelist, task)
+
         return
 
     def setBlockBlacklist(self, blockBlacklist, initialTask = None):
@@ -433,17 +434,17 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         if type(blockBlacklist) != type([]):
             blockBlacklist = [blockBlacklist]
-            
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-        
+
         for task in taskIterator:
             if task.getInputDatasetPath():
                 task.setInputBlockBlacklist(blockBlacklist)
             self.setBlockBlacklist(blockBlacklist, task)
-            
+
         return
 
     def setRunWhitelist(self, runWhitelist, initialTask = None):
@@ -454,12 +455,12 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         if type(runWhitelist) != type([]):
             runWhitelist = [runWhitelist]
-            
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-        
+
         for task in taskIterator:
             if task.getInputDatasetPath():
                 task.setInputRunWhitelist(runWhitelist)
@@ -475,12 +476,12 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         if type(runBlacklist) != type([]):
             runBlacklist = [runBlacklist]
-            
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-            
+
         for task in taskIterator:
             if task.getInputDatasetPath():
                 task.setInputRunBlacklist(runBlacklist)
@@ -500,7 +501,7 @@ class WMWorkloadHelper(PersistencyHelper):
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-            
+
         for task in taskIterator:
             taskType = task.taskType()
             for stepName in task.listAllStepNames():
@@ -529,6 +530,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                                         getattr(outputModule, "primaryDataset"),
                                                         getattr(outputModule, "dataTier"),
                                                         self.data.properties.processingVersion)
+                        lfnBase(unmergedLFN)
+                        lfnBase(mergedLFN)
                         setattr(outputModule, "processedDataset", processedDataset)
 
                         # For merge tasks, we want all output to go to the merged LFN base.
@@ -538,12 +541,12 @@ class WMWorkloadHelper(PersistencyHelper):
                         else:
                             setattr(outputModule, "lfnBase", unmergedLFN)
                             setattr(outputModule, "mergedLFNBase", mergedLFN)
-                            
+
             task.setTaskLogBaseLFN(self.data.properties.unmergedLFNBase)
             self.updateLFNsAndDatasets(task)
 
         return
-    
+
     def setAcquisitionEra(self, acquisitionEra):
         """
         _setAcquistionEra_
@@ -578,7 +581,7 @@ class WMWorkloadHelper(PersistencyHelper):
     def getProcessingVersion(self):
         """
         _getProcessingVersion_
-        
+
         Get the processingVersion
         """
 
@@ -608,14 +611,14 @@ class WMWorkloadHelper(PersistencyHelper):
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-            
+
         for task in taskIterator:
             if task.taskType() == "Merge":
                 task.setSplittingParameters(min_merge_size = minSize,
                                             max_merge_size = maxSize,
                                             max_merge_events = maxEvents)
             for stepName in task.listAllStepNames():
-                stepHelper = task.getStepHelper(stepName)                
+                stepHelper = task.getStepHelper(stepName)
                 if stepHelper.stepType() == "StageOut" and stepHelper.minMergeSize() != -1:
                     stepHelper.setMinMergeSize(minSize)
 
@@ -626,7 +629,7 @@ class WMWorkloadHelper(PersistencyHelper):
     def setWorkQueueSplitPolicy(self, policyName, splitAlgo, splitArgs):
         """
         _setWorkQueueSplitPolicy_
-        
+
         Set the WorkQueue split policy.
         policyName should be either 'DatasetBlock', 'Dataset', 'MonteCarlo' 'Block'
         different policy could be added in the workqueue plug in.
@@ -644,7 +647,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.setStartPolicy(policyName, SliceType = sliceType, SliceSize = sliceSize)
         self.setEndPolicy("SingleShot")
         return
-        
+
     def setJobSplittingParameters(self, taskPath, splitAlgo, splitArgs):
         """
         _setJobSplittingParameters_
@@ -659,7 +662,7 @@ class WMWorkloadHelper(PersistencyHelper):
             if taskHelper.taskType() == "Production":
                 self.setWorkQueueSplitPolicy("MonteCarlo", splitAlgo, splitArgs)
             else:
-                self.setWorkQueueSplitPolicy("Block", splitAlgo, splitArgs)                
+                self.setWorkQueueSplitPolicy("Block", splitAlgo, splitArgs)
 
         # There are currently two merge algorithms in WMBS.  WMBSMergeBySize
         # will reassemble the parent file.  This is only necessary for
@@ -704,7 +707,7 @@ class WMWorkloadHelper(PersistencyHelper):
         taskHelper = self.getTaskByPath(taskPath)
         if taskHelper == None:
             return
-        
+
         taskHelper.setTaskTimeOut(taskTimeOut)
         return
 
@@ -715,13 +718,13 @@ class WMWorkloadHelper(PersistencyHelper):
         Create a dictionary that maps task names to timeouts.
         """
         output = {}
-        
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-            
-        for task in taskIterator:        
+
+        for task in taskIterator:
             output[task.getPathName()] = task.getTaskTimeOut()
             output.update(self.listTimeOutsByTask(task))
 
@@ -734,13 +737,13 @@ class WMWorkloadHelper(PersistencyHelper):
         Create a dictionary that maps task names to job splitting parameters.
         """
         output = {}
-        
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-            
-        for task in taskIterator:        
+
+        for task in taskIterator:
             taskName = task.getPathName()
             taskParams = task.jobSplittingParameters()
             del taskParams["siteWhitelist"]
@@ -750,7 +753,7 @@ class WMWorkloadHelper(PersistencyHelper):
             output.update(self.listJobSplittingParametersByTask(task))
 
         return output
-            
+
     def listOutputDatasets(self, initialTask = None):
         """
         _listOutputDatasets_
@@ -758,12 +761,12 @@ class WMWorkloadHelper(PersistencyHelper):
         List the names of all the datasets produced by this workflow.
         """
         outputDatasets = []
-        
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-            
+
         for task in taskIterator:
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
@@ -835,11 +838,11 @@ class WMWorkloadHelper(PersistencyHelper):
 
         self.setName(newWorkloadName)
         self.addTask(newTopLevelTask)
-        newTopLevelTask.setTopOfTree()        
+        newTopLevelTask.setTopOfTree()
         if cleanupTask:
             self.addTask(cleanupTask)
             cleanupTask.setTopOfTree()
-            
+
         self.setWorkQueueSplitPolicy("ResubmitBlock",
                                      newTopLevelTask.jobSplittingAlgorithm(),
                                      newTopLevelTask.jobSplittingParameters())
@@ -909,7 +912,7 @@ class WMWorkload(ConfigSection):
         #//
         self.section_("tasks")
         self.tasks.tasklist = []
-        
+
         self.sandbox = None
 
 def newWorkload(workloadName):

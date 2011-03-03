@@ -11,9 +11,6 @@ Implementation of an Executor for a StageOut step
 
 """
 
-
-
-
 import os
 import os.path
 import logging
@@ -28,7 +25,8 @@ import WMCore.Storage.FileManager
 
 from WMCore.WMSpec.ConfigSectionTree import nodeParent, nodeName
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
-        
+from WMCore.Lexicon                  import lfn as lfnRegEx
+
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
 
 class StageOut(Executor):
@@ -37,7 +35,7 @@ class StageOut(Executor):
 
     Execute a StageOut Step
 
-    """        
+    """
 
     def pre(self, emulator = None):
         """
@@ -52,7 +50,7 @@ class StageOut(Executor):
             return emulator.emulatePre( self.step )
 
 
-        
+
         print "Steps.Executors.StageOut.pre called"
         return None
 
@@ -62,7 +60,7 @@ class StageOut(Executor):
         _execute_
 
 
-        """        
+        """
         #Are we using emulators again?
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
@@ -74,17 +72,17 @@ class StageOut(Executor):
 
         # Set wait to 15 minutes
         waitTime = overrides.get('waitTime', 900)
-        
+
         logging.info("StageOut override is: %s " % self.step)
 
         # Pull out StageOutMgr Overrides
-        
+
         # switch between old stageOut behavior and new, fancy stage out behavior
         useNewStageOutCode = False
         if overrides.has_key('newStageOut') and overrides.get('newStageOut'):
             useNewStageOutCode = True
-        
-        
+
+
         stageOutCall = {}
         if overrides.has_key("command") and overrides.has_key("option") \
                and overrides.has_key("se-name") and overrides.has_key("lfn-prefix"):
@@ -135,7 +133,7 @@ class StageOut(Executor):
             # Don't stage out files from bad steps.
             if not stepReport.stepSuccessful(step):
                 continue
-            
+
             # Okay, time to start using stuff
             # Now I'm a bit confused about this; each report should ONLY
             # Have the results of that particular step in it,
@@ -165,13 +163,15 @@ class StageOut(Executor):
                             logging.error(str(ex))
                             stepReport.addError(self.stepName, 50011,
                                                 "DirectToMergeFailure", str(ex))
-                
+
                 # Save the input PFN in case we need it
                 # Undecided whether to move file.pfn to the output PFN
                 file.InputPFN   = file.pfn
-                fileForTransfer = {'LFN': getattr(file, 'lfn'), \
-                                   'PFN': getattr(file, 'pfn'), \
-                                   'SEName' : None, \
+                lfn = getattr(file, 'lfn')
+                lfnRegEx(lfn)
+                fileForTransfer = {'LFN': lfn,
+                                   'PFN': getattr(file, 'pfn'),
+                                   'SEName' : None,
                                    'StageOutCommand': None}
                 signal.signal(signal.SIGALRM, alarmHandler)
                 signal.alarm(waitTime)
@@ -189,24 +189,24 @@ class StageOut(Executor):
                     stepReport.addError(self.stepName, 1,
                                         "StageOutFailure", str(ex))
                     stepReport.setStepStatus(self.stepName, 1)
-                    stepReport.persist("Report.pkl")                        
+                    stepReport.persist("Report.pkl")
                     raise
-                        
+
                 signal.alarm(0)
-                
-                
+
+
 
             # Am DONE with report
             # Persist it
             stepReport.persist(reportLocation)
 
-                
+
 
         #Done with all steps, and should have a list of
         #stagedOut files in fileForTransfer
         logging.info("Transferred %i files" %(len(filesTransferred)))
         return
-    
+
 
     def post(self, emulator = None):
         """
@@ -248,12 +248,12 @@ class StageOut(Executor):
                 if not hasattr(file, 'lfn') or not hasattr(file, 'location') or \
                        not hasattr(file, 'guid'):
                     continue
-                    
+
                 file.user_dn = getattr(self.step, "userDN", None)
                 file.async_dest = getattr(self.step, "asyncDest", None)
 
             stepReport.persist(reportLocation)
-        
+
         print "Steps.Executors.StageOut.post called"
         return None
 
@@ -263,7 +263,7 @@ class StageOut(Executor):
         """
         _handleLFNForMerge_
 
-        Digs up unmerged LFN out of WMStep outputModule and 
+        Digs up unmerged LFN out of WMStep outputModule and
         changes the current file to match.
         Requires a mergedLFNBase in the WMSpec output module
         """
@@ -281,7 +281,7 @@ class StageOut(Executor):
             return mergefile
         stepHelper = self.task.getStep(stepName = step)
         outputMod  = stepHelper.getOutputModule(moduleName = outputName)
-        
+
         if not outputMod:
             # Then we couldn't get the output module
             logging.error("Attempt to directly merge failed " \

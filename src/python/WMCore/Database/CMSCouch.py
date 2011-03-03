@@ -217,7 +217,7 @@ class Database(CouchDBRequests):
         return retval
 
     def commit(self, doc=None, returndocs = False, timestamp = False,
-               viewlist=[]):
+               viewlist=[], **data):
         """
         Add doc and/or the contents of self._queue to the database. If
         returndocs is true, return document objects representing what has been
@@ -225,6 +225,9 @@ class Database(CouchDBRequests):
         timestamp - this will be the timestamp of when the commit was called, it
         will not override an existing timestamp field.  If timestamp is a string
         that string will be used as the label for the timestamp.
+
+        key, value pairs can be used to pass extra parameters to the bulk doc api
+        See http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API
 
         TODO: restore support for returndocs and viewlist
 
@@ -242,7 +245,7 @@ class Database(CouchDBRequests):
         # commit in thread to avoid blocking others
         uri  = '/%s/_bulk_docs/' % self.name
 
-        data = {'docs': list(self._queue)}
+        data['docs'] = list(self._queue)
         retval = self.post(uri , data)
         self._reset_queue()
         for v in viewlist:

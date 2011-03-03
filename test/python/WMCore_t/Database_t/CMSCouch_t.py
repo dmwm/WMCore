@@ -256,5 +256,34 @@ class CMSCouchTest(unittest.TestCase):
         self.assertFalse(self.db.documentExists(doc_id, rev=doc_v2['_rev']))
         self.assertTrue(self.db.documentExists(doc_id, rev=doc_v3['_rev']))
 
+    def testCommit(self):
+        """
+        Test queue and commit modes
+        """
+        # try to commit 2 random docs
+        doc = {'foo':123, 'bar':456}
+        self.db.queue(doc)
+        self.db.queue(doc)
+        self.assertEqual(2, len(self.db.commit()))
+
+        # committing 2 docs with the same id will fail
+        self.db.queue(Document(id = "1", dict = {'foo':123, 'bar':456}))
+        self.db.queue(Document(id = "1", dict = {'foo':1234, 'bar':456}))
+        answer = self.db.commit()
+        self.assertEqual(2, len(answer))
+        self.assertEqual(answer[0]['error'], 'conflict')
+        self.assertEqual(answer[1]['error'], 'conflict')
+
+        # all_or_nothing mode ignores conflicts
+        self.db.queue(Document(id = "2", dict = doc))
+        self.db.queue(Document(id = "2", dict = {'foo':1234, 'bar':456}))
+        answer = self.db.commit(all_or_nothing = True)
+        self.assertEqual(2, len(answer))
+        self.assertEqual(answer[0].get('error'), None)
+        self.assertEqual(answer[0].get('error'), None)
+        self.assertEqual(answer[0]['id'], '2')
+        self.assertEqual(answer[1]['id'], '2')
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -44,5 +44,5 @@ class EventBased(JobFactory):
                 else:
                     self.newJob(name = self.getJobName(length=totalJobs))
                     self.currentJob.addFile(f)
-                    self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, 0)
+                    self.currentJob["mask"].setMaxAndSkipEvents(f["events"], 0)
                     totalJobs += 1

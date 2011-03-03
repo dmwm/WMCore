@@ -5,9 +5,6 @@ _EventBased_t_
 Event based splitting test.
 """
 
-
-
-
 import unittest
 import os
 import threading
@@ -160,7 +157,7 @@ class EventBasedTest(unittest.TestCase):
 
         self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
         
-        self.assertEqual(job["mask"].getMaxEvents(), 1000)
+        self.assertEqual(job["mask"].getMaxEvents(), 100)
         
         self.assertEqual(job["mask"]["FirstEvent"], 0)
 
@@ -288,7 +285,7 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups[0].jobs[6].getFiles(type = "lfn")), 1)
         
         for job in jobGroups[0].jobs:
-            self.assertEqual(job["mask"].getMaxEvents(), 150)
+            self.assertEqual(job["mask"].getMaxEvents(), 100)
             self.assertEqual(job["mask"]["FirstEvent"], 0)
 
         return

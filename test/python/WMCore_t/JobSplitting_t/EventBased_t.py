@@ -5,9 +5,6 @@ _EventBased_t_
 Event based splitting test.
 """
 
-
-
-
 import unittest
 
 from WMCore.DataStructs.File import File
@@ -117,7 +114,7 @@ class EventBasedTest(unittest.TestCase):
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
         
-        assert job["mask"].getMaxEvents() == 1000, \
+        assert job["mask"].getMaxEvents() == 100, \
                "ERROR: Job's max events is incorrect."
         
         assert job["mask"]["FirstEvent"] == 0, \
@@ -266,9 +263,6 @@ class EventBasedTest(unittest.TestCase):
         code will put at most one file in a job.
         """
         splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleFileSubscription)        
-
-        splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
 
         jobGroups = jobFactory(events_per_job = 150)
@@ -283,7 +277,7 @@ class EventBasedTest(unittest.TestCase):
             assert len(job.getFiles(type = "lfn")) == 1, \
                    "ERROR: Job contains too many files."
         
-            assert job["mask"].getMaxEvents() == 150, \
+            assert job["mask"].getMaxEvents() == 100, \
                    "ERROR: Job's max events is incorrect."
         
             assert job["mask"]["FirstEvent"] == 0, \

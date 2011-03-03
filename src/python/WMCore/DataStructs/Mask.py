@@ -10,11 +10,7 @@ job in two ways:
 
 """
 
-
-
-
-
-
+import logging
 
 class Mask(dict):
     """

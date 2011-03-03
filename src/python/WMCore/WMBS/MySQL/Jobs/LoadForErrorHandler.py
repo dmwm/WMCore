@@ -7,7 +7,8 @@ MySQL implementation of Jobs.LoadForErrorHandler.
 
 from WMCore.Database.DBFormatter import DBFormatter
 
-from WMCore.WMBS.File import File
+from WMCore.WMBS.File       import File
+from WMCore.DataStructs.Run import Run
 
 class LoadForErrorHandler(DBFormatter):
     """
@@ -19,7 +20,7 @@ class LoadForErrorHandler(DBFormatter):
     sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name, 
                     wmbs_job_state.name AS state, state_time, retry_count, 
                     couch_record,  cache_dir, wmbs_location.site_name AS location, 
-                    outcome AS bool_outcome, fwjr_path AS fwjr_path, ww.id as workflow,
+                    outcome AS bool_outcome, fwjr_path AS fwjr_path, ww.name as workflow,
                     ww.task as task, ww.spec as spec
              FROM wmbs_job
                INNER JOIN wmbs_jobgroup ON wmbs_jobgroup.id = wmbs_job.jobgroup
@@ -46,6 +47,9 @@ class LoadForErrorHandler(DBFormatter):
                      FROM wmbs_file_parent wfp
                      INNER JOIN wmbs_file_details parent ON parent.id = wfp.parent
                      WHERE wfp.child = :fileid """
+
+    runLumiSQL = """SELECT fileid, run, lumi FROM wmbs_file_runlumi_map
+                     WHERE fileid = :fileid"""
 
 
     def formatJobs(self, result):
@@ -100,6 +104,25 @@ class LoadForErrorHandler(DBFormatter):
                                             transaction = transaction)
         parentList   = self.formatDict(parentResult)
 
+        lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn = conn,
+                                          transaction = transaction)
+        lumiList = self.formatDict(lumiResult)
+        for f in fileList:
+            f['newRuns'] = []
+            fileRuns = {}
+            for l in lumiList:
+                if l['fileid'] == f['id']:
+                    run  = l['run']
+                    lumi = l['lumi']
+                    if not fileRuns.has_key(run):
+                        fileRuns[run] = []
+                    if not lumi in fileRuns[run]:
+                        fileRuns[run].append(lumi)
+            for r in fileRuns.keys():
+                newRun = Run(runNumber = r)
+                newRun.lumis = fileRuns[r]
+                f['newRuns'].append(newRun)
+
         filesForJobs = {}
         for f in fileList:
             jobid = f['jobid']
@@ -109,6 +132,8 @@ class LoadForErrorHandler(DBFormatter):
                 wmbsFile = File(id = f['id'])
                 wmbsFile.update(f)
                 wmbsFile['locations'].add(f['se_name'])
+                for r in wmbsFile['newRuns']:
+                    wmbsFile.addRun(r)
                 for entry in parentList:
                     if entry['id'] == f['id']:
                         wmbsFile['parents'].add(entry['lfn'])
@@ -116,6 +141,8 @@ class LoadForErrorHandler(DBFormatter):
             else:
                 # If the file is there, just add the location
                 filesForJobs[jobid][f['id']]['locations'].add(f['se_name'])
+
+        
 
 
         for j in jobList:

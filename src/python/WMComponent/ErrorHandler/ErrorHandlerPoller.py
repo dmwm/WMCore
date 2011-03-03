@@ -89,7 +89,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
             # Check if Retries >= max retry count
             if ajob['retry_count'] >= self.maxRetries:
                 exhaustJobs.append(ajob)
-                #SIMON's CODE SHOULD PUT the job in "newstate" state
+                logging.error("Exhausting %s" % ajob)
             else:
                 logging.debug("Job %i had %s retries remaining" \
                               % (ajob['id'], str(ajob['retry_count'])))
@@ -223,6 +223,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
             # One job per entry
             tmpJob = Job(id = entry['id'])
             tmpJob.update(entry)
+            tmpJob.getMask()
             listOfJobs.append(tmpJob)
 
 

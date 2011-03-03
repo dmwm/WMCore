@@ -182,9 +182,9 @@ class DataCollectionService(CouchService):
         Get a data collection by name
         """
         result = self.couchdb.loadView("ACDC", 'data_collections',
-                 { 'startkey' : collName }, []
-                )
-        # somewhat flaky assumption that we get one row, need to add some safeguards on this
+                                       {'startkey': collName,
+                                        'endkey': collName}, [])
+
         row = result[u'rows'][0]
         ownerInfo =  row[u'value'][u'owner']
         collId =  row[u'value'][u'_id']

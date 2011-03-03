@@ -162,7 +162,7 @@ class Mask(WMBSBase, WMMask):
             # Otherwise we don't know where the lumis end up
 
             blankRunLumi = False
-            if firstRun == lastRun:
+            if firstRun == lastRun and firstRun != None:
                 blankRunLumi = True
                 self.addRunAndLumis(run = firstRun, lumis = [firstLumi, lastLumi])
 

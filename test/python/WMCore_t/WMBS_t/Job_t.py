@@ -1186,6 +1186,15 @@ class JobTest(unittest.TestCase):
         self.assertEqual(len(runs), 2)
         self.assertEqual(runs[100], [[101, 102]])
         self.assertEqual(runs[200], [[201, 202]])
+
+        bigRun = Run(100, *[101, 102, 103, 104])
+        badRun = Run(300, *[1001, 1002])
+        result = loadJob['mask'].filterRunLumisByMask([bigRun, badRun])
+
+        self.assertEqual(len(result), 1)
+        alteredRun = result[0]
+        self.assertEqual(alteredRun.run, 100)
+        self.assertEqual(alteredRun.lumis, [101, 102])
         
 
 if __name__ == "__main__":

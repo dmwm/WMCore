@@ -136,6 +136,65 @@ class Mask(dict):
 
         return self['runAndLumis']
 
+    def runLumiInMask(self, run, lumi):
+        """
+        _runLumiInMask_
+
+        See if a particular runLumi is in the mask
+        """
+
+        if self['runAndLumis'] == {}:
+            # Empty dictionary
+            # ALWAYS TRUE
+            return True
+
+        if not run in self['runAndLumis'].keys():
+            return False
+
+        for pair in self['runAndLumis'][run]:
+            # Go through each max and min pair
+            if pair[0] <= lumi and pair[1] >= lumi:
+                # Then the lumi is bracketed
+                return True
+
+        return False
+
+
+    def filterRunLumisByMask(self, runs):
+        """
+        _filterRunLumisByMask_
+
+        Pass a Mask a list of run objects, get back a list of
+        run objects that correspond to the actual mask allowed values
+        """
+        if self['runAndLumis'] == {}:
+            # Empty dictionary
+            # ALWAYS TRUE
+            return runs
+
+
+        lumisToRemove = {}
+        for r in runs:
+            lumisToRemove = []
+            for l in r.lumis:
+                if not self.runLumiInMask(run = r.run, lumi = l):
+                    if not l in lumisToRemove:
+                        lumisToRemove.append(l)
+
+            for l in lumisToRemove:
+                r.lumis.remove(l)
+
+        runsToRemove = []
+        for r in runs:
+            if len(r.lumis) < 1:
+                runsToRemove.append(r)
+
+        for r in runsToRemove:
+            runs.remove(r)
+
+        return runs
+
+
 
 
 

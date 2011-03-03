@@ -90,9 +90,9 @@ class LexiconTest(unittest.TestCase):
         Test the LFN checker in both modes
         """
 
-        lfnA = '/store/temp/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
+        lfnA = '/store/temp1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
         lfn(lfnA)
-        lfnA = '/store/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
+        lfnA = '/store/temp/lustre1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
         lfn(lfnA)
 
         # All these cases should fail
@@ -144,9 +144,9 @@ class LexiconTest(unittest.TestCase):
         Test the LFN Base
         """
 
-        lfnA = '/store/temp/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
+        lfnA = '/store/temp1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
         lfnBase(lfnA)
-        lfnA = '/store/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
+        lfnA = '/store/temp/lustre1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
         lfnBase(lfnA)
 
         lfnA = '/Store/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'

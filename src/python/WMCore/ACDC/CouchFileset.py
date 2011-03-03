@@ -171,22 +171,10 @@ class CouchFileset(Fileset):
         """
         maskLumis = mask.getRunAndLumis()
         if maskLumis != {}:
+            # Then we actually have to do something
             for f in files:
-                for r in f['runs']:
-                    newRun = Run()
-                    if not r.run in maskLumis.keys():
-                        # Then it's not in there
-                        continue
-                    newRun.run = r.run
-                    for lumi in r.lumis:
-                        if lumi in maskLumis[r.run]:
-                            # Then we add it
-                            newRun.lumis.append(lumi)
-                    f['runs'].remove(r)
-                    if len(newRun.lumis) > 0:
-                        # Add it
-                        f['runs'].append(newRun)
-                            
+                newRuns = mask.filterRunLumisByMask(runs = f['runs'])
+                f['runs'] = newRuns
                             
         jsonFiles = {}
         [ jsonFiles.__setitem__(f['lfn'], f.__to_json__(None)) for f in files]

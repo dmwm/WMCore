@@ -18,10 +18,10 @@ config.component_('Webtools')
 # We could change port, set logging etc here like so:
 #config.Webtools.port = 8011
 #config.Webtools.show_tracebacks = True
-#config.Webtools.autoreload = True
-#config.Webtools.environment = 'development'
-#config.Webtools.log_screen = True
-#config.Webtools.error_log_level = logging.DEBUG
+config.Webtools.autoreload = True
+config.Webtools.environment = 'development'
+config.Webtools.log_screen = True
+config.Webtools.error_log_level = logging.DEBUG
 #config.Webtools.thread_pool = 10
 # etc. Check Root.py for all configurables
 # The above short-hand can be replaced with explicit namespaced configuration
@@ -58,10 +58,10 @@ active = config.WebtoolsDocs.views.section_('active')
 # This is the Security config the application will use
 config.component_('SecurityModule')
 # You can turn off security by setting
-#config.SecurityModule.dangerously_insecure = True
+config.SecurityModule.dangerously_insecure = True
 # There should be a proper HMAC key file here, use this file as an
 # example
-config.SecurityModule.key_file = os.path.join(getWMBASE(), 'src/python/WMCore/WebTools/DefaultConfig.py')
+#config.SecurityModule.key_file = os.path.join(getWMBASE(), 'src/python/WMCore/WebTools/DefaultConfig.py')
 #
 # I could secure all the pages in the web app to these settings using a default
 # configuration. This can still be over-ridden on a per page basis.

@@ -29,7 +29,7 @@ import sys, socket, time, os
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WebTools.Welcome import Welcome
 from WMCore.Agent.Harness import Harness
-from WMCore.WebTools.FrontEndAuth import FrontEndAuth
+from WMCore.WebTools.FrontEndAuth import FrontEndAuth, NullAuth
 
 def mytime():
     """
@@ -217,7 +217,9 @@ class Root(Harness):
         # SecurityModule config
         # Registers secmodv2 into cherrypy.tools so it can be used through
         # decorators
-        if not self.secconfig.dictionary_().get('dangerously_insecure', False):
+        if self.secconfig.dictionary_().get('dangerously_insecure', False):
+            cherrypy.tools.secmodv2 = NullAuth(self.secconfig)
+        else:
             cherrypy.tools.secmodv2 = FrontEndAuth(self.secconfig)
             if hasattr(self.secconfig,"default"):
                 # If the 'default' section is present, it will force the

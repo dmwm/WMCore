@@ -67,7 +67,6 @@ class ReqMgrBrowser(WebAPI):
         self.couchUrl = config.couchUrl
         self.configDBName = config.configDBName
         self.yuiroot = config.yuiroot
-        self.reqMgrHost = config.reqMgrHost
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
     def initThread(self, thread_index):
@@ -309,7 +308,7 @@ class ReqMgrBrowser(WebAPI):
                     message += "Changed status for %s to %s\n" % (requestName, status)
                     if status == "assigned":
                         # make a page to choose teams
-                        raise cherrypy.HTTPRedirect('%s/reqmgr/assign/one/%s' % (self.reqMgrHost, requestName))
+                        raise cherrypy.HTTPRedirect('/reqmgr/assign/one/%s' % requestName)
         return message + detailsBackLink(requestName)
 
 

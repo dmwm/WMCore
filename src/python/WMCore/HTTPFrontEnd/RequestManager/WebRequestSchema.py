@@ -6,6 +6,7 @@ import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as Sof
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
 from WMCore.Services.Requests import JSONRequests
+import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList
 from httplib import HTTPException
 import cherrypy
@@ -25,6 +26,7 @@ class WebRequestSchema(WebAPI):
         self.couchUrl = config.couchUrl
         self.componentDir = config.componentDir
         self.configDBName = config.configDBName
+        self.workloadDBName = config.workloadDBName
         self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)

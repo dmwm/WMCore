@@ -13,13 +13,12 @@ import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as Sof
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
-from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import removePasswordFromUrl, changePriority, changeStatus, unidecode
+import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
+from WMCore.Wrappers import JsonWrapper
 import WMCore.Lexicon
 import cherrypy
 import json
 import threading
-import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import urllib
 import logging
 
@@ -37,11 +36,8 @@ class ReqMgrRESTModel(RESTModel):
     be found at https://twiki.cern.ch/twiki/bin/viewauth/CMS/ReqMgrSystemDesign """
     def __init__(self, config):
         RESTModel.__init__(self, config)
-        #self.dialect = config.dialect
-        self.hostAddress = config.model.reqMgrHost
-        self.couchUrl = config.model.couchUrl
-        self.workloadCouchDB = config.model.workloadCouchDB 
-
+        self.couchUrl = config.couchUrl
+        self.workloadDBName = config.workloadDBName
         self._addMethod('GET', 'request', self.getRequest, 
                        args = ['requestName'],
                        validation=[self.isalnum], expires = 0)
@@ -266,7 +262,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def putWorkQueue(self, request, url):
         """ Registers the request as "acquired" by the workqueue with the given URL """
-        changeStatus(request, "acquired")
+        Utilities.changeStatus(request, "acquired")
         return ProdManagement.associateProdMgr(request, urllib.unquote(url))
 
     def validatePutWorkQueue(self, index):
@@ -279,40 +275,17 @@ class ReqMgrRESTModel(RESTModel):
         result = ""
         request = self.findRequest(requestName)
         if request == None:
-            request = self.makeRequest()
+            """ Creates a new request, with a JSON-encoded schema that is sent in the
+            body of the request """
+            body = cherrypy.request.body.read()
+            requestSchema = Utilities.unidecode(JsonWrapper.loads(body))
+            request = Utilities.makeRequest(requestSchema, self.couchUrl, self.workloadDBName)
         # see if status & priority need to be upgraded
         if status != None:
-            changeStatus(requestName, status)
+            Utilities.changeStatus(requestName, status)
         if priority != None:
-            changePriority(requestName, priority) 
+            Utilities.changePriority(requestName, priority) 
         return result
-
-    def makeRequest(self):
-        """ Creates a new request, with a JSON-encoded schema that is sent in the
-        body of the request """
-        body = cherrypy.request.body.read()
-        requestSchema = unidecode(JsonWrapper.loads(body))
-        logging.info(requestSchema)
-        maker = retrieveRequestMaker(requestSchema['RequestType'])
-        specificSchema = maker.schemaClass()
-        specificSchema.update(requestSchema)
-        url = cherrypy.url()
-        # we only want the first part, before /request/
-        url = url[0:url.find('/request')]
-        specificSchema.reqMgrURL = url
-        specificSchema.validate()
-
-        request = maker(specificSchema)
-        helper = WMWorkloadHelper(request['WorkflowSpec'])
-        # can't save Request object directly, because it makes it hard to retrieve the _rev
-        metadata = {}
-        metadata.update(request)
-        # don't want to JSONify the whole workflow
-        del metadata['WorkflowSpec']
-        workloadUrl = helper.saveCouch(self.couchUrl, self.workloadCouchDB, metadata=metadata)
-        request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
-        CheckIn.checkIn(request)
-        return requestSchema
 
     def putAssignment(self, team, requestName):
         """ Assigns this request to this team """

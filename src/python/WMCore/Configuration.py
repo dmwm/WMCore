@@ -508,9 +508,7 @@ def loadConfigurationFile(filename):
         msg += str(ex)
         raise RuntimeError, msg
 
-
     for attr in modRef.__dict__.values():
-
         if isinstance(attr, Configuration):
             return attr
 

@@ -11,7 +11,8 @@ class TestReqMgr(unittest.TestCase):
 
     def cleanupRequests(self):
         requests = self.jsonSender.get('/reqMgr/request')[0]
-        requestNames = [r['RequestName'] for r in requests]
+        #FIXME look at format
+        requestNames = [r.values()[0]['RequestName'] for r in requests]
         for requestType in self.requestTypes:
             requestName = 'Test%s'%requestType
             if requestName in requestNames:
@@ -19,7 +20,7 @@ class TestReqMgr(unittest.TestCase):
                 print  self.jsonSender.delete('/reqMgr/request/%s' % requestName)
 
     def setUp(self):
-        reqMgrHost = 'http://cmssrv49.fnal.gov:8240'
+        reqMgrHost = 'http://cmssrv49.fnal.gov:8240/reqmgr'
         self.jsonSender = JSONRequests(reqMgrHost)
         self.jsonSender.delete('/reqMgr/user/me')
         #self.requestTypes = ['ReReco', 'StoreResults', 'CmsGen', 'Reco']

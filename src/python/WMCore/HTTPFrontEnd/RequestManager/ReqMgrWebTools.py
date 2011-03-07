@@ -1,5 +1,6 @@
-""" Functions to interpret lists that get sent in as text"""
+""" Functions external to the web interface classes"""
 import urllib
+import logging
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import cherrypy
 import WMCore.Lexicon
@@ -11,6 +12,10 @@ import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetReques
 import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
 import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
+import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
+from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+
 
 
 def parseRunList(l):
@@ -40,7 +45,7 @@ def parseSite(kw, name):
 def allSoftwareVersions():
     """ Downloads a list of all software versions from the tag collector """
     result = []
-    f = urllib.urlopen("https://cmstags.cern.ch/cgi-bin/CmsTC/ReleasesXML")
+    f = urllib.urlopen("https://cmstags.cern.ch/tc/ReleasesXML/?anytype=1")
     for line in f:
         for tok in line.split():
             if tok.startswith("label="):
@@ -182,4 +187,22 @@ def unidecode(data):
         return type(data)(map(unidecode, data))
     else:
         return data
+
+def makeRequest(schema, couchUrl, couchDB):
+    logging.info(schema)
+    maker = retrieveRequestMaker(schema['RequestType'])
+    specificSchema = maker.schemaClass()
+    specificSchema.update(schema)
+    specificSchema.validate()
+
+    request = maker(specificSchema)
+    helper = WMWorkloadHelper(request['WorkflowSpec'])
+    # can't save Request object directly, because it makes it hard to retrieve the _rev
+    metadata = {}
+    metadata.update(request)
+    # don't want to JSONify the whole workflow
+    del metadata['WorkflowSpec']
+    workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
+    request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
+    CheckIn.checkIn(request)
 

@@ -14,7 +14,7 @@ WMCore.WMBS.WorkflowSummaryWithTask.taskTable = function(oArgs){
                  {key: "real_success", label: "success"}]
         };
     
-    var dataUrl = "/wmbs/tasksummary/" + oArgs.workflow
+    var dataUrl = "/workqueueservice/wmbs/tasksummary/" + oArgs.workflow
     
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
     //writeDebugObject(dataSource)
@@ -36,7 +36,7 @@ WMCore.WMBS.WorkflowSummaryWithTask.taskTable = function(oArgs){
 };
 
 var workflowTable = function(oArgs){
-    var postfixLink = "/wmbsmonitor/template/TaskSummary?workflow=";
+    var postfixLink = "/workqueueservice/wmbsmonitor/template/TaskSummary?workflow=";
     
     var formatUrl = function(elCell, oRecord, oColumn, sData){
         if (!oArgs.firstWorkflow) {
@@ -53,7 +53,7 @@ var workflowTable = function(oArgs){
                  {key: "real_fail", label: "fail"},
                  {key: "real_success", label: "success"}]
     };
-    var dataUrl = "/wmbs/workflowsummary";
+    var dataUrl = "/workqueueservice/wmbs/workflowsummary";
     
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
     //writeDebugObject(dataSource)

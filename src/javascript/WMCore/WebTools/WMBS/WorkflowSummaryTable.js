@@ -16,7 +16,7 @@ WMCore.WMBS.WorkflowSummaryTable.workflowTable = function(oTArgs){
                  {key: "real_fail", label: "fail"},
                  {key: "real_success", label: "success"}]
     };
-	var dataUrl = "/wmbs/workflowsummary";
+	var dataUrl = "/workqueueservice/wmbs/workflowsummary";
 	
 	var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
 	//writeDebugObject(dataSource)

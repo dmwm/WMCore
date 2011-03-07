@@ -1,7 +1,7 @@
 import os, re, socket
 from WMCore.WMInit import getWMBASE
 from WMCore.Configuration import Configuration
-from ReqMgrSecrets import connectUrl
+
 __all__ = []
 
 basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,16 +19,18 @@ def reqMgrConfig(
     yuiroot = 'http://yui.yahooapis.com/2.8.0r4',
     configCouchDB = 'reqmgr_config_cache',
     workloadCouchDB = 'reqmgr_workload_cache',
-    connectURL = connectUrl,
+    connectURL = None,
     startup = "Root.py"):
 
     config = Configuration()
 
-    config.section_("CoreDatabase")
-    #read from Secrets file
-    config.CoreDatabase.connectUrl = connectURL
-
     if startup == "Root.py":
+        from ReqMgrSecrets import connectUrl
+        config.section_("CoreDatabase")
+        #read from Secrets file
+        config.CoreDatabase.connectUrl = connectURL
+        config.reqmgr.database.connectUrl = connectURL
+        
         config.component_("Webtools")
         config.Webtools.host = '0.0.0.0'
         config.Webtools.port = port
@@ -42,9 +44,9 @@ def reqMgrConfig(
         config.reqmgr.Webtools.host = '0.0.0.0'
         config.reqmgr.Webtools.port = port
         config.reqmgr.Webtools.environment = 'devel'
+        config.reqmgr.database.connectUrl = connectURL
         
     config.reqmgr.componentDir = componentDir
-    config.reqmgr.database.connectUrl = connectURL
     config.reqmgr.templates = templates
     config.reqmgr.html = html
     config.reqmgr.admin = 'cms-service-webtools@cern.ch'
@@ -84,10 +86,10 @@ def reqMgrConfig(
     active.create.requestor = user
     active.create.cmsswDefaultVersion = 'CMSSW_3_5_8'
 
-    active.section_('GlobalMonitor')
-    active.GlobalMonitor.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorPage'
-    active.GlobalMonitor.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
-    active.GlobalMonitor.javascript = os.path.join(getWMBASE(), 'src/javascript')
-    active.GlobalMonitor.html = os.path.join(getWMBASE(), 'src/html')
+    active.section_('RequestOverview')
+    active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestManager.RequestOverview'
+    active.RequestOverview.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
+    active.RequestOverview.javascript = os.path.join(getWMBASE(), 'src/javascript')
+    active.RequestOverview.html = os.path.join(getWMBASE(), 'src/html')
 
     return config

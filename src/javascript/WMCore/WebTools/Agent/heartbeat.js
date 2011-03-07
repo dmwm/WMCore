@@ -40,7 +40,7 @@ WMCore.Agent.heartbeat.heartbeatTable = function(divID){
                     {key: "worker_name", label: "worker"}, 
                     {key: "ago", label: "last updated", formatter: dateFormatter}]
     
-    var dataUrl = "/wmagent/heartbeat";
+    var dataUrl = "/workqueueservice/wmagent/heartbeat";
     
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
     //writeDebugObject(dataSource)

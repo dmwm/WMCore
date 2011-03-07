@@ -123,7 +123,7 @@ WMCore.WMBS.ResourceInfoByType.resourceDT = function(divID){
         }]
     }]
     
-    var dataUrl = "/wmbs/listthresholdsforsubmit"
+    var dataUrl = "/workqueueservice/wmbs/listthresholdsforsubmit"
     
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
     dataSource.responseType = YAHOO.util.DataSource.TYPE_JSON

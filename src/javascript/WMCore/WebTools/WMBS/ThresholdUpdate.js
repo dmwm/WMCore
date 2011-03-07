@@ -9,7 +9,7 @@ WMCore.WMBS.ThresholdUpdate.resourceTable = function(divID){
                 oldValue = this.value,
                 datatable = this.getDataTable();
             YAHOO.util.Connect.asyncRequest('GET',
-                    '/wmbs/updatethreshold?siteName=' +
+                    '/workqueueservice/wmbs/updatethreshold?siteName=' +
                     record.getData("site") +
                     '&taskType=' + record.getData("type") +
                     '&maxSlots=' + maxSlots, {
@@ -41,7 +41,7 @@ WMCore.WMBS.ThresholdUpdate.resourceTable = function(divID){
         }]
     };
     
-    var dataUrl = "/wmbs/listthresholds"
+    var dataUrl = "/workqueueservice/wmbs/listthresholds"
     
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema)
     //writeDebugObject(dataSource)

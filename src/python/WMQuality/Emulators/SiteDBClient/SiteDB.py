@@ -30,3 +30,11 @@ class SiteDBJSON(object):
 
     def cmsNametoSE(self, name):
         return self.mapping[name]
+    
+    def seToCMSName(self, name):
+        for key, value in self.mapping.items():
+            if value == name:
+                return key
+        raise ValueError, "Not in emulator siteDB. choose name in %s" %\
+                           self.mapping.values()
+        

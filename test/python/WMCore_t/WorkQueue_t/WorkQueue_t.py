@@ -165,7 +165,7 @@ class WorkQueueTest(WorkQueueTestCase):
         _createResubmitSpec_
         Create a bogus resubmit workload.
         """
-        self.site = "cmssrm.fnal.gov"
+        self.site = 'a.example.com'
         workload = WMWorkloadHelper(WMWorkload("TestWorkload"))
         reco = workload.newTask("reco")
         workload.setOwnerDetails("evansde77", "DMWM")
@@ -207,7 +207,7 @@ class WorkQueueTest(WorkQueueTestCase):
         
         dcs.failedJobs([testJobA])
         topLevelTask = workload.getTopLevelTask()
-        workload.truncate("Resubmit_TestWorkload", topLevelTask.getPathName(), 
+        workload.truncate("Resubmit_TestWorkload", topLevelTask[0].getPathName(),
                           serverUrl, couchDB)
                                   
         return workload
@@ -809,8 +809,8 @@ class WorkQueueTest(WorkQueueTestCase):
                                        self.couchInit.couchDbName)
         spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
         spec.save(spec.specUrl())
-        self.localQueue.queueWork(spec.specUrl())
-        self.localQueue.getWork({self.site: 100})
+        self.assertEqual(self.localQueue.queueWork(spec.specUrl()), 1)
+        self.assertEqual(len(self.localQueue.getWork({'SiteA': 100})), 1)
         
         self.couchInit.tearDownCouch()
         

@@ -9,6 +9,7 @@ Rest Model abstract implementation
 from WMCore.Lexicon import check
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import request, HTTPError
+import cherrypy
 import traceback
 
 def restexpose(func):
@@ -126,20 +127,20 @@ class RESTModel(WebAPI):
         else:
             return data, self.defaultExpires
 
-    def addDAO(self, verb, methodKey, daoStr, args=[],
-               validation=[], version=1, daoFactory = None,
-               expires = None):
+    def addDAO(self, verb, methodKey, daoStr, args=[], validation=[],
+                version=1, daoFactory = None, expires = None,
+                secured=False, security_params={}):
         """
         addDAO will be deprecated in favour of the private _addDAO
         """
         msg = 'addDAO will be deprecated in favour of the private _addDAO - please update your code'
         self.warning(msg)
-        self._addDAO(verb, methodKey, daoStr, args, validation, version, daoFactory, expires)
+        self._addDAO(verb, methodKey, daoStr, args, validation, version, daoFactory, expires, secured, security_params)
 
 
-    def _addDAO(self, verb, methodKey, daoStr, args=[],
-               validation=[], version=1, daoFactory = None,
-               expires = None):
+    def _addDAO(self, verb, methodKey, daoStr, args=[], validation=[],
+               version=1, daoFactory = None, expires = None,
+               secured=False, security_params={}):
         """
         add dao in self.methods and wrap it with _sanitise_input. Assumes that a
         DAOFactory instance is available from self.
@@ -151,6 +152,7 @@ class RESTModel(WebAPI):
             # store the method name
             method = methodKey
             input_data = self._sanitise_input(args, kwargs, method)
+
             # store the dao
             if daoFactory:
                 dao = daoFactory(classname=daoStr)
@@ -166,27 +168,40 @@ class RESTModel(WebAPI):
         if expires == None:
             expires = self.defaultExpires
         self._addMethod(verb, methodKey, function, args, validation,
-                       version, expires)
+                       version, expires, secured, security_params)
 
     def addMethod(self, verb, methodKey, function, args=[],
-                 validation=[], version=1, expires = None):
+                 validation=[], version=1, expires = None,
+                 secured=False, security_params={}):
         """
         addMethod will be deprecated in favour of the private _addMethod
         """
         msg = 'addMethod will be deprecated in favour of the private _addMethod - please update your code'
         self.warning(msg)
-        self._addMethod(verb, methodKey, function, args, validation, version, expires)
+        self._addMethod(verb, methodKey, function, args, validation, version, expires, secured, security_params)
 
     def _addMethod(self, verb, methodKey, function, args=[],
-                  validation=[], version=1, expires = None):
+                  validation=[], version=1, expires = None,
+                  secured=False, security_params={}):
         """
         Add a method handler to self.methods self.methods, decorate it such that it
         receives sanitised input and is marked as 'restexposed'.
         """
-    
+
         if not self.methods.has_key(verb):
             self.methods[verb] = {}
         def wrapper(*input_args, **input_kwargs):
+            if secured:
+                # set up security
+                security = cherrypy.tools.secmodv2
+                # security_params should be a dict like:
+                #{'role':[], 'group':[], 'site':[], 'authzfunc':None}
+                security.callable(
+                                role=security_params.get('role', []),
+                                group=security_params.get('group', []),
+                                site=security_params.get('site', []),
+                                authzfunc=security_params.get('authzfunc', None)
+                                )
             if len(args) != 0:
                 # store the method name
                 method = methodKey

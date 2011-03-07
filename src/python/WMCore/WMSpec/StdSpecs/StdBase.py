@@ -104,7 +104,7 @@ class StdBase(object):
         monitoring.section_("DashboardMonitor")
         monitoring.DashboardMonitor.softTimeOut = 300000
         monitoring.DashboardMonitor.hardTimeOut = 600000
-        monitoring.DashboardMonitor.destinationHost = "dashboard08.cern.ch"
+        monitoring.DashboardMonitor.destinationHost = "cms-pamon.cern.ch"
         monitoring.DashboardMonitor.destinationPort = 8884
         return task
 

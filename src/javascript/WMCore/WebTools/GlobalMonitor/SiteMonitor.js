@@ -28,7 +28,7 @@ WMCore.GlobalMonitor.SiteMonitor.statusTable = function(divID){
                  {key: "job_slots", label:"Job Slots"}]
         };
 
-    var dataUrl = "/monitorSvc/sitemonitor";
+    var dataUrl = "/reqmgr/monitorSvc/sitemonitor";
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
 
     var dataTable = WMCore.createDataTable(divID, dataSource,

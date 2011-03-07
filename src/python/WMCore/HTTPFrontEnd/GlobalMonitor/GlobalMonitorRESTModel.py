@@ -8,8 +8,6 @@ from WMCore.WebTools.RESTModel import RESTModel
 
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.RequestMonitor \
      import getRequestOverview
-from WMCore.HTTPFrontEnd.GlobalMonitor.API.ResourceMonitor \
-     import getResourceOverview
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.AgentMonitor \
      import getAgentOverview
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.SiteMonitor \
@@ -28,7 +26,6 @@ class GlobalMonitorRESTModel(RESTModel):
         self.serviceLevel = self.config.serviceLevel
 
         self._addMethod("GET", "requestmonitor", self.getRequestMonitor) #expires=16000
-        self._addMethod("GET", "resourcemonitor", getResourceOverview)
         self._addMethod("GET", "agentmonitor", self.getAgentMonitor,
                        args = ['detail'])
         self._addMethod("GET", "sitemonitor", self.getSiteMonitor)

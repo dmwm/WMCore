@@ -21,9 +21,7 @@ def getRequestOverview(serviceURL, serviceLevel):
 def getRequestInfoFromReqMgr(serviceURL):
     """ get the request info from requestManager """
 
-    print serviceURL
     service = RequestManager({'endpoint':serviceURL})
-    print service
     try:
         baseResults = service.getRequestNames()
         print baseResults

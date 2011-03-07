@@ -197,7 +197,7 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                  {key: "queue injection", formatter:queueProgressFormatter}
                  ];
 
-    var dataUrl = "/monitorSvc/requestmonitor";
+    var dataUrl = "/reqmgr/monitorSvc/requestmonitor";
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
 
     var tableInfo = {};

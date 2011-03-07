@@ -383,7 +383,7 @@ init_wmagent(){
                        --global_workqueue_hostname=$GLOBAL_WORKQUEUE_HOSTNAME \
                        --global_workqueue_port=$GLOBAL_WORKQUEUE_PORT \
                        --local_workqueue_port=$LOCAL_WORKQUEUE_PORT
-    wmcore-db-init --config $WMAGENT_CONFIG --create --modules=WMCore.WMBS,WMCore.Agent.Database,WMComponent.DBSBuffer.Database,WMCore.WorkQueue.Database,WMCore.BossAir,WMCore.ResourceControl;
+    wmcore-db-init --config $WMAGENT_CONFIG --create --modules=WMCore.WMBS,WMCore.Agent.Database,WMComponent.DBS3Buffer,WMCore.WorkQueue.Database,WMCore.BossAir,WMCore.ResourceControl;
     export WMAGENT_CONFIG
 
     wmagent-couchapp-init;
@@ -405,6 +405,7 @@ init_reqmgr(){
                        --reqmgr_hostname=$REQMGR_HOSTNAME
     wmcore-db-init --config $WMAGENT_CONFIG --create --modules=WMCore.Agent.Database,WMCore.RequestManager.RequestDB
     export WMAGENT_CONFIG
+    wmagent-couchapp-init;
     touch $WMAGENT_DIR/config/.wmagentinit
 }
 

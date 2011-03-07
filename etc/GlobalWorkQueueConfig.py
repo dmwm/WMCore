@@ -65,6 +65,7 @@ config.WorkQueueService.default_expires = 0
 config.WorkQueueService.componentDir = os.path.join(config.General.workDir, "WorkQueueService")
 config.WorkQueueService.Webtools.port = globalWorkQueuePort
 config.WorkQueueService.Webtools.host = serverHostName
+config.WorkQueueService.Webtools.environment = "devel"
 config.WorkQueueService.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
 config.WorkQueueService.admin = "cmsdataops@cern.ch"
 config.WorkQueueService.title = 'WorkQueue Data Service'

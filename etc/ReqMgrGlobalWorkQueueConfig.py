@@ -42,12 +42,6 @@ reqMgrDBName = "reqmgrdb"
 agentName = "WMAgentCommissioning"
 teamName = "cmsdataops"
 
-# Root of the YUI javascript library.
-yuiRoot = "http://yui.yahooapis.com/2.8.0r4"
-
-# URL of the list of sites from SiteDB
-SITEDB = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name'
-
 # Nothing after this point should need to be changed.
 config = Configuration()
 
@@ -72,6 +66,7 @@ reqMgrUrl = "http://%s:%s" % (serverHostName, reqMgrPort)
 config.ReqMgr.componentDir = os.path.join(config.General.workDir, "ReqMgr")
 config.ReqMgr.Webtools.host = serverHostName
 config.ReqMgr.Webtools.port = reqMgrPort
+config.ReqMgr.Webtools.environment = "devel"
 config.ReqMgr.templates = os.path.join(getWMBASE(),
                                        "src/templates/WMCore/WebTools/RequestManager")
 config.ReqMgr.requestor = userName
@@ -97,7 +92,7 @@ active.GlobalMonitor.javascript = os.path.join(getWMBASE(), 'src/javascript')
 active.GlobalMonitor.html = os.path.join(getWMBASE(), 'src/html')
 
 active.section_('monitorSvc')
-active.monitorSvc.serviceURL = "%s/reqMgr" % reqMgrUrl
+active.monitorSvc.serviceURL = "%s/reqmgr/reqMgr" % reqMgrUrl
 active.monitorSvc.serviceLevel = 'RequestManager'
 active.monitorSvc.section_('model')
 active.monitorSvc.section_('formatter')
@@ -105,37 +100,6 @@ active.monitorSvc.object = 'WMCore.WebTools.RESTApi'
 active.monitorSvc.model.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorRESTModel'
 active.monitorSvc.default_expires = 0 # no caching
 active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
-
-active.section_('view')
-active.view.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrBrowser'
-active.view.reqMgrHost = reqMgrUrl
-
-active.section_('admin')
-active.admin.object = 'WMCore.HTTPFrontEnd.RequestManager.Admin'
-
-active.section_('approve')
-active.approve.object = 'WMCore.HTTPFrontEnd.RequestManager.Approve'
-
-active.section_('assign')
-active.assign.object = 'WMCore.HTTPFrontEnd.RequestManager.Assign'
-active.assign.sitedb = SITEDB
-
-active.section_('reqMgr')
-active.reqMgr.section_('model')
-active.reqMgr.section_('formatter')
-active.reqMgr.object = 'WMCore.WebTools.RESTApi'
-active.reqMgr.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
-active.reqMgr.model.reqMgrHost = reqMgrUrl
-active.reqMgr.model.couchUrl = couchURL
-active.reqMgr.model.workloadCouchDB = reqMgrDBName
-active.reqMgr.default_expires = 0 # no caching
-active.reqMgr.formatter.object = 'WMCore.WebTools.RESTFormatter'
-
-active.section_('create')
-active.create.object = 'WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema'
-active.create.requestor = userName
-active.create.reqMgrHost = reqMgrUrl
-active.create.cmsswDefaultVersion = 'CMSSW_3_5_8'
 
 config.component_("WorkQueueManager")
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
@@ -151,6 +115,7 @@ config.WorkQueueService.default_expires = 0
 config.WorkQueueService.componentDir = os.path.join(config.General.workDir, "WorkQueueService")
 config.WorkQueueService.Webtools.port = globalWorkQueuePort
 config.WorkQueueService.Webtools.host = serverHostName
+config.WorkQueueService.Webtools.environment = "devel"
 config.WorkQueueService.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
 config.WorkQueueService.admin = config.Agent.contact
 config.WorkQueueService.title = 'WorkQueue Data Service'
@@ -180,3 +145,4 @@ workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
 workqueuemonitor.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/WorkQueue')
 workqueuemonitor.javascript = os.path.join(getWMBASE(), 'src/javascript/')
 workqueuemonitor.html = os.path.join(getWMBASE(), 'src/html/')
+

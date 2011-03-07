@@ -72,6 +72,9 @@ def modifyConfiguration(config, **args):
     for component in config.listComponents_():
         compCfg = getattr(config, component)
         compCfg.componentDir = "%s/%s" % (args['working_dir'], component)
+
+        if component == "JobCreator":
+            compCfg.jobCacheDir = "%s/%s/JobCache" % (args['working_dir'], component)
             
     for webapp in config.listWebapps_():
         compCfg = getattr(config, webapp)
@@ -80,15 +83,17 @@ def modifyConfiguration(config, **args):
     # hostname locations
     config.Agent.hostName = socket.gethostname()
 
-    if hasattr(config, "ReqMgr"):
-        config.ReqMgr.Webtools.host = args["reqmgr_hostname"]
-        config.ReqMgr.Webtools.port = int(args["reqmgr_port"])
-        config.ReqMgr.couchUrl = args["couch_url"]
-        config.ReqMgr.configDBName = "wmagent_configcache"
-        config.ReqMgr.requestor = "cmsdataops"
-        config.ReqMgr.views.active.create.requestor = "cmsdataops"
-        config.ReqMgr.admin = "gutsche@fnal.gov"
-        config.ReqMgr.views.active.reqMgr.model.couchUrl = args["couch_url"]
+    if hasattr(config, "reqmgr"):
+        config.reqmgr.Webtools.host = args["reqmgr_hostname"]
+        config.reqmgr.Webtools.port = int(args["reqmgr_port"])
+        config.reqmgr.couchUrl = args["couch_url"]
+        config.reqmgr.configDBName = "wmagent_configcache"
+        config.reqmgr.views.active.create.requestor = "cmsdataops"
+        config.reqmgr.admin = "gutsche@fnal.gov"
+        config.reqmgr.views.active.reqMgr.model.couchUrl = args["couch_url"]
+        config.reqmgr.views.active.create.requestor = "cmsdataops"
+        config.reqmgr.database.connectUrl = args["mysql_url"]
+        config.reqmgr.database.socket = args["mysql_socket"]
 
     if args.get("local_workqueue_port", None) == None and args.get("global_workqueue_port", None) != None:
         config.WorkQueueManager.reqMgrConfig = {"teamName": "cmsdataops",
@@ -97,31 +102,25 @@ def modifyConfiguration(config, **args):
                                                                                                        args["global_workqueue_port"])
         config.WorkQueueService.Webtools.port = int(args["global_workqueue_port"])
         config.WorkQueueService.Webtools.host = args["global_workqueue_hostname"]
-        config.WorkQueueService.views.active.workqueue.queueParams.setdefault("QueueURL",
-                                                                              "http://%s:%s/workqueueservice/workqueue" % (args["global_workqueue_hostname"],
-                                                                                                                           args["global_workqueue_port"]))
+        config.WorkQueueService.views.active.workqueue.queueParams["QueueURL"] = "http://%s:%s/workqueueservice/workqueue" % (args["global_workqueue_hostname"],
+                                                                                                                              args["global_workqueue_port"])
+        config.WorkQueueService.views.active.workqueue.queueParams["CacheDir"] = "%s/WorkQueueManager/wf" % args['working_dir']
+        config.WorkQueueService.views.active.wmagent.couchConfig.couchURL = args["couch_url"]
+        config.WorkQueueService.views.active.workqueue.couchConfig.couchURL = args["couch_url"]
     elif args.get("local_workqueue_port", None) != None and args.get("global_workqueue_port", None) != None:
         config.WorkQueueManager.serviceUrl = "%s:%s" % (args["global_workqueue_hostname"],
                                                         args["global_workqueue_port"])
         config.WorkQueueManager.queueParams["ParentQueue"] = "http://%s/workqueueservice/workqueue" % config.WorkQueueManager.serviceUrl
         config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:%s" % (socket.gethostname(), args["local_workqueue_port"])
-        config.WorkQueueManager.queueParams["JobDumpConfig"] = config.JobStateMachine
         config.WorkQueueService.Webtools.port = int(args["local_workqueue_port"])
         config.WorkQueueService.Webtools.host = socket.gethostname()
-        config.WorkQueueService.views.active.workqueue.queueParams.setdefault("QueueURL",
-                                                                              "http://%s:%s/workqueueservice/workqueue" % (socket.gethostname(),
-                                                                                                                           args["local_workqueue_port"]))
-        jobCouchConfig = Configuration()
-        jobCouchConfig.JobStateMachine = config.JobStateMachine
-        bossAirConfig = Configuration()
-        bossAirConfig.BossAir = config.BossAir
-        bossAirConfig.section_("Agent")
-        bossAirConfig.Agent.agentName = agentName
-        config.WorkQueueService.views.active.workqueue.queueParams["BossAirConfig"] = bossAirConfig
-        config.WorkQueueService.views.active.workqueue.queueParams["JobDumpConfig"] = jobCouchConfig
-        config.WorkQueueService.views.couchConfig.couchURL = args["couch_url"]
-        config.WorkQueueService.views.couchConfig.acdcDBName = "wmagent_acdc"
-        config.WorkQueueService.views.couchConfig.acdcDBName = "wmagent_jobdump"
+        config.WorkQueueService.views.active.workqueue.queueParams["QueueURL"] = "http://%s:%s/workqueueservice/workqueue" % (socket.gethostname(),
+                                                                                                                              args["local_workqueue_port"])
+        config.WorkQueueService.views.active.workqueue.queueParams["CacheDir"] = "%s/WorkQueueManager/wf" % args['working_dir']
+        config.WorkQueueService.views.active.wmagent.couchConfig.couchURL = args["couch_url"]
+        config.WorkQueueService.views.active.workqueue.couchConfig.couchURL = args["couch_url"]                        
+        config.WorkQueueManager.BossAirConfig.BossAir = config.BossAir
+        config.WorkQueueManager.JobDumpConfig.JobStateMachine = config.JobStateMachine
 
     return config
 

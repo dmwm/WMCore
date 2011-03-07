@@ -110,22 +110,17 @@ config.WorkQueueManager.logLevel = 'DEBUG'
 config.WorkQueueManager.serviceUrl = "%s:%s" % (reqMgrServerHostName, globalWorkQueuePort)
 config.WorkQueueManager.pollInterval = 120
 
-# Make copies of the JSM and BosAir configs so we don't have to pass the entire
-# WMAgent config to the WorkQueue.
-jobCouchConfig = Configuration()
-jobCouchConfig.JobStateMachine = config.JobStateMachine
-bossAirConfig = Configuration()
-bossAirConfig.BossAir = config.BossAir
-bossAirConfig.section_("Agent")
-bossAirConfig.Agent.agentName = agentName
-
 config.WorkQueueManager.queueParams = {"PopulateFilesets": True,
                                        "ParentQueue": "http://%s/workqueue/" % config.WorkQueueManager.serviceUrl,
                                        "QueueURL": "http://%s:%s" % (serverHostName, localWorkQueuePort),
                                        "Teams": agentTeams,
-                                       "FullReportInterval": 300,
-                                       "BossAirConfig": bossAirConfig,
-                                       "JobDumpConfig": jobCouchConfig}
+                                       "FullReportInterval": 300}
+config.WorkQueueManager.section_("BossAirConfig")
+config.WorkQueueManager.BossAirConfig.BossAir = config.BossAir
+config.WorkQueueManager.BossAirConfig.section_("Agent")
+config.WorkQueueManager.BossAirConfig.Agent.agentName = agentName
+config.WorkQueueManager.section_("JobDumpConfig")
+config.WorkQueueManager.JobDumpConfig.JobStateMachine = config.JobStateMachine
 
 config.component_("DBSUpload")
 config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"
@@ -169,7 +164,7 @@ config.JobCreator.pollInterval = 120
 # This is now OPTIONAL: It defaults to the componentDir
 # However: In a production instance, this should be run on a high performance
 # disk, and should probably NOT be run on the same disk as the JobArchiver
-#config.JobCreator.jobCacheDir = config.General.workDir + "/JobCache"
+config.JobCreator.jobCacheDir = config.General.workDir + "/JobCache"
 config.JobCreator.defaultJobType = "Processing"
 config.JobCreator.workerThreads = 1
 
@@ -236,6 +231,7 @@ config.WorkQueueService.default_expires = 0
 config.WorkQueueService.componentDir = os.path.join(config.General.workDir, "WorkQueueService")
 config.WorkQueueService.Webtools.port = localWorkQueuePort
 config.WorkQueueService.Webtools.host = serverHostName
+config.WorkQueueService.Webtools.environment = "devel"
 config.WorkQueueService.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
 config.WorkQueueService.admin = config.Agent.contact
 config.WorkQueueService.title = 'WorkQueue Data Service'
@@ -283,6 +279,7 @@ wmagent.formatter.object = 'WMCore.WebTools.RESTFormatter'
 wmagent.section_('couchConfig')
 wmagent.couchConfig.couchURL = couchURL
 wmagent.couchConfig.acdcDBName = acdcDBName
+wmagent.couchConfig.jobDumpDBName = "wmagent_jobdump"
 
 wmagentmonitor = config.WorkQueueService.views.active.section_('wmagentmonitor')
 wmagentmonitor.object = 'WMCore.HTTPFrontEnd.Agent.AgentMonitorPage'

@@ -9,6 +9,7 @@ import os
 
 from WMCore.WMInit import getWMBASE
 from WMCore.Configuration import Configuration
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrConfiguration import reqMgrConfig
 
 # The following parameters may need to be changed but nothing else in the config
 # will.  The server host name needs to match the machine this is running on, the
@@ -70,62 +71,18 @@ config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl
 config.CoreDatabase.socket = databaseSocket
 
-config.webapp_("ReqMgr")
-reqMgrUrl = "http://%s:%s" % (serverHostName, reqMgrPort)
-config.ReqMgr.componentDir = os.path.join(config.General.workDir, "ReqMgr")
-config.ReqMgr.Webtools.host = serverHostName
-config.ReqMgr.Webtools.port = reqMgrPort
-config.ReqMgr.templates = os.path.join(getWMBASE(),
-                                       "src/templates/WMCore/WebTools/RequestManager")
-config.ReqMgr.requestor = userName
-config.ReqMgr.admin = userEmail
-config.ReqMgr.title = "CMS Request Manager"
-config.ReqMgr.description = "CMS Request Manager"
-config.ReqMgr.couchURL = couchURL
-config.ReqMgr.default_expires = 0
-config.ReqMgr.yuiroot = yuiRoot
-config.ReqMgr.couchUrl = couchURL
-config.ReqMgr.configDBName = configCacheDBName
+config.webapp_("reqmgr")
+config += reqMgrConfig(
+    port = reqMgrPort,
+    reqMgrHost = serverHostName,
+    user = userName,
+    couchurl = couchURL,
+    componentDir = os.path.join(config.General.workDir, "ReqMgr"),
+    workloadCouchDB = reqMgrDBName,
+    configCouchDB = configCacheDBName,
+    connectURL = databaseUrl,
+    startup = "wmcoreD")
 
-config.ReqMgr.section_("security")
-config.ReqMgr.security.dangerously_insecure = True
-
-views = config.ReqMgr.section_('views')
-active = views.section_('active')
-
-active.section_('RequestOverview')
-active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestManager.RequestOverview'
-active.RequestOverview.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
-active.RequestOverview.javascript = os.path.join(getWMBASE(), 'src/javascript')
-active.RequestOverview.html = os.path.join(getWMBASE(), 'src/html')
-
-active.section_('view')
-active.view.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrBrowser'
-active.view.reqMgrHost = reqMgrUrl
-
-active.section_('admin')
-active.admin.object = 'WMCore.HTTPFrontEnd.RequestManager.Admin'
-
-active.section_('approve')
-active.approve.object = 'WMCore.HTTPFrontEnd.RequestManager.Approve'
-
-active.section_('assign')
-active.assign.object = 'WMCore.HTTPFrontEnd.RequestManager.Assign'
-active.assign.sitedb = SITEDB
-
-active.section_('reqMgr')
-active.reqMgr.section_('model')
-active.reqMgr.section_('formatter')
-active.reqMgr.object = 'WMCore.WebTools.RESTApi'
-active.reqMgr.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
-active.reqMgr.model.reqMgrHost = reqMgrUrl
-active.reqMgr.model.couchUrl = couchURL
-active.reqMgr.model.workloadCouchDB = reqMgrDBName
-active.reqMgr.default_expires = 0 # no caching
-active.reqMgr.formatter.object = 'WMCore.WebTools.RESTFormatter'
-
-active.section_('create')
-active.create.object = 'WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema'
-active.create.requestor = userName
-active.create.reqMgrHost = reqMgrUrl
-active.create.cmsswDefaultVersion = 'CMSSW_3_9_5'
+config.reqmgr.admin = userEmail
+config.reqmgr.section_("security")
+config.reqmgr.security.dangerously_insecure = True

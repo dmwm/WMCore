@@ -66,6 +66,8 @@ class WorkQueueManager(Harness):
             wqManager.queueParams = {}
         qConfig = wqManager.queueParams
         qConfig.setdefault('CacheDir', path.join(wqManager.componentDir, 'wf'))
+        qConfig["BossAirConfig"] = getattr(config.WorkQueueManager, "BossAirConfig", None)
+        qConfig["JobDumpConfig"] = getattr(config.WorkQueueManager, "JobDumpConfig", None)
 
         try:
             monitorURL = ''

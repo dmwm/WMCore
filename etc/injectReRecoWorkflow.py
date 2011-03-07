@@ -85,7 +85,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
 
         dbsFile = DBSBufferFile(lfn = dbsResult["LogicalFileName"], size = dbsResult["FileSize"],
                                 events = dbsResult["NumberOfEvents"], checksums = {"cksum": dbsResult["Checksum"]},
-                                locations = "cmssrm.fnal.gov", status = "AlreadyInDBS")
+                                locations = "cmssrm.fnal.gov", status = "LOCAL")
         dbsFile.setDatasetPath(datasetPath)
         dbsFile.setAlgorithm(appName = "cmsRun", appVer = "Unknown", appFam = "Unknown",
                              psetHash = "Unknown", configContent = "Unknown")

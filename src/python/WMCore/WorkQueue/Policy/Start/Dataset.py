@@ -10,6 +10,7 @@ __all__ = []
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from math import ceil
+from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
 
 class Dataset(StartPolicyInterface):
     """Split elements into datasets"""
@@ -28,7 +29,7 @@ class Dataset(StartPolicyInterface):
                                      inputDataset.processed,
                                      inputDataset.tier)
         # dataset splitting can't have its data selection overridden
-        if (self.data and self.data != datasetPath):
+        if (self.data and self.data.keys() != [datasetPath]):
             raise RuntimeError, "Can't provide different data to split with"
 
         
@@ -40,7 +41,7 @@ class Dataset(StartPolicyInterface):
         if blockWhiteList or blockBlackList or runWhiteList or runBlackList:
             blocks = self.validBlocks(self.initialTask, self.dbs())
             if not blocks:
-                raise RuntimeError, 'No blocks pass white/blacklist'
+                return
 
             for block in blocks:
                 # even though getDBSSummaryInfo can use all the SliceType
@@ -78,8 +79,8 @@ class Dataset(StartPolicyInterface):
 
         if not work:
             work = dataset[self.args['SliceType']]
-            
-        self.newQueueElement(Data = dataset['path'],
+
+        self.newQueueElement(Inputs = {dataset['path'] : self.data.get(dataset['path'], [])},
                              ParentData = parents,
                              Jobs = ceil(float(work) /
                                          float(self.args['SliceSize']))
@@ -97,13 +98,14 @@ class Dataset(StartPolicyInterface):
         """Return blocks that pass the input data restriction"""
         datasetPath = task.getInputDatasetPath()
         validBlocks = []
+        locations = set()
 
         blockWhiteList = task.inputBlockWhitelist()
         blockBlackList = task.inputBlockBlacklist()
         runWhiteList = task.inputRunWhitelist()
         runBlackList = task.inputRunBlacklist()
 
-        for block in dbs.getFileBlocksInfo(datasetPath, locations = False):
+        for block in dbs.getFileBlocksInfo(datasetPath, locations = True):
 
             # check block restrictions
             if blockWhiteList and block['Name'] not in blockWhiteList:
@@ -125,4 +127,8 @@ class Dataset(StartPolicyInterface):
                     continue
 
             validBlocks.append(block)
+            locations = locations.intersection(set(sitesFromStorageEelements([x['Name'] for x in block['StorageElementList']])))
+
+        # all needed blocks present at these sites
+        self.data[datasetPath] = list(locations)
         return validBlocks

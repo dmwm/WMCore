@@ -37,6 +37,9 @@ couchURL = "http://USERNAMEPASSWORD@COUCHSERVER:5984"
 configCacheDBName = "wmagent_configcache"
 jobDumpDBName = "wmagent_jobdump"
 reqMgrDBName = "reqmgrdb"
+workqueueDBName = 'workqueue'
+workqueueInboxDbName = 'workqueue_inbox'
+
 
 # Agent name and team name.
 agentName = "WMAgentCommissioning"
@@ -104,9 +107,12 @@ active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
 config.component_("WorkQueueManager")
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
 config.WorkQueueManager.componentDir = os.path.join(config.General.workDir, "WorkQueueManager")
+config.WorkQueueManager.couchurl = couchURL
+config.WorkQueueManager.dbname = workqueueDBName
+config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.level = "GlobalQueue"
-config.WorkQueueManager.pollInterval = 120
-config.WorkQueueManager.queueParams = {'LocationRefreshInterval': 1800}
+config.WorkQueueManager.pollInterval = 600
+config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
                                         'endpoint': "%s/reqMgr/" % reqMgrUrl}
 

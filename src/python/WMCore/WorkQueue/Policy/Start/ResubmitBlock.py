@@ -30,11 +30,11 @@ class ResubmitBlock(StartPolicyInterface):
                     msg = "Parentage required but no parents found for %s"
                     raise RuntimeError, msg % block['Name']
 
-            self.newQueueElement(Data = block['Name'],
-                                 Sites = block['Sites'],
+            self.newQueueElement(Inputs = {block['Name'] : block['Sites']},
                                  ParentData = parents,
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
-                                             float(self.args['SliceSize']))
+                                             float(self.args['SliceSize'])),
+                                 ACDC = block['ACDC'],
                                  )
 
 
@@ -67,6 +67,7 @@ class ResubmitBlock(StartPolicyInterface):
             #TODO: needs this for lumi splitting
             dbsBlock['NumberOfLumis'] = block['lumis']
             dbsBlock["Sites"] = block["locations"]
+            dbsBlock['ACDC'] = acdcInfo
             validBlocks.append(dbsBlock)
             
         return validBlocks

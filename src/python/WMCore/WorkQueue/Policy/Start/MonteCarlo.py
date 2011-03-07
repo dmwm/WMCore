@@ -8,7 +8,7 @@ __all__ = []
 
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
-from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from WMCore.DataStructs.Mask import Mask
 from copy import copy
 from math import ceil
@@ -41,9 +41,7 @@ class MonteCarlo(StartPolicyInterface):
             jobs = ceil((mask['LastEvent'] - mask['FirstEvent']) /
                         float(self.args['SliceSize']))
             mask['LastLumi'] = mask['FirstLumi'] + int(jobs) - 1 # inclusive range
-            self.newQueueElement(Data = None,
-                                 ParentData = [],
-                                 WMSpec = self.wmspec,
+            self.newQueueElement(WMSpec = self.wmspec,
                                  Jobs = jobs,
                                  Mask = copy(mask))
             mask['FirstEvent'] = mask['LastEvent'] + 1
@@ -56,7 +54,7 @@ class MonteCarlo(StartPolicyInterface):
         StartPolicyInterface.validateCommon(self)
 
         if self.initialTask.totalEvents() < 1:
-            raise WorkQueueWMSpecError(self.wmspec, 'Invalid total events selection: %s' % str(self.initialTask.totalEvents()))
+            raise WorkQueueNoWorkError(self.wmspec, 'Invalid total events selection: %s' % str(self.initialTask.totalEvents()))
 
         if not self.initialTask.siteWhitelist():
             raise WorkQueueWMSpecError(self.wmspec, "Site whitelist mandatory for MonteCarlo")

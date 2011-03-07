@@ -30,3 +30,6 @@ class SiteDBJSON(object):
 
     def cmsNametoSE(self, name):
         return self.mapping[name]
+
+    def seToCMSName(self, name):
+        return name # for now se == site name

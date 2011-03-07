@@ -37,7 +37,7 @@ class Document(dict):
         """
         Initialise our Document object - a dictionary which has an id field
         """
-        dict.__init__(self)
+        #dict.__init__(self)
         self.update(dict)
         if id:
             self.setdefault("_id", id)

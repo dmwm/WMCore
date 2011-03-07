@@ -25,6 +25,15 @@ workDirectory = "WORKQUEUE_WORK_DIRECTORY"
 databaseUrl = "mysql://DBSUSER:DBSPASSWORD@localhost/ReqMgrDB"
 databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 
+# The couch username and password needs to be added.  The GroupUser and
+# ConfigCache couch apps need to be installed into the configcache couch
+# database.  The JobDump couchapp needs to be installed into the jobdump
+# database.  The GroupUser and ACDC couchapps needs to be install into the
+# acdc database.
+couchURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984"
+workqueueDBName = 'workqueue'
+workqueueInboxDbName = 'workqueue_inbox'
+
 # Agent name and team name.
 agentName = "WMAgentCommissioning"
 teamName = "cmsdataops"
@@ -54,9 +63,12 @@ reqMgrUrl = "http://%s:%s" % (reqMgrHostName, reqMgrPort)
 config.component_("WorkQueueManager")
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
 config.WorkQueueManager.componentDir = os.path.join(config.General.workDir, "WorkQueueManager")
+config.WorkQueueManager.couchurl = couchURL
+config.WorkQueueManager.dbname = workqueueDBName
+config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.level = "GlobalQueue"
-config.WorkQueueManager.pollInterval = 120
-config.WorkQueueManager.queueParams = {'LocationRefreshInterval': 1800}
+config.WorkQueueManager.pollInterval = 600
+config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
                                         'endpoint': "%s/reqMgr/" % reqMgrUrl}
 

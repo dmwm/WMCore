@@ -1,50 +1,42 @@
 #!/usr/bin/env python
-
-
 """
-Checks for finished subscriptions
-Upon finding finished subscriptions, notifies WorkQueue and kills them
+WorkQueuemanager component
+
+Runs periodic tasks for WorkQueue
 """
 
 
 
 
-import logging
 import threading
-
 from os import path
 
 from WMCore.Agent.Harness import Harness
-from WMCore.WMFactory import WMFactory
 
 from WMComponent.WorkQueueManager.WorkQueueManagerWorkPoller import WorkQueueManagerWorkPoller
 from WMComponent.WorkQueueManager.WorkQueueManagerReqMgrPoller import WorkQueueManagerReqMgrPoller
 from WMComponent.WorkQueueManager.WorkQueueManagerLocationPoller import WorkQueueManagerLocationPoller
-from WMComponent.WorkQueueManager.WorkQueueManagerFlushPoller import WorkQueueManagerFlushPoller
-from WMComponent.WorkQueueManager.WorkQueueManagerReportPoller import WorkQueueManagerReportPoller
+from WMComponent.WorkQueueManager.WorkQueueManagerCleaner import WorkQueueManagerCleaner
 from WMComponent.WorkQueueManager.WorkQueueManagerWMBSFileFeeder import WorkQueueManagerWMBSFileFeeder
 
 from WMCore.WorkQueue.WorkQueue import localQueue, globalQueue, WorkQueue
-from WMCore.Services.RequestManager.RequestManager \
-     import RequestManager as RequestManagerDS
 
 # Should probably import this but don't want to create the dependency
 WORKQUEUE_REST_NAMESPACE = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
 WORKQUEUE_MONITOR_NAMESPACE = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
 
 class WorkQueueManager(Harness):
+    """WorkQueuemanager component
+
+    Runs periodic tasks for WorkQueue
+    """
 
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
-
         self.config = self.setConfig(config)
-
         self.logger = None
-        self.wq = None
-        self.reqMgr = None
-        
-        print "WorkQueueManager.__init__"
+
 
     def setConfig(self, config):
         """
@@ -66,6 +58,14 @@ class WorkQueueManager(Harness):
             wqManager.queueParams = {}
         qConfig = wqManager.queueParams
         qConfig.setdefault('CacheDir', path.join(wqManager.componentDir, 'wf'))
+
+        if hasattr(wqManager, 'couchurl'):
+            wqManager.queueParams['CouchUrl'] = wqManager.couchurl
+        if hasattr(wqManager, 'dbname'):
+            wqManager.queueParams['DbName'] = wqManager.dbname
+        if hasattr(wqManager, 'inboxDatabase'):
+            wqManager.queueParams['InboxDbName'] = wqManager.inboxDatabase
+            
         qConfig["BossAirConfig"] = getattr(config.WorkQueueManager, "BossAirConfig", None)
         qConfig["JobDumpConfig"] = getattr(config.WorkQueueManager, "JobDumpConfig", None)
 
@@ -115,59 +115,56 @@ class WorkQueueManager(Harness):
         # Add event loop to worker manager
         myThread = threading.currentThread()
         self.logger = myThread.logger
-
-        self.instantiateQueues(self.config)
-
         pollInterval = self.config.WorkQueueManager.pollInterval
 
-        myThread.workerThreadManager.addWorker(
-                                    WorkQueueManagerLocationPoller(self.wq),
-                                    self.wq.params['LocationRefreshInterval'])
-        # Get work from ReqMgr & flush expired negotiations
+        ### Global queue special functions
         if self.config.WorkQueueManager.level == 'GlobalQueue':
+
+            # Get work from ReqMgr, report back & delete finished requests
             myThread.workerThreadManager.addWorker(
-                                WorkQueueManagerFlushPoller(self.wq), 
-                                self.wq.params['NegotiationTimeout'])
-            myThread.workerThreadManager.addWorker(
-                                WorkQueueManagerReqMgrPoller(
-                                        self.reqMgr, 
-                                        self.wq, 
+                                WorkQueueManagerReqMgrPoller( 
+                                        self.instantiateQueue(self.config),
                                         getattr(self.config.WorkQueueManager, 
                                                 'reqMgrConfig', {})
                                         ),
                                  pollInterval)
+
+        ### local queue special function
         elif self.config.WorkQueueManager.level == 'LocalQueue':
+
+            # pull work from parent queue
             myThread.workerThreadManager.addWorker(
-                                WorkQueueManagerWMBSFileFeeder(self.wq), 
+                                WorkQueueManagerWorkPoller(self.instantiateQueue(self.config)), 
                                 pollInterval)
-            
-        # If we have a parent we need to get work and report back
-        if self.wq.params['ParentQueue']:
-            # Get work from RequestManager or parent
+
+            # inject acquired work into wmbs
             myThread.workerThreadManager.addWorker(
-                             WorkQueueManagerWorkPoller(self.wq), 
-                             pollInterval)
-            # Report to parent queue
-            myThread.workerThreadManager.addWorker(
-                            WorkQueueManagerReportPoller(self.wq),
-                            self.wq.params['ReportInterval'])
+                                WorkQueueManagerWMBSFileFeeder(self.instantiateQueue(self.config)), 
+                                pollInterval)
+
+        ### general functions
+
+        # Data location updates
+        myThread.workerThreadManager.addWorker(
+                                    WorkQueueManagerLocationPoller(self.instantiateQueue(self.config)),
+                                    pollInterval)
+
+        # Clean finished work & apply end policies
+        myThread.workerThreadManager.addWorker(
+                                WorkQueueManagerCleaner(self.instantiateQueue(self.config)), 
+                                pollInterval)
 
         return
 
-    def instantiateQueues(self, config):
+    def instantiateQueue(self, config):
         """
         Create an appropriate queue
         """
         config.WorkQueueManager.queueParams.setdefault('logger', self.logger)
         self.logger.info("Creating %s queue" % config.WorkQueueManager.level)
         if config.WorkQueueManager.level == 'GlobalQueue':
-            self.wq = globalQueue(**config.WorkQueueManager.queueParams)
-            reqMgrParams = {'logger' : self.logger}
-            if hasattr(self.config.WorkQueueManager, 'reqMgrConfig'):
-                reqMgrParams.update(self.config.WorkQueueManager.reqMgrConfig)
-            self.reqMgr = RequestManagerDS(reqMgrParams)
+            return globalQueue(**config.WorkQueueManager.queueParams)
         elif config.WorkQueueManager.level == 'LocalQueue':
-            self.wq = localQueue(**config.WorkQueueManager.queueParams)
+            return localQueue(**config.WorkQueueManager.queueParams)
         else:
-            self.wq = WorkQueue(**config.WorkQueueManager.queueParams)
-        logging.info("Queue instantiated")
+            return WorkQueue(**config.WorkQueueManager.queueParams)

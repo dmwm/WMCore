@@ -5,7 +5,8 @@ updateLocations poller
 __all__ = []
 
 
-
+import time
+import random
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -20,7 +21,16 @@ class WorkQueueManagerLocationPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.queue = queue
-        
+
+    def setup(self, parameters):
+        """
+        Called at startup - introduce random delay
+             to avoid workers all starting at once
+        """
+        t = random.randrange(self.idleTime)
+        self.logger.info('Sleeping for %d seconds before 1st loop' % t)
+        time.sleep(t)
+
     def algorithm(self, parameters):
         """
         Update locations

@@ -25,7 +25,8 @@ from WMQuality.Emulators.RequestManagerClient.RequestManager \
     import RequestManager as fakeReqMgr
 
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
-from WMQuality.Emulators.EmulatorSetup import EmulatorHelper
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
+from WMCore.WorkQueue.WorkQueueReqMgrInterface import WorkQueueReqMgrInterface
 
 def getFirstTask(wmspec):
     """Return the 1st top level task"""
@@ -35,7 +36,7 @@ def getFirstTask(wmspec):
 
 class WorkQueueManagerTest(WorkQueueTestCase):
     """
-    TestCase for WorkQueueManagerTest module 
+    TestCase for WorkQueueManagerTest module
     """
 
 
@@ -44,6 +45,7 @@ class WorkQueueManagerTest(WorkQueueTestCase):
     def setSchema(self):
         self.schema = ["WMCore.WorkQueue.Database", "WMCore.WMBS",
                         "WMCore.MsgService", "WMCore.ThreadPool"]
+        self.couchApps = ["WorkQueue"]
     
     def setUp(self):
         WorkQueueTestCase.setUp(self)
@@ -103,99 +105,10 @@ class WorkQueueManagerTest(WorkQueueTestCase):
         """Return a workqueue instance"""
 
         globalQ = globalQueue(CacheDir = self.workDir,
-                           NegotiationTimeout = 0,
-                           QueueURL = 'global.example.com',
-                           Teams = ["The A-Team", "some other bloke"])
+                              QueueURL = 'global.example.com',
+                              Teams = ["The A-Team", "some other bloke"],
+                              DbName = 'workqueue_t_global')
         return globalQ
-
-    def testReqMgrPollerAlgorithm(self):
-        """ReqMgr reporting"""
-        # don't actually talk to ReqMgr - mock it.
-
-        globalQ = self.setupGlobalWorkqueue()
-        reqMgr = fakeReqMgr()
-        reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
-
-        # 1st run should pull a request
-        self.assertEqual(len(globalQ), 0)
-        reqPoller.algorithm({})
-        self.assertEqual(len(globalQ), 1)
-
-        # local queue acquires and runs
-        work = globalQ.getWork({'SiteA' : 10000, 'SiteB' : 10000})
-        globalQ.setStatus('Acquired', 1)
-        self.assertEqual(len(globalQ), 0)
-        reqPoller.algorithm({})
-        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running')
-
-        # finish work
-        globalQ.setStatus('Done', 1)
-        reqPoller.algorithm({})
-        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'completed')
-        # and removed from WorkQueue
-        self.assertEqual(len(globalQ.status()), 0)
-
-        # reqMgr problems should not crash client
-        reqPoller = WorkQueueManagerReqMgrPoller(None, globalQ, {})
-        reqPoller.algorithm({})
-        reqMgr._removeSpecs()
-
-
-    def testReqMgrBlockSplitting(self):
-        """ReqMgr interaction with block level splitting"""
-        globalQ = self.setupGlobalWorkqueue()
-        reqMgr = fakeReqMgr(splitter = 'Block')
-        reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
-
-        self.assertEqual(len(globalQ), 0)
-        reqPoller.algorithm({})
-        self.assertEqual(len(globalQ), 2)
-        globalQ.setStatus('Acquired', [1, 2])
-        elements = globalQ.status()
-        self.assertEqual(len(elements), 2)
-        elements[0]['PercentComplete'] = 25
-        elements[1]['PercentComplete'] = 75
-        globalQ.setProgress(elements[0])
-        globalQ.setProgress(elements[1])
-        elements = globalQ.status()
-        self.assertEqual(elements[0]['PercentComplete'], 25)
-        self.assertEqual(elements[1]['PercentComplete'], 75)
-        reqPoller.algorithm({}) # report back to ReqMgr
-        self.assertEqual(reqMgr.progress[reqMgr.names[0]]['percent_complete'],
-                         50)
-        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running')
-        globalQ.setStatus('Done', [1, 2])
-        elements[0]['PercentComplete'] = 100
-        elements[1]['PercentComplete'] = 100
-        globalQ.setProgress(elements[0])
-        globalQ.setProgress(elements[1])
-        reqPoller.algorithm({}) # report back to ReqMgr
-        self.assertEqual(reqMgr.progress[reqMgr.names[0]]['percent_complete'],
-                         100)
-        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'completed')
-        reqMgr._removeSpecs()
-
-
-    def testInvalidSpec(self):
-        """Report invalid spec back to ReqMgr"""
-        globalQ = self.setupGlobalWorkqueue()
-        reqMgr = fakeReqMgr(inputDataset = 'thisdoesntexist')
-        #reqMgr = fakeReqMgr()
-
-        reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
-        reqPoller.algorithm({})
-        self.assertEqual('failed', reqMgr.status[reqMgr.names[0]])
-        self.assertTrue('No work in spec:' in reqMgr.msg[reqMgr.names[0]])
-        reqMgr._removeSpecs()
-
-        globalQ = self.setupGlobalWorkqueue()
-        reqMgr = fakeReqMgr(dbsUrl = 'wrongprot://dbs.example.com')
-        reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
-        reqPoller.algorithm({})
-        self.assertEqual('failed', reqMgr.status[reqMgr.names[0]])
-        self.assertTrue('DBS config error' in reqMgr.msg[reqMgr.names[0]])
-        reqMgr._removeSpecs()
-
 
 if __name__ == '__main__':
     unittest.main()

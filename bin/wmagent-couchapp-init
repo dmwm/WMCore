@@ -100,4 +100,8 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
         installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")    
 
+	if hasattr(wmagentConfig, "WorkQueueManager"):
+        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname, "WorkQueue")
+        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase, "WorkQueue")
+
     sys.exit(0)

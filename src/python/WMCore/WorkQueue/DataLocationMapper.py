@@ -4,7 +4,7 @@
 from collections import defaultdict
 import time
 
-from WMCore.WMConnectionBase import WMConnectionBase
+from WMCore.WorkQueue.WorkQueueUtils import get_dbs
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 
 #TODO: Combine with existing dls so DBSreader can do this kind of thing transparently
@@ -52,16 +52,12 @@ class DataLocationMapper():
 
         if self.params.get('phedex'):
             self.phedex = self.params['phedex']
-        if self.params.get('dbses'):
-            self.dbses = self.params['dbses']
         if self.params.get('sitedb'):
             self.sitedb = self.params['sitedb']
 
 
-    def __call__(self, dataItems, newDataOnly = False, fullResync = False, dbses = {}):
+    def __call__(self, dataItems, fullResync = False, dbses = {}):
         result = {}
-        if dbses:
-            self.dbses.update(dbses)
 
         # do a full resync every fullRefreshInterval interval
         now = time.time()
@@ -77,7 +73,7 @@ class DataLocationMapper():
             else:
                 output, fullResync = self.locationsFromDBS(dbs, dataItems)
 
-            result.update(output)
+            result[dbs] = output
         if fullResync:
             self.lastFullResync = now
 
@@ -109,7 +105,7 @@ class DataLocationMapper():
 
         # convert from PhEDEx name to cms site name
         for name, nodes in result.items():
-            result[name] = [self.sitedb.phEDExNodetocmsName(x) for x in nodes]
+            result[name] = list(set([self.sitedb.phEDExNodetocmsName(x) for x in nodes]))
 
         return result, fullResync
 
@@ -136,65 +132,37 @@ class DataLocationMapper():
                 # if it is acdc block don't update location. location should be
                 # inserted when block is queued and not supposed to change
                 continue
-            if item['dbs_url'] not in self.dbses:
-                raise RuntimeError, 'No DBSReader for %s' % item['dbs_url']
-            itemsByDbs[self.dbses[item['dbs_url']]].append(item['name'])
+            itemsByDbs[get_dbs(item['dbs_url'])].append(item['name'])
         return itemsByDbs
 
 
-class WorkQueueDataLocationMapper(WMConnectionBase, DataLocationMapper):
+class WorkQueueDataLocationMapper(DataLocationMapper):
     """WorkQueue data location functionality"""
-    def __init__(self, logger, dbi, **kwargs):
-        WMConnectionBase.__init__(self, 'WMCore.WorkQueue.Database', logger, dbi)
+    def __init__(self, logger, backend, **kwargs):
+        self.backend = backend
+        self.logger = logger
         DataLocationMapper.__init__(self, **kwargs)
 
-        # dao actions
-        self.actions = {}
-        self.actions['ActiveData'] = self.daofactory(classname = "Data.GetActiveData")
-        self.actions['GetDataWithoutSite'] = self.daofactory(classname = "Data.GetDataWithoutSite")
-        self.actions['UpdateDataSiteMapping'] = self.daofactory(classname = "Site.UpdateDataSiteMapping")
-        self.actions['NewSite'] = self.daofactory(classname = "Site.New")
+    def __call__(self, fullResync = False):
+        dataItems = self.backend.getActiveData()
 
-    def __call__(self, newDataOnly = False, fullResync = False, dbses = {}, 
-                 dataLocations = {}):
-        """
-        if dataLocations [{'data': .. , sites: [....]}] are passed 
-        just update the location without contacting PhEDEx or DBS
-        """
-        if not dataLocations:
-            if newDataOnly:
-                dataItems = self.actions['GetDataWithoutSite'].execute(
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
-            else:
-                dataItems = self.actions['ActiveData'].execute(
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
+        # fullResync incorrect with multiple dbs's - fix!!!
+        dataLocations, fullResync = DataLocationMapper.__call__(self, dataItems, fullResync)
 
-            dataLocations, fullResync = DataLocationMapper.__call__(self, 
-                                                         dataItems, newDataOnly,
-                                                         fullResync, dbses)
-        else:
-            self.convertSENameToCMSName(dataLocations)
-
-        if dataLocations:
-            with self.transactionContext() as trans:
-                uniqueLocations = set()
-                for locations in dataLocations.values():
-                    uniqueLocations.update(locations)
-                self.actions['NewSite'].execute(list(uniqueLocations), conn = self.getDBConn(),
-                                                transaction = trans)
-                # This doesn't allow data to be in multiple dbs's
-                self.actions['UpdateDataSiteMapping'].execute(dataLocations, fullResync,
-                                                              conn = self.getDBConn(),
-                                                              transaction = trans)
+        # elements with multiple changed data items will fail fix this, or move to store data outside element
+        for dbs, dataMapping in dataLocations.items():
+            modified = []
+            for data, locations in dataMapping.items():
+                elements = self.backend.getElementsForData(dbs, data)
+                for element in elements:
+                    if sorted(locations) != sorted(element['Inputs'][data]):
+                        if fullResync:
+                            self.logger.info(data + ': Setting locations to: ' + ', '.join(locations))
+                            element['Inputs'][data] = locations
+                        else:
+                            self.logger.info(data + ': Adding locations: ' + ', '.join(locations))
+                            element['Inputs'][data] = list(set(element['Inputs'][data]) | set(locations))
+                        modified.append(element)
+            self.backend.saveElements(*modified)
 
         return len(dataLocations) # probably not quite what we want, but will indicate whether some mappings were added or not
-
-
-    def convertSENameToCMSName(self, dataLocations):
-        for key, locs in dataLocations.items():
-            cmsLocs = []
-            for location in locs:
-                cmsLocs.append(self.sitedb.seToCMSName(location))
-                dataLocations[key] = cmsLocs

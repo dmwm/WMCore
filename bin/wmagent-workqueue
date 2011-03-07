@@ -40,12 +40,21 @@ def createOptionParser():
     myOptParser.add_option("--reset", dest = "resetWork",
                            default = False, action = "store_true",
                            help = "Reset elements status.")
-    myOptParser.add_option("--flush-negotiations", dest = "flushNegotiationFailures",
-                           default = False, action = "store_true",
-                           help = "Flush negotiation failures.")
     myOptParser.add_option("--delete", dest = "deleteWork",
                            default = False, action = "store_true",
                            help = "Delete elements.")
+    myOptParser.add_option("--process", dest = "process",
+                           default = False, action = "store_true",
+                           help = "Process inbound work.")
+    myOptParser.add_option("--clean", dest = "clean",
+                           default = False, action = "store_true",
+                           help = "Clean queue.")
+    myOptParser.add_option("-i", "--interactive", dest = "interactive",
+                           default = False, action = "store_true",
+                           help = "Interactive console.")
+    myOptParser.add_option("--reqmgr", dest = "requestmanager",
+                           default = False, action = "store_true",
+                           help = "Synchronize with RequestManager")
 
     group = OptionGroup(myOptParser, "WorkQueue elements selection.",
                     "Use these to select which elements to perform  "
@@ -68,8 +77,7 @@ def createWorkQueue(config):
     manager = WorkQueueManager(config)
     #manager.logger = logging.getLogger()
     manager.logger = threading.currentThread().logger
-    manager.instantiateQueues(manager.config)
-    return manager.wq
+    return manager.instantiateQueue(manager.config)
 
 
 def connectionTest(configFile):
@@ -136,10 +144,21 @@ def main():
         workqueue.queueWork(wf)
     elif options.resetWork:
         workqueue.resetWork(options.id)
-    elif options.flushNegotiationFailures:
-        workqueue.flushNegotiationFailures()
+    elif options.process:
+        workqueue.processInboundWork()
     elif options.deleteWork:
         workqueue.deleteWork(options.id)
+    elif options.clean:
+        workqueue.performQueueCleanupActions()
+    elif options.interactive:
+        msg = 'Workqueue available in "workqueue" variable'
+        import code
+        code.interact(banner = msg, local = locals())
+    elif options.requestmanager:
+        from WMCore.WorkQueue.WorkQueueReqMgrInterface import WorkQueueReqMgrInterface
+        reqConfig = getattr(cfgObject.WorkQueueManager, 'reqMgrConfig', {})
+        reqMgrInt = WorkQueueReqMgrInterface(**reqConfig)
+        reqMgrInt(workqueue)
 
 if __name__ == '__main__':
 	main()

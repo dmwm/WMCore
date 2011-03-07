@@ -1,7 +1,7 @@
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore.RequestManager.RequestDB.Settings.RequestStatus import NextStatus
 
-class RequestManager(object):
+class RequestManager(dict):
     
     def __init__(self, *args, **kwargs):
         """
@@ -20,6 +20,8 @@ class RequestManager(object):
         self.progress = {}
         self.msg = {}
         self.names = []
+        import logging
+        self['logger'] = logging
     
     def getAssignment(self, teamName=None, request=None):
         if self.count < self.maxWmSpec:

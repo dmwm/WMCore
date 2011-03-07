@@ -15,7 +15,6 @@ class WorkQueueElementResult(dict):
         dict.__init__(self)
         self.update(kwargs)
 
-        self.setdefault('ParentQueueId', None)
         self.setdefault('WMSpec', None)
         self.setdefault('Elements', [])
         self.setdefault('Status', self.status())
@@ -31,6 +30,7 @@ class WorkQueueElementResult(dict):
                             0.0) / len(self['Elements'])))
         self.setdefault('RequestName', self['Elements'][0]['RequestName'])
         self.setdefault('TeamName', self['Elements'][0]['TeamName'])
+        self.setdefault('ParentQueueId', self['Elements'][0]['ParentQueueId'])
 
         # some cross checks
         for i in self['Elements']:
@@ -53,6 +53,10 @@ class WorkQueueElementResult(dict):
         """Return acquired items"""
         return [x for x in self['Elements'] if x.isRunning()]
 
+    def acquiredItems(self):
+        """Return available items"""
+        return [x for x in self['Elements'] if x.isAcquired()]
+
     def availableItems(self):
         """Return available items"""
         return [x for x in self['Elements'] if x.isAvailable()]
@@ -66,22 +70,25 @@ class WorkQueueElementResult(dict):
         if not self['Elements']:
             return None
 
-        if self.availableItems():
-            return "Available"
-        elif self.runningItems():
-            return "Acquired"
-        elif self.failedItems():
-            return "Failed"
-        elif self.canceledItems():
-            return "Canceled"
+        if not self.inEndState():
+            if self.runningItems():
+                return 'Running'
+            elif self.acquiredItems() or self.availableItems():
+                # available in local queue is acquired to parent
+                return 'Acquired'
         else:
-            # if all elements have same status take that
-            status = self['Elements'][0]['Status']
-            for element in self['Elements']:
-                if element['Status'] != status:
-                    msg = "Unable to compute overall status of elements: %s"
-                    raise RuntimeError, msg % str(self['Elements'])
-            return status
+            if self.canceledItems():
+                return "Canceled"
+            elif self.failedItems():
+                return "Failed"
+
+        # if all elements have same status take that
+        status = self['Elements'][0]['Status']
+        for element in self['Elements']:
+            if element['Status'] != status:
+                msg = "Unable to compute overall status of elements: %s"
+                raise RuntimeError, msg % str(self['Elements'])
+        return status
 
     def inEndState(self):
         """Are all requests complete (either success or failure)"""
@@ -89,6 +96,11 @@ class WorkQueueElementResult(dict):
             if not element.inEndState():
                 return False
         return True
+
+    def statusMetrics(self):
+        """Returns the status & performance metrics"""
+        keys = ['Status', 'PercentComplete', 'PercentSuccess']
+        return self.fromkeys(keys)
 
     def formatForWire(self):
         """Format used to send data over network

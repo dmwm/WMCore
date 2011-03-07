@@ -40,8 +40,9 @@ class DBSReader:
         blocks = [x for x in self.dataBlocks.getBlocks(dataset)
                 if x['Name'] == blockName or blockName == '*']
         if locations:
-            [x.__setitem__('StorageElementList',
-                           self.listFileBlockLocation(x['Name'])) for x in blocks]
+            for block in blocks:
+                block['StorageElementList'] = [{'Role' : '', 'Name' : x} for x in \
+                                               self.listFileBlockLocation(block['Name'])]
         return blocks
 
     def listFileBlockLocation(self, block):

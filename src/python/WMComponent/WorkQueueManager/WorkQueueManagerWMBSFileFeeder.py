@@ -7,7 +7,8 @@ __all__ = []
 
 
 
-import threading
+import time
+import random
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.ResourceControl.ResourceControl import ResourceControl
@@ -29,7 +30,16 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         self.previousWorkList = []
         
         self.resourceControl = ResourceControl()
-        
+
+    def setup(self, parameters):
+        """
+        Called at startup - introduce random delay
+             to avoid workers all starting at once
+        """
+        t = random.randrange(self.idleTime)
+        self.logger.info('Sleeping for %d seconds before 1st loop' % t)
+        time.sleep(t)
+
     def algorithm(self, parameters):
         """
         Pull in work
@@ -73,7 +83,7 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         # in the given subscription
         self.queue.logger.info("Checking the JobCreation from previous pulled work")
         for workUnit in self.previousWorkList:
-            filesForPeningJobCreation = len(workUnit["subscription"].filesOfStatus("Available"))
+            filesForPeningJobCreation = len(workUnit["Subscription"].filesOfStatus("Available"))
             if filesForPeningJobCreation > 0:
                 self.queue.logger.info("""Not all the jobs are created.
                                           %s files left for job creation

@@ -7,16 +7,16 @@ import unittest
 import shutil
 from WMCore.WorkQueue.Policy.Start.Block import Block
 from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload, getTestArguments
-from WMQuality.Emulators.DBSClient.DBSReader \
-    import DBSReader as MockDBSReader
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
+EmulatorHelper.setEmulators(phedex = True, dbs = True, 
+                            siteDB = True, requestMgr = False)
+from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload \
     import workload as MultiTaskProcessingWorkload
+from WMCore.WorkQueue.WorkQueueExceptions import *
+from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
+from WMQuality.Emulators.DataBlockGenerator import Globals
 
-def getFirstTask(wmspec):
-    """Return the 1st top level task"""
-    # http://www.logilab.org/ticket/8774
-    # pylint: disable-msg=E1101,E1103
-    return wmspec.taskIterator().next()
 
 rerecoArgs = getTestArguments()
 
@@ -31,9 +31,9 @@ class BlockTestCase(unittest.TestCase):
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)
-        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl)}
+        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
-            units = Block(**self.splitArgs)(Tier1ReRecoWorkload, task, dbs)
+            units = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(2, len(units))
             blocks = [] # fill with blocks as we get work units for them
             for unit in units:
@@ -54,7 +54,7 @@ class BlockTestCase(unittest.TestCase):
             datasets.append("/%s/%s/%s" % (inputDataset.primary,
                                            inputDataset.processed,
                                            inputDataset.tier))
-        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl)}
+        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in MultiTaskProcessingWorkload.taskIterator():
             units = Block(**self.splitArgs)(MultiTaskProcessingWorkload, task, dbs)
             self.assertEqual(2, len(units))
@@ -76,7 +76,7 @@ class BlockTestCase(unittest.TestCase):
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)
-        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl)}
+        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
 
         # Block blacklist
         rerecoArgs2 = {'BlockBlacklist' : [dataset + '#1']}
@@ -86,7 +86,7 @@ class BlockTestCase(unittest.TestCase):
         task = getFirstTask(blacklistBlockWorkload)
         units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
-        self.assertNotEqual(units[0]['Data'], rerecoArgs2['BlockBlacklist'][0])
+        self.assertNotEqual(units[0]['Inputs'].keys(), rerecoArgs2['BlockBlacklist'])
 
         # Block Whitelist
         rerecoArgs2['BlockWhitelist'] = [dataset + '#1']
@@ -96,7 +96,7 @@ class BlockTestCase(unittest.TestCase):
         task = getFirstTask(blacklistBlockWorkload)
         units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
-        self.assertEqual(units[0]['Data'], rerecoArgs2['BlockWhitelist'][0])
+        self.assertEqual(units[0]['Inputs'].keys(), rerecoArgs2['BlockWhitelist'])
 
         # Block Mixed Whitelist
         rerecoArgs2['BlockWhitelist'] = [dataset + '#2']
@@ -106,7 +106,7 @@ class BlockTestCase(unittest.TestCase):
         task = getFirstTask(blacklistBlockWorkload)
         units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
-        self.assertEqual(units[0]['Data'], rerecoArgs2['BlockWhitelist'][0])
+        self.assertEqual(units[0]['Inputs'].keys(), rerecoArgs2['BlockWhitelist'])
 
         # Run Whitelist
         rerecoArgs3 = {'RunWhitelist' : [1]}
@@ -116,7 +116,7 @@ class BlockTestCase(unittest.TestCase):
         task = getFirstTask(blacklistBlockWorkload)
         units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
-        self.assertEqual(units[0]['Data'], dataset + '#1')
+        self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#1'])
 
         # Run Blacklist
         rerecoArgs3 = {'RunBlacklist' : [2, 3]}
@@ -126,7 +126,7 @@ class BlockTestCase(unittest.TestCase):
         task = getFirstTask(blacklistBlockWorkload)
         units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
-        self.assertEqual(units[0]['Data'], dataset + '#1')
+        self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#1'])
 
         # Run Mixed Whitelist
         rerecoArgs3 = {'RunBlacklist' : [1], 'RunWhitelist' : [2]}
@@ -134,9 +134,9 @@ class BlockTestCase(unittest.TestCase):
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                      rerecoArgs3)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
-        self.assertEqual(units[0]['Data'], dataset + '#2')
+        self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#2'])
 
 
     def testDataDirectiveFromQueue(self):
@@ -146,11 +146,11 @@ class BlockTestCase(unittest.TestCase):
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)
-        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl)}
+        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
             # Take dataset and force to run over only 1 block
             units = Block(**self.splitArgs)(Tier1ReRecoWorkload, task,
-                                            dbs, dataset + '#1')
+                                            {dataset + '#1' : []})
             self.assertEqual(1, len(units))
             blocks = [] # fill with blocks as we get work units for them
             for unit in units:
@@ -169,13 +169,39 @@ class BlockTestCase(unittest.TestCase):
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)
-        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl)}
+        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
-            units = Block(**splitArgs)(Tier1ReRecoWorkload, task, dbs)
+            units = Block(**splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(2, len(units))
             blocks = [] # fill with blocks as we get work units for them
             for unit in units:
                 self.assertEqual(2, unit['Jobs'])
+
+    def testInvalidSpecs(self):
+        """Specs with no work"""
+        # no dataset
+        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        getFirstTask(processingSpec).data.input.dataset = None
+        for task in processingSpec.taskIterator():
+            self.assertRaises(WorkQueueWMSpecError, Block(), processingSpec, task)
+
+        # invalid dbs url
+        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        getFirstTask(processingSpec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
+        for task in processingSpec.taskIterator():
+            self.assertRaises(WorkQueueWMSpecError, Block(), processingSpec, task)
+
+        # invalid dataset name
+        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
+        for task in processingSpec.taskIterator():
+            self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
+
+        # invalid run whitelist
+        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        processingSpec.setRunWhitelist([666]) # not in this dataset
+        for task in processingSpec.taskIterator():
+            self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
 
 if __name__ == '__main__':
     unittest.main()

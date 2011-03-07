@@ -15,8 +15,6 @@ from WMCore.Configuration import Configuration
 
 # The following parameters may need to be changed.
 serverHostName = "HOSTNAME OF WMAGENT MACHINE"
-reqMgrServerHostName = "HOSTNAME OF REQMGR MACHINE"
-reqMgrPort = 8687
 globalWorkQueuePort = 8571
 localWorkQueuePort = 9997
 
@@ -34,6 +32,9 @@ databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 couchURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984"
 jobDumpDBName = "wmagent_jobdump"
 acdcDBName = "wmagent_acdc"
+globalWorkQueueCouchUrl = "http://USERNAME:PASSWORD@COUCHSERVER:5984/workqueue"
+workqueueDBName = 'workqueue'
+workqueueInboxDbName = 'workqueue_inbox'
 
 # Information for the workqueue, email of the administrator and the team names
 # for this agent.
@@ -108,11 +109,12 @@ config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManag
 config.WorkQueueManager.level = 'LocalQueue'
 config.WorkQueueManager.logLevel = 'DEBUG'
 config.WorkQueueManager.serviceUrl = "%s:%s" % (reqMgrServerHostName, globalWorkQueuePort)
-config.WorkQueueManager.pollInterval = 120
+config.WorkQueueManager.couchurl = couchURL
+config.WorkQueueManager.dbname = workqueueDBName
+config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 
-config.WorkQueueManager.queueParams = {"PopulateFilesets": True,
-                                       "ParentQueue": "http://%s/workqueue/" % config.WorkQueueManager.serviceUrl,
-                                       "QueueURL": "http://%s:%s" % (serverHostName, localWorkQueuePort),
+config.WorkQueueManager.queueParams = {"QueueURL": "http://%s:%s" % (serverHostName, localWorkQueuePort),
+                                       "ParentQueueCouchUrl": globalWorkQueueCouchUrl,
                                        "Teams": agentTeams,
                                        "FullReportInterval": 300}
 config.WorkQueueManager.section_("BossAirConfig")

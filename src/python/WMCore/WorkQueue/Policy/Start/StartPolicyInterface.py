@@ -9,8 +9,10 @@ import types
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
+#from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement as WorkQueueElement
 from WMCore.WMException import WMException
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
+from DBSAPI.dbsApiException import DbsConfigurationError
 
 class StartPolicyInterface(PolicyInterface):
     """Interface for start policies"""
@@ -22,8 +24,9 @@ class StartPolicyInterface(PolicyInterface):
         self.initialTask = None
         self.splitParams = None
         self.dbs_pool = {}
-        self.data = None
+        self.data = {}
         self.lumi = None
+        self.couchdb = None
 
     def split(self):
         """Apply policy to spec"""
@@ -44,23 +47,32 @@ class StartPolicyInterface(PolicyInterface):
             raise error
 
     def newQueueElement(self, **args):
+        args.setdefault('Status', 'Available')
         args.setdefault('WMSpec', self.wmspec)
         args.setdefault('Task', self.initialTask)
         args.setdefault('RequestName', self.wmspec.name())
-        args.setdefault('TeamName', self.team)
+        args.setdefault('TaskName', self.initialTask.name())
+        args.setdefault('Task', self.initialTask.name())
+        args.setdefault('Dbs', self.initialTask.dbsUrl())
+        args.setdefault('SiteWhitelist', self.initialTask.siteWhitelist())
+        args.setdefault('SiteBlacklist', self.initialTask.siteBlacklist())
+        args.setdefault('EndPolicy', self.wmspec.endPolicyParameters())
         self.workQueueElements.append(WorkQueueElement(**args))
 
-    def __call__(self, wmspec, task, dbs_pool = None, data = None, mask = None, team = None):
+    def __call__(self, wmspec, task, data = None, mask = None, team = None):
         self.wmspec = wmspec
         self.splitParams = self.wmspec.data.policies.start
         self.initialTask = task
-        self.team = team
-        if dbs_pool:
-            self.dbs_pool.update(dbs_pool)
-        self.data = data
+        if data:
+            self.data = data
         self.mask = mask
         self.validate()
-        self.split()
+        try:
+            self.split()
+        except DbsConfigurationError, ex:
+            # A dbs configuration error implies the spec is invalid
+            error = WorkQueueWMSpecError(self.wmspec, "DBS config error: %s" % str(ex))
+            raise error
         
         if not self.workQueueElements:
             msg = """data: %s, mask: %s.""" % (str(task.inputDataset().pythonise_()), str(mask))
@@ -70,8 +82,6 @@ class StartPolicyInterface(PolicyInterface):
 
     def dbs(self):
         """Get DBSReader"""
-        from WMCore.Services.DBS.DBSReader import DBSReader
+        from WMCore.WorkQueue.WorkQueueUtils import get_dbs
         dbs_url = self.initialTask.dbsUrl()
-        if not self.dbs_pool.has_key(dbs_url):
-            self.dbs_pool[dbs_url] = DBSReader(dbs_url)
-        return self.dbs_pool[dbs_url]
+        return get_dbs(dbs_url)

@@ -116,6 +116,19 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
         myThread.transaction.commit()
     return
 
+def freeSlots(multiplier = 1.0):
+    """
+    Get free resources from wmbs.
+
+    Specify multiplier to apply a ratio to the actual numbers
+    """
+    from WMCore.ResourceControl.ResourceControl import ResourceControl
+    rc_sites = ResourceControl().listThresholdsForCreate()
+    sites = {}
+    [sites.__setitem__(name, multiplier * slots['total_slots'])
+            for name, slots in rc_sites.items() if slots['total_slots'] > 0]
+    return sites
+
 class WMBSHelper(WMConnectionBase):
     """
     _WMBSHelper_

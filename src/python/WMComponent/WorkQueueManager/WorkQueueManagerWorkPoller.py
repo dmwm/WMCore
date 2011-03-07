@@ -8,7 +8,8 @@ Pull work out of the work queue.
 
 
 
-import socket
+import time
+import random
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -22,36 +23,26 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.queue = queue
-        
+
+    def setup(self, parameters):
+        """
+        Called at startup - introduce random delay
+             to avoid workers all starting at once
+        """
+        t = random.randrange(self.idleTime)
+        self.logger.info('Sleeping for %d seconds before 1st loop' % t)
+        time.sleep(t)
+
     def algorithm(self, parameters):
         """
         Pull in work
 	    """
-        
-        self.queue.logger.info("Pulling work from %s" % self.queue.params['ParentQueue'])
-        work = 0
-        try:
-            if self.retrieveCondition():
-                work = self.queue.pullWork()
-                self.queue.logger.info("Done Pulling work") 
-                if work:
-                    self.queue.logger.info("There is new work, update location info") 
-                    self.queue.updateLocationInfo(newDataOnly = True)
-                try:
-                    self.queue.logger.info("Updating Parents status")        
-                    self.queue.updateParent()
-                except StandardError, ex:
-                    import traceback
-                    self.queue.logger.error("Unable to update Parent Status: %s\n%s" 
-                                    % (str(ex), traceback.format_exc()))
-        except socket.error, message:
-            self.queue.logger.error("Error opening connection to work queue: %s" % (message))
-            return
-        except StandardError, ex:
-            import traceback
-            self.queue.logger.error("Unable to pull work from parent Error: %s\n%s" 
-                                    % (str(ex), traceback.format_exc()))
-        self.queue.logger.info("Obtained %s unit(s) of work" % work)
+        work = self.pullWork()
+        if work:
+            #TODO: guess could use changes for this...
+            self.queue.logger.info('Waiting 15 seconds for replication')
+            time.sleep(15) # give replication a chance
+        self.processWork()
         return
 
     def retrieveCondition(self):
@@ -61,3 +52,29 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         i.e. thredshod on workqueue 
         """
         return True
+
+    def pullWork(self):
+        """Get work from parent"""
+        self.queue.logger.info("Pulling work from %s" % self.queue.params['ParentQueue'])
+        work = 0
+        try:
+            if self.retrieveCondition():
+                work = self.queue.pullWork()
+        except IOError, (value, message):
+            self.queue.logger.error("Error %s opening connection to work queue: %s" % (value, message))
+        except StandardError, ex:
+            import traceback
+            self.queue.logger.error("Unable to pull work from parent Error: %s\n%s" 
+                                    % (str(ex), traceback.format_exc()))
+        self.queue.logger.info("Obtained %s unit(s) of work" % work)
+        return work
+
+    def processWork(self):
+        """Process new work"""
+        self.queue.logger.info("Splitting new work")
+        try:
+            self.queue.processInboundWork()
+        except StandardError, ex:
+            self.queue.logger.exception('Error during split')
+        self.logger.info('Splitting finished')
+        return

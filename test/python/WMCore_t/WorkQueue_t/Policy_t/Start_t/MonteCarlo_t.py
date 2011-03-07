@@ -12,14 +12,11 @@ from WMCore_t.WMSpec_t.samples.MultiMergeProductionWorkload \
     import workload as MultiMergeProductionWorkload
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
     import workload as MultiTaskProductionWorkload
+from WMCore.WorkQueue.WorkQueueExceptions import *
+from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
+from WMQuality.Emulators.DataBlockGenerator import Globals
 
 mcArgs = getMCArgs()
-
-def getFirstTask(wmspec):
-    """Return the 1st top level task"""
-    # http://www.logilab.org/ticket/8774
-    # pylint: disable-msg=E1101,E1103
-    return wmspec.taskIterator().next()
 
 class MonteCarloTestCase(unittest.TestCase):
 
@@ -86,6 +83,19 @@ class MonteCarloTestCase(unittest.TestCase):
                 self.assertEqual(unit['Task'], task)
         self.assertEqual(count, 2)
 
+    def testInvalidSpecs(self):
+        """Specs with no work"""
+        # no whitelist
+        mcspec = monteCarloWorkload('testProcessingInvalid', mcArgs)
+        getFirstTask(mcspec).setSiteWhitelist(None)
+        for task in mcspec.taskIterator():
+            self.assertRaises(WorkQueueWMSpecError, MonteCarlo(), mcspec, task)
+        getFirstTask(mcspec).setSiteWhitelist([])
+
+        # 0 events
+        getFirstTask(mcspec).addProduction(totalevents = 0)
+        for task in mcspec.taskIterator():
+            self.assertRaises(WorkQueueNoWorkError, MonteCarlo(), mcspec, task)
 
 if __name__ == '__main__':
     unittest.main()

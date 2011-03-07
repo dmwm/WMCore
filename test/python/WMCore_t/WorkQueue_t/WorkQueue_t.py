@@ -44,7 +44,7 @@ mcArgs = getMCArgs()
 
 def rerecoWorkload(workloadName, arguments):
     wmspec = rerecoWMSpec(workloadName, arguments)
-    wmspec.setStartPolicy("DatasetBlock")
+    #wmspec.setStartPolicy("DatasetBlock")
     return wmspec
 
 def getFirstTask(wmspec):
@@ -52,6 +52,16 @@ def getFirstTask(wmspec):
     # http://www.logilab.org/ticket/8774
     # pylint: disable-msg=E1101,E1103
     return wmspec.taskIterator().next()
+
+def syncQueues(queue):
+    """Sync parent & local queues and split work
+        Workaround having to wait for couchdb replication and splitting polling
+    """
+    queue.backend.forceQueueSync()
+    work = queue.processInboundWork()
+    queue.performQueueCleanupActions()
+    queue.backend.forceQueueSync()
+    return work
 
 class WorkQueueTest(WorkQueueTestCase):
     """
@@ -102,8 +112,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                      inputDataset.tier)
 
         # Create queues
-        self.globalQueue = globalQueue(CacheDir = self.workDir,
-                                       NegotiationTimeout = 0,
+        self.globalQueue = globalQueue(DbName = 'workqueue_t_global',
                                        QueueURL = 'global.example.com')
 #        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
 #                            PopulateFilesets = False,
@@ -123,25 +132,22 @@ class WorkQueueTest(WorkQueueTestCase):
         bossAirConfig.section_("Agent")
         bossAirConfig.Agent.agentName = "TestAgent"
 
-        self.localQueue = localQueue(ParentQueue = self.globalQueue,
-                                     CacheDir = self.workDir,
-                                     ReportInterval = 0,
+        self.localQueue = localQueue(DbName = 'workqueue_t_local',
+                                     ParentQueueCouchUrl = self.globalQueue.backend.db_url,
                                      QueueURL = "local.example.com",
                                      JobCouchConfig = jobCouchConfig,
                                      BossAirConfig = bossAirConfig)
 
-        self.localQueue2 = localQueue(ParentQueue = self.globalQueue,
-                                     CacheDir = self.workDir,
-                                     ReportInterval = 0,
-                                     QueueURL = "local2.example.com",
-                                     IgnoreDuplicates = False,
-                                     JobCouchConfig = jobCouchConfig,
-                                     BossAirConfig = bossAirConfig)
+        self.localQueue2 = localQueue(DbName = 'workqueue_t_local2',
+                                      ParentQueueCouchUrl = self.globalQueue.backend.db_url,
+                                      QueueURL = "local2.example.com",
+                                      JobCouchConfig = jobCouchConfig,
+                                      BossAirConfig = bossAirConfig)
 
         # standalone queue for unit tests
-        self.queue = WorkQueue(CacheDir = self.workDir,
-                               JobCouchConfig = jobCouchConfig,
-                               BossAirConfig = bossAirConfig)
+        self.queue = WorkQueue(JobCouchConfig = jobCouchConfig,
+                               BossAirConfig = bossAirConfig,
+                               DbName = 'workqueue_t')
 
         # create relevant sites in wmbs
         for site, se in self.queue.SiteDB.mapping.items():
@@ -206,7 +212,7 @@ class WorkQueueTest(WorkQueueTestCase):
         testJobA.addFile(testFileB)
         
         dcs.failedJobs([testJobA])
-        topLevelTask = workload.getTopLevelTask()
+        topLevelTask = workload.getTopLevelTask()[0]
         workload.truncate("Resubmit_TestWorkload", topLevelTask.getPathName(), 
                           serverUrl, couchDB)
                                   
@@ -217,7 +223,7 @@ class WorkQueueTest(WorkQueueTestCase):
         Enqueue and get work for a production WMSpec.
         """
         specfile = self.spec.specUrl()
-        numUnit = 2
+        numUnit = 1
         jobSlot = [10] * numUnit # array of jobs per block
         total = sum(jobSlot)
 
@@ -232,9 +238,6 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.queue.getWork({'SiteA' : 0})
         self.assertEqual([], work)
         work = self.queue.getWork({'SiteA' : jobSlot[0]})
-        self.assertEqual(len(work), 1)
-        # claim all work
-        work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
         self.assertEqual(len(work), 1)
 
         #no more work available
@@ -251,24 +254,23 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.queueWork(specfile)
         self.assertEqual(numUnit, len(self.globalQueue))
 
-        self.assertEqual(numUnit, self.localQueue.pullWork({'SiteA' : total}))
-        self.assertEqual(numUnit, len(self.localQueue.status(status = 'Available')))
-        self.assertEqual(numUnit, len(self.localQueue.status(status = 'Negotiating')))
+        # pull work to localQueue2 - check local doesn't get any
+        self.assertEqual(numUnit, self.localQueue2.pullWork({'SiteA' : total}))
+        self.assertEqual(0, self.localQueue.pullWork({'SiteA' : total}))
+        syncQueues(self.localQueue)
+        syncQueues(self.localQueue2)
+        self.assertEqual(numUnit, len(self.localQueue2.status(status = 'Available')))
+        self.assertEqual(0, len(self.localQueue.status(status = 'Available')))
+        self.assertEqual(numUnit, len(self.globalQueue.status(status = 'Acquired')))
+        self.assertEqual(self.localQueue2.params['QueueURL'], self.globalQueue.status()[0]['ChildQueueUrl'])
 
-        self.localQueue.updateParent()
-        self.assertEqual(0, len(self.localQueue.status(status = 'Negotiating')))
-        self.assertEqual(numUnit, len(self.localQueue.status(status = 'Acquired')))
-
-        work = self.localQueue.getWork({'SiteA' : total})
-        self.assertEqual(numUnit, len(work))
-
-        curr_event = 1
-        for unit in work:
-            with open(unit['mask_url']) as mask_file:
-                mask = pickle.load(mask_file)
-                self.assertEqual(curr_event, mask['FirstEvent'])
-                curr_event = mask['LastEvent'] + 1
-        self.assertEqual(curr_event - 1, 10000)
+#        curr_event = 1
+#        for unit in work:
+#            with open(unit['mask_url']) as mask_file:
+#                mask = pickle.load(mask_file)
+#                self.assertEqual(curr_event, mask['FirstEvent'])
+#                curr_event = mask['LastEvent'] + 1
+#        self.assertEqual(curr_event - 1, 10000)
 
 
     def testPriority(self):
@@ -280,10 +282,14 @@ class WorkQueueTest(WorkQueueTestCase):
         totalSlices = 1
 
         self.queue.queueWork(self.spec.specUrl())
-        self.assertEqual(totalJobs, sum([x['Jobs'] for x in self.queue.status()]))
+        self.queue.processInboundWork()
+        self.assertEqual(totalJobs, sum([x['Jobs'] for x in self.queue.status(status = 'Available')]))
 
         # priority change
         self.queue.setPriority(50, self.spec.name())
+        # test elements are now cancelled
+        self.assertEqual([x['Priority'] for x in self.queue.status(RequestName = self.spec.name())],
+                         [50] * totalSlices)
         self.assertRaises(RuntimeError, self.queue.setPriority, 50, 'blahhhhh')
 
         # claim all work
@@ -304,6 +310,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Queue Work & check accepted
         self.queue.queueWork(specfile)
+        self.queue.processInboundWork()
         self.assertEqual(len(njobs), len(self.queue))
 
         self.queue.updateLocationInfo()
@@ -337,6 +344,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Queue Work & check accepted
         self.queue.queueWork(specfile)
+        self.queue.processInboundWork()
         self.assertEqual(numBlocks, len(self.queue))
         self.queue.updateLocationInfo()
 
@@ -372,6 +380,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Queue Work & check accepted
         self.queue.queueWork(specfile)
+        self.queue.processInboundWork()
         self.assertEqual(numBlocks, len(self.queue))
 
         # Only SiteB in whitelist
@@ -379,6 +388,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(work), 0)
 
         # Site B can run
+        self.queue.updateLocationInfo()
         work = self.queue.getWork({'SiteB' : total, 'SiteAA' : total})
         self.assertEqual(len(work), 2)
 
@@ -392,90 +402,93 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
         # Add work to top most queue
         self.globalQueue.queueWork(self.processingSpec.specUrl())
-        self.assertEqual(1, len(self.globalQueue))
+        self.assertEqual(2, len(self.globalQueue))
 
         # check work isn't passed down to site without subscription
-        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 0)
+        self.assertEqual(self.localQueue.pullWork({'SiteC' : 1000}), 0)
 
         # put at correct site
         self.globalQueue.updateLocationInfo()
 
-        #import pdb
-        #pdb.set_trace()
-
         # check work isn't passed down to the wrong agent
-        work = self.localQueue.getWork({'SiteB' : 1000}) # Not in subscription
+        work = self.localQueue.getWork({'SiteC' : 1000}) # Not in subscription
         self.assertEqual(0, len(work))
-        self.assertEqual(1, len(self.globalQueue))
+        self.assertEqual(2, len(self.globalQueue))
 
         # pull work down to the lowest queue
         self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 2)
+        syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue), 2)
         # parent state should be negotiating till we verify we have it
-        self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
+        #self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
 
         # check work passed down to lower queue where it was acquired
         # work should have expanded and parent element marked as acquired
 
-        self.assertEqual(len(self.localQueue.getWork({'SiteA' : 1000})), 0)
+        #self.assertEqual(len(self.localQueue.getWork({'SiteA' : 1000})), 0)
         # releasing on block so need to update locations
         self.localQueue.updateLocationInfo()
         work = self.localQueue.getWork({'SiteA' : 1000})
         self.assertEqual(0, len(self.localQueue))
         self.assertEqual(2, len(work))
 
+        # check work in local and subscription made
+        [self.assert_(x['SubscriptionId'] > 0) for x in work]
+        [self.assert_(x['SubscriptionId'] > 0) for x in self.localQueue.status()]
+
         # mark work done & check this passes upto the top level
-        self.localQueue.setStatus('Done',
-                                  [str(x['element_id']) for x in work], id_type = 'id')
+        self.localQueue.setStatus('Done', [x.id for x in work])
 
 
-    def testMultipleQueueChaining(self):
-        """
-        Chain workQueues and verify status updates, negotiation failues etc
-        """
-        # verify that negotiation failures are removed
-        #self.globalQueue.flushNegotiationFailures()
-        #self.assertEqual(len(self.globalQueue.status('Negotiating')), 0)
-        #self.localQueue.updateParent()
-        # TODO: Check status of element in global queue
-        self.assertEqual(0, len(self.globalQueue))
-        self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
-
-        # Add work to top most queue
-        self.globalQueue.queueWork(self.processingSpec.specUrl())
-        self.assertEqual(1, len(self.globalQueue))
-        self.globalQueue.updateLocationInfo()
-        # pull to local queue
-        self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 2)
-
-        # check that global reset's status if acquired status not verified
-        self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
-        self.assertEqual(len(self.localQueue.status('Available')), 2)
-        # no work available for queue2 - Negotiating
-        self.assertEqual(self.localQueue2.pullWork({'SiteA' : 1000}), 0)
-        # queue1 hasn't claimed work so reset element to Available
-        self.assertEqual(self.globalQueue.flushNegotiationFailures(), 1)
-        # work still available in queue1 until it contacts parent
-        self.assertEqual(len(self.globalQueue.status('Available')), 3)
-
-        # queue2 pull available work
-        self.assertEqual(self.localQueue2.pullWork({'SiteA' : 1000}), 2)
-        self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
-        self.assertEqual(len(self.localQueue.status('Available')), 4)
-        self.localQueue2.updateParent() # queue2 claims work
-        self.assertEqual(len(self.globalQueue.status('Negotiating')), 0)
-        self.assertEqual(len(self.globalQueue.status('Acquired')), 1)
-        self.assertEqual(len(self.localQueue.status('Available')), 4)
-
-        # queue1 calls back to parent and find work claimed by queue2
-        self.localQueue.updateParent()
-        self.assertEqual(len(self.globalQueue.status('Acquired')), 1)
-        # As all queues share the same db - all elements will be canceled
-        # as delete is keyed on parent id and no elements will be available
-        # in real life - 1 element will be canceled and 2 will be available
-        self.assertEqual(len(self.localQueue.status('Canceled')), 4)
-        self.assertEqual(len(self.localQueue2.status('Available')), 0)
+#    def testMultipleQueueChaining(self):
+#        """
+#        Chain workQueues and verify status updates, negotiation failues etc
+#        """
+#        # verify that negotiation failures are removed
+#        #self.globalQueue.flushNegotiationFailures()
+#        #self.assertEqual(len(self.globalQueue.status('Negotiating')), 0)
+#        #self.localQueue.updateParent()
+#        # TODO: Check status of element in global queue
+#        self.assertEqual(0, len(self.globalQueue))
+#        self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
+#
+#        # Add work to top most queue
+#        self.globalQueue.queueWork(self.processingSpec.specUrl())
+#        self.globalQueue.processInboundWork()
+#        self.assertEqual(1, len(self.globalQueue))
+#        self.globalQueue.updateLocationInfo()
+#        # pull to local queue
+#        self.globalQueue.updateLocationInfo()
+#        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 2)
+#        syncQueues(self.localQueue)
+#
+#        # check that global reset's status if acquired status not verified
+#        #self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
+#        self.assertEqual(len(self.localQueue.status('Available')), 2)
+#        # no work available for queue2 - Negotiating
+#        self.assertEqual(self.localQueue2.pullWork({'SiteA' : 1000}), 0)
+#        # queue1 hasn't claimed work so reset element to Available
+#        #self.assertEqual(self.globalQueue.flushNegotiationFailures(), 1)
+#        # work still available in queue1 until it contacts parent
+#        #self.assertEqual(len(self.globalQueue.status('Available')), 3)
+#
+#        # queue2 pull available work
+#        self.assertEqual(self.localQueue2.pullWork({'SiteA' : 1000}), 2)
+#        self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
+#        self.assertEqual(len(self.localQueue.status('Available')), 4)
+#        self.localQueue2.updateParent() # queue2 claims work
+#        self.assertEqual(len(self.globalQueue.status('Negotiating')), 0)
+#        self.assertEqual(len(self.globalQueue.status('Acquired')), 1)
+#        self.assertEqual(len(self.localQueue.status('Available')), 4)
+#
+#        # queue1 calls back to parent and find work claimed by queue2
+#        self.localQueue.updateParent()
+#        self.assertEqual(len(self.globalQueue.status('Acquired')), 1)
+#        # As all queues share the same db - all elements will be canceled
+#        # as delete is keyed on parent id and no elements will be available
+#        # in real life - 1 element will be canceled and 2 will be available
+#        self.assertEqual(len(self.localQueue.status('Canceled')), 4)
+#        self.assertEqual(len(self.localQueue2.status('Available')), 0)
 
 
     def testQueueChainingStatusUpdates(self):
@@ -485,18 +498,15 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Add work to top most queue
         self.globalQueue.queueWork(self.processingSpec.specUrl())
-        self.assertEqual(1, len(self.globalQueue))
+        self.globalQueue.processInboundWork()
+        self.assertEqual(2, len(self.globalQueue))
 
         # pull to local queue
         self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 2)
-        # Tell parent local has acquired
-        self.assertEqual(self.localQueue.lastReportToParent, 0)
-        before = self.localQueue.lastFullReportToParent
-        self.localQueue.updateParent()
-        self.assertNotEqual(before, self.localQueue.lastFullReportToParent)
-        self.assertEqual(len(self.globalQueue.status('Acquired')), 1)
-        self.assertEqual(len(self.globalQueue.status('Available')), 2)
+        syncQueues(self.localQueue) # Tell parent local has acquired
+        self.assertEqual(len(self.globalQueue.status('Acquired')), 2)
+        self.assertEqual(len(self.localQueue.status('Available')), 2)
 
         # run work
         self.globalQueue.updateLocationInfo()
@@ -504,26 +514,35 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(work), 2)
 
         # resend info
-        before = self.localQueue.lastReportToParent
-        self.localQueue.updateParent()
-        self.assertNotEqual(before, self.localQueue.lastReportToParent)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.globalQueue.status('Running')), 2)
+        self.assertEqual(len(self.localQueue.status('Running')), 2)
 
         # finish work locally and propagate to global
-        self.localQueue.doneWork([str(x['element_id']) for x in work])
-        [x.update({'Id' : x['element_id'], 'PercentComplete' : 100,
-                   'PercentSuccess' : 99}) for x in work]
-        [self.localQueue.setProgress(x) for x in work]
+        self.localQueue.doneWork([x.id for x in work])
+        [self.localQueue.backend.updateElements(x.id, PercentComplete = 100, PercentSuccess = 99) for x in work]
         elements = self.localQueue.status('Done')
         self.assertEqual(len(elements), len(work))
         self.assertEqual([x['PercentComplete'] for x in elements],
                          [100] * len(work))
         self.assertEqual([x['PercentSuccess'] for x in elements],
                          [99] * len(work))
-        self.localQueue.updateParent(skipWMBS = True) # will delete elements from local
+
+        self.localQueue.performQueueCleanupActions(skipWMBS = True) # will delete elements from local
+        syncQueues(self.localQueue)
+        
         elements = self.globalQueue.status('Done')
+        self.assertEqual(len(elements), 2)
+        self.assertEqual([x['PercentComplete'] for x in elements], [100,100])
+        self.assertEqual([x['PercentSuccess'] for x in elements], [99, 99])
+
+        self.globalQueue.performQueueCleanupActions()
+        self.assertEqual(0, len(self.globalQueue.status()))
+        elements = self.globalQueue.backend.getInboxElements('Done')
         self.assertEqual(len(elements), 1)
         self.assertEqual([x['PercentComplete'] for x in elements], [100])
         self.assertEqual([x['PercentSuccess'] for x in elements], [99])
+
 
 
     def testMultiTaskProduction(self):
@@ -550,14 +569,9 @@ class WorkQueueTest(WorkQueueTestCase):
         # try to get work
         work = self.queue.getWork({'SiteA' : 0})
         self.assertEqual([], work)
-        work = self.queue.getWork({'SiteA' : njobs[0]})
-        self.assertEqual(len(work), 1)
-        self.assertEqual(sum([x['Jobs'] for x in self.queue.status(status = 'Acquired')]),
-                         njobs[0])
-        # claim all work
         work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
-        self.assertEqual(len(work), 1)
-        self.assertEqual(sum([x['Jobs'] for x in self.queue.status(status = 'Acquired')]),
+        self.assertEqual(len(work), 2)
+        self.assertEqual(sum([x['Jobs'] for x in self.queue.status(status = 'Running')]),
                          total)
 
         #no more work available
@@ -574,6 +588,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         specfile = self.spec.specUrl()
         self.globalQueue.queueWork(specfile, team = 'The A-Team')
+        self.globalQueue.processInboundWork()
         self.assertEqual(1, len(self.globalQueue))
         slots = {'SiteA' : 1000, 'SiteB' : 1000}
 
@@ -585,20 +600,24 @@ class WorkQueueTest(WorkQueueTestCase):
         # and with correct team name
         self.localQueue.params['Teams'] = ['The A-Team']
         self.assertEqual(self.localQueue.pullWork(slots), 1)
+        syncQueues(self.localQueue)
         # when work leaves the queue in the agent it doesn't care about teams
         self.localQueue.params['Teams'] = ['other']
         self.assertEqual(len(self.localQueue.getWork(slots)), 1)
-        self.localQueue.updateParent()
         self.assertEqual(0, len(self.globalQueue))
 
-        # with multiple teams
-        self.globalQueue.queueWork(specfile, team = 'The B-Team')
-        self.globalQueue.queueWork(specfile, team = 'The C-Team')
+    def testMultipleTeams(self):
+        """Multiple teams"""
+        slots = {'SiteA' : 1000, 'SiteB' : 1000}
+        self.globalQueue.queueWork(self.spec.specUrl(), team = 'The B-Team')
+        self.globalQueue.queueWork(self.processingSpec.specUrl(), team = 'The C-Team')
+        self.globalQueue.processInboundWork()
+        self.globalQueue.updateLocationInfo()
+
         self.localQueue.params['Teams'] = ['The B-Team', 'The C-Team']
-        self.localQueue.updateParent()
-        self.assertEqual(self.localQueue.pullWork(slots), 2)
-        self.localQueue.updateParent()
-        self.assertEqual(len(self.localQueue.getWork(slots)), 2)
+        self.assertEqual(self.localQueue.pullWork(slots), 3)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.getWork(slots)), 3)
 
 
     def testGlobalBlockSplitting(self):
@@ -614,27 +633,37 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(0, len(self.globalQueue))
         for _ in range(totalSpec):
             self.globalQueue.queueWork(self.processingSpec.specUrl())
+        self.globalQueue.processInboundWork()
         self.assertEqual(totalBlocks, len(self.globalQueue))
+        # both blocks in global belong to same parent, but have different inputs
+        status = self.globalQueue.status()
+        self.assertEqual(status[0]['ParentQueueId'], status[1]['ParentQueueId'])
+        self.assertNotEqual(status[0]['Inputs'], status[1]['Inputs'])
 
         # pull to local
-        self.globalQueue.updateLocationInfo()
+        # location info should already be added
+        #self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}),
                          totalBlocks)
+        syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status(status = 'Available')),
                          totalBlocks) # 2 in local
-        self.localQueue.updateLocationInfo()
+        #self.localQueue.updateLocationInfo()
         work = self.localQueue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
         self.assertEqual(len(work), totalBlocks)
         # both refer to same wmspec
-        self.assertEqual(work[0]['url'], work[1]['url'])
-        self.localQueue.doneWork([str(x['element_id']) for x in work])
-        self.localQueue.updateParent()
+        self.assertEqual(work[0]['WMSpecUrl'], work[1]['WMSpecUrl'])
+        self.localQueue.doneWork([str(x.id) for x in work])
         # elements in local deleted at end of update, only global ones left
         self.assertEqual(len(self.localQueue.status(status = 'Done')),
                          totalBlocks)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.status(status = 'Done')),
+                         0)
+        self.assertEqual(len(self.globalQueue.status(status = 'Done')),
+                         totalBlocks)
 
-
-    def testGlobalDatsetSplitting(self):
+    def testGlobalDatasetSplitting(self):
         """Dataset splitting at global level"""
 
         # force global queue to split work on block
@@ -648,63 +677,69 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(0, len(self.globalQueue))
         for _ in range(totalSpec):
             self.globalQueue.queueWork(self.processingSpec.specUrl())
+        self.globalQueue.processInboundWork()
         self.assertEqual(totalSpec, len(self.globalQueue))
 
         # pull to local
         self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}),
-                         totalBlocks)
+                         totalSpec)
+        syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status(status = 'Available')),
                          totalBlocks) # 2 in local
         self.localQueue.updateLocationInfo()
         work = self.localQueue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
         self.assertEqual(len(work), totalBlocks)
         # both refer to same wmspec
-        self.assertEqual(work[0]['url'], work[1]['url'])
-        self.localQueue.doneWork([str(x['element_id']) for x in work])
-        self.localQueue.updateParent()
+        self.assertEqual(work[0]['WMSpecUrl'], work[1]['WMSpecUrl'])
+        self.assertNotEqual(work[0]['Inputs'], work[1]['Inputs'])
+        self.localQueue.doneWork([str(x.id) for x in work])
+        self.assertEqual(len(self.localQueue.status(status = 'Done')),
+                         totalBlocks)
+        syncQueues(self.localQueue)
         # elements in local deleted at end of update, only global ones left
         self.assertEqual(len(self.localQueue.status(status = 'Done')),
+                         0)
+        self.assertEqual(len(self.globalQueue.status(status = 'Done')),
                          totalSpec)
 
     def testResetWork(self):
         """Reset work in global to different child queue"""
+        #TODO: This test sometimes fails - i suspect a race condition (maybe conflict in couch)
+        # Cancel code needs reworking so this will hopefully be fixed then
         totalBlocks = 2
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}),
                          totalBlocks)
-        self.localQueue.updateLocationInfo()
+        syncQueues(self.localQueue)
         work = self.localQueue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
         self.assertEqual(len(work), totalBlocks)
-        self.localQueue.updateParent()
-        self.assertEqual(len(self.localQueue.status(status = 'Acquired')),
-                         3) # sum of both queues
+        self.assertEqual(len(self.localQueue.status(status = 'Running')), 2)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.globalQueue.status(status = 'Running')), 2)
 
         # Re-assign work in global
-        self.globalQueue.resetWork([x['id'] for x in work])
-        self.localQueue.updateParent()
-        # work should be canceled in local
+        self.globalQueue.resetWork([x.id for x in self.globalQueue.status(status = 'Running')])
 
-        self.assertEqual(len(self.localQueue.status(status = 'Acquired')),
-                         0)
-        self.assertEqual(len(self.localQueue.status(status = 'Available')),
-                         1)
-        work_at_local = [x for x in self.globalQueue.status(status = 'Acquired') \
+        # work should be canceled in local
+        #TODO: Note the work in local will be orphaned but not canceled
+        syncQueues(self.localQueue)
+        work_at_local = [x for x in self.globalQueue.status(status = 'Running') \
                          if x['ChildQueueUrl'] == self.localQueue.params['QueueURL']]
         self.assertEqual(len(work_at_local), 0)
 
         # now 2nd queue calls and acquires work
         self.assertEqual(self.localQueue2.pullWork({'SiteA' : 1000}),
                          totalBlocks)
-        self.localQueue2.updateParent()
+        syncQueues(self.localQueue2)
 
         # check work in global assigned to local2
-        self.assertEqual(len(self.localQueue.status(status = 'Available')),
+        self.assertEqual(len(self.localQueue2.status(status = 'Available')),
                          2) # work in local2
         work_at_local2 = [x for x in self.globalQueue.status(status = 'Acquired') \
                          if x['ChildQueueUrl'] == self.localQueue2.params['QueueURL']]
-        self.assertEqual(len(work_at_local2), 1)
+        self.assertEqual(len(work_at_local2), 2)
 
 
     def testCancelWork(self):
@@ -714,29 +749,64 @@ class WorkQueueTest(WorkQueueTestCase):
         self.queue.updateLocationInfo()
         work = self.queue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
         self.assertEqual(len(self.queue), 0)
-        self.assertEqual(len(self.queue.status(status='Acquired')), elements)
-        ids = [x['element_id'] for x in work]
+        self.assertEqual(len(self.queue.status(status='Running')), elements)
+        ids = [x.id for x in work]
         canceled = self.queue.cancelWork(ids)
         self.assertEqual(sorted(canceled), sorted(ids))
         self.assertEqual(len(self.queue), 0)
         self.assertEqual(len(self.queue.status(status='Canceled')), elements)
 
         # now cancel a request
-        self.queue.queueWork(self.spec.specUrl(), request = 'testProduction')
+        self.queue.queueWork(self.spec.specUrl())
         elements = len(self.queue)
         work = self.queue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
         self.assertEqual(len(self.queue), 0)
-        self.assertEqual(len(self.queue.status(status='Acquired')), elements)
-        ids = [x['element_id'] for x in work]
-        canceled = self.queue.cancelWork('testProduction', id_type = 'request_name')
-        self.assertEqual(canceled, 'testProduction')
+        self.assertEqual(len(self.queue.status(status='Running')), elements)
+        ids = [x.id for x in work]
+        canceled = self.queue.cancelWork(WorkflowName = 'testProduction')
+        self.assertEqual(canceled, ids)
         self.assertEqual(len(self.queue), 0)
-        self.assertEqual(len(self.queue.status(status='Canceled',
-                                               elementIDs = ids)), elements)
+        self.queue.status(elementIDs = ids)
+        self.assertEqual([x['Status'] for x in self.queue.status(elementIDs = ids)],
+                         ['Canceled' for x in ids])
+        
+    def testCancelWorkGlobal(self):
+        """Cancel work in global queue"""
+        # queue to global & pull to local
+        self.globalQueue.queueWork(self.spec.specUrl())
+        self.globalQueue.updateLocationInfo()
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 1)
+        syncQueues(self.localQueue)
+        work = self.localQueue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
+        self.assertEqual(len(work), 1)
+        syncQueues(self.localQueue)
+
+        # cancel in global, and propagate down to local
+        self.globalQueue.cancelWork(WorkflowName = self.spec.name())
+        self.globalQueue.performQueueCleanupActions()
+        self.assertEqual(len(self.globalQueue.statusInbox(status='CancelRequested')), 1)
+        self.assertEqual(len(self.globalQueue.status(status='CancelRequested')), 1)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.statusInbox(status='Canceled')), 1)
+        self.assertEqual(len(self.localQueue.status()), 0)
+
+        # check cancel propagated back to global
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.globalQueue.status(status='Canceled')), 1)
+        self.globalQueue.performQueueCleanupActions()
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.statusInbox()), 0)
+        self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
+        self.assertEqual(len(self.globalQueue.status()), 0)
 
 
     def testInvalidSpecs(self):
         """Complain on invalid WMSpecs"""
+        # request != workflow name
+        self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork,
+                                                self.processingSpec.specUrl(),
+                                                request = 'fail_this')
+
         # invalid white list
         mcspec = monteCarloWorkload('testProductionInvalid', mcArgs)
         getFirstTask(mcspec).setSiteWhitelist('ThisIsInvalid')
@@ -754,7 +824,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # 0 events
         getFirstTask(mcspec).addProduction(totalevents = 0)
         mcspec.save(mcspec.specUrl())
-        self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, mcspec.specUrl())
+        self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, mcspec.specUrl())
 
         # no dataset
         processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
@@ -781,6 +851,23 @@ class WorkQueueTest(WorkQueueTestCase):
         processingSpec.save(processingSpec.specUrl())
         self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
 
+        # dataset splitting with invalid run whitelist
+        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        processingSpec.setSpecUrl(os.path.join(self.workDir,
+                                                    'testProcessingInvalid.spec'))
+        processingSpec.setStartPolicy('Dataset')
+        processingSpec.setRunWhitelist([666]) # not in this dataset
+        processingSpec.save(processingSpec.specUrl())
+        self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
+
+        # block splitting with invalid run whitelist
+        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        processingSpec.setSpecUrl(os.path.join(self.workDir,
+                                                    'testProcessingInvalid.spec'))
+        processingSpec.setStartPolicy('Block')
+        processingSpec.setRunWhitelist([666]) # not in this dataset
+        processingSpec.save(processingSpec.specUrl())
+        self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
 
     def testIgnoreDuplicates(self):
         """Ignore duplicate work"""
@@ -788,19 +875,57 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.queueWork(specfile)
         self.assertEqual(1, len(self.globalQueue))
         
-        slots = {'SiteA' : 1000, 'SiteB' : 1000}
-        work = self.localQueue.pullWork(slots)
-        self.assertEqual(work, 1)
-        
-        # put back to available & re-acquire
-        self.globalQueue.flushNegotiationFailures()
-        self.localQueue.setStatus('Acquired', 2) # also need to mark previous element as not-available
-        work = self.localQueue.pullWork(slots)
-        self.assertEqual(work, 0)
-        self.assertEqual(2, len(self.globalQueue.status())) # 1 in local & 1 in global
-        
+        # queue work again
+        self.globalQueue.queueWork(specfile)
+        self.assertEqual(1, len(self.globalQueue))
+
+
+    def testConflicts(self):
+        """Resolve conflicts between global & local queue"""
+        self.globalQueue.queueWork(self.spec.specUrl())
+        self.localQueue.pullWork({'SiteA' : 10000})
+        self.localQueue.getWork({'SiteA' : 10000})
+        syncQueues(self.localQueue)
+        global_ids = [x.id for x in self.globalQueue.status()]
+        self.localQueue.backend.updateInboxElements(*global_ids, Status = 'Done', PercentComplete = 69)
+        self.globalQueue.backend.updateElements(*global_ids, Status = 'Canceled')
+        self.localQueue.backend.forceQueueSync()
+        self.localQueue.backend.fixConflicts()
+        self.localQueue.backend.forceQueueSync()
+        self.assertEqual([x['Status'] for x in self.globalQueue.status(element_ids = global_ids)],
+                         ['Canceled'])
+        self.assertEqual([x['PercentComplete'] for x in self.globalQueue.status(element_ids = global_ids)],
+                         [69])
+        self.assertEqual([x for x in self.localQueue.statusInbox()],
+                         [x for x in self.globalQueue.status()])
+
+    def testDeleteWork(self):
+        """Delete finished work"""
+        self.globalQueue.queueWork(self.spec.specUrl())
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 10000}), 1)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.getWork({'SiteA' : 10000})), 1)
+        syncQueues(self.localQueue)
+        self.localQueue.doneWork(WorkflowName = self.spec.name())
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.status(WorkflowName = self.spec.name())),
+                         0) # deleted once inbox updated
+        self.assertEqual('Done',
+                         self.globalQueue.status(WorkflowName = self.spec.name())[0]['Status'])
+        self.globalQueue.performQueueCleanupActions()
+        self.assertEqual('Done',
+                         self.globalQueue.statusInbox(WorkflowName = self.spec.name())[0]['Status'])
+        self.assertEqual(len(self.globalQueue.status(WorkflowName = self.spec.name())),
+                         0) # deleted once inbox updated
+        self.globalQueue.deleteWorkflows(self.spec.name())
+        self.assertEqual(len(self.globalQueue.statusInbox(WorkflowName = self.spec.name())),
+                         0)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.statusInbox(WorkflowName = self.spec.name())),
+                         0)
     
     def testResubmissionWorkflow(self):
+        """Test workflow resubmission via ACDC"""
         from WMQuality.TestInitCouchApp import TestInitCouchApp
         self.couchInit = TestInitCouchApp(__file__)
         self.couchInit.setupCouch("sryu_acdc_test", "GroupUser", "ACDC")

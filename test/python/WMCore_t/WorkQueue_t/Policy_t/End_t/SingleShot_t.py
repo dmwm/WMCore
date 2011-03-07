@@ -40,7 +40,7 @@ class SingleShotTestCase(unittest.TestCase):
                       (self.available, self.done),
                       (self.available, self.negotiating),
                       ):
-            self.assertEqual(self.policy(*items)['Status'], 'Available')
+            self.assertEqual(self.policy(*items)['Status'], 'Acquired')
 
 
     def testEndConditions(self):

@@ -11,6 +11,7 @@ from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterf
 from copy import deepcopy
 from math import ceil
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
+from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
 
 class Block(StartPolicyInterface):
     """Split elements into blocks"""
@@ -29,9 +30,8 @@ class Block(StartPolicyInterface):
                 if not parents:
                     msg = "Parentage required but no parents found for %s"
                     raise RuntimeError, msg % block['Name']
-            
-                
-            self.newQueueElement(Data = block['Name'],
+
+            self.newQueueElement(Inputs = {block['Name'] : self.data.get(block['Name'], [])},
                                  ParentData = parents,
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
                                              float(self.args['SliceSize']))
@@ -55,12 +55,20 @@ class Block(StartPolicyInterface):
         runWhiteList = task.inputRunWhitelist()
         runBlackList = task.inputRunBlacklist()
 
-        # if a block has been passed take that instead of dataset in spec
-        if self.data and self.data.find('#') > -1:
-            datasetPath, self.data.split('#')[0]
-            blocks = dbs.getFileBlocksInfo(datasetPath, blockName = self.data, locations = False)
-        else:
-            blocks = dbs.getFileBlocksInfo(datasetPath, locations = False)
+        blocks = []
+        # Take data inputs or from spec
+        if not self.data:
+            self.data = {datasetPath : []} # same structure as in WorkQueueElement
+            #blocks = dbs.getFileBlocksInfo(datasetPath, locations = False)
+        #else:
+            #dataItems = self.data.keys()
+
+        for data in self.data:
+            if data.find('#') > -1:
+                datasetPath = str(data.split('#')[0])
+                blocks.extend(dbs.getFileBlocksInfo(datasetPath, blockName = str(data), locations = True))
+            else:
+                blocks.extend(dbs.getFileBlocksInfo(datasetPath, locations = True))
 
         for block in blocks:
 
@@ -86,6 +94,9 @@ class Block(StartPolicyInterface):
             if self.args['SliceType'] == self.lumiType:
                 blockSummary = dbs.getDBSSummaryInfo(block = block["Name"])
                 block[self.lumiType] = blockSummary[self.lumiType]
+
+            # save locations
+            self.data[block['Name']] = sitesFromStorageEelements([x['Name'] for x in block['StorageElementList']])
 
             validBlocks.append(block)
         return validBlocks

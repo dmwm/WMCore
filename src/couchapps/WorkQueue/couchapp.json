@@ -1,0 +1,4 @@
+{
+    "name": "WorkQueue",
+    "description": "WorkQueue buffers units of work for WMAgents"
+}

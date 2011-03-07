@@ -59,7 +59,7 @@ def modifyConfiguration(config, **args):
     mapping = {
         "mysql_socket" : [("CoreDatabase", "socket") ],
         "mysql_url" : [("CoreDatabase","connectUrl") ],
-        "couch_url" : [("JobStateMachine", "couchurl"), ("ACDC", "couchurl")],
+        "couch_url" : [("JobStateMachine", "couchurl"), ("ACDC", "couchurl"), ("WorkQueueManager", "couchurl")],
         "working_dir" : [("General", "workDir")],
     }
     

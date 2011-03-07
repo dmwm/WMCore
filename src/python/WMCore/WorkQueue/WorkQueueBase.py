@@ -25,5 +25,5 @@ class WorkQueueBase(WMConnectionBase):
         check to see if a transaction object has been created.  If none exists,
         create one but leave the transaction closed.
         """
-        WMConnectionBase.__init__(self, daoPackage = "WMCore.WorkQueue.Database", 
+        WMConnectionBase.__init__(self, daoPackage = "WMCore", 
                                   logger = logger, dbi = dbi)

@@ -398,8 +398,12 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'None')
-            unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'None')
+            if filterName != None:
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'None')
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'None')
+            else:
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'None')
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'None')                
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -430,8 +434,12 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, procEra)
-            unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, procEra)
+            if filterName != None:
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "vTest")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "vTest")
+            else:
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "vTest")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "vTest")
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -440,7 +448,7 @@ class WMWorkloadTest(unittest.TestCase):
                                  "Error: Incorrect merged LFN.")
             else:
                 self.assertEqual(outputModule.lfnBase, unmergedLFN,
-                                 "Error: Incorrect unmerged LFN %s." % outputModule.lfnBase)
+                                 "Error: Incorrect unmerged LFN %s" % outputModule.lfnBase)
                 self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
                                  "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
 
@@ -468,8 +476,12 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            mergedLFN = "%s/%s/%s/%s/%s" % (mergedLFNBase, acquisitionEra, primaryDataset, dataTier, procEra)
-            unmergedLFN = "%s/%s/%s/%s/%s" % (unmergedLFNBase, acquisitionEra, primaryDataset, dataTier, procEra)
+            if filterName != None:
+                mergedLFN = "/store/temp/merged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'vTest')
+                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'vTest')
+            else:
+                mergedLFN = "/store/temp/merged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'vTest')
+                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'vTest')
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -478,9 +490,9 @@ class WMWorkloadTest(unittest.TestCase):
                                  "Error: Incorrect merged LFN.")
             else:
                 self.assertEqual(outputModule.lfnBase, unmergedLFN,
-                                 "Error: Incorrect unmerged LFN %s." % outputModule.lfnBase)
+                                 "Error: Incorrect unmerged LFN %s" % outputModule.lfnBase)
                 self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
-                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+                                 "Error: Incorrect merged LFN %s" % outputModule.mergedLFNBase)
 
         outputDatasets = testWorkload.listOutputDatasets()
         self.assertEqual(len(outputDatasets), 3,

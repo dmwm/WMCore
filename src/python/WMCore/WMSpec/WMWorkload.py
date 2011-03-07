@@ -516,20 +516,23 @@ class WMWorkloadHelper(PersistencyHelper):
                             processedDataset = "%s-%s-%s" % (self.data.properties.acquisitionEra,
                                                              filterName,
                                                              self.data.properties.processingVersion)
+                            processingString = "%s-%s" % (filterName,
+                                                          self.data.properties.processingVersion)
                         else:
                             processedDataset = "%s-%s" % (self.data.properties.acquisitionEra,
                                                           self.data.properties.processingVersion)
+                            processingString = self.data.properties.processingVersion
 
                         unmergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.unmergedLFNBase,
                                                           self.data.properties.acquisitionEra,
                                                           getattr(outputModule, "primaryDataset"),
                                                           getattr(outputModule, "dataTier"),
-                                                          self.data.properties.processingVersion)
+                                                          processingString)
                         mergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.mergedLFNBase,
                                                         self.data.properties.acquisitionEra,
                                                         getattr(outputModule, "primaryDataset"),
                                                         getattr(outputModule, "dataTier"),
-                                                        self.data.properties.processingVersion)
+                                                        processingString)
                         lfnBase(unmergedLFN)
                         lfnBase(mergedLFN)
                         setattr(outputModule, "processedDataset", processedDataset)

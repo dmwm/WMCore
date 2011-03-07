@@ -796,5 +796,88 @@ class WMWorkloadTest(unittest.TestCase):
 
         return
 
+    def testSetCMSSWParams(self):
+        """
+        _testSetCMSSWParams_
+
+        """
+    def testTruncate(self):
+        """
+        _testTruncate_
+
+        Verify that the truncate method works correctly.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setTaskType("Processing")
+        procTaskCmssw = procTask.makeStep("cmsRun1")
+        procTaskCmssw.setStepType("CMSSW")
+        procTask.applyTemplates()
+        procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
+        procTaskCmsswHelper.addOutputModule("output",
+                                            primaryDataset = "primary",
+                                            processedDataset = "processed",
+                                            dataTier = "tier",
+                                            filterName = "filter",
+                                            lfnBase = "/store/data",
+                                            mergedLFNBase = "/store/unmerged")
+
+        procTaskStageOut = procTask.makeStep("StageOut1")
+        procTaskStageOut.setStepType("StageOut")
+        procTaskStageOut.getTypeHelper().setMinMergeSize(2)
+        procTask.applyTemplates()
+
+        mergeTask = procTask.addTask("MergeTask")
+        mergeTask.setTaskType("Merge")
+        mergeTask.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 2,
+                                        max_merge_events = 2, min_merge_size = 2)
+        mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
+        mergeTaskCmssw.setStepType("CMSSW")
+        mergeTask.applyTemplates()
+        mergeTask.setInputReference(procTask, outputModule = "output")
+
+        cleanupTask = procTask.addTask("CleanupTask")
+        cleanupTask.setTaskType("Cleanup")
+        cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
+        cleanupTaskCmssw = cleanupTask.makeStep("cmsRun1")
+        cleanupTaskCmssw.setStepType("CMSSW")
+        cleanupTask.applyTemplates()
+        cleanupTask.setInputReference(procTask, outputModule = "output")
+
+        skimTask = mergeTask.addTask("SkimTask")
+        skimTask.setTaskType("Skim")
+        skimTaskCmssw = skimTask.makeStep("cmsRun1")
+        skimTaskCmssw.setStepType("CMSSW")
+        skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)
+        skimTask.applyTemplates()
+
+        testWorkload.setCMSSWParams(cmsswVersion = "CMSSW_1_1_1", globalTag =
+                                    "GLOBALTAG")
+
+        def verifyParams(initialTask = None):
+            """
+            _verifyParams_
+
+            Verify that the cmssw version and global tag parameters are
+            correct.
+            """
+            taskIterator = initialTask.childTaskIterator()
+
+            for task in taskIterator:
+                for stepName in task.listAllStepNames():
+                    stepHelper = task.getStepHelper(stepName)
+                    if stepHelper.stepType() == "CMSSW":
+                        self.assertEqual(stepHelper.getCMSSWVersion(),
+                                         "CMSSW_1_1_1",
+                                         "Error: CMSSW Version should match.")
+                        self.assertEqual(stepHelper.getGlobalTag(),
+                                         "GLOBALTAG",
+                                         "Error: Global tag should match.")                        
+
+        for task in testWorkload.taskIterator():
+            verifyParams(task)
+        return
+                        
 if __name__ == '__main__':
     unittest.main()

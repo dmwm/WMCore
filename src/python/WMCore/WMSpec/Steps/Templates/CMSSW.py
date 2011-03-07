@@ -132,8 +132,6 @@ class CMSSWStepHelper(CoreHelper):
         """
         return self.data.application.setup.cmsswVersion
     
-    
-
     def setGlobalTag(self, globalTag):
         """
         _setGlobalTag_
@@ -143,6 +141,14 @@ class CMSSWStepHelper(CoreHelper):
         self.data.application.configuration.section_('arguments')
         self.data.application.configuration.arguments.globalTag = globalTag
         return
+
+    def getGlobalTag(self):
+        """
+        _getGlobalTag_
+
+        Retrieve the global tag.
+        """
+        return self.data.application.configuration.arguments.globalTag
 
     def setUserSandbox(self, userSandbox):
         """

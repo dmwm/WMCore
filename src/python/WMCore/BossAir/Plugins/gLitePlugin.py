@@ -17,8 +17,9 @@ import re
 import time
 import types
 
+from WMCore.Credential.Proxy import Proxy
 from WMCore.FwkJobReport.Report        import Report
-from WMCore.BossAir.Plugins.BasePlugin import BasePlugin,BossAirPluginException
+from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.DAOFactory import DAOFactory
 import WMCore.WMInit
 from copy import deepcopy
@@ -150,6 +151,40 @@ class gLitePlugin(BasePlugin):
                         'Cancelled']
 
 
+        if getattr ( self.config.Agent, 'serverDN' , None ) is None:
+            msg = "Error: serverDN parameter required and not provided " + \
+                  "in the configuration"
+            raise BossAirPluginException( msg )
+        if getattr ( self.config.BossAir, 'credentialDir', None) is None:
+            msg = "Error: credentialDir parameter required and " + \
+                  "not provided in the configuration"
+            raise BossAirPluginException( msg )
+        else:
+            if not os.path.exists(self.config.BossAir.credentialDir):
+                logging.debug("credentialDir not found: creating it...")
+                try:
+                    os.mkdir(self.config.BossAir.credentialDir)
+                except Exception, ex:
+                    msg = "Error: problem when creating credentialDir " + \
+                          "directory - '%s'" % str(ex)
+                    raise BossAirPluginException( msg )
+            elif not os.path.isdir(self.config.BossAir.credentialDir):
+                msg = "Error: credentialDir '%s' is not a directory" \
+                       % str(self.config.BossAir.credentialDir)
+                raise BossAirPluginException( msg )
+
+        self.defaultDelegation = {
+                                  'vo': self.defaultjdl['vo'],
+                                  'logger': myThread.logger,
+                                  'credServerPath' : \
+                                      self.config.BossAir.credentialDir,
+                                  'myProxySvr': self.defaultjdl['myproxyhost'],
+                                  'proxyValidity' : '192:00',
+                                  'min_time_left' : 36000,
+                                  'serverDN' : self.config.Agent.serverDN
+                                 }
+
+
         # These are the pool settings.
         self.nProcess       = getattr(self.config.BossAir, \
                                           'gLiteProcesses', 10)
@@ -171,13 +206,24 @@ class gLitePlugin(BasePlugin):
         self.defaultjdl['service'] = getattr(self.config.BossAir, \
                                            'gliteWMS', None)
 
+        self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, \
+                                      'myproxyhost', \
+                                       self.defaultDelegation['myProxySvr'] \
+                                                      )
+
         self.setupScript = getattr(self.config.BossAir, 'UISetupScript', None)
         if self.setupScript is None:
-            raise BossAirPluginException("Setup script not provided in the configuration: need to specify the 'UISetupScript' complete path.")
+            msg = "Setup script not provided in the configuration: need to " + \
+                  "specify the 'UISetupScript' complete path."
+            raise BossAirPluginException( msg )
         elif not os.path.exists( self.setupScript ):
-            raise BossAirPluginException("Setup script not found: check if '%s' is really there." % self.setupScript )
+            msg = "Setup script not found: check if '%s' is really there." \
+                   % self.setupScript
+            raise BossAirPluginException( msg )
         elif not self.checkUI():
-            raise BossAirPluginException("gLite environment has not been set properly through '%s'." % self.setupScript )
+            msg = "gLite environment has not been set properly through '%s'." \
+                   % self.setupScript
+            raise BossAirPluginException( msg )
         
         return
 
@@ -214,7 +260,8 @@ class gLitePlugin(BasePlugin):
 
         Kill all connections and terminate
         """
-        logging.debug("Ready to close all %i started processes " % len(self.pool))
+        logging.debug("Ready to close all %i started processes " \
+                        % len(self.pool) )
         for x in self.pool:
             try:
                 logging.debug("Shutting down %s " % str(x))
@@ -275,6 +322,8 @@ class gLitePlugin(BasePlugin):
         workqueued = {}
         submitDict = {}
 
+        retrievedproxy = {}
+
         for job in jobs:
             sandbox = job['sandbox']
             if not sandbox in submitDict.keys():
@@ -287,9 +336,35 @@ class gLitePlugin(BasePlugin):
         for sandbox in submitDict.keys():
             jobList = submitDict.get(sandbox, [])
             while len(jobList) > 0:
+
+                ## getting the sandbox jobs and splitting  by collection size
+                jobList = submitDict.get(sandbox, [])
                 command = "glite-wms-job-submit --json "
                 jobsReady = jobList[:self.collectionsize]
                 jobList   = jobList[self.collectionsize:]
+
+                ## retrieve user proxy and set the path
+                ownersandbox      = jobsReady[0]['userdn']
+                valid, ownerproxy = (False, None)
+                exportproxy       = 'echo $X509_USER_PROXY'
+                if ownersandbox in retrievedproxy:
+                    valid      = True
+                    ownerproxy = retrievedproxy[ownersandbox]
+                else:
+                    valid, ownerproxy = self.getProxy( ownersandbox )
+
+                if valid:
+                    retrievedproxy[ownersandbox] = ownerproxy
+                    exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
+                else:
+                    msg = "Problem retrieving user proxy, or user proxy " + \
+                          "expired '%s'" % ownersandbox
+                    logging.error( msg )
+                    failedJobs.extend( jobsReady )
+                    continue
+                    ## TODO prepare report and add to failed jobs
+
+                ## getting the job destinations
                 dest      = []
                 logging.debug("Getting location from %s" % str(jobsReady) )
                 try:
@@ -325,7 +400,7 @@ class gLitePlugin(BasePlugin):
                 if self.delegationid != "" :
                     command += " -d %s " % self.delegationid
                     logging.debug("Delegating proxy...")
-                    self.delegateProxy( self.defaultjdl['service'] )
+                    self.delegateProxy(self.defaultjdl['service'], exportproxy)
                 else :
                     command += " -a "
 
@@ -340,7 +415,8 @@ class gLitePlugin(BasePlugin):
                 # Now submit them
                 logging.debug("About to submit %i jobs" % len(jobsReady) )
                 workqueued[currentwork] = jobsReady
-                completecmd = 'source %s && %s' % (self.setupScript, command)
+                completecmd = 'source %s && %s && %s' \
+                               % (self.setupScript, exportproxy, command)
                 input.put((currentwork, completecmd, 'submit'))
                 currentwork += 1
 
@@ -371,7 +447,6 @@ class gLitePlugin(BasePlugin):
             #             NodeName_3_0: https://GHI
             #            }
             # }
-
             if jsout is not None:
                 parent   = ''
                 endpoint = ''
@@ -394,11 +469,11 @@ class gLitePlugin(BasePlugin):
                     continue
                 if jsout.has_key('children'): 
                     for key in jsout['children'].keys():
-                        jobid, retrycount = (key.split('NodeName_')[-1]).split('_')
+                        jobid, retryc = (key.split('NodeName_')[-1]).split('_')
                         job   = jobsub[int(jobid)-1]
                         job['bulkid']       = parent
                         job['gridid']       = jsout['children'][key]
-                        job['retry_count']  = int(retrycount)
+                        job['retry_count']  = int(retryc)
                         job['sched_status'] = 'Submitted'
                         #job['endpoint'] = endpoint
                         successfulJobs.append(job)
@@ -441,12 +516,16 @@ class gLitePlugin(BasePlugin):
         wmcoreBasedir = WMCore.WMInit.getWMBASE()
         if wmcoreBasedir  :
             cmdquerypath = wmcoreBasedir + \
-                           '/src/python/WMCore/BossAir/Plugins/' + queryfilename
+                           '/src/python/WMCore/BossAir/Plugins/' + \
+                           queryfilename
             if not os.path.exists( cmdquerypath ):
-                raise BossAirPluginException('Impossible to locate %s' % cmdquerypath)
+                msg = 'Impossible to locate %s' % cmdquerypath
+                raise BossAirPluginException( msg )
         else :
             # Impossible to locate GLiteQueryStatus.py ...
-            raise BossAirPluginException('Impossible to locate %s, WMBASE = %s ' % (queryfilename, str(wmcoreBasedir)) )
+            msg = 'Impossible to locate %s, WMBASE = %s ' \
+                   % (queryfilename, str(wmcoreBasedir))
+            raise BossAirPluginException( msg )
 
         logging.debug("Using %s to check the status " % cmdquerypath)
 
@@ -479,6 +558,14 @@ class gLitePlugin(BasePlugin):
         # max N jobs)
 
         for user in dnjobs.keys():
+
+            valid, ownerproxy = self.getProxy( user )
+            if not valid:
+                logging.error("Problem getting proxy for user '%s'" % str(user))
+                continue
+                ## TODO evaluate if jobs need to be set as failed
+            exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
+
             jobList = dnjobs.get(user, [])
             while len(jobList) > 0:
                 jobIds = []
@@ -493,7 +580,8 @@ class gLitePlugin(BasePlugin):
                 jobList   = jobList[self.trackmaxsize:]
                 logging.debug("Status check for %i jobs" %len(jobsReady))
                 workqueued[currentwork] = jobsReady
-                completecmd = 'source %s && %s' % (self.setupScript, command)
+                completecmd = 'source %s && %s && %s' \
+                               % (self.setupScript, exportproxy, command)
                 input.put((currentwork, completecmd, 'status'))
                 currentwork += 1
 
@@ -509,8 +597,9 @@ class gLitePlugin(BasePlugin):
             workid = res['workid']
             # Check error
             if exit != 0:
-                logging.error('Error executing %s: \n\texit code: %i\n\tstderr: %s\n\tjson: %s' % (cmdquerypath, exit, error, str(jsout.strip()) )
-                              )
+                msg = 'Error executing %s:\n\texit code: %i\n' %(cmdquerypath, exit)
+                msg += '\tstderr: %s\n\tjson: %s'  % (error, str(jsout.strip()))
+                logging.error( msg )
                 continue
             else:
                 # parse JSON output
@@ -518,7 +607,9 @@ class gLitePlugin(BasePlugin):
                 try:
                     out = json.loads(jsout)
                 except ValueError, va:
-                    raise BossAirPluginException('Error parsing JSON: \n\terror: %s\n\t:exception: %s' % (error, str(va)) )
+                    msg = 'Error parsing JSON:\n\terror: %s\n\t:exception: %s' \
+                           % (error, str(va))
+                    raise BossAirPluginException( msg )
                 ## out example
                 ##  {'https://cert-rb-01.cnaf.infn.it:9000/fucrLsxVXal9mzE3UaFBFg':
                 ##           {'status': 'K'
@@ -554,7 +645,8 @@ class gLitePlugin(BasePlugin):
                             jj['status_time'] = lbts
                             changeList.append(jj)
 
-                        if status not in ['Done', 'Aborted', 'Cleared', 'Cancelled by user', 'Cancelled']: 
+                        if status not in ['Done', 'Aborted', 'Cleared', 
+                                          'Cancelled by user', 'Cancelled']: 
                             runningList.append(jj)
                         else:
                             completeList.append(jj)
@@ -589,6 +681,8 @@ class gLitePlugin(BasePlugin):
         failedJobs    = []
         abortedJobs   = []
 
+        retrievedproxy = {}
+
         ## Start up processes
         input  = multiprocessing.Queue()
         result = multiprocessing.Queue()
@@ -598,16 +692,39 @@ class gLitePlugin(BasePlugin):
         # TODO: evaluate if passing just one job per work is too much overhead
 
         for jj in jobs:
+            ownersandbox      = jj['userdn']
+            valid, ownerproxy = (False, None)
+            exportproxy       = 'echo $X509_USER_PROXY'
+            if ownersandbox in retrievedproxy:
+                valid      = True
+                ownerproxy = retrievedproxy[ownersandbox]
+            else:
+                valid, ownerproxy = self.getProxy( ownersandbox )
 
-            if jj['status'] is not ['Done']:
+            if valid:
+                retrievedproxy[ownersandbox] = ownerproxy
+                exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
+            else:
+                msg = "Problem retrieving user proxy, or user proxy " + \
+                      "expired '%s'" % ownersandbox
+                logging.error( msg )
+                failedJobs.append( jj )
+                continue
+                ## TODO prepare report and add to failed jobs
+
+            logging.info("Processing job %s " %str(jj['status']))
+
+            if jj['status'] not in ['Done']:
                 if jj['status'] in ['Aborted']:
                     abortedJobs.append( jj )
                 continue
 
-            cmd = '%s %s %s %s' % (command, outdiropt, jj['cache_dir'], jj['gridid'])
+            cmd = '%s %s %s %s' \
+                   % (command, outdiropt, jj['cache_dir'], jj['gridid'])
             logging.debug("Enqueuing getoutput for job %i" % jj['jobid'] )
             workqueued[currentwork] = jj['jobid']
-            completecmd = 'source %s && %s' % (self.setupScript, cmd)
+            completecmd = 'source %s && %s && %s' \
+                           % (self.setupScript, exportproxy, cmd)
             input.put((currentwork, completecmd, 'output'))
             currentwork += 1
 
@@ -623,8 +740,9 @@ class gLitePlugin(BasePlugin):
             workid = res['workid']
             # Check error
             if exit != 0:
-                logging.error('Error executing %s: \n\texit code: %i\n\tstderr: %s\n\tjson: %s' % (command, exit, error, str(jsout.strip()) )
-                               )
+                msg = 'Error executing get-output:\n\texit code: %i\n' % exit
+                msg += '\tstderr: %s\n\tjson: %s' % (error, str(jsout.strip()))
+                logging.error( msg )
                 failedJobs.append(workqueued[workid])
                 continue
             else:
@@ -633,7 +751,9 @@ class gLitePlugin(BasePlugin):
                 try:
                     out = json #.loads(jsout)
                 except ValueError, va:
-                    raise BossAirPluginException('Error parsing JSON: \n\terror: %s\n\t:exception: %s' % (error, str(va)) )
+                    msg = 'Error parsing JSON:\n\terror: %s\n\t:exception: %s' \
+                           % (error, str(va))
+                    raise BossAirPluginException( msg )
 
                 ### out example
                 # {
@@ -654,13 +774,13 @@ class gLitePlugin(BasePlugin):
                         failedJobs.append(jobid)
                     """
                     if not jsout.has_key('result'):
-                        failedJobs.extend(jobid)
+                        failedJobs.append(jobid)
                         continue
                     elif jsout['result'] != 'success':
-                        failedJobs.extend(jobid)
+                        failedJobs.append(jobid)
                         continue
                     else:
-                        completedJobs.extend(jobid)
+                        completedJobs.append(jobid)
                     """
         ## Shut down processes
         logging.debug("About to close the subprocesses...")
@@ -683,6 +803,8 @@ class gLitePlugin(BasePlugin):
         completedJobs = []
         failedJobs    = []
 
+        retrievedproxy = {}
+
         ## Start up processes
         input  = multiprocessing.Queue()
         result = multiprocessing.Queue()
@@ -693,10 +815,33 @@ class gLitePlugin(BasePlugin):
 
         for jj in jobs:
 
-            cmd = '%s %s > %s/loggingInfo.%i.log' % (command, jj['gridid'], jj['cache_dir'], jj['retry_count'])
-            logging.debug("Enqueuing logging info command for job %i" % jj['jobid'] )
+            ownersandbox      = jj['userdn']
+            valid, ownerproxy = (False, None)
+            exportproxy       = 'echo $X509_USER_PROXY'
+            if ownersandbox in retrievedproxy:
+                valid      = True
+                ownerproxy = retrievedproxy[ownersandbox]
+            else:
+                valid, ownerproxy = self.getProxy( ownersandbox )
+
+            if valid:
+                retrievedproxy[ownersandbox] = ownerproxy
+                exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
+            else:
+                msg = "Problem retrieving user proxy, or user proxy " + \
+                      "expired '%s'" % ownersandbox
+                logging.error( msg )
+                failedJobs.append( jj )
+                continue
+                ## TODO prepare report and add to failed jobs
+
+            cmd = '%s %s > %s/loggingInfo.%i.log'\
+                   % (command, jj['gridid'], jj['cache_dir'], jj['retry_count'])
+            logging.debug("Enqueuing logging-info command for job %i" \
+                           % jj['jobid'] )
             workqueued[currentwork] = jj['jobid']
-            completecmd = 'source %s && %s' % (self.setupScript, cmd)
+            completecmd = 'source %s && %s && %s' \
+                           % (self.setupScript, exportproxy, cmd)
             input.put( (currentwork, completecmd, 'output') )
             currentwork += 1
 
@@ -713,9 +858,11 @@ class gLitePlugin(BasePlugin):
             logging.debug ('result : \n %s' % str(res) )
             # Check error
             if exit != 0:
-                logging.error('Error executing %s: \n\texit code: %i\n\tstderr: %s\n\tjson: %s' % (command, exit, error, str(jsout.strip()) )
-                               )
+                msg = 'Error getting logging-info:\n\texit code: %i\n' % exit
+                msg += '\tstderr: %s\n\tjson: %s' % (error, str(jsout.strip()))
+                logging.error( msg )
                 failedJobs.append(workqueued[workid])
+                continue
             else:
                 completedJobs.append(workqueued[workid])
 
@@ -767,6 +914,8 @@ class gLitePlugin(BasePlugin):
         completedJobs = []
         failedJobs    = []
 
+        retrievedproxy = {}
+
         ## Start up processes
         input  = multiprocessing.Queue()
         result = multiprocessing.Queue()
@@ -774,12 +923,33 @@ class gLitePlugin(BasePlugin):
         
         for job in jobs:
 
+            ownersandbox      = job['userdn']
+            valid, ownerproxy = (False, None)
+            exportproxy       = 'echo $X509_USER_PROXY'
+            if ownersandbox in retrievedproxy:
+                valid      = True
+                ownerproxy = retrievedproxy[ownersandbox]
+            else:
+                valid, ownerproxy = self.getProxy( ownersandbox )
+
+            if valid:
+                retrievedproxy[ownersandbox] = ownerproxy
+                exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
+            else:
+                msg = "Problem retrieving user proxy, or user proxy " + \
+                      "expired '%s'" % ownersandbox
+                logging.error( msg )
+                failedJobs.append( jj )
+                continue
+                ## TODO prepare report and add to failed jobs
+
             gridID = job['gridid']
             command = 'glite-wms-job-cancel --json --noint %s' % (gridID)
             logging.debug("Enqueuing cancel command for gridID %s" % gridID )
 
             workqueued[currentwork] = gridID
-            completecmd = 'source %s && %s' % (self.setupScript, command)
+            completecmd = 'source %s && %s && %s' \
+                           % (self.setupScript, exportproxy, command)
             input.put( (currentwork, completecmd, 'output') )
   
             currentwork += 1
@@ -799,11 +969,13 @@ class gLitePlugin(BasePlugin):
             logging.debug ('result : \n %s' % str(res) )
             # Checking error
             if exit != 0:
-                logging.error('Error executing %s: \n\texit code: %i\n\tstderr: %s\n\tjson: %s' % (command, exit, error, str(jsout.strip()) )
-                               )
+                msg = 'Error executing kill:\n\texit code: %i\n' % exit
+                msg += '\tstderr: %s\n\tjson: %s' % (error, str(jsout.strip()))
+                logging.error( msg )
                 failedJobs.append(workqueued[workid])
+                continue
             elif  jsout.find('success') != -1:
-                logging.debug('Succesfully killed job %s' % str(workqueued[workid]))
+                logging.debug('Success killing %s' % str(workqueued[workid]))
                 completedJobs.append(workqueued[workid]) 
             else:
                 logging.error('Error success != -1')
@@ -817,13 +989,15 @@ class gLitePlugin(BasePlugin):
 
 
 
-    def delegateProxy( self, wms = None ):
+    def delegateProxy( self, wms = None, exportcmd = None ):
         """
         _delegateProxy_
 
         delegate proxy to _all_ wms or to specific one (if explicitly passed)
         """
         command = "glite-wms-job-delegate-proxy -d " + self.delegationid
+        if exportcmd is not None:
+            command =  exportcmd + ' && ' + command
      
         if wms is not None:
             command1 = command + " -e " + wms
@@ -833,7 +1007,11 @@ class gLitePlugin(BasePlugin):
             stdout, stderr = pipe.communicate()
             logging.debug('Retrieved subprocess at time %s ' % str(time.time()))
             if len(stderr) > 0 or pipe.returncode != 0:
-                logging.error('Problem on delegating the proxy: \n\twms: "%s"\n\tstd error: "%s"\n\texit code: "%s"' % (wms, stderr, str(pipe.returncode)) )
+                msg = 'Problem on delegating the proxy:\n\twms: "%s"\n\t' \
+                        % wms
+                msg += 'std error: "%s"\n\texit code: "%s"' \
+                        % (stderr, str(pipe.returncode))
+                logging.error( msg )
             else:
                 logging.debug("Proxy delegated using %s endpoint" % wms )
  
@@ -846,7 +1024,10 @@ class gLitePlugin(BasePlugin):
             stdout, stderr = pipe.communicate()
             errcode = pipe.returncode
             if len(stderr) > 0 or errcode != 0:
-                logging.error('Problem on delegating the proxy: \n\tcfg: "%s"\n\tstd error: "%s"\n\texit code: "%s"' % (self.gliteConfig, stderr, str(errcode)) )
+                msg = 'Problem on delegating the proxy:\n\twms: "%s"\n' % wms
+                msg +='\tstd error: "%s"\n\texit code: "%s"' \
+                       % (stderr, str(pipe.returncode))
+                logging.error( msg )
             else:
                 logging.debug("Proxy delegated using %s " % self.gliteConfig)
  
@@ -1045,6 +1226,27 @@ class gLitePlugin(BasePlugin):
                 result = True
 
         return result
+
+    def getProxy(self, userdn):
+        """
+        _getProxy_
+        """
+
+        logging.debug("Retrieving proxy for %s" % userdn)
+        config = self.defaultDelegation
+        config['userDN'] = userdn
+        self.defaultDelegation['uisource'] = self.setupScript
+        proxy = Proxy(self.defaultDelegation)
+        proxyPath = proxy.getProxyFilename( True )
+        timeleft = proxy.getTimeLeft( proxyPath )
+        if timeleft is not None and timeleft > 3600:
+            return (True, proxyPath)
+        proxyPath = proxy.logonRenewMyProxy()
+        timeleft = proxy.getTimeLeft( proxyPath )
+        if timeleft is not None and timeleft > 0:
+            return (True, proxyPath)
+        return (False, None)
+
 
 # manage json library using the appropriate WMCore wrapper
 from WMCore.Wrappers import JsonWrapper as json

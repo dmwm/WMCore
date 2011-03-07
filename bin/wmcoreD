@@ -211,7 +211,12 @@ def startup(configFile):
             webtoolsRoot.startDaemon(keepParent = True, compName = component)            
         else:
             factory = WMFactory('componentFactory')
-            namespace = config.component_(component).namespace
+            try:
+                namespace = config.component_(component).namespace
+            except AttributeError:
+                print ("Failed to start component: Could not find component named %s in config" % component)
+                print ("Aborting")
+                return
             componentObject = factory.loadObject(classname = namespace, args = config)
             componentObject.startDaemon(keepParent = True)
             
@@ -248,7 +253,12 @@ def shutdown(configFile):
 
     for component in components:
         print('Stopping: '+component)
-        compDir = config.section_(component).componentDir
+        try:
+            compDir = config.section_(component).componentDir
+        except AttributeError:
+            print ("Failed to shutdown component: Could not find component named %s in config" % component)
+            print ("Aborting")
+            return
         compDir = os.path.expandvars(compDir)
         daemonXml = os.path.join(compDir, "Daemon.xml")
         if not os.path.exists(daemonXml):
@@ -301,6 +311,12 @@ def status(configFile):
     config = loadConfigurationFile(configFile)
 
     for component in components:
+        try:
+            compDir = config.section_(component).componentDir
+        except AttributeError:
+            print ("Failed to check component: Could not find component named %s in config" % component)
+            print ("Aborting")
+            return
         compDir = config.section_(component).componentDir
         compDir = os.path.expandvars(compDir)
         daemonXml = os.path.join(compDir, "Daemon.xml")

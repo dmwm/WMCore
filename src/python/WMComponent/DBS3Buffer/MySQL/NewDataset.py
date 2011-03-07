@@ -15,10 +15,10 @@ class NewDataset(DBFormatter):
     insert it
     """
     
-    sql = """INSERT IGNORE INTO dbsbuffer_dataset (path, processing_ver, acquisition_era)
-               VALUES (:path, :processing_ver, :acquisition_era)"""
+    sql = """INSERT IGNORE INTO dbsbuffer_dataset (path, processing_ver, acquisition_era, valid_status)
+               VALUES (:path, :processing_ver, :acquisition_era, :valid_status)"""
 
-    def execute(self, datasetPath, acquisitionEra = None, processingVer = None,
+    def execute(self, datasetPath, acquisitionEra = None, processingVer = None, validStatus = None,
                 conn = None, transaction = False):
         """
         _execute_
@@ -26,7 +26,7 @@ class NewDataset(DBFormatter):
         Insert new dataset
         """
         binds = {"path": datasetPath, 'acquisition_era': acquisitionEra,
-                 'processing_ver': processingVer}
+                 'processing_ver': processingVer, 'valid_status': validStatus}
 
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)

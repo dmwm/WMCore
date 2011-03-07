@@ -1,22 +1,16 @@
 #!/usr/bin/env python
 
 """
-This code should load the necessary information regarding
-dataset-algo combinations from the DBSBuffer.
-
-Oracle version
+Load the DAS info from the DAS ID
 
 """
 
+from WMComponent.DBSUpload.Database.MySQL.LoadInfoFromDAS import LoadInfoFromDAS as MySQLLoadInfoFromDAS
 
-
-
-from WMComponent.DBSUpload.Database.MySQL.FindDASToUpload import FindDASToUpload as MySQLFindDASToUpload
-
-
-class FindDASToUpload(MySQLFindDASToUpload):
+class LoadInfoFromDAS(MySQLLoadInfoFromDAS):
     """
-    Find Uploadable DAS
+    Oracle version
+
 
     """
 
@@ -33,12 +27,5 @@ class FindDASToUpload(MySQLFindDASToUpload):
              FROM dbsbuffer_algo_dataset_assoc das1
              INNER JOIN dbsbuffer_algo da1 ON da1.id = das1.algo_id
              INNER JOIN dbsbuffer_dataset ds1 ON ds1.id = das1.dataset_id
-             WHERE das1.id IN
-             (SELECT DISTINCT das.id
-             FROM dbsbuffer_algo_dataset_assoc das
-             INNER JOIN dbsbuffer_dataset ds2 ON ds2.id = das.dataset_id
-             WHERE EXISTS (SELECT id FROM dbsbuffer_file dbsfile
-                            WHERE dbsfile.dataset_algo = das.id
-                            AND dbsfile.status = 'NOTUPLOADED')
-             AND UPPER(ds2.Path) NOT LIKE 'BOGUS')
+             WHERE das1.id = :id
              """

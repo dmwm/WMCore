@@ -922,25 +922,52 @@ class Report:
 
         return getattr(self.data, 'jobID', None)
 
-    def setAcquisitionProcessing(self, acquisitionEra, processingVer):
+    def getAllFileRefs(self):
         """
-        _setAcquisitionProcessing_
+        _getAllFileRefs_
 
-        Set the acquisition and processing era for every output file
-        ONLY run this after all files have been accumulated; it doesn't
-        set things for future files.
+        Get references for all file in the step
         """
+        
         fileRefs = []
         for step in self.data.steps:
             tmpRefs = self.getAllFileRefsFromStep(step = step)
             if len(tmpRefs) > 0:
                 fileRefs.extend(tmpRefs)
 
+        return fileRefs
+
+    def setAcquisitionProcessing(self, acquisitionEra, processingVer):
+        """
+        _setAcquisitionProcessing_
+        
+        Set the acquisition and processing era for every output file
+        ONLY run this after all files have been accumulated; it doesn't
+        set things for future files.
+        """
+        fileRefs = self.getAllFileRefs()
+        
         # Should now have all the fileRefs
         for f in fileRefs:
-            f['acquisitionEra'] = acquisitionEra
-            f['processingVer']  = processingVer
+            f.acquisitionEra = acquisitionEra
+            f.processingVer  = processingVer
 
+        return
+
+    def setValidStatus(self, validStatus):
+        """
+        _setValidStatus_
+
+        Set the validStatus for all steps and all files.
+        ONLY run this after all files have been attached.
+        """
+    
+        fileRefs = self.getAllFileRefs()
+    
+        # Should now have all the fileRefs
+        for f in fileRefs:
+            f.validStatus = validStatus
+            
         return
       
 def addFiles(file1, file2):

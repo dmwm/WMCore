@@ -30,14 +30,15 @@ class LoadDBSFilesByDAS(DBFormatter):
              LEFT OUTER JOIN dbsbuffer_block dbb ON dbb.id = files.block_id
              WHERE dbsbuffer_algo_dataset_assoc.id = :das
              AND files.status = 'NOTUPLOADED'
-             AND (dbb.status = 'Open' OR dbb.status IS NULL)
              AND NOT EXISTS (SELECT parent FROM dbsbuffer_file_parent dbfp
                               INNER JOIN dbsbuffer_file dbf2 ON dbfp.parent = dbf2.id
-                              LEFT OUTER JOIN dbsbuffer_block dbb2 ON dbb2.id = dbf2.block_id
-                              WHERE dbfp.child = files.id AND (dbf2.status = 'NOTUPLOADED'
-                                                               OR (dbb2.status IS NOT NULL
-                                                                   AND dbb2.status != 'Closed'
-                                                                   AND dbb2.status != 'InGlobalDBS')))
+                              LEFT OUTER JOIN dbsbuffer_block db2 ON db2.id = dbf2.block_id
+                              WHERE dbfp.child = files.id
+                              AND ((dbf2.status != 'LOCAL'
+                                     AND dbf2.status != 'InPhEDEx')
+                                   OR (db2.status != 'Closed'
+                                     AND db2.status != 'InGlobalDBS'
+                                     AND db2.status IS NOT NULL)))
              ORDER BY files.id"""
 
     getLocationSQL = """SELECT dbsbuffer_location.se_name as location, dbsbuffer_file.id as id

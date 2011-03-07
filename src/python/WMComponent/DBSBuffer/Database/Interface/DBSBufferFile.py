@@ -36,6 +36,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.setdefault("psetHash", None)
         self.setdefault("configContent", None)
         self.setdefault("datasetPath", None)
+        self.setdefault("valid_status", None)
         
         if locations == None:
             self.setdefault("newlocations", set())
@@ -158,6 +159,7 @@ class DBSBufferFile(WMBSBase, WMFile):
                               transaction = True)
 
         newDatasetAction.execute(datasetPath = self["datasetPath"],
+                                 validStatus = self["valid_status"],
                                  conn = self.getDBConn(),
                                  transaction = True)
 
@@ -290,7 +292,7 @@ class DBSBufferFile(WMBSBase, WMFile):
 
             action = self.daoFactory(classname = "DBSBufferFiles.AddIgnore")
             action.execute(lfns = toBeCreated, datasetAlgo = assocID,
-                           status = "AlreadyInDBS",
+                           status = "LOCAL",
                            conn = self.getDBConn(),
                            transaction = True)
 
@@ -380,6 +382,16 @@ class DBSBufferFile(WMBSBase, WMFile):
         Set the dataset path for this file.
         """
         self["datasetPath"] = datasetPath
+        return
+
+    def setDatasetValidStatus(self, validStatus):
+        """
+        _setDatasetValidStatus_
+
+        Set the valid status for the dataset to be migrated into DBS
+        """
+
+        self['validStatus'] = validStatus
         return
 
     def getParentLFNs(self):

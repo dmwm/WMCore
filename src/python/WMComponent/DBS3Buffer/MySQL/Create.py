@@ -28,6 +28,7 @@ class Create(DBCreator):
 			   path            VARCHAR(500)    unique not null,
                            processing_ver  VARCHAR(255),
                            acquisition_era VARCHAR(255),
+                           valid_status    VARCHAR(20),
                            subscribed int default 0,
 			   primary key(id)	
 			) ENGINE=InnoDB"""
@@ -69,6 +70,7 @@ class Create(DBCreator):
 	     dataset_algo BIGINT UNSIGNED   not null,
              block_id     BIGINT UNSIGNED,
 	     status       varchar(20),
+             in_phedex    INTEGER DEFAULT 0,
              LastModificationDate  BIGINT,
              UNIQUE(lfn)) ENGINE=InnoDB"""
         

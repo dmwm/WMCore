@@ -229,14 +229,12 @@ class CMSSW(Executor):
                                      "CmsRunFailure", msg)
 
         self.report.parse(jobReportXML)
-        try:
-            acquisitionEra = self.workload.getAcquisitionEra()
-            processingVer  = self.workload.getProcessingVersion()
-            self.report.setAcquisitionProcessing(acquisitionEra = acquisitionEra,
-                                                 processingVer = processingVer)
-        except Exception, ex:
-            logging.error("Could not apply acquisition and processing Eras!")
-            logging.error(str(ex))
+        acquisitionEra = self.workload.getAcquisitionEra()
+        processingVer  = self.workload.getProcessingVersion()
+        validStatus    = self.workload.getValidStatus()
+        self.report.setAcquisitionProcessing(acquisitionEra = acquisitionEra,
+                                             processingVer = processingVer)
+        self.report.setValidStatus(validStatus = validStatus)
         return
 
     def post(self, emulator = None):

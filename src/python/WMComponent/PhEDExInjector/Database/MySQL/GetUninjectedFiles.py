@@ -6,9 +6,6 @@ Retrieve a list of files that have been injected into DBS but not PhEDEx.
 Format the output so that it can easily be injected into PhEDEx.
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetUninjectedFiles(DBFormatter):
@@ -34,7 +31,7 @@ class GetUninjectedFiles(DBFormatter):
                  dbsbuffer_file.id = dbsbuffer_file_location.filename
                INNER JOIN dbsbuffer_location ON
                  dbsbuffer_file_location.location = dbsbuffer_location.id
-             WHERE dbsbuffer_file.status = 'InDBS'"""
+             WHERE dbsbuffer_file.in_phedex = 0"""
 
     def format(self, result):
         """

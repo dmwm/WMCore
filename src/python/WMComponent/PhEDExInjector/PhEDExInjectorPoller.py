@@ -61,7 +61,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                 logger = self.logger,
                                 dbinterface = myThread.dbi)   
-        self.setStatus = daofactory(classname = "DBSBufferFiles.SetStatus")
+        self.setStatus = daofactory(classname = "DBSBufferFiles.SetPhEDExStatus")
 
         daofactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
                                 logger = self.logger,
@@ -161,8 +161,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         if len(injectedFiles) > 0:
             logging.debug("Injecting files: %s" % injectedFiles)
             self.setStatus.execute(injectedFiles, "InPhEDEx", 
-                                     conn = myThread.transaction.conn,
-                                     transaction = myThread.transaction)
+                                   conn = myThread.transaction.conn,
+                                   transaction = myThread.transaction)
 
         return
 

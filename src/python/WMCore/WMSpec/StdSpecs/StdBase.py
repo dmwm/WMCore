@@ -43,6 +43,7 @@ class StdBase(object):
         self.minMergeSize = 500000000
         self.maxMergeSize = 4294967296
         self.maxMergeEvents = 100000
+        self.validStatus = None
         return
 
     def __call__(self, workloadName, arguments):
@@ -66,6 +67,7 @@ class StdBase(object):
         self.minMergeSize = arguments.get("MinMergeSize", 500000000)
         self.maxMergeSize = arguments.get("MaxMergeSize", 4294967296)
         self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
+        self.validStatus = arguments.get("ValidStatus", "PRODUCTION")
         return
 
     def determineOutputModules(self, scenarioName = None, scenarioArgs = None,
@@ -118,6 +120,7 @@ class StdBase(object):
         workload.setEndPolicy("SingleShot")
         workload.setAcquisitionEra(acquisitionEra = self.acquisitionEra)
         workload.setProcessingVersion(processingVersion = self.processingVersion)
+        workload.setValidStatus(validStatus = self.validStatus)
         return workload
 
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,

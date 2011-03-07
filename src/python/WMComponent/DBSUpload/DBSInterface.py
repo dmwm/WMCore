@@ -73,7 +73,6 @@ def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
 
     Create a processed dataset
     """
-
     parents = []
 
     if dataTier == 'RAW-RECO':
@@ -263,9 +262,11 @@ def closeBlock(apiRef, block):
 
     Close a block 
     """
+    logging.info("In closeBlock()")
 
     try:
         apiRef.closeBlock(block)
+        logging.info("Back from closeBlock()")
     except DbsException, ex:
         msg = "Error in DBSInterface.closeBlock(%s)\n" % block
         msg += "%s\n" % formatEx(ex)
@@ -565,7 +566,7 @@ class DBSInterface:
             block['readyFiles'] = readyFiles
             flag = False
             if block['open'] == 'Pending':
-                logging.info("Found block to close in DBSInterface.createAndInsertBlocks: %s" % (block['Name']))
+                logging.info("3Found block to close in DBSInterface.createAndInsertBlocks: %s" % (block['Name']))
                 flag = True
 
             finBlock = self.insertFilesAndCloseBlocks(block = block, close = flag)
@@ -619,7 +620,8 @@ class DBSInterface:
                                            algorithm = dbsAlgo, 
                                            primary = primary,
                                            processedName = dataset['ProcessedDataset'],
-                                           dataTier = dataset['DataTier'])
+                                           dataTier = dataset['DataTier'],
+                                           status = dataset['status'])
 
 
         return processed
@@ -637,7 +639,7 @@ class DBSInterface:
         inserting the files, then actually closing if you have
         toggled the 'close' flag
         """
-
+        logging.info("insertFilesAndCloseBlocks(): %s, %s" % (block, close))
         # Insert all the files added to the block in this round
         if len(block.get('readyFiles', [])) > 0:
             insertFiles(apiRef = self.dbs, datasetPath = block['Path'],
@@ -650,8 +652,10 @@ class DBSInterface:
 
         # Close the block if requested
         if close:
+            logging.info("Calling close block...")
             closeBlock(apiRef = self.dbs, block = block)
             block['OpenForWriting'] = '0'
+            block['open'] = 0
 
         return block
 
@@ -679,7 +683,7 @@ class DBSInterface:
             if len(blockList) != 1:
                 msg = "Error: We can't load blocks with this name\n"
                 msg += str(name)
-                msg += "Retrieved %i blocks" % (len(blockList))
+                msg += "\nRetrieved %i blocks" % (len(blockList))
                 logging.error(msg)
                 raise DBSInterfaceError(msg)
             block = blockList[0]
@@ -704,7 +708,7 @@ class DBSInterface:
         This checks to see if blocks are closed.
         If they are, it migrates them.
         """
-
+        return blocks
         if type(blocks) != list:
             blocks = [blocks]
 
@@ -723,7 +727,7 @@ class DBSInterface:
                                          block_name = block['Name'],
                                          srcVersion = self.version,
                                          dstVersion = self.config.globalDBSVersion)
-                block['open'] = 0
+                block['open'] = 'InGlobalDBS'
             except DbsException, ex:
                 msg = "Error in DBSInterface.migrateClosedBlocks()\n"
                 msg += "%s\n" % formatEx(ex)

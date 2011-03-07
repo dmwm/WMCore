@@ -94,7 +94,10 @@ class DBSUploadTest(unittest.TestCase):
         tearDown function for unittest
         """
         
-        self.testInit.clearDatabase()
+        self.testInit.clearDatabase(modules = ["WMCore.ThreadPool",
+                                               "WMCore.MsgService",
+                                               "WMComponent.DBSBuffer.Database",
+                                               'WMCore.Agent.Database'])
 
     def createConfig(self):
         """
@@ -453,9 +456,9 @@ class DBSUploadTest(unittest.TestCase):
 
         result = myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
         self.assertEqual(result, [('Pending',), ('Open',)])
-        result = myThread.dbi.processData("SELECT status FROM dbsbuffer_file")[0].fetchall()
+        result = myThread.dbi.processData("SELECT status FROM dbsbuffer_file WHERE dataset_algo = 1")[0].fetchall()
         for res in result:
-            self.assertEqual(res[0], 'NOTUPLOADED')
+            self.assertEqual(res[0], 'READY')
 
         config.DBSUpload.abortStepThree     = False
         config.DBSInterface.DBSBlockMaxTime = 300
@@ -517,6 +520,7 @@ class DBSUploadTest(unittest.TestCase):
 
         Profile with cProfile and time various pieces
         """
+        return
         config = self.createConfig()
 
         name = "ThisIsATest_%s" % (makeUUID())

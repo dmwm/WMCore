@@ -12,10 +12,10 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class NewDataset(DBFormatter):
     existsSQL = "SELECT id FROM dbsbuffer_dataset WHERE path = :path FOR UPDATE"
-    sql = "INSERT IGNORE INTO dbsbuffer_dataset (path) VALUES (:path)"
+    sql = "INSERT IGNORE INTO dbsbuffer_dataset (path, valid_status) VALUES (:path, valid_status)"
 
-    def execute(self, datasetPath, conn = None, transaction = False):
-        binds = {"path": datasetPath}
+    def execute(self, datasetPath, validStatus,  conn = None, transaction = False):
+        binds = {"path": datasetPath, 'valid_status': validStatus}
 
         result = self.dbi.processData(self.existsSQL, binds, conn = conn,
                                       transaction = transaction)

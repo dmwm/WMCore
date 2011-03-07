@@ -28,8 +28,9 @@ class Create(DBCreator):
         self.create["01dbsbuffer_dataset"] = \
               """CREATE TABLE dbsbuffer_dataset
 			(
-			   id     BIGINT UNSIGNED not null auto_increment,
-			   path   varchar(500)    unique not null,
+			   id           BIGINT UNSIGNED not null auto_increment,
+			   path         varchar(500)    unique not null,
+                           valid_status VARCHAR(20),
                            subscribed int default 0,
 			   primary key(id)	
 			) ENGINE=InnoDB"""
@@ -71,6 +72,7 @@ class Create(DBCreator):
 	     dataset_algo BIGINT UNSIGNED   not null,
              block_id     BIGINT UNSIGNED,
 	     status       varchar(20),
+             in_phedex    INTEGER DEFAULT 0,
              LastModificationDate  BIGINT,
              UNIQUE(lfn)) ENGINE=InnoDB"""
         

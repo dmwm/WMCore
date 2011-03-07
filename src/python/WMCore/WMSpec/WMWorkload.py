@@ -590,6 +590,26 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return getattr(self.data.properties, 'processingVersion', None)
 
+    def setValidStatus(self, validStatus):
+        """
+        _setValidStatus_
+
+        Sets the status that will be reported to the processed dataset
+        in DBS
+        """
+
+        self.data.properties.validStatus = validStatus
+        return
+
+    def getValidStatus(self):
+        """
+        _getValidStatus_
+
+        Get the valid status for DBS
+        """
+
+        return getattr(self.data.properties, 'validStatus', None)
+
     def setLFNBase(self, mergedLFNBase, unmergedLFNBase):
         """
         _setLFNBase_

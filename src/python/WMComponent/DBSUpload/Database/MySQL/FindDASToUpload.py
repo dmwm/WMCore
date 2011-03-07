@@ -26,28 +26,17 @@ class FindDASToUpload(DBFormatter):
                da.app_fam AS ApplicationFamily, 
                da.PSet_Hash as PSetHash,
                da.Config_Content as PSetContent,
-               da.in_dbs AS algo_in_dbs
+               da.in_dbs AS algo_in_dbs,
+               ds.valid_status AS valid_status
              FROM dbsbuffer_algo_dataset_assoc das
              INNER JOIN dbsbuffer_dataset ds ON ds.id = das.dataset_id
              INNER JOIN dbsbuffer_algo da ON da.id = das.algo_id
              WHERE EXISTS (SELECT id FROM dbsbuffer_file dbsfile
                             WHERE dbsfile.dataset_algo = das.id
                             AND dbsfile.status = 'NOTUPLOADED')
-             AND NOT EXISTS (SELECT dbf2.id FROM dbsbuffer_file dbf2
-                              INNER JOIN dbsbuffer_file_parent dbfp ON dbf2.id = dbfp.parent
-                              INNER JOIN dbsbuffer_file dbf3 ON dbf3.id = dbfp.child
-                              LEFT OUTER JOIN dbsbuffer_block dbb2 ON dbb2.id = dbf2.block_id
-                              WHERE dbf3.dataset_algo = das.id
-                              AND (dbf2.status = 'NOTUPLOADED' OR (dbb2.status != 'Closed'
-                                                                   AND dbb2.status != 'InGlobalDBS'
-                                                                   AND dbb2.status IS NOT NULL)) )
              AND UPPER(ds.Path) NOT LIKE 'BOGUS'
              """
 
-
-    def getBinds(self):
-        binds =  {'status':'NOTUPLOADED'}
-        return binds
 
     def makeDAS(self, results):
         ret=[]
@@ -77,6 +66,7 @@ class FindDASToUpload(DBFormatter):
             entry['PSetHash']           = r['psethash']
             entry['PSetContent']        = r['psetcontent']
             entry['Dataset']            = r['dataset']
+            entry['ValidStatus']        = r['valid_status']
             ret.append(entry)
 
         return ret

@@ -231,7 +231,7 @@ class UploadToDBS (WMConnectionBase):
         return result
 
 
-    def closeBlockFiles(self, blockname):
+    def closeBlockFiles(self, blockname, status):
         """
         _closeBlockFiles_
 
@@ -242,8 +242,88 @@ class UploadToDBS (WMConnectionBase):
 
         myThread = threading.currentThread()
         existingTransaction = self.beginTransaction()
-        closeBlocks.execute(blockname = blockname,
+        closeBlocks.execute(blockname = blockname, status = status,
                             conn = self.getDBConn(),
                             transaction=self.existingTransaction())
         self.commitTransaction(existingTransaction)
         return
+
+
+    def loadFilesFromBlocks(self):
+        """
+        _loadFilesFromBlocks_
+        
+        Load the files from all active blocks
+        """
+        findFiles = self.factory(classname = "LoadFilesFromBlocks")
+        
+        myThread = threading.currentThread()
+        existingTransaction = self.beginTransaction()
+
+        dbsFiles = []
+
+        results   = findFiles.execute(conn = self.getDBConn(),
+                                      transaction=self.existingTransaction())
+
+        for entry in results:
+            # Add loaded information
+            dbsfile = DBSBufferFile(id=entry['id'])
+            dbsfile.update(entry)
+            dbsFiles.append(dbsfile)
+
+        for dbsfile in dbsFiles:
+            if 'runInfo' in dbsfile.keys():
+                # Then we have to replace it with a real run
+                for r in dbsfile['runInfo'].keys():
+                    run = Run(runNumber = r)
+                    run.extend(dbsfile['runInfo'][r])
+                    dbsfile.addRun(run)
+                del dbsfile['runInfo']
+            if 'parentLFNs' in dbsfile.keys():
+                # Then we have some parents
+                for lfn in dbsfile['parentLFNs']:
+                    newFile = DBSBufferFile(lfn = lfn)
+                    dbsfile['parents'].add(newFile)
+                del dbsfile['parentLFNs']
+
+        self.commitTransaction(existingTransaction)
+
+        return dbsFiles
+
+    def loadBlocks(self):
+        """
+        _loadBlocks_
+
+
+        Load a set of blocks that are ready for upload
+        """
+        existingTransaction = self.beginTransaction()
+        
+        openBlocks = self.factory(classname = "LoadBlocks")
+
+        result = openBlocks.execute(conn = self.getDBConn(),
+                                    transaction=self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
+        return result
+
+
+    def loadDASInfoByID(self, ids):
+        """
+        _loadDASInfoByID_
+
+        Load all the DAS info that we have given a DAS ID
+        """
+        if len(ids) < 1:
+            # Nothing to do
+            return []
+        
+        existingTransaction = self.beginTransaction()
+        
+        dasInfo = self.factory(classname = "LoadInfoFromDAS")
+
+        result = dasInfo.execute(ids = ids, conn = self.getDBConn(),
+                                 transaction=self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
+        return result

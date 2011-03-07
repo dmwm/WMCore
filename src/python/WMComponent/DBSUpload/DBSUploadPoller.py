@@ -60,9 +60,11 @@ def createDatasetFromInfo(info):
                'DataTier':         info.get('DataTier'),
                'Algo':             info.get('Algo'),
                'AlgoInDBS':        info.get('AlgoInDBS', None),
-               'DASInDBS':         info.get('DASInDBS', None)
+               'DASInDBS':         info.get('DASInDBS', None),
+               'status':           info.get('ValidStatus', 'PRODUCTION')
                }
-
+    if dataset['status'] == None:
+        dataset['status'] = 'PRODUCTION'
     return dataset
 
 def createAlgoFromInfo(info):
@@ -228,6 +230,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # Set DAOs
         self.setBlock  = self.bufferFactory(classname = "DBSBufferFiles.SetBlock")
+        self.setStatus = self.bufferFactory(classname = "DBSBufferFiles.SetStatus")
 
         # Set config parameters
         self.maxBlockFiles    = self.config.DBSInterface.DBSBlockMaxFiles
@@ -250,8 +253,8 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         logging.debug("Running subscription / fileset matching algorithm")
         try:
-            self.uploadDatasets()
-            self.closeBlocks()
+            self.sortBlocks()
+            self.uploadBlocks()
         except WMException:
             raise
         except Exception, ex:
@@ -272,17 +275,12 @@ class DBSUploadPoller(BaseWorkerThread):
         return
 
 
-    def uploadDatasets(self):
+    def sortBlocks(self):
         """
-        _uploadDatasets_
+        _sortBlocks_
 
-        Find new datasets and upload them.
-
-        First, find DAS with files to upload
-        Then, sort those files into blocks
-        Then, upload those blocks to DBSBuffer
-        Then, upload those blocks to DBS using DBSInterface
-        Then, close blocks in DBSBuffer
+        Find new files to upload, sort them into blocks
+        Save the blocks in DBSBuffer
         """
         myThread = threading.currentThread()
 
@@ -303,14 +301,15 @@ class DBSUploadPoller(BaseWorkerThread):
             algo    = createAlgoFromInfo(info = dasInfo)
             dataset = createDatasetFromInfo(info = dasInfo)
 
-            # Get the files and the blocks for the DAS
+            # Get the files for the DAS
             files  = self.uploadToDBS.findUploadableFilesByDAS(das = dasID)
+            if len(files) < 1:
+                # Then we have no files for this DAS
+                continue
+
+            # Load the blocks for the DAS
             blocks = self.uploadToDBS.loadBlocksByDAS(das = dasID)
             logging.debug("Retrieved %i files and %i blocks from DB." % (len(files), len(blocks)))
-
-            if len(files) < 1:
-                logging.error("Active DAS had no files!")
-                return
 
             # Sort the files and blocks by location
             locationDict = sortListByKey(input = files, key = 'locations')
@@ -350,21 +349,118 @@ class DBSUploadPoller(BaseWorkerThread):
             # STEP TWO: Commit blocks to DBSBuffer
             fileLFNs = self.createBlocksInDBSBuffer(readyBlocks = readyBlocks)
 
+            # Now we should have all the blocks in DBSBuffer
+            # Time to set the status of the files
 
-            # STEP THREE: Insert Into DBS and Update DBSBuffer
+            lfnList = [x['lfn'] for x in files]
+            self.setStatus.execute(lfns = lfnList, status = "READY", 
+                                   conn = myThread.transaction.conn,
+                                   transaction = myThread.transaction)
+
+        # All files that were in NOTUPLOADED
+        # And had uploaded parents
+        # Should now be in assigned to blocks in DBSBuffer, and in the READY status
+        return
+
+
+    def uploadBlocks(self):
+        """
+        _uploadBlocks_
+
+        Load all OPEN blocks out of the database with all their necessary files
+        Once we have the blocks, determine which ones are ready to be uploaded
+        Also determine which ones are ready to be migrated
+        Upload them
+        """
+        myThread = threading.currentThread()
+        files = self.uploadToDBS.loadFilesFromBlocks()
+
+        # Get the blocks
+        # This should grab all Pending and Open blocks
+        blockInfo = self.uploadToDBS.loadBlocks()
+        logging.info("HEY! %s" % files)
+        blocks = []
+
+        if len(blockInfo) < 1:
+            # Then we have no block, and probably no files
+            if not len(files) == 0:
+                logging.error("Had files but no blocks!  These files will not be uploaded to DBS this cycle.")
+                for f in files:
+                    logging.debug("Skipped file: %s" % f['lfn'])
+                return
+
+        # Assemble the blocks
+        for info in blockInfo:
+            block = createBlock(datasetPath = 'blank', location = 'blank')
+            block['id']           = info['id']
+            block['das']          = info['das']
+            block['Name']         = info['blockname']
+            block['CreationDate'] = info['create_time']
+            block['open']         = info['open']
+            blocks.append(block)
+
+
+        dasIDs = []
+        for block in blocks:
+            if block['das'] not in dasIDs:
+                dasIDs.append(block['das'])
+
+        dasAlgoDataset = {}
+        dasAlgoInfo = self.uploadToDBS.loadDASInfoByID(ids = dasIDs)
+        for dasInfo in dasAlgoInfo:
+            algo    = createAlgoFromInfo(info = dasInfo)
+            dataset = createDatasetFromInfo(info = dasInfo)
+            dasAlgoDataset[dasInfo['DAS_ID']] = {'dataset': dataset,
+                                                 'algo': algo}
+
+        # At this point we should have the dataset and algo information
+        # The blocks
+        # And the files
+        # Time to sort the files into blocks
+        for block in blocks:
+            for f in files:
+                if f['blockID'] == block['id']:
+                    # Put file in this block
+                    logging.debug("Setting file %s to block %s" % (f['lfn'], block['Name']))
+                    block['newFiles'].append(f)
+
+        # Check for block timeout
+        for block in blocks:
+            if time.time() - block['CreationDate'] > self.maxBlockTime:
+                logging.info("Setting status to Pending due to timeout for block %s" % block['Name'])
+                block['open'] = 'Pending'
+
+        # Should have files in blocks, now assign them to DAS
+        for dasID in dasAlgoDataset.keys():
+            readyBlocks = []
+            dataset = dasAlgoDataset[dasID]['dataset']
+            algo    = dasAlgoDataset[dasID]['algo']
+            for block in blocks:
+                if len(block['newFiles']) > 0:
+                    # Assign a location from the files
+                    logging.debug("Block %s has %i files" % (block['Name'], len(block['newFiles'])))
+                    block['location'] = list(block['newFiles'][0]['locations'])[0]
+                if block['das'] == dasID:
+                    logging.debug("Attaching block %s" % block['Name'])
+                    readyBlocks.append(block)
+            if len(readyBlocks) < 1:
+                # Nothing to do
+                logging.debug("Nothing to do for DAS %i in uploadBlocks" % dasID)
+                continue
+
             try:
+                # Now do the real action of transferring crap
                 # Damn it Anzar: Why does DBS print stuff out?
                 originalOut = sys.stdout
                 originalErr = sys.stderr
-
                 sys.stdout = open(os.devnull, 'w')
                 sys.stderr = open(os.devnull, 'w')
 
-                logging.info("About to send %i blocks to DBSInterface" % (len(readyBlocks)))
-                for block in readyBlocks:
-                    logging.info("About to send to DBS block %s with status %s" %(block['Name'], block.get('open', None)))
-                
-                
+                if getattr(self.config.DBSUpload, 'abortStepThree', False):
+                    # Blow the stack for testing purposes
+                    raise DBSUploadPollerException('None')
+
+                logging.info("About to upload to DBS for DAS %i with %i blocks" % (dasID, len(readyBlocks)))
                 affBlocks = self.dbsInterface.runDBSBuffer(algo = algo,
                                                            dataset = dataset,
                                                            blocks = readyBlocks)
@@ -372,32 +468,26 @@ class DBSUploadPoller(BaseWorkerThread):
                 sys.stdout = originalOut
                 sys.stderr = originalErr
 
-                if getattr(self.config.DBSUpload, 'abortStepThree', False):
-                    # Blow the stack for testing purposes
-                    raise DBSUploadPollerException('None')
 
+                # Update DBSBuffer with current information
                 myThread.transaction.begin()
                 
-                if not algo['InDBS']:
-                    # List the algo as uploaded
-                    self.addToBuffer.updateAlgo(algo, 1)
-                if not dataset['DASInDBS']:
-                    # List the datasetAlgo as uploaded
-                    self.uploadToDBS.setDatasetAlgo(datasetAlgoInfo =  {'DAS_ID': dasID},
-                                                    inDBS = 1)
+                localFiles  = []
+                globalFiles = []
                 for block in affBlocks:
-                    logging.info("About to set in DBSBuffer with status %s block %s" %(str(block['open']),
-                                                                                       block['Name']))
-                    if block['open'] == 0:
-                        self.uploadToDBS.setBlockStatus(block = block['Name'],
-                                                        locations = [block['location']],
-                                                        openStatus = block['open'])
+                    logging.info("Successfully inserted %i files for block %s." % (len(block['insertedFiles']),
+                                                                                   block['Name']))
+                    self.uploadToDBS.setBlockStatus(block = block['Name'],
+                                                    locations = [block['location']],
+                                                    openStatus = block['open'])
+                    if block['open'] == 'InGlobalDBS':
+                        logging.debug("Block %s now listed in global DBS" % block['Name'])
+                        self.uploadToDBS.closeBlockFiles(blockname = block['Name'], status = 'LOCAL')
+                    else:
+                        logging.debug("Block %s now uploaded to local DBS" % block['Name'])
+                        self.uploadToDBS.closeBlockFiles(blockname = block['Name'], status = 'LOCAL')
 
-                # Update file status
-                for block in readyBlocks:
-                    self.uploadToDBS.closeBlockFiles(blockname = block['Name'])
-
-                logging.info("Commmitting DBSBuffer transaction at end of DBS injection.")
+                logging.debug("About to do post-upload DBS commit for DAS %i" % dasID)
                 myThread.transaction.commit()
 
             except WMException:
@@ -412,84 +502,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 if getattr(myThread, 'transaction', None) != None: 
                     myThread.transaction.rollback()
                 raise DBSUploadPollerException(msg)
-
-
-        return
-
-
-    def closeBlocks(self):
-        """
-        _closeBlocks_
-
-        Check blocks for timeout and close them if
-        they exceed it.
-
-        Load blocks in Pending state and close and migrate
-        them - they are the result of an exception raised
-        in uploadDatasets()
-        """
-        
-        myThread = threading.currentThread()
-
-        try:
-            myThread.transaction.begin()
-
-            # Now it's time to do a block check and look for
-            # open blocks that we should timeout
-            blocks = self.uploadToDBS.findOpenBlocks()
-
-            logging.info("Found %i open or pending blocks" % (len(blocks)))
-
-            blocksToClose = []
-            doneBlocks    = []
-
-            for buffBlock in blocks:
-                if time.time() - buffBlock['create_time'] > self.maxBlockTime:
-                    # Then we have to load a block
-                    blocksToClose.append(buffBlock['blockname'])
-                    logging.info("Going to close and migrate block due to timeout: %s" % (buffBlock['blockname']))
-                elif buffBlock.get('status', None) == 'Pending':
-                    logging.info("Found block to migrate due to Pending status: %s" % (buffBlock['blockname']))
-                    blocksToClose.append(buffBlock['blockname'])
-
-            # Actually finish the blocks
-            if len(blocksToClose) > 0:
-                # Damn it Anzar: Why does DBS print stuff out?
-                originalOut = sys.stdout
-                originalErr = sys.stderr
-                sys.stdout = open(os.devnull, 'w')
-                sys.stderr = open(os.devnull, 'w')
-                
-                doneBlocks = self.dbsInterface.closeAndMigrateBlocksByName(blockNames = blocksToClose)
-
-                sys.stdout = originalOut
-                sys.stderr = originalErr
-
-            for block in doneBlocks:
-                # Now close 'em in DBSBuffer
-                logging.info("About to close block in DBSBuffer due to timeout: %s" % (block['Name']))
-                self.uploadToDBS.setBlockStatus(block['Name'], locations = None,
-                                                openStatus = 0)
-                self.uploadToDBS.closeBlockFiles(blockname = block['Name'])
-
-            logging.debug("Committing transaction at end of closeBlocks().")
-            myThread.transaction.commit()
-
-        except DBSInterfaceError, ex:
-            msg =  'Error in DBSInterface while closing timed-out blocks\n'
-            msg += str(ex)
-            logging.error(msg)
-            if getattr(myThread, 'transaction', None) != None: 
-                myThread.transaction.rollback()
-            raise 
-        except Exception, ex:
-            msg =  'Error in closing blocks in DBS\n'
-            msg += str(ex)
-            msg += str(traceback.format_exc())
-            logging.error(msg)
-            if getattr(myThread, 'transaction', None) != None: 
-                myThread.transaction.rollback()
-            raise DBSUploadPollerException(msg)
+            
 
         return
 

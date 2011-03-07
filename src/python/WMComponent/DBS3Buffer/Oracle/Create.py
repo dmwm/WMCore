@@ -36,6 +36,7 @@ class Create(DBCreator):
 	         path varchar2(500)   NOT NULL ENABLE,
                  processing_ver       VARCHAR2(255),
                  acquisition_era      VARCHAR2(255),
+                 valid_status         VARCHAR2(20),
              subscribed int DEFAULT 0
                )"""
         self.create["01dbsbuffer_dataset_seq"] = \
@@ -111,6 +112,7 @@ class Create(DBCreator):
                  cksum                 NUMBER(11),
                  dataset_algo          NUMBER(11)    NOT NULL ENABLE,
                  status                VARCHAR2(20),
+                 in_phedex             INTEGER DEFAULT 0,
                  block_id              NUMBER(11),
                  LastModificationDate  NUMBER(11)
                )%s""" % tablespaceTable

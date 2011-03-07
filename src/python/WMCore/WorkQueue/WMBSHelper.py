@@ -555,7 +555,7 @@ class WMBSHelper(WMConnectionBase):
                                   events = dbsFile["NumberOfEvents"], 
                                   checksums = checksums,
                                   locations = locations, 
-                                  status = "AlreadyInDBS")
+                                  status = "LOCAL")
         dbsBuffer.setDatasetPath('bogus')
         dbsBuffer.setAlgorithm(appName = "cmsRun", appVer = "Unknown", 
                              appFam = "Unknown", psetHash = "Unknown", 

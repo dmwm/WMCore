@@ -32,13 +32,8 @@ class LoadDBSFilesByDAS(DBFormatter):
              AND files.status = 'NOTUPLOADED'
              AND NOT EXISTS (SELECT parent FROM dbsbuffer_file_parent dbfp
                               INNER JOIN dbsbuffer_file dbf2 ON dbfp.parent = dbf2.id
-                              LEFT OUTER JOIN dbsbuffer_block db2 ON db2.id = dbf2.block_id
                               WHERE dbfp.child = files.id
-                              AND ((dbf2.status != 'LOCAL'
-                                     AND dbf2.status != 'InPhEDEx')
-                                   OR (db2.status != 'Closed'
-                                     AND db2.status != 'InGlobalDBS'
-                                     AND db2.status IS NOT NULL)))
+                              AND dbf2.status != 'GLOBAL')
              ORDER BY files.id"""
 
     getLocationSQL = """SELECT dbsbuffer_location.se_name as location, dbsbuffer_file.id as id

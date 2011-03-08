@@ -540,7 +540,51 @@ class DBSUploadTest(unittest.TestCase):
         return
 
 
-        
+    def testE_NoMigration(self):
+        """
+        _NoMigration_
+
+        Test the DBSUpload system with no global migration
+        """
+        myThread = threading.currentThread()
+        config = self.createConfig()
+        config.DBSInterface.DBSBlockMaxTime   = 3
+        config.DBSInterface.doGlobalMigration = False
+        config.DBSUpload.pollInterval         = 4
+
+        name = "ThisIsATest_%s" % (makeUUID())
+        tier = "RECO"
+        nFiles = 12
+        files = self.getFiles(name = name, tier = tier, nFiles = nFiles)
+        datasetPath = '/%s/%s/%s' % (name, name, tier)
+
+
+        # Load components that are necessary to check status
+        factory     = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
+        dbinterface = factory.loadObject("UploadToDBS")
+
+        dbsInterface = DBSInterface(config = config)
+        localAPI     = dbsInterface.getAPIRef()
+        globeAPI     = dbsInterface.getAPIRef(globalRef = True)
+
+        # In the first round we should create blocks for the first dataset
+        # The child dataset should not be handled until the parent is uploaded
+        testDBSUpload = DBSUploadPoller(config = config)
+        testDBSUpload.algorithm()
+
+        # First, see if there are any blocks
+        # One in DBS, one not in DBS
+        result = myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result, [('InGlobalDBS',), ('Open',)])
+
+
+        result = myThread.dbi.processData("SELECT status FROM dbsbuffer_file WHERE dataset_algo = 1")[0].fetchall()
+        for r in result:
+            self.assertEqual(r[0], 'GLOBAL')
+
+
+        return        
 
         
         

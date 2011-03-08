@@ -481,20 +481,23 @@ class DBSInterface:
                 "user" :'NORMAL',
                 'version': self.config.DBSVersion}
 
-        self.version          = self.config.DBSVersion
-        self.globalDBSUrl     = None
-        self.committedRuns    = []
-        self.maxBlockFiles    = self.config.DBSBlockMaxFiles
-        self.maxBlockTime     = self.config.DBSBlockMaxTime
-        self.maxBlockSize     = self.config.DBSBlockMaxSize
-        self.maxFilesToCommit = self.config.MaxFilesToCommit
+        self.version           = self.config.DBSVersion
+        self.globalDBSUrl      = None
+        self.committedRuns     = []
+        self.maxBlockFiles     = self.config.DBSBlockMaxFiles
+        self.maxBlockTime      = self.config.DBSBlockMaxTime
+        self.maxBlockSize      = self.config.DBSBlockMaxSize
+        self.maxFilesToCommit  = self.config.MaxFilesToCommit
+        self.doGlobalMigration = getattr(self.config, 'DoGlobalMigration', True)
 
-        if hasattr(self.config, 'globalDBSUrl'):
+        if getattr(self.config, 'globalDBSUrl', None) != None:
             globalArgs = {'url': self.config.globalDBSUrl,
                           'level': 'ERROR',
                           "user" :'NORMAL',
                           'version': self.config.globalDBSVersion}
             self.globalDBSUrl = self.config.globalDBSUrl
+        else:
+            self.doGlobalMigration = False
 
         try:
             self.dbs       = DbsApi(args)
@@ -639,7 +642,6 @@ class DBSInterface:
         inserting the files, then actually closing if you have
         toggled the 'close' flag
         """
-        logging.info("insertFilesAndCloseBlocks(): %s, %s" % (block, close))
         # Insert all the files added to the block in this round
         if len(block.get('readyFiles', [])) > 0:
             insertFiles(apiRef = self.dbs, datasetPath = block['Path'],
@@ -692,7 +694,7 @@ class DBSInterface:
                                                 close = True)
             blocksToClose.append(b2)
 
-        if self.globalDBSUrl:
+        if self.doGlobalMigration:
             self.migrateClosedBlocks(blocks = blocksToClose)
         
         return blocksToClose
@@ -708,7 +710,10 @@ class DBSInterface:
         This checks to see if blocks are closed.
         If they are, it migrates them.
         """
-        return blocks
+        if not self.doGlobalMigration:
+            logging.debug("Skipping migration due to doGlobalMigration tag.")
+            return blocks
+
         if type(blocks) != list:
             blocks = [blocks]
 

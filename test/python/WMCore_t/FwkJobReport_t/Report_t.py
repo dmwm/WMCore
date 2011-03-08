@@ -375,7 +375,28 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(report.getJobID(), 100)
 
         return
-        
+
+
+    def test_PerformanceReport(self):
+        """
+        _PerformanceReport_
+
+        Test the performance report part of the job report
+        """
+
+        report = Report("cmsRun1")
+        report.setStepVSize(stepName = "cmsRun1", min = 100, max = 800, average = 244)
+        report.setStepRSS(stepName = "cmsRun1", min = 100, max = 800, average = 244)
+        report.setStepPCPU(stepName = "cmsRun1", min = 100, max = 800, average = 244)
+        report.setStepPMEM(stepName = "cmsRun1", min = 100, max = 800, average = 244)
+
+        perf = report.retrieveStep("cmsRun1").performance
+        for section in perf.dictionary_().values():
+            d = section.dictionary_()
+            self.assertEqual(d['min'], 100)
+            self.assertEqual(d['max'], 800)
+            self.assertEqual(d['average'], 244)
+        return
     
 if __name__ == "__main__":
     unittest.main()

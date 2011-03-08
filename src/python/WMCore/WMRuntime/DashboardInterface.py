@@ -284,12 +284,13 @@ class DashboardInfo(dict):
         data['jobId']                    = self.jobName
         data['retryCount']               = self.job['retry_count']
         data['ExeEnd']                   = helper.name()
-        data['StageOutExitStatusReason'] = 'NotAvailable'
-        data['StageOutSE']               = 'NotAvailable'
-        data['StageOutExitStatus']       = 'NotAvailable'
-        data['StageOutEnd']              = 'NotAvailable'
-        data['StageOutTime']             = 'NotAvailable'
-        data['JobExitCode']              = 'NotAvailable'
+        if helper.name() == 'StageOut':
+            data['StageOutExitStatusReason'] = 'NotAvailable'
+            data['StageOutSE']               = 'NotAvailable'
+            data['StageOutExitStatus']       = stepReport.stepSuccessful(stepName = helper.name())
+            data['StageOutEnd']              = 'NotAvailable'
+            data['StageOutTime']             = 'NotAvailable'
+        data['JobExitCode']              = stepReport.stepSuccessful(stepName = helper.name())
         
         self.publish(data = data)
 

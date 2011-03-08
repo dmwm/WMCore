@@ -9,25 +9,32 @@ Single threaded extremely slow version of the DBSUploader
 
 Works in four steps:
 
-1) Load DAS with uploadable files out of the database.  Take
-those files that are already in blocks and put them back
-into those blocks.  For the rest of the files, create new blocks.
+1) Load DAS out of the database.  For now, loads all DAS
+with files in the NOTUPLOADED status.  For each DAS, loads
+all files that are NOTUPLOADED and have parents in GLOBAL
 
-2) Put those blocks into DBSBuffer with their status = Pending if full
-of Open if they still have room for more files.  This
-assures that we'll have some record if we fail during the DBS upload
-part of things.  Set files to belong to those blocks, etc.
+2) Splits new files into blocks.  Marks the files as status
+READY.  Puts the blocks into DBSBuffer, and assigns the files
+to the blocks.  If blocks are full, marks blocks as Pending.
 
-3) Insert things into DBS using DBSInterface.  Insert all blocks
-into local, and then migrate blocks in Pending to global.  Then
-mark the blocks and files as uploaded in DBS.
+3) Load all blocks in state Open or Pending out of the database.
+Load all READY status files from the database.  Assign files
+to blocks for upload to DBS.  Also check Open blocks for timeout.
+If they are timed out set them to Pending.
 
-4) Poll over all Open and Pending blocks.  Close all blocks that
-have timed out.  Close all Pending blocks.  Put contents into local
-DBS and migrate all to global.  This is the error catching mechanism
-that deals with exceptions raised in step 3 in DBS by attempting
-to repeat (note that if a block is bad somehow, it will keep
-repeating).
+4)  Send blocks to DBS.  Open blocks are loaded only into Local
+DBS instance.  Pending blocks have any READY files put into local,
+and are then migrated to global.  Once this process is done
+mark the files as status GLOBAL or LOCAL in DBSBuffer (depending
+on whether the block was migrated to global or not), and mark
+the block accordingly.
+
+Notes:
+
+You can avoid going to global altogether by setting:
+self.config.DBSInterface.DoGlobalMigration to False
+
+This version takes advantage of the separate dbsbuffer_file.in_phedex column
 """
 import os
 import sys
@@ -99,23 +106,6 @@ def sortByDAS(incoming):
 
 
     return output
-
-
-def createConfigForJSON(config):
-    """
-    Turn a config object into a dictionary of dictionaries
-
-    """
-
-    final = {}
-    for sectionName in config.listSections_():
-        section = getattr(config, sectionName)
-        if hasattr(section, 'dictionary_'):
-            # Create a dictionary key for it
-            final[sectionName] = createDictionaryFromConfig(section)
-
-
-    return final
 
 
 def sortListByKey(input, key):
@@ -190,6 +180,11 @@ def preassignBlocks(files, blocks):
 
 
 class DBSUploadPollerException(WMException):
+    """
+    Considering how many times you're likely to see this
+    you would think it would do something, but you would
+    be wrong.
+    """
     pass
 
 
@@ -236,6 +231,7 @@ class DBSUploadPoller(BaseWorkerThread):
         self.maxBlockFiles    = self.config.DBSInterface.DBSBlockMaxFiles
         self.maxBlockTime     = self.config.DBSInterface.DBSBlockMaxTime
         self.maxBlockSize     = self.config.DBSInterface.DBSBlockMaxSize
+        self.doMigration      = getattr(self.config.DBSInterface, 'doGlobalMigration', True)
         logging.debug("Initializing with maxFiles %i, maxTime %i, maxSize %i" % (self.maxBlockFiles,
                                                                                  self.maxBlockTime,
                                                                                  self.maxBlockSize))
@@ -305,6 +301,7 @@ class DBSUploadPoller(BaseWorkerThread):
             files  = self.uploadToDBS.findUploadableFilesByDAS(das = dasID)
             if len(files) < 1:
                 # Then we have no files for this DAS
+                logging.debug("DAS %i has no available files.  Continuing." % dasID)
                 continue
 
             # Load the blocks for the DAS
@@ -324,7 +321,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 blockDict, locationDict = preassignBlocks(files = locationDict, blocks = blockDict)
                 
                 # Now go over all the files
-                for location in locationDict:
+                for location in locationDict.keys():
                     # Split files into blocks
                     locFiles  = locationDict.get(location, [])
                     locBlocks = blockDict.get(location, [])
@@ -378,7 +375,6 @@ class DBSUploadPoller(BaseWorkerThread):
         # Get the blocks
         # This should grab all Pending and Open blocks
         blockInfo = self.uploadToDBS.loadBlocks()
-        logging.info("HEY! %s" % files)
         blocks = []
 
         if len(blockInfo) < 1:
@@ -472,17 +468,17 @@ class DBSUploadPoller(BaseWorkerThread):
                 # Update DBSBuffer with current information
                 myThread.transaction.begin()
                 
-                localFiles  = []
-                globalFiles = []
                 for block in affBlocks:
                     logging.info("Successfully inserted %i files for block %s." % (len(block['insertedFiles']),
                                                                                    block['Name']))
                     self.uploadToDBS.setBlockStatus(block = block['Name'],
                                                     locations = [block['location']],
                                                     openStatus = block['open'])
-                    if block['open'] == 'InGlobalDBS':
+                    if block['open'] == 'InGlobalDBS' or not self.doMigration:
+                        # Set block files as in global if they've been migrated.
+                        # If we aren't doing global migrations, all files are in global
                         logging.debug("Block %s now listed in global DBS" % block['Name'])
-                        self.uploadToDBS.closeBlockFiles(blockname = block['Name'], status = 'LOCAL')
+                        self.uploadToDBS.closeBlockFiles(blockname = block['Name'], status = 'GLOBAL')
                     else:
                         logging.debug("Block %s now uploaded to local DBS" % block['Name'])
                         self.uploadToDBS.closeBlockFiles(blockname = block['Name'], status = 'LOCAL')

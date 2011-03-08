@@ -130,7 +130,8 @@ config.DBSUpload.workerThreads = 1
 config.DBSUpload.pollInterval = 100
 
 config.section_("DBSInterface")
-config.DBSInterface.DBSUrl = localDBSUrl
+#config.DBSInterface.DBSUrl = localDBSUrl
+config.DBSInterface.DBSUrl = globalDBSUrl
 config.DBSInterface.DBSVersion = localDBSVersion
 config.DBSInterface.globalDBSUrl = globalDBSUrl
 config.DBSInterface.globalDBSVersion = globalDBSVersion
@@ -138,6 +139,7 @@ config.DBSInterface.DBSBlockMaxSize = dbsMaxBlockSize
 config.DBSInterface.DBSBlockMaxFiles = dbsMaxBlockFiles
 config.DBSInterface.DBSBlockMaxTime = dbsBlockTimeout
 config.DBSInterface.MaxFilesToCommit = 10
+config.DBSInterface.doGlobalMigration = False
 
 config.component_("PhEDExInjector")
 config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"

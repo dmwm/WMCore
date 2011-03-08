@@ -292,7 +292,7 @@ class DBSBufferFile(WMBSBase, WMFile):
 
             action = self.daoFactory(classname = "DBSBufferFiles.AddIgnore")
             action.execute(lfns = toBeCreated, datasetAlgo = assocID,
-                           status = "LOCAL",
+                           status = "GLOBAL",
                            conn = self.getDBConn(),
                            transaction = True)
 

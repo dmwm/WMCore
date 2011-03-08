@@ -5,10 +5,9 @@ of pileup files in the job sandbox for the dataset.
 """
 
 import os
+
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
-from WMCore.Services.DBS.DBSReader import DBSReader
 import WMCore.WMSpec.WMStep as WMStep
-from DBSAPI.dbsApi import DbsApi
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
 
 
@@ -91,6 +90,7 @@ class PileupFetcher(FetcherInterface):
         args["url"] = helper.data.dbsUrl
         args["version"] = "DBS_2_0_9"
         args["mode"] = "GET"
+        from DBSAPI.dbsApi import DbsApi        
         dbsApi = DbsApi(args)
 
         configDict = self._queryDbsAndGetPileupConfig(helper, dbsApi)

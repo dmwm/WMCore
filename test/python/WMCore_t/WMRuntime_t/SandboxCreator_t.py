@@ -5,16 +5,16 @@
     Tests sandbox production
 """
 
-
-
 import unittest
-import WMCore.WMRuntime.SandboxCreator as SandboxCreator
+
 import tempfile
-import WMCore_t.WMSpec_t.TestWorkloads as TestWorkloads
 import os.path
 import tarfile
 import pickle
 import shutil
+
+import WMCore_t.WMSpec_t.TestWorkloads as TestWorkloads
+import WMCore.WMRuntime.SandboxCreator as SandboxCreator
 import WMCore.WMSpec.WMTask as WMTask
 
 class SandboxCreator_t(unittest.TestCase):

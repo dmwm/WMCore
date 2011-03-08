@@ -10,6 +10,7 @@ import unittest
 import pickle
 import os
 import sys
+import nose
 
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Job import Job
@@ -145,6 +146,11 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         in test/python/WMCore_t/WMRuntime_t/Scripts_t/WMTaskSpace/cmsRun1/PSet.py
         
         """
+        try:
+             from DBSAPI.dbsApi import DbsApi
+        except ImportError, ex:
+            raise nose.SkipTest
+
         # this is modified and shortened version of 
         # WMCore/test/python/WMCore_t/Misc_t/site-local-config.xml
         # since the dataset name in question (below) is only present at

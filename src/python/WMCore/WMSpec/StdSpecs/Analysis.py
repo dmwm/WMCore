@@ -33,6 +33,7 @@ class AnalysisWorkloadFactory(StdBase):
     def buildWorkload(self):
 
         workload = self.createWorkload()
+        workload.setWorkQueueSplitPolicy("Block", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
         analysisTask = workload.newTask("Analysis")
 
         outputMods = self.setupProcessingTask(analysisTask, "Analysis", inputDataset=self.inputDataset,

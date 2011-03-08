@@ -969,7 +969,69 @@ class Report:
             f.validStatus = validStatus
             
         return
-      
+
+    def setStepRSS(self, stepName, min, max, average):
+        """
+        _setStepRSS_
+        
+        Set the Performance RSS information
+        """
+        
+        reportStep = self.retrieveStep(stepName)
+        reportStep.performance.section_('RSSMemory')
+        reportStep.performance.RSSMemory.min     = min
+        reportStep.performance.RSSMemory.max     = max
+        reportStep.performance.RSSMemory.average = average
+        
+        return
+    
+    def setStepPMEM(self, stepName, min, max, average):
+        """
+        _setStepPMEM_
+        
+        Set the Performance PMEM information
+        """
+        
+        reportStep = self.retrieveStep(stepName)
+        reportStep.performance.section_('PhysicalMemory')
+        reportStep.performance.PhysicalMemory.min     = min
+        reportStep.performance.PhysicalMemory.max     = max
+        reportStep.performance.PhysicalMemory.average = average
+        
+        return
+    
+    def setStepPCPU(self, stepName, min, max, average):
+        """
+        _setStepPCPU_
+        
+        Set the Performance PCPU information
+        """
+        
+        reportStep = self.retrieveStep(stepName)
+        reportStep.performance.section_('PercentCPU')
+        reportStep.performance.PercentCPU.min     = min
+        reportStep.performance.PercentCPU.max     = max
+        reportStep.performance.PercentCPU.average = average
+        
+        return
+    
+    
+    def setStepVSize(self, stepName, min, max, average):
+        """
+        _setStepVSize_
+        
+        Set the Performance PCPU information
+        """
+        
+        reportStep = self.retrieveStep(stepName)
+        reportStep.performance.section_('VSizeMemory')
+        reportStep.performance.VSizeMemory.min     = min
+        reportStep.performance.VSizeMemory.max     = max
+        reportStep.performance.VSizeMemory.average = average
+        
+        return
+    
+    
 def addFiles(file1, file2):
     """
     _addFiles_

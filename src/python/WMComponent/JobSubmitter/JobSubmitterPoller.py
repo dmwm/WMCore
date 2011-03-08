@@ -21,7 +21,6 @@ from WMCore.DAOFactory        import DAOFactory
 
 from WMCore.JobStateMachine.ChangeState       import ChangeState
 from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
-from WMCore.ProcessPool.ProcessPool           import ProcessPool
 from WMCore.ResourceControl.ResourceControl   import ResourceControl
 from WMCore.DataStructs.JobPackage            import JobPackage
 from WMCore.FwkJobReport.Report               import Report
@@ -223,9 +222,23 @@ class JobSubmitterPoller(BaseWorkerThread):
                 logging.info("Processed %d/%d new jobs." % (jobCount, len(newJobs)))
 
             pickledJobPath = os.path.join(newJob["cache_dir"], "job.pkl")
-            jobHandle = open(pickledJobPath, "r")
-            loadedJob = cPickle.load(jobHandle)
 
+            if not os.path.isfile(pickledJobPath):
+                # Then we have a problem - there's no file
+                logging.error("Could not find pickled jobObject %s" % pickledJobPath)
+                badJobs.append(newJob)
+                continue
+            try:
+                jobHandle = open(pickledJobPath, "r")
+                loadedJob = cPickle.load(jobHandle)
+                jobHandle.close()
+            except Exception, ex:
+                msg =  "Error while loading pickled job object %s\n" % pickledJobPath
+                msg += str(ex)
+                logging.error(msg)
+                raise JobSubmitterPollerException(msg)
+                
+            
             loadedJob['retry_count'] = newJob['retry_count']
 
             # Grab the possible locations

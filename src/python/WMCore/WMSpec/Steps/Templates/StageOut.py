@@ -48,13 +48,14 @@ class StageOutStepHelper(CoreHelper):
 
         return
 
-    def setMinMergeSize(self, minMergeSize):
+    def setMinMergeSize(self, minMergeSize, maxMergeEvents):
         """
         _setMinMergeSize_
 
         Set the mininum size for promoting a file to merged status.
         """
         self.data.output.minMergeSize = minMergeSize
+        self.data.output.maxMergeEvents = maxMergeEvents
         return
 
     def minMergeSize(self):

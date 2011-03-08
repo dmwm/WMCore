@@ -196,7 +196,7 @@ class StdBase(object):
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
         procTaskCmsswHelper.setGlobalTag(self.globalTag)
-        procTaskStageHelper.setMinMergeSize(self.minMergeSize)
+        procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
         if configDoc != None and configDoc != "":

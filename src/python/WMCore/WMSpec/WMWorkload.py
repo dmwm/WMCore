@@ -643,7 +643,7 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
                 if stepHelper.stepType() == "StageOut" and stepHelper.minMergeSize() != -1:
-                    stepHelper.setMinMergeSize(minSize)
+                    stepHelper.setMinMergeSize(minSize, maxEvents)
 
             self.setMergeParameters(minSize, maxSize, maxEvents, task)
 

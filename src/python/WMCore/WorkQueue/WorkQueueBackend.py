@@ -28,7 +28,7 @@ class WorkQueueBackend(object):
         self.parentCouchUrl = parentQueue
         self.db = self.server.connectDatabase(db_name, create = False)
         self.db_url = "%s/%s" % (self.db['host'], self.db.name)
-        self.inbox = self.server.connectDatabase(inbox_name, create = False) #TODO: Don't create here
+        self.inbox = self.server.connectDatabase(inbox_name, create = False)
 
         self._setupReplication(self.parentCouchUrl, queueUrl)
 
@@ -73,7 +73,8 @@ class WorkQueueBackend(object):
         """
         Insert WMSpec to backend
         """
-        return wmspec.saveCouch(self.db['host'], self.db.name, {None:None})
+        # Can't save empty dict so add dummy variable
+        return wmspec.saveCouch(self.db['host'], self.db.name, {'name' : wmspec.name()})
 
 
     def insertElements(self, units, parent = None):

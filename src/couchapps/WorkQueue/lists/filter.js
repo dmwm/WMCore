@@ -14,7 +14,6 @@ function(head, req) {
 	var first = true;
 	while (row = getRow()) {
 		ele = row["doc"]["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
-		log(row)
 		var matched = true;
 		for (key in query) {
 

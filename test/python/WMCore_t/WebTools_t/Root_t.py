@@ -7,9 +7,31 @@ from WMCore.WebTools.Root import Root
 from WMCore.Configuration import Configuration
 from cherrypy import engine, tree
 from cherrypy import config as cpconfig
-
+from tempfile import NamedTemporaryFile
 
 class RootTest(unittest.TestCase):
+
+    def getBaseConfiguration(self):
+        config = Configuration()
+        config.component_('SecurityModule')
+        config.SecurityModule.dangerously_insecure = True
+
+        config.component_('Webtools')
+        config.Webtools.application = 'UnitTests'
+        config.Webtools.log_screen = False
+        config.Webtools.environment = "development"
+        config.Webtools.error_log_level = logging.WARNING
+        config.Webtools.access_log_level = logging.DEBUG
+        config.Webtools.host = "localhost"
+        config.component_('UnitTests')
+        config.UnitTests.admin = "Mr Unit Test"
+        config.UnitTests.description = "Dummy server for unit tests"
+        config.UnitTests.title = "Unit Tests"
+        config.UnitTests.section_('views')
+        active = config.UnitTests.views.section_('active')
+
+        return config
+
     def testLongHandConfigurables(self):
         """
         Test that the following configuration variables work:
@@ -31,22 +53,7 @@ class RootTest(unittest.TestCase):
 
         (from http://docs.cherrypy.org/dev/intro/concepts/config.html)
         """
-        config = Configuration()
-        config.component_('SecurityModule')
-        config.SecurityModule.dangerously_insecure = True
-
-        config.component_('Webtools')
-        config.Webtools.application = 'UnitTests'
-        config.Webtools.log_screen = False
-        config.Webtools.error_log_level = logging.WARNING
-        config.Webtools.access_log_level = logging.DEBUG
-        config.Webtools.host = "localhost"
-        config.component_('UnitTests')
-        config.UnitTests.admin = "Mr Unit Test"
-        config.UnitTests.description = "Dummy server for unit tests"
-        config.UnitTests.title = "Unit Tests"
-        config.UnitTests.section_('views')
-        active = config.UnitTests.views.section_('active')
+        config = self.getBaseConfiguration()
 
         server = Root(config)
         server.start(blocking=False)
@@ -56,21 +63,7 @@ class RootTest(unittest.TestCase):
         """
         Test that a made up long hand configurable is ignored
         """
-        config = Configuration()
-        config.component_('SecurityModule')
-        config.SecurityModule.dangerously_insecure = True
-
-        config.component_('Webtools')
-        config.Webtools.application = 'UnitTests'
-        config.Webtools.log_screen = False
-        config.Webtools.error_log_level = logging.WARNING
-        config.Webtools.access_log_level = logging.DEBUG
-        config.component_('UnitTests')
-        config.UnitTests.admin = "Mr Unit Test"
-        config.UnitTests.description = "Dummy server for unit tests"
-        config.UnitTests.title = "Unit Tests"
-        config.UnitTests.section_('views')
-        active = config.UnitTests.views.section_('active')
+        config = self.getBaseConfiguration()
         # The following should be ignored by the configure step
         config.Webtools.section_('foo')
         config.Webtools.foo.bar = 'baz'
@@ -90,21 +83,7 @@ class RootTest(unittest.TestCase):
         All applications should define:
         ['admin', 'description', 'title']
         """
-        config = Configuration()
-        config.component_('SecurityModule')
-        config.SecurityModule.dangerously_insecure = True
-
-        config.component_('Webtools')
-        config.Webtools.application = 'UnitTests'
-        config.Webtools.log_screen = False
-        config.Webtools.error_log_level = logging.WARNING
-        config.Webtools.access_log_level = logging.DEBUG
-        config.component_('UnitTests')
-        config.UnitTests.admin = "Mr Unit Test"
-        config.UnitTests.description = "Dummy server for unit tests"
-        config.UnitTests.title = "Unit Tests"
-        config.UnitTests.section_('views')
-        active = config.UnitTests.views.section_('active')
+        config = self.getBaseConfiguration()
 
         config.UnitTests.__delattr__('admin')
         server = Root(config)
@@ -127,22 +106,7 @@ class RootTest(unittest.TestCase):
         """
         test_proxy_base = '/unit_test'
 
-        config = Configuration()
-        config.component_('SecurityModule')
-        config.SecurityModule.dangerously_insecure = True
-
-        config.component_('Webtools')
-        config.Webtools.application = 'UnitTests'
-        config.Webtools.log_screen = False
-        config.Webtools.error_log_level = logging.WARNING
-        config.Webtools.access_log_level = logging.DEBUG
-        config.component_('UnitTests')
-        config.UnitTests.admin = "Mr Unit Test"
-        config.UnitTests.description = "Dummy server for unit tests"
-        config.UnitTests.title = "Unit Tests"
-        config.UnitTests.section_('views')
-        active = config.UnitTests.views.section_('active')
-
+        config = self.getBaseConfiguration()
         config.Webtools.section_('tools')
         config.Webtools.tools.section_('proxy')
         config.Webtools.tools.proxy.base = test_proxy_base
@@ -160,21 +124,7 @@ class RootTest(unittest.TestCase):
         """
         test_proxy_base = '/unit_test'
 
-        config = Configuration()
-        config.component_('SecurityModule')
-        config.SecurityModule.dangerously_insecure = True
-
-        config.component_('Webtools')
-        config.Webtools.application = 'UnitTests'
-        config.Webtools.log_screen = False
-        config.Webtools.error_log_level = logging.WARNING
-        config.Webtools.access_log_level = logging.DEBUG
-        config.component_('UnitTests')
-        config.UnitTests.admin = "Mr Unit Test"
-        config.UnitTests.description = "Dummy server for unit tests"
-        config.UnitTests.title = "Unit Tests"
-        config.UnitTests.section_('views')
-        active = config.UnitTests.views.section_('active')
+        config = self.getBaseConfiguration()
         # Set the proxy base with a short hand cfg variable
         config.Webtools.proxy_base = test_proxy_base
         server = Root(config)
@@ -189,21 +139,7 @@ class RootTest(unittest.TestCase):
         """
         test_port = 8010
 
-        config = Configuration()
-        config.component_('SecurityModule')
-        config.SecurityModule.dangerously_insecure = True
-
-        config.component_('Webtools')
-        config.Webtools.application = 'UnitTests'
-        config.Webtools.log_screen = False
-        config.Webtools.error_log_level = logging.WARNING
-        config.Webtools.access_log_level = logging.DEBUG
-        config.component_('UnitTests')
-        config.UnitTests.admin = "Mr Unit Test"
-        config.UnitTests.description = "Dummy server for unit tests"
-        config.UnitTests.title = "Unit Tests"
-        config.UnitTests.section_('views')
-        active = config.UnitTests.views.section_('active')
+        config = self.getBaseConfiguration()
         # Set the port to a non-standard one
         config.Webtools.section_('server')
         config.Webtools.server.socket_port = test_port
@@ -219,21 +155,7 @@ class RootTest(unittest.TestCase):
         """
         test_port = 8010
 
-        config = Configuration()
-        config.component_('SecurityModule')
-        config.SecurityModule.dangerously_insecure = True
-
-        config.component_('Webtools')
-        config.Webtools.application = 'UnitTests'
-        config.Webtools.log_screen = False
-        config.Webtools.error_log_level = logging.WARNING
-        config.Webtools.access_log_level = logging.DEBUG
-        config.component_('UnitTests')
-        config.UnitTests.admin = "Mr Unit Test"
-        config.UnitTests.description = "Dummy server for unit tests"
-        config.UnitTests.title = "Unit Tests"
-        config.UnitTests.section_('views')
-        active = config.UnitTests.views.section_('active')
+        config = self.getBaseConfiguration()
         # Set the port to a non-standard one
         config.Webtools.port = test_port
 
@@ -249,21 +171,7 @@ class RootTest(unittest.TestCase):
         """
         test_port = 8010
 
-        config = Configuration()
-        config.component_('SecurityModule')
-        config.SecurityModule.dangerously_insecure = True
-
-        config.component_('Webtools')
-        config.Webtools.application = 'UnitTests'
-        config.Webtools.log_screen = False
-        config.Webtools.error_log_level = logging.WARNING
-        config.Webtools.access_log_level = logging.DEBUG
-        config.component_('UnitTests')
-        config.UnitTests.admin = "Mr Unit Test"
-        config.UnitTests.description = "Dummy server for unit tests"
-        config.UnitTests.title = "Unit Tests"
-        config.UnitTests.section_('views')
-        active = config.UnitTests.views.section_('active')
+        config = self.getBaseConfiguration()
         # Set the port the long handed way
         config.Webtools.section_('server')
         config.Webtools.server.socket_port = test_port - 1
@@ -274,6 +182,30 @@ class RootTest(unittest.TestCase):
         server.start(blocking=False)
         self.assertEquals(cpconfig['server.socket_port'], test_port)
         server.stop()
+
+    def testSecuritySetting(self):
+        testRole = "TestRole"
+        testGroup = "TestGroup"
+        testSite = "TestSite"
+        config = self.getBaseConfiguration()
+        config.SecurityModule.dangerously_insecure = False
+        # not real keyfile but for the test.
+        # file will be deleted automaticall when garbage collected.
+        tempFile = NamedTemporaryFile()
+        config.SecurityModule.key_file = tempFile.name
+        config.SecurityModule.section_("default")
+        config.SecurityModule.default.role = testRole
+        config.SecurityModule.default.group = testGroup
+        config.SecurityModule.default.site = testSite
+        config.Webtools.environment = "production"
+        server = Root(config)
+        server.start(blocking=False)
+        self.assertEquals(cpconfig['tools.secmodv2.on'], True)
+        self.assertEquals(cpconfig['tools.secmodv2.role'], testRole)
+        self.assertEquals(cpconfig['tools.secmodv2.group'], testGroup)
+        self.assertEquals(cpconfig['tools.secmodv2.site'], testSite)
+        server.stop()
+
 
     def testUsingFilterTool(self):
         """

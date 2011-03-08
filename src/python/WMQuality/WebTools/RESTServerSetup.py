@@ -33,7 +33,8 @@ class DefaultConfig(Configuration):
         self.component_('Webtools')
         self.Webtools.application = 'UnitTests'
         self.Webtools.log_screen = False
-        self.Webtools.error_log_level = logging.WARNING
+        self.Webtools.environment = "development"
+        self.Webtools.error_log_level = logging.DEBUG
         self.Webtools.access_log_level = logging.DEBUG
         self.Webtools.port = 8888
         self.Webtools.host = "localhost"

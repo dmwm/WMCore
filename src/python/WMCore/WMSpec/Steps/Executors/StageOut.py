@@ -21,10 +21,8 @@ from WMCore.FwkJobReport.Report             import Report
 
 import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.FileManager
-#from WMCore.Storage.StageOutError import StageOutFailure
 
 from WMCore.WMSpec.ConfigSectionTree import nodeParent, nodeName
-from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 from WMCore.Lexicon                  import lfn as lfnRegEx
 
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
@@ -159,10 +157,28 @@ class StageOut(Executor):
                         try:
                             file = self.handleLFNForMerge(mergefile = file, step = step)
                         except Exception, ex:
-                            logging.error("Encountered error while handling LFN for merge.\n")
+                            logging.error("Encountered error while handling LFN for merge due to size.\n")
                             logging.error(str(ex))
+                            logging.debug(file)
+                            logging.debug("minMergeSize: %s" % self.step.output.minMergeSize)
                             stepReport.addError(self.stepName, 50011,
                                                 "DirectToMergeFailure", str(ex))
+                    elif getattr(self.step.output, 'maxMergeEvents', None) != None\
+                             and getattr(file, 'events', None) != None\
+                             and not getattr(file, 'merged', False):
+                        # Then direct-to-merge due to events if
+                        # the file is large enough:
+                        if file.events > self.step.output.maxMergeEvents:
+                            # straight to merge
+                            try:
+                                file = self.handleLFNForMerge(mergefile = file, step = step)
+                            except Exception, ex:
+                                logging.error("Encountered error while handling LFN for merge due to events.\n")
+                                logging.error(str(ex))
+                                logging.debug(file)
+                                logging.debug("maxMergeEvents: %s" % self.step.output.maxMergeEvents)
+                                stepReport.addError(self.stepName, 50011,
+                                                    "DirectToMergeFailure", str(ex))
 
                 # Save the input PFN in case we need it
                 # Undecided whether to move file.pfn to the output PFN
@@ -226,7 +242,7 @@ class StageOut(Executor):
                 continue
 
             stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
-            print "Beginning report processing for step %s" %step
+            logging.info("Beginning report processing for step %s" % step)
 
             reportLocation = os.path.join(stepLocation, 'Report.pkl')
             if not os.path.isfile(reportLocation):
@@ -240,7 +256,7 @@ class StageOut(Executor):
 
             # Don't stage out files from bad steps.
             if not stepReport.stepSuccessful(step):
-               continue
+                continue
 
             files = stepReport.getAllFileRefsFromStep(step = step)
             for file in files:

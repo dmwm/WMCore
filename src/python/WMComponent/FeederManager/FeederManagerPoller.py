@@ -17,11 +17,6 @@ from WMCore.ThreadPool.WorkQueue import ThreadPool
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMFactory import WMFactory
 
-# Tracks filesets in dict. using this format filesetName:filesetObject}
-FILESET_WATCH = {}
-FILESET_NEW = {}
-LONG_SLEEP = time.time()/60
-
 class FeederManagerPoller(BaseWorkerThread):
     """
     Regular managed fileset poller, instantiate feeder
@@ -33,6 +28,8 @@ class FeederManagerPoller(BaseWorkerThread):
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
+        self.fileset_watch = {}
+        self.last_poll_time = time.time()/60
         self.workq = ThreadPool \
               ([self.pollExternal for _ in range(threads)])
 
@@ -55,15 +52,9 @@ class FeederManagerPoller(BaseWorkerThread):
         """
         completed, set the fileset to close (Not implemented yet)
         """
-        # Global variable shared between threads
-        # We don't need global variables anymore - see ticket #875
-        global FILESET_WATCH
-        global FILESET_NEW
-        global LONG_SLEEP
-
-        FILESET_WATCH_temp = []
+        fileset_watch_temp = []
         listFileset = {}
-        FILESET_NEW = {}
+        fileset_new = {}
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -84,37 +75,36 @@ class FeederManagerPoller(BaseWorkerThread):
             filesetToUpdate = Fileset(id=managedFilesets[fileset]['id'])
             filesetToUpdate.load()
 
-            if managedFilesets[fileset]['name'] not in FILESET_WATCH:
+            if managedFilesets[fileset]['name'] not in self.fileset_watch:
 
-                FILESET_WATCH[filesetToUpdate.name] = filesetToUpdate
-                FILESET_NEW[filesetToUpdate.name] = filesetToUpdate
+                self.fileset_watch[filesetToUpdate.name] = filesetToUpdate
+                fileset_new[filesetToUpdate.name] = filesetToUpdate
 
             listFileset[filesetToUpdate.name] = filesetToUpdate
 
-        # List update
-        for oldFileset in FILESET_WATCH:
+        # Update the list of the fileset to watch 
+        for oldFileset in self.fileset_watch:
 
             if oldFileset not in listFileset:
 
-                FILESET_WATCH_temp.append(oldFileset)
+                fileset_watch_temp.append(oldFileset)
+        # Remove from the list of the fileset to update the ones which are not 
+        # in ManagedFilesets anymore 
+        for oldTempFileset in fileset_watch_temp:
+            del self.fileset_watch[oldTempFileset]
 
-        for oldTempFileset in FILESET_WATCH_temp:
-            del FILESET_WATCH[oldTempFileset]
-
-        logging.debug("NEW FILESETS %s" % FILESET_NEW)
-        logging.debug("OLD FILESETS %s" % FILESET_WATCH)
-
+        logging.debug("NEW FILESETS %s" %fileset_new)
+        logging.debug("OLD FILESETS %s" %self.fileset_watch)
 
         # WorkQueue work
-        for name, fileset in FILESET_NEW.items():
+        for name, fileset in fileset_new.items():
 
             logging.debug("Will poll %s : %s" % (name, fileset.id))
             self.workq.enqueue(name, fileset)
 
         for key, filesets in self.workq.__iter__():
 
-            fileset = FILESET_WATCH[key]
-
+            fileset = self.fileset_watch[key]
             logging.debug \
       ("the poll key %s result %s is ready !" % (key, str(fileset.id)))
 
@@ -143,18 +133,17 @@ filesetId = fileset.id, feederType = feederId, \
 
         # Handles old filesets. We update old filesets every 10 mn
         # We need to make old filesets update cycle configurable
-        if ((time.time()/60) - LONG_SLEEP) > 10 :
+        if ((time.time()/60) - self.last_poll_time) > 10 :
 
             # WorkQueue handles old filesets
-            for name, fileset in FILESET_WATCH.items():
+            for name, fileset in self.fileset_watch.items():
 
                 logging.debug("Will poll %s : %s" % (name, fileset.id))
                 self.workq.enqueue(name, fileset)
 
             for key, filesets in self.workq.__iter__():
 
-                fileset = FILESET_WATCH[key]
-
+                fileset = self.fileset_watch[key]
                 logging.debug \
           ("the poll key %s result %s is ready !" % (key, str(fileset.id)))
 
@@ -180,7 +169,7 @@ filesetId = fileset.id, feederType = feederId, \
                     myThread.transaction.commit()
 
             # Update the last update time of old filesets
-            LONG_SLEEP = time.time()/60
+            self.last_poll_time = time.time()/60
 
     # Switch to static method if needed
     def pollExternal(self, fileset):
@@ -193,7 +182,7 @@ filesetId = fileset.id, feederType = feederId, \
 
             factory = WMFactory("default", \
                 "WMCore.WMBSFeeder." + (fileset.name).split(":")[1])
-            feeder = factory.loadObject("Feeder")
+            feeder = factory.loadObject( classname = "Feeder", getFromCache = False )
             feeder(fileset)
 
         except Exception,e :

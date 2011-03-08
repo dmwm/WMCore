@@ -93,6 +93,8 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
         for liveJob in liveJobs:
             if liveJob["state"].lower() == 'executing':
                 # Then we need to kill this on the batch system
+                liveWMBSJob = Job(id = liveJob["id"])
+                changeState.propagate(liveWMBSJob, "killed", liveJob["state"])
                 killableJobs.append(liveJob)
         # Now kill them
         try:
@@ -109,6 +111,9 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
             pass
 
     for liveJob in liveJobs:
+        if liveJob["state"] == "killed":
+            # Then we've killed it already
+            continue
         liveWMBSJob = Job(id = liveJob["id"])
         changeState.propagate(liveWMBSJob, "killed", liveJob["state"])
 

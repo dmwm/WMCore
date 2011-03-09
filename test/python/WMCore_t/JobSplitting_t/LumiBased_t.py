@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 """
-_EventBased_t_
+_LumiBased_t_
 
-Event based splitting test.
+Lumi based splitting test.
 """
-
-
-
 
 import unittest
 
@@ -20,9 +17,9 @@ from WMCore.DataStructs.Run import Run
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
 
-class EventBasedTest(unittest.TestCase):
+class LumiBasedTest(unittest.TestCase):
     """
-    _EventBasedTest_
+    _LumiBasedTest_
 
     Test event based job splitting.
     """
@@ -87,91 +84,12 @@ class EventBasedTest(unittest.TestCase):
 
         return testSubscription
 
-
-
-    def testA_NoFileSplitting(self):
-        """
-        _NoFileSplitting_
-
-        Test that things work if we do no file splitting
-        """
-
-        splitter = SplitterFactory()
-
-        oneSetSubscription = self.createSubscription(nFiles = 10, lumisPerFile = 1)
-        jobFactory = splitter(package = "WMCore.DataStructs",
-                              subscription = oneSetSubscription)
-        jobGroups = jobFactory(lumis_per_job = 3)
-        self.assertEqual(len(jobGroups), 1)
-        self.assertEqual(len(jobGroups[0].jobs), 4)
-
-
-        # Do some fairly extensive checking
-        self.assertEqual(len(jobGroups[0].jobs[0]['input_files']), 3)
-        self.assertEqual(jobGroups[0].jobs[0]['mask'],
-                         {'LastRun': 2L, 'FirstRun': 0L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 200L, 'FirstLumi': 0L})
-        self.assertEqual(len(jobGroups[0].jobs[1]['input_files']), 3)
-        self.assertEqual(jobGroups[0].jobs[1]['mask'],
-                         {'LastRun': 5L, 'FirstRun': 3L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 500L, 'FirstLumi': 300L})
-        self.assertEqual(len(jobGroups[0].jobs[2]['input_files']), 3)
-        self.assertEqual(jobGroups[0].jobs[2]['mask'],
-                         {'LastRun': 8L, 'FirstRun': 6L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 800L, 'FirstLumi': 600L})
-        self.assertEqual(len(jobGroups[0].jobs[3]['input_files']), 1)
-        self.assertEqual(jobGroups[0].jobs[3]['mask'],
-                         {'LastRun': 9L, 'FirstRun': 9L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 900L, 'FirstLumi': 900L})
-
-
-
-
-
-        # Now do five files with two lumis per file
-        twoLumiFiles = self.createSubscription(nFiles = 5, lumisPerFile = 2)
-        jobFactory = splitter(package = "WMCore.DataStructs",
-                              subscription = twoLumiFiles)
-        jobGroups = jobFactory(lumis_per_job = 3)
-        self.assertEqual(len(jobGroups), 1)
-        self.assertEqual(len(jobGroups[0].jobs), 3)
-        for job in jobGroups[0].jobs:
-            self.assertTrue(len(job['input_files']) in [1, 2])
-
-
-        # Now do five files with two lumis per file
-        tooBigFiles = self.createSubscription(nFiles = 5, lumisPerFile = 2)
-        jobFactory = splitter(package = "WMCore.DataStructs",
-                              subscription = tooBigFiles)
-        jobGroups = jobFactory(lumis_per_job = 1)
-        self.assertEqual(len(jobGroups), 1)
-        self.assertEqual(len(jobGroups[0].jobs), 5)
-        for job in jobGroups[0].jobs:
-            self.assertEqual(len(job['input_files']), 1)
-
-
-        # Do it with multiple sites
-        twoSiteSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 1, twoSites = True)
-        jobFactory = splitter(package = "WMCore.DataStructs",
-                              subscription = twoSiteSubscription)
-        jobGroups = jobFactory(lumis_per_job = 1)
-        self.assertEqual(len(jobGroups), 2)
-        self.assertEqual(len(jobGroups[0].jobs), 5)
-        for job in jobGroups[0].jobs:
-            self.assertEqual(len(job['input_files']), 1)
-
-
-        return
-
-
-
-    def testB_FileSplitting(self):
+    def testA_FileSplitting(self):
         """
         _FileSplitting_
 
         Test that things work if we split files between jobs
         """
-
         splitter = SplitterFactory()
 
         oneSetSubscription = self.createSubscription(nFiles = 10, lumisPerFile = 1)
@@ -184,7 +102,7 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
-            self.assertTrue(len(job['input_files']) in [1, 3])
+            self.assertTrue(len(job['input_files']), 1)
 
 
 
@@ -207,25 +125,24 @@ class EventBasedTest(unittest.TestCase):
         jobGroups = jobFactory(lumis_per_job = 2,
                                split_files_between_job = True)
         self.assertEqual(len(jobGroups), 1)
+        # 10 because we split on run boundaries
         self.assertEqual(len(jobGroups[0].jobs), 10)
         jobList = jobGroups[0].jobs
         for job in jobList:
-            self.assertEqual(len(job['input_files']), 1)
-
-        self.assertEqual(jobList[0]['mask'],
-                         {'LastRun': 0, 'FirstRun': 0, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 1, 'FirstLumi': 0})
-        self.assertEqual(jobList[1]['mask'],
-                         {'LastRun': 0, 'FirstRun': 0, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 2, 'FirstLumi': 2})
-        self.assertEqual(jobList[2]['mask'],
-                         {'LastRun': 1, 'FirstRun': 1, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 101, 'FirstLumi': 100})
-        self.assertEqual(jobList[3]['mask'],
-                         {'LastRun': 1, 'FirstRun': 1, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 102, 'FirstLumi': 102})
+            # Have should have one file, half two
+            self.assertTrue(len(job['input_files']) in [1,2])
 
 
+        mask0 = jobList[0]['mask'].getRunAndLumis()
+        self.assertEqual(mask0, {0L: [[0L, 1L]]})
+        mask1 = jobList[1]['mask'].getRunAndLumis()
+        self.assertEqual(mask1, {0L: [[2L, 2L]]})
+        mask2 = jobList[2]['mask'].getRunAndLumis()
+        self.assertEqual(mask2, {1L: [[100L, 101L]]})
+        mask3 = jobList[3]['mask'].getRunAndLumis()
+        self.assertEqual(mask3, {1L: [[102L, 102L]]})
+
+        self.assertEqual(jobList[0]['mask'].getRunAndLumis(), {0L: [[0L, 1L]]})
 
         # Do it with multiple sites
         twoSiteSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 2, twoSites = True)
@@ -238,8 +155,53 @@ class EventBasedTest(unittest.TestCase):
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job['input_files']), 1)
 
-        return
 
+
+    def testB_NoRunNoFileSplitting(self):
+        """
+        _NoRunNoFileSplitting_
+
+        Test the splitting algorithm in the odder fringe
+        cases that might be required.
+        """
+        splitter = SplitterFactory()
+        testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+
+        jobGroups = jobFactory(lumis_per_job = 3,
+                               split_files_between_job = False,
+                               splitOnRun = False)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 9)
+
+        # The first job should have three lumis from one run
+        # The second three lumis from two different runs
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[100L, 100L]]})
+
+
+        # And it should still be the same when you load it out of the database
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[100L, 100L]]})
+
+        # Assert that this works differently with file splitting on and run splitting on
+        testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+        jobGroups = jobFactory(lumis_per_job = 3,
+                               split_files_between_job = True,
+                               splitOnRun = True)
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 10)
+        
+        # In this case it should slice things up so that each job only has one run
+        # in it.
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]]})
+        return
 
 
 if __name__ == '__main__':

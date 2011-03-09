@@ -21,6 +21,9 @@ from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset     import Fileset
 from WMCore.DAOFactory              import DAOFactory
 
+from WMCore.ACDC.CouchCollection import CouchCollection
+from WMCore.GroupUser.User import User
+from WMCore.GroupUser.Group import Group
 
 def isGoodLumi(goodRunList, run, lumi):
     """
@@ -80,21 +83,33 @@ class LumiBased(JobFactory):
 
         lumisPerJob  = int(kwargs.get('lumis_per_job', 1))
         splitOnFile  = bool(kwargs.get('split_files_between_job', False))
-        goodLumiURL  = kwargs.get('goodLumiListURL', None)
+        collectionName  = kwargs.get('collectionName', None)
         splitOnRun   = kwargs.get('splitOnRun', True)
 
         goodRunList = {}
         # If we have runLumi info, we need to load it from couch
-        if goodLumiURL:
+        if collectionName:
             # WARNING:  This is a piece of crap
             try:
                 from WMCore.ACDC.DataCollectionService import DataCollectionService
-                couchURL = kwargs.get('couchURL')
-                couchDB  = kwargs.get('couchDB')
-                task     = kwargs.get('task')
-                DCS      = DataCollectionService(url = couchURL, database = couchDB)
-                goodRunList = DCS.getLumiWhitelist(collectionID = goodLumiURL,
-                                                   taskName = task)
+                couchURL    = kwargs.get('couchURL')
+                couchDB     = kwargs.get('couchDB')
+                filesetName = kwargs.get('filesetName')
+
+                group       = Group(name = kwargs.get('group'))
+                owner       = User(name = kwargs.get('owner'))
+                owner.setGroup(group)
+
+                logging.error("ACDC: %s, %s, %s, %s" % (couchURL, couchDB, filesetName, collectionName))
+
+                collection = CouchCollection(name = kwargs.get('collectionName'),
+                                             url = couchURL, database = couchDB)
+                collection.setOwner(owner)
+                collection.getCollectionId()
+                
+                DCS         = DataCollectionService(url = couchURL, database = couchDB)
+                goodRunList = DCS.getLumiWhitelist(collectionID = collection['collection_id'],
+                                                   taskName = filesetName)
             except Exception, ex:
                 msg =  "Exception while trying to load goodRunList\n"
                 msg =  "Ditching goodRunList\n"

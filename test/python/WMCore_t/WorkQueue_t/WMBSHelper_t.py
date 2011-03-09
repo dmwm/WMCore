@@ -58,7 +58,8 @@ class WMBSHelperTest(unittest.TestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setupCouch("wmbshelper_t", "JobDump")
+        self.testInit.setupCouch("wmbshelper_t/jobs", "JobDump")
+        self.testInit.setupCouch("wmbshelper_t/fwjrs", "FWJRDump")        
         os.environ["COUCHDB"] = "wmbshelper_t"
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
                                                  "WMComponent.DBSBuffer.Database",

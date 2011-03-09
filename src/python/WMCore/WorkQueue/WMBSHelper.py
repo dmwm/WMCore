@@ -342,15 +342,19 @@ class WMBSHelper(WMConnectionBase):
 
         return sub
     
-    def addFiles(self, block):
+    def addFiles(self, block, workflow = None):
         """
-        _createFiles_
+        _addFiles_
         
         create wmbs files from given dbs block.
         as well as run lumi update
         """
                 
         if self.wmSpec.getTopLevelTask()[0].getInputACDC():
+            block = self.removeDups.execute(files = block,
+                                            workflow = self.wmspec.name(),
+                                            conn = self.getDBConn(),
+                                            transaction = self.existingTransaction())
             for acdcFile in self.validFiles(block):
                 self._addACDCFileToWMBSFile(acdcFile)
         else:
@@ -363,9 +367,7 @@ class WMBSHelper(WMConnectionBase):
         # Add files to DBSBuffer
         self._createFilesInDBSBuffer()
 
-        #self.topLevelFileset.commit()
         self.topLevelFileset.markOpen(False)
-
         return totalFiles
 
 
@@ -671,7 +673,7 @@ class WMBSHelper(WMConnectionBase):
 
         results = []
         for f in files:
-            if not f.has_key("LumiList"):
+            if type(f) == type("") or not f.has_key("LumiList"):
                 results.append(f)
                 continue
             if runWhiteList or runBlackList:

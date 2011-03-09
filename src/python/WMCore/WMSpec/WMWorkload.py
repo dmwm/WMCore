@@ -694,6 +694,7 @@ class WMWorkloadHelper(PersistencyHelper):
         # Everything defaults to ParentlessMergeBySize as it is much less load
         # on the database.
         minMergeSize = None
+        maxMergeEvents = None
         for childTask in taskHelper.childTaskIterator():
             if childTask.taskType() == "Merge":
                 if splitAlgo == "EventBased" and taskHelper.taskType() != "Production":
@@ -703,6 +704,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
                 childSplitParams = childTask.jobSplittingParameters()
                 minMergeSize = childSplitParams["min_merge_size"]
+                maxMergeEvents = childSplitParams["max_merge_events"]
                 del childSplitParams["algorithm"]
                 del childSplitParams["siteWhitelist"]
                 del childSplitParams["siteBlacklist"]
@@ -716,7 +718,7 @@ class WMWorkloadHelper(PersistencyHelper):
             stepHelper = taskHelper.getStepHelper(stepName)
             if stepHelper.stepType() == "StageOut":
                 if splitAlgo != "EventBased" and minMergeSize:
-                    stepHelper.setMinMergeSize(minMergeSize)
+                    stepHelper.setMinMergeSize(minMergeSize, maxMergeEvents)
                 else:
                     stepHelper.disableStraightToMerge()
         return
@@ -840,6 +842,13 @@ class WMWorkloadHelper(PersistencyHelper):
         newTopLevelTask = self.getTaskByPath(initialTaskPath)
         newTopLevelTask.addInputACDC(serverUrl, databaseName, self.name(),
                                      initialTaskPath)
+        workloadOwner = self.getOwner()
+        newTopLevelTask.setSplittingParameters(collectionName = self.name(),
+                                               filesetName = initialTaskPath,
+                                               couchURL = serverUrl,
+                                               couchDB = databaseName,
+                                               owner = workloadOwner["name"],
+                                               group = workloadOwner["group"])
 
         cleanupTask = None
         if not newTopLevelTask.isTopOfTree():

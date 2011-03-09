@@ -357,13 +357,23 @@ class WMTaskHelper(TreeHelper):
         _setSplittingAlgorithm_
         
         Set the splitting algorithm name and arguments.  Clear out any old
-        splitting parameters as well.
+        splitting parameters while preserving the parameters for ACDC
+        resubmission which are:
+          collectionName, filesetName, couchURL, couchDB, owner, group
         """
+        setACDCParams = {}
+        for paramName in ["collectionName", "filesetName", "couchURL",
+                          "couchDB", "owner", "group"]:
+            if hasattr(self.data.input.splitting, paramName):
+                setACDCParams[paramName] = getattr(self.data.input.splitting,
+                                                   paramName)
+        
         delattr(self.data.input, "splitting")
         self.data.input.section_("splitting")
         
         setattr(self.data.input.splitting, "algorithm", algoName)
         self.setSplittingParameters(**params)
+        self.setSplittingParameters(**setACDCParams)
         return
 
     def jobSplittingAlgorithm(self):

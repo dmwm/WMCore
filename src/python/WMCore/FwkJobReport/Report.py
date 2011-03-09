@@ -106,6 +106,9 @@ class Report:
 
         return
 
+    def __str__(self):
+        return str(self.data)
+
     def listSteps(self):
         """
         _listSteps_

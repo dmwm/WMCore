@@ -2,7 +2,7 @@
 """
 Manage dependancies by declaring systems here.
 A system can depend on packages or other systems.
-
+If a package ends with a + include all subpackages.
 """
 dependencies = {
                 'wmc-base':{
@@ -38,7 +38,7 @@ dependencies = {
                                 'src/templates/WMCore/WebTools/Masthead',]
                         },
                 'reqmgr':{
-                        'packages': ['WMCore.RequestManager', 'WMCore.HTTPFrontEnd'],
+                        'packages': ['WMCore.Agent+', 'WMCore.RequestManager', 'WMCore.HTTPFrontEnd'],
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/javascript/WMCore/WebTools/RequestManager',
                                     'src/templates/WMCore/WebTools/RequestManager',
@@ -53,7 +53,7 @@ dependencies = {
                         'statics': ['src/templates/WMCore/WebTools/WorkQueue',]
                         },
                 'wmagent':{
-                        'packages': ['WMCore.Agent', 'WMCore.WMBS', 'WMCore.Algorithms',
+                        'packages': ['WMCore.Agent+', 'WMCore.WMBS', 'WMCore.Algorithms',
                                     'WMCore.JobStateMachine', 'WMComponent.DBSBuffer',
                                     'WMCore.HTTPFrontEnd', 'WMCore.ThreadPool',
                                     'WMCore.BossAir',

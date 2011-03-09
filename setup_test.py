@@ -1,6 +1,6 @@
 from distutils.core import Command
 from unittest import TextTestRunner, TestLoader, TestSuite
-from setup_build import get_relative_path, generate_filelist
+from setup_build import get_path_to_wmcore_root
 
 from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
@@ -37,6 +37,37 @@ try:
     can_nose = True
 except:
     pass
+
+def generate_filelist(basepath=None, recurse=True, ignore=False):
+    """
+    Recursively get a list of files to test/lint
+    """
+    if basepath:
+        walkpath = os.path.join(get_path_to_wmcore_root(), 'src/python', basepath)
+    else:
+        walkpath = os.path.join(get_path_to_wmcore_root(), 'src/python')
+
+    files = []
+
+    if walkpath.endswith('.py'):
+        if ignore and walkpath.endswith(ignore):
+            files.append(walkpath)
+    else:
+        for dirpath, dirnames, filenames in os.walk(walkpath):
+            # skipping CVS directories and their contents
+            pathelements = dirpath.split('/')
+            result = []
+            if not 'CVS' in pathelements:
+                # to build up a list of file names which contain tests
+                for file in filenames:
+                    if file.endswith('.py'):
+                        filepath = '/'.join([dirpath, file])
+                        files.append(filepath)
+
+    if len(files) == 0 and recurse:
+        files = generate_filelist(basepath + '.py', not recurse)
+
+    return files
 
 if can_nose:
     def get_subpackages(dir, prefix = ""):
@@ -306,7 +337,7 @@ def lint_files(files, reports=False):
     filename : result_dict
     """
 
-    rcfile=os.path.join(get_relative_path(),'standards/.pylintrc')
+    rcfile=os.path.join(get_path_to_wmcore_root(),'standards/.pylintrc')
 
     arguements = ['--rcfile=%s' % rcfile, '--ignore=DefaultConfig.py']
 
@@ -342,7 +373,7 @@ class LintCommand(Command):
                ('report', 'r', 'return a detailed lint report, default False')]
 
    def initialize_options(self):
-       self._dir = get_relative_path()
+       self._dir = get_path_to_wmcore_root()
        self.package = None
        self.report = False
 
@@ -416,7 +447,7 @@ class ReportCommand(Command):
        convention = 0
        statement = 0
 
-       srcpypath = '/'.join([get_relative_path(), 'src/python/'])
+       srcpypath = '/'.join([get_path_to_wmcore_root(), 'src/python/'])
        sys.path.append(srcpypath)
 
        cfg = ConfigParser()

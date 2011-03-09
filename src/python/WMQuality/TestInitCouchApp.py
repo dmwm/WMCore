@@ -65,6 +65,7 @@ class TestInitCouchApp(TestInit):
     
     def __init__(self, testClassName):
         TestInit.__init__(self, testClassName)
+        self.databases = []
         self.couch = None
 
         
@@ -75,11 +76,12 @@ class TestInitCouchApp(TestInit):
         Call in the setUp of your test to build a couch instance with the dbname provided
         and the required list of couchapps from WMCore/src/couchapps
         """
+        self.databases.append(dbName)
         self.couch = CouchAppTestHarness(dbName)
         self.couch.create()
         wmBase = self.init.getWMBASE()
         self.couch.pushCouchapps(*["%s/src/couchapps/%s" % (wmBase, couchapp) for couchapp in couchapps ])
-        
+
 
     couchUrl = property(lambda x: x.couch.couchUrl)
     couchDbName = property(lambda x: x.couch.dbName)
@@ -90,7 +92,9 @@ class TestInitCouchApp(TestInit):
         
         call this in tearDown to erase all evidence of your couch misdemeanours
         """
-        if self.couch != None:
-            self.couch.drop()
-            self.couch = None
-    
+        for database in self.databases:
+            couch = CouchAppTestHarness(database)
+            couch.drop()
+
+        self.couch = None
+        return

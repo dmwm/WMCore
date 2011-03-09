@@ -1,11 +1,7 @@
 #!/usr/bin/env python
-
 """
 ErrorHandler test TestErrorHandler module and the harness
 """
-
-
-
 
 import os
 import threading
@@ -52,8 +48,9 @@ class ErrorHandlerTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
                                 useDefault = False)
-        self.testInit.setupCouch("errorhandler_t", "GroupUser", "ACDC", "JobDump")
-        #self.testInit.setupCouch("errorhandler_jd_t", "JobDump")
+        self.testInit.setupCouch("errorhandler_t", "GroupUser", "ACDC")
+        self.testInit.setupCouch("errorhandler_t_jd/jobs", "JobDump")
+        self.testInit.setupCouch("errorhandler_t_jd/fwjrs", "FWJRDump")
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -65,8 +62,8 @@ class ErrorHandlerTest(unittest.TestCase):
         self.testDir = self.testInit.generateWorkDir()
         self.nJobs = 10
 
-        self.dataCS = DataCollectionService(url = self.testInit.couchUrl,
-                                            database = self.testInit.couchDbName)
+        self.dataCS = DataCollectionService(url = os.environ["COUCHURL"],
+                                            database = "errorhandler_t")
         
         return
 
@@ -110,12 +107,12 @@ class ErrorHandlerTest(unittest.TestCase):
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', None)
         config.JobStateMachine.default_retries = 1
-        config.JobStateMachine.couchDBName     = "errorhandler_t"
+        config.JobStateMachine.couchDBName     = "errorhandler_t_jd"
 
 
         config.section_('ACDC')
-        config.ACDC.couchurl = self.testInit.couchUrl
-        config.ACDC.database = self.testInit.couchDbName
+        config.ACDC.couchurl = os.environ["COUCHURL"]
+        config.ACDC.database = "errorhandler_t"
 
         return config
 
@@ -155,7 +152,7 @@ class ErrorHandlerTest(unittest.TestCase):
         myThread = threading.currentThread()
         myThread.transaction.begin()
         testWorkflow = Workflow(spec = workloadPath, owner = "Simon",
-                                name = "wf001", task="/TestWorkload/ReReco")
+                                name = "TestWorkload", task="/TestWorkload/ReReco")
         testWorkflow.create()
         
         testWMBSFileset = Fileset(name = "TestFileset")
@@ -261,8 +258,8 @@ class ErrorHandlerTest(unittest.TestCase):
         self.assertEqual(len(collList), 1)
 
         collection = collList[0]
-        self.assertEqual(collection['database'], self.testInit.couchDbName)
-        self.assertEqual(collection['url'], self.testInit.couchUrl)
+        self.assertEqual(collection['database'], "errorhandler_t")
+        self.assertEqual(collection['url'], os.environ["COUCHURL"])
         self.assertEqual(collection['collection_type'], 'ACDC.CollectionTypes.DataCollection')
         self.assertEqual(collection['name'], workloadName)
 
@@ -282,9 +279,6 @@ class ErrorHandlerTest(unittest.TestCase):
         
         Mimics creation of component and test jobs failed in submit stage.
         """
-
-        #return
-
         workloadName = 'TestWorkload'
 
         workload = self.createWorkload(workloadName = workloadName)
@@ -319,9 +313,6 @@ class ErrorHandlerTest(unittest.TestCase):
 
         Mimics creation of component and test jobs failed in execute stage.
         """
-
-        #return
-
         workloadName = 'TestWorkload'
 
         workload = self.createWorkload(workloadName = workloadName)
@@ -359,9 +350,6 @@ class ErrorHandlerTest(unittest.TestCase):
 
         Test that the system can exhaust jobs correctly
         """
-
-        #return
-
         workloadName = 'TestWorkload'
 
         workload = self.createWorkload(workloadName = workloadName)

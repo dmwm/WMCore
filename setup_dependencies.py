@@ -27,7 +27,7 @@ dependencies = {
                         'systems':['wmc-base']
                         },
                 'wmc-web':{
-                        'packages': ['WMCore.WebTools', 'WMCore.Agent', 'WMCore.WorkerThreads'],
+                        'packages': ['WMCore.WebTools', 'WMCore.Agent+', 'WMCore.WorkerThreads'],
                         'systems':['wmc-database', 'wmc-base'],
                         'statics': ['src/javascript/WMCore/WebTools',
                                 'src/javascript/external/yui',
@@ -38,7 +38,9 @@ dependencies = {
                                 'src/templates/WMCore/WebTools/Masthead',]
                         },
                 'reqmgr':{
-                        'packages': ['WMCore.RequestManager', 'WMCore.HTTPFrontEnd'],
+                        'packages': ['WMCore.RequestManager+', 
+                                     'WMCore.HTTPFrontEnd', 'WMCore.HTTPFrontEnd.RequestManager', # first one gets init.py
+                                     'WMCore.Services.WorkQueue', 'WMCore.Services.WMBS', 'WMCore.Services.WMAgent'],
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/javascript/WMCore/WebTools/RequestManager',
                                     'src/templates/WMCore/WebTools/RequestManager',
@@ -46,18 +48,19 @@ dependencies = {
                         },
                 'workqueue':{
                         'packages': ['WMComponent.WorkQueueManager', 'WMCore.WorkerThreads',
-                                    'WMCore.WorkQueue','WMCore.Services', 'WMCore.Wrappers',
-                                    'WMQuality.Emulators',' WMCore.WMSpec'],
+                                    'WMCore.WorkQueue+','WMCore.Services+', 'WMCore.Wrappers+',
+                                    'WMQuality.Emulators','WMCore.WMSpec+', 'WMCore.ResourceControl',
+                                    'WMCore.WMBS', 'WMCore.Algorithms+', 'WMCore.ACDC',
+                                    'WMCore.Services+'],
                         'modules' : ['WMQuality.__init__'],
                         'systems': ['wmc-web', 'wmc-database', 'wmc-base', 'wmc-component'],
                         'statics': ['src/templates/WMCore/WebTools/WorkQueue',]
                         },
                 'wmagent':{
-                        'packages': ['WMCore.Agent', 'WMCore.WMBS', 'WMCore.Algorithms',
+                        'packages': ['WMCore.Agent+', 'WMCore.Algorithms+',
                                     'WMCore.JobStateMachine', 'WMComponent.DBSBuffer',
                                     'WMCore.HTTPFrontEnd', 'WMCore.ThreadPool',
-                                    'WMCore.BossAir',
-                                    'WMCore.ResourceControl'],
+                                    'WMCore.BossAir'],
                         'systems':['wmc-web', 'wmc-database', 'workqueue', 'wmc-runtime'],
                         'statics': ['src/javascript/WMCore/WebTools/Agent',
                                 'src/javascript/WMCore/WebTools/WMBS',

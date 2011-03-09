@@ -802,12 +802,6 @@ class WMWorkloadTest(unittest.TestCase):
         _testSetCMSSWParams_
 
         """
-    def testTruncate(self):
-        """
-        _testTruncate_
-
-        Verify that the truncate method works correctly.
-        """
         testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
         procTask = testWorkload.newTask("ProcessingTask")
         procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)

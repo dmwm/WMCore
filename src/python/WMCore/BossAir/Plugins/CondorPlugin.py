@@ -220,6 +220,7 @@ class CondorPlugin(BasePlugin):
         # If we're here, then we have submitter components
         self.scriptFile = self.config.JobSubmitter.submitScript
         self.submitDir  = self.config.JobSubmitter.submitDir
+        timeout         = getattr(self.config.JobSubmitter, 'getTimeout', 300)
 
         if not os.path.exists(self.submitDir):
             os.makedirs(self.submitDir)
@@ -227,6 +228,7 @@ class CondorPlugin(BasePlugin):
 
         successfulJobs = []
         failedJobs     = []
+        jdlFiles       = []
 
         if len(jobs) == 0:
             # Then we have nothing to do
@@ -264,6 +266,7 @@ class CondorPlugin(BasePlugin):
                 handle = open(jdlFile, 'w')
                 handle.writelines(jdlList)
                 handle.close()
+                jdlFiles.append(jdlFile)
 
             
                 # Now submit them
@@ -275,7 +278,7 @@ class CondorPlugin(BasePlugin):
         # Now we should have sent all jobs to be submitted
         # Going to do the rest of it now
         for n in range(nSubmits):
-            res = self.result.get()
+            res = self.result.get(block = True, timeout = timeout)
             output = res['stdout']
             error  = res['stderr']
             idList = res['idList']
@@ -301,6 +304,11 @@ class CondorPlugin(BasePlugin):
                         if job.get('id', None) == jobID:
                             successfulJobs.append(job)
                             break
+
+        # Remove JDL files unless commanded otherwise
+        if getattr(self.config.JobSubmitter, 'deleteJDLFiles', True):
+            for f in jdlFiles:
+                os.remove(f)
 
 
         # We must return a list of jobs successfully submitted,

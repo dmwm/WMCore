@@ -27,17 +27,17 @@ def createOptionParser():
                            help = "Print out all known thresholds and site information.")
     myOptParser.add_option("--site-name", dest = "siteName",
                            help = "Specify the name of the site")
-    myOptParser.add_option("--job-slots", dest = "jobSlots",
-                           help = "Specify the number of job slots to use at the site")
+    myOptParser.add_option("--site-slots", dest = "jobSlots",
+                           help = "Specify the maximum number of slots to use at the site")
     myOptParser.add_option("--ce-name", dest = "ceName",
                            help = "Specify the CEName for the site")
     myOptParser.add_option("--se-name", dest = "seName",
                            help = "Specify the SEName for the site")
     myOptParser.add_option("--task-type", dest = "taskType",
                            help = "Specify the name of the task to add/modify")
-    myOptParser.add_option("--max-slots", dest = "maxSlots",
+    myOptParser.add_option("--task-slots", dest = "maxSlots",
                            help = "Specify the maximum number of slots for the task type")
-    myOptParser.add_option("--priority", dest = "priority",
+    myOptParser.add_option("--priority", dest = "priority", default = 1,
                            help = "Specify the priority of the threshold at the site (higher is better)")
     myOptParser.add_option("--plugin", dest = "plugin",
                            help = "Specify submit plugin to use for specific site")
@@ -102,7 +102,6 @@ def updateSiteInfo(resourceControl, siteName, jobSlots = None,
         return
 
     if jobSlots != None:
-        print "Updating jobslots for %s to %s" % (siteName, jobSlots)
         resourceControl.setJobSlotsForSite(siteName = siteName, jobSlots = jobSlots)
 
     if seName != None:

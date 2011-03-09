@@ -9,6 +9,8 @@ Read the raw XML output from the cmsRun executable.
 
 
 import os
+import re
+import logging
 import xml.parsers.expat
 
 from WMCore.FwkJobReport import Report
@@ -287,14 +289,18 @@ def perfRepHandler(targets):
         perfRep.section_("summaries")
         perfRep.section_("cpu")
         perfRep.section_("memory")
+        perfRep.section_("storage")
         for subnode in node.children:
-            if subnode.name == "PerformanceSummary":
+            metric = subnode.attrs.get('Metric', None)
+            if metric == "Timing":
+                targets['CPU'].send( (perfRep.cpu, subnode) )
+            elif metric == "SystemMemory" or metric == "ApplicationMemory":
+                targets['Memory'].send( (perfRep.memory, subnode) )
+            elif metric == "StorageStatistics":
+                targets['Storage'].send( (perfRep.storage, subnode) )
+            else:
                 targets['PerformanceSummary'].send( (perfRep.summaries,
                                                      subnode) )
-            if subnode.name == "CPU":
-                targets['CPU'].send( (perfRep.cpu, subnode) )
-            if subnode.name == "Memory":
-                targets['Memory'].send( (perfRep.memory, subnode) )
 
 
 
@@ -310,11 +316,15 @@ def perfSummaryHandler():
         report, node = (yield)
         summary = node.attrs.get('Metric', None)
         if summary == None: continue
-        report.section_(summary)
+        # Add performance section if it doesn't exist
+        if not hasattr(report, summary):
+            report.section_(summary)
         summRep = getattr(report, summary)
-        [setattr(summRep, subnode.attrs['Name'], subnode.attrs['Value'])
-         for subnode in node.children ]
-
+        
+        for subnode in node.children:
+            setattr(summRep, subnode.attrs['Name'],
+                    subnode.attrs['Value'])
+                    
 
 @coroutine
 def perfCPUHandler():
@@ -327,12 +337,7 @@ def perfCPUHandler():
     while True:
         report, node = (yield)
         for subnode in node.children:
-            if subnode.name == "CPUCore":
-                corename = "Core%s" % subnode.attrs['Core']
-                report.section_(corename)
-                core = getattr(report, corename)
-                [ setattr(core, prop.attrs['Name'], prop.text)
-                  for prop in subnode.children]
+            setattr(report, subnode.attrs['Name'], subnode.attrs['Value'])
 
 @coroutine
 def perfMemHandler():
@@ -340,14 +345,127 @@ def perfMemHandler():
     _perfMemHandler_
 
     Pack memory performance reports into the report
-
     """
+    # Make a list of performance info we actually want
+    goodStatistics = ['PeakValueRss', 'PeakValueVsize']
+
     while True:
         report, node = (yield)
         for prop in node.children:
-            [setattr(report, prop.attrs['Name'], prop.text)
-             for prop in node.children if prop.name == "Property"]
+            if prop.attrs['Name'] in goodStatistics:
+                setattr(report, prop.attrs['Name'], prop.attrs['Value'])
 
+def checkRegEx(regexp, candidate):
+        if re.compile(regexp).match(candidate) == None:
+            return False
+        return True
+
+
+@coroutine
+def perfStoreHandler():
+    """
+    _perfStoreHandler_
+
+    Handle the information from the Storage report
+    """
+
+    # Make a list of performance info we actually want
+    goodStatistics = ['Timing-([a-z]{4})-read(v?)-totalMegabytes',
+                      'Timing-([a-z]{4})-write(v?)-totalMegabytes',
+                      'Timing-([a-z]{4})-read(v?)-totalMsecs',
+                      'Timing-([a-z]{4})-read(v?)-numOperations',
+                      'Timing-([a-z]{4})-write(v?)-numOperations',
+                      'Timing-([a-z]{4})-read(v?)-maxMsecs',
+                      'Timing-tstoragefile-readActual-numOperations', 
+                      'Timing-tstoragefile-read-numOperations',
+                      'Timing-tstoragefile-readViaCache-numSuccessfulOperations',
+                      'Timing-tstoragefile-read-numOperations',
+                      'Timing-tstoragefile-read-totalMsecs',
+                      'Timing-tstoragefile-write-totalMsecs',
+                      ]
+
+    while True:
+        report, node = (yield)
+        logging.debug("Preparing to parse storage statistics")
+        storageValues = {}
+        for prop in node.children:
+            name = prop.attrs['Name']
+            for statName in goodStatistics:
+                if checkRegEx(statName, name):
+                    storageValues[name] = float(prop.attrs['Value'])
+                    #setattr(report, name, prop.attrs['Value'])
+
+        writeMethod = None
+        readMethod  = None
+        # Figure out read method
+        for key in storageValues.keys():
+            if checkRegEx('Timing-([a-z]{4})-read(v?)-numOperations', key):
+                if storageValues[key] != 0.0:
+                    # This is the reader
+                    readMethod = key.split('-')[1]
+                    break
+        # Figure out the write method
+        for key in storageValues.keys():
+            if checkRegEx('Timing-([a-z]{4})-write(v?)-numOperations', key):
+                if storageValues[key] != 0.0:
+                    # This is the reader
+                    writeMethod = key.split('-')[1]
+                    break
+                
+        # Then assemble the information
+        # Calculate the values
+        logging.debug("ReadMethod: %s" % readMethod)
+        logging.debug("WriteMethod: %s" % writeMethod)
+        try:
+            readTotalMB = storageValues.get("Timing-%s-read-totalMegabytes" % readMethod, 0) \
+                          + storageValues.get("Timing-%s-readv-totalMegabytes" % readMethod, 0)
+            readMSecs   = (storageValues.get("Timing-%s-read-totalMsecs" % readMethod, 0)\
+                           + storageValues.get("Timing-%s-readv-totalMsecs" % readMethod, 0))
+            totalReads  = storageValues.get("Timing-%s-read-numOperations" % readMethod, 0) \
+                          + storageValues.get("Timing-%s-readv-numOperations" % readMethod, 0)
+            readMaxMSec = max(storageValues.get("Timing-%s-read-maxMsecs" % readMethod, 0),
+                              storageValues.get("Timing-%s-readv-maxMsecs" % readMethod, 0))
+            readPercOps = storageValues.get("Timing-tstoragefile-readActual-numOperations", 0)/\
+                          storageValues.get("Timing-tstoragefile-read-numOperations", 0)
+            readCachOps = storageValues.get("Timing-tstoragefile-readViaCache-numSuccessfulOperations", 0)/\
+                          storageValues.get("Timing-tstoragefile-read-numOperations", 0)
+            readTotalT  = 1000 * storageValues.get("Timing-tstoragefile-read-totalMSecs", 0)
+            readNOps    = storageValues.get("Timing-tstoragefile-read-numOperations", 0)
+            writeTime   = storageValues.get("Timing-tstoragefile-write-totalMsecs", 0) * 1000
+            writeTotMB  = storageValues.get("Timing-%s-write-totalMegabytes" % writeMethod, 0) \
+                          + storageValues.get("Timing-%s-writev-totalMegabytes" % writeMethod, 0)
+            
+            if readMSecs > 0:
+                readMBSec = readTotalMB/readMSecs
+            else:
+                readMBSec = 0
+            if totalReads > 0:
+                readAveragekB = 1024* readTotalMB/totalReads
+            else:
+                readAveragekB = 0
+            
+
+            # Attach them to the report
+            setattr(report, 'readTotalMB', readTotalMB)
+            setattr(report, 'readMBSec', readMBSec)
+            setattr(report, 'readAveragekB', readAveragekB)
+            setattr(report, 'readMaxMSec', readMaxMSec)
+            setattr(report, 'readPercentageOps', readPercOps)
+            setattr(report, 'readTotalSecs', readTotalT)
+            setattr(report, 'readNumOps', readNOps)
+            setattr(report, 'writeTotalSecs', writeTime)
+            setattr(report, 'writeTotalMB', writeTotMB)
+            setattr(report, 'readCachePercentageOps', readCachOps)
+        except ZeroDivisionError:
+            logging.error("Tried to divide by zero doing storage statistics report parsing.")
+            logging.error("Either you aren't reading and writing data, or you aren't reporting it.")
+            logging.error("Not adding any storage performance info to report.")
+
+        
+        
+
+        
+            
 
 
 
@@ -375,6 +493,7 @@ def xmlToJobReport(reportInstance, xmlFile):
         "PerformanceSummary" : perfSummaryHandler(),
         "CPU" : perfCPUHandler(),
         "Memory" : perfMemHandler(),
+        "Storage": perfStoreHandler(),
         }
 
     dispatchers  = {

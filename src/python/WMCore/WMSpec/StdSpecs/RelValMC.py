@@ -222,9 +222,9 @@ class RelValMCWorkloadFactory(StdBase):
         # reconstruction task
         self.recoConfig = arguments["RecoConfigCacheID"]        
         # job splitting parameters (information for WorkQueue) for the reco task
-        self.recoJobSplitAlgo = arguments.get("RecoJobSplitAlgo", "FileBased")
+        self.recoJobSplitAlgo = arguments.get("RecoJobSplitAlgo", "LumiBased")
         self.recoJobSplitArgs = arguments.get("RecoJobSplitArgs",
-                                              {"files_per_job": 1})
+                                              {"lumis_per_job": 15})
                 
         # alcareco (skim) task
         self.alcaRecoConfig = arguments["AlcaRecoConfigCacheID"]

@@ -2,7 +2,7 @@
 """
 Manage dependancies by declaring systems here.
 A system can depend on packages or other systems.
-
+If a package ends with a + include all subpackages.
 """
 dependencies = {
                 'wmc-base':{

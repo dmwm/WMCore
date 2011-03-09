@@ -14,7 +14,7 @@ import unittest
 import time
 
 from setup_build import BuildCommand, InstallCommand
-from setup_build import get_relative_path, list_packages, list_static_files
+from setup_build import get_path_to_wmcore_root, list_packages, list_static_files
 from setup_test import LintCommand, ReportCommand, CoverageCommand, TestCommand
 from setup_dependencies import dependencies
 
@@ -61,7 +61,7 @@ class EnvCommand(Command):
        if not os.getenv('COUCHURL', False):
            # Use the default localhost URL if none is configured.
             print 'export COUCHURL=http://localhost:5984'
-       here = get_relative_path()
+       here = get_path_to_wmcore_root()
 
        tests = here + '/test/python'
        source = here + '/src/python'
@@ -85,7 +85,7 @@ class EnvCommand(Command):
        print 'export PATH=%s' % ':'.join(expath)
 
        #We want the WMCORE root set, too
-       print 'export WMCORE_ROOT=%s' % get_relative_path()
+       print 'export WMCORE_ROOT=%s' % get_path_to_wmcore_root()
        print 'export WMCOREBASE=$WMCORE_ROOT'
        print 'export WTBASE=$WMCORE_ROOT/src'
 
@@ -110,6 +110,6 @@ setup (name = 'wmcore',
                    'build_system': BuildCommand,
                    'install_system': InstallCommand },
        # base directory for all our packages
-       package_dir = {'': 'src/python/'},# % get_relative_path()},
+       package_dir = {'': 'src/python/'},# % get_path_to_wmcore_root()},
        packages = default_packages,
        data_files = list_static_files())

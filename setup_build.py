@@ -4,36 +4,12 @@ from distutils.command.install import install
 import os, sys, os.path, shutil
 from setup_dependencies import dependencies
 
-def get_relative_path():
+def get_path_to_wmcore_root():
+    """
+    Work out the path to the WMCore root from where the script is being run. Allows for
+    calling setup.py env from sub directories and directories outside the WMCore tree.
+    """
     return os.path.dirname(os.path.abspath(os.path.join(os.getcwd(), sys.argv[0])))
-
-def generate_filelist(basepath=None, recurse=True, ignore=False):
-    if basepath:
-        walkpath = os.path.join(get_relative_path(), 'src/python', basepath)
-    else:
-        walkpath = os.path.join(get_relative_path(), 'src/python')
-
-    files = []
-
-    if walkpath.endswith('.py'):
-        if ignore and walkpath.endswith(ignore):
-            files.append(walkpath)
-    else:
-        for dirpath, dirnames, filenames in os.walk(walkpath):
-            # skipping CVS directories and their contents
-            pathelements = dirpath.split('/')
-            result = []
-            if not 'CVS' in pathelements:
-                # to build up a list of file names which contain tests
-                for file in filenames:
-                    if file.endswith('.py'):
-                        filepath = '/'.join([dirpath, file])
-                        files.append(filepath)
-
-    if len(files) == 0 and recurse:
-        files = generate_filelist(basepath + '.py', not recurse)
-
-    return files
 
 def walk_dep_tree(system):
     """
@@ -62,7 +38,7 @@ def walk_dep_tree(system):
             modules = modules | dependants.get('modules', set())
     return {'packages': packages, 'statics': statics, 'modules': modules}
 
-def list_packages(package_dirs = []):
+def list_packages(package_dirs = [], recurse=True):
     """
     Take a list of directories and return a list of all packages under those directories, skipping VCS files.
     """
@@ -70,12 +46,21 @@ def list_packages(package_dirs = []):
     # Skip the following files
     ignore_these = set(['CVS', '.svn', 'svn', '.git', 'DefaultConfig.py'])
     for a_dir in package_dirs:
-        for dirpath, dirnames, filenames in os.walk('./%s' % a_dir, topdown=True):
-            pathelements = dirpath.split('/')
-            # If any part of pathelements is in the ignore_these set skip the path
-            if len(set(pathelements) & ignore_these) == 0:
-                path = pathelements[3:]
-                packages.append('.'.join(path))
+        if recurse:
+            # Recurse the sub-directories
+            for dirpath, dirnames, filenames in os.walk('%s' % a_dir, topdown=True):
+                pathelements = dirpath.split('/')
+                # If any part of pathelements is in the ignore_these set skip the path
+                if len(set(pathelements) & ignore_these) == 0:
+                    rel_path = os.path.relpath(dirpath, get_path_to_wmcore_root())
+                    rel_path = rel_path.split('/')[2:]
+                    packages.append('.'.join(rel_path))
+                else:
+                    print 'Ignoring %s' % dirpath
+        else:
+            rel_path = os.path.relpath(a_dir, get_path_to_wmcore_root())
+            rel_path = rel_path.split('/')[2:]
+            packages.append('.'.join(rel_path))
     return packages
 
 def data_files_for(dir):
@@ -102,11 +87,14 @@ def list_static_files(system = None):
             add_static((static_dir.replace('src/', ''), data_files_for(static_dir)))
     else:
         for language in ['couchapps', 'css', 'html', 'javascript', 'templates']:
-            add_static((language, data_files_for('%s/src/%s' % (get_relative_path(), language))))
+            add_static((language, data_files_for('%s/src/%s' % (get_path_to_wmcore_root(), language))))
     # The contents of static_files will be copied at install time
     return static_files
 
 def check_system(command):
+    """
+    Check that the system being built is known, print an error message and exit if it's not.
+    """
     if command.system in dependencies.keys():
         return
     elif command.system == None:
@@ -123,7 +111,8 @@ def check_system(command):
 
 def things_to_build(command):
     """
-    Take a build/install command and determine all the packages and modules it needs to build/install.
+    Take a build/install command and determine all the packages and modules it needs to build/install. Modules are
+    explicitly listed in the dependancies but packages needs to be generated (to pick up sub directories).
     """
     # work out all the dependent packages
     dependency_tree = walk_dep_tree(dependencies[command.system])
@@ -131,28 +120,29 @@ def things_to_build(command):
     package_src_dirs = []
     module_src_files = []
     for package in dependency_tree['packages']:
-        src_path = '%s/src/python/%s' % (get_relative_path(), package.replace('.','/'))
-        package_src_dirs.append(src_path)
-    for module in dependency_tree['modules']:
-        src_path = '%s/src/python/%s.py' % (get_relative_path(), module.replace('.','/'))
-        module_src_files.append(src_path)
-    packages_to_build = package_src_dirs
-    modules_to_build = module_src_files
-    return dependency_tree['packages'], dependency_tree['modules']
+        # Need to recurse packages
+        recurse = package.endswith('+')
+        print package, recurse
+        package = package.rstrip('+')
+        src_path = '%s/src/python/%s' % (get_path_to_wmcore_root(), package.replace('.','/'))
+        package_src_dirs.extend(list_packages([src_path], recurse))
+    return package_src_dirs, dependency_tree['modules']
 
 def print_build_info(command):
-    # print some helpful information
+    """
+    print some helpful information about what needs to be built
+    """
     if len(command.distribution.packages):
         command.announce('Installing %s requires the following packages:' % (command.system), 1)
         for package in command.distribution.packages:
-            if os.path.exists('./build/lib/%s' % package.replace('.','/')) and not command.force:
+            if os.path.exists('%s/build/lib/%s' % (get_path_to_wmcore_root(), package.replace('.','/'))) and not command.force:
                 command.announce('\t %s \t - already built!' % package, 1)
             else:
                 command.announce('\t %s' % package, 1)
     if len(command.distribution.py_modules):
         command.announce('Installing %s requires the following modules:' % (command.system), 1)
         for modules in command.distribution.py_modules:
-            if os.path.exists('%s/build/lib/%s' % (get_relative_path(), modules.replace('.','/'))) and not command.force:
+            if os.path.exists('%s/build/lib/%s' % (get_path_to_wmcore_root(), modules.replace('.','/'))) and not command.force:
                 command.announce('\t %s \t - already built!' % modules)
             else:
                 command.announce('\t %s' % modules)
@@ -163,10 +153,11 @@ def force_rebuild():
     sub-systems can merge up, worst case is doing a sub-system install after a full build/install -
     you'll get the contents of all packages.
 
-    This method forcibly removes the build area, so that all sub-system builds/installs staart from
+    This method forcibly removes the build area, so that all sub-system builds/installs start from
     a clean sheet.
     """
-    shutil.rmtree('%s/build' % get_relative_path())
+    if os.path.exists('%s/build' % get_path_to_wmcore_root()):
+        shutil.rmtree('%s/build' % get_path_to_wmcore_root())
 
 class BuildCommand(Command):
     """

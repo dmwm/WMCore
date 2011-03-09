@@ -896,6 +896,33 @@ class WMWorkloadHelper(PersistencyHelper):
                                                         newTopLevelTask.name()))
         return
 
+    def setCMSSWParams(self, cmsswVersion = None, globalTag = None,
+                       initialTask = None):
+        """
+        _setCMSSWVersion_
+
+        Set the CMSSW version and the global tag for all CMSSW steps in the
+        workload.
+        """
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            for stepName in task.listAllStepNames():
+                stepHelper = task.getStepHelper(stepName)
+
+                if stepHelper.stepType() == "CMSSW":
+                    if cmsswVersion != None:
+                        stepHelper.cmsswSetup(cmsswVersion = cmsswVersion)
+                    if globalTag != None:
+                        stepHelper.setGlobalTag(globalTag)
+
+            self.setCMSSWParams(cmsswVersion, globalTag, task)
+
+        return
+
 class WMWorkload(ConfigSection):
     """
     _WMWorkload_

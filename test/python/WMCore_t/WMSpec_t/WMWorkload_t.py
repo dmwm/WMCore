@@ -797,11 +797,10 @@ class WMWorkloadTest(unittest.TestCase):
 
         return
 
-    def testTruncate(self):
+    def testSetCMSSWParams(self):
         """
-        _testTruncate_
+        _testSetCMSSWParams_
 
-        Verify that the truncate method works correctly.
         """
         testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
         procTask = testWorkload.newTask("ProcessingTask")

@@ -52,7 +52,7 @@ class LumiBasedTest(unittest.TestCase):
         #self.testInit.clearDatabase(modules = ['WMCore.WMBS'])
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        self.testInit.setupCouch("wmcore-acdc-datacollectionsvc", "GroupUser", "ACDC")
+        self.testInit.setupCouch("lumi_t", "GroupUser", "ACDC")
         
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -74,9 +74,7 @@ class LumiBasedTest(unittest.TestCase):
         """
         _tearDown_
 
-        Nothing to do...
         """
-
         self.testInit.clearDatabase()
         self.testInit.tearDownCouch()        
         return
@@ -397,8 +395,10 @@ class LumiBasedTest(unittest.TestCase):
         jobGroups = jobFactory(lumis_per_job = 100,
                                split_files_between_job = False,
                                splitOnRun = True,
-                               goodLumiListURL = collection["collection_id"],
-                               task = workload.getTask("reco").getPathName(),
+                               collectionName = collection["name"],
+                               filesetName = workload.getTask("reco").getPathName(),
+                               owner = "evansde77",
+                               group = "DMWM",
                                couchURL = self.testInit.couchUrl,
                                couchDB = self.testInit.couchDbName)
 

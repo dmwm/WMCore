@@ -229,7 +229,7 @@ class WMWorkloadTest(unittest.TestCase):
         procTaskStageOut = procTask.makeStep("StageOut1")
         procTaskStageOut.setStepType("StageOut")
         procTaskStageOutHelper = procTaskStageOut.getTypeHelper()
-        procTaskStageOutHelper.setMinMergeSize(1)
+        procTaskStageOutHelper.setMinMergeSize(1, 1)
 
         mergeTask = procTask.addTask("MergeTask")
         mergeTask.setInputReference(procTaskCMSSW, outputModule = "output")
@@ -248,7 +248,7 @@ class WMWorkloadTest(unittest.TestCase):
         skimTaskStageOut = skimTask.makeStep("StageOut1")
         skimTaskStageOut.setStepType("StageOut")
         skimTaskStageOutHelper = skimTaskStageOut.getTypeHelper()
-        skimTaskStageOutHelper.setMinMergeSize(3)
+        skimTaskStageOutHelper.setMinMergeSize(3, 3)
         testWorkload.setMergeParameters(minSize = 10, maxSize = 100, maxEvents = 1000)
 
         procSplitParams = procTask.jobSplittingParameters()
@@ -520,7 +520,7 @@ class WMWorkloadTest(unittest.TestCase):
         procTaskCmssw.setStepType("CMSSW")
         procTaskStageOut = procTask.makeStep("StageOut1")
         procTaskStageOut.setStepType("StageOut")
-        procTaskStageOut.getTypeHelper().setMinMergeSize(2)
+        procTaskStageOut.getTypeHelper().setMinMergeSize(2, 2)
         procTask.applyTemplates()
 
         mergeTask = procTask.addTask("MergeTask")
@@ -712,6 +712,7 @@ class WMWorkloadTest(unittest.TestCase):
         Verify that the truncate method works correctly.
         """
         testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setOwnerDetails("sfoulkes", "DMWM")
         procTask = testWorkload.newTask("ProcessingTask")
         procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
         procTask.setTaskType("Processing")
@@ -729,7 +730,7 @@ class WMWorkloadTest(unittest.TestCase):
 
         procTaskStageOut = procTask.makeStep("StageOut1")
         procTaskStageOut.setStepType("StageOut")
-        procTaskStageOut.getTypeHelper().setMinMergeSize(2)
+        procTaskStageOut.getTypeHelper().setMinMergeSize(2, 2)
         procTask.applyTemplates()
 
         mergeTask = procTask.addTask("MergeTask")
@@ -825,7 +826,7 @@ class WMWorkloadTest(unittest.TestCase):
 
         procTaskStageOut = procTask.makeStep("StageOut1")
         procTaskStageOut.setStepType("StageOut")
-        procTaskStageOut.getTypeHelper().setMinMergeSize(2)
+        procTaskStageOut.getTypeHelper().setMinMergeSize(2, 2)
         procTask.applyTemplates()
 
         mergeTask = procTask.addTask("MergeTask")

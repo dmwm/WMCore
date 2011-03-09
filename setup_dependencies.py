@@ -17,13 +17,13 @@ dependencies = {
                         'systems': ['wmc-base']
                         },
                 'wmc-database':{
-                        'packages': ['WMCore.Wrappers', 'WMCore.GroupUser', 'WMCore.DataStructs', 'WMCore.Database',
+                        'packages': ['WMCore.Wrappers+', 'WMCore.GroupUser', 'WMCore.DataStructs', 'WMCore.Database',
                                     'WMCore.Algorithms', 'WMCore.Services', 'WMCore.Cache'],
                         'modules': ['WMCore.Action', 'WMCore.WMConnectionBase', 'WMCore.DAOFactory', 'WMCore.WMInit'],
                         'systems':['wmc-base']
                         },
                 'wmc-runtime':{
-                        'packages': ['WMCore.WMRuntime', 'WMCore.WMSpec', 'PSetTweaks', 'WMCore.FwkJobReport'],
+                        'packages': ['WMCore.WMRuntime', 'WMCore.WMSpec+', 'PSetTweaks', 'WMCore.FwkJobReport'],
                         'systems':['wmc-base']
                         },
                 'wmc-web':{
@@ -38,7 +38,8 @@ dependencies = {
                                 'src/templates/WMCore/WebTools/Masthead',]
                         },
                 'reqmgr':{
-                        'packages': ['WMCore.Agent+', 'WMCore.RequestManager', 'WMCore.HTTPFrontEnd'],
+                        'packages': ['WMCore.Agent+', 'WMCore.RequestManager+', 'WMCore.HTTPFrontEnd.RequestManager+',
+                                     'WMCore.Services.WorkQueue', 'WMCore.Services.WMBS', 'WMCore.Services.WMAgent'],
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/javascript/WMCore/WebTools/RequestManager',
                                     'src/templates/WMCore/WebTools/RequestManager',
@@ -46,8 +47,8 @@ dependencies = {
                         },
                 'workqueue':{
                         'packages': ['WMComponent.WorkQueueManager', 'WMCore.WorkerThreads',
-                                    'WMCore.WorkQueue','WMCore.Services', 'WMCore.Wrappers',
-                                    'WMQuality.Emulators',' WMCore.WMSpec'],
+                                    'WMCore.WorkQueue+','WMCore.Services+', 'WMCore.Wrappers+',
+                                    'WMQuality.Emulators',' WMCore.WMSpec+'],
                         'modules' : ['WMQuality.__init__'],
                         'systems': ['wmc-web', 'wmc-database', 'wmc-base', 'wmc-component'],
                         'statics': ['src/templates/WMCore/WebTools/WorkQueue',]

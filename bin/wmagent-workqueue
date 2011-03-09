@@ -11,8 +11,7 @@ import sys
 import logging
 import threading
 
-from WMCore.WorkQueue.WorkQueue import localQueue, globalQueue, WorkQueue
-from WMComponent.WorkQueueManager.WorkQueueManager import WorkQueueManager
+from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.WMInit import WMInit
 from WMCore.WMInit import connectToDB
@@ -74,10 +73,7 @@ def createOptionParser():
 
 def createWorkQueue(config):
     """Create a workqueue from wmagent config"""
-    manager = WorkQueueManager(config)
-    #manager.logger = logging.getLogger()
-    manager.logger = threading.currentThread().logger
-    return manager.instantiateQueue(manager.config)
+    return queueFromConfig(config)
 
 
 def connectionTest(configFile):

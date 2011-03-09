@@ -164,9 +164,9 @@ class DataProcessingWorkloadFactory(StdBase):
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
-        self.procJobSplitAlgo  = arguments.get("StdJobSplitAlgo", "FileBased")
+        self.procJobSplitAlgo  = arguments.get("StdJobSplitAlgo", "LumiBased")
         self.procJobSplitArgs  = arguments.get("StdJobSplitArgs",
-                                               {"files_per_job": 1})
+                                               {"lumis_per_job": 15})
         return self.buildWorkload()
 
 def dataProcessingWorkload(workloadName, arguments):

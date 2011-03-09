@@ -126,8 +126,8 @@ class StdBase(object):
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
                             inputModule = None, scenarioName = None,
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
-                            couchDBName = None, configDoc = None, splitAlgo = "FileBased",
-                            splitArgs = {'files_per_job': 1}, seeding = None, totalEvents = None,
+                            couchDBName = None, configDoc = None, splitAlgo = "LumiBased",
+                            splitArgs = {'lumis_per_job': 15}, seeding = None, totalEvents = None,
                             userDN = None, asyncDest = None, stepType = "CMSSW",
                             userSandbox = None, userFiles = []):
 

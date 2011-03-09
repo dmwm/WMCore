@@ -122,7 +122,7 @@ class DataProcessingTest(unittest.TestCase):
 
         self.assertEqual(procSubscription["type"], "Processing",
                          "Error: Wrong subscription type.")
-        self.assertEqual(procSubscription["split_algo"], "FileBased",
+        self.assertEqual(procSubscription["split_algo"], "LumiBased",
                          "Error: Wrong split algo.")
 
         unmergedReco = Fileset(name = "/TestWorkload/DataProcessing/unmerged-outputRECORECO")

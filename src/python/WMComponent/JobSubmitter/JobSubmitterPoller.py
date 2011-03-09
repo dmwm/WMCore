@@ -121,14 +121,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Call once to fill the siteKeys
         # TODO: Make this less clumsy!
-        #self.getThresholds()
-        rcThresholds = self.resourceControl.listThresholdsForSubmit()
-        for siteName in rcThresholds.keys():
-            for threshold in rcThresholds[siteName]:
-                seName = threshold["se_name"]
-                if not seName in self.siteKeys.keys():
-                    self.siteKeys[seName] = []
-                self.siteKeys[seName].append(siteName)
+        self.getThresholds()
         return
 
     def addJobsToPackage(self, loadedJob):
@@ -333,25 +326,16 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         rcThresholds = self.resourceControl.listThresholdsForSubmit()
 
-        submitThresholds = {}
         for siteName in rcThresholds.keys():
-            for taskType in rcThresholds[siteName].keys():
-                seName = rcThresholds[siteName][taskType]["se_name"]
+            # Add threshold if we don't have it already
+            for threshold in rcThresholds[siteName]:
+                seName = threshold["se_name"]
                 if not seName in self.siteKeys.keys():
                     self.siteKeys[seName] = []
-                self.siteKeys[seName].append(siteName)
+                if not siteName in self.siteKeys[seName]:
+                    self.siteKeys[seName].append(siteName)
 
-                if not submitThresholds.has_key(taskType):
-                    submitThresholds[taskType] = []
-
-                maxSlots = rcThresholds[siteName][taskType]["max_slots"]
-                runningJobs = rcThresholds[siteName][taskType]["task_running_jobs"]                
-
-                if runningJobs < maxSlots:
-                    submitThresholds[taskType].append((siteName,
-                                                       maxSlots - runningJobs))
-
-        return submitThresholds
+        return rcThresholds
 
     def assignJobLocations(self):
         """
@@ -367,19 +351,19 @@ class JobSubmitterPoller(BaseWorkerThread):
           - Path to cache directory
           - SE name of the site to run at
         """
-        #submitThresholds = self.getThresholds()
-
         jobsToSubmit = {}
         jobsToPrune = {}
 
-        rcThresholds = self.resourceControl.listThresholdsForSubmit()
+        rcThresholds = self.getThresholds()
 
         for siteName in rcThresholds.keys():
+            
             totalRunning = None
             if not self.cachedJobs.has_key(siteName):
                 logging.debug("No jobs for site %s" % siteName)
                 continue
             logging.debug("Have site %s" % siteName)
+            
 
             
             for threshold in rcThresholds.get(siteName, []):

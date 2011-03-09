@@ -160,7 +160,8 @@ class JobSubmitterTest(unittest.TestCase):
         #self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService', 'WMCore.ResourceControl', 'WMCore.BossAir', 'WMCore.Agent.Database'])
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database", "WMCore.MsgService"],
                                 useDefault = False)
-        self.testInit.setupCouch("jobsubmitter_t_3", "JobDump")
+        self.testInit.setupCouch("jobsubmitter_t/jobs", "JobDump")
+        self.testInit.setupCouch("jobsubmitter_t/fwjrs", "FWJRDump")
         
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
@@ -362,13 +363,14 @@ class JobSubmitterTest(unittest.TestCase):
         config.JobSubmitter.inputFile     = os.path.join(WMCore.WMInit.getWMBASE(),
                                                          'test/python/WMComponent_t/JobSubmitter_t',
                                                          'FrameworkJobReport-4540.xml')
+        config.JobSubmitter.deleteJDLFiles = False
 
 
         #JobStateMachine
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
         config.JobStateMachine.default_retries = 1
-        config.JobStateMachine.couchDBName     = "jobsubmitter_t_3"
+        config.JobStateMachine.couchDBName     = "jobsubmitter_t"
 
 
         # Needed, because this is a test

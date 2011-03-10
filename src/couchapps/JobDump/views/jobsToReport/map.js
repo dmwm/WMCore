@@ -22,6 +22,9 @@ function(doc) {
                           'id': doc['jobid'],
                           'name': doc['name'],
                           'requestName': doc['workflow'],
+                          'taskType': doc['taskType'],
+                          'user': doc['user'],
+                          'group': doc['group'],
                           'retryCount': retryCount,
                           'newState': transition['newstate'],
                           'oldState': transition['oldstate']});

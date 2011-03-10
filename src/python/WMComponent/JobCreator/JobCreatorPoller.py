@@ -515,6 +515,9 @@ class JobCreatorPoller(BaseWorkerThread):
                     for job in jobGroup.jobs:
                         nameDictList.append({'jobid':job['id'],
                                              'cacheDir':job['cache_dir']})
+                        job["user"] = wmWorkload.getOwner()["name"]
+                        job["group"] = wmWorkload.getOwner()["group"]
+                        job["taskType"] = wmTask.taskType()
                 # Set the caches in the database
                 try:
                     if len(nameDictList) > 0:

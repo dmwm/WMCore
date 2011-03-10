@@ -36,7 +36,7 @@ class GetFinishedSubscriptions(DBFormatter):
                       AND wmbs_jobgroup.subscription = wmbs_sub.id) = 0
                AND (SELECT COUNT(wmbs_job.id) FROM wmbs_job
                       INNER JOIN wmbs_jobgroup ON wmbs_jobgroup.id = wmbs_job.jobgroup
-                      WHERE :currTime - wmbs_job.state_time > :timeOut
+                      WHERE :currTime - wmbs_job.state_time < :timeOut
                       AND wmbs_jobgroup.subscription = wmbs_sub.id) = 0"""
 
     def execute(self, timeOut = 0, conn = None, transaction = False):

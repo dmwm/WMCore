@@ -9,6 +9,7 @@ import unittest
 import logging
 import random
 import threading
+import time
 
 from WMCore.DAOFactory import DAOFactory
 from WMQuality.TestInit import TestInit
@@ -1650,6 +1651,47 @@ class SubscriptionTest(unittest.TestCase):
 
         assert finishedSubs[0]["id"] == testSubscription3["id"], \
                "Error: Wrong subscription id."
+
+        return
+
+    def testFinishedSubscriptionsTimeout(self):
+        """
+        _testFinishedSubscriptionsTimeout_
+
+        Verify that the finished subscriptions timeout works correctly.
+        """
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()        
+
+        testFileset.markOpen(False)
+        testSubscription.create()
+        testSubscription.completeFiles([testFileA, testFileB, testFileC])
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        testJobA = Job(name = "testA")
+        testJobA.addFile(testFileA)
+        testJobA["location"] = "site1"
+        testJobA.create(testJobGroup)
+        testJobA["state"] = "cleanout"
+
+        changeJobState = self.daofactory(classname = "Jobs.ChangeState")
+        changeJobState.execute([testJobA])        
+
+        finishedDAO = self.daofactory(classname = "Subscriptions.GetFinishedSubscriptions")
+        finishedSubs = finishedDAO.execute(timeOut = 1000)
+
+        self.assertEqual(len(finishedSubs), 0,
+                         "Error: There should be no finished subs.")
+
+        time.sleep(10)
+
+        finishedSubs = finishedDAO.execute(timeOut = 0)
+
+        self.assertEqual(len(finishedSubs), 1,
+                         "Error: There should be one finished subs.")
+        self.assertEqual(finishedSubs[0]["id"], testSubscription["id"],
+                         "Error: Wrong finished subscription.")
 
         return
 

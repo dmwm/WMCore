@@ -12,7 +12,7 @@ import threading
 
 from WMCore.WMConnectionBase import WMConnectionBase
 
-class WorkQueueBase(WMConnectionBase):
+class WorkQueueBase():
     """
     Generic methods used by all of the WMBS classes.
     """
@@ -25,5 +25,17 @@ class WorkQueueBase(WMConnectionBase):
         check to see if a transaction object has been created.  If none exists,
         create one but leave the transaction closed.
         """
-        WMConnectionBase.__init__(self, daoPackage = "WMCore", 
-                                  logger = logger, dbi = dbi)
+        # only load dbi connection if we need it
+        if dbi or 'dbi' in dir(threading.currentThread()):
+            self.conn = WMConnectionBase(daoPackage = "WMCore",
+                                         logger = logger, dbi = dbi)
+            self.logger = self.conn.logger
+        else:
+            self.conn = None
+            if logger:
+                self.logger = logger
+            elif 'logger' in dir(threading.currentThread()):
+                self.logger = threading.currentThread().logger
+            else:
+                import logging
+                self.logger = logging.getLogger()

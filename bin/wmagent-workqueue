@@ -118,11 +118,6 @@ def main():
         print(msg)
         sys.exit(1)
 
-    os.environ['WMAGENT_CONFIG'] = options.config
-    connectToDB()
-    #connectionTest(options.config)
-    #threading.currentThread.logger = logging
-
     cfgObject = loadConfigurationFile(options.config)
 
     workqueue = createWorkQueue(cfgObject)

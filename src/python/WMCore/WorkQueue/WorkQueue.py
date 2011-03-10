@@ -482,9 +482,9 @@ class WorkQueue(WorkQueueBase):
         if syncWithWMBS:
             from WMCore.WorkQueue.WMBSHelper import wmbsSubscriptionStatus
             wmbs_status = wmbsSubscriptionStatus(logger = self.logger,
-                                                 dbi = self.dbi,
-                                                 conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+                                                 dbi = self.conn.dbi,
+                                                 conn = self.conn.getDBConn(),
+                                    transaction = self.conn.existingTransaction())
             for item in items:
                 for wmbs in wmbs_status:
                     if item['SubscriptionId'] == wmbs['subscription_id']:

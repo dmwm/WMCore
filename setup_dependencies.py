@@ -47,13 +47,12 @@ dependencies = {
                                     'src/html/RequestManager'],
                         },
                 'workqueue':{
-                        'packages': ['WMComponent.WorkQueueManager', 'WMCore.WorkerThreads',
-                                    'WMCore.WorkQueue+','WMCore.Services+', 'WMCore.Wrappers+',
-                                    'WMQuality.Emulators','WMCore.WMSpec+', 'WMCore.ResourceControl',
-                                    'WMCore.WMBS', 'WMCore.Algorithms+', 'WMCore.ACDC',
-                                    'WMCore.Services+'],
-                        'modules' : ['WMQuality.__init__'],
-                        'systems': ['wmc-web', 'wmc-database', 'wmc-base', 'wmc-component'],
+                        'packages': ['WMCore.WorkQueue+', 'WMCore.Services+', 'WMCore.Wrappers+',
+                                     'WMCore.WMSpec+', 'WMCore.ACDC',
+                                     'WMCore.HTTPFrontEnd', 'WMCore.HTTPFrontEnd.WorkQueue+'],
+                        'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
+                                     'WMCore.Database.__init__', 'WMCore.Database.CMSCouch'],
+                        'systems': ['wmc-web', 'wmc-base'],
                         'statics': ['src/templates/WMCore/WebTools/WorkQueue',]
                         },
                 'wmagent':{

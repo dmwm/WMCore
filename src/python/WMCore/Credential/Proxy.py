@@ -124,7 +124,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                    % (proxy, error)
             raise Exception(msg)
 
-        self.logger.info(\
+        self.logger.debug(\
 'Getting subject : \n command : %s\n subject : %s retcode : %s' %(\
     getSubjectCmd, subject, retcode) ) 
         return subject.strip()
@@ -187,7 +187,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
             raise Exception(msg)
 
         if not re.compile(r"^"+claimed).search(attribute):
-            self.logger.info("Wrong VO group/role.")
+            self.logger.error("Wrong VO group/role.")
             valid = False
 
         return valid
@@ -273,7 +273,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
             output, error, retcode = execute_command(self.setUI() +  myproxyDelegCmd )
 
-            self.logger.info('MyProxy delegation :\n command: %s\n output:\
+            self.logger.debug('MyProxy delegation :\n command: %s\n output:\
                      %s\n ret: %s'%( myproxyDelegCmd, output, retcode ) )
        
             if retcode > 0 :
@@ -301,7 +301,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
             output, error, retcode = execute_command(self.setUI() +  checkMyProxyCmd )
 
-            self.logger.info( \
+            self.logger.debug( \
  'Checking myproxy for %s...command : %s\n output : %s\n retcode : %s\n'\
          %(proxy, checkMyProxyCmd, output, retcode) )
 
@@ -314,7 +314,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
             if not output:
 
-                self.logger.info(\
+                self.logger.error(\
      'No credential delegated to myproxy server %s since %s.'\
                %(self.myproxyServer, error) )
 
@@ -335,7 +335,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
                     except Exception, e:
 
-                        self.logger.info('Error extracting timeleft from proxy')
+                        self.logger.error('Error extracting timeleft from proxy')
                         self.logger.debug( str(e) )
                         proxyTimeleft =  0 
                  
@@ -349,7 +349,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
                     if serverCredName not in credNameList :
 
-                        self.logger.info(\
+                        self.logger.error(\
 'Your proxy needs retrieval and renewal policies for \
                    the requested server.')
                         proxyTimeleft =  0
@@ -365,7 +365,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
                         except Exception, e:
 
-                            self.logger.info(\
+                            self.logger.error(\
           'Error extracting timeleft from credential name')
                             self.logger.debug( str(e) )
                             proxyTimeleft =  0
@@ -389,7 +389,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
             checkMyProxyCmd = 'myproxy-info -d -s ' + self.myproxyServer
     
             output, error, retcode = execute_command(self.setUI() +  checkMyProxyCmd )
-            self.logger.info( 'Checking myproxy...command \
+            self.logger.debug( 'Checking myproxy...command \
 : %s\n output : %s\n retcode : %s\n' %(checkMyProxyCmd, output, retcode) ) 
 
             if retcode > 0 :
@@ -400,7 +400,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
             if not output:
 
-                self.logger.info(\
+                self.logger.error(\
 'No credential delegated to myproxy server %s .'%self.myproxyServer)
                 valid = False
 
@@ -420,11 +420,11 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                     hours, minutes, seconds = timeleftList[0]
                     timeleft = int(hours)*3600 + int(minutes)*60 + int(seconds)
                 except Exception, e:
-                    self.logger.info('Error extracting timeleft from proxy')
+                    self.logger.error('Error extracting timeleft from proxy')
                     self.logger.debug( str(e) )
                     valid = False
                 if timeleft < minTime:
-                    self.logger.info(\
+                    self.logger.debug(\
 'Your proxy will expire in:\n\t%s hours %s minutes %s seconds\n the minTime\
           : %s'%(hours,minutes,seconds,minTime))
                     valid = False
@@ -439,7 +439,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
                     # check if the server credential exists
                     if serverCredName not in credNameList :
-                        self.logger.info(\
+                        self.logger.error(\
 'Your proxy needs retrieval and renewal policies for the requested server.')
                         valid = False
                         return valid
@@ -450,7 +450,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                         timeleft = int(hours)*3600 + int(minutes)*60\
                                  + int(seconds)
                     except Exception, e:
-                        self.logger.info(\
+                        self.logger.error(\
                   'Error extracting timeleft from credential name')
                         self.logger.debug( str(e) )
                         valid = False
@@ -459,7 +459,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                               server will expire in:\n\t'
                         logMsg += '%s hours %s minutes %s seconds\n'% \
                              (hours,minutes,seconds)
-                        self.logger.info(logMsg)
+                        self.logger.debug(logMsg)
                         valid = False
                     # clean up expired credentials for other servers
                     destroyListCred( credNameList )
@@ -467,7 +467,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
             return valid
 
         else: 
-            self.logger.debug(\
+            self.logger.error(\
 'Error delegating credentials : myproxyserver is not specified.')
             return False
 
@@ -670,7 +670,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
             msg =  "proxy lifetime %s is different from \
             voms extension lifetime%s for proxy %s\n" \
                    % (proxyLife, vomsLife, proxy) 
-            self.logger.info(msg)
+            self.logger.debug(msg)
             result = 0
         else:
             result = ProxyLife
@@ -695,7 +695,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
 
         except Exception:
             msg  =  "voms extension lifetime for proxy %s is 0 \n" % proxy
-            self.logger.info(msg)
+            self.logger.error(msg)
             result = 0
 
         return result

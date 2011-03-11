@@ -206,6 +206,9 @@ class gLitePlugin(BasePlugin):
         self.defaultjdl['service'] = getattr(self.config.BossAir, \
                                            'gliteWMS', None)
 
+        self.basetimeout  = getattr(self.config.JobSubmitter, \
+                                    'getTimeout', 300 ) 
+
         self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, \
                                       'myproxyhost', \
                                        self.defaultDelegation['myProxySvr'] \
@@ -423,7 +426,12 @@ class gLitePlugin(BasePlugin):
         logging.debug("Waiting for %i works to finish.." % len(workqueued))
         for n in xrange(len(workqueued)):
             logging.debug("Waiting for work number %i to finish.." % n)
-            res = result.get()
+            res = None
+            try:
+                res = result.get(block = True, timeout = self.basetimeout)
+            except multiprocessing.Queue.Empty:
+                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                continue
             jsout  = res['jsout']
             error  = res['stderr']
             exit   = res['exit']
@@ -590,7 +598,12 @@ class gLitePlugin(BasePlugin):
         logging.debug("Waiting for %i works to finish..." % len(workqueued))
         for n in xrange(len(workqueued)):
             logging.debug("Waiting for work number %i to finish.." % n)
-            res = result.get()
+            res = None
+            try:
+                res = result.get(block = True, timeout = self.basetimeout)
+            except multiprocessing.Queue.Empty:
+                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                continue
             jsout  = res['jsout']
             error  = res['stderr']
             exit   = res['exit']
@@ -733,7 +746,12 @@ class gLitePlugin(BasePlugin):
         logging.debug("Waiting for %i works to finish..." % len(workqueued))
         for n in xrange(len(workqueued)):
             logging.debug("Waiting for work number %i to finish.." % n)
-            res = result.get()
+            res = None
+            try:
+                res = result.get(block = True, timeout = self.basetimeout)
+            except multiprocessing.Queue.Empty:
+                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                continue
             jsout  = res['jsout']
             error  = res['stderr']
             exit   = res['exit']
@@ -850,7 +868,12 @@ class gLitePlugin(BasePlugin):
         logging.debug("Waiting for %i works to finish..." % len(workqueued))
         for n in xrange(len(workqueued)):
             logging.debug("Waiting for work number %i to finish.." % n)
-            res = result.get()
+            res = None
+            try:
+                res = result.get(block = True, timeout = self.basetimeout)
+            except multiprocessing.Queue.Empty:
+                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                continue
             jsout  = res['jsout']
             error  = res['stderr']
             exit   = res['exit']
@@ -959,9 +982,13 @@ class gLitePlugin(BasePlugin):
         logging.debug("Waiting for %i JOBS to be killed..." % len(workqueued))
 
         for n in xrange(len(workqueued)):
-
             logging.debug("Waiting for job number %i to be killed.." % n)
-            res = result.get()
+            res = None
+            try:
+                res = result.get(block = True, timeout = self.basetimeout)
+            except multiprocessing.Queue.Empty:
+                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                continue
             jsout  = res['jsout']
             error  = res['stderr']
             exit   = res['exit']

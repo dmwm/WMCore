@@ -513,6 +513,11 @@ class SetupCMSSWPset(ScriptInterface):
         # check for random seeds and the method of seeding which is in the job baggage
         self.handleSeeding()
         
+        # include the default performance report services
+        self.process.add_(cms.Service("SimpleMemoryCheck"))
+        self.process.add_(cms.Service("Timing"))
+        
+        
         # accept an overridden TFC from the step
         if hasattr(self.step.data.application,'overrideCatalog'):
             print "Found a TFC override: %s" % self.step.data.application.overrideCatalog

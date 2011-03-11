@@ -130,8 +130,14 @@ class TestChangeState(unittest.TestCase):
                "Error: Splitting should have created two jobs."
 
         testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Merge"
         testJobB = jobGroup.jobs[1]
-
+        testJobB["user"] = "sfoulkes"
+        testJobB["group"] = "DMWM"
+        testJobB["taskType"] = "Processing"
+        
         change.propagate([testJobA, testJobB], "new", "none")
         change.propagate([testJobA, testJobB], "created", "new")
         change.propagate([testJobA, testJobB], "executing", "created")
@@ -249,9 +255,21 @@ class TestChangeState(unittest.TestCase):
                "Error: Splitting should have created four jobs."
 
         testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Processing"
         testJobB = jobGroup.jobs[1]
+        testJobB["user"] = "sfoulkes"
+        testJobB["group"] = "DMWM"
+        testJobB["taskType"] = "Processing"        
         testJobC = jobGroup.jobs[2]
+        testJobC["user"] = "sfoulkes"
+        testJobC["group"] = "DMWM"
+        testJobC["taskType"] = "Processing"        
         testJobD = jobGroup.jobs[3]
+        testJobD["user"] = "sfoulkes"
+        testJobD["group"] = "DMWM"
+        testJobD["taskType"] = "Processing"
 
         change.persist([testJobA, testJobB], "created", "new")
         change.persist([testJobC, testJobD], "new", "none")        
@@ -308,9 +326,21 @@ class TestChangeState(unittest.TestCase):
                "Error: Splitting should have created four jobs."
 
         testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Processing"
         testJobB = jobGroup.jobs[1]
+        testJobB["user"] = "sfoulkes"
+        testJobB["group"] = "DMWM"
+        testJobB["taskType"] = "Processing"        
         testJobC = jobGroup.jobs[2]
+        testJobC["user"] = "sfoulkes"
+        testJobC["group"] = "DMWM"
+        testJobC["taskType"] = "Processing"        
         testJobD = jobGroup.jobs[3]
+        testJobD["user"] = "sfoulkes"
+        testJobD["group"] = "DMWM"
+        testJobD["taskType"] = "Processing"
 
         change.persist([testJobA], "created", "submitcooloff")
         change.persist([testJobB], "created", "jobcooloff")
@@ -367,7 +397,10 @@ class TestChangeState(unittest.TestCase):
         assert len(jobGroup.jobs) == 1, \
                "Error: Splitting should have created one job."
 
-        testJobA = jobGroup.jobs[0]        
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Processing"
 
         change.propagate([testJobA], 'created', 'new')
         myReport = Report()
@@ -443,7 +476,13 @@ class TestChangeState(unittest.TestCase):
                "Error: Splitting should have created two jobs."
 
         testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Merge"
         testJobB = jobGroup.jobs[1]
+        testJobB["user"] = "sfoulkes"
+        testJobB["group"] = "DMWM"
+        testJobB["taskType"] = "Processing"
 
         change.propagate([testJobA, testJobB], "new", "none")
         change.propagate([testJobA, testJobB], "created", "new")
@@ -473,17 +512,57 @@ class TestChangeState(unittest.TestCase):
 
         change.propagate([testJobB], "created", "submitcooloff")
         change.propagate([testJobB], "executing", "created")
-        change.propagate([testJobA, testJobB], "complete", "executing")        
+        change.propagate([testJobA, testJobB], "complete", "executing")
         change.propagate([testJobB], "success", "complete")
         change.propagate([testJobA], "jobfailed", "complete")        
 
         transitions = change.listTransitionsForDashboard()
-        goldenTransitions = [{"name": testJobA["name"], "retryCount": 0, "newState": "jobfailed", "oldState": "complete", "requestName": "wf001"},
-                             {"name": testJobB["name"], "retryCount": 1, "newState": "executing", "oldState": "created", "requestName": "wf001"},
-                             {"name": testJobB["name"], "retryCount": 1, "newState": "success", "oldState": "complete", "requestName": "wf001"}]
+        goldenTransitions = [{"name": testJobA["name"], "retryCount": 0, "newState": "jobfailed",
+                              "oldState": "complete", "requestName": "wf001", "user": "sfoulkes",
+                              "group": "DMWM", "taskType": "Merge", "performance": {}},
+                             {"name": testJobB["name"], "retryCount": 1, "newState": "executing",
+                              "oldState": "created", "requestName": "wf001", "user": "sfoulkes",
+                              "group": "DMWM", "taskType": "Processing", "performance": {}},
+                             {"name": testJobB["name"], "retryCount": 1, "newState": "success",
+                              "oldState": "complete", "requestName": "wf001", "user": "sfoulkes",
+                              "group": "DMWM", "taskType": "Processing", "performance": {}}]
         self.assertEqual(transitions, goldenTransitions,
                          "Error: Wrong transitions.")
+
+        xmlPath = os.path.join(getWMBASE(),
+                               "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
         
+        myReport = Report("cmsRun1")
+        myReport.parse(xmlPath)
+        testJobA["fwjr"] = myReport
+        change.propagate([testJobA], "complete", "executing")
+        change.propagate([testJobA], "success", "complete")        
+
+        transitions = change.listTransitionsForDashboard()
+
+        self.assertEqual(len(transitions), 1,
+                         "Error: Wrong number of transitions.")
+
+        perfSection = transitions[0]["performance"]
+        self.assertTrue(perfSection.has_key("storage"),
+                        "Error: Storage section is missing.")
+        self.assertTrue(perfSection.has_key("memory"),
+                        "Error: Memory section is missing.")
+        self.assertTrue(perfSection.has_key("cpu"),
+                        "Error: CPU section is missing.")
+
+        self.assertEqual(perfSection["cpu"]["AvgEventCPU"], "0.626105",
+                         "Error: AvgEventCPU is wrong.")
+        self.assertEqual(perfSection["cpu"]["TotalJobTime"], "23.5703",
+                         "Error: TotalJobTime is wrong.")
+        self.assertEqual(perfSection["storage"]["readTotalMB"], 39.6166,
+                         "Error: readTotalMB is wrong.")
+        self.assertEqual(perfSection["storage"]["readMaxMSec"], 320.653,
+                         "Error: readMaxMSec is wrong")
+        self.assertEqual(perfSection["memory"]["PeakValueRss"], "492.293",
+                         "Error: PeakValueRss is wrong.")
+        self.assertEqual(perfSection["memory"]["PeakValueVsize"], "643.281",
+                         "Error: PeakValueVsize is wrong.")
         return
 
 if __name__ == "__main__":

@@ -397,6 +397,67 @@ cms::Exception caught in EventProcessor and rethrown
             self.assertEqual(d['max'], 800)
             self.assertEqual(d['average'], 244)
         return
+
+    def testPerformanceSummary(self):
+        """
+        _testPerformanceSummary_
+        
+        Test whether or not we can pull performance information
+        out of a Timing/SimpleMemoryCheck jobReport
+        """
+        
+        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                               "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
+        
+        myReport = Report("cmsRun1")
+        myReport.parse(xmlPath)
+        
+        # Do a brief check of the three sections
+        perf = myReport.data.cmsRun1.performance
+
+        self.assertEqual(perf.memory.PeakValueRss, '492.293')
+        self.assertEqual(perf.cpu.TotalJobCPU, '9.16361')
+        self.assertEqual(perf.storage.writeTotalMB, 5.22226)
+        self.assertEqual(perf.storage.writeTotalSecs, 60317.4)
+        self.assertEqual(perf.storage.readPercentageOps, 0.98585512216030857)
+        
+        return
+
+    def testPerformanceJSON(self):
+        """
+        _testPerformanceJSON_
+
+        Verify that the performance section of the report is correctly converted
+        to JSON.
+        """
+        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                               "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
+        
+        myReport = Report("cmsRun1")
+        myReport.parse(xmlPath)
+
+        perfSection = myReport.__to_json__(thunker = None)["steps"]["cmsRun1"]["performance"]
+
+        self.assertTrue(perfSection.has_key("storage"),
+                        "Error: Storage section is missing.")
+        self.assertTrue(perfSection.has_key("memory"),
+                        "Error: Memory section is missing.")
+        self.assertTrue(perfSection.has_key("cpu"),
+                        "Error: CPU section is missing.")
+
+        self.assertEqual(perfSection["cpu"]["AvgEventCPU"], "0.626105",
+                         "Error: AvgEventCPU is wrong.")
+        self.assertEqual(perfSection["cpu"]["TotalJobTime"], "23.5703",
+                         "Error: TotalJobTime is wrong.")
+        self.assertEqual(perfSection["storage"]["readTotalMB"], 39.6166,
+                         "Error: readTotalMB is wrong.")
+        self.assertEqual(perfSection["storage"]["readMaxMSec"], 320.653,
+                         "Error: readMaxMSec is wrong")
+        self.assertEqual(perfSection["memory"]["PeakValueRss"], "492.293",
+                         "Error: PeakValueRss is wrong.")
+        self.assertEqual(perfSection["memory"]["PeakValueVsize"], "643.281",
+                         "Error: PeakValueVsize is wrong.")
+        return
     
 if __name__ == "__main__":
     unittest.main()

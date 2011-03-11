@@ -148,34 +148,50 @@ class Report:
                 
             self.addError("cmsRun1", 50115, "BadFWJRXML", msg)
 
+    def jsonizeFiles(self, reportModule):
+        """
+        _jsonizeFiles_
+        
+        Put individual files in JSON format.
+        """
+        jsonFiles = []
+        fileCount = getattr(reportModule.files, "fileCount", 0)
+
+        for i in range(fileCount):
+            reportFile = getattr(reportModule.files, "file%s" % i)
+            jsonFile = reportFile.dictionary_()
+
+            cfgSectionRuns = jsonFile["runs"]
+            jsonFile["runs"] = {}
+            for runNumber in cfgSectionRuns.listSections_():
+                jsonFile["runs"][str(runNumber)] = getattr(cfgSectionRuns,
+                                                               runNumber)
+            jsonFiles.append(jsonFile)
+
+        return jsonFiles
+
+    def jsonizePerformance(self, perfSection):
+        """
+        _jsonizePerformance_
+
+        Convert the performance section of the FWJR into JSON.
+        """
+        jsonPerformance = {}
+        for reportSection in ["storage", "memory", "cpu"]:
+            jsonPerformance[reportSection] = {}
+            if not hasattr(perfSection, reportSection):
+                continue
+
+            jsonPerformance[reportSection] = getattr(perfSection, reportSection).dictionary_()
+
+        return jsonPerformance
+
     def __to_json__(self, thunker):
         """
         __to_json__
 
         Create a JSON version of the Report.
         """
-        def jsonizeFiles(reportModule):
-            """
-            _jsonizeFiles_
-            
-            Put individual files in JSON format.
-            """
-            jsonFiles = []
-            fileCount = getattr(reportModule.files, "fileCount", 0)
-
-            for i in range(fileCount):
-                reportFile = getattr(reportModule.files, "file%s" % i)
-                jsonFile = reportFile.dictionary_()
-
-                cfgSectionRuns = jsonFile["runs"]
-                jsonFile["runs"] = {}
-                for runNumber in cfgSectionRuns.listSections_():
-                    jsonFile["runs"][str(runNumber)] = getattr(cfgSectionRuns,
-                                                               runNumber)
-                jsonFiles.append(jsonFile)
-
-            return jsonFiles
-
         jsonReport = {}
         jsonReport["task"] = self.getTaskName()
         jsonReport["steps"] = {}
@@ -195,15 +211,17 @@ class Report:
             jsonStep["start"] = stepTimes["startTime"]
             jsonStep["stop"] = stepTimes["stopTime"]
 
+            jsonStep["performance"] = self.jsonizePerformance(reportStep.performance)
+
             jsonStep["output"] = {}
             for outputModule in reportStep.outputModules:
                 reportOutputModule = getattr(reportStep.output, outputModule)
-                jsonStep["output"][outputModule] = jsonizeFiles(reportOutputModule)                
+                jsonStep["output"][outputModule] = self.jsonizeFiles(reportOutputModule)
 
             jsonStep["input"] = {}
             for inputSource in reportStep.input.listSections_():
                 reportInputSource = getattr(reportStep.input, inputSource)
-                jsonStep["input"][inputSource] = jsonizeFiles(reportInputSource)                
+                jsonStep["input"][inputSource] = self.jsonizeFiles(reportInputSource)                
 
             jsonStep["errors"] = []
             errorCount = getattr(reportStep.errors, "errorCount", 0)

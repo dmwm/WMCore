@@ -179,6 +179,9 @@ class ChangeState(WMObject, WMConnectionBase):
                                        "lastrun": job["mask"]["LastRun"]}
                 jobDocument["name"] = job["name"]
                 jobDocument["type"] = "job"
+                jobDocument["user"] = job["user"]
+                jobDocument["group"] = job["group"]
+                jobDocument["taskType"] = job["taskType"]
 
                 couchRecordsToUpdate.append({"jobid": job["id"],
                                              "couchid": jobDocument["_id"]})                
@@ -245,14 +248,25 @@ class ChangeState(WMObject, WMConnectionBase):
           - requestName
           - newState
           - oldState
+          - user
+          - group
+          - taskType
+          - performance
         """
         updateBase = "/" + self.jobsdatabase.name + "/_design/JobDump/_update/dashboardReporting/"
         viewResults = self.jobsdatabase.loadView("JobDump", "jobsToReport")
 
         jobsToReport = []
         for viewResult in viewResults["rows"]:
-            jobReport = {}
+            jobReport = {"performance": {}}
             jobReport.update(viewResult["value"])
+
+            perfResults = self.fwjrdatabase.loadView("FWJRDump", "performanceByJobID",
+                                                     options = {"startkey": [jobReport["id"], jobReport["retryCount"]],
+                                                                "endkey": [jobReport["id"], jobReport["retryCount"], {}]})
+            if len(perfResults["rows"]) > 0:
+                jobReport["performance"] = perfResults["rows"][0]["value"]
+                
             del jobReport["index"]
             del jobReport["id"]
             jobsToReport.append(jobReport)

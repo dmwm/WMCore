@@ -308,6 +308,18 @@ class SetupCMSSWPset(ScriptInterface):
         # still here means bad seeding algo name
         raise RuntimeError, "Bad Seeding Algorithm: %s" % seeding
     
+    def handlePerformanceSettings(self):
+        """
+        _handlePerformanceSettings_
+        
+        Install the standard performance report services
+        """
+        import FWCore.ParameterSet.Config as PSetConfig
+       
+        # include the default performance report services
+        self.process.add_(PSetConfig.Service("SimpleMemoryCheck"))
+        self.process.add_(PSetConfig.Service("Timing"))
+    
     
     def _handleChainedProcessing(self):
         """
@@ -512,11 +524,9 @@ class SetupCMSSWPset(ScriptInterface):
         
         # check for random seeds and the method of seeding which is in the job baggage
         self.handleSeeding()
-        
-        # include the default performance report services
-        self.process.add_(cms.Service("SimpleMemoryCheck"))
-        self.process.add_(cms.Service("Timing"))
-        
+
+        # make sure default parametersets for perf reports are installed
+        self.handlePerformanceSettings()
         
         # accept an overridden TFC from the step
         if hasattr(self.step.data.application,'overrideCatalog'):

@@ -73,12 +73,12 @@ Configuration <br>
       <option>relvalmcfs</option>
     </select><br/>
   <input type="radio" name=$radioName value="couchDB" /> CouchDB ID
-    <!--<input type="text" name="ProdConfigCacheID" size=80 />-->
-    <select name=$cacheName>
+    <input type="text" name="$cacheName" size=80 />
+    <!--<select name=$cacheName>
     #for $doc in $alldocs
       <option>$doc</option>
     #end for
-    </select>
+    </select>-->
   <br/>
 
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
@@ -92,7 +92,7 @@ DBS: <!--input type="text" name="dbs" value="http://cmsdbsprod.cern.ch/cms_dbs_p
 		<option>http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet</option>
                 <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_01/servlet/DBSServlet</option>
                 <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_02/servlet/DBSServlet</option>
-</select></br>
+</select><br>
 #end def
 
 #def skimBlock($skimNum)
@@ -155,12 +155,13 @@ Emulator:
         <li><a href="#storeResults"><em>StoreResults</em></a></li>
         <li><a href="#DataProcessing"><em>DataProcessing</em></a></li>
         <li><a href="#Resubmission"><em>Resubmission</em></a></li>
+        <li><a href="#ReDigi"><em>ReDigi</em></a></li>
     </ul>
     <div class="yui-content">
         <div id="rereco">
             $headerBlock
             $softwareBlock
-            $configBlock("inputMode", "Scenario", "ProdConfigCacheID")
+            $configBlock("inputMode", "Scenario", "ProcConfigCacheID")
             $ioBlock
             $moreSkims(0)
             $runBlockBlock
@@ -201,7 +202,7 @@ MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
             $softwareBlock
 # of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
 Multicore: <input type="text" name="Multicore" size=2 value="" /> <br/>
-            $configBlock("inputMode", "Scenario", "ProdConfigCacheID")
+            $configBlock("inputMode", "Scenario", "ProcConfigCacheID")
             $ioBlock
             $runBlockBlock
             $trailerBlock("DataProcessing")
@@ -214,6 +215,21 @@ ACDC Server URL: <input type="text" name="ACDCServer" size=30/><br/>
 ACDC Database Name: <input type="text" name="ACDCDatabase" size=30/><br/>
             $trailerBlock("Resubmission")
         </div>
+        <div id="ReDigi">
+            $headerBlock
+            $softwareBlock
+            $ioBlock
+<br/>
+Step One CacheCache ID: <input type="text" name="StepOneConfigCacheID" size=80 /><br/>
+Step One RAW Output Module Name: <input type="text" name="StepOneRAWOutputModuleName" size=20 /><br/>
+Step Two CacheCache ID: <input type="text" name="StepTwoConfigCacheID" size=80 /><br/>
+Step Two RECO Output Module Name: <input type="text" name="StepTwoRECOOutputModuleName" size=20 /><br/>
+Step Three CacheCache ID: <input type="text" name="StepThreeConfigCacheID" size=80 /><br/>
+Global Tag: <input type="text" name="GlobalTag" size=20 value=""/><br/>
+Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
+MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
+            $runBlockBlock
+            $trailerBlock("ReDigi")
     </div>
 </div>
 <script type="text/javascript">

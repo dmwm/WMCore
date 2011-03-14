@@ -4,8 +4,6 @@ _ResubmissionRequest_
 
 Prepare a workflow to be resubmitted.
 """
-import logging
-
 
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import loadWorkload
@@ -24,7 +22,6 @@ class ResubmissionRequest(RequestMakerInterface):
         RequestMakerInterface.__init__(self)
 
     def makeWorkload(self, schema):
-        logging.error("HELLO")
         originalRequest = GetRequest.getRequestByName(schema['OriginalRequestName'])
         helper = loadWorkload(originalRequest)
         helper.truncate(schema["RequestName"], schema["InitialTaskPath"],

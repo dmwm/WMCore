@@ -67,16 +67,13 @@ Site Blacklist:
 <h4>LFN Bases</h4>
 Merged LFN Base: <select name="MergedLFNBase">
   #for $mergedLFNBase in $mergedLFNBases
-    <option>$mergedLFNBase</option>
+    $mergedLFNBase
   #end for
 </select><br/>
 Unmerged LFN Base: <select name="UnmergedLFNBase">
-  <option>/store/unmerged</option>
-  <option>/store/backfill/1/unmerged</option>
-  <option>/store/backfill/1/test01/unmerged</option>
-  <option>/store/temp/unmerged</option>
-  <option>/store/temp/WMAgent/unmerged</option>
-  <option>/store/unmerged/lustre</option>
+  #for $unmergedLFNBase in $unmergedLFNBases
+    $unmergedLFNBase
+  #end for
 </select>
 
 <div id="otherOptions">
@@ -85,8 +82,8 @@ Min Merge Size <input type="text" name="MinMergeSize" value=500000000 size=10/>
 Max Merge Size <input type="text" name="MaxMergeSize" value=4294967296 size=10/>
 Max Merge Events <input type="text" name="MaxMergeEvents" value=50000 size=10/><br/>
 
-Acquisition Era: <input type="text" name="AcquisitionEra" size=20/><br/>
-ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 /><br/>
+Acquisition Era: <input type="text" name="AcquisitionEra" size=20 value="$acqEra" /><br/>
+ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 value="$procVer" /><br/>
 </div>
 <br/>
 

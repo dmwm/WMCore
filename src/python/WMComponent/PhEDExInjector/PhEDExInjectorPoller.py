@@ -160,7 +160,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         if len(injectedFiles) > 0:
             logging.debug("Injecting files: %s" % injectedFiles)
-            self.setStatus.execute(injectedFiles, "InPhEDEx", 
+            self.setStatus.execute(injectedFiles, 1, 
                                    conn = myThread.transaction.conn,
                                    transaction = myThread.transaction)
 

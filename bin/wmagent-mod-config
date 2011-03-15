@@ -105,8 +105,9 @@ def modifyConfiguration(config, **args):
         config.WorkQueueService.views.active.workqueue.queueParams["QueueURL"] = "http://%s:%s/workqueueservice/workqueue" % (args["global_workqueue_hostname"],
                                                                                                                               args["global_workqueue_port"])
         config.WorkQueueService.views.active.workqueue.queueParams["CacheDir"] = "%s/WorkQueueManager/wf" % args['working_dir']
-        config.WorkQueueService.views.active.wmagent.couchConfig.couchURL = args["couch_url"]
-        config.WorkQueueService.views.active.workqueue.couchConfig.couchURL = args["couch_url"]
+        if hasattr(config.WorkQueueService.views.active, "wmagent"):         
+            config.WorkQueueService.views.active.wmagent.couchConfig.couchURL = args["couch_url"]
+            config.WorkQueueService.views.active.workqueue.couchConfig.couchURL = args["couch_url"]
     elif args.get("local_workqueue_port", None) != None and args.get("global_workqueue_port", None) != None:
         config.WorkQueueManager.serviceUrl = "%s:%s" % (args["global_workqueue_hostname"],
                                                         args["global_workqueue_port"])
@@ -117,8 +118,11 @@ def modifyConfiguration(config, **args):
         config.WorkQueueService.views.active.workqueue.queueParams["QueueURL"] = "http://%s:%s/workqueueservice/workqueue" % (socket.gethostname(),
                                                                                                                               args["local_workqueue_port"])
         config.WorkQueueService.views.active.workqueue.queueParams["CacheDir"] = "%s/WorkQueueManager/wf" % args['working_dir']
-        config.WorkQueueService.views.active.wmagent.couchConfig.couchURL = args["couch_url"]
-        config.WorkQueueService.views.active.workqueue.couchConfig.couchURL = args["couch_url"]                        
+
+        if hasattr(config.WorkQueueService.views.active, "wmagent"):         
+            config.WorkQueueService.views.active.wmagent.couchConfig.couchURL = args["couch_url"]
+            config.WorkQueueService.views.active.workqueue.couchConfig.couchURL = args["couch_url"]
+            
         config.WorkQueueManager.BossAirConfig.BossAir = config.BossAir
         config.WorkQueueManager.JobDumpConfig.JobStateMachine = config.JobStateMachine
 

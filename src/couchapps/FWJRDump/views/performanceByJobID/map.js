@@ -10,7 +10,7 @@ function(doc) {
       }
 
       if (doc['fwjr']['steps'][stepName].performance) {
-        emit([doc['jobid'], doc['retrycount']], 
+        emit([doc['jobid'], doc['retrycount'], doc['timestamp']], 
              doc['fwjr']['steps'][stepName].performance);
       }
     }

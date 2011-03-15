@@ -98,7 +98,7 @@ config.CoreDatabase.connectUrl = databaseUrl
 config.component_("DashboardReporter")
 config.DashboardReporter.namespace = "WMComponent.DashboardReporter.DashboardReporter"
 config.DashboardReporter.componentDir = config.General.workDir + "/DashboardReporter"
-config.DashboardReporter.dashboardHost = "dashboard08.cern.ch"
+config.DashboardReporter.dashboardHost = "cms-wmagent-job.cern.ch"
 config.DashboardReporter.dashboardPort = 8884
 config.DashboardReporter.pollInterval = 60
 

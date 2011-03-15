@@ -7,6 +7,8 @@ import logging
 import socket
 import threading
 
+import WMCore.WMInit
+
 from WMCore.WMBS.Subscription   import Subscription
 from WMCore.WMBS.Workflow       import Workflow
 from WMCore.WMBS.File           import File
@@ -21,6 +23,7 @@ from WMCore.Agent.Configuration             import Configuration
 from WMCore.WMSpec.Makers.TaskMaker         import TaskMaker
 from WMCore.Services.UUID                   import makeUUID
 from WMCore.JobStateMachine.ChangeState     import ChangeState
+from WMCore.FwkJobReport.Report             import Report
 
 from WMComponent.DashboardReporter.DashboardReporterPoller import DashboardReporterPoller
 
@@ -54,7 +57,8 @@ class DashboardReporterTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ['WMCore.WMBS', 
                                                  'WMCore.ResourceControl',
                                                  'WMCore.Agent.Database'], useDefault = False)
-        self.testInit.setupCouch("dashboardreporter_t_0", "JobDump")
+        self.testInit.setupCouch("dashboardreporter_t/jobs", "JobDump")
+        self.testInit.setupCouch("dashboardreporter_t/fwjrs", "FWJRDump")
 
 
         resourceControl = ResourceControl()
@@ -105,7 +109,7 @@ class DashboardReporterTest(unittest.TestCase):
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')
         config.JobStateMachine.default_retries = 1
-        config.JobStateMachine.couchDBName     = "dashboardreporter_t_0"
+        config.JobStateMachine.couchDBName     = "dashboardreporter_t"
 
         return config
 
@@ -134,16 +138,18 @@ class DashboardReporterTest(unittest.TestCase):
 
         return workload
 
-    def createTestJobGroup(self, nJobs = 10, retry_count = 1, workloadPath = 'test'):
+    def createTestJobGroup(self, nJobs = 10, retry_count = 0, workloadPath = 'test'):
         """
         Creates a group of several jobs
         """
+
+        
 
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
         testWorkflow = Workflow(spec = workloadPath, owner = "Simon",
-                                name = "wf001", task="/TestWorkload/ReReco")
+                                name = "wf001", task="Test")
         testWorkflow.create()
         
         testWMBSFileset = Fileset(name = "TestFileset")
@@ -179,6 +185,10 @@ class DashboardReporterTest(unittest.TestCase):
             testJob = Job(name = makeUUID())
             testJob['retry_count'] = retry_count
             testJob['retry_max'] = 10
+            testJob['group'] = 'BadGuys'
+            testJob['user']  = 'amoron'
+            testJob['taskType'] = 'Merge'
+            #testJob['fwjr'] = myReport
             testJobGroup.add(testJob)
             testJob.create(group = testJobGroup)
             testJob.addFile(testFileA)
@@ -204,20 +214,26 @@ class DashboardReporterTest(unittest.TestCase):
         Test whether we pick up submitted jobs
         """
 
-        workload = self.createWorkload()
+        #workload = self.createWorkload()
         jobGroup = self.createTestJobGroup()
         config   = self.getConfig()
 
+        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                               "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
+        myReport = Report("cmsRun1")
+        myReport.parse(xmlPath)
+
         changer = ChangeState(config)
-        changer.propagate(jobGroup.jobs, 'created', 'new')
-        changer.propagate(jobGroup.jobs, 'executing', 'created')
+        for job in jobGroup.jobs:
+            job['fwjr'] = myReport
+        changer.propagate(jobGroup.jobs, "complete", "executing")
+        changer.propagate(jobGroup.jobs, "success", "complete")
 
         dashboardReporter = DashboardReporterPoller(config = config)
 
         dashboardReporter.algorithm()
 
         # What the hell am I supposed to check?
-
         changer.propagate(jobGroup.jobs, 'jobfailed', 'executing')
 
         dashboardReporter.algorithm()

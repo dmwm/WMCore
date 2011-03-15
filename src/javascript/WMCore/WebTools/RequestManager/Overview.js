@@ -30,7 +30,7 @@ WMCore.RequestManager.Overview.overviewTable = function(divID, filterDiv,
     
     var formatLocalQ = function(elCell, oRecord, oColumn, sData) { 
             var host;
-            if (!sData || ! sData.length) {
+            if (!sData || ! sData.length && oRecord.getData("status") != "completed") {
                 elCell.innerHTML = "Not Assigned";
             } else {
             for (data in sData) {

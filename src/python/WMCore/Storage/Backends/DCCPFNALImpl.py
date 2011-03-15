@@ -30,10 +30,10 @@ def pnfsPfn(pfn):
     filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
     
     # handle lustre location
-    if pfn.find('/store/unmerged/lustre/') == -1:
+    if pfn.find('/store/unmerged/') == -1:
         return filePath
     else:
-        pfnSplit = pfn.split("/store/unmerged/lustre/", 1)[1]
+        pfnSplit = pfn.split("/store/unmerged/", 1)[1]
         filePath = "/lustre/unmerged/%s" % pfnSplit
         return filePath
 
@@ -65,11 +65,11 @@ class DCCPFNALImpl(StageOutImpl):
         print "createOutputDirectory(): %s" % targetPFN
 
         # only create dir on remote storage
-        if targetPFN.find('/pnfs/') == -1 and targetPFN.find('lustre') == -1:
+        if targetPFN.find('/pnfs/') == -1 and targetPFN.find('/lustre/unmerged/') == -1:
             return
 
         # handle dcache or lustre location
-        if targetPFN.find('lustre') == -1:
+        if targetPFN.find('/lustre/unmerged') == -1:
             pfnSplit = targetPFN.split("WAX/11/store/", 1)[1]
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
             directory = os.path.dirname(filePath)
@@ -118,7 +118,7 @@ class DCCPFNALImpl(StageOutImpl):
         if not pfn.startswith("srm"):
             return pfn
 
-        if pfn.find('/store/unmerged/lustre/') == -1:
+        if pfn.find('/store/unmerged/') == -1:
             print "Translating PFN: %s\n To use dcache door" % pfn
             dcacheDoor = commands.getoutput(
                 "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh")
@@ -126,7 +126,7 @@ class DCCPFNALImpl(StageOutImpl):
             pfn = "%s%s" % (dcacheDoor, pfn)
             print "Created Target PFN with dCache Door: ", pfn
         else: 
-            pfnSplit = pfn.split("/store/unmerged/lustre/", 1)[1]
+            pfnSplit = pfn.split("/store/unmerged/", 1)[1]
             pfn = "/lustre/unmerged/%s" % pfnSplit
 
         return pfn
@@ -145,7 +145,7 @@ class DCCPFNALImpl(StageOutImpl):
             return self.buildStageInCommand(sourcePFN, targetPFN, options)
 
         
-        if targetPFN.find('lustre') == -1:
+        if targetPFN.find('/lustre/unmerged') == -1:
             optionsStr = ""
             if options != None:
                 optionsStr = str(options)
@@ -207,7 +207,7 @@ fi
         """
 
 
-        if targetPFN.find('lustre') == -1:
+        if targetPFN.find('/lustre/unmerged') == -1:
             optionsStr = ""
             if options != None:
                 optionsStr = str(options)
@@ -278,13 +278,13 @@ fi
         CleanUp pfn provided
 
         """
-        if pfnToRemove.find('/store/unmerged/lustre/') == -1:
+        if pfnToRemove.find('/store/unmerged/') == -1:
             pfnSplit = pfnToRemove.split("/store/", 1)[1]
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
             command = "rm -fv %s" %filePath
             self.executeCommand(command)
         else: 
-            pfnSplit = pfnToRemove.split("/store/unmerged/lustre/", 1)[1]
+            pfnSplit = pfnToRemove.split("/store/unmerged/", 1)[1]
             pfnToRemove = "/lustre/unmerged/%s" % pfnSplit
             command = "/bin/rm %s" % pfnToRemove
             self.executeCommand(command)
@@ -292,4 +292,3 @@ fi
 
 
 registerStageOutImpl("dccp-fnal", DCCPFNALImpl)
-

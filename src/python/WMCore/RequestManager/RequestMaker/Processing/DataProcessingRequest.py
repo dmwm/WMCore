@@ -14,7 +14,7 @@ import time
 from WMCore.RequestManager.RequestMaker.RequestMakerInterface import RequestMakerInterface
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
 from WMCore.RequestManager.RequestMaker.Registry import registerRequestType
-
+from WMCore.WMSpec.StdSpecs.DataProcessing import dataProcessingWorkload
 
 class DataProcessingRequest(RequestMakerInterface):
     """
@@ -26,6 +26,8 @@ class DataProcessingRequest(RequestMakerInterface):
     def __init__(self):
         RequestMakerInterface.__init__(self)
 
+    def makeWorkload(self, schema):
+        return dataProcessingWorkload(schema['RequestName'], schema).data
 
 
 class DataProcessingSchema(RequestSchema):
@@ -40,14 +42,13 @@ class DataProcessingSchema(RequestSchema):
         RequestSchema.__init__(self)
         self.setdefault("CMSSWVersion", None)
         self.setdefault("ProcessingVersion", None)
-        self.setdefault("ProdConfigCacheID", None)
         self.setdefault("GlobalTag", None)
         self.setdefault("InputDataset", None)
         self.setdefault("DBSURL", None)
         self.setdefault("Multicore", None)
         self.validateFields = [
             "CMSSWVersion",
-            "ProdConfigCacheID",
+            "ProcConfigCacheID",
             "GlobalTag",
             "InputDataset"
             ]
@@ -55,5 +56,3 @@ class DataProcessingSchema(RequestSchema):
 
 
 registerRequestType("DataProcessing", DataProcessingRequest, DataProcessingSchema)
-
-

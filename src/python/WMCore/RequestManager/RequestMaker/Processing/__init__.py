@@ -14,3 +14,4 @@ import RecoRequest
 import StoreResultsRequest
 import AnalysisRequest
 import ResubmissionRequest
+import ReDigiRequest

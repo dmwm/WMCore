@@ -5,9 +5,6 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-
-
-
 import unittest
 import logging
 import os
@@ -1045,16 +1042,12 @@ class FileTest(unittest.TestCase):
         assert len(goldenFiles) == 0, \
               "ERROR: Some parents are missing"
 
-
-
     def testAddToFileset(self):
         """
         _AddToFileset_
 
         Test to see if we can add to a fileset using the DAO
         """
-
-
         testFileset = Fileset(name = "inputFileset")
         testFileset.create()
 
@@ -1065,12 +1058,9 @@ class FileTest(unittest.TestCase):
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()
 
-
-
         addToFileset = self.daofactory(classname = "Files.AddToFileset")
         addToFileset.execute(file = [testFileA['lfn'], testFileB['lfn']],
                              fileset = testFileset.id)
-
 
         testFileset2 = Fileset(name = "inputFileset")
         testFileset2.loadData()
@@ -1083,8 +1073,63 @@ class FileTest(unittest.TestCase):
         addToFileset.execute(file = [testFileA['lfn'], testFileB['lfn']],
                              fileset = testFileset.id)
 
+    def testAddDupsToFileset(self):
+        """
+        _AddToDupsFileset_
 
-        
+        Verify the the dups version of the AddToFileset DAO will not add files
+        to a fileset if they're already associated to another fileset with the
+        same workflow.
+        """
+        testWorkflowA = Workflow(spec = 'hello', owner = "mnorman",
+                                 name = "wf001", task="basicWorkload/Production")
+        testWorkflowA.create()
+        testWorkflowB = Workflow(spec = 'hello', owner = "mnorman",
+                                 name = "wf001", task="basicWorkload/Production2")
+        testWorkflowB.create()        
+
+        testFilesetA = Fileset(name = "inputFilesetA")
+        testFilesetA.create()
+        testFilesetB = Fileset(name = "inputFilesetB")
+        testFilesetB.create()        
+
+        testSubscriptionA = Subscription(workflow = testWorkflowA, fileset = testFilesetA)
+        testSubscriptionA.create()
+        testSubscriptionB = Subscription(workflow = testWorkflowB, fileset = testFilesetB)
+        testSubscriptionB.create()        
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run( 1, *[45]))
+        testFileB.create()
+
+        addToFileset = self.daofactory(classname = "Files.AddDupsToFileset")
+        addToFileset.execute(file = [testFileA['lfn'], testFileB['lfn']],
+                             fileset = testFilesetA.id, workflow = "wf001")
+
+        testFileset2 = Fileset(name = "inputFilesetA")
+        testFileset2.loadData()
+
+        self.assertEqual(len(testFileset2.files), 2)
+        for file in testFileset2.files:
+            self.assertTrue(file in [testFileA, testFileB])
+
+        # Check that adding twice doesn't crash
+        addToFileset.execute(file = [testFileA['lfn'], testFileB['lfn']],
+                             fileset = testFilesetA.id, workflow = "wf001")
+
+        # Files should not get added to fileset B because fileset A is associated
+        # with wf001.
+        addToFileset.execute(file = [testFileA['lfn'], testFileB['lfn']],
+                             fileset = testFilesetB.id, workflow = "wf001")
+
+        testFileset2 = Fileset(name = "inputFilesetB")
+        testFileset2.loadData()
+
+        self.assertEqual(len(testFileset2.files), 0)
+        return
 
 if __name__ == "__main__":
     unittest.main() 

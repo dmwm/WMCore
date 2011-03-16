@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+"""
+_AddDupsToFileset_
+
+MySQL implementation of Files.AddDupsToFileset
+"""
+
+import time
+
+from WMCore.Database.DBFormatter import DBFormatter
+
+class AddDupsToFileset(DBFormatter):
+    sql = """INSERT IGNORE INTO wmbs_fileset_files (fileid, fileset, insert_time)
+               SELECT wmbs_file_details.id, :fileset, :insert_time
+               FROM wmbs_file_details
+               WHERE wmbs_file_details.lfn = :lfn AND NOT EXISTS
+                 (SELECT lfn FROM wmbs_file_details
+                    INNER JOIN wmbs_fileset_files ON
+                      wmbs_file_details.id = wmbs_fileset_files.fileid
+                    INNER JOIN wmbs_subscription ON
+                      wmbs_fileset_files.fileset = wmbs_subscription.fileset
+                    INNER JOIN wmbs_workflow ON
+                      wmbs_subscription.workflow = wmbs_workflow.id
+                    WHERE wmbs_file_details.lfn = :lfn AND
+                          wmbs_workflow.name = :workflow)"""
+
+    sqlAvail = """INSERT IGNORE INTO wmbs_sub_files_available (subscription, fileid)
+                    SELECT wmbs_subscription.id AS subscription,
+                           wmbs_file_details.id AS fileid FROM wmbs_subscription
+                      INNER JOIN wmbs_file_details ON
+                        wmbs_file_details.lfn = :lfn
+                    WHERE wmbs_subscription.fileset = :fileset AND NOT EXISTS
+                 (SELECT lfn FROM wmbs_file_details
+                    INNER JOIN wmbs_fileset_files ON
+                      wmbs_file_details.id = wmbs_fileset_files.fileid
+                    INNER JOIN wmbs_subscription ON
+                      wmbs_fileset_files.fileset = wmbs_subscription.fileset
+                    INNER JOIN wmbs_workflow ON
+                      wmbs_subscription.workflow = wmbs_workflow.id
+                    WHERE wmbs_file_details.lfn = :lfn AND
+                          wmbs_workflow.name = :workflow)""" 
+        
+    def execute(self, file, fileset, workflow, conn = None, transaction = False):
+        binds = []
+        availBinds = []
+        timestamp = int(time.time())
+        for fileLFN in file:
+            binds.append({"lfn": fileLFN, "fileset": fileset,
+                          "insert_time": timestamp, "workflow": workflow})
+            availBinds.append({"lfn": fileLFN, "fileset": fileset,
+                               "workflow": workflow})
+            
+        self.dbi.processData(self.sql, binds, conn = conn,
+                             transaction = transaction)
+        self.dbi.processData(self.sqlAvail, availBinds, conn = conn,
+                             transaction = transaction)        
+        return

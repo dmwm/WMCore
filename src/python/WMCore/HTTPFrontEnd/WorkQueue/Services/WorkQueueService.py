@@ -60,6 +60,8 @@ class WorkQueueService(ServiceInterface):
             self.wq = globalQueue(logger=self.model, dbi=self.model.dbi,
                                   **self.model.config.queueParams)
         elif self.model.config.level == "LocalQueue":
+            self.model.config.queueParams["BossAirConfig"] = self.model.config.BossAirConfig
+            self.model.config.queueParams["JobDumpConfig"] = self.model.config.JobDumpConfig
             self.wq = localQueue(logger=self.model, dbi=self.model.dbi,
                                   **self.model.config.queueParams)
         else:

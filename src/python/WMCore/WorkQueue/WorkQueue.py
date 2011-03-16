@@ -232,12 +232,12 @@ class WorkQueue(WorkQueueBase):
 
                     from WMCore.WorkQueue.WMBSHelper import killWorkflow
                     for workflow in set(requestNames):
-                        # JobCouchConfig and BossAirConfig are needed to be passed
+                        # JobDumpConfig and BossAirConfig are needed to be passed
                         # correctly to make this work there is no default value for
                         # these. Whoever instantiate the localqueue need to get these
                         # value from WMAgentConfig.py and set it correctly
                         # only needed in this specific call
-                        killWorkflow(workflow, self.params["JobCouchConfig"],
+                        killWorkflow(workflow, self.params["JobDumpConfig"],
                                      self.params["BossAirConfig"])
 
         #TODO: Do we need to message parents/children here?

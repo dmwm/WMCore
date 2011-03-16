@@ -250,6 +250,14 @@ workqueue.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/'
 workqueue.section_('model')
 workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
 workqueue.level = config.WorkQueueManager.level
+workqueue.section_("BossAirConfig")
+workqueue.BossAirConfig.BossAir = config.BossAir
+
+workqueue.BossAirConfig.section_("Agent")
+workqueue.BossAirConfig.Agent.agentName = agentName
+workqueue.section_("JobDumpConfig")
+workqueue.JobDumpConfig.JobStateMachine = config.JobStateMachine
+
 workqueue.section_('couchConfig')
 workqueue.couchConfig.couchURL = couchURL
 workqueue.couchConfig.acdcDBName = acdcDBName

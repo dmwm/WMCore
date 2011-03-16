@@ -80,11 +80,25 @@ def list_static_files(system = None):
     """
     Get a list of all the files that are classed as static (e.g. javascript, css, templates)
     """
+    # Skip the following files
+    ignore_these = set(['CVS', '.svn', 'svn', '.git', 'DefaultConfig.py'])
     static_files = []
     add_static = static_files.append
     if system:
         for static_dir in walk_dep_tree(system)['statics']:
-            add_static((static_dir.replace('src/', ''), data_files_for(static_dir)))
+            if static_dir.endswith('+'):
+                static_dir = static_dir.rstrip('+')
+                for dirpath, dirnames, filenames in os.walk('%s' % static_dir, topdown=True):
+                    pathelements = dirpath.split('/')
+                    # If any part of pathelements is in the ignore_these set skip the path
+                    if len(set(pathelements) & ignore_these) == 0:
+                        rel_path = os.path.relpath(dirpath, get_path_to_wmcore_root())
+                        files = [os.path.join(rel_path, f) for f in filenames]
+                        add_static((rel_path.replace('src/', ''), files))
+                    else:
+                        print 'Ignoring %s' % dirpath
+            else:
+                add_static((static_dir.replace('src/', ''), data_files_for(static_dir)))
     else:
         for language in ['couchapps', 'css', 'html', 'javascript', 'templates']:
             add_static((language, data_files_for('%s/src/%s' % (get_path_to_wmcore_root(), language))))

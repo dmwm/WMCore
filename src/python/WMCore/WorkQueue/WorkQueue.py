@@ -12,6 +12,7 @@ https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 import types
 from collections import defaultdict
 import os
+import threading
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
@@ -386,6 +387,9 @@ class WorkQueue(WorkQueueBase):
                 self.logger.debug("""Canceling work in wmbs, workflows: %s""" % (requestNames))
                 for workflow in requestNames:
                     try:
+                        myThread = threading.currentThread()
+                        myThread.dbi = self.dbi
+                        myThread.logger = self.logger                         
                         killWorkflow(workflow, self.params["JobDumpConfig"],
                                      self.params["BossAirConfig"])
                     except RuntimeError:

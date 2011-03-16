@@ -170,10 +170,8 @@ class WMBSHelper(WMConnectionBase):
         self.setFileLocation         = self.daofactory(classname = "Files.SetLocationByLFN")
         self.setFileAddChecksum      = self.daofactory(classname = "Files.AddChecksumByLFN")
         self.addFileAction           = self.daofactory(classname = "Files.Add")
-        self.addToFileset            = self.daofactory(classname = "Files.AddToFileset")
+        self.addToFileset            = self.daofactory(classname = "Files.AddDupsToFileset")
         self.getLocationInfo         = self.daofactory(classname = "Locations.GetSiteInfo")
-        self.removeDups              = self.daofactory(classname = "Workflow.RemoveDuplicates")
-
 
         # DAOs from DBSBuffer for file commit
         self.dbsCreateFiles    = self.dbsDaoFactory(classname = "DBSBufferFiles.Add")
@@ -365,10 +363,6 @@ class WMBSHelper(WMConnectionBase):
         """
                 
         if self.wmSpec.getTopLevelTask()[0].getInputACDC():
-            block = self.removeDups.execute(files = block,
-                                            workflow = self.wmSpec.name(),
-                                            conn = self.getDBConn(),
-                                            transaction = self.existingTransaction())
             for acdcFile in self.validFiles(block):
                 self._addACDCFileToWMBSFile(acdcFile)
         else:
@@ -468,6 +462,7 @@ class WMBSHelper(WMConnectionBase):
                                                                    self.topLevelFileset.id))
             self.addToFileset.execute(file = fileLFNs,
                                       fileset = self.topLevelFileset.id,
+                                      workflow = self.wmSpec.name(),
                                       conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
 

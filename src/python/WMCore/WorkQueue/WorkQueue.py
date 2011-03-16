@@ -13,6 +13,7 @@ import time
 import os
 import types
 import pickle
+import threading
 try:
     from collections import defaultdict
 except (NameError, ImportError):
@@ -237,6 +238,9 @@ class WorkQueue(WorkQueueBase):
                         # these. Whoever instantiate the localqueue need to get these
                         # value from WMAgentConfig.py and set it correctly
                         # only needed in this specific call
+                        myThread = threading.currentThread()
+                        myThread.dbi = self.dbi
+                        myThread.logger = self.logger 
                         killWorkflow(workflow, self.params["JobDumpConfig"],
                                      self.params["BossAirConfig"])
 

@@ -386,7 +386,7 @@ class WorkQueue(WorkQueueBase):
                 self.logger.debug("""Canceling work in wmbs, workflows: %s""" % (requestNames))
                 for workflow in requestNames:
                     try:
-                        killWorkflow(workflow, self.params["JobCouchConfig"],
+                        killWorkflow(workflow, self.params["JobDumpConfig"],
                                      self.params["BossAirConfig"])
                     except RuntimeError:
                         #TODO: Check this logic and improve if possible

@@ -155,7 +155,7 @@ class PromptSkimPoller(BaseWorkerThread):
                     "CmsPath": self.cmsPath,
                     "SkimConfig": configFile,
                     "UnmergedLFNBase": "/store/unmerged",
-                    "MergedLFNBase": "/store",
+                    "MergedLFNBase": "/store/data",
                     "MinMergeSize": self.minMergeSize,
                     "MaxMergeSize": self.maxMergeSize,
                     "MaxMergeEvents": self.maxMergeEvents,

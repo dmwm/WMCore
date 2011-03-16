@@ -53,7 +53,7 @@ dependencies = {
                         'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
                                      'WMCore.Database.__init__', 'WMCore.Database.CMSCouch'],
                         'systems': ['wmc-web', 'wmc-base'],
-                        'statics': ['src/templates/WMCore/WebTools/WorkQueue',]
+                        'statics': ['src/templates/WMCore/WebTools/WorkQueue', 'src/couchapps/WorkQueue+'],
                         },
                 'wmagent':{
                         'packages': ['WMCore.Agent+', 'WMCore.Algorithms+',

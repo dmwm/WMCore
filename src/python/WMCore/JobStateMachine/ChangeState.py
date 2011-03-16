@@ -262,7 +262,7 @@ class ChangeState(WMObject, WMConnectionBase):
             jobReport.update(viewResult["value"])
 
             perfResults = self.fwjrdatabase.loadView("FWJRDump", "performanceByJobID",
-                                                     options = {"startkey": [jobReport["id"], jobReport["retryCount"]],
+                                                     options = {"startkey": [jobReport["id"], jobReport["retryCount"], 0],
                                                                 "endkey": [jobReport["id"], jobReport["retryCount"], {}]})
             if len(perfResults["rows"]) > 0:
                 jobReport["performance"] = perfResults["rows"][0]["value"]

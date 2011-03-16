@@ -17,7 +17,7 @@ apmonInstance = None
 apmonInit = False
 
 # Monalisa configuration
-apmonConf = ['cms-jobmon.cern.ch:8884']
+apmonConf = ["cms-wmagent-job.cern.ch"]
 
 #
 # Method to create a single apmon instance at a time
@@ -87,5 +87,5 @@ if __name__ == '__main__' :
                jobid  = '1_https://sbgrb1.in2p3.fr:9000/abcdefghijklmno',
                params = {'SubmissionType':'Direct','application':'CMSSW_1_3_6','taskType':'analysis'},
                logr   = logger,
-               apmonServer = ['dashboard08.cern.ch:8884']
+               apmonServer = ["cms-wmagent-job.cern.ch"]
              )

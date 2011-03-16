@@ -199,13 +199,15 @@ class DashboardInfo(dict):
         #self['SyncCE']     = getSyncCE()
 
         data = {}
-        data['MessageType']   = 'jobRuntime'
-        data['MessageTS']     = time.time()
-        data['taskId']        = self.taskName
-        data['jobId']         = self.jobName
-        data['SyncCE']        = getSyncCE()
-        data['GridFlavour']   = "NotAvailable"
-        data['WNHostName']    = socket.gethostname()
+        data['MessageType']     = 'jobRuntime'
+        data['MessageTS']       = time.time()
+        data['taskId']          = self.taskName
+        data['jobId']           = self.jobName
+        data['SyncCE']          = getSyncCE()
+        data['GridFlavour']     = "NotAvailable"
+        data['WNHostName']      = socket.gethostname()
+        data['StatusValue']     = 'Running'
+        data['StatusEnterTime'] = time.time()
 
         
         self.publish(data = data)
@@ -222,7 +224,7 @@ class DashboardInfo(dict):
 
 
         #self['JobFinished'] = time.time()
-        #self['JobExitStatus'] = self.jobSuccess
+        #self[''] = self.jobSuccess
         #self.publish()
 
         # Under new paradigm, don't broadcast when finished

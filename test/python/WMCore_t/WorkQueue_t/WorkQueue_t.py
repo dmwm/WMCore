@@ -135,17 +135,17 @@ class WorkQueueTest(WorkQueueTestCase):
         self.localQueue = localQueue(DbName = 'workqueue_t_local',
                                      ParentQueueCouchUrl = self.globalQueue.backend.db_url,
                                      QueueURL = "local.example.com",
-                                     JobCouchConfig = jobCouchConfig,
+                                     JobDumpConfig = jobCouchConfig,
                                      BossAirConfig = bossAirConfig)
 
         self.localQueue2 = localQueue(DbName = 'workqueue_t_local2',
                                       ParentQueueCouchUrl = self.globalQueue.backend.db_url,
                                       QueueURL = "local2.example.com",
-                                      JobCouchConfig = jobCouchConfig,
+                                      JobDumpConfig = jobCouchConfig,
                                       BossAirConfig = bossAirConfig)
 
         # standalone queue for unit tests
-        self.queue = WorkQueue(JobCouchConfig = jobCouchConfig,
+        self.queue = WorkQueue(JobDumpConfig = jobCouchConfig,
                                BossAirConfig = bossAirConfig,
                                DbName = 'workqueue_t')
 
@@ -438,57 +438,6 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # mark work done & check this passes upto the top level
         self.localQueue.setStatus('Done', [x.id for x in work])
-
-
-#    def testMultipleQueueChaining(self):
-#        """
-#        Chain workQueues and verify status updates, negotiation failues etc
-#        """
-#        # verify that negotiation failures are removed
-#        #self.globalQueue.flushNegotiationFailures()
-#        #self.assertEqual(len(self.globalQueue.status('Negotiating')), 0)
-#        #self.localQueue.updateParent()
-#        # TODO: Check status of element in global queue
-#        self.assertEqual(0, len(self.globalQueue))
-#        self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
-#
-#        # Add work to top most queue
-#        self.globalQueue.queueWork(self.processingSpec.specUrl())
-#        self.globalQueue.processInboundWork()
-#        self.assertEqual(1, len(self.globalQueue))
-#        self.globalQueue.updateLocationInfo()
-#        # pull to local queue
-#        self.globalQueue.updateLocationInfo()
-#        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 2)
-#        syncQueues(self.localQueue)
-#
-#        # check that global reset's status if acquired status not verified
-#        #self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
-#        self.assertEqual(len(self.localQueue.status('Available')), 2)
-#        # no work available for queue2 - Negotiating
-#        self.assertEqual(self.localQueue2.pullWork({'SiteA' : 1000}), 0)
-#        # queue1 hasn't claimed work so reset element to Available
-#        #self.assertEqual(self.globalQueue.flushNegotiationFailures(), 1)
-#        # work still available in queue1 until it contacts parent
-#        #self.assertEqual(len(self.globalQueue.status('Available')), 3)
-#
-#        # queue2 pull available work
-#        self.assertEqual(self.localQueue2.pullWork({'SiteA' : 1000}), 2)
-#        self.assertEqual(len(self.globalQueue.status('Negotiating')), 1)
-#        self.assertEqual(len(self.localQueue.status('Available')), 4)
-#        self.localQueue2.updateParent() # queue2 claims work
-#        self.assertEqual(len(self.globalQueue.status('Negotiating')), 0)
-#        self.assertEqual(len(self.globalQueue.status('Acquired')), 1)
-#        self.assertEqual(len(self.localQueue.status('Available')), 4)
-#
-#        # queue1 calls back to parent and find work claimed by queue2
-#        self.localQueue.updateParent()
-#        self.assertEqual(len(self.globalQueue.status('Acquired')), 1)
-#        # As all queues share the same db - all elements will be canceled
-#        # as delete is keyed on parent id and no elements will be available
-#        # in real life - 1 element will be canceled and 2 will be available
-#        self.assertEqual(len(self.localQueue.status('Canceled')), 4)
-#        self.assertEqual(len(self.localQueue2.status('Available')), 0)
 
 
     def testQueueChainingStatusUpdates(self):

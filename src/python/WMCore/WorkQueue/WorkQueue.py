@@ -91,6 +91,9 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('LocalQueueFlag', True)
 
         self.params.setdefault('ACDCDB', None)
+        self.params.setdefault('JobDumpConfig', None)
+        self.params.setdefault('BossAirConfig', None)
+
         self.params.setdefault('QueueURL', None) # url this queue is visible on
         self.params.setdefault('Teams', [''])
 
@@ -388,7 +391,7 @@ class WorkQueue(WorkQueueBase):
                 for workflow in requestNames:
                     try:
                         myThread = threading.currentThread()
-                        myThread.dbi = self.dbi
+                        myThread.dbi = self.conn.dbi
                         myThread.logger = self.logger                         
                         killWorkflow(workflow, self.params["JobDumpConfig"],
                                      self.params["BossAirConfig"])

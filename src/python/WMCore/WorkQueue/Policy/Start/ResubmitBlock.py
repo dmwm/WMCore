@@ -54,20 +54,40 @@ class ResubmitBlock(StartPolicyInterface):
         acdcInfo = task.getInputACDC()
         acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
         collection = acdc.getDataCollection(acdcInfo['collection'])
-        acdcBlocks = acdc.chunkFileset(collection,
-                                       acdcInfo['fileset'],
-                                       chunkSize)
-        for block in acdcBlocks:
+        if self.data:
+            acdcBlockSplit = ACDCBlock.splitBlockName(self.data)
+        else:
+            #if self.data is not passed, assume the the data is input dataset
+            # from the spec
+            acdcBlockSplit = False
+
+        if acdcBlockSplit:
             dbsBlock = {}
-            dbsBlock['Name'] = ACDCBlock.name(self.wmspec.name(), 
-                                              task.name(),
-                                              block['offset'], block['files'])
+            dbsBlock['Name'] = self.data
+            block = acdc.getChunkInfo(collection, acdcBlockSplit['TaskName'],
+                                      acdcBlockSplit['Offset'],
+                                      acdcBlockSplit['NumOfFiles'])
             dbsBlock['NumberOfFiles'] = block['files']
             dbsBlock['NumberOfEvents'] = block['events']
             #TODO: needs this for lumi splitting
             dbsBlock['NumberOfLumis'] = block['lumis']
             dbsBlock["Sites"] = block["locations"]
-            dbsBlock['ACDC'] = acdcInfo
             validBlocks.append(dbsBlock)
+        else:
+            acdcBlocks = acdc.chunkFileset(collection,
+                                           acdcInfo['fileset'],
+                                           chunkSize)
+            for block in acdcBlocks:
+                dbsBlock = {}
+                dbsBlock['Name'] = ACDCBlock.name(self.wmspec.name(),
+                                                task.name(),
+                                                block['offset'], block['files'])
+                dbsBlock['NumberOfFiles'] = block['files']
+                dbsBlock['NumberOfEvents'] = block['events']
+                #TODO: needs this for lumi splitting
+                dbsBlock['NumberOfLumis'] = block['lumis']
+                dbsBlock["Sites"] = block["locations"]
+                dbsBlock['ACDC'] = acdcInfo
+                validBlocks.append(dbsBlock)
             
         return validBlocks

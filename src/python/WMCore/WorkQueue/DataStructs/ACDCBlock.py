@@ -26,7 +26,7 @@ class ACDCBlock(object):
             {'SpecName': blockSplit[1],
              'TaskName': blockSplit[2],
              'Offset': int(blockSplit[3]),
-             'ChunkSize': int(blockSplit[4])},
+             'NumOfFiles': int(blockSplit[4])},
              if it is acdc Block
             raise ValueError if the block is has wrong format
         """

@@ -36,6 +36,7 @@ from WMCore.Services.DBS.DBSReader import DBSReader
 from DBSAPI.dbsApiException import DbsConfigurationError
 from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 
+from WMCore.WMSpec.Persistency import PersistencyHelper
 #TODO: Scale test
 #TODO: Decide whether to move/refactor db functions
 #TODO: What about sending messages to component to handle almost live status updates
@@ -183,6 +184,7 @@ class WorkQueue(WorkQueueBase):
                                                               requireBlocksSubscribed = not self.params['ReleaseIncompleteBlocks'],
                                                               fullRefreshInterval = self.params['FullLocationRefreshInterval'],
                                                               updateIntervalCoarseness = self.params['LocationRefreshInterval'])
+
 
     #  //
     # // External API
@@ -789,8 +791,9 @@ class WorkQueue(WorkQueueBase):
                             
                             mask = None
                             if element.get('mask_url'):
-                                with open(element['mask_url']) as mask_file:
-                                    mask = pickle.load(mask_file)
+                                maskLoader = PersistencyHelper()
+                                maskLoader.load(element['mask_url'])
+                                mask = maskLoader.data
                             totalUnits.extend(self._splitWork(wmspec,
                                                         element['element_id'],
                                                         element.get('data'),

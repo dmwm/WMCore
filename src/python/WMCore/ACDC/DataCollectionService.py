@@ -252,7 +252,6 @@ class DataCollectionService(CouchService):
         chunk.
         """
         chunks        = []
-        fileLFNs      = []
         collection_id = collection['collection_id']
         results = self.couchdb.loadView("ACDC", "fileset_metadata",
                                         {"startkey": [collection_id, taskName],
@@ -286,6 +285,38 @@ class DataCollectionService(CouchService):
                            "events": numEventsInBlock, "lumis": numLumisInBlock,
                            "locations": currentLocation})
         return chunks
+
+    @CouchUtils.connectToCouch
+    def getChunkInfo(self, collection, taskName, chunkOffset, chunkSize):
+        """
+        _getChunkInfo_
+
+        Retrieve metadata for a particular chunk.
+        """
+        collection_id = collection["collection_id"]
+        results = self.couchdb.loadView("ACDC", "fileset_metadata",
+                                        {"startkey": [collection_id, taskName],
+                                         "endkey": [collection_id, taskName, {}],
+                                         "skip": chunkOffset,
+                                         "limit": chunkSize}, [])
+
+        totalFiles = 0
+        currentLocation = None
+        numFilesInBlock = 0
+        numLumisInBlock = 0
+        numEventsInBlock = 0
+
+        for row in results["rows"]:
+            if currentLocation == None:
+                currentLocation = row["key"][2]
+
+            numFilesInBlock += 1
+            numLumisInBlock += row["value"]["lumis"]
+            numEventsInBlock += row["value"]["events"]
+            
+        return {"offset": totalFiles, "files": numFilesInBlock,
+                "events": numEventsInBlock, "lumis": numLumisInBlock,
+                "locations": currentLocation}
     
     @CouchUtils.connectToCouch
     def getChunkFiles(self, collection, taskName, chunkOffset, chunkSize = 100):

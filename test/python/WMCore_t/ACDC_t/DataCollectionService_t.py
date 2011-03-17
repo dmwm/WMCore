@@ -213,6 +213,18 @@ class DataCollectionService_t(unittest.TestCase):
                        5: testFiles}
 
         for chunk in chunks:
+            chunkMetaData = dcs.getChunkInfo(dataCollection, "/ACDCTest/reco",
+                                             chunk["offset"], chunk["files"])
+
+            self.assertEqual(chunkMetaData["files"], chunk["files"],
+                             "Error: Metadata doesn't match.")
+            self.assertEqual(chunkMetaData["lumis"], chunk["lumis"],
+                             "Error: Metadata doesn't match.")            
+            self.assertEqual(chunkMetaData["events"], chunk["events"],
+                             "Error: Metadata doesn't match.")
+            self.assertEqual(chunkMetaData["locations"], chunk["locations"],
+                             "Error: Metadata doesn't match.")            
+            
             self.assertTrue(chunk["files"] in goldenMetaData.keys(),
                             "Error: Extra chunk found.")
             self.assertEqual(chunk["lumis"], goldenMetaData[chunk["files"]]["lumis"],

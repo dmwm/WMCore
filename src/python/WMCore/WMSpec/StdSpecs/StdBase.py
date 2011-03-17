@@ -216,7 +216,8 @@ class StdBase(object):
 
         return outputModules
 
-    def addOutputModule(self, parentTask, outputModuleName, dataTier, filterName):
+    def addOutputModule(self, parentTask, outputModuleName, dataTier, filterName,
+                        stepName = "cmsRun1"):
         """
         _addOutputModule_
 
@@ -251,7 +252,7 @@ class StdBase(object):
             lfnBase(unmergedLFN)
             lfnBase(mergedLFN)
 
-        cmsswStep = parentTask.getStep("cmsRun1")
+        cmsswStep = parentTask.getStep(stepName)
         cmsswStepHelper = cmsswStep.getTypeHelper()
         cmsswStepHelper.addOutputModule(outputModuleName,
                                         primaryDataset = self.inputPrimaryDataset,
@@ -286,7 +287,8 @@ class StdBase(object):
         return
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModule,
-                     dataTier, filterName, processedDatasetName):
+                     dataTier, filterName, processedDatasetName,
+                     parentStepName = "cmsRun1"):
         """
         _addMergeTask_
 
@@ -338,7 +340,7 @@ class StdBase(object):
                                              filterName = filterName,
                                              lfnBase = mergedLFN)
 
-        parentTaskCmssw = parentTask.getStep("cmsRun1")
+        parentTaskCmssw = parentTask.getStep(parentStepName)
         mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModule)
         self.addCleanupTask(parentTask, parentOutputModule)
         return mergeTask

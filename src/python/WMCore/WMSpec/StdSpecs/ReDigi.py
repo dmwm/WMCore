@@ -8,6 +8,7 @@ Standard three step redigi workflow.
 import os
 
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+import WMCore.WMSpec.Steps.StepFactory as StepFactory
 
 def getTestArguments():
     """
@@ -35,6 +36,7 @@ def getTestArguments():
         "StepTwoConfigCacheID": "3a4548750b61f485d42b4aa850ba385e",
         "StepTwoRECOOutputModuleName": "RECODEBUGoutput",
         "StepThreeConfigCacheID": "3a4548750b61f485d42b4aa850ba4ab7",
+        "KeepRAW": True,
         
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "wmagent_configcachescf",
@@ -52,6 +54,72 @@ class ReDigiWorkloadFactory(StdBase):
         StdBase.__init__(self)
         return
 
+    def setupDependentProcessing(self, stepOneTask, outputMods):
+        """
+        _setupDependentProcessing_
+
+        Setup seperate tasks for step one and step two processing.  Since we're
+        keeping the RAW we need to also setup merge tasks for it.
+        """
+        stepOneMergeTasks = {}
+        for outputModuleName in outputMods.keys():
+            outputModuleInfo = outputMods[outputModuleName]
+            mergeTask = self.addMergeTask(stepOneTask, self.procJobSplitAlgo,
+                                          outputModuleName,
+                                          outputModuleInfo["dataTier"],
+                                          outputModuleInfo["filterName"],
+                                          outputModuleInfo["processedDataset"])
+            stepOneMergeTasks[outputModuleName] = mergeTask
+
+        stepOneMergeTask = stepOneMergeTasks[self.stepOneRAWOutputModuleName]
+        stepTwoTask = stepOneMergeTask.addTask("ReDigiReReco")
+
+        parentCmsswStep = stepOneMergeTask.getStep("cmsRun1")
+        outputMods = self.setupProcessingTask(stepTwoTask, "Processing", inputStep = parentCmsswStep,
+                                              inputModule = "Merged", couchURL = self.couchURL,
+                                              couchDBName = self.couchDBName,
+                                              configDoc = self.stepTwoConfigCacheID,
+                                              splitAlgo = self.procJobSplitAlgo,
+                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
+        self.addLogCollectTask(stepTwoTask, taskName = "StepTwoLogCollect")
+        
+        return (stepTwoTask, "cmsRun1", outputMods)
+
+    def setupChainedProcessing(self, stepOneTask):
+        """
+        _setupChainedProcessing_
+
+        Modify the step one task to include a second chained CMSSW step to
+        do RECO on the RAW.
+        """
+        parentCmsswStep = stepOneTask.getStep("cmsRun1")
+        parentCmsswStepHelper = parentCmsswStep.getTypeHelper()
+        parentCmsswStepHelper.keepOutput(False)
+        stepTwoCmssw = parentCmsswStep.addTopStep("cmsRun2")
+        stepTwoCmssw.setStepType("CMSSW")
+
+        template = StepFactory.getStepTemplate("CMSSW")
+        template(stepTwoCmssw.data)
+
+        stepTwoCmsswHelper = stepTwoCmssw.getTypeHelper()
+        stepTwoCmsswHelper.setGlobalTag(self.globalTag)
+        stepTwoCmsswHelper.setupChainedProcessing("cmsRun1", self.stepOneRAWOutputModuleName)
+        stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                      scramArch = self.scramArch)
+        stepTwoCmsswHelper.setConfigCache(self.couchURL, self.stepTwoConfigCacheID,
+                                          self.couchDBName)
+        configOutput = self.determineOutputModules(None, None, self.stepTwoConfigCacheID,
+                                                   self.couchURL, self.couchDBName)
+        outputMods = {}
+        for outputModuleName in configOutput.keys():
+            outputModule = self.addOutputModule(stepOneTask, outputModuleName,
+                                                configOutput[outputModuleName]["dataTier"],
+                                                configOutput[outputModuleName]["filterName"],
+                                                stepName = "cmsRun2")
+            outputMods[outputModuleName] = outputModule
+
+        return (stepOneTask, "cmsRun2", outputMods)
+    
     def buildWorkload(self):
         """
         _buildWorkload_
@@ -77,42 +145,26 @@ class ReDigiWorkloadFactory(StdBase):
         if self.pileupConfig:
             self.setupPileup(stepOneTask, self.pileupConfig)
 
-        stepOneMergeTasks = {}
-        for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
-            mergeTask = self.addMergeTask(stepOneTask, self.procJobSplitAlgo,
-                                          outputModuleName,
-                                          outputModuleInfo["dataTier"],
-                                          outputModuleInfo["filterName"],
-                                          outputModuleInfo["processedDataset"])
-            stepOneMergeTasks[outputModuleName] = mergeTask
-
-        stepOneMergeTask = stepOneMergeTasks[self.stepOneRAWOutputModuleName]
-        stepTwoTask = stepOneMergeTask.addTask("ReDigiReReco")
-
-        parentCmsswStep = stepOneMergeTask.getStep("cmsRun1")
-        outputMods = self.setupProcessingTask(stepTwoTask, "Processing", inputStep = parentCmsswStep,
-                                              inputModule = "Merged", couchURL = self.couchURL,
-                                              couchDBName = self.couchDBName,
-                                              configDoc = self.stepTwoConfigCacheID,
-                                              splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
-        self.addLogCollectTask(stepTwoTask, taskName = "StepTwoLogCollect")
+        if self.keepRAW == True or self.keepRAW == "True":
+            (parentTask, parentStepName, outputMods) = self.setupDependentProcessing(stepOneTask, outputMods)
+        else:
+            (parentTask, parentStepName, outputMods) = self.setupChainedProcessing(stepOneTask)
 
         stepTwoMergeTasks = {}
         for outputModuleName in outputMods.keys():
             outputModuleInfo = outputMods[outputModuleName]
-            mergeTask = self.addMergeTask(stepTwoTask, self.procJobSplitAlgo,
+            mergeTask = self.addMergeTask(parentTask, self.procJobSplitAlgo,
                                           outputModuleName,
                                           outputModuleInfo["dataTier"],
                                           outputModuleInfo["filterName"],
-                                          outputModuleInfo["processedDataset"])
+                                          outputModuleInfo["processedDataset"],
+                                          parentStepName = parentStepName)
             stepTwoMergeTasks[outputModuleName] = mergeTask
 
         stepTwoMergeTask = stepTwoMergeTasks[self.stepTwoRECOOutputModuleName]
         stepThreeTask = stepTwoMergeTask.addTask("AODProd")
-
         parentCmsswStep = stepTwoMergeTask.getStep("cmsRun1")
+
         outputMods = self.setupProcessingTask(stepThreeTask, "Processing", inputStep = parentCmsswStep,
                                               inputModule = "Merged", couchURL = self.couchURL,
                                               couchDBName = self.couchDBName,
@@ -127,7 +179,7 @@ class ReDigiWorkloadFactory(StdBase):
                               outputModuleName,
                               outputModuleInfo["dataTier"],
                               outputModuleInfo["filterName"],
-                              outputModuleInfo["processedDataset"])        
+                              outputModuleInfo["processedDataset"])
         return workload
 
     def __call__(self, workloadName, arguments):
@@ -155,6 +207,7 @@ class ReDigiWorkloadFactory(StdBase):
         self.stepTwoConfigCacheID = arguments.get("StepTwoConfigCacheID")
         self.stepTwoRECOOutputModuleName = arguments.get("StepTwoRECOOutputModuleName")
         self.stepThreeConfigCacheID = arguments.get("StepThreeConfigCacheID")
+        self.keepRAW = arguments.get("KeepRAW", True)
 
         # Pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)

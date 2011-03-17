@@ -350,7 +350,7 @@ class SetupCMSSWPset(ScriptInterface):
         tfcFile = open(tfcPath, 'w')
         tfcFile.write(tfcStr)
         tfcFile.close()
-        self.step.data.application.overrideCatalog = tfcName
+        self.step.data.application.overrideCatalog = "trivialcatalog_file:" +tfcPath + "?protocol=direct"
 
 
     def _handlePileup(self):

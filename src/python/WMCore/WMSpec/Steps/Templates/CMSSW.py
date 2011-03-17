@@ -173,12 +173,23 @@ class CMSSWStepHelper(CoreHelper):
 
     def setupChainedProcessing(self, inputStepName, inputOutputModule):
         """
+        _setupChainedProcessing_
+        
         Set values to support chained CMSSW running.
         """
         self.data.input.chainedProcessing = True
         self.data.input.inputStepName = inputStepName
         self.data.input.inputOutputModule = inputOutputModule
         
+    def keepOutput(self, keepOutput):
+        """
+        _keepOutput_
+
+        Mark whether or not we should keep the output from this step.  We don't
+        want to keep the output from certain chained steps.
+        """
+        self.data.output.keep = keepOutput
+        return
         
     def setupPileup(self, pileupConfig, dbsUrl):
         """
@@ -234,6 +245,7 @@ class CMSSW(Template):
         step.output.jobReport = "FrameworkJobReport.xml"
         step.output.stdout = "%s-stdout.log" % stepname
         step.output.stderr = "%s-stderr.log" % stepname
+        step.output.keep = True
         step.output.section_("modules")
 
         step.output.section_("analysisFiles")

@@ -133,6 +133,26 @@ def addNode(currentNode, newNode):
     newNode.tree.parent = nodeName(currentNode)
     return
 
+def addTopNode(currentNode, newNode):
+    """
+    _addTopNode_
+
+    Add a child node to the current node provided but insert it
+    at the head of the childNames list.
+    """
+    newName = nodeName(newNode)
+    allNames = allNodeNames(currentNode)
+
+    if newName in allNames:
+        msg = "Duplicate Node Name %s already exists in tree\n" % newName
+        msg += "%s\n" % allNames
+        raise RuntimeError, msg
+
+    setattr(currentNode.tree.children, newName, newNode)
+    currentNode.tree.childNames.insert(0, newName)
+    newNode.tree.parent = nodeName(currentNode)
+    return
+
 def getNode(node, nodeNameToGet):
     """
     _getNode_
@@ -267,6 +287,17 @@ class TreeHelper:
         if isinstance(newNode, TreeHelper):
             return addNode(self.data, newNode.data)
         return addNode(self.data, newNode)
+
+    def addTopNode(self, newNode):
+        """
+        _addTopNode_
+
+        Add a child node to the current node provided but insert it
+        at the head of the childNames list.
+        """
+        if isinstance(newNode, TreeHelper):
+            return addTopNode(self.data, newNode.data)
+        return addTopNode(self.data, newNode)        
 
     def allNodeNames(self):
         """get list of all known node names in the tree containing this node"""

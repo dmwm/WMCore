@@ -234,6 +234,10 @@ class CMSSW(Executor):
         validStatus    = self.workload.getValidStatus()
         self.report.setAcquisitionProcessing(acquisitionEra = acquisitionEra,
                                              processingVer = processingVer)
+
+        if self.step.output.keep != True:
+            self.report.killOutput()
+            
         self.report.setValidStatus(validStatus = validStatus)
         return
 

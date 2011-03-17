@@ -38,7 +38,8 @@ class AddDupsToFileset(DBFormatter):
                     INNER JOIN wmbs_workflow ON
                       wmbs_subscription.workflow = wmbs_workflow.id
                     WHERE wmbs_file_details.lfn = :lfn AND
-                          wmbs_workflow.name = :workflow)""" 
+                          wmbs_workflow.name = :workflow AND
+                          wmbs_fileset_files.fileset != :fileset)""" 
         
     def execute(self, file, fileset, workflow, conn = None, transaction = False):
         binds = []

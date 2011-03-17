@@ -58,6 +58,17 @@ class WMStepHelper(TreeHelper):
         self.addNode(node)
         return node
 
+    def addTopStep(self, stepName):
+        """
+        _addTopStep_
+
+        Add a new step with the name provided to this step as a child.  This
+        will be the first top step of all the children.
+        """
+        node = WMStepHelper(WMStep(stepName))
+        self.addTopNode(node)
+        return node
+    
     def getStep(self, stepName):
         """
         _getStep_

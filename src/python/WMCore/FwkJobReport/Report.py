@@ -291,9 +291,19 @@ class Report:
 
         return outMod
     
+    def killOutput(self):
+        """
+        _killOutput_
 
-        
-
+        Remove all the output from the report.  This is useful for chained
+        processing where we don't want to keep the output from a particular
+        step in a job.
+        """
+        for outputModuleName in self.report.outputModules:
+            delattr(self.report.output, outputModuleName)
+            
+        self.report.outputModules = []
+        return
 
     def addOutputFile(self, outputModule, file = {}):
         """

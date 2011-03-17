@@ -159,6 +159,7 @@ class Workflow(WMBSBase, WMWorkflow):
         results = action.execute(workflow = self.id, conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
 
+        self.outputMap = {}
         for outputID in results.keys():
             for outputMap in results[outputID]:
                 outputFileset = Fileset(id = outputMap["output_fileset"])

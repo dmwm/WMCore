@@ -75,11 +75,7 @@ def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
     """
     parents = []
 
-    if dataTier == 'RAW-RECO':
-        dataTier = ['RAW', 'RECO']
-
-    if not type(dataTier) == list:
-        dataTier = [dataTier]
+    tierList = dataTier.split("-")
 
     if not type(algorithm) == list:
         algorithm = [algorithm]
@@ -87,7 +83,7 @@ def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
     processedDataset = DbsProcessedDataset(PrimaryDataset = primary,
                                            AlgoList=algorithm,
                                            Name = processedName,
-                                           TierList = dataTier,
+                                           TierList = tierList,
                                            ParentList = parents,
                                            PhysicsGroup = group,
                                            Status = status,

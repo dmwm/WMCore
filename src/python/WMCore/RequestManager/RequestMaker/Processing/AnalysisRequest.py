@@ -31,7 +31,8 @@ class AnalysisSchema(RequestSchema):
         self.validateFields = [
             "CMSSWVersion",
             "ScramArch",
-            "InputDataset"
+            "InputDataset",
+            "RequestorDN"
             ]
         self.optionalFields = [
             "SiteWhitelist",

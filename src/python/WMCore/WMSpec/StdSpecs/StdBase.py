@@ -32,6 +32,7 @@ class StdBase(object):
         self.workloadName = None
         self.priority = 0
         self.owner = None
+        self.owner_dn = None
         self.group = None
         self.acquisitionEra = None
         self.scramArch = None
@@ -56,6 +57,7 @@ class StdBase(object):
         self.workloadName = workloadName
         self.priority = arguments.get("Priority", 0)
         self.owner = arguments.get("Requestor", None)
+        self.owner_dn = arguments.get("RequestorDN", None)
         self.group = arguments.get("Group", None)
         self.acquisitionEra = arguments.get("AcquisitionEra", None)
         self.scramArch = arguments.get("ScramArch", None)
@@ -114,8 +116,10 @@ class StdBase(object):
 
         Create a new workload.
         """
+        ownerProps = {'dn': self.owner_dn}
+
         workload = newWorkload(self.workloadName)
-        workload.setOwnerDetails(self.owner, self.group)
+        workload.setOwnerDetails(self.owner, self.group, ownerProps)
         workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
         workload.setEndPolicy("SingleShot")
         workload.setAcquisitionEra(acquisitionEra = self.acquisitionEra)

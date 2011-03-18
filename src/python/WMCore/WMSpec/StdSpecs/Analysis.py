@@ -62,6 +62,7 @@ class AnalysisWorkloadFactory(StdBase):
 
         # Required parameters.
         self.owner = arguments["Requestor"]
+        self.owner_dn = arguments["RequestorDN"]
         self.frameworkVersion = arguments["CMSSWVersion"]
         self.scramArch = arguments["ScramArch"]
         self.inputDataset = arguments['InputDataset']

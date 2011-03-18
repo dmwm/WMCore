@@ -92,6 +92,7 @@ class LogCollect(Executor):
             except Alarm:
                 msg = "Indefinite hang during stageIn of LogCollect"
                 logging.error(msg)
+                self.report.addError(self.stepName, 60407, "LogCollectFailure")
             except StageOutFailure, ex:
                 msg = "Unable to StageIn %s" % file['LFN']
                 logging.error(msg)
@@ -126,13 +127,14 @@ class LogCollect(Executor):
             stageOutMgr(tarInfo)
             self.report.addOutputFile(outputModule = "LogCollect", file = tarInfo)
         except Alarm:
-                msg = "Indefinite hang during stageOut of LogCollect"
-                logging.error(msg)
+            msg = "Indefinite hang during stageOut of LogCollect"
+            logging.error(msg)
+            self.report.addError(self.stepName, 60409, "LogCollectFailure")
         except Exception, ex:
             msg = "Unable to stage out log archive:\n"
             msg += str(ex)
             print "MSG: %s" % msg
-            raise WMExecutionFailure(60312, "LogCollectStageOutError", msg)
+            raise WMExecutionFailure(60408, "LogCollectStageOutError", msg)
         signal.alarm(0)
 
         # If we're still here we didn't die on stageOut
@@ -148,11 +150,12 @@ class LogCollect(Executor):
             except Alarm:
                 msg = "Indefinite hang during delete of LogCollect"
                 logging.error(msg)
+                self.report.addError(self.stepName, 60411, "LogCollectFailure")
             except Exception, ex:
                 msg = "Unable to delete files:\n"
                 msg += str(ex)
                 logging.error(msg)
-                raise WMExecutionFailure(60312, "DeleteError", msg)
+                raise WMExecutionFailure(60410, "DeleteError", msg)
             signal.alarm(0)
 
 

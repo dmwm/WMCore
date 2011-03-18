@@ -517,15 +517,16 @@ class TestChangeState(unittest.TestCase):
         change.propagate([testJobA], "jobfailed", "complete")        
 
         transitions = change.listTransitionsForDashboard()
+
         goldenTransitions = [{"name": testJobA["name"], "retryCount": 0, "newState": "jobfailed",
                               "oldState": "complete", "requestName": "wf001", "user": "sfoulkes",
-                              "group": "DMWM", "taskType": "Merge", "performance": {}},
+                              "group": "DMWM", "taskType": "Merge", "performance": {}, "exitCode": 0},
                              {"name": testJobB["name"], "retryCount": 1, "newState": "executing",
                               "oldState": "created", "requestName": "wf001", "user": "sfoulkes",
-                              "group": "DMWM", "taskType": "Processing", "performance": {}},
+                              "group": "DMWM", "taskType": "Processing", "performance": {}, "exitCode": 0},
                              {"name": testJobB["name"], "retryCount": 1, "newState": "success",
                               "oldState": "complete", "requestName": "wf001", "user": "sfoulkes",
-                              "group": "DMWM", "taskType": "Processing", "performance": {}}]
+                              "group": "DMWM", "taskType": "Processing", "performance": {}, "exitCode": 0}]
         self.assertEqual(transitions, goldenTransitions,
                          "Error: Wrong transitions.")
 
@@ -543,7 +544,7 @@ class TestChangeState(unittest.TestCase):
         self.assertEqual(len(transitions), 1,
                          "Error: Wrong number of transitions.")
 
-        perfSection = transitions[0]["performance"]
+        perfSection = transitions[0]["performance"]["cmsRun1"]
         self.assertTrue(perfSection.has_key("storage"),
                         "Error: Storage section is missing.")
         self.assertTrue(perfSection.has_key("memory"),
@@ -563,6 +564,23 @@ class TestChangeState(unittest.TestCase):
                          "Error: PeakValueRss is wrong.")
         self.assertEqual(perfSection["memory"]["PeakValueVsize"], "643.281",
                          "Error: PeakValueVsize is wrong.")
+
+        xmlPath = os.path.join(getWMBASE(),
+                               "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
+
+        failedReport = Report()
+        failedReport.unpersist(os.path.join(getWMBASE(),
+                                            "test/python/WMCore_t/JobStateMachine_t/FailedReport.pkl"))
+        testJobA["fwjr"] = failedReport
+        change.propagate([testJobA], "complete", "executing")
+        change.propagate([testJobA], "success", "complete")        
+
+        transitions = change.listTransitionsForDashboard()
+
+        self.assertEqual(len(transitions), 1,
+                         "Error: Wrong number of transitions.")
+        self.assertEqual(transitions[0]["exitCode"], "8020",
+                         "Error: Wrong exit code.")
         return
 
 if __name__ == "__main__":

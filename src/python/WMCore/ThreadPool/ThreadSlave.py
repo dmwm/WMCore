@@ -110,8 +110,6 @@ class ThreadSlave:
         # we ensured that we use the dbFactory object from our parent
         # thread so we have only one engine in the application.
         myThread.dbi = myThread.dbFactory.connect()
-        logging.info("THREAD: Initialize transaction dictionary")
-        myThread.transactions = {}
         logging.info("THREAD: Initializing default transaction")
         myThread.transaction = Transaction(myThread.dbi)
         logging.info("THREAD: Loading backend")
@@ -194,10 +192,6 @@ class ThreadSlave:
         # this method is called once the thread is finished and 
         # we commit everything.
         myThread.transaction.commit()
-        msg = "committing other transactions if there any in this thread"
-        logging.debug(msg)
-        for transaction in myThread.transactions.keys():
-            transaction.commit()
  
         logging.debug("THREAD: Removed Work")
 

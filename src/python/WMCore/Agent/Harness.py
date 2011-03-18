@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101, W6501
+# W6501: It doesn't like string formatting in logging messages
 """
 Harness class that wraps standard functionality used in all daemon 
 components including:
@@ -36,7 +38,6 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
-from WMCore.WMFactory import WMFactory
 from WMCore import WMLogging
 from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
 from WMCore.Agent.ConfigDBMap import ConfigDBMap
@@ -79,26 +80,37 @@ class Harness:
             self.config.section_("Agent")
         
         self.config.Agent.componentName = compName 
-        compSect = getattr(self.config, compName, None) 
+        compSect = getattr(self.config, compName, None)
+        if compSect == None:
+            # Then we have a major problem - there's no section with this name
+            logging.error("Could not find section %s in config" % compName)
+            logging.error("We are returning, and hoping you know what you're doing!")
+            logging.debug("Config: %s" % self.config)
+            return
         # check if componentDir is set if not assign.
-        if not hasattr(compSect, "componentDir"):
+        if getattr(compSect, 'componentDir', None) == None:
             if not hasattr(self.config, "General"):
                 # Don't do anything.  Assume the user knows what they are doing.
+                logging.error("Missing componentDir and General section in config")
+                logging.error("Going to trust you to know what you're doing.")
                 return
             
-        try:
-            compSect.componentDir
-        except:
-            compSect.componentDir =  os.path.join(self.config.General.workDir, \
-                'Components/'+self.config.Agent.componentName)
+            compSect.componentDir =  os.path.join(self.config.General.workDir,
+                                                  'Components',
+                                                  self.config.Agent.componentName)
         # we have name and location of the log files. Now make sure there
         # is a directory.
         try:
-            os.makedirs(compSect.componentDir)
-        except :
-            pass
+            if not os.path.isdir(compSect.componentDir):
+                os.makedirs(compSect.componentDir)
+        except Exception, ex:
+            logging.error("Encountered exception while making componentDirs: %s" % str(ex))
+            logging.error("Ignoring")
 
         self.threadManagerName = ''
+        self.heartbeatAPI      = None
+        self.messages          = {}
+        self.logMsg            = {}
         
         return
 
@@ -128,14 +140,13 @@ class Harness:
             logHandler.setFormatter(logFormatter)
             logging.getLogger().addHandler(logHandler)
             logging.getLogger().setLevel(logging.INFO)
-            # map log strings to integer levels:
-            self.logMsg = {'DEBUG' :   logging.DEBUG,    \
-                          'ERROR' :   logging.ERROR,     \
-                          'NOTSET':   logging.NOTSET,    \
-                          'CRITICAL' : logging.CRITICAL, \
-                          'WARNING'  : logging.WARNING,  \
-                          'INFO'     : logging.INFO,     \
-                          'SQLDEBUG' : logging.SQLDEBUG  }
+            self.logMsg = {'DEBUG' :   logging.DEBUG,
+                           'ERROR' :   logging.ERROR,
+                           'NOTSET':   logging.NOTSET,
+                           'CRITICAL' : logging.CRITICAL,
+                           'WARNING'  : logging.WARNING,
+                           'INFO'     : logging.INFO,
+                           'SQLDEBUG' : logging.SQLDEBUG}
             if hasattr(compSect, "logLevel") and \
                compSect.logLevel in self.logMsg.keys():
                 logging.getLogger().setLevel(self.logMsg[compSect.logLevel])   
@@ -156,8 +167,6 @@ class Harness:
             myThread.logger = logging.getLogger()
             logging.info(">>>Setting config for thread: ")
             myThread.config = self.config
-            # set attribute for transaction objects.
-            myThread.transactions = {}
         
             logging.info(">>>Building database connection string")
             # check if there is a premade string if not build it yourself.
@@ -188,41 +197,10 @@ class Harness:
             elif connectDialect.lower() == 'sqlite':
                 myThread.dialect = 'SQLite'
 
-            myThread.transactions = {}
-
-            if getattr(self.config.Agent, "useMsgService", True):
-                logging.info(">>>Initializing MsgService Factory")
-                WMFactory("msgService", "WMCore.MsgService."+ \
-                          myThread.dialect)
-                myThread.msgService = \
-                                    myThread.factory['msgService'].loadObject("MsgService")
-
-
-                # diagnostic messages are ones that most of the time
-                # bypass the other messages. 
-                logging.info(">>>Initializing diagnostic messages")
-                self.diagnosticMessages = []
-                # can be used to print out the parameter 
-                # and handlers used by an agent
-                self.diagnosticMessages.append(compName + ':LogState')
-                self.diagnosticMessages.append('LogState')
-                # debug levels
-                for logLevel in self.logMsg.keys():
-                    self.diagnosticMessages.append(compName+ ':Logging.'+logLevel)
-                    self.diagnosticMessages.append('Logging.'+logLevel)
-                # events to stop the component.
-                self.diagnosticMessages.append(compName + ':Stop')
-                self.diagnosticMessages.append(compName + ':StopAndWait')
-                self.diagnosticMessages.append('Stop')
-                self.diagnosticMessages.append('StopAndWait')
-            if getattr(self.config.Agent, "useTrigger", True):
-                logging.info(">>>Instantiating trigger service")
-                WMFactory("trigger", "WMCore.Trigger")
-                myThread.trigger = myThread.factory['trigger'].loadObject("Trigger")
-
             logging.info("Harness part constructor finished")
-        except Exception,ex:
+        except Exception, ex:
             logging.critical("Problem instantiating "+str(ex))
+            logging.error("Traceback: %s" % str(traceback.format_exc()))
             raise
 
     def preInitialization(self):
@@ -284,88 +262,27 @@ class Harness:
 
     def __call__(self, event, payload):
         """
-        Loads the correct handler and performs the apropiate actions
-        Note that it is possible for developers to overload the 
-        diagnostic messages. That is they can augment the functionality.
+        Once upon a time this was for doing the handling of diagnostic messages
+
+        With the test-deprecating of the MsgService based diagnostics, we've basically
+        scratched this.
+
+        I'm leaving this in so at least the framework is still there
+
+        -mnorman
         """
-        compName = self.config.Agent.componentName
-        if event in self.messages.keys():
-            handler = self.messages[event]
-            logging.debug("Retrieving Handler for event: "+event)
-            logging.debug("Executing Payload " + str(payload))
-            handler.__call__(event, payload)
-            logging.debug("Event " + str(event) + " successfully handled")
-        # diagnostics are tiny operations so we put them here rather 
-        # than in separate handlers
-        if event in self.diagnosticMessages:
-            if(event.startswith(compName+':Logging')  or
-                event.startswith('Logging') ):
-                logLevel = event.split('.')[-1]
-                logging.getLogger().setLevel(self.logMsg[logLevel])
-                logging.critical("Log level set to: "+logLevel)
-            elif(event == compName+':LogState') or \
-                (event == 'LogState'):
-                logging.info(str(self))
-        # if there is no handler, throw an error.
-        if not event in self.diagnosticMessages and \
-            not event in self.messages.keys():
-                msg = """Message %s with payload: %s 
-has no handler in this component.
-I am going to throw a fatal error! The following message subscriptions 
-which have a handler, have been found: diagnostic: %s and component specific: %s 
-                """ % (event, payload, str(self.diagnosticMessages), \
-                str(self.messages.keys()))
-                logging.critical(msg)
-                raise Exception(msg)
+        return
 
     def initialization(self):
         """
         _initialization__
 
-        Performs the basic initialization. e.g.:
-        
-        - registering the trigger and message service with handlers
-        - checking if the component specific message types conflict
-        with the default diagnostic ones
-        - registering itself with the message service
-        - subscribing to message types.
+        Used the handle initializing the MsgService.  The MsgService
+        is no longer used.
+
+        Removed but not deleted, since all sorts of things call it
         """
-        if not getattr(self.config.Agent, "useMsgService", True):
-            return
- 
-        try:
-  
-            myThread = threading.currentThread()
-            # register this component
-            logging.info(">>>Registering this component to msgService")
-            myThread.msgService.registerAs(self.config.Agent.componentName)
-            logging.info(">>>Subscribing to events:")
-            # subscribe to messages (or generate a warning:
-            if len(self.messages.keys())==0:
-                logging.warning("COMPONENT DOES NOT SUBSCRIBE TO MESSAGES!")
-                logging.warning("IS THIS INTENTIONAL?!")
-            for message in self.messages.keys():
-                # check if the messages do not conflict with our 
-                # diagnostic ones
-                if message in self.diagnosticMessages:
-                    raise WMException(WMEXCEPTION['WMCORE-6'], 'WMCORE-6')
-                myThread.msgService.subscribeTo(message)
-                logging.info(">>>Subscribed to event : " + message)
-            logging.info(">>>Subscribing to diagnostic events : ")
-            for message in self.diagnosticMessages:
-                myThread.msgService.prioritySubscribeTo(message)
-                logging.info(">>>Subscribed to event : " + message)
-            # remove any stop messages that where send to us
-            # while we where not running
-            logging.info(">>>Before I start I purge any stop messages send "+\
-                "to me")
-            myThread.msgService.remove("Stop")
-            myThread.msgService.remove("StopAndWait")
-            myThread.msgService.remove(self.config.Agent.componentName+":Stop")
-            myThread.msgService.remove(self.config.Agent.componentName+":StopAndWait")
-        except Exception,ex:
-            logging.critical("Problem initializing : "+str(ex))
-            raise
+        return
 
     def prepareToStart(self):
         """
@@ -398,16 +315,6 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         myThread.transaction.commit()
 
         logging.info('>>>Committing default transaction')
-        logging.info(">>>Flushing messages")
-
-        if getattr(self.config.Agent, "useMsgService", True):
-            myThread.msgService.finish()
-
-        logging.info('>>>Committing possible other transactions')
-        # if we have multiple database we might want to synchronize
-        # commits
-        for transaction in myThread.transactions.keys():
-            transaction.commit()
 
         logging.info(">>>Starting worker threads")
         myThread.workerThreadManager.resumeWorkers()
@@ -450,24 +357,10 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         """
         __handleMessage_
 
-        A direct method for handling events for this component.
-        This method is mainly used for testing frameworks where you want to 
-        have immediate feedback on the handling of a message in the test framework.
+        Formerly used to handle messages - now non-functional
+        Left here in case someone else is using it (i.e. PilotManager)
         """ 
-        # if the type of message is empty, check the message service 
-        # for a messages.
-        if type == '':
-            myThread = threading.currentThread()
-            msg = myThread.msgService.get()
-            type = msg['name']
-            payload = msg['payload']
-
-        logging.debug("Receiving message of type: "+str(type)+\
-        ", payload: "+str(payload))
-        self.__call__(type, payload)
-        # make sure the message is set to finish if the type is empty.
-        myThread = threading.currentThread()
-        myThread.msgService.finish()
+        return
         
     def startDaemon(self, keepParent = False, compName = None):
         """
@@ -483,7 +376,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         if not compName:
             compName = self.__class__.__name__
         compSect = getattr(self.config, compName, None) 
-        msg = "Log will be in %s " %(compSect.componentDir)
+        msg = "Log will be in %s " % (compSect.componentDir)
         print(msg)
         # put the daemon config file in the work dir of this component.
         # FIXME: this file will be replaced by a database table.
@@ -502,8 +395,8 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
 
         returns: Nothing
 
-        Start up the component, performs initialization an waits 
-        for messages. Calling this method results in the application
+        Start up the component, performs initialization and waits indefinitely
+        Calling this method results in the application
         running in the xterm (not in daemon mode)
  
         """
@@ -512,43 +405,11 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
             msg = 'None'
             self.prepareToStart()
             while True:
-                time.sleep(10)
+                pass
 
-                if getattr(self.config.Agent, "useMsgService", True):
-                    msg = myThread.msgService.get()
-                    # we commit here as we do not want long standing open 
-                    # database connections (but we keep track of the last get 
-                    # message state
-                    self.handleMessage(msg['name'], msg)
-                    logging.debug(">>>Closing and commit all database sessions" \
-                                  +" that have been registered")
-                    # when we call the msgService.finish we finally remove the msg
-                    # from the queu.
-                    myThread.msgService.finish()
-                    
-                for transaction in myThread.transactions.keys():
-                    transaction.commit()
-
-                if getattr(self.config.Agent, "useMsgService", True):
-                    logging.debug(">>>Finished handling message of type "+ \
-                                  str(msg['name'])+ " \n")
-                    if msg['name'] == 'Stop' or \
-                           msg['name'] == self.config.Agent.componentName+':Stop':
-                        logging.info(">>>Quick shut down of component")
-                        self.prepareToStop(False)
-                        break
-                    if msg['name'] == 'StopAndWait' or  \
-                           msg['name'] == self.config.Agent.componentName+':StopAndWait':
-                        logging.info(">>>Shut down of component "+\
-                                     "while waiting for threads to finish")
-                        # check if nr of threads is specified.
-                        self.prepareToStop(True, msg['payload']) 
-                        break
-        except Exception,ex:
+        except Exception, ex:
             if self.state == 'initialize':
-                errormsg = """ 
-PostMortem: choked when initializing with error: %s
-                """ % (str(ex))
+                errormsg = """PostMortem: choked when initializing with error: %s\n""" % (str(ex))
                 stackTrace = traceback.format_tb(sys.exc_info()[2], None)
                 for stackFrame in stackTrace:
                     errormsg += stackFrame         
@@ -558,11 +419,9 @@ PostMortem: choked when initializing with error: %s
                 for stackFrame in stackTrace:
                     errormsg += stackFrame
                 logging.error(errormsg)
-                logging.info(\
-                    ">>>Fatal error, rollback all non-committed transactions")
-                logging.info(">>>Closing all connections")
-                for transaction in myThread.transactions.keys():
-                    transaction.rollback()
+                logging.error(">>>Fatal Error, Preparing to Rollback Transaction")
+                if getattr(myThread, 'transaction', None) != None:
+                    myThread.transaction.rollback()
                 self.prepareToStop(False)
                 errormsg = """ 
 PostMortem: choked while handling messages  with error: %s

@@ -103,8 +103,6 @@ class BaseWorkerThread:
 
         logging.info("Initialising default database")
         myThread.dbi = myThread.dbFactory.connect()
-        logging.info("Initialise transaction dictionary")
-        myThread.transactions = {}
         logging.info("Initialising default transaction")
         myThread.transaction = Transaction(myThread.dbi)
         # Set up message service and trigger

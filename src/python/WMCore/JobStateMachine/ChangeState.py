@@ -179,9 +179,9 @@ class ChangeState(WMObject, WMConnectionBase):
                                        "lastrun": job["mask"]["LastRun"]}
                 jobDocument["name"] = job["name"]
                 jobDocument["type"] = "job"
-                jobDocument["user"] = job["user"]
-                jobDocument["group"] = job["group"]
-                jobDocument["taskType"] = job["taskType"]
+                jobDocument["user"] = job.get("user", None)
+                jobDocument["group"] = job.get("group", None)
+                jobDocument["taskType"] = job.get("taskType", None)
 
                 couchRecordsToUpdate.append({"jobid": job["id"],
                                              "couchid": jobDocument["_id"]})                

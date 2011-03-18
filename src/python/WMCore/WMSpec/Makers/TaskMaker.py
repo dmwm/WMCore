@@ -49,6 +49,7 @@ class TaskMaker:
         self.workflowDict = {}
         self.subDict      = {}
         self.owner        = ''
+        self.owner_dn     = ''
 
 
         myThread = threading.currentThread()
@@ -121,6 +122,8 @@ class TaskMaker:
 
         if hasattr(self.workload, 'owner'):
             self.owner = self.workload.owner
+        if hasattr(self.workload, 'owner_dn'):
+            self.owner_dn = self.workload.owner_dn
 
         for toptask in self.workload.taskIterator():
             #for each task, build sandbox, register, and subscribe
@@ -150,7 +153,8 @@ class TaskMaker:
         fileSet = Fileset(name = self.getFilesetName(task), is_open = True)
         fileSet.create()
 
-        taskFlow = Workflow(spec = specURL, owner = self.owner, name = self.getWorkflowName(task), task = task.name())
+        taskFlow = Workflow(spec = specURL, owner = self.owner, owner_dn = self.owner_dn, 
+                                                name = self.getWorkflowName(task), task = task.name())
         taskFlow.create()
 
         self.workflowDict[task.name()] = taskFlow

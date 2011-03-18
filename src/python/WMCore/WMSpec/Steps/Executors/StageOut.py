@@ -161,7 +161,7 @@ class StageOut(Executor):
                             logging.error(str(ex))
                             logging.debug(file)
                             logging.debug("minMergeSize: %s" % self.step.output.minMergeSize)
-                            stepReport.addError(self.stepName, 50011,
+                            stepReport.addError(self.stepName, 60401,
                                                 "DirectToMergeFailure", str(ex))
                     elif getattr(self.step.output, 'maxMergeEvents', None) != None\
                              and getattr(file, 'events', None) != None\
@@ -177,7 +177,7 @@ class StageOut(Executor):
                                 logging.error(str(ex))
                                 logging.debug(file)
                                 logging.debug("maxMergeEvents: %s" % self.step.output.maxMergeEvents)
-                                stepReport.addError(self.stepName, 50011,
+                                stepReport.addError(self.stepName, 60402,
                                                     "DirectToMergeFailure", str(ex))
 
                 # Save the input PFN in case we need it
@@ -201,8 +201,10 @@ class StageOut(Executor):
                 except Alarm:
                     msg = "Indefinite hang during stageOut of logArchive"
                     logging.error(msg)
+                    stepReport.addError(self.stepName, 60403,
+                                        "StageOutFailure")
                 except Exception, ex:
-                    stepReport.addError(self.stepName, 1,
+                    stepReport.addError(self.stepName, 60307,
                                         "StageOutFailure", str(ex))
                     stepReport.setStepStatus(self.stepName, 1)
                     stepReport.persist("Report.pkl")

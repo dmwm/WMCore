@@ -147,13 +147,14 @@ class LogArchive(Executor):
         except Alarm:
             msg = "Indefinite hang during stageOut of logArchive"
             logging.error(msg)
+            self.report.addError(self.stepName, 60404, "LogArchiveFailure")
         except WMException, ex:
-            self.report.addError(self.stepName, 1, "LogArchiveFailure", str(ex))
+            self.report.addError(self.stepName, 60307, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")
             raise ex
         except Exception, ex:
-            self.report.addError(self.stepName, 1, "LogArchiveFailure", str(ex))
+            self.report.addError(self.stepName, 60405, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")
             msg = "Failure in transferring logArchive tarball\n"

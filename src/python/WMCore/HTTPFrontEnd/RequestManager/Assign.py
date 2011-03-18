@@ -25,8 +25,8 @@ class Assign(WebAPI):
         self.allMergedLFNBases =  [
             "/store/backfill/1", "/store/backfill/2", 
             "/store/data",  "/store/mc"]
-        self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp",
-                                    "/store/unmerged/lustre"]
+        self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
+
         self.mergedLFNBases = {
              "ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
              "DataProcessing" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],

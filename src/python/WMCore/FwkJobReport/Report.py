@@ -240,6 +240,25 @@ class Report:
         
         return jsonReport
 
+    def getExitCode(self):
+        """
+        _getExitCode_
+
+        Return the first exit code you find.
+        """
+        returnCode = 0
+        for stepName in self.listSteps():
+            reportStep = self.retrieveStep(stepName)
+            errorCount = getattr(reportStep.errors, "errorCount", 0)
+            for i in range(errorCount):
+                reportError = getattr(reportStep.errors, "error%i" % i)
+                if not getattr(reportError, 'exitCode', None):
+                    returnCode = 99999
+                else:
+                    return int(reportError.exitCode)
+
+        return returnCode
+
     def stepSuccessful(self, stepName):
         """
         _stepSuccessful_

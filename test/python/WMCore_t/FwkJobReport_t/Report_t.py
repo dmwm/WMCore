@@ -458,6 +458,24 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(perfSection["memory"]["PeakValueVsize"], "643.281",
                          "Error: PeakValueVsize is wrong.")
         return
+
+
+    def testExitCode(self):
+        """
+        _testExitCode_
+
+        Test and see if we can get an exit code out of a report
+
+        Note: Errors without a return code return 99999
+        """
+
+        report = Report("cmsRun1")
+        self.assertEqual(report.getExitCode(), 0)
+        report.addError(stepName = "cmsRun1", exitCode = None, errorType = "test", errorDetails = "test")
+        self.assertEqual(report.getExitCode(), 99999)
+        report.addError(stepName = "cmsRun1", exitCode = '12345', errorType = "test", errorDetails = "test")
+        self.assertEqual(report.getExitCode(), 12345)
+
     
 if __name__ == "__main__":
     unittest.main()

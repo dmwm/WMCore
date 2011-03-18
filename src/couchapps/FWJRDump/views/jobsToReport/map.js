@@ -5,13 +5,11 @@ function(doc) {
     }
 
     for (var stepName in doc['fwjr'].steps) {
-      if (stepName.search('cmsRun') == -1) {
-        continue;
-      }
-
       if (doc['fwjr']['steps'][stepName].performance) {
         emit([doc['jobid'], doc['retrycount'], doc['timestamp']], 
-             doc['fwjr']['steps'][stepName].performance);
+             [stepName, doc['fwjr']['steps'][stepName].start,
+              doc['fwjr']['steps'][stepName].performance,
+              doc['fwjr']['steps'][stepName].errors]);
       }
     }
   }

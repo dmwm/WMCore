@@ -258,15 +258,26 @@ class ChangeState(WMObject, WMConnectionBase):
 
         jobsToReport = []
         for viewResult in viewResults["rows"]:
-            jobReport = {"performance": {}}
+            jobReport = {"performance": {},
+                         "exitCode": 0}
             jobReport.update(viewResult["value"])
 
-            perfResults = self.fwjrdatabase.loadView("FWJRDump", "performanceByJobID",
+            fwjrResults = self.fwjrdatabase.loadView("FWJRDump", "jobsToReport",
                                                      options = {"startkey": [jobReport["id"], jobReport["retryCount"], 0],
                                                                 "endkey": [jobReport["id"], jobReport["retryCount"], {}]})
-            if len(perfResults["rows"]) > 0:
-                jobReport["performance"] = perfResults["rows"][0]["value"]
-                
+
+            errorTime = None
+            exitCode = 0
+            for row in fwjrResults["rows"]:
+                jobReport["performance"][row["value"][0]] = row["value"][2]
+
+                errors = row["value"][3]
+                if len(errors) > 0:
+                    if errorTime == None or row["value"][1] < errorTime:
+                        erorrTime = row["value"][1]
+                        exitCode = errors[0]["exitCode"]
+
+            jobReport["exitCode"] = exitCode
             del jobReport["index"]
             del jobReport["id"]
             jobsToReport.append(jobReport)

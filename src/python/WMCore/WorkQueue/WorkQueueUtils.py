@@ -82,7 +82,6 @@ def queueConfigFromConfigObject(config):
     if not hasattr(wqManager, 'queueParams'):
         wqManager.queueParams = {}
     qConfig = wqManager.queueParams
-    qConfig.setdefault('CacheDir', path.join(wqManager.componentDir, 'wf'))
 
     if hasattr(wqManager, 'couchurl'):
         wqManager.queueParams['CouchUrl'] = wqManager.couchurl

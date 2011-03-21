@@ -10,8 +10,6 @@ Generic methods used by all of the WMBS classes.
 
 import threading
 
-from WMCore.WMConnectionBase import WMConnectionBase
-
 class WorkQueueBase():
     """
     Generic methods used by all of the WMBS classes.
@@ -27,6 +25,7 @@ class WorkQueueBase():
         """
         # only load dbi connection if we need it
         if dbi or 'dbi' in dir(threading.currentThread()):
+            from WMCore.WMConnectionBase import WMConnectionBase
             self.conn = WMConnectionBase(daoPackage = "WMCore",
                                          logger = logger, dbi = dbi)
             self.logger = self.conn.logger

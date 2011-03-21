@@ -13,8 +13,6 @@ import threading
 
 from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
 from WMCore.Configuration import loadConfigurationFile
-from WMCore.WMInit import WMInit
-from WMCore.WMInit import connectToDB
 
 def createOptionParser():
     """
@@ -75,38 +73,6 @@ def createWorkQueue(config):
     """Create a workqueue from wmagent config"""
     return queueFromConfig(config)
 
-
-def connectionTest(configFile):
-    """
-    _connectionTest_
-
-    Create a DB Connection instance to test the connection specified
-    in the config file.
-
-    """
-    config = loadConfigurationFile(configFile)
-    wmInit = WMInit()
-
-    if not hasattr(config, "CoreDatabase"):
-        print "No CoreDatabase section."
-        sys.exit(1)
-
-    (dialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
-    socket = getattr(config.CoreDatabase, "socket", None)
-
-    try:
-       wmInit.setLogging('wmcoreD', 'wmcoreD', logExists = False, logLevel = logging.WARNING)
-       wmInit.setDatabaseConnection(dbConfig = config.CoreDatabase.connectUrl,
-                                    dialect = dialect,
-                                    socketLoc = socket)
-    except Exception, ex:
-        msg = "Unable to make connection to using \n"
-        msg += "parameters provided in %s\n" % config.CoreDatabase.connectUrl
-        msg += str(ex)
-        print msg
-        raise ex
-
-    return
 
 def main():
     myOptParser = createOptionParser()

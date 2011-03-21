@@ -601,7 +601,7 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.localQueue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
         self.assertEqual(len(work), totalBlocks)
         # both refer to same wmspec
-        self.assertEqual(work[0]['WMSpecUrl'], work[1]['WMSpecUrl'])
+        self.assertEqual(work[0]['RequestName'], work[1]['RequestName'])
         self.localQueue.doneWork([str(x.id) for x in work])
         # elements in local deleted at end of update, only global ones left
         self.assertEqual(len(self.localQueue.status(status = 'Done')),
@@ -640,7 +640,7 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.localQueue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
         self.assertEqual(len(work), totalBlocks)
         # both refer to same wmspec
-        self.assertEqual(work[0]['WMSpecUrl'], work[1]['WMSpecUrl'])
+        self.assertEqual(work[0]['RequestName'], work[1]['RequestName'])
         self.assertNotEqual(work[0]['Inputs'], work[1]['Inputs'])
         self.localQueue.doneWork([str(x.id) for x in work])
         self.assertEqual(len(self.localQueue.status(status = 'Done')),

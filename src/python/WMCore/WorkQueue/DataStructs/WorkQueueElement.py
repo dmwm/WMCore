@@ -24,7 +24,6 @@ class WorkQueueElement(dict):
         self.setdefault('Inputs', {})
         self.setdefault('ParentData', [])
         self.setdefault('Jobs', None)
-        self.setdefault('WMSpecUrl', None)
         self.setdefault('WMSpec', None)
         self.setdefault('SiteWhitelist', [])
         self.setdefault('SiteBlacklist', [])

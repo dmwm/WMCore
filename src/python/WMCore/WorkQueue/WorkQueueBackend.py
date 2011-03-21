@@ -66,16 +66,32 @@ class WorkQueueBackend(object):
 
     def getElementsForSplitting(self):
         """Returns the elements from the inbox that need to be split"""
-        return self.getInboxElements(status = 'Negotiating', loadSpec = True)
+        elements = self.getInboxElements(status = 'Negotiating')
+        specs = {} # cache as may have multiple elements for same spec
+        for ele in elements:
+            if ele['RequestName'] not in specs:
+                wmspec = WMWorkloadHelper()
+                wmspec.load(self.parentCouchUrl + "/%s/spec" % ele['RequestName'])
+                specs[ele['RequestName']] = wmspec
+            ele['WMSpec'] = specs[ele['RequestName']]
+        del specs
+        return elements
  
 
     def insertWMSpec(self, wmspec):
         """
         Insert WMSpec to backend
         """
+        # Can't save spec to inbox, it needs to be visible to child queues
         # Can't save empty dict so add dummy variable
         return wmspec.saveCouch(self.db['host'], self.db.name, {'name' : wmspec.name()})
 
+
+    def getWMSpec(self, name):
+        """Get the spec"""
+        wmspec = WMWorkloadHelper()
+        wmspec.load(self.db['host'] + "/%s/%s/spec" % (self.db.name, name))
+        return wmspec
 
     def insertElements(self, units, parent = None):
         """
@@ -87,14 +103,13 @@ class WorkQueueBackend(object):
         if not units:
             return
         # store spec file separately - assume all elements share same spec
-        wmspec_url = self.insertWMSpec(units[0]['WMSpec'])
+        self.insertWMSpec(units[0]['WMSpec'])
         for unit in units:
 
             # cast to couch
             if not isinstance(unit, CouchWorkQueueElement):
                 unit = CouchWorkQueueElement(self.db, elementParams = dict(unit))
 
-            unit['WMSpecUrl'] = wmspec_url
             if parent:
                 unit['ParentQueueId'] = parent.id
                 unit['TeamName'] = parent['TeamName']
@@ -108,7 +123,7 @@ class WorkQueueBackend(object):
         
         This does not persist it to the database.
         """
-        params = {'WMSpec' : spec, 'WMSpecUrl' : spec.specUrl(),
+        params = {'WMSpec' : spec,
                   'RequestName' : spec.name(), 'TeamName' : team,
                   'Status' : 'Acquired'}
         unit = CouchWorkQueueElement(self.inbox, elementParams = params)
@@ -146,11 +161,10 @@ class WorkQueueBackend(object):
         if loadSpec:
             specs = {} # cache as may have multiple elements for same spec
             for ele in elements:
-                if ele['WMSpecUrl'] not in specs:
-                    wmspec = WMWorkloadHelper()
-                    wmspec.load(ele['WMSpecUrl'])
-                    specs[ele['WMSpecUrl']] = wmspec
-                ele['WMSpec'] = specs[ele['WMSpecUrl']]
+                if ele['RequestName'] not in specs:
+                    wmspec = self.getWMSpec(ele['RequestName'])
+                    specs[ele['RequestName']] = wmspec
+                ele['WMSpec'] = specs[ele['RequestName']]
             del specs
         return elements
 
@@ -219,15 +233,14 @@ class WorkQueueBackend(object):
         specs = {}
         for i in elements:
             i.delete()
-            specs[i['WMSpecUrl']] = i['WMSpec'] 
+            specs[i['RequestName']] = None
         elements[0]._couch.commit()
         # delete specs if no longer used
-        for specUrl in specs:
+        for wf in specs:
             try:
-                spec = specUrl.split('/')[-2:-1]
                 if not self.db.loadView('WorkQueue', 'elementsByWorkflow',
-                                        {'key' : spec, 'limit' : 0})['total_rows']:
-                    self.db.delete_doc(*spec)
+                                        {'key' : wf, 'limit' : 0})['total_rows']:
+                    self.db.delete_doc(wf)
             except CouchNotFoundError:
                 pass
 

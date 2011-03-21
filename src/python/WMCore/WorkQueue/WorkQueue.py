@@ -263,12 +263,11 @@ class WorkQueue(WorkQueueBase):
         for match in matches:
             blockName, dbsBlock = None, None
             if self.params['PopulateFilesets']:
-                if not wmspecCache.has_key(match['WMSpecUrl']):
-                    wmspec = WMWorkloadHelper()
-                    wmspec.load(match['WMSpecUrl'])  
-                    wmspecCache[match['WMSpecUrl']] = wmspec
+                if not wmspecCache.has_key(match['RequestName']):
+                    wmspec = self.backend.getWMSpec(match['RequestName'])
+                    wmspecCache[match['RequestName']] = wmspec
                 else:
-                    wmspec = wmspecCache[match['WMSpecUrl']]
+                    wmspec = wmspecCache[match['RequestName']]
 
                 if match['Inputs']:
                     self.logger.info("Adding Processing work")
@@ -334,7 +333,7 @@ class WorkQueue(WorkQueueBase):
         for ele in elements:
             ele['Status'] = 'Negotiating'
             ele['ChildQueueUrl'] = queue
-        work = self.backend.saveElements(*elements)
+        work = self.parent_queue.saveElements(*elements)
         requests = ', '.join(list(set(['"%s"' % x['RequestName'] for x in work])))
         self.logger.info('Acquired work for request(s): %s' % requests)
         return work

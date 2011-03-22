@@ -30,7 +30,7 @@ WMCore.RequestManager.Overview.overviewTable = function(divID, filterDiv,
     
     var formatLocalQ = function(elCell, oRecord, oColumn, sData) { 
             var host;
-            if (!sData || ! sData.length && oRecord.getData("status") != "completed") {
+            if (!sData || ! sData.length) {
                 elCell.innerHTML = "Not Assigned";
             } else {
             for (data in sData) {
@@ -49,7 +49,9 @@ WMCore.RequestManager.Overview.overviewTable = function(divID, filterDiv,
                  return;
             };
             localQueueList  = oRecord.getData("local_queue")
-            if (!localQueueList || !localQueueList.length) {
+            if ((!localQueueList || !localQueueList.length) && oRecord.getData("status") != "completed"
+                                                            && oRecord.getData("status") != "aborted"
+                                                            && oRecord.getData("status") != "failed") {
                  elCell.innerHTML = "Not Assigned";
                  return;
             };

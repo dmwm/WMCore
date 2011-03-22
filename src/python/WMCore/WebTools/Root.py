@@ -111,6 +111,7 @@ class Root(Harness):
             self.app = self.config.Webtools.application
             self.secconfig = config.component_("SecurityModule")
             self.serverConfig = config.section_("Webtools")
+            self.coreDatabase = config.section_("CoreDatabase")
             self.mode = 'standalone'
         else:
             Harness.__init__(self, config, compName = webApp)

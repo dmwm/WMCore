@@ -32,6 +32,7 @@ class AnalysisSchema(RequestSchema):
             "CMSSWVersion",
             "ScramArch",
             "InputDataset",
+            "Requestor",
             "RequestorDN"
             ]
         self.optionalFields = [

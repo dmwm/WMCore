@@ -47,6 +47,19 @@ def removeTeam(teamName):
     return
 
 
+def getTeamID(teamName):
+    """
+    _getTeamID_
+
+    Return the ID of the team if it exists, otherwise return None
+
+    """
+    factory = DBConnect.getConnection()
+    teamId = factory(classname = "Team.ID")
+    result = teamId.execute(teamName)
+    return result
+
+
 def listTeams():
     """
     _listTeams_

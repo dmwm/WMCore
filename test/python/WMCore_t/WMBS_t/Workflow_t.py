@@ -276,9 +276,8 @@ class WorkflowTest(unittest.TestCase):
         Verify that the user is being added and handled correctly
         """
 
-        dn = "/C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Mattia " + \
-             "Cinquilli/CN=proxy"
-        testWorkflow1 = Workflow(spec = "spec1.xml", owner = dn,
+        owner = "Spiga"
+        testWorkflow1 = Workflow(spec = "spec1.xml", owner = owner,
                                  name = "wf001", task = "MultiUser-support")
         testWorkflow1.create()
 
@@ -291,7 +290,7 @@ class WorkflowTest(unittest.TestCase):
                                                   owner = testWorkflow1.owner,
                                                   spec  = testWorkflow1.spec )
 
-        testWorkflow2 = Workflow(spec = "spec2.xml", owner = dn,
+        testWorkflow2 = Workflow(spec = "spec2.xml", owner = owner,
                                  name = "wf002", task = "MultiUser-support")
         testWorkflow2.create()
 
@@ -299,7 +298,7 @@ class WorkflowTest(unittest.TestCase):
                                                   owner = testWorkflow2.owner,
                                                   spec  = testWorkflow2.spec )
 
-        testWorkflow3 = Workflow(spec = "spec3.xml", owner = "Ciccio",
+        testWorkflow3 = Workflow(spec = "spec3.xml", owner = "Ciccio", 
                                  name = "wf003", task = "MultiUser-support")
         testWorkflow3.create()
 
@@ -308,9 +307,9 @@ class WorkflowTest(unittest.TestCase):
                                                   spec  = testWorkflow3.spec )
 
 
-        self.assertEqual(testWorkflow1.owner, dn)
-        self.assertEqual(listFromOwner1["owner"], dn)
-        self.assertEqual(listFromOwner2["owner"], dn)
+        self.assertEqual(testWorkflow1.owner, owner)
+        self.assertEqual(listFromOwner1["owner"], owner)
+        self.assertEqual(listFromOwner2["owner"], owner)
         self.assertEqual(listFromOwner1["owner"], listFromOwner2["owner"])
         self.assertNotEqual(listFromOwner1["owner"], listFromOwner3["owner"])
         self.assertNotEqual(listFromOwner2["owner"], listFromOwner3["owner"])

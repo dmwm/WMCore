@@ -33,10 +33,11 @@ class Workflow(WMBSBase, WMWorkflow):
     
     workflow + fileset = subscription
     """
-    def __init__(self, spec = None, owner = None, name = None, task = None, id = -1):
+    def __init__(self, spec = None, owner = None, dn = None, name = None, task = None, id = -1):
         WMBSBase.__init__(self)
-        WMWorkflow.__init__(self, spec = spec, owner = owner, name = name, task = task)
+        WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn, name = name, task = task)
 
+        if not self.dn: self.dn = '%s_DN'%owner  
         self.id = id
         return
         
@@ -48,7 +49,7 @@ class Workflow(WMBSBase, WMWorkflow):
         and name.  Return the ID if the workflow exists, False otherwise.
         """
         action = self.daofactory(classname = "Workflow.Exists")
-        result = action.execute(spec = self.spec, owner = self.owner,
+        result = action.execute(spec = self.spec, owner = self.dn,
                                 name = self.name, task = self.task, 
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
@@ -68,12 +69,12 @@ class Workflow(WMBSBase, WMWorkflow):
 
         ## check if owner exists, if not add it
         userfactory = self.daofactory(classname = "Users.GetUserId")
-        userid      = userfactory.execute( dn = owner,
+        userid      = userfactory.execute( hn = owner,
                                            conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
         if not userid:
             newuser = self.daofactory(classname = "Users.New")
-            userid  = newuser.execute( dn = owner,
+            userid  = newuser.execute( dn = self.dn, hn = owner,
                                        conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
 

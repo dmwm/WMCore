@@ -132,7 +132,7 @@ function generateSkim(splitAlgo, splitParams) {
   }
 
   procStr += ">Two File Based</input></td>\n";
-  procStr += generateInput("Files per job:", "two_files_per_job", splitParams);
+  procStr += generateInput("Files per job:", "files_per_job", splitParams);
   procStr += "</tr>";
   procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   procStr += "</table>\n";

@@ -174,11 +174,8 @@ class DashboardInfo(dict):
         #self.setdefault("jobName", jobName)
 
 
-        self.taskName = self.workload.name()
-        self.jobName  = "%s/%s_%i" % (self.workload.name(), self.job['name'], self.job['retry_count'])
-        
-
-
+        self.taskName = 'wmagent_%s' % self.workload.name()
+        self.jobName  = '%s_%i' % (job['name'], job['retry_count'])
         self.jobSuccess = 0
         
 
@@ -287,12 +284,8 @@ class DashboardInfo(dict):
         data['retryCount']               = self.job['retry_count']
         data['ExeEnd']                   = helper.name()
         if helper.name() == 'StageOut':
-            data['StageOutExitStatusReason'] = 'NotAvailable'
-            data['StageOutSE']               = 'NotAvailable'
             data['StageOutExitStatus']       = stepReport.stepSuccessful(stepName = helper.name())
-            data['StageOutEnd']              = 'NotAvailable'
-            data['StageOutTime']             = 'NotAvailable'
-        data['JobExitCode']              = stepReport.stepSuccessful(stepName = helper.name())
+
         
         self.publish(data = data)
 

@@ -682,7 +682,9 @@ class WMWorkloadHelper(PersistencyHelper):
             return
 
         if taskHelper.isTopOfTree():
-            if taskHelper.taskType() == "Production":
+            if self.startPolicy() == "ResubmitBlock":
+                self.setWorkQueueSplitPolicy("ResubmitBlock", splitAlgo, splitArgs)                
+            elif taskHelper.taskType() == "Production":
                 self.setWorkQueueSplitPolicy("MonteCarlo", splitAlgo, splitArgs)
             else:
                 self.setWorkQueueSplitPolicy("Block", splitAlgo, splitArgs)

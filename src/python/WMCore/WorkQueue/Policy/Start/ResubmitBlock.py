@@ -79,7 +79,7 @@ class ResubmitBlock(StartPolicyInterface):
             for block in acdcBlocks:
                 dbsBlock = {}
                 dbsBlock['Name'] = ACDCBlock.name(self.wmspec.name(),
-                                                  task.name(),
+                                                  acdcInfo["fileset"],
                                                   block['offset'], block['files'])
                 dbsBlock['NumberOfFiles'] = block['files']
                 dbsBlock['NumberOfEvents'] = block['events']

@@ -9,6 +9,7 @@ class ACDCBlock(object):
     
     @staticmethod
     def name(wmspecName, taskName, offset, numOfFile):
+        taskName = taskName.replace('/', ':')
         return "/%s/%s/%s/%s/%s" % (ACDC_PREFIX, wmspecName, taskName, offset,
                                      numOfFile)
 
@@ -39,6 +40,6 @@ class ACDCBlock(object):
             raise ValueError, msg
         else:
             return {'SpecName': str(blockSplit[2]),
-                    'TaskName': str(blockSplit[3]),
+                    'TaskName': str(blockSplit[3]).replace(':', '/'),
                     'Offset': int(blockSplit[4]),
                     'NumOfFiles': int(blockSplit[5])}

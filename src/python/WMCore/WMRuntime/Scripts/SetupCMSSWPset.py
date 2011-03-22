@@ -539,7 +539,7 @@ class SetupCMSSWPset(ScriptInterface):
         hostname = socket.gethostname()
         if hostname.endswith("fnal.gov"):
             for inputFile in self.job["input_files"]:
-                if inputFile["lfn"].find("lustre") != -1:
+                if inputFile["lfn"].find("unmerged") != -1:
                     self.process.source.overrideCatalog = \
                         cms.untracked.string("trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage-test.xml?protocol=direct")
         

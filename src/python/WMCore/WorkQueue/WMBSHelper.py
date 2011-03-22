@@ -384,6 +384,7 @@ class WMBSHelper(WMConnectionBase):
         fileLocations  = []
         fileCreate     = []
         fileLFNs       = []
+        lfnsToCreate   = []
 
         
         for wmbsFile in self.wmbsFilesToCreate:
@@ -401,6 +402,10 @@ class WMBSHelper(WMConnectionBase):
 
             if wmbsFile.exists():
                 continue
+
+            if lfn in lfnsToCreate:
+                continue
+            lfnsToCreate.append(lfn)
 
             if len(wmbsFile['newlocations']) < 1:
                 # Then we're in trouble

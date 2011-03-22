@@ -412,8 +412,8 @@ class WMBSHelperTest(unittest.TestCase):
         can be used by the subscription creation test.
         """
         testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
-        testWorkload.setOwner("sfoulkes@fnal.gov")
         testWorkload.setSpecUrl("/path/to/workload")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM", {'dn': 'MyDN'})
 
         procTask = testWorkload.newTask("ProcessingTask")
         procTask.setTaskType("Processing")

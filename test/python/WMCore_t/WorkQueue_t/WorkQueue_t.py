@@ -174,7 +174,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.site = "cmssrm.fnal.gov"
         workload = WMWorkloadHelper(WMWorkload("TestWorkload"))
         reco = workload.newTask("reco")
-        workload.setOwnerDetails("evansde77", "DMWM")
+        workload.setOwnerDetails("evansde77", "DMWM", {'dn': 'MyDN'})
 
         # first task uses the input dataset
         reco.addInputDataset(primary = "PRIMARY", processed = "processed-v1", tier = "TIER1")
@@ -504,6 +504,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # Basic production Spec
         spec = MultiTaskProductionWorkload
         spec.setSpecUrl(os.path.join(self.workDir, 'multiTaskProduction.spec'))
+        spec.setOwnerDetails("evansde77", "DMWM", {'dn': 'MyDN'})
         spec.save(spec.specUrl())
         
         specfile = spec.specUrl()

@@ -243,7 +243,7 @@ class WMBSHelper(WMConnectionBase):
             return sub
 
         workflow = Workflow(self.wmSpec.specUrl(), self.wmSpec.getOwner()["name"],
-                            self.wmSpec.name(), task.getPathName())
+                            self.wmSpec.getOwner()["dn"], self.wmSpec.name(), task.getPathName())
         workflow.create()
         subscription = Subscription(fileset = fileset, workflow = workflow,
                                     split_algo = task.jobSplittingAlgorithm(),

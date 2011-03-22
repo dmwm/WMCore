@@ -13,16 +13,16 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class GetUserId(DBFormatter):
     sql = """SELECT id FROM wmbs_users
-             WHERE cert_dn = :dn
+             WHERE name_hn = :hn
           """
 
-    def execute(self, dn, hn = None, conn = None, transaction = False):
+    def execute(self, hn, dn = None, conn = None, transaction = False):
 
         binds = {}
-        if hn is not None:
+        if dn is not None:
             binds = {"dn": dn, "hn": hn}
         else:
-            binds = {"dn": dn}
+            binds = {"hn": hn}
 
         result = self.dbi.processData( self.sql, binds, conn = conn,
                                        transaction = transaction )

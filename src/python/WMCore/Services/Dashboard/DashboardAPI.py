@@ -4,7 +4,7 @@
 This is the Dashboard API Module for the Worker Node
 """
 
-import apmon
+from WMCore.Services.Dashboard import apmon
 import time
 from types import DictType, StringType, ListType
 

@@ -91,10 +91,12 @@ class Watchdog(threading.Thread):
             return self.factory.loadObject(monitorName)
         except WMException, wmEx:
             msg = "WatchdogFactory Unable to load Object: %s" % monitorName
+            logging.error(msg)
             raise WatchdogException(msg)
         except Exception, ex:
             msg = "Error creating object %s in WatchdogFactory:\n" % monitorName
             msg += str(ex)
+            logging.error(msg)
             raise WatchdogException(msg)
 
 

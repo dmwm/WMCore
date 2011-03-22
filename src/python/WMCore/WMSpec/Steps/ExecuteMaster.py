@@ -49,14 +49,14 @@ class ExecuteMaster:
             myThread.watchdogMonitor.notifyJobStart(task)
         except WMException:
             self.toTaskDirectory()
-            return
+            raise
         except Exception, ex:
             msg =  "Encountered unhandled exception while starting monitors:\n"
             msg += str(ex) + '\n'
             msg += str(traceback.format_exc()) + '\n'
             logging.error(msg)
             self.toTaskDirectory()
-            return
+            raise WMExecutionFailure(msg)
             
         
         for step in task.steps().nodeIterator():

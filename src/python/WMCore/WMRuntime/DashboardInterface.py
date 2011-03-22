@@ -22,6 +22,8 @@ from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
 
 from WMCore.WMRuntime.Tools.Plugins.ApMonLite.ApMonDestMgr import ApMonDestMgr
 
+from WMCore.Services.Dashboard.DashboardAPI import apmonSend, apmonFree
+
 
 def generateDashboardID(job, workload, task):
     """
@@ -141,6 +143,7 @@ class DashboardInfo(dict):
         self.job          = job
         self.publisher    = None
         self.destinations = {}
+        self.server       = None
 
         dict.__init__(self)
 
@@ -360,6 +363,7 @@ class DashboardInfo(dict):
             self._InitPublisher()
         self.destinations[host] = port
         self.publisher.newDestination(host, port)
+        self.server = ['%s:%s' % (host, port)]
 
 
 
@@ -374,11 +378,11 @@ class DashboardInfo(dict):
         redunancy is the amount to times to publish this information
 
         """
-        if self.publisher == None:
-            self._InitPublisher()
+        #if self.publisher == None:
+        #    self._InitPublisher()
       
         
-        self.publisher.connect()
+        #self.publisher.connect()
         toPublish = {}
         if data:
             toPublish = data
@@ -387,11 +391,18 @@ class DashboardInfo(dict):
         for key, value in toPublish.items():
             if value == None:
                 del toPublish[key]
+
+                
+        logging.debug("About to send UDP package to dashboard: %s" % toPublish)
+        logging.debug("Using address %s" % self.server)
+        apmonSend(taskid = self.taskName, jobid = self.jobName, params = toPublish,
+                  logr = logging, apmonServer = self.server)
+        apmonFree()
         
-        for i in range(1, redundancy+1):
-            self.publisher.send(**toPublish)
-            
-        self.publisher.disconnect()
+        #for i in range(1, redundancy+1):
+        #    self.publisher.send(**toPublish)
+        #    
+        #self.publisher.disconnect()
         return
 
 

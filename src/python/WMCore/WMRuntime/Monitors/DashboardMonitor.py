@@ -15,13 +15,12 @@ import logging
 import os
 import os.path
 import signal
-import subprocess
 import traceback
 
 from WMCore.WMRuntime.Monitors.WMRuntimeMonitor import WMRuntimeMonitor
 from WMCore.WMSpec.Steps.Executor               import getStepSpace
 from WMCore.WMSpec.WMStep                       import WMStepHelper
-from WMCore.Algorithms.SubprocessAlgos          import *
+from WMCore.Algorithms.SubprocessAlgos          import tailNLinesFromFile
 
 import WMCore.FwkJobReport.Report as Report
 
@@ -43,11 +42,11 @@ def getStepPID(stepSpace, stepName):
         logging.error(msg)
         return
     
-    filehandle=open(pidFile,'r')
-    output=filehandle.read()
+    filehandle = open(pidFile,'r')
+    output = filehandle.read()
     
     try:
-        stepPID=int(output)
+        stepPID = int(output)
     except ValueError:
         msg = "Couldn't find a number"
         logging.error(msg)
@@ -62,11 +61,11 @@ def searchForEvent(file):
     
     Searches for the last event output into the CMSSW output file
     """
-
+    import re
     MatchRunEvent = re.compile("Run: [0-9]+ Event: [0-9]+$")
 
     #I'm just grabbing the last twenty lines for the hell of it
-    tailNLinesFromFile(file, 20)
+    lines = tailNLinesFromFile(file, 20)
 
     lastMatch = None
     for line in lines:
@@ -97,6 +96,14 @@ def searchForEvent(file):
 
 
 class DashboardMonitor(WMRuntimeMonitor):
+    """
+    _DashboardMonitor_
+    
+    Run in the background and pass information to
+    the DashboardInterface instance.
+
+    If the job exceeds timeouts, kill the job
+    """
 
     def __init__(self):
         self.startTime        = None
@@ -118,7 +125,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         Handles the monitor initiation
 
         """
-        print "In DashboardMonitor.initMonitor"
+        logging.info("In DashboardMonitor.initMonitor")
 
         self.task    = task
         self.job     = job
@@ -133,6 +140,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         self.dashboardInfo = DashboardInfo(task = task, job = job)
 
         if destHost and destPort:
+            logging.info("About to set destination to %s:%s" % (destHost, destPort)) 
             self.dashboardInfo.addDestination(host = destHost,
                                               port = destPort)
 
@@ -267,7 +275,6 @@ class DashboardMonitor(WMRuntimeMonitor):
                 msg2 += str(ex)
                 msg2 += str(traceback.format_exc()) + '\n'
                 logging.error(msg2)
-                pass
 
             
             if stepPID == None or stepPID == os.getpid():
@@ -286,14 +293,14 @@ class DashboardMonitor(WMRuntimeMonitor):
                 msg += "WARNING: Hard Kill Timeout has Expired:"
                 logging.error(msg)
                 os.kill(stepPID, signal.SIGTERM)
-                killedpid, stat = os.waitpid(pid, os.WNOHANG)
+                killedpid, stat = os.waitpid(stepPID, os.WNOHANG)
                 if killedpid == 0:
                     os.kill(stepPID, signal.SIGKILL)
-                    killedpid, stat = os.waitpid(pid, os.WNOHANG)
+                    killedpid, stat = os.waitpid(stepPID, os.WNOHANG)
                     if killedpid == 0:
                         logging.error("Can't kill job.  Out of options.  Waiting for system reboot.")
                         #Panic!  It's unkillable!
-                        pass
+                        
 
 
         return

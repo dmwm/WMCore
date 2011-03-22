@@ -17,9 +17,7 @@ from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.WMException                     import WMException
 from WMCore.JobStateMachine.ChangeState     import ChangeState
 
-from WMComponent.DashboardReporter.DashboardInterface import DashboardInterface
-
-from WMComponent.DashboardReporter.DashboardAPI import apmonSend, apmonFree
+from WMCore.Services.Dashboard.DashboardAPI import apmonSend, apmonFree
 
 
 class DashboardReporterException(WMException):

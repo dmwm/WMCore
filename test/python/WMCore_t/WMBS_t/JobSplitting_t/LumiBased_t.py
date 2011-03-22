@@ -251,6 +251,26 @@ class LumiBasedTest(unittest.TestCase):
         # in it.
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
         self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]]})
+
+
+        testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 4, twoSites = False)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroups = jobFactory(lumis_per_job = 10,
+                               split_files_between_job = False,
+                               splitOnRun = False)
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 2)
+        self.assertEqual(jobs[0]['mask']['runAndLumis'], {0L: [[0L, 3L]], 1L: [[100L, 103L]], 2L: [[200L, 201L]]})
+        self.assertEqual(jobs[1]['mask']['runAndLumis'], {2L: [[202L, 203L]], 3L: [[300L, 303L]], 4L: [[400L, 403L]]})
+
+        j = Job(id = jobs[0]['id'])
+        j.loadData()
+        self.assertEqual(len(j['input_files']), 3)
+        for f in j['input_files']:
+            self.assertTrue(f['events'], 100)
+            self.assertTrue(f['size'], 1000) 
         return
 
     def createTestWorkload(self):

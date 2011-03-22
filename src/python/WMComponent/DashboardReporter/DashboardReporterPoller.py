@@ -189,6 +189,7 @@ class DashboardReporterPoller(BaseWorkerThread):
             package['MessageType']     = 'JobStatus'
             package['StatusValue']     = job['finalState']
             package['StatusEnterTime'] = time.time()
+            package['JobExitCode']     = job['exitCode']
 
             logging.info("Sending completed info: %s" % str(package))
             result = apmonSend( taskid = package['taskId'], jobid = package['jobId'], params = package, logr = logging, apmonServer = self.serverreport)
@@ -215,33 +216,35 @@ class DashboardReporterPoller(BaseWorkerThread):
         Handle the post-processing step information
         """
 
-        performance = job['performance']
-        package = {}
-        package['jobId']       = '%s_%i' % (job['name'], job['retryCount'])
-        package['taskId']      = 'wmagent_%s' % job['requestName']
-        package['stepName']               = "cmsRun1"  # Hard coded until Monday
-        package['PeakValueRss'] 	  = performance['memory'].get('PeakValueRss', None)
-        package['PeakValueVsize'] 	  = performance['memory'].get('PeakValueVsize', None)
-        package['writeTotalMB']           = performance['storage'].get('writeTotalMB', None)
-        package['readPercentageOps'] 	  = performance['storage'].get('readPercentageOps', None)
-        package['readAveragekB'] 	  = performance['storage'].get('readAveragekB', None)
-        package['readTotalMB'] 	          = performance['storage'].get('readTotalMB', None)
-        package['readNumOps']  	          = performance['storage'].get('readNumOps', None)
-        package['readCachePercentageOps'] = performance['storage'].get('readCachePercentageOps', None)
-        package['readMBSec'] 	          = performance['storage'].get('readMBSec', None)
-        package['readMaxMSec'] 	          = performance['storage'].get('readMaxMSec', None)
-        package['readTotalSecs'] 	  = performance['storage'].get('readTotalSecs', None) 
-        package['writeTotalSecs'] 	  = performance['storage'].get('writeTotalSecs', None) 
-        package['TotalJobCPU'] 	          = performance['cpu'].get('TotalJobCPU', None)
-        package['TotalEventCPU'] 	  = performance['cpu'].get('TotalEventCPU', None)
-        package['AvgEventCPU'] 	          = performance['cpu'].get('AvgEventCPU', None)
-        package['AvgEventTime'] 	  = performance['cpu'].get('AvgEventTime', None)
-        package['MinEventCPU'] 	          = performance['cpu'].get('MinEventCPU', None)
-        package['MaxEventTime'] 	  = performance['cpu'].get('MaxEventTime', None)
-        package['TotalJobTime'] 	  = performance['cpu'].get('TotalJobTime', None)
-        package['MinEventTime'] 	  = performance['cpu'].get('MinEventTime', None)
-        package['MaxEventCPU'] 	          = performance['cpu'].get('MaxEventCPU', None)
-
+        performanceSteps = job['performance']
+        for stepName in performanceSteps.keys():
+            performance = performanceSteps[stepName]
+            package = {}
+            package['jobId']                  = '%s_%i' % (job['name'], job['retryCount'])
+            package['taskId']                 = 'wmagent_%s' % job['requestName']
+            package['stepName']               = stepName
+            package['PeakValueRss'] 	      = performance['memory'].get('PeakValueRss', None)
+            package['PeakValueVsize'] 	      = performance['memory'].get('PeakValueVsize', None)
+            package['writeTotalMB']           = performance['storage'].get('writeTotalMB', None)
+            package['readPercentageOps']      = performance['storage'].get('readPercentageOps', None)
+            package['readAveragekB'] 	      = performance['storage'].get('readAveragekB', None)
+            package['readTotalMB'] 	      = performance['storage'].get('readTotalMB', None)
+            package['readNumOps']  	      = performance['storage'].get('readNumOps', None)
+            package['readCachePercentageOps'] = performance['storage'].get('readCachePercentageOps', None)
+            package['readMBSec']              = performance['storage'].get('readMBSec', None)
+            package['readMaxMSec']            = performance['storage'].get('readMaxMSec', None)
+            package['readTotalSecs'] 	      = performance['storage'].get('readTotalSecs', None) 
+            package['writeTotalSecs'] 	      = performance['storage'].get('writeTotalSecs', None) 
+            package['TotalJobCPU']            = performance['cpu'].get('TotalJobCPU', None)
+            package['TotalEventCPU'] 	      = performance['cpu'].get('TotalEventCPU', None)
+            package['AvgEventCPU'] 	      = performance['cpu'].get('AvgEventCPU', None)
+            package['AvgEventTime'] 	      = performance['cpu'].get('AvgEventTime', None)
+            package['MinEventCPU']            = performance['cpu'].get('MinEventCPU', None)
+            package['MaxEventTime'] 	      = performance['cpu'].get('MaxEventTime', None)
+            package['TotalJobTime'] 	      = performance['cpu'].get('TotalJobTime', None)
+            package['MinEventTime'] 	      = performance['cpu'].get('MinEventTime', None)
+            package['MaxEventCPU']            = performance['cpu'].get('MaxEventCPU', None)
+            
         logging.debug("Sending performance info: %s" % str(package))
         result = apmonSend( taskid = package['taskId'], jobid = package['jobId'], params = package, logr = logging, apmonServer = self.serverreport)
         

@@ -174,7 +174,7 @@ class ErrorHandlerTest(unittest.TestCase):
         testFileA.setLocation('malpaquet')
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(10, *[12314, 12315]))
+        testFileB.addRun(Run(10, *[12314, 12315, 12316]))
         testFileB.setLocation('malpaquet')
 
         testFile0.create()
@@ -189,7 +189,7 @@ class ErrorHandlerTest(unittest.TestCase):
             testJob['retry_count'] = retry_count
             testJob['retry_max'] = 10
             testJob['mask'].addRunAndLumis(run = 10, lumis = [12312])
-            testJob['mask'].addRunAndLumis(run = 10, lumis = [12314])
+            testJob['mask'].addRunAndLumis(run = 10, lumis = [12314, 12316])
             testJobGroup.add(testJob)
             testJob.create(group = testJobGroup)
             testJob.addFile(testFileA)
@@ -270,7 +270,8 @@ class ErrorHandlerTest(unittest.TestCase):
                 self.assertEqual(f['events'], 10)
                 self.assertEqual(f['size'], 1024)
                 self.assertEqual(f['parents'], [u'/this/is/a/parent'])
-                self.assertTrue(f['runs'][0]['lumis'] in [[12312], [12314]])
+                self.assertTrue(f['runs'][0]['lumis'] in [[12312], [12314, 12315, 12316]],
+                                "Unknown lumi %s" % f['runs'][0]['lumis'])
         return
 
     def testSubmit(self):

@@ -220,6 +220,9 @@ class LumiBased(JobFactory):
                         lastLumi = lumi
                         stopJob = False
                         lastRun = run.run
+
+                        if self.currentJob and not f in self.currentJob['input_files']:
+                            self.currentJob.addFile(f)
                     
                     if firstLumi != None and lastLumi != None:
                         # Add this run to the mask

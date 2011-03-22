@@ -80,8 +80,8 @@ class ResubmitBlock(StartPolicyInterface):
             for block in acdcBlocks:
                 dbsBlock = {}
                 dbsBlock['Name'] = ACDCBlock.name(self.wmspec.name(),
-                                                task.name(),
-                                                block['offset'], block['files'])
+                                                  acdcInfo["fileset"],
+                                                  block['offset'], block['files'])
                 dbsBlock['NumberOfFiles'] = block['files']
                 dbsBlock['NumberOfEvents'] = block['events']
                 #TODO: needs this for lumi splitting

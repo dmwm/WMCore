@@ -133,7 +133,6 @@ load_secrets_file(){
 . $WMCORE_DIR/app/etc/profile.d/init.sh
 . $ROOT_DIR/couchdb/app/etc/profile.d/init.sh
 . $ROOT_DIR/mysql/app/etc/profile.d/init.sh
-. $WMCORE_DIR/python2.6/etc/profile.d/init.sh
 . $WMCORE_DIR/py2-mysqldb/etc/profile.d/init.sh 
 . $PROJ_DIR/cheetah/etc/profile.d/init.sh
 . $PROJ_DIR/openid/etc/profile.d/init.sh

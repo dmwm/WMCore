@@ -1,14 +1,12 @@
 """ Pages for the creation of requests """
 import WMCore.RequestManager.RequestMaker.Production
-import WMCore.RequestManager.RequestMaker.Processing.StoreResultsRequest
 import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
-from WMCore.Services.Requests import JSONRequests
+import WMCore.RequestManager.RequestMaker.Processing
+import WMCore.RequestManager.RequestMaker.Production
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList
-from httplib import HTTPException
 import cherrypy
 import time
 from WMCore.WebTools.WebAPI import WebAPI
@@ -51,19 +49,22 @@ class WebRequestSchema(WebAPI):
         return result
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def index(self):
         """ Main web page for creating requests """
         self.versions = SoftwareAdmin.listSoftware().keys()
         self.versions.sort()
-
-        if not self.requestor in Registration.listUsers():
-            return "User " + self.requestor + " is not registered.  Contact a ReqMgr administrator."
-
-        groups = GroupInfo.groupsForUser(self.requestor).keys()
+        # see if this was configured with a hardcoded user.  If not, take from the request header 
+        requestor = self.requestor
+        if not requestor:
+            requestor = cherrypy.request.user["login"]
+        if not requestor in Registration.listUsers():
+            return "User " + requestor + " is not registered.  Contact a ReqMgr administrator."
+        groups = GroupInfo.groupsForUser(requestor).keys()
         if groups == []:
-            return "User " + self.requestor + " is not in any groups.  Contact a ReqMgr administrator."
+            return "User " + requestor + " is not in any groups.  Contact a ReqMgr administrator."
         return self.templatepage("WebRequestSchema", yuiroot=self.yuiroot,
-            requestor=self.requestor,
+            requestor=requestor,
             groups=groups, 
             versions=self.versions, 
             alldocs = self.allDocs(),
@@ -71,6 +72,7 @@ class WebRequestSchema(WebAPI):
             defaultSkimConfig=self.defaultSkimConfig)
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def makeSchema(self, **kwargs):
         """ Handles the submission of requests """
         # make sure no extra spaces snuck in
@@ -81,14 +83,12 @@ class WebRequestSchema(WebAPI):
         schema.update(kwargs)
         currentTime = time.strftime('%y%m%d_%H%M%S',
                                  time.localtime(time.time()))
-
         if schema.has_key('RequestString') and schema['RequestString'] != "":
             schema['RequestName'] = "%s_%s_%s" % (
-                self.requestor, schema['RequestString'], currentTime)
+                schema['Requestor'], schema['RequestString'], currentTime)
         else:
-            schema['RequestName'] = "%s_%s" % (self.requestor, currentTime)
+            schema['RequestName'] = "%s_%s" % (schema['Requestor'], currentTime)
             
-        schema['Requestor'] = self.requestor
         schema['CouchURL'] = self.couchUrl
         schema['CouchDBName'] = self.configDBName
 
@@ -127,16 +127,12 @@ class WebRequestSchema(WebAPI):
                 
         for runlist in ["RunWhitelist", "RunBlacklist"]:
             if runlist in kwargs:
-                schema[runlist] = parseRunList(kwargs[runlist])
+                schema[runlist] = Utilities.parseRunList(kwargs[runlist])
         for blocklist in ["BlockWhitelist", "BlockBlacklist"]:
             if blocklist in kwargs:
-                schema[blocklist] = parseBlockList(kwargs[blocklist])
+                schema[blocklist] = Utilities.parseBlockList(kwargs[blocklist])
 
+        schema = Utilities.unidecode(schema)
+        request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName)
         baseURL = cherrypy.request.base
-        senderOpts = {'req_cache_path':self.componentDir}
-        jsonSender = JSONRequests(baseURL, senderOpts)
-        try:
-            jsonSender.put('/reqmgr/reqMgr/request/'+schema['RequestName'], schema)
-        except HTTPException, ex:
-            return ex.reason+' '+ex.result
         raise cherrypy.HTTPRedirect('%s/reqmgr/view/details/%s' % (baseURL, schema['RequestName']))

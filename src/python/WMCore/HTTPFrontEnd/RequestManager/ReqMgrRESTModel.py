@@ -11,7 +11,6 @@ import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement as UserMan
 import WMCore.RequestManager.RequestDB.Interface.ProdSystem.ProdMgrRetrieve as ProdMgrRetrieve
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
-import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.Wrappers import JsonWrapper
@@ -38,92 +37,99 @@ class ReqMgrRESTModel(RESTModel):
         RESTModel.__init__(self, config)
         self.couchUrl = config.couchUrl
         self.workloadDBName = config.workloadDBName
+        self.security_params = {'roles':config.security_roles}
         self._addMethod('GET', 'request', self.getRequest, 
                        args = ['requestName'],
-                       validation=[self.isalnum], expires = 0)
+                       secured=True, validation=[self.isalnum], expires = 0)
         self._addMethod('GET', 'assignment', self.getAssignment,
                        args = ['teamName', 'request'],
-                       validation = [self.isalnum], expires = 0)
+                       secured=True, validation = [self.isalnum], expires = 0)
         self._addMethod('GET', 'user', self.getUser,
                        args = ['userName'], 
-                       validation = [self.isalnum], expires = 0)
+                       secured=True, validation = [self.isalnum], expires = 0)
         self._addMethod('GET', 'group', self.getGroup,
-                       args = ['group', 'user'], expires = 0)
-        self._addMethod('GET', 'version', self.getVersion, args = [], expires = 0)
-        self._addMethod('GET', 'team', self.getTeam, args = [], expires = 0)
+                       args = ['group', 'user'], secured=True, expires = 0)
+        self._addMethod('GET', 'version', self.getVersion, args = [], 
+                        secured=True, expires = 0)
+        self._addMethod('GET', 'team', self.getTeam, args = [], 
+                        secured=True, expires = 0)
         self._addMethod('GET', 'workQueue', self.getWorkQueue,
                        args = ['request', 'workQueue'], 
-                       validation = [self.isalnum], expires = 0)
+                       secured=True, validation = [self.isalnum], expires = 0)
         self._addMethod('GET', 'message', self.getMessage,
                        args = ['request'], 
-                       validation = [self.isalnum], expires = 0)
-
+                       secured=True, validation = [self.isalnum], expires = 0)
         self._addMethod('PUT', 'request', self.putRequest,
                        args = ['requestName', 'status', 'priority'],
-                       validation = [self.isalnum, self.intpriority])
+                       secured=True, validation = [self.isalnum, self.intpriority])
         self._addMethod('PUT', 'assignment', self.putAssignment,
                        args = ['team', 'requestName'],
+                       secured=True, security_params=self.security_params,
                        validation = [self.isalnum])
         self._addMethod('PUT', 'user', self.putUser,
                        args = ['userName', 'email', 'dnName'],
+                       secured=True, security_params=self.security_params,
                        validation = [self.validateUser])
         self._addMethod('PUT', 'group', self.putGroup,
                        args = ['group', 'user'],
+                       secured=True, security_params=self.security_params,
                        validation = [self.isalnum])
         self._addMethod('PUT', 'version', self.putVersion,
                        args = ['version'],
+                       secured=True, security_params=self.security_params,
                        validation = [self.validateVersion])
         self._addMethod('PUT', 'team', self.putTeam,
                        args = ['team'],
+                       secured=True, security_params=self.security_params,
                        validation = [self.isalnum])
         self._addMethod('PUT', 'workQueue', self.putWorkQueue, 
                        args = ['request', 'url'],
+                       secured=True, security_params=self.security_params,
                        validation = [self.validatePutWorkQueue])
         self._addMethod('PUT', 'message', self.putMessage,
                        args = ['request'],
+                       secured=True, security_params=self.security_params,
                        validation = [self.isalnum])
-
         self._addMethod('POST', 'request', self.postRequest,
                         args = ['requestName', 'events_written', 
                                 'events_merged', 'files_written',
                                 'files_merged', 'percent_written', 
                                 'percent_success', 'dataset'],
-                                 validation = [self.validateUpdates])
+                        secured=True, validation = [self.validateUpdates])
         self._addMethod('POST', 'user', self.postUser,
-                          args = ['user', 'priority'],
-                          validation = [self.isalnum, self.intpriority])
+                        args = ['user', 'priority'],
+                        secured=True, security_params=self.security_params,
+                        validation = [self.isalnum, self.intpriority])
         self._addMethod('POST',  'group', self.postGroup,
-                          args = ['group', 'priority'],
-                          validation = [self.isalnum, self.intpriority])
-
+                        args = ['group', 'priority'],
+                        secured=True, security_params=self.security_params,
+                        validation = [self.isalnum, self.intpriority])
         self._addMethod('DELETE', 'request', self.deleteRequest,
-                          args = ['requestName'],
-                          validation = [self.isalnum])
+                        args = ['requestName'],
+                        secured=True, security_params=self.security_params,
+                        validation = [self.isalnum])
         self._addMethod('DELETE', 'user', self.deleteUser,
-                          args = ['user'],
-                          validation = [self.isalnum])
+                        args = ['user'],
+                        secured=True, security_params=self.security_params,
+                        validation = [self.isalnum])
         self._addMethod('DELETE', 'group', self.deleteGroup,
-                          args = ['group', 'user'],
-                          validation = [self.isalnum])
+                        args = ['group', 'user'],
+                        secured=True, security_params=self.security_params,
+                        validation = [self.isalnum])
         self._addMethod('DELETE', 'version', self.deleteVersion,
-                          args = ['version'],
-                          validation = [self.validateVersion])
+                        args = ['version'],
+                        secured=True, validation = [self.validateVersion])
         self._addMethod('DELETE', 'team', self.deleteTeam,
-                          args = ['team'],
-                          validation = [self.isalnum])
-        # stop caching for all GET', PUT, POST, and DELETEs
-        #for call in ['PUT', 'POST', 'DELETE']:
-        #   for method, paramDict in self.methods[call].iteritems():
-        #       paramDict['expires'] = 0
-
+                        args = ['team'],
+                        secured=True, security_params=self.security_params,
+                        validation = [self.isalnum])
         self._addMethod('GET', 'requestnames', self.getRequestNames,
-                       args = [], expires = 0)
-
-        self._addMethod("GET", "overview", getGlobalSummaryView) #expires=16000
-        self._addMethod("GET", "resourceInfo", getResourceOverview)
+                       args = [], secured=True, expires = 0)
+        self._addMethod("GET", "overview", getGlobalSummaryView, secured=True) #expires=16000
+        self._addMethod("GET", "resourceInfo", getResourceOverview, secured=True)
         self._addMethod("GET", "agentoverview", getAgentOverview,
-                       args = ['detail'])
-        self._addMethod("GET", "siteoverview", getSiteOverview)
+                       secured=True, args = ['detail'])
+        self._addMethod("GET", "siteoverview", getSiteOverview, secured=True)
         
         cherrypy.engine.subscribe('start_thread', self.initThread)
     

@@ -85,14 +85,17 @@ class ReqMgrBrowser(WebAPI):
         return v
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def index(self):
         """ Main web page """
+        print cherrypy.request.user
         requests = GetRequest.getAllRequestDetails()
         tableBody = self.drawRequests(requests)
         return self.templatepage("ReqMgrBrowser", yuiroot=self.yuiroot, 
                                  fields=self.fields, tableBody=tableBody)
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def search(self, value, field):
         """ Search for a regular expression in a certain field of all requests """
         filteredRequests = []
@@ -106,6 +109,7 @@ class ReqMgrBrowser(WebAPI):
                                  fields=self.fields, tableBody=tableBody)
         
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def splitting(self, requestName):
         """
         _splitting_
@@ -141,6 +145,7 @@ class ReqMgrBrowser(WebAPI):
                                  taskInfo = splitInfo, taskNames = taskNames)
             
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def handleSplittingPage(self, requestName, splittingTask, splittingAlgo,
                             **submittedParams):
         """
@@ -178,6 +183,7 @@ class ReqMgrBrowser(WebAPI):
                + " " + detailsBackLink(requestName)
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def details(self, requestName):
         """ A page showing the details for the requests """
         self.validate(requestName)
@@ -203,6 +209,7 @@ class ReqMgrBrowser(WebAPI):
                                  
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def showOriginalConfig(self, docId):
         """ Makes a link to the original text of the config """
         configCache = ConfigCache(self.couchUrl, self.configDBName)
@@ -213,6 +220,7 @@ class ReqMgrBrowser(WebAPI):
         return '<pre>' + configString + '</pre>'
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def showTweakFile(self, docId):
         """ Makes a link to the dump of the tweakfile """
         configCache = ConfigCache(self.couchUrl, self.configDBName)
@@ -220,6 +228,7 @@ class ReqMgrBrowser(WebAPI):
         return str(configCache.getPSetTweaks()).replace('\n', '<br>')
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def showWorkload(self, url):
         """ Displays the workload """
         request = {'RequestWorkflow':url}
@@ -291,6 +300,7 @@ class ReqMgrBrowser(WebAPI):
         return "%i%%" % pct
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def doAdmin(self, **kwargs):
         """  format of kwargs is {'requestname:status' : 'approved', 'requestname:priority' : '2'} """
         message = ""
@@ -313,6 +323,8 @@ class ReqMgrBrowser(WebAPI):
 
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
+    # FIXME needs to check if authorized, or original user
     def modifyWorkload(self, requestName, workload,
                        runWhitelist=None, runBlacklist=None, 
                        blockWhitelist=None, blockBlacklist=None):

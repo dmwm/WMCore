@@ -27,12 +27,14 @@ class Approve(WebAPI):
         myThread.dbi = self.dbi
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def index(self, all=0):
         """ Page for approving requests """
         requests = requestsWhichCouldLeadTo('assignment-approved')
         return self.templatepage("Approve", requests=requests, all=all)
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
     def handleApprovalPage(self, **kwargs):
         """ Handler for approving requests """
         # handle the checkboxes

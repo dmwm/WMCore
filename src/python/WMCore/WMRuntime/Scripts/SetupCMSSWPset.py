@@ -541,7 +541,7 @@ class SetupCMSSWPset(ScriptInterface):
             for inputFile in self.job["input_files"]:
                 if inputFile["lfn"].find("unmerged") != -1:
                     self.process.source.overrideCatalog = \
-                        cms.untracked.string("trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage-test.xml?protocol=direct")
+                        cms.untracked.string("trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage-test.xml?protocol=dcap")
         
         configFile = self.step.data.application.command.configuration
         workingDir = self.stepSpace.location

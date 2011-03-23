@@ -68,12 +68,31 @@ def data_files_for(dir):
     Return list of data files in provided dir, do not walk through
     """
     files = []
-    for ifile in os.listdir(dir):
-        filename = os.path.join(dir, ifile)
-        if  os.path.isfile(filename):
-            if  filename[-1] == '~':
-                continue
-            files.append(filename)
+    add_static = files.append
+    # Skip the following files
+    ignore_these = set(['CVS', '.svn', 'svn', '.git', 'DefaultConfig.py'])
+    if dir.endswith('+'):
+        dir = dir.rstrip('+')
+        for dirpath, dirnames, filenames in os.walk('%s' % dir, topdown=True):
+            pathelements = dirpath.split('/')
+            # If any part of pathelements is in the ignore_these set skip the path
+            if len(set(pathelements) & ignore_these) == 0:
+                rel_path = os.path.relpath(dirpath, get_path_to_wmcore_root())
+                localfiles = [os.path.join(rel_path, f) for f in filenames]
+                add_static((rel_path.replace('src/', ''), localfiles))
+            else:
+                print 'Ignoring %s' % dirpath
+    else:
+        localfiles = []
+        for ifile in os.listdir(dir):
+            filename = os.path.join(dir, ifile)
+            if  os.path.isfile(filename):
+                if  filename[-1] == '~':
+                    continue
+                localfiles.append(filename)
+        rel_path = os.path.relpath(dir, get_path_to_wmcore_root())
+        add_static((rel_path.replace('src/', ''), localfiles))
+
     return files
 
 def list_static_files(system = None):
@@ -83,25 +102,14 @@ def list_static_files(system = None):
     # Skip the following files
     ignore_these = set(['CVS', '.svn', 'svn', '.git', 'DefaultConfig.py'])
     static_files = []
-    add_static = static_files.append
     if system:
         for static_dir in walk_dep_tree(system)['statics']:
-            if static_dir.endswith('+'):
-                static_dir = static_dir.rstrip('+')
-                for dirpath, dirnames, filenames in os.walk('%s' % static_dir, topdown=True):
-                    pathelements = dirpath.split('/')
-                    # If any part of pathelements is in the ignore_these set skip the path
-                    if len(set(pathelements) & ignore_these) == 0:
-                        rel_path = os.path.relpath(dirpath, get_path_to_wmcore_root())
-                        files = [os.path.join(rel_path, f) for f in filenames]
-                        add_static((rel_path.replace('src/', ''), files))
-                    else:
-                        print 'Ignoring %s' % dirpath
-            else:
-                add_static((static_dir.replace('src/', ''), data_files_for(static_dir)))
+            static_files.extend(data_files_for(static_dir))
     else:
-        for language in ['couchapps', 'css', 'html', 'javascript', 'templates']:
-            add_static((language, data_files_for('%s/src/%s' % (get_path_to_wmcore_root(), language))))
+        for language in ['couchapps+', 'css+', 'html+', 'javascript+', 'templates+']:
+            static_files.extend(data_files_for('%s/src/%s' % (get_path_to_wmcore_root(), language)))
+        for toplevel in ['bin+', 'etc+']:
+            static_files.extend(data_files_for('%s/%s' % (get_path_to_wmcore_root(), toplevel)))
     # The contents of static_files will be copied at install time
     return static_files
 

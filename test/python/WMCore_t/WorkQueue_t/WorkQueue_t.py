@@ -888,6 +888,22 @@ class WorkQueueTest(WorkQueueTestCase):
         self.localQueue.getWork({self.site: 100})
         
         self.couchInit.tearDownCouch()
+
+    def testThrottling(self):
+        """Pull work only if all previous work processed in child"""
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
+        self.assertEqual(2, len(self.globalQueue))
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1}), 1)
+        # further pull will fail till we replicate to child
+        # hopefully couch replication wont happen till we manually sync
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1}), 0)
+        self.assertEqual(1, len(self.globalQueue))
+        self.assertEqual(0, len(self.localQueue))
+        syncQueues(self.localQueue)
+        self.assertEqual(1, len(self.localQueue))
+        # pull works again
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1}), 1)
         
+
 if __name__ == "__main__":
     unittest.main()

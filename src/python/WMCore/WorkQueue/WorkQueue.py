@@ -560,12 +560,24 @@ class WorkQueue(WorkQueueBase):
             self.logger.info('Not pulling more work. No free slots.')
             return 0
 
+        left_over = self.parent_queue.getElements('Negotiating', returnIdOnly = True,
+                                                  ChildQueueUrl = self.params['QueueURL'])
+        if left_over:
+            self.logger.info('Not pulling more work. Still replicating %d previous units' % len(left_over))
+            return 0
+
+        still_processing = self.backend.getInboxElements('Negotiating', returnIdOnly = True)
+        if still_processing:
+            self.logger.info('Not pulling more work. Still processing %d previous units' % len(still_processing))
+            return 0
+
         self.logger.info("Pull work for sites %s: " % str(resources))
 
         work, _ = self.parent_queue.availableWork(resources, self.params['Teams'])
         if not work:
             self.logger.info('No available work in parent queue.')
             return 0
+
         work = self._assignToChildQueue(self.params['QueueURL'], *work)
         return len(work)
 

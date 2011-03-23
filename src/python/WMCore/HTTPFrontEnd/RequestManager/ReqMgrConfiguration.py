@@ -8,10 +8,9 @@ basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def reqMgrConfig(
     componentDir =  basedir + "/var",
-    html = os.path.join(getWMBASE(), 'src/html/RequestManager'),
-    templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/RequestManager'),
+    installation = os.path.join(getWMBASE(), 'src'),
     port = 8240,
-    user = 'rpw',
+    user = None,
     reqMgrHost = "http://%s:%d" % (socket.gethostname().lower(), 8240),
     proxyBase = None,
     couchurl = os.getenv("COUCHURL"),
@@ -23,14 +22,14 @@ def reqMgrConfig(
     startup = "Root.py"):
 
     config = Configuration()
+    reqMgrHtml = os.path.join(installation, 'html/RequestManager')
+    reqMgrTemplates = os.path.join(installation, 'templates/WMCore/WebTools/RequestManager')
+    requestOverviewHtml = os.path.join(installation, 'html')
+    requestOverviewTemplates = os.path.join(installation, 'templates/WMCore/WebTools')
+    requestOverviewJavascript = os.path.join(installation, 'javascript')
+   
 
     if startup == "Root.py":
-        from ReqMgrSecrets import connectUrl
-        config.section_("CoreDatabase")
-        #read from Secrets file
-        config.CoreDatabase.connectUrl = connectURL
-        config.reqmgr.database.connectUrl = connectURL
-        
         config.component_("Webtools")
         config.Webtools.host = '0.0.0.0'
         config.Webtools.port = port
@@ -39,6 +38,12 @@ def reqMgrConfig(
             config.Webtools.proxy_base = proxy_base
         config.Webtools.environment = 'production'
         config.component_('reqmgr')
+        from ReqMgrSecrets import connectUrl
+        config.section_("CoreDatabase")
+        #read from Secrets file
+        config.CoreDatabase.connectUrl = connectUrl
+        config.reqmgr.section_('database')
+        config.reqmgr.database.connectUrl = connectUrl
     else:
         config.webapp_("reqmgr")
         config.reqmgr.Webtools.host = '0.0.0.0'
@@ -47,14 +52,15 @@ def reqMgrConfig(
         config.reqmgr.database.connectUrl = connectURL
         
     config.reqmgr.componentDir = componentDir
-    config.reqmgr.templates = templates
-    config.reqmgr.html = html
+    config.reqmgr.templates = reqMgrTemplates
+    config.reqmgr.html = reqMgrHtml
     config.reqmgr.admin = 'cms-service-webtools@cern.ch'
     config.reqmgr.title = 'CMS Request Manager'
     config.reqmgr.description = 'CMS Request Manager'
     config.reqmgr.couchUrl = couchurl
     config.reqmgr.configDBName = configCouchDB
     config.reqmgr.workloadDBName = workloadCouchDB
+    config.reqmgr.security_roles = ['Admin', 'Developer', 'Data Manager']
     config.reqmgr.yuiroot = yuiroot
 
     views = config.reqmgr.section_('views')
@@ -88,8 +94,8 @@ def reqMgrConfig(
 
     active.section_('RequestOverview')
     active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestManager.RequestOverview'
-    active.RequestOverview.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
-    active.RequestOverview.javascript = os.path.join(getWMBASE(), 'src/javascript')
-    active.RequestOverview.html = os.path.join(getWMBASE(), 'src/html')
+    active.RequestOverview.templates = requestOverviewTemplates
+    active.RequestOverview.javascript = requestOverviewJavascript
+    active.RequestOverview.html = requestOverviewHtml
 
     return config

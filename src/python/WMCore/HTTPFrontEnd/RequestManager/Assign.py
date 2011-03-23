@@ -13,6 +13,8 @@ import types
 #from WMCore.WebTools.Page import TemplatedPage
 from WMCore.WebTools.WebAPI import WebAPI
 
+security_roles = ['Developer', 'Admin',  'Data Manager']
+
 class Assign(WebAPI):
     """ Used by data ops to assign requests to processing sites"""
     def __init__(self, config):
@@ -53,6 +55,7 @@ class Assign(WebAPI):
         return v
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2(role=security_roles)
     def one(self,  requestName):
         """ Assign a single request """
         self.validate(requestName)
@@ -96,6 +99,7 @@ class Assign(WebAPI):
                                  acqEra = acqEra, procVer = procVer)
 
     @cherrypy.expose    
+    @cherrypy.tools.secmodv2(role=security_roles)
     def index(self, all=0):
         """ Main page """
         # returns dict of  name:id
@@ -139,6 +143,7 @@ class Assign(WebAPI):
                                  acqEra = acqEra, procVer = procVer)
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2(role=security_roles)
     def handleAssignmentPage(self, **kwargs):
         """ handler for the main page """
         # handle the checkboxes

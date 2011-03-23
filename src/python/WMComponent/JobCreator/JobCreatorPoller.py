@@ -488,8 +488,9 @@ class JobCreatorPoller(BaseWorkerThread):
                 jobNumber = self.countJobs.execute(workflow = workflow.id,
                                                    conn = myThread.transaction.conn, 
                                                    transaction = True)
+                jobNumber += splitParams.get('initial_lfn_counter', 0)
                 logging.debug("Have %i jobs for this workflow already" % (jobNumber))
-
+            
                 # Assemble a dict of all the info
                 processDict = {'workflow': workflow,
                                'wmWorkload': wmWorkload, 'wmTaskName': wmTask.getPathName(),

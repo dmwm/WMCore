@@ -360,10 +360,14 @@ class WMTaskHelper(TreeHelper):
         splitting parameters while preserving the parameters for ACDC
         resubmission which are:
           collectionName, filesetName, couchURL, couchDB, owner, group
+
+        This also needs to preserve the parameter we use to set the initial
+        LFN counter:
+          initial_lfn_counter
         """
         setACDCParams = {}
         for paramName in ["collectionName", "filesetName", "couchURL",
-                          "couchDB", "owner", "group"]:
+                          "couchDB", "owner", "group", "initial_lfn_counter"]:
             if hasattr(self.data.input.splitting, paramName):
                 setACDCParams[paramName] = getattr(self.data.input.splitting,
                                                    paramName)

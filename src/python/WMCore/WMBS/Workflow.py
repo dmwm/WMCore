@@ -37,7 +37,7 @@ class Workflow(WMBSBase, WMWorkflow):
         WMBSBase.__init__(self)
         WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn, name = name, task = task)
 
-        if not self.dn: self.dn = '%s_DN'%owner  
+        if not self.dn: self.dn = owner  
         self.id = id
         return
         

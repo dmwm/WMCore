@@ -57,9 +57,10 @@ dependencies = {
                         },
                 'wmagent':{
                         'packages': ['WMCore.Agent+', 'WMCore.Algorithms+',
-                                    'WMCore.JobStateMachine', 'WMComponent.DBSBuffer',
+                                    'WMCore.JobStateMachine', 'WMComponent+',
                                     'WMCore.HTTPFrontEnd', 'WMCore.ThreadPool',
-                                    'WMCore.BossAir'],
+                                    'WMCore.BossAir', 'WMCore.Storage', 'WMCore.Credential',
+                                    'WMCore.JobSplitting', 'WMCore.ProcessPool'],
                         'systems':['wmc-web', 'wmc-database', 'workqueue', 'wmc-runtime'],
                         'statics': ['src/javascript/WMCore/WebTools/Agent',
                                 'src/javascript/WMCore/WebTools/WMBS',

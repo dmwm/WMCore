@@ -81,6 +81,24 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data._internal_name = workloadName
         return
 
+    def getInitialJobCount(self):
+        """
+        _getInitialJobCount_
+
+        Get the initial job count, this is incremented everytime the workflow
+        is resubmitted with ACDC.
+        """
+        return self.data.initialJobCount
+
+    def setInitialJobCount(self, jobCount):
+        """
+        _setInitialJobCount_
+
+        Set the initial job count.
+        """
+        self.data.initialJobCount = jobCount
+        return
+    
     def getTopLevelTask(self):
         """
         _getTopLevelTask_
@@ -845,12 +863,14 @@ class WMWorkloadHelper(PersistencyHelper):
         newTopLevelTask.addInputACDC(serverUrl, databaseName, self.name(),
                                      initialTaskPath)
         workloadOwner = self.getOwner()
+        self.setInitialJobCount(self.getInitialJobCount() + 10000000)
         newTopLevelTask.setSplittingParameters(collectionName = self.name(),
                                                filesetName = initialTaskPath,
                                                couchURL = serverUrl,
                                                couchDB = databaseName,
                                                owner = workloadOwner["name"],
-                                               group = workloadOwner["group"])
+                                               group = workloadOwner["group"],
+                                               initial_lfn_counter = self.getInitialJobCount())
 
         cleanupTask = None
         if not newTopLevelTask.isTopOfTree():
@@ -975,6 +995,7 @@ class WMWorkload(ConfigSection):
         self.tasks.tasklist = []
 
         self.sandbox = None
+        self.initialJobCount = 0
 
 def newWorkload(workloadName):
     """

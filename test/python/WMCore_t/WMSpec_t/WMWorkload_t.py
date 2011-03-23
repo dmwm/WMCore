@@ -762,6 +762,13 @@ class WMWorkloadTest(unittest.TestCase):
         testWorkload.truncate("TestWorkloadResubmit", "/TestWorkload/ProcessingTask/MergeTask",
                               "somecouchurl", "somedatabase")
 
+        self.assertEqual(testWorkload.getInitialJobCount(), 20000000,
+                         "Error: Initial job count is wrong.")
+
+        mergeTask = testWorkload.getTaskByPath("/TestWorkloadResubmit/MergeTask")
+        self.assertEqual(mergeTask.jobSplittingParameters()["initial_lfn_counter"],
+                         20000000, "Error: Initial LFN counter is incorrect.")
+
         self.assertEqual(len(testWorkload.getTopLevelTask()), 2,
                          "Error: There should be two top level tasks.")
         goldenTasks = [mergeTask.getPathName(), cleanupTask.getPathName()]

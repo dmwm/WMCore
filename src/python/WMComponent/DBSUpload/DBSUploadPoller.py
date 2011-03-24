@@ -437,8 +437,15 @@ class DBSUploadPoller(BaseWorkerThread):
                     logging.debug("Block %s has %i files" % (block['Name'], len(block['newFiles'])))
                     block['location'] = list(block['newFiles'][0]['locations'])[0]
                 if block['das'] == dasID:
-                    logging.debug("Attaching block %s" % block['Name'])
-                    readyBlocks.append(block)
+                    if block['open'] == 'Pending':
+                        # Always attach pending blocks
+                        logging.debug("Attaching block %s" % block['Name'])
+                        readyBlocks.append(block)
+                    elif len(block['newFiles']) > 0:
+                        # Else you only deal with blocks if they have new files
+                        logging.debug("Attaching block %s" % block['Name'])
+                        readyBlocks.append(block)
+                        
             if len(readyBlocks) < 1:
                 # Nothing to do
                 logging.debug("Nothing to do for DAS %i in uploadBlocks" % dasID)

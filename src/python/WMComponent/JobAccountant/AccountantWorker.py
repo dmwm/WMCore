@@ -436,13 +436,41 @@ class AccountantWorker(WMConnectionBase):
         """
         wmbsJob = Job(id = jobID)
         wmbsJob.load()
-
+        outputID = wmbsJob.loadOutputID()
         wmbsJob["outcome"] = "failure"
         #wmbsJob.save()
         
         # We'll fake the rest of the state transitions here as the rest of the
         # WMAgent job submission framework is not yet complete.
         wmbsJob["fwjr"] = fwkJobReport
+
+        outputMap = self.getOutputMapAction.execute(jobID = jobID,
+                                                    conn = self.getDBConn(),
+                                                    transaction = self.existingTransaction())
+
+        jobType = self.getJobTypeAction.execute(jobID = jobID,
+                                                conn = self.getDBConn(),
+                                                transaction = self.existingTransaction())
+
+        fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
+
+        if fileList == None:
+            fileList = []
+
+        for fwjrFile in fileList:
+            wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
+                                          jobID = jobID)
+            merged = fwjrFile['merged']
+            moduleLabel = fwjrFile["module_label"]
+
+            if merged:
+                self.mergedOutputFiles.append(wmbsFile)
+
+            self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputID})
+            outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
+            for outputFileset in outputFilesets:
+                self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
+            
         self.listOfJobsToFail.append(wmbsJob)
         
         return

@@ -4,11 +4,13 @@ from WMCore.Configuration import Configuration
 
 __all__ = []
 
+import os
+
 basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def reqMgrConfig(
     componentDir =  basedir + "/var",
-    installation = os.path.join(getWMBASE(), 'src'),
+    installation = os.environ["WMCORE_ROOT"],
     port = 8240,
     user = None,
     reqMgrHost = "http://%s:%d" % (socket.gethostname().lower(), 8240),

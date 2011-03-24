@@ -180,7 +180,7 @@ config.JobSubmitter.maxThreads = 1
 config.JobSubmitter.pollInterval = 120
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
-config.JobSubmitter.submitScript = os.path.join(getWMBASE(), "src/python/WMComponent/JobSubmitter/submit.sh")
+config.JobSubmitter.submitScript = os.path.join(os.environ["WMCORE_ROOT"], "etc/submit.sh")
 
 config.component_("JobTracker")
 config.JobTracker.namespace = "WMComponent.JobTracker.JobTracker"
@@ -236,7 +236,7 @@ config.WorkQueueService.componentDir = os.path.join(config.General.workDir, "Wor
 config.WorkQueueService.Webtools.port = localWorkQueuePort
 config.WorkQueueService.Webtools.host = serverHostName
 config.WorkQueueService.Webtools.environment = "devel"
-config.WorkQueueService.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
+config.WorkQueueService.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
 config.WorkQueueService.admin = config.Agent.contact
 config.WorkQueueService.title = 'WorkQueue Data Service'
 config.WorkQueueService.description = 'Provide WorkQueue related service call'
@@ -248,7 +248,7 @@ config.WorkQueueService.section_('views')
 active = config.WorkQueueService.views.section_('active')
 workqueue = active.section_('workqueue')
 workqueue.object = 'WMCore.WebTools.RESTApi'
-workqueue.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/')
+workqueue.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools/')
 workqueue.section_('model')
 workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
 workqueue.level = config.WorkQueueManager.level
@@ -274,16 +274,16 @@ workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (serverHostName
                                                                   'workqueue'))
 workqueuemonitor = active.section_('workqueuemonitor')
 workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
-workqueuemonitor.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/WorkQueue')
-workqueuemonitor.javascript = os.path.join(getWMBASE(), 'src/javascript/')
-workqueuemonitor.css = os.path.join(getWMBASE(), 'src/css/')
-workqueuemonitor.html = os.path.join(getWMBASE(), 'src/html/')
+workqueuemonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools/WorkQueue')
+workqueuemonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'javascript/')
+workqueuemonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'css/')
+workqueuemonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')
 
 workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
 
 wmagent = config.WorkQueueService.views.active.section_('wmagent')
 wmagent.object = 'WMCore.WebTools.RESTApi'
-wmagent.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/')
+wmagent.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools/')
 wmagent.section_('model')
 wmagent.model.object = 'WMCore.HTTPFrontEnd.Agent.AgentRESTModel'
 wmagent.section_('formatter')
@@ -295,7 +295,7 @@ wmagent.couchConfig.jobDumpDBName = "wmagent_jobdump"
 
 wmagentmonitor = config.WorkQueueService.views.active.section_('wmagentmonitor')
 wmagentmonitor.object = 'WMCore.HTTPFrontEnd.Agent.AgentMonitorPage'
-wmagentmonitor.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
-wmagentmonitor.javascript = os.path.join(getWMBASE(), 'src/javascript/')
-wmagentmonitor.css = os.path.join(getWMBASE(), 'src/css/')
-wmagentmonitor.html = os.path.join(getWMBASE(), 'src/html/')
+wmagentmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
+wmagentmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'javascript/')
+wmagentmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'css/')
+wmagentmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')

@@ -276,7 +276,7 @@ class JobCreatorTest(unittest.TestCase):
         Just test that everything works...more or less
         """
 
-        return
+        #return
 
         myThread = threading.currentThread()
 
@@ -301,17 +301,10 @@ class JobCreatorTest(unittest.TestCase):
         # First, can we run once without everything crashing?
         testJobCreator.algorithm()
 
-
-        #if os.path.exists('TestDir'):
-        #    shutil.rmtree('TestDir')
-        #shutil.copytree(self.testDir, 'TestDir')
-
-
         getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
         result = getJobsAction.execute(state = 'Created', jobType = "Processing")
 
         self.assertEqual(len(result), nSubs*nFiles)
-
 
         # Count database objects
         result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')[0].fetchall()
@@ -319,7 +312,7 @@ class JobCreatorTest(unittest.TestCase):
 
 
         # Find the test directory
-        testDirectory = os.path.join(self.testDir, 'TestWorkload', 'ReReco')
+        testDirectory = os.path.join(self.testDir, 'jobCacheDir', 'TestWorkload', 'ReReco')
         # It should have at least one jobGroup
         self.assertTrue('JobCollection_1_0' in os.listdir(testDirectory))
         # But no more then twenty

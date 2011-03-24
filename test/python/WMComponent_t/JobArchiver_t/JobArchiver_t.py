@@ -61,7 +61,9 @@ class JobArchiverTest(unittest.TestCase):
         #self.tearDown()
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
                                 useDefault = False)
-        self.testInit.setupCouch("jobarchiver_t_0", "JobDump")
+        self.testInit.setupCouch("job_archiver_t_0/jobs", "JobDump")
+        self.testInit.setupCouch("job_archiver_t_0/fwjrs", "FWJRDump")
+
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,

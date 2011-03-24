@@ -50,7 +50,8 @@ class RetryManagerTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
                                                  "WMCore.MsgService"],
                                 useDefault = False)
-        self.testInit.setupCouch("retry_manager_t_0", "JobDump")
+        self.testInit.setupCouch("retry_manager_t/jobs", "JobDump")
+        self.testInit.setupCouch("retry_manager_t/fwjrs", "FWJRDump")
         
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -103,7 +104,7 @@ class RetryManagerTest(unittest.TestCase):
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', None)
         config.JobStateMachine.default_retries = 1
-        config.JobStateMachine.couchDBName     = "retry_manager_t_0"
+        config.JobStateMachine.couchDBName     = "retry_manager_t"
 
         return config
 

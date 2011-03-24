@@ -191,7 +191,7 @@ class JobAccountantTest(unittest.TestCase):
         Verify that it functions correctly.
         """
         self.setupDBForJobFailure(jobName = "T0Skim-Run2-Skim2-Jet-631",
-                                  fwjrName = "SkimFailure.pkl")
+                                  fwjrName = "badBackfillJobReport.pkl")
 
         config = self.createConfig()
         accountant = JobAccountantPoller(config)
@@ -199,6 +199,11 @@ class JobAccountantTest(unittest.TestCase):
         accountant.algorithm()
 
         self.verifyJobFailure("T0Skim-Run2-Skim2-Jet-631")
+
+        f = File(id = 2)
+        f.load()
+        self.assertEqual(f['lfn'],
+                         '/store/unmerged/logs/prod/2011/3/16/cmsdataops_Backfill_110311_01_T1_IT_CNAF_Mu_110311_171929/DataProcessing/DataProcessingMergeRECOoutput/MuSkim/0000/0/4c32fa40-4da3-11e0-b58a-00221959e72f-0-0-logArchive.tar.gz')
         return
 
     def testEmptyFWJR(self):
@@ -1686,6 +1691,7 @@ class JobAccountantTest(unittest.TestCase):
         self.assertEqual(report.getJobID(), 1)
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

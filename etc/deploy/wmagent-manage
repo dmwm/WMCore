@@ -11,13 +11,11 @@ PROJ_NAME=$(basename $PROJ_DIR)
 
 COUCHDB_DIR="$ROOT_DIR/couchdb"
 MYSQL_DIR="$ROOT_DIR/mysql"
-WMCORE_DIR="$ROOT_DIR/wmcore"
+WMCORE_DIR="$PROJ_DIR/wmcore"
 WMAGENT_DIR=
-export WMCORE_ROOT="$WMCORE_DIR/app"
 
 MYSQL_INIT_DONE=0
 COUCH_INIT_DONE=0
-WMCORE_INIT_DONE=0
 WMAGENT_INIT_DONE=0
 
 MYSQL_DATABASE=
@@ -54,7 +52,6 @@ fi
 if [ -e $MYSQL_DIR/logs/.mysqlinitdb ]; then MYSQL_INIT_DONE=1; else MYSQL_INIT_DONE=0; fi;
 if [ -e $COUCHDB_DIR/logs/.couchinitdb ]; then COUCH_INIT_DONE=1; else COUCH_INIT_DONE=0; fi;    
 if [ -e $WMAGENT_DIR/config/.wmagentinit ]; then WMAGENT_INIT_DONE=1; else WMAGENT_INIT_DONE=0; fi;
-if [ -e $WMAGENT_DIR/config/.wmcoreinit ]; then WMCORE_INIT_DONE=1; else WMCORE_INIT_DONE=0; fi;
 
 #
 # Passwords/Secrets handling
@@ -130,18 +127,18 @@ load_secrets_file(){
 #
 # Environment
 #
-. $WMCORE_DIR/app/etc/profile.d/init.sh
 . $ROOT_DIR/couchdb/app/etc/profile.d/init.sh
 . $ROOT_DIR/mysql/app/etc/profile.d/init.sh
-. $WMCORE_DIR/py2-mysqldb/etc/profile.d/init.sh 
+. $PROJ_DIR/py2-mysqldb/etc/profile.d/init.sh 
 . $PROJ_DIR/cheetah/etc/profile.d/init.sh
 . $PROJ_DIR/openid/etc/profile.d/init.sh
 . $PROJ_DIR/cherrypy/etc/profile.d/init.sh
 . $PROJ_DIR/py2-cjson/etc/profile.d/init.sh
+. $PROJ_DIR/app/etc/profile.d/init.sh
 
-export PATH=$PATH:$WMCORE_DIR/app/bin
-export PYTHONPATH=$WMCORE_DIR/app/src/python:$PYTHONPATH
-export PYTHONPATH=$PYTHONPATH:$WMCORE_DIR/app/test/python
+export WMCORE_ROOT="$PROJ_DIR/wmcore"
+
+export PATH=$PATH:$WMCORE_DIR/bin
 export PYTHONPATH=$PYTHONPATH:$WMAGENT_DIR/dls-client/Client/lib
 export PYTHONPATH=$PYTHONPATH:$WMAGENT_DIR/dbs-client/lib
 
@@ -360,20 +357,13 @@ stop_services(){
 #  WMAgent                   #
 ##############################
 
-init_wmcore(){
-    #echo "Initialising WMCore..."
-    #cant think of too much to actually do here...
-    #touch $WMCORE_DIR/configs/.wmcoreinit
-    true
-}
-
 # generate the agent config from the basic template
 init_wmagent(){
     load_secrets_file;
     if [ ! -e $WMAGENT_DIR/install ]; then
         mkdir $WMAGENT_DIR/install  
     fi
-    wmagent-mod-config --input=$WMCORE_DIR/app/etc/WMAgentConfig.py \
+    wmagent-mod-config --input=$WMCORE_DIR/etc/WMAgentConfig.py \
                        --output=$WMAGENT_CONFIG \
                        --mysql_url=mysql://$MYSQL_USER:$MYSQL_PASS@localhost/$MYSQL_DATABASE \
                        --mysql_socket=$MYSQL_DIR/logs/mysql.sock \
@@ -394,7 +384,7 @@ init_wmagent(){
 
 init_reqmgr(){
     load_secrets_file;
-    wmagent-mod-config --input=$WMCORE_DIR/app/etc/ReqMgrConfig.py \
+    wmagent-mod-config --input=$WMCORE_DIR/etc/ReqMgrConfig.py \
                        --output=$WMAGENT_CONFIG \
                        --mysql_url=mysql://$MYSQL_USER:$MYSQL_PASS@localhost/$MYSQL_DATABASE \
                        --mysql_socket=$MYSQL_DIR/logs/mysql.sock \
@@ -410,7 +400,7 @@ init_reqmgr(){
 
 init_workqueue(){
     load_secrets_file;
-    wmagent-mod-config --input=$WMCORE_DIR/app/etc/GlobalWorkQueueConfig.py \
+    wmagent-mod-config --input=$WMCORE_DIR/etc/GlobalWorkQueueConfig.py \
                        --output=$WMAGENT_CONFIG \
                        --mysql_url=mysql://$MYSQL_USER:$MYSQL_PASS@localhost/$MYSQL_DATABASE \
                        --mysql_socket=$MYSQL_DIR/logs/mysql.sock \
@@ -430,10 +420,6 @@ init_workqueue(){
 #
 init_agent(){
     echo " + Initialising $PROJ_NAME"
-    if [ $WMCORE_INIT_DONE -eq 0 ]; then
-           #echo "WMCore has not been initialised";
-           init_wmcore;
-    fi
     if [ $WMAGENT_INIT_DONE -eq 0 ]; then
         echo " + $PROJ_NAME has not been initialised";
         case "$PROJ_NAME" in
@@ -505,12 +491,12 @@ clean_all(){
 execute_command(){
     shift;
     local RUNTHIS=$1
-    local WMCORE_BIN_DIR=$WMCORE_DIR/app/bin
+    local WMCORE_BIN_DIR=$WMCORE_DIR/bin
     echo $RUNTHIS
-    if [ ! -e $WMCORE_BIN_DIR/$1 ]; then
-        echo "$RUNTHIS is not a binary in WMCore/bin"
-        exit 1
-    fi
+    #if [ ! -e $WMCORE_BIN_DIR/$1 ]; then
+    #    echo "$RUNTHIS is not a binary in WMCore/bin"
+    #    exit 1
+    #fi
     shift;
     load_secrets_file;
     export WMAGENT_CONFIG

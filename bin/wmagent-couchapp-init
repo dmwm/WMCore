@@ -31,9 +31,10 @@ def installCouchApp(couchUrl, couchDBName, couchAppName):
     wmBase = getWMBASE()
     develPath = "%s/src/couchapps" % wmBase
     if not os.path.exists(develPath):
-        basePath = "%s/src/couchapps" % os.environ['WMCORE_ROOT']
+        basePath = "%s/couchapps" % os.environ['WMCORE_ROOT']
     else:
         basePath = develPath
+
     couchapppush(couchappConfig, "%s/%s" % (basePath, couchAppName),
                  "%s/%s" % (couchUrl, couchDBName))
     return

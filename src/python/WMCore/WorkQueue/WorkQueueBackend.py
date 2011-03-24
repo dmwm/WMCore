@@ -181,6 +181,13 @@ class WorkQueueBackend(object):
                                                    x['doc'])
                 for x in elements.get('rows', [])]
 
+    def getElementsForParent(self, parent):
+        """Get elements with the given parent"""
+        elements = self.db.loadView('WorkQueue', 'elementsByParent', {'key' : parent.id, 'include_docs' : True})
+        return [CouchWorkQueueElement.fromDocument(self.db,
+                                                   x['doc'])
+                for x in elements.get('rows', [])]
+
     def saveElements(self, *elements):
         """Persist elements
 

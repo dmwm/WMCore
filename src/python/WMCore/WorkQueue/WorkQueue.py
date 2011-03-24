@@ -672,20 +672,18 @@ class WorkQueue(WorkQueueBase):
         inbound_work = self.backend.getElementsForSplitting()
         for inbound in inbound_work:
             # Check we haven't already split the work
-            #TODO: This requires a full scan - write a view to speed up
-            work = self.backend.getElements(ParentQueueId = inbound.id)
+            work = self.backend.getElementsForParent(inbound)
 
             if not work:
-                try:
+                try: # We haven't split this before, do so now
                     work = self._splitWork(inbound['WMSpec'], inbound.id, inbound['Inputs'], inbound['Mask'])
                 except Exception, ex:
                     self.logger.exception('Exception splitting work for wmspec "%s": %s' % (inbound['WMSpec'].name(), str(ex)))
                     continue
 
                 self.backend.insertElements(work, parent = inbound)
-            # advise parent we have work - doesn't matter if this fails
-            # as subsequent updates will redo this
-            self.backend.updateInboxElements(inbound.id, Status = 'Acquired')
+            inbound['Status'] = 'Acquired'  # update parent
+            self.backend.saveElements(inbound) # if this fails subsequent updates will retry
             result.extend(work)
         requests = ', '.join(list(set(['"%s"' % x['RequestName'] for x in result])))
         if requests:

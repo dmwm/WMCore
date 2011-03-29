@@ -431,10 +431,28 @@ class ConfigCache(WMObject):
         """
         _getIDFromLabel_
 
+        Retrieve the ID of a config given it's label.
         """
+        results = self.database.loadView("ConfigCache", "config_by_label",
+                                         {"startkey": label,
+                                          "limit": 1})
+
+        if results["rows"][0]["key"] == label:
+            return results["rows"][0]["value"]
+
+        return None
+
+    def listAllConfigsByLabel(self):
+        """
+        _listAllConfigsByLabel_
+
+        Retrieve a list of all the configs in the config cache.  This is
+        returned in the form of a dictionary that is keyed by label.
+        """
+        configs = {}
         results = self.database.loadView("ConfigCache", "config_by_label")
 
-        if results["total_rows"] != 1:
-            return None
+        for result in results["rows"]:
+            configs[result["key"]] = result["value"]
 
-        return results["rows"][0]["value"]
+        return configs

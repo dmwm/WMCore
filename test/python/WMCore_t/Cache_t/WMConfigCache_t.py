@@ -137,5 +137,31 @@ class testWMConfigCache(unittest.TestCase):
         configCache2.delete()
         return
 
+    def testListAllConfigs(self):
+        """
+        _testListAllConfigs_
+
+        Verify that the list all configs method works correctly.
+        """
+        configCacheA = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
+        configCacheA.createUserGroup(groupname = "testGroup", username = 'testOps')
+        configCacheA.setLabel("labelA")
+        configCacheA.save()
+
+        configCacheB = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
+        configCacheB.createUserGroup(groupname = "testGroup", username = 'testOps')
+        configCacheB.setLabel("labelB")
+        configCacheB.save()
+
+        configs = configCacheA.listAllConfigsByLabel()
+
+        self.assertEqual(len(configs.keys()), 2,
+                         "Error: There should be two configs")
+        self.assertEqual(configs["labelA"], configCacheA.getCouchID(),
+                         "Error: Label A is wrong.")
+        self.assertEqual(configs["labelB"], configCacheB.getCouchID(),
+                         "Error: Label B is wrong.")        
+        return
+
 if __name__ == "__main__":
     unittest.main() 

@@ -20,4 +20,7 @@ class SetLocationByLFN(MySQLSetLocationByLFN):
                FROM dbsbuffer_file df, dbsbuffer_location dl
                WHERE df.lfn = :lfn
                AND dl.se_name = :sename
+               AND NOT EXISTS (SELECT filename FROM dbsbuffer_file_location
+                                 WHERE filename = df.id
+                                 AND location = dl.id)
                """

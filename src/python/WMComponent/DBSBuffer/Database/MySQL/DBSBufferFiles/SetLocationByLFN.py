@@ -11,7 +11,7 @@ MySQL implementation of DBSBuffer.SetLocationByLFN
 from WMCore.Database.DBFormatter import DBFormatter
 
 class SetLocationByLFN(DBFormatter):
-    sql = """INSERT INTO dbsbuffer_file_location (filename, location)
+    sql = """INSERT IGNORE INTO dbsbuffer_file_location (filename, location)
                SELECT df.id, dl.id
                FROM dbsbuffer_file df
                INNER JOIN dbsbuffer_location dl

@@ -513,10 +513,13 @@ class WMBSHelper(WMConnectionBase):
 
             lfn           = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']
-            
-            dbsFileTuples.append((lfn, dbsFile['size'],
-                                  dbsFile['events'], self.insertedBogusDataset,
-                                  dbsFile['status']))
+
+            newTuple = (lfn, dbsFile['size'],
+                        dbsFile['events'], self.insertedBogusDataset,
+                        dbsFile['status'])
+
+            if not newTuple in dbsFileTuples:
+                dbsFileTuples.append(newTuple)
 
 
             if len(dbsFile['newlocations']) < 1:

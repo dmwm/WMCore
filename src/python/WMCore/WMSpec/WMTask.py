@@ -362,12 +362,14 @@ class WMTaskHelper(TreeHelper):
           collectionName, filesetName, couchURL, couchDB, owner, group
 
         This also needs to preserve the parameter we use to set the initial
-        LFN counter:
+        LFN counter and whether or not we merge across runs:
           initial_lfn_counter
+          merge_across_runs
         """
         setACDCParams = {}
         for paramName in ["collectionName", "filesetName", "couchURL",
-                          "couchDB", "owner", "group", "initial_lfn_counter"]:
+                          "couchDB", "owner", "group", "initial_lfn_counter",
+                          "merge_across_runs"]:
             if hasattr(self.data.input.splitting, paramName):
                 setACDCParams[paramName] = getattr(self.data.input.splitting,
                                                    paramName)

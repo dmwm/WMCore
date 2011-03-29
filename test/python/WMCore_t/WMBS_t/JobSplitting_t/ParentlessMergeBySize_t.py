@@ -163,6 +163,28 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         return
 
+    def testMinMergeSize1(self):
+        """
+        _testMinMergeSize1_
+
+        Set the minimum merge size to be 20,000 bytes which is more than the
+        sum of all file sizes in the WMBS instance.  Verify that no merge jobs
+        will be produced.
+        """
+        self.stuffWMBS()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.mergeSubscription)
+
+        result = jobFactory(min_merge_size = 200000, max_merge_size = 2000000000,
+                            max_merge_events = 200000000)
+
+        assert len(result) == 0, \
+               "ERROR: No job groups should be returned."
+
+        return
+
     def testMinMergeSize1a(self):
         """
         _testMinMergeSize1a_
@@ -236,7 +258,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         Set the maximum merge size to be 100000 bytes.  Verify that two merge
         jobs are created, one for the one large file and another for the rest of
-        the files.  Verify that each merge job contains the expected files.
+        the files.  Verify that each merge job contains the expected files and
+        that we merge across runs.
         """
         self.stuffWMBS()
 
@@ -310,6 +333,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         """
         _testMaxEvents_
 
+        Verify the the max_merge_events parameter works and that we correctly
+        merge across runs.
         """
         self.stuffWMBS()
 
@@ -379,6 +404,238 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         return
 
+    def testMinMergeSize1aNoRunMerge(self):
+        """
+        _testMinMergeSize1aNoRunMerge_
+
+        Set the minimum merge size to be 20,000 bytes which is more than the
+        sum of all file sizes in the WMBS instance and mark the fileset as
+        closed.  Verify that two jobs are pushed out and that we don't merge
+        accross run boundaries.
+        """
+        self.stuffWMBS()
+        self.mergeFileset.markOpen(False)
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.mergeSubscription)
+
+        result = jobFactory(min_merge_size = 200000, max_merge_size = 2000000,
+                            max_merge_events = 2000000, merge_across_runs = False)
+
+        assert len(result) == 1, \
+               "ERROR: More than one JobGroup returned: %s" % len(result)
+
+        assert len(result[0].jobs) == 2, \
+               "Error: Two jobs should have been returned: %s" % len(result[0].jobs)
+        
+        goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
+                        "fileC"]
+        goldenFilesB = ["fileI", "fileII", "fileIII", "fileIV"]
+        goldenFilesA.sort()
+        goldenFilesB.sort()
+
+        for job in result[0].jobs:
+            currentRun = 0
+            currentLumi = 0
+            currentEvent = 0
+            jobLFNs = []
+
+            for file in job.getFiles():
+                file.loadData()
+                jobLFNs.append(file["lfn"])
+                assert file["locations"] == set(["somese.cern.ch"]), \
+                       "Error: File is missing a location."
+
+                fileRun = list(file["runs"])[0].run
+                fileLumi = min(list(file["runs"])[0])
+                fileEvent = file["first_event"]
+
+                if currentRun == 0:
+                    currentRun = fileRun
+                    currentLumi = fileLumi
+                    currentEvent = fileEvent
+                    continue
+
+                assert fileRun >= currentRun, \
+                       "ERROR: Files not sorted by run."
+
+                if fileRun == currentRun:
+                    assert fileLumi >= currentLumi, \
+                           "ERROR: Files not ordered by lumi"
+
+                if fileLumi == currentLumi:
+                    assert fileEvent >= currentEvent, \
+                           "ERROR: Files not ordered by first event"
+
+                currentRun = fileRun
+                currentLumi = fileLumi
+                currentEvent = fileEvent
+
+            jobLFNs.sort()
+            if jobLFNs == goldenFilesA:
+                goldenFilesA = []
+            else:
+                self.assertEqual(jobLFNs, goldenFilesB,
+                                 "Error: LFNs do not match.")
+                goldenFilesB = []
+                
+        return    
+
+    def testMaxMergeSizeNoRunMerge(self):
+        """
+        _testMaxMergeSizeNoRunMerge_
+
+        Set the maximum merge size to be 100000 bytes.  Verify that two merge
+        jobs are created, one for the one large file and another for the rest of
+        the files.  Verify that each merge job contains the expected files and
+        that we don't merge across run boundaries.
+        """
+        self.stuffWMBS()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.mergeSubscription)
+
+        result = jobFactory(min_merge_size = 1, max_merge_size = 100000,
+                            max_merge_events = 200000, merge_across_runs = False)
+
+        assert len(result) == 1, \
+               "ERROR: More than one JobGroup returned: %s" % result
+
+        assert len(result[0].jobs) == 3, \
+               "ERROR: Three jobs should have been returned."
+
+        goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
+                        "fileC"]
+        goldenFilesB = ["fileI", "fileII", "fileIII"]
+        goldenFilesC = ["fileIV"]
+
+        for job in result[0].jobs:
+            jobFiles = job.getFiles()
+            
+            if jobFiles[0]["lfn"] in goldenFilesA:
+                goldenFiles = goldenFilesA
+            elif jobFiles[0]["lfn"] in goldenFilesB:
+                goldenFiles = goldenFilesB
+            else:
+                goldenFiles = goldenFilesC
+
+            currentRun = 0
+            currentLumi = 0
+            currentEvent = 0
+            for file in jobFiles:
+                self.assertTrue(file["lfn"] in goldenFiles, 
+                                "Error: Unknown file in merge jobs.")
+                self.assertTrue(file["locations"] == set(["somese.cern.ch"]),
+                                "Error: File is missing a location.")
+
+                goldenFiles.remove(file["lfn"])
+
+            fileRun = list(file["runs"])[0].run
+            fileLumi = min(list(file["runs"])[0])
+            fileEvent = file["first_event"]
+
+            if currentRun == 0:
+                currentRun = fileRun
+                currentLumi = fileLumi
+                currentEvent = fileEvent
+                continue
+
+            self.assertTrue(fileRun >= currentRun,
+                            "ERROR: Files not sorted by run.")
+            if fileRun == currentRun:
+                self.assertTrue(fileLumi >= currentLumi,
+                                "ERROR: Files not ordered by lumi")
+                if fileLumi == currentLumi:
+                    self.assertTrue(fileEvent >= currentEvent,
+                                    "ERROR: Files not ordered by first event")
+
+            currentRun = fileRun
+            currentLumi = fileLumi
+            currentEvent = fileEvent
+
+        self.assertTrue(len(goldenFilesA) == 0 and len(goldenFilesB) == 0,
+                        "ERROR: Files missing from merge jobs.")
+
+        return
+
+    def testMaxEventsNoRunMerge(self):
+        """
+        _testMaxEventsNoRunMerge_
+
+        Verify that the max events merge parameter works correctly and that we
+        don't merge accross run boundaries.
+        """
+        self.stuffWMBS()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.mergeSubscription)
+
+        result = jobFactory(min_merge_size = 1, max_merge_size = 20000000,
+                            max_merge_events = 100000, merge_across_runs = False)
+
+        self.assertTrue(len(result) == 1,
+                        "ERROR: More than one JobGroup returned: %s" % result)
+
+        self.assertTrue(len(result[0].jobs) == 3,
+                        "ERROR: Three jobs should have been returned: %s" % len(result[0].jobs))
+
+        goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
+                        "fileC",]
+        goldenFilesB = ["fileI", "fileII", "fileIV"]
+        goldenFilesC = ["fileIII"]
+
+        for job in result[0].jobs:
+            jobFiles = job.getFiles()
+            
+            if jobFiles[0]["lfn"] in goldenFilesA:
+                goldenFiles = goldenFilesA
+            elif jobFiles[0]["lfn"] in goldenFilesB:
+                goldenFiles = goldenFilesB
+            else:
+                goldenFiles = goldenFilesC
+
+            currentRun = 0
+            currentLumi = 0
+            currentEvent = 0
+            for file in jobFiles:
+                self.assertTrue(file["lfn"] in goldenFiles,
+                                "Error: Unknown file in merge jobs.")
+                self.assertTrue(file["locations"] == set(["somese.cern.ch"]),
+                                "Error: File is missing a location: %s" % file["locations"])
+
+                goldenFiles.remove(file["lfn"])
+
+                fileRun = list(file["runs"])[0].run
+                fileLumi = min(list(file["runs"])[0])
+                fileEvent = file["first_event"]
+
+                if currentRun == 0:
+                    currentRun = fileRun
+                    currentLumi = fileLumi
+                    currentEvent = fileEvent
+                    continue
+
+                self.assertTrue(fileRun >= currentRun,
+                                "ERROR: Files not sorted by run: %s, %s" % (fileRun, currentRun))
+                if fileRun == currentRun:
+                    self.assertTrue(fileLumi >= currentLumi,
+                                    "ERROR: Files not ordered by lumi")
+                    if fileLumi == currentLumi:
+                        self.assertTrue(fileEvent >= currentEvent,
+                                        "ERROR: Files not ordered by first event")
+
+                currentRun = fileRun
+                currentLumi = fileLumi
+                currentEvent = fileEvent
+
+        self.assertTrue(len(goldenFilesA) == 0 and len(goldenFilesB) == 0 and len(goldenFilesC) == 0,
+                        "ERROR: Files missing from merge jobs.")
+
+        return
+
     def testLocationMerging(self):
         """
         _testLocationMerging_
@@ -404,13 +661,13 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
                               subscription = self.mergeSubscription)
 
         result = jobFactory(min_merge_size = 4097, max_merge_size = 99999999,
-                            max_merge_events = 999999999)
+                            max_merge_events = 999999999, merge_across_runs = False)
 
         assert len(result) == 1, \
                "ERROR: More than one JobGroup returned."
 
-        assert len(result[0].jobs) == 2, \
-               "ERROR: Two jobs should have been returned."
+        assert len(result[0].jobs) == 3, \
+               "ERROR: Three jobs should have been returned."
 
         for job in result[0].jobs:
             firstInputFile = job.getFiles()[0]

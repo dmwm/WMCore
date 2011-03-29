@@ -322,12 +322,23 @@ class StdBase(object):
         else:
             splitAlgo = "ParentlessMergeBySize"
 
-        mergeTask.setSplittingAlgorithm(splitAlgo,
-                                        max_merge_size = self.maxMergeSize,
-                                        min_merge_size = self.minMergeSize,
-                                        max_merge_events = self.maxMergeEvents,
-                                        siteWhitelist = self.siteWhitelist,
-                                        siteBlacklist = self.siteBlacklist)
+        if dataTier == "DQM":
+            # DQM wants everything to be a single file per run, so we'll merge
+            # accordingly.
+            mergeTask.setSplittingAlgorithm(splitAlgo,
+                                            max_merge_size = 21000000000,
+                                            min_merge_size = 20000000000,
+                                            max_merge_events = 21000000000,
+                                            merge_across_runs = False,
+                                            siteWhitelist = self.siteWhitelist,
+                                            siteBlacklist = self.siteBlacklist)
+        else:
+            mergeTask.setSplittingAlgorithm(splitAlgo,
+                                            max_merge_size = self.maxMergeSize,
+                                            min_merge_size = self.minMergeSize,
+                                            max_merge_events = self.maxMergeEvents,
+                                            siteWhitelist = self.siteWhitelist,
+                                            siteBlacklist = self.siteBlacklist)            
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",

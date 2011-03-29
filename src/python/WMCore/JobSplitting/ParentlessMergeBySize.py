@@ -37,16 +37,25 @@ class ParentlessMergeBySize(JobFactory):
         """
         _defineFileGroups_
 
-        Group mergeable files by their SE name so that we don't try to merge
-        together files on different SEs.
+        Group mergeable files by their SE name and run number so that we don't
+        try to merge together files on different SEs.  Merging against across
+        run boundaries is configurable.
         """
         fileGroups = {}
 
         for mergeableFile in mergeableFiles:
             if not fileGroups.has_key(mergeableFile["se_name"]):
-                fileGroups[mergeableFile["se_name"]] = []
+                if self.mergeAcrossRuns:
+                    fileGroups[mergeableFile["se_name"]] = []
+                else:
+                    fileGroups[mergeableFile["se_name"]] = {}
 
-            fileGroups[mergeableFile["se_name"]].append(mergeableFile)
+            if self.mergeAcrossRuns:
+                fileGroups[mergeableFile["se_name"]].append(mergeableFile)
+            else:
+                if not fileGroups[mergeableFile["se_name"]].has_key(mergeableFile["file_run"]):
+                    fileGroups[mergeableFile["se_name"]][mergeableFile["file_run"]] = []
+                fileGroups[mergeableFile["se_name"]][mergeableFile["file_run"]].append(mergeableFile)
 
         return fileGroups
 
@@ -122,6 +131,7 @@ class ParentlessMergeBySize(JobFactory):
           max_merge_size - The maximum size of merged files
           min_merge_size - The minimum size of merged files
           max_merge_events - The maximum number of events in a merge file
+          merge_across_runs - Whether or not we merge across runs
         """
         # This doesn't use a proxy
         self.grabByProxy = False
@@ -129,6 +139,7 @@ class ParentlessMergeBySize(JobFactory):
         self.maxMergeSize = int(kwargs.get("max_merge_size", 1000000000))
         self.minMergeSize = int(kwargs.get("min_merge_size", 1048576))
         self.maxMergeEvents = int(kwargs.get("max_merge_events", 50000))
+        self.mergeAcrossRuns = kwargs.get("merge_across_runs", True)
 
         self.subscription["fileset"].load()
 
@@ -151,6 +162,10 @@ class ParentlessMergeBySize(JobFactory):
         groupedFiles = self.defineFileGroups(mergeableFiles)
 
         for seName in groupedFiles.keys():
-            self.defineMergeJobs(groupedFiles[seName])
+            if self.mergeAcrossRuns:
+                self.defineMergeJobs(groupedFiles[seName])
+            else:
+                for runNumber in groupedFiles[seName].keys():
+                    self.defineMergeJobs(groupedFiles[seName][runNumber])
 
         return

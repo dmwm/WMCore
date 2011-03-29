@@ -12,7 +12,7 @@ import time
 from WMCore.Database.DBFormatter import DBFormatter
 
 class New(DBFormatter):
-    sql = """INSERT INTO wmbs_users (cert_dn, name_hn)
+    sql = """INSERT IGNORE INTO wmbs_users (cert_dn, name_hn)
                  VALUES ( :dn, :hn )
           """
     sql_get_id = """SELECT id FROM wmbs_users

@@ -48,7 +48,9 @@ class StoreResultsTest(unittest.TestCase):
         Create a StoreResults workflow and verify it installs into WMBS
         correctly.
         """
-        testWorkload = storeResultsWorkload("TestWorkload", getTestArguments())
+        arguments = getTestArguments()
+        arguments.update({'CmsPath' :"/uscmst1/prod/sw/cms"})
+        testWorkload = storeResultsWorkload("TestWorkload", arguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("ewv@fnal.gov", "DMWM")
 

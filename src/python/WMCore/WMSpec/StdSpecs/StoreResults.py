@@ -12,6 +12,7 @@ Standard StoreResults workflow.
 """
 
 import time
+import os
 
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -30,18 +31,27 @@ def getTestArguments():
     """
 
     arguments = {
-        "CmsPath": "/uscmst1/prod/sw/cms",
-        "AcquisitionEra": "Blennies",
+        "StdJobSplitAlgo":   "ParentlessMergeBySize",
+        "StdJobSplitArgs":   {"files_per_job": 1},
+        "SkimJobSplitAlgo":  "TwoFileBased",
+        "SkimJobSplitArgs":  {"files_per_job": 1},
+        "UnmergedLFNBase":   "/store/temp/WMAgent/unmerged",
+        "MergedLFNBase":     "/store/results",
+        "MinMergeSize":      1*1024*1024*1024,
+        "MaxMergeSize":      3*1024*1024*1024,
+        "MaxMergeEvents":    100000,
+        "DataTier":          'USER',
+        "SkimInput":         "output",
+        "Scenario":          "",
+        "AcquisitionEra":    "Whatever",
         "Requestor": "ewv@fnal.gov",
-        "InputDataset": "/MinimumBias/Run2010A-PromptReco-v2/RECO",
-        "CMSSWVersion": "CMSSW_3_6_1_patch6",
+        "InputDataset":      "/MinimumBias/Run2010A-Dec22ReReco_v1/USER",
+        "CMSSWVersion":      "CMSSW_3_X_Y",
         "ScramArch": "slc5_ia32_gcc434",
-        "ProcessingVersion": "v2scf",
-        "SkimInput": "output",
+        "ProcessingVersion": "v1",
+        # These may not be needed
         "GlobalTag": "GR10_P_v4::All",
-        "CouchURL": "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984",
-        "CouchDBName": "wmagent_config_cache",
-        "Scenario": ""
+        "CouchURL":         os.environ.get("COUCHURL", None),
         }
 
     return arguments

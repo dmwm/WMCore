@@ -146,6 +146,10 @@ def creatorProcess(work, jobCacheDir):
         sandbox      = work.get('sandbox')
         owner        = work.get('owner')
         ownerDN      = work.get('ownerDN',None)
+
+        if ownerDN == None:
+            ownerDN = owner
+            
         jobNumber    = work.get('jobNumber', 0)
         wmTaskPrio   = work.get('wmTaskPrio', None)
     except KeyError, ex:

@@ -284,7 +284,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                                                       batchDir,
                                                       loadedJob["sandbox"],
                                                       loadedJob["cache_dir"],
-                                                      loadedJob["owner"],
+                                                      loadedJob.get("ownerDN", None),
                                                       loadedJob.get("priority", None)))
                 
         if len(badJobs) > 0:

@@ -102,7 +102,7 @@ def runSplitter(jobFactory, splitParams):
 
 
 def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
-            wmTaskPrio = None, owner = None):
+            wmTaskPrio = None, owner = None, ownerDN = None ):
         """
         _saveJob_
 
@@ -121,6 +121,7 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
         job['cache_dir'] = cacheDir
         job['priority']  = wmTaskPrio
         job['owner']     = owner
+        job['ownerDN']     = ownerDN
         output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
         cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
         output.close()
@@ -144,6 +145,7 @@ def creatorProcess(work, jobCacheDir):
         wmTaskName   = work.get('wmTaskName')
         sandbox      = work.get('sandbox')
         owner        = work.get('owner')
+        ownerDN      = work.get('ownerDN',None)
         jobNumber    = work.get('jobNumber', 0)
         wmTaskPrio   = work.get('wmTaskPrio', None)
     except KeyError, ex:
@@ -173,7 +175,8 @@ def creatorProcess(work, jobCacheDir):
                     jobNumber = jobNumber,
                     wmTaskPrio = wmTaskPrio,
                     sandbox = sandbox,
-                    owner = owner)
+                    owner = owner,
+                    ownerDN = ownerDN)
 
     except Exception, ex:
         # Register as failure; move on
@@ -496,7 +499,8 @@ class JobCreatorPoller(BaseWorkerThread):
                                'wmWorkload': wmWorkload, 'wmTaskName': wmTask.getPathName(),
                                'jobNumber': jobNumber, 'sandbox': wmTask.data.input.sandbox,
                                'wmTaskPrio': wmTask.getTaskPriority(),
-                               'owner': wmWorkload.getOwner().get('name', None)}
+                               'owner': wmWorkload.getOwner().get('name', None),
+                               'ownerDN': wmWorkload.getOwner().get('dn', None)}
                 tempSubscription = Subscription(id = wmbsSubscription['id'])
 
                 nameDictList = []

@@ -24,26 +24,6 @@ class LoadComplete(DBFormatter):
     one is likely faster (not tested).
 
     """
-    sql = """SELECT bl_runjob.wmbs_id AS jobid,
-                    bl_runjob.grid_id AS gridid,
-                    bl_runjob.bulk_id AS bulkid, 
-                    bl_status.name AS status,
-                    bl_runjob.retry_count AS retry_count,
-                    bl_runjob.id AS id, 
-                    bl_runjob.status_time AS status_time,
-                    wmbs_users.cert_dn AS userdn
-             FROM bl_runjob
-             INNER JOIN wmbs_users wu ON wmbs_user.id = bl_runjob.user
-             INNER JOIN wmbs_job ON
-               wmbs_job.id = bl_runjob.wmbs_id AND
-               wmbs_job.state = (SELECT id FROM wmbs_job_state WHERE name = 'executing') AND
-               wmbs_job.retry_count = bl_runjob.retry_count
-             INNER JOIN bl_status ON
-               bl_status.id = bl_runjob.sched_status
-             INNER JOIN wmbs_users ON
-               bl_runjob.user_id = wmbs_users.id
-             WHERE bl_runjob.status = 0
-             """
 
     sql = """SELECT bl_runjob.wmbs_id AS jobid,
                     bl_runjob.grid_id AS gridid,

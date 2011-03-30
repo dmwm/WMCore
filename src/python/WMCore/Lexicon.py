@@ -36,11 +36,11 @@ def block(candidate):
 
 def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
-    return check(r'[a-zA-Z0-9\s\.\-_]{1,100}$', candidate)
+    return check(r'[a-zA-Z0-9\s\.\-_]{1,255}$', candidate)
 
 def dataset(candidate):
     """ A slash followed by an identifier,x3 """
-    return check(r'(/[a-zA-Z0-9\.\-_]{1,100}){3}$', candidate)
+    return check(r'(/[a-zA-Z0-9\.\-_]{1,255}){3}$', candidate)
 
 def procdataset(candidate):
     pass
@@ -79,7 +79,7 @@ def lfnBase(candidate):
 
 
 def cmsswversion(candidate):
-    return check('CMSSW(_\d+){3}(_[a-z\d]+)?$', candidate)
+    return check('CMSSW(_\d+){3}(_[a-zA-Z0-9]+)?$', candidate)
 
 def couchurl(candidate):
     return check('http://(([a-zA-Z0-9:@\.\-_]){0,100})(localhost|fnal\.gov|cern\.ch|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d+', candidate)

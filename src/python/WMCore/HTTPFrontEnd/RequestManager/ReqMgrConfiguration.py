@@ -62,7 +62,7 @@ def reqMgrConfig(
     config.reqmgr.couchUrl = couchurl
     config.reqmgr.configDBName = configCouchDB
     config.reqmgr.workloadDBName = workloadCouchDB
-    config.reqmgr.security_roles = ['Admin', 'Developer', 'Data Manager']
+    config.reqmgr.security_roles = ['Admin', 'Developer', 'Data Manager', 'developer', 'admin', 'data-manager']
     config.reqmgr.yuiroot = yuiroot
 
     views = config.reqmgr.section_('views')
@@ -88,6 +88,7 @@ def reqMgrConfig(
     active.reqMgr.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
     active.reqMgr.default_expires = 0 # no caching
     active.reqMgr.formatter.object = 'WMCore.WebTools.RESTFormatter'
+    active.reqMgr.templates = os.path.join(installation, 'templates/WMCore/WebTools')
 
     active.section_('create')
     active.create.object = 'WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema'

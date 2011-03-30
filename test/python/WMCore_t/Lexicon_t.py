@@ -60,7 +60,7 @@ class LexiconTest(unittest.TestCase):
            self.assertRaises(AssertionError, dataset, notok)
 
     def testVersion(self):
-        for ok in ['CMSSW_3_8_0_pre1', 'CMSSW_1_2_0', 'CMSSW_4_0_0_patch11']:
+        for ok in ['CMSSW_3_8_0_pre1', 'CMSSW_1_2_0', 'CMSSW_4_0_0_patch11', 'CMSSW_3_10_0_pre9G493']:
             assert cmsswversion(ok)
 
     def testBadVersion(self):

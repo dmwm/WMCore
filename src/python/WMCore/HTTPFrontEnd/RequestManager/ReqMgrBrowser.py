@@ -52,7 +52,6 @@ class ReqMgrBrowser(WebAPI):
                              'Requestor': '../admin/user', 
                              'RequestName': 'details'}
         self.detailsFields = ['RequestName', 'RequestType', 'Requestor', 'CMSSWVersion',
-                """ Main class for browsing and modifying requests """
             'ScramArch', 'GlobalTag', 'RequestSizeEvents',
             'InputDataset', 'PrimaryDataset', 'AcquisitionEra', 'ProcessingVersion', 
             'RunWhitelist', 'RunBlacklist', 'BlockWhitelist', 'BlockBlacklist', 
@@ -233,8 +232,8 @@ class ReqMgrBrowser(WebAPI):
         """ Displays the workload """
         request = {'RequestWorkflow':url}
         helper = loadWorkload(request)
-        workloadText = str(helper.data).replace('\n', '<br>')
-        return cgi.escape(workloadText)
+        workloadText = str(helper.data)
+        return cgi.escape(workloadText).replace("\n", "<br/>\n")
  
     def drawRequests(self, requests):
         """ Display all requests """
@@ -325,7 +324,7 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
     # FIXME needs to check if authorized, or original user
-    def modifyWorkload(self, requestName, workload,
+    def modifyWorkload(self, requestName, workload, CMSSWVersion=None, GlobalTag=None,
                        runWhitelist=None, runBlacklist=None, 
                        blockWhitelist=None, blockBlacklist=None):
         """ handles the "Modify" button of the details page """
@@ -334,6 +333,11 @@ class ReqMgrBrowser(WebAPI):
         helper.load(workload)
         message = ""
         #inputTask = helper.getTask(requestType).data.input.dataset
+        if GlobalTag or CMSSWVersion:
+            helper.setCMSSWParams(cmsswVersion=CMSSWVersion, globalTag=GlobalTag)
+            helper.data.request.schema.CMSSWVersion = CMSSWVersion
+            helper.data.request.schema.GlobalTag = GlobalTag
+            message += "CMSSW version %s, GlobalTag %s<br/>" % (CMSSWVersion, GlobalTag)
         if runWhitelist != "" and runWhitelist != None:
             l = parseRunList(runWhitelist)
             helper.setRunWhitelist(l)

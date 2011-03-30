@@ -15,7 +15,7 @@ import cherrypy
 import threading
 from WMCore.WebTools.WebAPI import WebAPI
 
-security_roles = ['Developer', 'Admin',  'Data Manager']
+security_roles = ['Developer', 'Admin',  'Data Manager', 'developer', 'admin', 'data-manager']
 
 class Admin(WebAPI):
     """ Handles administration functions for ReqMgr """

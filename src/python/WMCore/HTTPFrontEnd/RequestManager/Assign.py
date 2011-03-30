@@ -13,7 +13,8 @@ import types
 #from WMCore.WebTools.Page import TemplatedPage
 from WMCore.WebTools.WebAPI import WebAPI
 
-security_roles = ['Developer', 'Admin',  'Data Manager']
+security_roles = ['Developer', 'Admin', 'Data Manager',
+                  'developer', 'admin', 'data-manager']
 
 class Assign(WebAPI):
     """ Used by data ops to assign requests to processing sites"""

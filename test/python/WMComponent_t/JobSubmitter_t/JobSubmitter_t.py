@@ -38,10 +38,6 @@ from WMCore.WMBS.Job          import Job
 
 from WMComponent.JobSubmitter.JobSubmitter       import JobSubmitter
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
-from WMComponent.JobSubmitter.Plugins.CondorGlobusPlugin   import CondorGlobusPlugin
-from WMComponent.JobSubmitter.Plugins.CondorGlideInPlugin  import CondorGlideInPlugin
-from WMComponent.JobSubmitter.Plugins.BossLiteCondorPlugin import BossLiteCondorPlugin
-
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 

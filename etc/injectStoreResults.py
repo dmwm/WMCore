@@ -31,17 +31,21 @@ from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 # The default arguments are set in:
 #   WMCORE/src/python/WMCore/WMSpec/StdSpecs/StoreResults.py
 arguments = getTestArguments()
-arguments["StdJobSplitAlgo"] = "ParentlessMergeBySize"
-arguments["StdJobSplitArgs"] = {"files_per_job": 1}
-arguments["SkimJobSplitAlgo"] = "TwoFileBased"
-arguments["SkimJobSplitArgs"] = {"files_per_job": 1}
 arguments["UnmergedLFNBase"] = "/store/temp/WMAgent/unmerged"
 arguments["MergedLFNBase"] = "/store/temp/results"
-arguments["MinMergeSize"] = 1*1024*1024*1024
-arguments["MaxMergeSize"] = 3*1024*1024*1024
-arguments["MaxMergeEvents"] = 100000
-arguments["DataTier"] = 'USER'
 arguments["AcquisitionEra"] = 'Blennies'
+arguments["CmsPath"] = "/uscmst1/prod/sw/cms"
+        #34      arguments.update({
+        #35              "CmsPath": "/uscmst1/prod/sw/cms",
+        #36              "AcquisitionEra": "Blennies",
+arguments["Requestor"] =  "ewv@fnal.gov"
+arguments["InputDataset"] = "/MinimumBias/Run2010A-Dec22ReReco_v1/RECO"
+arguments["CMSSWVersion"] =  "CMSSW_3_9_7"
+arguments["ScramArch"] =  "slc5_ia32_gcc434"
+arguments["ProcessingVersion"] =  "v2ewv"
+        #42              "CouchDBName": "gutsche_configcache",
+arguments["MergedLFNBase"] =  "/store/temp/results"
+        #44      })
 
 if len(sys.argv) != 2:
     print "Usage:"

@@ -144,8 +144,15 @@ class CondorPlugin(BasePlugin):
 
 
         self.packageDir = None
-        self.unpacker   = self.unpacker   = os.path.join(getWMBASE(),
-                                                         'src/python/WMCore/WMRuntime/Unpacker.py')
+
+        if os.path.exists(os.path.join(getWMBASE(),
+                                       'src/python/WMCore/WMRuntime/Unpacker.py')):
+            self.unpacker = os.path.join(getWMBASE(),
+                                         'src/python/WMCore/WMRuntime/Unpacker.py')
+        else:
+            self.unpacker = os.path.join(getWMBASE(),
+                                         'WMCore/WMRuntime/Unpacker.py')
+            
         self.agent      = getattr(config.Agent, 'agentName', 'WMAgent')
         self.sandbox    = None
         self.scriptFile = None

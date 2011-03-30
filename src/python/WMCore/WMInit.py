@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 _WMInit
 
@@ -20,9 +20,13 @@ from WMCore.Configuration import loadConfigurationFile
 
 import os.path
 import sys
+
 def getWMBASE():
     """ returns the root of WMCore install """
-    return os.path.normpath( os.path.join(os.path.dirname(__file__), '..', '..','..' ) )
+    if __file__.find("src/python") != -1:
+        return os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    else:
+        return os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))        
 
 def connectToDB():
     """

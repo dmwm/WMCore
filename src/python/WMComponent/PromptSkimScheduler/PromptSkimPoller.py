@@ -159,7 +159,8 @@ class PromptSkimPoller(BaseWorkerThread):
                     "MinMergeSize": self.minMergeSize,
                     "MaxMergeSize": self.maxMergeSize,
                     "MaxMergeEvents": self.maxMergeEvents,
-                    "StdJobSplitAlgo": splitAlgo}
+                    "StdJobSplitAlgo": splitAlgo,
+                    "StdJobSplitArgs": {"files_per_job": 1}}
 
         workload = self.promptSkimFactory(workloadName, wfParams)
         workload.setOwner("CMSDataOps")

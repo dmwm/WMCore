@@ -39,7 +39,7 @@ class AnalysisWorkloadFactory(StdBase):
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.analysisConfigCacheID, splitAlgo = self.analysisJobSplitAlgo,
                                               splitArgs = self.analysisJobSplitArgs, \
-                                              userDN = self.userDN, asyncDest = self.asyncDest,
+                                              userDN = self.owner_dn, asyncDest = self.asyncDest,
                                               userSandbox = self.userSandbox, userFiles = self.userFiles)
         self.addLogCollectTask(analysisTask)
         return workload
@@ -81,11 +81,9 @@ class AnalysisWorkloadFactory(StdBase):
         
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
-        self.analysisJobSplitAlgo  = arguments.get("ProdJobSplitAlgo", "EventBased")
-        self.analysisJobSplitArgs  = arguments.get("ProdJobSplitArgs",
+        self.analysisJobSplitAlgo  = arguments.get("JobSplitAlgo", "EventBased")
+        self.analysisJobSplitArgs  = arguments.get("JobSplitArgs",
                                                {"events_per_job": 1000})
-        self.userDN = arguments.get("userDN",\
- "/C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Hassen Riahi")
         self.asyncDest = arguments.get("asyncDest","T2_IT_Pisa")
         self.userSandbox = arguments.get("userSandbox", None)
         self.userFiles   = arguments.get("userFiles", [])

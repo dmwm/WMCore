@@ -880,6 +880,63 @@ class WMWorkloadTest(unittest.TestCase):
         for task in testWorkload.taskIterator():
             verifyParams(task)
         return
-                        
+
+    def testGenerateSummaryInfo(self):
+        """
+        _testGenerateSummaryInfo_
+        
+        Test that we can generate the summary info for a workload
+        
+        Checks listInputDatasets by proxy
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+    
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setTaskType("Processing")
+        mergeTask = procTask.addTask("MergeTask")
+        mergeTask.setTaskType("Merge")
+    
+        procTaskCMSSW = procTask.makeStep("cmsRun1")
+        procTaskCMSSW.setStepType("CMSSW")
+        procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
+        procTask.applyTemplates()
+        
+        summary = testWorkload.generateWorkloadSummary()
+
+        # All that should be in here should be tasks.
+        self.assertEqual(summary, {'input': [], 'ACDC': {'filesets': {}, 'collection': None},
+                                   'tasks': ['/TestWorkload/ProcessingTask',
+                                             '/TestWorkload/ProcessingTask/MergeTask'],
+                                   'output': [],
+                                   'performance': {'/TestWorkload/ProcessingTask': {},
+                                                   '/TestWorkload/ProcessingTask/MergeTask': {}},
+                                   'owner': {}})
+
+        procTask.addInputDataset(primary = "PrimaryDatasetB",
+                                 processed = "ProcessedDatasetB",
+                                 tier = "DataTierB",
+                                 block_whitelist = ["BlockA", "BlockB"],
+                                 black_blacklist = ["BlockC"],
+                                 run_whitelist = [11, 12],
+                                 run_blacklist = [13])
+        
+        procTaskCMSSWHelper.addOutputModule("OutputA",
+                                            primaryDataset = "bogusPrimary",
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DataTierA",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None)
+
+        summary = testWorkload.generateWorkloadSummary()
+
+        # Now see if we have the input and output dataset
+        self.assertEqual(summary.get('input', None),
+                         ['/PrimaryDatasetB/ProcessedDatasetB/DataTierB'])
+        self.assertEqual(summary.get('output', None),
+                         ['/bogusPrimary/bogusProcessed/DataTierA'])
+
+        return
+
 if __name__ == '__main__':
     unittest.main()

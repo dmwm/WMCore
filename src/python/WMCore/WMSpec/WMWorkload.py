@@ -799,6 +799,22 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return output
 
+    def listInputDatasets(self):
+        """
+        _listInputDatasets_
+    
+        List all the input datasets in the workload
+        """
+        inputDatasets = []
+    
+        taskIterator = self.taskIterator()
+        for task in taskIterator:
+            path = task.getInputDatasetPath()
+            if path:
+                inputDatasets.append(path)
+                
+        return inputDatasets
+
     def listOutputDatasets(self, initialTask = None):
         """
         _listOutputDatasets_
@@ -944,6 +960,35 @@ class WMWorkloadHelper(PersistencyHelper):
             self.setCMSSWParams(cmsswVersion, globalTag, task)
 
         return
+
+    def generateWorkloadSummary(self):
+        """
+        _generateWorkloadSummary_
+        
+        Generates a dictionary with the following information:
+        task paths
+        ACDC
+        input datasets
+        output datasets
+        
+        Intended for use in putting WMSpec info into couch
+        """
+        summary = {'tasks': [],
+                   'ACDC': { "collection" : None, "filesets": {} },
+                   'input': [],
+                   'output': [],
+                   'owner' : {},
+                   }
+    
+        summary['tasks']  = self.listAllTaskPathNames()
+        summary['output'] = self.listOutputDatasets()
+        summary['input']  = self.listInputDatasets()
+        summary['owner'] = self.data.owner.dictionary_()
+        summary['performance'] = {}
+        for t in summary['tasks']:
+            summary['performance'][t] = {}
+        
+        return summary
 
 class WMWorkload(ConfigSection):
     """

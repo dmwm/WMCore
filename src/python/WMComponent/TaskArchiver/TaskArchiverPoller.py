@@ -29,8 +29,13 @@ from WMCore.WMBS.Fileset        import Fileset
 from WMCore.DAOFactory          import DAOFactory
 from WMCore.WorkQueue.WorkQueue import localQueue
 from WMCore.WMException         import WMException
+from WMCore.Database.CMSCouch   import CouchServer
+from WMCore.DataStructs.Run     import Run
+from WMCore.DataStructs.Mask    import Mask
 
-from WMComponent.JobCreator.CreateWorkArea import getMasterName
+from WMComponent.JobCreator.CreateWorkArea   import getMasterName
+from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
+
 
 class TaskArchiverPollerException(WMException):
     """
@@ -46,6 +51,9 @@ class TaskArchiverPoller(BaseWorkerThread):
     """
     Polls for Ended jobs
 
+    List of attributes
+    
+    requireCouch:  raise an exception on couch failure instead of ignoring
     """
     def __init__(self, config):
         """
@@ -68,6 +76,26 @@ class TaskArchiverPoller(BaseWorkerThread):
             self.workQueue = None
 
         self.timeout = getattr(self.config.TaskArchiver, "timeOut", 0)
+
+        # Start a couch server for getting job info
+        # from the FWJRs for committal to archive
+        try:
+            self.dbname       = getattr(self.config.JobStateMachine, "couchDBName")
+            self.couchdb      = CouchServer(self.config.JobStateMachine.couchurl)
+            self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname)
+            self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname)
+            self.workdatabase = self.couchdb.connectDatabase(self.dbname)
+            logging.debug("Using url %s" % self.config.JobStateMachine.couchurl)
+            logging.debug("Writing to %s" % self.dbname)
+            self.requireCouch = getattr(self.config.TaskArchiver, 'requireCouch', False)
+        except Exception, ex:
+            msg =  "Error in connecting to couch.\n"
+            msg += str(ex)
+            logging.error(msg)
+            self.jobsdatabase = None
+            self.fwjrdatabase = None
+            if self.requireCouch:
+                raise TaskArchiverPollerException(msg)
         return        
     
 
@@ -192,20 +220,122 @@ class TaskArchiverPoller(BaseWorkerThread):
                 workflow = sub['workflow']
                 if not workflow.exists():
                     # Then we deleted the workflow
+                    # First pull its info from couch and archive it
+                    self.archiveCouchSummary(workflow = workflow)
                     # Now we have to delete the task area.
                     workDir, taskDir = getMasterName(startDir = self.jobCacheDir,
                                                      workflow = workflow)
-                    logging.error("About to delete work directory %s\n" % taskDir)
+                    logging.info("About to delete work directory %s" % taskDir)
                     if os.path.isdir(taskDir):
                         # Remove the taskDir, because we're done
                         shutil.rmtree(taskDir)
+                    else:
+                        logging.error("Attempted to delete work directory but it was already gone: %s" % taskDir)
+                    # Remove the sandbox dir
+                    logging.debug("Loading spec to delete sandbox dir")
+                    spec     = retrieveWMSpec(workflow = workflow)
+                    wmTask   = spec.getTaskByPath(workflow.task)
+                    sandbox  = getattr(wmTask.data.input, 'sandbox', None)
+                    if sandbox:
+                        sandboxDir = os.path.dirname(sandbox)
+                        if os.path.isdir(sandboxDir):
+                            shutil.rmtree(sandboxDir)
+                            logging.debug("Sandbox dir deleted")
+                        else:
+                            logging.error("Attempted to delete sandbox dir but it was already gone: %s" % sandboxDir)
             except Exception, ex:
                 msg =  "Critical error while deleting subscription %i\n" % sub['id']
                 msg += str(ex)
+                msg += str(traceback.format_exc())
                 logging.error(msg)
                 raise TaskArchiverPollerException(msg)
 
         return
 
 
+    def archiveCouchSummary(self, workflow):
+        """
+        _archiveCouchSummary_
 
+        For each workflow pull its information from couch and turn it into
+        a summary for archiving
+        """
+
+        failedJobs = []
+        jobErrors  = []
+
+        # Get a list of failed job IDs
+        failedCouch = self.jobsdatabase.loadView("JobDump", "failedJobsByWorkflowName",
+                                                 options = {"startkey": [workflow.task.split('/')[1], workflow.task],
+                                                            "endkey": [workflow.task.split('/')[1], workflow.task]})['rows']
+        for entry in failedCouch:
+            failedJobs.append(entry['value'])
+
+        workflowFailures = {}
+        workflowFailures["_id"] = workflow.task.split('/')[1]
+        
+        for jobid in failedJobs:
+            outputCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
+                                                     options = {"startkey": [jobid, 0],
+                                                                "endkey": [jobid, {}]})['rows']
+            job    = self.jobsdatabase.document(id = str(jobid))
+            inputs = [x['lfn'] for x in job['inputfiles']]
+            runsA  = [x['runs'][0] for x in job['inputfiles']]
+            maskA  = job['mask']
+            # Have to transform this because JSON is too stupid to understand ints
+            for key in maskA['runAndLumis'].keys():
+                maskA['runAndLumis'][int(key)] = maskA['runAndLumis'][key]
+                del maskA['runAndLumis'][key]
+            mask   = Mask()
+            mask.update(maskA)
+            runs   = []
+            # Turn arbitrary format into real runs
+            for r in runsA:
+                run = Run(runNumber = r['run_number'])
+                run.lumis = r.get('lumis', [])
+                runs.append(run)
+            # Get rid of runs that aren't in the mask
+            runs = mask.filterRunLumisByMask(runs = runs)
+            for err in outputCouch:
+                task   = err['value']['task']
+                step   = err['value']['step']
+                errors = err['value']['error']
+                if not task in workflowFailures.keys():
+                    workflowFailures[task] = {}
+                if not step in workflowFailures[task].keys():
+                    workflowFailures[task][step] = {}
+                stepFailures = workflowFailures[task][step]
+                for error in errors:
+                    exitCode = str(error['exitCode'])
+                    if not exitCode in stepFailures.keys():
+                        stepFailures[exitCode] = {"errors": [],
+                                                  "jobs":   [],
+                                                  "input":  [],
+                                                  "runs":   {}}
+                    if jobid in stepFailures[exitCode]['jobs']:
+                        # We're repeating this error, and I don't know why
+                        continue
+                    stepFailures[exitCode]['jobs'].append(jobid)
+                    if len(stepFailures[exitCode]['errors']) == 0 or \
+                           exitCode == '99999':
+                        # Only record the first error for an exit code
+                        # unless exit code is 99999 (general panic)
+                        stepFailures[exitCode]['errors'].append(error)
+                    # Add input LFNs to structure
+                    for input in inputs:
+                        if not input in stepFailures[exitCode]['input']:
+                            stepFailures[exitCode]['input'].append(input)
+                    # Add runs to structure
+                    for run in runs:
+                        if not str(run.run) in stepFailures[exitCode]['runs'].keys():
+                            stepFailures[exitCode]['runs'][str(run.run)] = []
+                        for l in run.lumis:
+                            if not l in stepFailures[exitCode]['runs'][str(run.run)]:
+                                stepFailures[exitCode]['runs'][str(run.run)].append(l)
+                                                         
+        # Now we have the workflowFailures in the right format
+        # Time to send them on
+        logging.debug("About to commit workflow summary to couch")
+        self.workdatabase.commitOne(workflowFailures)
+        logging.debug("Finished committing workflow summary to couch")
+        return

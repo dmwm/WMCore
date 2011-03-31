@@ -1,20 +1,17 @@
 #!/usr/bin/env python
-
 """
 JobArchiver test 
 """
 
-
-
-
 import os
+import os.path
 import logging
 import threading
 import unittest
 import time
 import shutil
 
-from WMCore.Agent.Configuration import loadConfigurationFile
+import WMCore.WMInit
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 #from WMQuality.TestInit   import TestInit
@@ -34,6 +31,8 @@ from WMComponent.TaskArchiver.TaskArchiver       import TaskArchiver
 from WMComponent.TaskArchiver.TaskArchiverPoller import TaskArchiverPoller
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.FwkJobReport.Report         import Report
+from WMCore.Database.CMSCouch           import CouchServer
 
 from WMCore_t.WMSpec_t.TestSpec     import testWorkload
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
@@ -59,12 +58,14 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
 
-        #self.tearDown()
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", 
                                                  "WMCore.ThreadPool", 'WMCore.WorkQueue.Database'],
 
                                 useDefault = False)
-        self.testInit.setupCouch("taskarchiver_t_0", "JobDump")
+        self.testInit.setupCouch("taskarchiver_t_0", "WorkloadSummary")
+        self.testInit.setupCouch("taskarchiver_t_0/jobs", "JobDump")
+        self.testInit.setupCouch("taskarchiver_t_0/fwjrs", "FWJRDump")
+        
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -72,6 +73,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
 
         self.testDir = self.testInit.generateWorkDir()
+        os.makedirs(os.path.join(self.testDir, 'specDir'))
 
 
         self.nJobs = 10
@@ -82,12 +84,11 @@ class TaskArchiverTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
 
-        self.testInit.clearDatabase()
+        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.MsgService", 
+                                               "WMCore.ThreadPool", 'WMCore.WorkQueue.Database'])
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
-
         return
-
 
     def getConfig(self):
         """
@@ -103,7 +104,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl     = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
-        config.JobStateMachine.couchDBName  = "job_accountant_t"
+        config.JobStateMachine.couchDBName  = "taskarchiver_t_0"
 
         config.component_("JobCreator")
         config.JobCreator.jobCacheDir       = os.path.join(self.testDir, 'testDir')
@@ -152,7 +153,7 @@ class TaskArchiverTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         testWorkflow = Workflow(spec = specLocation, owner = "Simon",
-                                name = name, task="Test")
+                                name = name, task="/TestWorkload/ReReco")
         testWorkflow.create()
         
         testWMBSFileset = Fileset(name = name)
@@ -164,7 +165,8 @@ class TaskArchiverTest(unittest.TestCase):
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
         testFileB.addRun(Run(10, *[12312]))
-        testFileA.setLocation('malpaquet')
+        testFileB.setLocation('malpaquet')
+        
         testFileA.create()
         testFileB.create()
 
@@ -186,17 +188,26 @@ class TaskArchiverTest(unittest.TestCase):
             testJob.addFile(testFileB)
             testJob['retry_count'] = 1
             testJob['retry_max'] = 10
+            testJob['mask'].addRunAndLumis(run = 10, lumis = [12312, 12313])
             testJobGroup.add(testJob)
         
         testJobGroup.commit()
 
         changer = ChangeState(config)
 
+        report = Report()
+        path   = os.path.join(WMCore.WMInit.getWMBASE(),
+                              "test/python/WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
+        report.load(filename = path)
+
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
-        changer.propagate(testJobGroup.jobs, 'success', 'complete')
-        changer.propagate(testJobGroup.jobs, 'cleanout', 'success')
+        for job in testJobGroup.jobs:
+            job['fwjr'] = report
+        changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
+        changer.propagate(testJobGroup.jobs, 'exhausted', 'jobfailed')
+        changer.propagate(testJobGroup.jobs, 'cleanout', 'exhausted')
 
         testSubscription.completeFiles([testFileA, testFileB])
 
@@ -296,14 +307,14 @@ class TaskArchiverTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         config = self.getConfig()
-        workloadPath = os.path.join(self.testDir, 'spec.pkl')
+        workloadPath = os.path.join(self.testDir, 'specDir', 'spec.pkl')
         workload     = self.createWorkload(workloadName = workloadPath)
         testJobGroup = self.createTestJobGroup(config = config,
                                                name = workload.name(),
                                                specLocation = workloadPath)
 
         cachePath = os.path.join(config.JobCreator.jobCacheDir,
-                                 "TestWorkload", "Test")
+                                 "TestWorkload", "ReReco")
         os.makedirs(cachePath)
         self.assertTrue(os.path.exists(cachePath))
 
@@ -327,10 +338,17 @@ class TaskArchiverTest(unittest.TestCase):
 
         # Make sure we deleted the directory
         self.assertFalse(os.path.exists(cachePath))
+        self.assertFalse(os.path.exists(os.path.join(self.testDir, 'workloadTest/TestWorkload')))
 
         testWMBSFileset = Fileset(id = 1)
         self.assertEqual(testWMBSFileset.exists(), False)
-        
+
+        dbname       = getattr(config.JobStateMachine, "couchDBName")
+        couchdb      = CouchServer(config.JobStateMachine.couchurl)
+        workdatabase = couchdb.connectDatabase(dbname)
+
+        workloadSummary = workdatabase.document(id = "TestWorkload")
+        print workloadSummary
         return
 
 
@@ -407,13 +425,6 @@ class TaskArchiverTest(unittest.TestCase):
 
 
         logging.info("TaskArchiver took %f seconds" % (stopTime - startTime))
-
-
-        
-
-        
-
-
 
 if __name__ == '__main__':
     unittest.main()

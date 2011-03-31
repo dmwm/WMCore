@@ -146,20 +146,9 @@ class ChangeState(WMObject, WMConnectionBase):
 
                 jobDocument["inputfiles"] = []
                 for inputFile in job["input_files"]:
-                    docInputFile = {"lfn": inputFile["lfn"],
-                                    "firstevent": inputFile["first_event"],
-                                    "lastevent": inputFile["last_event"],
-                                    "id": inputFile["id"],
-                                    "size": inputFile["size"],
-                                    "events": inputFile["events"],
-                                    "merged": inputFile["merged"],
-                                    "locations": [],
-                                    "runs": [],
-                                    "parents": []}
-
-                    for location in inputFile["locations"]:
-                        docInputFile["locations"].append(location)
-
+                    docInputFile = inputFile.json()
+                    
+                    docInputFile["parents"] = []
                     for parent in inputFile["parents"]:
                         docInputFile["parents"].append({"lfn": parent["lfn"]})
 
@@ -171,12 +160,18 @@ class ChangeState(WMObject, WMConnectionBase):
                                                "timestamp": timestamp}}
                 
                 jobDocument["jobgroup"] = job["jobgroup"]
-                jobDocument["mask"] = {"firstevent": job["mask"]["FirstEvent"],
-                                       "lastevent": job["mask"]["LastEvent"],
-                                       "firstlumi": job["mask"]["FirstLumi"],
-                                       "lastlumi": job["mask"]["LastLumi"],
-                                       "firstrun": job["mask"]["FirstRun"],
-                                       "lastrun": job["mask"]["LastRun"]}
+                jobDocument["mask"] = {"FirstEvent": job["mask"]["FirstEvent"],
+                                       "LastEvent": job["mask"]["LastEvent"],
+                                       "FirstLumi": job["mask"]["FirstLumi"],
+                                       "LastLumi": job["mask"]["LastLumi"],
+                                       "FirstRun": job["mask"]["FirstRun"],
+                                       "LastRun": job["mask"]["LastRun"]}
+                if job['mask']['runAndLumis'] != {}:
+                    # Then we have to save the mask runAndLumis
+                    jobDocument['mask']['runAndLumis'] = {}
+                    for key in job['mask']['runAndLumis'].keys():
+                        jobDocument['mask']['runAndLumis'][str(key)] = job['mask']['runAndLumis'][key]
+                        
                 jobDocument["name"] = job["name"]
                 jobDocument["type"] = "job"
                 jobDocument["user"] = job.get("user", None)

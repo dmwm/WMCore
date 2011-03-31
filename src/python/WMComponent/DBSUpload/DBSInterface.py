@@ -484,7 +484,7 @@ class DBSInterface:
         self.maxBlockTime      = self.config.DBSBlockMaxTime
         self.maxBlockSize      = self.config.DBSBlockMaxSize
         self.maxFilesToCommit  = self.config.MaxFilesToCommit
-        self.doGlobalMigration = getattr(self.config, 'DoGlobalMigration', True)
+        self.doGlobalMigration = getattr(self.config, 'doGlobalMigration', True)
 
         if getattr(self.config, 'globalDBSUrl', None) != None:
             globalArgs = {'url': self.config.globalDBSUrl,

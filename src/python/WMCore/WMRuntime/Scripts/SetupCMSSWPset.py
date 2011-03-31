@@ -341,6 +341,7 @@ class SetupCMSSWPset(ScriptInterface):
 
         fixupFileNames(self.process)
         self.process.source.fileNames.setValue([inputFile])
+        self.process.maxEvents.input.setValue(-1)
 
         tfcName = "override_catalog.xml"
         tfcPath = os.path.join(os.getcwd(), tfcName)            

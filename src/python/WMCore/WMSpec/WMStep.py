@@ -99,6 +99,15 @@ class WMStepHelper(TreeHelper):
         """
         self.data.asyncDest = asyncDest 
 
+    def setPublishName(self, publishName):
+        """
+        _setPublishName_
+
+        Set the publish data name for asynchronous stageout
+
+        """
+        self.data.publishName = publishName
+
     def getTypeHelper(self):
         """
         _getTypeHelper_

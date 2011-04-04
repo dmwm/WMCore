@@ -132,7 +132,7 @@ class StdBase(object):
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "LumiBased",
                             splitArgs = {'lumis_per_job': 15}, seeding = None, totalEvents = None,
-                            userDN = None, asyncDest = None, stepType = "CMSSW",
+                            userDN = None, asyncDest = None, publishName =None, stepType = "CMSSW",
                             userSandbox = None, userFiles = []):
 
         """
@@ -162,6 +162,7 @@ class StdBase(object):
         procTaskStageOut.setStepType("StageOut")
         procTaskStageOut.setUserDN(userDN)
         procTaskStageOut.setAsyncDest(asyncDest)
+        procTaskStageOut.setPublishName(publishName)
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
         procTask.applyTemplates()

@@ -269,6 +269,7 @@ class StageOut(Executor):
 
                 file.user_dn = getattr(self.step, "userDN", None)
                 file.async_dest = getattr(self.step, "asyncDest", None)
+                #file.publishName = getattr(self.step, "publishName", None)
 
             stepReport.persist(reportLocation)
 

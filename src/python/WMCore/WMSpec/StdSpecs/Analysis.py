@@ -4,6 +4,7 @@
 
 
 import os
+import time
 
 ##from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
@@ -39,7 +40,7 @@ class AnalysisWorkloadFactory(StdBase):
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.analysisConfigCacheID, splitAlgo = self.analysisJobSplitAlgo,
                                               splitArgs = self.analysisJobSplitArgs, \
-                                              userDN = self.owner_dn, asyncDest = self.asyncDest,
+                                              userDN = self.owner_dn, asyncDest = self.asyncDest, publishName = self.publishName,
                                               userSandbox = self.userSandbox, userFiles = self.userFiles)
         self.addLogCollectTask(analysisTask)
         return workload
@@ -84,7 +85,8 @@ class AnalysisWorkloadFactory(StdBase):
         self.analysisJobSplitAlgo  = arguments.get("JobSplitAlgo", "EventBased")
         self.analysisJobSplitArgs  = arguments.get("JobSplitArgs",
                                                {"events_per_job": 1000})
-        self.asyncDest = arguments.get("asyncDest","T2_IT_Pisa")
+        self.asyncDest = arguments.get("asyncDest", "T2_IT_Pisa")
+        self.publishName = arguments.get("PublishDataName", str(int(time.time())))
         self.userSandbox = arguments.get("userSandbox", None)
         self.userFiles   = arguments.get("userFiles", [])
 

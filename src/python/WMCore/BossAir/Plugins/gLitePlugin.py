@@ -24,7 +24,6 @@ from WMCore.DAOFactory import DAOFactory
 import WMCore.WMInit
 from copy import deepcopy
 
-
 def processWorker(input, results):
     """
     _outputWorker_
@@ -88,6 +87,9 @@ def processWorker(input, results):
         except ValueError, val:
             print val, stdout, stderr
             jsout = stdout
+        except Exception, err:
+            jsout = str(work) + '\n' str(err)
+            stderr = stdout + '\n' + stderr
 
         #print "Returning work %i " % workid
 
@@ -118,7 +120,7 @@ class gLitePlugin(BasePlugin):
                   'gridftphost': socket.getfqdn(),
                   'cestatus'   : 'Production',
                   'sbtransfer' : 'gsiftp',
-                  'service'    : None
+                  'service'    : 'https://gswms01.cern.ch:7443/glite_wms_wmproxy_server'
                  }
 
 
@@ -330,98 +332,105 @@ class gLitePlugin(BasePlugin):
         for job in jobs:
             sandbox = job['sandbox']
             if not sandbox in submitDict.keys():
-                submitDict[sandbox] = []
-            submitDict[sandbox].append(job)
+                submitDict[sandbox] = {}
+            if job['location'] not in submitDict[sandbox]:
+                if job['location']:
+                    submitDict[sandbox][job['location']] = []
+                else:
+                    submitDict[sandbox][''] = []
+            submitDict[sandbox][job['location']].append(job)
 
         tounlink = []
+
         # Now submit the bastards
         currentwork = len(workqueued)
         for sandbox in submitDict.keys():
-            jobList = submitDict.get(sandbox, [])
-            while len(jobList) > 0:
+            logging.debug("   Handling '%s'" % str(sandbox))
+            siteDict = submitDict.get(sandbox, {})
+            for site in siteDict.keys():
+                logging.debug("   Handling '%s'" % str(site))
+                jobList = siteDict.get(site, [])
+                while len(jobList) > 0:
+                    ## getting the sandbox jobs and splitting  by collection size
+                    jobList = siteDict.get(site, [])
+                    command = "glite-wms-job-submit --json "
+                    jobsReady = jobList[:self.collectionsize]
+                    jobList   = jobList[self.collectionsize:]
 
-                ## getting the sandbox jobs and splitting  by collection size
-                jobList = submitDict.get(sandbox, [])
-                command = "glite-wms-job-submit --json "
-                jobsReady = jobList[:self.collectionsize]
-                jobList   = jobList[self.collectionsize:]
+                    ## retrieve user proxy and set the path
+                    ownersandbox      = jobsReady[0]['userdn']
+                    valid, ownerproxy = (False, None)
+                    exportproxy       = 'echo $X509_USER_PROXY'
+                    if ownersandbox in retrievedproxy:
+                        valid      = True
+                        ownerproxy = retrievedproxy[ownersandbox]
+                    else:
+                        valid, ownerproxy = self.getProxy( ownersandbox )
 
-                ## retrieve user proxy and set the path
-                ownersandbox      = jobsReady[0]['userdn']
-                valid, ownerproxy = (False, None)
-                exportproxy       = 'echo $X509_USER_PROXY'
-                if ownersandbox in retrievedproxy:
-                    valid      = True
-                    ownerproxy = retrievedproxy[ownersandbox]
-                else:
-                    valid, ownerproxy = self.getProxy( ownersandbox )
+                    if valid:
+                        retrievedproxy[ownersandbox] = ownerproxy
+                        exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
+                    else:
+                        msg = "Problem retrieving user proxy, or user proxy " + \
+                              "expired '%s'" % ownersandbox
+                        logging.error( msg )
+                        failedJobs.extend( jobsReady )
+                        continue
+                        ## TODO prepare report and add to failed jobs
 
-                if valid:
-                    retrievedproxy[ownersandbox] = ownerproxy
-                    exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
-                else:
-                    msg = "Problem retrieving user proxy, or user proxy " + \
-                          "expired '%s'" % ownersandbox
-                    logging.error( msg )
-                    failedJobs.extend( jobsReady )
-                    continue
-                    ## TODO prepare report and add to failed jobs
+                    ## getting the job destinations
+                    dest      = []
+                    logging.debug("Getting location from %s" % str(jobsReady) )
+                    try:
+                        dest = self.getDestinations( [], jobsReady[0]['location'] )
+                    except Exception, ex:
+                        import traceback
+                        msg = str(traceback.format_exc())
+                        msg += str(ex)
+                        logging.error("Exception in site selection \n %s " % msg)
+                        return {'NoResult': [0]}
 
-                ## getting the job destinations
-                dest      = []
-                logging.debug("Getting location from %s" % str(jobsReady) )
-                try:
-                    dest = self.getDestinations( [], jobsReady[0]['location'] )
-                except Exception, ex:
-                    import traceback
-                    msg = str(traceback.format_exc())
-                    msg += str(ex)
-                    logging.error("Exception in site selection \n %s " % msg)
-                    return {'NoResult': [0]}
+                    if len(dest) == 0:
+                        logging.error('No site selected, trying to submit without')
 
-                if len(dest) == 0:
-                    logging.error('No site selected, trying to submit without')
+                    jdlReady  = self.makeJdl( jobList = jobsReady, dest = dest, info = info )
+                    if not jdlReady or len(jdlReady) == 0:
+                        # Then we got nothing
+                        logging.error("No JDL file made!")
+                        return {'NoResult': [0]}
 
-                jdlReady  = self.makeJdl( jobList = jobsReady, 
-                                          dest = dest,
-                                          info = info
-                                        )
-                if not jdlReady or len(jdlReady) == 0:
-                    # Then we got nothing
-                    logging.error("No JDL file made!")
-                    return {'NoResult': [0]}
+                    # write a jdl into tmpFile
+                    tmp, fname = tempfile.mkstemp(suffix = '.jdl', prefix = 'glite',
+                                                  dir = self.submitDir )
+                    tmpFile = os.fdopen(tmp, "w")
+                    tmpFile.write( jdlReady )
+                    tmpFile.close()
+                    tounlink.append( fname )
 
-                # write a jdl into tmpFile
-                tmp, fname = tempfile.mkstemp(suffix = '.jdl', prefix = 'glite',
-                                              dir = self.submitDir )
-                tmpFile = os.fdopen(tmp, "w")
-                tmpFile.write( jdlReady )
-                tmpFile.close()
-                tounlink.append( fname )
+                    # delegate proxy
+                    if self.delegationid != "" :
+                        command += " -d %s " % self.delegationid
+                        logging.debug("Delegating proxy...")
+                        self.delegateProxy(self.defaultjdl['service'], exportproxy)
+                    else :
+                        command += " -a "
 
-                # delegate proxy
-                if self.delegationid != "" :
-                    command += " -d %s " % self.delegationid
-                    logging.debug("Delegating proxy...")
-                    self.delegateProxy(self.defaultjdl['service'], exportproxy)
-                else :
-                    command += " -a "
+                    if self.gliteConfig is not None:
+                        command += " -c " + self.gliteConfig
+                    elif self.defaultjdl['service'] is not None:
+                        # eventual note: the '-e' override the ...
+                        command += ' -e ' + self.defaultjdl['service']
+                    #command += ' -e https://gswms01.cern.ch:7443/glite_wms_wmproxy_server '
+                    #command += ' -e https://wms-cms-analysis.grid.cnaf.infn.it:7443/glite_wms_wmproxy_server '
 
-                if self.gliteConfig is not None:
-                    command += " -c " + self.gliteConfig
-                elif self.defaultjdl['service'] is not None:
-                    # eventual note: the '-e' override the ...
-                    command += ' -e ' + self.defaultjdl['service']
+                    command += ' ' + fname
 
-                command += ' ' + fname
-
-                # Now submit them
-                logging.debug("About to submit %i jobs" % len(jobsReady) )
-                workqueued[currentwork] = jobsReady
-                completecmd = 'source %s && %s && %s' \
-                               % (self.setupScript, exportproxy, command)
-                input.put((currentwork, completecmd, 'submit'))
-                currentwork += 1
+                    # Now submit them
+                    logging.debug("About to submit %i jobs" % len(jobsReady) )
+                    workqueued[currentwork] = jobsReady
+                    completecmd = 'source %s && %s && %s' % (self.setupScript, exportproxy, command)
+                    input.put((currentwork, completecmd, 'submit'))
+                    currentwork += 1
 
         logging.debug("Waiting for %i works to finish.." % len(workqueued))
         for n in xrange(len(workqueued)):
@@ -458,7 +467,7 @@ class gLitePlugin(BasePlugin):
             if jsout is not None:
                 parent   = ''
                 endpoint = ''
-                if jsout.has_key('result'):
+                if 'result' in jsout:
                     if jsout['result'] != 'success':
                         failedJobs.extend(jobsub)
                         continue
@@ -1086,12 +1095,12 @@ class gLitePlugin(BasePlugin):
             commonFiles += "root.inputsandbox[%i]," % ind
             ind += 1 
         ## this should include the JobPackage.pkl
-        if jobList[0].has_key('packageDir') and \
-           jobList[0]['packageDir'] is not None:
-            isb += '"%s%s",' % ( startdir, \
-                     os.path.join(jobList[0]['packageDir'], 'JobPackage.pkl'))
-            commonFiles += "root.inputsandbox[%i]," % ind
-            ind += 1
+        #if jobList[0].has_key('packageDir') and \
+        #   jobList[0]['packageDir'] is not None:
+        #    isb += '"%s%s",' % ( startdir, \
+        #             os.path.join(jobList[0]['packageDir'], 'JobPackage.pkl'))
+        #    commonFiles += "root.inputsandbox[%i]," % ind
+        #    ind += 1
         ## this should include the job starter on the WN
         if self.submitFile is not None:
             isb += '"%s%s",' % ( startdir, self.submitFile )
@@ -1134,8 +1143,15 @@ class gLitePlugin(BasePlugin):
             jdl += 'OutputSandbox = {"Report.%i.pkl",".BrokerInfo", "%i_%i.stdout","%i_%i.stderr"};\n' \
                     % (jobretry, jobid, jobretry, jobid, jobretry)
 
-            if len(commonFiles) > 0:
-                jdl += 'InputSandbox = {%s};\n' % commonFiles
+            inputfiles = ''
+            if 'packageDir' in job and job['packageDir'] is not None:
+                if len(commonFiles) > 0:
+                    inputfiles = '"%s%s",%s' % (startdir, os.path.join(job['packageDir'], 'JobPackage.pkl'),commonFiles)
+                else:
+                    inputfiles = '"%s%s"' % (startdir, os.path.join(job['packageDir'], 'JobPackage.pkl'))
+
+            if len(inputfiles) > 0:
+                jdl += 'InputSandbox = {%s};\n' % inputfiles
 
             jdl += '],\n'
             counter += 1
@@ -1169,6 +1185,7 @@ class gLitePlugin(BasePlugin):
         jdl += "\n]\n"
 
         # return values
+        logging.error( str(jdl) )
         return jdl
 
     def sewhite(self, sesites):

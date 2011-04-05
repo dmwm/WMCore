@@ -132,13 +132,11 @@ class WorkQueueTest(WorkQueueTestCase):
 
         self.localQueue = localQueue(DbName = 'workqueue_t_local',
                                      ParentQueueCouchUrl = self.globalQueue.backend.db_url,
-                                     QueueURL = "local.example.com",
                                      JobDumpConfig = jobCouchConfig,
                                      BossAirConfig = bossAirConfig)
 
         self.localQueue2 = localQueue(DbName = 'workqueue_t_local2',
                                       ParentQueueCouchUrl = self.globalQueue.backend.db_url,
-                                      QueueURL = "local2.example.com",
                                       JobDumpConfig = jobCouchConfig,
                                       BossAirConfig = bossAirConfig)
 

@@ -76,10 +76,18 @@ class WorkQueue(WorkQueueBase):
             raise RuntimeError, 'CouchUrl config value mandatory'
         self.params.setdefault('DbName', 'workqueue')
         self.params.setdefault('InboxDbName', self.params['DbName'] + '_inbox')
+        self.params.setdefault('ParentQueueCouchUrl', None) # We get work from here
+
+        self.backend = WorkQueueBackend(self.params['CouchUrl'], self.params['DbName'],
+                                        self.params['InboxDbName'],
+                                        self.params['ParentQueueCouchUrl'], self.params.get('QueueURL'),
+                                        logger = self.logger)
+        if self.params.get('ParentQueueCouchUrl'):
+            self.parent_queue = WorkQueueBackend(self.params['ParentQueueCouchUrl'].rsplit('/', 1)[0],
+                                                 self.params['ParentQueueCouchUrl'].rsplit('/', 1)[1])
 
         self.params.setdefault("GlobalDBS",
                                "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.params.setdefault('ParentQueueCouchUrl', None) # We get work from here
         self.params.setdefault('QueueDepth', 2) # when less than this locally
         self.params.setdefault('LocationRefreshInterval', 600)
         self.params.setdefault('FullLocationRefreshInterval', 7200)
@@ -94,7 +102,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('JobDumpConfig', None)
         self.params.setdefault('BossAirConfig', None)
 
-        self.params.setdefault('QueueURL', None) # url this queue is visible on
+        self.params.setdefault('QueueURL', self.backend.db_url) # url this queue is visible on
         self.params.setdefault('WMBSURL', None) # this will be only set on local Queue
         self.params.setdefault('Teams', [''])
 
@@ -121,17 +129,6 @@ class WorkQueue(WorkQueueBase):
                                                   )
         
         self.params.setdefault('EndPolicySettings', {})
-
-        if self.params['ParentQueueCouchUrl'] is not None and not self.params['QueueURL']:
-            raise RuntimeError, "ParentQueueCouchUrl defined but not QueueURL"
-
-        self.backend = WorkQueueBackend(self.params['CouchUrl'], self.params['DbName'],
-                                        self.params['InboxDbName'],
-                                        self.params['ParentQueueCouchUrl'], self.params['QueueURL'],
-                                        logger = self.logger)
-        if self.params.get('ParentQueueCouchUrl'):
-            self.parent_queue = WorkQueueBackend(self.params['ParentQueueCouchUrl'].rsplit('/', 1)[0],
-                                                 self.params['ParentQueueCouchUrl'].rsplit('/', 1)[1])
 
         assert(self.params['TrackLocationOrSubscription'] in ('subscription',
                                                               'location'))

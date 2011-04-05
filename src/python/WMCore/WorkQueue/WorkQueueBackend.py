@@ -24,11 +24,11 @@ class WorkQueueBackend(object):
             import logging
             self.logger = logging
         self.server = CouchServer(db_url)
-        self.queueUrl = queueUrl
         self.parentCouchUrl = parentQueue
         self.db = self.server.connectDatabase(db_name, create = False)
         self.db_url = "%s/%s" % (self.db['host'], self.db.name)
         self.inbox = self.server.connectDatabase(inbox_name, create = False)
+        self.queueUrl = queueUrl or self.db_url
 
 
     def forceQueueSync(self):

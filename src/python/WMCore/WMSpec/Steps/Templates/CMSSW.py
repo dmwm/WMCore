@@ -50,8 +50,10 @@ class CMSSWStepHelper(CoreHelper):
         retrieve list of output module names
 
         """
-        return self.data.output.modules.dictionary_().keys()
-    
+        if hasattr(self.data.output, "modules"):
+            return self.data.output.modules.dictionary_().keys()
+
+        return []
     
     def getOutputModule(self, name):
         """

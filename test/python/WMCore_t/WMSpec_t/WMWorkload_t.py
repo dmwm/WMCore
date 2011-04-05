@@ -226,10 +226,14 @@ class WMWorkloadTest(unittest.TestCase):
         procTask.setTaskType("Processing")
         procTaskCMSSW = procTask.makeStep("cmsRun1")
         procTaskCMSSW.setStepType("CMSSW")
-        procTaskStageOut = procTask.makeStep("StageOut1")
+        procTaskStageOut = procTaskCMSSW.addStep("StageOut1")
         procTaskStageOut.setStepType("StageOut")
+        procTask.applyTemplates()
         procTaskStageOutHelper = procTaskStageOut.getTypeHelper()
         procTaskStageOutHelper.setMinMergeSize(1, 1)
+        procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
+        procTaskCMSSWHelper.addOutputModule("output", dataTier = "RECO")
+        procTaskCMSSWHelper.addOutputModule("outputDQM", dataTier = "DQM")        
 
         mergeTask = procTask.addTask("MergeTask")
         mergeTask.setInputReference(procTaskCMSSW, outputModule = "output")
@@ -240,6 +244,20 @@ class WMWorkloadTest(unittest.TestCase):
         mergeTaskStageOut.setStepType("StageOut")
         mergeTaskCMSSW = mergeTask.makeStep("cmsRun1")
         mergeTaskCMSSW.setStepType("CMSSW")
+
+        mergeDQMTask = procTask.addTask("MergeDQMTask")
+        mergeDQMTask.setInputReference(procTaskCMSSW, outputModule = "outputDQM")
+        mergeDQMTask.setTaskType("Merge")
+        mergeDQMTask.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 4,
+                                           max_merge_events = 4, min_merge_size = 4,
+                                           merge_across_runs = False)
+        mergeDQMTaskCMSSW = mergeDQMTask.makeStep("cmsRun1")
+        mergeDQMTaskCMSSW.setStepType("CMSSW")
+        mergeDQMTaskStageOut = mergeDQMTaskCMSSW.addStep("StageOut1")
+        mergeDQMTaskStageOut.setStepType("StageOut")
+        mergeDQMTask.applyTemplates()
+        mergeDQMTaskCMSSWHelper = mergeDQMTaskCMSSW.getTypeHelper()
+        mergeDQMTaskCMSSWHelper.addOutputModule("Merged", dataTier = "DQM")
 
         skimTask = mergeTask.addTask("SkimTask")
         skimTask.setTaskType("Skim")
@@ -290,6 +308,22 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site white list was updated.")
         self.assertEqual(mergeSplitParams["siteBlacklist"], [],
                          "Error: Site black list was updated.")
+
+        mergeDQMSplitParams = mergeDQMTask.jobSplittingParameters()
+        self.assertEqual(len(mergeDQMSplitParams.keys()), 7,
+                         "Error: Wrong number of params for merge task.")
+        self.assertEqual(mergeDQMSplitParams["algorithm"], "WMBSMergeBySize",
+                         "Error: Wrong job splitting algo for merge task.")
+        self.assertEqual(mergeDQMSplitParams["min_merge_size"], 4,
+                         "Error: Wrong min merge size: %s" % mergeDQMSplitParams)
+        self.assertEqual(mergeDQMSplitParams["max_merge_size"], 4,
+                         "Error: Wrong max merge size.")
+        self.assertEqual(mergeDQMSplitParams["max_merge_events"], 4,
+                         "Error: Wrong max merge events.")
+        self.assertEqual(mergeDQMSplitParams["siteWhitelist"], [],
+                         "Error: Site white list was updated.")
+        self.assertEqual(mergeDQMSplitParams["siteBlacklist"], [],
+                         "Error: Site black list was updated.")        
 
         self.assertEqual(procTaskStageOutHelper.minMergeSize(), 10,
                          "Error: Min merge size for proc task is wrong.")

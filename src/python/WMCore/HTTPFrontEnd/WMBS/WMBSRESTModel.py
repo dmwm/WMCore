@@ -11,7 +11,6 @@ from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.Requests import JSONRequests
 from WMCore.HTTPFrontEnd.ContentTypeHandler import ContentTypeHandler
-from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfoByID
 
 class WMBSRESTModel(RESTModel):
     """
@@ -22,9 +21,29 @@ class WMBSRESTModel(RESTModel):
         
         RESTModel.__init__(self, config)
 
+
+
+        #External couch call
+        self._addMethod("GET", "jobsummary", self.getJobSummary)
+        self._addMethod("GET", "jobstatebysite", self.getJobStateBySite)
+        # batch system status
+        bossAirDAOFactory = DAOFactory(package = "WMCore.BossAir",
+                                       logger = self,
+                                       dbinterface = self.dbi)
+
+        self._addDAO('GET', 'batchjobstatus', "JobStatusForMonitoring",
+                    daoFactory = bossAirDAOFactory)
+
+        self._addDAO('GET', 'batchjobstatusbysite',
+                           "JobStatusByLocation",
+                           daoFactory = bossAirDAOFactory)
+
+
+
         self.daofactory = DAOFactory(package = "WMCore.WMBS", logger = self,
                                      dbinterface = self.dbi)
 
+        self._addDAO('GET', 'listsites', "Locations.List")
         self._addDAO('GET', "listsubtypes", "Monitoring.ListSubTypes")
         self._addDAO('GET', "listjobstates", "Monitoring.ListJobStates")
         self._addDAO('GET', "listjobsbysub", "Monitoring.ListJobsBySub",
@@ -96,7 +115,16 @@ class WMBSRESTModel(RESTModel):
 
         return
     
+    def getJobSummary(self):
+        from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfo
+        return JobInfo.getJobSummaryByWorkflow(self.config.couchConfig)
+
+    def getJobStateBySite(self):
+        from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfo
+        return JobInfo.getJobStateBySite(self.config.couchConfig)
+
     def jobInfoByID(self):
+        from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfoByID
         return JobInfoByID.getJobInfo(self.config.couchConfig)
 
     def jobStatusValidate(self, input):

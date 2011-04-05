@@ -5,8 +5,8 @@ __all__ = ['get_remote_queue', 'get_dbs', 'sitesFromStorageEelements',
            'queueConfigFromConfigObject', 'queueFromConfig']
 
 # Should probably import this but don't want to create the dependency
-WORKQUEUE_REST_NAMESPACE = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
-WORKQUEUE_MONITOR_NAMESPACE = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
+WMBS_REST_NAMESPACE = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
+WWBS_MONITOR_NAMESPACE = 'WMCore.HTTPFrontEnd.WMBS.WMBSMonitorPage'
 
 __queues = {}
 def get_remote_queue(queue, logger):
@@ -90,6 +90,7 @@ def queueConfigFromConfigObject(config):
     if hasattr(wqManager, 'inboxDatabase'):
         wqManager.queueParams['InboxDbName'] = wqManager.inboxDatabase
 
+    qConfig['QueueURL'] = "%s/%s" % (wqManager.couchurl, wqManager.dbname)
     qConfig["BossAirConfig"] = getattr(config.WorkQueueManager, "BossAirConfig", None)
     qConfig["JobDumpConfig"] = getattr(config.WorkQueueManager, "JobDumpConfig", None)
 
@@ -101,20 +102,20 @@ def queueConfigFromConfigObject(config):
             for page in webapp.section_('views').section_('active'):
 
                 if not queueFlag and hasattr(page, "model") \
-                   and page.section_('model').object == WORKQUEUE_REST_NAMESPACE:
-                    qConfig['QueueURL'] = 'http://%s:%s/%s/%s' % (webapp.Webtools.host,
+                   and page.section_('model').object == WMBS_REST_NAMESPACE:
+                    qConfig['WMBSURL'] = 'http://%s:%s/%s/%s' % (webapp.Webtools.host,
                                                               webapp.Webtools.port,
                                                               webapp._internal_name.lower(),
                                                               page._internal_name)
                     queueFlag = True
 
-                if page.object == WORKQUEUE_MONITOR_NAMESPACE:
+                if page.object == WWBS_MONITOR_NAMESPACE:
                     monitorURL = 'http://%s:%s/%s/%s' % (webapp.Webtools.host,
                                                       webapp.Webtools.port,
                                                       webapp._internal_name.lower(),
                                                       page._internal_name)
-        if not queueFlag:
-            raise RuntimeError
+        #if not queueFlag:
+        #    raise RuntimeError
 
     except RuntimeError:
         msg = """Unable to determine WorkQueue QueueURL, Either:

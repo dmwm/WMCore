@@ -32,7 +32,7 @@ def combineListOfDict(matchKey, baseList, applyList, errorKey = None, **kwargs):
         for aItem in applyList:
             #Error handling
             if errorKey and aItem.has_key("error_url"):
-                if resultDict.has_key(errorKey):
+                if resultDict.has_key(errorKey) and resultDict[errorKey]:
                     if type(resultDict[errorKey]) != list:
                         errorKeyCollection = [resultDict[errorKey]]
                     else:
@@ -86,3 +86,14 @@ def addToList(a, b):
     results.extend(convertToList(a))
     results.extend(convertToList(b))
     return results
+
+def splitCouchServiceURL(serviceURL):
+    """
+    split service URL to couchURL and couchdb name
+    serviceURL should be couchURL/dbname format.
+    """
+
+    splitedURL = serviceURL.rstrip('/').rsplit('/', 1)
+
+    print "test", splitedURL
+    return splitedURL[0], splitedURL[1]

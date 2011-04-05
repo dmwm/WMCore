@@ -31,8 +31,17 @@ class GlobalMonitorPage(TemplatedPage):
         """
         The index of the documentation
         """
+        #TODO: template solution is commented out.
+        #If the monitoring view is almost the same use template
+        #otherwise use diffent html
+        #reqmonitorJS = "RequestMonitor.js"
+        frontPage = "index.html"
+        if self.config.serviceLevel == "LocalQueue":
+            #reqmonitorJS = "LocalRequestMonitor.js"
+            frontPage = "LocalIndex.html"
+        #return self.templatepage("FrontPage", reqmonitorJS = reqmonitorJS)
         return serveFile('text/html',
-                    path.join(self.config.html, 'GlobalMonitor','index.html'))
+                    path.join(self.config.html, 'GlobalMonitor', frontPage))
 
     @expose
     def default(self, *args):

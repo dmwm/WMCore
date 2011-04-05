@@ -15,11 +15,6 @@ class WMBS(Service):
         responseType will be either xml or json
         """
         
-        #if self.responseType == 'json':
-            #self.parser = JSONParser()
-        #elif self.responseType == 'xml':
-            #self.parser = XMLParser()
-        
         dict.setdefault("accept_type", "application/json")
         dict.setdefault("content_type", "application/json")
         self.encoder = JsonWrapper.dumps
@@ -52,6 +47,43 @@ class WMBS(Service):
 
         return result
     
+    def getJobSummaryFromCouchDB(self):
+        """
+        get the job status summary by request (workflow) from couchDB
+        """
+        args = {}
+        callname = 'jobsummary'
+        return self._getResult(callname, args = args, verb = "GET")
+
+    def getSiteSummaryFromCouchDB(self):
+        """
+        returns number of complete jobs from the sites recorded in couchDB
+        within the one hour period of calling. This might not the exact number
+        since it could be gotten from the staled cache. (for performance reason)
+        However, it should be close enough monitor sites' health.
+        {'site': 'FNAL', 'complete': 1, 'success': 100, 'jobfailed':2}
+        complete : job is completed but not accounted.
+        """
+        args = {}
+        callname = 'jobstatebysite'
+        return self._getResult(callname, args = args, verb = "GET")
+
+    def getBatchJobStatus(self):
+        """
+        get the normalized job status from batch system
+        """
+        args = {}
+        callname = 'batchjobstatus'
+        return self._getResult(callname, args = args, verb = "GET")
+
+    def getBatchJobStatusBySite(self):
+        """
+        get the normalized job status from batch system by sites
+        """
+        args = {}
+        callname = 'batchjobstatusbysite'
+        return self._getResult(callname, args = args, verb = "GET")
+
     def getResourceInfo(self, tableFormat = True):
         """
         """

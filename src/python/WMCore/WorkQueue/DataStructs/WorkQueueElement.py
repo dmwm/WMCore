@@ -41,6 +41,8 @@ class WorkQueueElement(dict):
         self.setdefault('TeamName', None)
         self.setdefault('EndPolicy', {})
         self.setdefault('ACDC', {})
+        self.setdefault('ChildQueueUrl', None)
+        self.setdefault('WMBSUrl', None)
         # Mask used to constrain MC run/lumi ranges
         self.setdefault('Mask', None)
 

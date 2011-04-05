@@ -16,7 +16,7 @@ from WMCore.Configuration import Configuration
 # The following parameters may need to be changed.
 serverHostName = "HOSTNAME OF WMAGENT MACHINE"
 globalWorkQueuePort = 8571
-localWorkQueuePort = 9997
+wmbsServicePort = 9997
 
 # The work directory and database need to be separate from the ReqMgr
 # installation.
@@ -113,8 +113,7 @@ config.WorkQueueManager.couchurl = couchURL
 config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 
-config.WorkQueueManager.queueParams = {"QueueURL": "http://%s:%s" % (serverHostName, localWorkQueuePort),
-                                       "ParentQueueCouchUrl": globalWorkQueueCouchUrl,
+config.WorkQueueManager.queueParams = {"ParentQueueCouchUrl": globalWorkQueueCouchUrl,
                                        "Teams": agentTeams,
                                        "FullReportInterval": 300}
 config.WorkQueueManager.section_("BossAirConfig")
@@ -230,58 +229,36 @@ config.TaskArchiver.timeOut      = workflowArchiveTimeout
 config.TaskArchiver.WorkQueueParams = {}
 config.TaskArchiver.useWorkQueue = True
 
-config.webapp_('WorkQueueService')
-config.WorkQueueService.default_expires = 0
-config.WorkQueueService.componentDir = os.path.join(config.General.workDir, "WorkQueueService")
-config.WorkQueueService.Webtools.port = localWorkQueuePort
-config.WorkQueueService.Webtools.host = serverHostName
-config.WorkQueueService.Webtools.environment = "devel"
-config.WorkQueueService.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
-config.WorkQueueService.admin = config.Agent.contact
-config.WorkQueueService.title = 'WorkQueue Data Service'
-config.WorkQueueService.description = 'Provide WorkQueue related service call'
+config.webapp_('WMBSService')
+config.WMBSService.default_expires = 0
+config.WMBSService.componentDir = os.path.join(config.General.workDir, "WMBSService")
+config.WMBSService.Webtools.port = wmbsServicePort
+config.WMBSService.Webtools.host = serverHostName
+config.WMBSService.Webtools.environment = "devel"
+config.WMBSService.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
+config.WMBSService.admin = config.Agent.contact
+config.WMBSService.title = 'WMBS Data Service'
+config.WMBSService.description = 'Provide WMBS related service call'
 
-config.WorkQueueService.section_("security")
-config.WorkQueueService.security.dangerously_insecure = True
+config.WMBSService.section_("security")
+config.WMBSService.security.dangerously_insecure = True
 
-config.WorkQueueService.section_('views')
-active = config.WorkQueueService.views.section_('active')
-workqueue = active.section_('workqueue')
-workqueue.object = 'WMCore.WebTools.RESTApi'
-workqueue.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools/')
-workqueue.section_('model')
-workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
-workqueue.level = config.WorkQueueManager.level
-workqueue.section_("BossAirConfig")
-workqueue.BossAirConfig.BossAir = config.BossAir
+config.WMBSService.section_('views')
+active = config.WMBSService.views.section_('active')
+wmbs = active.section_('wmbs')
+wmbs.object = 'WMCore.WebTools.RESTApi'
+wmbs.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/')
+wmbs.section_('model')
+wmbs.model.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
+wmbs.section_('formatter')
+wmbs.formatter.object = 'WMCore.WebTools.RESTFormatter'
 
-workqueue.BossAirConfig.section_("Agent")
-workqueue.BossAirConfig.Agent.agentName = agentName
-workqueue.section_("JobDumpConfig")
-workqueue.JobDumpConfig.JobStateMachine = config.JobStateMachine
+wmbs.section_('couchConfig')
+wmbs.couchConfig.couchURL = couchURL
+wmbs.couchConfig.acdcDBName = acdcDBName
+wmbs.couchConfig.jobDumpDBName = jobDumpDBName
 
-workqueue.section_('couchConfig')
-workqueue.couchConfig.couchURL = couchURL
-workqueue.couchConfig.acdcDBName = acdcDBName
-workqueue.couchConfig.jobDumpDBName = jobDumpDBName
-workqueue.section_('formatter')
-workqueue.formatter.object = 'WMCore.WebTools.RESTFormatter'
-workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
-                            'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService']
-workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
-workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (serverHostName,
-                                                                  config.WorkQueueService.Webtools.port,
-                                                                  'workqueue'))
-workqueuemonitor = active.section_('workqueuemonitor')
-workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
-workqueuemonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools/WorkQueue')
-workqueuemonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'javascript/')
-workqueuemonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'css/')
-workqueuemonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')
-
-workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
-
-wmagent = config.WorkQueueService.views.active.section_('wmagent')
+wmagent = config.WMBSService.views.active.section_('wmagent')
 wmagent.object = 'WMCore.WebTools.RESTApi'
 wmagent.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools/')
 wmagent.section_('model')
@@ -293,7 +270,7 @@ wmagent.couchConfig.couchURL = couchURL
 wmagent.couchConfig.acdcDBName = acdcDBName
 wmagent.couchConfig.jobDumpDBName = "wmagent_jobdump"
 
-wmagentmonitor = config.WorkQueueService.views.active.section_('wmagentmonitor')
+wmagentmonitor = config.WMBSService.views.active.section_('wmagentmonitor')
 wmagentmonitor.object = 'WMCore.HTTPFrontEnd.Agent.AgentMonitorPage'
 wmagentmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
 wmagentmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'javascript/')

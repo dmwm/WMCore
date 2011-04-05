@@ -48,12 +48,11 @@ dependencies = {
                         },
                 'workqueue':{
                         'packages': ['WMCore.WorkQueue+', 'WMCore.Services+', 'WMCore.Wrappers+',
-                                     'WMCore.WMSpec+', 'WMCore.ACDC',
-                                     'WMCore.HTTPFrontEnd', 'WMCore.HTTPFrontEnd.WorkQueue+'],
+                                     'WMCore.WMSpec+', 'WMCore.ACDC'],
                         'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
                                      'WMCore.Database.__init__', 'WMCore.Database.CMSCouch'],
-                        'systems': ['wmc-web', 'wmc-base'],
-                        'statics': ['src/templates/WMCore/WebTools/WorkQueue', 'src/couchapps/WorkQueue+'],
+                        'systems': ['wmc-base'],
+                        'statics': ['src/couchapps/WorkQueue+'],
                         },
                 'wmagent':{
                         'packages': ['WMCore.Agent+', 'WMCore.Algorithms+',

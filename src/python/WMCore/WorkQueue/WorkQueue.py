@@ -95,6 +95,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('BossAirConfig', None)
 
         self.params.setdefault('QueueURL', None) # url this queue is visible on
+        self.params.setdefault('WMBSURL', None) # this will be only set on local Queue
         self.params.setdefault('Teams', [''])
 
         self.params.setdefault('SplittingMapping', {})
@@ -230,7 +231,8 @@ class WorkQueue(WorkQueueBase):
         except TypeError:
             ids = [ids]
 
-        return self.backend.updateElements(*ids, Status = 'Available', ChildQueueUrl = None)
+        return self.backend.updateElements(*ids, Status = 'Available',
+                                           ChildQueueUrl = None, WMBSUrl = None)
 
     def getWork(self, siteJobs, pullingQueueUrl = None, team = None):
         """ 
@@ -255,7 +257,9 @@ class WorkQueue(WorkQueueBase):
 
         # if work is being pulled from us to another queue, mark elements as such
         if pullingQueueUrl:
-            return self._assignToChildQueue(pullingQueueUrl, *matches)
+            return self._assignToChildQueue(pullingQueueUrl,
+                                            self.params['WMBSURL'],
+                                            *matches)
 
         # cache wmspecs for lifetime of function call, likely we will have multiple elements for same spec.
         #TODO: Check to see if we can skip spec loading - need to persist some more details to element
@@ -328,11 +332,12 @@ class WorkQueue(WorkQueueBase):
                          % (sub['id'], match['RequestName']))
         return sub
 
-    def _assignToChildQueue(self, queue, *elements):
+    def _assignToChildQueue(self, queue, wmbsUrl,*elements):
         """Assign work to the provided child queue"""
         for ele in elements:
             ele['Status'] = 'Negotiating'
             ele['ChildQueueUrl'] = queue
+            ele['WMBSUrl'] = wmbsUrl
         work = self.parent_queue.saveElements(*elements)
         requests = ', '.join(list(set(['"%s"' % x['RequestName'] for x in work])))
         self.logger.info('Acquired work for request(s): %s' % requests)
@@ -577,8 +582,8 @@ class WorkQueue(WorkQueueBase):
         if not work:
             self.logger.info('No available work in parent queue.')
             return 0
-
-        work = self._assignToChildQueue(self.params['QueueURL'], *work)
+        work = self._assignToChildQueue(self.params['QueueURL'],
+                                        self.params['WMBSURL'], *work)
         return len(work)
 
     def performQueueCleanupActions(self, full = False, skipWMBS = False):

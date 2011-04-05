@@ -1,6 +1,7 @@
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.WMAgent.WMAgent import WMAgent
+from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import splitCouchServiceURL
 
 def getAgentOverview(serviceURL, serviceLevel):
 
@@ -34,7 +35,8 @@ def getAgentInfoFromReqMgr(serviceURL):
 
 def getAgentInfoFromGlobalQueue(serviceURL):
 
-    globalQ = WorkQueue({'endpoint': serviceURL})
+    url, dbName = splitCouchServiceURL(serviceURL)
+    globalQ = WorkQueue(url, dbName)
     try:
         childQueues = globalQ.getChildQueues()
     except Exception, ex:
@@ -46,14 +48,31 @@ def getAgentInfoFromGlobalQueue(serviceURL):
 
     agents = []
     for childQueue in childQueues:
-        agents.append(getAgentInfoFromLocalQueue(childQueue))
+        agents.extend(getAgentInfoFromLocalQueue(childQueue))
     return agents
 
 def getAgentInfoFromLocalQueue(serviceURL):
     """ get agent status from local agent """
+    url, dbName = splitCouchServiceURL(serviceURL)
+    localQ = WorkQueue(url, dbName)
 
+    try:
+        wmbsUrl = localQ.getWMBSUrl()
+    except Exception, ex:
+        errorInfo = {}
+        errorInfo['url'] = serviceURL
+        errorInfo['status'] = "Local Queue down: %s" % serviceURL
+        errorInfo['acdc'] = 'N/A'
+        return [errorInfo]
+
+    agents = []
+    for url in wmbsUrl:
+        agents.append(getAgentInfoFromLocalQueue(url))
+    return agents
+
+def getAgentInfoFromWMBS(serviceURL):
     agentInfo = {}
-    agentURL = serviceURL.replace('/workqueue', '/wmagent')
+    agentURL = serviceURL.replace('/wmbs', '/wmagent')
     agentService = WMAgent({'endpoint': agentURL})
     try:
         agent = agentService.getAgentStatus(detail = False)

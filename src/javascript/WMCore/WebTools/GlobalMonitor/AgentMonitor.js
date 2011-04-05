@@ -33,7 +33,7 @@ WMCore.GlobalMonitor.AgentMonitor.statusTable = function(divID){
                  {key: "acdc", formatter:formatACDCLink}]
         };
 
-    var dataUrl = "/reqmgr/monitorSvc/agentmonitor";
+    var dataUrl = "../monitorSvc/agentmonitor";
     var dataSource = WMCore.createDataSource(dataUrl, dataSchema);
 
     var dataTable = WMCore.createDataTable(divID, dataSource,

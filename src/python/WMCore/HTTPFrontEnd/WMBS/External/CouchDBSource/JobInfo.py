@@ -104,3 +104,44 @@ def getJobSummaryByWorkflow(couchConfig):
         formatted.append(dictItem)
 
     return formatted
+
+def getJobStateBySite(couchConfig):
+    """
+    report jobstatus by site within hour period
+    only for complete jobs (complete, success, jobfailed states)
+    """
+    try:
+        couchDBBase = CouchDBConnectionBase(couchConfig)
+        changeStateDB = couchDBBase.getCouchJobsDB()
+    except:
+        #TODO log the error in the server
+        #If the server is down it doesn't throw CouchError,
+        #Need to distinquish between server down and CouchError
+        return [{"error": 'Couch connection error'}]
+
+    options = {"group": True, "group_level": 2, "stale": "ok"}
+
+    result = changeStateDB.loadView("JobDump", "jobStateBySite", options)
+
+    # reformat to match other type.
+    formatted = []
+
+    currentSite = None
+    siteDict = None
+    #result is sorted by site.
+    for item in result['rows']:
+        if currentSite == item['key'][0]:
+            siteDict[item['key'][1]] = item['value']
+        else:
+            if siteDict != None:
+                formatted.append(siteDict)
+            siteDict = {}
+            siteDict['site'] = item['key'][0]
+            siteDict[item['key'][1]] = item['value']
+            currentSite = item['key'][0]
+
+    if siteDict != None:
+        formatted.append(siteDict)
+
+    return formatted
+

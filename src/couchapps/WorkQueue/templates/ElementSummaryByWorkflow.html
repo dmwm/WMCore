@@ -1,0 +1,27 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title> {{request}} : WorkQueue Elements</title>
+<!--YUI Library -->
+{{>yui-lib}}
+
+<!-- WorkQueue library -->
+{{>workqueue-common-lib}}
+
+<script src="../../js/ElementInfoByWorkflow.js"></script>
+
+</head>
+<body class="yui-skin-sam">
+<h3> Workqueue Elements for {{request}} </h3>
+<div id="elements"></div>
+<script>
+
+var oArgs = {};
+oArgs.divID = "elements";
+oArgs.workflow = "{{{request}}}";
+
+WQ.ElementInfoByWorkflow.elementTable(oArgs);
+
+</script>
+</body>
+</html>

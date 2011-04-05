@@ -90,13 +90,14 @@ active = views.section_('active')
 
 active.section_('GlobalMonitor')
 active.GlobalMonitor.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorPage'
-active.GlobalMonitor.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
+active.GlobalMonitor.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/GlobalQueue')
 active.GlobalMonitor.javascript = os.path.join(getWMBASE(), 'src/javascript')
 active.GlobalMonitor.html = os.path.join(getWMBASE(), 'src/html')
+active.GlobalMonitor.serviceLevel = 'RequestManager'
 
 active.section_('monitorSvc')
 active.monitorSvc.serviceURL = "%s/reqmgr/reqMgr" % reqMgrUrl
-active.monitorSvc.serviceLevel = 'RequestManager'
+active.monitorSvc.serviceLevel = active.GlobalMonitor.serviceLevel
 active.monitorSvc.section_('model')
 active.monitorSvc.section_('formatter')
 active.monitorSvc.object = 'WMCore.WebTools.RESTApi'
@@ -115,40 +116,4 @@ config.WorkQueueManager.pollInterval = 600
 config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
                                         'endpoint': "%s/reqMgr/" % reqMgrUrl}
-
-config.webapp_('WorkQueueService')
-config.WorkQueueService.default_expires = 0
-config.WorkQueueService.componentDir = os.path.join(config.General.workDir, "WorkQueueService")
-config.WorkQueueService.Webtools.port = globalWorkQueuePort
-config.WorkQueueService.Webtools.host = serverHostName
-config.WorkQueueService.Webtools.environment = "devel"
-config.WorkQueueService.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
-config.WorkQueueService.admin = config.Agent.contact
-config.WorkQueueService.title = 'WorkQueue Data Service'
-config.WorkQueueService.description = 'Provide WorkQueue related service call'
-
-config.WorkQueueService.section_("security")
-config.WorkQueueService.security.dangerously_insecure = True
-
-config.WorkQueueService.section_('views')
-active = config.WorkQueueService.views.section_('active')
-workqueue = active.section_('workqueue')
-workqueue.object = 'WMCore.WebTools.RESTApi'
-workqueue.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/')
-workqueue.section_('model')
-workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
-workqueue.level = config.WorkQueueManager.level
-workqueue.section_('formatter')
-workqueue.formatter.object = 'WMCore.WebTools.RESTFormatter'
-workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
-                            'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService']
-workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
-workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (serverHostName,
-                                                                  config.WorkQueueService.Webtools.port,
-                                                                  'workqueue'))
-workqueuemonitor = active.section_('workqueuemonitor')
-workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
-workqueuemonitor.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/WorkQueue')
-workqueuemonitor.javascript = os.path.join(getWMBASE(), 'src/javascript/')
-workqueuemonitor.html = os.path.join(getWMBASE(), 'src/html/')
 

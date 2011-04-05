@@ -1,5 +1,7 @@
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+from WMCore.Services.WMBS.WMBS import WMBS
+from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import splitCouchServiceURL
 
 def getSiteOverview(serviceURL, serviceLevel):
 
@@ -31,7 +33,8 @@ def getSiteInfoFromReqMgr(serviceURL):
 
 def getSiteInfoFromGlobalQueue(serviceURL):
 
-    globalQ = WorkQueue({'endpoint': serviceURL})
+    url, dbName = splitCouchServiceURL(serviceURL)
+    globalQ = WorkQueue(url, dbName)
     try:
         queues = globalQ.getChildQueues()
     except Exception, ex:
@@ -47,9 +50,28 @@ def getSiteInfoFromGlobalQueue(serviceURL):
 def getSiteInfoFromLocalQueue(serviceURL):
     """ get agent status from local agent """
 
-    wqService = WorkQueue({'endpoint': serviceURL})
+    url, dbName = splitCouchServiceURL(serviceURL)
+    wqService = WorkQueue(url, dbName)
     try:
-        batchJobs = wqService.getBatchJobStatusBySite()
+        wmbsUrls = wqService.getWMBSUrl()
+    except Exception, ex:
+        errorInfo = {}
+        errorInfo['site_name'] = serviceURL
+        return [errorInfo]
+
+    siteInfo = []
+    for url in wmbsUrls:
+        _combineSites(siteInfo, getSiteInfoFromWMBSService(url))
+    return siteInfo
+
+def getSiteInfoFromWMBSService(serviceURL):
+    wmbsSvc = WMBS({'endpoint': serviceURL})
+    try:
+        batchJobs = wmbsSvc.getBatchJobStatusBySite()
+        completeJobs = wmbsSvc.getSiteSummaryFromCouchDB()
+        #TODO need to find a way to combine the site
+        #batch job has the format of {'site_name': "T1_US_FNAL"}
+        #and complete jobs has the format of {'site': 'FNAL'}
     except Exception, ex:
         return {}
 

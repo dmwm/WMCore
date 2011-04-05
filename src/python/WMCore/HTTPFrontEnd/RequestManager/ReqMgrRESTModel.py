@@ -21,14 +21,6 @@ import threading
 import urllib
 import logging
 
-from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.Overview \
-     import getGlobalSummaryView
-from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.ResourceMonitor \
-     import getResourceOverview
-from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.AgentMonitor \
-     import getAgentOverview
-from WMCore.HTTPFrontEnd.RequestManager.ExternalMethods.SiteMonitor \
-     import getSiteOverview
 
 class ReqMgrRESTModel(RESTModel):
     """ The REST interface to the ReqMgr database.  Documentation may
@@ -125,11 +117,6 @@ class ReqMgrRESTModel(RESTModel):
                         validation = [self.isalnum])
         self._addMethod('GET', 'requestnames', self.getRequestNames,
                        args = [], secured=True, expires = 0)
-        self._addMethod("GET", "overview", getGlobalSummaryView, secured=True) #expires=16000
-        self._addMethod("GET", "resourceInfo", getResourceOverview, secured=True)
-        self._addMethod("GET", "agentoverview", getAgentOverview,
-                       secured=True, args = ['detail'])
-        self._addMethod("GET", "siteoverview", getSiteOverview, secured=True)
         
         cherrypy.engine.subscribe('start_thread', self.initThread)
     

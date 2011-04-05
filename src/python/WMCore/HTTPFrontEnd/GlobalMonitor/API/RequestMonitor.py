@@ -2,16 +2,19 @@ import logging
 
 import WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter as DFormatter
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import combineListOfDict
+from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import splitCouchServiceURL
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+from WMCore.Services.WMBS.WMBS import WMBS
 
 def getRequestOverview(serviceURL, serviceLevel):
+
+    print serviceLevel, serviceURL
 
     if serviceLevel == "RequestManager":
         return getRequestInfoFromReqMgr(serviceURL)
     elif serviceLevel == "GlobalQueue":
         return getRequestInfoFromGlobalQueue(serviceURL)
-
     elif serviceLevel == "LocalQueue":
         return getRequestInfoFromLocalQueue(serviceURL)
     else:
@@ -38,20 +41,24 @@ def getRequestInfoFromReqMgr(serviceURL):
 
 def getRequestInfoFromGlobalQueue(serviceURL):
     """ get the request info from global queue """
-
-    service = WorkQueue({'endpoint': serviceURL})
+    url, dbName = splitCouchServiceURL(serviceURL)
+    service = WorkQueue(url, dbName)
     try:
         jobInfo = service.getTopLevelJobsByRequest()
         qInfo = service.getChildQueuesByRequest()
+        print qInfo
+        childQueueURLs = set()
+        for item in qInfo:
+            childQueueURLs.add(item['local_queue'])
+
     except Exception, ex:
         logging.error(str(ex))
         return DFormatter.errorFormatter(serviceURL, "GlobalQueue Down")
     else:
         baseResults = combineListOfDict('request_name', jobInfo, qInfo,
                                     local_queue = DFormatter.addToList)
-        urls = service.getChildQueues()
         localResults = []
-        for url in urls:
+        for url in childQueueURLs:
             localResults.append(getRequestOverview(url, "LocalQueue"))
 
         localQRules = {'pending': DFormatter.add, 'cooloff': DFormatter.add,
@@ -67,13 +74,26 @@ def getRequestInfoFromGlobalQueue(serviceURL):
 def getRequestInfoFromLocalQueue(serviceURL):
     """ get the request info from local queue """
 
-    service = WorkQueue({'endpoint': serviceURL})
+    url, dbName = splitCouchServiceURL(serviceURL)
+    service = WorkQueue(serviceURL, dbName)
     try:
+        wmbsUrls = service.getWMBSUrl()
         jobStatusInfo = service.getJobStatusByRequest()
-        batchJobs = service.getBatchJobStatus()
     except Exception, ex:
         logging.error(str(ex))
         return DFormatter.errorFormatter(serviceURL, "LocalQueue Down")
+
+    # assumes one to one relation between localqueue and wmbs
+    return getRequestInfoFromWMBS(wmbsUrls[0], jobStatusInfo)
+
+def getRequestInfoFromWMBS(serviceURL, jobStatusInfo):
+
+    service = WMBS({'endpoint':serviceURL})
+    try:
+        batchJobs = service.getBatchJobStatus()
+    except Exception, ex:
+        logging.error(str(ex))
+        return DFormatter.errorFormatter(serviceURL, "WMBS Service Dowtn")
 
     try:
         couchJobs = service.getJobSummaryFromCouchDB()

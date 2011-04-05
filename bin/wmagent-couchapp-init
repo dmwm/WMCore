@@ -102,7 +102,15 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")    
 
 	if hasattr(wmagentConfig, "WorkQueueManager"):
-        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname, "WorkQueue")
-        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase, "WorkQueue")
+        #installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname, "WorkQueue")
+        #installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase, "WorkQueue")
+
+        #TODO couchDB name is hardcoded instead of getting the name from configuration.
+        # This is wrong but I couldn't find a easy way not a easy way (mostly due to lack of
+        # my couchDB knowledge.There must be a easy way)for workqueue monitor to determine
+        # which database it is looking at.(currently hard coded in javascript)
+        # revert back to use config when it is implemented
+        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, "workqueue", "WorkQueue")
+        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, "workqueue_inbox", "WorkQueue")
 
     sys.exit(0)

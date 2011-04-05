@@ -9,7 +9,7 @@ WMCore.namespace("GlobalMonitor.RequestMonitor");
 WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                                                         filterFunction){
 
-    var postfixLink = "/template/ElementSummaryByWorkflow?workflow=";
+    var postfixLink = "/_design/WorkQueue/_rewrite/elementsInfo/";
 
     var formatRequest = function(elCell, oRecord, oColumn, sData) {
             elCell.innerHTML = "<a href='../view/details/" + sData  +
@@ -22,11 +22,11 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                 elCell.innerHTML = "Not Assigned";
             } else {
                 host = sData.split('/')[2];
-                elCell.innerHTML = "<a href='" + sData  + "monitor" + postfixLink +
+                elCell.innerHTML = "<a href='" + sData + postfixLink +
                                      oRecord.getData("request_name") + "' target='_blank'>" +
                                      host + "</a>";
             };
-        };
+    };
 
     var formatLocalQ = function(elCell, oRecord, oColumn, sData) {
             var host;
@@ -40,7 +40,7 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                          host + "</a> <br>";
                 };
         };
-        };
+    };
 
     var formatCouchDB = function(elCell, oRecord, oColumn, sData) {
             var host;
@@ -48,12 +48,13 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                  elCell.innerHTML = "<font color='red'> " + oRecord.getData("error") + "<font>";
                  return;
             };
-            localQueueList  = oRecord.getData("local_queue")
-            if (!localQueueList || !localQueueList.length) {
+
+            if (!sData) {
+                localQueueList  = oRecord.getData("local_queue")
+                if (!localQueueList || !localQueueList.length) {
                  elCell.innerHTML = "Not Assigned";
                  return;
-            };
-            if (!sData) {
+                };
                 if (oRecord.getData("couch_error")) {
                     elCell.innerHTML = "<font color='red'> Can't connect Job DB <font>";
                 } else {
@@ -78,7 +79,8 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                     elCell.innerHTML = sData;
                 };
             };
-        };
+    };
+
     var formatPending = function(elCell, oRecord, oColumn, sData) {
             formatJobLink(elCell, oRecord, oColumn, sData, "pending")
     };

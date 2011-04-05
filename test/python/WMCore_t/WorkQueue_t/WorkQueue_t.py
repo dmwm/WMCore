@@ -57,10 +57,8 @@ def syncQueues(queue):
     """Sync parent & local queues and split work
         Workaround having to wait for couchdb replication and splitting polling
     """
-    queue.backend.forceQueueSync()
     work = queue.processInboundWork()
     queue.performQueueCleanupActions()
-    queue.backend.forceQueueSync()
     return work
 
 class WorkQueueTest(WorkQueueTestCase):

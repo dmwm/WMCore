@@ -37,11 +37,9 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         """
         Pull in work
 	    """
-        work = self.pullWork()
-        if work:
-            #TODO: guess could use changes for this...
-            self.queue.logger.info('Waiting 15 seconds for replication')
-            time.sleep(15) # give replication a chance
+        self.pullWork()
+        # process if we get work or not - we may have to split old work
+        # i.e. if transient errors were seen during splitting
         self.processWork()
         return
 

@@ -584,6 +584,9 @@ class WorkQueue(WorkQueueBase):
             return 0
         work = self._assignToChildQueue(self.params['QueueURL'],
                                         self.params['WMBSURL'], *work)
+
+        # do this whether we have work or not - other events i.e. cancel may have happened
+        self.backend.pullFromParent()
         return len(work)
 
     def performQueueCleanupActions(self, full = False, skipWMBS = False):
@@ -599,6 +602,7 @@ class WorkQueue(WorkQueueBase):
         self.backend.fixConflicts() # before doing anything fix any conflicts
 
         # first check for inbound changes
+        self.backend.pullFromParent()
         wf_to_cancel = set([x['RequestName'] for x in self.statusInbox('CancelRequested')])
         for wf in wf_to_cancel:  # cancel work
             self.cancelWork(WorkflowName = wf)
@@ -634,6 +638,7 @@ class WorkQueue(WorkQueueBase):
 
         self.backend.deleteElements(*finished_elements)
 
+        self.backend.sendToParent() # update parent with new status's
 
     def _splitWork(self, wmspec, parentQueueId = None,
                    data = None, mask = None, team = None):

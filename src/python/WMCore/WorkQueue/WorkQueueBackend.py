@@ -30,38 +30,34 @@ class WorkQueueBackend(object):
         self.db_url = "%s/%s" % (self.db['host'], self.db.name)
         self.inbox = self.server.connectDatabase(inbox_name, create = False)
 
-        self._setupReplication(self.parentCouchUrl, queueUrl)
-
-
-    def _setupReplication(self, source = None, queueUrl = None):
-        """Start backend replication
-
-        Parent db <- (Bi-directional) -> Local inbox"""
-        if self.parentCouchUrl and queueUrl:
-            self.server.replicate(source = self.parentCouchUrl,
-                                  destination = "%s/%s" % (self.inbox['host'], self.inbox.name),
-                                  continuous = True,
-                                  filter = 'WorkQueue/childQueueFilter',
-                                  query_params = {'queueUrl' : queueUrl})
-            self.server.replicate(source = "%s/%s" % (self.inbox['host'], self.inbox.name),
-                                  destination = self.parentCouchUrl,
-                                  continuous = True,
-                                  filter = 'WorkQueue/childQueueFilter',
-                                  query_params = {'queueUrl' : queueUrl})
-
 
     def forceQueueSync(self):
         """Force a blocking replication
             - for use mainly in tests"""
-        if self.parentCouchUrl and self.queueUrl:
-            self.server.replicate(source = self.parentCouchUrl,
-                                  destination = "%s/%s" % (self.inbox['host'], self.inbox.name),
-                                  filter = 'WorkQueue/childQueueFilter',
-                                  query_params = {'queueUrl' : self.queueUrl})
-            self.server.replicate(source = "%s/%s" % (self.inbox['host'], self.inbox.name),
-                                  destination = self.parentCouchUrl,
-                                  filter = 'WorkQueue/childQueueFilter',
-                                  query_params = {'queueUrl' : self.queueUrl})
+        self.pullFromParent()
+        self.sendToParent()
+
+    def pullFromParent(self):
+        """Replicate from parent couch - blocking"""
+        try:
+            if self.parentCouchUrl and self.queueUrl:
+                self.server.replicate(source = self.parentCouchUrl,
+                                      destination = "%s/%s" % (self.inbox['host'], self.inbox.name),
+                                      filter = 'WorkQueue/childQueueFilter',
+                                      query_params = {'queueUrl' : self.queueUrl})
+        except StandardError, ex:
+            self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
+
+    def sendToParent(self):
+        """Replicate to parent couch - blocking"""
+        try:
+            if self.parentCouchUrl and self.queueUrl:
+                self.server.replicate(source = "%s/%s" % (self.inbox['host'], self.inbox.name),
+                                      destination = self.parentCouchUrl,
+                                      filter = 'WorkQueue/childQueueFilter',
+                                      query_params = {'queueUrl' : self.queueUrl})
+        except StandardError, ex:
+                self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
 
     def getElementsForSplitting(self):

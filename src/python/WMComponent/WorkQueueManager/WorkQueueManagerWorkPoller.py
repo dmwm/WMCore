@@ -53,7 +53,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
 
     def pullWork(self):
         """Get work from parent"""
-        self.queue.logger.info("Pulling work from %s" % self.queue.params['ParentQueue'])
+        self.queue.logger.info("Pulling work from %s" % self.queue.parent_queue.queueUrl)
         work = 0
         try:
             if self.retrieveCondition():

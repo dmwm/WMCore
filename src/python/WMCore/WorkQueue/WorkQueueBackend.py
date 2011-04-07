@@ -45,7 +45,7 @@ class WorkQueueBackend(object):
                                       destination = "%s/%s" % (self.inbox['host'], self.inbox.name),
                                       filter = 'WorkQueue/childQueueFilter',
                                       query_params = {'queueUrl' : self.queueUrl})
-        except StandardError, ex:
+        except Exception, ex:
             self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
     def sendToParent(self):
@@ -56,7 +56,7 @@ class WorkQueueBackend(object):
                                       destination = self.parentCouchUrl,
                                       filter = 'WorkQueue/childQueueFilter',
                                       query_params = {'queueUrl' : self.queueUrl})
-        except StandardError, ex:
+        except Exception, ex:
                 self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
 

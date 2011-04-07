@@ -1,6 +1,6 @@
 function(doc) {
    var ele = doc["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
-   if (ele['ChildQueueUrl']) {
+   if (ele && ele['ChildQueueUrl']) {
        emit(ele['ChildQueueUrl'], null);
-   };
+   }
 }

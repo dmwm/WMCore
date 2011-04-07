@@ -860,6 +860,26 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data, 'taskPriority', None)
 
+    def addNotification(self, target):
+        """
+        _addNotification_
+
+        Add a target to be notified on workflow completion
+        """
+
+        self.data.notifications.targets.append(target)
+        return
+
+    def getNotifications(self):
+        """
+        _getNotifications_
+
+        Get all targets for notification at workflow completion
+        """
+
+        return self.data.notifications.targets
+
+    
 class WMTask(ConfigSectionTree):
     """
     _WMTask_
@@ -880,6 +900,8 @@ class WMTask(ConfigSectionTree):
         self.section_("pythonLibs")
         self.section_("constraints")
         self.section_("input")
+        self.section_("notifications")
+        self.notifications.targets = []
         self.input.sandbox = None
         self.input.section_("splitting")
         self.input.splitting.algorithm = None

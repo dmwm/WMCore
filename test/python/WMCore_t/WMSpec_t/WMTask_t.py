@@ -313,6 +313,28 @@ class WMTaskTest(unittest.TestCase):
         # Should handle ints
         testTask.setTaskPriority(priority = 2)
         self.assertEqual(testTask.getTaskPriority(), 2)
+        return
+
+    def testAddNotifications(self):
+        """
+        _testAddNotifications_
+
+        Test whether we can add notification addresses
+        """
+
+        testTask = makeWMTask("TestTask")
+        testTask.setTaskType("Processing")
+
+        targetList = ['loser@fnal.gov', 'loser@cern.ch']
+
+        self.assertEqual(testTask.getNotifications(), [])
+
+        for x in targetList:
+            testTask.addNotification(target = x)
+
+        self.assertEqual(testTask.getNotifications(), targetList)
+
+        
 
 if __name__ == '__main__':
     unittest.main()

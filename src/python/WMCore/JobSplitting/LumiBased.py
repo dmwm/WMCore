@@ -82,7 +82,11 @@ class LumiBased(JobFactory):
         myThread = threading.currentThread()
 
         lumisPerJob  = int(kwargs.get('lumis_per_job', 1))
-        splitOnFile  = bool(kwargs.get('split_files_between_job', False))
+
+        # This is off until we resolve the problems with it.
+        #splitOnFile  = bool(kwargs.get('split_files_between_job', False))
+        
+        splitOnFile = True
         collectionName  = kwargs.get('collectionName', None)
         splitOnRun   = kwargs.get('splitOnRun', True)
 

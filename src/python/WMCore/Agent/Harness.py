@@ -405,7 +405,7 @@ class Harness:
             msg = 'None'
             self.prepareToStart()
             while True:
-                pass
+                time.sleep(360)
 
         except Exception, ex:
             if self.state == 'initialize':

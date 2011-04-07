@@ -1,6 +1,23 @@
 function(doc, site) {
     var ele = doc["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
-    ele.InsertTime = doc.timestamp
-    ele.UpdateTime = doc.updatetime
-    emit([ele.RequestName, ele.Status], ele);
+    emit([ele.RequestName, ele.Status], {'RequestName':ele.RequestName,
+                                         'Inputs': ele.Inputs,
+                                         'Jobs': ele.Jobs,
+                                         'SiteWhitelist': ele.SiteWhitelist,
+                                         'SiteBlacklist': ele.SiteBlacklist,
+                                         'Dbs': ele.Dbs,
+                                         'Task': ele.Task,
+                                         'Priority': ele.Priority,
+                                         'Status': ele.Status,
+                                         'EventsWritten': ele.EventsWritten,
+                                         'FilesProcessed': ele.FilesProcessed,
+                                         'PercentComplete': ele.PercentComplete,
+                                         'PercentSuccess': ele.PercentSuccess,
+                                         'TeamName': ele.TeamName,
+                                         'ChildQueueUrl': ele.ChildQueueUrl,
+                                         'WMBSUrl': ele.WMBSUrl,
+                                         'ACDC': ele.ACDC,
+                                         'InsertTime': doc.timestamp,
+                                         'UpdateTime': doc.updatetime
+                                         });
 }

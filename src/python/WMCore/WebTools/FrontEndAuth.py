@@ -29,7 +29,7 @@ class FrontEndAuth(cherrypy.Tool):
         the user-agent requests a page of the back-end app.
         """
         # Sets initial user information for this request
-        assert(getattr(cherrypy.request, "user", None), None)
+        assert(getattr(cherrypy.request, "user", None) == None)
         cherrypy.request.user = {'dn': None,
                                 'method': None,
                                 'login': None,

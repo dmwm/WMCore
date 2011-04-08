@@ -466,6 +466,13 @@ class JobCreatorPoller(BaseWorkerThread):
             jobSplittingFunction = runSplitter(jobFactory = wmbsJobFactory,
                                                splitParams = splitParams)
 
+            # Now we get to find out how many jobs there are.
+            jobNumber = self.countJobs.execute(workflow = workflow.id,
+                                               conn = myThread.transaction.conn, 
+                                               transaction = True)
+            jobNumber += splitParams.get('initial_lfn_counter', 0)
+            logging.debug("Have %i jobs for this workflow already" % (jobNumber))
+
             continueSubscription = True
             while continueSubscription:
                 # This loop runs over the jobFactory,
@@ -491,13 +498,7 @@ class JobCreatorPoller(BaseWorkerThread):
                     myThread.transaction.commit()
                     break
 
-                # Now we get to find out what job they are.
-                jobNumber = self.countJobs.execute(workflow = workflow.id,
-                                                   conn = myThread.transaction.conn, 
-                                                   transaction = True)
-                jobNumber += splitParams.get('initial_lfn_counter', 0)
-                logging.debug("Have %i jobs for this workflow already" % (jobNumber))
-            
+                            
                 # Assemble a dict of all the info
                 processDict = {'workflow': workflow,
                                'wmWorkload': wmWorkload, 'wmTaskName': wmTask.getPathName(),

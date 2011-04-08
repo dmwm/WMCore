@@ -13,6 +13,7 @@ class ListThresholdsForSubmit(DBFormatter):
     sql = """SELECT wmbs_location.site_name AS site_name,
                     wmbs_location.se_name AS se_name,
                     wmbs_location.job_slots,
+                    wmbs_location.cms_name AS cms_name,
                     rc_threshold.max_slots,
                     wmbs_sub_types.name AS task_type,
                     job_count.total AS task_running_jobs,
@@ -76,6 +77,7 @@ class ListThresholdsForSubmit(DBFormatter):
             threshold["max_slots"]         = result["max_slots"]
             threshold["se_name"]           = result["se_name"]
             threshold["priority"]          = result["priority"]
+            threshold['cms_name']          = result["cms_name"]
 
             totalRunning[siteName] += result["task_running_jobs"]
             formattedResults[siteName].append(threshold)

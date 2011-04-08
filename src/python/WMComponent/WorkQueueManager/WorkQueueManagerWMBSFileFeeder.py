@@ -11,7 +11,7 @@ import time
 import random
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.WorkQueue.WMBSHelper import freeSlots
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Job import Job
 
@@ -28,8 +28,6 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         self.queue = queue
         
         self.previousWorkList = []
-        
-        self.resourceControl = ResourceControl()
 
     def setup(self, parameters):
         """
@@ -49,31 +47,18 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
             self.getWorks()
         
     def getWorks(self):
-        
-        
+        """
+        Inject work into wmbs for idle sites
+        """
         self.queue.logger.info("Getting work and feeding WMBS files")
 
         # need to make sure jobs are created
-        siteRCDict = self.resourceControl.listThresholdsForCreate()
-        
-        workQueueDict = {}
+        resources = freeSlots(minusRunning = True)
 
-        for site in siteRCDict.keys():
-            #This is the number of free slots
-            # - the number of Created but not Exectuing jobs
-            freeSlots = siteRCDict[site]['total_slots'] - siteRCDict[site]['running_jobs'] 
-            #I need freeSlots jobs on site location
-            self.queue.logger.info("""I need %s jobs on site %s: 
-                                      %s total slots, %s pending jobs"""
-                                      % (freeSlots, site,
-                                         siteRCDict[site]['total_slots'],
-                                         siteRCDict[site]['running_jobs']))
+        for site in resources:
+            self.queue.logger.info("I need %d jobs on site %s" % (resources[site], site))
 
-            if freeSlots < 0:
-                freeSlots = 0
-            workQueueDict[site] = freeSlots
-
-        self.previousWorkList = self.queue.getWork(workQueueDict)
+        self.previousWorkList = self.queue.getWork(resources)
         self.queue.logger.info("%s of units of work acquired for file creation" 
                                % len(self.previousWorkList))
         return

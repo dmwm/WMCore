@@ -17,7 +17,7 @@ class JobStatusByLocation(DBFormatter):
     """
 
 
-    sql = """SELECT wl.site_name AS site_name, wl.job_slots as job_slots,
+    sql = """SELECT wl.cms_name AS site_name, wl.job_slots as job_slots,
                     count(rj.wmbs_id) AS num_jobs, 
                     st.name AS status, wl.plugin AS plugin
                FROM bl_runjob rj

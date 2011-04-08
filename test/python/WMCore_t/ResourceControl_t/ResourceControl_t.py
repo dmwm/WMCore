@@ -166,7 +166,7 @@ class ResourceControlTest(unittest.TestCase):
         jobs.
         """
         myResourceControl = ResourceControl()
-        myResourceControl.insertSite("testSite1", 10, "testSE1", "testCE1")
+        myResourceControl.insertSite("testSite1", 10, "testSE1", "testCE1", "T1_US_FNAL")
         myResourceControl.insertSite("testSite2", 20, "testSE2", "testCE2")        
 
         myResourceControl.insertThreshold("testSite1", "Processing", 20)
@@ -307,17 +307,22 @@ class ResourceControlTest(unittest.TestCase):
         # another running job without a location.
         assert createThresholds["testSite2"]["running_jobs"] == 2, \
                "Error: Wrong number of running jobs for site 2"
+        # We should also have a phedex_name
+        self.assertEqual(createThresholds["testSite1"]["cms_name"], "T1_US_FNAL")
+        self.assertEqual(createThresholds["testSite2"]["cms_name"], None)
 
         mergeThreshold1 = None
         mergeThreshold2 = None
         procThreshold1  = None
         procThreshold2  = None
         for threshold in submitThresholds["testSite1"]:
+            self.assertEqual(threshold['cms_name'], 'T1_US_FNAL')
             if threshold['task_type'] == "Merge":
                 mergeThreshold1 = threshold
             elif threshold['task_type'] == "Processing":
                 procThreshold1 = threshold
         for threshold in submitThresholds["testSite2"]:
+            self.assertEqual(threshold['cms_name'], None)
             if threshold['task_type'] == "Merge":
                 mergeThreshold2 = threshold
             elif threshold['task_type'] == "Processing":

@@ -36,6 +36,7 @@ from WMCore.Services.UUID import makeUUID
 from WMCore.WMBS.Job import Job
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
+from WMCore.ResourceControl.ResourceControl import ResourceControl
 
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
@@ -146,7 +147,9 @@ class WorkQueueTest(WorkQueueTestCase):
                                DbName = 'workqueue_t')
 
         # create relevant sites in wmbs
+        rc = ResourceControl()
         for site, se in self.queue.SiteDB.mapping.items():
+            rc.insertSite(site, 100, se, cmsName = site)
             daofactory = DAOFactory(package = "WMCore.WMBS",
                                     logger = threading.currentThread().logger,
                                     dbinterface = threading.currentThread().dbi)
@@ -900,6 +903,15 @@ class WorkQueueTest(WorkQueueTestCase):
         # pull works again
         self.assertEqual(self.localQueue.pullWork({'SiteA' : 1}), 1)
         
-
+    def testSitesFromResourceControl(self):
+        """Test sites from resource control"""
+        # Most tests pull work for specific sites (to give us control)
+        # In reality site list will come from resource control so test
+        # that here (just a simple check that we can get sites from rc)
+        self.globalQueue.queueWork(self.spec.specUrl())
+        self.assertEqual(self.localQueue.pullWork(), 1)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.status()), 1)
+    
 if __name__ == "__main__":
     unittest.main()

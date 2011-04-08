@@ -11,7 +11,7 @@ import copy
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ListThresholdsForCreate(DBFormatter):
-    assignedSQL = """SELECT wmbs_location.site_name, wmbs_location.job_slots,
+    assignedSQL = """SELECT wmbs_location.site_name, wmbs_location.job_slots, wmbs_location.cms_name,
                             COUNT(wmbs_job.id) AS total FROM wmbs_job
                        INNER JOIN wmbs_job_state ON
                          wmbs_job.state = wmbs_job_state.id
@@ -25,6 +25,7 @@ class ListThresholdsForCreate(DBFormatter):
                      GROUP BY wmbs_location.site_name, wmbs_location.job_slots"""
     
     unassignedSQL = """SELECT wmbs_location.site_name, wmbs_location.job_slots,
+                              wmbs_location.cms_name,
                               unassigned_jobs.job, unassigned_jobs.valid FROM wmbs_location
                          LEFT OUTER JOIN
                            (SELECT DISTINCT wmbs_job_assoc.job, wmbs_file_location.location,
@@ -63,7 +64,8 @@ class ListThresholdsForCreate(DBFormatter):
                 result["total"] = 0
                 
             if not results.has_key(result["site_name"]):
-                results[result["site_name"]] = {"total_slots": 0, "running_jobs": 0}
+                results[result["site_name"]] = {"total_slots": 0, "running_jobs": 0,
+                                                "cms_name": result["cms_name"]}
 
             results[result["site_name"]]["running_jobs"] += result["total"]
             results[result["site_name"]]["total_slots"] = result["job_slots"]
@@ -72,7 +74,9 @@ class ListThresholdsForCreate(DBFormatter):
         jobBin = {}
         for result in unassignedResults:
             if not results.has_key(result["site_name"]):
-                results[result["site_name"]] = {"total_slots": result["job_slots"], "running_jobs": 0}
+                results[result["site_name"]] = {"total_slots": result["job_slots"],
+                                                "running_jobs": 0,
+                                                "cms_name": result["cms_name"]}
             if not jobBin.has_key(result["job"]):
                 jobBin[result["job"]] = []
 

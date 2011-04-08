@@ -107,12 +107,13 @@ class CreateWMBSBase(DBCreator):
 
         self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
-             id        INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             site_name VARCHAR(255) NOT NULL,
-             se_name   VARCHAR(255),
-             ce_name   VARCHAR(255),
-             job_slots INTEGER,
-             plugin    VARCHAR(255),
+             id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
+             site_name   VARCHAR(255) NOT NULL,
+             cms_name    VARCHAR(255),
+             se_name     VARCHAR(255),
+             ce_name     VARCHAR(255),
+             job_slots   INTEGER,
+             plugin      VARCHAR(255),
              UNIQUE(site_name))"""
 
         self.create["07wmbs_users"] = \

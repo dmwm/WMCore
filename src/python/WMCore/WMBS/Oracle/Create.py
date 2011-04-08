@@ -152,12 +152,13 @@ class Create(CreateWMBSBase):
         
         self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
-               id        INTEGER      NOT NULL,
-               site_name VARCHAR(255) NOT NULL,
-               se_name   VARCHAR(255),
-               ce_name   VARCHAR(255),
-               job_slots INTEGER,
-               plugin    VARCHAR(255)
+               id          INTEGER      NOT NULL,
+               site_name   VARCHAR(255) NOT NULL,
+               cms_name    VARCHAR(255),
+               se_name     VARCHAR(255),
+               ce_name     VARCHAR(255),
+               job_slots   INTEGER,
+               plugin      VARCHAR(255)
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_location"] = \

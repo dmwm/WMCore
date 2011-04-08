@@ -20,7 +20,7 @@ class ResourceControl(WMConnectionBase):
         return
 
     def insertSite(self, siteName, jobSlots = 0, seName = None,
-                   ceName = None, plugin = None):
+                   ceName = None, cmsName = None, plugin = None):
         """
         _insertSite_
 
@@ -30,7 +30,8 @@ class ResourceControl(WMConnectionBase):
         insertAction = self.wmbsDAOFactory(classname = "Locations.New")
         insertAction.execute(siteName = siteName, jobSlots = jobSlots,
                              seName = seName, ceName = ceName,
-                             plugin = plugin, conn = self.getDBConn(),
+                             plugin = plugin, cmsName = cmsName,
+                             conn = self.getDBConn(),
                              transaction = self.existingTransaction())
         return
 

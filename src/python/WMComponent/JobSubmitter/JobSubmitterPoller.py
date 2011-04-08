@@ -85,6 +85,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.sandboxPackage = {}
         self.siteKeys       = {}
         self.locationDict   = {}
+        self.cmsNames       = {}
         self.packageSize    = getattr(self.config.JobSubmitter, 'packageSize', 100)
 
         try:
@@ -251,11 +252,17 @@ class JobSubmitterPoller(BaseWorkerThread):
                 else:
                     for siteName in self.siteKeys[loc]:
                         possibleLocations.add(siteName)
-            
+
             if len(loadedJob["siteWhitelist"]) > 0:
-                possibleLocations = possibleLocations & set(loadedJob.get("siteWhitelist"))
+                whiteList = []
+                for cmsName in loadedJob["siteWhitelist"]:
+                    whiteList.extend(self.cmsNames.get(cmsName, []))
+                possibleLocations = possibleLocations & set(whiteList)
             if len(loadedJob["siteBlacklist"]) > 0:
-                possibleLocations = possibleLocations - set(loadedJob.get("siteBlacklist"))
+                blackList = []
+                for cmsName in loadedJob["siteBlacklist"]:
+                    blackList.extend(self.cmsNames.get(cmsName, []))
+                possibleLocations = possibleLocations - set(blackList)
 
             if len(possibleLocations) == 0:
                 badJobs.append(newJob)
@@ -329,11 +336,16 @@ class JobSubmitterPoller(BaseWorkerThread):
         for siteName in rcThresholds.keys():
             # Add threshold if we don't have it already
             for threshold in rcThresholds[siteName]:
-                seName = threshold["se_name"]
+                seName  = threshold["se_name"]
+                cmsName = threshold["cms_name"]
                 if not seName in self.siteKeys.keys():
                     self.siteKeys[seName] = []
                 if not siteName in self.siteKeys[seName]:
                     self.siteKeys[seName].append(siteName)
+                if not cmsName in self.cmsNames.keys():
+                    self.cmsNames[cmsName] = []
+                if not siteName in self.cmsNames[cmsName]:
+                    self.cmsNames[cmsName].append(siteName)
 
         return rcThresholds
 

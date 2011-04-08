@@ -26,13 +26,15 @@ def createOptionParser():
                            default = False, action = "store_true",
                            help = "Print out all known thresholds and site information.")
     myOptParser.add_option("--site-name", dest = "siteName",
-                           help = "Specify the name of the site")
+                           help = "Specify the unique name of the location")
     myOptParser.add_option("--site-slots", dest = "jobSlots",
                            help = "Specify the maximum number of slots to use at the site")
     myOptParser.add_option("--ce-name", dest = "ceName",
                            help = "Specify the CEName for the site")
     myOptParser.add_option("--se-name", dest = "seName",
                            help = "Specify the SEName for the site")
+    myOptParser.add_option("--cms-name", dest = "cmsName",
+                           help = "Specify the name of the site in SiteDB")
     myOptParser.add_option("--task-type", dest = "taskType",
                            help = "Specify the name of the task to add/modify")
     myOptParser.add_option("--task-slots", dest = "maxSlots",
@@ -80,7 +82,8 @@ def printThresholds(resourceControl, desiredSiteName):
         print ""    
 
 def updateSiteInfo(resourceControl, siteName, jobSlots = None,
-                   ceName = None, seName = None, plugin = None):
+                   ceName = None, seName = None, plugin = None,
+                   cmsName = None):
     """
     _updateSiteInfo_
 
@@ -98,7 +101,7 @@ def updateSiteInfo(resourceControl, siteName, jobSlots = None,
         print "Adding %s to the resource control db..." % siteName
         resourceControl.insertSite(siteName = siteName, jobSlots = int(jobSlots),
                                    seName = seName, ceName = ceName,
-                                   plugin = plugin)
+                                   plugin = plugin, cmsName = cmsName)
         return
 
     if jobSlots != None:
@@ -154,7 +157,7 @@ else:
         sys.exit(1)
     if options.taskType == None:
         updateSiteInfo(myResourceControl, options.siteName, options.jobSlots,
-                       options.ceName, options.seName, options.plugin)
+                       options.ceName, options.seName, options.plugin, options.cmsName)
         sys.exit(0)
     else:
         updateThresholdInfo(myResourceControl, options.siteName,

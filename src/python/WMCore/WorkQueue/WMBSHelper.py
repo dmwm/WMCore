@@ -11,6 +11,7 @@ Use WMSpecParser to extract information for creating workflow, fileset, and subs
 
 import logging
 import threading
+from collections import defaultdict
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
@@ -121,18 +122,26 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
         myThread.transaction.commit()
     return
 
-def freeSlots(multiplier = 1.0):
+def freeSlots(multiplier = 1.0, minusRunning = False):
     """
     Get free resources from wmbs.
 
-    Specify multiplier to apply a ratio to the actual numbers
+    Specify multiplier to apply a ratio to the actual numbers.
+    minusRunning control if running jobs should be counted
     """
     from WMCore.ResourceControl.ResourceControl import ResourceControl
     rc_sites = ResourceControl().listThresholdsForCreate()
-    sites = {}
-    [sites.__setitem__(name, multiplier * slots['total_slots'])
-            for name, slots in rc_sites.items() if slots['total_slots'] > 0]
-    return sites
+    sites = defaultdict(lambda: 0)
+    for name, site in rc_sites.items():
+        if not site.get('cms_name'):
+            logging.warning("Not fetching work for %s, cms_name not defined" % name)
+            continue
+        slots = site['total_slots']
+        if minusRunning:
+            slots -= site['running_jobs']
+        if slots > 0:
+            sites[site['cms_name']] += (slots * multiplier)
+    return dict(sites)
 
 class WMBSHelper(WMConnectionBase):
     """

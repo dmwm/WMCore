@@ -176,7 +176,8 @@ class JobSubmitterTest(unittest.TestCase):
         resourceControl = ResourceControl()
         for site in self.sites:
             resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
-                                       ceName = site, plugin = "CondorPlugin", jobSlots = 10000)
+                                       ceName = site, plugin = "CondorPlugin", jobSlots = 10000,
+                                       cmsName = site)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             maxSlots = 10000)
 
@@ -198,8 +199,6 @@ class JobSubmitterTest(unittest.TestCase):
         self.testInit.clearDatabase(modules = ["WMCore.WMBS",'WMCore.MsgService',
                                                'WMCore.ResourceControl', 'WMCore.BossAir',
                                                'WMCore.Agent.Database'])
-        #self.testInit.clearDatabase()
-
         self.testInit.delWorkDir()
 
         self.testInit.tearDownCouch()
@@ -807,7 +806,7 @@ class JobSubmitterTest(unittest.TestCase):
         Trust the jobCreator to get this in the job right
         """
 
-        return
+        #return
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))

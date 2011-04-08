@@ -83,9 +83,9 @@ function generateProcessing(splitAlgo, splitParams) {
 
   procStr += ">Lumi Based</input></td>\n";
   procStr += generateInput("Lumis per job:", "lumis_per_job", splitParams);
-  procStr += '<td>Split files between jobs: <select name="split_files_between_job">';
-  if ("split_files_between_job" in splitParams) {
-    if (splitParams["split_files_between_job"] == "True") {
+  procStr += '<td>Split files between jobs: <select name="halt_job_on_file_boundaries">';
+  if ("halt_job_on_file_boundaries" in splitParams) {
+    if (splitParams["halt_job_on_file_boundaries"] == "True") {
       procStr += "<option selected>True</option><option>False</option>\n";
     } else {
       procStr += "<option>True</option><option selected>False</option>\n";

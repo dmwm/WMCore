@@ -9,6 +9,7 @@ __all__ = []
 
 
 import time
+import socket
 import os.path
 import logging
 
@@ -58,7 +59,10 @@ class DashboardReporterPoller(BaseWorkerThread):
 
         #self.apmonsender = ApmonIf() 
         self.taskCache = []
-
+        self.agentName = 'WMAgent'
+        if hasattr(config, 'Agent'):
+            self.agentName = "%s@%s" % (getattr(config.Agent, 'agentName', 'WMAgent'),
+                                        socket.getfqdn(socket.gethostname()))
         return
 
 
@@ -277,6 +281,7 @@ class DashboardReporterPoller(BaseWorkerThread):
         package['TaskType']       = 'WMAgentTesting'
         package['CMSUser']        = user
         package['Workflow']       = name
+        package['AgentName']      = self.agentName
 
         logging.info("Sending info for task %s" % str(name))
 

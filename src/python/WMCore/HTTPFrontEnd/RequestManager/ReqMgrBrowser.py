@@ -133,8 +133,8 @@ class ReqMgrBrowser(WebAPI):
             # boolean values to strings as the javascript true is different from
             # the python True.  We'll also add the timeouts here.
             splittingDict[taskName]["timeout"] = timeOutDict[taskName]
-            if "split_files_between_job" in splittingDict[taskName]:
-                splittingDict[taskName]["split_files_between_job"] = str(splittingDict[taskName]["split_files_between_job"])
+            if "halt_job_on_file_boundaries" in splittingDict[taskName]:
+                splittingDict[taskName]["halt_job_on_file_boundaries"] = str(splittingDict[taskName]["halt_job_on_file_boundaries"])
                 
             splitInfo.append({"splitAlgo": splittingDict[taskName]["algorithm"],
                               "splitParams": str(splittingDict[taskName]),
@@ -162,10 +162,10 @@ class ReqMgrBrowser(WebAPI):
             splitParams["files_per_job"] = int(submittedParams["two_files_per_job"])
         elif splittingAlgo == "LumiBased":
             splitParams["lumis_per_job"] = int(submittedParams["lumis_per_job"])
-            if str(submittedParams["split_files_between_job"]) == "True":
-                splitParams["split_files_between_job"] = True
+            if str(submittedParams["halt_job_on_file_boundaries"]) == "True":
+                splitParams["halt_job_on_file_boundaries"] = True
             else:
-                splitParams["split_files_between_job"] = False                
+                splitParams["halt_job_on_file_boundaries"] = False                
         elif splittingAlgo == "EventBased":
             splitParams["events_per_job"] = int(submittedParams["events_per_job"])
         elif 'Merg' in splittingTask:

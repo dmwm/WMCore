@@ -144,7 +144,7 @@ class LumiBasedTest(unittest.TestCase):
 
 
         jobGroups = jobFactory(lumis_per_job = 3,
-                               split_files_between_job = True)
+                               halt_job_on_file_boundaries = True)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -157,7 +157,7 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = twoLumiFiles)
         jobGroups = jobFactory(lumis_per_job = 1,
-                               split_files_between_job = True)
+                               halt_job_on_file_boundaries = True)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -169,7 +169,7 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = wholeLumiFiles)
         jobGroups = jobFactory(lumis_per_job = 2,
-                               split_files_between_job = True)
+                               halt_job_on_file_boundaries = True)
         self.assertEqual(len(jobGroups), 1)
         # 10 because we split on run boundaries
         self.assertEqual(len(jobGroups[0].jobs), 10)
@@ -197,7 +197,7 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = twoSiteSubscription)
         jobGroups = jobFactory(lumis_per_job = 1,
-                               split_files_between_job = True)
+                               halt_job_on_file_boundaries = True)
         self.assertEqual(len(jobGroups), 2)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -218,7 +218,7 @@ class LumiBasedTest(unittest.TestCase):
                               subscription = testSubscription)
 
         jobGroups = jobFactory(lumis_per_job = 3,
-                               split_files_between_job = False,
+                               halt_job_on_file_boundaries = False,
                                splitOnRun = False)
 
         self.assertEqual(len(jobGroups), 1)
@@ -241,7 +241,7 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = testSubscription)
         jobGroups = jobFactory(lumis_per_job = 3,
-                               split_files_between_job = True,
+                               halt_job_on_file_boundaries = True,
                                splitOnRun = True)
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
@@ -257,7 +257,7 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = testSubscription)
         jobGroups = jobFactory(lumis_per_job = 10,
-                               split_files_between_job = False,
+                               halt_job_on_file_boundaries = False,
                                splitOnRun = False)
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
@@ -413,7 +413,7 @@ class LumiBasedTest(unittest.TestCase):
                               subscription = testSubscription)
 
         jobGroups = jobFactory(lumis_per_job = 100,
-                               split_files_between_job = False,
+                               halt_job_on_file_boundaries = False,
                                splitOnRun = True,
                                collectionName = collection["name"],
                                filesetName = workload.getTask("reco").getPathName(),
@@ -425,6 +425,68 @@ class LumiBasedTest(unittest.TestCase):
 
         self.assertEqual(jobGroups[0].jobs[0]['mask'].getRunAndLumis(), {1L: [[1L, 2L], [3L, 3L], [11L, 12L]]})
         self.assertEqual(jobGroups[0].jobs[1]['mask'].getRunAndLumis(), {3L: [[20L, 20L]]})
+
+        return
+
+
+    def testD_NonContinuousLumis(self):
+        """
+        _NonContinuousLumis_
+
+        Test and see if LumiBased can work when the lumis are non continuous
+        """
+
+
+        baseName = makeUUID()
+        nFiles   = 10
+
+        testFileset = Fileset(name = baseName)
+        testFileset.create()
+        for i in range(nFiles):
+            newFile = File(lfn = '%s_%i' % (baseName, i), size = 1000,
+                           events = 100, locations = "somese.cern.ch")
+            # Set to two non-continuous lumi numbers
+            lumis = [100 + i, 200 + i]
+            newFile.addRun(Run(i, *lumis))
+            newFile.create()
+            testFileset.addFile(newFile)
+
+        testFileset.commit()
+
+
+        testSubscription  = Subscription(fileset = testFileset,
+                                         workflow = self.testWorkflow,
+                                         split_algo = "LumiBased",
+                                         type = "Processing")
+        testSubscription.create()
+
+        splitter   = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+
+        jobGroups = jobFactory(lumis_per_job = 2,
+                               halt_job_on_file_boundaries = False,
+                               splitOnRun = False)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 10)
+        for j in jobs:
+            runs =  j['mask'].getRunAndLumis()
+            for r in runs.keys():
+                self.assertEqual(len(runs[r]), 2)
+                for l in runs[r]:
+                    # Each run should have two lumis
+                    # Each lumi should be of form [x, x]
+                    # meaning that the first and last lumis are the same
+                    self.assertEqual(len(l), 2)
+                    self.assertEqual(l[0], l[1])
+                
+                
+
+
+
+        
 
             
         

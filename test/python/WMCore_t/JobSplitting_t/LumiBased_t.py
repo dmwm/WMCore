@@ -98,7 +98,7 @@ class LumiBasedTest(unittest.TestCase):
 
 
         jobGroups = jobFactory(lumis_per_job = 3,
-                               split_files_between_job = True)
+                               halt_job_on_file_boundaries = True)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -111,7 +111,7 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = twoLumiFiles)
         jobGroups = jobFactory(lumis_per_job = 1,
-                               split_files_between_job = True)
+                               halt_job_on_file_boundaries = True)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -123,7 +123,7 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = wholeLumiFiles)
         jobGroups = jobFactory(lumis_per_job = 2,
-                               split_files_between_job = True)
+                               halt_job_on_file_boundaries = True)
         self.assertEqual(len(jobGroups), 1)
         # 10 because we split on run boundaries
         self.assertEqual(len(jobGroups[0].jobs), 10)
@@ -149,7 +149,7 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = twoSiteSubscription)
         jobGroups = jobFactory(lumis_per_job = 1,
-                               split_files_between_job = True)
+                               halt_job_on_file_boundaries = True)
         self.assertEqual(len(jobGroups), 2)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -170,7 +170,7 @@ class LumiBasedTest(unittest.TestCase):
                               subscription = testSubscription)
 
         jobGroups = jobFactory(lumis_per_job = 3,
-                               split_files_between_job = False,
+                               halt_job_on_file_boundaries = False,
                                splitOnRun = False)
 
         self.assertEqual(len(jobGroups), 1)
@@ -191,7 +191,7 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = testSubscription)
         jobGroups = jobFactory(lumis_per_job = 3,
-                               split_files_between_job = True,
+                               halt_job_on_file_boundaries = True,
                                splitOnRun = True)
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs

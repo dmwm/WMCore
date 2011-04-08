@@ -82,11 +82,7 @@ class LumiBased(JobFactory):
         myThread = threading.currentThread()
 
         lumisPerJob  = int(kwargs.get('lumis_per_job', 1))
-
-        # This is off until we resolve the problems with it.
-        #splitOnFile  = bool(kwargs.get('split_files_between_job', False))
-        
-        splitOnFile = True
+        splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', True))
         collectionName  = kwargs.get('collectionName', None)
         splitOnRun   = kwargs.get('splitOnRun', True)
 
@@ -103,8 +99,6 @@ class LumiBased(JobFactory):
                 group       = Group(name = kwargs.get('group'))
                 owner       = User(name = kwargs.get('owner'))
                 owner.setGroup(group)
-
-                logging.error("ACDC: %s, %s, %s, %s" % (couchURL, couchDB, filesetName, collectionName))
 
                 collection = CouchCollection(name = kwargs.get('collectionName'),
                                              url = couchURL, database = couchDB)
@@ -200,6 +194,14 @@ class LumiBased(JobFactory):
                                 firstLumi = None
                                 lastLumi  = None
                             continue
+
+                        # You have to kill the lumi chain if they're not continuous
+                        if lastLumi and not lumi == lastLumi + 1:
+                            self.currentJob['mask'].addRunAndLumis(run = run.run,
+                                                                   lumis = [firstLumi, lastLumi])
+                            firstLumi = None
+                            lastLumi  = None
+                        
                         if firstLumi == None:
                             # Set the first lumi in the run
                             firstLumi = lumi

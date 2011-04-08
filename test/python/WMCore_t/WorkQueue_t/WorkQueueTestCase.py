@@ -49,7 +49,7 @@ class WorkQueueTestCase(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-        #self.testInit.tearDownCouch()
+        self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
         

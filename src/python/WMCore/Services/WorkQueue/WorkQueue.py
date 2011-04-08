@@ -41,7 +41,7 @@ class WorkQueue(object):
 
     def getWMBSUrlByRequest(self):
         """Get data items we have work in the queue for"""
-        data = self.db.loadView('WorkQueue', 'wmbsUrlByRequest(',
+        data = self.db.loadView('WorkQueue', 'wmbsUrlByRequest',
                                 {'reduce' : True, 'group' : True})
         return [{'request_name' : x['key'][0],
                  'wmbs_url' : x['key'][1]} for x in data.get('rows', [])]

@@ -14,8 +14,9 @@ from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMQuality.Emulators import EmulatorSetup
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
-class WorkQueueTest(RESTBaseUnitTest):
+class WorkQueueTest(unittest.TestCase):
     """
     Test WorkQueue Service client
     It will start WorkQueue RESTService
@@ -25,92 +26,56 @@ class WorkQueueTest(RESTBaseUnitTest):
     This checks whether DS call makes without error and return the results.
     Not the correctness of functions. That will be tested in different module.
     """
-    def initialize(self):
-        
-        self.config = DefaultConfig(
-                'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
-        dbUrl = os.environ.get("DATABASE", None)
-        self.config.setDBUrl(dbUrl)
-        self.config.setWorkQueueLevel("GlobalQueue")
-        # mysql example
-        #self.config.setDBUrl('mysql://username@host.fnal.gov:3306/TestDB')
-        #self.config.setDBSocket('/var/lib/mysql/mysql.sock')
-        self.schemaModules = ["WMCore.WorkQueue.Database"]
-        wqConfig = self.config.getModelConfig()
-        wqConfig.queueParams = {}
-        wqConfig.serviceModules = [
-            'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
-            'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService']
-        
     def setUp(self):
         """
-        setUP global values
+        _setUp_
         """
         EmulatorHelper.setEmulators(phedex = True, dbs = True, 
                                     siteDB = True, requestMgr = True)
-        
-        RESTBaseUnitTest.setUp(self)
-        self.params = {}
-        self.params['endpoint'] = self.config.getServerUrl()
-        
-        # original location of wmspec: under current directory - WMSpecs
+
         self.specGenerator = WMSpecGenerator("WMSpecs")
-        self.configFile = EmulatorSetup.setupWMAgentConfig()
-        os.environ["COUCHDB"] = "workqueue_t"
-        self.testInit.setupCouch("workqueue_t", "JobDump")
-        
+        #self.configFile = EmulatorSetup.setupWMAgentConfig()
+        self.schema = []
+        self.couchApps = ["WorkQueue"]
+        self.testInit = TestInitCouchApp('WorkQueueServiceTest')
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = self.schema,
+                                useDefault = False)
+        self.testInit.setupCouch('workqueue_t', *self.couchApps)
+        self.testInit.setupCouch('workqueue_t_inbox', *self.couchApps)
+        return
+
     def tearDown(self):
-        RESTBaseUnitTest.tearDown(self)
-        EmulatorSetup.deleteConfig(self.configFile)        
+        """
+        _tearDown_
+
+        Drop all the WMBS tables.
+        """
         self.testInit.tearDownCouch()
+        #EmulatorSetup.deleteConfig(self.configFile)
         self.specGenerator.removeSpecs()
         
-        # following should be tearDownClass if we swithch to python 2.7
-        try:
-            # clean up files created by cherrypy.
-            shutil.rmtree('wf')
-        except:
-            pass
-        EmulatorHelper.resetEmulators()
 
     def testWorkQueueService(self):
-        self.config.setWorkQueueLevel("GlobalQueue")
         # test getWork
         specName = "RerecoSpec"
         specUrl = self.specGenerator.createReRecoSpec(specName, "file")
+        globalQ = globalQueue(DbName = 'workqueue_t',
+                              QueueURL = self.testInit.couchUrl)
+        self.assertTrue(globalQ.queueWork(specUrl, "RerecoSpec", "teamA") > 0)
 
-        wqApi = WorkQueueDS(self.params)
-
-        self.assertTrue(wqApi.queueWork(specUrl, "teamA", "RerecoSpec") > 0)
-
-        data = wqApi.getWork({'SiteA' : 1000000}, "http://test.url")
-
-        # testStatusChange
-        self.assertTrue(len(wqApi.status()) > 1)
-        self.assertEqual(wqApi.cancelWork([1]), [1])
-        self.assertEqual(wqApi.doneWork([1]), [1])
-        self.assertEqual(wqApi.failWork([1]), [1])
-
-        # testSynchronize
-        childUrl = "http://test.url"
-        childResources = [{'ParentQueueId' : 1, 'Status' : 'Available'}]
-        self.assertEqual(wqApi.synchronize(childUrl, childResources),
-                         {'Canceled': set([1])})
-
-        # testCancelWorkWithRequest
-        self.assertEqual(wqApi.cancelWork(["RerecoSpec"], "request_name"),
-                                          ["RerecoSpec"])
-        
-        # testGetChildQueues
-        self.assertTrue(wqApi.getChildQueues() > 0)
-        
-        # testGetChildQueuesByRequest
-        self.assertTrue(wqApi.getChildQueuesByRequest() > 0)
-
-        #TODO: this needs to be tested in separate localQueue service setting.
-        # testGetJobSummaryFromCouchDB
-        #self.assertTrue(wqApi.getJobSummaryFromCouchDB() > 0)
-
+        wqApi = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
+        #This only checks minimum client call not exactly correctness of return
+        # values.
+        self.assertEqual(wqApi.getTopLevelJobsByRequest(),
+                         [{'total_jobs': 2, 'request_name': 'RerecoSpec'}])
+        self.assertEqual(wqApi.getChildQueues(), [])
+        self.assertEqual(wqApi.getJobStatusByRequest(),
+            [{'status': 'Available', 'jobs': 2, 'request_name': 'RerecoSpec'}])
+        self.assertEqual(wqApi.getChildQueuesByRequest(), [])
+        self.assertEqual(wqApi.getWMBSUrl(), [])
+        self.assertEqual(wqApi.getWMBSUrlByRequest(), [])
 
 if __name__ == '__main__':
 

@@ -454,7 +454,7 @@ class WorkQueue(WorkQueueBase):
             return 1
 
         if request and request != wmspec.name():
-            raise WorkQueueWMSpecError(wmspec, 'Request & workflow name mismatch')
+            raise WorkQueueWMSpecError(wmspec, 'Request & workflow name mismatch %s vs %s' % (request, wmspec.name()))
 
         # Do splitting before we save inbound work to verify the wmspec
         # if the spec fails it won't enter the queue

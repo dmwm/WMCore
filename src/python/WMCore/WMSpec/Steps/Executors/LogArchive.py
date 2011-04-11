@@ -84,10 +84,9 @@ class LogArchive(Executor):
             
         matchFiles = [
             ".log$",
+            "FrameworkJobReport",
             "Report.pkl",
             "Report.pcl",
-            "^FrameworkJobReport.xml$",
-            "^FrameworkJobReport-Backup.xml$",
             "^PSet.py$"
             ]
 

@@ -161,17 +161,17 @@ class TestChangeState(unittest.TestCase):
         assert testJobADoc["owner"] == testJobA["owner"], \
                "Error: Owner parameter is incorrect."
 
-        assert testJobADoc["mask"]["firstevent"] == testJobA["mask"]["FirstEvent"], \
+        assert testJobADoc["mask"]["FirstEvent"] == testJobA["mask"]["FirstEvent"], \
                "Error: First event in mask is incorrect."
-        assert testJobADoc["mask"]["lastevent"] == testJobA["mask"]["LastEvent"], \
+        assert testJobADoc["mask"]["LastEvent"] == testJobA["mask"]["LastEvent"], \
                "Error: Last event in mask is incorrect."
-        assert testJobADoc["mask"]["firstlumi"] == testJobA["mask"]["FirstLumi"], \
+        assert testJobADoc["mask"]["FirstLumi"] == testJobA["mask"]["FirstLumi"], \
                "Error: First lumi in mask is incorrect."
-        assert testJobADoc["mask"]["lastlumi"] == testJobA["mask"]["LastLumi"], \
+        assert testJobADoc["mask"]["LastLumi"] == testJobA["mask"]["LastLumi"], \
                "Error: First lumi in mask is incorrect."
-        assert testJobADoc["mask"]["firstrun"] == testJobA["mask"]["FirstRun"], \
+        assert testJobADoc["mask"]["FirstRun"] == testJobA["mask"]["FirstRun"], \
                "Error: First run in mask is incorrect."
-        assert testJobADoc["mask"]["lastevent"] == testJobA["mask"]["LastRun"], \
+        assert testJobADoc["mask"]["LastEvent"] == testJobA["mask"]["LastRun"], \
                "Error: First event in mask is incorrect."        
 
         assert len(testJobADoc["inputfiles"]) == 1, \
@@ -186,17 +186,17 @@ class TestChangeState(unittest.TestCase):
         assert testJobBDoc["jobgroup"] == testJobB["jobgroup"], \
                "Error: Jobgroup parameter is incorrect."
 
-        assert testJobBDoc["mask"]["firstevent"] == testJobB["mask"]["FirstEvent"], \
+        assert testJobBDoc["mask"]["FirstEvent"] == testJobB["mask"]["FirstEvent"], \
                "Error: First event in mask is incorrect."
-        assert testJobBDoc["mask"]["lastevent"] == testJobB["mask"]["LastEvent"], \
+        assert testJobBDoc["mask"]["LastEvent"] == testJobB["mask"]["LastEvent"], \
                "Error: Last event in mask is incorrect."
-        assert testJobBDoc["mask"]["firstlumi"] == testJobB["mask"]["FirstLumi"], \
+        assert testJobBDoc["mask"]["FirstLumi"] == testJobB["mask"]["FirstLumi"], \
                "Error: First lumi in mask is incorrect."
-        assert testJobBDoc["mask"]["lastlumi"] == testJobB["mask"]["LastLumi"], \
+        assert testJobBDoc["mask"]["LastLumi"] == testJobB["mask"]["LastLumi"], \
                "Error: First lumi in mask is incorrect."
-        assert testJobBDoc["mask"]["firstrun"] == testJobB["mask"]["FirstRun"], \
+        assert testJobBDoc["mask"]["FirstRun"] == testJobB["mask"]["FirstRun"], \
                "Error: First run in mask is incorrect."
-        assert testJobBDoc["mask"]["lastevent"] == testJobB["mask"]["LastRun"], \
+        assert testJobBDoc["mask"]["LastEvent"] == testJobB["mask"]["LastRun"], \
                "Error: First event in mask is incorrect."
         
         assert len(testJobBDoc["inputfiles"]) == 1, \
@@ -515,8 +515,15 @@ class TestChangeState(unittest.TestCase):
         change.propagate([testJobA, testJobB], "complete", "executing")
         change.propagate([testJobB], "success", "complete")
         change.propagate([testJobA], "jobfailed", "complete")        
+        timestamp = int(time.time())
 
         transitions = change.listTransitionsForDashboard()
+
+        for transition in transitions:
+            self.assertTrue(timestamp - 10 < transition["timestamp"] and
+                            timestamp + 10 > transition["timestamp"],
+                            "Error: Timestamp is wrong.")
+            del transition["timestamp"]
 
         goldenTransitions = [{"name": testJobA["name"], "retryCount": 0, "newState": "jobfailed",
                               "oldState": "complete", "requestName": "wf001", "user": "sfoulkes",

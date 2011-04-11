@@ -27,7 +27,8 @@ function(doc) {
                           'group': doc['group'],
                           'retryCount': retryCount,
                           'newState': transition['newstate'],
-                          'oldState': transition['oldstate']});
+                          'oldState': transition['oldstate'],
+                          'timestamp': transition['timestamp']});
     }
   }
 }

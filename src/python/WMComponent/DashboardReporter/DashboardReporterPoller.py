@@ -143,7 +143,7 @@ class DashboardReporterPoller(BaseWorkerThread):
             if not taskName in self.taskCache:
                 self.addTask(name = taskName, user = job.get('user', None))
             logging.info("Sending info for task %s" % str(job))
-            
+
             package = {}
             package['jobId']           = '%s_%i' % (job['name'], job['retryCount'])
             package['taskId']          = 'wmagent_%s' % taskName
@@ -154,8 +154,8 @@ class DashboardReporterPoller(BaseWorkerThread):
             package['JobType']         = job['taskType']
             package['StatusValue']     = 'submitted'
             package['scheduler']       = 'BossAir'
-            package['StatusEnterTime'] = time.time()
-            
+            package['StatusEnterTime'] = job.get('timestamp', time.time())
+                        
             logging.info("Sending: %s" % str(package))
             result = apmonSend( taskid = package['taskId'], jobid = package['jobId'], params = package, logr = logging, apmonServer = self.serverreport)
 
@@ -190,7 +190,7 @@ class DashboardReporterPoller(BaseWorkerThread):
             package['MessageTS']       = time.time()
             package['MessageType']     = 'JobStatus'
             package['StatusValue']     = job['finalState']
-            package['StatusEnterTime'] = time.time()
+            package['StatusEnterTime'] = job['timestamp']
             package['JobExitCode']     = job['exitCode']
 
             logging.info("Sending completed info: %s" % str(package))

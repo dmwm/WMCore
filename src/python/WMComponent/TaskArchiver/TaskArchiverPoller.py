@@ -263,21 +263,42 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         failedJobs = []
         jobErrors  = []
+        outputLFNs = []
+
+        workflowFailures = {}
 
         # Get a list of failed job IDs
         failedCouch = self.jobsdatabase.loadView("JobDump", "failedJobsByWorkflowName",
                                                  options = {"startkey": [workflow.task.split('/')[1], workflow.task],
                                                             "endkey": [workflow.task.split('/')[1], workflow.task]})['rows']
+
+        output = self.fwjrdatabase.loadView("FWJRDump", "outputByWorkflowName",
+                                            options = {"group_level": 2,
+                                                       "startkey": [workflow.task.split('/')[1]],
+                                                       "endkey": [workflow.task.split('/')[1], {}]})['rows']
+        
         for entry in failedCouch:
             failedJobs.append(entry['value'])
 
-        workflowFailures = {}
+
         workflowFailures["_id"] = workflow.task.split('/')[1]
+
+        # Attach output
+        workflowFailures['output'] = {}
+        for e in output:
+            entry   = e['value']
+            dataset = entry['dataset']
+            workflowFailures['output'][dataset] = {}
+            workflowFailures['output'][dataset]['nFiles'] = entry['count']
+            workflowFailures['output'][dataset]['size']   = entry['size']
+            workflowFailures['output'][dataset]['events'] = entry['events']
+            
         
         for jobid in failedJobs:
-            outputCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
-                                                     options = {"startkey": [jobid, 0],
-                                                                "endkey": [jobid, {}]})['rows']
+            errorCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
+                                                    options = {"startkey": [jobid, 0],
+                                                               "endkey": [jobid, {}]})['rows']
+            
             job    = self.jobsdatabase.document(id = str(jobid))
             inputs = [x['lfn'] for x in job['inputfiles']]
             runsA  = [x['runs'][0] for x in job['inputfiles']]
@@ -296,7 +317,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                 runs.append(run)
             # Get rid of runs that aren't in the mask
             runs = mask.filterRunLumisByMask(runs = runs)
-            for err in outputCouch:
+            for err in errorCouch:
                 task   = err['value']['task']
                 step   = err['value']['step']
                 errors = err['value']['error']
@@ -309,13 +330,13 @@ class TaskArchiverPoller(BaseWorkerThread):
                     exitCode = str(error['exitCode'])
                     if not exitCode in stepFailures.keys():
                         stepFailures[exitCode] = {"errors": [],
-                                                  "jobs":   [],
+                                                  "jobs":   0,
                                                   "input":  [],
                                                   "runs":   {}}
                     if jobid in stepFailures[exitCode]['jobs']:
                         # We're repeating this error, and I don't know why
                         continue
-                    stepFailures[exitCode]['jobs'].append(jobid)
+                    stepFailures[exitCode]['jobs'] += 1 # Increment job counter
                     if len(stepFailures[exitCode]['errors']) == 0 or \
                            exitCode == '99999':
                         # Only record the first error for an exit code

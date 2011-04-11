@@ -64,7 +64,7 @@ class CreateWMBSBase(DBCreator):
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
              id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             name        VARCHAR(255) NOT NULL,
+             name        VARCHAR(500) NOT NULL,
              open        INT(1)       NOT NULL DEFAULT 0,
              last_update INTEGER      NOT NULL,
              UNIQUE (name))"""
@@ -137,7 +137,7 @@ class CreateWMBSBase(DBCreator):
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
              spec         VARCHAR(500) NOT NULL,
              name         VARCHAR(255) NOT NULL,
-             task         VARCHAR(255) NOT NULL,
+             task         VARCHAR(500) NOT NULL,
              owner        INTEGER      NOT NULL,
              UNIQUE(name, task),
              FOREIGN KEY(owner)    REFERENCES wmbs_users(id)

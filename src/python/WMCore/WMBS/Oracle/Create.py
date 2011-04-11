@@ -54,7 +54,7 @@ class Create(CreateWMBSBase):
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
                id          INTEGER      NOT NULL,
-               name        VARCHAR(255) NOT NULL,
+               name        VARCHAR(500) NOT NULL,
                open        CHAR(1)      CHECK (open IN ('0', '1' )) NOT NULL,
                last_update INTEGER      NOT NULL
                ) %s""" % tablespaceTable
@@ -210,7 +210,7 @@ class Create(CreateWMBSBase):
                id    INTEGER      NOT NULL,
                spec  VARCHAR(500) NOT NULL,
                name  VARCHAR(255) NOT NULL,
-               task  VARCHAR(255) NOT NULL,
+               task  VARCHAR(500) NOT NULL,
                owner INTEGER      NOT NULL
                ) %s""" % tablespaceTable
 

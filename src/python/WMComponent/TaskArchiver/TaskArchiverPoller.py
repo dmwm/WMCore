@@ -281,7 +281,17 @@ class TaskArchiverPoller(BaseWorkerThread):
             failedJobs.append(entry['value'])
 
 
-        workflowFailures["_id"] = workflow.task.split('/')[1]
+        workflowFailures["_id"]          = workflow.task.split('/')[1]
+        try:
+            workflowFailures["ACDCServer"]   = self.config.ACDC.couchurl
+            workflowFailures["ACDCDatabase"] = self.config.ACDC.database
+        except AttributeError, ex:
+            # We're missing the ACDC info.
+            # Keep going
+            logging.error("ACDC info missing from config.  Skipping this step in the workflow summary.")
+            logging.debug("Error: %s" % str(ex))
+    
+            
 
         # Attach output
         workflowFailures['output'] = {}
@@ -333,9 +343,6 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                   "jobs":   0,
                                                   "input":  [],
                                                   "runs":   {}}
-                    if jobid in stepFailures[exitCode]['jobs']:
-                        # We're repeating this error, and I don't know why
-                        continue
                     stepFailures[exitCode]['jobs'] += 1 # Increment job counter
                     if len(stepFailures[exitCode]['errors']) == 0 or \
                            exitCode == '99999':

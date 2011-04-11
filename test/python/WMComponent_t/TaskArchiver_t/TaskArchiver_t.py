@@ -116,6 +116,10 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.logLevel        = 'SQLDEBUG'
         config.TaskArchiver.timeOut         = 0
 
+        config.section_("ACDC")
+        config.ACDC.couchurl                = config.JobStateMachine.couchurl
+        config.ACDC.database                = config.JobStateMachine.couchDBName
+
         # Make the jobCacheDir
         os.mkdir(config.JobCreator.jobCacheDir)
 
@@ -348,7 +352,7 @@ class TaskArchiverTest(unittest.TestCase):
         workdatabase = couchdb.connectDatabase(dbname)
 
         workloadSummary = workdatabase.document(id = "TestWorkload")
-        print workloadSummary
+        #print workloadSummary
         return
 
 

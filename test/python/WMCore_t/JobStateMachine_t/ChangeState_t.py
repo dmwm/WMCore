@@ -63,6 +63,7 @@ class TestChangeState(unittest.TestCase):
         """
         _tearDown_
 
+        Cleanup the databases.
         """
         self.testInit.clearDatabase()
         self.testInit.tearDownCouch()
@@ -434,6 +435,70 @@ class TestChangeState(unittest.TestCase):
 
         return
 
+    def testDuplicateJobReports(self):
+        """
+        _testDuplicateJobReports_
+
+        Verify that everything works correctly if a job report is added to the
+        database more than once.
+        """
+        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
+        change = ChangeState(DefaultConfig.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", seName = "somese.cern.ch")
+        
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile.create()
+        testFileset.addFile(testFile)
+        testFileset.commit()
+        
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        assert len(jobGroup.jobs) == 1, \
+               "Error: Splitting should have created one job."
+
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Processing"
+
+        change.propagate([testJobA], 'created', 'new')
+        myReport = Report()
+        reportPath = os.path.join(getWMBASE(),
+                                  "test/python/WMCore_t/JobStateMachine_t/Report.pkl")
+        myReport.unpersist(reportPath)
+        testJobA["fwjr"] = myReport
+
+        change.propagate([testJobA], 'executing', 'created')
+        change.propagate([testJobA], 'executing', 'created')        
+
+        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t/fwjrs")
+        allDocs = changeStateDB.document("_all_docs")
+
+        self.assertEqual(len(allDocs["rows"]), 2,
+                         "Error: Wrong number of documents")
+
+        for resultRow in allDocs["rows"]:
+            if resultRow["id"] != "_design/FWJRDump":
+                fwjrDoc = changeStateDB.document(resultRow["id"])
+                break
+
+        return    
+
     def testDashboardTransitions(self):
     	"""
         _testDashboardTransitions_
@@ -572,15 +637,13 @@ class TestChangeState(unittest.TestCase):
         self.assertEqual(perfSection["memory"]["PeakValueVsize"], "643.281",
                          "Error: PeakValueVsize is wrong.")
 
-        xmlPath = os.path.join(getWMBASE(),
-                               "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
-
         failedReport = Report()
         failedReport.unpersist(os.path.join(getWMBASE(),
                                             "test/python/WMCore_t/JobStateMachine_t/FailedReport.pkl"))
-        testJobA["fwjr"] = failedReport
-        change.propagate([testJobA], "complete", "executing")
-        change.propagate([testJobA], "success", "complete")        
+        change.propagate([testJobB], "complete", "executing")
+        testJobB["fwjr"] = failedReport
+        testJobB["retry_count"] += 1
+        change.propagate([testJobB], "success", "complete")        
 
         transitions = change.listTransitionsForDashboard()
 

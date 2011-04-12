@@ -162,12 +162,12 @@ function renderJobMask(jobDocument) {
   maskDiv = document.createElement("div");
   maskDiv.style.margin = "0px 0px 0px 15px";
 
-  maskDiv.innerHTML += "First Event: " + jobDocument["mask"]["firstevent"] + "<br>";
-  maskDiv.innerHTML += "Last Event: " + jobDocument["mask"]["lastevent"] + "<br>";
-  maskDiv.innerHTML += "First Lumi: " + jobDocument["mask"]["firstlumi"] + "<br>";
-  maskDiv.innerHTML += "Last Lumi: " + jobDocument["mask"]["lastlumi"] + "<br>";
-  maskDiv.innerHTML += "First Run: " + jobDocument["mask"]["firstrun"] + "<br>";
-  maskDiv.innerHTML += "Last Run: " + jobDocument["mask"]["lastrun"] + "<br>";
+  maskDiv.innerHTML += "First Event: " + jobDocument["mask"]["FirstEvent"] + "<br>";
+  maskDiv.innerHTML += "Last Event: " + jobDocument["mask"]["LastEvent"] + "<br>";
+  maskDiv.innerHTML += "First Lumi: " + jobDocument["mask"]["FirstLumi"] + "<br>";
+  maskDiv.innerHTML += "Last Lumi: " + jobDocument["mask"]["LastLumi"] + "<br>";
+  maskDiv.innerHTML += "First Run: " + jobDocument["mask"]["FirstRun"] + "<br>";
+  maskDiv.innerHTML += "Last Run: " + jobDocument["mask"]["LastRun"] + "<br>";
 
   maskLabelDiv.appendChild(maskDiv);
 };
@@ -253,7 +253,7 @@ function renderJobErrors(jobID) {
   };
 };
 
-function renderLogArchives(jobID) {
+function renderLogArchives(jobID, requestName) {
   // Render all of the logarchive information for the given job.
   xmlhttp = new XMLHttpRequest();
   xmlhttp.open("GET", getRootDBPath() + "%2Ffwjrs/_design/FWJRDump/_view/logArchivesByJobID?stale=ok&startkey=[" + jobID + "]&endkey=[" + jobID + ",{}]", false);
@@ -263,19 +263,38 @@ function renderLogArchives(jobID) {
   archivesLabelDiv = document.getElementById("logArchives");
   archivesLabelDiv.innerHTML = "Log Archives:"
   archivesLabelDiv.style.margin = "10px 0px 0px 0px";
-  archivesDiv = document.createElement("div");
-  archivesDiv.style.margin = "0px 0px 0px 15px";
-  archivesLabelDiv.appendChild(archivesDiv);
 
   if (jobArchives["rows"].length == 0) {
+    archivesDiv = document.createElement("div");
+    archivesDiv.style.margin = "0px 0px 0px 15px";
+    archivesLabelDiv.appendChild(archivesDiv);
     archivesDiv.innerHTML = "(none)";
     return;
   };
 
   for (archiveIndex in jobArchives["rows"]) {
+    archivesDiv = document.createElement("div");
+    archivesDiv.style.margin = "0px 0px 0px 15px";
+    archivesLabelDiv.appendChild(archivesDiv);
+    archivesDiv.innerHTML += "Retry ";
     archivesDiv.innerHTML += jobArchives["rows"][archiveIndex]["value"]["retrycount"];
     archivesDiv.innerHTML += " -> " + jobArchives["rows"][archiveIndex]["value"]["lfn"];
-    archivesDiv.innerHTML += "<br>";
+
+    var siblingJobs = getSiblingJobsForFile(requestName, jobID, 
+                                            jobArchives["rows"][archiveIndex]["value"]["lfn"]);
+    if (siblingJobs.length > 0) {
+      archivesParentSiblingDiv = document.createElement("div");
+      archivesParentSiblingDiv.style.margin = "0px 0px 0px 15px";
+      archivesDiv.appendChild(archivesParentSiblingDiv);
+      archivesParentSiblingDiv.innerHTML += " Used by: ";
+
+      for (var siblingJobIndex in siblingJobs) {
+        archivesParentSiblingDiv.innerHTML += "<a href=\"../jobSummary/" + siblingJobs[siblingJobIndex] + "\">" + siblingJobs[siblingJobIndex] + "</a>";
+        if (siblingJobIndex != siblingJobs.length - 1) {
+          archivesParentSiblingDiv.innerHTML += ", ";
+        };
+      };
+    };
   }
 }
 
@@ -298,5 +317,5 @@ function renderJobSummary(jobID) {
   renderJobOutputFiles(jobDoc["workflow"], jobID);
 
   renderJobErrors(jobID);
-  renderLogArchives(jobID);
+  renderLogArchives(jobID, jobDoc["workflow"]);
 };

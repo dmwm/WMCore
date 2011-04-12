@@ -166,6 +166,7 @@ class ChangeState(WMObject, WMConnectionBase):
                                        "LastLumi": job["mask"]["LastLumi"],
                                        "FirstRun": job["mask"]["FirstRun"],
                                        "LastRun": job["mask"]["LastRun"]}
+
                 if job['mask']['runAndLumis'] != {}:
                     # Then we have to save the mask runAndLumis
                     jobDocument['mask']['runAndLumis'] = {}
@@ -197,7 +198,8 @@ class ChangeState(WMObject, WMConnectionBase):
 
             if job.get("fwjr", None):
                 job["fwjr"].setTaskName(job["task"])
-                fwjrDocument = {"jobid": job["id"],
+                fwjrDocument = {"_id": "%s-%s" % (job["id"], job["retry_count"]),
+                                "jobid": job["id"],
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),
                                 "type": "fwjr"}

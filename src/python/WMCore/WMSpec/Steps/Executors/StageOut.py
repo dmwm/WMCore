@@ -21,8 +21,8 @@ from WMCore.FwkJobReport.Report             import Report
 
 import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.FileManager
+import WMCore.Storage.DeleteMgr   as DeleteMgr
 
-from WMCore.WMSpec.ConfigSectionTree import nodeParent, nodeName
 from WMCore.Lexicon                  import lfn as lfnRegEx
 
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
@@ -161,6 +161,7 @@ class StageOut(Executor):
                             logging.error(str(ex))
                             logging.debug(file)
                             logging.debug("minMergeSize: %s" % self.step.output.minMergeSize)
+                            manager.cleanSuccessfulStageOuts()
                             stepReport.addError(self.stepName, 60401,
                                                 "DirectToMergeFailure", str(ex))
                     elif getattr(self.step.output, 'maxMergeEvents', None) != None\
@@ -177,6 +178,7 @@ class StageOut(Executor):
                                 logging.error(str(ex))
                                 logging.debug(file)
                                 logging.debug("maxMergeEvents: %s" % self.step.output.maxMergeEvents)
+                                manager.cleanSuccessfulStageOuts()
                                 stepReport.addError(self.stepName, 60402,
                                                     "DirectToMergeFailure", str(ex))
 
@@ -201,10 +203,12 @@ class StageOut(Executor):
                 except Alarm:
                     msg = "Indefinite hang during stageOut of logArchive"
                     logging.error(msg)
+                    manager.cleanSuccessfulStageOuts()
                     stepReport.addError(self.stepName, 60403,
                                         "StageOutTimeout", msg)
                     stepReport.persist("Report.pkl")
                 except Exception, ex:
+                    manager.cleanSuccessfulStageOuts()
                     stepReport.addError(self.stepName, 60307,
                                         "StageOutFailure", str(ex))
                     stepReport.setStepStatus(self.stepName, 1)
@@ -332,3 +336,6 @@ class StageOut(Executor):
 
         # Return the file
         return mergefile
+
+
+

@@ -112,8 +112,8 @@ class WebRequestSchema(WebAPI):
             d["SkimInput"] = kwargs["SkimInput%s" % skimNumber]
             d["Scenario"] = kwargs["Scenario"]
 
-            if kwargs.get("SkimConfig%s" % skimNumber, None) != None:
-                d["ConfigCacheID"] = kwargs["SkimConfig%s" % skimNumber]
+            if kwargs.get("Skim%sConfigCacheID" % skimNumber, None) != None:
+                d["ConfigCacheID"] = kwargs["Skim%sConfigCacheID" % skimNumber]
        
             schema["SkimConfigs"].append(d)
             skimNumber += 1

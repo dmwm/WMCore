@@ -60,7 +60,7 @@ Software Release: <select name="CMSSWVersion">
 
 #end def 
 
-#def configBlock($radioName, $scenarioName, $cacheName)
+#def configBlock($radioName, $scenarioName, $cacheName, $type)
 Configuration <br>
   <input type="radio" name=$radioName value="scenario" /> Scenario
     <select name="Scenario">
@@ -72,7 +72,7 @@ Configuration <br>
       <option>relvalmc</option>
       <option>relvalmcfs</option>
     </select><br/>
-  <input type="radio" name=$radioName value="couchDB" /> CouchDB ID
+  <input type="radio" name=$radioName value="couchDB" /> $type ConfigCache ID
     <input type="text" name="$cacheName" size=80 />
     <!--<select name=$cacheName>
     #for $doc in $alldocs
@@ -98,7 +98,7 @@ DBS: <!--input type="text" name="dbs" value="http://cmsdbsprod.cern.ch/cms_dbs_p
 #def skimBlock($skimNum)
 Skim Name: <input type="text", name="SkimName$skimNum" size=20 value="skim"$skimNum/>
 Skim Input: <input type="text", name="SkimInput$skimNum" size=20 value="output"/><BR/>
-Skim Config: <input type="text" name="SkimConfig$skimNum" value=$defaultSkimConfig size=80/><br>
+Skim ConfigCache ID: <input type="text" name="Skim$skimNumConfigCacheID" value=$defaultSkimConfig size=80/><br>
 #end def
 
 #def moreSkims($firstSkim)
@@ -116,7 +116,7 @@ function addSkim() {
   newdiv.setAttribute('id',divIdName);
   newdiv.innerHTML = 'Skim Name: <input type="text", name="SkimName'+num+'" size=20 value="skim'+num+'"/><br>' 
   + ' Skim Input '+num+': <input type="text", name="SkimInput'+num+'" size=40 value="output"/><BR/>' 
-  +'Skim Config ' + num +': <input type="text" name="SkimConfig'+num+'"/> <br>'
+  +'Skim ConfigCache ID ' + num +': <input type="text" name="Skim'+num+'ConfigCacheID"/> <br>'
   ni.appendChild(newdiv);
 }
 </script>
@@ -161,7 +161,7 @@ Emulator:
         <div id="rereco">
             $headerBlock
             $softwareBlock
-            $configBlock("inputMode", "Scenario", "ProcConfigCacheID")
+            $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Reco")
             $ioBlock
             $moreSkims(0)
             $runBlockBlock
@@ -171,7 +171,7 @@ Emulator:
             $headerBlock
             $softwareBlock
 # of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
-            $configBlock("inputMode", "Scenario", "ProdConfigCacheID")
+            $configBlock("inputMode", "Scenario", "ProdConfigCacheID", "MC")
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
 Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
 MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
@@ -202,7 +202,7 @@ MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
             $softwareBlock
 # of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
 Multicore: <input type="text" name="Multicore" size=2 value="" /> <br/>
-            $configBlock("inputMode", "Scenario", "ProcConfigCacheID")
+            $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Processing")
             $ioBlock
             $runBlockBlock
             $trailerBlock("DataProcessing")

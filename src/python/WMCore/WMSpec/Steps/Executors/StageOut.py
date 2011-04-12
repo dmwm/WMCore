@@ -68,8 +68,8 @@ class StageOut(Executor):
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
 
-        # Set wait to 15 minutes
-        waitTime = overrides.get('waitTime', 900)
+        # Set wait to over an hour
+        waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
 
         logging.info("StageOut override is: %s " % self.step)
 
@@ -202,7 +202,8 @@ class StageOut(Executor):
                     msg = "Indefinite hang during stageOut of logArchive"
                     logging.error(msg)
                     stepReport.addError(self.stepName, 60403,
-                                        "StageOutFailure")
+                                        "StageOutTimeout", msg)
+                    stepReport.persist("Report.pkl")
                 except Exception, ex:
                     stepReport.addError(self.stepName, 60307,
                                         "StageOutFailure", str(ex))

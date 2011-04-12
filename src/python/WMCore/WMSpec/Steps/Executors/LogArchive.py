@@ -79,8 +79,8 @@ class LogArchive(Executor):
         logging.info("Beginning Steps.Executors.LogArchive.Execute")
         logging.info("Using the following overrides: %s " % overrides)
         logging.info("Step is: %s" % self.step)
-        # Wait fifteen minutes for stageOut
-        waitTime = overrides.get('waitTime', 900)
+        # Wait timout for stageOut
+        waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
             
         matchFiles = [
             ".log$",
@@ -146,7 +146,9 @@ class LogArchive(Executor):
         except Alarm:
             msg = "Indefinite hang during stageOut of logArchive"
             logging.error(msg)
-            self.report.addError(self.stepName, 60404, "LogArchiveFailure")
+            self.report.addError(self.stepName, 60404, "LogArchiveTimeout", msg)
+            self.report.persist("Report.pkl")
+            raise WMExecutionFailure(60404, "LogArchiveTimeout", msg)
         except WMException, ex:
             self.report.addError(self.stepName, 60307, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)

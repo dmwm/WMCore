@@ -58,8 +58,8 @@ class LogCollect(Executor):
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
 
-        # Set wait to 15 minutes
-        waitTime = overrides.get('waitTime', 900)
+        # Set wait to over an hour
+        waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
 
         stageOutParams = {"command": "srmv2", "option": "-streams_num=1",
                           "se-name": "srm-cms.cern.ch",
@@ -92,7 +92,8 @@ class LogCollect(Executor):
             except Alarm:
                 msg = "Indefinite hang during stageIn of LogCollect"
                 logging.error(msg)
-                self.report.addError(self.stepName, 60407, "LogCollectFailure")
+                self.report.addError(self.stepName, 60407, "LogCollectTimeout", msg)
+                self.report.persist("Report.pkl")
             except StageOutFailure, ex:
                 msg = "Unable to StageIn %s" % file['LFN']
                 logging.error(msg)
@@ -129,7 +130,7 @@ class LogCollect(Executor):
         except Alarm:
             msg = "Indefinite hang during stageOut of LogCollect"
             logging.error(msg)
-            self.report.addError(self.stepName, 60409, "LogCollectFailure")
+            raise WMExecutionFailure(60409, "LogCollectTimeout", msg)
         except Exception, ex:
             msg = "Unable to stage out log archive:\n"
             msg += str(ex)
@@ -150,7 +151,7 @@ class LogCollect(Executor):
             except Alarm:
                 msg = "Indefinite hang during delete of LogCollect"
                 logging.error(msg)
-                self.report.addError(self.stepName, 60411, "LogCollectFailure")
+                raise WMExecutionFailure(60411, "DeleteTimeout", msg)
             except Exception, ex:
                 msg = "Unable to delete files:\n"
                 msg += str(ex)

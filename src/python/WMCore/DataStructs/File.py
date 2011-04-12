@@ -135,6 +135,8 @@ class File(WMObject, dict):
                 # Then for some reason, we're passing strings
                 # Done specifically for ErrorHandler
                 fileDict['parents'].append(parent)
+            elif thunker == None:
+                continue
             else:
                 fileDict["parents"].append(thunker._thunk(parent))
 

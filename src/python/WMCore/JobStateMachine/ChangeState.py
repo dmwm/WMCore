@@ -127,9 +127,9 @@ class ChangeState(WMObject, WMConnectionBase):
             if newstate == "new":
                 oldstate = "none"
                 
-            if job.get("location", None):
+            if job.get("site_cms_name", None):
                 if newstate == "executing":
-                    jobLocation = job["location"]
+                    jobLocation = job["site_cms_name"]
                 else:
                     jobLocation = "Agent"
             else:

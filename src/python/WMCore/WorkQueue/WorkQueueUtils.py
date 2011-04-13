@@ -130,6 +130,7 @@ def queueConfigFromConfigObject(config):
         myThread = threading.currentThread()
         if not hasattr(myThread, 'logger'):
             import logging
+            logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(module)s: %(message)s')
             myThread.logger = logging.getLogger()
         qConfig['logger'] = myThread.logger
 

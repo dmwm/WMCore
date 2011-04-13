@@ -285,6 +285,21 @@ class PhEDEx(Service):
         data = self._getResult('tfc', args = {'node':node}, verb="GET")
         return data
 
+    def getAuth(self, ability):
+        """
+        _getAuth_
+
+        Determine whether or not the users has permissions to perform the
+        given ability.
+        """
+        data = self._getResult('auth', args = {'ability':ability}, verb="GET")
+        node = data['phedex']['auth'][0].get('node', None)
+
+        if node:
+            return True
+        else:
+            return False 
+
     def getPFN(self, nodes=[], lfns=[], destination=None, protocol='srmv2', custodial='n'):
         """
         Get the PFN for an LFN on a node. Return a dict with a tuple of the input as the key

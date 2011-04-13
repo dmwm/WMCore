@@ -50,7 +50,7 @@ dependencies = {
                         'packages': ['WMCore.WorkQueue+', 'WMCore.Services+', 'WMCore.Wrappers+',
                                      'WMCore.WMSpec+', 'WMCore.ACDC', 'WMCore.GroupUser'],
                         'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
-                                     'WMCore.Database.__init__', 'WMCore.Database.CMSCouch'
+                                     'WMCore.Database.__init__', 'WMCore.Database.CMSCouch',
                                      'WMCore.Algorithms.ParseXMLFile'],
                         'systems': ['wmc-base'],
                         'statics': ['src/couchapps/WorkQueue+'],

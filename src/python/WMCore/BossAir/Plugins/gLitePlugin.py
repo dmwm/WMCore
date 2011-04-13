@@ -88,7 +88,7 @@ def processWorker(input, results):
             print val, stdout, stderr
             jsout = stdout
         except Exception, err:
-            jsout = str(work) + '\n' str(err)
+            jsout = str(work) + '\n' + str(err)
             stderr = stdout + '\n' + stderr
 
         #print "Returning work %i " % workid
@@ -259,6 +259,31 @@ class gLitePlugin(BasePlugin):
         return stateDict
 
 
+    def fakeReport(self, title, mesg, code, job):
+        """
+        _fakeReport_
+
+        Prepares a report to be passed to the JobAccountant
+        """
+        print "MATTIA\njob: \n'"+ str(job) + "'\n"
+        if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
+            return
+        if not os.path.isdir(job['cache_dir']):
+            logging.error("Could not write a kill FWJR due to non-existant cache_dir for job %i\n" % job['id'])
+            logging.debug("cache_dir: %s\n" % job['cache_dir'])
+            return
+        reportName = os.path.join(job['cache_dir'], 'Report.%i.pkl' % job['retry_count'])
+        if os.path.exists(reportName) and os.path.getsize(reportName) > 0:
+            logging.debug("Not writing report due to pre-existing report for job %i.\n" % job['id'])
+            logging.debug("ReportPath: %s\n" % reportName)
+            return
+        else:
+            errorReport = Report()
+            errorReport.addError(title, code, title, mesg)
+            errorReport.save(filename = reportName)
+        return 
+
+
     def close(self, input, result):
         """
         _close_
@@ -375,8 +400,9 @@ class gLitePlugin(BasePlugin):
                               "expired '%s'" % ownersandbox
                         logging.error( msg )
                         failedJobs.extend( jobsReady )
+                        for job in jobsReady:
+                            self.fakeReport("SubmissionFailure", msg, -1, job)
                         continue
-                        ## TODO prepare report and add to failed jobs
 
                     ## getting the job destinations
                     dest      = []
@@ -470,19 +496,27 @@ class gLitePlugin(BasePlugin):
                 if 'result' in jsout:
                     if jsout['result'] != 'success':
                         failedJobs.extend(jobsub)
+                        for job in jobsub:
+                            self.fakeReport("SubmissionFailure", str(jsout), -1, job)
                         continue
                 else:
                     failedJobs.extend(jobsub)
+                    for job in jobsub:
+                        self.fakeReport("SubmissionFailure", str(jsout), -1, job)
                     continue
                 if jsout.has_key('parent'): 
                     parent = jsout['parent']
                 else:
                     failedJobs.extend(jobsub)
+                    for job in jobsub:
+                        self.fakeReport("SubmissionFailure", str(jsout), -1, job)
                     continue
                 if jsout.has_key('endpoint'): 
                     endpoint = jsout['endpoint']
                 else:
                     failedJobs.extend(jobsub)
+                    for job in jobsub:
+                        self.fakeReport("SubmissionFailure", str(jsout), -1, job)
                     continue
                 if jsout.has_key('children'): 
                     for key in jsout['children'].keys():
@@ -496,6 +530,8 @@ class gLitePlugin(BasePlugin):
                         successfulJobs.append(job)
                 else:
                     failedJobs.extend(jobsub)
+                    for job in jobsub:
+                        self.fakeReport("SubmissionFailure", str(jsout), -1, job)
                     continue
 
         logging.debug("Submission completed and processed at time %s " \
@@ -731,8 +767,8 @@ class gLitePlugin(BasePlugin):
                       "expired '%s'" % ownersandbox
                 logging.error( msg )
                 failedJobs.append( jj )
+                self.fakeReport("GetOutputFailure", msg, -1, jj)
                 continue
-                ## TODO prepare report and add to failed jobs
 
             logging.info("Processing job %s " %str(jj['status']))
 
@@ -771,16 +807,14 @@ class gLitePlugin(BasePlugin):
                 msg += '\tstderr: %s\n\tjson: %s' % (error, str(jsout.strip()))
                 logging.error( msg )
                 failedJobs.append(workqueued[workid])
+                for jj in jobs:
+                    if jj['jobid'] == workqueued[workid]:
+                        self.fakeReport("GetOutputFailure", msg, -1, jj)
+                        break
                 continue
             else:
-                # parse JSON output
-                out = None
-                try:
-                    out = json #.loads(jsout)
-                except ValueError, va:
-                    msg = 'Error parsing JSON:\n\terror: %s\n\t:exception: %s' \
-                           % (error, str(va))
-                    raise BossAirPluginException( msg )
+                # parse JSON output, but is not a correct json format, so don't do it!
+                out = json
 
                 ### out example
                 # {
@@ -799,16 +833,11 @@ class gLitePlugin(BasePlugin):
                         completedJobs.append(jobid)
                     else:
                         failedJobs.append(jobid)
-                    """
-                    if not jsout.has_key('result'):
-                        failedJobs.append(jobid)
-                        continue
-                    elif jsout['result'] != 'success':
-                        failedJobs.append(jobid)
-                        continue
-                    else:
-                        completedJobs.append(jobid)
-                    """
+                        for jj in jobs:
+                            if jj['jobid'] == jobid:
+                                self.fakeReport("GetOutputFailure", msg, -1, jj)
+                                break
+
         ## Shut down processes
         logging.debug("About to close the subprocesses...")
         self.close(input, result)
@@ -859,8 +888,8 @@ class gLitePlugin(BasePlugin):
                       "expired '%s'" % ownersandbox
                 logging.error( msg )
                 failedJobs.append( jj )
+                self.fakeReport("PostMortemFailure", msg, -1, jj)
                 continue
-                ## TODO prepare report and add to failed jobs
 
             cmd = '%s %s > %s/loggingInfo.%i.log'\
                    % (command, jj['gridid'], jj['cache_dir'], jj['retry_count'])
@@ -894,6 +923,10 @@ class gLitePlugin(BasePlugin):
                 msg += '\tstderr: %s\n\tjson: %s' % (error, str(jsout.strip()))
                 logging.error( msg )
                 failedJobs.append(workqueued[workid])
+                for jj in jobs:
+                    if jj['jobid'] == workqueued[workid]:
+                        self.fakeReport("PostMortemFailure", msg, -1, jj)
+                        break
                 continue
             else:
                 completedJobs.append(workqueued[workid])
@@ -972,8 +1005,8 @@ class gLitePlugin(BasePlugin):
                       "expired '%s'" % ownersandbox
                 logging.error( msg )
                 failedJobs.append( jj )
+                self.fakeReport("KillFailure", msg, -1, jj)
                 continue
-                ## TODO prepare report and add to failed jobs
 
             gridID = job['gridid']
             command = 'glite-wms-job-cancel --json --noint %s' % (gridID)
@@ -1009,13 +1042,22 @@ class gLitePlugin(BasePlugin):
                 msg += '\tstderr: %s\n\tjson: %s' % (error, str(jsout.strip()))
                 logging.error( msg )
                 failedJobs.append(workqueued[workid])
+                for jj in jobs:
+                    if jj['jobid'] == workqueued[workid]:
+                        self.fakeReport("KillFailure", msg, -1, jj)
+                        break
                 continue
-            elif  jsout.find('success') != -1:
+            elif jsout.find('success') != -1:
                 logging.debug('Success killing %s' % str(workqueued[workid]))
                 completedJobs.append(workqueued[workid]) 
             else:
                 logging.error('Error success != -1')
                 failedJobs.append(workqueued[workid])
+                for jj in jobs:
+                    if jj['jobid'] == workqueued[workid]:
+                        self.fakeReport("KillFailure", msg, -1, jj)
+                        break
+                continue
 
         ## Shut down processes
         logging.debug("Close the subprocesses...")

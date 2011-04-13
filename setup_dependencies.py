@@ -48,7 +48,7 @@ dependencies = {
                         },
                 'workqueue':{
                         'packages': ['WMCore.WorkQueue+', 'WMCore.Services+', 'WMCore.Wrappers+',
-                                     'WMCore.WMSpec+', 'WMCore.ACDC'],
+                                     'WMCore.WMSpec+', 'WMCore.ACDC', 'WMCore.GroupUser'],
                         'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
                                      'WMCore.Database.__init__', 'WMCore.Database.CMSCouch'],
                         'systems': ['wmc-base'],

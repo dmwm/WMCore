@@ -7,9 +7,6 @@ and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
 back down and verify that everything is complete.
 """
 
-
-
-
 import threading
 import time
 import os
@@ -28,7 +25,6 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMQuality.TestInit import TestInit
 
-
 class PhEDExInjectorPollerTest(unittest.TestCase):
     """
     _PhEDExInjectorPollerTest_
@@ -37,21 +33,21 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
     and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
     back down and verify that everything is complete.    
     """
-    __integration__ = "depends on Phedex"
+
     def setUp(self):
         """
         _setUp_
 
         Install the DBSBuffer schema into the database and connect to PhEDEx.
         """
-        self.phedexURL = "https://cmswttest.cern.ch/phedex/datasvc/json/tbedi/"
-        self.dbsURL = "http://cmssrv49.fnal.gov:8989/DBS/servlet/DBSServlet"
+        self.phedexURL = "https://cmsweb.cern.ch/phedex/datasvc/json/test"
+        self.dbsURL = "http://vocms09.cern.ch:8880/cms_dbs_int_local_yy_writer/servlet/DBSServlet"
         
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
 
-        self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
+        self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
 
         myThread = threading.currentThread()
@@ -168,11 +164,11 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         setBlock.execute(testFileE["lfn"], self.blockBName)
 
         fileStatus = bufferFactory(classname = "DBSBufferFiles.SetStatus")
-        fileStatus.execute(testFileA["lfn"], "InDBS")
-        fileStatus.execute(testFileB["lfn"], "InDBS")
-        fileStatus.execute(testFileC["lfn"], "InDBS")
-        fileStatus.execute(testFileD["lfn"], "InDBS")
-        fileStatus.execute(testFileE["lfn"], "InDBS")        
+        fileStatus.execute(testFileA["lfn"], "LOCAL")
+        fileStatus.execute(testFileB["lfn"], "LOCAL")
+        fileStatus.execute(testFileC["lfn"], "LOCAL")
+        fileStatus.execute(testFileD["lfn"], "LOCAL")
+        fileStatus.execute(testFileE["lfn"], "LOCAL")        
         return
 
     def createConfig(self):
@@ -183,8 +179,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         PhEDEx instances.
         """
         config = self.testInit.getConfiguration()
-        config.component_("DBSUpload")
-        config.DBSUpload.globalDBSUrl = self.dbsURL
+        config.component_("DBSInterface")
+        config.DBSInterface.globalDBSUrl = self.dbsURL
 
         config.component_("PhEDExInjector")
         config.PhEDExInjector.phedexurl = self.phedexURL

@@ -56,6 +56,7 @@ def reqMgrConfig(
     config.reqmgr.componentDir = componentDir
     config.reqmgr.templates = reqMgrTemplates
     config.reqmgr.html = reqMgrHtml
+    config.reqmgr.javascript = requestOverviewJavascript
     config.reqmgr.admin = 'cms-service-webtools@cern.ch'
     config.reqmgr.title = 'CMS Request Manager'
     config.reqmgr.description = 'CMS Request Manager'

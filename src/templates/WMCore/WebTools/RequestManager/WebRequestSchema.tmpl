@@ -4,14 +4,20 @@
 
 <!-- Sam Skin CSS for TabView -->
 <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.1/build/tabview/assets/skins/sam/tabview.css">
+<link type="text/css" rel="stylesheet" href="http://yui.yahooapis.com/2.8.2r1/build/autocomplete/assets/skins/sam/autocomplete.css">
+
  
 <!-- JavaScript Dependencies for Tabview: -->
 <script src="http://yui.yahooapis.com/2.8.1/build/yahoo-dom-event/yahoo-dom-event.js"></script>
 <script src="http://yui.yahooapis.com/2.8.1/build/element/element-min.js"></script>
+<script src="http://yui.yahooapis.com/2.8.2r1/build/datasource/datasource-min.js"></script>
+<script src="http://yui.yahooapis.com/2.8.2r1/build/connection/connection-min.js"></script>
  
 <!-- Source file for TabView -->
 <script src="http://yui.yahooapis.com/2.8.1/build/tabview/tabview-min.js"></script>
-
+<script src="http://yui.yahooapis.com/2.8.2r1/build/autocomplete/autocomplete-min.js"></script>
+<script src="javascript/namespace.js"></script>
+<script src="javascript/dataTable.js"></script>
 <!-- Hokey way to keep ENTER from submitting the form.  Ticket #401 -->
 <script type="text/javascript">
 
@@ -73,12 +79,16 @@ Configuration <br>
       <option>relvalmcfs</option>
     </select><br/>
   <input type="radio" name=$radioName value="couchDB" /> $type ConfigCache ID
-    <input type="text" name="$cacheName" size=80 />
-    <!--<select name=$cacheName>
+    <!--<input type="text" name="$cacheName" size=80 />
+    <select name=$cacheName>
     #for $doc in $alldocs
       <option>$doc</option>
     #end for
     </select>-->
+    <div id="couchdiv">
+       <input name="$cacheName" size=80 id="couchinput" type="text">
+       <div id="couchcontainer"></div>
+    </div>
   <br/>
 
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
@@ -236,7 +246,12 @@ MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
 <script type="text/javascript">
    var tabView = new YAHOO.widget.TabView('tabby');
 </script>
-
+<script type="text/javascript">
+   var dataUrl = $alldocs
+   var dataSchema = {fields:["doc"]};
+   var dataSource = WMCore.createDataSource(dataUrl, dataSchema, "Local");
+   var oAC = new YAHOO.widget.AutoComplete("couchinput", "couchcontainer", dataSource);
+</script>
 </body>
 </html>
 

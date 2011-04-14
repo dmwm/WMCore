@@ -12,6 +12,7 @@ import time
 from WMCore.WebTools.WebAPI import WebAPI
 import WMCore.Database.CMSCouch
 import threading
+import os.path
 
 
 class WebRequestSchema(WebAPI):
@@ -36,6 +37,7 @@ class WebRequestSchema(WebAPI):
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
 
+    @cherrypy.expose
     def allDocs(self):
         server = WMCore.Database.CMSCouch.CouchServer(self.couchUrl)
         database = server.connectDatabase(self.configDBName)
@@ -47,6 +49,15 @@ class WebRequestSchema(WebAPI):
            else:
                result.append(row["id"]) 
         return result
+
+    @cherrypy.expose
+    def javascript(self, *args):
+        if args[0] == "external":
+            return Utilities.serveFile('application/javascript',
+                             os.path.join(self.config.javascript), *args)
+        return Utilities.serveFile('application/javascript',
+                          os.path.join(self.config.javascript,
+                                    'WMCore', 'WebTools'), *args)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
@@ -67,7 +78,7 @@ class WebRequestSchema(WebAPI):
             requestor=requestor,
             groups=groups, 
             versions=self.versions, 
-            alldocs = self.allDocs(),
+            alldocs = Utilities.unidecode(self.allDocs()),
             defaultVersion=self.cmsswVersion,
             defaultSkimConfig=self.defaultSkimConfig)
 

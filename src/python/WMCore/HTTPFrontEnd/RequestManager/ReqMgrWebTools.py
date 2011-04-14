@@ -206,3 +206,16 @@ def makeRequest(schema, couchUrl, couchDB):
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     CheckIn.checkIn(request)
 
+from os import path
+from cherrypy import HTTPError
+from cherrypy.lib.static import serve_file
+
+def serveFile(contentType, prefix, *args):
+    """Return a workflow from the cache"""
+    name = path.normpath(path.join(prefix, *args))
+    if path.commonprefix([name, prefix]) != prefix:
+        raise HTTPError(403)
+    if not path.exists(name):
+        raise HTTPError(404, "%s not found" % name)
+    return serve_file(name, content_type = contentType)
+

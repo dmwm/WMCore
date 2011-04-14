@@ -20,6 +20,9 @@ from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUID import makeUUID
 
+from WMCore.WMSpec.StdSpecs.ReDigi import getTestArguments, reDigiWorkload
+from WMCore.Database.CMSCouch import CouchServer, Document
+
 class DataCollectionService_t(unittest.TestCase):
     def setUp(self):
         """bootstrap tests"""
@@ -29,6 +32,10 @@ class DataCollectionService_t(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setupCouch("wmcore-acdc-datacollectionsvc", "GroupUser", "ACDC")
+        self.testInit.setupCouch("datacollectionsvc_t_cc", "ConfigCache")
+
+        couchServer = CouchServer(os.environ["COUCHURL"])
+        self.configDatabase = couchServer.connectDatabase("datacollectionsvc_t_cc")
         return
         
     def tearDown(self):
@@ -67,13 +74,92 @@ class DataCollectionService_t(unittest.TestCase):
 
         return workload
 
+    def injectReDigiConfigs(self):
+        """
+        _injectReDigiConfigs_
+
+        Create bogus config cache documents for the various steps of the
+        ReDigi workflow.  Return the IDs of the documents.
+        """
+        stepOneConfig = Document()
+        stepOneConfig["info"] = None
+        stepOneConfig["config"] = None
+        stepOneConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
+        stepOneConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
+        stepOneConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
+        stepOneConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RAWDEBUGoutput"],
+                                                          "RAWDEBUGoutput": {"dataset": {"filterName": "",
+                                                                                         "dataTier": "RAW-DEBUG-OUTPUT"}}}}
+
+        stepTwoConfig = Document()
+        stepTwoConfig["info"] = None
+        stepTwoConfig["config"] = None
+        stepTwoConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
+        stepTwoConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
+        stepTwoConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
+        stepTwoConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RECODEBUGoutput", "DQMoutput"],
+                                                          "RECODEBUGoutput": {"dataset": {"filterName": "",
+                                                                                          "dataTier": "RECO-DEBUG-OUTPUT"}},
+                                                          "DQMoutput": {"dataset": {"filterName": "",
+                                                                                    "dataTier": "DQM"}}}}
+
+        stepThreeConfig = Document()
+        stepThreeConfig["info"] = None
+        stepThreeConfig["config"] = None
+        stepThreeConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
+        stepThreeConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
+        stepThreeConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
+        stepThreeConfig["pset_tweak_details"] ={"process": {"outputModules_": ["aodOutputModule"],
+                                                            "aodOutputModule": {"dataset": {"filterName": "",
+                                                                                            "dataTier": "AODSIM"}}}}        
+        stepOne = self.configDatabase.commitOne(stepOneConfig)[0]["id"]
+        stepTwo = self.configDatabase.commitOne(stepTwoConfig)[0]["id"]
+        stepThree = self.configDatabase.commitOne(stepThreeConfig)[0]["id"]        
+        return (stepOne, stepTwo, stepThree)
+
+    def testReDigiInsertion(self):
+        """
+        _testReDigiInsertion_
+
+        Verify that the ReDigi workflow is correctly inserted into ACDC.
+        """
+        defaultArguments = getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "datacollectionsvc_t_cc"
+        configs = self.injectReDigiConfigs()
+        defaultArguments["StepOneConfigCacheID"] = configs[0]
+        defaultArguments["StepTwoConfigCacheID"] = configs[1]
+        defaultArguments["StepThreeConfigCacheID"] = configs[2]
+
+        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
+        testWorkload.setSpecUrl("somespec")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")        
+
+        dcs = DataCollectionService(url = self.testInit.couchUrl, database = "wmcore-acdc-datacollectionsvc")
+        dcs.createCollection(testWorkload)
+
+        dataCollections = dcs.listDataCollections()
+        self.assertEqual(len(dataCollections), 1,
+                         "Error: There should only be one data collection.")
+
+        for taskName in testWorkload.listAllTaskPathNames():
+            if taskName.find("Cleanup") != -1 or taskName.find("LogCollect") != -1:
+                # We don't insert cleanup and logcollect tasks into ACDC.
+                continue
+
+            taskFilesets = [ x for x in dcs.filesetsByTask(dataCollections[0], taskName)]
+            self.assertEqual(len(taskFilesets), 1,
+                             "Error: Fileset is missing.")
+        
+        return
+
     def testA(self):
         """
         test creating collections and filesets based off a workload.
         """
         workload = self.createTestWorkload()
         
-        dcs = DataCollectionService(url = self.testInit.couchUrl, database = self.testInit.couchDbName)
+        dcs = DataCollectionService(url = self.testInit.couchUrl, database = "wmcore-acdc-datacollectionsvc")
         dcs.createCollection(workload)
         
         colls = [c for c in dcs.listDataCollections()]
@@ -122,7 +208,7 @@ class DataCollectionService_t(unittest.TestCase):
         the chunks are pulled out of ACDC correctly.
         """
         workload = self.createTestWorkload()
-        dcs = DataCollectionService(url = self.testInit.couchUrl, database = self.testInit.couchDbName)
+        dcs = DataCollectionService(url = self.testInit.couchUrl, database = "wmcore-acdc-datacollectionsvc")
         dcs.createCollection(workload)        
 
         def getJob(workload):
@@ -292,7 +378,7 @@ class DataCollectionService_t(unittest.TestCase):
            "2": [[5, 7], [10, 12], [15, 15]],
            "3": [[20, 20]]}
         """
-        dcs = DataCollectionService(url = self.testInit.couchUrl, database = self.testInit.couchDbName)        
+        dcs = DataCollectionService(url = self.testInit.couchUrl, database = "wmcore-acdc-datacollectionsvc")
 
         workload = self.createTestWorkload()
         collection = dcs.createCollection(workload)

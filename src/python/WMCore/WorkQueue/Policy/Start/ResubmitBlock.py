@@ -42,9 +42,6 @@ class ResubmitBlock(StartPolicyInterface):
         """Check args and spec work with block splitting"""
         StartPolicyInterface.validateCommon(self)
 
-        if not self.initialTask.inputDataset():
-            raise WorkQueueWMSpecError(self.wmspec, 'No input dataset')
-
     def validBlocks(self, task):
         """Return blocks that pass the input data restriction"""
         validBlocks = []

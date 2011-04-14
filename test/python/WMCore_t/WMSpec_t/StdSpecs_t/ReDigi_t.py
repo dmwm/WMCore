@@ -24,8 +24,7 @@ class ReDigiTest(unittest.TestCase):
         """
         _setUp_
 
-        Initialize the database and couch.
-        
+        Initialize the database and couch.        
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()

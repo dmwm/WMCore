@@ -394,7 +394,7 @@ class WMBSHelper(WMConnectionBase):
                 if not lfn in fileLFNs:
                     fileLFNs.append(lfn)
                     for parent in wmbsFile['parents']:
-                        parentageBinds.append({'child': lfn, 'parent': parent['lfn']})
+                        parentageBinds.append({'child': lfn, 'parent': parent})
             
             selfChecksums = wmbsFile['checksums']
             if len(wmbsFile['runs']) > 0:

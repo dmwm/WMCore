@@ -22,12 +22,12 @@ function(head, req) {
 
     if (numBytes == 1) {
       var bytesString = numBytes + " byte";
-    } else if ((numBytes / 1073741824) > 1) {
-      var bytesString = (numBytes / 1073741824.0).toFixed(2) + " GB";
-    } else if ((numBytes / 1048576) > 1) {
-      var bytesString = (numBytes / 1048576.0).toFixed(2) + " MB";
-    } else if ((numBytes / 1024) > 1) {
-      var bytesString = (numBytes / 1024.0).toFixed(2) + " KB";
+    } else if ((numBytes / 1000000000) > 1) {
+      var bytesString = (numBytes / 1000000000.0).toFixed(2) + " GB";
+    } else if ((numBytes / 1000000) > 1) {
+      var bytesString = (numBytes / 1000000.0).toFixed(2) + " MB";
+    } else if ((numBytes / 1000) > 1) {
+      var bytesString = (numBytes / 1000.0).toFixed(2) + " KB";
     } else {
       var bytesString = numBytes + " bytes";
     }

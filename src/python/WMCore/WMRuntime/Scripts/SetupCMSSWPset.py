@@ -319,6 +319,7 @@ class SetupCMSSWPset(ScriptInterface):
         # include the default performance report services
         self.process.add_(PSetConfig.Service("SimpleMemoryCheck"))
         self.process.add_(PSetConfig.Service("Timing"))
+        self.process.Timing.summaryOnly = PSetConfig.untracked(PSetConfig.bool(True))
     
     
     def _handleChainedProcessing(self):
@@ -340,6 +341,7 @@ class SetupCMSSWPset(ScriptInterface):
                        mapping_type = "pfn-to-lfn")
 
         fixupFileNames(self.process)
+        fixupMaxEvents(self.process)        
         self.process.source.fileNames.setValue([inputFile])
         self.process.maxEvents.input.setValue(-1)
 

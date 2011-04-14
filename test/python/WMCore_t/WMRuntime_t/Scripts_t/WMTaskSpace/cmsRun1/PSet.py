@@ -62,6 +62,8 @@ class Process():
         Add a service to our services dict.
         """
         self.services[service.serviceName] = service
+        setattr(self, service.serviceName, service)
+        return
 
     def dumpPython(self):
         """

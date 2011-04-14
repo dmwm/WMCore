@@ -99,6 +99,14 @@ def int32(value = 0):
     """
     return ConfigObject("uint32", value)    
 
+def bool(value = True):
+    """
+    _bool_
+
+    Bool parameter.
+    """
+    return ConfigObject("bool", value)
+
 def VLuminosityBlockRange():
     """
     _VLuminosityBlockRange_

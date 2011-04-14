@@ -233,8 +233,8 @@ class ReqMgrBrowser(WebAPI):
         """ Displays the workload """
         request = {'RequestWorkflow':url}
         helper = loadWorkload(request)
-        workloadText = str(helper.data).replace('\n', '<br>')
-        return cgi.escape(workloadText)
+        workloadText = str(helper.data)
+        return cgi.escape(workloadText).replace("\n", "<br/>\n")
  
     def drawRequests(self, requests):
         """ Display all requests """

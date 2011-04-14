@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
-<title>Full Page Layout with Menu Navigation - Example</title>
+<title>WorkQueue Monitor</title>
 <style type="text/css">
 /*margin and padding on body element
   can introduce errors in determining
@@ -46,9 +46,7 @@ body {
 
 <script src="js/namespace.js"></script>
 <script src="js/dataTable.js"></script>
-<script src="js/WorkQueueTree.js"></script>
-<script src="js/WorkloadStatusYUIPieChart.js"></script>
-<script src="js/WorkflowChart.js"></script>
+
 <!--<script src="javascript/WorkQueue/ElementInfoWithPagination2.js"></script>
 <script src="javascript/WorkQueue/ElementInfoWithServerPagination.js"></script>
  This script uses client side pagination
@@ -123,12 +121,6 @@ body {
     </div>
 </div>
 <div id="bottom1"></div>
-<div id="left1">
-    <span class="title">Workload Status</span>
-    <div id="statuschart" class="chart"></div>
-    <span class="title">Job Status</span>
-    <div id="jobchart" class="chart"></div>
-</div>
 
 <div id="center1">
     <span class="title">Workload Infomation</span>
@@ -185,7 +177,7 @@ body {
                          id: "suboption",
                          itemdata: [
                              {text: "local queue",
-                              url: "http://cmssrv52.fnal.gov:9997/workqueuemonitor/examples/Layout.html" },
+                              url: "" },
                              {text: "wmagent", url: "" }
                          ]
                       }

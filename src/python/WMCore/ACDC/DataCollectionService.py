@@ -92,9 +92,8 @@ class DataCollectionService(CouchService):
             filesetName = None
             metadata = {}
 
-          
+            filesetName = t
             if inpDataset != None:
-                filesetName = "/%s/%s/%s" % (inpDataset.primary, inpDataset.processed, inpDataset.tier)
                 metadata['input_dataset'] = {}
                 #hmmn, no recursive dictionary conversion for ConfigSection? pretty sure I wrote one somewhere...
                 for key, val in inpDataset.dictionary_().items():
@@ -105,15 +104,15 @@ class DataCollectionService(CouchService):
             
             if inpStep != None:
                 step = stepMap[inpStep]
-                if step.stepType() != "CMSSW": continue
+                if step.stepType() != "CMSSW":
+                    continue
                 metadata['input_step'] = {}
                 metadata['input_step']['step_name'] = inpStep
                 outputModule = task.data.input.outputModule
                 metadata['input_step']['module_name'] = outputModule
                 outModConfig = getattr(step.data.output.modules, outputModule, None)
-                if outModConfig == None: continue
-                filesetName = "%s/%s/%s" % (outModConfig.primaryDataset, outModConfig.processedDataset,
-                                            outModConfig.dataTier)
+                if outModConfig == None:
+                    continue
                 metadata['input_dataset'] = {}
                 metadata['input_dataset'].update(outModConfig.dictionary_())
 

@@ -39,7 +39,7 @@ acdcDBName = "wmagent_acdc"
 # for this agent.
 userEmail = "OP EMAIL"
 agentTeams = "team1,team2,cmsdataops"
-agentName = "WMAgentCommissioning"
+agentName = "t1processing"
 
 # List of BossAir plugins that this agent will use.
 bossAirPlugins = ["CondorPlugin"]

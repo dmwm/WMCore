@@ -715,7 +715,11 @@ class WMTaskHelper(TreeHelper):
         
         accessor for parentProcessing information (two file input)
         """
-        return getattr(self.data.input.dataset, "parentFlag", False)
+        if hasattr(self, "data"):
+            if hasattr(self.data, "input"):
+                if hasattr(self.data.input, "dataset"):
+                    return getattr(self.data.input.dataset, "parentFlag", False)
+        return False
     
     def totalEvents(self):
         """

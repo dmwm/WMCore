@@ -1,0 +1,26 @@
+From 0.7.4 to 0.7.5:
+ - Fixes to ACDC and WMSpec to allow dependent (not top level) tasks to be 
+   resubmitted (1453).
+ - Display file sizes in KB/MB/GB/TB instead of KiB/MiB/GiB/TiB (1454).
+ - Change the timing setting for cmsRun (1450).
+ - Fix file parentage when inserting files into WMBS from the WorkQueue (1451).
+ - Fix the PhEDExInjector unit test and prevent it from closing blocks that
+   have uninjected files (1249).
+ - Dust the cobwebs off the PhEDEx unit test and add an auth() method to the
+   PhEDEx class to check if a user has a given ability (712).
+ - Generate a fake FWJR if the gLite BossAir plugin encounters errors (1025).
+ - The stage out step must delete all files on failures (1430).
+ - Add IMProv to the default build.
+ - Fix inconsistencies in ReqMgr interface (1438).
+ - Better handle duplicate jobs reports in couch and make finding collected
+   logarchives easier (1296, 1433)
+ - Fix a couple issues with stageout timeouts and error reporting (1361, 1381, 1390)
+ - Fix JSON serialization of the File object when a thunker is not available (1435).
+ - Pull the state change time out of couch (1237).
+ - Archive all FWJR files (1384).
+ - Increase the size of the task name and fileset name in WMBS (1418).
+ - Fix a couple problems with LFN counters.
+ - Fix assert error in front end auth (1412).
+ - Add the agent name and host to the dashboard task info (1358).
+ - Fix LumiBased splitting over files that do no have contigious lumi sections
+   and rename the parameter that controls this.

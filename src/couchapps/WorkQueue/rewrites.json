@@ -25,5 +25,35 @@
    "method": "GET",
    "query": {"group": true
             }
+  },
+
+  {
+    "from": "",
+    "to": "index.html"
+  },
+
+  {
+    "from": "vendor/*",
+    "to": "vendor/*"
+  },
+
+  {
+    "from": "config/*",
+    "to": "config/*"
+  },
+
+  {
+    "from": "_view/*",
+    "to": "_view/*"
+  },
+
+  {
+    "from": "_list/*",
+    "to": "_list/*"
+  },
+
+  {
+    "from": "_update/*",
+    "to": "_update/*"
   }
 ]

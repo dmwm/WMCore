@@ -55,5 +55,10 @@
   {
     "from": "_update/*",
     "to": "_update/*"
+  },
+
+  {
+    "from": "js/*",
+    "to": "js/*"
   }
 ]

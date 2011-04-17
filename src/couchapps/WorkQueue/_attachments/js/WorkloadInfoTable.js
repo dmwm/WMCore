@@ -36,7 +36,7 @@ WQ.WorkloadInfoTable.workloadTable = function(args) {
                       formatter: progressFormatter, parser: "number"}]
             };
 
-    var dataUrl = "./_rewrite/workflowInfo/" + args.workflow
+    var dataUrl = "workflowInfo/" + args.workflow
 
     var dataSource = WQ.createDataSource(dataUrl, dataSchema);
     var tableConfig = WQ.createDefaultTableConfig();

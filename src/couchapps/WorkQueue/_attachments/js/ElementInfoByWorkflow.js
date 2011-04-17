@@ -77,7 +77,7 @@ WQ.ElementInfoByWorkflow.elementTable = function(args) {
         };
 
     //workqueue database name is hardcoded, need to change to get from config
-    var dataUrl = "./_rewrite/elementsInfo/" + args.workflow
+    var dataUrl = "elementsInfo/" + args.workflow
     var dataSource = WQ.createDataSource(dataUrl, dataSchema)
 
     var tableConfig = WQ.createDefaultTableConfig();

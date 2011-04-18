@@ -150,6 +150,46 @@ class DataCollectionService_t(unittest.TestCase):
             taskFilesets = [ x for x in dcs.filesetsByTask(dataCollections[0], taskName)]
             self.assertEqual(len(taskFilesets), 1,
                              "Error: Fileset is missing.")
+
+        testWorkload.truncate("ACDC_Round_1", "/TestWorkload/ReDigi", os.environ["COUCHURL"],
+                              "wmcore-acdc-datacollectionsvc")
+        dcs.createCollection(testWorkload)
+
+        dataCollections = dcs.listDataCollections()
+        self.assertEqual(len(dataCollections), 2,
+                         "Error: There should only be two data collections.")
+        for dataCollection in dataCollections:
+            if dataCollection["name"] == "ACDC_Round_1":
+                break
+
+        for taskName in testWorkload.listAllTaskPathNames():
+            if taskName.find("Cleanup") != -1 or taskName.find("LogCollect") != -1:
+                # We don't insert cleanup and logcollect tasks into ACDC.
+                continue
+
+            taskFilesets = [ x for x in dcs.filesetsByTask(dataCollection, taskName)]
+            self.assertEqual(len(taskFilesets), 1,
+                             "Error: Fileset is missing.")
+
+        testWorkload.truncate("ACDC_Round_2", "/ACDC_Round_1/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco", os.environ["COUCHURL"],
+                              "wmcore-acdc-datacollectionsvc")
+        dcs.createCollection(testWorkload)
+
+        dataCollections = dcs.listDataCollections()
+        self.assertEqual(len(dataCollections), 3,
+                         "Error: There should only be two data collections.")
+        for dataCollection in dataCollections:
+            if dataCollection["name"] == "ACDC_Round_2":
+                break
+
+        for taskName in testWorkload.listAllTaskPathNames():
+            if taskName.find("Cleanup") != -1 or taskName.find("LogCollect") != -1:
+                # We don't insert cleanup and logcollect tasks into ACDC.
+                continue
+
+            taskFilesets = [ x for x in dcs.filesetsByTask(dataCollection, taskName)]
+            self.assertEqual(len(taskFilesets), 1,
+                             "Error: Fileset is missing.")
         
         return
 

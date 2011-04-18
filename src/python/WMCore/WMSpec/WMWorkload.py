@@ -885,6 +885,7 @@ class WMWorkloadHelper(PersistencyHelper):
         newTopLevelTask = self.getTaskByPath(initialTaskPath)
         newTopLevelTask.addInputACDC(serverUrl, databaseName, self.name(),
                                      initialTaskPath)
+        newTopLevelTask.setInputStep(None)
         workloadOwner = self.getOwner()
         self.setInitialJobCount(self.getInitialJobCount() + 10000000)
         newTopLevelTask.setSplittingParameters(collectionName = self.name(),
@@ -896,8 +897,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                                initial_lfn_counter = self.getInitialJobCount())
 
         cleanupTask = None
+        parentTaskPath = "/".join(initialTaskPath.split("/")[:-1])
         if not newTopLevelTask.isTopOfTree():
-            parentTaskPath = "/".join(initialTaskPath.split("/")[:-1])
             parentTask = self.getTaskByPath(parentTaskPath)
             for childTask in parentTask.childTaskIterator():
                 if childTask.taskType() == "Cleanup" and \
@@ -933,6 +934,11 @@ class WMWorkloadHelper(PersistencyHelper):
             """
             for childTask in initialTask.childTaskIterator():
                 childTask.setPathName("%s/%s" % (parentPath, childTask.name()))
+                inputStep = childTask.getInputStep()
+                if inputStep != None:
+                    inputStep = inputStep.replace(parentTaskPath, "/" + newWorkloadName)
+                    childTask.setInputStep(inputStep)
+                    
                 adjustPathsForTask(childTask, childTask.getPathName())
 
             return

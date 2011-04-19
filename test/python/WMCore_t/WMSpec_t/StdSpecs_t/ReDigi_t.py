@@ -47,7 +47,7 @@ class ReDigiTest(unittest.TestCase):
         self.testInit.clearDatabase()
         return
 
-    def injectReDigiConfigs(self):
+    def injectReDigiConfigs(self, combinedStepOne = False):
         """
         _injectReDigiConfigs_
 
@@ -60,9 +60,16 @@ class ReDigiTest(unittest.TestCase):
         stepOneConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
         stepOneConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
         stepOneConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-        stepOneConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RAWDEBUGoutput"],
-                                                          "RAWDEBUGoutput": {"dataset": {"filterName": "",
-                                                                                         "dataTier": "RAW-DEBUG-OUTPUT"}}}}
+        if combinedStepOne:
+            stepOneConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RECODEBUGoutput", "DQMoutput"],
+                                                              "RECODEBUGoutput": {"dataset": {"filterName": "",
+                                                                                              "dataTier": "RECO-DEBUG-OUTPUT"}},
+                                                              "DQMoutput": {"dataset": {"filterName": "",
+                                                                                        "dataTier": "DQM"}}}}            
+        else:
+            stepOneConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RAWDEBUGoutput"],
+                                                              "RAWDEBUGoutput": {"dataset": {"filterName": "",
+                                                                                             "dataTier": "RAW-DEBUG-OUTPUT"}}}}            
 
         stepTwoConfig = Document()
         stepTwoConfig["info"] = None
@@ -389,31 +396,13 @@ class ReDigiTest(unittest.TestCase):
 
         return
 
-    def testChainedReDigi(self):
+    def verifyDiscardRAW(self):
         """
-        _testChaninedReDigi_
+        _verifyDiscardRAW_
 
-        Verify that a chained ReDigi workflow that discards RAW data can be
-        created and installed into WMBS correctly.  This will only verify the
-        step one/step two information in WMBS as the step three information is
-        the same as the dependent workflow.
+        Verify that a workflow that discards the RAW was installed into WMBS
+        correctly.
         """
-        defaultArguments = getTestArguments()
-        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
-        defaultArguments["CouchDBName"] = "redigi_t"
-        configs = self.injectReDigiConfigs()
-        defaultArguments["StepOneConfigCacheID"] = configs[0]
-        defaultArguments["StepTwoConfigCacheID"] = configs[1]
-        defaultArguments["StepThreeConfigCacheID"] = configs[2]
-        defaultArguments["KeepRAW"] = False
-
-        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
-        
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
-
         topLevelFileset = Fileset(name = "TestWorkload-Redigi-SomeBlock")
         topLevelFileset.loadData()
 
@@ -535,8 +524,62 @@ class ReDigiTest(unittest.TestCase):
         for outputMod in stepTwoMergeDQMWorkflow.outputMap.keys():
             self.assertTrue(len(stepTwoMergeDQMWorkflow.outputMap[outputMod]) == 1,
                             "Error: more than one destination for output mod.")
-
         return
+
+    def testChainedReDigi(self):
+        """
+        _testChaninedReDigi_
+
+        Verify that a chained ReDigi workflow that discards RAW data can be
+        created and installed into WMBS correctly.  This will only verify the
+        step one/step two information in WMBS as the step three information is
+        the same as the dependent workflow.
+        """
+        defaultArguments = getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "redigi_t"
+        configs = self.injectReDigiConfigs()
+        defaultArguments["StepOneConfigCacheID"] = configs[0]
+        defaultArguments["StepTwoConfigCacheID"] = configs[1]
+        defaultArguments["StepThreeConfigCacheID"] = configs[2]
+        defaultArguments["KeepRAW"] = False
+
+        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
+        testWorkload.setSpecUrl("somespec")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        
+        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
+        testWMBSHelper.createSubscription()
+
+        self.verifyDiscardRAW()
+        return
+
+    def testCombinedReDigiRecoConfig(self):
+        """
+        _testCombinedReDigigRecoConfig_
+
+        Verify that a ReDigi workflow that uses a single step one config
+        installs into WMBS correctly.
+        """
+        defaultArguments = getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "redigi_t"
+        configs = self.injectReDigiConfigs(combinedStepOne = True)
+        defaultArguments["StepOneConfigCacheID"] = configs[0]
+        defaultArguments["StepTwoConfigCacheID"] = None
+        defaultArguments["RAWOutputModuleName"] = None
+        defaultArguments["StepThreeConfigCacheID"] = configs[2]
+        defaultArguments["KeepRAW"] = False
+
+        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
+        testWorkload.setSpecUrl("somespec")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        
+        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
+        testWMBSHelper.createSubscription()
+
+        self.verifyDiscardRAW()
+        return    
 
 if __name__ == '__main__':
     unittest.main()

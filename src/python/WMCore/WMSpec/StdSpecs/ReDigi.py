@@ -2,7 +2,7 @@
 """
 _ReDigi_
 
-Standard three step redigi workflow.
+Standard two/three step redigi workflow.
 """
 
 import os
@@ -31,10 +31,10 @@ def getTestArguments():
         "ProcessingVersion": "v2scf",
         "GlobalTag": "GR10_P_v4::All",
 
-        "StepOneConfigCacheID": "3a4548750b61f485d42b4aa850b9ede5",
-        "StepOneRAWOutputModuleName": "RAWDEBUGoutput",
+        "RAWOutputModuleName": "RAWDEBUGoutput",
+        "RECOOutputModuleName": "RECODEBUGoutput",
         "StepTwoConfigCacheID": "3a4548750b61f485d42b4aa850ba385e",
-        "StepTwoRECOOutputModuleName": "RECODEBUGoutput",
+        "StepOneConfigCacheID": "3a4548750b61f485d42b4aa850b9ede5",
         "StepThreeConfigCacheID": "3a4548750b61f485d42b4aa850ba4ab7",
         "KeepRAW": True,
         
@@ -71,7 +71,7 @@ class ReDigiWorkloadFactory(StdBase):
                                           outputModuleInfo["processedDataset"])
             stepOneMergeTasks[outputModuleName] = mergeTask
 
-        stepOneMergeTask = stepOneMergeTasks[self.stepOneRAWOutputModuleName]
+        stepOneMergeTask = stepOneMergeTasks[self.rawOutputModuleName]
         stepTwoTask = stepOneMergeTask.addTask("ReDigiReReco")
 
         parentCmsswStep = stepOneMergeTask.getStep("cmsRun1")
@@ -103,7 +103,7 @@ class ReDigiWorkloadFactory(StdBase):
 
         stepTwoCmsswHelper = stepTwoCmssw.getTypeHelper()
         stepTwoCmsswHelper.setGlobalTag(self.globalTag)
-        stepTwoCmsswHelper.setupChainedProcessing("cmsRun1", self.stepOneRAWOutputModuleName)
+        stepTwoCmsswHelper.setupChainedProcessing("cmsRun1", self.rawOutputModuleName)
         stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                       scramArch = self.scramArch)
         stepTwoCmsswHelper.setConfigCache(self.couchURL, self.stepTwoConfigCacheID,
@@ -145,7 +145,12 @@ class ReDigiWorkloadFactory(StdBase):
         if self.pileupConfig:
             self.setupPileup(stepOneTask, self.pileupConfig)
 
-        if self.keepRAW == True or self.keepRAW == "True":
+        if self.stepTwoConfigCacheID == None or self.rawOutputModuleName == None or \
+               self.stepTwoConfigCacheID == "" or self.rawOutputModuleName == "":
+            parentTask = stepOneTask
+            parentStepName = "cmsRun1"
+            outputModes = outputMods
+        elif self.keepRAW == True or self.keepRAW == "True":
             (parentTask, parentStepName, outputMods) = self.setupDependentProcessing(stepOneTask, outputMods)
         else:
             (parentTask, parentStepName, outputMods) = self.setupChainedProcessing(stepOneTask)
@@ -161,7 +166,7 @@ class ReDigiWorkloadFactory(StdBase):
                                           parentStepName = parentStepName)
             stepTwoMergeTasks[outputModuleName] = mergeTask
 
-        stepTwoMergeTask = stepTwoMergeTasks[self.stepTwoRECOOutputModuleName]
+        stepTwoMergeTask = stepTwoMergeTasks[self.recoOutputModuleName]
         stepThreeTask = stepTwoMergeTask.addTask("AODProd")
         parentCmsswStep = stepTwoMergeTask.getStep("cmsRun1")
 
@@ -202,10 +207,10 @@ class ReDigiWorkloadFactory(StdBase):
 
         # Pull down the configs and the names of the output modules so that
         # we can chain things together properly.
+        self.rawOutputModuleName = arguments.get("RAWOutputModuleName", None)
+        self.recoOutputModuleName = arguments.get("RECOOutputModuleName")
         self.stepOneConfigCacheID = arguments.get("StepOneConfigCacheID")
-        self.stepOneRAWOutputModuleName = arguments.get("StepOneRAWOutputModuleName")
-        self.stepTwoConfigCacheID = arguments.get("StepTwoConfigCacheID")
-        self.stepTwoRECOOutputModuleName = arguments.get("StepTwoRECOOutputModuleName")
+        self.stepTwoConfigCacheID = arguments.get("StepTwoConfigCacheID", None)
         self.stepThreeConfigCacheID = arguments.get("StepThreeConfigCacheID")
         self.keepRAW = arguments.get("KeepRAW", True)
 

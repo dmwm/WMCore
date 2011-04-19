@@ -332,6 +332,24 @@ class WMTaskHelper(TreeHelper):
         [ setattr(self.data.input, key, val)
           for key, val in extras.items() ]
         return
+
+    def setInputStep(self, stepName):
+        """
+        _setInputStep_
+
+        Set the name of the step used who's output is used as input for this
+        task.
+        """
+        self.data.input.inputStep = stepName
+        return
+
+    def getInputStep(self):
+        """
+        _getInputStep_
+
+        Retrieve the name of the input step, if there is one.
+        """
+        return getattr(self.data.input, "inputStep", None)
     
     def inputReference(self):
         """

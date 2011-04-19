@@ -413,16 +413,15 @@ class SetupCMSSWPset(ScriptInterface):
             for pileupType in self.step.data.pileup.listSections_():
                 # there should be either "input" or "secsource" attributes
                 # and both "MixingModule", "DataMixingModule" can have both
-                inputTypeAttrib = getattr(m, "input", None) or getattr(m, "secsource", None)                                
+                inputTypeAttrib = getattr(m, "input", None) or getattr(m, "secsource", None)
+                inputTypeAttrib.fileNames = cms.untracked.vstring()
                 if pileupType == requestedPileupType:
                     # not all blocks may be stored on the local SE, loop over
                     # all blocks and consider only files stored locally                    
-                    filesToMixIn = []
                     for blockDict in pileupDict[pileupType].values():
                         if seLocalName in blockDict["StorageElementNames"]:
                             for fileLFN in blockDict["FileList"]:
                                 inputTypeAttrib.fileNames.append(str(fileLFN))
-                            filesToMixIn.extend(blockDict["FileList"])
                     
     def _getPileupMixingModules(self):
         """

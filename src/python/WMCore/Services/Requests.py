@@ -22,9 +22,9 @@ import stat
 from WMCore.Algorithms import Permissions
 
 from WMCore.WMException import WMException
-from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+from WMCore.Lexicon import sanitizeURL
 
 def check_server_url(srvurl):
     good_name = srvurl.startswith('http://') or srvurl.startswith('https://')
@@ -325,28 +325,15 @@ class BasicAuthJSONRequests(JSONRequests):
         username:password@hostname
     """
     def __init__(self, url = "http://localhost:8080", dict={}):
-        endpoint_components = urlparse.urlparse(url)
+        urlComponent = sanitizeURL(url)
         # Cleanly pull out the user/password from the url
-        if endpoint_components.port:
-            netloc = '%s:%s' % (endpoint_components.hostname,
-                        endpoint_components.port)
-        else:
-            netloc = endpoint_components.hostname
 
-        #Build a URL without the username/password information
-        url = urlparse.urlunparse(
-                [endpoint_components.scheme,
-                 netloc,
-                 endpoint_components.path,
-                 endpoint_components.params,
-                 endpoint_components.query,
-                 endpoint_components.fragment])
-
-        JSONRequests.__init__(self, url, dict)
+        JSONRequests.__init__(self, urlComponent['url'], dict)
         # Add the necessary auth information into the header
-        auth_string = "Basic %s" % base64.encodestring('%s:%s' % (endpoint_components.username,
-                                                                  endpoint_components.password)).strip()
-        if endpoint_components.username != None:
+        auth_string = "Basic %s" % base64.encodestring('%s:%s' % (
+                                            urlComponent['username'],
+                                            urlComponent['password'])).strip()
+        if urlComponent['username'] != None:
             self.additionalHeaders["Authorization"] = auth_string
         return
 

@@ -11,25 +11,30 @@ from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-
+from WMCore.Lexicon import sanitizeURL
 
 class WorkQueueBackend(object):
     """
     Represents persistent storage for WorkQueue
     """
-    def __init__(self, db_url, db_name = 'workqueue', inbox_name = 'workqueue_inbox', parentQueue = None, queueUrl = None, logger = None):
+    def __init__(self, db_url, db_name = 'workqueue',
+                 inbox_name = 'workqueue_inbox', parentQueue = None,
+                 queueUrl = None, logger = None):
         if logger:
             self.logger = logger
         else:
             import logging
             self.logger = logging
         self.server = CouchServer(db_url)
-        self.parentCouchUrl = parentQueue
+        self.parentCouchUrlWithAuth = parentQueue
+        if parentQueue:
+            self.parentCouchUrl = sanitizeURL(parentQueue)['url']
+        else:
+            self.parentCouchUrl = None
         self.db = self.server.connectDatabase(db_name, create = False)
-        self.db_url = "%s/%s" % (self.db['host'], self.db.name)
+        self.hostWithAuth = db_url
         self.inbox = self.server.connectDatabase(inbox_name, create = False)
-        self.queueUrl = queueUrl or self.db_url
-
+        self.queueUrl = queueUrl or sanitizeURL(db_url)['url']
 
     def forceQueueSync(self):
         """Force a blocking replication
@@ -42,7 +47,7 @@ class WorkQueueBackend(object):
         try:
             if self.parentCouchUrl and self.queueUrl:
                 self.server.replicate(source = self.parentCouchUrl,
-                                      destination = "%s/%s" % (self.inbox['host'], self.inbox.name),
+                                      destination = "%s/%s" % (self.hostWithAuth, self.inbox.name),
                                       filter = 'WorkQueue/childQueueFilter',
                                       query_params = {'queueUrl' : self.queueUrl})
         except Exception, ex:
@@ -52,8 +57,8 @@ class WorkQueueBackend(object):
         """Replicate to parent couch - blocking"""
         try:
             if self.parentCouchUrl and self.queueUrl:
-                self.server.replicate(source = "%s/%s" % (self.inbox['host'], self.inbox.name),
-                                      destination = self.parentCouchUrl,
+                self.server.replicate(source = "%s/%s" % (self.db['host'], self.inbox.name),
+                                      destination = self.parentCouchUrlWithAuth,
                                       filter = 'WorkQueue/childQueueFilter',
                                       query_params = {'queueUrl' : self.queueUrl})
         except Exception, ex:
@@ -80,7 +85,7 @@ class WorkQueueBackend(object):
         """
         # Can't save spec to inbox, it needs to be visible to child queues
         # Can't save empty dict so add dummy variable
-        return wmspec.saveCouch(self.db['host'], self.db.name, {'name' : wmspec.name()})
+        return wmspec.saveCouch(self.hostWithAuth, self.db.name, {'name' : wmspec.name()})
 
 
     def getWMSpec(self, name):

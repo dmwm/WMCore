@@ -102,7 +102,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('JobDumpConfig', None)
         self.params.setdefault('BossAirConfig', None)
 
-        self.params.setdefault('QueueURL', self.backend.db_url) # url this queue is visible on
+        self.params.setdefault('QueueURL', self.backend.queueUrl) # url this queue is visible on
         self.params.setdefault('WMBSURL', None) # this will be only set on local Queue
         self.params.setdefault('Teams', [''])
 

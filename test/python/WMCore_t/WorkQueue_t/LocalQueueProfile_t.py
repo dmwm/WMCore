@@ -11,9 +11,8 @@ import shutil
 
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMQuality.Emulators.DataBlockGenerator import Globals
-from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
-from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
+from WMCore.WorkQueue.WorkQueue import localQueue
 from WorkQueueTestCase import WorkQueueTestCase
 
 
@@ -32,13 +31,13 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
                                     siteDB = True, requestMgr = True)
         WorkQueueTestCase.setUp(self)
         
-        self.specGenerator = WMSpecGenerator()
+        self.cacheDir = tempfile.mkdtemp()
+        self.specGenerator = WMSpecGenerator(self.cacheDir)
         self.specs = self.createReRecoSpec(1, "file")
-        
-        self.cacheDir = tempfile.mkdtemp() 
- 
+
         # Create queues
-        self.localQueue = localQueue(CacheDir = self.cacheDir,
+        self.localQueue = localQueue(DbName = self.queueDB,
+                                     InboxDbName = self.queueInboxDB,
                                      NegotiationTimeout = 0,
                                      QueueURL = 'global.example.com')
         
@@ -47,7 +46,6 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         """tearDown"""
         WorkQueueTestCase.tearDown(self)
         try:
-            shutil.rmtree( self.cacheDir )
             self.specGenerator.removeSpecs()
         except:
             pass
@@ -72,12 +70,13 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         #p.strip_dirs().sort_stats('name').print_stats(10)
             
     def testGetWorkLocalQueue(self):
-
+        i = 0
         for spec in self.specs:
-            self.localQueue.queueWork(spec, team = "A-team")
+            i += 1
+            specName = "MinBiasProcessingSpec_Test_%s" % i
+            self.localQueue.queueWork(spec, specName, team = "A-team")
         self.localQueue.updateLocationInfo()
-        self.createProfile('getWorkProfile.prof',
-                           self.localQueueGetWork)
+        self.createProfile('getWorkProfile.prof', self.localQueueGetWork)
         
     def localQueueGetWork(self):
         siteJobs = {}

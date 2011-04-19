@@ -9,6 +9,7 @@ handled appropriately by the client methods, on success returns True.
 
 import re
 import string
+import urlparse
 
 from WMCore.WMException import WMException
 
@@ -174,4 +175,28 @@ def parseLFNBase(candidate):
 
     return final
 
+def sanitizeURL(url):
+    """Take the url with/without username and password and return sanitized url,
+       username and password in dict format
+       WANNING: This doesn't check the correctness of url format.
+       Don't use ':' in username or password.
+    """
+    endpoint_components = urlparse.urlparse(url)
+    # Cleanly pull out the user/password from the url
+    if endpoint_components.port:
+        netloc = '%s:%s' % (endpoint_components.hostname,
+                    endpoint_components.port)
+    else:
+        netloc = endpoint_components.hostname
 
+    #Build a URL without the username/password information
+    url = urlparse.urlunparse(
+            [endpoint_components.scheme,
+             netloc,
+             endpoint_components.path,
+             endpoint_components.params,
+             endpoint_components.query,
+             endpoint_components.fragment])
+
+    return {'url': url , 'username': endpoint_components.username,
+            'password': endpoint_components.password}

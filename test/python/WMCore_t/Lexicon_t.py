@@ -239,6 +239,23 @@ class LexiconTest(unittest.TestCase):
 
         return
 
+    def testSanitizeURL(self):
+        proto = "http"
+        host = "test.com"
+        user = "abc"
+        passwd = "^cba$"
+        port  = "9999"
+        url = "%s://%s:%s@%s:%s" % (proto, user, passwd, host, port)
+        urlDict = sanitizeURL(url)
+        self.assertEqual(urlDict['url'], "%s://%s:%s" % (proto, host, port))
+        self.assertEqual(urlDict['username'], user)
+        self.assertEqual(urlDict['password'], passwd)
+
+        noPassURL = "http://test.com"
+        urlDict = sanitizeURL(noPassURL)
+        self.assertEqual(urlDict['url'], noPassURL)
+        self.assertEqual(urlDict['username'], None)
+        self.assertEqual(urlDict['password'], None)
 
 if __name__ == "__main__":
     unittest.main()

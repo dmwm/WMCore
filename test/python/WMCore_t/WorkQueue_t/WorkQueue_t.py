@@ -37,7 +37,7 @@ from WMCore.WMBS.Job import Job
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.ResourceControl.ResourceControl import ResourceControl
-
+from WMCore.Lexicon import sanitizeURL
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
 rerecoArgs = getRerecoArgs()
@@ -111,8 +111,10 @@ class WorkQueueTest(WorkQueueTestCase):
                                      inputDataset.tier)
 
         # Create queues
-        self.globalQueue = globalQueue(DbName = 'workqueue_t_global',
-                                       QueueURL = 'global.example.com')
+        globalCouchUrl = "%s/%s" % (self.testInit.couchUrl, self.globalQDB)
+        self.globalQueue = globalQueue(DbName = self.globalQDB,
+                                       InboxDbName = self.globalQInboxDB,
+                                       QueueURL = globalCouchUrl)
 #        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
 #                            PopulateFilesets = False,
 #                            ParentQueue = self.globalQueue,
@@ -131,20 +133,23 @@ class WorkQueueTest(WorkQueueTestCase):
         bossAirConfig.section_("Agent")
         bossAirConfig.Agent.agentName = "TestAgent"
 
-        self.localQueue = localQueue(DbName = 'workqueue_t_local',
-                                     ParentQueueCouchUrl = self.globalQueue.backend.db_url,
+        self.localQueue = localQueue(DbName = self.localQDB,
+                                     InboxDbName = self.localQInboxDB,
+                                     ParentQueueCouchUrl = globalCouchUrl,
                                      JobDumpConfig = jobCouchConfig,
                                      BossAirConfig = bossAirConfig)
 
-        self.localQueue2 = localQueue(DbName = 'workqueue_t_local2',
-                                      ParentQueueCouchUrl = self.globalQueue.backend.db_url,
+        self.localQueue2 = localQueue(DbName = self.localQDB2,
+                                      InboxDbName = self.localQInboxDB2,
+                                      ParentQueueCouchUrl = globalCouchUrl,
                                       JobDumpConfig = jobCouchConfig,
                                       BossAirConfig = bossAirConfig)
 
         # standalone queue for unit tests
         self.queue = WorkQueue(JobDumpConfig = jobCouchConfig,
                                BossAirConfig = bossAirConfig,
-                               DbName = 'workqueue_t')
+                               DbName = self.queueDB,
+                               InboxDbName = self.queueInboxDB)
 
         # create relevant sites in wmbs
         rc = ResourceControl()
@@ -261,7 +266,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(numUnit, len(self.localQueue2.status(status = 'Available')))
         self.assertEqual(0, len(self.localQueue.status(status = 'Available')))
         self.assertEqual(numUnit, len(self.globalQueue.status(status = 'Acquired')))
-        self.assertEqual(self.localQueue2.params['QueueURL'], self.globalQueue.status()[0]['ChildQueueUrl'])
+        self.assertEqual(sanitizeURL(self.localQueue2.params['QueueURL'])['url'],
+                         self.globalQueue.status()[0]['ChildQueueUrl'])
 
 #        curr_event = 1
 #        for unit in work:
@@ -675,7 +681,7 @@ class WorkQueueTest(WorkQueueTestCase):
         #TODO: Note the work in local will be orphaned but not canceled
         syncQueues(self.localQueue)
         work_at_local = [x for x in self.globalQueue.status(status = 'Running') \
-                         if x['ChildQueueUrl'] == self.localQueue.params['QueueURL']]
+                         if x['ChildQueueUrl'] == sanitizeURL(self.localQueue.params['QueueURL'])['url']]
         self.assertEqual(len(work_at_local), 0)
 
         # now 2nd queue calls and acquires work
@@ -687,7 +693,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue2.status(status = 'Available')),
                          2) # work in local2
         work_at_local2 = [x for x in self.globalQueue.status(status = 'Acquired') \
-                         if x['ChildQueueUrl'] == self.localQueue2.params['QueueURL']]
+                         if x['ChildQueueUrl'] == sanitizeURL(self.localQueue2.params['QueueURL'])['url']]
         self.assertEqual(len(work_at_local2), 2)
 
 
@@ -875,18 +881,15 @@ class WorkQueueTest(WorkQueueTestCase):
     
     def testResubmissionWorkflow(self):
         """Test workflow resubmission via ACDC"""
-        from WMQuality.TestInitCouchApp import TestInitCouchApp
-        self.couchInit = TestInitCouchApp(__file__)
-        self.couchInit.setupCouch("sryu_acdc_test", "GroupUser", "ACDC")
+        acdcCouchDB = "workqueue_t_acdc"
+        self.testInit.setupCouch(acdcCouchDB, "GroupUser", "ACDC")
         
-        spec = self.createResubmitSpec(self.couchInit.couchUrl, 
-                                       self.couchInit.couchDbName)
+        spec = self.createResubmitSpec(self.testInit.couchUrl,
+                                       acdcCouchDB)
         spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
         spec.save(spec.specUrl())
-        self.localQueue.queueWork(spec.specUrl())
+        self.localQueue.queueWork(spec.specUrl(), 'Resubmit_TestWorkload')
         self.localQueue.getWork({self.site: 100})
-        
-        self.couchInit.tearDownCouch()
 
     def testThrottling(self):
         """Pull work only if all previous work processed in child"""

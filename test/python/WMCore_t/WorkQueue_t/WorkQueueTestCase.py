@@ -25,20 +25,29 @@ class WorkQueueTestCase(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also add some dummy locations.
         """
+        self.queueDB = 'workqueue_t'
+        self.queueInboxDB = 'workqueue_t_inbox'
+        self.globalQDB = 'workqueue_t_global'
+        self.globalQInboxDB = 'workqueue_t_global_inbox'
+        self.localQDB = 'workqueue_t_local'
+        self.localQInboxDB = 'workqueue_t_local_inbox'
+        self.localQDB2 = 'workqueue_t_local2'
+        self.localQInboxDB2 = 'workqueue_t_local2_inbox'
+
         self.setSchema()
         self.testInit = TestInit('WorkQueueTest')
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = self.schema,
                                 useDefault = False)
-        self.testInit.setupCouch('workqueue_t', *self.couchApps)
-        self.testInit.setupCouch('workqueue_t_inbox', *self.couchApps)
-        self.testInit.setupCouch('workqueue_t_global', *self.couchApps)
-        self.testInit.setupCouch('workqueue_t_global_inbox', *self.couchApps)
-        self.testInit.setupCouch('workqueue_t_local_inbox', *self.couchApps)
-        self.testInit.setupCouch('workqueue_t_local', *self.couchApps)
-        self.testInit.setupCouch('workqueue_t_local2_inbox', *self.couchApps)
-        self.testInit.setupCouch('workqueue_t_local2', *self.couchApps)
+        self.testInit.setupCouch(self.queueDB, *self.couchApps)
+        self.testInit.setupCouch(self.queueInboxDB, *self.couchApps)
+        self.testInit.setupCouch(self.globalQDB, *self.couchApps)
+        self.testInit.setupCouch(self.globalQInboxDB , *self.couchApps)
+        self.testInit.setupCouch(self.localQDB, *self.couchApps)
+        self.testInit.setupCouch(self.localQInboxDB, *self.couchApps)
+        self.testInit.setupCouch(self.localQDB2, *self.couchApps)
+        self.testInit.setupCouch(self.localQInboxDB2, *self.couchApps)
         
         self.workDir = self.testInit.generateWorkDir()
         return

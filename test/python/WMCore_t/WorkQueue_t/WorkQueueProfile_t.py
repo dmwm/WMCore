@@ -7,10 +7,8 @@ import tempfile
 import unittest
 import cProfile
 import pstats
-from WMQuality.Emulators.DataBlockGenerator import Globals
-from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
-from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
+from WMCore.WorkQueue.WorkQueue import globalQueue
 from WorkQueueTestCase import WorkQueueTestCase
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
     
@@ -33,21 +31,21 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         EmulatorHelper.setEmulators(phedex = True, dbs = True, 
                                     siteDB = True, requestMgr = True)
         WorkQueueTestCase.setUp(self)
-        self.specGenerator = WMSpecGenerator()
-        self.specs = self.createReRecoSpec(10)
         
-        self.cacheDir = tempfile.mkdtemp() 
+        self.cacheDir = tempfile.mkdtemp()
+        self.specGenerator = WMSpecGenerator(self.cacheDir)
+        self.specNamePrefix = "TestReReco_"
+        self.specs = self.createReRecoSpec(5, "file")
         # Create queues
-        self.globalQueue = globalQueue(CacheDir = self.cacheDir,
-                                       NegotiationTimeout = 0,
-                                       QueueURL = 'global.example.com')
+        self.globalQueue = globalQueue(DbName = self.globalQDB,
+                                       InboxDbName = self.globalQInboxDB,
+                                       NegotiationTimeout = 0)
         
         
     def tearDown(self):
         """tearDown"""
         WorkQueueTestCase.tearDown(self)
         try:
-            shutil.rmtree( self.cacheDir )
             self.specGenerator.removeSpecs()
         except:
             pass
@@ -56,7 +54,7 @@ class WorkQueueProfileTest(WorkQueueTestCase):
     def createReRecoSpec(self, numOfSpec, type = "spec"):
         specs = []    
         for i in range(numOfSpec):
-            specName = "MinBiasProcessingSpec_Test_%s" % (i+1)
+            specName = "%s%s" % (self.specNamePrefix, (i+1))
             specs.append(self.specGenerator.createReRecoSpec(specName, type))
         return specs
     
@@ -76,12 +74,10 @@ class WorkQueueProfileTest(WorkQueueTestCase):
                            self.multipleQueueWorkCall)
 
     def multipleQueueWorkCall(self):
+        i = 0
         for wmspec in self.specs:
-            units = self.globalQueue._splitWork(wmspec)
-            with self.globalQueue.transactionContext():
-                for unit in units:
-                    self.globalQueue._insertWorkQueueElement(unit)
-                             
-        
+            i += 1
+            self.globalQueue.queueWork(wmspec, self.specNamePrefix + str(i), 'test_team')
+
 if __name__ == "__main__":
     unittest.main()

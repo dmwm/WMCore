@@ -266,17 +266,25 @@ class TaskArchiverPoller(BaseWorkerThread):
         outputLFNs = []
 
         workflowFailures = {}
+        workflowName     = workflow.task.split('/')[1]
 
         # Get a list of failed job IDs
         failedCouch = self.jobsdatabase.loadView("JobDump", "failedJobsByWorkflowName",
-                                                 options = {"startkey": [workflow.task.split('/')[1], workflow.task],
-                                                            "endkey": [workflow.task.split('/')[1], workflow.task]})['rows']
+                                                 options = {"startkey": [workflowName, workflow.task],
+                                                            "endkey": [workflowName, workflow.task]})['rows']
 
         output = self.fwjrdatabase.loadView("FWJRDump", "outputByWorkflowName",
                                             options = {"group_level": 2,
-                                                       "startkey": [workflow.task.split('/')[1]],
-                                                       "endkey": [workflow.task.split('/')[1], {}]})['rows']
-        
+                                                       "startkey": [workflowName],
+                                                       "endkey": [workflowName, {}],
+                                                       "group": True,
+                                                       "group_level": 1})['rows']
+
+        perf = self.handleCouchPerformance(workflowName = workflowName)
+        workflowFailures['performance'] = {}
+        for key in perf:
+            workflowFailures['performance'][key] = perf[key]['average']
+
         for entry in failedCouch:
             failedJobs.append(entry['value'])
 
@@ -302,8 +310,8 @@ class TaskArchiverPoller(BaseWorkerThread):
             workflowFailures['output'][dataset]['nFiles'] = entry['count']
             workflowFailures['output'][dataset]['size']   = entry['size']
             workflowFailures['output'][dataset]['events'] = entry['events']
-            
-        
+
+                    
         for jobid in failedJobs:
             errorCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
                                                     options = {"startkey": [jobid, 0],
@@ -366,4 +374,47 @@ class TaskArchiverPoller(BaseWorkerThread):
         logging.debug("About to commit workflow summary to couch")
         self.workdatabase.commitOne(workflowFailures)
         logging.debug("Finished committing workflow summary to couch")
+
         return
+
+
+
+
+    def handleCouchPerformance(self, workflowName):
+        """
+        _handleCouchPerformance_
+
+        The couch performance stuff is convoluted enough I think I want to handle it separately.
+        """
+        output = {}
+
+        perf = self.fwjrdatabase.loadView("FWJRDump", "performanceByWorkflowName",
+                                          options = {"startkey": [workflowName],
+                                                     "endkey": [workflowName],
+                                                     'group': True})['rows']
+
+        for row in perf:
+            for key in row['value'].keys():
+                if not key in output.keys():
+                    output[key] = {'value': 0,
+                                   'count': 0,
+                                   'average': 0}
+                if row['value'][key]['count'] > 0:
+                    # You only want ones where actual events were counted
+                    # It should be impossible to get this wrong, but you know...
+                    output[key]['value'] += row['value'][key]['value']
+                    output[key]['count'] += row['value'][key]['count']
+
+        for key in output.keys():
+            try:
+                output[key]['average'] = output[key]['value']/float(output[key]['count'])
+            except ZeroDivisionError:
+                logging.error("Performance report for workload %s has divide by zero error for key %s!" % (workflowName, key))
+                logging.error("Output: %s" % output)
+                output[key]['average'] = 0
+
+
+        return output
+
+
+        

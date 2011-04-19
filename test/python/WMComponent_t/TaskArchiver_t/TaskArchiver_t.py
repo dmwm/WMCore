@@ -58,8 +58,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
 
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", 
-                                                 "WMCore.ThreadPool", 'WMCore.WorkQueue.Database'],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS", 'WMCore.WorkQueue.Database'],
 
                                 useDefault = False)
         self.testInit.setupCouch("taskarchiver_t_0", "WorkloadSummary")
@@ -84,8 +83,7 @@ class TaskArchiverTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
 
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.MsgService", 
-                                               "WMCore.ThreadPool", 'WMCore.WorkQueue.Database'])
+        self.testInit.clearDatabase(modules = ["WMCore.WMBS", 'WMCore.WorkQueue.Database'])
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
         return
@@ -201,7 +199,8 @@ class TaskArchiverTest(unittest.TestCase):
 
         report = Report()
         path   = os.path.join(WMCore.WMInit.getWMBASE(),
-                              "test/python/WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
+                              "test/python/WMComponent_t/JobAccountant_t/fwjrs", "PerformanceReport.pkl")
+                              #"test/python/WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
         report.load(filename = path)
 
         changer.propagate(testJobGroup.jobs, 'created', 'new')
@@ -352,7 +351,10 @@ class TaskArchiverTest(unittest.TestCase):
         workdatabase = couchdb.connectDatabase(dbname)
 
         workloadSummary = workdatabase.document(id = "TestWorkload")
-        #print workloadSummary
+        self.assertEqual(workloadSummary['ACDCServer'], config.ACDC.couchurl)
+        self.assertEqual(workloadSummary['output'].keys(),
+                         ['/MinBias_TuneZ2_7TeV-pythia6/Backfill-110414_Type4_Redigi_01_T1_US_FNAL_MinBias_TuneZ2_7TeV-pythia6-v1/GEN-SIM-RAWDEBUG'])
+        self.assertEqual(workloadSummary['performance']['TotalJobCPU'], 21001.200000000001)
         return
 
 

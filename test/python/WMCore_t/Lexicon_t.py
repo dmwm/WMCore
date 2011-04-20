@@ -87,13 +87,26 @@ class LexiconTest(unittest.TestCase):
         """
         _testLFN_
 
-        Test the LFN checker in both modes
+        Test the LFN checker in several modes, including user LFNs
         """
 
+        lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        lfn(lfnA)
+        lfnA = '/store/user/ewv/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        lfn(lfnA)
+        lfnA = '/store/temp/group/Exotica/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        lfn(lfnA)
+        lfnA = '/store/group/Exotica/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        lfn(lfnA)
         lfnA = '/store/temp1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
         lfn(lfnA)
         lfnA = '/store/temp/lustre1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
         lfn(lfnA)
+        lfnA = '/store/backfill/1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
+        lfn(lfnA)
+        lfnA = '/store/data/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
+        lfn(lfnA)        
+
 
         # All these cases should fail
         lfnA = '/storeA/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
@@ -134,6 +147,14 @@ class LexiconTest(unittest.TestCase):
         lfnA = '/store/temp/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X;-2.root'
         self.assertRaises(AssertionError, lfn, lfnA)
 
+        lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/USER/v1/a_X-2.root'
+        self.assertRaises(AssertionError, lfn, lfnA)
+        lfnA = '/store/temp/user/ewv/Higgs;123/PrivateSample/v1/a_X-2.root'
+        self.assertRaises(AssertionError, lfn, lfnA)
+        lfnA = '/store/temp/user/ewv/Higgs-123/Private;Sample/v1/a_X-2.root'
+        self.assertRaises(AssertionError, lfn, lfnA)
+        lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/v1;/a_X-2.root'
+        self.assertRaises(AssertionError, lfn, lfnA)
 
         return
 
@@ -144,6 +165,14 @@ class LexiconTest(unittest.TestCase):
         Test the LFN Base
         """
 
+        lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/v1'
+        lfnBase(lfnA)
+        lfnA = '/store/user/ewv/Higgs-123/PrivateSample/v1'
+        lfnBase(lfnA)
+        lfnA = '/store/temp/group/Exotica/Higgs-123/PrivateSample/v1'
+        lfnBase(lfnA)
+        lfnA = '/store/user/group/Exotica/PrivateSample/v1'
+        lfnBase(lfnA)
         lfnA = '/store/temp1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
         lfnBase(lfnA)
         lfnA = '/store/temp/lustre1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
@@ -210,6 +239,33 @@ class LexiconTest(unittest.TestCase):
         self.assertEqual(result['lfnCounter'], '1000')
         self.assertEqual(result['filename'], 'a_X-2.root')
 
+        lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        result = parseLFN(lfnA)
+
+        self.assertEqual(result['baseLocation'], '/store/temp/user')
+        self.assertEqual(result['primaryDataset'], 'Higgs-123')
+        self.assertEqual(result['secondaryDataset'], 'PrivateSample')
+        self.assertEqual(result['processingVersion'], 'v1')
+        self.assertEqual(result['filename'], 'a_X-2.root')
+
+        lfnA = '/store/user/ewv/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        result = parseLFN(lfnA)
+
+        self.assertEqual(result['baseLocation'], '/store/user')
+        self.assertEqual(result['primaryDataset'], 'Higgs-123')
+        self.assertEqual(result['secondaryDataset'], 'PrivateSample')
+        self.assertEqual(result['processingVersion'], 'v1')
+        self.assertEqual(result['filename'], 'a_X-2.root')
+
+        lfnA = '/store/group/Exotica/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        result = parseLFN(lfnA)
+
+        self.assertEqual(result['baseLocation'], '/store/group')
+        self.assertEqual(result['primaryDataset'], 'Higgs-123')
+        self.assertEqual(result['secondaryDataset'], 'PrivateSample')
+        self.assertEqual(result['processingVersion'], 'v1')
+        self.assertEqual(result['filename'], 'a_X-2.root')
+
         return
 
     def testLFNBaseParser(self):
@@ -236,6 +292,30 @@ class LexiconTest(unittest.TestCase):
         self.assertEqual(result['primaryDataset'], 'MuElectron-10_100')
         self.assertEqual(result['dataTier'], 'RAW-RECO')
         self.assertEqual(result['processingVersion'], 'vX-1')
+
+        lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/v1'
+        result = parseLFNBase(lfnA)
+
+        self.assertEqual(result['baseLocation'], '/store/temp/user')
+        self.assertEqual(result['primaryDataset'], 'Higgs-123')
+        self.assertEqual(result['secondaryDataset'], 'PrivateSample')
+        self.assertEqual(result['processingVersion'], 'v1')
+
+        lfnA = '/store/user/ewv/Higgs-123/PrivateSample/v1'
+        result = parseLFNBase(lfnA)
+
+        self.assertEqual(result['baseLocation'], '/store/user')
+        self.assertEqual(result['primaryDataset'], 'Higgs-123')
+        self.assertEqual(result['secondaryDataset'], 'PrivateSample')
+        self.assertEqual(result['processingVersion'], 'v1')
+
+        lfnA = '/store/group/Exotica/Higgs-123/PrivateSample/v1'
+        result = parseLFNBase(lfnA)
+
+        self.assertEqual(result['baseLocation'], '/store/group')
+        self.assertEqual(result['primaryDataset'], 'Higgs-123')
+        self.assertEqual(result['secondaryDataset'], 'PrivateSample')
+        self.assertEqual(result['processingVersion'], 'v1')
 
         return
 

@@ -40,6 +40,8 @@ class ProxyTest(unittest.TestCase):
         self.proxyPath = None
         self.proxy = Proxy( dict )
         self.serverKey = dict['server_key']
+        self.serverDN = None
+        if dict.has_key('serverDN'): self.serverDN = dict['serverDN']
 
     def tearDown(self):
         """
@@ -91,8 +93,9 @@ class ProxyTest(unittest.TestCase):
         """
         if not os.path.exists( self.serverKey ):
 
+           self.proxy.create()
            timeLeft = self.proxy.getTimeLeft()
-           assert ( int(timeLeft) / 3600 ) == 191
+           assert ( int(timeLeft) / 3600 ) == 192
 
     @attr("integration")
     def testRenewProxy( self ):
@@ -148,7 +151,7 @@ class ProxyTest(unittest.TestCase):
 
         self.testCreateProxy()
         user = self.proxy.getUserName( )
-        identity = self.getUserIdentity().split("/")[4][3:]
+        identity = self.getUserIdentity().split("/")[5][3:]
 
         self.assertEqual(user, identity,
                          "Error: User name is wrong: |%s|\n|%s|" % (user, identity))
@@ -178,6 +181,7 @@ class ProxyTest(unittest.TestCase):
         """
         if not os.path.exists( self.serverKey ):
 
+           self.proxy.create()
            self.proxy.delegate( credential = self.proxyPath )
            valid = self.proxy.checkMyProxy( )
            assert valid == True 
@@ -188,6 +192,7 @@ class ProxyTest(unittest.TestCase):
         """
         if not os.path.exists( self.serverKey ):
 
+           self.proxy.create()
            self.proxy.delegate( credential = self.proxyPath, serverRenewer = True )
            valid = self.proxy.checkMyProxy( checkRenewer = True )
            assert valid == True
@@ -198,6 +203,7 @@ class ProxyTest(unittest.TestCase):
         """
         if not os.path.exists( self.serverKey ):
 
+           self.proxy.create()
            self.proxy.delegate( )
            valid = self.proxy.checkMyProxy( )
            assert valid == True
@@ -208,6 +214,7 @@ class ProxyTest(unittest.TestCase):
         """
         if not os.path.exists( self.serverKey ):
 
+           self.proxy.create()
            self.proxy.delegate( serverRenewer = True )
            valid = self.proxy.checkMyProxy( checkRenewer = True )
            assert valid == True
@@ -227,6 +234,7 @@ class ProxyTest(unittest.TestCase):
         """
         if not os.path.exists( self.serverKey ):
 
+           self.proxy.create()
            time.sleep( 70 )
            self.proxy.renewMyProxy( proxy = self.proxyPath )
            time.sleep( 5 )
@@ -238,8 +246,9 @@ class ProxyTest(unittest.TestCase):
     def testRenewMyProxyForServer( self ):
         """
         """
-        if not os.path.exists( self.serverKey ):
-            
+        if not os.path.exists( self.serverKey ) and self.serverDN:
+
+            self.proxy.create()
             time.sleep( 70 )
             self.proxy.renewMyProxy( proxy = self.proxyPath, serverRenewer = True )
             time.sleep( 5 )

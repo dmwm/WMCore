@@ -75,6 +75,16 @@ function generateProcessing(splitAlgo, splitParams) {
   procStr += ">File Based</input></td>";
   procStr += generateInput("Files per job:", "files_per_job", splitParams);
   procStr += "<td></td></tr><tr><td>";
+
+  procStr += '<input type="radio" name="splittingAlgo" value="TwoFileBased"';
+
+  if (splitAlgo == "TwoFileBased") {
+    procStr += " checked";
+  }
+
+  procStr += ">Two File Based</input></td>";
+  procStr += generateInput("Files per job:", "two_files_per_job", splitParams);
+  procStr += "<td></td></tr><tr><td>";
   procStr += '<input type="radio" name="splittingAlgo" value="LumiBased"';
 
   if (splitAlgo == "LumiBased") {

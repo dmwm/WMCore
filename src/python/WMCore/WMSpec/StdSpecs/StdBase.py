@@ -131,7 +131,7 @@ class StdBase(object):
                             inputModule = None, scenarioName = None,
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "LumiBased",
-                            splitArgs = {'lumis_per_job': 15}, seeding = None, totalEvents = None,
+                            splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
                             userDN = None, asyncDest = None, publishName =None, stepType = "CMSSW",
                             userSandbox = None, userFiles = []):
 

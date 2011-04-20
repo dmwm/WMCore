@@ -136,6 +136,12 @@ class ReqMgrBrowser(WebAPI):
                 splittingDict[taskName]["halt_job_on_file_boundaries"] = str(splittingDict[taskName]["halt_job_on_file_boundaries"])
             if "merge_across_runs" in splittingDict[taskName]:
                 splittingDict[taskName]["merge_across_runs"] = str(splittingDict[taskName]["merge_across_runs"])                
+
+            # We also need to change the name of the "files_per_job" parameter
+            # in the TwoFileBased algo to "two_files_per_job".
+            if splittingDict[taskName]["algorithm"] == "TwoFileBased":
+                splittingDict[taskName]["two_files_per_job"] = splittingDict[taskName]["files_per_job"]
+                del splittingDict[taskName]["files_per_job"]
                 
             splitInfo.append({"splitAlgo": splittingDict[taskName]["algorithm"],
                               "splitParams": str(splittingDict[taskName]),

@@ -13,6 +13,8 @@ import tempfile
 import WMCore.WMSpec.WMTask as WMTask
 import WMCore.WMSpec.WMStep as WMStep
 import urllib
+import urlparse
+
 import WMCore
 import PSetTweaks
 from WMCore.WMSpec.Steps.StepFactory import getFetcher
@@ -143,7 +145,9 @@ class SandboxCreator:
                         exclude = tarballExclusion)
 
         for sb in userSandboxes:
-            archive.add(sb, os.path.basename(sb))
+            splitResult = urlparse.urlsplit(sb)
+            if not splitResult[0]:
+                archive.add(sb, os.path.basename(sb))
 
         archive.close()
         pythonHandle.close()

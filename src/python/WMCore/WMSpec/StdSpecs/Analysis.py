@@ -19,6 +19,7 @@ def getTestArguments():
     args['InputDataset'] = "/RelValProdTTbar/JobRobot-MC_3XY_V24_JobRobot-v1/GEN-SIM-DIGI-RECO"
     args["ScramArch"] =  "slc5_ia32_gcc434"
     args['CMSSWVersion'] = "CMSSW_4_2_0"
+    args["userSandbox"] = 'http://home.fnal.gov/~ewv/agent.tgz'
     
     return args
 
@@ -40,6 +41,11 @@ class AnalysisWorkloadFactory(StdBase):
         """
         workload = self.createWorkload()
         analysisTask = workload.newTask("Analysis")
+        (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = self.inputDataset[1:].split("/")
+
+        lfnBase = "/store/user"
+        self.userUnmergedLFN = "%s/%s/%s/%s/%s" % (lfnBase, self.userName, self.inputPrimaryDataset,
+                                                            self.publishName, self.processingVersion)
 
         outputMods = self.setupProcessingTask(analysisTask, "Analysis", inputDataset=self.inputDataset,
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
@@ -62,11 +68,7 @@ class AnalysisWorkloadFactory(StdBase):
         """
         StdBase.__call__(self, workloadName, arguments)
 
-        #TODO modify accordingly with policy for user data handlying to be defined
-        lfnCategory = "/store/user/%s" % arguments["Username"]
-        self.userUnmergedLFN = "%s/%s" % (lfnCategory, arguments['ProcessingVersion'])
         self.globalTag = arguments.get("GlobalTag", None)
-        self.inputPrimaryDataset = None
 
         # Required parameters.
         self.owner = arguments["Requestor"]
@@ -97,6 +99,8 @@ class AnalysisWorkloadFactory(StdBase):
         self.publishName = arguments.get("PublishDataName", str(int(time.time())))
         self.userSandbox = arguments.get("userSandbox", None)
         self.userFiles   = arguments.get("userFiles", [])
+        self.userName    = arguments.get("Username",'jblow')
+        self.processingVersion = arguments.get('ProcessingVersion', 'v1')
 
         return self.buildWorkload()
 

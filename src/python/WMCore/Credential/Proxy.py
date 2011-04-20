@@ -10,11 +10,21 @@ try:
 except:
     from sha import sha as sha1 
 
-def execute_command( command ):
+def execute_command( command, logger, timeout ):
     """
     _execute_command_
     Funtion to manage commands.  
     """
+    import signal
+    class Alarm(Exception):
+        pass
+
+    def alarm_handler(signum, frame):
+        raise Alarm
+
+    signal.signal(signal.SIGALRM, alarm_handler)
+    signal.alarm(timeout)
+
     proc = subprocess.Popen(
             ["/bin/bash"], shell=True, cwd=os.environ['PWD'],
             stdout=subprocess.PIPE,
@@ -22,11 +32,20 @@ def execute_command( command ):
             stdin=subprocess.PIPE,
     )
     proc.stdin.write(command)
-    stdout, stderr = proc.communicate()
-    rc = proc.returncode
+
+    try:
+        stdout, stderr = proc.communicate()
+        rc = proc.returncode
+        signal.alarm(0) # reset the alarm
+    except Alarm:
+        logger.error('\
+Timeout in %s execution.' %command )
+        signal.alarm(0) # reset the alarm
+        stdout, stderr, rc = None, None, 99999
+
     return stdout, stderr, rc
 
-def destroyListCred( self, credNameList = [], credTimeleftList = { } ):
+def destroyListCred( credNameList = [], credTimeleftList = { }, logger = None, timeout = 0 ):
     """
     _destroyListCred_
     Get list of credential name and their timelefts to destroy the one 
@@ -44,7 +63,7 @@ def destroyListCred( self, credNameList = [], credTimeleftList = { } ):
     if len(cleanCredCmd)>0:
         self.logger.debug('Removing expired credentials: %s'%cleanCredCmd)
         try:
-            execute_command( cleanCredCmd )
+            execute_command( cleanCredCmd, logger, timeout )
         except:
             self.logger.debug('\
 Error in cleaning expired credentials. Ignore and go ahead.')
@@ -62,7 +81,7 @@ class Proxy(Credential):
         """
         Credential.__init__( self, args )
 
-        self.executeTimeout = args.get( "timeout", None )
+        self.commandTimeout = args.get( "ServiceContactTimeout", 1200 ) #The default is 20 mn.
         self.myproxyServer = args.get( "myProxySvr", '')
         self.serverDN = args.get( "serverDN", '')
         self.userDN = args.get( "userDN", '')
@@ -138,7 +157,8 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
         subjFromCertCmd = 'openssl x509 -in '+certFile+' -subject -noout'
 
-        subjectResult, error, retcode = execute_command(self.setUI() + subjFromCertCmd)
+        subjectResult, error, retcode = execute_command(self.setUI() + subjFromCertCmd, self.logger, self.commandTimeout)
+
         if retcode != 0 :
             msg = "Error while checking proxy subject for %s since %s"\
                % (certFile, error)
@@ -179,7 +199,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
             claimed += self.group
         if self.role: claimed += "/Role=%s" % self.role
 
-        attribute, error, retcode = execute_command(self.setUI() +  checkAttCmd )
+        attribute, error, retcode = execute_command(self.setUI() +  checkAttCmd, self.logger, self.commandTimeout )
 
         if retcode != 0 :
             msg = "Error while checking attribute for %s since %s"\
@@ -209,7 +229,8 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
         createCmd += ' -valid ' + self.proxyValidity
 
         self.logger.debug(createCmd)
-        output, error, retcode = execute_command(self.setUI() +  createCmd )
+
+        output, error, retcode = execute_command(self.setUI() +  createCmd, self.logger, self.commandTimeout )
 
         if retcode != 0 : 
             raise Exception(\
@@ -238,7 +259,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
         destroyCmd = 'rm -f %s' % credential
 
-        output, error, retcode = execute_command( destroyCmd )
+        output, error, retcode = execute_command( destroyCmd, self.logger, self.commandTimeout )
 
         if retcode != 0 :
             msg = " Error while removing proxy %s using command %s \
@@ -271,7 +292,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                 myproxyDelegCmd += ' -x -R \'%s\' -Z \'%s\' -k %s -t 168:00 ' \
                     % (self.serverDN, self.serverDN, serverCredName )
 
-            output, error, retcode = execute_command(self.setUI() +  myproxyDelegCmd )
+            output, error, retcode = execute_command(self.setUI() +  myproxyDelegCmd, self.logger, self.commandTimeout )
 
             self.logger.debug('MyProxy delegation :\n command: %s\n output:\
                      %s\n ret: %s'%( myproxyDelegCmd, output, retcode ) )
@@ -299,7 +320,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
             checkMyProxyCmd = 'myproxy-info -d -s ' + self.myproxyServer
 
-            output, error, retcode = execute_command(self.setUI() +  checkMyProxyCmd )
+            output, error, retcode = execute_command(self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
 
             self.logger.debug( \
  'Checking myproxy for %s...command : %s\n output : %s\n retcode : %s\n'\
@@ -345,7 +366,11 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                       self.serverDN).hexdigest()
                     credNameList = re.compile(\
                    " name: (?P<CN>.*)").findall(output)
-                    credTimeleftList = timeleftList[1:]
+                    if len(timeleftList) == len(credNameList):
+                        credTimeleftList = timeleftList
+                    else:
+                        credTimeleftList = timeleftList[1:]
+
 
                     if serverCredName not in credNameList :
 
@@ -359,9 +384,9 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                         try:
 
                             hours, minutes, seconds = \
-        credTimeleftList[ credNameList.index(serverCredName) ]
+            credTimeleftList[ credNameList.index(serverCredName) ]
                             proxyTimeleft = int(hours)*3600\
-                     + int(minutes)*60 + int(seconds)
+                         + int(minutes)*60 + int(seconds)
 
                         except Exception, e:
 
@@ -369,6 +394,11 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
           'Error extracting timeleft from credential name')
                             self.logger.debug( str(e) )
                             proxyTimeleft =  0
+
+                else:
+                    self.logger.error(\
+                  'Configuration Error')
+
 
         else: 
 
@@ -387,8 +417,8 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
             valid = True
 
             checkMyProxyCmd = 'myproxy-info -d -s ' + self.myproxyServer
-    
-            output, error, retcode = execute_command(self.setUI() +  checkMyProxyCmd )
+
+            output, error, retcode = execute_command(self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
             self.logger.debug( 'Checking myproxy...command \
 : %s\n output : %s\n retcode : %s\n' %(checkMyProxyCmd, output, retcode) ) 
 
@@ -416,26 +446,32 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
                 # the first time refers to the flat user proxy, 
                 # the other ones are related to the server credential name
-                try:
-                    hours, minutes, seconds = timeleftList[0]
-                    timeleft = int(hours)*3600 + int(minutes)*60 + int(seconds)
-                except Exception, e:
-                    self.logger.error('Error extracting timeleft from proxy')
-                    self.logger.debug( str(e) )
-                    valid = False
-                if timeleft < minTime:
-                    self.logger.debug(\
-'Your proxy will expire in:\n\t%s hours %s minutes %s seconds\n the minTime\
-          : %s'%(hours,minutes,seconds,minTime))
-                    valid = False
+                if not checkRenewer:
+                    try:
+                        hours, minutes, seconds = timeleftList[0]
+                        timeleft = int(hours)*3600 + int(minutes)*60 + int(seconds)
+                    except Exception, e:
+                        self.logger.info('Error extracting timeleft from proxy')
+                        self.logger.debug( str(e) )
+                        valid = False
+                    if timeleft < minTime:
+                        self.logger.info(\
+    'Your proxy will expire in:\n\t%s hours %s minutes %s seconds\n the minTime\
+              : %s'%(hours,minutes,seconds,minTime))
+                        valid = False
 
                 # check the timeleft for the required server
-                if checkRenewer and len(self.serverDN.strip()) > 0:
+                elif len(self.serverDN.strip()) > 0:
   
                     serverCredName = sha1(self.serverDN).hexdigest()
                     credNameList = re.compile(" name: (?P<CN>.*)").\
                                 findall(output)
-                    credTimeleftList = timeleftList[1:]
+
+                    if len(timeleftList) == len(credNameList):
+                        credTimeleftList = timeleftList
+                    else:
+                        credTimeleftList = timeleftList[1:]
+
 
                     # check if the server credential exists
                     if serverCredName not in credNameList :
@@ -462,7 +498,11 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                         self.logger.debug(logMsg)
                         valid = False
                     # clean up expired credentials for other servers
-                    destroyListCred( credNameList )
+                    destroyListCred( credNameList, credTimeleftList, self.logger, self.commandTimeout )
+                else:
+                    self.logger.error(\
+                  'Configuration Error')
+
 
             return valid
 
@@ -490,7 +530,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
             # get vo, group and role from the current certificate
             getVoCmd = 'env X509_USER_PROXY=%s voms-proxy-info -vo' \
                             % proxyFilename
-            attribute, error, retcode = execute_command(self.setUI() + getVoCmd)
+            attribute, error, retcode = execute_command(self.setUI() + getVoCmd, self.logger, self.commandTimeout)
             if retcode != 0:
                 raise Exception("Unable to get VO for proxy \
                   %s! Exit code:%s"%(proxyFilename, retcode) )
@@ -499,7 +539,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
             # at least /cms/Role=NULL/Capability=NULL
             roleCapCmd = 'env X509_USER_PROXY=%s voms-proxy-info -fqan' \
                         % proxyFilename
-            attribute, error, retcode = execute_command(self.setUI() + roleCapCmd)
+            attribute, error, retcode = execute_command(self.setUI() + roleCapCmd, self.logger, self.commandTimeout)
             if retcode != 0:
                 raise Exception(\
   "Unable to get FQAN for proxy %s! Exit code:%s since %s"\
@@ -538,8 +578,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
   (self.myproxyServer, proxyFilename, self.userDN, credServerName) )
 
         logonCmd = ' '.join(cmdList)
-        msg, error, retcode = execute_command(self.setUI() + logonCmd)
-
+        msg, error, retcode = execute_command(self.setUI() + logonCmd, self.logger, self.commandTimeout)
         self.logger.debug('MyProxy logon - retrieval:\n%s'%logonCmd)
 
         if retcode > 0 :
@@ -560,8 +599,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
         cmd = 'grid-proxy-info -file '\
        + proxy + ' -timeleft'
 
-        timeLeft, error, retcode = execute_command(self.setUI() + cmd)
-
+        timeLeft, error, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
         if retcode != 0 and retcode != 1:
             raise Exception(\
 "Error while checking retrieved proxy timeleft for %s since %s"\
@@ -596,7 +634,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
         (voAttribute, proxy, proxy, proxy, vomsValid) )
 
         cmd = ' '.join(cmdList)
-        msg, error, retcode = execute_command(self.setUI() + cmd)
+        msg, error, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
         self.logger.debug('Voms extension:\n%s'%cmd)
 
         if retcode > 0:
@@ -628,8 +666,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
             return 0
 
         timeLeftCmd = 'voms-proxy-info -file '+proxy+' -timeleft'
-
-        timeLeftLocal, error, retcode = execute_command(self.setUI() + timeLeftCmd )
+        timeLeftLocal, error, retcode = execute_command(self.setUI() + timeLeftCmd, self.logger, self.commandTimeout)
 
         if retcode != 0 and retcode != 1:
             msg = "Error while checking proxy timeleft for %s since %s"\
@@ -682,7 +719,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
         """
         cmd = 'voms-proxy-info -file '+proxy+' -actimeleft'
 
-        ACtimeLeftLocal, error, retcode = execute_command(self.setUI() + cmd)
+        ACtimeLeftLocal, error, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
 
         if retcode != 0 and retcode != 1:
             msg = "Error while checking proxy actimeleft for %s since %s"\

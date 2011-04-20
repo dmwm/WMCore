@@ -3,7 +3,6 @@
 # pylint: disable-msg=C0301,W0142
 
 
-import os
 import time
 
 ##from WMCore.Configuration import ConfigSection
@@ -13,12 +12,13 @@ from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 def getTestArguments():
     """generate some test data"""
     args = {}
-    args['Requestor'] = "riahi"
+    args['Requestor'] = "mmascher"
+    args['Username'] = "mmascher"
+    args['ProcessingVersion'] = ""
+    args['RequestorDN'] = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni"
+    args['InputDataset'] = "/RelValProdTTbar/JobRobot-MC_3XY_V24_JobRobot-v1/GEN-SIM-DIGI-RECO"
     args["ScramArch"] =  "slc5_ia32_gcc434"
-    args["CouchUrl"] = "http://crab.pg.infn.it:5984"
-    args["CouchDBName"] = "test"
-    args['CMSSWVersion'] = "CMSSW_3_6_1_patch7"
-    args["ConfigCacheDoc"] = "0c0e420ccca712020a482436d6069a51"
+    args['CMSSWVersion'] = "CMSSW_4_2_0"
     
     return args
 
@@ -32,7 +32,12 @@ class AnalysisWorkloadFactory(StdBase):
         StdBase.__init__(self)
 
     def buildWorkload(self):
+        """
+        _buildWorkload_
 
+        Build a workflow for Analysis  requests.
+        
+        """
         workload = self.createWorkload()
         analysisTask = workload.newTask("Analysis")
 
@@ -43,6 +48,9 @@ class AnalysisWorkloadFactory(StdBase):
                                               userDN = self.owner_dn, asyncDest = self.asyncDest, publishName = self.publishName,
                                               userSandbox = self.userSandbox, userFiles = self.userFiles)
         self.addLogCollectTask(analysisTask)
+
+        workload.setWorkQueueSplitPolicy("DatasetBlock", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
+
         return workload
 
 
@@ -57,7 +65,7 @@ class AnalysisWorkloadFactory(StdBase):
         #TODO modify accordingly with policy for user data handlying to be defined
         lfnCategory = "/store/user/%s" % arguments["Username"]
         self.userUnmergedLFN = "%s/%s" % (lfnCategory, arguments['ProcessingVersion'])
-        self.globalTag = arguments.get("GlobalTag",None)
+        self.globalTag = arguments.get("GlobalTag", None)
         self.inputPrimaryDataset = None
 
         # Required parameters.

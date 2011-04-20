@@ -191,13 +191,12 @@ class CMSSW(Executor):
                                          jobReportXML,
                                          cmsswCommand,
                                          cmsswConfig,
-                                         os.path.basename(userTarball),
+                                         userTarball,
                                          userFiles,
                                          cmsswArguments]
         logging.info("Executing CMSSW. args: %s" % args)
         spawnedChild = subprocess.Popen( args, 0, None, None, stdoutHandle,
                                              stderrHandle )
-
         #(stdoutData, stderrData) = spawnedChild.communicate()
         # the above line replaces the bottom block. I'm unsure of why
         # nobody used communicate(), but I'm leaving this just in case
@@ -302,9 +301,9 @@ if [ $? -ne 0 ]; then echo "Scram failed"; exit 71; fi
 cd $CMSSW_VERSION
 if [ $? -ne 0 ]; then echo "***\nCouldn't chdir: $?\n"; exit 72; fi
 
-if [ -n $USER_TARBALL ] && [ -f $WMAGENTJOBDIR/$USER_TARBALL ] ; then
-    echo "Unwinding $WMAGENTJOBDIR/$USER_TARBALL"
-    tar xfz $WMAGENTJOBDIR/$USER_TARBALL
+if [ -n $USER_TARBALL ] ; then
+    #echo "Unwinding $WMAGENTJOBDIR/$USER_TARBALL"
+    #tar xfz $WMAGENTJOBDIR/$USER_TARBALL
     $WMAGENTJOBDIR/WMCore/WMRuntime/Scripts/UnpackUserTarball.py $USER_TARBALL $USER_FILES
     if [ $? -ne 0 ]; then echo "***\nCouldn't untar sandbox: $?\n"; exit 74; fi
 fi

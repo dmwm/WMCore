@@ -129,7 +129,7 @@ class DataProcessingWorkloadFactory(StdBase):
 
         if arguments.has_key("Multicore"):
             numCores = arguments.get("Multicore")
-            if numCores == None:
+            if numCores == None or numCores == "":
                 self.multicore = False
             elif numCores == "auto":
                 self.multicore = True
@@ -137,22 +137,6 @@ class DataProcessingWorkloadFactory(StdBase):
             else:
                 self.multicore = True
                 self.multicoreNCores = numCores
-
-        # The SkimConfig parameter must be a list of dictionaries where each
-        # dictionary will have the following keys:
-        #  SkimName
-        #  SkimInput
-        #  SkimSplitAlgo - Optional at workflow creation time
-        #  SkimSplitParams - Optional at workflow creation time
-        #  ConfigCacheID
-        #  Scenario
-        #
-        # The ConfigCacheID and Scenaio are mutually exclusive, only one can be
-        # set.  The SkimSplitAlgo and SkimSplitParams don't have to be set when
-        # the workflow is created but must be set when the workflow is approved.
-        # The SkimInput is the name of the output module in the  processing step
-        # that will be used as the input for the skim.
-        self.skimConfigs = arguments.get("SkimConfigs", [])
 
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
@@ -166,7 +150,7 @@ class DataProcessingWorkloadFactory(StdBase):
         # parameters will be updated after the workflow has been created.
         self.procJobSplitAlgo  = arguments.get("StdJobSplitAlgo", "LumiBased")
         self.procJobSplitArgs  = arguments.get("StdJobSplitArgs",
-                                               {"lumis_per_job": 15})
+                                               {"lumis_per_job": 8})            
         return self.buildWorkload()
 
 def dataProcessingWorkload(workloadName, arguments):

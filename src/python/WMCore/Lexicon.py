@@ -12,6 +12,17 @@ import string
 
 from WMCore.WMException import WMException
 
+lfnParts = {
+    'era'       : '([a-zA-Z0-9\-_]+)',
+    'primDS'    : '([a-zA-Z0-9\-_]+)',
+    'tier'      : '([A-Z\-_]+)',
+    'version'   : '([a-zA-Z0-9\-_]+)',
+    'secondary' : '([a-zA-Z0-9\-_]+)',
+    'counter'   : '([0-9]+)',
+    'root'      : '([a-zA-Z0-9\-_]+).root',
+    'hnName'    : '([a-zA-Z0-9]+)',
+}
+
 def sitetier(candidate):
     return check("^T[0-3]", candidate)
 
@@ -60,10 +71,17 @@ def lfn(candidate):
     """
     regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)/([0-9]+)/([a-zA-Z0-9\-_]+).root'
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)/([0-9]+)/([a-zA-Z0-9\-_]+).root'
+    regexp3 = '/store/(temp/)*(user|group)/%(hnName)s/%(primDS)s/%(secondary)s/%(version)s/%(counter)s/%(root)s' % lfnParts
+
     try:
         return check(regexp1, candidate)
     except AssertionError:
+        pass
+
+    try:
         return check(regexp2, candidate)
+    except AssertionError:
+        return check(regexp3, candidate)
 
 def lfnBase(candidate):
     """
@@ -72,10 +90,18 @@ def lfnBase(candidate):
     """
     regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)'
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)'
+    regexp3 = '/(store)/(temp/)*(user|group)/%(hnName)s/%(primDS)s/%(secondary)s/%(version)s' % lfnParts
+
+
     try:
         return check(regexp1, candidate)
     except AssertionError:
+        pass
+
+    try:
         return check(regexp2, candidate)
+    except AssertionError:
+        return check(regexp3, candidate)
 
 
 def cmsswversion(candidate):
@@ -105,6 +131,23 @@ def parseLFN(candidate):
 
     if parts[0] == '':
         parts.remove('')
+    if 'user' in parts[1:3] or 'group' in parts[1:3]:
+        if parts[1] in ['user', 'group']:
+            final['baseLocation'] = '/%s' % string.join(parts[:2], '/')
+            parts = parts[2:]
+        else:
+            final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
+            parts = parts[3:]
+
+        final['hnName']            = parts[0]
+        final['primaryDataset']    = parts[1]
+        final['secondaryDataset']  = parts[2]
+        final['processingVersion'] = parts[3]
+        final['lfnCounter']        = parts[4]
+        final['filename']          = parts[5]
+
+        return final
+
 
     if len(parts) == 8:
         # Then we have only two locations
@@ -149,6 +192,21 @@ def parseLFNBase(candidate):
 
     if parts[0] == '':
         parts.remove('')
+
+    if 'user' in parts[1:3] or 'group' in parts[1:3]:
+        if parts[1] in ['user', 'group']:
+            final['baseLocation'] = '/%s' % string.join(parts[:2], '/')
+            parts = parts[2:]
+        else:
+            final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
+            parts = parts[3:]
+
+        final['hnName']            = parts[0]
+        final['primaryDataset']    = parts[1]
+        final['secondaryDataset']  = parts[2]
+        final['processingVersion'] = parts[3]
+
+        return final
 
     if len(parts) == 6:
         # Then we have only two locations

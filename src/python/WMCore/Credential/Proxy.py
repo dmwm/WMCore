@@ -61,11 +61,11 @@ def destroyListCred( credNameList = [], credTimeleftList = { }, logger = None, t
 
     cleanCredCmd = " && ".join(cleanCredCmdList)
     if len(cleanCredCmd)>0:
-        self.logger.debug('Removing expired credentials: %s'%cleanCredCmd)
+        logger.debug('Removing expired credentials: %s'%cleanCredCmd)
         try:
             execute_command( cleanCredCmd, logger, timeout )
         except:
-            self.logger.debug('\
+            logger.debug('\
 Error in cleaning expired credentials. Ignore and go ahead.')
 
     return
@@ -136,7 +136,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
         getSubjectCmd = "voms-proxy-info -file "+proxy+" -identity"
 
-        subject, error, retcode = execute_command(self.setUI() + getSubjectCmd)
+        subject, error, retcode = execute_command(self.setUI() + getSubjectCmd, self.logger, self.commandTimeout)
 
         if retcode != 0 :
             msg = "Error while checking proxy subject for %s since %s"\

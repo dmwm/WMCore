@@ -99,22 +99,22 @@ class PhEDExTest(unittest.TestCase):
 
         injectionSpec = XMLDrop.XMLInjectionSpec(self.dbsTestUrl)
         datasetSpec = injectionSpec.getDataset(testDataset)
-        datasetSpec.getFileblock(blockA, True)
-        datasetSpec.getFileblock(blockB, True)
-        improv = injectionSpec.save()
-        self.phedexApi.injectBlocks("T1_US_FNAL_MSS", improv.makeDOMElement().toprettyxml())
+        datasetSpec.getFileblock(blockA, 'y')
+        datasetSpec.getFileblock(blockB, 'y')
+        blockSpec = injectionSpec.save()
+        self.phedexApi.injectBlocks("T1_US_FNAL_MSS", blockSpec)
 
         # Create a dataset level subscription to a node
         testDatasetSub = PhEDExSubscription([testDataset], "T1_UK_RAL_MSS",
                                             "Saturn", requestOnly = "n")
-        xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl, 
-                                                   testDatasetSub.getDatasetPaths())
-        self.phedexApi.subscribe(testDatasetSub, xmlData)
+        datasetSpec = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl, 
+                                                       testDatasetSub.getDatasetPaths())
+        self.phedexApi.subscribe(testDatasetSub, datasetSpec)
 
         # Create a block level subscrtion to a different node
         testBlockSub = PhEDExSubscription([testDataset], "T1_DE_KIT_MSS", "Saturn",
                                           level = "block", requestOnly = "n")
-        self.phedexApi.subscribe(testBlockSub, improv.makeDOMElement().toprettyxml())
+        self.phedexApi.subscribe(testBlockSub, blockSpec)
 
         subs = self.phedexApi.getSubscriptionMapping(testDataset)
         self.assertEqual(subs[testDataset], set(["T1_UK_RAL_MSS"]),

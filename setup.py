@@ -96,8 +96,7 @@ class EnvCommand(Command):
 default_packages = list_packages(['src/python/WMCore',
                                   'src/python/WMComponent',
                                   'src/python/WMQuality',
-                                  'src/python/PSetTweaks',
-                                  'src/python/IMProv'])
+                                  'src/python/PSetTweaks'])
 
 setup (name = 'wmcore',
        version = '1.0',

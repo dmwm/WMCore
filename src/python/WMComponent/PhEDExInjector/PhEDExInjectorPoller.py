@@ -109,8 +109,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                     blockSpec.addFile(file["lfn"], file["checksum"],
                                       file["size"])
 
-        improv = injectionSpec.save()
-        return improv.makeDOMElement().toprettyxml()
+        return injectionSpec.save()
     
     def injectFiles(self):
         """

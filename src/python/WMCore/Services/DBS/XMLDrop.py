@@ -9,8 +9,7 @@ TODO: Need to merge with ProdCommon.DataMgmt.PhEDEx.DropMaker.py - Talk to Stuar
 """
 
 import logging
-from IMProv.IMProvNode import IMProvNode
-from IMProv.IMProvDoc import IMProvDoc
+from xml.dom.minidom import getDOMImplementation
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 
@@ -46,9 +45,12 @@ class XMLFileblock(list):
         Serialise this to XML compatible with PhEDEx injection
 
         """
-        result = IMProvNode("block")
-        result.attrs['name'] = self.fileblockName
-        result.attrs['is-open'] = self.isOpen
+        impl = getDOMImplementation()
+
+        doc = impl.createDocument(None, "block", None)
+        result = doc.createElement("block")
+        result.setAttribute('name', self.fileblockName)
+        result.setAttribute('is-open', self.isOpen)
         for lfn, checksums, size in self:
             # checksums is a comma separated list of key:value pair
             checksum = ",".join(["%s:%s" % (x, y) for x, y \
@@ -59,11 +61,11 @@ class XMLFileblock(list):
             formattedChecksums = ",".join(["%s:%s" % (x.lower(), y) for x, y \
                                            in checksums.items() \
                                            if y not in (None, '')])
-            file = IMProvNode("file")
-            file.attrs['name'] = lfn
-            file.attrs['checksum'] = formattedChecksums
-            file.attrs['bytes'] = size
-            result.addNode(file)
+            file = doc.createElement("file")
+            file.setAttribute('name', lfn)
+            file.setAttribute('checksum', formattedChecksums)
+            file.setAttribute('bytes', str(size))
+            result.appendChild(file)
 
         return result
     
@@ -112,15 +114,17 @@ class XMLDataset(list):
         serialise object into PhEDEx injection XML format
 
         """
-        
-        dataset = IMProvNode("dataset")
-        dataset.attrs['name'] = self.datasetName
-        dataset.attrs['is-open'] = self.datasetIsOpen
-        dataset.attrs['is-transient'] = self.datasetIsTransient
+
+        impl = getDOMImplementation()
+        doc = impl.createDocument(None, "dataset", None)
+        dataset = doc.createElement("dataset")
+        dataset.setAttribute('is-open', self.datasetIsOpen)
+        dataset.setAttribute('is-transient', self.datasetIsTransient)
+        dataset.setAttribute('name', self.datasetName)
         
         for block in self.fileblocks.values():
-            dataset.addNode(block.save())
-        
+            dataset.appendChild(block.save())
+
         return dataset
 
 class XMLInjectionSpec:
@@ -175,18 +179,20 @@ class XMLInjectionSpec:
         serialise object into PhEDEx injection XML format
 
         """
-        result = IMProvNode("data")
-        # hard coded as version 2. might need to change
-        result.attrs['version'] = '2'
-        dbs = IMProvNode("dbs")
-        dbs.attrs['name'] = self.dbs
-        dbs.attrs['dls'] = 'dbs'
-        result.addNode(dbs)
+        impl   = getDOMImplementation()
+        doc    = impl.createDocument(None, "data", None)
+        result = doc.createElement("data")
+        result.setAttribute('version', '2')
+        
+        dbs = doc.createElement('dbs')
+        dbs.setAttribute('dls', 'dbs')
+        dbs.setAttribute('name', self.dbs)
+        result.appendChild(dbs)
         
         for dataset in self.datasetPaths.values():
-            dbs.addNode(dataset.save())
+            dbs.appendChild(dataset.save())
                 
-        return result
+        return result.toprettyxml()
 
     def write(self, filename):
         """
@@ -197,7 +203,7 @@ class XMLInjectionSpec:
         """
         handle = open(filename, 'w')
         improv = self.save()
-        handle.write(improv.makeDOMElement().toprettyxml())
+        handle.write(improv)
         handle.close()
         return
         
@@ -212,7 +218,7 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
     spec = XMLInjectionSpec(dbsUrl)
 
 
-    reader = DBSReader(dbsUrl)
+    reader = DBSReader(dbsUrl, version = "DBS_2_0_9")
 
     dataset = spec.getDataset(datasetPath)   
         
@@ -231,9 +237,8 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
                 checksums['adler32'] = x['Adler32']
             xmlBlock.addFile(x['LogicalFileName'], checksums, x['FileSize'])
 
-    improv = spec.save()
-    xmlString = improv.makeDOMElement().toprettyxml()
-    return xmlString
+    xml = spec.save()
+    return xml
 
 
 def makePhEDExXMLForDatasets(dbsUrl, datasetPaths):        
@@ -250,8 +255,7 @@ def makePhEDExXMLForDatasets(dbsUrl, datasetPaths):
     for datasetPath in datasetPaths:
         spec.getDataset(datasetPath)
         
-    improv = spec.save()
-    xmlString = improv.makeDOMElement().toprettyxml()
+    xmlString = spec.save()
     return xmlString
 
     

@@ -32,7 +32,7 @@ class SetPriority(DBFormatter):
         """
 
         self.sql = "UPDATE reqmgr_group SET group_base_priority=%s" % priority
-        self.sql += "WHERE group_name=\'%s\'" % group
+        self.sql += " WHERE group_name=\'%s\'" % group
         result = self.dbi.processData(self.sql,
                          conn = conn, transaction = trans)
         return self.format(result)

@@ -27,17 +27,28 @@ def getRequestSchema():
 
 class RequestManagerConfig(DefaultConfig):
         
-    def setReqMgrHost(self):
+    def _setReqMgrHost(self):
         self.UnitTests.views.active.rest.model.reqMgrHost = \
               self.getServerUrl().strip('rest/')
     
-    def setWorkloadCache(self):
+    def _setWorkloadCache(self):
         self.UnitTests.views.active.rest.model.workloadCache = \
               tempfile.mkdtemp()
     
+    def _setupCouchUrl(self):
+        self.UnitTests.views.active.rest.couchUrl = os.environ.get("COUCHURL",None)
+        
     def deleteWorkloadCache(self):
         shutil.rmtree(self.UnitTests.views.active.rest.model.workloadCache)
-        
+    
+    def setupRequestConfig(self):
+        import WMCore.RequestManager.RequestMaker.Processing.RecoRequest
+        self.UnitTests.views.active.rest.workloadDBName = "test"
+        self.UnitTests.views.active.rest.security_roles = []
+        self._setReqMgrHost()
+        self._setWorkloadCache()
+        self._setupCouchUrl()
+    
 class RequestManagerTest(RESTBaseUnitTest):
     """
     Test RequestMgr Service client
@@ -54,8 +65,7 @@ class RequestManagerTest(RESTBaseUnitTest):
         dbUrl = os.environ.get("DATABASE", None)
         self.config.setDBUrl(dbUrl)        
         self.config.setFormatter('WMCore.WebTools.RESTFormatter')
-        self.config.setReqMgrHost()
-        self.config.setWorkloadCache()
+        self.config.setupRequestConfig()
         # mysql example
         #self.config.setDBUrl('mysql://username@host.fnal.gov:3306/TestDB')
         #self.config.setDBSocket('/var/lib/mysql/mysql.sock')
@@ -102,11 +112,11 @@ class RequestManagerTest(RESTBaseUnitTest):
        
         #TODO: not sure why this fails. Rick? could you look at this
         request = self.reqService.getAssignment(request = requestName)
-        self.assertEqual(type(request), dict)
+        self.assertEqual(type(request), list)
         self.assertTrue(len(request) > 0)
         
         self.reqService.sendMessage(requestName,"error")
-        self.reqService.putWorkQueue(requestName, "test_url")
+        self.reqService.putWorkQueue(requestName, "http://test_url")
         self.reqService.reportRequestProgress(requestName, 
                         percent_complete = 100, percent_success = 90)
         

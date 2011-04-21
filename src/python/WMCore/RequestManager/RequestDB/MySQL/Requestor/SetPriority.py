@@ -28,7 +28,7 @@ class SetPriority(DBFormatter):
         """
 
         self.sql = "UPDATE reqmgr_requestor SET requestor_base_priority=%s" % priority
-        self.sql += "WHERE requestor_hn_name=\'%s\'" % username
+        self.sql += " WHERE requestor_hn_name=\'%s\'" % username
 
         result = self.dbi.processData(self.sql,
                                       conn = conn, transaction = trans)

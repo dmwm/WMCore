@@ -528,3 +528,4 @@ class Create(DBCreator):
         for status in StatusList:
             sql = "INSERT INTO reqmgr_request_status (status_name) VALUES('%s')" % status
             self.inserts["%3d_reqstatus" % i] = sql
+            i = i + 1

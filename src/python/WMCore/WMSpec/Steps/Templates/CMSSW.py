@@ -125,6 +125,13 @@ class CMSSWStepHelper(CoreHelper):
             setattr(self.data.application.setup, k, v)
         return
 
+    def getScramArch(self):
+        """
+        _getScramArch_
+
+        Retrieve the scram architecture used for this step.
+        """
+        return self.data.application.setup.scramArch
 
     def getCMSSWVersion(self):
         """

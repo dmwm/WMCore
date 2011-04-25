@@ -20,6 +20,14 @@ from WMCore.DAOFactory        import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.ACDC.DataCollectionService  import DataCollectionService
 from WMCore.WMSpec.WMWorkload           import WMWorkload, WMWorkloadHelper
+from WMCore.WMException                 import WMException
+
+class ErrorHandlerException(WMException):
+    """
+    The Exception class for the ErrorHandlerPoller
+
+    """
+    pass
 
 
 class ErrorHandlerPoller(BaseWorkerThread):
@@ -40,7 +48,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
                                      dbinterface = myThread.dbi)
         self.changeState = ChangeState(self.config)
 
-        self.maxRetries = self.config.ErrorHandler.maxRetries
+        self.maxRetries     = self.config.ErrorHandler.maxRetries
+        self.maxProcessSize = getattr(self.config.ErrorHandler, 'maxProcessSize', 250)
 
         self.getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
 
@@ -77,7 +86,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         Actually do the retries
 
         """
-
+        logging.info("Processing retries for %i failed jobs of type %s." % (len(jobs), jobType))
         exhaustJobs = []
         cooloffJobs = []
 
@@ -89,18 +98,21 @@ class ErrorHandlerPoller(BaseWorkerThread):
             # Check if Retries >= max retry count
             if ajob['retry_count'] >= self.maxRetries:
                 exhaustJobs.append(ajob)
-                logging.error("Exhausting %s" % ajob)
+                logging.error("Exhausting job %i" % ajob['id'])
+                logging.debug("JobInfo: %s" % ajob)
             else:
                 logging.debug("Job %i had %s retries remaining" \
                               % (ajob['id'], str(ajob['retry_count'])))
 
         #Now to actually do something.
+        logging.debug("About to propagate jobs")
         self.changeState.propagate(exhaustJobs, 'exhausted', \
                                    '%sfailed' %(jobType))
         self.changeState.propagate(cooloffJobs, '%scooloff' %(jobType), \
                                    '%sfailed' %(jobType))
 
         # Remove all the files in the exhausted jobs.
+        logging.debug("About to fail input files for exhausted jobs")
         for job in exhaustJobs:
             job.failInputFiles()
 
@@ -113,7 +125,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         Do the ACDC creation and hope it works
         """
-
+        logging.debug("Entering ACDC with %i jobs" % len(jobList))
         collectionDict = {}
 
         for job in jobList:
@@ -129,17 +141,43 @@ class ErrorHandlerPoller(BaseWorkerThread):
                 wmWorkload.load(spec)
                 self.specCache[spec] = wmWorkload
                 wmSpec = wmWorkload
+                # Should only need to create a collection once for a given spec
+                self.dataCollection.createCollection(wmSpec = wmSpec)
+
             else:
                 wmSpec = self.specCache[spec]
 
 
-            self.dataCollection.createCollection(wmSpec = wmSpec)
-
+            logging.debug("About to begin collection creation in ACDC")
             failedJobs = collectionDict[spec]
             self.dataCollection.failedJobs(failedJobs)
 
         return
 
+    def splitJobList(self, jobList, jobType):
+        """
+        _splitJobList_
+
+        Split up list of jobs into more manageable chunks if necessary
+        """
+        if len(jobList) < 1:
+            # Nothing to do
+            return
+
+        myThread = threading.currentThread()
+
+        while len(jobList) > 0:
+            # Loop over the list and handle it one chunk at a time
+            tmpList = jobList[:self.maxProcessSize]
+            jobList = jobList[self.maxProcessSize:]
+            logging.debug("About to process %i errors" % len(tmpList))
+            myThread.transaction.begin()
+            exhaustList = self.processRetries(tmpList, jobType)
+            self.handleACDC(jobList = exhaustList)
+            myThread.transaction.commit()
+
+        return
+            
 
             
 
@@ -152,8 +190,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
         createList = []
         submitList = []
         jobList    = []
-
-
 
         # Run over created jobs
         idList = self.getJobs.execute(state = 'CreateFailed')
@@ -176,24 +212,9 @@ class ErrorHandlerPoller(BaseWorkerThread):
         if len(idList) > 0:
             jobList = self.loadJobsFromList(idList = idList)
 
-
-        fullList = []
-        fullList.extend(jobList)
-        fullList.extend(submitList)
-        fullList.extend(createList)
-
-        exhaustList = []
-
-        exhaustList.extend(self.processRetries(createList, 'create'))
-        exhaustList.extend(self.processRetries(submitList, 'submit'))
-        exhaustList.extend(self.processRetries(jobList, 'job'))
-
-        # Now do ACDC
-        try:
-            self.handleACDC(jobList = exhaustList)
-        except Exception, ex:
-            logging.error("ACDC threw an exception: %s" % ex)
-            logging.error(str(traceback.format_exc()))
+        self.splitJobList(jobList = createList, jobType = 'create')
+        self.splitJobList(jobList = submitList, jobType = 'submit')
+        self.splitJobList(jobList = jobList,    jobType = 'job')
 
         return
 
@@ -238,19 +259,21 @@ class ErrorHandlerPoller(BaseWorkerThread):
         logging.debug("Running error handling algorithm")
         myThread = threading.currentThread()
         try:
-            myThread.transaction.begin()
             self.handleErrors()
-            myThread.transaction.commit()
+        except WMException, ex:
+            try:
+                myThread.transaction.rollback()
+            except:
+                pass
+            raise
         except Exception, ex:
             msg = "Caught exception in ErrorHandler\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
             msg += "\n\n"
             logging.error(msg)
-            if hasattr(myThread, 'transaction') \
-                   and myThread.transaction != None \
-                   and hasattr(myThread.transaction, 'transaction') \
-                   and myThread.transaction.transaction != None:
+            if getattr(myThread, 'transaction', None) != None \
+               and getattr(myThread.transaction, 'transaction', None) != None:
                 myThread.transaction.rollback()
-            raise Exception(msg)
+            raise ErrorHandlerException(msg)
 

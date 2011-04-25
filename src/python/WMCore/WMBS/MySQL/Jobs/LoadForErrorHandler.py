@@ -98,7 +98,11 @@ class LoadForErrorHandler(DBFormatter):
         filesResult = self.dbi.processData(self.fileSQL, binds, conn = conn,
                                            transaction = transaction)
         fileList  = self.formatDict(filesResult)
-        fileBinds = [{'fileid': x['id']} for x in fileList]
+        fileBinds = []
+        for x in fileList:
+            # Assemble unique list of binds
+            if not x['id'] in fileBinds:
+                fileBinds.append({'fileid': x['id']})
 
         parentResult = self.dbi.processData(self.parentSQL, fileBinds, conn = conn,
                                             transaction = transaction)
@@ -107,11 +111,17 @@ class LoadForErrorHandler(DBFormatter):
         lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn = conn,
                                           transaction = transaction)
         lumiList = self.formatDict(lumiResult)
+        lumiDict = {}
+        for l in lumiList:
+            if not l['fileid'] in lumiDict.keys():
+                lumiDict[l['fileid']] = []
+            lumiDict[l['fileid']].append(l)
+            
         for f in fileList:
             f['newRuns'] = []
             fileRuns = {}
-            for l in lumiList:
-                if l['fileid'] == f['id']:
+            if f['id'] in lumiDict.keys():
+                for l in lumiDict[f['id']]:
                     run  = l['run']
                     lumi = l['lumi']
                     if not fileRuns.has_key(run):

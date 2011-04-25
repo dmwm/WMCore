@@ -9,6 +9,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import sys
 import os
+import logging
 import unittest
 
 
@@ -47,7 +48,7 @@ class CouchCollection(Collection):
         """
         self.getCollectionId()
         if self['collection_id'] != None:
-            print "collection exists..."
+            logging.info("collection exists...")
             return self.get()
         document    = CMSCouch.Document()
         document['collection'] = self

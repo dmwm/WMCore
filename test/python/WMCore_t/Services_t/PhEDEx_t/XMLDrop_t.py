@@ -10,7 +10,7 @@ from WMCore.WMFactory import WMFactory
 from WMCore.DAOFactory import DAOFactory
 from WMQuality.TestInit import TestInit
 
-from WMCore.Services.DBS import XMLDrop
+from WMCore.Services.PhEDEx import XMLDrop
 
 
 class XMLDropTest(unittest.TestCase):

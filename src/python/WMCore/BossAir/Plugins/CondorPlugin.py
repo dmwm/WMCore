@@ -608,6 +608,12 @@ class CondorPlugin(BasePlugin):
         stdout, stderr = pipe.communicate()
         classAdsRaw = stdout.split(':::')
         
+        if not pipe.returncode == 0:
+            # Then things have gotten bad - condor_q is not responding
+            logging.error("condor_q returned non-zero value %s" % str(pipe.returncode))
+            logging.error("Skipping classAd processing this round")
+            return jobInfo
+        
 
         if classAdsRaw == '':
             # We have no jobs

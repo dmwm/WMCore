@@ -68,7 +68,7 @@ class TestReqMgr(RESTBaseUnitTest):
         #self.config.setDBSocket('/var/lib/mysql/mysql.sock')
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
         # Do this is you don't want to remake and delete the schema
-        #self.schemaModules = None
+        #self.schemaModules = []
         
     def setUp(self):
         """
@@ -160,7 +160,6 @@ class TestReqMgr(RESTBaseUnitTest):
         #workloadHelper = WMWorkloadCache.loadFromURL(requestsAndSpecs[requestName])
         workloadHelper = WMWorkloadHelper()
         workloadHelper.load(requestsAndSpecs[requestName]) 
-        print str(workloadHelper.data.owner)
         self.assertEqual(workloadHelper.getOwner()['Requestor'], "me")
         self.assertTrue(self.jsonSender.get('assignment?request=%s'% requestName)[0] == ['White Sox'])
 
@@ -185,6 +184,14 @@ class TestReqMgr(RESTBaseUnitTest):
         #self.assertEqual(messages[0][0][0], message)
         for status in ['running', 'completed']:
             self.jsonSender.put('request/%s?status=%s' % (requestName, status))
+
+        # campaign
+        self.jsonSender.put('campaign/%s' % 'TestCampaign')
+        campaigns = self.jsonSender.get('campaign')[0]
+        self.assertTrue('TestCampaign' in campaigns.keys())
+        self.jsonSender.put('campaign/%s/%s' % ('TestCampaign', requestName))
+        requestsInCampaign = self.jsonSender.get('campaign/%s' % 'TestCampaign')[0]
+        self.assertTrue(requestName in requestsInCampaign.keys())
         self.jsonSender.delete('request/%s' % requestName)
 
 if __name__=='__main__':

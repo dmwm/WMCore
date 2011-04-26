@@ -42,22 +42,21 @@ Request Priority: <input type="text" name="RequestPriority" size=2 value=1 /><br
 #end def
 
 #def softwareBlock
-Software Release: <select name="CMSSWVersion">
-			#for $version in $versions
-    				#if $version == $defaultVersion
-        				<option selectED>$version</option>
-    				#else
-        				<option>$version</option>
-    				#end if
-			#end for
-		   </select>
-
-		   <select name="ScramArch">
-    			<option>slc4_ia32_gcc345</option>
-    			<option selectED>slc5_ia32_gcc434</option>
-    			<option>slc5_amd64_gcc434</option>
-		   </select><br/>
-
+Software Release: 
+<select name="CMSSWVersion">
+  #for $version in $versions
+    #if $version == $defaultVersion
+      <option selectED>$version</option>
+    #else
+      <option>$version</option>
+    #end if
+  #end for
+</select>
+<select name="ScramArch">
+   <option>slc4_ia32_gcc345</option>
+   <option selected>slc5_ia32_gcc434</option>
+   <option>slc5_amd64_gcc434</option>
+</select><br/>
 #end def 
 
 #def configBlock($radioName, $scenarioName, $cacheName, $type)
@@ -82,6 +81,13 @@ Configuration <br>
   <br/>
 
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
+#end def
+
+#def campaignBlock
+<div id="campaigndiv">
+Campaign: <input type="text" name="Campaign" size=40 id="campaign" />
+<div id="campaigncontainer"></div>
+</div>
 #end def
 
 #def ioBlock
@@ -153,6 +159,7 @@ Emulator:
         <div id="rereco">
             $headerBlock
             $softwareBlock
+            $campaignBlock
             $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Reco")
             $ioBlock
             $skimBlock
@@ -172,6 +179,7 @@ MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
         <div id="relvalmc">
             $headerBlock
             $softwareBlock
+            $campaignBlock
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
 # of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 /><br/>
 Generation ConfigCache ID <input type="text" name="GenConfigCacheID" size=80 /><br/>
@@ -186,12 +194,14 @@ MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
         <div id="storeResults">
             $headerBlock
             $softwareBlock
+            $campaignBlock
             $ioBlock
             $trailerBlock("StoreResults")
         </div>
         <div id="DataProcessing">
             $headerBlock
             $softwareBlock
+            $campaignBlock
 # of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
 Multicore: <input type="text" name="Multicore" size=2 value="" /> <br/>
             $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Processing")
@@ -210,6 +220,7 @@ ACDC Database Name: <input type="text" name="ACDCDatabase" size=30/><br/>
         <div id="ReDigi">
             $headerBlock
             $softwareBlock
+            $campaignBlock
             $ioBlock
 <br/>
 Step One CacheCache ID: <input type="text" name="StepOneConfigCacheID" size=80 /><br/>
@@ -228,7 +239,18 @@ MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
 <script type="text/javascript">
    var tabView = new YAHOO.widget.TabView('tabby');
 </script>
+-<script type="text/javascript">
+   var couchInput = $alldocs
+   var couchSchema = {fields:["doc"]};
+   var couchSource = WMCore.createDataSource(couchInput, couchSchema, "Local");
+   var couchAutoComplete = new YAHOO.widget.AutoComplete("couchinput", "couchcontainer", couchSource);
 
+   var campaignInput = $allcampaigns
+   var campaignSchema = {fields:["doc"]};
+   var campaignSource = WMCore.createDataSource(campaignInput, campaignSchema, "Local");
+   var campaignAutoComplete = new YAHOO.widget.AutoComplete("campaigninput", "campaigncontainer", campaignSource);
+
+ </script>
 </body>
 </html>
 

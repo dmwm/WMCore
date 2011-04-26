@@ -91,7 +91,3 @@ def listRequestsByProdMgr(prodMgrName):
     result = reqFind.execute(prodMgrName)
     return result
 
-
-
-
-

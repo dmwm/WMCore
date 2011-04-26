@@ -36,7 +36,9 @@ class Create(DBCreator):
                       'reqmgr_progress_update',
                       'reqmgr_message',
                       'reqmgr_assigned_prodmgr',
-                      'reqmgr_assigned_prodagent']
+                      'reqmgr_assigned_prodagent',
+                      'reqmgr_campaign',
+                      'reqmgr_campaign_assoc' ]
     
     def __init__(self, logger=None, dbi=None, param=None):
         if dbi == None:
@@ -379,6 +381,34 @@ class Create(DBCreator):
 
         ) ENGINE=InnoDB
         """
+
+        self.create['q_reqmgr_campaign'] = """
+        CREATE TABLE reqmgr_campaign (
+
+        campaign_id INT(11) NOT NULL AUTO_INCREMENT,
+        campaign_name VARCHAR(255),
+
+        UNIQUE(campaign_name),
+        PRIMARY KEY(campaign_id)
+
+        ) ENGINE=InnoDB
+        """
+
+        self.create['r_reqmgr_campaign_assoc'] = """
+        CREATE TABLE reqmgr_campaign_assoc (
+
+        request_id INT(11) NOT NULL,
+        campaign_id INT(11) NOT NULL,
+
+        UNIQUE( request_id, campaign_id),
+        FOREIGN KEY (request_id) references
+           reqmgr_request(request_id) ON DELETE CASCADE,
+        FOREIGN KEY (campaign_id) references
+           reqmgr_campaign(campaign_id)
+
+        ) ENGINE=InnoDB
+        """
+
 
         for typeName in TypesList:
             sql = "INSERT INTO reqmgr_request_type (type_name) VALUES ('%s')" % typeName

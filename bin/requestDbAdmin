@@ -124,15 +124,16 @@ def doList():
        print ProdManagement.listTeams()
 
 def doDelete():
-    if group != None:
+    if group and user:
+        GroupAdmin.removeUserFromGroup(user, group)
+    elif group:
         GroupAdmin.deleteGroup(arg)
-    if user != None:
+    elif user:
         UserAdmin.deleteUser(arg)
     if version != None:
         SoftwareAdmin.removeSoftware(arg)
     if team != None:
         ProdManagement.removeTeam(arg)
-        # GroupAdmin.removeUserFromGroup(self.requestor, self.group)
 
 for opt, arg in opts:
     if opt == "-u":

@@ -12,6 +12,7 @@ import WMCore.RequestManager.RequestDB.Interface.ProdSystem.ProdMgrRetrieve as P
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
+import WMCore.RequestManager.RequestDB.Interface.Request.Campaign as Campaign
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.Wrappers import JsonWrapper
 import WMCore.Lexicon
@@ -59,6 +60,9 @@ class ReqMgrRESTModel(RESTModel):
         self._addMethod('GET', 'message', self.getMessage,
                        args = ['request'], 
                        secured=True, validation = [self.isalnum], expires = 0)
+        self._addMethod('GET', 'campaign', self.getCampaign,
+                       args = ['campaign'],
+                       secured=True, validation = [self.isalnum], expires = 0)
         self._addMethod('PUT', 'request', self.putRequest,
                        args = ['requestName', 'status', 'priority'],
                        secured=True, validation = [self.isalnum, self.intpriority])
@@ -89,6 +93,10 @@ class ReqMgrRESTModel(RESTModel):
         self._addMethod('PUT', 'message', self.putMessage,
                        args = ['request'],
                        secured=True, security_params=self.security_params,
+                       validation = [self.isalnum])
+        self._addMethod('PUT', 'campaign', self.putCampaign,
+                       args = ['campaign', 'request'],
+                       secured=True, 
                        validation = [self.isalnum])
         self._addMethod('POST', 'request', self.postRequest,
                         args = ['requestName', 'events_written', 
@@ -121,6 +129,10 @@ class ReqMgrRESTModel(RESTModel):
                         secured=True, validation = [self.validateVersion])
         self._addMethod('DELETE', 'team', self.deleteTeam,
                         args = ['team'],
+                        secured=True, security_params=self.security_params,
+                        validation = [self.isalnum])
+        self._addMethod('DELETE', 'campaign', self.deleteCampaign,
+                        args = ['campaign'],
                         secured=True, security_params=self.security_params,
                         validation = [self.isalnum])
         self._addMethod('GET', 'requestnames', self.getRequestNames,
@@ -173,14 +185,6 @@ class ReqMgrRESTModel(RESTModel):
             if request['RequestName'] == requestName:
                 return request
         return None
-
-    def requestID(self, requestName):
-        """ Finds the ReqMgr database ID for a request """
-        requests = ListRequests.listRequests()
-        for request in requests:
-            if request['RequestName'] == requestName:
-                return request['RequestID']
-        raise RuntimeError("No such request")
 
     def getRequest(self, requestName=None):
         """ If a request name is specified, return the details of the request. 
@@ -266,6 +270,14 @@ class ReqMgrRESTModel(RESTModel):
         """ Returns a list of messages attached to this request """
         return ChangeState.getMessages(request)
 
+    def getCampaign(self, campaign=None):
+        """ returns a list of all campaigns if no argument, and a list of
+             all requests in a campaign if there is an argument """
+        if campaign == None:
+            return Campaign.listCampaigns()
+        else:
+            return Campaign.listRequestsByCampaign(campaign)
+
     def putWorkQueue(self, request, url):
         """ Registers the request as "acquired" by the workqueue with the given URL """
         Utilities.changeStatus(request, "acquired")
@@ -330,6 +342,19 @@ class ReqMgrRESTModel(RESTModel):
         result = ChangeState.putMessage(request, message)
         return result
 
+    def putCampaign(self, campaign, request=None):
+        """ Adds a campaign if it doesn't already exist, and optionally
+            associates a request with it """
+        if request:
+            requestID = GetRequest.requestID(request)
+            if requestID:
+                return Campaign.associateCampaign(campaign, requestID)
+            else:
+                return False
+        else:
+            Campaign.addCampaign(campaign)
+
+        
 #    def postRequest(self, requestName, events_written=None, events_merged=None, 
 #                    files_written=None, files_merged = None, dataset=None):
     def postRequest(self, requestName, **kwargs):
@@ -398,6 +423,8 @@ class ReqMgrRESTModel(RESTModel):
         """ Delete this team from ReqMgr """
         ProdManagement.removeTeam(urllib.unquote(team))
 
+    def deleteCampaign(self, campaign):
+        return Campaign.deleteCampaign(campaign)
 
     
 

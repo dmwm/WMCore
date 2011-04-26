@@ -56,7 +56,12 @@ class Create(DBCreator):
                       'reqmgr_progress_update',
                       'reqmgr_message',
                       'reqmgr_assigned_prodmgr',
-                      'reqmgr_assigned_prodagent']
+                      'reqmgr_assigned_prodagent',
+                      'reqmgr_campaign',
+                      'reqmgr_campaign_seq',
+                      'reqmgr_campaign_trg',
+                      'reqmgr_campaign_assoc'
+                      ]
 
     def __init__(self, logger=None, dbi=None, param=None):
         if dbi == None:
@@ -518,6 +523,45 @@ class Create(DBCreator):
                   ON DELETE CASCADE
 
         )
+        """
+
+        self.create['q_reqmgr_campaign'] = """
+        CREATE TABLE reqmgr_campaign (
+
+        campaign_id NUMBER(11) NOT NULL,
+        campaign_name VARCHAR(255),
+
+        UNIQUE(campaign_name),
+        PRIMARY KEY(campaign_id)
+
+        )
+        """
+        self.create['q_reqmgr_campaign_seq'] = """
+        CREATE SEQUENCE reqmgr_campaign_seq
+        START WITH 1
+        INCREMENT BY 1
+        NOMAXVALUE"""
+        self.create['q_reqmgr_campaign_trg'] =  """
+        CREATE TRIGGER reqmgr_campaign_trg
+        BEFORE INSERT ON reqmgr_campaign
+        FOR EACH ROW
+        BEGIN
+        SELECT reqmgr_campaign_seq.nextval INTO :new.campaign_id FROM dual;
+        END;"""
+
+        self.create['r_reqmgr_campaign_assoc'] = """
+        CREATE TABLE reqmgr_campaign_assoc (
+
+        request_id NUMBER(11) NOT NULL,
+        campaign_id NUMBER(11) NOT NULL,
+
+        UNIQUE( request_id, campaign_id),
+        FOREIGN KEY (request_id) references
+           reqmgr_request(request_id) ON DELETE CASCADE,
+        FOREIGN KEY (campaign_id) references
+           reqmgr_campaign(campaign_id)
+
+        ) 
         """
 
         for typeName in TypesList:

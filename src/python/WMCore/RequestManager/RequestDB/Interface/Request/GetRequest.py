@@ -88,13 +88,17 @@ def getRequest(requestId):
 
     return requestInstance
 
-def getRequestByName(requestName):
+def requestID(requestName):
+    """ Finds the ReqMgr database ID for a request """
     factory = DBConnect.getConnection()
     f =  factory(classname = "Request.FindByName")
     id = f.execute(requestName)
     if id == None:
         raise RuntimeError, "Cannot find request %s" % requestName
-    return getRequest(id)
+    return id
+
+def getRequestByName(requestName):
+    return getRequest(requestID(requestName))
      
 def getRequestDetails(requestName):
     """ Return a dict with the intimate details of the request """

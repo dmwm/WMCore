@@ -105,7 +105,7 @@ def lfnBase(candidate):
 
 
 def cmsswversion(candidate):
-    return check('CMSSW(_\d+){3}(_[a-zA-Z0-9]+)?$', candidate)
+    return check('CMSSW(_\d+){3}(_[a-zA-Z0-9_]+)?$', candidate)
 
 def couchurl(candidate):
     return check('http://(([a-zA-Z0-9:@\.\-_]){0,100})(localhost|fnal\.gov|cern\.ch|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d+', candidate)

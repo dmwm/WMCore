@@ -932,7 +932,7 @@ class WMWorkloadHelper(PersistencyHelper):
         return
 
     def setCMSSWParams(self, cmsswVersion = None, globalTag = None,
-                       initialTask = None):
+                       scramArch = None, initialTask = None):
         """
         _setCMSSWVersion_
 
@@ -950,11 +950,12 @@ class WMWorkloadHelper(PersistencyHelper):
 
                 if stepHelper.stepType() == "CMSSW":
                     if cmsswVersion != None:
-                        stepHelper.cmsswSetup(cmsswVersion = cmsswVersion)
+                        stepHelper.cmsswSetup(cmsswVersion = cmsswVersion,
+                                              scramArch = scramArch)
                     if globalTag != None:
                         stepHelper.setGlobalTag(globalTag)
 
-            self.setCMSSWParams(cmsswVersion, globalTag, task)
+            self.setCMSSWParams(cmsswVersion, globalTag, scramArch, task)
 
         return
 

@@ -889,7 +889,7 @@ class WMWorkloadTest(unittest.TestCase):
         skimTask.applyTemplates()
 
         testWorkload.setCMSSWParams(cmsswVersion = "CMSSW_1_1_1", globalTag =
-                                    "GLOBALTAG")
+                                    "GLOBALTAG", scramArch = "SomeSCRAMArch")
 
         def verifyParams(initialTask = None):
             """
@@ -909,7 +909,9 @@ class WMWorkloadTest(unittest.TestCase):
                                          "Error: CMSSW Version should match.")
                         self.assertEqual(stepHelper.getGlobalTag(),
                                          "GLOBALTAG",
-                                         "Error: Global tag should match.")                        
+                                         "Error: Global tag should match.")
+                        self.assertEqual(stepHelper.getScramArch(), "SomeSCRAMArch",
+                                         "Error: Scram arch should match.")
 
         for task in testWorkload.taskIterator():
             verifyParams(task)

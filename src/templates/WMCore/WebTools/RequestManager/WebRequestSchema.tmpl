@@ -105,29 +105,21 @@ DBS: <!--input type="text" name="dbs" value="http://cmsdbsprod.cern.ch/cms_dbs_p
 </select><br>
 #end def
 
-#def skimBlock($skimNum)
-Skim Name: <input type="text", name="SkimName$skimNum" size=20 value="skim"$skimNum/>
-Skim Input: <input type="text", name="SkimInput$skimNum" size=20 value="output"/><BR/>
-Skim ConfigCache ID: <input type="text" name="Skim$skimNumConfigCacheID" value=$defaultSkimConfig size=80/><br>
-#end def
-
-#def moreSkims($firstSkim)
-<input type="hidden" value=$firstSkim id="nskims" />
+#def skimBlock
 <a href="javascript:;" onclick="addSkim();">Add Skim</a><br>
 <div id="skimDiv"> </div>
 <script>
+var nskim = 1
 function addSkim() {
   var ni = document.getElementById('skimDiv');
-  var numi = document.getElementById('nskims');
-  var num = (document.getElementById('nskims').value-1) + 2;
-  numi.value = num;
   var newdiv = document.createElement('div');
-  var divIdName = 'my'+num+'Div';
+  var divIdName = 'my'+nskim+'Div';
   newdiv.setAttribute('id',divIdName);
-  newdiv.innerHTML = 'Skim Name: <input type="text", name="SkimName'+num+'" size=20 value="skim'+num+'"/><br>' 
-  + ' Skim Input '+num+': <input type="text", name="SkimInput'+num+'" size=40 value="output"/><BR/>' 
-  +'Skim ConfigCache ID ' + num +': <input type="text" name="Skim'+num+'ConfigCacheID"/> <br>'
+  newdiv.innerHTML = 'Skim Name: <input type="text", name="SkimName'+nskim+'" size=20 value="skim'+nskim+'"/><br/>' 
+  + ' Skim Input '+nskim+': <input type="text", name="SkimInput'+nskim+'" size=40"/><br/>' 
+  +'Skim ConfigCache ID ' + nskim +': <input type="text" name="Skim'+nskim+'ConfigCacheID"/> <br/>'
   ni.appendChild(newdiv);
+  ++nskim;
 }
 </script>
 #end def
@@ -173,7 +165,7 @@ Emulator:
             $softwareBlock
             $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Reco")
             $ioBlock
-            $moreSkims(0)
+            $skimBlock
             $runBlockBlock
             $trailerBlock("ReReco")
         </div>

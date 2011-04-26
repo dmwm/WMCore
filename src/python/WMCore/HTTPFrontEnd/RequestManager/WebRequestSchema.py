@@ -3,6 +3,7 @@ import WMCore.RequestManager.RequestMaker.Production
 import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
+import WMCore.RequestManager.RequestDB.Interface.Request.Campaign as Campaign
 from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
 import WMCore.RequestManager.RequestMaker.Processing
 import WMCore.RequestManager.RequestMaker.Production
@@ -69,16 +70,20 @@ class WebRequestSchema(WebAPI):
         requestor = self.requestor
         if not requestor:
             requestor = cherrypy.request.user["login"]
+        if not requestor:
+            return "No username found in your certificate"
         if not requestor in Registration.listUsers():
-            return "User " + requestor + " is not registered.  Contact a ReqMgr administrator."
+            return "User %s is not registered.  Contact a ReqMgr administrator." % requestor
         groups = GroupInfo.groupsForUser(requestor).keys()
         if groups == []:
             return "User " + requestor + " is not in any groups.  Contact a ReqMgr administrator."
+        campaigns = Campaign.listCampaigns()
         return self.templatepage("WebRequestSchema", yuiroot=self.yuiroot,
             requestor=requestor,
             groups=groups, 
             versions=self.versions, 
             alldocs = Utilities.unidecode(self.allDocs()),
+            allcampaigns = campaigns,                     
             defaultVersion=self.cmsswVersion,
             defaultSkimConfig=self.defaultSkimConfig)
 
@@ -102,6 +107,10 @@ class WebRequestSchema(WebAPI):
             
         schema['CouchURL'] = self.couchUrl
         schema['CouchDBName'] = self.configDBName
+
+        campaign = kwargs.get("Campaign", "")
+        if campaign != "":
+            schema["Campaign"] = campaign
 
         if 'Scenario' in kwargs and 'ProdConfigCacheID' in kwargs:
             # Use input mode to delete the unused one

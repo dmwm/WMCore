@@ -56,7 +56,7 @@ class ReqMgrBrowser(WebAPI):
             'ScramArch', 'GlobalTag', 'RequestSizeEvents',
             'InputDataset', 'PrimaryDataset', 'AcquisitionEra', 'ProcessingVersion', 
             'RunWhitelist', 'RunBlacklist', 'BlockWhitelist', 'BlockBlacklist', 
-            'RequestWorkflow', 'Scenario', 'PrimaryDataset',
+            'RequestWorkflow', 'Scenario', 'Campaign', 'PrimaryDataset',
             'Acquisition Era', 'Processing Version', 'Merged LFN Base', 'Unmerged LFN Base',
             'Site Whitelist', 'Site Blacklist']
 
@@ -335,29 +335,39 @@ class ReqMgrBrowser(WebAPI):
     # FIXME needs to check if authorized, or original user
     def modifyWorkload(self, requestName, workload,
                        runWhitelist=None, runBlacklist=None, 
-                       blockWhitelist=None, blockBlacklist=None):
+                       blockWhitelist=None, blockBlacklist=None,
+                       ScramArch=None):
         """ handles the "Modify" button of the details page """
         self.validate(requestName) 
         helper = WMWorkloadHelper()
         helper.load(workload)
+        schema = helper.data.request.schema
         message = ""
         #inputTask = helper.getTask(requestType).data.input.dataset
         if runWhitelist != "" and runWhitelist != None:
             l = parseRunList(runWhitelist)
             helper.setRunWhitelist(l)
+            schema.RunWhitelist = l
             message += 'Changed runWhiteList to %s<br>' % l
         if runBlacklist != "" and runBlacklist != None:
             l = parseRunList(runBlacklist)
             helper.setRunBlacklist(l)
+            schema.RunBlacklist = l
             message += 'Changed runBlackList to %s<br>' % l
         if blockWhitelist != "" and blockWhitelist != None:
             l = parseBlockList(blockWhitelist)
             helper.setBlockWhitelist(l)
+            schema.BlockWhitelist = l
             message += 'Changed blockWhiteList to %s<br>' % l
         if blockBlacklist != "" and blockBlacklist != None:
             l = parseBlockList(blockBlacklist)
             helper.setBlockBlacklist(l)
+            schema.BlockBlacklist = l
             message += 'Changed blockBlackList to %s<br>' % l
+        if ScramArch and ScramArch != schema.ScramArch:
+            message += "modifyng the Scram Arch to %s" % ScramArch
+            schema.ScramArch = ScramArch
+            helper.setCMSSWParams(cmsswVersion=schema.CMSSWVersion, scramArch=ScramArch)
         saveWorkload(helper, workload)
         return message + detailsBackLink(requestName)
 

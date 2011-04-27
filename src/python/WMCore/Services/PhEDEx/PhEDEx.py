@@ -16,10 +16,12 @@ class PhEDEx(Service):
     https://cmsweb.cern.ch/phedex/datasvc/doc
     """
 
-    def __init__(self, dict = {}, responseType = "json", secure = True):
+    def __init__(self, dict = None, responseType = "json", secure = True):
         """
         responseType will be either xml or json
         """
+        if not dict:
+            dict = {}
         self.responseType = responseType.lower()
 
         dict["timeout"] = 300

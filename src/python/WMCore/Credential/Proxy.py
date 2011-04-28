@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=C0103,W0613,C0321
+#pylint: disable=C0103,W0613,C0321
 import os, subprocess
 import traceback
 import re
@@ -15,33 +15,32 @@ def execute_command( command, logger, timeout ):
     _execute_command_
     Funtion to manage commands.  
     """
-    import signal
-    class Alarm(Exception):
-        pass
+    import time
 
-    def alarm_handler(signum, frame):
-        raise Alarm
-
-    signal.signal(signal.SIGALRM, alarm_handler)
-    signal.alarm(timeout)
-
+    stdout, stderr, rc = None, None, 99999
     proc = subprocess.Popen(
-            ["/bin/bash"], shell=True, cwd=os.environ['PWD'],
+            command, shell=True, cwd=os.environ['PWD'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE,
     )
-    proc.stdin.write(command)
 
-    try:
-        stdout, stderr = proc.communicate()
-        rc = proc.returncode
-        signal.alarm(0) # reset the alarm
-    except Alarm:
-        logger.error('\
-Timeout in %s execution.' %command )
-        signal.alarm(0) # reset the alarm
-        stdout, stderr, rc = None, None, 99999
+    t_beginning = time.time()
+    seconds_passed = 0
+    while True:
+        if proc.poll() is not None:
+            break
+        seconds_passed = time.time() - t_beginning
+        if timeout and seconds_passed > timeout:
+            proc.terminate()
+            logger.error('\
+    Timeout in %s execution.' %command )
+            return stdout, stderr, rc
+
+        time.sleep(0.1)
+
+    stdout, stderr = proc.communicate()
+    rc = proc.returncode
 
     return stdout, stderr, rc
 

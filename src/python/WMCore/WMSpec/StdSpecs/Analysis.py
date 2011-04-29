@@ -6,6 +6,7 @@
 import time
 
 ##from WMCore.Configuration import ConfigSection
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 
@@ -23,6 +24,17 @@ def getTestArguments():
     
     return args
 
+def remoteLFNPrefix(site, lfn=''):
+    """
+    Convert a site name to the relevant remote LFN prefix
+    """
+
+    phedexJSON = PhEDEx(responseType='json')
+
+    seName = phedexJSON.getNodeSE(site)
+    uri = phedexJSON.getPFN(nodes=[site], lfns=[lfn])[(site,lfn)]
+
+    return uri.replace(lfn, ''), seName # Don't want the actual LFN, just prefix
 
 class AnalysisWorkloadFactory(StdBase):
     """
@@ -43,9 +55,10 @@ class AnalysisWorkloadFactory(StdBase):
         analysisTask = workload.newTask("Analysis")
         (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = self.inputDataset[1:].split("/")
 
-        lfnBase = "/store/user"
-        self.userUnmergedLFN = "%s/%s/%s/%s/%s" % (lfnBase, self.userName, self.inputPrimaryDataset,
-                                                            self.publishName, self.processingVersion)
+        lfnBase = '/store/user/%s' % self.userName
+        lfnPrefix, seName = remoteLFNPrefix(site=self.asyncDest, lfn=lfnBase)
+        self.userUnmergedLFN = "%s/%s/%s/%s" % (lfnBase, self.inputPrimaryDataset,
+                                                self.publishName, self.processingVersion)
 
         outputMods = self.setupProcessingTask(analysisTask, "Analysis", inputDataset=self.inputDataset,
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
@@ -53,8 +66,18 @@ class AnalysisWorkloadFactory(StdBase):
                                               splitArgs = self.analysisJobSplitArgs, \
                                               userDN = self.owner_dn, asyncDest = self.asyncDest, publishName = self.publishName,
                                               userSandbox = self.userSandbox, userFiles = self.userFiles)
-        self.addLogCollectTask(analysisTask)
+        logCollectTask = self.addLogCollectTask(analysisTask)
+        logCollectStep = logCollectTask.getStep('logCollect1')
 
+        if not self.saveLogs:
+            logCollectTime = time.time() + 5*24*3600
+            logCollectTask.setSplittingAlgorithm("FixedDelay", trigger_time = logCollectTime)
+            logCollectStep.addOverride('cleanOnly', True)
+
+        logCollectStep.addOverride('userLogs',  True)
+        logCollectStep.addOverride('seName',    seName)
+        logCollectStep.addOverride('lfnBase',   lfnBase)
+        logCollectStep.addOverride('lfnPrefix', lfnPrefix)
         workload.setWorkQueueSplitPolicy("DatasetBlock", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
 
         return workload
@@ -95,12 +118,13 @@ class AnalysisWorkloadFactory(StdBase):
         self.analysisJobSplitAlgo  = arguments.get("JobSplitAlgo", "EventBased")
         self.analysisJobSplitArgs  = arguments.get("JobSplitArgs",
                                                {"events_per_job": 1000})
-        self.asyncDest = arguments.get("asyncDest", "T2_IT_Pisa")
+        self.asyncDest = arguments.get("asyncDest", "T1_US_FNAL_Buffer")
         self.publishName = arguments.get("PublishDataName", str(int(time.time())))
         self.userSandbox = arguments.get("userSandbox", None)
         self.userFiles   = arguments.get("userFiles", [])
         self.userName    = arguments.get("Username",'jblow')
         self.processingVersion = arguments.get('ProcessingVersion', 'v1')
+        self.saveLogs    = arguments.get("SaveLogs", True)
 
         return self.buildWorkload()
 

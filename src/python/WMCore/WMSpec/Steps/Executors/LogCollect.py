@@ -59,11 +59,15 @@ class LogCollect(Executor):
             overrides = self.step.override.dictionary_()
 
         # Set wait to over an hour
-        waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
+        waitTime  = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
+        seName    = overrides.get('seName',    "srm-cms.cern.ch")
+        lfnPrefix = overrides.get('lfnPrefix', "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms")
+        lfnBase   = overrides.get('lfnBase',   "/store/user/jsmith")
+        userLogs  = overrides.get('userLogs',  False)
+        cleanOnly = overrides.get('cleanOnly', False)
 
         stageOutParams = {"command": "srmv2", "option": "-streams_num=1",
-                          "se-name": "srm-cms.cern.ch",
-                          "lfn-prefix": "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms"}
+                          "se-name": seName,  "lfn-prefix": lfnPrefix}
 
         try:
             deleteMgr   = DeleteMgr.DeleteMgr()
@@ -76,67 +80,71 @@ class LogCollect(Executor):
 
 
         # Now we need the logs
-        logs = []
-        for file in self.job["input_files"]:
-            logs.append({"LFN": file["lfn"]})
+        if not cleanOnly:
+            logs = []
+            for file in self.job["input_files"]:
+                logs.append({"LFN": file["lfn"]})
 
-        readyFiles = []
-        for file in logs:
+            readyFiles = []
+            for file in logs:
+                signal.signal(signal.SIGALRM, alarmHandler)
+                signal.alarm(waitTime)
+                try:
+                    output = stageInMgr(**file)
+                    readyFiles.append(output)
+                    self.report.addInputFile(sourceName = "logArchives",
+                                            lfn = file['LFN'])
+                except Alarm:
+                    msg = "Indefinite hang during stageIn of LogCollect"
+                    logging.error(msg)
+                    self.report.addError(self.stepName, 60407, "LogCollectTimeout", msg)
+                    self.report.persist("Report.pkl")
+                except StageOutFailure, ex:
+                    msg = "Unable to StageIn %s" % file['LFN']
+                    logging.error(msg)
+                    # Don't do anything other then record it
+                    self.report.addSkippedFile(file['PFN'], file['LFN'])
+                except Exception, ex:
+                    raise
+
+                signal.alarm(0)
+
+            if len(readyFiles) == 0:
+                # Then we have no output; all the files failed
+                # Panic!
+                msg = "No logs staged in during LogCollect step"
+                logging.error(msg)
+                raise WMExecutionFailure(60312, "LogCollectError", msg)
+
+            now = datetime.datetime.now()
+            tarPFN = self.createArchive(readyFiles)
+            if userLogs:
+                lfn = "%s/CRAB-Logs/%s/%s" % (lfnBase, self.report.data.workload, os.path.basename(tarPFN))
+            else:
+                lfn = "/store/logs/prod/%i/%.2i/%s/%s/%s" % (now.year, now.month, "WMAgent",
+                                                            self.report.data.workload,
+                                                            os.path.basename(tarPFN))
+
+            tarInfo = {'LFN'    : lfn,
+                    'PFN'    : tarPFN,
+                    'SEName' : None,
+                    'GUID'   : None}
+
             signal.signal(signal.SIGALRM, alarmHandler)
             signal.alarm(waitTime)
             try:
-                output = stageInMgr(**file)
-                readyFiles.append(output)
-                self.report.addInputFile(sourceName = "logArchives",
-                                         lfn = file['LFN'])
+                stageOutMgr(tarInfo)
+                self.report.addOutputFile(outputModule = "LogCollect", file = tarInfo)
             except Alarm:
-                msg = "Indefinite hang during stageIn of LogCollect"
+                msg = "Indefinite hang during stageOut of LogCollect"
                 logging.error(msg)
-                self.report.addError(self.stepName, 60407, "LogCollectTimeout", msg)
-                self.report.persist("Report.pkl")
-            except StageOutFailure, ex:
-                msg = "Unable to StageIn %s" % file['LFN']
-                logging.error(msg)
-                # Don't do anything other then record it
-                self.report.addSkippedFile(file['PFN'], file['LFN'])
+                raise WMExecutionFailure(60409, "LogCollectTimeout", msg)
             except Exception, ex:
-                raise
-            
+                msg = "Unable to stage out log archive:\n"
+                msg += str(ex)
+                print "MSG: %s" % msg
+                raise WMExecutionFailure(60408, "LogCollectStageOutError", msg)
             signal.alarm(0)
-
-        if len(readyFiles) == 0:
-            # Then we have no output; all the files failed
-            # Panic!
-            msg = "No logs staged in during LogCollect step"
-            logging.error(msg)
-            raise WMExecutionFailure(60312, "LogCollectError", msg)
-
-        now = datetime.datetime.now()
-        tarPFN = self.createArchive(readyFiles)
-        lfn = "/store/logs/prod/%i/%.2i/%s/%s/%s" % (now.year, now.month, "WMAgent",
-                                                     self.report.data.workload,
-                                                     os.path.basename(tarPFN))
-
-        tarInfo = {'LFN'    : lfn,
-                   'PFN'    : tarPFN,
-                   'SEName' : None,
-                   'GUID'   : None}
-
-        signal.signal(signal.SIGALRM, alarmHandler)
-        signal.alarm(waitTime)
-        try:
-            stageOutMgr(tarInfo)
-            self.report.addOutputFile(outputModule = "LogCollect", file = tarInfo)
-        except Alarm:
-            msg = "Indefinite hang during stageOut of LogCollect"
-            logging.error(msg)
-            raise WMExecutionFailure(60409, "LogCollectTimeout", msg)
-        except Exception, ex:
-            msg = "Unable to stage out log archive:\n"
-            msg += str(ex)
-            print "MSG: %s" % msg
-            raise WMExecutionFailure(60408, "LogCollectStageOutError", msg)
-        signal.alarm(0)
 
         # If we're still here we didn't die on stageOut
         for file in self.job["input_files"]:        
@@ -162,9 +170,14 @@ class LogCollect(Executor):
 
         # Add to report
         outputRef = getattr(self.report.data, self.stepName)
-        outputRef.output.pfn = tarInfo['PFN']
-        outputRef.output.location = tarInfo['SEName']
-        outputRef.output.lfn = tarInfo['LFN']
+        if cleanOnly:
+            outputRef.output.pfn = 'NotStaged'
+            outputRef.output.location = 'NotStaged'
+            outputRef.output.lfn = 'NotStaged'
+        else:
+            outputRef.output.pfn = tarInfo['PFN']
+            outputRef.output.location = tarInfo['SEName']
+            outputRef.output.lfn = tarInfo['LFN']
         return 
 
     def post(self, emulator = None):

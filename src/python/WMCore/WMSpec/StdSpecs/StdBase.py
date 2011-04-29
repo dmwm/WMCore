@@ -270,7 +270,7 @@ class StdBase(object):
         return {"dataTier": dataTier, "processedDataset": processedDatasetName,
                 "filterName": filterName}
 
-    def addLogCollectTask(self, parentTask, taskName = "LogCollect"):
+    def addLogCollectTask(self, parentTask, taskName = "LogCollect", filesPerJob = 500):
         """
         _addLogCollectTask_
 
@@ -282,14 +282,14 @@ class StdBase(object):
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
         logCollectTask.applyTemplates()
-        logCollectTask.setSplittingAlgorithm("EndOfRun", files_per_job = 500)
+        logCollectTask.setSplittingAlgorithm("EndOfRun", files_per_job = filesPerJob)
         logCollectTask.addGenerator("BasicNaming")
         logCollectTask.addGenerator("BasicCounter")
         logCollectTask.setTaskType("LogCollect")
 
         parentTaskLogArch = parentTask.getStep("logArch1")
         logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")
-        return
+        return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModule,
                      dataTier, filterName, processedDatasetName,

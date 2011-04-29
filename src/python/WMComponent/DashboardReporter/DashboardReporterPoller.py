@@ -247,18 +247,18 @@ class DashboardReporterPoller(BaseWorkerThread):
             package['MinEventTime'] 	      = performance['cpu'].get('MinEventTime', None)
             package['MaxEventCPU']            = performance['cpu'].get('MaxEventCPU', None)
             
-        logging.debug("Sending performance info: %s" % str(package))
-        result = apmonSend( taskid = package['taskId'], jobid = package['jobId'], params = package, logr = logging, apmonServer = self.serverreport)
+            logging.debug("Sending performance info: %s" % str(package))
+            result = apmonSend( taskid = package['taskId'], jobid = package['jobId'], params = package, logr = logging, apmonServer = self.serverreport)
         
-        if result != 0:
-            msg =  "Error %i sending info for completed job %s via UDP\n" % (result, job['name'])
-            msg += "Ignoring"
-            logging.error(msg)
-            logging.debug("Package sent: %s\n" % package)
-            logging.debug("Host info: host %s, port %s, pass %s" \
-                          % (self.config.DashboardReporter.dashboardHost,
-                             self.config.DashboardReporter.dashboardPort,
-                             getattr(self.config.DashboardReporter, 'dashboardPass', '')))
+            if result != 0:
+                msg =  "Error %i sending info for completed job %s via UDP\n" % (result, job['name'])
+                msg += "Ignoring"
+                logging.error(msg)
+                logging.debug("Package sent: %s\n" % package)
+                logging.debug("Host info: host %s, port %s, pass %s" \
+                              % (self.config.DashboardReporter.dashboardHost,
+                                 self.config.DashboardReporter.dashboardPort,
+                                 getattr(self.config.DashboardReporter, 'dashboardPass', '')))
         apmonFree()
 
         return

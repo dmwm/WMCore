@@ -12,9 +12,6 @@ import os
 import time
 import logging
 import socket
-import subprocess
-#import popen2
-
 
 from WMCore.WMSpec.WMStep     import WMStepHelper
 
@@ -166,17 +163,6 @@ class DashboardInfo(dict):
         self.setdefault("JSToolUI" , None) # Can't set here, see bug #64232
 
 
-        #taskName, jobName = generateDashboardID(job = self.job,
-        #                                        workload = self.workload,
-        #                                        task = self.task)
-
-        #self.taskName = taskName
-        #self.jobName  = jobName
-
-        #self.setdefault("taskName", taskName)
-        #self.setdefault("jobName", jobName)
-
-
         self.taskName = 'wmagent_%s' % self.workload.name()
         self.jobName  = '%s_%i' % (job['name'], job['retry_count'])
         self.jobSuccess = 0
@@ -193,10 +179,6 @@ class DashboardInfo(dict):
 
         Fill with basic information upon job start
         """
-
-        #self["JobStarted"] = time.time()
-        #self["GridJobID"]  = getGridJobID()
-        #self['SyncCE']     = getSyncCE()
 
         data = {}
         data['MessageType']     = 'jobRuntime'
@@ -222,12 +204,13 @@ class DashboardInfo(dict):
         Fill with jobEnding info
         """
 
-
-        #self['JobFinished'] = time.time()
-        #self[''] = self.jobSuccess
-        #self.publish()
-
-        # Under new paradigm, don't broadcast when finished
+        data = {}
+        data['MessageType']     = 'jobRuntime'
+        data['MessageTS']       = time.time()
+        data['taskId']          = self.taskName
+        data['jobId']           = self.jobName
+        data['JobExitCode']     = self.jobSuccess
+        self.publish(data = data)
         
         return
     
@@ -240,14 +223,7 @@ class DashboardInfo(dict):
         """
 
         helper = WMStepHelper(step)
-        #self['ExeStart']     = helper.name()
-        #self['ExeStartTime'] = time.time()
-        #
-        ## Some absolute crap that's hard-coded in that we should get rid of.
-        #if helper.stepType().lower() == 'cmssw':
-        #    # Add the version, etc.
-        #    self["ApplicationVersion"] = getattr(step.application.setup,
-        #                                         'cmsswVersion', None)
+
 
         data = {}
         data['MessageType']   = 'jobRuntime'
@@ -270,13 +246,9 @@ class DashboardInfo(dict):
         """
         helper = WMStepHelper(step)
 
-        #stepSuccess = stepReport.stepSuccessful(stepName = helper.name())
-        #
-        #self['ExeEnd']        = helper.name()
-        #self['ExeFinishTime'] = time.time()
-        #self['ExeExitStatus'] = stepSuccess
-        #if not stepSuccess == 0:
-        #    self.jobSuccess = 1
+        stepSuccess = stepReport.stepSuccessful(stepName = helper.name())
+        if self.jobSuccess == 0:
+            self.jobSuccess = stepSuccess
 
 
         data = {}
@@ -303,13 +275,6 @@ class DashboardInfo(dict):
         What if the job is killed?
         """
 
-        # Then the job failed
-        #self['JobExitStatus'] = 99999
-        #self['JobFinished']   = time.time()
-        #self.publish()
-
-        # Under new paradigm, don't broadcast when finished
-
         return
 
     def stepKilled(self, step):
@@ -320,9 +285,6 @@ class DashboardInfo(dict):
         """
 
         helper = WMStepHelper(step)
-        #self['ExeEnd']        = helper.name()
-        #self['ExeFinishTime'] = time.time()
-        #self['ExeExitStatus'] = 99999
 
         data = {}
         data['MessageType']   = 'jobRuntime'
@@ -347,7 +309,6 @@ class DashboardInfo(dict):
         But not yet
         """
 
-        #self.publish()
 
         return
 

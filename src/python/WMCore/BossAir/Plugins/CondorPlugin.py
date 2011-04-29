@@ -347,6 +347,8 @@ class CondorPlugin(BasePlugin):
 
         # Get the job
         jobInfo = self.getClassAds()
+        if not jobInfo:
+            return runningList, changeList, completeList
         if len(jobInfo.keys()) == 0:
             noInfoFlag = True
 
@@ -378,8 +380,10 @@ class CondorPlugin(BasePlugin):
                 elif jobStatus == 5:
                     # Job is Held; experienced an error
                     statName = 'Held'
-                elif jobStatus == 2:
+                elif jobStatus == 2 or jobStatus == 6:
                     # Job is Running, doing what it was supposed to
+                    # NOTE: Status 6 is transferring output
+                    # I'm going to list this as running for now because it fits.
                     statName = 'Running'
                 elif jobStatus == 3:
                     # Job is in X-state: List as error
@@ -612,7 +616,7 @@ class CondorPlugin(BasePlugin):
             # Then things have gotten bad - condor_q is not responding
             logging.error("condor_q returned non-zero value %s" % str(pipe.returncode))
             logging.error("Skipping classAd processing this round")
-            return jobInfo
+            return None
         
 
         if classAdsRaw == '':

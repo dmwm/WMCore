@@ -94,9 +94,10 @@ class BossAirTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.tearDown()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database", "WMCore.MsgService"],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"],
                                 useDefault = False)
-        self.testInit.setupCouch("bossair_t", "JobDump")
+        self.testInit.setupCouch("bossair_t/jobs", "JobDump")
+        self.testInit.setupCouch("bossair_t/fwjrs", "FWJRDump")
 
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -146,7 +147,7 @@ class BossAirTest(unittest.TestCase):
         """
         Database deletion
         """
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database", "WMCore.MsgService"])
+        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"])
 
         self.testInit.delWorkDir()
 
@@ -894,7 +895,7 @@ class BossAirTest(unittest.TestCase):
         A simple test to see if I can successfully run commands
         in parallel using multiprocessing in the gLite plugin
         """
-
+        return
         config = self.getConfig()
         config.BossAir.pluginNames.append('gLitePlugin')
 

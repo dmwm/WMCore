@@ -117,7 +117,7 @@ class CondorPlugin(BasePlugin):
         stateDict = {'New': 'Pending',
                      'Idle': 'Pending',
                      'Running': 'Running',
-                     'Held': 'Running',
+                     'Held': 'Error',
                      'Complete': 'Complete',
                      'Error': 'Error',
                      'Timeout': 'Error',

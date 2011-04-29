@@ -14,6 +14,7 @@ from WMCore.Services.DBS import XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx 
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import SubscriptionList
+from WMCore.Storage.TrivialFileCatalog import readTFC
 
 from nose.plugins.attrib import attr
 
@@ -148,6 +149,28 @@ class PhEDExTest(unittest.TestCase):
         # and one of the mappings should be the same as from the previous call
         self.assertTrue(call1[call1_key] == call2[call1_key])
         return
+
+    @attr('integration')
+    def testXMLJSON(self):
+        """
+        Test XML and JSON in the same scope
+        """
+        site = 'T1_US_FNAL_Buffer'
+        dict = {}
+        dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/json/test"
+        phedexJSON = PhEDEx(responseType='json', dict=dict)
+        dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/xml/test"
+        phedexXML  = PhEDEx(responseType='xml',  dict=dict)
+
+        phedexXML.getNodeTFC(site)
+        tfc_file = phedexXML.cacheFileName('tfc', inputdata={'node' : site})
+        tfc_map = {}
+        tfc_map[site] = readTFC(tfc_file)
+        pfn =    tfc_map[site].matchLFN('srmv2', '/store/user/jblow/dir/test.root')
+
+        self.failUnless(pfn == 'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/user/jblow/dir/test.root')
+
+        self.failUnless(phedexJSON.getNodeSE('T1_US_FNAL_Buffer') == 'cmssrm.fnal.gov')
 
     @attr('integration')
     def testAuth(self):

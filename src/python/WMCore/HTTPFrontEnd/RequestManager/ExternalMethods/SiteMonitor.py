@@ -23,8 +23,7 @@ def getSiteOverview():
     return combinedResults
 
 def _combineSites(results, batchJobs):
-    if results:
-        return batchJobs
+
     for batchJob in batchJobs:
         newSite = True
         for item in results:

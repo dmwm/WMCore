@@ -56,8 +56,7 @@ def getSiteInfoFromLocalQueue(serviceURL):
     return batchJobs
 
 def _combineSites(results, batchJobs):
-    if results:
-        return batchJobs
+
     for batchJob in batchJobs:
         newSite = True
         for item in results:

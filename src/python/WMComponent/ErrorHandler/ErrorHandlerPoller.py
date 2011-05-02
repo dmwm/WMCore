@@ -132,6 +132,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
             if not job['spec'] in collectionDict.keys():
                 collectionDict[job['spec']] = []
             collectionDict[job['spec']].append(job)
+            job.getMask()
 
         for spec in collectionDict.keys():
             
@@ -244,7 +245,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
             # One job per entry
             tmpJob = Job(id = entry['id'])
             tmpJob.update(entry)
-            tmpJob.getMask()
             listOfJobs.append(tmpJob)
 
 

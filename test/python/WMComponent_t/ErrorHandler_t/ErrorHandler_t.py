@@ -62,7 +62,7 @@ class ErrorHandlerTest(unittest.TestCase):
         self.testDir = self.testInit.generateWorkDir()
         self.nJobs = 10
 
-        self.dataCS = DataCollectionService(url = os.environ["COUCHURL"],
+        self.dataCS = DataCollectionService(url = self.testInit.couchUrl,
                                             database = "errorhandler_t")
         
         return
@@ -111,7 +111,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
 
         config.section_('ACDC')
-        config.ACDC.couchurl = os.environ["COUCHURL"]
+        config.ACDC.couchurl = self.testInit.couchUrl
         config.ACDC.database = "errorhandler_t"
 
         return config
@@ -259,7 +259,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
         collection = collList[0]
         self.assertEqual(collection['database'], "errorhandler_t")
-        self.assertEqual(collection['url'], os.environ["COUCHURL"])
+        self.assertEqual(collection['url'], self.testInit.couchUrl)
         self.assertEqual(collection['collection_type'], 'ACDC.CollectionTypes.DataCollection')
         self.assertEqual(collection['name'], workloadName)
 

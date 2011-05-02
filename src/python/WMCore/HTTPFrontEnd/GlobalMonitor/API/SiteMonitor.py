@@ -78,8 +78,7 @@ def getSiteInfoFromWMBSService(serviceURL):
     return batchJobs
 
 def _combineSites(results, batchJobs):
-    if results:
-        return batchJobs
+    """ get site information from each agent """
     for batchJob in batchJobs:
         newSite = True
         for item in results:

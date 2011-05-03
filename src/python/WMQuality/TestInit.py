@@ -140,7 +140,7 @@ class TestInit:
         elif dialectPart == 'oracle':
             return 'Oracle'
         else:
-            raise RuntimeError, "Unrecognized dialect"
+            raise RuntimeError, "Unrecognized dialect %s" % dialectPart
         
     def eraseEverythingInDatabase(self):
         if not self.hasDatabase:

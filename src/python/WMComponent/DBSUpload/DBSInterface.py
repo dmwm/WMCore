@@ -15,13 +15,13 @@ DBSUploader
 import logging
 import time
 import traceback
+import collections
 
 from DBSAPI.dbsApi            import DbsApi
 from DBSAPI.dbsException      import DbsException
 
 
 from WMComponent.DBSUpload.DBSErrors import DBSInterfaceError, formatEx
-
 
 # For creating algorithms
 from DBSAPI.dbsAlgorithm             import DbsAlgorithm
@@ -479,7 +479,7 @@ class DBSInterface:
 
         self.version           = self.config.DBSVersion
         self.globalDBSUrl      = None
-        self.committedRuns     = []
+        self.committedRuns     = collections.deque(maxlen = 1000)
         self.maxBlockFiles     = self.config.DBSBlockMaxFiles
         self.maxBlockTime      = self.config.DBSBlockMaxTime
         self.maxBlockSize      = self.config.DBSBlockMaxSize

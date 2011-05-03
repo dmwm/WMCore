@@ -34,17 +34,18 @@ class LoadFilesFromBlocks(LoadDBSFilesByDAS):
                      INNER JOIN dbsbuffer_block dbb ON dbb.id = files.block_id
                      WHERE (dbb.status = 'Open' OR dbb.status = 'Pending')
                      AND files.status = 'READY'
+                     AND dbb.id = :block_id
                      ORDER BY files.id"""
 
 
 
-    def execute(self, conn = None, transaction = False):
+    def execute(self, blockID, conn = None, transaction = False):
         """
         Execute multiple SQL queries to extract all binding information
         Use the first query to get the fileIDs
 
         """
-        result   = self.dbi.processData(self.fileInfoSQL, {},
+        result   = self.dbi.processData(self.fileInfoSQL, {'block_id': blockID},
                                         conn = conn,
                                         transaction = transaction)
         fileInfo = self.formatFileInfo(result)

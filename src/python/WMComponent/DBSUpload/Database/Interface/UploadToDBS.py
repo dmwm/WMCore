@@ -249,7 +249,7 @@ class UploadToDBS (WMConnectionBase):
         return
 
 
-    def loadFilesFromBlocks(self):
+    def loadFilesFromBlocks(self, blockID):
         """
         _loadFilesFromBlocks_
         
@@ -262,7 +262,8 @@ class UploadToDBS (WMConnectionBase):
 
         dbsFiles = []
 
-        results   = findFiles.execute(conn = self.getDBConn(),
+        results   = findFiles.execute(blockID = blockID,
+                                      conn = self.getDBConn(),
                                       transaction=self.existingTransaction())
 
         for entry in results:

@@ -370,7 +370,7 @@ class DBSUploadPoller(BaseWorkerThread):
         Upload them
         """
         myThread = threading.currentThread()
-        files = self.uploadToDBS.loadFilesFromBlocks()
+        
 
         # Get the blocks
         # This should grab all Pending and Open blocks
@@ -379,11 +379,8 @@ class DBSUploadPoller(BaseWorkerThread):
 
         if len(blockInfo) < 1:
             # Then we have no block, and probably no files
-            if not len(files) == 0:
-                logging.error("Had files but no blocks!  These files will not be uploaded to DBS this cycle.")
-                for f in files:
-                    logging.debug("Skipped file: %s" % f['lfn'])
-                return
+            logging.info("No blocks in this iteration.  Returning")
+            return
 
         # Assemble the blocks
         for info in blockInfo:
@@ -414,6 +411,7 @@ class DBSUploadPoller(BaseWorkerThread):
         # And the files
         # Time to sort the files into blocks
         for block in blocks:
+            files = self.uploadToDBS.loadFilesFromBlocks(blockID = block['id'])
             for f in files:
                 if f['blockID'] == block['id']:
                     # Put file in this block

@@ -14,6 +14,11 @@ function(head, req) {
 	var first = true;
 	while (row = getRow()) {
 		ele = row["doc"]["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
+		// is this an element
+		if (!ele) {
+			continue;
+		}
+
 		var matched = true;
 		for (key in query) {
 
@@ -34,10 +39,23 @@ function(head, req) {
 				}
 			}
 
-			// for any other key just do a straight comparison
-			if (ele[key] && query[key] != ele[key]) {
+            // if element doesnt have the key it cant match
+			if (!ele[key]) {
 				matched = false;
-				break
+				break;
+			}
+
+			// if array check if inside - can't believe this is the best way...
+			if (Object.prototype.toString.call(query[key]) === '[object Array]') {
+				if (query[key].indexOf(ele[key]) === -1) {
+				  matched = false;
+				  break;
+			    }
+
+			// for any other key just do a straight comparison
+			} else if (ele[key] && query[key] !== ele[key]) {
+				matched = false;
+				break;
 			}
 		}
 

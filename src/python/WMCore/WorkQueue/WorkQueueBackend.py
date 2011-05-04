@@ -132,13 +132,14 @@ class WorkQueueBackend(object):
         return unit
 
     def getElements(self, status = None, elementIDs = None, returnIdOnly = False,
-                    db = None, loadSpec = False, **elementFilters):
+                    db = None, loadSpec = False, WorkflowName = None, **elementFilters):
         """Return elements that match requirements
 
         status, elementIDs & filters are 'AND'ed together to filter elements.
         returnIdOnly causes the element not to be loaded and only the id returned
         db is used to specify which database to return from 
         loadSpec causes the workflow for each spec to be loaded.
+        WorkflowName may be used in the place of RequestName
         """
         key = []
         if not db:
@@ -152,6 +153,9 @@ class WorkQueueBackend(object):
             options = {'include_docs' : True, 'filter' : elementFilters, 'idOnly' : returnIdOnly}
             if status:
                 key.append(status)
+            if WorkflowName:
+                # Stored in couch as RequestName
+                options['filter']['RequestName'] = WorkflowName
 
             view = db.loadList('WorkQueue', 'filter', 'elementsByStatus', options, key)
             view = json.loads(view)

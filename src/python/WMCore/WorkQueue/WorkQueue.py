@@ -195,10 +195,11 @@ class WorkQueue(WorkQueueBase):
 
         for x in affected:
             x['Status'] = status
-        self.backend.saveElements(*affected)
+        elements = self.backend.saveElements(*affected)
         
         if not affected:
             raise RuntimeError, "Status not changed: No matching elements"
+        return elements
 
     def setPriority(self, newpriority, *workflowNames):
         """
@@ -344,7 +345,7 @@ class WorkQueue(WorkQueueBase):
         """Mark work as done
         """
         try:
-            self.setStatus('Done', elementIDs = elementIDs, SubscriptionId = SubscriptionId, WorkflowName = WorkflowName)
+            return self.setStatus('Done', elementIDs = elementIDs, SubscriptionId = SubscriptionId, WorkflowName = WorkflowName)
         except RuntimeError:
             if SubscriptionId:
                 self.logger.info("""Done Update: Only some subscription is 
@@ -353,12 +354,11 @@ class WorkQueue(WorkQueueBase):
                 return elementIDs
             else:
                 raise
-        return elementIDs
 
     def failWork(self, elementIDs, id_type = 'id'):
         """Mark work as failed"""
         try:
-            self.setStatus('Failed', elementIDs, id_type)
+            return self.setStatus('Failed', elementIDs, id_type)
         except RuntimeError:
             if id_type == "subscription_id":
                 self.logger.info("""Fail update: Only some subscription is 

@@ -153,8 +153,10 @@ class TaskArchiverPoller(BaseWorkerThread):
             return
 
         if self.workQueue != None:
-            doneList = self.notifyWorkQueue(subList)
-            self.killSubscriptions(doneList)
+            doneIds = self.notifyWorkQueue(subList)
+            # Only kill subscriptions updated in workqueue
+            doneSubs = [x for x in subList if x['id'] in doneIds]
+            self.killSubscriptions(doneSubs)
         else:
             self.killSubscriptions(subList)
             
@@ -198,8 +200,8 @@ class TaskArchiverPoller(BaseWorkerThread):
             subIDs.append(sub['id'])        
         
         try:
-            self.workQueue.doneWork(subIDs, id_type = "subscription_id")
-            return subList
+            elements = self.workQueue.doneWork(SubscriptionId = subIDs)
+            return list(set([x['SubscriptionId'] for x in elements]))
         except Exception, ex:
             logging.error("Error talking to workqueue: %s" % str(ex))
             logging.error("Tried to complete the following: %s" % subIDs)

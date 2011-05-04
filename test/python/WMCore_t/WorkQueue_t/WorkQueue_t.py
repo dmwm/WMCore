@@ -718,7 +718,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.queue), 0)
         self.assertEqual(len(self.queue.status(status='Running')), elements)
         ids = [x.id for x in work]
-        canceled = self.queue.cancelWork(WorkflowName = 'testProduction')
+        canceled = self.queue.cancelWork(WorkflowName = ['testProduction'])
         self.assertEqual(canceled, ids)
         self.assertEqual(len(self.queue), 0)
         self.queue.status(elementIDs = ids)
@@ -847,9 +847,9 @@ class WorkQueueTest(WorkQueueTestCase):
         self.localQueue.backend.forceQueueSync()
         self.localQueue.backend.fixConflicts()
         self.localQueue.backend.forceQueueSync()
-        self.assertEqual([x['Status'] for x in self.globalQueue.status(element_ids = global_ids)],
+        self.assertEqual([x['Status'] for x in self.globalQueue.status(elementIDs = global_ids)],
                          ['Canceled'])
-        self.assertEqual([x['PercentComplete'] for x in self.globalQueue.status(element_ids = global_ids)],
+        self.assertEqual([x['PercentComplete'] for x in self.globalQueue.status(elementIDs = global_ids)],
                          [69])
         self.assertEqual([x for x in self.localQueue.statusInbox()],
                          [x for x in self.globalQueue.status()])

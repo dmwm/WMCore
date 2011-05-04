@@ -198,9 +198,14 @@ class ReportTest(unittest.TestCase):
 
         Verify that the parsing of a CMSSW XML report works correctly even if
         the XML is malformed.
+
+        This should raise a FwkJobReportException, which in CMSSW will be caught
         """
         myReport = Report("cmsRun1")
-        myReport.parse(self.badxmlPath)
+        from WMCore.FwkJobReport.Report import FwkJobReportException
+        self.assertRaises(FwkJobReportException, myReport.parse, self.badxmlPath)
+        self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].type, 'BadFWJRXML')
+        self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].exitCode, 50115)
         return    
 
     def testErrorReporting(self):
@@ -246,6 +251,9 @@ cms::Exception caught in EventProcessor and rethrown
         assert myReport.data.cmsRun1.errors.error0.details == cmsException, \
                "Error: Error details are wrong:\n|%s|\n|%s|" % (myReport.data.cmsRun1.errors.error0.details,
                                                                cmsException)
+
+        # Test getStepErrors
+        self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].type, "CMSException")
         
         return
 

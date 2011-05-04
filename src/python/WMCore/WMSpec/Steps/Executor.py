@@ -14,6 +14,7 @@ from WMCore.WMSpec.WMStep import WMStepHelper
 from WMCore.WMSpec.Steps.StepFactory import getStepEmulator
 
 getStepName = lambda step: WMStepHelper(step).name()
+getStepErrorDestination = lambda step: WMStepHelper(step).getErrorDestinationStep()
 
 def getStepSpace(stepName):
     """
@@ -82,6 +83,7 @@ class Executor:
         self.report.data.task = self.task.name()
         self.report.data.workload = self.stepSpace.taskSpace.workloadName()
         self.report.data.id = job['id']
+        self.errorDestination = getStepErrorDestination(self.step)
 
         self.step.section_("execution")
         self.step.execution.exitStatus = 0

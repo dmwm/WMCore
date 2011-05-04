@@ -22,6 +22,15 @@ from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
 
 from WMCore.FwkJobReport.FileInfo import FileInfo
+from WMCore.WMException           import WMException
+
+class FwkJobReportException(WMException):
+    """
+    _FwkJobReportException_
+
+    FwkJobReport error class
+    """
+    pass
 
 def checkFileForCompletion(file):
     """
@@ -127,7 +136,7 @@ class Report:
         reportStep.status = status
         return
     
-    def parse(self, xmlfile):
+    def parse(self, xmlfile, stepName = "cmsRun1"):
         """
         _parse_
 
@@ -145,8 +154,10 @@ class Report:
             stackTrace = traceback.format_tb(sys.exc_info()[2], None)
             for stackFrame in stackTrace:
                 crashMessage += stackFrame
-                
-            self.addError("cmsRun1", 50115, "BadFWJRXML", msg)
+
+            self.addError(stepName, 50115, "BadFWJRXML", msg)
+            raise FwkJobReportException(msg)
+            
 
     def jsonizeFiles(self, reportModule):
         """
@@ -795,6 +806,26 @@ class Report:
             listOfFiles.append(file)
 
         return listOfFiles
+
+    def getStepErrors(self, stepName):
+        """
+        _getStepErrors_
+
+        Get all errors for a given step
+        """
+        if self.retrieveStep(stepName) == None:
+            # Create a step and set it to failed
+            # Assumption: Adding an error fails a step
+            self.addStep(stepName, status = 1)
+
+        stepSection = self.retrieveStep(stepName)
+
+        errorCount = getattr(stepSection.errors, "errorCount", 0)
+        if errorCount == 0:
+            return {}
+        else:
+            return stepSection.errors.dictionary_()
+
 
     def stepSuccessful(self, stepName):
         """

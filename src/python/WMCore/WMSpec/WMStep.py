@@ -166,6 +166,27 @@ class WMStepHelper(TreeHelper):
                 return self.data.user.userFiles
         return []
 
+    def setErrorDestinationStep(self, stepName):
+        """
+        _setErrorDestinationStep_
+
+        In case of error, give the name of the step that
+        the execute process should go to.
+        """
+
+        self.data.errorDestinationStep = stepName
+        return
+
+    def getErrorDestinationStep(self):
+        """
+        _getErrorDestinationStep_
+
+        In case of error, get the step that should be
+        next in the process
+        """
+
+        return getattr(self.data, 'errorDestinationStep', None)
+
 class WMStep(ConfigSectionTree):
     """
     _WMStep_

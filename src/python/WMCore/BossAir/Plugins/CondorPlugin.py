@@ -347,7 +347,7 @@ class CondorPlugin(BasePlugin):
 
         # Get the job
         jobInfo = self.getClassAds()
-        if not jobInfo:
+        if jobInfo == None:
             return runningList, changeList, completeList
         if len(jobInfo.keys()) == 0:
             noInfoFlag = True
@@ -422,6 +422,9 @@ class CondorPlugin(BasePlugin):
         for job in jobs:
             if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
                 # Then we can't do anything
+                logging.error("Can't find this job's cache_dir in CondorPlugin.complete")
+                logging.error("cache_dir: %s" % job.get('cache_dir', 'Missing'))
+                logging.error("retry_count: %s" % job.get('retry_count', 'Missing'))
                 continue
             reportName = os.path.join(job['cache_dir'], 'Report.%i.pkl' % job['retry_count'])
             if os.path.isfile(reportName) and os.path.getsize(reportName) > 0:
@@ -431,7 +434,7 @@ class CondorPlugin(BasePlugin):
             if os.path.isdir(reportName):
                 # Then something weird has happened.
                 # File error, do nothing
-                logging.error("Went to check on error report for job %i.  Found a directory instead.\n" % job['wmbs_id'])
+                logging.error("Went to check on error report for job %i.  Found a directory instead.\n" % job['id'])
                 logging.error("Ignoring this, but this is very strange.\n")
 
             # If we're still here, we must not have a real error report
@@ -443,6 +446,8 @@ class CondorPlugin(BasePlugin):
                 logOutput += logTail
             condorReport = Report()
             condorReport.addError("NoJobReport", 61303, "NoJobReport", logOutput)
+            condorReport.save(filename = reportName)
+            logging.debug("No returning job report for job %i" % job['id'])
 
 
         return

@@ -227,7 +227,12 @@ class CMSSW(Executor):
             raise WMExecutionFailure(spawnedChild.returncode,
                                      "CmsRunFailure", msg)
 
-        self.report.parse(jobReportXML)
+        try:
+            self.report.parse(jobReportXML, stepName = self.stepName)
+        except Exception, ex:
+            # Catch it if something goes wrong
+            raise WMExecutionFailure(50115, "BadJobReportXML", str(ex))
+        
         acquisitionEra = self.workload.getAcquisitionEra()
         processingVer  = self.workload.getProcessingVersion()
         validStatus    = self.workload.getValidStatus()
@@ -256,7 +261,12 @@ class CMSSW(Executor):
         # Attach info to files
         self.report.addInfoToOutputFilesForStep(stepName = self.stepName, step = self.step)
 
-        return "NotNone"
+        if self.report.getStepErrors(self.stepName) != {}:
+            # Then we had errors
+            # Go directly to spot specified in WMStep
+            return self.errorDestination
+
+        return None
 
 configBlob = """#!/bin/bash
 

@@ -123,6 +123,20 @@ class WMStepTest(unittest.TestCase):
         self.assertEqual(testModule.tester, 'nonsense')
 
         return
+
+    def testE_Properties(self):
+        """
+        _Properties_
+
+        Test the various properties that we have set in the step
+        """
+
+        wmStep = makeWMStep("step2")
+
+        # errorDestinatio
+        self.assertEqual(wmStep.getErrorDestinationStep(), None)
+        wmStep.setErrorDestinationStep(stepName = 'testStep')
+        self.assertEqual(wmStep.getErrorDestinationStep(), 'testStep')
         
 
 

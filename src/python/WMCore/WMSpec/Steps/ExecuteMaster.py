@@ -58,14 +58,20 @@ class ExecuteMaster:
             self.toTaskDirectory()
             raise WMExecutionFailure(msg)
             
-        
+        skipToStep = None
         for step in task.steps().nodeIterator():
             try:
                 helper = WMStepHelper(step)
                 stepType = helper.stepType()
                 stepName = helper.name()
+                if skipToStep and skipToStep != stepName:
+                    # Then we continue until we get to the required step
+                    continue
+                skipToStep = None # Reset this when we get to the right step
                 executor = StepFactory.getStepExecutor(stepType)
-                self.doExecution(executor, step, wmbsJob)
+                result = self.doExecution(executor, step, wmbsJob)
+                if not result == None:
+                    skipToStep = result
             except WMException, ex:
                 self.toTaskDirectory()
                 break
@@ -122,6 +128,10 @@ class ExecuteMaster:
             logging.info("Pre Executor Task Change: %s" % preOutcome)
             executor.saveReport()
             self.toTaskDirectory()
+            myThread.watchdogMonitor.notifyStepEnd(step = step,
+                                                   stepReport = executor.report)
+            executor.saveReport()
+            return preOutcome
         try:
             executor.report.setStepStartTime(stepName = executor.stepName)
             executionObject.execute()
@@ -141,9 +151,16 @@ class ExecuteMaster:
 
         postOutcome = executionObject.post()
         if postOutcome != None:
-            logging.info("Pre Executor Task Change: %s" % preOutcome)
+            logging.info("Post Executor Task Change: %s" % postOutcome)
             executor.saveReport()
             self.toTaskDirectory()
+            myThread.watchdogMonitor.notifyStepEnd(step = step,
+                                                   stepReport = executor.report)
+            executor.saveReport()
+            return postOutcome
+
+
+        
         self.toTaskDirectory()
 
         # Okay, we're done, set the job to successful
@@ -155,6 +172,7 @@ class ExecuteMaster:
         # Tell the watchdog that we're done with the step
         myThread.watchdogMonitor.notifyStepEnd(step = step,
                                                stepReport = executor.report)
+        return None
 
     def toStepDirectory(self, step):
         """

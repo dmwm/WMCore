@@ -54,8 +54,9 @@ class Exit60515(DiagnosticHandler):
         if args.get('ExceptionInstance', False):
             msg += str(args.get('ExceptionInstance'))
 
-        errLog = os.path.join(executor.step.builder.workingDir,
-                              executor.step.output.jobReport,
+        jobReport = os.path.join(executor.step.builder.workingDir,
+                                 executor.step.output.jobReport)
+        errLog = os.path.join(os.path.dirname(jobReport),
                               'scramOutput.log')
 
         if os.path.exists(errLog):

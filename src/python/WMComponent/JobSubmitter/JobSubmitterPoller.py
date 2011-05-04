@@ -503,7 +503,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             jobs    = jobsToSubmit.get(package, [])
 
             for job in jobs:
-                job['location'], job['plugin'] = self.getSiteInfo(job['custom']['location'])
+                job['location'], job['plugin'], job['site_cms_name'] = self.getSiteInfo(job['custom']['location'])
                 job['sandbox'] = sandbox
 
             #Clean out the package reference
@@ -531,7 +531,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             siteInfo = self.locationAction.execute(siteName = jobSite)
             self.locationDict[jobSite] = siteInfo[0]
         return (self.locationDict[jobSite].get('ce_name'),
-                self.locationDict[jobSite].get('plugin'))
+                self.locationDict[jobSite].get('plugin'),
+                self.locationDict[jobSite].get('cms_name'))
 
     def algorithm(self, parameters = None):
         """

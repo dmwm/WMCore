@@ -162,12 +162,32 @@ function renderJobMask(jobDocument) {
   maskDiv = document.createElement("div");
   maskDiv.style.margin = "0px 0px 0px 15px";
 
-  maskDiv.innerHTML += "First Event: " + jobDocument["mask"]["FirstEvent"] + "<br>";
-  maskDiv.innerHTML += "Last Event: " + jobDocument["mask"]["LastEvent"] + "<br>";
-  maskDiv.innerHTML += "First Lumi: " + jobDocument["mask"]["FirstLumi"] + "<br>";
-  maskDiv.innerHTML += "Last Lumi: " + jobDocument["mask"]["LastLumi"] + "<br>";
-  maskDiv.innerHTML += "First Run: " + jobDocument["mask"]["FirstRun"] + "<br>";
-  maskDiv.innerHTML += "Last Run: " + jobDocument["mask"]["LastRun"] + "<br>";
+  if(jobDocument["mask"]["FirstEvent"] != null) {
+    maskDiv.innerHTML += "events: " + jobDocument["mask"]["FirstEvent"] + " - " +
+      jobDocument["mask"]["LastEvent"] + "<br>\n";
+  } else if (jobDocument["mask"]["FirstLumi"] != null) {
+    maskDiv.innerHTML += "lumis: " + jobDocument["mask"]["FirstRun"] + ":" +
+      jobDocument["mask"]["FirstLumi"] + " - " + jobDocument["mask"]["LastRun"] +
+      ":" + jobDocument["mask"]["LastLumi"] + "<br>\n";
+  } else if (jobDocument["mask"]["FirstRun"] != null) {
+    maskDiv.innerHTML += "runs: " + jobDocument["mask"]["FirstRun"] + " - " +
+       jobDocument["mask"]["LastRun"] + "<br>\n";
+  } else if (jobDocument["mask"].runAndLumis) {
+    for (runNumber in jobDocument["mask"]["runAndLumis"]) {
+      maskDiv.innerHTML += runNumber + ": ";
+      for (maskIndex in jobDocument["mask"]["runAndLumis"][runNumber]) {
+        lumiMask = jobDocument["mask"]["runAndLumis"][runNumber][maskIndex];
+        if (parseInt(maskIndex) + 1 == jobDocument["mask"]["runAndLumis"][runNumber].length) {
+          maskDiv.innerHTML += "[" + lumiMask[0] + ", " + lumiMask[1] + "]\n";
+        } else {
+          maskDiv.innerHTML += "[" + lumiMask[0] + ", " + lumiMask[1] + "], ";
+        }
+      }
+      maskDiv.innerHTML += "<br>\n";
+    }
+  } else {
+    maskDiv.innerHTML += "(none)<br>\n";
+  }
 
   maskLabelDiv.appendChild(maskDiv);
 };

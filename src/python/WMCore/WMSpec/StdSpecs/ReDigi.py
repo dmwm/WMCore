@@ -31,12 +31,13 @@ def getTestArguments():
         "ProcessingVersion": "v2scf",
         "GlobalTag": "GR10_P_v4::All",
 
-        "RAWOutputModuleName": "RAWDEBUGoutput",
-        "RECOOutputModuleName": "RECODEBUGoutput",
+        "StepOneOutputModuleName": "RAWDEBUGoutput",
+        "StepTwoOutputModuleName": "RECODEBUGoutput",
         "StepTwoConfigCacheID": "3a4548750b61f485d42b4aa850ba385e",
         "StepOneConfigCacheID": "3a4548750b61f485d42b4aa850b9ede5",
         "StepThreeConfigCacheID": "3a4548750b61f485d42b4aa850ba4ab7",
-        "KeepRAW": True,
+        "KeepStepOneOutput": True,
+        "KeepStepTwoOutput": True,
         
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "wmagent_configcachescf",
@@ -54,36 +55,115 @@ class ReDigiWorkloadFactory(StdBase):
         StdBase.__init__(self)
         return
 
+    def addMergeTasks(self, parentTask, parentStepName, outputMods):
+        """
+        _addMergeTasks_
+
+        Add merge and cleanup tasks for the output of a processing step.
+        """
+        mergeTasks = {}
+        for outputModuleName in outputMods.keys():
+            outputModuleInfo = outputMods[outputModuleName]
+            mergeTask = self.addMergeTask(parentTask, self.procJobSplitAlgo,
+                                          outputModuleName,
+                                          outputModuleInfo["dataTier"],
+                                          outputModuleInfo["filterName"],
+                                          outputModuleInfo["processedDataset"],
+                                          parentStepName = parentStepName)
+            mergeTasks[outputModuleName] = mergeTask
+
+        return mergeTasks
+
+    def addDependentProcTask(self, taskName, parentMergeTask, configCacheID):
+        """
+        _addDependentProcTask_
+
+        Add a dependent processing tasks to a merge tasks.
+        """
+        parentCmsswStep = parentMergeTask.getStep("cmsRun1")
+        newTask = parentMergeTask.addTask(taskName)
+        outputMods = self.setupProcessingTask(newTask, "Processing", inputStep = parentCmsswStep,
+                                              inputModule = "Merged", couchURL = self.couchURL,
+                                              couchDBName = self.couchDBName,
+                                              configDoc = configCacheID,
+                                              splitAlgo = self.procJobSplitAlgo,
+                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
+        self.addLogCollectTask(newTask, taskName = taskName + "LogCollect")
+        mergeTasks = self.addMergeTasks(newTask, "cmsRun1", outputMods)
+        return mergeTasks
+    
+    def setupThreeStepChainedProcessing(self, stepOneTask):
+        """
+        _setupThreeStepChainedProcessing_
+
+        Modify the step one task to include two more CMSSW steps and chain the
+        output between all three steps.
+        """
+        parentCmsswStep = stepOneTask.getStep("cmsRun1")
+        parentCmsswStepHelper = parentCmsswStep.getTypeHelper()
+        parentCmsswStepHelper.keepOutput(False)
+        stepTwoCmssw = parentCmsswStep.addTopStep("cmsRun2")
+        stepTwoCmssw.setStepType("CMSSW")
+
+        template = StepFactory.getStepTemplate("CMSSW")
+        template(stepTwoCmssw.data)
+
+        stepTwoCmsswHelper = stepTwoCmssw.getTypeHelper()
+        stepTwoCmsswHelper.setGlobalTag(self.globalTag)
+        stepTwoCmsswHelper.setupChainedProcessing("cmsRun1", self.stepOneOutputModuleName)
+        stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                      scramArch = self.scramArch)
+        stepTwoCmsswHelper.setConfigCache(self.couchURL, self.stepTwoConfigCacheID,
+                                          self.couchDBName)
+        stepTwoCmsswHelper.keepOutput(False)
+
+        stepThreeCmssw = stepTwoCmssw.addTopStep("cmsRun3")
+        stepThreeCmssw.setStepType("CMSSW")
+        template(stepThreeCmssw.data)
+        stepThreeCmsswHelper = stepThreeCmssw.getTypeHelper()
+        stepThreeCmsswHelper.setGlobalTag(self.globalTag)
+        stepThreeCmsswHelper.setupChainedProcessing("cmsRun2", self.stepTwoOutputModuleName)
+        stepThreeCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                      scramArch = self.scramArch)
+        stepThreeCmsswHelper.setConfigCache(self.couchURL, self.stepThreeConfigCacheID,
+                                          self.couchDBName)
+
+        configOutput = self.determineOutputModules(None, None, self.stepThreeConfigCacheID,
+                                                   self.couchURL, self.couchDBName)
+        outputMods = {}
+        for outputModuleName in configOutput.keys():
+            outputModule = self.addOutputModule(stepOneTask, outputModuleName,
+                                                configOutput[outputModuleName]["dataTier"],
+                                                configOutput[outputModuleName]["filterName"],
+                                                stepName = "cmsRun3")
+            outputMods[outputModuleName] = outputModule
+
+        self.addMergeTasks(stepOneTask, "cmsRun3", outputMods)
+        return
+
     def setupDependentProcessing(self, stepOneTask, outputMods):
         """
         _setupDependentProcessing_
 
-        Setup seperate tasks for step one and step two processing.  Since we're
-        keeping the RAW we need to also setup merge tasks for it.
+        Setup seperate tasks for all processing.
         """
-        stepOneMergeTasks = {}
-        for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
-            mergeTask = self.addMergeTask(stepOneTask, self.procJobSplitAlgo,
-                                          outputModuleName,
-                                          outputModuleInfo["dataTier"],
-                                          outputModuleInfo["filterName"],
-                                          outputModuleInfo["processedDataset"])
-            stepOneMergeTasks[outputModuleName] = mergeTask
+        stepOneMergeTasks = self.addMergeTasks(stepOneTask, "cmsRun1", outputMods)
 
-        stepOneMergeTask = stepOneMergeTasks[self.rawOutputModuleName]
-        stepTwoTask = stepOneMergeTask.addTask("ReDigiReReco")
-
-        parentCmsswStep = stepOneMergeTask.getStep("cmsRun1")
-        outputMods = self.setupProcessingTask(stepTwoTask, "Processing", inputStep = parentCmsswStep,
-                                              inputModule = "Merged", couchURL = self.couchURL,
-                                              couchDBName = self.couchDBName,
-                                              configDoc = self.stepTwoConfigCacheID,
-                                              splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
-        self.addLogCollectTask(stepTwoTask, taskName = "StepTwoLogCollect")
+        if self.stepTwoConfigCacheID == None or self.stepTwoConfigCacheID == "":
+            return
         
-        return (stepTwoTask, "cmsRun1", outputMods)
+        stepOneMergeTask = stepOneMergeTasks[self.stepOneOutputModuleName]
+        stepTwoMergeTasks = self.addDependentProcTask("StepTwoProc",
+                                                      stepOneMergeTask,
+                                                      self.stepTwoConfigCacheID)
+
+        if self.stepThreeConfigCacheID == None or self.stepThreeConfigCacheID == "":
+            return
+
+        stepTwoMergeTask = stepTwoMergeTasks[self.stepTwoOutputModuleName]
+        self.addDependentProcTask("StepThreeProc", stepTwoMergeTask,
+                                  self.stepThreeConfigCacheID)
+        return
 
     def setupChainedProcessing(self, stepOneTask):
         """
@@ -103,7 +183,7 @@ class ReDigiWorkloadFactory(StdBase):
 
         stepTwoCmsswHelper = stepTwoCmssw.getTypeHelper()
         stepTwoCmsswHelper.setGlobalTag(self.globalTag)
-        stepTwoCmsswHelper.setupChainedProcessing("cmsRun1", self.rawOutputModuleName)
+        stepTwoCmsswHelper.setupChainedProcessing("cmsRun1", self.stepOneOutputModuleName)
         stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                       scramArch = self.scramArch)
         stepTwoCmsswHelper.setConfigCache(self.couchURL, self.stepTwoConfigCacheID,
@@ -118,8 +198,16 @@ class ReDigiWorkloadFactory(StdBase):
                                                 stepName = "cmsRun2")
             outputMods[outputModuleName] = outputModule
 
-        return (stepOneTask, "cmsRun2", outputMods)
-    
+        mergeTasks = self.addMergeTasks(stepOneTask, "cmsRun2", outputMods)
+
+        if self.stepThreeConfigCacheID == None or self.stepThreeConfigCacheID == "":
+            return
+
+        mergeTask = mergeTasks[self.stepTwoOutputModuleName]
+        self.addDependentProcTask("StepThreeProc", mergeTask,
+                                  self.stepThreeConfigCacheID)        
+        return
+        
     def buildWorkload(self):
         """
         _buildWorkload_
@@ -134,7 +222,7 @@ class ReDigiWorkloadFactory(StdBase):
         
         workload = self.createWorkload()
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
-        stepOneTask = workload.newTask("ReDigi")
+        stepOneTask = workload.newTask("StepOneProc")
 
         outputMods = self.setupProcessingTask(stepOneTask, "Processing", self.inputDataset,
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
@@ -145,46 +233,16 @@ class ReDigiWorkloadFactory(StdBase):
         if self.pileupConfig:
             self.setupPileup(stepOneTask, self.pileupConfig)
 
-        if self.stepTwoConfigCacheID == None or self.rawOutputModuleName == None or \
-               self.stepTwoConfigCacheID == "" or self.rawOutputModuleName == "":
-            parentTask = stepOneTask
-            parentStepName = "cmsRun1"
-            outputModes = outputMods
-        elif self.keepRAW == True or self.keepRAW == "True":
-            (parentTask, parentStepName, outputMods) = self.setupDependentProcessing(stepOneTask, outputMods)
+        if self.keepStepOneOutput == True and self.keepStepTwoOutput == True:
+            self.setupDependentProcessing(stepOneTask, outputMods)
+        elif self.keepStepOneOutput == False and self.keepStepTwoOutput == True:
+            self.setupChainedProcessing(stepOneTask)
+        elif self.keepStepOneOutput == False and self.keepStepTwoOutput == False:
+            self.setupThreeStepChainedProcessing(stepOneTask)
         else:
-            (parentTask, parentStepName, outputMods) = self.setupChainedProcessing(stepOneTask)
+            # Steps one and two are dependent, step three is chained.
+            pass
 
-        stepTwoMergeTasks = {}
-        for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
-            mergeTask = self.addMergeTask(parentTask, self.procJobSplitAlgo,
-                                          outputModuleName,
-                                          outputModuleInfo["dataTier"],
-                                          outputModuleInfo["filterName"],
-                                          outputModuleInfo["processedDataset"],
-                                          parentStepName = parentStepName)
-            stepTwoMergeTasks[outputModuleName] = mergeTask
-
-        stepTwoMergeTask = stepTwoMergeTasks[self.recoOutputModuleName]
-        stepThreeTask = stepTwoMergeTask.addTask("AODProd")
-        parentCmsswStep = stepTwoMergeTask.getStep("cmsRun1")
-
-        outputMods = self.setupProcessingTask(stepThreeTask, "Processing", inputStep = parentCmsswStep,
-                                              inputModule = "Merged", couchURL = self.couchURL,
-                                              couchDBName = self.couchDBName,
-                                              configDoc = self.stepThreeConfigCacheID,
-                                              splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
-        self.addLogCollectTask(stepThreeTask, "StepThreeLogCollect")
-
-        for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
-            self.addMergeTask(stepThreeTask, self.procJobSplitAlgo,
-                              outputModuleName,
-                              outputModuleInfo["dataTier"],
-                              outputModuleInfo["filterName"],
-                              outputModuleInfo["processedDataset"])
         return workload
 
     def __call__(self, workloadName, arguments):
@@ -207,12 +265,13 @@ class ReDigiWorkloadFactory(StdBase):
 
         # Pull down the configs and the names of the output modules so that
         # we can chain things together properly.
-        self.rawOutputModuleName = arguments.get("RAWOutputModuleName", None)
-        self.recoOutputModuleName = arguments.get("RECOOutputModuleName")
+        self.stepOneOutputModuleName = arguments.get("StepOneOutputModuleName", None)
+        self.stepTwoOutputModuleName = arguments.get("StepTwoOutputModuleName")
         self.stepOneConfigCacheID = arguments.get("StepOneConfigCacheID")
         self.stepTwoConfigCacheID = arguments.get("StepTwoConfigCacheID", None)
         self.stepThreeConfigCacheID = arguments.get("StepThreeConfigCacheID")
-        self.keepRAW = arguments.get("KeepRAW", True)
+        self.keepStepOneOutput = arguments.get("KeepStepOneOutput", True)
+        self.keepStepTwoOutput = arguments.get("KeepStepTwoOutput", True)        
 
         # Pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)

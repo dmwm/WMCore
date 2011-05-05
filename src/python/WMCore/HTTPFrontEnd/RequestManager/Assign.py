@@ -33,7 +33,7 @@ class Assign(WebAPI):
         self.mergedLFNBases = {
              "ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
              "DataProcessing" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
-             "ReDigi" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],             
+             "ReDigi" : ["/store/backfill/1", "/store/backfill/2", "/store/data", "/store/mc"],
              "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
              "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
              "Resubmission" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"]}

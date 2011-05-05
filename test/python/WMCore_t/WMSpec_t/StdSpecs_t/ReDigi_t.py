@@ -119,45 +119,45 @@ class ReDigiTest(unittest.TestCase):
         testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
         testWMBSHelper.createSubscription()
 
-        topLevelFileset = Fileset(name = "TestWorkload-Redigi-SomeBlock")
+        topLevelFileset = Fileset(name = "TestWorkload-StepOneProc-SomeBlock")
         topLevelFileset.loadData()
 
-        stepOneUnmergedRAWFileset = Fileset(name = "/TestWorkload/ReDigi/unmerged-RAWDEBUGoutput")
+        stepOneUnmergedRAWFileset = Fileset(name = "/TestWorkload/StepOneProc/unmerged-RAWDEBUGoutput")
         stepOneUnmergedRAWFileset.loadData()
-        stepOneMergedRAWFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/merged-Merged")
+        stepOneMergedRAWFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/merged-Merged")
         stepOneMergedRAWFileset.loadData()
-        stepOneLogArchiveFileset = Fileset(name = "/TestWorkload/ReDigi/unmerged-logArchive")
+        stepOneLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/unmerged-logArchive")
         stepOneLogArchiveFileset.loadData()
-        stepOneMergeLogArchiveFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/merged-logArchive")
+        stepOneMergeLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/merged-logArchive")
         stepOneMergeLogArchiveFileset.loadData()
 
-        stepTwoUnmergedDQMFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/unmerged-DQMoutput")
+        stepTwoUnmergedDQMFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-DQMoutput")
         stepTwoUnmergedDQMFileset.loadData()
-        stepTwoUnmergedRECOFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/unmerged-RECODEBUGoutput")
+        stepTwoUnmergedRECOFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-RECODEBUGoutput")
         stepTwoUnmergedRECOFileset.loadData()
-        stepTwoMergedDQMFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeDQMoutput/merged-Merged")
+        stepTwoMergedDQMFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeDQMoutput/merged-Merged")
         stepTwoMergedDQMFileset.loadData()
-        stepTwoMergedRECOFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeRECODEBUGoutput/merged-Merged")
+        stepTwoMergedRECOFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/merged-Merged")
         stepTwoMergedRECOFileset.loadData()
-        stepTwoLogArchiveFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/unmerged-logArchive")
+        stepTwoLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-logArchive")
         stepTwoLogArchiveFileset.loadData()
-        stepTwoMergeDQMLogArchiveFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeDQMoutput/merged-logArchive")
+        stepTwoMergeDQMLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeDQMoutput/merged-logArchive")
         stepTwoMergeDQMLogArchiveFileset.loadData()
-        stepTwoMergeRECOLogArchiveFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeRECODEBUGoutput/merged-logArchive")
+        stepTwoMergeRECOLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/merged-logArchive")
         stepTwoMergeRECOLogArchiveFileset.loadData()
 
-        stepThreeUnmergedAODFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeRECODEBUGoutput/AODProd/unmerged-aodOutputModule")
+        stepThreeUnmergedAODFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/unmerged-aodOutputModule")
         stepThreeUnmergedAODFileset.loadData()
-        stepThreeMergedAODFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeRECODEBUGoutput/AODProd/AODProdMergeaodOutputModule/merged-Merged")
+        stepThreeMergedAODFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcMergeaodOutputModule/merged-Merged")
         stepThreeMergedAODFileset.loadData()
-        stepThreeLogArchiveFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeRECODEBUGoutput/AODProd/unmerged-logArchive")
+        stepThreeLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/unmerged-logArchive")
         stepThreeLogArchiveFileset.loadData()
         
-        stepThreeMergeLogArchiveFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeRECODEBUGoutput/AODProd/AODProdMergeaodOutputModule/merged-logArchive")
+        stepThreeMergeLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcMergeaodOutputModule/merged-logArchive")
         stepThreeMergeLogArchiveFileset.loadData()
 
         stepOneWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                   task = "/TestWorkload/ReDigi")
+                                   task = "/TestWorkload/StepOneProc")
         stepOneWorkflow.load()
         self.assertTrue("logArchive" in stepOneWorkflow.outputMap.keys(),
                         "Error: Step one missing output module.")
@@ -182,7 +182,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step one sub has wrong type.")
 
         stepOneCleanupWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                          task = "/TestWorkload/ReDigi/ReDigiCleanupUnmergedRAWDEBUGoutput")
+                                          task = "/TestWorkload/StepOneProc/StepOneProcCleanupUnmergedRAWDEBUGoutput")
         stepOneCleanupWorkflow.load()
         self.assertEqual(len(stepOneCleanupWorkflow.outputMap.keys()), 0,
                          "Error: Cleanup should have no output.")
@@ -192,7 +192,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step one sub has wrong type.")
 
         stepOneLogCollectWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                             task = "/TestWorkload/ReDigi/LogCollect")
+                                             task = "/TestWorkload/StepOneProc/LogCollect")
         stepOneLogCollectWorkflow.load()
         self.assertEqual(len(stepOneLogCollectWorkflow.outputMap.keys()), 0,
                          "Error: LogCollect should have no output.")
@@ -202,7 +202,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step one sub has wrong type.")
 
         stepOneMergeWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                        task = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput")
+                                        task = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput")
         stepOneMergeWorkflow.load()
         self.assertTrue("Merged" in stepOneMergeWorkflow.outputMap.keys(),
                         "Error: Step one merge missing output module.")
@@ -225,7 +225,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step one sub has wrong type.")
 
         stepTwoWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                   task = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco")
+                                   task = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc")
         stepTwoWorkflow.load()
         self.assertTrue("RECODEBUGoutput" in stepTwoWorkflow.outputMap.keys(),
                         "Error: Step two missing output module.")
@@ -253,7 +253,7 @@ class ReDigiTest(unittest.TestCase):
                             "Error: more than one destination for output mod.")
 
         stepTwoCleanupDQMWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                             task = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoCleanupUnmergedDQMoutput")
+                                             task = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcCleanupUnmergedDQMoutput")
         stepTwoCleanupDQMWorkflow.load()
         self.assertEqual(len(stepTwoCleanupDQMWorkflow.outputMap.keys()), 0,
                          "Error: Cleanup shouldn't have any output.")
@@ -263,7 +263,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step two sub has wrong type.")        
 
         stepTwoCleanupRECOWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                              task = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoCleanupUnmergedRECODEBUGoutput")
+                                              task = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcCleanupUnmergedRECODEBUGoutput")
         stepTwoCleanupRECOWorkflow.load()
         self.assertEqual(len(stepTwoCleanupRECOWorkflow.outputMap.keys()), 0,
                          "Error: Cleanup shouldn't have any output.")
@@ -273,7 +273,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step two sub has wrong type.")                
 
         stepTwoLogCollectWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                             task = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/StepTwoLogCollect")
+                                             task = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcLogCollect")
         stepTwoLogCollectWorkflow.load()
         self.assertEqual(len(stepTwoLogCollectWorkflow.outputMap.keys()), 0,
                          "Error: LogCollect shouldn't have any output.")
@@ -283,7 +283,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step two sub has wrong type.")
 
         stepTwoMergeRECOWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                            task = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeRECODEBUGoutput")
+                                            task = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput")
         stepTwoMergeRECOWorkflow.load()
         self.assertTrue("Merged" in stepTwoMergeRECOWorkflow.outputMap.keys(),
                         "Error: Step two merge missing output module.")
@@ -306,7 +306,7 @@ class ReDigiTest(unittest.TestCase):
                             "Error: more than one destination for output mod.")
 
         stepTwoMergeDQMWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                           task = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeDQMoutput")
+                                           task = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeDQMoutput")
         stepTwoMergeDQMWorkflow.load()
         self.assertTrue("Merged" in stepTwoMergeDQMWorkflow.outputMap.keys(),
                         "Error: Step two merge missing output module.")
@@ -329,7 +329,7 @@ class ReDigiTest(unittest.TestCase):
                             "Error: more than one destination for output mod.")
         
         stepThreeWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                     task = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeRECODEBUGoutput/AODProd")
+                                     task = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc")
         stepThreeWorkflow.load()
         self.assertTrue("aodOutputModule" in stepThreeWorkflow.outputMap.keys(),
                         "Error: Step three missing output module.")
@@ -352,7 +352,7 @@ class ReDigiTest(unittest.TestCase):
                             "Error: more than one destination for output mod.")
 
         stepThreeCleanupWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                            task = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeRECODEBUGoutput/AODProd/AODProdCleanupUnmergedaodOutputModule")
+                                            task = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcCleanupUnmergedaodOutputModule")
         stepThreeCleanupWorkflow.load()
         self.assertEqual(len(stepThreeCleanupWorkflow.outputMap.keys()), 0,
                          "Error: Cleanup should have no output.")
@@ -362,7 +362,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step three sub has wrong type.")
 
         stepThreeLogCollectWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                               task = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeRECODEBUGoutput/AODProd/StepThreeLogCollect")
+                                               task = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcLogCollect")
         stepThreeLogCollectWorkflow.load()
         self.assertEqual(len(stepThreeLogCollectWorkflow.outputMap.keys()), 0,
                          "Error: LogCollect should have no output.")
@@ -372,7 +372,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step three sub has wrong type.")
 
         stepThreeMergeWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                          task = "/TestWorkload/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco/ReDigiReRecoMergeRECODEBUGoutput/AODProd/AODProdMergeaodOutputModule")
+                                          task = "/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcMergeaodOutputModule")
         stepThreeMergeWorkflow.load()
         self.assertTrue("Merged" in stepThreeMergeWorkflow.outputMap.keys(),
                         "Error: Step three merge missing output module.")
@@ -403,26 +403,26 @@ class ReDigiTest(unittest.TestCase):
         Verify that a workflow that discards the RAW was installed into WMBS
         correctly.
         """
-        topLevelFileset = Fileset(name = "TestWorkload-Redigi-SomeBlock")
+        topLevelFileset = Fileset(name = "TestWorkload-StepOneProc-SomeBlock")
         topLevelFileset.loadData()
 
-        stepTwoUnmergedDQMFileset = Fileset(name = "/TestWorkload/ReDigi/unmerged-DQMoutput")
+        stepTwoUnmergedDQMFileset = Fileset(name = "/TestWorkload/StepOneProc/unmerged-DQMoutput")
         stepTwoUnmergedDQMFileset.loadData()
-        stepTwoUnmergedRECOFileset = Fileset(name = "/TestWorkload/ReDigi/unmerged-RECODEBUGoutput")
+        stepTwoUnmergedRECOFileset = Fileset(name = "/TestWorkload/StepOneProc/unmerged-RECODEBUGoutput")
         stepTwoUnmergedRECOFileset.loadData()
-        stepTwoMergedDQMFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeDQMoutput/merged-Merged")
+        stepTwoMergedDQMFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/merged-Merged")
         stepTwoMergedDQMFileset.loadData()
-        stepTwoMergedRECOFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRECODEBUGoutput/merged-Merged")
+        stepTwoMergedRECOFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-Merged")
         stepTwoMergedRECOFileset.loadData()
-        stepTwoLogArchiveFileset = Fileset(name = "/TestWorkload/ReDigi/unmerged-logArchive")
+        stepTwoLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/unmerged-logArchive")
         stepTwoLogArchiveFileset.loadData()
-        stepTwoMergeDQMLogArchiveFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeDQMoutput/merged-logArchive")
+        stepTwoMergeDQMLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/merged-logArchive")
         stepTwoMergeDQMLogArchiveFileset.loadData()
-        stepTwoMergeRECOLogArchiveFileset = Fileset(name = "/TestWorkload/ReDigi/ReDigiMergeRECODEBUGoutput/merged-logArchive")
+        stepTwoMergeRECOLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-logArchive")
         stepTwoMergeRECOLogArchiveFileset.loadData()
 
         stepTwoWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                   task = "/TestWorkload/ReDigi")
+                                   task = "/TestWorkload/StepOneProc")
         stepTwoWorkflow.load()
         self.assertTrue("RECODEBUGoutput" in stepTwoWorkflow.outputMap.keys(),
                         "Error: Step two missing output module.")
@@ -450,7 +450,7 @@ class ReDigiTest(unittest.TestCase):
                             "Error: more than one destination for output mod.")
 
         stepTwoCleanupDQMWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                             task = "/TestWorkload/ReDigi/ReDigiCleanupUnmergedDQMoutput")
+                                             task = "/TestWorkload/StepOneProc/StepOneProcCleanupUnmergedDQMoutput")
         stepTwoCleanupDQMWorkflow.load()
         self.assertEqual(len(stepTwoCleanupDQMWorkflow.outputMap.keys()), 0,
                          "Error: Cleanup shouldn't have any output.")
@@ -460,7 +460,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step two sub has wrong type.")
 
         stepTwoCleanupRECOWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                              task = "/TestWorkload/ReDigi/ReDigiCleanupUnmergedRECODEBUGoutput")
+                                              task = "/TestWorkload/StepOneProc/StepOneProcCleanupUnmergedRECODEBUGoutput")
         stepTwoCleanupRECOWorkflow.load()
         self.assertEqual(len(stepTwoCleanupRECOWorkflow.outputMap.keys()), 0,
                          "Error: Cleanup shouldn't have any output.")
@@ -470,7 +470,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step two sub has wrong type.")
 
         stepTwoLogCollectWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                             task = "/TestWorkload/ReDigi/LogCollect")
+                                             task = "/TestWorkload/StepOneProc/LogCollect")
         stepTwoLogCollectWorkflow.load()
         self.assertEqual(len(stepTwoLogCollectWorkflow.outputMap.keys()), 0,
                          "Error: LogCollect shouldn't have any output.")
@@ -480,7 +480,7 @@ class ReDigiTest(unittest.TestCase):
                          "Error: Step two sub has wrong type.")
 
         stepTwoMergeRECOWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                            task = "/TestWorkload/ReDigi/ReDigiMergeRECODEBUGoutput")
+                                            task = "/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput")
         stepTwoMergeRECOWorkflow.load()
         self.assertTrue("Merged" in stepTwoMergeRECOWorkflow.outputMap.keys(),
                         "Error: Step two merge missing output module.")
@@ -503,7 +503,7 @@ class ReDigiTest(unittest.TestCase):
                             "Error: more than one destination for output mod.")
 
         stepTwoMergeDQMWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
-                                           task = "/TestWorkload/ReDigi/ReDigiMergeDQMoutput")
+                                           task = "/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput")
         stepTwoMergeDQMWorkflow.load()
         self.assertTrue("Merged" in stepTwoMergeDQMWorkflow.outputMap.keys(),
                         "Error: Step two merge missing output module.")
@@ -526,6 +526,91 @@ class ReDigiTest(unittest.TestCase):
                             "Error: more than one destination for output mod.")
         return
 
+    def verifyKeepAOD(self):
+        """
+        _verifyKeepAOD_
+
+        Verify that a workflow that only produces AOD in a single step was
+        installed correctly into WMBS.
+        """
+        topLevelFileset = Fileset(name = "TestWorkload-StepOneProc-SomeBlock")
+        topLevelFileset.loadData()
+
+        stepTwoUnmergedAODFileset = Fileset(name = "/TestWorkload/StepOneProc/unmerged-aodOutputModule")
+        stepTwoUnmergedAODFileset.loadData()
+        stepTwoMergedAODFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-Merged")
+        stepTwoMergedAODFileset.loadData()
+        stepTwoLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/unmerged-logArchive")
+        stepTwoLogArchiveFileset.loadData()
+        stepTwoMergeAODLogArchiveFileset = Fileset(name = "/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-logArchive")
+        stepTwoMergeAODLogArchiveFileset.loadData()
+
+        stepTwoWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
+                                   task = "/TestWorkload/StepOneProc")
+        stepTwoWorkflow.load()
+        self.assertTrue("aodOutputModule" in stepTwoWorkflow.outputMap.keys(),
+                        "Error: Step two missing output module.")
+        self.assertEqual(stepTwoWorkflow.outputMap["logArchive"][0]["merged_output_fileset"].id, stepTwoLogArchiveFileset.id,
+                         "Error: logArchive fileset is wrong.")
+        self.assertEqual(stepTwoWorkflow.outputMap["logArchive"][0]["output_fileset"].id, stepTwoLogArchiveFileset.id,
+                         "Error: logArchive fileset is wrong.")
+        self.assertEqual(stepTwoWorkflow.outputMap["aodOutputModule"][0]["merged_output_fileset"].id, stepTwoMergedAODFileset.id,
+                         "Error: AOD output fileset is wrong.")
+        self.assertEqual(stepTwoWorkflow.outputMap["aodOutputModule"][0]["output_fileset"].id, stepTwoUnmergedAODFileset.id,
+                         "Error: AOD output fileset is wrong.")        
+        stepTwoSub = Subscription(workflow = stepTwoWorkflow, fileset = topLevelFileset)
+        stepTwoSub.loadData()
+        self.assertEqual(stepTwoSub["type"], "Processing",
+                         "Error: Step two sub has wrong type.")
+
+        for outputMod in stepTwoWorkflow.outputMap.keys():
+            self.assertTrue(len(stepTwoWorkflow.outputMap[outputMod]) == 1,
+                            "Error: more than one destination for output mod.")
+
+        stepTwoCleanupAODWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
+                                             task = "/TestWorkload/StepOneProc/StepOneProcCleanupUnmergedaodOutputModule")
+        stepTwoCleanupAODWorkflow.load()
+        self.assertEqual(len(stepTwoCleanupAODWorkflow.outputMap.keys()), 0,
+                         "Error: Cleanup shouldn't have any output.")
+        stepTwoCleanupAODSub = Subscription(workflow = stepTwoCleanupAODWorkflow, fileset = stepTwoUnmergedAODFileset)
+        stepTwoCleanupAODSub.loadData()
+        self.assertEqual(stepTwoCleanupAODSub["type"], "Cleanup",
+                         "Error: Step two sub has wrong type.")
+
+        stepTwoLogCollectWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
+                                             task = "/TestWorkload/StepOneProc/LogCollect")
+        stepTwoLogCollectWorkflow.load()
+        self.assertEqual(len(stepTwoLogCollectWorkflow.outputMap.keys()), 0,
+                         "Error: LogCollect shouldn't have any output.")
+        stepTwoLogCollectSub = Subscription(workflow = stepTwoLogCollectWorkflow, fileset = stepTwoLogArchiveFileset)
+        stepTwoLogCollectSub.loadData()
+        self.assertEqual(stepTwoLogCollectSub["type"], "LogCollect",
+                         "Error: Step two sub has wrong type.")
+
+        stepTwoMergeAODWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
+                                           task = "/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule")
+        stepTwoMergeAODWorkflow.load()
+        self.assertTrue("Merged" in stepTwoMergeAODWorkflow.outputMap.keys(),
+                        "Error: Step two merge missing output module.")
+        self.assertTrue("logArchive" in stepTwoMergeAODWorkflow.outputMap.keys(),
+                        "Error: Step two merge missing output module.")
+        self.assertEqual(stepTwoMergeAODWorkflow.outputMap["logArchive"][0]["merged_output_fileset"].id, stepTwoMergeAODLogArchiveFileset.id,
+                         "Error: logArchive fileset is wrong.")
+        self.assertEqual(stepTwoMergeAODWorkflow.outputMap["logArchive"][0]["output_fileset"].id, stepTwoMergeAODLogArchiveFileset.id,
+                         "Error: logArchive fileset is wrong.")
+        self.assertEqual(stepTwoMergeAODWorkflow.outputMap["Merged"][0]["merged_output_fileset"].id, stepTwoMergedAODFileset.id,
+                         "Error: AOD merge output fileset is wrong.")
+        self.assertEqual(stepTwoMergeAODWorkflow.outputMap["Merged"][0]["output_fileset"].id, stepTwoMergedAODFileset.id,
+                         "Error: AOD merge output fileset is wrong.")
+        stepTwoMergeAODSub = Subscription(workflow = stepTwoMergeAODWorkflow, fileset = stepTwoUnmergedAODFileset)
+        stepTwoMergeAODSub.loadData()
+        self.assertEqual(stepTwoMergeAODSub["type"], "Merge",
+                         "Error: Step two sub has wrong type.")
+        for outputMod in stepTwoMergeAODWorkflow.outputMap.keys():
+            self.assertTrue(len(stepTwoMergeAODWorkflow.outputMap[outputMod]) == 1,
+                            "Error: more than one destination for output mod.")
+        return    
+
     def testChainedReDigi(self):
         """
         _testChaninedReDigi_
@@ -542,7 +627,7 @@ class ReDigiTest(unittest.TestCase):
         defaultArguments["StepOneConfigCacheID"] = configs[0]
         defaultArguments["StepTwoConfigCacheID"] = configs[1]
         defaultArguments["StepThreeConfigCacheID"] = configs[2]
-        defaultArguments["KeepRAW"] = False
+        defaultArguments["KeepStepOneOutput"] = False
 
         testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
@@ -554,9 +639,36 @@ class ReDigiTest(unittest.TestCase):
         self.verifyDiscardRAW()
         return
 
+    def testThreeStepChainedReDigi(self):
+        """
+        _testThreeStepChaninedReDigi_
+
+        Verify that a chained ReDigi workflow that discards RAW and RECO data
+        can be created and installed into WMBS correctly.  
+        """
+        defaultArguments = getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "redigi_t"
+        configs = self.injectReDigiConfigs()
+        defaultArguments["StepOneConfigCacheID"] = configs[0]
+        defaultArguments["StepTwoConfigCacheID"] = configs[1]
+        defaultArguments["StepThreeConfigCacheID"] = configs[2]
+        defaultArguments["KeepStepOneOutput"] = False
+        defaultArguments["KeepStepTwoOutput"] = False
+
+        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
+        testWorkload.setSpecUrl("somespec")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        
+        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
+        testWMBSHelper.createSubscription()
+
+        self.verifyKeepAOD()
+        return    
+
     def testCombinedReDigiRecoConfig(self):
         """
-        _testCombinedReDigigRecoConfig_
+        _testCombinedReDigiRecoConfig_
 
         Verify that a ReDigi workflow that uses a single step one config
         installs into WMBS correctly.
@@ -566,10 +678,9 @@ class ReDigiTest(unittest.TestCase):
         defaultArguments["CouchDBName"] = "redigi_t"
         configs = self.injectReDigiConfigs(combinedStepOne = True)
         defaultArguments["StepOneConfigCacheID"] = configs[0]
-        defaultArguments["StepTwoConfigCacheID"] = None
-        defaultArguments["RAWOutputModuleName"] = None
-        defaultArguments["StepThreeConfigCacheID"] = configs[2]
-        defaultArguments["KeepRAW"] = False
+        defaultArguments["StepTwoConfigCacheID"] = configs[2]
+        defaultArguments["StepThreeConfigCacheID"] = None
+        defaultArguments["StepOneOutputModuleName"] = "RECODEBUGoutput"
 
         testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
@@ -579,6 +690,31 @@ class ReDigiTest(unittest.TestCase):
         testWMBSHelper.createSubscription()
 
         self.verifyDiscardRAW()
+        return    
+
+    def testSingleStepReDigi(self):
+        """
+        _testSingleStepReDigi_
+
+        Verify that a single step ReDigi workflow can be created and installed
+        correctly into WMBS.
+        """
+        defaultArguments = getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "redigi_t"
+        configs = self.injectReDigiConfigs()
+        defaultArguments["StepOneConfigCacheID"] = configs[2]
+        defaultArguments["StepTwoConfigCacheID"] = None
+        defaultArguments["StepThreeConfigCacheID"] = None
+
+        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
+        testWorkload.setSpecUrl("somespec")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        
+        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
+        testWMBSHelper.createSubscription()
+
+        self.verifyKeepAOD()
         return    
 
 if __name__ == '__main__':

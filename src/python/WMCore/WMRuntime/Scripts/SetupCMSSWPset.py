@@ -8,6 +8,7 @@ Create a CMSSW PSet suitable for running a WMAgent job.
 import os
 import types
 import socket
+import traceback
 
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog 
@@ -484,9 +485,19 @@ class SetupCMSSWPset(ScriptInterface):
         if scenario != None and scenario != "":
             funcName = getattr(self.step.data.application.configuration, "function", None)
             funcArgs = getattr(self.step.data.application.configuration, "arguments", None)
-            self.createProcess(scenario, funcName, funcArgs)
+            try:
+                self.createProcess(scenario, funcName, funcArgs)
+            except Exception, ex:
+                print "Error creating process for Config/DataProcessing:"
+                print traceback.format_exc()
+                raise ex
         else:
-            self.loadPSet()
+            try:
+                self.loadPSet()
+            except Exception, ex:
+                print "Error loading PSet:"
+                print traceback.format_exc()
+                raise ex
 
         self.fixupProcess()
 
@@ -548,6 +559,12 @@ class SetupCMSSWPset(ScriptInterface):
         configFile = self.step.data.application.command.configuration
         workingDir = self.stepSpace.location
         handle = open("%s/%s" % (workingDir, configFile), 'w')
-        handle.write(self.process.dumpPython())
+        try:
+            handle.write(self.process.dumpPython())
+        except Exception, ex:
+            print "Error writing out PSet:"
+            print traceback.format_exc()
+            raise ex
+        
         handle.close()
         return 0

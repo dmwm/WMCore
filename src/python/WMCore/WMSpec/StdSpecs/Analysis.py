@@ -124,7 +124,7 @@ class AnalysisWorkloadFactory(StdBase):
         self.userFiles   = arguments.get("userFiles", [])
         self.userName    = arguments.get("Username",'jblow')
         self.processingVersion = arguments.get('ProcessingVersion', 'v1')
-        self.saveLogs    = arguments.get("SaveLogs", True)
+        self.saveLogs    = arguments.get("SaveLogs", False)
 
         return self.buildWorkload()
 

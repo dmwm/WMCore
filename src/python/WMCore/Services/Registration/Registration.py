@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-A very simple interface to the Registration service. All we need to do here is
+A very simple interface to the Registration service. All we need to do here is 
 send a JSON encoded dictionary periodically (hourly) to the service. To achieve
 this do something like:
 
@@ -14,9 +14,9 @@ reg_info ={
 
 reg = Registration({"inputdata": reg_info})
 
-this will create a Registration object with all the relevant registration
-information (_id, admin, type, name, and timeout are the minimal set, you could
-add more such as description, configuration files etc should your app need it).
+this will create a Registration object with all the relevant registration 
+information (_id, admin, type, name, and timeout are the minimal set, you could 
+add more such as description, configuration files etc should your app need it). 
 
 Once instatiated you will then want to poll it hourly like so:
 
@@ -24,53 +24,58 @@ reg.refreshCache()
 
 This will push the configuration up to the Registration service
 '''
-from WMCore.Database.CMSCouch import CouchServer
+from WMCore.Services.Service import Service 
+from WMCore.Services.Requests import BasicAuthJSONRequests
+import datetime
+import logging
+from httplib import HTTPException
 
-class Registration():
-    def __init__(self, cfg_dict = {}, reg_info = {}):
-        """
-        Initialise the regsvc for this component,
-        """
+class Registration(Service):
+    def __init__(self, dict):
+        defaultdict = {'endpoint': "https://cmsweb.cern.ch/registration/",
+                       'cacheduration': 1,
+                       }
+        defaultdict.update(dict)
+        defaultdict["method"] = 'PUT'
+        defaultdict["content_type"] = "application/json"
+        defaultdict['requests'] = BasicAuthJSONRequests
+
+        Service.__init__(self, defaultdict)
+        # Set correct internal state
+        cache = 'regsvc'
+        url = '/regsvc/%s' % self['inputdata']['url'].__hash__()
         try:
-            config_dict = {
-                            'server': 'https://cmsweb.cern.ch/',
-                            'database': 'registration',
-                            'cacheduration': 1,
-                           }
+            data = Service.forceRefresh(self, cache, url, 
+                                    verb = 'GET', decoder=False).read()
+            # Decode the data from json
+            data = self['requests'].decode(data)
+            # Update internal state to get the revision
+            self['inputdata']['_rev'] = data['_rev']
+            print data['_rev']
 
-            config_dict.update(cfg_dict)
+        except HTTPException, he:
+            # If the document is not found (404) we can refresh the cache to 
+            # create it. Other statuses should be raised for handling higher up
+            if str(he).find("404") != -1:
+                self.refreshCache()
+            else:
+                raise he
+                
+        
+    def refreshCache(self, inputdata = {}):
+        # It's possible that the data has changed, for instance a change in admin
+        self['inputdata'].update(inputdata)
+        # But we want to set the timestamp explicitly
+        self['inputdata']['timestamp'] = str(datetime.datetime.now())
+        
+        cache = 'regsvc'
+        url = '/regsvc/%s' % self['inputdata']['url'].__hash__()
+        # Talk to the RegSvc, read the data but don't decode the response
+        data = Service.refreshCache(self, cache, url, 
+                                    verb = 'PUT', decoder=False).read()
+        
+        # Decode the data from json
+        data = self['requests'].decode(data)
+        # Update internal state to get the revision
+        self['inputdata']['_rev'] = data['rev']
 
-            self.server = CouchServer(config_dict['server'])
-            self.db = self.server.connectDatabase(config_dict['database'])
-
-            if 'location' not in reg_info.keys():
-                raise KeyError('Registration needs a location in its reg_info')
-            self.location_hash = str(reg_info['location'].__hash__())
-            reg_info['_id'] = self.location_hash
-            reg_info['#config_hash'] = hash(str(reg_info))
-            push_cfg = True
-            if self.db.documentExists(self.location_hash):
-                # If the doc exists, check that the configuration hasn't changed
-                doc = self.db.document(self.location_hash)
-                push_cfg = doc['#config_hash'] != reg_info['#config_hash']
-                reg_info['_rev'] = doc['_rev']
-            if push_cfg:
-                self.db.commitOne(reg_info)
-        except:
-            # Don't want to raise anything here
-            # TODO: but should probably log...
-            pass
-        self.report()
-
-
-    def report(self):
-        """
-        'Ping' the RegSvc with a doc containing the service doc's ID and a
-        timestamp, this can be used to provide uptime information.
-        """
-        try:
-            self.db.commitOne({'service': self.location_hash}, timestamp=True)
-        except:
-            # Don't want to raise anything here
-            # TODO: but should probably log...
-            pass

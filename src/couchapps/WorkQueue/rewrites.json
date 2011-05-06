@@ -28,8 +28,13 @@
   },
 
   {
+      "from": "index.html",
+      "to": "index.html"
+  },
+
+  {
     "from": "",
-    "to": "index.html"
+    "to": "_show/redirect"
   },
 
   {
@@ -50,6 +55,11 @@
   {
     "from": "_list/*",
     "to": "_list/*"
+  },
+
+  {
+    "from": "_show/*",
+    "to": "_show/*"
   },
 
   {

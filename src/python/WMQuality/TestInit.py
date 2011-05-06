@@ -234,8 +234,7 @@ class TestInit:
         """
         if not self.hasDatabase:
             return 
-        defaultModules = ["WMCore.MsgService", "WMCore.ThreadPool", \
-                          "WMCore.Trigger"]
+        defaultModules = ["WMCore.WMBS"]
         if not useDefault:
             defaultModules = []
 

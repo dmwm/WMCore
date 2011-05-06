@@ -103,6 +103,8 @@ class AnalysisWorkloadFactory(StdBase):
         self.blockWhitelist = arguments.get("BlockWhitelist", [])
         self.runWhitelist = arguments.get("RunWhitelist", [])
         self.runBlacklist = arguments.get("RunBlacklist", [])
+        self.siteWhitelist = arguments.get("SiteWhitelist", [])
+        self.siteBlacklist = arguments.get("SiteBlacklist", [])
 
         self.couchURL = arguments.get("CouchUrl", "http://derpderp:derpityderp@cmssrv52.derp.gov:5984")
         self.couchDBName = arguments.get("CouchDBName", "wmagent_config_cache")        

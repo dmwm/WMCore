@@ -18,7 +18,7 @@ from WMCore.WMFactory  import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
 
-from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBSBuffer.Database.Interface.AddToBuffer   import AddToBuffer
 
 class DBSBufferFileTest(unittest.TestCase):
@@ -32,8 +32,7 @@ class DBSBufferFileTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMComponent.DBSBuffer.Database"])
-        self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
+        self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
 
         myThread = threading.currentThread()

@@ -56,7 +56,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
         newDatasetAction = self.daoFactory(classname = "NewDataset")
         listDatasetAction = self.daoFactory(classname = "ListDataset")
         
-        newDatasetAction.execute(datasetPath = "/Cosmics/CRUZET-v1/RECO")
+        newDatasetAction.execute(datasetPath = "/Cosmics/CRUZET-v1/RECO", validStatus = "PRODUCTION")
         resultA = listDatasetAction.execute(datasetPath = "/Cosmics/CRUZET-v1/RECO")
 
         assert len(resultA) == 1, \
@@ -64,7 +64,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
         assert resultA[0]["path"] == "/Cosmics/CRUZET-v1/RECO", \
                "ERROR: Wrong dataset path in DBSBuffer"
 
-        newDatasetAction.execute(datasetPath = "/Cosmics/CRUZET-v1/RECO")
+        newDatasetAction.execute(datasetPath = "/Cosmics/CRUZET-v1/RECO", validStatus = "PRODUCTION")
         resultB = listDatasetAction.execute(datasetID = resultA[0]["id"])
 
         assert len(resultB) == 1, \
@@ -87,6 +87,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
         listDatasetAction = self.daoFactory(classname = "ListDataset")
         
         newDatasetAction.execute(datasetPath = "/Cosmics/CRUZET-v1/RECO",
+                                 validStatus = "PRODUCTION",
                                  conn = myThread.transaction.conn,
                                  transaction = True)
         resultA = listDatasetAction.execute(datasetPath = "/Cosmics/CRUZET-v1/RECO",

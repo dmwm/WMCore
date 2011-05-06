@@ -59,10 +59,10 @@ class JobArchiverTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.tearDown()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        self.testInit.setupCouch("job_archiver_t_0/jobs", "JobDump")
-        self.testInit.setupCouch("job_archiver_t_0/fwjrs", "FWJRDump")
+        self.testInit.setupCouch("jobarchiver_t_0/jobs", "JobDump")
+        self.testInit.setupCouch("jobarchiver_t_0/fwjrs", "FWJRDump")
 
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -81,7 +81,7 @@ class JobArchiverTest(unittest.TestCase):
         Database deletion
         """
 
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"])
+        self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
 

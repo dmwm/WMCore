@@ -158,6 +158,7 @@ class CondorPlugin(BasePlugin):
         self.scriptFile = None
         self.submitDir  = None
         self.removeTime = getattr(config.BossAir, 'removeTime', 60)
+        self.multiTasks = getattr(config.BossAir, 'multicoreTaskTypes', [])
 
 
         # Build ourselves a pool
@@ -551,6 +552,10 @@ class CondorPlugin(BasePlugin):
                               % (job['location']))
                 continue
             jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
+
+            # Check for multicore
+            if job.get('taskType', None) in self.multiTasks:
+                jdl.append('+RequiresWholeMachine?' 'TRUE')
 
             # Transfer the output files
             jdl.append("transfer_output_files = Report.%i.pkl\n" % (job["retry_count"]))

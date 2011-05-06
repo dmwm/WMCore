@@ -72,9 +72,12 @@ class DataProcessingWorkloadFactory(StdBase):
         procTask = workload.newTask("DataProcessing")
 
         cmsswStepType = "CMSSW"
+        taskType = "Processing"
         if self.multicore:
             cmsswStepType = "MulticoreCMSSW"
-        outputMods = self.setupProcessingTask(procTask, "Processing", self.inputDataset,
+            taskType = "MultiProcessing"
+            
+        outputMods = self.setupProcessingTask(procTask, taskType, self.inputDataset,
                                               scenarioName = self.procScenario, scenarioFunc = "promptReco",
                                               scenarioArgs = {"globalTag": self.globalTag, "writeTiers": ["RECO", "ALCARECO"]}, 
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,

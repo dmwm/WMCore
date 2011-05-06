@@ -90,6 +90,7 @@ config.section_("BossAir")
 config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
 config.BossAir.pluginNames = bossAirPlugins
 config.BossAir.nCondorProcesses = 1
+config.BossAir.multicoreTaskTypes = ["MultiProcessing", "MultiProduction"]
 
 config.section_("CoreDatabase")
 config.CoreDatabase.socket = databaseSocket

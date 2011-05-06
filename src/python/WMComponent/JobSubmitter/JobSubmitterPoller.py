@@ -463,7 +463,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'cache_dir': cachedJob[4],
                                'packageDir': package,
                                'userdn': cachedJob[5],
-                               'priority': cachedJob[6]}
+                               'priority': cachedJob[6],
+                               'taskType': taskType}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)

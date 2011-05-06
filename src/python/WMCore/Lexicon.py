@@ -27,6 +27,14 @@ lfnParts = {
 def sitetier(candidate):
     return check("^T[0-3]", candidate)
 
+def jobrange(candidate):
+    """ Specifies a numbers/range of jobs separated by a comma.
+        A range is composed by two numbers separated my minus
+        For example valid candidates are either 1 or 1,2 or 3-6,5,7-8
+        It is like when you specifies which pages to print in Word
+    """
+    return check("^\d+(-\d+)?(,\d+(-\d+)?)*$", candidate)
+
 def cmsname(candidate):
     """
     Check candidate as a (partial) CMS name. Should pass:

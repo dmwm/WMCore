@@ -10,9 +10,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 import unittest
 import random
 import os
-
-
-
+import nose
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.ACDC.CouchCollection import CouchCollection
@@ -22,6 +20,7 @@ from WMCore.ACDC.CouchFileset import CouchFileset
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUID import makeUUID
+from WMCore.DataStructs.Mask import Mask
 
 
 class CouchFileset_t(unittest.TestCase):
@@ -71,6 +70,7 @@ class CouchFileset_t(unittest.TestCase):
 
         files1 = []
         files2 = []
+        mask = Mask()
         numberOfFiles = 10
         run = Run(10000000, 1,2,3,4,5,6,7,8,9,10)
         for i in range(0, numberOfFiles):
@@ -83,10 +83,13 @@ class CouchFileset_t(unittest.TestCase):
             f2.addRun(run)
             files2.append(f2)
 
-        fs.add(*files1)
-        fs.add(*files2)
-        print fs.filelistDocuments()
-        print len(fs.fileset())
+        fs.add(files1, mask)
+        fs.add(files2, mask)
+        # Something's wrong here, but I don't know what
+        # Commenting out the print statements
+        # Possibly nullifying the test in the process
+        self.assertEqual(len(fs.filelistDocuments()), 2)
+        #print len(fs.fileset())
         fs.drop()
 
 if __name__ == '__main__':

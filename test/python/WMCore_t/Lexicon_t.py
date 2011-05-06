@@ -24,6 +24,25 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, sitetier, 'T4')
         self.assertRaises(AssertionError, sitetier, 'D0')
 
+    def testGoodJobranges(self):
+        # Check that valid tiers work
+        assert jobrange('3'), 'valid job range not validated'
+        assert jobrange('78'), 'valid job range not validated'
+        assert jobrange('3-9'), 'valid job range not validated'
+        assert jobrange('32-97'), 'valid job range not validated'
+        assert jobrange('2,3'), 'valid job range not validated'
+        assert jobrange('24,39'), 'valid job range not validated'
+        assert jobrange('2-91,45,5,64,7,78-91'), 'valid job range not validated'
+
+    def testBadJobranges(self):
+        # Check that invalid tiers raise an exception
+        self.assertRaises(AssertionError, jobrange, 'I')
+        self.assertRaises(AssertionError, jobrange, '1-2i')
+        self.assertRaises(AssertionError, jobrange, '1-i2')
+        self.assertRaises(AssertionError, jobrange, '1,2-3,3d-5')
+        self.assertRaises(AssertionError, jobrange, '-1,2-3,3d-5')
+        self.assertRaises(AssertionError, jobrange, '1-2,2,-5')
+
     def testGoodCMSName(self):
         # Check that full names work
         assert cmsname('T0_CH_CERN'), 'valid CMS name not validated'
@@ -105,7 +124,7 @@ class LexiconTest(unittest.TestCase):
         lfnA = '/store/backfill/1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
         lfn(lfnA)
         lfnA = '/store/data/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
-        lfn(lfnA)        
+        lfn(lfnA)
 
 
         # All these cases should fail

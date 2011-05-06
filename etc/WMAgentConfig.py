@@ -17,6 +17,7 @@ from WMCore.Configuration import Configuration
 serverHostName = "HOSTNAME OF WMAGENT MACHINE"
 globalWorkQueuePort = 8571
 wmbsServicePort = 9997
+reqMgrServerHostName = "I presume the host name for the req manager"
 
 # The work directory and database need to be separate from the ReqMgr
 # installation.

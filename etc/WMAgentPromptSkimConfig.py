@@ -15,6 +15,9 @@ from WMCore.Configuration import Configuration
 config = Configuration()
 serverHostName = "localhost"
 wmbsServicePort = 9999
+couchURL = 'some_couch_url'
+acdcDBName = 'some_database'
+jobDumpDBName = 'some_database'
 config.section_("Agent")
 config.Agent.hostName = serverHostName
 config.Agent.contact = "sfoulkes@fnal.gov"
@@ -151,7 +154,7 @@ config.RetryManager.componentDir  = config.General.workDir + "/RetryManager"
 config.RetryManager.logLevel = "DEBUG"
 config.RetryManager.pollInterval = 10
 config.RetryManager.coolOffTime = {"create": 10, "submit": 10, "job": 10}
-config.RetryManager.pluginName = "RetryAlgo"
+config.RetryManager.pluginName = "LinearAlgo"
 
 config.component_("JobArchiver")
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
@@ -176,7 +179,7 @@ config.WMBSService.componentDir = os.path.join(config.General.workDir, "WMBSServ
 config.WMBSService.Webtools.port = wmbsServicePort
 config.WMBSService.Webtools.host = serverHostName
 config.WMBSService.Webtools.environment = "devel"
-config.WMBSService.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
+config.WMBSService.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
 config.WMBSService.admin = config.Agent.contact
 config.WMBSService.title = 'WMBS Data Service'
 config.WMBSService.description = 'Provide WMBS related service call'
@@ -188,7 +191,7 @@ config.WMBSService.section_('views')
 active = config.WMBSService.views.section_('active')
 wmbs = active.section_('wmbs')
 wmbs.object = 'WMCore.WebTools.RESTApi'
-wmbs.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/')
+wmbs.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
 wmbs.section_('model')
 wmbs.model.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
 wmbs.section_('formatter')
@@ -220,9 +223,9 @@ wmagentmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')
 
 active.section_('GlobalMonitor')
 active.GlobalMonitor.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorPage'
-active.GlobalMonitor.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/GlobalMonitor')
-active.GlobalMonitor.javascript = os.path.join(getWMBASE(), 'src/javascript')
-active.GlobalMonitor.html = os.path.join(getWMBASE(), 'src/html')
+active.GlobalMonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/GlobalMonitor')
+active.GlobalMonitor.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript')
+active.GlobalMonitor.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html')
 active.GlobalMonitor.serviceLevel = 'LocalQueue'
 
 active.section_('monitorSvc')

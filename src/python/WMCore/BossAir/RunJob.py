@@ -23,7 +23,8 @@ class RunJob(dict):
                  bulkid = None, retry_count = 0, status = None,
                  location = None, userdn = None, plugin = None,
                  cache_dir = None, status_time = None, packageDir = None,
-                 sandbox = None, priority = None, cms_site_name = None):
+                 sandbox = None, priority = None, cms_site_name = None,
+                 taskType = None):
         """
         Just make sure you init the dictionary fields.
 
@@ -47,6 +48,7 @@ class RunJob(dict):
         self.setdefault('packageDir', packageDir)
         self.setdefault('sandbox', sandbox)
         self.setdefault('priority', priority)
+        self.setdefault('taskType', taskType)
 
 
         return

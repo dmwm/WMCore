@@ -40,7 +40,8 @@ class DBSBufferDatasetTest(unittest.TestCase):
 
         datasetAction = self.daoFactory(classname = "NewDataset")
         datasetListAction = self.daoFactory(classname = "ListDataset")
-        datasetAction.execute(datasetPath = "/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        datasetAction.execute(datasetPath = "/Cosmics/CRUZET09-PromptReco-v1/RECO",
+                              validStatus = "PRODUCTION")
 
         listResult = datasetListAction.execute(datasetPath = "/Cosmics/CRUZET09-PromptReco-v1/RECO")
         self.datasetID = listResult[0]["id"]

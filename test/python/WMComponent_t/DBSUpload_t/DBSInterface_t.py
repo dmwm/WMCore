@@ -8,10 +8,6 @@ Test for the DBSInterface
 
 """
 
-
-
-
-
 import os
 import threading
 import time
@@ -24,11 +20,7 @@ from WMCore.Agent.Configuration import Configuration
 
 from WMCore.DataStructs.Run   import Run
 
-
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
-
-
-
 from WMComponent.DBSUpload.DBSInterface import *
 
 
@@ -84,9 +76,9 @@ class DBSInterfaceTest(unittest.TestCase):
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
 
         config.section_("DBSInterface")
-        config.DBSInterface.globalDBSUrl     = 'http://cmssrv49.fnal.gov:8989/DBS209P5/servlet/DBSServlet'
+        config.DBSInterface.globalDBSUrl     = 'http://vocms09.cern.ch:8880/cms_dbs_int_local_xx_writer/servlet/DBSServlet'
         config.DBSInterface.globalDBSVersion = 'DBS_2_0_9'
-        config.DBSInterface.DBSUrl           = 'http://cmssrv49.fnal.gov:8989/DBS209P5_2/servlet/DBSServlet'
+        config.DBSInterface.DBSUrl           = 'http://vocms09.cern.ch:8880/cms_dbs_int_local_yy_writer/servlet/DBSServlet'
         config.DBSInterface.DBSVersion       = 'DBS_2_0_9'
         config.DBSInterface.DBSBlockMaxFiles = 10
         config.DBSInterface.DBSBlockMaxSize  = 9999999999

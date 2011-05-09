@@ -8,8 +8,6 @@ import shutil
 from WMCore.WorkQueue.Policy.Start.Block import Block
 from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload, getTestArguments
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
-EmulatorHelper.setEmulators(phedex = True, dbs = True, 
-                            siteDB = True, requestMgr = False)
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload \
     import workload as MultiTaskProcessingWorkload
@@ -24,6 +22,14 @@ class BlockTestCase(unittest.TestCase):
 
     splitArgs = dict(SliceType = 'NumberOfFiles', SliceSize = 10)
 
+    def setUp(self):
+        EmulatorHelper.setEmulators(phedex = True, dbs = True,
+                            siteDB = True, requestMgr = False)
+        Globals.GlobalParams.resetParams()
+    def tearDown(self):
+        EmulatorHelper.resetEmulators()
+        Globals.GlobalParams.resetParams()
+
     def testTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""
         Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
@@ -34,7 +40,7 @@ class BlockTestCase(unittest.TestCase):
         dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
             units = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
-            self.assertEqual(2, len(units))
+            self.assertEqual(Globals.GlobalParams.numOfBlocksPerDataset(), len(units))
             blocks = [] # fill with blocks as we get work units for them
             for unit in units:
                 self.assertEqual(1, unit['Jobs'])
@@ -56,9 +62,10 @@ class BlockTestCase(unittest.TestCase):
                                            inputDataset.tier))
         dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in MultiTaskProcessingWorkload.taskIterator():
-            units = Block(**self.splitArgs)(MultiTaskProcessingWorkload, task, dbs)
-            self.assertEqual(2, len(units))
+            units = Block(**self.splitArgs)(MultiTaskProcessingWorkload, task)
+            self.assertEqual(Globals.GlobalParams.numOfBlocksPerDataset(), len(units))
             blocks = [] # fill with blocks as we get work units for them
+
             for unit in units:
                 self.assertEqual(1, unit['Jobs'])
                 self.assertEqual(MultiTaskProcessingWorkload, unit['WMSpec'])
@@ -84,7 +91,7 @@ class BlockTestCase(unittest.TestCase):
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                               rerecoArgs2)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertNotEqual(units[0]['Inputs'].keys(), rerecoArgs2['BlockBlacklist'])
 
@@ -94,7 +101,7 @@ class BlockTestCase(unittest.TestCase):
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                      rerecoArgs2)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), rerecoArgs2['BlockWhitelist'])
 
@@ -104,7 +111,7 @@ class BlockTestCase(unittest.TestCase):
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                      rerecoArgs2)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), rerecoArgs2['BlockWhitelist'])
 
@@ -114,7 +121,7 @@ class BlockTestCase(unittest.TestCase):
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                      rerecoArgs3)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#1'])
 
@@ -124,7 +131,7 @@ class BlockTestCase(unittest.TestCase):
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                     rerecoArgs3)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#1'])
 

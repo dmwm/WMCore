@@ -36,14 +36,17 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
     TestCase for WorkQueueReqMgrInterface module
     """
     def setSchema(self):
-        self.schema = ["WMCore.WorkQueue.Database", "WMCore.WMBS",
-                        "WMCore.MsgService", "WMCore.ThreadPool"]
+        self.schema = []
         self.couchApps = ["WorkQueue"]
 
     def setUp(self):
         WorkQueueTestCase.setUp(self)
         EmulatorHelper.setEmulators(phedex = True, dbs = True,
                                     siteDB = True, requestMgr = False)
+        self.globalQCouchUrl = "%s/%s" % (self.testInit.couchUrl, self.globalQDB)
+        self.localQCouchUrl =  "%s/%s" % (self.testInit.couchUrl,
+                                          self.localQInboxDB)
+
     def tearDown(self):
         WorkQueueTestCase.tearDown(self)
         EmulatorHelper.resetEmulators()
@@ -76,17 +79,26 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
 
     def setupGlobalWorkqueue(self):
         """Return a workqueue instance"""
-
-        globalQ = globalQueue(CacheDir = self.workDir,
-                              QueueURL = 'global.example.com',
-                              Teams = ["The A-Team", "some other bloke"],
-                              DbName = 'workqueue_t_global')
+        globalQ = globalQueue(DbName = self.globalQDB,
+                              InboxDbName = self.globalQInboxDB,
+                              QueueURL = self.globalQCouchUrl,
+                              Teams = ["The A-Team", "some other bloke"])
         return globalQ
+
+    def setupLocalQueue(self):
+        """Create a local queue"""
+        localQ = localQueue(DbName = self.localQDB,
+                            InboxDbName = self.localQInboxDB,
+                            QueueURL = self.localQCouchUrl,
+                            Teams = ["The A-Team", "some other bloke"],
+                            ParentQueueCouchUrl = self.globalQCouchUrl)
+        return localQ
 
     def testReqMgrPollerAlgorithm(self):
         """ReqMgr reporting"""
         # don't actually talk to ReqMgr - mock it.
         globalQ = self.setupGlobalWorkqueue()
+        localQ = self.setupLocalQueue()
         reqMgr = fakeReqMgr(splitter = 'Block')
         reqMgrInt = WorkQueueReqMgrInterface()
         reqMgrInt.reqMgr = reqMgr
@@ -99,7 +111,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
 
         # local queue acquires and runs
         globalQ.updateLocationInfo()
-        work = globalQ.getWork({'SiteA' : 10000, 'SiteB' : 10000}, pullingQueueUrl = 'local.example.com')
+        work = localQ.pullWork({'SiteA' : 10000, 'SiteB' : 10000})
         self.assertEqual(len(globalQ), 0)
         reqMgrInt(globalQ)
         self.assertEqual(reqMgr.status[reqMgr.names[0]], 'acquired')
@@ -111,6 +123,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running')
 
         # finish work
+        work = globalQ.status()
         globalQ.setStatus('Done', elementIDs = [x.id for x in work])
         reqMgrInt(globalQ)
         globalQ.performQueueCleanupActions()

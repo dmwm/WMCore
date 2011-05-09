@@ -548,8 +548,6 @@ class WorkQueueTest(WorkQueueTestCase):
         slots = {'SiteA' : 1000, 'SiteB' : 1000}
 
         # Can't get work for wrong team
-        self.assertEqual([], self.globalQueue.getWork(slots, team = 'other'))
-        # now do chain
         self.localQueue.params['Teams'] = ['other']
         self.assertEqual(self.localQueue.pullWork(slots), 0)
         # and with correct team name

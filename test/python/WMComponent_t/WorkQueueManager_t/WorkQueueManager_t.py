@@ -43,8 +43,7 @@ class WorkQueueManagerTest(WorkQueueTestCase):
     _maxMessage = 10
 
     def setSchema(self):
-        self.schema = ["WMCore.WorkQueue.Database", "WMCore.WMBS",
-                        "WMCore.MsgService", "WMCore.ThreadPool"]
+        self.schema = []
         self.couchApps = ["WorkQueue"]
     
     def setUp(self):

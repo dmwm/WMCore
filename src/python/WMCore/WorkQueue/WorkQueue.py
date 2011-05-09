@@ -232,32 +232,21 @@ class WorkQueue(WorkQueueBase):
         return self.backend.updateElements(*ids, Status = 'Available',
                                            ChildQueueUrl = None, WMBSUrl = None)
 
-    def getWork(self, siteJobs, pullingQueueUrl = None, team = None):
+    def getWork(self, siteJobs):
         """ 
-        Get available work from the queue.
+        Get available work from the queue, inject into wmbs & mark as running
 
         siteJob is dict format of {site: estimateJobSlot}
         of the resources to get work for.
-
-        If pullingQueueUrl is specified the work is to be assigned to another
-        queue, indicate this by setting status to Negotiating.
-
-        if pullingQueueUrl is None, inject work into wmbs and mark as Running.
         """
         results = []
         if not self.backend.isAvailable():
             self.logger.info('Backend busy or down: skipping fetching of work')
             return results
-        matches, _ = self.backend.availableWork(siteJobs, team)
+        matches, _ = self.backend.availableWork(siteJobs)
 
         if not matches:
             return results
-
-        # if work is being pulled from us to another queue, mark elements as such
-        if pullingQueueUrl:
-            return self._assignToChildQueue(pullingQueueUrl,
-                                            self.params['WMBSURL'],
-                                            *matches)
 
         # cache wmspecs for lifetime of function call, likely we will have multiple elements for same spec.
         #TODO: Check to see if we can skip spec loading - need to persist some more details to element

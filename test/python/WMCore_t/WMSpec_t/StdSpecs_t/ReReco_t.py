@@ -81,8 +81,9 @@ class ReRecoTest(unittest.TestCase):
         dataProcArguments = getTestArguments()
         dataProcArguments["SkimConfigs"] = [{"SkimName": "SomeSkim",
                                              "SkimInput": "outputRECORECO",
-                                             "SkimSplitAlgo": "TwoFileBased",
-                                             "SkimSplitArgs": {"files_per_job": 1},
+                                             "SkimSplitAlgo": "FileBased",
+                                             "SkimSplitArgs": {"files_per_job": 1,
+                                                               "include_parents": True},
                                              "ConfigCacheID": skimConfig,
                                              "Scenario": None}]
         dataProcArguments["CouchURL"] = os.environ["COUCHURL"]
@@ -162,7 +163,7 @@ class ReRecoTest(unittest.TestCase):
 
         self.assertEqual(skimSubscription["type"], "Skim",
                          "Error: Wrong subscription type.")
-        self.assertEqual(skimSubscription["split_algo"], "TwoFileBased",
+        self.assertEqual(skimSubscription["split_algo"], "FileBased",
                          "Error: Wrong split algo.")
 
         for skimOutput in ["A", "B"]:

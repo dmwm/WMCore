@@ -288,7 +288,8 @@ class ReDigiWorkloadFactory(StdBase):
         # parameters will be updated after the workflow has been created.
         self.procJobSplitAlgo = arguments.get("StdJobSplitAlgo", "LumiBased")
         self.procJobSplitArgs = arguments.get("StdJobSplitArgs",
-                                              {"lumis_per_job": 8})
+                                              {"lumis_per_job": 8,
+                                               "include_parents": self.includeParents})
         return self.buildWorkload()
 
 def reDigiWorkload(workloadName, arguments):

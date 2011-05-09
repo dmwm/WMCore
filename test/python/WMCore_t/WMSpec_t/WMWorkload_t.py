@@ -262,7 +262,7 @@ class WMWorkloadTest(unittest.TestCase):
         skimTask = mergeTask.addTask("SkimTask")
         skimTask.setTaskType("Skim")
         skimTask.setInputReference(mergeTaskCMSSW, outputModule = "merged")
-        skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)
+        skimTask.setSplittingAlgorithm("FileBased", files_per_job = 1, include_parents = True)
         skimTaskStageOut = skimTask.makeStep("StageOut1")
         skimTaskStageOut.setStepType("StageOut")
         skimTaskStageOutHelper = skimTaskStageOut.getTypeHelper()
@@ -284,10 +284,12 @@ class WMWorkloadTest(unittest.TestCase):
         skimSplitParams = skimTask.jobSplittingParameters()
         self.assertEqual(len(skimSplitParams.keys()), 4,
                          "Error: Wrong number of params for skim task.")
-        self.assertEqual(skimSplitParams["algorithm"], "TwoFileBased",
+        self.assertEqual(skimSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for skim task.")
         self.assertEqual(skimSplitParams["files_per_job"], 1,
                          "Error: Wrong number of files per job.")
+        self.assertEqual(skimSplitParams["include_parents"], True,
+                         "Error: Include parents is wrong.")        
         self.assertEqual(skimSplitParams["siteWhitelist"], [],
                          "Error: Site white list was updated.")
         self.assertEqual(skimSplitParams["siteBlacklist"], [],
@@ -566,11 +568,11 @@ class WMWorkloadTest(unittest.TestCase):
         skimTask.setTaskType("Skim")
         skimTaskCmssw = skimTask.makeStep("cmsRun1")
         skimTaskCmssw.setStepType("CMSSW")
-        skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)
+        skimTask.setSplittingAlgorithm("FileBased", files_per_job = 1, include_parents = True)
         skimTask.applyTemplates()
 
-        testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask", "TwoFileBased",
-                                               {"files_per_job": 2})
+        testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask", "FileBased",
+                                               {"files_per_job": 2, "include_parents": True})
         testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask/MergeTask/SkimTask", "RunBased",
                                                {"max_files": 21,
                                                 "some_other_param": "value"})
@@ -585,10 +587,12 @@ class WMWorkloadTest(unittest.TestCase):
         procSplitParams = procTask.jobSplittingParameters()
         self.assertEqual(len(procSplitParams.keys()), 4,
                          "Error: Wrong number of params for proc task.")
-        self.assertEqual(procSplitParams["algorithm"], "TwoFileBased",
+        self.assertEqual(procSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for proc task.")
         self.assertEqual(procSplitParams["files_per_job"], 2,
                          "Error: Wrong number of files per job.")
+        self.assertEqual(procSplitParams["include_parents"], True,
+                         "Error: Include parents is wrong.")        
         self.assertEqual(procSplitParams["siteWhitelist"], [],
                          "Error: Site white list was updated.")
         self.assertEqual(procSplitParams["siteBlacklist"], [],
@@ -686,9 +690,9 @@ class WMWorkloadTest(unittest.TestCase):
 
         skimTask = mergeTask.addTask("SkimTask")
         skimTask.setTaskType("Skim")
-        skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)
+        skimTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
 
-        testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask", "TwoFileBased",
+        testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask", "FileBased",
                                                {"files_per_job": 2})
         testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask/MergeTask/SkimTask", "RunBased",
                                                {"max_files": 21,
@@ -705,7 +709,10 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertTrue("/TestWorkload/ProcessingTask/MergeTask/SkimTask" in results.keys(),
                         "Error: Task is missing.")
 
-        self.assertEqual(results["/TestWorkload/ProcessingTask"], {"files_per_job": 2, "algorithm": "TwoFileBased", "type": "Processing"},
+        self.assertEqual(results["/TestWorkload/ProcessingTask"], {"files_per_job": 2,
+                                                                   "include_parents": True,
+                                                                   "algorithm": "FileBased",
+                                                                   "type": "Processing"},
                          "Error: Wrong splitting parameters.")
         self.assertEqual(results["/TestWorkload/ProcessingTask/MergeTask/SkimTask"],
                          {"max_files": 21, "algorithm": "RunBased", "some_other_param": "value", "type": "Skim"},
@@ -788,7 +795,7 @@ class WMWorkloadTest(unittest.TestCase):
         skimTask.setTaskType("Skim")
         skimTaskCmssw = skimTask.makeStep("cmsRun1")
         skimTaskCmssw.setStepType("CMSSW")
-        skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)
+        skimTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
         skimTask.applyTemplates()
 
         testWorkload.truncate("TestWorkload", "/TestWorkload/ProcessingTask",
@@ -885,7 +892,7 @@ class WMWorkloadTest(unittest.TestCase):
         skimTask.setTaskType("Skim")
         skimTaskCmssw = skimTask.makeStep("cmsRun1")
         skimTaskCmssw.setStepType("CMSSW")
-        skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)
+        skimTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
         skimTask.applyTemplates()
 
         testWorkload.setCMSSWParams(cmsswVersion = "CMSSW_1_1_1", globalTag =

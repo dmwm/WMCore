@@ -43,8 +43,6 @@ class LumiBasedTest(unittest.TestCase):
         Create two subscriptions: One that contains a single file and one that
         contains multiple files.
         """
-
-
         
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
@@ -91,6 +89,9 @@ class LumiBasedTest(unittest.TestCase):
 
         testFileset = Fileset(name = baseName)
         testFileset.create()
+        parentFile = File('%s_parent' % (baseName), size = 1000, events = 100, 
+                          locations = set(["somese.cern.ch"])) 
+        parentFile.create() 
         for i in range(nFiles):
             newFile = File(lfn = '%s_%i' % (baseName, i), size = 1000,
                            events = 100, locations = "somese.cern.ch")
@@ -102,6 +103,7 @@ class LumiBasedTest(unittest.TestCase):
                     lumis.append((100 * i) + lumi)
             newFile.addRun(Run(i, *lumis))
             newFile.create()
+            newFile.addParent(parentFile['lfn'])
             testFileset.addFile(newFile)
         if twoSites:
             for i in range(nFiles):
@@ -115,6 +117,7 @@ class LumiBasedTest(unittest.TestCase):
                         lumis.append((100 * i) + lumi)
                 newFile.addRun(Run(i, *lumis))
                 newFile.create()
+                newFile.addParent(parentFile['lfn']) 
                 testFileset.addFile(newFile)
         testFileset.commit()
 
@@ -481,6 +484,37 @@ class LumiBasedTest(unittest.TestCase):
                     # meaning that the first and last lumis are the same
                     self.assertEqual(len(l), 2)
                     self.assertEqual(l[0], l[1])
+
+        return
+
+
+    def testE_getParents(self): 
+        """ 
+        _getParents_ 
+        
+        Test the TwoFileBased version of this code 
+        """ 
+        
+        
+        splitter = SplitterFactory() 
+        
+        oneSetSubscription = self.createSubscription(nFiles = 10, lumisPerFile = 1) 
+        jobFactory = splitter(package = "WMCore.WMBS", 
+                              subscription = oneSetSubscription) 
+        
+        jobGroups = jobFactory(lumis_per_job = 3, 
+                               split_files_between_job = True, 
+                               include_parents = True) 
+        self.assertEqual(len(jobGroups), 1) 
+        self.assertEqual(len(jobGroups[0].jobs), 10) 
+        for job in jobGroups[0].jobs: 
+            self.assertTrue(len(job['input_files']), 1) 
+            f = job['input_files'][0] 
+            self.assertEqual(len(f['parents']), 1) 
+            self.assertEqual(f['lfn'].split('_')[0], 
+                             list(f['parents'])[0]['lfn'].split('_')[0])
+
+        return
                 
                 
 

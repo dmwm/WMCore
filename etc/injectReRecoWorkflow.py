@@ -30,8 +30,8 @@ from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 arguments = getTestArguments()
 arguments["StdJobSplitAlgo"] = "FileBased"
 arguments["StdJobSplitArgs"] = {"files_per_job": 1}
-arguments["SkimJobSplitAlgo"] = "TwoFileBased"
-arguments["SkimJobSplitArgs"] = {"files_per_job": 1}
+arguments["SkimJobSplitAlgo"] = "FileBased"
+arguments["SkimJobSplitArgs"] = {"files_per_job": 1, "include_parents": True}
 
 if len(sys.argv) != 2:
     print "Usage:"

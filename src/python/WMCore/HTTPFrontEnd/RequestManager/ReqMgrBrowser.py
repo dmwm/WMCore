@@ -5,6 +5,7 @@ import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetReques
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, saveWorkload, loadWorkload, changePriority, changeStatus, priorityMenu
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Cache.WMConfigCache import ConfigCache 
+from WMCore.Wrappers import JsonWrapper
 import WMCore.Lexicon
 import logging
 import cherrypy
@@ -128,24 +129,9 @@ class ReqMgrBrowser(WebAPI):
 
         splitInfo = []
         for taskName in taskNames:
-            # We basically stringify the splitting params dictionary and pass
-            # that to the splitting page as javascript.  We need to change
-            # boolean values to strings as the javascript true is different from
-            # the python True.  We'll also add the timeouts here.
-            splittingDict[taskName]["timeout"] = timeOutDict[taskName]
-            if "halt_job_on_file_boundaries" in splittingDict[taskName]:
-                splittingDict[taskName]["halt_job_on_file_boundaries"] = str(splittingDict[taskName]["halt_job_on_file_boundaries"])
-            if "merge_across_runs" in splittingDict[taskName]:
-                splittingDict[taskName]["merge_across_runs"] = str(splittingDict[taskName]["merge_across_runs"])                
-
-            # We also need to change the name of the "files_per_job" parameter
-            # in the TwoFileBased algo to "two_files_per_job".
-            if splittingDict[taskName]["algorithm"] == "TwoFileBased":
-                splittingDict[taskName]["two_files_per_job"] = splittingDict[taskName]["files_per_job"]
-                del splittingDict[taskName]["files_per_job"]
-                
+            jsonSplittingParams = JsonWrapper.dumps(splittingDict[taskName])
             splitInfo.append({"splitAlgo": splittingDict[taskName]["algorithm"],
-                              "splitParams": str(splittingDict[taskName]),
+                              "splitParams": jsonSplittingParams,
                               "taskType": splittingDict[taskName]["type"],
                               "taskName": taskName})
 
@@ -179,13 +165,19 @@ class ReqMgrBrowser(WebAPI):
         elif 'Merg' in splittingTask:
             for field in ['min_merge_size', 'max_merge_size', 'max_merge_events']:
                 splitParams[field] = int(submittedParams[field])
-            
+        if "include_parents" in submittedParams.keys():
+            if str(submittedParams["include_parents"]) == "True":
+                splitParams["include_parents"] = True
+            else:
+                splitParams["include_parents"] = False
+        
         self.validate(requestName)
         request = GetRequest.getRequestByName(requestName)
         helper = loadWorkload(request)
         logging.info("SetSplitting " + requestName + splittingTask + splittingAlgo + str(splitParams))
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
-        helper.setTaskTimeOut(splittingTask, int(submittedParams["timeout"]))
+        if submittedParams.get("timeout", "") != "":
+            helper.setTaskTimeOut(splittingTask, int(submittedParams["timeout"]))
         saveWorkload(helper, request['RequestWorkflow'])
         return "Successfully updated splitting parameters for " + splittingTask \
                + " " + detailsBackLink(requestName)

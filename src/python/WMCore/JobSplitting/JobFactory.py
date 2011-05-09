@@ -13,6 +13,7 @@ from WMCore.DataStructs.Fileset  import Fileset
 from WMCore.DataStructs.File     import File
 from WMCore.Services.UUID        import makeUUID
 from WMCore.WMBS.File            import File as WMBSFile
+from WMCore.DAOFactory           import DAOFactory
 
 
 class JobFactory(WMObject):
@@ -44,6 +45,13 @@ class JobFactory(WMObject):
         self.grabByProxy   = False
         self.daoFactory    = None
         self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
+
+        if package == 'WMCore.WMBS':
+            myThread = threading.currentThread() 
+            self.daoFactory = DAOFactory(package = "WMCore.WMBS", 
+                                         logger = myThread.logger, 
+                                         dbinterface = myThread.dbi) 
+            self.getParentInfoAction  = self.daoFactory(classname = "Files.GetParentInfo") 
 
     def __call__(self, jobtype = "Job", grouptype = "JobGroup", *args, **kwargs):
         """
@@ -343,3 +351,40 @@ class JobFactory(WMObject):
             formattedResults.append(indivDict)
 
         return formattedResults
+
+
+    def findParent(self, lfn): 
+        """ 
+        _findParent_ 
+        
+        Find the parents for a file based on its lfn 
+        """ 
+        
+        parentsInfo = self.getParentInfoAction.execute([lfn]) 
+        newParents  = set() 
+        for parentInfo in parentsInfo: 
+            
+            # This will catch straight to merge files that do not have redneck 
+            # parents.  We will mark the straight to merge file from the job 
+            # as a child of the merged parent. 
+            if int(parentInfo["merged"]) == 1: 
+                newParents.add(parentInfo["lfn"]) 
+                
+            elif parentInfo['gpmerged'] == None: 
+                continue 
+            
+            # Handle the files that result from merge jobs that aren't redneck 
+            # children.  We have to setup parentage and then check on whether or 
+            # not this file has any redneck children and update their parentage 
+            # information. 
+            elif int(parentInfo["gpmerged"]) == 1: 
+                newParents.add(parentInfo["gplfn"]) 
+ 		 
+            # If that didn't work, we've reached the great-grandparents 
+            # And we have to work via recursion 
+            else: 
+                parentSet = self.findParent(lfn = parentInfo['gplfn']) 
+                for parent in parentSet: 
+                    newParents.add(parent) 
+                    
+        return newParents 

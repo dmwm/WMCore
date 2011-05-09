@@ -466,7 +466,7 @@ class WMBSHelperTest(unittest.TestCase):
         skimTask = mergeTask.addTask("SkimTask")
         skimTask.setTaskType("Skim")
         skimTask.setInputReference(mergeTaskCMSSW, outputModule = "Merged")
-        skimTask.setSplittingAlgorithm("TwoFileBased", files_per_job = 1)
+        skimTask.setSplittingAlgorithm("FileBased", files_per_job = 1, include_parents = True)
         skimTaskCMSSW = skimTask.makeStep("cmsRun1")
         skimTaskCMSSW.setStepType("CMSSW")
         skimTaskCMSSWHelper = skimTaskCMSSW.getTypeHelper()
@@ -623,7 +623,7 @@ class WMBSHelperTest(unittest.TestCase):
 
         self.assertEqual(skimSubscription["type"], "Skim",
                          "Error: Wrong subscription type.")
-        self.assertEqual(skimSubscription["split_algo"], "TwoFileBased",
+        self.assertEqual(skimSubscription["split_algo"], "FileBased",
                          "Error: Wrong split algo.")
         return
 
@@ -724,7 +724,7 @@ class WMBSHelperTest(unittest.TestCase):
 
         self.assertEqual(skimSubscription["type"], "Skim",
                          "Error: Wrong subscription type.")
-        self.assertEqual(skimSubscription["split_algo"], "TwoFileBased",
+        self.assertEqual(skimSubscription["split_algo"], "FileBased",
                          "Error: Wrong split algo.")
 
         return

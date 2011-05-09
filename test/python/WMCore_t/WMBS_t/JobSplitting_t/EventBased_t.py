@@ -51,10 +51,14 @@ class EventBasedTest(unittest.TestCase):
         
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
+        parentFile = File('/parent/lfn/', size = 1000, events = 100, 
+                          locations = set(["somese.cern.ch"])) 
+        parentFile.create() 
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
                            locations = set(["somese.cern.ch"]))
             newFile.create()
+            newFile.addParent(lfn = parentFile['lfn']) 
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
 
@@ -298,7 +302,8 @@ class EventBasedTest(unittest.TestCase):
         more than one file available, at different site combinations.
         """
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleSiteSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleSiteSubscription)
 
         jobGroups = jobFactory(events_per_job = 100)
 
@@ -317,7 +322,33 @@ class EventBasedTest(unittest.TestCase):
 
         return
 
+    def test_addParents(self):
+        """
+        _addParents_
 
+        Test our ability to add parents to a job
+        """
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleFileSubscription)
+
+        jobGroups = jobFactory(events_per_job = 50, include_parents = True)
+
+        self.assertEqual(len(jobGroups), 1)
+
+        self.assertEqual(len(jobGroups[0].jobs), 20)
+        
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job.getFiles(type = "lfn")), 1)        
+            self.assertEqual(job["mask"].getMaxEvents(), 50)
+            self.assertTrue(job["mask"]["FirstEvent"] in [0, 50],
+                            "ERROR: Job's first event is incorrect: %i" % job['mask']['FirstEvent'])
+            for f in job['input_files']: 
+                self.assertEqual(len(f['parents']), 1) 
+                self.assertEqual(list(f['parents'])[0]['lfn'], '/parent/lfn/')
+
+        return
 
 
 if __name__ == '__main__':

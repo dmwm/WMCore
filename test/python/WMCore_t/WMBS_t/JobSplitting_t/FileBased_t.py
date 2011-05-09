@@ -57,11 +57,15 @@ class FileBasedTest(unittest.TestCase):
         
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
+        parentFile = File('/parent/lfn/', size = 1000, events = 100, 
+                          locations = set(["somese.cern.ch"])) 
+        parentFile.create() 
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
                            locations = set(["somese.cern.ch"]))
             newFile.addRun(Run(i, *[45]))
             newFile.create()
+            newFile.addParent(lfn = parentFile['lfn']) 
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
 
@@ -319,6 +323,36 @@ class FileBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups[0].jobs), 10)
 
         return
+
+    def test_getParents(self): 
+        """ 
+        _getParents_ 
+        
+        Check that we can do the same as the TwoFileBased 
+        """ 
+        splitter = SplitterFactory() 
+        jobFactory = splitter(package = "WMCore.WMBS", 
+                              subscription = self.multipleFileSubscription) 
+        
+        jobGroups = jobFactory(files_per_job = 2, 
+                               include_parents  = True) 
+        
+        self.assertEqual(len(jobGroups), 1) 
+        self.assertEqual(len(jobGroups[0].jobs), 5) 
+        
+        fileList = [] 
+        for job in jobGroups[0].jobs: 
+            self.assertEqual(len(job.getFiles()), 2) 
+            for file in job.getFiles(type = "lfn"): 
+                fileList.append(file) 
+        self.assertEqual(len(fileList), 10) 
+        
+        for j in jobGroups[0].jobs: 
+            for f in j['input_files']: 
+                self.assertEqual(len(f['parents']), 1) 
+                self.assertEqual(list(f['parents'])[0]['lfn'], '/parent/lfn/') 
+                
+        return 
 
 
 

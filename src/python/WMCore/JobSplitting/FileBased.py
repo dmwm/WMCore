@@ -15,6 +15,7 @@ import logging
 import gc
 
 from WMCore.JobSplitting.JobFactory import JobFactory
+from WMCore.WMBS.File               import File 
 
 class FileBased(JobFactory):
     def algorithm(self, *args, **kwargs):
@@ -29,6 +30,7 @@ class FileBased(JobFactory):
         filesPerJob   = int(kwargs.get("files_per_job", 10))
         jobsPerGroup  = int(kwargs.get("jobs_per_group", 0))
         runBoundaries = kwargs.get("respect_run_boundaries", False)
+        getParents    = kwargs.get("include_parents", False) 
         filesInJob    = 0
         listOfFiles   = []
 
@@ -46,8 +48,13 @@ class FileBased(JobFactory):
                 #This isn't supposed to happen, but better safe then sorry
                 continue
             jobRun = None
-            for file in fileList:
-                fileRun = file.get('minrun', None)
+            for f in fileList:
+                if getParents: 
+                    parentLFNs = self.findParent(lfn = f['lfn']) 
+                    for lfn in parentLFNs: 
+                        parent = File(lfn = lfn) 
+                        f['parents'].add(parent) 
+                fileRun = f.get('minrun', None)
                 if filesInJob == 0 or filesInJob == filesPerJob or (runBoundaries and fileRun != jobRun):
                     if jobsPerGroup:
                         if jobsInGroup > jobsPerGroup:
@@ -61,14 +68,8 @@ class FileBased(JobFactory):
                     jobRun       = fileRun
                     
                 filesInJob += 1
-                self.currentJob.addFile(file)
+                self.currentJob.addFile(f)
                 
-                listOfFiles.append(file)
-
-            #logging.error("Made it to end of FileBased location")
-            #logging.error(gc.get_count())
-            #logging.error(gc.get_referrers())
-
-
+                listOfFiles.append(f)
 
         return

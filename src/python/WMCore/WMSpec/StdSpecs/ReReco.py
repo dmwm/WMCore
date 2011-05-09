@@ -38,8 +38,8 @@ def getTestArguments():
         #"ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
 
         #"SkimConfigs": [{"SkimName": "Prescaler", "SkimInput": "output",
-        #                "SkimSplitAlgo": "TwoFileBased",
-        #                "SkimSplitArgs": {"files_per_job": 1},
+        #                "SkimSplitAlgo": "FileBased",
+        #                "SkimSplitArgs": {"files_per_job": 1, "include_parents": True},
         #                "ConfigCacheID": "3adb4bad8f05cabede27969face2e59d",
         #                "Scenario": None}]
         }
@@ -122,9 +122,10 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
-        self.skimJobSplitAlgo = arguments.get("SkimJobSplitAlgo", "TwoFileBased")
+        self.skimJobSplitAlgo = arguments.get("SkimJobSplitAlgo", "FileBased")
         self.skimJobSplitArgs = arguments.get("SkimJobSplitArgs",
-                                              {"files_per_job": 1})
+                                              {"files_per_job": 1,
+                                               "include_parents": True})
 
         return self.addSkims(workload)
 

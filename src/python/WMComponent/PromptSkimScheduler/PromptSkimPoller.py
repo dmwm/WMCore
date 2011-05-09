@@ -134,9 +134,9 @@ class PromptSkimPoller(BaseWorkerThread):
         configFile = runConfig.retrieveConfigFromURL(skimConfig.ConfigURL)
 
         if skimConfig.TwoFileRead:
-            splitAlgo = "TwoFileBased"
+            includeParents = True
         else:
-            splitAlgo = "FileBased"
+            includeParents = True
 
         blockLocation = blockInfo["STORAGE_NODE"].replace("_MSS", "")
 
@@ -159,8 +159,9 @@ class PromptSkimPoller(BaseWorkerThread):
                     "MinMergeSize": self.minMergeSize,
                     "MaxMergeSize": self.maxMergeSize,
                     "MaxMergeEvents": self.maxMergeEvents,
-                    "StdJobSplitAlgo": splitAlgo,
-                    "StdJobSplitArgs": {"files_per_job": 1},
+                    "StdJobSplitAlgo": "FileBased",
+                    "StdJobSplitArgs": {"files_per_job": 1,
+                                        "include_parents": includeParents}
                     "ValidStatus": "VALID"}
 
         workload = self.promptSkimFactory(workloadName, wfParams)

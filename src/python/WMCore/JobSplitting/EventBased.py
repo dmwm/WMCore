@@ -7,9 +7,8 @@ a set of jobs based on event counts
 """
 
 
-
-
 from WMCore.JobSplitting.JobFactory import JobFactory
+from WMCore.WMBS.File               import File 
 
 class EventBased(JobFactory):
     """
@@ -23,6 +22,7 @@ class EventBased(JobFactory):
         set number of events per job.  
         """
         eventsPerJob = int(kwargs.get("events_per_job", 100))
+        getParents   = kwargs.get("include_parents", False) 
         totalJobs    = 0
         
         locationDict = self.sortByLocation()
@@ -33,6 +33,12 @@ class EventBased(JobFactory):
             for f in fileList:
                 currentEvent = 0
                 eventsInFile = f['events']
+
+                if getParents: 
+                    parentLFNs = self.findParent(lfn = f['lfn']) 
+                    for lfn in parentLFNs: 
+                        parent = File(lfn = lfn) 
+                        f['parents'].add(parent) 
 
                 if eventsInFile >= eventsPerJob:
                     while currentEvent < eventsInFile:

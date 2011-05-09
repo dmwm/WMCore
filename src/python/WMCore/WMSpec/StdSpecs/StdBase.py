@@ -45,6 +45,7 @@ class StdBase(object):
         self.maxMergeSize = 4294967296
         self.maxMergeEvents = 100000
         self.validStatus = None
+        self.includeParents = False
         return
 
     def __call__(self, workloadName, arguments):
@@ -70,6 +71,12 @@ class StdBase(object):
         self.maxMergeSize = arguments.get("MaxMergeSize", 4294967296)
         self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
         self.validStatus = arguments.get("ValidStatus", "PRODUCTION")
+
+        if arguments.get("IncludeParents", False) == "True":
+            self.includeParents = True
+        else:
+            self.includeParents = False
+            
         return
 
     def determineOutputModules(self, scenarioName = None, scenarioArgs = None,

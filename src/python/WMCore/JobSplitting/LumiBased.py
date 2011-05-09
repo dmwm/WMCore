@@ -18,8 +18,8 @@ import traceback
 from WMCore.DataStructs.Run import Run
 
 from WMCore.JobSplitting.JobFactory import JobFactory
+from WMCore.WMBS.File               import File 
 from WMCore.DataStructs.Fileset     import Fileset
-from WMCore.DAOFactory              import DAOFactory
 
 from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.GroupUser.User import User
@@ -70,7 +70,7 @@ class LumiBased(JobFactory):
 
     locations = []
 
-
+    
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -81,10 +81,11 @@ class LumiBased(JobFactory):
 
         myThread = threading.currentThread()
 
-        lumisPerJob  = int(kwargs.get('lumis_per_job', 1))
-        splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', True))
+        lumisPerJob     = int(kwargs.get('lumis_per_job', 1))
+        splitOnFile     = bool(kwargs.get('halt_job_on_file_boundaries', True))
         collectionName  = kwargs.get('collectionName', None)
-        splitOnRun   = kwargs.get('splitOnRun', True)
+        splitOnRun      = kwargs.get('splitOnRun', True)
+        getParents      = kwargs.get('include_parents', False) 
 
         goodRunList = {}
         # If we have runLumi info, we need to load it from couch
@@ -121,10 +122,7 @@ class LumiBased(JobFactory):
 
         # First we need to load the data
         if self.package == 'WMCore.WMBS':
-            daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                    logger = myThread.logger,
-                                    dbinterface = myThread.dbi)
-            loadRunLumi = daoFactory(classname = "Files.GetBulkRunLumi")
+            loadRunLumi = self.daoFactory(classname = "Files.GetBulkRunLumi")
 
         for key in lDict.keys():
             newlist = []
@@ -168,6 +166,12 @@ class LumiBased(JobFactory):
             self.newGroup()
             stopJob = True
             for f in locationDict[location]:
+
+                if getParents: 
+                    parentLFNs = self.findParent(lfn = f['lfn']) 
+                    for lfn in parentLFNs: 
+                        parent = File(lfn = lfn) 
+                        f['parents'].add(parent)
 
                 if splitOnFile:
                     # Then we have to split on every boundary

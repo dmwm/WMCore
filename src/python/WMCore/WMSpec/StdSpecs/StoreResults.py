@@ -33,15 +33,12 @@ def getTestArguments():
     arguments = {
         "StdJobSplitAlgo":   "ParentlessMergeBySize",
         "StdJobSplitArgs":   {"files_per_job": 1},
-        "SkimJobSplitAlgo":  "TwoFileBased",
-        "SkimJobSplitArgs":  {"files_per_job": 1},
         "UnmergedLFNBase":   "/store/temp/WMAgent/unmerged",
         "MergedLFNBase":     "/store/results",
         "MinMergeSize":      1*1024*1024*1024,
         "MaxMergeSize":      3*1024*1024*1024,
         "MaxMergeEvents":    100000,
         "DataTier":          'USER',
-        "SkimInput":         "output",
         "Scenario":          "",
         "AcquisitionEra":    "Whatever",
         "Requestor": "ewv@fnal.gov",
@@ -89,7 +86,6 @@ class StoreResultsWorkloadFactory(StdBase):
         # Required parameters.
         self.inputDataset = arguments["InputDataset"]
         self.frameworkVersion = arguments["CMSSWVersion"]
-        self.skimInput = arguments["SkimInput"]
         self.globalTag = arguments["GlobalTag"]
         self.cmsPath = arguments["CmsPath"]
 
@@ -105,8 +101,6 @@ class StoreResultsWorkloadFactory(StdBase):
         self.emulation = arguments.get("Emulation", False)
         self.stdJobSplitAlgo  = arguments.get("StdJobSplitAlgo", 'FileBased')
         self.stdJobSplitArgs  = arguments.get("StdJobSplitArgs", {'files_per_job': 1})
-        self.skimJobSplitAlgo = arguments.get("SkimJobSplitAlgo", 'TwoFileBased')
-        self.skimJobSplitArgs = arguments.get("SkimJobSplitArgs", {'files_per_job': 1})
         self.dataTier         = arguments.get("DataTier", 'USER')
         dataTier = self.dataTier
 

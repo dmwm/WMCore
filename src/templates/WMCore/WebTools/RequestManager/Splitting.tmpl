@@ -75,16 +75,6 @@ function generateProcessing(splitAlgo, splitParams) {
   procStr += ">File Based</input></td>";
   procStr += generateInput("Files per job:", "files_per_job", splitParams);
   procStr += "<td></td></tr><tr><td>";
-
-  procStr += '<input type="radio" name="splittingAlgo" value="TwoFileBased"';
-
-  if (splitAlgo == "TwoFileBased") {
-    procStr += " checked";
-  }
-
-  procStr += ">Two File Based</input></td>";
-  procStr += generateInput("Files per job:", "two_files_per_job", splitParams);
-  procStr += "<td></td></tr><tr><td>";
   procStr += '<input type="radio" name="splittingAlgo" value="LumiBased"';
 
   if (splitAlgo == "LumiBased") {
@@ -95,13 +85,13 @@ function generateProcessing(splitAlgo, splitParams) {
   procStr += generateInput("Lumis per job:", "lumis_per_job", splitParams);
   procStr += '<td>Split files between jobs: <select name="halt_job_on_file_boundaries">';
   if ("halt_job_on_file_boundaries" in splitParams) {
-    if (splitParams["halt_job_on_file_boundaries"] == "True") {
+    if (splitParams["halt_job_on_file_boundaries"] == true) {
       procStr += "<option selected>True</option><option>False</option>\n";
     } else {
       procStr += "<option>True</option><option selected>False</option>\n";
     }
   } else {
-    procStr += "<option>True</option><option>False</option>\n";
+    procStr += "<option>True</option><option select>False</option>\n";
   }
  
   procStr += "</select></input></td></tr>\n";
@@ -115,7 +105,19 @@ function generateProcessing(splitAlgo, splitParams) {
   procStr += generateInput("Events per job:", "events_per_job", splitParams);
   procStr += "<td></td></tr>\n"
   procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
-  procStr += "</table>\n";
+
+  procStr += '<tr><td>Include parents: <select name="include_parents">';
+  if ("include_parents" in splitParams) {
+    if (splitParams["include_parents"] == true) {
+      procStr += "<option selected>True</option><option>False</option>\n";
+    } else {
+      procStr += "<option>True</option><option selected>False</option>\n";
+    }
+  } else {
+    procStr += "<option>True</option><option selected>False</option>\n";
+  }
+
+  procStr += "</td></tr></table>\n";
   return procStr;
 }  
 

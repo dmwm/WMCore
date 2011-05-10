@@ -153,68 +153,60 @@ class gLitePlugin(BasePlugin):
                         'Cancelled']
 
 
-        if getattr ( self.config.Agent, 'serverDN' , None ) is None:
-            msg = "Error: serverDN parameter required and not provided " + \
-                  "in the configuration"
-            raise BossAirPluginException( msg )
-        if getattr ( self.config.BossAir, 'credentialDir', None) is None:
-            msg = "Error: credentialDir parameter required and " + \
-                  "not provided in the configuration"
-            raise BossAirPluginException( msg )
-        else:
-            if not os.path.exists(self.config.BossAir.credentialDir):
-                logging.debug("credentialDir not found: creating it...")
-                try:
-                    os.mkdir(self.config.BossAir.credentialDir)
-                except Exception, ex:
-                    msg = "Error: problem when creating credentialDir " + \
-                          "directory - '%s'" % str(ex)
-                    raise BossAirPluginException( msg )
-            elif not os.path.isdir(self.config.BossAir.credentialDir):
-                msg = "Error: credentialDir '%s' is not a directory" \
-                       % str(self.config.BossAir.credentialDir)
-                raise BossAirPluginException( msg )
-
         self.defaultDelegation = {
                                   'vo': self.defaultjdl['vo'],
                                   'logger': myThread.logger,
-                                  'credServerPath' : \
-                                      self.config.BossAir.credentialDir,
                                   'myProxySvr': self.defaultjdl['myproxyhost'],
                                   'proxyValidity' : '192:00',
-                                  'min_time_left' : 36000,
-                                  'serverDN' : self.config.Agent.serverDN
+                                  'min_time_left' : 36000
                                  }
+
+        self.singleproxy  = getattr(self.config.BossAir, 'manualProxyPath', None)
+
+        if self.singleproxy is None:
+            if getattr ( self.config.Agent, 'serverDN' , None ) is None:
+                msg = "Error: serverDN parameter required and not provided " + \
+                      "in the configuration"
+                raise BossAirPluginException( msg )
+            if getattr ( self.config.BossAir, 'credentialDir', None) is None:
+                msg = "Error: credentialDir parameter required and " + \
+                      "not provided in the configuration"
+                raise BossAirPluginException( msg )
+            else:
+                if not os.path.exists(self.config.BossAir.credentialDir):
+                    logging.debug("credentialDir not found: creating it...")
+                    try:
+                        os.mkdir(self.config.BossAir.credentialDir)
+                    except Exception, ex:
+                        msg = "Error: problem when creating credentialDir " + \
+                              "directory - '%s'" % str(ex)
+                        raise BossAirPluginException( msg )
+                elif not os.path.isdir(self.config.BossAir.credentialDir):
+                    msg = "Error: credentialDir '%s' is not a directory" \
+                           % str(self.config.BossAir.credentialDir)
+                    raise BossAirPluginException( msg )
+            self.defaultDelegation['credServerPath'] = self.config.BossAir.credentialDir
+            self.defaultDelegation['serverDN'] = self.config.Agent.serverDN
+        else:
+            logging.debug("Using manually provided proxy '%s' " % self.singleproxy)
 
 
         # These are the pool settings.
-        self.nProcess       = getattr(self.config.BossAir, \
-                                          'gLiteProcesses', 10)
-        self.collectionsize = getattr(self.config.BossAir, \
-                                          'gLiteCollectionSize', 200)
-        self.trackmaxsize   = getattr(self.config.BossAir, \
-                                          'gLiteMaxTrackSize', 200)
+        self.nProcess       = getattr(self.config.BossAir, 'gLiteProcesses', 10)
+        self.collectionsize = getattr(self.config.BossAir, 'gLiteCollectionSize', 200)
+        self.trackmaxsize   = getattr(self.config.BossAir, 'gLiteMaxTrackSize', 200)
 
         self.pool     = []
 
-        self.submitFile   = getattr(self.config.JobSubmitter, \
-                                           'submitScript', None)
-        self.unpackerFile = getattr(self.config.JobSubmitter, \
-                                           'unpackerScript', None)
-        self.submitDir    = getattr(self.config.JobSubmitter, \
-                                           'submitDir', '/tmp/')
-        self.gliteConfig  = getattr(self.config.BossAir, \
-                                           'gLiteConf', None)
-        self.defaultjdl['service'] = getattr(self.config.BossAir, \
-                                           'gliteWMS', None)
+        self.submitFile   = getattr(self.config.JobSubmitter, 'submitScript', None)
+        self.unpackerFile = getattr(self.config.JobSubmitter, 'unpackerScript', None)
+        self.submitDir    = getattr(self.config.JobSubmitter, 'submitDir', '/tmp/')
+        self.gliteConfig  = getattr(self.config.BossAir, 'gLiteConf', None)
+        self.defaultjdl['service'] = getattr(self.config.BossAir, 'gliteWMS', None)
 
-        self.basetimeout  = getattr(self.config.JobSubmitter, \
-                                    'getTimeout', 300 ) 
+        self.basetimeout  = getattr(self.config.JobSubmitter, 'getTimeout', 300 ) 
 
-        self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, \
-                                      'myproxyhost', \
-                                       self.defaultDelegation['myProxySvr'] \
-                                                      )
+        self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, 'myproxyhost', self.defaultDelegation['myProxySvr'] )
 
         self.setupScript = getattr(self.config.BossAir, 'UISetupScript', None)
         if self.setupScript is None:
@@ -229,6 +221,7 @@ class gLitePlugin(BasePlugin):
             msg = "gLite environment has not been set properly through '%s'." \
                    % self.setupScript
             raise BossAirPluginException( msg )
+        self.defaultDelegation['uisource'] = self.setupScript
         
         return
 
@@ -390,7 +383,7 @@ class gLitePlugin(BasePlugin):
                         valid      = True
                         ownerproxy = retrievedproxy[ownersandbox]
                     else:
-                        valid, ownerproxy = self.getProxy( ownersandbox )
+                        valid, ownerproxy = self.validateProxy( ownersandbox )
 
                     if valid:
                         retrievedproxy[ownersandbox] = ownerproxy
@@ -567,10 +560,18 @@ class gLitePlugin(BasePlugin):
         cmdquerypath = ''
         queryfilename    = 'GLiteStatusQuery.py'
         wmcoreBasedir = WMCore.WMInit.getWMBASE()
+
+        if os.path.exists(os.path.join(wmcoreBasedir, 'src/python/WMCore/WMRuntime/Unpacker.py')):
+            self.unpacker = os.path.join(wmcoreBasedir, 'src/python/WMCore/WMRuntime/Unpacker.py')
+        else:
+            self.unpacker = os.path.join(wmcoreBasedir, 'WMCore/WMRuntime/Unpacker.py')
+
         if wmcoreBasedir  :
-            cmdquerypath = wmcoreBasedir + \
-                           '/src/python/WMCore/BossAir/Plugins/' + \
-                           queryfilename
+            if os.path.exists(os.path.join(wmcoreBasedir, 'src/python/WMCore/BossAir/Plugins/', queryfilename)):
+                cmdquerypath = os.path.join(wmcoreBasedir, 'src/python/WMCore/BossAir/Plugins/', queryfilename)
+            else:
+                cmdquerypath = os.path.join(wmcoreBasedir, 'WMCore/BossAir/Plugins/', queryfilename)
+
             if not os.path.exists( cmdquerypath ):
                 msg = 'Impossible to locate %s' % cmdquerypath
                 raise BossAirPluginException( msg )
@@ -612,7 +613,7 @@ class gLitePlugin(BasePlugin):
 
         for user in dnjobs.keys():
 
-            valid, ownerproxy = self.getProxy( user )
+            valid, ownerproxy = self.validateProxy( user )
             if not valid:
                 logging.error("Problem getting proxy for user '%s'" % str(user))
                 continue
@@ -757,7 +758,7 @@ class gLitePlugin(BasePlugin):
                 valid      = True
                 ownerproxy = retrievedproxy[ownersandbox]
             else:
-                valid, ownerproxy = self.getProxy( ownersandbox )
+                valid, ownerproxy = self.validateProxy( ownersandbox )
 
             if valid:
                 retrievedproxy[ownersandbox] = ownerproxy
@@ -878,7 +879,7 @@ class gLitePlugin(BasePlugin):
                 valid      = True
                 ownerproxy = retrievedproxy[ownersandbox]
             else:
-                valid, ownerproxy = self.getProxy( ownersandbox )
+                valid, ownerproxy = self.validateProxy( ownersandbox )
 
             if valid:
                 retrievedproxy[ownersandbox] = ownerproxy
@@ -995,7 +996,7 @@ class gLitePlugin(BasePlugin):
                 valid      = True
                 ownerproxy = retrievedproxy[ownersandbox]
             else:
-                valid, ownerproxy = self.getProxy( ownersandbox )
+                valid, ownerproxy = self.validateProxy( ownersandbox )
 
             if valid:
                 retrievedproxy[ownersandbox] = ownerproxy
@@ -1313,6 +1314,25 @@ class gLitePlugin(BasePlugin):
 
         return result
 
+
+    def validateProxy(self, userdn):
+        """
+        _validateProxy_
+
+        Return the proxy path to be used and a boolean to indicates if the proxy is good or not
+        """
+        if self.singleproxy is not None:
+            proxy = Proxy(self.defaultDelegation)
+            timeleft = proxy.getTimeLeft( self.singleproxy )
+            if timeleft is not None and timeleft > 60:
+                logging.info("Remaining timeleft for proxy %s is %s" % (self.singleproxy, str(timeleft)))
+                return (True, self.singleproxy)
+            else:
+                return (False, self.singleproxy)
+        else:
+            return getProxy(userdn)
+
+
     def getProxy(self, userdn):
         """
         _getProxy_
@@ -1321,7 +1341,6 @@ class gLitePlugin(BasePlugin):
         logging.debug("Retrieving proxy for %s" % userdn)
         config = self.defaultDelegation
         config['userDN'] = userdn
-        self.defaultDelegation['uisource'] = self.setupScript
         proxy = Proxy(self.defaultDelegation)
         proxyPath = proxy.getProxyFilename( True )
         timeleft = proxy.getTimeLeft( proxyPath )

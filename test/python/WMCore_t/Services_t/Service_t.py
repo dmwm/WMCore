@@ -13,11 +13,15 @@ from httplib import HTTPException
 from WMCore.Services.Service import Service
 from WMCore.Algorithms import Permissions
 
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+
 class ServiceTest(unittest.TestCase):
     def setUp(self):
         """
         Setup for unit tests
         """
+        self.testInit = TestInit(__file__)
+        self.testDir = self.testInit.generateWorkDir()
         testname = self.id().split('.')[-1]
         
         logging.basicConfig(level=logging.DEBUG,
@@ -45,6 +49,7 @@ class ServiceTest(unittest.TestCase):
     def tearDown(self):
         testname = self.id().split('.')[-1]
         #shutil.rmtree(self.cache_path, ignore_errors = True)
+        self.testInit.delWorkDir()
 
         if self._exc_info()[0] == None:
             self.logger.info('test "%s" passed' % testname)
@@ -152,7 +157,7 @@ class ServiceTest(unittest.TestCase):
                 }
         service = Service(dict)
         deftimeout = socket.getdefaulttimeout()
-        service.getData('/tmp/socketresettest', '/cgi-bin/cmssw.cgi')
+        service.getData('%s/socketresettest' % self.testDir, '/cgi-bin/cmssw.cgi')
         assert deftimeout == socket.getdefaulttimeout()
 
     def testStaleCache(self):

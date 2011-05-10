@@ -10,6 +10,8 @@ import WMCore.WMSpec.StdSpecs.MonteCarlo as MonteCarloSpec
 import WMCore.WMSpec.StdSpecs.DataProcessing as DataProcessingSpec
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
 
+from nose.plugins.attrib import attr
+
 import unittest
 
 class makeWorkload_t(unittest.TestCase):
@@ -24,18 +26,23 @@ class makeWorkload_t(unittest.TestCase):
         maker = retrieveRequestMaker(name)
         request = maker(schema)
 
+    @attr("integration")
     def testReReco(self):
         self.do('ReReco', ReRecoSpec.getTestArguments())
 
+    @attr("integration")
     def testMonteCarlo(self):
         self.do('MonteCarlo', MonteCarloSpec.getTestArguments())
 
+    @attr("integration")
     def testRelValMC(self):
         self.do('RelValMC', RelValMCSpec.getTestArguments())
 
+    @attr("integration")
     def testStoreResults(self):
         self.do('StoreResults', StoreResultsSpec.getTestArguments())
 
+    @attr("integration")
     def testDataProcessing(self):
         self.do('DataProcessing', DataProcessingSpec.getTestArguments())
 

@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+
+"""
+RequestManager unittest
+
+
+"""
+
 from WMCore.Services.Requests import JSONRequests
 import WMCore_t.RequestManager_t.FakeRequests as FakeRequests
 import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest as ReRecoRequest
@@ -10,6 +18,7 @@ import urllib
 import tempfile
 import shutil
 import os
+from nose.plugins.attrib import attr
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
@@ -53,6 +62,11 @@ class RequestManagerConfig(DefaultConfig):
         self._setupCouchUrl()
         
 class TestReqMgr(RESTBaseUnitTest):
+    """
+    _TestReqMgr_
+
+    Basic test for the ReqMgr services
+    """
 
     def initialize(self):
         self.config = RequestManagerConfig(
@@ -114,7 +128,7 @@ class TestReqMgr(RESTBaseUnitTest):
         self.assertTrue(self.jsonSender.put('version/CMSSW_3_5_8')[1] == 200)
         self.assertTrue('CMSSW_3_5_8' in self.jsonSender.get('version')[0])
 
-    
+    @attr("integration")
     def testReReco(self):
         schema = ReReco.getTestArguments()
         schema['RequestName'] = 'TestReReco'

@@ -9,6 +9,8 @@ from WMCore.Configuration import Configuration
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.Configuration import saveConfigurationFile
 
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+
 
 class ConfigurationTest(unittest.TestCase):
     """
@@ -17,19 +19,16 @@ class ConfigurationTest(unittest.TestCase):
     """
     def setUp(self):
         """set up"""
-        self.normalSave = "/tmp/WMCore_Agent_Configuration_t_normal.py"
-        self.docSave = "/tmp/WMCore_Agent_Configuration_t_documented.py"
-        self.commentSave = "/tmp/WMCore_Agent_Configuration_t_commented.py"
+        self.testInit = TestInit(__file__)
+        self.testDir  = self.testInit.generateWorkDir()
+        self.normalSave = "%s/WMCore_Agent_Configuration_t_normal.py" % self.testDir
+        self.docSave = "%s/WMCore_Agent_Configuration_t_documented.py" % self.testDir
+        self.commentSave = "%s/WMCore_Agent_Configuration_t_commented.py" % self.testDir
 
     def tearDown(self):
         """clean up"""
-        return
-        if os.path.exists(self.normalSave):
-            os.remove(self.normalSave)
-        if os.path.exists(self.docSave):
-            os.remove(self.docSave)
-        if os.path.exists(self.commentSave):
-            os.remove(self.commentSave)
+        self.testInit.delWorkDir()
+
 
 
 

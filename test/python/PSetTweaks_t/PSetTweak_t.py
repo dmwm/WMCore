@@ -6,12 +6,29 @@ Unittests for PSetTweaks module
 import unittest
 import PSetTweaks.PSetTweak as PSetTweak
 
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
 class PSetTweakTest(unittest.TestCase):
     """
     unittest for PSetTweak class
 
     """
+
+    def setUp(self):
+        """
+        setUp some basic functions
+
+        """
+        self.testInit = TestInit(__file__)
+        self.testDir  = self.testInit.generateWorkDir()
+        return
+
+    def tearDown(self):
+        """
+        tearDown the test framework
+
+        """
+        self.testInit.tearDownCouch()
 
     def testA(self):
         """init"""
@@ -39,12 +56,6 @@ class PSetTweakTest(unittest.TestCase):
         tweak.addParameter("process.module1.module2.module3.parameter4", 1234)
 
 
-
-
-        #for x,y in tweak:
-        #    print x,y
-
-
     def testD(self):
         """pythonise"""
         tweak = PSetTweak.PSetTweak()
@@ -57,7 +68,7 @@ class PSetTweakTest(unittest.TestCase):
 
         #print tweak.pythonise()
 
-        persistFile = "/tmp/PSetTweak_persist.py"
+        persistFile = "%s/PSetTweak_persist.py" % self.testDir
         tweak.persist(persistFile, "python")
 
         tweak2 = PSetTweak.PSetTweak()
@@ -80,7 +91,7 @@ class PSetTweakTest(unittest.TestCase):
         #print tweak.jsonise()
 
 
-        persistFile = "/tmp/PSetTweak_persist.json"
+        persistFile = "%s/PSetTweak_persist.json" % self.testDir
         tweak.persist(persistFile, "json")
         tweak2 = PSetTweak.PSetTweak()
         tweak2.unpersist(persistFile)

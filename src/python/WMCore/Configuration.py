@@ -14,6 +14,7 @@ Module dealing with Configuration file in python format
 import os
 import imp
 import types
+import traceback
 
 _SimpleTypes = [
     types.BooleanType,
@@ -506,6 +507,7 @@ def loadConfigurationFile(filename):
         msg += "%s\n" % filename
         msg += "Due to error:\n"
         msg += str(ex)
+        msg += str(traceback.format_exc())
         raise RuntimeError, msg
 
     for attr in modRef.__dict__.values():

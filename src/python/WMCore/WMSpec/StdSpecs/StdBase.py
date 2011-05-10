@@ -46,6 +46,7 @@ class StdBase(object):
         self.maxMergeEvents = 100000
         self.validStatus = None
         self.includeParents = False
+        self.dbsUrl = None
         return
 
     def __call__(self, workloadName, arguments):
@@ -71,6 +72,7 @@ class StdBase(object):
         self.maxMergeSize = arguments.get("MaxMergeSize", 4294967296)
         self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
         self.validStatus = arguments.get("ValidStatus", "PRODUCTION")
+        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True

@@ -277,7 +277,6 @@ class ReDigiWorkloadFactory(StdBase):
         self.pileupConfig = arguments.get("PileupConfig", None)
 
         # Optional arguments that default to something reasonable.
-        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
         self.blockBlacklist = arguments.get("BlockBlacklist", [])
         self.blockWhitelist = arguments.get("BlockWhitelist", [])
         self.runBlacklist = arguments.get("RunBlacklist", [])

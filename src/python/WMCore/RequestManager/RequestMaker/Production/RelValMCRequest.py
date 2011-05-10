@@ -41,7 +41,8 @@ class RelValMCSchema(RequestSchema):
         self.validateFields = [
             "CMSSWVersion", "Requestor", "ScramArch",
             "PrimaryDataset", "GlobalTag", "RequestSizeEvents",
-            "GenConfigCacheID", "RecoConfigCacheID", "AlcaRecoConfigCacheID"]
+            "GenConfigCacheID", "StepOneConfigCacheID", "StepTwoConfigCacheID",
+            "GenOutputModuleName", "StepOneOutputModuleName"]
 
 registerRequestType("RelValMC", RelValMCRequest, RelValMCSchema)
 

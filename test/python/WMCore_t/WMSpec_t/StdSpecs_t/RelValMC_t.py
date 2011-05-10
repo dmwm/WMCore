@@ -74,41 +74,37 @@ class RelValMCTest(unittest.TestCase):
         config["pset_tweak_details"] = \
             {"process": {"outputModules_": ["OutputA"],
                          "OutputA": {"dataset": {"filterName": "OutputAFilter",
-                                                 "dataTier": "GEN-SIM-RAW"}}}}
+                                                 "dataTier": "GEN-SIM"}}}}
         result = self.configDatabase.commitOne(config)
         return result[0]["id"]
 
-    
-    def injectReconstructionConfig(self):
+    def injectStepOneConfig(self):
         """
-        Reco step - Will have two output modules. Filter name can be anything,
-        data tiers will be "GEN-SIM-RECO" and "ALCARECO".
+        _injectStepOneConfig_
         
+        Will output RAW data.
         """
         config = self._getConfigBase()
         config["pset_tweak_details"] = \
-            {"process": {"outputModules_": ["RecoA", "RecoB"],
-                         "RecoA": {"dataset": {"filterName": "RecoAFilter",
-                                               "dataTier": "GEN-SIM-RECO"}},
-                         "RecoB": {"dataset": {"filterName": "RecoBFilter",
-                                               "dataTier": "ALCARECO"}}}}
+            {"process": {"outputModules_": ["OutputB"],
+                         "OutputB": {"dataset": {"filterName": "OutputBFilter",
+                                                 "dataTier": "GEN-SIM-RAW"}}}}
         result = self.configDatabase.commitOne(config)
         return result[0]["id"]
     
-    
-    def injectAlcaRecoConfig(self):
+    def injectStepTwoConfig(self):
         """
-        AlcaReco step configuration, will have two output modules.
-        Filter name can be anything, data tiers can be anything.
-        
+        _injectStepTwoConfig_
+
+        Will output RECO and AOD.
         """
         config = self._getConfigBase()
         config["pset_tweak_details"] = \
-            {"process": {"outputModules_": ["AlcaRecoA", "AlcaRecoB"],
-                         "AlcaRecoA": {"dataset": {"filterName": "AlcaRecoAFilter",
-                                                   "dataTier": "GEN-SIM-RECO-ALCARECOA"}},
-                         "AlcaRecoB": {"dataset": {"filterName": "AlcaRecoBFilter",
-                                                   "dataTier": "GEN-SIM-RECO-ALCARECOB"}}}}
+            {"process": {"outputModules_": ["OutputC", "OutputD"],
+                         "OutputC": {"dataset": {"filterName": "OutputCFilter",
+                                                 "dataTier": "GEN-SIM-RECO"}},
+                         "OutputD": {"dataset": {"filterName": "OutputDFilter",
+                                                 "dataTier": "AODSIM"}}}}
         result = self.configDatabase.commitOne(config)
         return result[0]["id"]
 
@@ -215,15 +211,14 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(logCollectSub["type"], "LogCollect", "Error: Wrong subscription type.")
             self.assertEqual(logCollectSub["split_algo"], "EndOfRun", "Error: Wrong split algo.")
 
-        
-    def _reconstructionTaskTest(self):
+    def _stepOneTaskTest(self):
         recoTask = Workflow(name = "TestWorkload",
-                            task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction")        
+                            task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne")
         recoTask.load()
-        self.assertEqual(len(recoTask.outputMap.keys()), 3, "Error: Wrong number of WF outputs.")
+        self.assertEqual(len(recoTask.outputMap.keys()), 2, "Error: Wrong number of WF outputs.")
         
         # output modules
-        goldenOutputMods = ["RecoA", "RecoB"]
+        goldenOutputMods = ["OutputB"]
         
         for o in goldenOutputMods:
             mergedOutput = recoTask.outputMap[o][0]["merged_output_fileset"]
@@ -231,10 +226,10 @@ class RelValMCTest(unittest.TestCase):
             mergedOutput.loadData()
             unmergedOutput.loadData()
             self.assertEqual(mergedOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMerge%s/merged-Merged" % o,
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMerge%s/merged-Merged" % o,
                              ("Error: Merged output fileset is wrong: %s" % mergedOutput.name))
             self.assertEqual(unmergedOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/unmerged-%s" % o,
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/unmerged-%s" % o,
                              ("Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name))
             
         logArchOutput = recoTask.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -242,15 +237,15 @@ class RelValMCTest(unittest.TestCase):
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
         self.assertEqual(logArchOutput.name,
-                         "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/unmerged-logArchive",
+                         "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/unmerged-logArchive",
                          ("Error: LogArchive output fileset is wrong: %s" % logArchOutput.name))
         self.assertEqual(unmergedLogArchOutput.name,
-                         "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/unmerged-logArchive",
+                         "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/unmerged-logArchive",
                          ("Error: LogArchive output fileset is wrong: %s" % unmergedLogArchOutput.name))
 
         for o in goldenOutputMods:
             mergeTask = Workflow(name = "TestWorkload",
-                                 task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMerge%s" % o)
+                                 task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMerge%s" % o)
             mergeTask.load()
             self.assertEqual(len(mergeTask.outputMap.keys()), 2, "Error: Wrong number of WF outputs.")
             mergedMergeOutput = mergeTask.outputMap["Merged"][0]["merged_output_fileset"]
@@ -258,39 +253,39 @@ class RelValMCTest(unittest.TestCase):
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
             self.assertEqual(mergedMergeOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMerge%s/merged-Merged" % o,
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMerge%s/merged-Merged" % o,
                              ("Error: Merged output fileset is wrong: %s" % mergedMergeOutput.name))
             self.assertEqual(unmergedMergeOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMerge%s/merged-Merged" % o,
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMerge%s/merged-Merged" % o,
                              ("Error: Unmerged output fileset is wrong: %s" % unmergedMergeOutput.name))
             logArchOutput = mergeTask.outputMap["logArchive"][0]["merged_output_fileset"]
             unmergedLogArchOutput = mergeTask.outputMap["logArchive"][0]["output_fileset"]
             logArchOutput.loadData()
             unmergedLogArchOutput.loadData()
             self.assertEqual(logArchOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMerge%s/merged-logArchive" % o,
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMerge%s/merged-logArchive" % o,
                              ("Error: LogArchive output fileset is wrong: %s" % logArchOutput.name))
             self.assertEqual(unmergedLogArchOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMerge%s/merged-logArchive" % o,
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMerge%s/merged-logArchive" % o,
                              ("Error: LogArchive output fileset is wrong: %s" % unmergedLogArchOutput.name))
 
         for o in goldenOutputMods:
-            unmerged = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/unmerged-%s" % o)
+            unmerged = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/unmerged-%s" % o)
             unmerged.loadData()
             
-            mergeTask = Workflow(name = "TestWorkload",                    
-                                      task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMerge%s" % o)
+            mergeTask = Workflow(name = "TestWorkload",
+                                      task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMerge%s" % o)
             mergeTask.load()
             mergeSubscription = Subscription(fileset = unmerged, workflow = mergeTask)
-            mergeSubscription.loadData()            
+            mergeSubscription.loadData()
             self.assertEqual(mergeSubscription["type"], "Merge", "Error: Wrong subscription type.")
             self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize", "Error: Wrong split algo.")
 
         for o in goldenOutputMods:
-            unmerged = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/unmerged-%s" % o)
+            unmerged = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/unmerged-%s" % o)
             unmerged.loadData()
             cleanupTask = Workflow(name = "TestWorkload",
-                                   task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionCleanupUnmerged%s" % o)            
+                                   task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneCleanupUnmerged%s" % o)
             cleanupTask.load()
             cleanupSubscription = Subscription(fileset = unmerged, workflow = cleanupTask)
             cleanupSubscription.loadData()
@@ -299,10 +294,10 @@ class RelValMCTest(unittest.TestCase):
             
         for o in goldenOutputMods:
             recoMergeLogCollect = Fileset(name =
-                                          "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMerge%s/merged-logArchive" % o)
+                                          "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMerge%s/merged-logArchive" % o)
             recoMergeLogCollect.loadData()
             recoMergeLogCollectTask = Workflow(name = "TestWorkload",
-                                               task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMerge%s/Reconstruction%sMergeLogCollect" % (o, o))
+                                               task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMerge%s/StepOne%sMergeLogCollect" % (o, o))
             recoMergeLogCollectTask.load()
             logCollectSub = Subscription(fileset = recoMergeLogCollect, workflow = recoMergeLogCollectTask)
             logCollectSub.loadData()
@@ -310,22 +305,19 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(logCollectSub["split_algo"], "EndOfRun", "Error: Wrong split algo.")
 
 
-    def _alcaRecoTaskTest(self):
+    def _stepTwoTaskTest(self):
         """
-        Test for the final third task, resp. 5th task, ALCARECO. It runs on
-        dataTier "GEN-SIM-RECO" output of the previous Reconstruction task
-        so we only consider RecoA as output module of the Reconstruction task
-        (and not RecoB).
+        _stepTwoTaskTest_
         
         """
         alcaRecoTask = Workflow(name = "TestWorkload",
-                                task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO")        
+                                task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo")        
         alcaRecoTask.load()
         self.assertEqual(len(alcaRecoTask.outputMap.keys()), 3,
                          "Error: Wrong number of WF outputs.")
         
         # output modules
-        goldenOutputMods = ["AlcaRecoA", "AlcaRecoB"]
+        goldenOutputMods = ["OutputC", "OutputD"]
         
         for o in goldenOutputMods:
             mergedOutput = alcaRecoTask.outputMap[o][0]["merged_output_fileset"]
@@ -333,10 +325,10 @@ class RelValMCTest(unittest.TestCase):
             mergedOutput.loadData()
             unmergedOutput.loadData()
             self.assertEqual(mergedOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOMerge%s/merged-Merged" % o,
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-Merged" % o,
                              ("Error: Merged output fileset is wrong: %s" % mergedOutput.name))
             self.assertEqual(unmergedOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/unmerged-%s" % o,
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/unmerged-%s" % o,
                              ("Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name))
             
         logArchOutput = alcaRecoTask.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -344,15 +336,15 @@ class RelValMCTest(unittest.TestCase):
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
         self.assertEqual(logArchOutput.name,
-                         "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/unmerged-logArchive",
+                         "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/unmerged-logArchive",
                          ("Error: LogArchive output fileset is wrong: %s" % logArchOutput.name))
         self.assertEqual(unmergedLogArchOutput.name,
-                         "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/unmerged-logArchive",
+                         "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/unmerged-logArchive",
                          ("Error: LogArchive output fileset is wrong: %s" % unmergedLogArchOutput.name))
 
         for o in goldenOutputMods:
             mergeTask = Workflow(name = "TestWorkload",
-                                 task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOMerge%s" % o)
+                                 task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s" % o)
             mergeTask.load()
             self.assertEqual(len(mergeTask.outputMap.keys()), 2, "Error: Wrong number of WF outputs.")
             mergedMergeOutput = mergeTask.outputMap["Merged"][0]["merged_output_fileset"]
@@ -360,27 +352,27 @@ class RelValMCTest(unittest.TestCase):
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
             self.assertEqual(mergedMergeOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOMerge%s/merged-Merged" % o,                             
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-Merged" % o,                             
                              ("Error: Merged output fileset is wrong: %s" % mergedMergeOutput.name))
             self.assertEqual(unmergedMergeOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOMerge%s/merged-Merged" % o,                             
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-Merged" % o,                             
                              ("Error: Unmerged output fileset is wrong: %s" % unmergedMergeOutput.name))
             logArchOutput = mergeTask.outputMap["logArchive"][0]["merged_output_fileset"]
             unmergedLogArchOutput = mergeTask.outputMap["logArchive"][0]["output_fileset"]
             logArchOutput.loadData()
             unmergedLogArchOutput.loadData()
             self.assertEqual(logArchOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOMerge%s/merged-logArchive" % o,                             
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-logArchive" % o,                             
                              ("Error: LogArchive output fileset is wrong: %s" % logArchOutput.name))
             self.assertEqual(unmergedLogArchOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOMerge%s/merged-logArchive" % o,                             
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-logArchive" % o,                             
                              ("Error: LogArchive output fileset is wrong: %s" % unmergedLogArchOutput.name))
 
         for o in goldenOutputMods:
-            unmerged = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/unmerged-%s" % o)
+            unmerged = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/unmerged-%s" % o)
             unmerged.loadData()            
             mergeTask = Workflow(name = "TestWorkload",
-                                 task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOMerge%s" % o)
+                                 task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s" % o)
             mergeTask.load()
             mergeSubscription = Subscription(fileset = unmerged, workflow = mergeTask)
             mergeSubscription.loadData()            
@@ -388,10 +380,10 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize", "Error: Wrong split algo.")
         
         for o in goldenOutputMods:
-            unmerged = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/unmerged-%s" % o)
+            unmerged = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/unmerged-%s" % o)
             unmerged.loadData()
             cleanupTask = Workflow(name = "TestWorkload",
-                                   task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOCleanupUnmerged%s" % o)                                    
+                                   task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoCleanupUnmerged%s" % o)                                    
             cleanupTask.load()
             cleanupSubscription = Subscription(fileset = unmerged, workflow = cleanupTask)
             cleanupSubscription.loadData()
@@ -399,10 +391,10 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(cleanupSubscription["split_algo"], "SiblingProcessingBased", "Error: Wrong split algo.")
         
         for o in goldenOutputMods:
-            alcaRecoMergeLogCollect = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOMerge%s/merged-logArchive" % o)
+            alcaRecoMergeLogCollect = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-logArchive" % o)
             alcaRecoMergeLogCollect.loadData()
             alcaRecoMergeLogCollectTask = Workflow(name = "TestWorkload",
-                                                   task = "/TestWorkload/Generation/GenerationMergeOutputA/Reconstruction/ReconstructionMergeRecoA/ALCARECO/ALCARECOMerge%s/ALCARECO%sMergeLogCollect" % (o, o))                                               
+                                                   task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/StepTwo%sMergeLogCollect" % (o, o))                                               
             alcaRecoMergeLogCollectTask.load()
             logCollectSub = Subscription(fileset = alcaRecoMergeLogCollect, workflow = alcaRecoMergeLogCollectTask)
             logCollectSub.loadData()
@@ -419,10 +411,11 @@ class RelValMCTest(unittest.TestCase):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "relvalmc_t"
-        defaultArguments["GenDataTier"] = "GEN-SIM-RAW"
+        defaultArguments["GenOutputModuleName"] = "OutputA"
+        defaultArguments["StepOneOutputModuleName"] = "OutputB"
         defaultArguments["GenConfigCacheID"] = self.injectGenerationConfig()
-        defaultArguments["RecoConfigCacheID"] = self.injectReconstructionConfig()
-        defaultArguments["AlcaRecoConfigCacheID"] = self.injectAlcaRecoConfig() 
+        defaultArguments["StepOneConfigCacheID"] = self.injectStepOneConfig()
+        defaultArguments["StepTwoConfigCacheID"] = self.injectStepTwoConfig() 
         
         testWorkload = relValMCWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
@@ -434,9 +427,9 @@ class RelValMCTest(unittest.TestCase):
         # now run the tests on single workload instance installed into WMBS
         # each of the subtests is dealing with specific tasks
         self._generationTaskTest()
-        self._reconstructionTaskTest()
-        self._alcaRecoTaskTest()
-
+        self._stepTwoTaskTest()
+        self._stepOneTaskTest()
+        return
 
     def testRelValMCWithPileup(self):
         """
@@ -447,12 +440,12 @@ class RelValMCTest(unittest.TestCase):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "relvalmc_t"
-        # in this test, try not to define generation task datatier (first output module
-        # should be automatically picked up)
-        #defaultArguments["GenDataTier"] = "GEN-SIM-RAW"
+
+        defaultArguments["GenOutputModuleName"] = "OutputA"
+        defaultArguments["StepOneOutputModuleName"] = "OutputB"
         defaultArguments["GenConfigCacheID"] = self.injectGenerationConfig()
-        defaultArguments["RecoConfigCacheID"] = self.injectReconstructionConfig()
-        defaultArguments["AlcaRecoConfigCacheID"] = self.injectAlcaRecoConfig()
+        defaultArguments["StepOneConfigCacheID"] = self.injectStepOneConfig()
+        defaultArguments["StepTwoConfigCacheID"] = self.injectStepTwoConfig()
         
         # add pile up information - for the generation task
         defaultArguments["PileupConfig"] = {"cosmics": ["/some/cosmics/dataset1","/some/cosmics/dataset2"],
@@ -468,10 +461,8 @@ class RelValMCTest(unittest.TestCase):
         # now run the tests on single workload instance installed into WMBS
         # each of the subtests is dealing with specific tasks
         self._generationTaskTest()
-        self._reconstructionTaskTest()
-        self._alcaRecoTaskTest()
+        self._stepOneTaskTest()
+        self._stepTwoTaskTest()
         
-        
-
 if __name__ == "__main__":
     unittest.main()

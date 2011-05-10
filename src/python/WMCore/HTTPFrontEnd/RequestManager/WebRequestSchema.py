@@ -146,5 +146,7 @@ class WebRequestSchema(WebAPI):
             request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName)
         except RuntimeError, e:
             raise cherrypy.HTTPError(400, "Error creating request: %s" % e)
+        except KeyError, e:
+            raise cherrypy.HTTPError(400, "Error creating request: %s" % e)        
         baseURL = cherrypy.request.base
         raise cherrypy.HTTPRedirect('%s/reqmgr/view/details/%s' % (baseURL, schema['RequestName']))

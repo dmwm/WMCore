@@ -38,13 +38,11 @@ dependencies = {
                                 'src/templates/WMCore/WebTools/Masthead',]
                         },
                 'reqmgr':{
-                        'packages': ['WMCore.RequestManager+', 
+                        'packages': ['WMCore.RequestManager+',
                                      'WMCore.HTTPFrontEnd', 'WMCore.HTTPFrontEnd.RequestManager+', # first one gets init.py
                                      'WMCore.Services.WorkQueue', 'WMCore.Services.WMBS', 'WMCore.Services.WMAgent'],
                         'systems':['wmc-web', 'wmc-runtime'],
-                        'statics': ['src/javascript/WMCore/WebTools/RequestManager',
-                                    'src/templates/WMCore/WebTools/RequestManager',
-                                    'src/html/RequestManager'],
+                        'statics': ['src/templates/WMCore/WebTools/RequestManager'],
                         },
                 'workqueue':{
                         'packages': ['WMCore.WorkQueue+', 'WMCore.Services+', 'WMCore.Wrappers+',
@@ -66,5 +64,12 @@ dependencies = {
                                 'src/javascript/WMCore/WebTools/WMBS',
                                 'src/javascript/external/graphael',
                                 'src/templates/WMCore/WebTools/WMBS',],
+                        },
+                'crabserver':{
+                        'packages': ['WMCore.Services+'],
+                        'systems': ['wmagent', 'reqmgr']
+                        },
+                'wmclient':{
+                        'systems': ['wmc-runtime', 'wmc-database']
                         },
                }

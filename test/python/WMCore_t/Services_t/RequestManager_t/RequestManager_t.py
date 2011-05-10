@@ -3,6 +3,8 @@ import unittest
 import tempfile
 import shutil
 
+from nose.plugins.attrib import attr
+
 from WMCore.Services.Requests import JSONRequests
 from WMCore.Services.RequestManager.RequestManager import RequestManager \
      as RequestManagerDS
@@ -91,7 +93,8 @@ class RequestManagerTest(RESTBaseUnitTest):
     def tearDown(self):
         self.config.deleteWorkloadCache()
         RESTBaseUnitTest.tearDown(self)
-        
+
+    @attr("integration")
     def testRequestManagerService(self):
         requestName = self.requestSchema['RequestName']
         

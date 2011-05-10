@@ -1,0 +1,89 @@
+From 0.7.5 to 0.7.6:
+  - Modify the gLite BossAir plugin to use a local proxy (1554).
+  - Support two file reads in the FileBased, LumiBased and EventBased splitting
+    algorithms.  Add a parameters to the ReqMgr to enable two-file-read at the
+    request creation level (1225, 1522).
+  - Create multicore subscription types and modify BossAir to use them (1535).
+  - Add reasonable defaults for initial database modules to install for a
+    unit test (1542).
+  - Fix the DBSBuffer/DBSUpload unit tests (1544).
+  - Lexicon utility for jobRanges, new FWJRDump view (1403).
+  - Fix the JobArchiver unit test (1545).
+  - Fix the ACDC unit tests (1547).
+  - Discard logs produced by the Analysis workflow by default (1543).
+  - Support chaining all three steps together in the ReDigi workflow, among
+    other things (1519).
+  - Print tracebacks for the common failure modes when dealing with a PSet (1493).
+  - Fix the display of the run and lumi masks.  Also, add a view to count the
+     number of successful, failed and cooloff jobs at a site.  Use that view to
+     generate a list of errors for cooloff jobs at a site (1496).
+  - Fix several error handling problems at runtime including proper reporting
+    of the failed step in chained jobs and failing of chained steps if an initial
+    step fails.  Also, fix the insertion of condor errors and CMSSW errors into
+    the FWJR (1432, 1427, 1497, and 1493).
+  - Fix parsing of the condor_q output in BossAir when no classadds are
+    returned (1537).
+  - Pass the CMS site name to couch instead of the CE name (1360).
+  - Fix insertion of file parents into WMBS from the WorkQueue.
+  - If TestInit doesn't recognize the database dialect print an error including
+    what it doesn't recognize (1527).
+  - Attempt to reduce memory usage of DBSUpload (1510, 1505).
+  - Improve loading or job masks in the ErrorHandler (1209).
+  - Fix the site overview when using more than one agent (1515).
+  - Update the "last_update" field in a fileset when closing it (1514).
+  - Make LogCollect jobs more flexible (1404, 1482).
+  - Fail held jobs after 30 minutes of being held (1456).
+  - Report JobExitCode to the dashboard at runtime (1511).
+  - Fix performance reporting in DashboardReporter (1506).
+  - Don't fail jobs if we can't talk to the condor queue.
+  - Fixup default arguments in PhEDEx class (1502).
+  - Don't trust the output of condor_q if it returns non-zero (1501).
+  - Improve error messages in the ReqMgr when creating requests (1473).
+  - Fix a bunch of ReqMgr issues: changing run/block black/white list,
+    changing the scram arch, initial campaign support (1431, 1477, 1478).
+  - Add a helper method in WMWorkload for modifying the scram arch (1478).
+  - Don't show failed/aborted requests on the approval page and fix issues with
+    skim input (1474, 1494).
+  - Improve ErrorHandler performance (1500, 1498).
+  - ReqMgr unit test fixups plus some database fixes (623).
+  - Fix unit tests to deal with changes to NullAuth (1459).
+  - Fix LFN parsing for /store/users (1330).
+  - Fix output LFNs for Analysis jobs (1383).
+  - Fix the credential unit tests (1480).
+  - Allow sandbox to be a URL insted of a file. Add unit test for unpacking 
+    tarball.
+  - Reduce the default lumis_per_job to 8 and allow the use of the TwoFileBased
+    splitting algorithm (1475).
+  - Support ReDigi requests where the ReDigi and Reco configs are combined into
+    one step (1462).
+  - Clear out the pileup inputs before we add to them (1467).
+  - Change the input step name when truncating a workflow (1466).
+  - Don't print out contents of files into log file fixes (1457).
+  - Make the RelValMC workflow more flexible (1579).
+
+From 0.7.4 to 0.7.5:
+ - Fixes to ACDC and WMSpec to allow dependent (not top level) tasks to be 
+   resubmitted (1453).
+ - Display file sizes in KB/MB/GB/TB instead of KiB/MiB/GiB/TiB (1454).
+ - Change the timing setting for cmsRun (1450).
+ - Fix file parentage when inserting files into WMBS from the WorkQueue (1451).
+ - Fix the PhEDExInjector unit test and prevent it from closing blocks that
+   have uninjected files (1249).
+ - Dust the cobwebs off the PhEDEx unit test and add an auth() method to the
+   PhEDEx class to check if a user has a given ability (712).
+ - Generate a fake FWJR if the gLite BossAir plugin encounters errors (1025).
+ - The stage out step must delete all files on failures (1430).
+ - Add IMProv to the default build.
+ - Fix inconsistencies in ReqMgr interface (1438).
+ - Better handle duplicate jobs reports in couch and make finding collected
+   logarchives easier (1296, 1433)
+ - Fix a couple issues with stageout timeouts and error reporting (1361, 1381, 1390)
+ - Fix JSON serialization of the File object when a thunker is not available (1435).
+ - Pull the state change time out of couch (1237).
+ - Archive all FWJR files (1384).
+ - Increase the size of the task name and fileset name in WMBS (1418).
+ - Fix a couple problems with LFN counters.
+ - Fix assert error in front end auth (1412).
+ - Add the agent name and host to the dashboard task info (1358).
+ - Fix LumiBased splitting over files that do no have contigious lumi sections
+   and rename the parameter that controls this.

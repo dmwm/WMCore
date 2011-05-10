@@ -94,7 +94,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             logging.error(msg)
             self.jobsdatabase = None
             self.fwjrdatabase = None
-            if self.requireCouch:
+            if getattr(self.config.TaskArchiver, 'requireCouch', False):
                 raise TaskArchiverPollerException(msg)
         return        
     

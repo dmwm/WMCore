@@ -311,13 +311,10 @@ if [ $? -ne 0 ]; then echo "Scram failed"; exit 71; fi
 cd $CMSSW_VERSION
 if [ $? -ne 0 ]; then echo "***\nCouldn't chdir: $?\n"; exit 72; fi
 
-if [ -n $USER_TARBALL ] ; then
-    #echo "Unwinding $WMAGENTJOBDIR/$USER_TARBALL"
-    #tar xfz $WMAGENTJOBDIR/$USER_TARBALL
-    $WMAGENTJOBDIR/WMCore/WMRuntime/Scripts/UnpackUserTarball.py $USER_TARBALL $USER_FILES
+if [ -n "$USER_TARBALL" ] ; then
+    python2.6 $WMAGENTJOBDIR/WMCore/WMRuntime/Scripts/UnpackUserTarball.py $USER_TARBALL $USER_FILES
     if [ $? -ne 0 ]; then echo "***\nCouldn't untar sandbox: $?\n"; exit 74; fi
 fi
-if [ $? -ne 0 ]; then echo "***\nCouldn't untar sandbox: $?\n"; exit 74; fi
 eval `$SCRAM_COMMAND runtime -sh`
 if [ $? -ne 0 ]; then echo "***\nCouldn't get scram runtime: $?\n*"; exit 73; fi
 echo "Completed SCRAM project"

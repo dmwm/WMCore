@@ -37,12 +37,12 @@ class ReDigiSchema(RequestSchema):
             "GlobalTag",
             "InputDataset",
             "StepOneConfigCacheID",
-            "StepThreeConfigCacheID",
-            "RECOOutputModuleName"
             ]
         self.optionalFields = [
+            "StepThreeConfigCacheID",
+            "StepOneOutputModuleName"
             "StepTwoConfigCacheID",
-            "RAWOutputModuleName",
+            "StepTwoOutputModuleName",
             "SiteWhitelist",
             "SiteBlacklist",
             "BlockWhitelist",

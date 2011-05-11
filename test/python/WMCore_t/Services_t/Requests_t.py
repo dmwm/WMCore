@@ -21,7 +21,7 @@ from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
 from WMCore.JobStateMachine import DefaultConfig
 from WMCore.DataStructs.Mask import Mask
 from WMCore.DataStructs.Job import Job
-from WMCore.Services.Requests import BasicAuthJSONRequests
+from WMCore.Services.Requests import JSONRequests
 from WMCore.WMBS.Job import Job as WMBSJob
 from WMQuality.TestInit import TestInit
 import WMCore.Database.CMSCouch as CMSCouch
@@ -261,7 +261,7 @@ class testJSONRequests(unittest.TestCase):
 
     def testSpecialCharacterPasswords(self):
         url = 'http://username:p@ssw:rd@localhost:6666'
-        req = BasicAuthJSONRequests(url)
+        req = JSONRequests(url)
         self.assertEquals(req['host'], 'http://localhost:6666')
         self.assertEquals(req.additionalHeaders['Authorization'], 'Basic dXNlcm5hbWU6cEBzc3c6cmQ=')
 

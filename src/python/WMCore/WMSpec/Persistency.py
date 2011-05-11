@@ -61,13 +61,23 @@ class PersistencyHelper:
         # urllib2 needs a scheme - assume local file if none given
         if not urlparse(filename)[0]:
             filename = 'file:' + filename
-        # Send Accept header so we dont get default which may be fancy ie. json
-        handle = urlopen(Request(filename, headers = {"Accept" : "*/*"}))
+            handle = urlopen(Request(filename, headers = {"Accept" : "*/*"}))
+            self.data = cPickle.load(handle)
+            handle.close()
+        elif filename.startswith('file:'):
+            handle = urlopen(Request(filename, headers = {"Accept" : "*/*"}))
+            self.data = cPickle.load(handle)
+            handle.close()
+        else:
+            # use own request class so we get authentication if needed
+            from WMCore.Services.Requests import Requests
+            request = Requests(filename)
+            data = request.makeRequest('', incoming_headers = {"Accept" : "*/*"})
+            self.data = cPickle.loads(data[0])
+
         #TODO: use different encoding scheme for different extension
         #extension = filename.split(".")[-1].lower()
-        
-        self.data = cPickle.load(handle)
-        handle.close()
+
         return
 
 

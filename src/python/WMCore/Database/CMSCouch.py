@@ -17,7 +17,7 @@ import base64
 import logging
 from httplib import HTTPException
 
-from WMCore.Services.Requests import BasicAuthJSONRequests
+from WMCore.Services.Requests import JSONRequests
 
 def check_name(dbname):
     match = re.match("^[a-z0-9_$()+-/]+$", urllib.unquote_plus(dbname))
@@ -62,7 +62,7 @@ class Document(dict):
 
         return jsonDict
 
-class CouchDBRequests(BasicAuthJSONRequests):
+class CouchDBRequests(JSONRequests):
     """
     CouchDB has two non-standard HTTP calls, implement them here for
     completeness, and talks to the CouchDB port
@@ -71,7 +71,7 @@ class CouchDBRequests(BasicAuthJSONRequests):
         """
         Initialise requests
         """
-        BasicAuthJSONRequests.__init__(self, url)
+        JSONRequests.__init__(self, url)
         self.accept_type = "application/json"
 
     def move(self, uri=None, data=None):
@@ -97,7 +97,7 @@ class CouchDBRequests(BasicAuthJSONRequests):
         try:
             if not cache:
                 incoming_headers.update({'Cache-Control':'no-cache'})
-            result, status, reason, cached = BasicAuthJSONRequests.makeRequest(
+            result, status, reason, cached = JSONRequests.makeRequest(
                                         self, uri, data, type, incoming_headers,
                                         encode, decode,contentType)
         except HTTPException, e:

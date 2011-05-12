@@ -15,9 +15,7 @@ from WMCore.Configuration import Configuration
 
 # The following parameters may need to be changed.
 serverHostName = "HOSTNAME OF WMAGENT MACHINE"
-globalWorkQueuePort = 8571
 wmbsServicePort = 9997
-reqMgrServerHostName = "I presume the host name for the req manager"
 
 # The work directory and database need to be separate from the ReqMgr
 # installation.
@@ -33,7 +31,6 @@ databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 couchURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984"
 jobDumpDBName = "wmagent_jobdump"
 acdcDBName = "wmagent_acdc"
-globalWorkQueueCouchUrl = "http://USERNAME:PASSWORD@COUCHSERVER:5984/workqueue"
 workqueueDBName = 'workqueue'
 workqueueInboxDbName = 'workqueue_inbox'
 
@@ -110,20 +107,27 @@ config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManag
 config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
 config.WorkQueueManager.level = 'LocalQueue'
 config.WorkQueueManager.logLevel = 'DEBUG'
-config.WorkQueueManager.serviceUrl = "%s:%s" % (reqMgrServerHostName, globalWorkQueuePort)
 config.WorkQueueManager.couchurl = couchURL
 config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
+config.WorkQueueManager.queueParams = {}
+# see CouchProxyManager component below
+config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "http://localhost:8080/couchdb/workqueue"
+config.WorkQueueManager.queueParams["Teams"] = agentTeams
 
-config.WorkQueueManager.queueParams = {"ParentQueueCouchUrl": globalWorkQueueCouchUrl,
-                                       "Teams": agentTeams,
-                                       "FullReportInterval": 300}
 config.WorkQueueManager.section_("BossAirConfig")
 config.WorkQueueManager.BossAirConfig.BossAir = config.BossAir
 config.WorkQueueManager.BossAirConfig.section_("Agent")
 config.WorkQueueManager.BossAirConfig.Agent.agentName = agentName
 config.WorkQueueManager.section_("JobDumpConfig")
 config.WorkQueueManager.JobDumpConfig.JobStateMachine = config.JobStateMachine
+
+# needed for authentication from local couch to global workqueue
+config.component_('CouchProxyManager')
+config.CouchProxyManager.namespace = "WMComponent.CouchProxyManager.CouchProxyManager"
+config.CouchProxyManager.componentDir = config.General.workDir + "/CouchProxyManager"
+config.CouchProxyManager.section_('cmsweb_couch')
+config.CouchProxyManager.cmsweb_couch.remote_host = 'https://cmsweb-testbed.cern.ch'
 
 config.component_("DBSUpload")
 config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"

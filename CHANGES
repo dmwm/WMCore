@@ -1,3 +1,7 @@
+From 0.7.6 to 0.7.6a:
+  - Fix ReDigi request creation and users sandboxes at runtime (1590).
+  - Change the log level in couch to info.
+
 From 0.7.5 to 0.7.6:
   - Modify the gLite BossAir plugin to use a local proxy (1554).
   - Support two file reads in the FileBased, LumiBased and EventBased splitting

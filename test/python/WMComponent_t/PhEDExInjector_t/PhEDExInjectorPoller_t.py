@@ -60,6 +60,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         self.testFilesA = []
         self.testFilesB = []
+        self.testDatasetA = "/%s/PromptReco-v1/RECO" % makeUUID()
+        self.testDatasetB = "/%s/CRUZET11-v1/RAW" % makeUUID()
         self.phedex = PhEDEx({"endpoint": self.phedexURL}, "json")
 
         return
@@ -90,7 +92,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
-        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileA.setDatasetPath(self.testDatasetA)
         testFileA.addRun(Run(2, *[45]))
         testFileA.create()
 
@@ -100,7 +102,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         testFileB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
-        testFileB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileB.setDatasetPath(self.testDatasetA)
         testFileB.addRun(Run(2, *[45]))
         testFileB.create()
 
@@ -110,13 +112,13 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         testFileC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
-        testFileC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileC.setDatasetPath(self.testDatasetA)
         testFileC.addRun(Run(2, *[45]))
         testFileC.create()        
                                         
         self.testFilesA.append(testFileA)
         self.testFilesA.append(testFileB)
-        self.testFilesA.append(testFileC)        
+        self.testFilesA.append(testFileC)
 
         testFileD = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
                                   checksums = checksums,
@@ -124,7 +126,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         testFileD.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
-        testFileD.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RAW")
+        testFileD.setDatasetPath(self.testDatasetB)
         testFileD.addRun(Run(2, *[45]))
         testFileD.create()
 
@@ -134,7 +136,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         testFileE.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
-        testFileE.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RAW")
+        testFileE.setDatasetPath(self.testDatasetB)
         testFileE.addRun(Run(2, *[45]))
         testFileE.create()        
 
@@ -147,8 +149,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                    dbinterface = myThread.dbi)
         createBlock = uploadFactory(classname = "SetBlockStatus")
 
-        self.blockAName = "/Cosmics/CRUZET09-PromptReco-v1/RAW#" + makeUUID()
-        self.blockBName = "/Cosmics/CRUZET09-PromptReco-v1/RECO#" + makeUUID()
+        self.blockAName = self.testDatasetA + "#" + makeUUID()
+        self.blockBName = self.testDatasetB + "#" + makeUUID()
         createBlock.execute(block = self.blockAName, locations = ["srm-cms.cern.ch"], open_status = 1)
         createBlock.execute(block = self.blockBName, locations = ["srm-cms.cern.ch"], open_status = 1)
 
@@ -184,6 +186,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         config.component_("PhEDExInjector")
         config.PhEDExInjector.phedexurl = self.phedexURL
+        config.PhEDExInjector.subscribeMSS = True
+        config.PhEDExInjector.group = "Saturn"
 
         return config
 
@@ -217,7 +221,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         Stuff the database and have the poller upload files to PhEDEx.  Retrieve
         replica information for the uploaded blocks and verify that all files
-        have been injected.
+        have been injected.  Also verify that files have been subscribed to MSS.
         """
         self.stuffDatabase()
 
@@ -266,7 +270,16 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         replicaInfo = self.retrieveReplicaInfoForBlock(self.blockBName)
         assert replicaInfo["is_open"] == "y", \
-               "Error: block should be open."        
+               "Error: block should be open."
+
+        subAResult = self.phedex.subscriptions(dataset = self.testDatasetA)
+        self.assertEqual(len(subAResult["phedex"]["dataset"]), 1,
+                         "Error: Subscription was not made.")
+        datasetASub = subAResult["phedex"]["dataset"][0]
+        self.assertTrue(datasetASub["files"] == "3" and datasetASub["name"] == self.testDatasetA,
+                        "Error: Metadata is incorrect for sub.")
+        self.assertEqual(datasetASub["subscription"][0]["node"], "T1_CH_CERN_MSS",
+                         "Error: Node is wrong.")
         return
 
 if __name__ == '__main__':

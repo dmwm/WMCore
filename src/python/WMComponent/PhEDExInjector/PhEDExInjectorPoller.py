@@ -33,6 +33,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
         self.dbsUrl = config.DBSInterface.globalDBSUrl 
         self.subscribeMSS = getattr(config.PhEDExInjector, "subscribeMSS", False)
+        self.group = getattr(config.PhEDExInjector, "group", "DataOps")
 
         # This will be used to map SE names which are stored in the DBSBuffer to
         # PhEDEx node names.  The first key will be the "kind" which consists
@@ -232,8 +233,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             return
 
         myThread = threading.currentThread()
-        unsubscribedDatasets = self.getUnsubscribedDatasets.execute(conn = myThread.transaction.conn,
-                                                                    transaction = True)
+        unsubscribedDatasets = self.getUnsubscribed.execute(conn = myThread.transaction.conn,
+                                                            transaction = True)
 
         for unsubscribedDataset in unsubscribedDatasets:
             datasetPath = unsubscribedDataset["path"]
@@ -243,16 +244,15 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 logging.error("No MSS node for SE: %s" % seName)
                 continue
 
-            newSubscription = PhEDExSubscription(datasetPath, seName, "DataOps",
+            newSubscription = PhEDExSubscription(datasetPath, self.seMap["MSS"][seName], self.group,
                                                  custodial = "y", requestOnly = "n")
             
             xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, 
                                     newSubscription.getDatasetPaths())
-            
             self.phedex.subscribe(newSubscription, xmlData)
             
-            self.markSubscribed(datasetPath, conn = myThread.transaction.conn,
-                                transaction = True)
+            self.markSubscribed.execute(datasetPath, conn = myThread.transaction.conn,
+                                        transaction = True)
 
         return
     

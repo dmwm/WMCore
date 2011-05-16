@@ -154,7 +154,7 @@ class JobSubmitterTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         #self.tearDown()
         #self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService', 'WMCore.ResourceControl', 'WMCore.BossAir', 'WMCore.Agent.Database'])
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database", "WMCore.MsgService"],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"],
                                 useDefault = False)
         self.testInit.setupCouch("jobsubmitter_t/jobs", "JobDump")
         self.testInit.setupCouch("jobsubmitter_t/fwjrs", "FWJRDump")
@@ -196,7 +196,7 @@ class JobSubmitterTest(unittest.TestCase):
         Standard tearDown
 
         """
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS",'WMCore.MsgService',
+        self.testInit.clearDatabase(modules = ["WMCore.WMBS",
                                                'WMCore.ResourceControl', 'WMCore.BossAir',
                                                'WMCore.Agent.Database'])
         self.testInit.delWorkDir()

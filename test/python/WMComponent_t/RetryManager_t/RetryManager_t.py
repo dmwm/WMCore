@@ -47,8 +47,7 @@ class RetryManagerTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS",
-                                                 "WMCore.MsgService"],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setupCouch("retry_manager_t/jobs", "JobDump")
         self.testInit.setupCouch("retry_manager_t/fwjrs", "FWJRDump")

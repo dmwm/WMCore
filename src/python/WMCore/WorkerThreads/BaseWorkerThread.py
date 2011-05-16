@@ -105,20 +105,6 @@ class BaseWorkerThread:
         myThread.dbi = myThread.dbFactory.connect()
         logging.info("Initialising default transaction")
         myThread.transaction = Transaction(myThread.dbi)
-        # Set up message service and trigger
-        logging.info("Instantiating message queue for thread")
-        factory = WMFactory("msgService", "WMCore.MsgService." + \
-            myThread.dialect)
-        # we instantiate a message service here but we do not register it.
-        # the main thread represents us in the msg service. We copy the 
-        # the main thread procid to our object.
-        myThread.msgService = factory.loadObject("MsgService")
-        myThread.msgService.procid = self.procid
-        msg = "Instantiating trigger service for thread"
-        logging.info(msg)
-        WMFactory("trigger", "WMCore.Trigger")
-        myThread.trigger = myThread.factory['trigger'].loadObject("Trigger")
-        # TODO: add trigger instantiation.
 
         # Call worker setup
         self.setup(parameters)

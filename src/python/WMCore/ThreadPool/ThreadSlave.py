@@ -63,9 +63,7 @@ class ThreadSlave:
         # get the procid from the mainthread msg service
         # if we use this in testing it might not be there.
         self.procid = 0
-        if hasattr(myThread,'msgService'):
-            self.procid = myThread.msgService.procid
-      
+
         # we can potentially use mapping from messages to handlers
         # to have one thread handling multiple message types.
         self.messages = {}
@@ -113,15 +111,6 @@ class ThreadSlave:
         logging.info("THREAD: Initializing default transaction")
         myThread.transaction = Transaction(myThread.dbi)
         logging.info("THREAD: Loading backend")
-        logging.info("THREAD: Instantiating message queue for thread")
-        factory = WMFactory("msgService", "WMCore.MsgService."+ \
-            myThread.dialect)
-        # we instantiate a message service here but we do not register it.
-        # the main thread represents us in the msg service. We copy the 
-        # the main thread procid to our object.
-        myThread.msgService = factory.loadObject("MsgService")
-        myThread.msgService.procid = self.procid
-        # TODO: add trigger instantiation.
         logging.info("THREAD constructor finished")
 
     # FIXME: enable the (configurable) possibility to retrieve 

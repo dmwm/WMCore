@@ -46,7 +46,7 @@ class ErrorHandlerTest(unittest.TestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setupCouch("errorhandler_t", "GroupUser", "ACDC")
         self.testInit.setupCouch("errorhandler_t_jd/jobs", "JobDump")

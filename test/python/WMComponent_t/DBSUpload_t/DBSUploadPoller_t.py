@@ -63,9 +63,7 @@ class DBSUploadTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = 
-                                ["WMCore.ThreadPool",
-                                 "WMCore.MsgService",
-                                 "WMComponent.DBSBuffer.Database",
+                                ["WMComponent.DBSBuffer.Database",
                                  'WMCore.Agent.Database'],
                                 useDefault = False)
       
@@ -94,9 +92,7 @@ class DBSUploadTest(unittest.TestCase):
         tearDown function for unittest
         """
         
-        self.testInit.clearDatabase(modules = ["WMCore.ThreadPool",
-                                               "WMCore.MsgService",
-                                               "WMComponent.DBSBuffer.Database",
+        self.testInit.clearDatabase(modules = ["WMComponent.DBSBuffer.Database",
                                                'WMCore.Agent.Database'])
 
     def createConfig(self):

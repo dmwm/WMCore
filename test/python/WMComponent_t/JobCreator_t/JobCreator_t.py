@@ -72,8 +72,6 @@ class JobCreatorTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         #self.tearDown()
         self.testInit.setSchema(customModules = ['WMCore.WMBS', 
-                                                 'WMCore.MsgService',
-                                                 'WMCore.ThreadPool',
                                                  'WMCore.ResourceControl',
                                                  'WMCore.Agent.Database'], useDefault = False)
         self.testInit.setupCouch("jobcreator_t_0", "JobDump")
@@ -128,8 +126,7 @@ class JobCreatorTest(unittest.TestCase):
         
         myThread = threading.currentThread()
 
-        self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService',
-                                               'WMCore.ThreadPool', 'WMCore.ResourceControl',
+        self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.ResourceControl',
                                                'WMCore.Agent.Database'])
         
         self.testInit.delWorkDir()

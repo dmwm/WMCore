@@ -85,7 +85,10 @@ class WorkQueueBackend(object):
         """
         # Can't save spec to inbox, it needs to be visible to child queues
         # Can't save empty dict so add dummy variable
-        return wmspec.saveCouch(self.hostWithAuth, self.db.name, {'name' : wmspec.name()})
+        dummy_values = {'name' : wmspec.name()}
+        # change specUrl in spec before saving (otherwise it points to previous url)
+        wmspec.setSpecUrl(self.hostWithAuth + "/%s/%s/spec" % (self.db.name, wmspec.name()))
+        return wmspec.saveCouch(self.hostWithAuth, self.db.name, dummy_values)
 
 
     def getWMSpec(self, name):

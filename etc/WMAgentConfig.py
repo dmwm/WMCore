@@ -233,7 +233,6 @@ config.TaskArchiver.componentDir  = config.General.workDir + "/TaskArchiver"
 config.TaskArchiver.logLevel = "DEBUG"
 config.TaskArchiver.pollInterval = 240
 config.TaskArchiver.timeOut      = workflowArchiveTimeout
-config.TaskArchiver.WorkQueueParams = {}
 config.TaskArchiver.useWorkQueue = True
 
 config.webapp_('WMBSService')

@@ -70,8 +70,12 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.jobCacheDir = self.config.JobCreator.jobCacheDir
         
         if getattr(self.config.TaskArchiver, "useWorkQueue", False) != False:
-            wqp = self.config.TaskArchiver.WorkQueueParams
-            self.workQueue = localQueue(**wqp)
+            # Get workqueue setup from config unless overridden
+            if hasattr(self.config.TaskArchiver, 'WorkQueueParams'):
+                self.workQueue = localQueue(**self.config.TaskArchiver.WorkQueueParams)
+            else:
+                from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
+                self.workQueue = queueFromConfig(self.config)
         else:
             self.workQueue = None
 

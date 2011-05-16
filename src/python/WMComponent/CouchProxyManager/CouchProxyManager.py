@@ -29,16 +29,26 @@ class CouchProxyManager(Harness):
             if not hasattr(section, 'pythonise_'):
                 continue # not an actual section
             config = section.dictionary_()
-            # add x509 if not set in config
-            #TODO: Expand this to look for certificates also
-            if os.environ.get('X509_USER_PROXY'):
-                config.setdefault('key_file', os.environ.get('X509_USER_PROXY'))
-                config.setdefault('cert_file', os.environ.get('X509_USER_PROXY'))
+            cert, key = self.getCredentials()
+            # if not provided in config search for credentials
+            if cert and key:
+                config.setdefault('key_file', key)
+                config.setdefault('cert_file', cert)
 
             logger = get_logger(False, None)
             config.setdefault('logger', logger) #myThread.logger)
             myThread.workerThreadManager.addWorker(CouchProxyRunner(**config))
 
+    def getCredentials(self):
+        """Get x509 credentials, return cert & key"""
+        if os.environ.get('X509_USER_PROXY'):
+            return os.environ['X509_USER_PROXY'], os.environ['X509_USER_PROXY']
+        # cert will need to be unencryped
+        elif os.environ.get('X509_USER_CERT'):
+            if not os.environ.get('X509_USER_KEY'):
+                raise RuntimeError, "X509_USER_CERT also requires X509_USER_KEY to be defined"
+            return os.environ['X509_USER_CERT'], os.environ['X509_USER_KEY']
+        return None, None
 
 class CouchProxyRunner(BaseWorkerThread):
     """Actually run the proxy"""

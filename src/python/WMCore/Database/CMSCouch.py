@@ -14,7 +14,6 @@ import urllib
 import re
 import hashlib
 import base64
-import logging
 from httplib import HTTPException
 
 from WMCore.Services.Requests import JSONRequests
@@ -101,10 +100,6 @@ class CouchDBRequests(JSONRequests):
                                         self, uri, data, type, incoming_headers,
                                         encode, decode,contentType)
         except HTTPException, e:
-            logging.error("Error for making request %s" % uri)
-            logging.error("Request made with type %s" % type)
-            logging.debug("Encode: %s" % encode)
-            logging.debug("Decode: %s" % decode)
             self.checkForCouchError(getattr(e, "status", None),
                                     getattr(e, "reason", None), data)
 

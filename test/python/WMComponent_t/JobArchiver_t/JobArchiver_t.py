@@ -39,6 +39,8 @@ from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPoller
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
+from nose.plugins.attrib import attr
+
 
 class JobArchiverTest(unittest.TestCase):
     """
@@ -241,7 +243,7 @@ class JobArchiverTest(unittest.TestCase):
 
         return
 
-
+    @attr('integration')
     def testB_SpeedTest(self):
         """
         _SpeedTest_

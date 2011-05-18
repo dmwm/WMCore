@@ -554,7 +554,7 @@ class CouchServer(CouchDBRequests):
         if source not in self.listDatabases():
           check_server_url(source)
         if destination not in self.listDatabases():
-          if create_target:
+          if create_target and not destination.startswith("http"):
             check_name(destination)
           else:
             check_server_url(destination)

@@ -17,8 +17,8 @@ def getAgentOverview():
     for queue in gQueues:
         globalQ = WorkQueue({'endpoint': queue + "/"})
         childQueues = globalQ.getChildQueues()
-        agentInfo = {}
         for childQueue in childQueues:
+            agentInfo = {}
             agentUrl = childQueue[:-9] + "wmagent"
             agentService = WMAgent({'endpoint': agentUrl})
             agent = agentService.getAgentStatus(detail = False)

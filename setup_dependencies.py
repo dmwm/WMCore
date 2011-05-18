@@ -42,9 +42,10 @@ dependencies = {
                                      'WMCore.HTTPFrontEnd', 'WMCore.HTTPFrontEnd.RequestManager+', # first one gets init.py
                                      'WMCore.Services.WorkQueue', 'WMCore.Services.WMBS', 'WMCore.Services.WMAgent'],
                         'systems':['wmc-web', 'wmc-runtime'],
-                        'statics': ['src/javascript/WMCore/WebTools/RequestManager',
-                                    'src/templates/WMCore/WebTools/RequestManager',
-                                    'src/html/RequestManager'],
+                        'statics': ['src/templates/WMCore/WebTools/RequestManager',
+                                    'src/html/RequestManager', 
+                                    'src/couchapps/ReqMgr+',
+                                    'src/couchapps/ConfigCache+'],
                         },
                 'workqueue':{
                         'packages': ['WMComponent.WorkQueueManager', 'WMCore.WorkerThreads',

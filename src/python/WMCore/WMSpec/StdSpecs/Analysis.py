@@ -6,7 +6,6 @@
 import time
 
 ##from WMCore.Configuration import ConfigSection
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 
@@ -28,7 +27,7 @@ def remoteLFNPrefix(site, lfn=''):
     """
     Convert a site name to the relevant remote LFN prefix
     """
-
+    from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
     phedexJSON = PhEDEx(responseType='json')
 
     seName = phedexJSON.getNodeSE(site)

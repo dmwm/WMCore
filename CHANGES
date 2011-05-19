@@ -1,3 +1,17 @@
+From 0.7.6a to 0.7.7:
+  - Increase the default minimum merge size in the ReqMgr to 2GiB.
+  - Enable automatic PhEDEx subscriptions to MSS.
+  - Add new views of the FWJR dump for async stageout (1402).
+  - Add a couch view to retrieve the PFNs of archived logs (1303).
+  - Fixup automatic MSS subscriptions in the PhEDExInjector (1561).
+  - Fix a problem where the site a job is assigned to never made it into couch.
+  - Add a ReqMgr couchapp (1610).
+  - Move the PhEDEx import in the Analysis stdspec so that it's only pulled in 
+    when necessary.
+  - Fix agent monitor for multiple agents (1523).
+  - Add back in the TwoFileBased splitting algo so newer agents can work with 
+    older ReqMgr.
+
 From 0.7.6 to 0.7.6a:
   - Fix ReDigi request creation and users sandboxes at runtime (1590).
   - Change the log level in couch to info.

@@ -61,9 +61,10 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS", 'WMCore.WorkQueue.Database'],
 
                                 useDefault = False)
-        self.testInit.setupCouch("taskarchiver_t_0", "WorkloadSummary")
-        self.testInit.setupCouch("taskarchiver_t_0/jobs", "JobDump")
-        self.testInit.setupCouch("taskarchiver_t_0/fwjrs", "FWJRDump")
+        self.databaseName = "taskarchiver_t_0"
+        self.testInit.setupCouch(self.databaseName, "WorkloadSummary")
+        self.testInit.setupCouch("%s/jobs" % self.databaseName, "JobDump")
+        self.testInit.setupCouch("%s/fwjrs" % self.databaseName, "FWJRDump")
         
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -76,6 +77,8 @@ class TaskArchiverTest(unittest.TestCase):
 
 
         self.nJobs = 10
+        self.campaignName = 'aCampaign'
+        return
 
     def tearDown(self):
         """
@@ -85,7 +88,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         self.testInit.clearDatabase(modules = ["WMCore.WMBS", 'WMCore.WorkQueue.Database'])
         self.testInit.delWorkDir()
-        self.testInit.tearDownCouch()
+        #self.testInit.tearDownCouch()
         return
 
     def getConfig(self):
@@ -102,7 +105,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl     = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
-        config.JobStateMachine.couchDBName  = "taskarchiver_t_0"
+        config.JobStateMachine.couchDBName  = self.databaseName
 
         config.component_("JobCreator")
         config.JobCreator.jobCacheDir       = os.path.join(self.testDir, 'testDir')
@@ -113,6 +116,9 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.pollInterval    = 60
         config.TaskArchiver.logLevel        = 'SQLDEBUG'
         config.TaskArchiver.timeOut         = 0
+        config.TaskArchiver.histogramKeys   = ['AvgEventTime']
+        config.TaskArchiver.histogramBins   = 5
+        config.TaskArchiver.histogramLimit  = 5
 
         config.section_("ACDC")
         config.ACDC.couchurl                = config.JobStateMachine.couchurl
@@ -139,6 +145,8 @@ class TaskArchiverTest(unittest.TestCase):
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
 
+        workload.setCampaign(self.campaignName)
+
         workload.save(workloadName)
 
         return workload
@@ -146,7 +154,7 @@ class TaskArchiverTest(unittest.TestCase):
         
 
     def createTestJobGroup(self, config, name = "TestWorkthrough",
-                           specLocation = "spec.xml"):
+                           specLocation = "spec.xml", error = False):
         """
         Creates a group of several jobs
 
@@ -198,9 +206,12 @@ class TaskArchiverTest(unittest.TestCase):
         changer = ChangeState(config)
 
         report = Report()
-        path   = os.path.join(WMCore.WMInit.getWMBASE(),
-                              "test/python/WMComponent_t/JobAccountant_t/fwjrs", "PerformanceReport.pkl")
-                              #"test/python/WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
+        if error:
+            path   = os.path.join(WMCore.WMInit.getWMBASE(),
+                                  "test/python/WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
+        else:
+            path = os.path.join(WMCore.WMInit.getWMBASE(),
+                                "test/python/WMComponent_t/JobAccountant_t/fwjrs", "PerformanceReport2.pkl")
         report.load(filename = path)
 
         changer.propagate(testJobGroup.jobs, 'created', 'new')
@@ -314,7 +325,8 @@ class TaskArchiverTest(unittest.TestCase):
         workload     = self.createWorkload(workloadName = workloadPath)
         testJobGroup = self.createTestJobGroup(config = config,
                                                name = workload.name(),
-                                               specLocation = workloadPath)
+                                               specLocation = workloadPath,
+                                               error = False)
 
         cachePath = os.path.join(config.JobCreator.jobCacheDir,
                                  "TestWorkload", "ReReco")
@@ -352,13 +364,53 @@ class TaskArchiverTest(unittest.TestCase):
 
         workloadSummary = workdatabase.document(id = "TestWorkload")
         self.assertEqual(workloadSummary['ACDCServer'], config.ACDC.couchurl)
-        self.assertEqual(workloadSummary['output'].keys(),
-                         ['/MinBias_TuneZ2_7TeV-pythia6/Backfill-110414_Type4_Redigi_01_T1_US_FNAL_MinBias_TuneZ2_7TeV-pythia6-v1/GEN-SIM-RAWDEBUG'])
-        self.assertEqual(workloadSummary['performance']['TotalJobCPU'], 21001.200000000001)
+        #self.assertEqual(workloadSummary['output'].keys(),
+        #                 ['/MinBias_TuneZ2_7TeV-pythia6/Backfill-110414_Type4_Redigi_01_T1_US_FNAL_MinBias_TuneZ2_7TeV-pythia6-v1/GEN-SIM-RAWDEBUG'])
+        self.assertEqual(workloadSummary['performance']['TotalJobCPU']['average'], 16.502500000000001)
+        self.assertTrue(workloadSummary['performance']['TotalJobCPU']['stdDev'] < 0.000001)
+        self.assertEqual(workloadSummary['performance']['AvgEventTime']['histogram'][0]['stdDev'], 0.0)
+        self.assertEqual(workloadSummary['performance']['AvgEventTime']['histogram'][0]['average'], 0.0)
+        self.assertEqual(workloadSummary['performance']['readMaxMSec']['average'], 1518.0599999999999)
+        self.assertEqual(workloadSummary['campaign'], self.campaignName)
+        return
+
+    def testB_testErrors(self):
+        """
+        _testErrors_
+
+        Test with a failed FWJR
+        """
+
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+        workloadPath = os.path.join(self.testDir, 'specDir', 'spec.pkl')
+        workload     = self.createWorkload(workloadName = workloadPath)
+        testJobGroup = self.createTestJobGroup(config = config,
+                                               name = workload.name(),
+                                               specLocation = workloadPath,
+                                               error = True)
+
+        cachePath = os.path.join(config.JobCreator.jobCacheDir,
+                                 "TestWorkload", "ReReco")
+        os.makedirs(cachePath)
+        self.assertTrue(os.path.exists(cachePath))
+
+        testTaskArchiver = TaskArchiverPoller(config = config)
+        testTaskArchiver.algorithm()
+
+        dbname       = getattr(config.JobStateMachine, "couchDBName")
+        couchdb      = CouchServer(config.JobStateMachine.couchurl)
+        workdatabase = couchdb.connectDatabase(dbname)
+
+        workloadSummary = workdatabase.document(id = "TestWorkload")
+
+        self.assertEqual(workloadSummary['/TestWorkload/ReReco']['failureTime'], 500)
+        self.assertTrue(workloadSummary['/TestWorkload/ReReco']['cmsRun1'].has_key('99999'))
         return
 
 
-    def testB_Profile(self):
+    def atestC_Profile(self):
         """
         _Profile_
         
@@ -393,7 +445,7 @@ class TaskArchiverTest(unittest.TestCase):
 
 
 
-    def testC_Timing(self):
+    def atestD_Timing(self):
         """
         _Timing_
 

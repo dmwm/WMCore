@@ -628,6 +628,27 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return getattr(self.data.properties, 'validStatus', None)
 
+    def setCampaign(self, campaign):
+        """
+        _setCampaign_
+
+        Set the campaign to which this workflow belongs
+        Optional
+        """
+
+        self.data.properties.campaign = campaign
+        return
+
+
+    def getCampaign(self):
+        """
+        _getCampaign_
+
+        Get the campaign for the workflow
+        """
+
+        return getattr(self.data.properties, 'campaign', None)
+
     def setLFNBase(self, mergedLFNBase, unmergedLFNBase):
         """
         _setLFNBase_

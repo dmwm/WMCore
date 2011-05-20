@@ -13,6 +13,15 @@ b) Calls the WMBS.Subscription.DeleteEverything() method on them.
 This should be a simple process.  Because of the long time between
 the submission of subscriptions projected and the short time to run
 this class, it should be run irregularly.
+
+
+Config options
+histogramKeys: Allows you to report values in histogram form in the
+  workloadSummary - i.e., as a list of bins
+histogramBins: Bin size for all histograms
+histogramLimit: Limit in terms of number of standard deviations from the
+  average at which you cut the histogram off.  All points outside of that
+  go into overflow and underflow.
 """
 __all__ = []
 
@@ -32,6 +41,7 @@ from WMCore.WMException         import WMException
 from WMCore.Database.CMSCouch   import CouchServer
 from WMCore.DataStructs.Run     import Run
 from WMCore.DataStructs.Mask    import Mask
+from WMCore.Algorithms          import MathAlgos
 
 from WMComponent.JobCreator.CreateWorkArea   import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
@@ -80,6 +90,11 @@ class TaskArchiverPoller(BaseWorkerThread):
             self.workQueue = None
 
         self.timeout = getattr(self.config.TaskArchiver, "timeOut", 0)
+
+        # Set up optional histograms
+        self.histogramKeys  = getattr(self.config.TaskArchiver, "histogramKeys", [])
+        self.histogramBins  = getattr(self.config.TaskArchiver, "histogramBins", 10)
+        self.histogramLimit = getattr(self.config.TaskArchiver, "histogramLimit", 5.0)
 
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
@@ -226,8 +241,14 @@ class TaskArchiverPoller(BaseWorkerThread):
                 workflow = sub['workflow']
                 if not workflow.exists():
                     # Then we deleted the workflow
-                    # First pull its info from couch and archive it
-                    self.archiveCouchSummary(workflow = workflow)
+
+                    # First load the WMSpec
+                    logging.debug("Loading spec to delete sandbox dir")
+                    spec     = retrieveWMSpec(workflow = workflow)
+                    wmTask   = spec.getTaskByPath(workflow.task)
+                                        
+                    # Then pull its info from couch and archive it
+                    self.archiveCouchSummary(workflow = workflow, spec = spec)
                     # Now we have to delete the task area.
                     workDir, taskDir = getMasterName(startDir = self.jobCacheDir,
                                                      workflow = workflow)
@@ -238,28 +259,26 @@ class TaskArchiverPoller(BaseWorkerThread):
                     else:
                         logging.error("Attempted to delete work directory but it was already gone: %s" % taskDir)
                     # Remove the sandbox dir
-                    logging.debug("Loading spec to delete sandbox dir")
-                    spec     = retrieveWMSpec(workflow = workflow)
-                    wmTask   = spec.getTaskByPath(workflow.task)
+                    
                     sandbox  = getattr(wmTask.data.input, 'sandbox', None)
                     if sandbox:
                         sandboxDir = os.path.dirname(sandbox)
-                        if os.path.isdir(sandboxDir):
-                            shutil.rmtree(sandboxDir)
-                            logging.debug("Sandbox dir deleted")
-                        else:
-                            logging.error("Attempted to delete sandbox dir but it was already gone: %s" % sandboxDir)
+                        #if os.path.isdir(sandboxDir):
+                        #    shutil.rmtree(sandboxDir)
+                        #    logging.debug("Sandbox dir deleted")
+                        #else:
+                        #    logging.error("Attempted to delete sandbox dir but it was already gone: %s" % sandboxDir)
             except Exception, ex:
                 msg =  "Critical error while deleting subscription %i\n" % sub['id']
                 msg += str(ex)
                 msg += str(traceback.format_exc())
                 logging.error(msg)
-                raise TaskArchiverPollerException(msg)
+                #raise TaskArchiverPollerException(msg)
 
         return
 
 
-    def archiveCouchSummary(self, workflow):
+    def archiveCouchSummary(self, workflow, spec):
         """
         _archiveCouchSummary_
 
@@ -271,8 +290,11 @@ class TaskArchiverPoller(BaseWorkerThread):
         jobErrors  = []
         outputLFNs = []
 
-        workflowFailures = {}
+        workflowData = {}
         workflowName     = workflow.task.split('/')[1]
+
+        # Set campaign
+        workflowData['campaign'] = spec.getCampaign()
 
         # Get a list of failed job IDs
         failedCouch = self.jobsdatabase.loadView("JobDump", "failedJobsByWorkflowName",
@@ -287,18 +309,20 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                        "group_level": 1})['rows']
 
         perf = self.handleCouchPerformance(workflowName = workflowName)
-        workflowFailures['performance'] = {}
+        workflowData['performance'] = {}
         for key in perf:
-            workflowFailures['performance'][key] = perf[key]['average']
+            workflowData['performance'][key] = {}
+            for attr in perf[key].keys():
+                workflowData['performance'][key][attr] = perf[key][attr]
 
         for entry in failedCouch:
             failedJobs.append(entry['value'])
 
 
-        workflowFailures["_id"]          = workflow.task.split('/')[1]
+        workflowData["_id"]          = workflow.task.split('/')[1]
         try:
-            workflowFailures["ACDCServer"]   = self.config.ACDC.couchurl
-            workflowFailures["ACDCDatabase"] = self.config.ACDC.database
+            workflowData["ACDCServer"]   = self.config.ACDC.couchurl
+            workflowData["ACDCDatabase"] = self.config.ACDC.database
         except AttributeError, ex:
             # We're missing the ACDC info.
             # Keep going
@@ -308,16 +332,17 @@ class TaskArchiverPoller(BaseWorkerThread):
             
 
         # Attach output
-        workflowFailures['output'] = {}
+        workflowData['output'] = {}
         for e in output:
             entry   = e['value']
             dataset = entry['dataset']
-            workflowFailures['output'][dataset] = {}
-            workflowFailures['output'][dataset]['nFiles'] = entry['count']
-            workflowFailures['output'][dataset]['size']   = entry['size']
-            workflowFailures['output'][dataset]['events'] = entry['events']
+            workflowData['output'][dataset] = {}
+            workflowData['output'][dataset]['nFiles'] = entry['count']
+            workflowData['output'][dataset]['size']   = entry['size']
+            workflowData['output'][dataset]['events'] = entry['events']
 
-                    
+
+        # Loop over all failed jobs
         for jobid in failedJobs:
             errorCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
                                                     options = {"startkey": [jobid, 0],
@@ -327,6 +352,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             inputs = [x['lfn'] for x in job['inputfiles']]
             runsA  = [x['runs'][0] for x in job['inputfiles']]
             maskA  = job['mask']
+            
             # Have to transform this because JSON is too stupid to understand ints
             for key in maskA['runAndLumis'].keys():
                 maskA['runAndLumis'][int(key)] = maskA['runAndLumis'][key]
@@ -345,18 +371,23 @@ class TaskArchiverPoller(BaseWorkerThread):
                 task   = err['value']['task']
                 step   = err['value']['step']
                 errors = err['value']['error']
-                if not task in workflowFailures.keys():
-                    workflowFailures[task] = {}
-                if not step in workflowFailures[task].keys():
-                    workflowFailures[task][step] = {}
-                stepFailures = workflowFailures[task][step]
+                logs   = err['value']['logs']
+                start  = err['value']['start']
+                stop   = err['value']['stop']
+                if not task in workflowData.keys():
+                    workflowData[task] = {'failureTime': 0}
+                if not step in workflowData[task].keys():
+                    workflowData[task][step] = {}
+                workflowData[task]['failureTime'] += (stop - start)
+                stepFailures = workflowData[task][step]
                 for error in errors:
                     exitCode = str(error['exitCode'])
                     if not exitCode in stepFailures.keys():
                         stepFailures[exitCode] = {"errors": [],
                                                   "jobs":   0,
                                                   "input":  [],
-                                                  "runs":   {}}
+                                                  "runs":   {},
+                                                  "logs":   []}
                     stepFailures[exitCode]['jobs'] += 1 # Increment job counter
                     if len(stepFailures[exitCode]['errors']) == 0 or \
                            exitCode == '99999':
@@ -374,11 +405,14 @@ class TaskArchiverPoller(BaseWorkerThread):
                         for l in run.lumis:
                             if not l in stepFailures[exitCode]['runs'][str(run.run)]:
                                 stepFailures[exitCode]['runs'][str(run.run)].append(l)
-                                                         
-        # Now we have the workflowFailures in the right format
+                    for log in logs:
+                        if not log in stepFailures[exitCode]["logs"]:
+                            stepFailures[exitCode]["logs"].append(log)
+
+        # Now we have the workflowData in the right format
         # Time to send them on
         logging.debug("About to commit workflow summary to couch")
-        self.workdatabase.commitOne(workflowFailures)
+        self.workdatabase.commitOne(workflowData)
         logging.debug("Finished committing workflow summary to couch")
 
         return
@@ -393,34 +427,31 @@ class TaskArchiverPoller(BaseWorkerThread):
         The couch performance stuff is convoluted enough I think I want to handle it separately.
         """
         output = {}
+        final  = {}
 
         perf = self.fwjrdatabase.loadView("FWJRDump", "performanceByWorkflowName",
                                           options = {"startkey": [workflowName],
-                                                     "endkey": [workflowName],
-                                                     'group': True})['rows']
+                                                     "endkey": [workflowName]})['rows']
 
         for row in perf:
             for key in row['value'].keys():
                 if not key in output.keys():
-                    output[key] = {'value': 0,
-                                   'count': 0,
-                                   'average': 0}
-                if row['value'][key]['count'] > 0:
-                    # You only want ones where actual events were counted
-                    # It should be impossible to get this wrong, but you know...
-                    output[key]['value'] += row['value'][key]['value']
-                    output[key]['count'] += row['value'][key]['count']
+                    output[key] = []
+                output[key].append(float(row['value'][key]))
 
         for key in output.keys():
-            try:
-                output[key]['average'] = output[key]['value']/float(output[key]['count'])
-            except ZeroDivisionError:
-                logging.error("Performance report for workload %s has divide by zero error for key %s!" % (workflowName, key))
-                logging.error("Output: %s" % output)
-                output[key]['average'] = 0
-
-
-        return output
+            final[key] = {}
+            if key in self.histogramKeys:
+                histogram = MathAlgos.createHistogram(numList = output[key],
+                                                      nBins = self.histogramBins,
+                                                      limit = self.histogramLimit)
+                final[key]['histogram'] = histogram
+            else:
+                average, stdDev = MathAlgos.getAverageStdDev(numList = output[key])
+                final[key]['average'] = average
+                final[key]['stdDev']  = stdDev
+            
+        return final
 
 
         

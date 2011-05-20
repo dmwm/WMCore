@@ -5,11 +5,16 @@ function(doc) {
     }
 
     var specName = doc['fwjr'].task.split('/')[1];
+    var startTime = 99999999999;
+    var stopTime = 0;
 
     for (var stepName in doc['fwjr'].steps) {
+      startTime = Math.min(startTime, doc['fwjr']['steps'][stepName].start)
+      stopTime = Math.max(stopTime, doc['fwjr']['steps'][stepName].stop)
       if (doc['fwjr']['steps'][stepName].errors.length > 0) {
         inputLFNs = new Array();
         inputRuns = new Object;
+	logLFNs   = new Array();
 
         for (var inputName in doc['fwjr']['steps'][stepName]['input']) {
           if (inputName == 'source') {
@@ -47,8 +52,16 @@ function(doc) {
                 }
               }
             }
-          }
-        }
+          }	  
+        } //END for loop over inputs
+
+	if ('logArch1' in doc['fwjr'].steps) {
+	  for (var outputName in doc['fwjr']['steps']['logArch1']['output']) {
+	    for (var outputIndex in doc['fwjr']['steps']['logArch1']['output'][outputName]) {
+	      logLFNs.push(doc['fwjr']['steps']['logArch1']['output'][outputName][outputIndex]['lfn']);
+	    } //END loop over log archive outputs
+	  }//END loop over output names
+	}
 
         emit([doc['jobid'], doc['retrycount']], 
              {'jobid': doc['jobid'],
@@ -57,8 +70,11 @@ function(doc) {
               'task': doc['fwjr']['task'],
               'error': doc['fwjr']['steps'][stepName].errors,
               'input': inputLFNs,
-              'runs': inputRuns});
+              'runs': inputRuns,
+	      'logs': logLFNs,
+	      'start': startTime,
+	      'stop': stopTime});
       }
-    }
+    } //END for loop over steps
   }
 }

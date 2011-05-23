@@ -211,3 +211,8 @@ class WorkQueue(Service):
         args['request'] = request
         callname = 'queuework'
         return self._getResult(callname, args = args, verb = "PUT")
+
+    def getSiteSummaryFromCouchDB(self):
+        args = {}
+        callname = 'jobstatebysite'
+        return self._getResult(callname, args = args, verb = "GET")

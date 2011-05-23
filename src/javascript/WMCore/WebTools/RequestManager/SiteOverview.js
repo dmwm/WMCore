@@ -25,6 +25,9 @@ WMCore.RequestManager.SiteOverview.statusTable = function(divID){
                  {key: "Running"},
                  {key: "Complete"},
                  {key: "Error"},
+                 {key: "success", label: "Success"},
+                 {key: "failure", label: "Failure"},
+                 {key: "cooloff", label: "Cooloff"},
                  {key: "job_slots", label:"Job Slots"}]
         };
 

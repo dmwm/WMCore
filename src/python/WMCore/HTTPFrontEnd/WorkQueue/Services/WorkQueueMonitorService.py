@@ -49,6 +49,7 @@ class WorkQueueMonitorService(ServiceInterface):
         if self.model.config.level == "LocalQueue":
             #External couch call
             self.model._addMethod("GET", "jobsummary", self.getJobSummary)
+            self.model._addMethod("GET", "jobstatebysite", self.getJobStateBySite)
             # batch system status
             bossAirDAOFactory = DAOFactory(package = "WMCore.BossAir",
                                        logger = self.model,
@@ -133,6 +134,10 @@ class WorkQueueMonitorService(ServiceInterface):
     def getJobSummary(self):
         from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfo
         return JobInfo.getJobSummaryByWorkflow(self.model.config.couchConfig)
+
+    def getJobStateBySite(self):
+        from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfo
+        return JobInfo.getJobStateBySite(self.model.config.couchConfig)
 
     def validateInt(self, input):
         """

@@ -51,9 +51,6 @@ config.CRABInterface.agentDN = "/Your/Agent/DN.here/"
 config.CRABInterface.SandBoxCache_endpoint = "USB-cache-endpoint"
 config.CRABInterface.SandBoxCache_port  = "PORT"
 config.CRABInterface.SandBoxCache_basepath ="/Path/if/Needed"
-
-config.CRABInterface.views.active.crab.jsmCacheCouchURL = couchURL
-config.CRABInterface.views.active.crab.jsmCacheCouchDB = jsmCacheDBName
 ##
 
 config.CRABInterface.admin = "admin@mail.address"
@@ -77,3 +74,8 @@ config.CRABInterface.views.active.crab.model.workloadCouchDB = workloadCouchDB
 config.CRABInterface.views.active.crab.model.object = 'CRABServer.CRABRESTModel'
 config.CRABInterface.views.active.crab.formatter.object = 'WMCore.WebTools.RESTFormatter'
 
+## TODO once the deploy model has been defined.. we will clarify how 
+##      to deal with these params
+config.CRABInterface.views.active.crab.jsmCacheCouchURL = couchURL
+config.CRABInterface.views.active.crab.jsmCacheCouchDB = jsmCacheDBName
+##

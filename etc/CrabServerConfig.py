@@ -77,3 +77,8 @@ config.CRABInterface.views.active.crab.model.workloadCouchDB = workloadCouchDB
 config.CRABInterface.views.active.crab.model.object = 'CRABServer.CRABRESTModel'
 config.CRABInterface.views.active.crab.formatter.object = 'WMCore.WebTools.RESTFormatter'
 
+## TODO once the deploy model has been defined.. we will clarify how 
+##      to deal with these params
+config.CRABInterface.views.active.crab.jsmCacheCouchURL = couchURL
+config.CRABInterface.views.active.crab.jsmCacheCouchDB = jsmCacheDBName
+##

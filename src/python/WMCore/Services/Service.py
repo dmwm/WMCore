@@ -54,34 +54,37 @@ result          |  cached  |  cached  |  cached  | not cached |
 
 import datetime
 import os
-import httplib2
-from httplib import InvalidURL
-from urlparse import urlparse
 import time
-from httplib import HTTPException
-from WMCore.Services.Requests import Requests
-from WMCore.WMException import WMException
-from WMCore.Wrappers import JsonWrapper as json
 import types
 import logging
 
+from httplib import InvalidURL, HTTPException
+from httplib2 import HttpLib2Error
+
+from urlparse import urlparse
+
+from WMCore.Services.Requests import Requests
+from WMCore.WMException import WMException
+from WMCore.Wrappers import JsonWrapper as json
+
+
 class Service(dict):
 
-    def __init__(self, dict = {}):
+    def __init__(self, cfg_dict = {}):
         #The following should read the configuration class
         for a in ['endpoint']:
-            assert a in dict.keys(), "Can't have a service without a %s" % a
+            assert a in cfg_dict.keys(), "Can't have a service without a %s" % a
 
         scheme = ''
         netloc = ''
         path = ''
 
         #if end point ends without '/', add that
-        if not dict['endpoint'].endswith('/'):
-            dict['endpoint'] = dict['endpoint'].strip() + '/'
+        if not cfg_dict['endpoint'].endswith('/'):
+            cfg_dict['endpoint'] = cfg_dict['endpoint'].strip() + '/'
 
         # then split the endpoint into netloc and basepath
-        endpoint_components = urlparse(dict['endpoint'])
+        endpoint_components = urlparse(cfg_dict['endpoint'])
 
         scheme = endpoint_components.scheme
 
@@ -98,7 +101,7 @@ class Service(dict):
         self.setdefault("timeout", 30)
 
         # then update with the incoming dict
-        self.update(dict)
+        self.update(cfg_dict)
 
         self['service_name'] = self.__class__.__name__ # used for cache naming
 
@@ -110,7 +113,7 @@ class Service(dict):
             requests = Requests
         # Instantiate a Request
         try:
-            self["requests"] = requests(dict['endpoint'], dict)
+            self["requests"] = requests(cfg_dict['endpoint'], cfg_dict)
         except WMException, ex:
             msg = str(ex)
             self["logger"].exception(msg)
@@ -243,21 +246,33 @@ class Service(dict):
                 f = open(cachefile, 'w')
                 f.write(str(data))
                 f.close()
-        except HTTPException, he:
-            if not os.path.exists(cachefile):
 
-                msg = 'The cachefile %s does not exist and the service at %s is'
-                msg += ' unavailable - it returned %s because %s'
-                msg = msg % (cachefile, he.url, he.status, he.reason)
+
+        except (HttpLib2Error, HTTPException), he:
+            #
+            # Overly complicated exception handling. This is due to a request
+            # from *Ops that it is very clear that data is is being returned
+            # from a cachefile, and that cachefiles can be good/stale/dead.
+            #
+            if not os.path.exists(cachefile):
+                msg = 'The cachefile %s does not exist and the service at %s'
+                msg = msg % (cachefile, url)
+                if hasattr(he, 'status') and hasattr(he, 'reason'):
+                    msg += ' is unavailable - it returned %s because %s'
+                    msg += msg % (he.status, he.reason)
+                else:
+                    msg += ' raised a %s when accessed' % he.__repr__()
                 self['logger'].warning(msg)
-                raise HTTPException(msg)
+                raise he
             else:
                 cache_age = os.path.getmtime(cachefile)
-                t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
+                delta = datetime.timedelta(hours = self.get('maxcachereuse', 24))
+                t = datetime.datetime.now() - delta
                 cache_dead = cache_age < time.mktime(t.timetuple())
                 if self.get('usestalecache', False) and not cache_dead:
-                    # If usestalecache is set the previous version of the cache file
-                    # should be returned, with a suitable message in the log
+                    # If usestalecache is set the previous version of the cache
+                    # file should be returned, with a suitable message in the
+                    # log, but no exception raised
                     self['logger'].warning('Returning stale cache data')
                     self['logger'].info('%s returned %s because %s' % (he.url,
                                                                        he.status,
@@ -268,16 +283,26 @@ class Service(dict):
                 else:
                     if cache_dead:
                         msg = 'The cachefile %s is dead (%s hours older than cache '
-                        msg += 'duration), and the service at %s is unavailable - '
-                        msg += 'it returned %s because %s'
-                        msg = msg % (cachefile, self.get('maxcachereuse', 24), he.url, he.status, he.reason)
+                        msg += 'duration), and the service at %s'
+                        msg = msg % (cachefile, self.get('maxcachereuse', 24), url)
+                        if hasattr(he, 'status') and hasattr(he, 'reason'):
+                            msg += ' is unavailable - it returned %s because %s'
+                            msg += msg % (he.status, he.reason)
+                        else:
+                            msg += ' raised a %s when accessed' % he.__repr__()
                         self['logger'].warning(msg)
                     elif self.get('usestalecache', False) == False:
-                        msg = 'The cachefile %s is stale and the service at %s is'
-                        msg += ' unavailable - it returned %s because %s'
-                        msg = msg % (cachefile, he.url, he.status, he.reason)
+                        # Cache is not dead but Service is configured to not
+                        # return stale data.
+                        msg = 'The cachefile %s is stale and the service at %s'
+                        msg = msg % (cachefile, url)
+                        if hasattr(he, 'status') and hasattr(he, 'reason'):
+                            msg += ' is unavailable - it returned %s because %s'
+                            msg += msg % (he.status, he.reason)
+                        else:
+                            msg += ' raised a %s when accessed' % he.__repr__()
                         self['logger'].warning(msg)
-                    raise HTTPException(msg)
+                    raise he
 
     def _verbCheck(self, verb='GET'):
         if verb.upper() in self.supportVerbList:

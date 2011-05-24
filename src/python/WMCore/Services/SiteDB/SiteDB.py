@@ -9,7 +9,7 @@ API for dealing with retrieving information from SiteDB
 
 
 
-from WMCore.Services.SSLService import SSLService
+from WMCore.Services.Service import Service
 
 # This should be deprecated in preference to simplejson once SiteDB spits out
 # correct json
@@ -20,7 +20,7 @@ from WMCore.Services.EmulatorSwitch import emulatorHook
 # when emulator values are set. 
 # Look WMCore.Services.EmulatorSwitch module for the values
 @emulatorHook
-class SiteDBJSON(SSLService):
+class SiteDBJSON(Service):
 
     """
     API for dealing with retrieving information from SiteDB
@@ -30,7 +30,7 @@ class SiteDBJSON(SSLService):
         dict['endpoint'] = "https://cmsweb.cern.ch/sitedb/json/index/"
         self.parser = JSONParser()
 
-        SSLService.__init__(self, dict)
+        Service.__init__(self, dict)
 
     def getJSON(self, callname, file = 'result.json', clearCache = False, verb = 'GET', **args):
         """

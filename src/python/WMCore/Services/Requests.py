@@ -22,9 +22,9 @@ import stat
 from WMCore.Algorithms import Permissions
 
 from WMCore.WMException import WMException
-from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+from WMCore.Lexicon import sanitizeURL
 
 def check_server_url(srvurl):
     good_name = srvurl.startswith('http://') or srvurl.startswith('https://')
@@ -45,6 +45,14 @@ class Requests(dict):
         #set up defaults
         self.setdefault("accept_type", 'text/html')
         self.setdefault("content_type", 'application/x-www-form-urlencoded')
+        self.additionalHeaders = {}
+
+        # check for basic auth early, as if found this changes the url
+        urlComponent = sanitizeURL(url)
+        if urlComponent['username'] is not None:
+            self.addBasicAuth(urlComponent['username'], urlComponent['password'])
+            url = urlComponent['url'] # remove user, password from url
+
         self.setdefault("host", url)
 
         # then update with the incoming dict
@@ -61,8 +69,7 @@ class Requests(dict):
         check_server_url(self['host'])
         # and then get the URL opener
         self.setdefault("conn", self._getURLOpener())
-        self.additionalHeaders = {}
-        return
+
 
     def get(self, uri=None, data={}, incoming_headers={},
                encode = True, decode=True, contentType=None):
@@ -218,14 +225,6 @@ class Requests(dict):
         """
         return data.__str__()
 
-    def _getURLOpener(self):
-        """
-        method getting an HTTPConnection, it is used by the constructor such
-        that a sub class can override it to have different type of connection
-        i.e. - if it needs authentication, or some fancy handler
-        """
-        return httplib2.Http(self['req_cache_path'], self['timeout'])
-
     def cachePath(self, given_path, service_name):
         """Return cache location"""
         if not service_name:
@@ -284,115 +283,18 @@ class Requests(dict):
         """Parse netloc to get user"""
         return self['endpoint_components'].username
 
-class JSONRequests(Requests):
-    """
-    Example implementation of Requests that encodes data to/from JSON.
-    """
-    def __init__(self, url = 'http://localhost:8080', dict={}):
-        Requests.__init__(self, url, dict)
-        self['accept_type'] = "application/json"
-        self['content_type'] = "application/json"
-
-    def encode(self, data):
-        """
-        encode data as json
-        """
-        encoder = JSONEncoder()
-        thunker = JSONThunker()
-        thunked = thunker.thunk(data)
-        return encoder.encode(thunked)
-
-
-    def decode(self, data):
-        """
-        decode the data to python from json
-        """
-        if data:
-            decoder = JSONDecoder()
-            thunker = JSONThunker()
-            data =  decoder.decode(data)
-            unthunked = thunker.unthunk(data)
-            return unthunked
-        else:
-            return {}
-
-class BasicAuthJSONRequests(JSONRequests):
-    """
-    _BasicAuthJSONRequests_
-
-    Support basic HTTP auth for JSON requests.  The username and password must
-    be embedded into the url in the following form:
-        username:password@hostname
-    """
-    def __init__(self, url = "http://localhost:8080", dict={}):
-        endpoint_components = urlparse.urlparse(url)
-        # Cleanly pull out the user/password from the url
-        if endpoint_components.port:
-            netloc = '%s:%s' % (endpoint_components.hostname,
-                        endpoint_components.port)
-        else:
-            netloc = endpoint_components.hostname
-
-        #Build a URL without the username/password information
-        url = urlparse.urlunparse(
-                [endpoint_components.scheme,
-                 netloc,
-                 endpoint_components.path,
-                 endpoint_components.params,
-                 endpoint_components.query,
-                 endpoint_components.fragment])
-
-        JSONRequests.__init__(self, url, dict)
-        # Add the necessary auth information into the header
-        auth_string = "Basic %s" % base64.encodestring('%s:%s' % (endpoint_components.username,
-                                                                  endpoint_components.password)).strip()
-        if endpoint_components.username != None:
-            self.additionalHeaders["Authorization"] = auth_string
-        return
-
-class SSLRequests(Requests):
-    """
-    Implementation of Requests using HTTPS to send requests to a given URL,
-    without authenticating via a key/cert pair.
-    """
     def _getURLOpener(self):
         """
         method getting a secure (HTTPS) connection
         """
-        return httplib2.Http(self['req_cache_path'], self['timeout'])
-
-class SSLJSONRequests(JSONRequests):
-    """
-    _SSLJSONRequests_
-
-    Implementation of JSONRequests using HTTPS to send requests to a given URL,
-    without authenticating via a key/cert pair.
-    """
-    def _getURLOpener(self):
-        """
-        _getURLOpener_
-
-        Retrieve a secure (HTTPS) connection.
-        """
-        return httplib2.Http(self['req_cache_path'], self['timeout'])
-
-
-class SecureRequests(Requests):
-    """
-    Implementation of Requests using a different connection type, e.g. use HTTPS
-    to send requests to a given URL, authenticating via a key/cert pair
-    """
-    def _getURLOpener(self):
-        """
-        method getting a secure (HTTPS) connection
-        """
-        # if we have a key/cert add to request, if not proceed as not all https connections require them
         key, cert = None, None
-        try:
-            key, cert = self.getKeyCert()
-        except Exception, ex:
-            self['logger'].warning('No certificate or key found, authentication may fail')
-            self['logger'].debug(str(ex))
+        if self['endpoint_components'].scheme == 'https': # only add certs to https requests
+            # if we have a key/cert add to request, if not proceed as not all https connections require them
+            try:
+                key, cert = self.getKeyCert()
+            except Exception, ex:
+                self['logger'].info('No certificate or key found, authentication may fail')
+                self['logger'].debug(str(ex))
 
         http = httplib2.Http(self['req_cache_path'], self['timeout'])
 
@@ -400,6 +302,12 @@ class SecureRequests(Requests):
         if key or cert:
             http.add_certificate(key=key, cert=cert, domain=self.getDomainName())
         return http
+
+    def addBasicAuth(self, username, password):
+        """Add basic auth headers to request"""
+        auth_string = "Basic %s" % base64.encodestring('%s:%s' % (
+                                            username, password)).strip()
+        self.additionalHeaders["Authorization"] = auth_string
 
     def getKeyCert(self):
         """
@@ -452,6 +360,39 @@ class SecureRequests(Requests):
 
         # All looks OK, still doesn't guarantee proxy's validity etc.
         return key, cert
+
+class JSONRequests(Requests):
+    """
+    Example implementation of Requests that encodes data to/from JSON.
+    """
+    def __init__(self, url = 'http://localhost:8080', dict={}):
+        Requests.__init__(self, url, dict)
+        self['accept_type'] = "application/json"
+        self['content_type'] = "application/json"
+
+    def encode(self, data):
+        """
+        encode data as json
+        """
+        encoder = JSONEncoder()
+        thunker = JSONThunker()
+        thunked = thunker.thunk(data)
+        return encoder.encode(thunked)
+
+
+    def decode(self, data):
+        """
+        decode the data to python from json
+        """
+        if data:
+            decoder = JSONDecoder()
+            thunker = JSONThunker()
+            data =  decoder.decode(data)
+            unthunked = thunker.unthunk(data)
+            return unthunked
+        else:
+            return {}
+
 
 class TempDirectory():
     """Directory that cleans up after itself"""

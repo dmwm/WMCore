@@ -51,7 +51,6 @@ result          |  cached  |  cached  |  cached  | not cached |
 
 
 
-SECURE_SERVICES = ('https',)
 
 import datetime
 import os
@@ -110,11 +109,6 @@ class Service(dict):
         # either passed as param to __init__, determine via scheme or default
         if type(self.get('requests')) == types.TypeType:
             requests = self['requests']
-        # Is this a secure service - add other schemes as we need them
-        elif self.get('secure', False) or scheme in SECURE_SERVICES:
-            # only bring in ssl stuff if we really need it
-            from WMCore.Services.Requests import SecureRequests
-            requests = SecureRequests
         else:
             requests = Requests
         # Instantiate a Request

@@ -6,22 +6,24 @@ function getRootDBPath() {
   return "http://" + urlParts[2] + "/" + rootDBName;
 }
 
-function getFailedJobs(workflowName, errorDiv) {
+function getFailedJobs(workflowName, statusDiv) {
   // Retrieve the list of failed jobs IDs from couch for the given workflow.
-  errorDiv.innerHTML = "Retrieving list of failed jobs from couch...";
+  statusDiv.innerHTML = "Retrieving list of failed jobs from couch...";
   xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", getRootDBPath() + "%2Fjobs/_design/JobDump/_view/failedJobsByWorkflowName?stale=ok&startkey=[\"" + workflowName + "\"]&endkey=[\"" + workflowName + "\",{}]", false);
+  xmlhttp.open("GET", getRootDBPath() + "%2Fjobs/_design/JobDump/_view/failedJobsByWorkflowName?stale=ok&include_docs=true&startkey=[\"" + workflowName + "\"]&endkey=[\"" + workflowName + "\",{}]", false);
   xmlhttp.send();
 
-  errorDiv.innerHTML += "done.";
+  statusDiv.innerHTML += "done.";
   return eval("(" + xmlhttp.responseText + ")")["rows"];
 };
 
-function getErrorInfoForJob(jobID) {
-  // Retrieve the error information from couch for the given jobs ID.
+function getErrorInfo(workflowName, statusDiv) {
+  // Retrieve the error information from couch for the given workflow.
+  statusDiv.innerHTML = "Retrieving errors messages from couch...";
   xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", getRootDBPath() + "%2Ffwjrs/_design/FWJRDump/_view/errorsByJobID?stale=ok&startkey=[" + jobID + "]&endkey=[" + jobID + ",{}]", false);
+  xmlhttp.open("GET", getRootDBPath() + "%2Ffwjrs/_design/FWJRDump/_view/errorsByWorkflowName?stale=ok&startkey=[\"" + workflowName + "\"]&endkey=[\"" + workflowName + "\",{}]", false);
   xmlhttp.send();
+  statusDiv.innerHTML += "done.";
   return eval("(" + xmlhttp.responseText + ")")["rows"];
 };
 
@@ -52,7 +54,7 @@ function removeArrayDuplicates(someArray, compareFunc) {
   return uniqueValues;
 }
 
-function collateFailureInfo(failedJobs, errorDiv) {
+function collateFailureInfo(failedJobs, fwjrInfo, statusDiv) {
   // Given a list of failed job IDs retrieve the frameworks job reports for all
   // of the jobs and sort the failure information into a single object.  The 
   // object will have the following form:
@@ -62,17 +64,28 @@ function collateFailureInfo(failedJobs, errorDiv) {
   //                                    "input": [lfn, ...],
   //                                    "runs": {runNumber: [lumi, ...]}}}}
   var workflowFailures = {};
+  var errorInfo = {};
+
+  for (var fwjrIndex in fwjrInfo) {
+    jobID = fwjrInfo[fwjrIndex]["value"]["jobid"];
+    if (errorInfo.hasOwnProperty(jobID)) {
+      errorInfo[jobID] = errorInfo[jobID].concat(fwjrInfo[fwjrIndex]["value"]);
+    } else {
+      errorInfo[jobID] = [fwjrInfo[fwjrIndex]["value"]];
+    };
+  };
 
   failedJobs.sort(numericalCompare);
-  for (failedJobIndex in failedJobs) {
+  for (var failedJobIndex in failedJobs) {
     var jobID = failedJobs[failedJobIndex]["value"];
-    var jobErrors = getErrorInfoForJob(jobID);
+    var jobDoc = failedJobs[failedJobIndex]["doc"];
+    var jobErrors = errorInfo[jobID];
 
-    errorDiv.innerHTML = "Retrieving failure information for job " + jobID + " ";
-    errorDiv.innerHTML += "(" + failedJobIndex + " of " + failedJobs.length + ")";
+    statusDiv.innerHTML = "Processing failure information for job " + jobID + " ";
+    statusDiv.innerHTML += "(" + failedJobIndex + " of " + failedJobs.length + ")";
 
     for (var errorIndex in jobErrors) {
-      var workflowError = jobErrors[errorIndex]["value"]
+      var workflowError = jobErrors[errorIndex];
       if (!workflowFailures.hasOwnProperty(workflowError["task"])) {
         workflowFailures[workflowError["task"]] = {};
       }
@@ -95,13 +108,28 @@ function collateFailureInfo(failedJobs, errorDiv) {
         };
       };
 
-      stepFailure[exitCode]["input"] = stepFailure[exitCode]["input"].concat(workflowError["input"]);
+      for(var inputIndex in jobDoc["inputfiles"]) {
+        stepFailure[exitCode]["input"] = stepFailure[exitCode]["input"].concat(jobDoc["inputfiles"][inputIndex]["lfn"]);
+      };
+
       stepFailure[exitCode]["jobs"].push(jobID);
-      for(var runNumber in workflowError["runs"]) {
-        if (stepFailure[exitCode]["runs"].hasOwnProperty(runNumber)) {
-          stepFailure[exitCode]["runs"][runNumber] = stepFailure[exitCode]["runs"][runNumber].concat(workflowError["runs"][runNumber]);
-        } else {
-          stepFailure[exitCode]["runs"][runNumber] = workflowError["runs"][runNumber];
+
+      if (jobDoc["mask"].runAndLumis) {
+        for(var runNumber in jobDoc["mask"]["runAndLumis"]) {
+          for(var lumiIndex in jobDoc["mask"]["runAndLumis"][runNumber]) {
+            firstLumi = jobDoc["mask"]["runAndLumis"][runNumber][lumiIndex][0];
+            lastLumi = jobDoc["mask"]["runAndLumis"][runNumber][lumiIndex][1];
+            var lumis = [];
+            while (firstLumi <= lastLumi) {
+              lumis.push(firstLumi);
+              firstLumi += 1;
+            }
+            if (stepFailure[exitCode]["runs"].hasOwnProperty(runNumber)) {
+              stepFailure[exitCode]["runs"][runNumber] = stepFailure[exitCode]["runs"][runNumber].concat(lumis);
+            } else {
+              stepFailure[exitCode]["runs"][runNumber] = lumis;
+            };
+          };
         };
       };
     };
@@ -267,7 +295,8 @@ function renderWorkflowErrors(workflowName, errorDiv) {
   errorDiv.appendChild(statusDiv);
 
   failedJobs = getFailedJobs(workflowName, statusDiv);
-  workflowFailures = collateFailureInfo(failedJobs, statusDiv);
+  fwjrInfo = getErrorInfo(workflowName, statusDiv)
+  workflowFailures = collateFailureInfo(failedJobs, fwjrInfo, statusDiv);
   var firstTask = true;
 
   for (var taskName in workflowFailures) {

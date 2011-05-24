@@ -17,6 +17,8 @@ from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMQuality.Emulators.DataBlockGenerator import Globals
 
 rerecoArgs = getTestArguments()
+parentProcArgs = getTestArguments()
+parentProcArgs.update(IncludeParents = "True")
 
 class DatasetTestCase(unittest.TestCase):
 
@@ -201,6 +203,29 @@ class DatasetTestCase(unittest.TestCase):
         processingSpec.setRunWhitelist([666]) # not in this dataset
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Dataset(), processingSpec, task)
+
+    def testParentProcessing(self):
+        """
+        test parent processing: should have the same results as rereco test
+        with the parent flag and dataset.
+        """
+        parentProcSpec = rerecoWorkload('testParentProcessing', parentProcArgs)
+
+        inputDataset = getFirstTask(parentProcSpec).inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+        for task in parentProcSpec.taskIterator():
+            units = Dataset(**self.splitArgs)(parentProcSpec, task)
+            self.assertEqual(1, len(units))
+            for unit in units:
+                self.assertEqual(2, unit['Jobs'])
+                self.assertEqual(parentProcSpec, unit['WMSpec'])
+                self.assertEqual(task, unit['Task'])
+                self.assertEqual(unit['Inputs'].keys(), [dataset])
+                self.assertEqual(True, unit['ParentFlag'])
+                self.assertEqual(0, len(unit['ParentData']))
 
 if __name__ == '__main__':
     unittest.main()

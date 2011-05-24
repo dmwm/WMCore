@@ -7,6 +7,7 @@ Retrieve information about a job from couch and format it nicely.
 import sys
 import datetime
 import os
+import time
 
 from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource.CouchDBConnectionBase \
     import CouchDBConnectionBase
@@ -118,10 +119,11 @@ def getJobStateBySite(couchConfig):
         #If the server is down it doesn't throw CouchError,
         #Need to distinquish between server down and CouchError
         return [{"error": 'Couch connection error'}]
+    currentTime = int(time.time())
+    endkey = [currentTime - (currentTime % 3600), {}, {}]
+    options = {"group_level": 3, "endkey":endkey, "stale": "ok"}
 
-    options = {"group": True, "group_level": 2, "stale": "ok"}
-
-    result = changeStateDB.loadView("JobDump", "jobStateBySite", options)
+    result = changeStateDB.loadView("JobDump", "hourlyStatusBySiteName", options)
 
     # reformat to match other type.
     formatted = []
@@ -130,15 +132,15 @@ def getJobStateBySite(couchConfig):
     siteDict = None
     #result is sorted by site.
     for item in result['rows']:
-        if currentSite == item['key'][0]:
-            siteDict[item['key'][1]] = item['value']
+        if currentSite == item['key'][1]:
+            siteDict[item['key'][2]] = item['value']
         else:
             if siteDict != None:
                 formatted.append(siteDict)
             siteDict = {}
-            siteDict['site'] = item['key'][0]
-            siteDict[item['key'][1]] = item['value']
-            currentSite = item['key'][0]
+            siteDict['site_name'] = item['key'][1]
+            siteDict[item['key'][2]] = item['value']
+            currentSite = item['key'][1]
 
     if siteDict != None:
         formatted.append(siteDict)

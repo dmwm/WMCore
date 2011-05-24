@@ -20,6 +20,7 @@ from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload \
     import monteCarloWorkload, getMCArgs
 
 from WMQuality.Emulators.DataBlockGenerator import Globals
+from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator \
      import DataBlockGenerator
 from WMCore.DAOFactory import DAOFactory
@@ -42,6 +43,8 @@ from WMCore.Lexicon import sanitizeURL
 # Thus total element counts etc count elements in all queues
 rerecoArgs = getRerecoArgs()
 mcArgs = getMCArgs()
+parentProcArgs = getRerecoArgs()
+parentProcArgs.update(IncludeParents = "True")
 
 def rerecoWorkload(workloadName, arguments):
     wmspec = rerecoWMSpec(workloadName, arguments)
@@ -90,6 +93,12 @@ class WorkQueueTest(WorkQueueTestCase):
         self.processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessing.spec'))
         self.processingSpec.save(self.processingSpec.specUrl())
+
+        # Sample Tier1 ReReco spec
+        self.parentProcSpec = rerecoWorkload('testParentProcessing', parentProcArgs)
+        self.parentProcSpec.setSpecUrl(os.path.join(self.workDir,
+                                                    'testParentProcessing.spec'))
+        self.parentProcSpec.save(self.parentProcSpec.specUrl())
 
         # ReReco spec with blacklist
         self.blacklistSpec = rerecoWorkload('blacklistSpec', rerecoArgs)
@@ -329,11 +338,13 @@ class WorkQueueTest(WorkQueueTestCase):
         # Only 1 block at SiteB - get 1 work element when any resources free
         work = self.queue.getWork({'SiteB' : 1})
         self.assertEqual(len(work), 1)
+        self.assertEqual(work[0]["NumOfFilesAdded"], GlobalParams.numOfFilesPerBlock())
 
         # claim remaining work
         work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
         self.assertEqual(len(work), 1)
 
+        self.assertEqual(work[0]["NumOfFilesAdded"], GlobalParams.numOfFilesPerBlock())
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))
 
@@ -913,6 +924,39 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(self.localQueue.pullWork(), 1)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status()), 1)
-    
+
+    def testParentProcessing(self):
+        """
+        Enqueue and get work for a processing WMSpec.
+        """
+        specfile = self.parentProcSpec.specUrl()
+        njobs = [5, 10] # array of jobs per block
+        total = sum(njobs)
+
+        # Queue Work & check accepted
+        self.queue.queueWork(specfile)
+        self.queue.processInboundWork()
+        self.assertEqual(len(njobs), len(self.queue))
+
+        self.queue.updateLocationInfo()
+        # No resources
+        work = self.queue.getWork({})
+        self.assertEqual(len(work), 0)
+        work = self.queue.getWork({'SiteA' : 0,
+                                   'SiteB' : 0})
+        self.assertEqual(len(work), 0)
+
+        # Only 1 block at SiteB - get 1 work element when any resources free
+        work = self.queue.getWork({'SiteB' : 1})
+        self.assertEqual(len(work), 1)
+        self.assertEqual(work[0]["NumOfFilesAdded"], GlobalParams.numOfFilesPerBlock() * 2)
+
+        # claim remaining work
+        work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
+        self.assertEqual(len(work), 1)
+        self.assertEqual(work[0]["NumOfFilesAdded"], GlobalParams.numOfFilesPerBlock() * 2)
+
+        # no more work available
+        self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))
 if __name__ == "__main__":
     unittest.main()

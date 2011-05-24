@@ -300,9 +300,22 @@ class WorkQueueBackend(object):
         return [{'dbs_url' : x['key'][0],
                  'name' : x['key'][1]} for x in data.get('rows', [])]
 
+    def getActiveParentData(self):
+        """Get data items we have work in the queue for with parent"""
+        data = self.db.loadView('WorkQueue', 'activeParentData', {'reduce' : True, 'group' : True})
+        return [{'dbs_url' : x['key'][0],
+                 'name' : x['key'][1]} for x in data.get('rows', [])]
+
     def getElementsForData(self, dbs, data):
         """Get active elements for this dbs & data combo"""
         elements = self.db.loadView('WorkQueue', 'elementsByData', {'key' : data, 'include_docs' : True})
+        return [CouchWorkQueueElement.fromDocument(self.db,
+                                                   x['doc'])
+                for x in elements.get('rows', [])]
+
+    def getElementsForParentData(self, data):
+        """Get active elements for this data """
+        elements = self.db.loadView('WorkQueue', 'elementsByParentData', {'key' : data, 'include_docs' : True})
         return [CouchWorkQueueElement.fromDocument(self.db,
                                                    x['doc'])
                 for x in elements.get('rows', [])]

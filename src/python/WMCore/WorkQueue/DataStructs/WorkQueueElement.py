@@ -22,7 +22,10 @@ class WorkQueueElement(dict):
         self.update(kwargs)
 
         self.setdefault('Inputs', {})
+        #both ParentData and ParentFlag is needed in case there Dataset split,
+        # even though ParentFlag is True it will have empty ParentData
         self.setdefault('ParentData', [])
+        self.setdefault('ParentFlag', False)
         self.setdefault('Jobs', None)
         self.setdefault('WMSpec', None)
         self.setdefault('SiteWhitelist', [])
@@ -38,11 +41,14 @@ class WorkQueueElement(dict):
         self.setdefault('PercentComplete', 0)
         self.setdefault('PercentSuccess', 0)
         self.setdefault('RequestName', None)
+        self.setdefault('TaskName', None)
         self.setdefault('TeamName', None)
         self.setdefault('EndPolicy', {})
         self.setdefault('ACDC', {})
         self.setdefault('ChildQueueUrl', None)
         self.setdefault('WMBSUrl', None)
+        # Number of files added to WMBS including parent files for this element. used only for monitoring purpose
+        self.setdefault('NumOfFilesAdded', 0)
         # Mask used to constrain MC run/lumi ranges
         self.setdefault('Mask', None)
 

@@ -354,14 +354,14 @@ class WMBSHelper(WMConnectionBase):
         sub = self.createSubscription()
         
         if block != None:
-            self.addFiles(block)
+            addedFiles = self.addFiles(block)
         #For MC case
         else:
-            self.addMCFakeFile()
+            addedFiles = self.addMCFakeFile()
         
         self.commitTransaction(existingTransaction = False)
 
-        return sub
+        return sub, addedFiles
     
     def addFiles(self, block, workflow = None):
         """
@@ -484,9 +484,6 @@ class WMBSHelper(WMConnectionBase):
             self.setParentage.execute(binds = parentageBinds,
                                       conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
-
-
-        
 
         return len(fileCreate)
 

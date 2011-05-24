@@ -69,11 +69,10 @@ def getSiteInfoFromWMBSService(serviceURL):
     try:
         batchJobs = wmbsSvc.getBatchJobStatusBySite()
         completeJobs = wmbsSvc.getSiteSummaryFromCouchDB()
-        #TODO need to find a way to combine the site
-        #batch job has the format of {'site_name': "T1_US_FNAL"}
-        #and complete jobs has the format of {'site': 'FNAL'}
+        _combineSites(completeJobs, batchJobs)
+        return completeJobs
     except Exception, ex:
-        return {}
+        return []
 
     return batchJobs
 
@@ -84,7 +83,8 @@ def _combineSites(results, batchJobs):
         for item in results:
             if item['site_name'] == batchJob['site_name']:
                 newSite = False
-                for status in ['Pending', 'Running', 'Complete','Error']:
+                for status in ['Pending', 'Running', 'Complete','Error',
+                               "success", "failure", "cooloff"]:
                     item.setdefault(status, 0)
                     batchJob.setdefault(status, 0)
                     item[status] += batchJob[status]

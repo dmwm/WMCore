@@ -165,4 +165,33 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                         modified.append(element)
             self.backend.saveElements(*modified)
 
-        return len(dataLocations) # probably not quite what we want, but will indicate whether some mappings were added or not
+        numOfParentLocations = self.updateParentLocation(fullResync)
+
+        return len(dataLocations) + numOfParentLocations # probably not quite what we want, but will indicate whether some mappings were added or not
+
+    def updateParentLocation(self, fullResync = False):
+        dataItems = self.backend.getActiveParentData()
+
+        # fullResync incorrect with multiple dbs's - fix!!!
+        dataLocations, fullResync = DataLocationMapper.__call__(self, dataItems, fullResync)
+
+        # elements with multiple changed data items will fail fix this, or move to store data outside element
+        for dataMapping in dataLocations.values():
+            modified = []
+            for data, locations in dataMapping.items():
+                elements = self.backend.getElementsForParentData(data)
+                for element in elements:
+                    for pData in element['ParentData']:
+                        if pData['Name'] == data:
+                            if sorted(locations) != sorted(pData['Sites']):
+                                if fullResync:
+                                    self.logger.info(data + ': Setting locations to: ' + ', '.join(locations))
+                                    pData['Sites'] = locations
+                                else:
+                                    self.logger.info(data + ': Adding locations: ' + ', '.join(locations))
+                                    pData['Sites'] = list(set(pData['Sites']) | set(locations))
+                                modified.append(element)
+                                break
+            self.backend.saveElements(*modified)
+
+        return len(dataLocations)

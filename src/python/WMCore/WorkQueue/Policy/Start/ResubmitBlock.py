@@ -25,13 +25,11 @@ class ResubmitBlock(StartPolicyInterface):
         for block in self.validBlocks(self.initialTask):
             parents = []
             if self.initialTask.parentProcessingFlag():
-                parents = block['Parents']
-                if not parents:
-                    msg = "Parentage required but no parents found for %s"
-                    raise RuntimeError, msg % block['Name']
-
+                parentFlag = True
+            else:
+                parentFlag = False
             self.newQueueElement(Inputs = {block['Name'] : block['Sites']},
-                                 ParentData = parents,
+                                 ParentFlag = parentFlag,
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
                                              float(self.args['SliceSize'])),
                                  ACDC = block['ACDC'],

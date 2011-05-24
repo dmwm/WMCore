@@ -64,28 +64,18 @@ class Dataset(StartPolicyInterface):
 
         # parentage
         if self.initialTask.parentProcessingFlag():
-            parents = dataset['Parents']
-            if not parents:
-                # Real data lacks dataset parentage - work with block parentage
-                if not blocks:
-                    blocks = dbs.getFileBlocksInfo(datasetPath)
-                for block in blocks:
-                    parents.extend(block['Parents'])
-            if not parents:
-                msg = "Parentage required but no parents found for %s"
-                raise RuntimeError, msg % datasetPath
+            parentFlag = True
         else:
-            parents = []
+            parentFlag = False
 
         if not work:
             work = dataset[self.args['SliceType']]
 
         self.newQueueElement(Inputs = {dataset['path'] : self.data.get(dataset['path'], [])},
-                             ParentData = parents,
+                             ParentFlag = parentFlag,
                              Jobs = ceil(float(work) /
                                          float(self.args['SliceSize']))
                              )
-                             #Jobs = dataset[self.args['SliceType']])
 
 
     def validate(self):

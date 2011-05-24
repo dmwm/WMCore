@@ -53,6 +53,9 @@ class DBSReader:
         """Fake files"""
         return self.dataBlocks.getFiles(block)
 
+    def listFilesInBlockWithParents(self, block):
+        return self.dataBlocks.getFiles(block, True)
+
     def getFileBlock(self, block):
         """Return block + locations"""
         result = { block : {
@@ -61,6 +64,30 @@ class DBSReader:
             "IsOpen" : False,
             }
                 }
+        return result
+
+    def getFileBlockWithParents(self, fileBlockName):
+        """
+        _getFileBlockWithParents_
+
+        return a dictionary:
+        { blockName: {
+             "StorageElements" : [<se list>],
+             "Files" : dictionaries representing each file
+             }
+        }
+
+        files
+
+        """
+
+        result = { fileBlockName: {
+            "StorageElements" : self.listFileBlockLocation(fileBlockName),
+            "Files" : self.listFilesInBlockWithParents(fileBlockName),
+            "IsOpen" : False,
+
+            }
+                   }
         return result
 
     def listRuns(self, dataset = None, block = None):
@@ -114,5 +141,8 @@ class DBSReader:
                 result['path'] = dataset
 
         return result
+
+    def listBlockParents(self, block):
+        return self.dataBlocks.getParentBlock(block, 1)
 
 # pylint: enable-msg=W0613,R0201

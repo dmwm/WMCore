@@ -23,16 +23,23 @@ class Block(StartPolicyInterface):
         
     def split(self):
         """Apply policy to spec"""
-        for block in self.validBlocks(self.initialTask, self.dbs()):
-            parents = []
+        dbs = self.dbs()
+        for block in self.validBlocks(self.initialTask, dbs):
+            #set the parent flag for processing only for clarity on the couch doc
+            parentList = []
+            parentFlag = False
+            #TODO this is slow process needs to change in DBS3
             if self.initialTask.parentProcessingFlag():
-                parents = block['Parents']
-                if not parents:
-                    msg = "Parentage required but no parents found for %s"
-                    raise RuntimeError, msg % block['Name']
+                parentFlag = True
+                for dbsBlock in dbs.listBlockParents(block["Name"]):
+                    parentBlock = {'Name': dbsBlock["Name"],
+                                   'Sites': sitesFromStorageEelements([x['Name'] for x in
+                                            dbsBlock['StorageElementList']])}
+                    parentList.append(parentBlock)
 
             self.newQueueElement(Inputs = {block['Name'] : self.data.get(block['Name'], [])},
-                                 ParentData = parents,
+                                 ParentFlag = parentFlag,
+                                 ParentData = parentList,
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
                                              float(self.args['SliceSize']))
                                  )

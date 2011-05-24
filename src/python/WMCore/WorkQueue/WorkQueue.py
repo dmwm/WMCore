@@ -262,7 +262,7 @@ class WorkQueue(WorkQueueBase):
 
                 if match['Inputs']:
                     self.logger.info("Adding Processing work")
-                    blockName, dbsBlock = self._getDBSBlock(match)
+                    blockName, dbsBlock = self._getDBSBlock(match, wmspec)
                 else:
                     self.logger.info("Adding Production work")
 
@@ -277,7 +277,7 @@ class WorkQueue(WorkQueueBase):
         self.logger.info('Injected %s units into WMBS' % len(results))
         return results
 
-    def _getDBSBlock(self, match):
+    def _getDBSBlock(self, match, wmspec):
         """Get DBS info for this block"""
         blockName = match['Inputs'].keys()[0] #TODO: Allow more than one
 
@@ -293,7 +293,7 @@ class WorkQueue(WorkQueueBase):
             return blockName, fileLists
         else:
             dbs = get_dbs(match['Dbs'])
-            if match['ParentData']: #This isn't right fix
+            if wmspec.getTask(match['TaskName']).parentProcessingFlag():
                 dbsBlockDict = dbs.getFileBlockWithParents(blockName)
             else:
                 dbsBlockDict = dbs.getFileBlock(blockName)
@@ -308,8 +308,8 @@ class WorkQueue(WorkQueueBase):
         mask = match['Mask']
         wmbsHelper = WMBSHelper(wmspec, blockName, mask)
 
-        sub = wmbsHelper.createSubscriptionAndAddFiles(block = dbsBlock)
-        self.logger.info("Created top level Subscription %s" % sub['id'])
+        sub, match['NumOfFilesAdded'] = wmbsHelper.createSubscriptionAndAddFiles(block = dbsBlock)
+        self.logger.info("Created top level Subscription %s with %s files" % (sub['id'], match['NumOfFilesAdded']))
 
         match['SubscriptionId'] = sub['id']
         match['Status'] = 'Running'

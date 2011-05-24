@@ -14,22 +14,15 @@ numOfLumis = GlobalParams.numOfLumisPerBlock()
 
 class DataBlockGenerator(object):
     
-    def __init__(self):
-        self.blocks = {}        
-        self.locations = {}
-        self.files = {}
-    
     def _blockGenerator(self, dataset):
         if dataset.startswith('/' + Globals.NOT_EXIST_DATASET):
             raise NoDatasetError, "no dataset"
-        
-        self.blocks[dataset] = []
-        
+        blocks = []
         for i in range(GlobalParams.numOfBlocksPerDataset()):
             blockName = "%s#%s" % (dataset, i+1)
             size = GlobalParams.numOfFilesPerBlock() * GlobalParams.sizeOfFile()
             
-            self.blocks[dataset].append(
+            blocks.append(
                                     {'Name' : blockName,
                                      'NumberOfEvents' : numOfEvents,
                                      'NumberOfFiles' : numOfFiles,
@@ -37,11 +30,28 @@ class DataBlockGenerator(object):
                                      'Size' : size,
                                      'Parents' : ()}
                                      )
+        return blocks
+
+    def getParentBlock(self, block, numberOfParents = 1):
+        blocks = []
+        for i in range(numberOfParents):
+            blockName = "%s_parent_%s" % (block, i+1)
+            size = GlobalParams.numOfFilesPerBlock() * GlobalParams.sizeOfFile()
             
-            
-    def _fileGenerator(self, blockName):
+            blocks.append({'Name' : blockName,
+                           'NumberOfEvents' : numOfEvents,
+                           'NumberOfFiles' : numOfFiles,
+                           'NumberOfLumis' : numOfLumis,
+                           'Size' : size,
+                           'StorageElementList':[{'Role' : '', 'Name' : x} for x in \
+                                               self.getLocation(blockName)],
+                           'Parents' : ()}
+                           )
+        return blocks
+
+    def _fileGenerator(self, blockName, parentFlag):
         
-        self.files[blockName] = []
+        files = []
         
         for fileID in range(GlobalParams.numOfFilesPerBlock()):
            
@@ -52,12 +62,15 @@ class DataBlockGenerator(object):
             #Not sure why fileName is unit code - change to str
             parentFileName = str(parentFileName)
 
+            if parentFlag:
+                parentList = [self._createDBSFile(blockName, {'LogicalFileName':parentFileName})]
+            else:
+                parentList = []
             dbsFile = {'LogicalFileName': fileName, 
-                       'ParentList' : [self._createDBSFile(blockName,
-                                                {'LogicalFileName':parentFileName})],
+                       'ParentList' : parentList,
                       }
-            self.files[blockName].append(self._createDBSFile(blockName,
-                                                             dbsFile))
+            files.append(self._createDBSFile(blockName, dbsFile))
+        return files
 
     def _createDBSFile(self, blockName, dbsFile = {}):
         run =  GlobalParams.getRunNumberForBlock(blockName)
@@ -73,24 +86,17 @@ class DataBlockGenerator(object):
         return defaultDBSFile
         
     def getBlocks(self, dataset):
+       try:
+           return self._blockGenerator(dataset)
+       except NoDatasetError:
+           return []
         
-        if not self.blocks.has_key(dataset):
-            try:
-                self._blockGenerator(dataset)
-            except NoDatasetError:
-                return []
-        return  self.blocks[dataset]
-        
-    def getFiles(self, block):
-        if not self.files.has_key(block):
-            self._fileGenerator(block)
-        return  self.files[block]
+    def getFiles(self, block, parentFlag = False):
+        return self._fileGenerator(block, parentFlag)
     
     def getLocation(self, block):
-        
         return Globals.getSites(block)
     
     def getDatasetName(self, block):
         return block.split('#')[0]
                 
-    

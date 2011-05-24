@@ -25,6 +25,9 @@ WMCore.GlobalMonitor.SiteMonitor.statusTable = function(divID){
                  {key: "Running"},
                  {key: "Complete"},
                  {key: "Error"},
+                 {key: "success", label: "Success"},
+                 {key: "failure", label: "Failure"},
+                 {key: "cooloff", label: "Cool Off"},
                  {key: "job_slots", label:"Job Slots"}]
         };
 

@@ -39,8 +39,8 @@ config.webapp_("CRABInterface")
 config.CRABInterface.componentDir = config.General.workDir + "/CRABInterface"
 config.CRABInterface.Webtools.host = serverHostName
 config.CRABInterface.Webtools.port = CRABInterfacePort
-config.CRABInterface.templates =os.path.join(getWMBASE(),
-                                       "src/templates/WMCore/WebTools")
+config.CRABInterface.Webtools.environment = "devel"
+config.CRABInterface.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
 
 config.CRABInterface.configCacheCouchURL = "YourConfigCacheUrl"
 config.CRABInterface.configCacheCouchDB = "configCacheCouchDB-Name"
@@ -67,8 +67,8 @@ config.CRABInterface.views.active.section_('crab')
 config.CRABInterface.views.active.crab.section_('model')
 config.CRABInterface.views.active.crab.section_('formatter')
 config.CRABInterface.views.active.crab.object = 'WMCore.WebTools.RESTApi'
-config.CRABInterface.views.active.crab.templates = os.path.join(getWMBASE(),
-                                       "src/templates/WMCore/WebTools/")
+config.CRABInterface.views.active.crab.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
+
 config.CRABInterface.views.active.crab.model.couchUrl = couchURL
 config.CRABInterface.views.active.crab.model.workloadCouchDB = workloadCouchDB
 config.CRABInterface.views.active.crab.model.object = 'CRABServer.CRABRESTModel'

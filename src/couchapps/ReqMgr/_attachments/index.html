@@ -22,7 +22,7 @@
 
 <script  type="text/javascript">
 
-var dataSource = new YAHOO.util.XHRDataSource('http://localhost:5894/reqmgr_workload_cache/_design/ReqMgr/_list/requests/all');
+var dataSource = new YAHOO.util.XHRDataSource('http://cms-xen41.fnal.gov:5984/reqmgr_workload_cache/_design/ReqMgr/_list/requests/all');
 dataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
 //Always send accept type as application/json
 YAHOO.util.Connect.initHeader("Accept", "application/json", true);
@@ -31,8 +31,7 @@ YAHOO.util.Connect.initHeader("Accept", "application/json", true);
 dataSource.responseSchema = {
     fields: [
         { key: 'RequestName'}, { key: 'Group'}, { key: 'Requestor'}, 
-        { key: 'RequestType'}, { key: 'Request Priority'},  { key: 'RequestStatus'},
-        { key: 'Complete' }, { key: 'Success' }
+        { key: 'RequestType'}, { key: 'Request Priority'},  { key: 'RequestStatus'}
     ]
 };
  
@@ -41,10 +40,8 @@ var columnDefs = [
         { key: 'Group', sortable:true}, 
         { key: 'Requestor', sortable:true},
         { key: 'RequestType', label: 'Type', sortable:true}, 
-        { key: 'RequestPriority', label: 'ReqMgrRequestPriority', sortable:true}, 
-        { key: 'RequestStatus', label: 'Status', sortable:true}, 
-        { key: 'Complete', sortable:true},
-        { key: 'Success', sortable:true}
+        { key: 'RequestPriority', label: 'RequestPriority', sortable:true}, 
+        { key: 'RequestStatus', label: 'Status', sortable:true}
 ];
  
 var oConfigs = { 

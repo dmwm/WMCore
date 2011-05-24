@@ -88,14 +88,15 @@ class LexiconTest(unittest.TestCase):
 
     def testGoodCouchUrl(self):
         for ok in ['http://vittoria@antimatter.cern.ch:5984',
-                   'http://fbi.fnal.gov:5984',
+                   'https://fbi.fnal.gov:5984',
                    'http://fmulder:trustno1@fbi.fnal.gov:5984',
                    'http://localhost:443',
                    'http://127.0.0.1:1234',
                    'http://0.0.0.0:4321',
                    'http://1.2.3.4:5678',
                    'http://han:solo@1.2.3.4:9876',
-                   'http://luke:skywalker@localhost:7654']:
+                   'http://luke:skywalker@localhost:7654/some_db/some_doc',
+                   'https://cmsreqmgr.cern.ch/couchdb/db1/doc' ]:
             assert couchurl(ok)
 
     def testBadCouchUrl(self):

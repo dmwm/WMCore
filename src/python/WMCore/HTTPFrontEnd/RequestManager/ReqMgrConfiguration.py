@@ -26,9 +26,7 @@ def reqMgrConfig(
     config = Configuration()
     reqMgrHtml = os.path.join(installation, 'html/RequestManager')
     reqMgrTemplates = os.path.join(installation, 'templates/WMCore/WebTools/RequestManager')
-    requestOverviewHtml = os.path.join(installation, 'html')
-    requestOverviewTemplates = os.path.join(installation, 'templates/WMCore/WebTools')
-    requestOverviewJavascript = os.path.join(installation, 'javascript')
+    reqMgrJavascript = os.path.join(installation, 'javascript')
    
 
     if startup == "Root.py":
@@ -56,6 +54,7 @@ def reqMgrConfig(
     config.reqmgr.componentDir = componentDir
     config.reqmgr.templates = reqMgrTemplates
     config.reqmgr.html = reqMgrHtml
+    config.reqmgr.javascript = reqMgrJavascript
     config.reqmgr.admin = 'cms-service-webtools@cern.ch'
     config.reqmgr.title = 'CMS Request Manager'
     config.reqmgr.description = 'CMS Request Manager'

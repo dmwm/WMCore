@@ -51,9 +51,6 @@ config.CRABInterface.agentDN = "/Your/Agent/DN.here/"
 config.CRABInterface.SandBoxCache_endpoint = "USB-cache-endpoint"
 config.CRABInterface.SandBoxCache_port  = "PORT"
 config.CRABInterface.SandBoxCache_basepath ="/Path/if/Needed"
-
-config.CRABInterface.views.active.crab.jsmCacheCouchURL = couchURL
-config.CRABInterface.views.active.crab.jsmCacheCouchDB = jsmCacheDBName
 ##
 
 config.CRABInterface.admin = "admin@mail.address"

@@ -17,16 +17,11 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 from WMCore.Configuration import loadConfigurationFile
+from WMCore.WMBase import getWMBASE
 
 import os.path
 import sys
 
-def getWMBASE():
-    """ returns the root of WMCore install """
-    if __file__.find("src/python") != -1:
-        return os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-    else:
-        return os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))        
 
 def connectToDB():
     """

@@ -119,6 +119,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.histogramKeys   = ['AvgEventTime']
         config.TaskArchiver.histogramBins   = 5
         config.TaskArchiver.histogramLimit  = 5
+        config.TaskArchiver.summaryDBName   = self.databaseName
 
         config.section_("ACDC")
         config.ACDC.couchurl                = config.JobStateMachine.couchurl

@@ -42,6 +42,7 @@ from WMCore.Database.CMSCouch   import CouchServer
 from WMCore.DataStructs.Run     import Run
 from WMCore.DataStructs.Mask    import Mask
 from WMCore.Algorithms          import MathAlgos
+from WMCore.Alerts.ZMQ.Sender   import Sender
 
 from WMComponent.JobCreator.CreateWorkArea   import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
@@ -101,6 +102,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         try:
             self.dbname       = getattr(self.config.JobStateMachine, "couchDBName")
             self.couchdb      = CouchServer(self.config.JobStateMachine.couchurl)
+            self.summarydb    = getattr(self.config.TaskArchiver, "summaryDBName", self.dbname)
             self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname)
             self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname)
             self.workdatabase = self.couchdb.connectDatabase(self.dbname)
@@ -213,6 +215,10 @@ class TaskArchiverPoller(BaseWorkerThread):
         Tells the workQueue component that a particular subscription,
         or set of subscriptions, is done.  Receives confirmation
         """
+
+        if len(subList) < 1:
+            return []
+        
         subIDs = []
         
         for sub in subList:

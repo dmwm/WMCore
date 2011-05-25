@@ -27,7 +27,9 @@ def reqMgrConfig(
     reqMgrHtml = os.path.join(installation, 'html/RequestManager')
     reqMgrTemplates = os.path.join(installation, 'templates/WMCore/WebTools/RequestManager')
     reqMgrJavascript = os.path.join(installation, 'javascript')
-   
+    requestOverviewHtml = os.path.join(installation, 'html')
+    requestOverviewTemplates = os.path.join(installation, 'templates/WMCore/WebTools')
+    requestOverviewJavascript = os.path.join(installation, 'javascript')
 
     if startup == "Root.py":
         config.component_("Webtools")
@@ -50,7 +52,7 @@ def reqMgrConfig(
         config.reqmgr.Webtools.port = port
         config.reqmgr.Webtools.environment = 'devel'
         config.reqmgr.database.connectUrl = connectURL
-        
+
     config.reqmgr.componentDir = componentDir
     config.reqmgr.templates = reqMgrTemplates
     config.reqmgr.html = reqMgrHtml
@@ -82,7 +84,7 @@ def reqMgrConfig(
 
     active.section_('reqMgr')
     active.reqMgr.section_('model')
-    active.reqMgr.section_('formatter') 
+    active.reqMgr.section_('formatter')
     active.reqMgr.object = 'WMCore.WebTools.RESTApi'
     active.reqMgr.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
     active.reqMgr.default_expires = 0 # no caching

@@ -265,13 +265,16 @@ class ErrorHandlerTest(unittest.TestCase):
 
         # Now look at what's inside
         for fileset in self.dataCS.listFilesets(collection):
+            counter = 0
             for f in fileset.files():
+                counter += 1
                 self.assertTrue(f['lfn'] in ["/this/is/a/lfnA", "/this/is/a/lfnB"])
                 self.assertEqual(f['events'], 10)
                 self.assertEqual(f['size'], 1024)
                 self.assertEqual(f['parents'], [u'/this/is/a/parent'])
                 self.assertTrue(f['runs'][0]['lumis'] in [[12312], [12314, 12315, 12316]],
                                 "Unknown lumi %s" % f['runs'][0]['lumis'])
+            self.assertEqual(counter, 20)
         return
 
     def testSubmit(self):

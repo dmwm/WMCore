@@ -186,7 +186,7 @@ class Requests(dict):
             # if this is threaded this may spoil things
             # only have one endpoint so don't need to determine which to shut
             [conn.close() for conn in self['conn'].connections.values()]
-            self['conn'] = httplib2.Http(self["req_cache_path"])
+            self['conn'] = httplib2.Http(self["req_cache_path"], self["timeout"])
             # ... try again... if this fails propagate error to client
             try:
                 response, result = self['conn'].request(uri, method = verb,

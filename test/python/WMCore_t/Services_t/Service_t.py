@@ -25,6 +25,12 @@ class CrappyServer(object):
         return "Hello World!"
     truncated.exposed = True
 
+class SlowServer(object):
+    def slow(self):
+        time.sleep(300)
+        return "Hello World!"
+    slow.exposed = True
+
 class CrappyRequest(Requests):
     def makeRequest(self, uri=None, data={}, verb='GET', incoming_headers={},
                      encoder=True, decoder=True, contentType=None):
@@ -260,6 +266,21 @@ class ServiceTest(unittest.TestCase):
         test_dict = {'logger': self.logger,'endpoint':'http://localhost:8080/truncated', 'usestalecache': True}
         myService = Service(test_dict)
         self.assertRaises(IncompleteRead, myService.getData, 'foo', '')
+        cherrypy.engine.exit()
+        cherrypy.engine.stop()
+
+    def testSlowResponse(self):
+        cherrypy.tree.mount(SlowServer())
+        cherrypy.engine.start()
+        FORMAT = '%(message)s'
+        logging.basicConfig(format=FORMAT)
+        logger = logging.getLogger('john')
+        test_dict = {'logger': self.logger,'endpoint':'http://localhost:8080/slow', 'usestalecache': True}
+        myService = Service(test_dict)
+        startTime = int(time.time())
+        self.assertRaises(socket.timeout, myService.getData, 'foo', '')
+        self.assertTrue(int(time.time()) - startTime < 130,
+                        "Error: Timeout took too long")
         cherrypy.engine.exit()
         cherrypy.engine.stop()
 

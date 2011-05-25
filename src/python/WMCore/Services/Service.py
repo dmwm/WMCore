@@ -274,9 +274,13 @@ class Service(dict):
                     # file should be returned, with a suitable message in the
                     # log, but no exception raised
                     self['logger'].warning('Returning stale cache data')
-                    self['logger'].info('%s returned %s because %s' % (he.url,
-                                                                       he.status,
-                                                                       he.reason))
+                    if hasattr(he, 'status') and hasattr(he, 'reason'):
+                        self['logger'].info('%s returned %s because %s' % (he.url,
+                                                                           he.status,
+                                                                           he.reason))
+                    else:
+                        self['logger'].info('raised a %s when accessed' % he.__repr__())
+                        raise
                     self['logger'].info('cache file (%s) was created on %s' % (
                                                                         cachefile,
                                                                         cache_age))

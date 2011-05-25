@@ -64,6 +64,7 @@ function collateFailureInfo(failedJobs, fwjrInfo, statusDiv) {
   //                                    "input": [lfn, ...],
   //                                    "runs": {runNumber: [lumi, ...]}}}}
   var workflowFailures = {};
+  var missedRunLumi = {};
   var errorInfo = {};
 
   for (var fwjrIndex in fwjrInfo) {
@@ -129,12 +130,19 @@ function collateFailureInfo(failedJobs, fwjrInfo, statusDiv) {
             } else {
               stepFailure[exitCode]["runs"][runNumber] = lumis;
             };
+
+            if (missedRunLumi.hasOwnProperty(runNumber)) {
+              missedRunLumi[runNumber] = missedRunLumi[runNumber].concat(lumis);
+            } else {
+              missedRunLumi[runNumber] = lumis;
+            };
           };
         };
       };
     };
   };
 
+  renderRunLumiDetails(missedRunLumi, document.getElementById("runlumi"), false);
   return workflowFailures;
 }
 
@@ -232,7 +240,7 @@ function renderInputDetails(inputLFNs, stepDiv) {
   return;
 };
 
-function renderRunLumiDetails(runLumiInfo, stepDiv) {
+function renderRunLumiDetails(runLumiInfo, stepDiv, heading) {
   // Insert run and lumi information into the given div.
   var runLumiLabelDiv = document.createElement("div");
   runLumiLabelDiv.style.margin = "10px 0px 0px 15px";
@@ -278,9 +286,14 @@ function renderRunLumiDetails(runLumiInfo, stepDiv) {
   };  
 
   if (displayRun) {
-    stepDiv.appendChild(runLumiLabelDiv);
-    runLumiLabelDiv.appendChild(runLumiDiv);
-    runLumiDiv.innerHTML = runLumiStr;
+    if (heading) {
+      stepDiv.appendChild(runLumiLabelDiv);
+      runLumiLabelDiv.appendChild(runLumiDiv);
+      runLumiDiv.innerHTML = runLumiStr;
+    } else {
+      stepDiv.appendChild(runLumiDiv);
+      runLumiDiv.innerHTML = runLumiStr;
+    }
   };
 };
 
@@ -328,7 +341,7 @@ function renderWorkflowErrors(workflowName, errorDiv) {
         renderErrorDetails(workflowFailures[taskName][stepName][exitCode]["errors"], stepDiv);
         renderJobDetails(workflowFailures[taskName][stepName][exitCode]["jobs"], stepDiv);
         renderInputDetails(workflowFailures[taskName][stepName][exitCode]["input"], stepDiv);
-        renderRunLumiDetails(workflowFailures[taskName][stepName][exitCode]["runs"], stepDiv);
+        renderRunLumiDetails(workflowFailures[taskName][stepName][exitCode]["runs"], stepDiv, true);
       };
     };
   };

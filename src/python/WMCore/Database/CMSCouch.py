@@ -127,6 +127,10 @@ class CouchDBRequests(JSONRequests):
             raise CouchPreconditionFailedError(reason, data, result)
         elif status == 500:
             raise CouchInternalServerError(reason, data, result)
+        elif status in [502, 503, 504]:
+            # There are HTTP errors that CouchDB doesn't raise but can appear
+            # in our environment, e.g. behind a proxy. Reraise the HTTPException
+            raise
         else:
             # We have a new error status, log it
             raise CouchError(reason, data, result, status)

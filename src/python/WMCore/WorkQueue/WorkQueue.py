@@ -522,7 +522,9 @@ class WorkQueue(WorkQueueBase):
         if not self.backend.isAvailable():
             self.logger.info('Backend busy or down: skipping location update')
             return 0
-        return self.dataLocationMapper()
+        result = self.dataLocationMapper()
+        self.backend.recordTaskActivity('location_refresh')
+        return result
 
     def pullWork(self, resources = None):
         """
@@ -623,7 +625,12 @@ class WorkQueue(WorkQueueBase):
 
         self.backend.deleteElements(*finished_elements)
 
+        msg = 'Finished elements: %s\nCanceled workflows: %s' % (', '.join(["%s (%s)" % (x.id, x['RequestName']) \
+                                                                            for x in finished_elements]),
+                                                                 ', '.join(wf_to_cancel))
+        self.backend.recordTaskActivity('housekeeping', msg)
         self.backend.sendToParent() # update parent with new status's
+
 
     def _splitWork(self, wmspec, parentQueueId = None,
                    data = None, mask = None, team = None):

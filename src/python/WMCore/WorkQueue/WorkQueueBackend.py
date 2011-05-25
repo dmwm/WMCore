@@ -6,8 +6,9 @@ Interface to WorkQueue persistent storage
 """
 
 import random
+import time
 
-from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
+from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
@@ -385,3 +386,18 @@ class WorkQueueBackend(object):
                     for i in queue:
                         i.delete() # delete others (if merged value update accepted)
                     self.saveElements(*queue)
+
+    def recordTaskActivity(self, taskname, comment = ''):
+        """Record a task for monitoring"""
+        try:
+            record = self.db.document('task_activity')
+        except CouchNotFoundError:
+            record = Document('task_activity')
+        record.setdefault('tasks', {})
+        record['tasks'].setdefault(taskname, {})
+        record['tasks'][taskname]['timestamp'] = time.time()
+        record['tasks'][taskname]['comment'] = comment
+        try:
+            self.db.commitOne(record)
+        except StandardError, ex:
+            self.logger.error("Unable to update task %s freshness: %s" % (taskname, str(ex)))

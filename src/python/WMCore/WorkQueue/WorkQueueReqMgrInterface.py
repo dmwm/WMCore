@@ -17,12 +17,15 @@ class WorkQueueReqMgrInterface():
 
     def __call__(self, queue):
         """Synchronize WorkQueue and RequestManager"""
+        msg = ''
         try:    # pull in new work
-            self.queueNewRequests(queue)
+            work = self.queueNewRequests(queue)
+            msg += "New Work: %d\n" % work
         except Exception:
             self.logger.exception("Error caught during RequestManager pull")
         try:    # report back to ReqMgr
             uptodate_elements = self.report(queue)
+            msg += "Updated ReqMgr status for: %s" % ", ".join([x for x in uptodate_elements])
         except:
             self.logger.exception("Error caught during RequestManager update")
         else:
@@ -30,6 +33,8 @@ class WorkQueueReqMgrInterface():
                 self.deleteFinishedWork(queue, uptodate_elements)
             except:
                 self.logger.exception("Error caught during work deletion")
+            else:
+                queue.backend.recordTaskActivity('reqmgr_sync', msg)
 
     def queueNewRequests(self, queue):
         """Get requests from regMgr and queue to workqueue"""

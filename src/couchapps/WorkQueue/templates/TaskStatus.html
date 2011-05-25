@@ -1,0 +1,23 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>WorkQueue task status</title>
+</head>
+<body>
+<h3>Status of periodic tasks</h3>
+<div id="tasks">
+  <table cellspacing="10" align="center">
+    <th>Name</th><th>Last run</th><th>Status</th><th>Info</th>
+    {{#tasks}}
+      <tr>
+        <td>{{name}}</td><td>{{timestamp}}</td>
+        <td>{{#uptodate}}ok{{/uptodate}}{{^uptodate}}ERROR! Task not run recently{{/uptodate}}</td>
+        <td>{{comment}}</td>
+      </tr>
+    {{/tasks}}
+
+  </table>
+</div>
+
+</body>
+</html>

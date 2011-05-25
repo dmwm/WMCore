@@ -115,13 +115,6 @@ config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "http://localhost:8080/couchdb/workqueue"
 config.WorkQueueManager.queueParams["Teams"] = agentTeams
 
-config.WorkQueueManager.section_("BossAirConfig")
-config.WorkQueueManager.BossAirConfig.BossAir = config.BossAir
-config.WorkQueueManager.BossAirConfig.section_("Agent")
-config.WorkQueueManager.BossAirConfig.Agent.agentName = agentName
-config.WorkQueueManager.section_("JobDumpConfig")
-config.WorkQueueManager.JobDumpConfig.JobStateMachine = config.JobStateMachine
-
 # needed for authentication from local couch to global workqueue
 config.component_('CouchProxyManager')
 config.CouchProxyManager.namespace = "WMComponent.CouchProxyManager.CouchProxyManager"

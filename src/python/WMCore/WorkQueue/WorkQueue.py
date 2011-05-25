@@ -98,7 +98,6 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('PopulateFilesets', True)
         self.params.setdefault('LocalQueueFlag', True)
 
-        self.params.setdefault('ACDCDB', None)
         self.params.setdefault('JobDumpConfig', None)
         self.params.setdefault('BossAirConfig', None)
 

@@ -75,6 +75,21 @@ def setupCron(couchUrl, couchDBName):
     os.rmdir(tempDir)
     return
 
+def setupCronCompaction(couchUrl, couchDbName):
+    """Add a simple couch compaction"""
+    compactUrl = "%s/%s/_compact" % (couchUrl, couchDbName)
+    compactCmd = "curl -s -H 'Content-Type: application/json' -X POST '%s' > /dev/null"
+
+    tempDir = tempfile.mkdtemp()
+    os.system("crontab -l > %s/crontab" % tempDir)
+    cronTab = open("%s/crontab" % tempDir, "a")
+    cronTab.write("0 1 * * * %s\n" % (compactCmd % compactUrl))
+    cronTab.close()
+
+    os.system("crontab %s/crontab" % tempDir)
+    os.remove("%s/crontab" % tempDir)
+    os.rmdir(tempDir)
+
 if __name__ == "__main__":
     if not os.environ.has_key("WMAGENT_CONFIG"):
         print "The WMAGENT_CONFIG environment variable needs to be set before"
@@ -102,15 +117,9 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")    
 
     if hasattr(wmagentConfig, "WorkQueueManager"):
-        #installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname, "WorkQueue")
-        #installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase, "WorkQueue")
-
-        #TODO couchDB name is hardcoded instead of getting the name from configuration.
-        # This is wrong but I couldn't find a easy way not a easy way (mostly due to lack of
-        # my couchDB knowledge.There must be a easy way)for workqueue monitor to determine
-        # which database it is looking at.(currently hard coded in javascript)
-        # revert back to use config when it is implemented
-        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, "workqueue", "WorkQueue")
-        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, "workqueue_inbox", "WorkQueue")
+        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname, "WorkQueue")
+        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase, "WorkQueue")
+        setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
+        setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
 
     sys.exit(0)

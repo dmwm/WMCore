@@ -1,3 +1,15 @@
+From 0.7.7 to 0.7.8:
+  - When we create a new httplib2 object make sure to set the timeout (1658).
+  - Pull input file and run/lumi information from the job objects instead
+    of the FWJR.  Change the loading of error information so that we only
+    query couch once instead of once per failed job (1595).
+  - Support more use cases in couch URL validation and fix a couple ReqMgr
+    deployment issues (1655).
+  - Merge SecureRequests, BasicAuthJsonRequest into Requests (1585).
+  - Cleanup error handling and other things in the Services class (1622).
+  - Initial support for cooloff/successful/failed jobs in the Request 
+    Overvew (1539).
+
 From 0.7.6a to 0.7.7:
   - Increase the default minimum merge size in the ReqMgr to 2GiB.
   - Enable automatic PhEDEx subscriptions to MSS.

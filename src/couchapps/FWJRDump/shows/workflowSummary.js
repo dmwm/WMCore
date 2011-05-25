@@ -7,6 +7,8 @@ function(doc, req) {
   response += "<div id=output style=\"margin: 0px 0px 0px 15px;\"></div>\n";
 
   response += "\n<br>\n";
+  response += "Missed Run/Lumis:<br>\n\n";
+  response += "<div id=runlumi></div><br>\n";
   response += "Failures:\n\n";
   response += "<div id=errors></div>\n";
 

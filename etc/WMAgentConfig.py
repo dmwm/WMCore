@@ -147,7 +147,7 @@ config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"
 config.PhEDExInjector.componentDir = config.General.workDir + "/PhEDExInjector"
 config.PhEDExInjector.logLevel = "DEBUG"
 config.PhEDExInjector.maxThreads = 1
-config.PhEDExInjector.subscribeMSS = True
+config.PhEDExInjector.subscribeMSS = False
 config.PhEDExInjector.phedexurl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
 config.PhEDExInjector.pollInterval = 100
 

@@ -1,5 +1,4 @@
 from WMCore.WebTools.RESTModel import RESTModel
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
 import WMCore.RequestManager.RequestDB.Interface.User.Requests as UserRequests
 import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
@@ -129,6 +128,10 @@ class ReqMgrRESTModel(RESTModel):
                         validation = [self.isalnum])
         self._addMethod('GET', 'requestnames', self.getRequestNames,
                        args = [], secured=True, expires = 0)
+        self._addMethod('GET', 'outputDatasetsByRequestName', self.getOutputForRequest,
+                       args = ['requestName'], secured=True, expires = 0)
+        self._addMethod('GET', 'outputDatasestByPrepID', self.getOutputForPrepID,
+                       args = ['prepID'], secured=True, expires = 0)        
         
         cherrypy.engine.subscribe('start_thread', self.initThread)
     
@@ -185,6 +188,22 @@ class ReqMgrRESTModel(RESTModel):
         """ return all the request names in RequestManager as list """
         #TODO this could me combined with getRequest
         return GetRequest.getOverview()
+
+    def getOutputForRequest(self, requestName):
+        """Return the datasets produced by this request."""
+        request = GetRequest.getRequestByName(requestName)
+        if request == None:
+            return []
+        helper = Utilities.loadWorkload(request)
+        return helper.listOutputDatasets()
+
+    def getOutputForPrepID(self, prepID):
+        """Return the datasets produced by this prep ID."""
+        requestName = GetRequest.getRequestByPrepID(prepID)
+        if requestName == None:
+            return []
+        helper = Utilities.loadWorkload(requestName)
+        return helper.listOutputDatasets()        
 
     def getAssignment(self, teamName=None, request=None):
         """ If a team name is passed in, get all assignments for that team.

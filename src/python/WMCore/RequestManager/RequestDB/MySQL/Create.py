@@ -184,6 +184,8 @@ class Create(DBCreator):
         request_size_events INT(11) DEFAULT 0,
         request_size_files INT(11)  DEFAULT 0,
 
+        prep_id VARCHAR(255),
+
         UNIQUE(request_name),
         FOREIGN KEY(request_type) REFERENCES reqmgr_request_type(type_id),
         FOREIGN KEY(request_status) references

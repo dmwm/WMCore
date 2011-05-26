@@ -105,15 +105,19 @@ class PersistencyHelper:
         url = couchUrl + specuri
         return url
 
+    def splitCouchUrl(self, url):
+        """ Splits a URL into baseURL, dbname, and document """
+        toks = url.split('/')
+        dbname = toks[3]
+        # assume that the name "couchdb" is a redirected URL
+        if dbname == "couchdb":
+            dbname = toks[4]
+        toks = url.split('/%s/' % dbname)
+        return toks[0], dbname, toks[1]
+
     def saveCouchUrl(self, url):
         """ Saves the spec to a given Couch URL """
-        # look for the first slash after 'http://'
-        thirdSlash  = url.index('/', 7)
-        couchUrl = url[:thirdSlash]
-        uri = url[thirdSlash:]
-        # uri should be something like '/couchdb/doc/spec'
-        toks = uri.split('/')
-        dbname = toks[1]
+        couchUrl, dbname, doc = self.splitCouchUrl(url)
         return self.saveCouch(couchUrl, dbname)
 
     def deleteCouch(self, couchUrl, couchDBName, id):

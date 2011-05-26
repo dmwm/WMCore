@@ -70,7 +70,7 @@ def loadWorkload(request):
  
 def saveWorkload(helper, workload):
     """ Saves the changes to this workload """
-    if workload.startswith('http://'):
+    if workload.startswith('http'):
         helper.saveCouchUrl(workload)
     else:
         helper.save(workload)

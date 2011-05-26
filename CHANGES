@@ -1,3 +1,7 @@
+From 0.7.8 to 0.7.8a:
+  - Fix a problem with the ReqMgr configuration (1666).
+  - Workaround a problem with couch redirects (1670).
+
 From 0.7.7 to 0.7.8:
   - When we create a new httplib2 object make sure to set the timeout (1658).
   - Pull input file and run/lumi information from the job objects instead

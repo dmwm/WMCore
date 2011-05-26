@@ -26,6 +26,8 @@ class New(DBFormatter):
     - workflow
     - priority
 
+    Optional is:
+    - prep_id
     """
     def execute(self, conn = None, trans = None, **request):
         """
@@ -55,21 +57,21 @@ class New(DBFormatter):
         if workflow == None:
             msg = "workflow not provided to Request.New.execute"
             raise RuntimeError, msg
-
-
-
+        
         priority = request.get("request_priority", 0)
+        prep_id = request.get("prep_id", None)
 
         self.sql = """
         INSERT INTO reqmgr_request (request_name, request_type,
                                     request_status, request_priority,
-                                    requestor_group_id, workflow)
+                                    requestor_group_id, workflow, prep_id)
 
-          VALUES (\'%s\', \'%s\', %s, %s, %s, \'%s\')
-        """ % (reqName, reqType, reqStatus, priority, requestor, workflow)
-        result = self.dbi.processData(self.sql,
-                                      conn = conn, transaction = trans)
-
+          VALUES (:req_name, :req_type, :req_status, :priority, :requestor,
+                  :workflow, :prep_id)"""
+        binds = {"req_name": reqName, "req_type": reqType, "req_status": reqStatus,
+                 "priority": priority, "requestor": requestor, "workflow": workflow,
+                 "prep_id": prep_id}
+        result = self.dbi.processData(self.sql, binds, conn = conn, transaction = trans)
 
         reqIdOut = self.dbi.processData("SELECT LAST_INSERT_ID()",
                                         conn = conn,
@@ -78,9 +80,3 @@ class New(DBFormatter):
         if result == []:
             return None
         return result[0]
-
-
-
-
-
-

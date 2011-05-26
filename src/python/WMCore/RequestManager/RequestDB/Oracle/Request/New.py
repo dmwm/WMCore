@@ -57,19 +57,20 @@ class New(DBFormatter):
             raise RuntimeError, msg
 
 
-
+        prep_id = request.get("prep_id", None)
         priority = request.get("request_priority", 0)
 
         self.sql = """
         INSERT INTO reqmgr_request (request_name, request_type,
                                     request_status, request_priority,
-                                    requestor_group_id, workflow)
+                                    requestor_group_id, workflow, prep_id)
 
-          VALUES (\'%s\', \'%s\', %s, %s, %s, \'%s\')
-        """ % (reqName, reqType, reqStatus, priority, requestor, workflow)
-        result = self.dbi.processData(self.sql,
-                                      conn = conn, transaction = trans)
-
+          VALUES (:req_name, :req_type, :req_status, :priority, :requestor,
+                  :workflow, :prep_id)"""
+        binds = {"req_name": reqName, "req_type": reqType, "req_status": reqStatus,
+                 "priority": priority, "requestor": requestor, "workflow": workflow,
+                 "prep_id": prep_id}
+        result = self.dbi.processData(self.sql, binds, conn = conn, transaction = trans)
 
         reqIdOut = self.dbi.processData("select last_number from user_sequences where sequence_name='REQMGR_REQUEST_SEQ'",
                                         conn = conn,

@@ -43,8 +43,6 @@ dependencies = {
                                      'WMCore.Services.WorkQueue', 'WMCore.Services.WMBS', 'WMCore.Services.WMAgent'],
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/templates/WMCore/WebTools/RequestManager',
-                                    'src/javascript/WMCore/WebTools/RequestManager',
-                                    'src/html/RequestManager',
                                     'src/couchapps/ReqMgr+',
                                     'src/couchapps/ConfigCache+'],
                         },

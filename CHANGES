@@ -1,3 +1,6 @@
+From 0.7.8a to 0.7.8b:
+  - Include support for Prep in ReqMgr (1415).
+
 From 0.7.8 to 0.7.8a:
   - Fix a problem with the ReqMgr configuration (1666).
   - Workaround a problem with couch redirects (1670).

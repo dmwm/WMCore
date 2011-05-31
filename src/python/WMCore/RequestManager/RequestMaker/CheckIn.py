@@ -62,7 +62,7 @@ def checkIn(request):
         requestName,
         request['RequestType'],
         request['RequestWorkflow'],
-        request['PrepID']
+        request.get('PrepID', None)
     )
     except Exception, ex:
         msg = "Error creating new request:\n"

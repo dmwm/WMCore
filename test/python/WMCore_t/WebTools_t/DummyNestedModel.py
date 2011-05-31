@@ -8,13 +8,13 @@ class DummyNestedModel(NestedModel):
         NestedModel.__init__(self, config)
         self.methods = {'GET':{
                            'foo': {
-                                    'default':{'default_data':1234, 
+                                    'default':{'default_data':1234,
                                                'call':self.foo,
                                                'version': 1,
                                                'args': ['message'],
                                                'expires': 3600,
                                                'validation': []},
-                                    'ping':{'default_data':1234, 
+                                    'ping':{'default_data':1234,
                                            'call':self.ping,
                                            'version': 1,
                                            'args': [],
@@ -22,8 +22,8 @@ class DummyNestedModel(NestedModel):
                                            'validation': []}}
                            }
                     }
-    
-    def foo(self, message = None): 
+
+    def foo(self, message = None):
         """
         Return a different simple message
         """
@@ -32,7 +32,7 @@ class DummyNestedModel(NestedModel):
         else:
             return 'foo'
 
-    def ping(self): 
+    def ping(self):
         """
         Return a simple message
         """

@@ -251,8 +251,7 @@ class Root(Harness):
                     for instance in globalconf['instances']:
                         self._mountPage(view, globalconf, factory, instance)
                 else:
-                    mount_point = "/%s/%s" % (self.app.lower(), view._internal_name)
-                    self._mountPage(view, mount_point, globalconf, factory)
+                    self._mountPage(view, globalconf, factory)
 
         if hasattr(self.appconfig.views, 'maintenance'):
             #for i in self.appconfig.views.maintenance:
@@ -304,8 +303,10 @@ class Root(Harness):
         """
         if is_index:
             mount_point = os.path.join('/', self.app.lower())
-        else:
+        elif instance:
             mount_point = os.path.join('/', self.app.lower(), instance, view._internal_name)
+        else:
+            mount_point = os.path.join('/', self.app.lower(), view._internal_name)
         view_config = self._generate_config(view, globalconf, instance, is_index)
         # component now contains the full configuration (global + view)
         # use this throughout

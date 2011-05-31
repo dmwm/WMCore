@@ -7,6 +7,3 @@ Trigger test methods
 
 """
 __all__ = []
-
-
-

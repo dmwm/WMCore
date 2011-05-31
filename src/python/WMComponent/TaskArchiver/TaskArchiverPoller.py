@@ -43,6 +43,7 @@ from WMCore.DataStructs.Run     import Run
 from WMCore.DataStructs.Mask    import Mask
 from WMCore.Algorithms          import MathAlgos
 from WMCore.Alerts.ZMQ.Sender   import Sender
+from WMCore.Lexicon             import sanitizeURL
 
 from WMComponent.JobCreator.CreateWorkArea   import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
@@ -327,7 +328,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         workflowData["_id"]          = workflow.task.split('/')[1]
         try:
-            workflowData["ACDCServer"]   = self.config.ACDC.couchurl
+            workflowData["ACDCServer"]   = sanitizeURL(self.config.ACDC.couchurl)['url']
             workflowData["ACDCDatabase"] = self.config.ACDC.database
         except AttributeError, ex:
             # We're missing the ACDC info.

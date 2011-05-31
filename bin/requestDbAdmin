@@ -19,6 +19,7 @@ from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import allSoftwareVersion
 from WMCore.WMInit import WMInit
 from WMCore.Configuration import loadConfigurationFile
 import logging
+from sqlalchemy.exceptions import IntegrityError
 
 valid = 'g:u:v:t:c:'
 
@@ -87,7 +88,12 @@ def doAdd():
     if version != None:
         if version == "all":
             for v in allSoftwareVersions():
-                SoftwareAdmin.addSoftware(v)
+                # this can be used in concurrent cron jobs, so ignore integrity errors
+                # from the later ones
+                try:
+                    SoftwareAdmin.addSoftware(v)
+                except IntegrityError:
+                    pass
         else:
             SoftwareAdmin.addSoftware(version)
     if team != None:

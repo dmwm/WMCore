@@ -69,7 +69,7 @@ class SiblingProcessingBased(JobFactory):
                     newFile["locations"] = set([jobFile["se_name"]])                
                     self.currentJob.addFile(newFile)
                 
-                    fileSites[siteName] = fileSites[siteName][filesPerJob:]
+                fileSites[siteName] = fileSites[siteName][filesPerJob:]
 
             if filesetClosed and len(fileSites[siteName]) > 0:
                 self.newJob(name = makeUUID())

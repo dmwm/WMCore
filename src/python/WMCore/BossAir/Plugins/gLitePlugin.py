@@ -16,6 +16,7 @@ import os
 import re
 import time
 import types
+import stat
 
 from WMCore.Credential.Proxy import Proxy
 from WMCore.FwkJobReport.Report        import Report
@@ -208,6 +209,8 @@ class gLitePlugin(BasePlugin):
 
         self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, 'myproxyhost', self.defaultDelegation['myProxySvr'] )
 
+        self.manualenvprefix = getattr(self.config.BossAir, 'gLitePrefixEnv', '')
+
         self.setupScript = getattr(self.config.BossAir, 'UISetupScript', None)
         if self.setupScript is None:
             msg = "Setup script not provided in the configuration: need to " + \
@@ -222,7 +225,9 @@ class gLitePlugin(BasePlugin):
                    % self.setupScript
             raise BossAirPluginException( msg )
         self.defaultDelegation['uisource'] = self.setupScript
-        
+
+        self.debugOutput = getattr(self.config.BossAir, 'gLiteCacheOutput', False)
+
         return
 
 
@@ -372,6 +377,11 @@ class gLitePlugin(BasePlugin):
                     ## getting the sandbox jobs and splitting  by collection size
                     jobList = siteDict.get(site, [])
                     command = "glite-wms-job-submit --json "
+                    if self.debugOutput:
+                        unused, uniquename = tempfile.mkstemp(suffix = '.log', prefix = 'glite.submit.%s.' % time.strftime("%Y%m%d%H%M%S", time.localtime()),
+                                                              dir = self.submitDir )
+                        command += '--logfile %s ' % os.path.join(self.submitDir, uniquename)
+
                     jobsReady = jobList[:self.collectionsize]
                     jobList   = jobList[self.collectionsize:]
 
@@ -447,7 +457,7 @@ class gLitePlugin(BasePlugin):
                     # Now submit them
                     logging.debug("About to submit %i jobs" % len(jobsReady) )
                     workqueued[currentwork] = jobsReady
-                    completecmd = 'source %s && %s && %s' % (self.setupScript, exportproxy, command)
+                    completecmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && %s && %s' % (self.setupScript, self.manualenvprefix, exportproxy, command)
                     input.put((currentwork, completecmd, 'submit'))
                     currentwork += 1
 
@@ -511,16 +521,19 @@ class gLitePlugin(BasePlugin):
                     for job in jobsub:
                         self.fakeReport("SubmissionFailure", str(jsout), -1, job)
                     continue
-                if jsout.has_key('children'): 
-                    for key in jsout['children'].keys():
-                        jobid, retryc = (key.split('NodeName_')[-1]).split('_')
-                        job   = jobsub[int(jobid)-1]
-                        job['bulkid']       = parent
-                        job['gridid']       = jsout['children'][key]
-                        job['retry_count']  = int(retryc)
-                        job['sched_status'] = 'Submitted'
-                        #job['endpoint'] = endpoint
-                        successfulJobs.append(job)
+                if jsout.has_key('children'):
+                    jobnames = jsout['children'].keys()
+                    for jj in jobsub:
+                        jobnamejdl = 'Job_%i_%s' % (jj['id'], jj['retry_count'])
+                        if jobnamejdl in jobnames:
+                            job = jj
+                            job['bulkid']       = parent
+                            job['gridid']       = jsout['children'][jobnamejdl]
+                            job['sched_stattus'] = 'Submitted'
+                            successfulJobs.append(job)
+                        else:
+                            failedJobs.append(jj)
+                            self.fakeReport("SubmissionFailure", str(jsout), -1, jj)
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
@@ -531,8 +544,9 @@ class gLitePlugin(BasePlugin):
                        % str(time.time()) )
 
         # unlinking all the temporary files used for jdl
-        for tempf in tounlink:
-            os.unlink( tempf )
+        if not self.debugOutput:
+            for tempf in tounlink:
+                os.unlink( tempf )
 
         # need to shut down the subprocesses
         logging.debug("About to close the subprocesses...")
@@ -634,8 +648,7 @@ class gLitePlugin(BasePlugin):
                 jobList   = jobList[self.trackmaxsize:]
                 logging.debug("Status check for %i jobs" %len(jobsReady))
                 workqueued[currentwork] = jobsReady
-                completecmd = 'source %s && %s && %s' \
-                               % (self.setupScript, exportproxy, command)
+                completecmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && %s && %s' % (self.setupScript, self.manualenvprefix, exportproxy, command)
                 input.put((currentwork, completecmd, 'status'))
                 currentwork += 1
 
@@ -782,8 +795,7 @@ class gLitePlugin(BasePlugin):
                    % (command, outdiropt, jj['cache_dir'], jj['gridid'])
             logging.debug("Enqueuing getoutput for job %i" % jj['jobid'] )
             workqueued[currentwork] = jj['jobid']
-            completecmd = 'source %s && %s && %s' \
-                           % (self.setupScript, exportproxy, cmd)
+            completecmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && %s && %s' % (self.setupScript, self.manualenvprefix, exportproxy, cmd)
             input.put((currentwork, completecmd, 'output'))
             currentwork += 1
 
@@ -897,8 +909,7 @@ class gLitePlugin(BasePlugin):
             logging.debug("Enqueuing logging-info command for job %i" \
                            % jj['jobid'] )
             workqueued[currentwork] = jj['jobid']
-            completecmd = 'source %s && %s && %s' \
-                           % (self.setupScript, exportproxy, cmd)
+            completecmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && %s && %s' % (self.setupScript, self.manualenvprefix, exportproxy, cmd)
             input.put( (currentwork, completecmd, 'output') )
             currentwork += 1
 
@@ -1014,8 +1025,7 @@ class gLitePlugin(BasePlugin):
             logging.debug("Enqueuing cancel command for gridID %s" % gridID )
 
             workqueued[currentwork] = gridID
-            completecmd = 'source %s && %s && %s' \
-                           % (self.setupScript, exportproxy, command)
+            completecmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && %s && %s' % (self.setupScript, self.manualenvprefix, exportproxy, command)
             input.put( (currentwork, completecmd, 'output') )
   
             currentwork += 1
@@ -1167,12 +1177,11 @@ class gLitePlugin(BasePlugin):
         # single job definition
         jdl += "Nodes = {\n"
 
-        counter = 0
         for job in jobList:
             jobid = job['id']
             jobretry = job['retry_count']
             jdl += '[\n'
-            jdl += 'NodeName   = "NodeName_%i_%s";\n' % (counter, jobretry)
+            jdl += 'NodeName   = "Job_%i_%s";\n' % (job['id'], jobretry)
             jdl += 'Executable = "%s";\n' % os.path.basename(self.submitFile)
             if job.has_key('sandbox') and job['sandbox'] is not None:
                 jdl += 'Arguments  = "%s %s";\n' \
@@ -1197,12 +1206,11 @@ class gLitePlugin(BasePlugin):
                 jdl += 'InputSandbox = {%s};\n' % inputfiles
 
             jdl += '],\n'
-            counter += 1
         jdl  = jdl[:-2] + "\n};\n"
 
         # global sandbox definition
         if len(isb) > 0:
-            jdl += "InputSandbox = {%s};\n" % (isb)
+            jdl += 'InputSandbox = {%s};\n' % isb
 
         #### BUILD REQUIREMENTS ####
         jdl += 'Requirements = Member("%s", ' % self.defaultjdl['nodesarch'] + \
@@ -1300,7 +1308,7 @@ class gLitePlugin(BasePlugin):
 
         result = False
 
-        cmd = 'source %s && glite-version' % self.setupScript 
+        cmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && glite-version' % (self.setupScript, self.manualenvprefix)
         pipe = subprocess.Popen(cmd, stdout = subprocess.PIPE,
                                 stderr = subprocess.PIPE, shell = True)
         stdout, stderr = pipe.communicate()
@@ -1330,7 +1338,7 @@ class gLitePlugin(BasePlugin):
             else:
                 return (False, self.singleproxy)
         else:
-            return getProxy(userdn)
+            return self.getProxy(userdn)
 
 
     def getProxy(self, userdn):

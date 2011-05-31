@@ -315,5 +315,55 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         
         return
 
+    def testLargeNumberOfFiles(self):
+        """
+        _testLargeNumberOfFiles_
+
+        Setup a subscription with 500 files and verify that the splitting algo
+        works correctly.
+        """
+        testWorkflowA = Workflow(spec = "specA.xml", owner = "Steve",
+                                 name = "wfA", task = "Test")
+        testWorkflowA.create()
+        testWorkflowB = Workflow(spec = "specB.xml", owner = "Steve",
+                                 name = "wfB", task = "Test")
+        testWorkflowB.create()        
+
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        allFiles = []
+        for i in range(500):
+            testFile = File(str(i), size = 1000, events = 100,
+                                  locations = set(["somese.cern.ch"]))
+            testFile.create()
+            allFiles.append(testFile)
+            testFileset.addFile(testFile)
+        testFileset.commit()            
+
+        testSubscriptionA = Subscription(fileset = testFileset,
+                                         workflow = testWorkflowA,
+                                         split_algo = "FileBased",
+                                         type = "Processing")
+        testSubscriptionA.create()
+        testSubscriptionB = Subscription(fileset = testFileset,
+                                         workflow = testWorkflowB,
+                                         split_algo = "SiblingProcessingBased",
+                                         type = "Processing")
+        testSubscriptionB.create()
+
+        testSubscriptionA.completeFiles(allFiles)
+
+        splitter = SplitterFactory()
+        deleteFactoryA = splitter(package = "WMCore.WMBS",
+                                  subscription = testSubscriptionB)
+
+        result = deleteFactoryA(files_per_job = 50)
+        self.assertEqual(len(result), 1,
+                         "Error: Wrong number of job groups returned.")
+        self.assertEqual(len(result[0].jobs), 10,
+                         "Error: Wrong number of jobs returned.")
+                             
+        return
 if __name__ == '__main__':
     unittest.main()

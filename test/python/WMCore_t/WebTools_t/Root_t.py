@@ -206,6 +206,34 @@ class RootTest(unittest.TestCase):
         self.assertEquals(cpconfig['tools.secmodv2.site'], testSite)
         server.stop()
 
+    def testInstanceInUrl(self):
+        config = self.getBaseConfiguration()
+        config.SecurityModule.dangerously_insecure = True
+        server = Root(config)
+        # Add our test page
+        config.UnitTests.instances = ['foo', 'bar', 'baz/zoink']
+        active = config.UnitTests.views.section_('active')
+        active.section_('test')
+        active.test.object = 'WMCore_t.WebTools_t.InstanceTestPage'
+        active.test.section_('database')
+        instances = active.test.database.section_('instances')
+        foo = instances.section_('foo')
+        bar = instances.section_('bar')
+        baz = instances.section_('baz/zoink')
+        foo.connectUrl = 'sqlite:///foo'
+        bar.connectUrl = 'sqlite:///bar'
+        baz.connectUrl = 'sqlite:///baz/zoink'
+        server.start(blocking=False)
+
+        #http://localhost:8080/unittests/bar/test/database
+        for instance in config.UnitTests.instances:
+            url = 'http://localhost:8080/unittests/%s/test' % instance
+            html = urllib2.urlopen(url).read()
+            self.assertEquals(html, instance)
+            url = '%s/database' % url
+            html = urllib2.urlopen(url).read()
+            self.assertEquals(html, instances.section_(instance).connectUrl)
+        server.stop()
 
     def testUsingFilterTool(self):
         """

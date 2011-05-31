@@ -247,31 +247,45 @@ class Root(Harness):
         for view in self.appconfig.views.active:
             #Iterate through each view's configuration and instantiate the class
             if view._internal_name != the_index:
-                self._mountPage(view, "/%s/%s" % (self.app.lower(), view._internal_name), globalconf, factory)
+                if 'instances' in globalconf.keys():
+                    for instance in globalconf['instances']:
+                        self._mountPage(view, globalconf, factory, instance)
+                else:
+                    mount_point = "/%s/%s" % (self.app.lower(), view._internal_name)
+                    self._mountPage(view, mount_point, globalconf, factory)
 
         if hasattr(self.appconfig.views, 'maintenance'):
             #for i in self.appconfig.views.maintenance:
             #TODO: Show a maintenance page with a 503 Service Unavailable header
             pass
 
-    def _mountPage(self, view, mount_point, globalconf, factory):
+    def _generate_config(self, view, globalconf, instance=None, is_index=False):
         """
-        _mountPage_
-        Add the page to the CherryPy tree.
+        _generate_config_
+        Create the configuration for a page by combining it's configuration
+        with the global one
         """
-        if not mount_point.startswith("/%s" % self.app.lower()):
-            raise ValueError('%s is an invalid mount point' % mount_point)
         config = Configuration()
         view_config = config.component_(view._internal_name)
         view_config.application = self.app
 
+        view_dict = view.dictionary_()
+        for k in view_dict.keys():
+            view_config.__setattr__(k, view_dict[k])
         for k in globalconf.keys():
             # Add the global config to the view
             view_config.__setattr__(k, globalconf[k])
 
-        view_dict = view.dictionary_()
-        for k in view_dict.keys():
-            view_config.__setattr__(k, view_dict[k])
+        # TODO: remove bits we don't need
+
+        if instance:
+            # record the instance into the view's configuration
+            view_config.instance = instance
+            if hasattr(view, 'database') and hasattr(view.database, 'instances'):
+                db_cfg = view.database.section_('instances')
+                view_config.section_('database')
+                view_config.database = db_cfg.section_(instance)
+
 
         if view_config.dictionary_().has_key('database'):
             if not type(view_config.database) == str:
@@ -280,7 +294,19 @@ class Root(Harness):
                         view_config.database.connectUrl = self.coreDatabase.connectUrl
                         if hasattr(self.coreDatabase, "socket"):
                             view_config.database.socket = self.coreDatabase.socket
+        return view_config
 
+
+    def _mountPage(self, view, globalconf, factory, instance=None, is_index=False):
+        """
+        _mountPage_
+        Add the page to the CherryPy tree.
+        """
+        if is_index:
+            mount_point = os.path.join('/', self.app.lower())
+        else:
+            mount_point = os.path.join('/', self.app.lower(), instance, view._internal_name)
+        view_config = self._generate_config(view, globalconf, instance, is_index)
         # component now contains the full configuration (global + view)
         # use this throughout
 
@@ -289,10 +315,9 @@ class Root(Harness):
         obj = factory.loadObject(view_config.object, view_config, getFromCache = False)
         # Attach the object to cherrypy's tree, at the name of the component
         cherrypy.tree.mount(obj, mount_point)
-        msg = "%s available on %s/%s/%s" % (view_config._internal_name,
+        msg = "%s available on %s/%s" % (view_config._internal_name,
                                             cherrypy.server.base(),
-                                            self.app.lower(),
-                                            view_config._internal_name)
+                                            mount_point)
         cherrypy.log.error_log.info(msg)
 
     def _makeIndex(self):
@@ -300,13 +325,13 @@ class Root(Harness):
         Create an index page, either from the configured page or a generic default
         welcome page.
         """
+        globalconf = self.appconfig.dictionary_()
         if hasattr(self.appconfig, 'index'):
             factory = WMFactory('webtools_factory')
-            globalconf = self.appconfig.dictionary_()
             view = getattr(self.appconfig.views.active, globalconf['index'])
             del globalconf['views']
             del globalconf['index']
-            self._mountPage(view, "/%s" % self.app.lower(), globalconf, factory)
+            self._mountPage(view, globalconf, factory, is_index=True)
 
         else:
             cherrypy.log.error_log.info("No index defined for %s - instantiating default Welcome page"
@@ -316,9 +341,17 @@ class Root(Harness):
             for view in self.appconfig.views.active:
                 if not getattr(view, "hidden", False):
                     viewName = view._internal_name
-                    viewObj = cherrypy.tree.apps['/%s/%s' % (self.app.lower(), viewName)].root
-                    docstring = viewObj.__doc__
-                    namesAndDocstrings.append((viewName, docstring))
+                    if 'instances' in globalconf.keys():
+                        for instance in globalconf['instances']:
+                            mount_point = '/%s/%s/%s' % (self.app.lower(), instance, viewName)
+                            viewObj = cherrypy.tree.apps[mount_point].root
+                            docstring = viewObj.__doc__
+                            namesAndDocstrings.append(('%s/%s' % (instance, viewName), docstring))
+                    else:
+                        mount_point = '/%s/%s' % (self.app.lower(), viewName)
+                        viewObj = cherrypy.tree.apps[mount_point].root
+                        docstring = viewObj.__doc__
+                        namesAndDocstrings.append((viewName, docstring))
             cherrypy.tree.mount(Welcome(namesAndDocstrings), "/%s" % self.app.lower())
 
     def start(self, blocking=True):

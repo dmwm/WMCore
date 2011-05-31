@@ -14,12 +14,24 @@ import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetReques
 import WMCore.RequestManager.RequestDB.Interface.Request.MakeRequest as MakeRequest
 import WMCore.RequestManager.RequestDB.Interface.Request.Campaign as Campaign
 import WMCore.RequestManager.RequestDB.Interface.Admin.RequestManagement as RequestAdmin
+import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareManagement
 
 
 def raiseCheckInError(request, ex, msg):
+    requestName = request['RequestName']
     msg +='\n' + str(ex)
-    msg += "\nUnable to check in new request"
-    RequestAdmin.deleteRequest(request['RequestID'])
+    msg += "\nUnable to check in new request %s" % requestName
+
+    reqId = GetRequest.requestID(requestName)
+    # make absolutely sure you're deleting the right one
+    oldReqId = request['RequestID']
+    if reqId:
+       # make absolutely sure you're deleting the right one
+       oldReqId = request['RequestID']
+       if oldReqId != reqId:
+           raise RuntimeError, "Bad state deleting request %s/%s.  Please contact a ReqMgr administrator" % (oldReqId/ reqId)
+       else:
+           RequestAdmin.deleteRequest(reqId)
     raise RuntimeError, msg
 
 
@@ -36,6 +48,13 @@ def checkIn(request):
     # // First try and register the request in the DB
     #//
     requestName = request['RequestName']
+
+    # test if the software versions are registered first
+    versions = SoftwareManagement.listSoftware()
+    for version in request.get('SoftwareVersions', []):
+        if not version in versions:
+            raise RuntimeError, "Cannot find software version %s in ReqMgr" % version
+
     try:
         reqId = MakeRequest.createRequest(
         request['Requestor'],

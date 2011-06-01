@@ -81,11 +81,11 @@ for opt, arg in opts:
         user = arg
 
 def getList():
-    if len(opts) == 0:
+    if not (user or status or group or prodMgr):
         return ListRequests.listRequests()
     # These methods only return IDs
     ids  = []
-    if status != None and len(opts) == 1:
+    if status and not (user or group or team or prodMgr):
         ids.extend(ListRequests.listRequestsByStatus(status))
     else:
         if user:
@@ -105,7 +105,7 @@ def doDelete():
     for request in requests:
         if user or args == ['all'] or request['RequestName'] in args:
             print "Deleting " + request['RequestName']
-            RequestAdmin.deleteRequest(request["ReqMgrRequestID"])
+            RequestAdmin.deleteRequest(request["RequestID"])
 
 if sys.argv[1] == 'list':
     for request in getList():

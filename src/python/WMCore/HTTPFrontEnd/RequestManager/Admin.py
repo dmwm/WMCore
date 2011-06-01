@@ -49,10 +49,10 @@ class Admin(WebAPI):
     def index(self):
         """ Main web page """
         return """
-<a href="users">Users</a>
-<a href="groups">Groups</a>
-<a href="teams">Teams</a>
-<a href="versions">Versions</a>
+<a href="users/">Users</a>
+<a href="groups/">Groups</a>
+<a href="teams/">Teams</a>
+<a href="versions/">Versions</a>
          """
 
     @cherrypy.expose

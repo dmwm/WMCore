@@ -111,7 +111,6 @@ def fixupFileNames(process):
 
     process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
     process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")
-    process.source.cacheSize = cms.untracked.uint32(100000000)
 
     if not hasattr(process.source, "fileNames"):
         process.source.fileNames = cms.untracked.vstring()

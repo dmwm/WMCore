@@ -512,10 +512,15 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             jobList.extend(jobs)
 
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        # Run the actual underlying submit code using bossAir
         successList, failList = self.bossAir.submit(jobs = jobList)
 
-        self.changeState.propagate(successList, 'executing',    'created')
+        # Propagate states in the WMBS database
+        self.changeState.propagate(successList, 'executing', 'created')
         self.changeState.propagate(failList, 'submitfailed', 'created')
+        myThread.transaction.commit()
 
         
         return

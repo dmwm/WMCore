@@ -1,3 +1,16 @@
+From 0.7.8b to 0.7.9:
+  - Encase BossAir calls in transactions (1701).
+  - ReqMgr admin page needs trailing slashes in links (1708).
+  - Don't change the cache size for CMSSW, the default is fine (1704).
+  - Fix SiblingProcessingBased splitting dealing with large numbers of 
+    files (1678).
+  - Better handle integrity errors when refreshing CMSSW versions (1671).
+  - Increase the length of the name field in wmbs_fileset (1700).
+  - Make the PrepID optional in the ReqMgr (1693).
+  - Raise a better error if a CMSSW software version isn't known to ReqMgr
+    and be more careful able deleting requests (1687).
+  - gLite fix for missmatch between jobid-osb + typo (1675).
+
 From 0.7.8a to 0.7.8b:
   - Include support for Prep in ReqMgr (1415).
 

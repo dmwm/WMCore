@@ -35,7 +35,7 @@ class WorkQueueBackend(object):
         self.db = self.server.connectDatabase(db_name, create = False)
         self.hostWithAuth = db_url
         self.inbox = self.server.connectDatabase(inbox_name, create = False)
-        self.queueUrl = queueUrl or sanitizeURL(db_url)['url']
+        self.queueUrl = sanitizeURL(queueUrl or (db_url + db_name))['url']
 
     def forceQueueSync(self):
         """Force a blocking replication

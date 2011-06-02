@@ -91,7 +91,6 @@ def queueConfigFromConfigObject(config):
         wqManager.queueParams['InboxDbName'] = wqManager.inboxDatabase
 
     # pull some info we need from other areas of the config
-    qConfig['QueueURL'] = "%s/%s" % (wqManager.couchurl, wqManager.dbname)
     if not "BossAirConfig" in qConfig and hasattr(config, 'BossAir'):
         qConfig["BossAirConfig"] = config.BossAir
         qConfig['BossAirConfig'].section_("Agent").agentName = config.Agent.agentName

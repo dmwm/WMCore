@@ -32,8 +32,8 @@ class ForwardSinkTest(unittest.TestCase):
         self.address1 = "tcp://127.0.0.1:5557"
         self.controlAddr1 = "tcp://127.0.0.1:5559"
         
-        self.address2 = "tcp://127.0.0.1:105557"
-        self.controlAddr2 = "tcp://127.0.0.1:105559"
+        self.address2 = "tcp://127.0.0.1:15557"
+        self.controlAddr2 = "tcp://127.0.0.1:15559"
         
         self.outputfileCritical = "/tmp/ForwardSinkTestCritical.json"
         self.outputfileAll = "/tmp/ForwardSinkTestAll.json"

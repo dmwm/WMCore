@@ -15,7 +15,7 @@ function(doc) {
         for (var outputFileIndex in stepOutput[outputModuleName]) {
           var outputFile = stepOutput[outputModuleName][outputFileIndex];
           if (outputFile['OutputPFN'] != '') {
-            emit([request], {"jobid" : doc['jobid'], "pfn" : outputFile['OutputPFN']});
+            emit([request], {"jobid" : doc['jobid'], "pfn" : outputFile['OutputPFN'], "checksums" : outputFile['checksums']});
           }
         }
       }

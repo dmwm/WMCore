@@ -1,78 +1,61 @@
-#!/usr/bin/env python
 """
-_AlertProcessor_
-
-Component that runs an alert Processor pipeline to forward alerts to various other systems & monitoring
+Component of WMAgent that runs an alert Processor pipeline to forward
+alerts to various other systems & monitoring.
 
 """
 
 import logging
-from multiprocessing import Process
 
 from WMCore.Agent.Harness import Harness
 from WMCore.Alerts.ZMQ.Processor import Processor
-from WMCore.Alerts.ZMQ.Receiver  import Receiver
-from WMCore.Alerts.ZMQ.Sender  import Sender
-
-
-def startProcessor(listensOn, controlOn, config):
-    """
-    _startProcessor_
-    
-    Start the ZMQ alert processor
-    """
-    rec = Receiver(listensOn, Processor(), controlOn)
-    rec.start()
-    
-
-
-    
+from WMCore.Alerts.ZMQ.Receiver import Receiver
+from WMCore.Alerts.ZMQ.Sender import Sender
     
 
 
 class AlertProcessor(Harness):
     def __init__(self, config):
         Harness.__init__(self, config)
+        self._myName = self.__class__.__name__
         self.config = config
-        self.process = None
+        # instance of processor
+        self._processor = None
+        # instance of Receiver which owns Processor (self._processor) 
+        # and runs on background
+        self._receiver = None
+        logging.info("%s initialized." % self._myName)
+        
         
     def preInitialization(self):
         """
-        _preInitialization_
+        Start up the ZMQ Receiver + Processor.
         
-        Start up the zmq Processor
         """
-        confSect = self.config.AlertProcessor
-        target  = confSect.processorListensOn 
-        control = confSect.processorControlOn 
-        
-        self.process = Process(target = startProcessor, args = (target, control, confSect))
-        self.process.start()
-        
+        logging.info("%s starting ..." % self._myName)
+        self._processor = Processor(self.config.AlertProcessor)
+        # Receiver listens on work channel (address) and on control
+        # channel (controlAddr)
+        self._receiver = Receiver(self.config.AlertProcessor.address,
+                                  self._processor,
+                                  self.config.AlertProcessor.controlAddr)
+        self._receiver.startReceiver()
+        logging.info("%s started, Receiver should be listening." % self._myName)
         
         
     def stopProcessor(self):
         """
-        _stopProcessor_
+        Method to shutdown the Alert Processor.
         
-        Method to shutdown the Alert Processor
         """
-        s = Sender(listensOn, "AlertProcessor.stopProcessor", controlOn)
-        s.send_shutdown()
-        self.process.terminate()
+        logging.info("%s shutting down, waiting for Receiver ..." % self._myName)
+        self._receiver.shutdown()
         
         
     def prepareToStop(self, wait = False, stopPayload = ""):
         """
-        _prepareToStop_
+        Override prepareToStop to include call to stopProcessor.
+        Ugly, but seems no other way to do this...
         
-        Override prepareToStop to include call to stopProcessor
-        Fugly, but seems no other way to do this...
         """
         self.stopProcessor()
         Harness.prepareToStop(self, wait, stopPayload)
-        
-        
-   
-  
-     

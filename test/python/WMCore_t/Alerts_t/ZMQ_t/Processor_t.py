@@ -1,62 +1,73 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""
-Processor_t.py
 
+"""
 Created by Dave Evans on 2011-03-15.
 Copyright (c) 2011 Fermilab. All rights reserved.
+
 """
 
-import unittest
+
+import os
 import time
+import unittest
+
 from multiprocessing import Process, Queue
-from WMCore.Alerts.ZMQ.Processor import Processor
-from WMCore.Alerts.ZMQ.Sender    import Sender
-from WMCore.Alerts.ZMQ.Receiver  import Receiver
+
+from WMCore.Alerts.Alert import Alert
 from WMCore.Configuration import Configuration
+from WMCore.Alerts.ZMQ.Processor import Processor
+from WMCore.Alerts.ZMQ.Sender import Sender
+from WMCore.Alerts.ZMQ.Receiver import Receiver
+from WMCore.Alerts.ZMQ.Sinks.FileSink import FileSink
+from WMQuality.TestInitCouchApp import TestInitCouchApp
+
+
 
 def simpleWorker(addr, ctrl):
     """
-    _simpleWorker_
+    Sender that pauses and sends a shutdown message.
     
-    Sender that pauses and sends a shutdown message
     """
-    time.sleep(1)
-    s = Sender(addr, "Processor_t", ctrl )
+    s = Sender(addr, "Processor_t", ctrl)
     s.register()
-    time.sleep(1)
     s.unregister()
-    time.sleep(1)
-    s.send_shutdown()
-    return
+    s.sendShutdown()
+ 
+ 
     
 def worker(addr, ctrl, nAlerts, workerId = "Processor_t"):
     """
-    _worker_
-    
-    Send a few alerts 
+    Send a few alerts.
+     
     """
-    time.sleep(1)
-    s = Sender(addr, workerId, ctrl )
+    s = Sender(addr, workerId, ctrl)
     s.register()
-    time.sleep(1)
     for i in range(0, nAlerts):
-        s({"Alert" : "Test", "Level" : i+5 })
-        time.sleep(1)
+        a = Alert(Type = "Alert", Level = i)
+        s(a)
     s.unregister()
-    time.sleep(1)
-    s.send_shutdown()
+    s.sendShutdown()
     
-class Processor_t(unittest.TestCase):
+    
+    
+class ProcessorTest(unittest.TestCase):
     """
     TestCase for Processor.
+    
     """
+    
+    
     def setUp(self):
         """
-        set up for tests
+        Set up for tests.
+        
         """
         self.addr = "tcp://127.0.0.1:5557"
         self.ctrl = "tcp://127.0.0.1:5559"
+        
+        self.allOutputFile = "/tmp/ProcessorTestAllAlerts.json"
+        self.criticalOutputFile = "/tmp/ProcessorTestCriticalAlerts.json"
         
         self.config = Configuration()
         self.config.component_("AlertProcessor")
@@ -65,55 +76,109 @@ class Processor_t(unittest.TestCase):
         
         self.config.AlertProcessor.critical.level = 5
         self.config.AlertProcessor.all.level = 0
-        self.config.AlertProcessor.all.buffer_size = 3
-        
+        self.config.AlertProcessor.all.bufferSize = 3
         
         self.config.AlertProcessor.critical.section_("sinks")
         self.config.AlertProcessor.all.section_("sinks")
+                        
         
-        #self.config.AlertProcessor.critical.sinks.section_("email")
-        #self.config.AlertProcessor.critical.sinks.section_("couch")
-        #self.config.AlertProcessor.critical.sinks.section_("propagate")
-        self.config.AlertProcessor.critical.sinks.section_("file")
-        self.config.AlertProcessor.critical.sinks.file.outputfile = "/tmp/critical-alerts.json"
+    def tearDown(self):
+        for f in (self.criticalOutputFile, self.allOutputFile):
+            if os.path.exists(f):
+                os.remove(f)
+        if hasattr(self, "testInit"):
+            self.testInit.tearDownCouch()
         
-        self.config.AlertProcessor.all.sinks.section_("file")
-        self.config.AlertProcessor.all.sinks.file.outputfile = "/tmp/all-alerts.json"
-        
-        #self.config.AlertProcessor.critical.sinks.couch.url = None
-        #self.config.AlertProcessor.critical.sinks.couch.database = None
-        
-        #self.config.AlertProcessor.critical.sinks.email.fromAddr = "sfoulkes@fnal.gov"
-        #self.config.AlertProcessor.critical.sinks.email.toAddr = ["sfoulkes@fnal.gov", "mnorman@fnal.gov", "meloam@fnal.gov"]
-        #self.config.AlertProcessor.critical.sinks.email.smtpServer = "smtp.fnal.gov"
-        
-        
-        
-    # def testA(self):
-    #     """test startup and shutdown of processor in receiver"""
-    #     self.p = Process(target=simpleWorker, args=(self.addr, self.ctrl))
-    #     self.p.start()
-    #     
-    #     rec = Receiver(self.addr, Processor(self.config.AlertProcessor))
-    #     rec.start()
-    # 
-    #def testB(self):
-    #    """
-    #    test processing some alerts
-    #    ToDo: work out some way of retrieving the alerts and checking them
-    #    """
-    #    self.p = Process(target=worker, args=(self.addr, self.ctrl, 10))
-    #    self.p.start()
-    #
-    #    rec = Receiver(self.addr, Processor(self.config.AlertProcessor))
-    #    rec.start()
-        
-    def testC(self):
-        """
-        test configuring sinks
-        """
-        #print str(self.config.AlertProcessor)
+
+    def testProcessorBasic(self):
+        print str(self.config.AlertProcessor)
         p = Processor(self.config.AlertProcessor)
-    
-if __name__ == '__main__':
+
+
+    def testProcessorWithReceiver(self):
+        """
+        Test startup and shutdown of processor in receiver.
+        
+        """
+        processor = Processor(self.config.AlertProcessor)
+        rec = Receiver(self.addr, processor, self.ctrl)
+        rec.startReceiver()
+        # since the above is non-blocking, could send the messages from here
+        # directly, yet running via Process doesn't harm
+        sender = Process(target = simpleWorker, args = (self.addr, self.ctrl))
+        sender.start()
+        # wait until the Receiver is shut by simpleWorker
+        while rec.isReady():
+            time.sleep(0.1)
+        
+            
+    def testProcessorWithReceiverAndFileSink(self):
+        # add corresponding part of the configuration for FileSink(s)
+        config = self.config.AlertProcessor
+        config.critical.sinks.section_("file")
+        config.critical.sinks.file.outputfile = self.criticalOutputFile 
+        
+        config.all.sinks.section_("file")
+        config.all.sinks.file.outputfile = self.allOutputFile
+        
+        processor = Processor(config)
+        rec = Receiver(self.addr, processor, self.ctrl)
+        rec.startReceiver() # non blocking call
+        
+        # run worker(), this time directly without Process as above,
+        # worker will send 10 Alerts to Receiver
+        worker(self.addr, self.ctrl, 10)
+        
+        # wait until the Receiver is shut by worker
+        while rec.isReady():
+            time.sleep(0.1)
+            
+        # now check the FileSink output files for content:
+        # the all Alerts has threshold level set to 0 so Alerts
+        # with level 1 and higher, resp. for critical the level
+        # was above set to 5 so 6 and higher out of worker's 0 .. 9
+        # (10 Alerts altogether) shall be present
+        allSink = FileSink(config.all.sinks.file)
+        criticalSink = FileSink(config.critical.sinks.file)
+        allList = allSink.load()
+        criticalList = criticalSink.load()
+        # check 'all' levels
+        self.assertEqual(len(allList), 9) # levels 1 .. 9 went in
+        for a, level in zip(allList, range(1, 9)):
+            self.assertEqual(a["Level"], level)
+        # check 'critical' levels
+        self.assertEqual(len(criticalList), 4) # only levels 6 .. 9 went in
+        for a, level in zip(criticalList, range(6, 9)):
+            self.assertEqual(a["Level"], level)
+            
+            
+    def testProcessorWithReceiverAndCouchSink(self):
+        # set up couch first
+        self.testInit = TestInitCouchApp(__file__)
+        self.testInit.setLogging()
+        dbName = "couch_sink"
+        self.testInit.setupCouch(dbName)
+        
+        # add corresponding part of the configuration for CouchSink(s)
+        config = self.config.AlertProcessor
+        config.critical.sinks.section_("couch")
+        config.critical.sinks.couch.url = self.testInit.couchUrl
+        config.critical.sinks.couch.database = self.testInit.couchDbName
+
+        # just send the Alert into couch
+
+        processor = Processor(config)
+        rec = Receiver(self.addr, processor, self.ctrl)
+        rec.startReceiver() # non blocking call
+        
+        # run worker(), this time directly without Process as above,
+        # worker will send 10 Alerts to Receiver
+        worker(self.addr, self.ctrl, 10)
+        
+        # wait until the Receiver is shut by worker
+        while rec.isReady():
+            time.sleep(0.1)
+            
+            
+if __name__ == "__main__":
     unittest.main()

@@ -1,22 +1,18 @@
 #!/usr/bin/env python
 # encoding: utf-8
+
 """
-Alert.py
 
 Created by Dave Evans on 2011-02-24.
 Copyright (c) 2011 Fermilab. All rights reserved.
-"""
 
-import sys
-import os
+"""
 
 
 
 class Alert(dict):
     """
-    _Alert_
-    
-    Alert structure
+    Alert structure - alert message instance.
     
     """
     def __init__(self, **args):
@@ -32,6 +28,45 @@ class Alert(dict):
 
 
     level = property(lambda x: x.get("Level"))
-    
 
         
+    
+class RegisterMsg(dict):
+    """
+    Control message to register senders with Receiver instance.
+    
+    """
+    
+    key = u"Register"
+    
+    def __init__(self, label):
+        dict.__init__(self)
+        self[self.key] = label
+        
+
+
+class UnregisterMsg(dict):
+    """
+    Control message to unregister senders with Receiver instance.
+    
+    """
+    
+    key = u"Unregister"
+    
+    def __init__(self, label):
+        dict.__init__(self)
+        self[self.key] = label
+        
+        
+        
+class ShutdownMsg(dict):
+    """
+    Control message to shutdown the Receiver instance.
+    
+    """
+    
+    key = u"Shutdown"
+    
+    def __init__(self):
+        dict.__init__(self)
+        self[self.key] = True

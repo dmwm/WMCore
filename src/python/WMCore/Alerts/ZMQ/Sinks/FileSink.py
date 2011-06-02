@@ -1,68 +1,57 @@
-#!/usr/bin/env python
-# encoding: utf-8
-"""
-FileSink.py
-
-Created by Dave Evans on 2011-04-28.
-Copyright (c) 2011 Fermilab. All rights reserved.
-"""
-
-import sys
-import os
-from collections import deque
 import json
+from contextlib import contextmanager
 
-class FileSink:
+
+class FileSink(object):
     """
-    _FileSink_
+    Class handles storing Alert messages (JSONized) into a file.
     
-    Coroutine like sink for flushing alerts to a JSON file.
-    Uses a deque to rotate entries
-    Potentially a lot of file churn on this if fed alerts one at a time, may be worth 
-    doing a Buffered version that flushes to file every N alerts instead, but this QND job 
-    will do for now
+    File is being appended, there is no wrapping object representation,
+    e.g. list, so direct loading of the entire file content into
+    JSON is not possible, yet load() is implemented. 
     
     """
+    
+    
     def __init__(self, config):
         self.outputfile = config.outputfile
-        self.depth = getattr(config, "depth", 100)
-        self.deque = None
+        self.encoder = json.encoder.JSONEncoder()
+        self.decoder = json.decoder.JSONDecoder()
 
 
-    def load(self):
-        """
-        _load_
-        
-        Load the current set of alerts in the file into the deque
-        """
-        if self.deque == None:
-            self.deque = deque(maxlen = self.depth)
-        else:
-            handle = open(self.outputfile, 'r')
-            self.deque.extend(list(json.load(handle)))
-            handle.close()
-        
-    def save(self):
-        """
-        _save_
-        
-        persist the deque to the file
-        """
-        handle = open(self.outputfile, 'w')
-        json.dump(list(self.deque), handle)
-        handle.close()
-        self.deque.clear()
+    @contextmanager
+    def _handleFile(self, mode):
+        f = open(self.outputfile, mode)
+        try:
+            yield f
+        finally:
+            f.close()
         
     
+    def load(self):
+        """
+        Return a Python list of Alert instances loaded from the file this
+        instace of FileSink is configured with.
+        
+        """
+        r = []
+        with self._handleFile('r') as f:
+            for line in f:
+                obj = self.decoder.decode(line)
+                r.append(obj)
+        return r
+            
+                    
     def send(self, alerts):
         """
-        _send_
-        Generator like interface
+        alerts is a list of Alert instances.
+        
+        Writes out new line separated json representation of Alert instances.
+        The corresponding test tests that new line character is handled well
+        if occurrs in the payload of the Alert instance.
+        
         """
-        self.load()
-        self.deque.extend(alerts)
-        self.save()
-
-
-
-
+        with self._handleFile('a') as f:
+            for a in alerts:
+                s = self.encoder.encode(a)
+                f.write("%s\n" % s)

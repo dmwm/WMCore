@@ -869,7 +869,7 @@ class WorkQueue(WorkQueueBase):
                 # i.e. canceled in parent - if so cancel here...
                 result = self.parent_queue.synchronize(self.params['QueueURL'],
                                                        items)
-            except RuntimeError, ex:
+            except Exception, ex:
                 # log a failure to communicate
                 msg = "Unable to send update to parent queue, error: %s"
                 self.logger.warning(msg % str(ex))

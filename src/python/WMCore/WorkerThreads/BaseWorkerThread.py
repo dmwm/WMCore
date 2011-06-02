@@ -189,6 +189,7 @@ class BaseWorkerThread:
                                 if getattr(self.component.config.Agent, "useHeartbeat", True):
                                     self.heartbeatAPI.updateWorkerError(
                                         myThread.getName(), msg)
+                            raise ex
                         # Put the thread to sleep
                         time.sleep(self.idleTime)
 

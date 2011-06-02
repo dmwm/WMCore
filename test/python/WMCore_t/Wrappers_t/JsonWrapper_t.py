@@ -42,6 +42,11 @@ class TestWrapper(unittest.TestCase):
         result = json_wrap.loads(data)
         expect = json.loads(data)
         self.assertEqual(expect, result)
+
+        try:
+            json_wrap.loads("bogusbogus")
+        except cjson.DecodeError, ex:
+            self.assertEqual(ex.args, ("cannot parse JSON description: bogusbogus",))            
     
     def test_json(self):
         """
@@ -57,6 +62,11 @@ class TestWrapper(unittest.TestCase):
         result = json_wrap.loads(data)
         expect = json.loads(data)
         self.assertEqual(expect, result)
+
+        try:
+            json_wrap.loads("bogusbogus")
+        except ValueError, ex:
+            self.assertEqual(ex.args, ("No JSON object could be decoded: bogusbogus",))
 
     def test_string_compare(self):
         """

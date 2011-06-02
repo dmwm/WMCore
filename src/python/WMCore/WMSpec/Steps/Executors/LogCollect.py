@@ -20,8 +20,8 @@ import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.StageInMgr  as StageInMgr
 import WMCore.Storage.DeleteMgr   as DeleteMgr
 from WMCore.Storage.StageOutError import StageOutFailure
-        
-from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
+
+from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 
 class LogCollect(Executor):
     """

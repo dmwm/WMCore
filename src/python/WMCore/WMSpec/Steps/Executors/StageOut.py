@@ -25,7 +25,7 @@ import WMCore.Storage.DeleteMgr   as DeleteMgr
 
 from WMCore.Lexicon                  import lfn as lfnRegEx
 
-from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
+from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 
 class StageOut(Executor):
     """

@@ -24,19 +24,7 @@ from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.FileManager
 
-
-class Alarm(Exception):
-    """
-    Silly exception
-
-    """
-    pass
-
-def alarmHandler(signum, frame):
-    """
-    Silly handler (raise if you have an alarm)
-    """
-    raise Alarm
+from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 
 lfnGroup = lambda j : str(j.get("counter", 0) / 1000).zfill(4)
 

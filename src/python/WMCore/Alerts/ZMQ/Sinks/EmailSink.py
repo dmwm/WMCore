@@ -1,12 +1,3 @@
-#!/usr/bin/env python
-# encoding: utf-8
-
-"""
-Created by Dave Evans on 2011-04-27.
-Copyright (c) 2011 Fermilab. All rights reserved.
-
-"""
-
 import smtplib
 
 
@@ -17,7 +8,10 @@ class EmailSink(object):
     
     """
     
-            
+    
+    EMAIL_HEADER = "From: %s\r\nTo: %s\r\n\r\n"
+    
+    
     def __init__(self, config):
         self.config = config
         server = getattr(self.config, "smtpServer", "localhost")
@@ -26,7 +20,7 @@ class EmailSink(object):
         if login != None:
             self.smtp.login(login, passw)
         self.fromAddr = getattr(self.config, "fromAddr", None)
-        self.toAddrs  = getattr(self.config, "toAddr", None)
+        self.toAddr  = getattr(self.config, "toAddr", None)
         
         
     def send(self, alerts):
@@ -34,10 +28,10 @@ class EmailSink(object):
         Handle list of alerts.
         
         """
-        msg = "From: %s\r\nTo: %s\r\n\r\n" % (self.fromAddr, ", ".join(self.toAddrs))
+        msg = self.EMAIL_HEADER % (self.fromAddr, ", ".join(self.toAddr))
         for a in alerts:
             msg += "\n%s\n" % str(a)
-        self.smtp.sendmail(self.fromAddr, self.toAddrs, msg)
+        self.smtp.sendmail(self.fromAddr, self.toAddr, msg)
         
         
     def __del__(self):

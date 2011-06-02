@@ -27,9 +27,17 @@ def loads(idict, **kwargs):
     Based on default _module invoke appropriate JSON decoding API call
     """
     if  _module == 'json':
-        return json.loads(idict, **kwargs)
+        try:
+            return json.loads(idict, **kwargs)
+        except ValueError, ex:
+            ex.args = ("%s: %s" % (ex.args[0], idict),)
+            raise ex
     elif _module == 'cjson':
-        return cjson.decode(idict)
+        try:
+            return cjson.decode(idict)
+        except cjson.DecodeError, ex:
+            ex.args = ("%s: %s" % (ex.args[0], idict),)
+            raise ex
 
 def load(source):
     """

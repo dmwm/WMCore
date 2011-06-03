@@ -481,8 +481,12 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(report.getExitCode(), 0)
         report.addError(stepName = "cmsRun1", exitCode = None, errorType = "test", errorDetails = "test")
         self.assertEqual(report.getExitCode(), 99999)
+        self.assertEqual(report.getStepExitCode(stepName = "cmsRun1"), 99999)
         report.addError(stepName = "cmsRun1", exitCode = '12345', errorType = "test", errorDetails = "test")
         self.assertEqual(report.getExitCode(), 12345)
+        self.assertEqual(report.getStepExitCode(stepName = "cmsRun1"), 12345)
+
+        
 
     
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ import pstats
 from nose.plugins.attrib import attr
 
 import WMCore.WMInit
-from WMQuality.TestInit   import TestInit
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
 
@@ -139,6 +139,8 @@ class JobTrackerTest(unittest.TestCase):
         #self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"])
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"],
                                 useDefault = False)
+        self.testInit.setupCouch("jobtracker_t/jobs", "JobDump")
+        self.testInit.setupCouch("jobtracker_t/fwjrs", "FWJRDump")
 
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -155,8 +157,11 @@ class JobTrackerTest(unittest.TestCase):
 
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute(siteName = "malpaquet", seName = "malpaquet",
-                               ceName = "malpaquet", plugin = "CondorPlugin") 
+                               ceName = "malpaquet", plugin = "CondorPlugin")
 
+        # Create user
+        newuser = self.daoFactory(classname = "Users.New")
+        newuser.execute(dn = "jchurchill")
 
         # We actually need the user name
         self.user = getpass.getuser()
@@ -168,8 +173,9 @@ class JobTrackerTest(unittest.TestCase):
         Database deletion
         """
         self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"])
-
         self.testInit.delWorkDir()
+        self.testInit.tearDownCouch()
+        return
         
 
     def getConfig(self):
@@ -228,9 +234,9 @@ class JobTrackerTest(unittest.TestCase):
 
         #JobStateMachine
         config.component_('JobStateMachine')
-        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'mnorman:theworst@cmssrv52.fnal.gov:5984')
+        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')
         config.JobStateMachine.default_retries = 1
-        config.JobStateMachine.couchDBName     = "mnorman_test"
+        config.JobStateMachine.couchDBName     = "jobtracker_t"
         
         return config
     
@@ -277,6 +283,7 @@ class JobTrackerTest(unittest.TestCase):
             testJob['retry_count'] = 1
             testJob['retry_max'] = 10
             testJob.create(testJobGroup)
+            testJob.save()
             testJobGroup.add(testJob)
 
         testJobGroup.commit()
@@ -380,10 +387,12 @@ class JobTrackerTest(unittest.TestCase):
         f.close()
 
         for job in testJobGroup.jobs:
-            job['plugin']    = 'CondorPlugin'
-            job['user']      = 'jchurchill'
-            job['custom']    = {'location': 'malpaquet'}
-            job['cache_dir'] = self.testDir
+            job['plugin']     = 'CondorPlugin'
+            job['userdn']     = 'jchurchill'
+            job['custom']     = {'location': 'malpaquet'}
+            job['cache_dir']  = self.testDir
+            job['sandbox']    = sandbox
+            job['packageDir'] = self.testDir
 
         info = {}
         info['packageDir'] = self.testDir
@@ -391,7 +400,6 @@ class JobTrackerTest(unittest.TestCase):
         info['sandbox']    = sandbox
 
         jobTracker.bossAir.submit(jobs = testJobGroup.jobs, info = info)
-
 
         time.sleep(1)
 
@@ -423,9 +431,7 @@ class JobTrackerTest(unittest.TestCase):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0)
 
-
         jobTracker.algorithm()
-
 
         # Are jobs in the right state?
         result = self.getJobs.execute(state = 'Executing', jobType = "Processing")

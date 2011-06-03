@@ -315,5 +315,32 @@ class WorkflowTest(unittest.TestCase):
         self.assertNotEqual(listFromOwner2["owner"], listFromOwner3["owner"])
         return
 
+
+    def testCountWorkflow(self):
+        """
+        _testCountWorkflow_
+
+        """
+        spec  = "spec.py"
+        owner = "moron"        
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        countSpecDAO = daoFactory(classname = "Workflow.CountWorkflowBySpec")
+
+        workflows = []
+        for i in range(0, 10):
+            testWorkflow = Workflow(spec = spec, owner = owner,
+                                    name = "wf00%i" % i, task = "task%i" % i)
+            testWorkflow.create()
+            workflows.append(testWorkflow)
+
+        self.assertEqual(countSpecDAO.execute(spec = spec), 10)
+
+        for i in range(0, 10):
+            wf = workflows.pop()
+            wf.delete()
+            self.assertEqual(countSpecDAO.execute(spec = spec), 10 - (i + 1))
+
 if __name__ == "__main__":
     unittest.main()

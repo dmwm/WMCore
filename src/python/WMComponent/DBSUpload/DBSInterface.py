@@ -620,7 +620,8 @@ class DBSInterface:
                                            primary = primary,
                                            processedName = dataset['ProcessedDataset'],
                                            dataTier = dataset['DataTier'],
-                                           status = dataset['status'])
+                                           status = dataset['status'],
+                                           globalTag = dataset['globalTag'])
 
 
         return processed

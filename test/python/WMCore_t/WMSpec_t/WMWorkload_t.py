@@ -120,6 +120,28 @@ class WMWorkloadTest(unittest.TestCase):
         for key in ownerProps.keys():
             self.assertEqual(result[key], ownerProps[key])
 
+
+    def testE_Properties(self):
+        """
+        _Properties_
+
+        Check the values attached to the workloads general properties
+        """
+        name = "ThisIsASillyString"
+
+        workload = WMWorkloadHelper(WMWorkload("workload1"))
+        workload.setValidStatus(validStatus = name)
+        workload.setProcessingVersion(processingVersion = name)
+        workload.setAcquisitionEra(acquisitionEra = name)
+
+        self.assertEqual(workload.getValidStatus(), name)
+        self.assertEqual(workload.getProcessingVersion(), name)
+        self.assertEqual(workload.getAcquisitionEra(), name)
+
+        return
+
+        
+
     def testWhiteBlacklists(self):
         """
         _testWhiteBlacklists_

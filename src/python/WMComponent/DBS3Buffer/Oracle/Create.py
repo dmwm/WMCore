@@ -37,6 +37,7 @@ class Create(DBCreator):
                  processing_ver       VARCHAR2(255),
                  acquisition_era      VARCHAR2(255),
                  valid_status         VARCHAR2(20),
+                 global_tag           VARCHAR2(255),
              subscribed int DEFAULT 0
                )"""
         self.create["01dbsbuffer_dataset_seq"] = \

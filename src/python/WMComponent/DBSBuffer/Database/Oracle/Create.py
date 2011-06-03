@@ -38,6 +38,7 @@ class Create(DBCreator):
 	         id           NUMBER(11)      NOT NULL ENABLE,
 	         path         VARCHAR2(500)   NOT NULL ENABLE,
                  valid_status VARCHAR2(20),
+                 global_tag   VARCHAR2(255),
              subscribed int DEFAULT 0
                )"""
         self.create["01dbsbuffer_dataset_seq"] = \

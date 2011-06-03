@@ -31,6 +31,7 @@ class Create(DBCreator):
 			   id           BIGINT UNSIGNED not null auto_increment,
 			   path         varchar(500)    unique not null,
                            valid_status VARCHAR(20),
+                           global_tag   VARCHAR(255),
                            subscribed int default 0,
 			   primary key(id)	
 			) ENGINE=InnoDB"""

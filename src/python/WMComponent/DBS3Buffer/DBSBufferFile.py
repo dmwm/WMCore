@@ -39,6 +39,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.setdefault("processingVer", None)
         self.setdefault("acquisitionEra", None)
         self.setdefault("validStatus", None)
+        self.setdefault("globalTag", None)
         
         if locations == None:
             self.setdefault("newlocations", set())
@@ -164,6 +165,7 @@ class DBSBufferFile(WMBSBase, WMFile):
                                  processingVer = self['processingVer'],
                                  acquisitionEra = self['acquisitionEra'],
                                  validStatus = self['validStatus'],
+                                 globalTag   = self['globalTag'],
                                  conn = self.getDBConn(),
                                  transaction = True)
 
@@ -418,6 +420,25 @@ class DBSBufferFile(WMBSBase, WMFile):
         self['validStatus'] = validStatus
         return
 
+    def setGlobalTag(self, globalTag):
+        """
+        _setGlobalTag_
+        
+        Set the global Tag
+        """
+
+        self['globalTag'] = globalTag
+        return
+    
+    def getGlobalTag(self):
+        """
+        _getGlobalTag_
+
+        Get the global Tag
+        """
+
+        return self['globalTag']
+    
     def getParentLFNs(self):
         """
         Get a flat list of parent LFNs

@@ -68,8 +68,11 @@ def createDatasetFromInfo(info):
                'Algo':             info.get('Algo'),
                'AlgoInDBS':        info.get('AlgoInDBS', None),
                'DASInDBS':         info.get('DASInDBS', None),
-               'status':           info.get('ValidStatus', 'PRODUCTION')
+               'status':           info.get('ValidStatus', 'PRODUCTION'),
+               'globalTag':        info.get('GlobalTag', '')
                }
+    if dataset['globalTag'] == None:
+        dataset['globalTag'] = ''
     if dataset['status'] == None:
         dataset['status'] = 'PRODUCTION'
     return dataset

@@ -16,6 +16,7 @@ import os
 import threading
 import logging
 import gc
+import collections
 
 from WMCore.Agent.Configuration  import Configuration
 from WMCore.FwkJobReport.Report  import Report
@@ -100,9 +101,9 @@ class AccountantWorker(WMConnectionBase):
         self.listOfJobsToFail  = []
         self.filesetAssoc      = []
         self.count = 0
-        self.datasetAlgoID     = []
-        self.datasetAlgoPaths  = []
-        self.dbsLocations      = []
+        self.datasetAlgoID     = collections.deque(maxlen = 1000)
+        self.datasetAlgoPaths  = collections.deque(maxlen = 1000)
+        self.dbsLocations      = collections.deque(maxlen = 1000)
 
         return
 
@@ -309,6 +310,7 @@ class AccountantWorker(WMConnectionBase):
         dbsFile.setValidStatus(validStatus = jobReportFile.get("validStatus", None))
         dbsFile.setProcessingVer(ver = jobReportFile.get('processingVer', None))
         dbsFile.setAcquisitionEra(era = jobReportFile.get('acquisitionEra', None))
+        dbsFile.setGlobalTag(globalTag = jobReportFile.get('globalTag', None))
         
         for run in jobReportFile["runs"]:
             newRun = Run(runNumber = run.run)
@@ -511,9 +513,12 @@ class AccountantWorker(WMConnectionBase):
             # Also run insertDatasetAlgo
 
             assocID         = None
-            datasetAlgoPath = '%s:%s:%s:%s:%s' % (dbsFile['datasetPath'],
-                                                  dbsFile["appName"], dbsFile["appVer"],
-                                                  dbsFile["appFam"], dbsFile["psetHash"])
+            datasetAlgoPath = '%s:%s:%s:%s:%s:%s:%s:%s' % (dbsFile['datasetPath'],
+                                                           dbsFile["appName"], dbsFile["appVer"],
+                                                           dbsFile["appFam"], dbsFile["psetHash"],
+                                                           dbsFile['processingVer'],
+                                                           dbsFile['acquisitionEra'],
+                                                           dbsFile['globalTag'])
             # First, check if this is in the cache
             if datasetAlgoPath in self.datasetAlgoPaths:
                 for da in self.datasetAlgoID:

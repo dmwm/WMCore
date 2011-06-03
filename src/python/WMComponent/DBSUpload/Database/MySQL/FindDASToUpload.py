@@ -27,7 +27,8 @@ class FindDASToUpload(DBFormatter):
                da.PSet_Hash as PSetHash,
                da.Config_Content as PSetContent,
                da.in_dbs AS algo_in_dbs,
-               ds.valid_status AS valid_status
+               ds.valid_status AS valid_status,
+               ds.global_tag AS global_tag
              FROM dbsbuffer_algo_dataset_assoc das
              INNER JOIN dbsbuffer_dataset ds ON ds.id = das.dataset_id
              INNER JOIN dbsbuffer_algo da ON da.id = das.algo_id
@@ -67,6 +68,7 @@ class FindDASToUpload(DBFormatter):
             entry['PSetContent']        = r['psetcontent']
             entry['Dataset']            = r['dataset']
             entry['ValidStatus']        = r['valid_status']
+            entry['GlobalTag']          = r.get('global_tag', '')
             ret.append(entry)
 
         return ret

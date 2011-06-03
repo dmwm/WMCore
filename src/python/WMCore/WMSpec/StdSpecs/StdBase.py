@@ -356,6 +356,7 @@ class StdBase(object):
                                         scramArch = self.scramArch)
         mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
         mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
+        mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
 
         mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
                                         self.inputPrimaryDataset, dataTier,

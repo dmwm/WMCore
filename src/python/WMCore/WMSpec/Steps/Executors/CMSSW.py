@@ -16,6 +16,7 @@ import logging
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMRuntime.Tools.Scram import Scram
+from WMCore.WMSpec.WMStep import WMStepHelper
 
 from WMCore.FwkJobReport.Report import Report
 
@@ -236,6 +237,8 @@ class CMSSW(Executor):
         acquisitionEra = self.workload.getAcquisitionEra()
         processingVer  = self.workload.getProcessingVersion()
         validStatus    = self.workload.getValidStatus()
+        typeHelper     = WMStepHelper(self.step).getTypeHelper()
+        globalTag      = typeHelper.getGlobalTag()
         self.report.setAcquisitionProcessing(acquisitionEra = acquisitionEra,
                                              processingVer = processingVer)
 
@@ -243,6 +246,7 @@ class CMSSW(Executor):
             self.report.killOutput()
             
         self.report.setValidStatus(validStatus = validStatus)
+        self.report.setGlobalTag(globalTag = globalTag)
         return
 
     def post(self, emulator = None):

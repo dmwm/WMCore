@@ -685,6 +685,7 @@ class Report:
         newFile["acquisitionEra"] = getattr(fileRef, 'acquisitionEra', None)
         newFile["processingVer"]  = getattr(fileRef, 'processingVer', None)
         newFile["validStatus"]    = getattr(fileRef, 'validStatus', None)
+        newFile["globalTag"]      = getattr(fileRef, 'globalTag', None)
         newFile["outputModule"]   = outputModule
         
 
@@ -1067,6 +1068,22 @@ class Report:
         # Should now have all the fileRefs
         for f in fileRefs:
             f.validStatus = validStatus
+            
+        return
+
+    def setGlobalTag(self, globalTag):
+        """
+        _setGlobalTag_
+        
+        Set the global Tag from the spec on the WN
+        ONLY run this after all the files have been attached
+        """
+
+        fileRefs = self.getAllFileRefs()
+    
+        # Should now have all the fileRefs
+        for f in fileRefs:
+            f.globalTag = globalTag
             
         return
 

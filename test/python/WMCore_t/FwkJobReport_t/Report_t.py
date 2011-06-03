@@ -486,8 +486,29 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(report.getExitCode(), 12345)
         self.assertEqual(report.getStepExitCode(stepName = "cmsRun1"), 12345)
 
+    def testProperties(self):
+        """
+        _testProperties_
         
-
+        Test data fields for the properties information for DBS
+        """
+        
+        myReport = Report("cmsRun1")
+        myReport.parse(self.xmlPath)
+        
+        name = "ThisIsASillyString"
+        
+        myReport.setValidStatus(name)
+        myReport.setGlobalTag(name)
+        myReport.setAcquisitionProcessing(acquisitionEra = 'NULL', processingVer = name)
+        
+        for f in myReport.getAllFilesFromStep("cmsRun1"):
+            self.assertEqual(f['globalTag'], name)
+            self.assertEqual(f['validStatus'], name)
+            self.assertEqual(f['processingVer'], name)
+            self.assertEqual(f['acquisitionEra'], 'NULL')
+            
+        return
     
 if __name__ == "__main__":
     unittest.main()

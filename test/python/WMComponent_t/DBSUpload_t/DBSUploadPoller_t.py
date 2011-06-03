@@ -23,7 +23,8 @@ from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
 #from WMComponent.DBSUpload.DBSUploadTest import DBSUploadPoller2 as DBSUploadPoller
 from WMComponent.DBSUpload.DBSUploadWorker import DBSUploadWorker
 
-from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+#from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 
 from WMCore.WMFactory       import WMFactory
 from WMQuality.TestInit     import TestInit
@@ -63,7 +64,7 @@ class DBSUploadTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = 
-                                ["WMComponent.DBSBuffer.Database",
+                                ["WMComponent.DBS3Buffer",
                                  'WMCore.Agent.Database'],
                                 useDefault = False)
       
@@ -92,7 +93,7 @@ class DBSUploadTest(unittest.TestCase):
         tearDown function for unittest
         """
         
-        self.testInit.clearDatabase(modules = ["WMComponent.DBSBuffer.Database",
+        self.testInit.clearDatabase(modules = ["WMComponent.DBS3Buffer",
                                                'WMCore.Agent.Database'])
 
     def createConfig(self):
@@ -159,6 +160,7 @@ class DBSUploadTest(unittest.TestCase):
                                   configContent = "MOREGIBBERISH")
             testFile.setDatasetPath("/%s/%s/%s" % (name, name, tier))
             testFile.addRun(Run( 1, *[f]))
+            testFile.setGlobalTag("aGlobalTag")
             testFile.create()
             testFile.setLocation(site)
             files.append(testFile)
@@ -171,6 +173,7 @@ class DBSUploadTest(unittest.TestCase):
                               configContent = "MOREGIBBERISH")
         testFileChild.setDatasetPath("/%s/%s_2/RECO" %(name, name))
         testFileChild.addRun(Run( 1, *[45]))
+        testFileChild.setGlobalTag("aGlobalTag")
         testFileChild.create()
         testFileChild.setLocation(site)
 
@@ -191,7 +194,6 @@ class DBSUploadTest(unittest.TestCase):
         mark as done, finish them, migrate them
         Also check the timeout
         """
-
         myThread = threading.currentThread()
         config = self.createConfig()
         config.DBSInterface.DBSBlockMaxTime = 3

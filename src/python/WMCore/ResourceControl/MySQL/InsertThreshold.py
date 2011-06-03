@@ -31,17 +31,21 @@ class InsertThreshold(DBFormatter):
                  (SELECT id FROM wmbs_sub_types WHERE name  = :tasktype),
                  :maxslots, :priority)"""
 
-    def execute(self, siteName, taskType, maxSlots, priority = 1, conn = None,
+    def execute(self, siteName, taskType, maxSlots, priority = None, conn = None,
                 transaction = False):
         binds = {"sitename": siteName, "tasktype": taskType,
                  "maxslots": maxSlots, "priority": priority}
         result = self.dbi.processData(self.selSQL, {"sitename": siteName, "tasktype": taskType},
                                       conn = conn, transaction = transaction)
-        result = self.format(result)
+        result = self.formatDict(result)
 
         if len(result) == 0:
+            if priority == None:
+                binds['priority'] = 1
             self.dbi.processData(self.addSQL, binds, conn = conn, transaction = transaction)
         else:
+            if priority == None:
+                binds['priority'] = result[0]['priority']
             self.dbi.processData(self.updSQL, binds, conn = conn, transaction = transaction)            
 
         return

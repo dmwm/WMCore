@@ -39,7 +39,7 @@ def createOptionParser():
                            help = "Specify the name of the task to add/modify")
     myOptParser.add_option("--task-slots", dest = "maxSlots",
                            help = "Specify the maximum number of slots for the task type")
-    myOptParser.add_option("--priority", dest = "priority", default = 1,
+    myOptParser.add_option("--priority", dest = "priority", default = None,
                            help = "Specify the priority of the threshold at the site (higher is better)")
     myOptParser.add_option("--plugin", dest = "plugin",
                            help = "Specify submit plugin to use for specific site")
@@ -119,7 +119,7 @@ def updateSiteInfo(resourceControl, siteName, jobSlots = None,
 
     return
 
-def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots, priority = 1):
+def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots, priority = None):
     """
     _updateThresholdInfo_
 

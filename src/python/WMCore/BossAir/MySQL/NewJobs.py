@@ -16,7 +16,7 @@ class NewJobs(DBFormatter):
     """
 
 
-    sql = """INSERT INTO bl_runjob (wmbs_id, grid_id, bulk_id, sched_status, retry_count, user_id)
+    sql = """INSERT IGNORE INTO bl_runjob (wmbs_id, grid_id, bulk_id, sched_status, retry_count, user_id)
                VALUES (:jobid, :gridid, :bulkid,
                  (SELECT id FROM bl_status WHERE name = :status), 
                  :retry_count,

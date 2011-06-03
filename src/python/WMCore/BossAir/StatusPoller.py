@@ -88,8 +88,11 @@ class StatusPoller(BaseWorkerThread):
 
         # We need to show that the jobs are in state timeout
         # and then kill them.
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
         self.bossAir.update(jobs = jobsToKill)
         self.bossAir.kill(jobs = jobsToKill, killMsg = "Job killed due to timeout")
+        myThread.transaction.commit()
 
 
         return

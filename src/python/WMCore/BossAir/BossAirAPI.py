@@ -463,7 +463,17 @@ class BossAirAPI(WMConnectionBase):
                     raise BossAirException(msg)
 
         # Create successful jobs in BossAir
-        self.createNewJobs(wmbsJobs = successJobs)
+        try:
+            logging.debug("About to create %i new jobs in BossAir" % len(successJobs))
+            self.createNewJobs(wmbsJobs = successJobs)
+        except WMException:
+            raise
+        except Exception, ex:
+            msg =  "Unhandled error in creation of %i new jobs.\n" % len(successJobs)
+            msg += str(ex)
+            logging.error(msg)
+            logging.debug("Job: %s" % successJobs)
+            raise BossAirException(msg)
 
         return successJobs, failureJobs
 
@@ -816,12 +826,13 @@ class BossAirAPI(WMConnectionBase):
                             rj[key] = runJob.get(key, None)
                     finalJobs.append(rj)
                     break
-                # If we get here, we're sort of screwed
-                # It means that although we sent for it, we couldn't find it.
-                # Possibly means that the job just isn't in there yet.
-                # Make a note of it, then do nothing
-                logging.debug("Could not successfully load a runJob for wmbsJob %i:%i\n" % (wmbsJob['id'], wmbsJob['retry_count']))
-                logging.debug("WMBS Job: %s\n" % wmbsJob)
+            # If we get here, we're sort of screwed
+            # It means that although we sent for it, we couldn't find it.
+            # Possibly means that the job just isn't in there yet.
+            # Make a note of it, then do nothing
+            logging.debug("Could not successfully load a runJob for wmbsJob %i:%i\n" % (wmbsJob['id'], wmbsJob['retry_count']))
+            logging.debug("WMBS Job: %s\n" % wmbsJob)
+
 
         return finalJobs
 

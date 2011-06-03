@@ -140,8 +140,6 @@ class TaskArchiverTest(unittest.TestCase):
         """
 
         workload = testWorkload("Tier1ReReco")
-        rereco = workload.getTask("ReReco")
-
         
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
@@ -156,7 +154,8 @@ class TaskArchiverTest(unittest.TestCase):
         
 
     def createTestJobGroup(self, config, name = "TestWorkthrough",
-                           specLocation = "spec.xml", error = False):
+                           specLocation = "spec.xml", error = False,
+                           task = "/TestWorkload/ReReco"):
         """
         Creates a group of several jobs
 
@@ -165,7 +164,7 @@ class TaskArchiverTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         testWorkflow = Workflow(spec = specLocation, owner = "Simon",
-                                name = name, task="/TestWorkload/ReReco")
+                                name = name, task = task)
         testWorkflow.create()
         
         testWMBSFileset = Fileset(name = name)
@@ -330,15 +329,25 @@ class TaskArchiverTest(unittest.TestCase):
                                                specLocation = workloadPath,
                                                error = False)
 
+        # Create second workload
+        testJobGroup2 = self.createTestJobGroup(config = config,
+                                                name = "%s_2" % workload.name(),
+                                                specLocation = workloadPath,
+                                                task = "/TestWorkload/ReReco/LogCollect")
+
         cachePath = os.path.join(config.JobCreator.jobCacheDir,
                                  "TestWorkload", "ReReco")
         os.makedirs(cachePath)
         self.assertTrue(os.path.exists(cachePath))
 
-        
+        cachePath2 = os.path.join(config.JobCreator.jobCacheDir,
+                                 "TestWorkload", "LogCollect")
+        os.makedirs(cachePath2)
+        self.assertTrue(os.path.exists(cachePath2))
+
 
         result = myThread.dbi.processData("SELECT * FROM wmbs_subscription")[0].fetchall()
-        self.assertEqual(len(result), 1)
+        self.assertEqual(len(result), 2)
 
         testTaskArchiver = TaskArchiverPoller(config = config)
         testTaskArchiver.algorithm()
@@ -354,8 +363,8 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
         # Make sure we deleted the directory
-        #self.assertFalse(os.path.exists(cachePath))
-        #self.assertFalse(os.path.exists(os.path.join(self.testDir, 'workloadTest/TestWorkload')))
+        self.assertFalse(os.path.exists(cachePath))
+        self.assertFalse(os.path.exists(os.path.join(self.testDir, 'workloadTest/TestWorkload')))
 
         testWMBSFileset = Fileset(id = 1)
         self.assertEqual(testWMBSFileset.exists(), False)

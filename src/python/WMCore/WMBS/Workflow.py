@@ -210,6 +210,20 @@ class Workflow(WMBSBase, WMWorkflow):
         self.commitTransaction(existingTransaction)
         return
 
+    def countWorkflowsBySpec(self):
+        """
+        _countWorkflowsBySpec_
+        
+        Count workflows that share our spec
+        """
+
+        existingTransaction = self.beginTransaction()
+        action = self.daofactory(classname = "Workflow.CountWorkflowBySpec")
+        result = action.execute(spec = self.spec)
+        self.commitTransaction(existingTransaction)
+
+        return result
+
     def __str__(self):
         """
         __str__

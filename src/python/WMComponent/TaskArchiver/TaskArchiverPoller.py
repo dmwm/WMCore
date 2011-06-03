@@ -266,15 +266,16 @@ class TaskArchiverPoller(BaseWorkerThread):
                     else:
                         logging.error("Attempted to delete work directory but it was already gone: %s" % taskDir)
                     # Remove the sandbox dir
-                    
-                    sandbox  = getattr(wmTask.data.input, 'sandbox', None)
+                    if not workflow.countWorkflowsBySpec() == 0:
+                        continue
+                        sandbox  = getattr(wmTask.data.input, 'sandbox', None)
                     if sandbox:
                         sandboxDir = os.path.dirname(sandbox)
-                        #if os.path.isdir(sandboxDir):
-                        #    shutil.rmtree(sandboxDir)
-                        #    logging.debug("Sandbox dir deleted")
-                        #else:
-                        #    logging.error("Attempted to delete sandbox dir but it was already gone: %s" % sandboxDir)
+                        if os.path.isdir(sandboxDir):
+                            shutil.rmtree(sandboxDir)
+                            logging.debug("Sandbox dir deleted")
+                        else:
+                            logging.error("Attempted to delete sandbox dir but it was already gone: %s" % sandboxDir)
             except Exception, ex:
                 msg =  "Critical error while deleting subscription %i\n" % sub['id']
                 msg += str(ex)

@@ -456,6 +456,10 @@ class ResourceControlTest(unittest.TestCase):
         self.assertEqual(result['testSite1'][1]['task_type'], 'Merge')
         self.assertEqual(result['testSite1'][0]['task_type'], 'Processing')
 
+        myResourceControl.insertThreshold("testSite2", "Merge", 20)
+        result = myResourceControl.listThresholdsForSubmit()
+        self.assertEqual(result['testSite2'][0]['priority'], 2)
+
         
         return
 

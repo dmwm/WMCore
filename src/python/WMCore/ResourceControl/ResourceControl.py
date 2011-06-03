@@ -49,7 +49,7 @@ class ResourceControl(WMConnectionBase):
             return None
         return result[0]
 
-    def insertThreshold(self, siteName, taskType, maxSlots, priority = 1):
+    def insertThreshold(self, siteName, taskType, maxSlots, priority = None):
         """
         _insertThreshold_
 

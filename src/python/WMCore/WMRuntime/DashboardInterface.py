@@ -258,6 +258,7 @@ class DashboardInfo(dict):
         data['jobId']                    = self.jobName
         data['retryCount']               = self.job['retry_count']
         data['ExeEnd']                   = helper.name()
+        data['ExeExitCode']              = stepReport.getStepExitCode(stepName = helper.name())
         if helper.name() == 'StageOut':
             data['StageOutExitStatus']       = stepReport.stepSuccessful(stepName = helper.name())
 

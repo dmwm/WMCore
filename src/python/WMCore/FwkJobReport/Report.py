@@ -259,14 +259,14 @@ class Report:
         """
         returnCode = 0
         for stepName in self.listSteps():
-            reportStep = self.retrieveStep(stepName)
-            errorCount = getattr(reportStep.errors, "errorCount", 0)
-            for i in range(errorCount):
-                reportError = getattr(reportStep.errors, "error%i" % i)
-                if not getattr(reportError, 'exitCode', None):
-                    returnCode = 99999
-                else:
-                    return int(reportError.exitCode)
+            errorCode = self.getStepExitCode(stepName = stepName)
+            if errorCode == 99999:
+                # Then we don't know what this error was
+                # Mark it for return only if we don't fine an
+                # actual error code in the job.
+                returnCode = errorCode
+            elif errorCode != 0:
+                return errorCode
 
         return returnCode
 
@@ -282,6 +282,25 @@ class Report:
             return True
 
         return False
+
+    def getStepExitCode(self, stepName):
+        """
+        _getStepExitCode_
+        
+        Get the exit code for a particular step
+        Return 0 if none
+        """
+        returnCode = 0
+        reportStep = self.retrieveStep(stepName)
+        errorCount = getattr(reportStep.errors, "errorCount", 0)
+        for i in range(errorCount):
+            reportError = getattr(reportStep.errors, "error%i" % i)
+            if not getattr(reportError, 'exitCode', None):
+                returnCode = 99999
+            else:
+                return int(reportError.exitCode)
+            
+        return returnCode
 
     def persist(self, filename):
         """

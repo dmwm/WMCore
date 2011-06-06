@@ -8,16 +8,13 @@ class NoDatasetError(StandardError):
         self.msg = 'NoDatasetError'
         self.error = error
 
-numOfFiles = GlobalParams.numOfFilesPerBlock()
-numOfEvents = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfEventsPerFile()
-numOfLumis = GlobalParams.numOfLumisPerBlock()
-
 class DataBlockGenerator(object):
     
     def _blockGenerator(self, dataset):
         if dataset.startswith('/' + Globals.NOT_EXIST_DATASET):
             raise NoDatasetError, "no dataset"
         blocks = []
+        numOfEvents = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfEventsPerFile()
         for i in range(GlobalParams.numOfBlocksPerDataset()):
             blockName = "%s#%s" % (dataset, i+1)
             size = GlobalParams.numOfFilesPerBlock() * GlobalParams.sizeOfFile()
@@ -25,8 +22,8 @@ class DataBlockGenerator(object):
             blocks.append(
                                     {'Name' : blockName,
                                      'NumberOfEvents' : numOfEvents,
-                                     'NumberOfFiles' : numOfFiles,
-                                     'NumberOfLumis' : numOfLumis,
+                                     'NumberOfFiles' : GlobalParams.numOfFilesPerBlock(),
+                                     'NumberOfLumis' : GlobalParams.numOfLumisPerBlock(),
                                      'Size' : size,
                                      'Parents' : ()}
                                      )
@@ -34,14 +31,15 @@ class DataBlockGenerator(object):
 
     def getParentBlock(self, block, numberOfParents = 1):
         blocks = []
+        numOfEvents = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfEventsPerFile()
         for i in range(numberOfParents):
             blockName = "%s_parent_%s" % (block, i+1)
             size = GlobalParams.numOfFilesPerBlock() * GlobalParams.sizeOfFile()
             
             blocks.append({'Name' : blockName,
                            'NumberOfEvents' : numOfEvents,
-                           'NumberOfFiles' : numOfFiles,
-                           'NumberOfLumis' : numOfLumis,
+                           'NumberOfFiles' : GlobalParams.numOfFilesPerBlock(),
+                           'NumberOfLumis' : GlobalParams.numOfLumisPerBlock(),
                            'Size' : size,
                            'StorageElementList':[{'Role' : '', 'Name' : x} for x in \
                                                self.getLocation(blockName)],
@@ -79,8 +77,8 @@ class DataBlockGenerator(object):
                           'FileSize': GlobalParams.sizeOfFile(),
                           'ParentList': [],
                           'LumiList': [{'RunNumber': run,
-                                        'LumiSectionNumber': run*(numOfLumis) + lumi -1}
-                                       for lumi in range(numOfLumis)]
+                                        'LumiSectionNumber': run*(GlobalParams.numOfLumisPerBlock()) + lumi -1}
+                                       for lumi in range(GlobalParams.numOfLumisPerBlock())]
                           }
         defaultDBSFile.update(dbsFile)
         return defaultDBSFile

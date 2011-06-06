@@ -105,6 +105,7 @@ class WorkQueue(WorkQueueBase):
                                     # backend took previous QueueURL and sanitized it
         self.params.setdefault('WMBSURL', None) # this will be only set on local Queue
         self.params.setdefault('Teams', [''])
+        self.params.setdefault('DrainMode', False)
 
         self.params.setdefault('SplittingMapping', {})
         self.params['SplittingMapping'].setdefault('DatasetBlock',
@@ -540,6 +541,9 @@ class WorkQueue(WorkQueueBase):
             return 0
         if not self.backend.isAvailable() or not self.parent_queue.isAvailable():
             self.logger.info('Backend busy or down: skipping work pull')
+            return 0
+        if self.params['DrainMode']:
+            self.logger.info('Draining queue: skipping work pull')
             return 0
 
         if not resources:

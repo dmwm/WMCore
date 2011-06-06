@@ -77,12 +77,13 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         return config
 
 
-    def setupGlobalWorkqueue(self):
+    def setupGlobalWorkqueue(self, **kwargs):
         """Return a workqueue instance"""
         globalQ = globalQueue(DbName = self.globalQDB,
                               InboxDbName = self.globalQInboxDB,
                               QueueURL = self.globalQCouchUrl,
-                              Teams = ["The A-Team", "some other bloke"])
+                              Teams = ["The A-Team", "some other bloke"],
+                              **kwargs)
         return globalQ
 
     def setupLocalQueue(self):
@@ -196,6 +197,15 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         self.assertTrue('DBS config error' in reqMgr.msg[reqMgr.names[0]])
         reqMgr._removeSpecs()
 
+    def testDrainMode(self):
+        """Stop acquiring work when DrainMode set"""
+        globalQ = self.setupGlobalWorkqueue(DrainMode = True)
+        reqMgr = fakeReqMgr()
+        reqMgrInt = WorkQueueReqMgrInterface()
+        reqMgrInt.reqMgr = reqMgr
+        self.assertEqual(len(globalQ), 0)
+        reqMgrInt(globalQ)
+        self.assertEqual(len(globalQ), 0)
 
 if __name__ == '__main__':
     unittest.main()

@@ -958,5 +958,13 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # no more work available
         self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))
+
+    def testDrainMode(self):
+        """Stop acquiring work when DrainMode set"""
+        self.localQueue.params['DrainMode'] = True
+        self.globalQueue.queueWork(self.spec.specUrl())
+        self.assertEqual(1, len(self.globalQueue))
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000, 'SiteB' : 1000}), 0)
+
 if __name__ == "__main__":
     unittest.main()

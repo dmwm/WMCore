@@ -42,6 +42,10 @@ class WorkQueueReqMgrInterface():
         work = 0
         workLoads = []
 
+        if queue.params['DrainMode']:
+            self.logger.info('Draining queue: Skip requesting work from ReqMgr')
+            return 0
+
         try:
             workLoads = self.getAvailableRequests(*queue.params['Teams'])
         except Exception, ex:

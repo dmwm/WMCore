@@ -78,6 +78,10 @@ class Block(StartPolicyInterface):
                 blocks.extend(dbs.getFileBlocksInfo(datasetPath, locations = True))
 
         for block in blocks:
+            # blocks with 0 valid files should be ignored
+            # - ideally they would be deleted but dbs can't delete blocks
+            if not block['NumberOfFiles']:
+                continue
 
             # check block restrictions
             if blockWhiteList and block['Name'] not in blockWhiteList:

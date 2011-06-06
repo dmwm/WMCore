@@ -212,6 +212,14 @@ class BlockTestCase(unittest.TestCase):
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
 
+        # blocks with 0 files are skipped
+        # set all blocks in request to 0 files, no work should be found & an error is raised
+        Globals.GlobalParams.setNumOfFilesPerBlock(0)
+        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        for task in processingSpec.taskIterator():
+            self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
+        Globals.GlobalParams.resetParams()
+
     def testParentProcessing(self):
         """
         test parent processing: should have the same results as rereco test

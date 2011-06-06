@@ -56,7 +56,10 @@ class StartPolicyInterface(PolicyInterface):
         args.setdefault('SiteWhitelist', self.initialTask.siteWhitelist())
         args.setdefault('SiteBlacklist', self.initialTask.siteBlacklist())
         args.setdefault('EndPolicy', self.wmspec.endPolicyParameters())
-        self.workQueueElements.append(WorkQueueElement(**args))
+        ele = WorkQueueElement(**args)
+        if not ele['Jobs']:
+            raise WorkQueueWMSpecError(self.wmspec, 'No work in element: "%s"' % ele)
+        self.workQueueElements.append(ele)
 
     def __call__(self, wmspec, task, data = None, mask = None, team = None):
         self.wmspec = wmspec

@@ -40,7 +40,7 @@ class CMSCouchTest(unittest.TestCase):
         doc = {'foo':123, 'bar':456}
         id = self.db.commitOne(doc, returndocs=True)[0]['id']
         # What about a Document
-        doc = Document(dict=doc)
+        doc = Document(inputDict = doc)
         id = self.db.commitOne(doc, returndocs=True)[0]['id']
 
     def testCommitOneWithQueue(self):
@@ -53,7 +53,7 @@ class CMSCouchTest(unittest.TestCase):
         for i in range(1,6):
             self.db.queue(doc)
         # Commit one Document
-        doc = Document(dict=doc)
+        doc = Document(inputDict = doc)
         id = self.db.commitOne(doc, returndocs=True)[0]['id']
         self.assertEqual(1, len(self.db.allDocs()['rows']))
         self.db.commit()
@@ -267,16 +267,16 @@ class CMSCouchTest(unittest.TestCase):
         self.assertEqual(2, len(self.db.commit()))
 
         # committing 2 docs with the same id will fail
-        self.db.queue(Document(id = "1", dict = {'foo':123, 'bar':456}))
-        self.db.queue(Document(id = "1", dict = {'foo':1234, 'bar':456}))
+        self.db.queue(Document(id = "1", inputDict = {'foo':123, 'bar':456}))
+        self.db.queue(Document(id = "1", inputDict = {'foo':1234, 'bar':456}))
         answer = self.db.commit()
         self.assertEqual(2, len(answer))
         self.assertEqual(answer[0]['error'], 'conflict')
         self.assertEqual(answer[1]['error'], 'conflict')
 
         # all_or_nothing mode ignores conflicts
-        self.db.queue(Document(id = "2", dict = doc))
-        self.db.queue(Document(id = "2", dict = {'foo':1234, 'bar':456}))
+        self.db.queue(Document(id = "2", inputDict = doc))
+        self.db.queue(Document(id = "2", inputDict = {'foo':1234, 'bar':456}))
         answer = self.db.commit(all_or_nothing = True)
         self.assertEqual(2, len(answer))
         self.assertEqual(answer[0].get('error'), None)

@@ -33,12 +33,13 @@ class Document(dict):
     """
     Document class is the instantiation of one document in the CouchDB
     """
-    def __init__(self, id=None, dict = {}):
+    def __init__(self, id=None, inputDict = {}):
         """
         Initialise our Document object - a dictionary which has an id field
+        inputDict - input dictionary to initialise this instance
         """
-        #dict.__init__(self)
-        self.update(dict)
+        dict.__init__(self)
+        self.update(inputDict)
         if id:
             self.setdefault("_id", id)
 
@@ -267,7 +268,7 @@ class Database(CouchDBRequests):
         uri = '/%s/%s' % (self.name, urllib.quote_plus(id))
         if rev:
             uri += '?' + urllib.urlencode({'rev' : rev})
-        return Document(id = id, dict=self.get(uri))
+        return Document(id = id, inputDict = self.get(uri))
 
     def documentExists(self, id, rev = None):
         """

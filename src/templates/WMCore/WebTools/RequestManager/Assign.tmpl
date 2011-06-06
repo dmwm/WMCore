@@ -117,11 +117,11 @@ Actions:<select name="action">
 #set $requestName = $request['RequestName']
 <tr>
 <td align=center><input type="checkbox" $checked name = "checkbox$requestName"/></td> 
-<td align=center><a href="../view/details/$requestName">$requestName</a></td>
+<td align=center><a href="/reqmgr/view/details/$requestName">$requestName</a></td>
 <td align=center>$request['RequestType']</td>
 <td align=center>$request['PriorityMenu']</td>
 <td align=center>$request['Input']</td>
-<td align=center><a href="../view/splitting/$requestName">parameters</a></td>
+<td align=center><a href="/reqmgr/view/splitting/$requestName">parameters</a></td>
 </tr>
 #end for
 

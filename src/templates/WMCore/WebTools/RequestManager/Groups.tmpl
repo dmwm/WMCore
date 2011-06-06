@@ -3,13 +3,13 @@
 
 <body>
 
-<form action="handleAddGroup">
+<form action="/reqmgr/admin/handleAddGroup">
 <b>Add Group:</b><input type="text" name="group" size=20/>
 <input type=submit><br>
 </form>
 
 #for $group in $groups
-  <a href="../group/$group">$group</a><br/>
+  <a href="/reqmgr/admin/group/$group">$group</a><br/>
 #end for
 
 </body>

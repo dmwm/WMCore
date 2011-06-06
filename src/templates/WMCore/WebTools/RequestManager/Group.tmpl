@@ -6,11 +6,11 @@ Group $group <br><br>
 
 <b>Users:</b><br>
 #for $user in $users
-  <a href="../user/$user">$user</a><br>
+  <a href="/reqmgr/admin/user/$user">$user</a><br>
 #end for
 <br>
 
-<form action="../handleGroupPriority">
+<form action="/reqmgr/admin/handleGroupPriority">
 <b>Group Priority:</b><input type="text" name="groupPriority" size=2 value=$priority />
 <input type="hidden" value=$group name="group" />
 <input type=submit>

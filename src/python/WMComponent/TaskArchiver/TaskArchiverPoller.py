@@ -244,8 +244,16 @@ class TaskArchiverPoller(BaseWorkerThread):
         for sub in doneList:
             logging.info("Deleting subscription %i" % sub['id'])
             try:
+                sub.load()
+                sub['workflow'].load()
+                wf = sub['workflow']
+                if self.workQueue != None and not \
+                       self.workQueue.getWMBSInjectStatus(wf.name):
+                        # Then there are still files to be put in.
+                        continue
                 sub.deleteEverything()
                 workflow = sub['workflow']
+
                 if not workflow.exists():
                     # Then we deleted the workflow
 

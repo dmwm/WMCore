@@ -389,11 +389,8 @@ class Subscription(WMBSBase, WMSubscription):
         Nothing except the taskArchiver should be calling this.
         """
         existingTransaction = self.beginTransaction()
-        self.load()
 
         jobGroups = self.getAllJobGroups()
-
-
         filesets = []
 
         # The order here is important
@@ -408,7 +405,6 @@ class Subscription(WMBSBase, WMSubscription):
             filesets.append(result['output'])
 
         # Get output filesets from the workflow
-        self['workflow'].load()
         for entry in self['workflow'].outputMap:
             for outputFilesets in self['workflow'].outputMap[entry]:
                 wid = outputFilesets["output_fileset"].id

@@ -966,5 +966,42 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(1, len(self.globalQueue))
         self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000, 'SiteB' : 1000}), 0)
 
+    def testWMBSInjectionStatus(self):
+
+        self.globalQueue.queueWork(self.spec.specUrl())
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
+        # test globalqueue status (no parent queue case)
+        self.assertEqual(self.globalQueue.getWMBSInjectionStatus(),
+                         [{'testProcessing': False}, {'testProduction': False}])
+        self.assertEqual(self.globalQueue.getWMBSInjectionStatus(self.spec.name()),
+                         False)
+
+        self.assertEqual(self.localQueue.pullWork(),3)
+        # test local queue status with parents (globalQueue is not synced yet
+        self.assertEqual(self.localQueue.getWMBSInjectionStatus(),
+                         [{'testProcessing': False}, {'testProduction': False}])
+        self.assertEqual(self.localQueue.getWMBSInjectionStatus(self.spec.name()),
+                         False)
+        self.localQueue.processInboundWork()
+        self.localQueue.updateLocationInfo()
+        self.localQueue.getWork({'SiteA' : 1000})
+        self.assertEqual(self.localQueue.getWMBSInjectionStatus(),
+                            [{'testProcessing': False}, {'testProduction': False}])
+        self.assertEqual(self.localQueue.getWMBSInjectionStatus(self.spec.name()),
+                         False)
+
+        #update parents status
+        self.localQueue.performQueueCleanupActions()
+        self.assertEqual(self.localQueue.getWMBSInjectionStatus(),
+                         [{'testProcessing': True}, {'testProduction': True}])
+        self.assertEqual(self.localQueue.getWMBSInjectionStatus(self.spec.name()),
+                         True)
+
+        #test not existing workflow
+        self.assertRaises(ValueError,
+                          self.localQueue.getWMBSInjectionStatus,
+                          "NotExistWorkflow"
+                         )
+
 if __name__ == "__main__":
     unittest.main()

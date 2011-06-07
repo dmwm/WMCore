@@ -697,3 +697,17 @@ class WorkQueue(WorkQueueBase):
             self.logger.info('Split work for request(s): %s' % requests)
 
         return result
+
+    def getWMBSInjectionStatus(self, workflowName = None):
+        """
+        if the parent queue exist return the result from parent queue.
+        other wise return the result from the current queue.
+        (In general parent queue always exist when it is called from local queue
+        except T1 skim case)
+        returns list of [{workflowName: injection status (True or False)}]
+        if the workflow is not exist return []
+        """
+        if self.parent_queue:
+            return self.parent_queue.getWMBSInjectStatus(workflowName)
+        else:
+            return self.backend.getWMBSInjectStatus(workflowName)

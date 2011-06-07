@@ -401,3 +401,20 @@ class WorkQueueBackend(object):
             self.db.commitOne(record)
         except StandardError, ex:
             self.logger.error("Unable to update task %s freshness: %s" % (taskname, str(ex)))
+
+    def getWMBSInjectStatus(self, request = None):
+        """
+        This service only provided by global queue
+        """
+        options = {'group' : True}
+        if request:
+            options.update(key = request)
+        data = self.db.loadView('WorkQueue', 'wmbsInjectStatusByRequest',
+                                options)
+        if request:
+            if data['rows']:
+                return data['rows'][0]['value']
+            else:
+                raise ValueError("%s not exist in the queue" % request)
+        else:
+            return [{x['key']: x['value']} for x in data.get('rows', [])]

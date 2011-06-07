@@ -1,3 +1,14 @@
+From 0.7.9 to 0.7.9a/b:
+  - Catch Exception during WorkQueue sync with parent (1715).
+  - Cause components to crash if an unhandled exception is thrown (1722).
+  - Add the bad JSON to the error message when parsing a string (1716).
+  - Include the file checksum in the outputPFN view (1710).
+  - Fixup the JobTracker unit test (1723).
+  - Report the step exit code to dashboard (1702).
+  - Preserve the priority if in is specified for wmagent-resource-control (1726).
+  - Use absolute links everywhere in the ReqMgr (1749).
+  - Fix the admin interface to team names in ReqMgr (1760).
+
 From 0.7.8b to 0.7.9:
   - Encase BossAir calls in transactions (1701).
   - ReqMgr admin page needs trailing slashes in links (1708).

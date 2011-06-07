@@ -49,10 +49,10 @@ class Admin(WebAPI):
     def index(self):
         """ Main web page """
         return """
-<a href="users/">Users</a>
-<a href="groups/">Groups</a>
-<a href="teams/">Teams</a>
-<a href="versions/">Versions</a>
+<a href="/reqmgr/admin/users/">Users</a>
+<a href="/reqmgr/admin/groups/">Groups</a>
+<a href="/reqmgr/admin/teams/">Teams</a>
+<a href="/reqmgr/admin/versions/">Versions</a>
          """
 
     @cherrypy.expose
@@ -140,7 +140,9 @@ class Admin(WebAPI):
     @cherrypy.tools.secmodv2()
     def teams(self):
         """ Lists all teams """
-        return self.templatepage("Teams", teams = ProdManagement.listTeams())
+        teams = ProdManagement.listTeams().keys()
+        self.validate(teams)
+        return self.templatepage("Teams", teams = teams)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
@@ -148,8 +150,12 @@ class Admin(WebAPI):
         """ Details for a team """
         self.validate(teamName)
         assignments = ListRequests.listRequestsByTeam(teamName)
+        if assignments == None:
+            assignments = []
+        else:
+            assignments = assignments.keys()
         self.validate(assignments)
-        return self.templatepage("Team", team=teamName, requests=assignments.keys())
+        return self.templatepage("Team", team=teamName, requests=assignments)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2(role=security_roles)
@@ -182,14 +188,13 @@ class Admin(WebAPI):
     def handleAllVersions(self):
         """ Registers all versions in the TC """
         currentVersions = SoftwareAdmin.listSoftware().keys()
-
         allVersions = allSoftwareVersions()
         result = ""
         for version in allVersions:
             if not version in currentVersions:
                 WMCore.Lexicon.cmsswversion(version)
                 SoftwareAdmin.addSoftware(version)
-                result += "Added version %s<br>" % version
+                result += "Added version %s<br/>" % version
         if result == "":
             result = "Version list is up to date"
         return result

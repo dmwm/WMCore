@@ -11,5 +11,5 @@ __all__ = []
 import MonteCarloRequest
 import CmsGenRequest
 import RelValMCRequest
-
+import MonteCarloFromGENRequest
 

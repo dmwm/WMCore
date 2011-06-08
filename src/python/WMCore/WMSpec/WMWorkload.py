@@ -98,6 +98,23 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.initialJobCount = jobCount
         return
+
+    def getDashboardActivity(self):
+        """
+        _getDashboardActivity_
+
+        Retrieve the dashboard activity.
+        """
+        return self.data.properties.dashboardActivity
+
+    def setDashboardActivity(self, dashboardActivity):
+        """
+        _setDashboardActivity_
+
+        Set the dashboard activity for the workflow.
+        """
+        self.data.properties.dashboardActivity = dashboardActivity
+        return
     
     def getTopLevelTask(self):
         """
@@ -1067,6 +1084,7 @@ class WMWorkload(ConfigSection):
         self.properties.processingVersion = None
         self.properties.unmergedLFNBase = "/store/unmerged"
         self.properties.mergedLFNBase = "/store/data"
+        self.properties.dashboardActivity = None
 
         #  //
         # // tasks

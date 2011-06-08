@@ -51,6 +51,7 @@ class RelValMCWorkloadFactory(StdBase):
                 
         """
         workload = self.createWorkload()
+        workload.setDashboardActivity("relval")
         workload.setWorkQueueSplitPolicy("MonteCarlo", self.genJobSplitAlgo,
                                          self.genJobSplitArgs)
         

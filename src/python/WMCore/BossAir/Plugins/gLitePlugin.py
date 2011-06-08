@@ -207,7 +207,7 @@ class gLitePlugin(BasePlugin):
 
         self.basetimeout  = getattr(self.config.JobSubmitter, 'getTimeout', 300 ) 
 
-        self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, 'myproxyhost', self.defaultDelegation['myProxySvr'] )
+        self.defaultjdl['myproxyhost'] = self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, 'myproxyhost', self.defaultDelegation['myProxySvr'] )
 
         self.manualenvprefix = getattr(self.config.BossAir, 'gLitePrefixEnv', '')
 

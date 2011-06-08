@@ -121,7 +121,8 @@ class SetupCMSSWMulticore(ScriptInterface):
             p2 = subprocess.Popen("wc -l", stdin=p1.stdout, stdout=subprocess.PIPE, shell = True)
             output = p2.communicate()[0]
             numCores = int(output)
-            
+        else:
+            numCores = int(numCores)
             
         procCount = (eventTotal + numCores - 1) / numCores
     

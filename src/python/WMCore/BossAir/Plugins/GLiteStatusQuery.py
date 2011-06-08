@@ -120,9 +120,7 @@ class GLiteStatusQuery(object):
         self.jobId = self.states.index('Jobid')
 
         import re
-        self.ft = re.compile("(\d+)Undefined=(\d+) Submitted=(\d+) Waiting=(\d+) Ready=(\d+) \
-                              Scheduled=(\d+) Running=(\d+) Done=(\d+) Cleared=(\d+) Aborted=(\d+) \
-                              Cancelled=(\d+) Unknown=(\d+) Purged=(\d+)")
+        self.ft = re.compile("(\d+)Undefined=(\d+) Submitted=(\d+) Waiting=(\d+) Ready=(\d+) Scheduled=(\d+) Running=(\d+) Done=(\d+) Cleared=(\d+) Aborted=(\d+) Cancelled=(\d+) Unknown=(\d+) Purged=(\d+)")
 
     ##########################################################################
     def getJobInfo( self, jobInfo, runningJob, forceAborted=False ):

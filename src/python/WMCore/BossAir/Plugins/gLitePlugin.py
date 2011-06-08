@@ -703,10 +703,15 @@ class gLitePlugin(BasePlugin):
                         jobStatus   = out[jj['gridid']]
                         status      = jobStatus['statusScheduler']
                         destination = jobStatus['destination']
-                        ## TODO: need to handle the status time stamp
-                        #lbts        = jobStatus['lbTimestamp']
-                        lbts         = 0
-                 
+
+                        if 'lbTimestamp' in jobStatus:
+                            jj['status_time'] = jobStatus['lbTimestamp']
+                        else:
+                            ## we do not want jobs without timestamp to abort...
+                            ## (probably), so I just set current time and print as an error for the operator
+                            logging.error("Impossible to retrieve timestamp from status: job %s in status %s! Setting current time." %s(jj['gridid'], status))
+                            jj['status_time'] = time.time()
+
                         # Get the global state
                         jj['globalState'] = gLitePlugin.stateMap()[status]
 
@@ -714,7 +719,6 @@ class gLitePlugin(BasePlugin):
                         if status != jj['status']:
                             # Then the status has changed
                             jj['status']      = status
-                            jj['status_time'] = lbts
                             changeList.append(jj)
 
                         if status not in ['Done', 'Aborted', 'Cleared', 

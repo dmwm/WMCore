@@ -74,6 +74,9 @@ function(doc) {
                lastTransition['newstate'] == 'cleanout') {
       emit([doc['workflow'], doc['task'], doc['jobid']],
             {'jobid': doc['jobid'], 'state': 'success', 'task': doc['task']});
+    } else {
+       emit([doc['workflow'], doc['task'], doc['jobid']],
+            {'jobid': doc['jobid'], 'state': 'transitioning', 'task': doc['task']});
     }
   }
 }

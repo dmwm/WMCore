@@ -40,6 +40,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.setdefault("acquisitionEra", None)
         self.setdefault("validStatus", None)
         self.setdefault("globalTag", None)
+        self.setdefault("datasetParent", None)
         
         if locations == None:
             self.setdefault("newlocations", set())
@@ -166,6 +167,7 @@ class DBSBufferFile(WMBSBase, WMFile):
                                  acquisitionEra = self['acquisitionEra'],
                                  validStatus = self['validStatus'],
                                  globalTag   = self['globalTag'],
+                                 parent      = self['datasetParent'],
                                  conn = self.getDBConn(),
                                  transaction = True)
 

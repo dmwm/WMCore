@@ -67,13 +67,16 @@ def createPrimaryDataset(primaryName, primaryDatasetType = 'mc', apiRef = None):
 
 def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
                            group = "NoGroup", status = "VALID",
-                           globalTag = ''):
+                           globalTag = '', parent = None):
     """
     _createProcessedDataset_
 
     Create a processed dataset
     """
-    parents = []
+    if parent != None:
+        parents = [parent]
+    else:
+        parents = []
 
     tierList = dataTier.split("-")
 
@@ -621,7 +624,8 @@ class DBSInterface:
                                            processedName = dataset['ProcessedDataset'],
                                            dataTier = dataset['DataTier'],
                                            status = dataset['status'],
-                                           globalTag = dataset['globalTag'])
+                                           globalTag = dataset['globalTag'],
+                                           parent = dataset['parent'])
 
 
         return processed

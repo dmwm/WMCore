@@ -30,6 +30,7 @@ class Create(DBCreator):
                            acquisition_era VARCHAR(255),
                            valid_status    VARCHAR(20),
                            global_tag      VARCHAR(255),
+                           parent          VARCHAR(500),
                            subscribed int default 0,
 			   primary key(id)	
 			) ENGINE=InnoDB"""

@@ -32,12 +32,13 @@ class Create(DBCreator):
         self.create["01dbsbuffer_dataset"] = \
           """CREATE TABLE dbsbuffer_dataset
                (
-	         id   NUMBER(11)      NOT NULL ENABLE,
-	         path varchar2(500)   NOT NULL ENABLE,
-                 processing_ver       VARCHAR2(255),
-                 acquisition_era      VARCHAR2(255),
-                 valid_status         VARCHAR2(20),
-                 global_tag           VARCHAR2(255),
+	         id                NUMBER(11)     NOT NULL ENABLE,
+	         path              VARCHAR2(500)  NOT NULL ENABLE,
+                 processing_ver    VARCHAR2(255),
+                 acquisition_era   VARCHAR2(255),
+                 valid_status      VARCHAR2(20),
+                 global_tag        VARCHAR2(255),
+                 parent            VARCHAR2(500),
              subscribed int DEFAULT 0
                )"""
         self.create["01dbsbuffer_dataset_seq"] = \

@@ -5,13 +5,8 @@ _BasicAlgos_t_
 Test class for Basic Algorithms
 """
 
-
-
-
-
-
-
 import os
+import hashlib
 import unittest
 import tempfile
 
@@ -83,7 +78,25 @@ class testBasicAlgos(unittest.TestCase):
 
         return
 
+    def test_MD5(self):
+        """
+        _MD5_
 
+        Check if we can create an MD5 checksum
+        """
+
+        silly = "This is a rather ridiculous string"
+        filename = '/tmp/md5test.test'
+
+        f = open(filename, 'w')
+        f.write(silly)
+        f.close()
+
+        self.assertEqual(BasicAlgos.getMD5(filename = filename),
+                         hashlib.md5(silly).hexdigest())
+
+        os.remove(filename)
+        return
 
 
 if __name__ == "__main__":

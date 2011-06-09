@@ -21,8 +21,10 @@ from WMCore.WMException import WMException
 
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
+from WMCore.FwkJobReport.FileInfo           import readAdler32, readCksum
 import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.FileManager
+import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
 from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 
@@ -129,7 +131,10 @@ class LogArchive(Executor):
             self.report.addOutputModule(moduleName = "logArchive")
             reportFile = {"lfn": fileInfo["LFN"], "pfn": fileInfo["PFN"],
                           "location": fileInfo["SEName"], "module_label": "logArchive",
-                          "events": 0, "size": 0, "merged": False}
+                          "events": 0, "size": 0, "merged": False,
+                          "checksums": {'md5': BasicAlgos.getMD5(tarBallLocation),
+                                        'adler32': readAdler32(tarBallLocation),
+                                        'cksum': readCksum(tarBallLocation)}}
             self.report.addOutputFile(outputModule = "logArchive", file = reportFile)
         except Alarm:
             msg = "Indefinite hang during stageOut of logArchive"

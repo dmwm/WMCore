@@ -190,7 +190,7 @@ class StdBase(object):
         procTask.addGenerator("BasicNaming")
         procTask.addGenerator("BasicCounter")
 
-        if taskType == "Production":
+        if taskType == "Production" and totalEvents != None:
             procTask.addGenerator(seeding)
             procTask.addProduction(totalevents = totalEvents)
         else:

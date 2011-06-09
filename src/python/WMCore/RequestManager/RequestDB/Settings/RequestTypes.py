@@ -18,5 +18,6 @@ TypesList = [
     "DataProcessing",
     "Analysis",
     "Resubmission",
-    "ReDigi"
+    "ReDigi",
+    "MonteCarloFromGEN"
     ]

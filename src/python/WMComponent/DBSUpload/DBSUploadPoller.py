@@ -455,44 +455,46 @@ class DBSUploadPoller(BaseWorkerThread):
             try:
                 # Now do the real action of transferring crap
                 # Damn it Anzar: Why does DBS print stuff out?
-                originalOut = sys.stdout
-                originalErr = sys.stderr
-                sys.stdout = open(os.devnull, 'w')
-                sys.stderr = open(os.devnull, 'w')
 
-                if getattr(self.config.DBSUpload, 'abortStepThree', False):
-                    # Blow the stack for testing purposes
-                    raise DBSUploadPollerException('None')
+                for singleBlock in readyBlocks:
+                    originalOut = sys.stdout
+                    originalErr = sys.stderr
+                    sys.stdout = open(os.devnull, 'w')
+                    sys.stderr = open(os.devnull, 'w')
+                    
+                    if getattr(self.config.DBSUpload, 'abortStepThree', False):
+                        # Blow the stack for testing purposes
+                        raise DBSUploadPollerException('None')
+                    
+                    logging.info("About to upload to DBS for DAS %i with %i blocks" % (dasID, len(readyBlocks)))
+                    affBlocks = self.dbsInterface.runDBSBuffer(algo = algo,
+                                                               dataset = dataset,
+                                                               blocks = [singleBlock])
 
-                logging.info("About to upload to DBS for DAS %i with %i blocks" % (dasID, len(readyBlocks)))
-                affBlocks = self.dbsInterface.runDBSBuffer(algo = algo,
-                                                           dataset = dataset,
-                                                           blocks = readyBlocks)
-
-                sys.stdout = originalOut
-                sys.stderr = originalErr
-
-
-                # Update DBSBuffer with current information
-                myThread.transaction.begin()
+                    sys.stdout = originalOut
+                    sys.stderr = originalErr
+                    
+                    
+                    # Update DBSBuffer with current information
+                    myThread.transaction.begin()
                 
-                for block in affBlocks:
-                    logging.info("Successfully inserted %i files for block %s." % (len(block['insertedFiles']),
-                                                                                   block['Name']))
-                    self.uploadToDBS.setBlockStatus(block = block['Name'],
-                                                    locations = [block['location']],
-                                                    openStatus = block['open'])
-                    if block['open'] == 'InGlobalDBS' or not self.doMigration:
-                        # Set block files as in global if they've been migrated.
-                        # If we aren't doing global migrations, all files are in global
-                        logging.debug("Block %s now listed in global DBS" % block['Name'])
-                        self.uploadToDBS.closeBlockFiles(blockname = block['Name'], status = 'GLOBAL')
-                    else:
-                        logging.debug("Block %s now uploaded to local DBS" % block['Name'])
-                        self.uploadToDBS.closeBlockFiles(blockname = block['Name'], status = 'LOCAL')
+                    for block in affBlocks:
+                        logging.info("Successfully inserted %i files for block %s." % (len(block['insertedFiles']),
+                                                                                       block['Name']))
+                        self.uploadToDBS.setBlockStatus(block = block['Name'],
+                                                        locations = [block['location']],
+                                                        openStatus = block['open'])
+                        if block['open'] == 'InGlobalDBS' or not self.doMigration:
+                            # Set block files as in global if they've been migrated.
+                            # If we aren't doing global migrations, all files are in global
+                            logging.debug("Block %s now listed in global DBS" % block['Name'])
+                            self.uploadToDBS.closeBlockFiles(blockname = block['Name'], status = 'GLOBAL')
+                        else:
+                            logging.debug("Block %s now uploaded to local DBS" % block['Name'])
+                            self.uploadToDBS.closeBlockFiles(blockname = block['Name'], status = 'LOCAL')
 
-                logging.debug("About to do post-upload DBS commit for DAS %i" % dasID)
-                myThread.transaction.commit()
+                        logging.debug("About to do post-upload DBS commit for DAS %i" % dasID)
+                        myThread.transaction.commit()
 
             except WMException:
                 if getattr(myThread, 'transaction', None) != None: 

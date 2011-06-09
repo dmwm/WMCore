@@ -19,7 +19,9 @@ function(doc) {
 
           if (step[stepAttribute][outputModule].length > 0 &&
               'pfn' in step['output']['logArchive'][0]) {
-            emit([request], {"jobid" : doc['jobid'], "pfn" :  step["output"]["logArchive"][0]["pfn"]});
+            emit([request], {"jobid" : doc['jobid'],
+                               "pfn" : step["output"]["logArchive"][0]["pfn"],
+                         "checksums" : step["output"]["logArchive"][0]["checksums"]});
           }
         }
       }

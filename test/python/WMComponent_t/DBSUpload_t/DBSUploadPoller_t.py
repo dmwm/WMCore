@@ -21,7 +21,6 @@ import nose
 from WMComponent.DBSUpload.DBSUpload       import DBSUpload
 from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
 #from WMComponent.DBSUpload.DBSUploadTest import DBSUploadPoller2 as DBSUploadPoller
-from WMComponent.DBSUpload.DBSUploadWorker import DBSUploadWorker
 
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 

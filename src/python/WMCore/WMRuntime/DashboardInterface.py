@@ -246,9 +246,9 @@ class DashboardInfo(dict):
         """
         helper = WMStepHelper(step)
 
-        stepSuccess = stepReport.stepSuccessful(stepName = helper.name())
+        stepSuccess = stepReport.getStepExitCode(stepName = helper.name())
         if self.jobSuccess == 0:
-            self.jobSuccess = stepSuccess
+            self.jobSuccess = int(stepSuccess)
 
 
         data = {}

@@ -8,10 +8,7 @@ Python implementations of basic Linux functionality
 """
 
 import os
-
-
-
-
+import hashlib
 
 
 
@@ -43,5 +40,29 @@ def tail(filename, nLines = 20):
     f.close()
         
     return lines[-nLines:]
+
+
+
+def getMD5(filename, size = 8192):
+    """
+    _md5_
+
+    Get the md5 checksum of a particular file
+    """
+
+    h = hashlib.md5()
+    f = open(filename, 'r')
+
+    # Read the file
+    while True:
+        bit = f.read(size)
+        if len(bit) == 0:
+            # EOF
+            break
+        h.update(bit)
+
+    f.close()
+    return h.hexdigest()
+        
 
 

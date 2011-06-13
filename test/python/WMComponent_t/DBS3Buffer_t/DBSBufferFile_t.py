@@ -38,6 +38,10 @@ class DBSBufferFileTest(unittest.TestCase):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
 
+        self.daoFactory2 = DAOFactory(package = "WMComponent.DBSUpload.Database",
+                                      logger = myThread.logger,
+                                      dbinterface = myThread.dbi)
+
         locationAction = self.daoFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")        
@@ -918,6 +922,34 @@ class DBSBufferFileTest(unittest.TestCase):
                 self.assertEqual(parent['lfn'], testFile['lfn'])
             for key in compareList:
                 self.assertEqual(f[key], testFileChildA[key])
+
+
+    def testProperties(self):
+        """
+        _testProperties_
+
+        Test added tags that use DBSBuffer to transfer from workload to DBS
+        """
+
+
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
+        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileA.setValidStatus(validStatus = "VALID")
+        testFileA.setProcessingVer(ver = "ProcVer")
+        testFileA.setAcquisitionEra(era = "AcqEra")
+        testFileA.setGlobalTag(globalTag = "GlobalTag")
+        testFileA.setDatasetParent(datasetParent = "Parent")
+        testFileA.create()
+
+        # There are no accessors for these things because load is never called
+        action = self.daoFactory2(classname = "LoadInfoFromDAS")
+        das    = action.execute(ids = [1])[0]
+        self.assertEqual(das['Parent'], 'Parent')
+        self.assertEqual(das['GlobalTag'], 'GlobalTag')
+        self.assertEqual(das['ValidStatus'], 'VALID')
         
     
         

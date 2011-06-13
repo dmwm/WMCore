@@ -501,12 +501,14 @@ cms::Exception caught in EventProcessor and rethrown
         myReport.setValidStatus(name)
         myReport.setGlobalTag(name)
         myReport.setAcquisitionProcessing(acquisitionEra = 'NULL', processingVer = name)
+        myReport.setInputDataset(inputPath = '/lame/path')
         
         for f in myReport.getAllFilesFromStep("cmsRun1"):
             self.assertEqual(f['globalTag'], name)
             self.assertEqual(f['validStatus'], name)
             self.assertEqual(f['processingVer'], name)
             self.assertEqual(f['acquisitionEra'], 'NULL')
+            self.assertEqual(f['inputPath'], '/lame/path')
             
         return
     

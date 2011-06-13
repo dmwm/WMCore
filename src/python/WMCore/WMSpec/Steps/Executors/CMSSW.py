@@ -237,10 +237,14 @@ class CMSSW(Executor):
         acquisitionEra = self.workload.getAcquisitionEra()
         processingVer  = self.workload.getProcessingVersion()
         validStatus    = self.workload.getValidStatus()
+        inputPath      = self.task.getInputDatasetPath()
         cacheUrl, cacheDB, configID = self.step.getConfigInfo()
                 
         typeHelper     = WMStepHelper(self.step).getTypeHelper()
         globalTag      = typeHelper.getGlobalTag()
+        self.report.setValidStatus(validStatus = validStatus)
+        self.report.setGlobalTag(globalTag = globalTag)
+        self.report.setInputDataset(inputPath = inputPath)
         self.report.setAcquisitionProcessing(acquisitionEra = acquisitionEra,
                                              processingVer = processingVer)
         self.report.setConfigURL(configURL = "%s;;%s;;%s" % (cacheUrl,
@@ -250,8 +254,7 @@ class CMSSW(Executor):
         if self.step.output.keep != True:
             self.report.killOutput()
             
-        self.report.setValidStatus(validStatus = validStatus)
-        self.report.setGlobalTag(globalTag = globalTag)
+        
         return
 
     def post(self, emulator = None):

@@ -440,6 +440,26 @@ class DBSBufferFile(WMBSBase, WMFile):
         """
 
         return self['globalTag']
+
+
+    def setDatasetParent(self, datasetParent):
+        """
+        _setDatasetParent_
+
+        Set the dataset's parent path
+        """
+
+        self['datasetParent'] = datasetParent
+        return
+
+    def getDatasetParent(self):
+        """
+        _getDatasetParent_
+
+        Return the datasetParent
+        """
+
+        return self['datasetParent']
     
     def getParentLFNs(self):
         """

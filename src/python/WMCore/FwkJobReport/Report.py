@@ -687,6 +687,7 @@ class Report:
         newFile["validStatus"]    = getattr(fileRef, 'validStatus', None)
         newFile["globalTag"]      = getattr(fileRef, 'globalTag', None)
         newFile['configURL']      = getattr(fileRef, 'configURL', None)
+        newFile['inputPath']      = getattr(fileRef, 'inputPath', None)
         newFile["outputModule"]   = outputModule
         
 
@@ -1102,6 +1103,20 @@ class Report:
             f.configURL = configURL
 
         return
+
+    def setInputDataset(self, inputPath):
+        """
+        _setInputDataset_
+
+        Set the input dataset path for the task in each file
+        """
+
+
+        fileRefs = self.getAllFileRefs()
+
+        # Should now have all the fileRefs
+        for f in fileRefs:
+            f.inputPath = inputPath
 
     def setStepRSS(self, stepName, min, max, average):
         """

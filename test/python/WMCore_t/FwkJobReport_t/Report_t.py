@@ -510,5 +510,38 @@ cms::Exception caught in EventProcessor and rethrown
             
         return
     
+    def testOutputFiles(self):
+        """
+        _testOutputFiles_
+        
+        Test some basic manipulation of output files
+        """
+        
+        myReport = Report("cmsRun1")
+        myReport.parse(self.xmlPath)
+        
+        files = myReport.getAllFilesFromStep(step = "cmsRun1")
+        
+        f1 = files[0]
+        f2 = files[1]
+        
+        self.assertEqual(f1['outputModule'], 'outputRECORECO')
+        self.assertEqual(f1['pfn'], 'outputRECORECO.root')
+        
+        self.assertEqual(f2['outputModule'], 'outputALCARECORECO')
+        self.assertEqual(f2['pfn'], 'outputALCARECORECO.root')
+        
+        for f in files:
+            self.assertEqual(f['events'], 2)
+            self.assertEqual(f['configURL'], None)
+            self.assertEqual(f['merged'], False)
+            self.assertEqual(f['validStatus'], None)
+            self.assertEqual(f['first_event'], 0)
+
+        return
+                         
+
+ 
+    
 if __name__ == "__main__":
     unittest.main()

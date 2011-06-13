@@ -109,7 +109,7 @@ def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
 
 # pylint: disable-msg=C0103
 def createAlgorithm(apiRef, appName, appVer, appFam,
-                    PSetHash = None):
+                    PSetHash = None, PSetContent = None):
     """
     _createAlgorithm_
 
@@ -129,7 +129,8 @@ def createAlgorithm(apiRef, appName, appVer, appFam,
 
 
     # Create PSetHash
-    psetInstance = DbsQueryableParameterSet(Hash = PSetHash)
+    psetInstance = DbsQueryableParameterSet(Hash = PSetHash,
+                                            Content = PSetContent)
     algorithmInstance = DbsAlgorithm(ExecutableName = appName,
                                      ApplicationVersion = appVer,
                                      ApplicationFamily = appFam,
@@ -604,7 +605,8 @@ class DBSInterface:
                                   appName = algo['ApplicationName'],
                                   appVer = algo['ApplicationVersion'],
                                   appFam = algo['ApplicationFamily'],
-                                  PSetHash = algo['PSetHash'])
+                                  PSetHash = algo['PSetHash'],
+                                  PSetContent = algo['PSetContent'])
 
         if dataset['PrimaryDataset'].lower() == 'bogus':
             # Do not commit bogus datasets!

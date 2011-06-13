@@ -137,7 +137,15 @@ class WMStepTest(unittest.TestCase):
         self.assertEqual(wmStep.getErrorDestinationStep(), None)
         wmStep.setErrorDestinationStep(stepName = 'testStep')
         self.assertEqual(wmStep.getErrorDestinationStep(), 'testStep')
-        
+
+        self.assertEqual(wmStep.getConfigInfo(), (None, None, None))
+
+        wmStep.data.application.configuration.configCacheUrl = 'test1'
+        wmStep.data.application.configuration.cacheName = 'test2'
+        wmStep.data.application.configuration.configId = 'test3'
+
+        self.assertEqual(wmStep.getConfigInfo(), ('test1', 'test2', 'test3'))
+        return
 
 
 if __name__ == '__main__':

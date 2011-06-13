@@ -187,6 +187,21 @@ class WMStepHelper(TreeHelper):
 
         return getattr(self.data, 'errorDestinationStep', None)
 
+
+    def getConfigInfo(self):
+        """
+        _getConfigInfo_
+
+        Get information about the config cache location
+        """
+
+        cacheUrl = getattr(self.data.application.configuration, 'configCacheUrl', None)
+        cacheDb  = getattr(self.data.application.configuration, 'cacheName', None)
+        configId = getattr(self.data.application.configuration, 'configId', None)
+
+        return cacheUrl, cacheDb, configId
+        
+
 class WMStep(ConfigSectionTree):
     """
     _WMStep_

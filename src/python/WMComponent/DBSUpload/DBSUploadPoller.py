@@ -45,6 +45,7 @@ import traceback
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.ProcessPool.ProcessPool        import ProcessPool
+from WMCore.Cache.WMConfigCache            import ConfigCache
 
 from WMCore.WMFactory     import WMFactory
 from WMCore.DAOFactory    import DAOFactory
@@ -88,9 +89,29 @@ def createAlgoFromInfo(info):
             'ApplicationFamily':  info.get('ApplicationFamily'),
             'ApplicationVersion': info.get('ApplicationVersion'),
             'PSetHash':           info.get('PSetHash'),
-            'PSetContent':        info.get('PSetContent'),
+            'PSetContent':        None,
             'InDBS':              info.get('AlgoInDBS', None)
             }
+
+    configString = info.get('PSetContent')
+    if configString:
+        split = configString.split(';;')
+        cacheURL = split[0]
+        cacheDB  = split[1]
+        configID = split[2]
+        try:
+            configCache = ConfigCache(cacheURL, cacheDB)
+            configCache.loadByID(configID)
+            algo['PSetContent'] = configCache.getConfig()
+        except Exception, ex:
+            msg =  "Exception in getting configCache from DB\n"
+            msg += "Ignoring this exception and continuing without config.\n"
+            msg += str(ex)
+            msg += str(traceback.format_exc())
+            logging.error(msg)
+            logging.debug("URL: %s,  DB: %s,  ID: %s" % (cacheURL, cacheDB, configID))
+            
+        
 
     return algo
 

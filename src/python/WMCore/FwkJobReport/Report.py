@@ -686,6 +686,7 @@ class Report:
         newFile["processingVer"]  = getattr(fileRef, 'processingVer', None)
         newFile["validStatus"]    = getattr(fileRef, 'validStatus', None)
         newFile["globalTag"]      = getattr(fileRef, 'globalTag', None)
+        newFile['configURL']      = getattr(fileRef, 'configURL', None)
         newFile["outputModule"]   = outputModule
         
 
@@ -1085,6 +1086,21 @@ class Report:
         for f in fileRefs:
             f.globalTag = globalTag
             
+        return
+
+    def setConfigURL(self, configURL):
+        """
+        _setConfigURL_
+
+        Set the config URL in a portable storage form
+        """
+
+        fileRefs = self.getAllFileRefs()
+
+        # Should now have all the fileRefs
+        for f in fileRefs:
+            f.configURL = configURL
+
         return
 
     def setStepRSS(self, stepName, min, max, average):

@@ -237,10 +237,15 @@ class CMSSW(Executor):
         acquisitionEra = self.workload.getAcquisitionEra()
         processingVer  = self.workload.getProcessingVersion()
         validStatus    = self.workload.getValidStatus()
+        cacheUrl, cacheDB, configID = self.step.getConfigInfo()
+                
         typeHelper     = WMStepHelper(self.step).getTypeHelper()
         globalTag      = typeHelper.getGlobalTag()
         self.report.setAcquisitionProcessing(acquisitionEra = acquisitionEra,
                                              processingVer = processingVer)
+        self.report.setConfigURL(configURL = "%s;;%s;;%s" % (cacheUrl,
+                                                             cacheDB,
+                                                             configID))
 
         if self.step.output.keep != True:
             self.report.killOutput()

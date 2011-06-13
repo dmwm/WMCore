@@ -298,11 +298,11 @@ class AccountantWorker(WMConnectionBase):
                                 events = jobReportFile["events"],
                                 checksums = jobReportFile["checksums"],
                                 status = "NOTUPLOADED")
-        #dbsFile["locations"] = set()
         dbsFile.setAlgorithm(appName = datasetInfo["applicationName"],
                              appVer = datasetInfo["applicationVersion"],
                              appFam = jobReportFile["module_label"],
-                             psetHash = "GIBBERISH", configContent = "MOREGIBBERISH")
+                             psetHash = "GIBBERISH",
+                             configContent = jobReportFile.get('configURL'))
         
         dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["primaryDataset"],
                                               datasetInfo["processedDataset"],

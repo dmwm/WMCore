@@ -18,24 +18,20 @@ import unittest
 import cProfile, pstats
 import nose
 
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+
 from WMComponent.DBSUpload.DBSUpload       import DBSUpload
 from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
-#from WMComponent.DBSUpload.DBSUploadTest import DBSUploadPoller2 as DBSUploadPoller
-
-#from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
-from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferFile  import DBSBufferFile
 
 from WMCore.WMFactory       import WMFactory
-from WMQuality.TestInit     import TestInit
 from WMCore.DAOFactory      import DAOFactory
 from WMCore.Services.UUID   import makeUUID
 from WMCore.DataStructs.Run import Run
 
 from WMCore.Agent.Configuration import Configuration
-
+from WMCore.Cache.WMConfigCache import ConfigCache
 from WMCore.Agent.HeartbeatAPI  import HeartbeatAPI
-
-#from WMCore.Services.DBS.DBSReader import DBSReader
 
 from WMComponent.DBSUpload.DBSInterface import *
 
@@ -59,6 +55,11 @@ class DBSUploadTest(unittest.TestCase):
         setUp function for unittest
 
         """
+        # Set constants
+        self.couchDB      = "config_test"
+        self.configURL    = "RANDOM;;URL;;NAME"
+        self.configString = "This is a random string"
+        
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -66,6 +67,7 @@ class DBSUploadTest(unittest.TestCase):
                                 ["WMComponent.DBS3Buffer",
                                  'WMCore.Agent.Database'],
                                 useDefault = False)
+        self.testInit.setupCouch(self.couchDB, "GroupUser", "ConfigCache")
       
         myThread = threading.currentThread()
         self.bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
@@ -82,6 +84,19 @@ class DBSUploadTest(unittest.TestCase):
         self.componentName = 'JobSubmitter'
         self.heartbeatAPI  = HeartbeatAPI(self.componentName)
         self.heartbeatAPI.registerComponent()
+
+        # Set up a config cache
+        configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = self.couchDB)
+        configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+        psetPath = os.path.join("/tmp", "PSet.txt")
+        f = open(psetPath, 'w')
+        f.write(self.configString)
+        f.close()
+        configCache.addConfig(newConfig = psetPath, psetHash = None)
+        configCache.save()
+        self.configURL = "%s;;%s;;%s" % (os.environ["COUCHURL"],
+                                         self.couchDB,
+                                         configCache.getCouchID())
 
         return
 
@@ -156,7 +171,7 @@ class DBSUploadTest(unittest.TestCase):
                                      events = 20, checksums = {'cksum': 1})
             testFile.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
                                   appFam = "RECO", psetHash = "GIBBERISH",
-                                  configContent = "MOREGIBBERISH")
+                                  configContent = self.configURL)
             testFile.setDatasetPath("/%s/%s/%s" % (name, name, tier))
             testFile.addRun(Run( 1, *[f]))
             testFile.setGlobalTag("aGlobalTag")
@@ -169,7 +184,7 @@ class DBSUploadTest(unittest.TestCase):
                                  events = 10, checksums = {'cksum': 1})
         testFileChild.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
                               appFam = "RECO", psetHash = "GIBBERISH",
-                              configContent = "MOREGIBBERISH")
+                              configContent = self.configURL)
         testFileChild.setDatasetPath("/%s/%s_2/RECO" %(name, name))
         testFileChild.addRun(Run( 1, *[45]))
         testFileChild.setGlobalTag("aGlobalTag")
@@ -366,7 +381,7 @@ class DBSUploadTest(unittest.TestCase):
                                      locations = "malpaquet")
             testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                                   appFam = tier, psetHash = "GIBBERISH_PART2",
-                                  configContent = "MOREGIBBERISH")
+                                  configContent = self.configURL)
             testFile.setDatasetPath(datasetPath)        
             testFile.addRun(Run( 1, *[46]))
             testFile.create()
@@ -389,7 +404,7 @@ class DBSUploadTest(unittest.TestCase):
                                      locations = "malpaquet")
             testFile.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
                                   appFam = tier, psetHash = "GIBBERISH",
-                                  configContent = "MOREGIBBERISH")
+                                  configContent = self.configURL)
             testFile.setDatasetPath('/%s/%s_3/%s' % (name, name, tier))        
             testFile.addRun(Run( 1, *[46]))
             testFile.create()
@@ -497,8 +512,9 @@ class DBSUploadTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
         self.assertEqual(result, [('InGlobalDBS',), ('InGlobalDBS',), ('Open',)])
 
-        time.sleep(3)
+        time.sleep(5)
         testDBSUpload.algorithm()
+        time.sleep(2)
         result = myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
         self.assertEqual(result, [('InGlobalDBS',), ('InGlobalDBS',), ('InGlobalDBS',)])
 

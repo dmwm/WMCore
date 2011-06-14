@@ -48,13 +48,6 @@ WMCore.RequestManager.Overview.overviewTable = function(divID, filterDiv,
                  elCell.innerHTML = "<font color='red'> " + oRecord.getData("error") + "<font>";
                  return;
             };
-            localQueueList  = oRecord.getData("local_queue")
-            if ((!localQueueList || !localQueueList.length) && oRecord.getData("status") != "completed"
-                                                            && oRecord.getData("status") != "aborted"
-                                                            && oRecord.getData("status") != "failed") {
-                 elCell.innerHTML = "Not Assigned";
-                 return;
-            };
             if (!sData) {
                 if (oRecord.getData("couch_error")) {
                     elCell.innerHTML = "<font color='red'> Can't connect Job DB <font>";

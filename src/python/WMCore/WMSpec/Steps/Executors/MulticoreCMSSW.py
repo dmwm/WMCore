@@ -354,7 +354,7 @@ class MulticoreCMSSW(Executor):
         # Attach info to files
         self.report.addInfoToOutputFilesForStep(stepName = self.stepName, step = self.step)
 
-        return "NotNone"
+        return None
 
 configBlob = """#!/bin/bash
 

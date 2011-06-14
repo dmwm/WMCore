@@ -525,7 +525,8 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
 
-                if stepHelper.stepType() == "CMSSW":
+                if stepHelper.stepType() == "CMSSW" or \
+                       stepHelper.stepType() == "MulticoreCMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
                         outputModule = stepHelper.getOutputModule(outputModuleName)
                         filterName = getattr(outputModule, "filterName", None)
@@ -659,7 +660,8 @@ class WMWorkloadHelper(PersistencyHelper):
                 stepHelper = task.getStepHelper(stepName)
                 if stepHelper.stepType() == "StageOut" and stepHelper.minMergeSize() != -1:
                     stepHelper.setMinMergeSize(minSize, maxEvents)
-                if stepHelper.stepType() == "CMSSW":
+                if stepHelper.stepType() == "CMSSW" or \
+                       stepHelper.stepType() == "MulticoreCMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
                         outputModule = stepHelper.getOutputModule(outputModuleName)
                         if outputModule.dataTier == "DQM":
@@ -823,7 +825,8 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
 
-                if stepHelper.stepType() == "CMSSW":
+                if stepHelper.stepType() == "CMSSW" or \
+                       stepHelper.stepType() == "MulticoreCMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
                         outputModule = stepHelper.getOutputModule(outputModuleName)
                         outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
@@ -948,7 +951,8 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
 
-                if stepHelper.stepType() == "CMSSW":
+                if stepHelper.stepType() == "CMSSW" or \
+                       stepHelper.stepType() == "MulticoreCMSSW":
                     if cmsswVersion != None:
                         stepHelper.cmsswSetup(cmsswVersion = cmsswVersion,
                                               scramArch = scramArch)

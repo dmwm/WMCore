@@ -140,7 +140,5 @@ def queueConfigFromConfigObject(config):
     # ReqMgr params
     if not hasattr(wqManager, 'reqMgrConfig'):
         wqManager.reqMgrConfig = {}
-    wqManager.reqMgrConfig['QueueURL'] = qConfig['QueueURL']
-    wqManager.reqMgrConfig['MonitorURL'] = monitorURL
 
     return config

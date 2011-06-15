@@ -270,7 +270,6 @@ class WorkQueueTest(WorkQueueTestCase):
                 curr_event = mask['LastEvent'] + 1
         self.assertEqual(curr_event - 1, 10000)
 
-
     def testPriority(self):
         """
         Test priority change functionality
@@ -799,8 +798,7 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.localQueue.pullWork(slots)
         self.assertEqual(work, 0)
         self.assertEqual(2, len(self.globalQueue.status())) # 1 in local & 1 in global
-        
-    
+
     def testResubmissionWorkflow(self):
         from WMQuality.TestInitCouchApp import TestInitCouchApp
         self.couchInit = TestInitCouchApp(__file__)
@@ -814,6 +812,23 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.getWork({'SiteA': 100})), 1)
         
         self.couchInit.tearDownCouch()
-        
+
+    def testProductionMask(self):
+        """Test mask_url is created when globalqueue get call is called"""
+        specfile = self.spec.specUrl()
+        numUnit = 1
+        jobSlot = [10] * numUnit # array of jobs per block
+        total = sum(jobSlot)
+
+        self.globalQueue.queueWork(specfile)
+        self.assertEqual(numUnit, len(self.globalQueue))
+        work = self.globalQueue.getWork({'SiteA' : total})
+        curr_event = 1
+        for unit in work:
+            with open(unit['mask_url']) as mask_file:
+                mask = pickle.load(mask_file)
+                self.assertEqual(curr_event, mask['FirstEvent'])
+                curr_event = mask['LastEvent'] + 1
+        self.assertEqual(curr_event - 1, 10000)
 if __name__ == "__main__":
     unittest.main()

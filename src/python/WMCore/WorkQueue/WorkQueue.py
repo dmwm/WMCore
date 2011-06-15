@@ -350,6 +350,14 @@ class WorkQueue(WorkQueueBase):
                                     transaction = self.existingTransaction())
 
             blockName, dbsBlock = None, None
+            if not match['input_id']:
+                self.logger.info("Adding Production work")
+                wmspecInfo['mask_url'] = None
+                lumi_path = os.path.join(self.params['CacheDir'],
+                                              "%s.mask" % match['id'])
+                if os.path.exists(lumi_path):
+                    wmspecInfo['mask_url'] = lumi_path
+
             if self.params['PopulateFilesets']:
                 if not wmspecCache.has_key(wmspecInfo['id']):
                         wmspec = WMWorkloadHelper()

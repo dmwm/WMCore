@@ -14,6 +14,7 @@ import unittest
 import logging
 
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
+from WMComponent.PhEDExInjector.PhEDExInjectorSubscriber import PhEDExInjectorSubscriber
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
@@ -188,6 +189,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         config.PhEDExInjector.phedexurl = self.phedexURL
         config.PhEDExInjector.subscribeMSS = True
         config.PhEDExInjector.group = "Saturn"
+        config.PhEDExInjector.pollInterval = 30
+        config.PhEDExInjector.subscribeInterval = 60
 
         return config
 
@@ -271,6 +274,10 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         replicaInfo = self.retrieveReplicaInfoForBlock(self.blockBName)
         assert replicaInfo["is_open"] == "y", \
                "Error: block should be open."
+
+        subscriber = PhEDExInjectorSubscriber(self.createConfig())
+        subscriber.setup(parameters = None)
+        subscriber.algorithm(parameters = None)        
 
         subAResult = self.phedex.subscriptions(dataset = self.testDatasetA)
         self.assertEqual(len(subAResult["phedex"]["dataset"]), 1,

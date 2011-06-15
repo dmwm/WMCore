@@ -1,40 +1,33 @@
+#!/usr/bin/env python
+"""
+_PhEDExInjector_
 
-# harness class that encapsulates the basic component logic.
-from WMCore.Agent.Harness import Harness
-# we do not import failure handlers as they are dynamicly 
-# loaded from the config file.
-from WMCore.WMFactory import WMFactory
-import os
+Poll DBSBuffer and inject files into PhEDEx after they've been injected into
+DBS.
+"""
+
 import threading
 import logging
-from WMCore.Configuration import loadConfigurationFile
+
 from WMCore.Agent.Harness import Harness
 from WMCore.WMFactory import WMFactory
+
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
-#from WMCore.HTTPFrontEnd import Downloader
-#from WMCore.WebTools.Root import Root
-
-factory = WMFactory('generic')
-
+from WMComponent.PhEDExInjector.PhEDExInjectorSubscriber import PhEDExInjectorSubscriber
 
 class PhEDExInjector(Harness):
     def __init__(self, config):
-        # call the base class
         Harness.__init__(self, config)
-        self.pollTime = 1
-        #self.start()
 
     def preInitialization(self):
-        print "PhEDExInjector.preInitialization"
-        
-        # use a factory to dynamically load handlers.
-        factory = WMFactory('generic')
-        
-        
-        # Add event loop to worker manager
-        myThread = threading.currentThread()
-        
         pollInterval = self.config.PhEDExInjector.pollInterval
-        logging.info("Setting poll interval to %s seconds" % pollInterval)
+        subInterval = self.config.PhEDExInjector.subscribeInterval
+        logging.info("Setting poll interval to %s seconds for inject" % pollInterval)
+
+
+        myThread = threading.currentThread()
         myThread.workerThreadManager.addWorker(PhEDExInjectorPoller(self.config), pollInterval)
-        
+
+        if getattr(self.config.PhEDExInjector, "subscribeMSS", False):
+            logging.info("Setting poll interval to %s seconds for subscribe" % subInterval)            
+            myThread.workerThreadManager.addWorker(PhEDExInjectorSubscriber(self.config), subInterval)

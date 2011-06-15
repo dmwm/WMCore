@@ -12,7 +12,6 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.Services.DBS import XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 
 from WMCore.DAOFactory import DAOFactory
 
@@ -32,7 +31,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         self.config = config
         self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
         self.dbsUrl = config.DBSInterface.globalDBSUrl 
-        self.subscribeMSS = getattr(config.PhEDExInjector, "subscribeMSS", False)
         self.group = getattr(config.PhEDExInjector, "group", "DataOps")
 
         # This will be used to map SE names which are stored in the DBSBuffer to
@@ -56,8 +54,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         self.getUninjected = daofactory(classname = "GetUninjectedFiles")
         self.getMigrated = daofactory(classname = "GetMigratedBlocks")
-        self.getUnsubscribed = daofactory(classname = "GetUnsubscribedDatasets")
-        self.markSubscribed = daofactory(classname = "MarkDatasetSubscribed")
 
         daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                 logger = self.logger,
@@ -222,40 +218,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         return
 
-    def subscribeDatasets(self):
-        """
-        _subscribeDatasets_
-
-        Search DBSBuffer for datasets that have not yet been subscribed to mass
-        storage and create subscriptions for them.
-        """
-        if not self.seMap.has_key("MSS"):
-            return
-
-        myThread = threading.currentThread()
-        unsubscribedDatasets = self.getUnsubscribed.execute(conn = myThread.transaction.conn,
-                                                            transaction = True)
-
-        for unsubscribedDataset in unsubscribedDatasets:
-            datasetPath = unsubscribedDataset["path"]
-            seName = unsubscribedDataset["se_name"]
-
-            if not self.seMap["MSS"].has_key(seName):
-                logging.error("No MSS node for SE: %s" % seName)
-                continue
-
-            newSubscription = PhEDExSubscription(datasetPath, self.seMap["MSS"][seName], self.group,
-                                                 custodial = "y", requestOnly = "n")
-            
-            xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, 
-                                    newSubscription.getDatasetPaths())
-            self.phedex.subscribe(newSubscription, xmlData)
-            
-            self.markSubscribed.execute(datasetPath, conn = myThread.transaction.conn,
-                                        transaction = True)
-
-        return
-    
     def algorithm(self, parameters):
         """
         _algorithm_
@@ -268,9 +230,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         self.injectFiles()
         self.closeBlocks()
-
-        if self.subscribeMSS:
-            self.subscribeDatasets()
 
         myThread.transaction.commit()
         return

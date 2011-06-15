@@ -143,7 +143,7 @@ class ReqMgrRESTModel(RESTModel):
         self._addMethod("GET", "siteoverview", getSiteOverview, secured=True)
         self._addMethod('GET', 'outputDatasetsByRequestName', self.getOutputForRequest,
                        args = ['requestName'], secured=True, expires = 0)
-        self._addMethod('GET', 'outputDatasestByPrepID', self.getOutputForPrepID,
+        self._addMethod('GET', 'outputDatasetsByPrepID', self.getOutputForPrepID,
                        args = ['prepID'], secured=True, expires = 0)        
         
         cherrypy.engine.subscribe('start_thread', self.initThread)
@@ -211,12 +211,16 @@ class ReqMgrRESTModel(RESTModel):
         return helper.listOutputDatasets()
 
     def getOutputForPrepID(self, prepID):
-        """Return the datasets produced by this prep ID."""
-        requestName = GetRequest.getRequestByPrepID(prepID)
-        if requestName == None:
-            return []
-        helper = Utilities.loadWorkload(requestName)
-        return helper.listOutputDatasets()        
+        """Return the datasets produced by this prep ID. in a dict of requestName:dataset list"""
+        requestIDs = GetRequest.getRequestByPrepID(prepID)
+        result = {}
+        print requestIDs
+        for requestID in requestIDs:
+            request = GetRequest.getRequest(requestID)
+            requestName = request["RequestName"]
+            helper = Utilities.loadWorkload(request)
+            result[requestName] =  helper.listOutputDatasets()
+        return result
 
     def getAssignment(self, teamName=None, request=None):
         """ If a team name is passed in, get all assignments for that team.

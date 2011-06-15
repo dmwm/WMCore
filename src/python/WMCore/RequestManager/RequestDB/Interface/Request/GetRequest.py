@@ -103,10 +103,8 @@ def getRequestByName(requestName):
 def getRequestByPrepID(prepID):
     factory = DBConnect.getConnection()
     getID = factory(classname = "Request.FindByPrepID")
-    requestID = getID.execute(prepID)
-    if requestID == None:
-        return None
-    return getRequest(requestID)
+    requestIDs = getID.execute(prepID)
+    return requestIDs
     
 def getRequestDetails(requestName):
     """ Return a dict with the intimate details of the request """

@@ -27,9 +27,10 @@ def reqMgrConfig(
     reqMgrHtml = os.path.join(installation, 'html/RequestManager')
     reqMgrTemplates = os.path.join(installation, 'templates/WMCore/WebTools/RequestManager')
     reqMgrJavascript = os.path.join(installation, 'javascript')
-    requestOverviewHtml = os.path.join(installation, 'html')
-    requestOverviewTemplates = os.path.join(installation, 'templates/WMCore/WebTools')
-    requestOverviewJavascript = os.path.join(installation, 'javascript')
+
+    requestOverviewTemplates = reqMgrTemplates
+    requestOverviewJavascript = reqMgrJavascript
+    requestOverviewHtml = reqMgrHtml  
 
     if startup == "Root.py":
         config.component_("Webtools")
@@ -107,10 +108,10 @@ def reqMgrConfig(
     active.create.requestor = user
     active.create.cmsswDefaultVersion = 'CMSSW_3_5_8'
 
-    active.section_('RequestOverview')
-    active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestManager.RequestOverview'
-    active.RequestOverview.templates = requestOverviewTemplates
-    active.RequestOverview.javascript = requestOverviewJavascript
-    active.RequestOverview.html = requestOverviewHtml
+    #active.section_('RequestOverview')
+    #active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestManager.RequestOverview'
+    #active.RequestOverview.templates = requestOverviewTemplates
+    #active.RequestOverview.javascript = requestOverviewJavascript
+    #active.RequestOverview.html = requestOverviewHtml
 
     return config

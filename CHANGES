@@ -1,3 +1,23 @@
+From 0.7.9b to 0.7.10:
+  - Myproxy configuration coherence for glite plugin (1762).
+  - Make sure that the numCores parameter is an int (1776).
+  - Add the MonteCarloFromGEN workflow (1774).
+  - Wrap DBS blocks in single commits (1772).
+  - Refactor the BossAir unit tests (1720).
+  - Add a catch-all state so that all jobs are always reported by the (#1783).
+  - Fix reporting of the JobExitCode from the WN (1692).
+  - Add checksums for logarchive view (1766).
+  - Report on checksums for log archive files (1754).
+  - Workaround a couple multicore problems (1805).
+  - Fix problems with missing couch link in monitoring (1806).
+  - Fix WorkQueue element mask passing to child queue (1795).
+  - Add closeout and announced state and pages for marking bulk state
+    changes (1709).
+  - Improve error message for missing requests (1793).
+  - Improve the outputDatasetsByPrepID REST call in ReqMgr (1679).
+  - Add a script to help run jobs interactively (1419).
+  - Improve automatic PhEDEx subscription (1659).
+
 From 0.7.9 to 0.7.9a/b:
   - Catch Exception during WorkQueue sync with parent (1715).
   - Cause components to crash if an unhandled exception is thrown (1722).

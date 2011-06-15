@@ -72,13 +72,15 @@ def reqMgrConfig(
 
     active.section_('admin')
     active.admin.object = 'WMCore.HTTPFrontEnd.RequestManager.Admin'
-
     active.section_('approve')
     active.approve.object = 'WMCore.HTTPFrontEnd.RequestManager.Approve'
-
     active.section_('assign')
     active.assign.object = 'WMCore.HTTPFrontEnd.RequestManager.Assign'
     active.assign.sitedb = sitedb
+    active.section_('closeout')
+    active.closeout.object = 'WMCore.HTTPFrontEnd.RequestManager.CloseOut'
+    active.section_('announce')
+    active.announce.object = 'WMCore.HTTPFrontEnd.RequestManager.Announce'
 
     active.section_('reqMgr')
     active.reqMgr.section_('model')
@@ -88,6 +90,15 @@ def reqMgrConfig(
     active.reqMgr.default_expires = 0 # no caching
     active.reqMgr.formatter.object = 'WMCore.WebTools.RESTFormatter'
     active.reqMgr.templates = os.path.join(installation, 'templates/WMCore/WebTools')
+    #deprecate the old interface
+    active.section_('rest')
+    active.rest.section_('model')
+    active.rest.section_('formatter')
+    active.rest.object = 'WMCore.WebTools.RESTApi'
+    active.rest.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
+    active.rest.default_expires = 0 # no caching
+    active.rest.formatter.object = 'WMCore.WebTools.RESTFormatter'
+    active.rest.templates = os.path.join(installation, 'templates/WMCore/WebTools')
 
     active.section_('create')
     active.create.object = 'WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema'

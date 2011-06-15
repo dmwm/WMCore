@@ -218,4 +218,3 @@ def serveFile(contentType, prefix, *args):
     if not path.exists(name):
         raise HTTPError(404, "%s not found" % name)
     return serve_file(name, content_type = contentType)
-

@@ -1,17 +1,9 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-<title> Request Approval </title>
+<title> $operation Requests  </title>
 
 <!-- Hokey way to keep ENTER from submitting the form.  Ticket #401 -->
-<script type="text/javascript">
-function stopRKey(evt) {
-  var evt = (evt) ? evt : ((event) ? event : null);
-  var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement : null);
-  if ((evt.keyCode == 13) && (node.type=="text"))  {return false;}
-}
-document.onkeypress = stopRKey;
-</script>
 <style type="text/css">
 table {
 border-width: 1px;
@@ -41,15 +33,18 @@ font-family: Arial;
 
 </head>
 <body>
-<h2>Approve Requests</h2>
-<form action="handleApprovalPage" method="POST">
+<h2>$operation Requests</h2>
+<form action="handle$operation" method="POST">
 
 <div id="actions">
 <a href='./?all=1'>Select All</a><br/>
+#if $actions
 Actions:<select name="action">
-  <option>Approve</option>
-  <option>Reject</option>
+  #for $action in $actions
+    <option>$action</option>
+  #end for
 </select>
+#end if
 <input type="submit"/>
 </div>
 <br/>

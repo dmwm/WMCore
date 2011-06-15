@@ -186,7 +186,10 @@ class ReqMgrBrowser(WebAPI):
     def details(self, requestName):
         """ A page showing the details for the requests """
         self.validate(requestName)
-        request = GetRequest.getRequestDetails(requestName)
+        try:
+            request = GetRequest.getRequestDetails(requestName)
+        except AssertionError:
+            raise cherrypy.HTTPError(404, "Cannot find request %s" % requestName)
         helper = loadWorkload(request)
         task = helper.getTopLevelTask()[0]
         docId = None

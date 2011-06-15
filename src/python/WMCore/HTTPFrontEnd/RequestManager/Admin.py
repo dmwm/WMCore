@@ -8,7 +8,7 @@ import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement as UserMan
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 import WMCore.RequestManager.RequestDB.Interface.User.Requests as UserRequests
 import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import allSoftwareVersions
+import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 import WMCore.Lexicon
 import logging
 import cherrypy
@@ -23,6 +23,7 @@ class Admin(WebAPI):
         WebAPI.__init__(self, config)
         # Take a guess
         self.templatedir = config.templates
+        self.htmldir  = config.html
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
     def initThread(self, thread_index):
@@ -48,12 +49,7 @@ class Admin(WebAPI):
     @cherrypy.tools.secmodv2()
     def index(self):
         """ Main web page """
-        return """
-<a href="/reqmgr/admin/users/">Users</a>
-<a href="/reqmgr/admin/groups/">Groups</a>
-<a href="/reqmgr/admin/teams/">Teams</a>
-<a href="/reqmgr/admin/versions/">Versions</a>
-         """
+        return Utilities.serveFile('text/html', self.htmldir, "Admin.html")
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
@@ -188,7 +184,7 @@ class Admin(WebAPI):
     def handleAllVersions(self):
         """ Registers all versions in the TC """
         currentVersions = SoftwareAdmin.listSoftware().keys()
-        allVersions = allSoftwareVersions()
+        allVersions = Utilities.allSoftwareVersions()
         result = ""
         for version in allVersions:
             if not version in currentVersions:

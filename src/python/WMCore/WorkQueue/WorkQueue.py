@@ -360,49 +360,51 @@ class WorkQueue(WorkQueueBase):
         return elementIDs
 
 
-    def cancelWork(self, elementIDs = None, SubscriptionId = None, WorkflowName = None):
-        """Mark work as canceled
-           Arguments are AND'd to select elements
+    def cancelWork(self, elementIDs = None, SubscriptionId = None, WorkflowName = None, elements = None):
+        """Cancel work - delete in wmbs, delete from workqueue db, set canceled in inbox
+           Elements may be directly provided or determined from series of filter arguments
         """
-        args = {}
-        if SubscriptionId:
-            args['SubscriptionId'] = SubscriptionId
-        if WorkflowName:
-            args['RequestName'] = WorkflowName
-        elements = self.backend.getElements(elementIDs = elementIDs, **args)
+        if not self.params['LocalQueueFlag']:
+            raise RuntimeError, "Not a local queue - can't cancel work"
+        if not elements:
+            args = {}
+            if SubscriptionId:
+                args['SubscriptionId'] = SubscriptionId
+            if WorkflowName:
+                args['RequestName'] = WorkflowName
+            elements = self.backend.getElements(elementIDs = elementIDs, **args)
 
-        if self.params['LocalQueueFlag']:
-            status = 'Canceled'
-            # if we can talk to wmbs kill the jobs
-            if self.params['PopulateFilesets']:
-                from WMCore.WorkQueue.WMBSHelper import killWorkflow
+        # if we can talk to wmbs kill the jobs
+        if self.params['PopulateFilesets']:
+            from WMCore.WorkQueue.WMBSHelper import killWorkflow
 
-                requestNames = set([x['RequestName'] for x in elements])
-                self.logger.debug("""Canceling work in wmbs, workflows: %s""" % (requestNames))
-                for workflow in requestNames:
-                    try:
-                        myThread = threading.currentThread()
-                        myThread.dbi = self.conn.dbi
-                        myThread.logger = self.logger                         
-                        killWorkflow(workflow, self.params["JobDumpConfig"],
-                                     self.params["BossAirConfig"])
-                    except RuntimeError:
-                        #TODO: Check this logic and improve if possible
-                        if SubscriptionId:
-                            self.logger.info("""Cancel update: Only some subscription's canceled.
-                                        This might be due to a child subscriptions: %s"""
-                                        % elementIDs)
-        # Global queue
-        else:
-            status = 'CancelRequested' # mark elements for cancel in child queue
+            requestNames = set([x['RequestName'] for x in elements])
+            self.logger.debug("""Canceling work in wmbs, workflows: %s""" % (requestNames))
+            for workflow in requestNames:
+                try:
+                    myThread = threading.currentThread()
+                    myThread.dbi = self.conn.dbi
+                    myThread.logger = self.logger
+                    killWorkflow(workflow, self.params["JobDumpConfig"],
+                                 self.params["BossAirConfig"])
+                except RuntimeError:
+                    #TODO: Check this logic and improve if possible
+                    if SubscriptionId:
+                        self.logger.info("""Cancel update: Only some subscription's canceled.
+                                    This might be due to a child subscriptions: %s"""
+                                    % elementIDs)
 
-        for element in elements:
-            # if element already marked skip it
-            if element['Status'] not in ('Canceled', 'CancelRequested'):
-                element['Status'] = status
-        self.backend.saveElements(*elements)
+            # update parent elements to canceled
+            for wf in requestNames:
+                inbox_elements = self.backend.getInboxElements(WorkflowName = wf, returnIdOnly = True)
+                if not inbox_elements:
+                    raise RuntimeError, "Cant find parent for %s" % wf
+                self.backend.updateInboxElements(*inbox_elements, Status = 'Canceled')
+            # delete elements - no longer need them
+            self.backend.deleteElements(*elements)
 
         return [x.id for x in elements]
+
 
     def deleteWorkflows(self, *requests):
         """Delete requests if finished"""
@@ -581,60 +583,55 @@ class WorkQueue(WorkQueueBase):
         self.backend.pullFromParent()
         return len(work)
 
-    def performQueueCleanupActions(self, full = False, skipWMBS = False):
+    def performQueueCleanupActions(self, skipWMBS = False):
         """
         Apply end policies to determine work status & cleanup finished work
         """
-        #TODO: Probably want to refactor this 
-        #TODO: Maybe move to iterator so we don't have everything in memory
         if not self.backend.isAvailable():
             self.logger.info('Backend busy or down: skipping cleanup tasks')
             return
 
+        self.backend.pullFromParent() # Check we are upto date with inbound changes
         self.backend.fixConflicts() # before doing anything fix any conflicts
 
-        # first check for inbound changes
-        self.backend.pullFromParent()
-        wf_to_cancel = set([x['RequestName'] for x in self.statusInbox('CancelRequested')])
-        for wf in wf_to_cancel:  # cancel work
-            self.cancelWork(WorkflowName = wf)
+        wf_to_cancel = [] # record what we did for task_activity
+        finished_elements = []
 
         useWMBS = not skipWMBS and self.params['LocalQueueFlag']
-        # Get queue elements grouped by their parent with updated wmbs progress
-        elementsByParent = self.status(dictKey = "ParentQueueId", syncWithWMBS = useWMBS)
-        if not elementsByParent:
-            return # queue empty
+        # Get queue elements grouped by their workflow with updated wmbs progress
+        # Cancel if requested, update locally and remove obsolete elements
+        for wf, elements in self.status(dictKey = "RequestName", syncWithWMBS = useWMBS).items():
+            try:
+                parents = self.backend.getInboxElements(RequestName = wf)
+                if not parents:
+                    raise RuntimeError, "Parent elements not found for %s" % wf
 
-        # apply end policy to elements grouped by parent element
-        results = {}
-        for parent, group in elementsByParent.items():
-            results[parent] = endPolicy(group, self.params['EndPolicySettings'])
+                results = endPolicy(elements, parents, self.params['EndPolicySettings'])
+                for result in results:
+                    # check for cancellation requests (affects entire workflow)
+                    if self.params['LocalQueueFlag'] and result['Status'] == 'CancelRequested':
+                        self.cancelWork(elements = elements)
+                        wf_to_cancel.append(wf)
+                        break
 
-        parent_elements = self.backend.getInboxElements()
-        [x.updateWithResult(results[x.id]) for x in parent_elements if x.id in results]
-        updated_parents = [x for x in parent_elements if x.modified]
+                    parent = result['ParentQueueElement']
+                    if parent.modified:
+                        self.backend.updateInboxElements(parent.id, **parent.statusMetrics())
 
-        # update parent elements with status & progress
-        [self.backend.updateInboxElements(x.id, **x.statusMetrics()) for x in updated_parents]
+                    if result.inEndState():
+                        self.backend.deleteElements(*result['Elements'])
+                        finished_elements.extend(result['Elements'])
+                        continue
 
-        updated_elements, finished_elements = [], []
-        for result in results.values():
-            if result.inEndState():
-                finished_elements.extend([x for x in result['Elements']])
-            else:
-                # updated elements - (ignore finished ones - we will remove them soon)
-                updated_elements.extend([x for x in result['Elements'] if x.modified])
-
-        # update elements - (not finished ones - we will delete them next)
-        [self.backend.updateElements(x.id, **x.statusMetrics()) for x in updated_elements]
-
-        self.backend.deleteElements(*finished_elements)
+                    [self.backend.updateElements(x.id, **x.statusMetrics()) for x in result['Elements'] if x.modified]
+            except Exception, ex:
+                self.logger.error('Error processing workflow "%s": %s' % (wf, str(ex)))
 
         msg = 'Finished elements: %s\nCanceled workflows: %s' % (', '.join(["%s (%s)" % (x.id, x['RequestName']) \
                                                                             for x in finished_elements]),
                                                                  ', '.join(wf_to_cancel))
         self.backend.recordTaskActivity('housekeeping', msg)
-        self.backend.sendToParent() # update parent with new status's
+        self.backend.sendToParent() # update parent queue with new status's
 
 
     def _splitWork(self, wmspec, parentQueueId = None,

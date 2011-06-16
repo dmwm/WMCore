@@ -8,6 +8,7 @@
 
 import unittest
 import math
+from functools import partial
 from WMCore.WorkQueue.Policy.End.SingleShot import SingleShot
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement as WQE
 
@@ -16,15 +17,16 @@ class SingleShotTestCase(unittest.TestCase):
 
     def setUp(self):
         """Create workflow stuff"""
-        self.policy = SingleShot(SuccessThreshold = 0.9)
-        self.strict_policy = SingleShot()
+        self.policy = partial(SingleShot, SuccessThreshold = 0.9)
+        self.strict_policy = partial(SingleShot)
 
         # ones i made earlier
-        self.available = WQE(Status = 'Available')
-        self.acquired = WQE(Status = 'Acquired')
-        self.negotiating = WQE(Status = 'Negotiating')
-        self.done = WQE(Status = 'Done', PercentComplete = 100, PercentSuccess = 100)
-        self.failed = WQE(Status = 'Failed', PercentComplete = 100, PercentSuccess = 0)
+        self.parent = WQE(); self.parent.id = 1
+        self.available = WQE(Status = 'Available', ParentQueueId = 1)
+        self.acquired = WQE(Status = 'Acquired', ParentQueueId = 1)
+        self.negotiating = WQE(Status = 'Negotiating', ParentQueueId = 1)
+        self.done = WQE(Status = 'Done', PercentComplete = 100, PercentSuccess = 100, ParentQueueId = 1)
+        self.failed = WQE(Status = 'Failed', PercentComplete = 100, PercentSuccess = 0, ParentQueueId = 1)
 
     def tearDown(self):
         pass
@@ -40,14 +42,16 @@ class SingleShotTestCase(unittest.TestCase):
                       (self.available, self.done),
                       (self.available, self.negotiating),
                       ):
-            self.assertEqual(self.policy(*items)['Status'], 'Acquired')
+            results = self.policy()(items, [self.parent])
+            self.assertEqual(len(results), 1)
+            self.assertEqual(results[0]['Status'], 'Acquired')
 
 
     def testEndConditions(self):
         """Correct status when all elements in an end state"""
         for result in (('Done', self.done, self.done),
                        ('Failed', self.failed, self.done)):
-            self.assertEqual(result[0], self.strict_policy(*result[1:])['Status'])
+            self.assertEqual(result[0], self.strict_policy()(result[1:], [self.parent])[0]['Status'])
 
 
     def testSuccessThreshold(self):
@@ -80,12 +84,12 @@ class SingleShotTestCase(unittest.TestCase):
         # go through range, checking correct status for entire pre-seeded dict
         # be careful of rounding errors here
         for threshold in frange4(0., 1., 0.1):
-            policy = SingleShot(SuccessThreshold = threshold)
+            policy = partial(SingleShot, SuccessThreshold = threshold)
             for value, items in elements.items():
                 if value >= threshold:
-                    self.assertEqual(policy(*items)['Status'], 'Done')
+                    self.assertEqual(policy()(items, [self.parent])[0]['Status'], 'Done')
                 else:
-                    self.assertEqual(policy(*items)['Status'], 'Failed')
+                    self.assertEqual(policy()(items, [self.parent])[0]['Status'], 'Failed')
 
 
 if __name__ == '__main__':

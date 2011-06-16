@@ -719,7 +719,8 @@ class WorkQueueTest(WorkQueueTestCase):
         canceled = self.queue.cancelWork(ids)
         self.assertEqual(sorted(canceled), sorted(ids))
         self.assertEqual(len(self.queue), 0)
-        self.assertEqual(len(self.queue.status(status='Canceled')), elements)
+        self.assertEqual(len(self.queue.status()), 0)
+        self.assertEqual(len(self.queue.statusInbox(status='Canceled')), 1)
 
         # now cancel a request
         self.queue.queueWork(self.spec.specUrl())
@@ -731,10 +732,8 @@ class WorkQueueTest(WorkQueueTestCase):
         canceled = self.queue.cancelWork(WorkflowName = ['testProduction'])
         self.assertEqual(canceled, ids)
         self.assertEqual(len(self.queue), 0)
-        self.queue.status(elementIDs = ids)
-        self.assertEqual([x['Status'] for x in self.queue.status(elementIDs = ids)],
-                         ['Canceled' for x in ids])
-        
+
+
     def testCancelWorkGlobal(self):
         """Cancel work in global queue"""
         # queue to global & pull to local

@@ -92,6 +92,8 @@ class WorkQueueElementResult(dict):
 
     def inEndState(self):
         """Are all requests complete (either success or failure)"""
+        if 'Status' in self:
+            return self['Status'] in ('Done', 'Failed', 'Canceled')
         for element in self['Elements']:
             if not element.inEndState():
                 return False

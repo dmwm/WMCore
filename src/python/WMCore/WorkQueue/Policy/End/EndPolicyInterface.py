@@ -14,25 +14,29 @@ class EndPolicyInterface(PolicyInterface):
     """Interface for end policies"""
     def __init__(self, **args):
         PolicyInterface.__init__(self, **args)
-        self.result = None
+        self.results = []
 
-    def __call__(self, *elements):
+    def __call__(self, elements, parents):
         """Apply policy to given elements"""
-        self.validate(*elements)
+        for parent in parents:
+            elements_for_parent = []
+            for element in elements:
+                if element['ParentQueueId'] == parent.id:
+                    elements_for_parent.append(element)
+            if not elements_for_parent:
+                raise RuntimeError, "No elements given for %s" % str(parent.id)
+            result = WQEResult(ParentQueueId = parent.id,
+                               ParentQueueElement = parent,
+                               Elements = elements_for_parent)
+            self.results.append(result)
 
-        self.result = WQEResult(ParentQueueId = elements[0]['ParentQueueId'],
-                           WMSpec = elements[0]['WMSpec'],
-                           Elements = elements)
-        self.applyPolicy()
-        return self.result
+        self.applyPolicy() # do plugin logic
+        return self.results
 
     def applyPolicy(self):
-        """Override in sub classes for custom behaviour"""
-        pass
-
-    def validate(self, *elements):
-        """Valid input?"""
-        for ele in elements[1:]:
-            if ele['ParentQueueId'] != elements[0]['ParentQueueId']:
-                msg = "Policy must be applied to elements with the same parent"
-                raise RuntimeError, msg
+        """Extend in sub classes for custom behaviour"""
+        for result in self.results:
+            result['ParentQueueElement'].updateWithResult(result)
+            # check for a cancellation request
+            if result['ParentQueueElement'].isCancelRequested():
+                result['Status'] = 'CancelRequested'

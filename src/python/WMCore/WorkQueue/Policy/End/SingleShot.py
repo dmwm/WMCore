@@ -21,6 +21,9 @@ class SingleShot(EndPolicyInterface):
 
     def applyPolicy(self):
         """Apply the given policy"""
-        # override status if SuccessThreshold met
-        if self.result['PercentSuccess'] >= (self.args['SuccessThreshold'] * 100):
-            self.result['Status'] = "Done"
+        EndPolicyInterface.applyPolicy(self)
+
+        for result in self.results:
+            # override status if SuccessThreshold met
+            if result['PercentSuccess'] >= (self.args['SuccessThreshold'] * 100):
+                result['Status'] = "Done"

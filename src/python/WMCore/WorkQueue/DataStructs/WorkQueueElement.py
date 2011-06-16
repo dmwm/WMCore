@@ -104,6 +104,9 @@ class WorkQueueElement(dict):
     def isCanceled(self):
         return self['Status'] == 'Canceled'
 
+    def isCancelRequested(self):
+        return self['Status'] == 'CancelRequested'
+
     def updateFromSubscription(self, wmbsStatus):
         """Get subscription status"""
         mapping = {'EventsWritten' : 'events_written',
@@ -122,9 +125,15 @@ class WorkQueueElement(dict):
                           'PercentComplete', 'PercentSuccess')
         modified = False
         for val in progressValues:
-            if self[val] != progressReport[val]:
-                self[val] = progressReport[val]
-                modified = True
+            # ignore if values the same
+            if self[val] == progressReport[val]:
+                continue
+            # ignore new state if it is lower than the current state
+            if val == 'Status' and self[val] and not STATES.index(progressReport[val]) > STATES.index(self[val]):
+                continue
+
+            self[val] = progressReport[val]
+            modified = True
         self.modified = modified
 
     def statusMetrics(self):

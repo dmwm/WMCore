@@ -666,7 +666,8 @@ class WMBSHelper(WMConnectionBase):
                         checksums = checksums,
                         #TODO: need to get list of parent lfn
                         parents = acdcFile["parents"],
-                        locations = acdcFile["locations"])
+                        locations = acdcFile["locations"],
+                        merged = acdcFile.get('merged', True))
 
         ## TODO need to get the lumi lists
         for run in acdcFile['runs']:

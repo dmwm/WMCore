@@ -100,8 +100,8 @@ def abortRequest(request):
     url = response[0]
     if url == None or url == "":
         raise cherrypy.HTTPError(400, "Cannot find URL for request " + request)
-    workqueue = WorkQueue.WorkQueue({'endpoint': url})
-    workqueue.cancelWork([request], "request_name")
+    workqueue = WorkQueue.WorkQueue(url)
+    workqueue.cancelWorkflow(request)
 
 def changeStatus(requestName, status):
     """ Changes the status for this request """

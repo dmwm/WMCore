@@ -95,5 +95,4 @@ def splitCouchServiceURL(serviceURL):
 
     splitedURL = serviceURL.rstrip('/').rsplit('/', 1)
 
-    print "test", splitedURL
     return splitedURL[0], splitedURL[1]

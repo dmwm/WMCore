@@ -13,6 +13,7 @@ import threading
 from WMCore.Configuration import Configuration
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMCore.WorkQueue.WorkQueueExceptions import *
+from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 
 from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload as rerecoWMSpec, \
                                           getTestArguments as getRerecoArgs
@@ -737,26 +738,29 @@ class WorkQueueTest(WorkQueueTestCase):
     def testCancelWorkGlobal(self):
         """Cancel work in global queue"""
         # queue to global & pull to local
-        self.globalQueue.queueWork(self.spec.specUrl())
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 1)
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 2)
         syncQueues(self.localQueue)
         work = self.localQueue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
-        self.assertEqual(len(work), 1)
+        self.assertEqual(len(work), 2)
         syncQueues(self.localQueue)
 
         # cancel in global, and propagate down to local
-        self.globalQueue.cancelWork(WorkflowName = self.spec.name())
+        #service = WorkQueueService({'endpoint': self.localQueue.backend.parentCouchUrl})
+        service = WorkQueueService(self.globalQueue.backend.db['host'], self.globalQueue.backend.db.name)
+        service.cancelWorkflow(self.processingSpec.name())
+        #self.globalQueue.cancelWork(WorkflowName = self.spec.name())
         self.globalQueue.performQueueCleanupActions()
         self.assertEqual(len(self.globalQueue.statusInbox(status='CancelRequested')), 1)
-        self.assertEqual(len(self.globalQueue.status(status='CancelRequested')), 1)
+        self.assertEqual(len(self.globalQueue.status(status='CancelRequested')), 2)
         syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue.statusInbox(status='Canceled')), 1)
+        self.assertEqual(len(self.localQueue.statusInbox(status='Canceled')), 2)
         self.assertEqual(len(self.localQueue.status()), 0)
 
         # check cancel propagated back to global
         syncQueues(self.localQueue)
-        self.assertEqual(len(self.globalQueue.status(status='Canceled')), 1)
+        self.assertEqual(len(self.globalQueue.status(status='Canceled')), 2)
         self.globalQueue.performQueueCleanupActions()
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.statusInbox()), 0)

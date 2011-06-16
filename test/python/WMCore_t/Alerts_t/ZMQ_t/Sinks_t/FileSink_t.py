@@ -21,15 +21,15 @@ class FileSinkTest(unittest.TestCase):
     def testFileSinkBasic(self):
         sink = FileSink(self.config)
         alerts = []
-        for i in range(10):
+        nAlerts = 10
+        for i in range(nAlerts):
             a = Alert(Source = __file__, Level = i, Timestamp = time.time(),
                       Type = "Test")
             alerts.append(a)
         sink.send(alerts)
-        self.failUnless(os.path.exists(self.config.outputfile))
         # test by reading back
         loadAlerts = sink.load()
-        self.assertEqual(len(loadAlerts), 10)
+        self.assertEqual(len(loadAlerts), nAlerts)
         
         # Since FileSink implementation depends on line-separated JSONs of
         # Alert instance, test handling new lines in the payload
@@ -39,8 +39,8 @@ class FileSinkTest(unittest.TestCase):
             a = Alert(Source = __file__, Level = i, Timestamp = time.time(),
                       Type = "Test", Details = {"message": testMsg})
             alerts.append(a)
+        self.failUnless(os.path.exists(self.config.outputfile))            
         sink.send(alerts)
-        self.failUnless(os.path.exists(self.config.outputfile))
         # test by reading back
         loadAlerts = sink.load()
         self.assertEqual(len(loadAlerts), 20)

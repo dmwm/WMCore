@@ -24,8 +24,8 @@ class EmailSinkTest(unittest.TestCase):
         self.config.smtpUser = None
         self.config.smtpPass = None
         
-        # now we want to mock smtp emailing stuff - via pymox
-        # otherwise with the above configuration
+        # now we want to mock smtp emailing stuff - via pymox - no actual
+        # email sending to happen
         self.mox = mox.Mox()
         self.smtpReal = EmailSinkMod.smtplib
         EmailSinkMod.smtplib = self.mox.CreateMock(EmailSinkMod.smtplib)
@@ -43,7 +43,7 @@ class EmailSinkTest(unittest.TestCase):
         alerts = []
         for i in range(10):
             a = Alert(Source=__file__, Level = i, Timestamp = time.time(), Type = "Test")
-            msg += "\n%s\n" % str(a)
+            msg += "\n%s\n" % a.toMsg()
             alerts.append(a)
             
         # method calls definition, ordered

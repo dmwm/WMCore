@@ -1,10 +1,6 @@
-#!/usr/bin/env python
-# encoding: utf-8
-
 """
-
-Created by Dave Evans on 2011-02-24.
-Copyright (c) 2011 Fermilab. All rights reserved.
+Class representation of an Alert message.
+Representation of management messages within the Alert framework.
 
 """
 
@@ -15,6 +11,12 @@ class Alert(dict):
     Alert structure - alert message instance.
     
     """
+    
+    TEMPLATE = (u"Alert: Component: %(Component)s, Source: %(Source)s, "
+                "Type: %(Type)s, Level: %(Level)s, Workload: %(Workload)s, "
+                "Timestamp: %(Timestamp)s, Details: %(Details)s")  
+    
+    
     def __init__(self, **args):
         dict.__init__(self)
         self.setdefault("Level", 0)
@@ -28,7 +30,18 @@ class Alert(dict):
 
 
     level = property(lambda x: x.get("Level"))
-
+    
+    
+    def toMsg(self):
+        """
+        Unlike e.g. __str__ which would return string representation
+        of the dict instance, this method returns string ready for 
+        posting.
+        
+        """
+        r = self.TEMPLATE % self
+        return r
+    
         
     
 class RegisterMsg(dict):

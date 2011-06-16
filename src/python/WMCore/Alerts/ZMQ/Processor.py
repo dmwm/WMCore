@@ -17,14 +17,15 @@ from WMCore.Alerts.ZMQ.Sinks.CouchSink import CouchSink
 from WMCore.Alerts.ZMQ.Sinks.EmailSink import EmailSink
 from WMCore.Alerts.ZMQ.Sinks.FileSink import FileSink
 from WMCore.Alerts.ZMQ.Sinks.ForwardSink import ForwardSink
-
+from WMCore.Alerts.ZMQ.Sinks.RSSFeedSink import RSSFeedSink
 
 
 sinksMap = {
-    "file"  : FileSink,
-    "couch" : CouchSink,
-    "email" : EmailSink,
-    "forward" : ForwardSink
+    "file": FileSink,
+    "couch": CouchSink,
+    "email": EmailSink,
+    "forward": ForwardSink,
+    "rss": RSSFeedSink
 }
 
 

@@ -30,7 +30,7 @@ class EmailSink(object):
         """
         msg = self.EMAIL_HEADER % (self.fromAddr, ", ".join(self.toAddr))
         for a in alerts:
-            msg += "\n%s\n" % str(a)
+            msg += "\n%s\n" % a.toMsg()
         self.smtp.sendmail(self.fromAddr, self.toAddr, msg)
         
         

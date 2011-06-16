@@ -14,14 +14,15 @@ class FileSink(object):
     
     
     def __init__(self, config):
-        self.outputfile = config.outputfile
+        self.config = config
         self.encoder = json.encoder.JSONEncoder()
         self.decoder = json.decoder.JSONDecoder()
 
 
     @contextmanager
-    def _handleFile(self, mode):
-        f = open(self.outputfile, mode)
+    def _handleFile(self, mode, fileName = None):
+        fn = fileName or self.config.outputfile
+        f = open(fn, mode)
         try:
             yield f
         finally:
@@ -31,7 +32,7 @@ class FileSink(object):
     def load(self):
         """
         Return a Python list of Alert instances loaded from the file this
-        instace of FileSink is configured with.
+        instance of FileSink is configured with.
         
         """
         r = []
@@ -48,7 +49,7 @@ class FileSink(object):
         
         Writes out new line separated json representation of Alert instances.
         The corresponding test tests that new line character is handled well
-        if occurrs in the payload of the Alert instance.
+        if occurs in the payload of the Alert instance.
         
         """
         with self._handleFile('a') as f:

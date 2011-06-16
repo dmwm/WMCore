@@ -266,6 +266,21 @@ class ProxyTest(unittest.TestCase):
            timeLeft = self.proxy.getTimeLeft( proxyPath )
            assert ( int(timeLeft) / 3600 ) > 120
 
+    @attr("integration")
+    def testVomsRenewal( self ):
+        """
+        """
+        if not os.path.exists( self.serverKey ):
+
+           self.proxy.create()
+           proxyPath = self.proxy.getProxyFilename( )
+
+           time.sleep( 70 )
+
+           self.proxy.vomsExtensionRenewal( proxyPath )
+           vomsTimeLeft = self.proxy.getVomsLife( proxyPath )
+           assert ( int(vomsTimeLeft) / 3600 ) == 191
+
 #    def testDestroyMyProxy( self ):
 #        """
 #        """

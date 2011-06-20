@@ -60,9 +60,13 @@ class Requests(dict):
 
         self['endpoint_components'] = urlparse.urlparse(self['host'])
 
-        cache_dir = (self.cachePath(dict.get('cachepath'), dict.get('service_name')))
-        self["cachepath"] = cache_dir
-        self["req_cache_path"] = os.path.join(cache_dir, '.cache')
+        # If cachepath = None disable caching
+        if 'cachepath' in dict and dict['cachepath'] is None:
+            self["req_cache_path"] = None
+        else:
+            cache_dir = (self.cachePath(dict.get('cachepath'), dict.get('service_name')))
+            self["cachepath"] = cache_dir
+            self["req_cache_path"] = os.path.join(cache_dir, '.cache')
         self.setdefault("timeout", 30)
         self.setdefault("logger", logging)
 

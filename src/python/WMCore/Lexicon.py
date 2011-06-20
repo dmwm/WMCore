@@ -21,7 +21,7 @@ lfnParts = {
     'secondary' : '([a-zA-Z0-9\-_]+)',
     'counter'   : '([0-9]+)',
     'root'      : '([a-zA-Z0-9\-_]+).root',
-    'hnName'    : '([a-zA-Z0-9]+)',
+    'hnName'    : '([a-zA-Z0-9\.]+)',
 }
 
 def sitetier(candidate):

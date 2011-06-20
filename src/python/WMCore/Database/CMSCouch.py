@@ -71,7 +71,7 @@ class CouchDBRequests(JSONRequests):
         """
         Initialise requests
         """
-        JSONRequests.__init__(self, url)
+        JSONRequests.__init__(self, url, {"cachepath" : None})
         self.accept_type = "application/json"
 
     def move(self, uri=None, data=None):

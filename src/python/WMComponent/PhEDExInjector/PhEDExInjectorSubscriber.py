@@ -10,7 +10,7 @@ import logging
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
-from WMCore.Services.PhEDEx import XMLDrop
+from WMCore.Services.DBS import XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 

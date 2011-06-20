@@ -112,7 +112,11 @@ class LexiconTest(unittest.TestCase):
 
         lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
         lfn(lfnA)
+        lfnA = '/store/temp/user/cinquilli.nocern/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        lfn(lfnA)
         lfnA = '/store/user/ewv/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        lfn(lfnA)
+        lfnA = '/store/user/cinquilli.nocern/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
         lfn(lfnA)
         lfnA = '/store/temp/group/Exotica/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
         lfn(lfnA)

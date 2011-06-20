@@ -95,7 +95,8 @@ def getJobSummaryByWorkflow(couchConfig):
         dictItem['couch_doc_base'] = "%s/%s" % (couchDocBase, item['key'][0])
         options = {'startkey':'["%s"]' % item['key'][0],
                    'endkey':'["%s",{}]' % item['key'][0],
-                   "reduce": "false"}
+                   "reduce": "false",
+                   "stale": "ok"}
     
         dictItem['couch_job_info_base'] = couchDBBase.getCouchDBHtmlBase(quotedJobsDBName,
                                                                          "JobDump", "replace_to_Jobs", 

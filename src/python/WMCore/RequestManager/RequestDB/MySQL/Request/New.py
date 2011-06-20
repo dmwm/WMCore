@@ -69,7 +69,7 @@ class New(DBFormatter):
           VALUES (:req_name, :req_type, :req_status, :priority, :requestor,
                   :workflow, :prep_id)"""
         binds = {"req_name": reqName, "req_type": reqType, "req_status": reqStatus,
-                 "priority": priority, "requestor": requestor, "workflow": workflow,
+                 "priority": int(priority), "requestor": requestor, "workflow": workflow,
                  "prep_id": prep_id}
         result = self.dbi.processData(self.sql, binds, conn = conn, transaction = trans)
 

@@ -24,6 +24,7 @@ class FindByTeam(DBFormatter):
 
         retrieve details of a request given the teamId
         """
+        binds = {}
         if reqStatus != None:
             self.sql = """
            SELECT req.request_name, req.request_id FROM reqmgr_request req
@@ -31,16 +32,18 @@ class FindByTeam(DBFormatter):
                ON req.request_status = stat.status_id
              JOIN reqmgr_assignment assign
                ON req.request_id = assign.request_id
-             WHERE stat.status_name = '%s' AND assign.team_id = %s
-             """ % (reqStatus, teamId)
+             WHERE stat.status_name = :req_status AND assign.team_id = :team_id
+             """ 
+            binds = {"req_status": reqStatus, "team_id": teamId}
         else:
             self.sql = """
            SELECT req.request_name, req.request_id FROM reqmgr_request req
              JOIN reqmgr_assignment assign
                ON req.request_id = assign.request_id
-             WHERE assign.team_id = %s
-            """ % teamId
-        result = self.dbi.processData(self.sql,
+             WHERE assign.team_id = :team_id
+            """ 
+            binds = {"team_id": teamId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return dict(self.format(result))
 

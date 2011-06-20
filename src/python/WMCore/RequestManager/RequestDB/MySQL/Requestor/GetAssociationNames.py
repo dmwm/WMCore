@@ -37,11 +37,9 @@ class GetAssociationNames(DBFormatter):
          from reqmgr_group
           JOIN reqmgr_group_association
              ON reqmgr_group_association.group_id = reqmgr_group.group_id
-               WHERE reqmgr_group_association.requestor_id=%s""" % (
-            requestorId, )
-
-
-        result = self.dbi.processData(self.sql,
+               WHERE reqmgr_group_association.requestor_id=:requestor_id"""
+        binds = {"requestor_id": requestorId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return dict(self.format(result))
 

@@ -28,9 +28,9 @@ class Association(DBFormatter):
         """
         self.sql = "INSERT INTO reqmgr_software_dependency ("
         self.sql += " request_id, software_id) VALUES "
-        self.sql += " ( %s, %s )" % (requestId, softwareId)
-
-        result = self.dbi.processData(self.sql,
+        self.sql += " (:request_id, :software_id)"
+        binds = {"request_id": requestId, "software_id": softwareId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
 
         return

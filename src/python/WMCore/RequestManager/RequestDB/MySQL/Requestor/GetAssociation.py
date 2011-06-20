@@ -30,9 +30,9 @@ class GetAssociation(DBFormatter):
 
         """
         self.sql = "SELECT group_id FROM reqmgr_group_association "
-        self.sql += " WHERE requestor_id = %s " % (
-            requestorId,)
-        result = self.dbi.processData(self.sql,
+        self.sql += " WHERE requestor_id = :requestor_id"
+        binds = {"requestor_id": requestorId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         values = [ x[0] for x in self.format(result)]
         return values

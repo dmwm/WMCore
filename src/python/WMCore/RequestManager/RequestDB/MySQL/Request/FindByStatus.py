@@ -29,12 +29,9 @@ class FindByStatus(DBFormatter):
          SELECT req.request_name, req.request_id from reqmgr_request req
            JOIN reqmgr_request_status stat
              ON req.request_status = stat.status_id
-           WHERE stat.status_name = '%s'
-         """ % reqStatus
-
-
-
-
-        result = self.dbi.processData(self.sql,
+           WHERE stat.status_name = :req_status
+         """ 
+        binds = {"req_status": reqStatus}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return dict(self.format(result))

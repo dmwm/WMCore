@@ -29,9 +29,11 @@ class New(DBFormatter):
         """
         self.sql = "INSERT INTO reqmgr_assignment "
         self.sql += "(request_id, team_id, priority_modifier ) "
-        self.sql += "VALUES (%s, %s, %s)" % ( requestId, teamId, priorityMod)
+        self.sql += "VALUES (:requestId, :teamId, :priorityMod)"
 
-        result = self.dbi.processData(self.sql,
+        binds = {"requestId":requestId, "teamId":teamId, "priorityMod":int(priorityMod)}
+
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
 

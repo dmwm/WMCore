@@ -28,8 +28,9 @@ class GetOutput(DBFormatter):
 
         self.sql = """
            select dataset_name from reqmgr_output_dataset
-             where request_id = %s""" % requestId
-        result = self.dbi.processData(self.sql,
+             where request_id = :request_id"""
+        binds = {"request_id": requestId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return self.format(result)
 

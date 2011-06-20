@@ -28,10 +28,9 @@ class GetByRequest(DBFormatter):
         SELECT assign.team_id, assign.priority_modifier, team.team_name
           FROM reqmgr_assignment assign
             JOIN reqmgr_teams team ON assign.team_id = team.team_id
-          WHERE assign.request_id = %s
-          """ % requestId
-
-        result = self.dbi.processData(self.sql,
+          WHERE assign.request_id = :requestId"""
+        binds = {"requestId":requestId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
 
         output = []

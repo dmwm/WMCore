@@ -27,11 +27,10 @@ class FindByName(DBFormatter):
         """
         self.sql = """
          SELECT req.request_id from reqmgr_request req
-           WHERE req.request_name = '%s'
-         """ % reqName
-
-
-        result = self.dbi.processData(self.sql,
+           WHERE req.request_name = :reqname
+         """ 
+        binds = {"reqname": reqName}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         output = self.format(result)
         if len(output) == 0:

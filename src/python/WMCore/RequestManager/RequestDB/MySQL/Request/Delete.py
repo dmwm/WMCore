@@ -25,11 +25,9 @@ class Delete(DBFormatter):
         delete a request given the request id
 
         """
-        self.sql = "delete from reqmgr_request where request_id = %s" % (
-            requestId)
-
-
-        result = self.dbi.processData(self.sql,
+        self.sql = "delete from reqmgr_request where request_id = :request_id"
+        binds = {"request_id": requestId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
 

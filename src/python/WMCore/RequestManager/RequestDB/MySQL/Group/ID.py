@@ -30,9 +30,9 @@ class ID(DBFormatter):
 
         """
         self.sql = "SELECT group_id FROM reqmgr_group "
-        self.sql += "WHERE group_name=\'%s\'" % groupname
-
-        result = self.dbi.processData(self.sql,
+        self.sql += "WHERE group_name=:groupname"
+        binds = {"groupname": groupname}
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = trans)
         output = self.format(result)
         if len(output) == 0:

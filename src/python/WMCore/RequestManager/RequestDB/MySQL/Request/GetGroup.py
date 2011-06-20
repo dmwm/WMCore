@@ -24,8 +24,7 @@ class GetGroup(DBFormatter):
         retrieve details of a request given the request id
 
         """
-        self.sql = "select * from reqmgr_group JOIN reqmgr_group_association ON reqmgr_group_association.group_id = reqmgr_group.group_id WHERE reqmgr_group_association.association_id = %s"
-
-
-        result = self.dbi.processData(self.sql,
+        self.sql = "select * from reqmgr_group JOIN reqmgr_group_association ON reqmgr_group_association.group_id = reqmgr_group.group_id WHERE reqmgr_group_association.association_id = :association_id"
+        binds = {"association_id": associationId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)

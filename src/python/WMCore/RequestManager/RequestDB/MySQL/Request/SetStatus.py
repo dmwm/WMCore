@@ -26,11 +26,10 @@ class SetStatus(DBFormatter):
 
         """
         self.sql = """
-        UPDATE reqmgr_request SET request_status=%s
-          WHERE request_id = %s
-        """ % (statusId, requestId)
-
-        result = self.dbi.processData(self.sql,
+        UPDATE reqmgr_request SET request_status=:status_id
+          WHERE request_id = :request_id"""
+        binds = {"status_id": statusId, "request_id": requestId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
 

@@ -29,9 +29,9 @@ class DeleteAssociation(DBFormatter):
 
         """
         self.sql = "DELETE FROM reqmgr_group_association WHERE "
-        self.sql += " requestor_id = %s AND group_id = %s" % (
-            requestorId, groupId)
-        result = self.dbi.processData(self.sql,
+        self.sql += " requestor_id = :requestor_id AND group_id = :group_id"
+        binds = {"requestor_id":requestorId, "group_id": groupId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
 

@@ -19,7 +19,7 @@ class SetPriority(DBFormatter):
     Modify the priority of a group 
 
     """
-    def execute(self, group, priority, conn = None, trans = False):
+    def execute(self, groupName, priority, conn = None, trans = False):
         """
         _execute_
 
@@ -31,9 +31,10 @@ class SetPriority(DBFormatter):
 
         """
 
-        self.sql = "UPDATE reqmgr_group SET group_base_priority=%s" % priority
-        self.sql += " WHERE group_name=\'%s\'" % group
-        result = self.dbi.processData(self.sql,
+        self.sql = "UPDATE reqmgr_group SET group_base_priority=:priority"
+        self.sql += " WHERE group_name=:group_name"
+        binds = {"priority": int(priority), "group_name": groupName}
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = trans)
         return self.format(result)
 

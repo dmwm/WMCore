@@ -26,9 +26,9 @@ class New(DBFormatter):
 
         """
         self.sql = "INSERT INTO reqmgr_software (software_name) "
-        self.sql += "VALUES (\'%s\')" % softwareName
-
-        result = self.dbi.processData(self.sql,
+        self.sql += "VALUES (:software_name)"
+        binds = {"software_name": softwareName}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
 

@@ -180,7 +180,7 @@ class ReqMgrRESTModel(RESTModel):
         """ If a request name is specified, return the details of the request. 
         Otherwise, return an overview of all requests """
         if requestName == None:
-            return GetRequest.getAllRequestDetails()
+            return GetRequest.getRequests()
         else:
             return GetRequest.getRequestDetails(requestName)
 

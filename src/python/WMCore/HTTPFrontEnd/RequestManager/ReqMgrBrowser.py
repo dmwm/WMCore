@@ -90,7 +90,7 @@ class ReqMgrBrowser(WebAPI):
     def index(self):
         """ Main web page """
         print cherrypy.request.user
-        requests = GetRequest.getAllRequestDetails()
+        requests = GetRequest.getRequests()
         tableBody = self.drawRequests(requests)
         return self.templatepage("ReqMgrBrowser", yuiroot=self.yuiroot, 
                                  fields=self.fields, tableBody=tableBody)
@@ -100,7 +100,7 @@ class ReqMgrBrowser(WebAPI):
     def search(self, value, field):
         """ Search for a regular expression in a certain field of all requests """
         filteredRequests = []
-        requests = GetRequest.getAllRequestDetails()
+        requests = GetRequest.getRequests()
         for request in requests:
             if request[field].find(value) != -1:
                 filteredRequests.append(request)

@@ -27,13 +27,9 @@ class New(DBFormatter):
 
         self.sql = "INSERT INTO reqmgr_requestor (requestor_hn_name, "
         self.sql += "contact_email, requestor_dn_name,"
-        self.sql += "requestor_base_priority ) VALUES ("
-
-        self.sql += "\'%s\', " % username
-        self.sql += "\'%s\', " % email
-        self.sql += "\'%s\', " % dnName
-        self.sql += " %s)" % priority
-        result = self.dbi.processData(self.sql,
+        self.sql += "requestor_base_priority ) VALUES (:username, :email, :dnname, :priority)"
+        binds = {"username":username, "email": email, "dnname": dnName, "priority": int(priority)}
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = trans)
         return self.format(result)
 

@@ -32,11 +32,10 @@ class FindByProdMgr(DBFormatter):
 
             JOIN reqmgr_assigned_prodmgr assoc
                ON req.request_id = assoc.request_id
-            WHERE assoc.prodmgr_id = '%s'
-        """ % prodMgr
-
-
-        result = self.dbi.processData(self.sql,
+            WHERE assoc.prodmgr_id = :prodmgr
+        """ 
+        binds = {"prodmgr": prodMgr}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         output = self.format(result)
         requests = []

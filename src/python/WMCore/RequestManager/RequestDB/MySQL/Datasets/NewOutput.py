@@ -28,10 +28,9 @@ class NewOutput(DBFormatter):
         """
         self.sql = "INSERT INTO reqmgr_output_dataset ("
         self.sql += "request_id, dataset_name) VALUES "
-        self.sql += "(%s, \'%s\') " % (
-            requestId, datasetName)
-
-        result = self.dbi.processData(self.sql,
+        self.sql += "(:request_id, :dataset_name) "
+        binds = {"request_id": requestId, "dataset_name": datasetName}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
 

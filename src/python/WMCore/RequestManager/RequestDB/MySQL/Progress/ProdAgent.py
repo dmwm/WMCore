@@ -23,10 +23,9 @@ class ProdAgent(DBFormatter):
 
         """
         self.sql = "INSERT INTO reqmgr_assigned_prodagent "
-        self.sql += "(request_id, prodagent_id) VALUES (%s, \'%s\')" % (
-            requestId, prodagentName)
-
-        result = self.dbi.processData(self.sql,
+        self.sql += "(request_id, prodagent_id) VALUES (:request_id, :prodagent_name)" 
+        binds = {"request_id": requestId, "prodagent_name": prodagentName}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
 
 

@@ -28,8 +28,8 @@ class Delete(DBFormatter):
         Delete the user by username
 
         """
-        self.sql = "delete from reqmgr_requestor where requestor_hn_name="
-        self.sql += "\'%s\'" % username
-        result = self.dbi.processData(self.sql,
+        self.sql = "delete from reqmgr_requestor where requestor_hn_name=:username"
+        binds = {"username": username}
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = trans)
         return

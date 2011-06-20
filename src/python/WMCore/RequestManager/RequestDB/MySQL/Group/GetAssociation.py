@@ -22,7 +22,7 @@ class GetAssociation(DBFormatter):
 
     """
 
-    def execute(self, requestorId, conn = None, trans = False):
+    def execute(self, groupId, conn = None, trans = False):
         """
         _execute_
 
@@ -30,9 +30,9 @@ class GetAssociation(DBFormatter):
 
         """
         self.sql = "SELECT requestor_id FROM reqmgr_group_association "
-        self.sql += " WHERE group_id = %s " % (
-            requestorId,)
-        result = self.dbi.processData(self.sql,
+        self.sql += " WHERE group_id = :group_id "
+        binds = {"group_id": groupId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         values = [ x[0] for x in self.format(result)]
         return values

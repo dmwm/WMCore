@@ -15,8 +15,18 @@ import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListReq
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 from WMCore.RequestManager.DataStructs.Request import Request
 
+def reverseLookups():
+    """ returns reverse lookups for Types and Status """
+    factory = DBConnect.getConnection()
+    reqTypes = factory(classname = 'ReqTypes.Map').execute()
+    reqStatus = factory(classname = 'ReqStatus.Map').execute()
+    reverseTypes = {}
+    [ reverseTypes.__setitem__(v, k) for k, v in reqTypes.iteritems() ]
+    reverseStatus = {}
+    [ reverseStatus.__setitem__(v, k) for k, v in reqStatus.iteritems() ]
+    return reverseTypes, reverseStatus
 
-def getRequest(requestId):
+def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     """
     _getRequest_
 
@@ -28,65 +38,54 @@ def getRequest(requestId):
     """
     factory = DBConnect.getConnection()
     reqGet = factory(classname = "Request.Get")
-    reqTypes = factory(classname = 'ReqTypes.Map').execute()
-    reqStatus = factory(classname = 'ReqStatus.Map').execute()
-
     reqData = reqGet.execute(requestId)
+    requestName = reqData['request_name']
 
-    reverseTypes = {}
-    [ reverseTypes.__setitem__(v, k) for k, v in reqTypes.iteritems() ]
-    reverseStatus = {}
-    [ reverseStatus.__setitem__(v, k) for k, v in reqStatus.iteritems() ]
+    if not reverseTypes or not reverseStatus:
+        reverseTypes, reverseStatus = reverseLookups()
 
     getGroup = factory(classname = "Group.GetGroupFromAssoc")
     groupData = getGroup.execute(reqData['requestor_group_id'])
 
     getUser = factory(classname = "Requestor.GetUserFromAssoc")
     userData = getUser.execute(reqData['requestor_group_id'])
-    requestInstance = Request()
-    requestInstance["ReqMgrRequestID"] = reqData['request_id']
-    requestInstance["RequestName"] = reqData['request_name']
-    requestInstance["RequestType"] = reverseTypes[reqData['request_type']]
-    requestInstance["RequestStatus"] = reverseStatus[reqData['request_status']]
-    requestInstance["RequestPriority"] = reqData['request_priority']
-    requestInstance["ReqMgrRequestBasePriority"] = reqData['request_priority']
-    requestInstance["RequestWorkflow"] = reqData['workflow']
-    requestInstance["RequestSizeEvents"] = reqData['request_size_events']
-    requestInstance["RequestSizeFiles"] = reqData['request_size_files']
+    request = Request()
+    request["ReqMgrRequestID"] = reqData['request_id']
+    request["RequestName"] = requestName
+    request["RequestType"] = reverseTypes[reqData['request_type']]
+    request["RequestStatus"] = reverseStatus[reqData['request_status']]
+    request["RequestPriority"] = reqData['request_priority']
+    request["ReqMgrRequestBasePriority"] = reqData['request_priority']
+    request["RequestWorkflow"] = reqData['workflow']
+    request["RequestSizeEvents"] = reqData['request_size_events']
+    request["RequestSizeFiles"] = reqData['request_size_files']
 
-    requestInstance["Group"] = groupData['group_name']
-    requestInstance["ReqMgrGroupID"] = groupData['group_id']
-    requestInstance["ReqMgrGroupBasePriority"] = \
+    request["Group"] = groupData['group_name']
+    request["ReqMgrGroupID"] = groupData['group_id']
+    request["ReqMgrGroupBasePriority"] = \
                         groupData['group_base_priority']
-    requestInstance["Requestor"] = userData['requestor_hn_name']
-    requestInstance["ReqMgrRequestorID"] = userData['requestor_id']
-    requestInstance["ReqMgrRequestorBasePriority"] = \
+    request["Requestor"] = userData['requestor_hn_name']
+    request["ReqMgrRequestorID"] = userData['requestor_id']
+    request["ReqMgrRequestorBasePriority"] = \
                                 userData['requestor_base_priority']
-    requestInstance["RequestPriority"] = \
-      requestInstance['RequestPriority'] + groupData['group_base_priority']
-    requestInstance["RequestPriority"] = \
-      requestInstance['RequestPriority'] + userData['requestor_base_priority']
+    request["RequestPriority"] = \
+      request['RequestPriority'] + groupData['group_base_priority']
+    request["RequestPriority"] = \
+      request['RequestPriority'] + userData['requestor_base_priority']
 
-
-    # TODO: Update priority for group and user values
-
-
-    # get datasets and sw
+    updates = ChangeState.getProgress(requestName)
+    request['percent_complete'], request['percent_success'] = percentages(updates)
     sqDeps = factory(classname = "Software.GetByAssoc")
     swVers = sqDeps.execute(requestId)
-    requestInstance['SoftwareVersions'] = swVers.values()
-
+    request['SoftwareVersions'] = swVers.values()
     getDatasetsIn = factory(classname = "Datasets.GetInput")
     getDatasetsOut = factory(classname = "Datasets.GetOutput")
-
     datasetsIn = getDatasetsIn.execute(requestId)
     datasetsOut = getDatasetsOut.execute(requestId)
-
-    requestInstance['InputDatasetTypes'] = datasetsIn
-    requestInstance['InputDatasets'] = datasetsIn.keys()
-    requestInstance['OutputDatasets'] = datasetsOut
-
-    return requestInstance
+    request['InputDatasetTypes'] = datasetsIn
+    request['InputDatasets'] = datasetsIn.keys()
+    request['OutputDatasets'] = datasetsOut
+    return request
 
 def requestID(requestName):
     """ Finds the ReqMgr database ID for a request """
@@ -99,6 +98,37 @@ def requestID(requestName):
 
 def getRequestByName(requestName):
     return getRequest(requestID(requestName))
+
+def percentages(updates):
+    """ returns percent complete and percent success, from a list of updates """
+    percent_complete = 0
+    percent_success = 0
+    for update in updates:
+        if update.has_key('percent_complete'):
+            percent_complete = update['percent_complete']
+        if update.has_key('percent_success'):
+            percent_success = update['percent_success']
+    return percent_complete, percent_success
+
+def getRequestDetails(requestName):
+    """ Return a dict with the intimate details of the request """
+    requestId = requestID(requestName)
+    request = getRequest(requestId)
+    request['Assignments'] = getAssignmentsByName(requestName)
+    request['RequestMessages'] = ChangeState.getMessages(requestName)
+    request['RequestUpdates'] = ChangeState.getProgress(requestName)
+    return request
+
+def getRequests():
+    """ This only fills the details needed to make succint browser tables,
+        so some fields, such as InputDatasets or SoftwareVersions,
+        need to be filled through getRequestDetails """
+    requests = ListRequests.listRequests()
+    reverseTypes, reverseStatus = reverseLookups()
+    result = []
+    for request in requests:
+        result.append(getRequest(request['RequestID'], reverseTypes, reverseStatus))
+    return result
 
 def getRequestByPrepID(prepID):
     factory = DBConnect.getConnection()

@@ -27,10 +27,9 @@ class ID(DBFormatter):
 
         """
         self.sql = """
-        select team_id from reqmgr_teams where team_name = '%s'
-        """ % teamName
-
-        result = self.dbi.processData(self.sql,
+        select team_id from reqmgr_teams where team_name = :team_name"""
+        binds = {"team_name": teamName}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         output = self.format(result)
         if len(output) == 0:

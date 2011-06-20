@@ -27,11 +27,10 @@ class GetGroupFromAssoc(DBFormatter):
         self.sql = """select * from reqmgr_group
        JOIN reqmgr_group_association
          ON reqmgr_group_association.group_id = reqmgr_group.group_id
-           WHERE reqmgr_group_association.association_id = %s
-           """ % associationId
+           WHERE reqmgr_group_association.association_id = :association_id"""
 
-
-        result = self.dbi.processData(self.sql,
+        binds = {"association_id": associationId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         if len(result) == 0:
             return None

@@ -27,8 +27,9 @@ class Delete(DBFormatter):
         Delete the association between a request and a prod team
 
         """
-        self.sql = "DELETE FROM reqmgr_assignment WHERE request_id = " % requestId
-        result = self.dbi.processData(self.sql,
+        binds = {"request_id" : requestId}
+        self.sql = "DELETE FROM reqmgr_assignment WHERE request_id = :request_id" 
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
 

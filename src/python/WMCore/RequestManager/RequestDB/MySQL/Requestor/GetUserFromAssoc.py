@@ -27,11 +27,9 @@ class GetUserFromAssoc(DBFormatter):
         self.sql = """select * from reqmgr_requestor
        JOIN reqmgr_group_association
          ON reqmgr_group_association.requestor_id = reqmgr_requestor.requestor_id
-           WHERE reqmgr_group_association.association_id = %s
-           """ % associationId
-
-
-        result = self.dbi.processData(self.sql,
+           WHERE reqmgr_group_association.association_id = :association_id"""
+        binds = {"association_id": associationId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         if len(result) == 0:
             return None

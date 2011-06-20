@@ -29,9 +29,9 @@ class NewAssociation(DBFormatter):
 
         """
         self.sql = "INSERT INTO reqmgr_group_association( "
-        self.sql += "requestor_id, group_id) VALUES ( %s, %s)" % (
-            requestorId, groupId)
-        result = self.dbi.processData(self.sql,
+        self.sql += "requestor_id, group_id) VALUES (:requestor_id, :group_id)"
+        binds ={"requestor_id": requestorId, "group_id": groupId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
 

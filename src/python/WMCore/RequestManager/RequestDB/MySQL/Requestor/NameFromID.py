@@ -31,9 +31,9 @@ class NameFromID(DBFormatter):
 
         """
         self.sql = "SELECT requestor_hn_name FROM reqmgr_requestor "
-        self.sql += "WHERE requestor_id=\'%s\'" % id
-
-        result = self.dbi.processData(self.sql,
+        self.sql += "WHERE requestor_id=:id" 
+        binds = {"id": id}
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = trans)
         output = self.format(result)
         if len(output) == 0:

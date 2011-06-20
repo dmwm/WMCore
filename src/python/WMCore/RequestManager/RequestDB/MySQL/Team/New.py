@@ -23,11 +23,8 @@ class New(DBFormatter):
         Insert a new team with the name provided
 
         """
-        self.sql = "INSERT INTO reqmgr_teams (team_name) VALUES ("
-        self.sql += "\'%s\')" % teamname
-
-
-
-        result = self.dbi.processData(self.sql,
+        self.sql = "INSERT INTO reqmgr_teams (team_name) VALUES (:team_name)"
+        binds = {"team_name": teamname}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return self.format(result)

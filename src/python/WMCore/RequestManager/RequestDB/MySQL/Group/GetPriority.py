@@ -29,8 +29,9 @@ class GetPriority(DBFormatter):
 
         """
 
-        self.sql = "SELECT group_base_priority FROM reqmgr_group WHERE group_name=\'%s\'" % group
-        result = self.dbi.processData(self.sql,
+        self.sql = "SELECT group_base_priority FROM reqmgr_group WHERE group_name=:group_name" 
+        binds = {"group_name": group}
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = trans)
         return self.formatOne(result)[0]
 

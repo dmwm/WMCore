@@ -28,8 +28,9 @@ class GetInput(DBFormatter):
 
         self.sql = """
            select dataset_name, dataset_type from reqmgr_input_dataset
-             where request_id = %s""" % requestId
-        result = self.dbi.processData(self.sql,
+             where request_id = :request_id"""
+        binds = {"request_id": requestId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return dict(self.format(result))
 

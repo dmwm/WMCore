@@ -29,9 +29,9 @@ class NewAssoc(DBFormatter):
         """
         self.sql = "INSERT INTO reqmgr_campaign_assoc "
         self.sql += "(request_id, campaign_id ) "
-        self.sql += "VALUES (%s, %s)" % ( requestId, campaignId)
-
-        result = self.dbi.processData(self.sql,
+        self.sql += "VALUES (:request_id, :campaign_id)"
+        binds = {"request_id":requestId, "campaign_id":campaignId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
 

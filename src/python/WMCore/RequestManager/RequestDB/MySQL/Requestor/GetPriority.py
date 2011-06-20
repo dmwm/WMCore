@@ -27,9 +27,9 @@ class GetPriority(DBFormatter):
         """
 
         self.sql = "SELECT requestor_base_priority FROM reqmgr_requestor "
-        self.sql += "WHERE requestor_hn_name=\'%s\'" % username
-
-        result = self.dbi.processData(self.sql,
+        self.sql += "WHERE requestor_hn_name=:username" 
+        binds = {"username": username}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return self.formatOne(result)[0]
 

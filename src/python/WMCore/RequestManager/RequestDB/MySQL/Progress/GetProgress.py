@@ -18,7 +18,8 @@ class GetProgress(DBFormatter):
     def execute(self, requestId, conn = None, trans = False):
 
         self.sql = "SELECT * FROM reqmgr_progress_update "
-        self.sql += "WHERE request_id=%s"%requestId
-        result = self.dbi.processData(self.sql,
+        self.sql += "WHERE request_id=:request_id"
+        binds = {"request_id": requestId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return self.formatDict(result)

@@ -26,9 +26,9 @@ class Message(DBFormatter):
         """
         self.sql = "INSERT INTO reqmgr_message (request_id, update_time,"
         self.sql += "message) VALUES ("
-        self.sql += "%s, CURRENT_TIMESTAMP, \'%s\') " % (requestId, message)
-
-        result = self.dbi.processData(self.sql,
+        self.sql += ":request_id, CURRENT_TIMESTAMP, :message)"
+        binds = {"request_id": requestId, "message": message}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return self.format(result)
 

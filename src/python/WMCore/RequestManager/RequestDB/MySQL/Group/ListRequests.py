@@ -31,10 +31,9 @@ class ListRequests(DBFormatter):
         select request_name, request_id from reqmgr_request
            JOIN reqmgr_group_association ON
    reqmgr_request.requestor_group_id = reqmgr_group_association.association_id
-           where reqmgr_group_association.group_id = %s
-           """ % groupId
-
-        result = self.dbi.processData(self.sql,
+           where reqmgr_group_association.group_id = :group_id"""
+        binds = {"group_id": groupId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return dict(self.format(result))
 

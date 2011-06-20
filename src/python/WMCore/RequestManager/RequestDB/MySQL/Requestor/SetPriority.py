@@ -27,10 +27,10 @@ class SetPriority(DBFormatter):
         - *priority* : value to change priority to
         """
 
-        self.sql = "UPDATE reqmgr_requestor SET requestor_base_priority=%s" % priority
-        self.sql += " WHERE requestor_hn_name=\'%s\'" % username
-
-        result = self.dbi.processData(self.sql,
+        self.sql = "UPDATE reqmgr_requestor SET requestor_base_priority=:priority"
+        self.sql += " WHERE requestor_hn_name=:username"
+        binds = {"priority": int(priority), "username": username}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return self.format(result)
 

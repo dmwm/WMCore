@@ -26,11 +26,10 @@ class Priority(DBFormatter):
 
         """
         self.sql = """
-        UPDATE reqmgr_request SET request_priority = %s
-          WHERE request_id = %s
-        """ % (priority, requestId)
-
-        result = self.dbi.processData(self.sql,
+        UPDATE reqmgr_request SET request_priority = :priority
+          WHERE request_id = :request_id"""
+        binds = {"priority": int(priority), "request_id": requestId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
 

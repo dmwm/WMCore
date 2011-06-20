@@ -24,11 +24,9 @@ class Get(DBFormatter):
         retrieve details of a request given the request id
 
         """
-        self.sql = "select * from reqmgr_request where request_id = %s" % (
-            requestId)
-
-
-        result = self.dbi.processData(self.sql,
+        self.sql = "select * from reqmgr_request where request_id = :request_id"
+        binds = {"request_id": requestId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         if len(result) == 0:
             return None

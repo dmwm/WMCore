@@ -25,9 +25,9 @@ class Delete(DBFormatter):
 
         """
         self.sql = "delete from reqmgr_software where "
-        self.sql += "software_name=\'%s\'" % softwareName
-
-        result = self.dbi.processData(self.sql,
+        self.sql += "software_name=:software_name"
+        binds = {"software_name": softwareName}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
 

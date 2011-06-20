@@ -27,10 +27,10 @@ class ID(DBFormatter):
 
         """
         self.sql = """
-        select campaign_id from reqmgr_campaign where campaign_name = '%s'
-        """ % campaignName
-
-        result = self.dbi.processData(self.sql,
+        select campaign_id from reqmgr_campaign where campaign_name = :campaign_name
+        """ 
+        binds = {"campaign_name":campaignName}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         output = self.format(result)
         if len(output) == 0:

@@ -19,9 +19,9 @@ class New(DBFormatter):
 
         self.sql = "INSERT INTO reqmgr_group ( "
         self.sql += "group_name,group_base_priority  )"
-        self.sql += " VALUES (\'%s\', %s)" % (groupName, groupPriority)
-
-        result = self.dbi.processData(self.sql,
+        self.sql += " VALUES (:group_name, :group_priority)"
+        binds = {"group_name": groupName, "group_priority": int(groupPriority)}
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return self.format(result)
 

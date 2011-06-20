@@ -28,10 +28,9 @@ class GetByAssoc(DBFormatter):
         select reqmgr_software.software_id,reqmgr_software.software_name
          from reqmgr_software JOIN reqmgr_software_dependency
      ON reqmgr_software.software_id = reqmgr_software_dependency.software_id
-          where reqmgr_software_dependency.request_id = %s """ % (
-            requestId,)
-
-        result = self.dbi.processData(self.sql,
+          where reqmgr_software_dependency.request_id = :request_id"""
+        binds = {"request_id": requestId}
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return dict(self.format(result))
 

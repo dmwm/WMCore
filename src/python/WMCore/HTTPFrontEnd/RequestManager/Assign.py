@@ -105,44 +105,50 @@ class Assign(WebAPI):
     def index(self, all=0):
         """ Main page """
         # returns dict of  name:id
-        requests = requestsWithStatus('assignment-approved')
+        allRequests = requestsWithStatus('assignment-approved')
         teams = ProdManagement.listTeams()
 
         procVer = ""
         acqEra = ""
+        badRequestNames = []
+        goodRequests = []
+        reqMergedBase = None
+        reqUnmergedBase = None
+        for request in allRequests:
+            # make sure there's a workload attached
+            try:
+                helper = loadWorkload(request)
+            except:
+                badRequestNames.append(requestName)
+            else:
+                # get defaults from the first good one
+                if not goodRequests:
+                    if helper.getAcquisitionEra() != None:
+                        acqEra = helper.getAcquisitionEra()
+                    if helper.getProcessingVersion() != None:
+                        procVer = helper.getProcessingVersion()
+                    (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
+                goodRequests.append(request)
         mergedBases = []
         unmergedBases = []
-        if len(requests) > 0:
-            request = GetRequest.getRequestByName(requests[0]["RequestName"])
-            helper = loadWorkload(request)
-            if helper.getAcquisitionEra() != None:
-                acqEra = helper.getAcquisitionEra()
-            if helper.getProcessingVersion() != None:
-                procVer = helper.getProcessingVersion()
+        for mergedBase in self.allMergedLFNBases:
+            if mergedBase == reqMergedBase:
+                mergedBases.append("<option SELECTED>%s</option>" % mergedBase)
+            else:
+                mergedBases.append("<option>%s</option>" % mergedBase)
 
-            (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
-            for mergedBase in self.allMergedLFNBases:
-                if mergedBase == reqMergedBase:
-                    mergedBases.append("<option SELECTED>%s</option>" % mergedBase)
-                else:
-                    mergedBases.append("<option>%s</option>" % mergedBase)
-
-            for unmergedBase in self.allUnmergedLFNBases:
-                if unmergedBase == reqUnmergedBase:
-                    unmergedBases.append("<option SELECTED>%s</option>" % unmergedBase)
-                else:
-                    unmergedBases.append("<option>%s</option>" % unmergedBase)
-        else:
-            for mergedBase in self.allMergedLFNBases:
-                mergedBases.append("<option>%s</option>" % mergedBase)        
-            for unmergedBase in self.allUnmergedLFNBases:
-                unmergedBases.append("<option>%s</option>" % unmergedBase)                
-        
-        return self.templatepage("Assign", all=all, requests=requests, teams=teams,
+        for unmergedBase in self.allUnmergedLFNBases:
+            if unmergedBase == reqUnmergedBase:
+                unmergedBases.append("<option SELECTED>%s</option>" % unmergedBase)
+            else:
+                unmergedBases.append("<option>%s</option>" % unmergedBase)
+ 
+        return self.templatepage("Assign", all=all, requests=goodRequests, teams=teams,
                                  assignments=[], sites=self.sites,
                                  mergedLFNBases = mergedBases,
                                  unmergedLFNBases = unmergedBases,
-                                 acqEra = acqEra, procVer = procVer)
+                                 acqEra = acqEra, procVer = procVer, 
+                                 badRequests=badRequestNames)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2(role=security_roles)

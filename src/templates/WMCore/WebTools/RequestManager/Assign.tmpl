@@ -128,6 +128,13 @@ Actions:<select name="action">
 </table>
 </div>
 
+<div id="badrequests">
+#if $badRequests
+  <b>Could not find the workload for the following requests</b>:<br/>
+  #for $request in $badReqeusts
+     $request<br/>
+  #end for
+#end if
 </form>
 </body>
 </html>

@@ -27,12 +27,11 @@ class Size(DBFormatter):
 
 
         self.sql = "UPDATE reqmgr_request SET request_size_events=:event_size"
+        binds = {"event_size": int(eventSize), "request_id": requestId}
         if fileSize != None:
             self.sql += ",request_size_files=:file_size"
-
+            binds["file_size"] = int(fileSize)
         self.sql += " WHERE request_id=:request_id"
-        binds = {"event_size": int(eventSize), "file_size": int(fileSize), 
-                 "request_id": requestId}
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return self.format(result)

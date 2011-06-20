@@ -1,8 +1,12 @@
 """ Functions external to the web interface classes"""
 import urllib
+import time
 import logging
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import cherrypy
+from os import path
+from cherrypy import HTTPError
+from cherrypy.lib.static import serve_file
 import WMCore.Lexicon
 import cgi
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
@@ -188,27 +192,102 @@ def unidecode(data):
     else:
         return data
 
-def makeRequest(schema, couchUrl, couchDB):
-    logging.info(schema)
-    maker = retrieveRequestMaker(schema['RequestType'])
-    specificSchema = maker.schemaClass()
-    specificSchema.update(schema)
-    specificSchema.validate()
+def validate(schema):
+    for field in ['RequestName', 'Requestor', 'RequestString',
+        'Campaign', 'Scenario', 'ProdConfigCacheID', 'inputMode',
+        'CouchDBName', 'Group']:
+        value = schema.get(field, '')
+        if value != '':
+            WMCore.Lexicon.identifier(value)
+    for field in ['CouchURL']:
+        value = schema.get(field, '')
+        if value != '':
+            WMCore.Lexicon.couchurl(schema[field])
+            schema[field] = removePasswordFromUrl(value)
+    for field in ['InputDatasets', 'OutputDatasets']:
+        for dataset in schema.get(field, []):
+            WMCore.Lexicon.dataset(dataset)
+    for field in ['InputDataset', 'OutputDataset']:
+        value = schema.get(field, '')
+        if value != '':
+            WMCore.Lexicon.dataset(schema[field])
+    for field in ['SoftwareVersion']:
+        value = schema.get(field, '')
+        if value != '':
+            WMCore.Lexicon.cmsswversion(schema[field])
+        
+def makeRequest(kwargs, couchUrl, couchDB):
+    logging.info(kwargs)
+    """ Handles the submission of requests """
+    # make sure no extra spaces snuck in
+    for k, v in kwargs.iteritems():
+        if isinstance(v, str):
+            kwargs[k] = v.strip()
+    maker = retrieveRequestMaker(kwargs["RequestType"])
+    schema = maker.newSchema()
+    schema.update(kwargs)
+    currentTime = time.strftime('%y%m%d_%H%M%S',
+                             time.localtime(time.time()))
+    requestString = schema.get('RequestString', "")
+    if requestString != "":
+        schema['RequestName'] = "%s_%s_%s" % (
+        schema['Requestor'], requestString, currentTime)
+    else:
+        schema['RequestName'] = "%s_%s" % (schema['Requestor'], currentTime)
+    campaign = kwargs.get("Campaign", "")
+    if campaign != "":
+        schema["Campaign"] = campaign
+    if 'Scenario' in kwargs and 'ProdConfigCacheID' in kwargs:
+        # Use input mode to delete the unused one
+        inputMode = kwargs['inputMode']
+        inputValues = {'scenario':'Scenario',
+                       'couchDB':'ProdConfigCacheID'}
+        for n, v in inputValues.iteritems():
+            if n != inputMode:
+                schema[v] = ""
 
-    request = maker(specificSchema)
+    if kwargs.has_key("InputDataset"):
+        schema["InputDatasets"] = [kwargs["InputDataset"]]
+    skimNumber = 1
+    # a list of dictionaries
+    schema["SkimConfigs"] = []
+    while kwargs.has_key("SkimName%s" % skimNumber):
+        d = {}
+        d["SkimName"] = kwargs["SkimName%s" % skimNumber]
+        d["SkimInput"] = kwargs["SkimInput%s" % skimNumber]
+        d["Scenario"] = kwargs["Scenario"]
+
+        if kwargs.get("Skim%sConfigCacheID" % skimNumber, None) != None:
+            d["ConfigCacheID"] = kwargs["Skim%sConfigCacheID" % skimNumber]
+
+        schema["SkimConfigs"].append(d)
+        skimNumber += 1
+
+    if kwargs.has_key("DataPileup") or kwargs.has_key("MCPileup"):
+        schema["PileupConfig"] = {}
+        if kwargs.has_key("DataPileup") and kwargs["DataPileup"] != "":
+            schema["PileupConfig"]["data"] = [kwargs["DataPileup"]]
+        if kwargs.has_key("MCPileup") and kwargs["MCPileup"] != "":
+            schema["PileupConfig"]["mc"] = [kwargs["MCPileup"]]
+
+    for runlist in ["RunWhitelist", "RunBlacklist"]:
+        if runlist in kwargs:
+            schema[runlist] = parseRunList(kwargs[runlist])
+    for blocklist in ["BlockWhitelist", "BlockBlacklist"]:
+        if blocklist in kwargs:
+            schema[blocklist] = parseBlockList(kwargs[blocklist])
+    validate(schema)
+    request = maker(schema)
     helper = WMWorkloadHelper(request['WorkflowSpec'])
     # can't save Request object directly, because it makes it hard to retrieve the _rev
     metadata = {}
     metadata.update(request)
     # don't want to JSONify the whole workflow
     del metadata['WorkflowSpec']
-    workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
+    workloadUrl = helper.saveCouch(removePasswordFromUrl(couchUrl), couchDB, metadata=metadata)
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     CheckIn.checkIn(request)
-
-from os import path
-from cherrypy import HTTPError
-from cherrypy.lib.static import serve_file
+    return request
 
 def serveFile(contentType, prefix, *args):
     """Return a workflow from the cache"""

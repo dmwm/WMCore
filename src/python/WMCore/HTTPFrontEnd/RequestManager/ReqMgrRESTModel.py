@@ -29,6 +29,7 @@ class ReqMgrRESTModel(RESTModel):
         RESTModel.__init__(self, config)
         self.couchUrl = config.couchUrl
         self.workloadDBName = config.workloadDBName
+        self.configDBName = config.configDBName
         self.security_params = {'roles':config.security_roles}
         self._addMethod('GET', 'request', self.getRequest, 
                        args = ['requestName'],
@@ -298,22 +299,25 @@ class ReqMgrRESTModel(RESTModel):
         assert index['url'].startswith('http')
         return index
 
-    def putRequest(self, requestName, status=None, priority=None):
+    def putRequest(self, requestName=None, status=None, priority=None):
         """ Checks the request n the body with one arg, and changes the status with kwargs """
-        result = ""
-        request = self.findRequest(requestName)
+        request = None
+        if requestName:
+            request = self.findRequest(requestName)
         if request == None:
             """ Creates a new request, with a JSON-encoded schema that is sent in the
             body of the request """
             body = cherrypy.request.body.read()
-            requestSchema = Utilities.unidecode(JsonWrapper.loads(body))
-            request = Utilities.makeRequest(requestSchema, self.couchUrl, self.workloadDBName)
+            schema = Utilities.unidecode(JsonWrapper.loads(body))
+            schema.setdefault('CouchURL', Utilities.removePasswordFromUrl(self.couchUrl))
+            schema.setdefault('CouchDBName', self.configDBName)
+            request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName)
         # see if status & priority need to be upgraded
         if status != None:
             Utilities.changeStatus(requestName, status)
         if priority != None:
             Utilities.changePriority(requestName, priority) 
-        return result
+        return request
 
     def putAssignment(self, team, requestName):
         """ Assigns this request to this team """

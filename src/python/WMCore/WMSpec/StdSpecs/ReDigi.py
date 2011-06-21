@@ -233,11 +233,14 @@ class ReDigiWorkloadFactory(StdBase):
         if self.pileupConfig:
             self.setupPileup(stepOneTask, self.pileupConfig)
 
-        if self.keepStepOneOutput == True and self.keepStepTwoOutput == True:
+        if (self.keepStepOneOutput == True or self.keepStepOneOutput == "True") \
+               and (self.keepStepTwoOutput == True or self.keepStepTwoOutput == "True"):
             self.setupDependentProcessing(stepOneTask, outputMods)
-        elif self.keepStepOneOutput == False and self.keepStepTwoOutput == True:
+        elif (self.keepStepOneOutput == False or self.keepStepOneOutput == "False") \
+                 and (self.keepStepTwoOutput == True or self.keepStepTwoOutput == "True"):
             self.setupChainedProcessing(stepOneTask)
-        elif self.keepStepOneOutput == False and self.keepStepTwoOutput == False:
+        elif (self.keepStepOneOutput == False or self.keepStepOneOutput == "False") \
+                 and (self.keepStepTwoOutput == False or self.keepStepTwoOutput == "False"):
             self.setupThreeStepChainedProcessing(stepOneTask)
         else:
             # Steps one and two are dependent, step three is chained.

@@ -27,6 +27,12 @@
             }
   },
 
+  {"from": "stuckElementsInfo",
+   "to": "_list/stuckElements/stuckElements",
+   "method": "GET",
+   "query" : {"include_docs" : true}
+  },
+
   {
       "from": "index.html",
       "to": "index.html"

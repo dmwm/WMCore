@@ -1,0 +1,26 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title> Stuck WorkQueue Elements</title>
+<!--YUI Library -->
+{{>yui-lib}}
+
+<!-- WorkQueue library -->
+{{>workqueue-common-lib}}
+
+<script src="js/StuckElementInfo.js"></script>
+
+</head>
+<body class="yui-skin-sam">
+<h3> Stuck Workqueue Elements </h3>
+<div id="elements"></div>
+<script>
+
+var oArgs = {};
+oArgs.divID = "elements";
+
+WQ.StuckElementInfo.elementTable(oArgs);
+
+</script>
+</body>
+</html>

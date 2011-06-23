@@ -933,6 +933,10 @@ class WorkQueue(WorkQueueBase):
         for topLevelTask in wmspec.taskIterator():
             dbs_url = topLevelTask.dbsUrl()
 
+            if topLevelTask.taskType() not in ("Processing", "Production", \
+                                               "Merge"):
+                continue
+
             try:
                 if dbs_url:
                     self._get_dbs(dbs_url)

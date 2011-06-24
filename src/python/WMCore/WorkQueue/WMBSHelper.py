@@ -13,6 +13,8 @@ import logging
 import threading
 from collections import defaultdict
 
+from WMCore.WMRuntime.SandboxCreator import SandboxCreator
+
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
@@ -149,7 +151,7 @@ class WMBSHelper(WMConnectionBase):
 
     Interface between the WorkQueue and WMBS.
     """
-    def __init__(self, wmSpec, blockName = None, mask = None):
+    def __init__(self, wmSpec, blockName = None, mask = None, cachepath = '.'):
         """
         _init_
 
@@ -158,6 +160,7 @@ class WMBSHelper(WMConnectionBase):
         self.block = blockName
         self.mask = mask
         self.wmSpec = wmSpec
+        self.cachepath = cachepath
 
         self.topLevelFileset = None
         self.topLevelSubscription = None
@@ -196,6 +199,11 @@ class WMBSHelper(WMConnectionBase):
         self.insertedBogusDataset = -1
 
         return
+
+    def createSandbox(self):
+        """Create the runtime sandbox"""
+        sandboxCreator = SandboxCreator()
+        sandboxCreator.makeSandbox(self.cachepath, self.wmSpec)
 
     def createTopLevelFileset(self, topLevelFilesetName = None):
         """
@@ -250,6 +258,9 @@ class WMBSHelper(WMConnectionBase):
                                               topLevelTask,
                                               self.topLevelFileset)
             return sub
+
+        # create runtime sandbox for workflow
+        self.createSandbox()
 
         workflow = Workflow(self.wmSpec.specUrl(), self.wmSpec.getOwner()["name"],
                             self.wmSpec.getOwner().get("dn", None), self.wmSpec.name(), task.getPathName())

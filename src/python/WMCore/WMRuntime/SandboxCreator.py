@@ -73,18 +73,24 @@ class SandboxCreator:
             returning the path to the archive and putting it in the
             task
         """
+        workloadName = workload.name()
+        # Create path to sandbox
+        path = "%s/%s/WMSandbox" % (buildItHere, workloadName)
+        workloadFile = os.path.join(path, "WMWorkload.pkl")
+        archivePath = os.path.join(buildItHere, "%s/%s-Sandbox.tar.bz2" % (workloadName, workloadName))
+        # check if already built
+        if os.path.exists(archivePath) and os.path.exists(workloadFile):
+            workload.setSpecUrl(workloadFile) # point to sandbox spec
+            return archivePath
+
         #  //
         # // Set up Fetcher plugins, use default list for maintaining
         #//  compatibility
         commonFetchers = [ "CMSSWFetcher", "URLFetcher", "PileupFetcher" ]
-        
+
         # generate the real path and make it
-        workloadName = workload.name()
-        path = "%s/%s/WMSandbox" % (buildItHere, workloadName)
         self._makePathonPackage(path)
         
-        # Create path to sandbox
-        archivePath = os.path.join(buildItHere, "%s/%s-Sandbox.tar.bz2" % (workloadName, workloadName))
         # Add sandbox path to workload
         workload.setSandbox(archivePath)
         userSandboxes = []
@@ -122,7 +128,6 @@ class SandboxCreator:
         
         
         # pickle up the workload for storage in the sandbox
-        workloadFile = path + "/WMWorkload.pkl"
         workload.setSpecUrl(workloadFile)
         workload.save(workloadFile)
 

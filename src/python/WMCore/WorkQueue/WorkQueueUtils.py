@@ -4,6 +4,8 @@
 __all__ = ['get_remote_queue', 'get_dbs', 'sitesFromStorageEelements',
            'queueConfigFromConfigObject', 'queueFromConfig']
 
+import os
+
 # Should probably import this but don't want to create the dependency
 WMBS_REST_NAMESPACE = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
 WWBS_MONITOR_NAMESPACE = 'WMCore.HTTPFrontEnd.WMBS.WMBSMonitorPage'
@@ -96,6 +98,8 @@ def queueConfigFromConfigObject(config):
         qConfig['BossAirConfig'].section_("Agent").agentName = config.Agent.agentName
     if not "JobDumpConfig" in qConfig and hasattr(config, 'JobStateMachine'):
         qConfig["JobDumpConfig"] = config.JobStateMachine
+    if not "CacheDir" in qConfig and hasattr(config.WorkQueueManager, 'componentDir'):
+        qConfig['CacheDir'] = os.path.join(config.WorkQueueManager.componentDir, 'cache')
 
     try:
         monitorURL = ''

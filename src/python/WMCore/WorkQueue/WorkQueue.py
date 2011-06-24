@@ -106,6 +106,13 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('WMBSURL', None) # this will be only set on local Queue
         self.params.setdefault('Teams', [''])
         self.params.setdefault('DrainMode', False)
+        if self.params.get('CacheDir'):
+            try:
+                os.makedirs(self.params['CacheDir'])
+            except OSError:
+                pass
+        elif self.params.get('PopulateFilesets'):
+            raise RuntimeError, 'CacheDir mandatory for local queue'
 
         self.params.setdefault('SplittingMapping', {})
         self.params['SplittingMapping'].setdefault('DatasetBlock',
@@ -307,7 +314,7 @@ class WorkQueue(WorkQueueBase):
         self.logger.info("Adding WMBS subscription")
 
         mask = match['Mask']
-        wmbsHelper = WMBSHelper(wmspec, blockName, mask)
+        wmbsHelper = WMBSHelper(wmspec, blockName, mask, self.params['CacheDir'])
 
         sub, match['NumOfFilesAdded'] = wmbsHelper.createSubscriptionAndAddFiles(block = dbsBlock)
         self.logger.info("Created top level Subscription %s with %s files" % (sub['id'], match['NumOfFilesAdded']))

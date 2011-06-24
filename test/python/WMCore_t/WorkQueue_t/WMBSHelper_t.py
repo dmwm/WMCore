@@ -502,7 +502,7 @@ class WMBSHelperTest(unittest.TestCase):
                                    ceName = 'site2', plugin = "TestPlugin")        
 
         testWorkload = self.createTestWMSpec()
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock", cachepath = self.workDir)
         testWMBSHelper.createSubscription()
 
         procWorkflow = Workflow(name = "TestWorkload",
@@ -511,7 +511,8 @@ class WMBSHelperTest(unittest.TestCase):
 
         self.assertEqual(procWorkflow.owner, "sfoulkes@fnal.gov",
                          "Error: Wrong owner.")
-        self.assertEqual(procWorkflow.spec, "/path/to/workload",
+        self.assertEqual(procWorkflow.spec, os.path.join(self.workDir, procWorkflow.name,
+                                                         "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
         self.assertEqual(len(procWorkflow.outputMap.keys()), 1,
                          "Error: Wrong number of WF outputs.")
@@ -533,7 +534,8 @@ class WMBSHelperTest(unittest.TestCase):
 
         self.assertEqual(mergeWorkflow.owner, "sfoulkes@fnal.gov",
                          "Error: Wrong owner.")
-        self.assertEqual(mergeWorkflow.spec, "/path/to/workload",
+        self.assertEqual(mergeWorkflow.spec, os.path.join(self.workDir, mergeWorkflow.name,
+                                                          "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
         self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
                          "Error: Wrong number of WF outputs.")
@@ -544,7 +546,8 @@ class WMBSHelperTest(unittest.TestCase):
 
         self.assertEqual(cleanupWorkflow.owner, "sfoulkes@fnal.gov",
                          "Error: Wrong owner.")
-        self.assertEqual(cleanupWorkflow.spec, "/path/to/workload",
+        self.assertEqual(cleanupWorkflow.spec, os.path.join(self.workDir, cleanupWorkflow.name,
+                                                            "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
         self.assertEqual(len(cleanupWorkflow.outputMap.keys()), 0,
                          "Error: Wrong number of WF outputs.")        
@@ -561,7 +564,8 @@ class WMBSHelperTest(unittest.TestCase):
 
         self.assertEqual(skimWorkflow.owner, "sfoulkes@fnal.gov",
                          "Error: Wrong owner.")
-        self.assertEqual(skimWorkflow.spec, "/path/to/workload",
+        self.assertEqual(skimWorkflow.spec, os.path.join(self.workDir, skimWorkflow.name,
+                                                        "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
         self.assertEqual(len(skimWorkflow.outputMap.keys()), 2,
                          "Error: Wrong number of WF outputs.")
@@ -638,12 +642,12 @@ class WMBSHelperTest(unittest.TestCase):
                                    ceName = 'site2', plugin = "TestPlugin")        
 
         testWorkload = self.createTestWMSpec()
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock", cachepath = self.workDir)
         testWMBSHelper.createSubscription()
 
         testWorkload.truncate("ResubmitTestWorkload", "/TestWorkload/ProcessingTask/MergeTask",
                               "someserver", "somedatabase")
-        testResubmitWMBSHelper = WMBSHelper(testWorkload, "SomeBlock2")
+        testResubmitWMBSHelper = WMBSHelper(testWorkload, "SomeBlock2", cachepath = self.workDir)
         testResubmitWMBSHelper.createSubscription()
 
         mergeWorkflow = Workflow(name = "ResubmitTestWorkload",
@@ -652,7 +656,8 @@ class WMBSHelperTest(unittest.TestCase):
 
         self.assertEqual(mergeWorkflow.owner, "sfoulkes@fnal.gov",
                          "Error: Wrong owner.")
-        self.assertEqual(mergeWorkflow.spec, "/path/to/workload",
+        self.assertEqual(mergeWorkflow.spec, os.path.join(self.workDir, mergeWorkflow.name,
+                                                          "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
         self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
                          "Error: Wrong number of WF outputs.")
@@ -663,7 +668,8 @@ class WMBSHelperTest(unittest.TestCase):
 
         self.assertEqual(cleanupWorkflow.owner, "sfoulkes@fnal.gov",
                          "Error: Wrong owner.")
-        self.assertEqual(cleanupWorkflow.spec, "/path/to/workload",
+        self.assertEqual(cleanupWorkflow.spec, os.path.join(self.workDir, cleanupWorkflow.name,
+                                                          "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
         self.assertEqual(len(cleanupWorkflow.outputMap.keys()), 0,
                          "Error: Wrong number of WF outputs.")        
@@ -680,7 +686,8 @@ class WMBSHelperTest(unittest.TestCase):
 
         self.assertEqual(skimWorkflow.owner, "sfoulkes@fnal.gov",
                          "Error: Wrong owner.")
-        self.assertEqual(skimWorkflow.spec, "/path/to/workload",
+        self.assertEqual(skimWorkflow.spec, os.path.join(self.workDir, skimWorkflow.name,
+                                                          "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
         self.assertEqual(len(skimWorkflow.outputMap.keys()), 2,
                          "Error: Wrong number of WF outputs.")
@@ -760,7 +767,7 @@ class WMBSHelperTest(unittest.TestCase):
         
         topLevelTask = getFirstTask(wmspec)
          
-        wmbs = WMBSHelper(wmspec, block, mask)
+        wmbs = WMBSHelper(wmspec, block, mask, cachepath = self.workDir)
         if block:
             block = self.dbs.getFileBlock(block)[block]
         wmbs.createSubscriptionAndAddFiles(block = block)

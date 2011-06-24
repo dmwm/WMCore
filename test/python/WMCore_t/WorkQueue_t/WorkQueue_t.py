@@ -147,19 +147,22 @@ class WorkQueueTest(WorkQueueTestCase):
                                      InboxDbName = self.localQInboxDB,
                                      ParentQueueCouchUrl = globalCouchUrl,
                                      JobDumpConfig = jobCouchConfig,
-                                     BossAirConfig = bossAirConfig)
+                                     BossAirConfig = bossAirConfig,
+                                     CacheDir = self.workDir)
 
         self.localQueue2 = localQueue(DbName = self.localQDB2,
                                       InboxDbName = self.localQInboxDB2,
                                       ParentQueueCouchUrl = globalCouchUrl,
                                       JobDumpConfig = jobCouchConfig,
-                                      BossAirConfig = bossAirConfig)
+                                      BossAirConfig = bossAirConfig,
+                                      CacheDir = self.workDir)
 
         # standalone queue for unit tests
         self.queue = WorkQueue(JobDumpConfig = jobCouchConfig,
                                BossAirConfig = bossAirConfig,
                                DbName = self.queueDB,
-                               InboxDbName = self.queueInboxDB)
+                               InboxDbName = self.queueInboxDB,
+                               CacheDir = self.workDir)
 
         # create relevant sites in wmbs
         rc = ResourceControl()

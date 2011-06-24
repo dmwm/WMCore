@@ -16,21 +16,21 @@
    "to": "_list/workflowSummary/workflowSummary",
    "method": "GET",
    "query": {"key": [":request"],
-             "group": true
+             "group": "true"
             }
   },
 
   {"from": "workflowInfo",
    "to": "_list/workflowSummary/workflowSummary",
    "method": "GET",
-   "query": {"group": true
+   "query": {"group": "true"
             }
   },
 
   {"from": "stuckElementsInfo",
    "to": "_list/stuckElements/stuckElements",
    "method": "GET",
-   "query" : {"include_docs" : true}
+   "query" : {"include_docs" : "true"}
   },
 
   {

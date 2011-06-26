@@ -98,7 +98,7 @@ def queueConfigFromConfigObject(config):
         qConfig['BossAirConfig'].section_("Agent").agentName = config.Agent.agentName
     if not "JobDumpConfig" in qConfig and hasattr(config, 'JobStateMachine'):
         qConfig["JobDumpConfig"] = config.JobStateMachine
-    if not "CacheDir" in qConfig and hasattr(config.WorkQueueManager, 'componentDir'):
+    if not "CacheDir" in qConfig and getattr(config.WorkQueueManager, 'componentDir', None):
         qConfig['CacheDir'] = os.path.join(config.WorkQueueManager.componentDir, 'cache')
 
     try:

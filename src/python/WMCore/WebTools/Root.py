@@ -269,11 +269,12 @@ class Root(Harness):
         view_config.application = self.app
 
         view_dict = view.dictionary_()
-        for k in view_dict.keys():
-            view_config.__setattr__(k, view_dict[k])
         for k in globalconf.keys():
             # Add the global config to the view
             view_config.__setattr__(k, globalconf[k])
+        for k in view_dict.keys():
+            # overwrite global if the local config is different
+            view_config.__setattr__(k, view_dict[k])
 
         # TODO: remove bits we don't need
 

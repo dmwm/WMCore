@@ -1,3 +1,19 @@
+0.7.10 to 0.7.11:
+  - Update the merged status of a file when installed into WMBS by the
+    WorkQueue (1813).
+  - The XML drop class didn't get moved into PhEDEx/ on the branch.  Fix things
+    to point at the old location.
+  - Completely disable HTTP caching for couch (1831).
+  - Allow periods in HN user names (1836).
+  - Make sure the pass stale=ok in all monitoring couch queries (1824).
+  -  Handle boolean parameters passed in the from ReqMgr properly in the
+     ReDigi spec (1845).
+  - Commit two WorkQueue fixes for using ACDC with merge tasks that are
+    in production and not needed on the trunk.
+  - Don't auto approve PhEDEx subscriptions.
+  - Include step name in error messages (1868).
+  - Restore the RequestOverview config.
+  
 From 0.7.9b to 0.7.10:
   - Myproxy configuration coherence for glite plugin (1762).
   - Make sure that the numCores parameter is an int (1776).

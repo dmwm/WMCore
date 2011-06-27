@@ -108,10 +108,10 @@ def reqMgrConfig(
     active.create.requestor = user
     active.create.cmsswDefaultVersion = 'CMSSW_3_5_8'
 
-    #active.section_('RequestOverview')
-    #active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestManager.RequestOverview'
-    #active.RequestOverview.templates = requestOverviewTemplates
-    #active.RequestOverview.javascript = requestOverviewJavascript
-    #active.RequestOverview.html = requestOverviewHtml
+    active.section_('RequestOverview')
+    active.RequestOverview.object = 'WMCore.HTTPFrontEnd.RequestManager.RequestOverview'
+    active.RequestOverview.templates = requestOverviewTemplates
+    active.RequestOverview.javascript = requestOverviewJavascript
+    active.RequestOverview.html = requestOverviewHtml
 
     return config

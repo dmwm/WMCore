@@ -102,7 +102,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
             logging.info("Subscribing %s to %s" % (datasetMap[siteMSS],
                                                    siteMSS))
             newSubscription = PhEDExSubscription(datasetMap[siteMSS], siteMSS, self.group,
-                                                 custodial = "y", requestOnly = "n")
+                                                 custodial = "y", requestOnly = "y")
             
             xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, 
                                                        newSubscription.getDatasetPaths())

@@ -233,15 +233,17 @@ class CMSSW(Executor):
         except Exception, ex:
             # Catch it if something goes wrong
             raise WMExecutionFailure(50115, "BadJobReportXML", str(ex))
+
+        stepHelper = WMStepHelper(self.step)
+        typeHelper = stepHelper.getTypeHelper()
         
         acquisitionEra = self.workload.getAcquisitionEra()
         processingVer  = self.workload.getProcessingVersion()
         validStatus    = self.workload.getValidStatus()
         inputPath      = self.task.getInputDatasetPath()
-        cacheUrl, cacheDB, configID = self.step.getConfigInfo()
-                
-        typeHelper     = WMStepHelper(self.step).getTypeHelper()
         globalTag      = typeHelper.getGlobalTag()
+        cacheUrl, cacheDB, configID = stepHelper.getConfigInfo()
+                
         self.report.setValidStatus(validStatus = validStatus)
         self.report.setGlobalTag(globalTag = globalTag)
         self.report.setInputDataset(inputPath = inputPath)

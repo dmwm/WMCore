@@ -307,7 +307,7 @@ class ReqMgrRESTModel(RESTModel):
         return ProdManagement.associateProdMgr(request, urllib.unquote(url))
 
     def validatePutWorkQueue(self, index):
-        assert index['request'].replace('_','').replace('-','').isalnum()
+        assert index['request'].replace('_','').replace('-','').replace('.','').isalnum()
         assert index['url'].startswith('http')
         return index
 

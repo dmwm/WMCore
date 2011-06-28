@@ -879,6 +879,9 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
 
+                if not getattr(stepHelper.data.output, "keep", True):
+                    continue
+
                 if stepHelper.stepType() == "CMSSW" or \
                        stepHelper.stepType() == "MulticoreCMSSW":
                     for outputModuleName in stepHelper.listOutputModules():

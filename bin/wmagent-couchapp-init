@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
 
-    if hasattr(wmagentConfig.JobStateMachine, "couchDBName"):
+    if hasattr(wmagentConfig, "JobStateMachine") and hasattr(wmagentConfig.JobStateMachine, "couchDBName"):
         fwjrDumpName = urllib.quote_plus("%s/fwjrs" % wmagentConfig.JobStateMachine.couchDBName)
         jobDumpName = urllib.quote_plus("%s/jobs" % wmagentConfig.JobStateMachine.couchDBName)
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, fwjrDumpName, "FWJRDump")
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         setupCron(wmagentConfig.JobStateMachine.couchurl,
                   wmagentConfig.JobStateMachine.couchDBName)
 
-    if hasattr(wmagentConfig.JobStateMachine, "configCacheDBName"):
+    if hasattr(wmagentConfig, "JobStateMachine") and hasattr(wmagentConfig.JobStateMachine, "configCacheDBName"):
         installCouchApp(wmagentConfig.JobStateMachine.couchurl,
                         wmagentConfig.JobStateMachine.configCacheDBName, "ConfigCache")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl,

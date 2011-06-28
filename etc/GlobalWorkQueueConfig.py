@@ -16,7 +16,6 @@ from WMCore.Configuration import Configuration
 serverHostName = "SERVER_HOSTNAME"
 reqMgrHostName = "REQMGR_HOSTNAME"
 reqMgrPort = 8687
-globalWorkQueuePort = 8571
 
 # The work directory and database need to be separate from the WMAgent
 # installation.
@@ -70,39 +69,3 @@ config.WorkQueueManager.pollInterval = 600
 config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
                                         'endpoint': "%s/reqMgr/" % reqMgrUrl}
-
-config.webapp_('WorkQueueService')
-config.WorkQueueService.default_expires = 0
-config.WorkQueueService.componentDir = os.path.join(config.General.workDir, "WorkQueueService")
-config.WorkQueueService.Webtools.port = globalWorkQueuePort
-config.WorkQueueService.Webtools.host = serverHostName
-config.WorkQueueService.Webtools.environment = "devel"
-config.WorkQueueService.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
-config.WorkQueueService.admin = "cmsdataops@cern.ch"
-config.WorkQueueService.title = 'WorkQueue Data Service'
-config.WorkQueueService.description = 'Provide WorkQueue related service call'
-
-config.WorkQueueService.section_("security")
-config.WorkQueueService.security.dangerously_insecure = True
-
-config.WorkQueueService.section_('views')
-active = config.WorkQueueService.views.section_('active')
-workqueue = active.section_('workqueue')
-workqueue.object = 'WMCore.WebTools.RESTApi'
-workqueue.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools/')
-workqueue.section_('model')
-workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
-workqueue.level = config.WorkQueueManager.level
-workqueue.section_('formatter')
-workqueue.formatter.object = 'WMCore.WebTools.RESTFormatter'
-workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
-                            'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService']
-workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
-workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (serverHostName,
-                                                                  config.WorkQueueService.Webtools.port,
-                                                                  'workqueue'))
-workqueuemonitor = active.section_('workqueuemonitor')
-workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
-workqueuemonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools/WorkQueue')
-workqueuemonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'javascript/')
-workqueuemonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')

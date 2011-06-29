@@ -109,14 +109,19 @@ class StdBase(object):
 
         Add dashboard monitoring for the given task.
         """
+        gb = 1024.0 * 1024.0 * 1024.0
+        
         monitoring = task.data.section_("watchdog")
         monitoring.interval = 600
-        monitoring.monitors = ["DashboardMonitor"]
+        monitoring.monitors = ["DashboardMonitor", "PerformanceMonitor"]
         monitoring.section_("DashboardMonitor")
         monitoring.DashboardMonitor.softTimeOut = 300000
         monitoring.DashboardMonitor.hardTimeOut = 600000
         monitoring.DashboardMonitor.destinationHost = "cms-wmagent-job.cern.ch"
         monitoring.DashboardMonitor.destinationPort = 8884
+        monitoring.section_("PerformanceMonitor")
+        monitoring.PerformanceMonitor.maxRSS = 4 * gb
+        monitoring.PerformanceMonitor.maxVSize = 4 * gb
         return task
 
     def createWorkload(self):

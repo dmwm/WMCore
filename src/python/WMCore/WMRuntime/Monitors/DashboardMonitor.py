@@ -36,11 +36,11 @@ def getStepPID(stepSpace, stepName):
     Find the PID for a step given its stepSpace from the file
     """
     currDir = stepSpace.location
-    pidFile = os.path.join(currDir, 'process_id')
+    pidFile = os.path.join(currDir, 'process.id')
     if not os.path.isfile(pidFile):
         msg = "Could not find process ID file for step %s" % stepName
         logging.error(msg)
-        return
+        return None
     
     filehandle = open(pidFile,'r')
     output = filehandle.read()
@@ -259,6 +259,8 @@ class DashboardMonitor(WMRuntimeMonitor):
             # If possible, write a FWJR
             report  = Report.Report()
             try:
+                self.logPath = os.path.join(self.currentStepSpace.location,
+                                            '../../../', os.path.basename(self.logPath))
                 if os.path.isfile(self.logPath):
                     # We should be able to find existant job report.
                     # If not, we're in trouble

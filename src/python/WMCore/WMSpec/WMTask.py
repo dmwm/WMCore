@@ -897,6 +897,23 @@ class WMTaskHelper(TreeHelper):
 
         return self.data.notifications.targets
 
+    def setPerformanceMonitor(self, maxRSS = None, maxVSize = None):
+        """
+        _setPerformanceMonitor_
+
+        Set the setup for a non-standard optional plugin that
+        you may or may not use because Oli wants something.
+        """
+        monitoring = self.data.section_("watchdog")
+        if not hasattr(self.data.watchdog, 'monitors'):
+            self.data.watchdog.monitors = []
+        if not 'PerformanceMonitor' in monitoring.monitors:
+            monitoring.monitors.append('PerformanceMonitor')
+            monitoring.section_("PerformanceMonitor")
+        monitoring.PerformanceMonitor.maxRSS   = maxRSS
+        monitoring.PerformanceMonitor.maxVSize = maxVSize
+        return
+
     
 class WMTask(ConfigSectionTree):
     """

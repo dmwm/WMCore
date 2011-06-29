@@ -79,3 +79,18 @@ def tailNLinesFromFile(file, n):
     output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
 
     return output.split('\n')
+
+
+
+def runCommand(cmd, shell = True):
+    """
+    Run generic command
+    
+    This is NOT secure and hence NOT recommended
+    """
+
+    pipe = subprocess.Popen(cmd, stdout = subprocess.PIPE,
+                            stderr = subprocess.PIPE, shell = shell)
+
+    stdout, stderr = pipe.communicate()
+    return stdout, stderr

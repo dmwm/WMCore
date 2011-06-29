@@ -334,6 +334,22 @@ class WMTaskTest(unittest.TestCase):
 
         self.assertEqual(testTask.getNotifications(), targetList)
 
+    def testPerformanceMonitor(self):
+        """
+        _testPerformanceMonitor_
+
+        Test automated adding of performanceMonitor
+        Really you shouldn't be using this, so don't add it.
+        """
+
+        testTask = makeWMTask("TestTask")
+
+        testTask.setPerformanceMonitor(maxRSS = 100, maxVSize = 101)
+
+        self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
+        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS,   100)
+        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxVSize, 101)
+        return
         
 
 if __name__ == '__main__':

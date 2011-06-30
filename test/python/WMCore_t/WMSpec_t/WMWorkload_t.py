@@ -359,7 +359,11 @@ class WMWorkloadTest(unittest.TestCase):
         procTaskCMSSW = procTask.makeStep("cmsRun1")
         procTaskCMSSW.setStepType("CMSSW")
         procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
+        procTaskCMSSW2 = procTaskCMSSW.addStep("cmsRun2")
+        procTaskCMSSW2.setStepType("CMSSW")
+        procTaskCMSSW2Helper = procTaskCMSSW2.getTypeHelper()
         procTask.applyTemplates()
+        procTaskCMSSW2Helper.keepOutput(False)
 
         acquisitionEra = "TestAcqEra"
         primaryDataset = "bogusPrimary"
@@ -372,6 +376,13 @@ class WMWorkloadTest(unittest.TestCase):
                                             lfnBase = "bogusUnmerged",
                                             mergedLFNBase = "bogusMerged",
                                             filterName = None)
+        procTaskCMSSW2Helper.addOutputModule("OutputC",
+                                            primaryDataset = primaryDataset,
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DATATIERC",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None)        
         procTaskCMSSWHelper.addOutputModule("OutputB",
                                             primaryDataset = primaryDataset,
                                             processedDataset = "bogusProcessed",
@@ -532,7 +543,7 @@ class WMWorkloadTest(unittest.TestCase):
 
         outputDatasets = testWorkload.listOutputDatasets()
         self.assertEqual(len(outputDatasets), 3,
-                         "Error: Wrong number of output datasets.")
+                         "Error: Wrong number of output datasets: %s" % testWorkload.listOutputDatasets())
         self.assertTrue("/bogusPrimary/TestAcqEra-vTest/DATATIERA" in outputDatasets,
                         "Error: A dataset is missing")
         self.assertTrue("/bogusPrimary/TestAcqEra-vTest/DATATIERB" in outputDatasets,
@@ -713,7 +724,7 @@ class WMWorkloadTest(unittest.TestCase):
                                                                    "include_parents": True,
                                                                    "algorithm": "FileBased",
                                                                    "type": "Processing"},
-                         "Error: Wrong splitting parameters.")
+                         "Error: Wrong splitting parameters: %s")
         self.assertEqual(results["/TestWorkload/ProcessingTask/MergeTask/SkimTask"],
                          {"max_files": 21, "algorithm": "RunBased", "some_other_param": "value", "type": "Skim"},
                          "Error: Wrong splitting parameters.")

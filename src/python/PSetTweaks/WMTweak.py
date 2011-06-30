@@ -8,6 +8,7 @@ Note: This can be used within the CMSSW environment to act on a
 process/config but does not depend on any CMSSW libraries. It needs to stay like this.
 
 """
+import logging
 
 from PSetTweaks.PSetTweak import PSetTweak
 from PSetTweaks.PSetTweak import parameterIterator, psetIterator
@@ -389,6 +390,29 @@ def makeJobTweak(job):
     secondaryFiles = []
     for inputFile in job["input_files"]:
         if inputFile["lfn"].startswith("MCFakeFile"):
+            # If there is a preset lumi in the mask, use it as the first
+            # luminosity setting
+            if getattr(job['mask'], 'FirstLumi', None) != None:
+                result.addParameter("process.source.firstLuminosityBlock",
+                                    job['mask']['FirstLumi'])
+            else:
+                # Then we don't have a FirstLumi
+                # Set the lumi block equal to the number of the job in the
+                # workflow.  Numbers start at 0, add one so lumis start at
+                # one.
+                logging.debug("MCFakeFile initiated without job FirstLumi - using counter.")
+                result.addParameter("process.source.firstLuminosityBlock",
+                                    int(job["counter"]) + 1)
+
+            # Assign the run
+            if getattr(job['mask'], 'FirstRun', None) != None:
+                result.addParameter("process.source.firstRun",
+                                    job['mask']['FirstRun'])
+            else:
+                # Then we have to get the run from the counter instead.
+                logging.debug("MCFakeFile initiated without job FirstRun - using one.")
+                result.addParameter("process.source.firstRun", 1)
+
             continue
         
         primaryFiles.append(inputFile["lfn"])

@@ -183,7 +183,7 @@ class ReqMgrRESTModel(RESTModel):
         if requestName == None:
             return GetRequest.getRequests()
         else:
-            return GetRequest.getRequestDetails(requestName)
+            return Utilities.requestDetails(requestName)
 
     def getRequestNames(self):
         """ return all the request names in RequestManager as list """

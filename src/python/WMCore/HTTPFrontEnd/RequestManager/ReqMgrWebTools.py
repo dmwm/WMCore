@@ -284,10 +284,23 @@ def makeRequest(kwargs, couchUrl, couchDB):
     metadata.update(request)
     # don't want to JSONify the whole workflow
     del metadata['WorkflowSpec']
-    workloadUrl = helper.saveCouch(removePasswordFromUrl(couchUrl), couchDB, metadata=metadata)
+    workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     CheckIn.checkIn(request)
     return request
+
+def requestDetails(requestName):
+    """ Adds details from the Couch document as well as the database """
+    WMCore.Lexicon.identifier(requestName)
+    request = GetRequest.getRequestDetails(requestName)
+    helper = loadWorkload(request)
+    schema = helper.data.request.schema.dictionary_()
+    # take the stuff from the DB preferentially
+    schema.update(request)
+    task = helper.getTopLevelTask()[0]
+    schema['Site Whitelist'] = task.siteWhitelist()
+    schema['Site Blacklist'] = task.siteBlacklist()
+    return schema
 
 def serveFile(contentType, prefix, *args):
     """Return a workflow from the cache"""

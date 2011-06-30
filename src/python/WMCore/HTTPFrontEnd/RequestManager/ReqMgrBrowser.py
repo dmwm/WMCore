@@ -2,7 +2,7 @@
 """ Main Module for browsing and modifying requests """
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, saveWorkload, loadWorkload, changePriority, changeStatus, priorityMenu
+import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Cache.WMConfigCache import ConfigCache 
 from WMCore.Wrappers import JsonWrapper
@@ -53,7 +53,6 @@ class ReqMgrBrowser(WebAPI):
                              'Requestor': '../admin/user', 
                              'RequestName': 'details'}
         self.detailsFields = ['RequestName', 'RequestType', 'Requestor', 'CMSSWVersion',
-                """ Main class for browsing and modifying requests """
             'ScramArch', 'GlobalTag', 'RequestSizeEvents',
             'InputDataset', 'PrimaryDataset', 'AcquisitionEra', 'ProcessingVersion', 
             'RunWhitelist', 'RunBlacklist', 'BlockWhitelist', 'BlockBlacklist', 
@@ -63,7 +62,7 @@ class ReqMgrBrowser(WebAPI):
 
         self.adminMode = True
         # don't allow mass editing.  Make people click one at a time.
-        #self.adminFields = {'RequestStatus':'statusMenu', 'ReqMgrRequestBasePriority':'priorityMenu'}
+        #self.adminFields = {'RequestStatus':'statusMenu', 'ReqMgrRequestBasePriority':'Utilities.priorityMenu'}
         self.adminFields = {}
         self.couchUrl = config.couchUrl
         self.configDBName = config.configDBName
@@ -121,7 +120,7 @@ class ReqMgrBrowser(WebAPI):
         """
         self.validate(requestName)
         request = GetRequest.getRequestByName(requestName)
-        helper = loadWorkload(request)
+        helper = Utilities.loadWorkload(request)
         splittingDict = helper.listJobSplittingParametersByTask()
         timeOutDict = helper.listTimeOutsByTask()
         taskNames = splittingDict.keys()
@@ -173,12 +172,12 @@ class ReqMgrBrowser(WebAPI):
         
         self.validate(requestName)
         request = GetRequest.getRequestByName(requestName)
-        helper = loadWorkload(request)
+        helper = Utilities.loadWorkload(request)
         logging.info("SetSplitting " + requestName + splittingTask + splittingAlgo + str(splitParams))
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
         if submittedParams.get("timeout", "") != "":
             helper.setTaskTimeOut(splittingTask, int(submittedParams["timeout"]))
-        saveWorkload(helper, request['RequestWorkflow'])
+        Utilities.saveWorkload(helper, request['RequestWorkflow'])
         return "Successfully updated splitting parameters for " + splittingTask \
                + " " + detailsBackLink(requestName)
 
@@ -188,28 +187,19 @@ class ReqMgrBrowser(WebAPI):
         """ A page showing the details for the requests """
         self.validate(requestName)
         try:
-            request = GetRequest.getRequestDetails(requestName)
+            request = Utilities.requestDetails(requestName)
         except AssertionError:
-            raise cherrypy.HTTPError(404, "Cannot find request %s" % requestName)
-        helper = loadWorkload(request)
-        task = helper.getTopLevelTask()[0]
-        docId = None
-        d = helper.data.request.schema.dictionary_()
-        d['RequestWorkflow'] = request['RequestWorkflow']
-        d['Site Whitelist'] = task.siteWhitelist()
-        d['Site Blacklist'] = task.siteBlacklist()
-        if d.get('ProdConfigCacheID', '') != '':
-            docId = d['ProdConfigCacheID']        
-        assignments = GetRequest.getAssignmentsByName(requestName)
+            raise cherrypy.HTTPError(404, "Cannot load request %s" % requestName)
         adminHtml = statusMenu(requestName, request['RequestStatus']) \
-                  + ' Priority ' + priorityMenu(request)
+                  + ' Priority ' + Utilities.priorityMenu(request)
         return self.templatepage("Request", requestName=requestName,
-                                detailsFields = self.detailsFields, requestSchema=d,
-                                docId=docId, assignments=assignments,
-                                adminHtml = adminHtml,
+                                detailsFields=self.detailsFields, 
+                                requestSchema=request,
+                                docId=request.get('ProdConfigCacheID', None),
+                                assignments=request['Assignments'],
+                                adminHtml=adminHtml,
                                 messages=request['RequestMessages'],
                                 updateDictList=request['RequestUpdates'])
-                                 
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
@@ -235,7 +225,7 @@ class ReqMgrBrowser(WebAPI):
     def showWorkload(self, url):
         """ Displays the workload """
         request = {'RequestWorkflow':url}
-        helper = loadWorkload(request)
+        helper = Utilities.loadWorkload(request)
         workloadText = str(helper.data)
         return cgi.escape(workloadText).replace("\n", "<br/>\n")
  
@@ -314,10 +304,10 @@ class ReqMgrBrowser(WebAPI):
                 status = v
                 priority = kwargs[requestName+':priority']
                 if priority != '':
-                    changePriority(requestName, priority)
+                    Utilities.changePriority(requestName, priority)
                     message += "Changed priority for %s to %s\n" % (requestName, priority)
                 if status != "":
-                    changeStatus(requestName, status)
+                    Utilities.changeStatus(requestName, status)
                     message += "Changed status for %s to %s\n" % (requestName, status)
                     if status == "assigned":
                         # make a page to choose teams
@@ -328,7 +318,8 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
     # FIXME needs to check if authorized, or original user
-    def modifyWorkload(self, requestName, workload,
+    def modifyWorkload(self, requestName, workload, 
+                       CMSSWVersion=None, GlobalTag=None,
                        runWhitelist=None, runBlacklist=None, 
                        blockWhitelist=None, blockBlacklist=None,
                        ScramArch=None):
@@ -339,23 +330,28 @@ class ReqMgrBrowser(WebAPI):
         schema = helper.data.request.schema
         message = ""
         #inputTask = helper.getTask(requestType).data.input.dataset
+        if GlobalTag or CMSSWVersion:
+            helper.setCMSSWParams(cmsswVersion=CMSSWVersion, globalTag=GlobalTag)
+            helper.data.request.schema.CMSSWVersion = CMSSWVersion
+            helper.data.request.schema.GlobalTag = GlobalTag
+            message += "CMSSW version %s, GlobalTag %s<br/>" % (CMSSWVersion, GlobalTag)
         if runWhitelist != "" and runWhitelist != None:
-            l = parseRunList(runWhitelist)
+            l = Utilities.parseRunList(runWhitelist)
             helper.setRunWhitelist(l)
             schema.RunWhitelist = l
             message += 'Changed runWhiteList to %s<br>' % l
         if runBlacklist != "" and runBlacklist != None:
-            l = parseRunList(runBlacklist)
+            l = Utilities.parseRunList(runBlacklist)
             helper.setRunBlacklist(l)
             schema.RunBlacklist = l
             message += 'Changed runBlackList to %s<br>' % l
         if blockWhitelist != "" and blockWhitelist != None:
-            l = parseBlockList(blockWhitelist)
+            l = Utilities.parseBlockList(blockWhitelist)
             helper.setBlockWhitelist(l)
             schema.BlockWhitelist = l
             message += 'Changed blockWhiteList to %s<br>' % l
         if blockBlacklist != "" and blockBlacklist != None:
-            l = parseBlockList(blockBlacklist)
+            l = Utilities.parseBlockList(blockBlacklist)
             helper.setBlockBlacklist(l)
             schema.BlockBlacklist = l
             message += 'Changed blockBlackList to %s<br>' % l
@@ -363,6 +359,6 @@ class ReqMgrBrowser(WebAPI):
             message += "modifyng the Scram Arch to %s" % ScramArch
             schema.ScramArch = ScramArch
             helper.setCMSSWParams(cmsswVersion=schema.CMSSWVersion, scramArch=ScramArch)
-        saveWorkload(helper, workload)
+        Utilities.saveWorkload(helper, workload)
         return message + detailsBackLink(requestName)
 

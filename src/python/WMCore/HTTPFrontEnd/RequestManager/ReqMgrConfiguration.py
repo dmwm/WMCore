@@ -30,7 +30,7 @@ def reqMgrConfig(
 
     requestOverviewTemplates = reqMgrTemplates
     requestOverviewJavascript = reqMgrJavascript
-    requestOverviewHtml = reqMgrHtml  
+    requestOverviewHtml = os.path.join(installation, 'html')
 
     if startup == "Root.py":
         config.component_("Webtools")

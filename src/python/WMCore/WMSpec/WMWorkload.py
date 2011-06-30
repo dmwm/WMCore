@@ -340,6 +340,19 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return [ t for t in self.taskIterator() if t.taskType() == ttype ]
 
+    def getAllTasks(self):
+        """
+        _getAllTasks_
+
+        Get all tasks from a workload
+        """
+        tasks = []
+        pathNames = self.listAllTaskPathNames()
+        for n in pathNames:
+            tasks.append(self.getTaskByPath(taskPath = n))
+
+        return tasks
+
 
     def addTask(self, wmTask):
         """
@@ -1048,6 +1061,24 @@ class WMWorkloadHelper(PersistencyHelper):
             summary['performance'][t] = {}
         
         return summary
+
+    def setupPerformanceMonitoring(self, maxRSS, maxVSize):
+        """
+        _setupPerformanceMonitoring_
+        
+        Attempt to automatically setup the performance monitoring
+        You should not use this and I make no guarantees for whether
+        it still works.
+        """
+        for task in self.getAllTasks():
+            if task.taskType() in ['Production', 'Processing']:
+                task.setPerformanceMonitor(maxRSS = maxRSS, maxVSize = maxVSize)
+
+        return
+
+        
+
+        
 
 class WMWorkload(ConfigSection):
     """

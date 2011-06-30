@@ -1026,5 +1026,27 @@ class WMWorkloadTest(unittest.TestCase):
 
         return
 
+
+    def test_addPerformanceMonitor(self):
+        """
+        _addPerformanceMonitor_
+
+        Don't use this, and don't play around with it.
+        """
+
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+    
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setTaskType("Processing")
+        mergeTask = procTask.addTask("MergeTask")
+        mergeTask.setTaskType("Merge")
+    
+        
+        testWorkload.setupPerformanceMonitoring(maxRSS = 101, maxVSize = 102)
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.maxRSS, 101)
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.maxVSize, 102)
+        self.assertFalse(hasattr(testWorkload.data.tasks.ProcessingTask.tree.children.MergeTask, 'watchdog'))
+        return
+
 if __name__ == '__main__':
     unittest.main()

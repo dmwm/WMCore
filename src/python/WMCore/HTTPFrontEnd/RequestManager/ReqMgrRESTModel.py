@@ -314,7 +314,10 @@ class ReqMgrRESTModel(RESTModel):
             request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName)
         # see if status & priority need to be upgraded
         if status != None:
-            Utilities.changeStatus(requestName, status)
+            try:
+                Utilities.changeStatus(requestName, status)
+            except RuntimeError, e:
+                raise cherrypy.HTTPError(403, "Failed to change status: %s" % str(e))
         if priority != None:
             Utilities.changePriority(requestName, priority) 
         return request

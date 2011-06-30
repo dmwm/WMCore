@@ -582,6 +582,7 @@ class WMWorkloadTest(unittest.TestCase):
         given type of task works correctly.
         """
         testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setWorkQueueSplitPolicy("Block", "FileBased", {"files_per_job": 1})
         procTask = testWorkload.newTask("ProcessingTask")
         procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
         procTask.setTaskType("Processing")
@@ -611,7 +612,7 @@ class WMWorkloadTest(unittest.TestCase):
                                                 "some_other_param": "value"})
 
         self.assertEqual(testWorkload.startPolicy(), "Block",
-                         "Error: Wrong start policy.")
+                         "Error: Wrong start policy: %s" % testWorkload.startPolicy())
         self.assertEqual(testWorkload.startPolicyParameters()["SliceType"], "NumberOfFiles",
                          "Errror: Wrong slice type.")
         self.assertEqual(testWorkload.startPolicyParameters()["SliceSize"], 2,

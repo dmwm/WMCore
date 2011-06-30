@@ -760,12 +760,7 @@ class WMWorkloadHelper(PersistencyHelper):
             return
 
         if taskHelper.isTopOfTree():
-            if self.startPolicy() == "ResubmitBlock":
-                self.setWorkQueueSplitPolicy("ResubmitBlock", splitAlgo, splitArgs)                
-            elif taskHelper.taskType() == "Production":
-                self.setWorkQueueSplitPolicy("MonteCarlo", splitAlgo, splitArgs)
-            else:
-                self.setWorkQueueSplitPolicy("Block", splitAlgo, splitArgs)
+            self.setWorkQueueSplitPolicy(self.startPolicy(), splitAlgo, splitArgs)
 
         # There are currently two merge algorithms in WMBS.  WMBSMergeBySize
         # will reassemble the parent file.  This is only necessary for

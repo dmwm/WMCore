@@ -125,9 +125,9 @@ def queueConfigFromConfigObject(config):
         #    raise RuntimeError
 
     except RuntimeError:
-        msg = """Unable to determine WorkQueue QueueURL, Either:
-        Configure a WorkQueueRESTModel webapp_ section or,
-        Add a WorkQueueManager.queueParams.QueueURL setting."""
+        msg = """Unable to determine WMBS monitor URL, Either:
+        Configure a WMBSRESTModel webapp_ section or,
+        Add a WorkQueueManager.queueParams.WMBSURL setting."""
         raise RuntimeError, msg
 
     if not qConfig.has_key('Teams') and hasattr(config.Agent, 'teamName'):

@@ -11,6 +11,7 @@ from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterf
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from math import ceil
 from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
+from WMCore import Lexicon
 
 class Dataset(StartPolicyInterface):
     """Split elements into datasets"""
@@ -87,6 +88,7 @@ class Dataset(StartPolicyInterface):
     def validBlocks(self, task, dbs):
         """Return blocks that pass the input data restriction"""
         datasetPath = task.getInputDatasetPath()
+        Lexicon.dataset(datasetPath) # check dataset name
         validBlocks = []
         locations = set()
 

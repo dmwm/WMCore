@@ -753,7 +753,7 @@ class WMBSHelperTest(unittest.TestCase):
         wmspec = monteCarloWorkload(name, mcArgs)
         wmspec.setSpecUrl("/path/to/workload")        
         getFirstTask(wmspec).addProduction(totalevents = 10000)
-        getFirstTask(wmspec).setSiteWhitelist(['SiteA', 'SiteB', 'SiteC'])
+        getFirstTask(wmspec).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
         return wmspec
 
     def getDBS(self, wmspec):
@@ -860,7 +860,7 @@ class WMBSHelperTest(unittest.TestCase):
         # add sites that would normally be added by operator via resource_control
         locationDAO = self.daoFactory(classname = "Locations.New")
         ses = []
-        for site in ['SiteA', 'SiteB']:
+        for site in ['T2_XX_SiteA', 'T2_XX_SiteB']:
             locationDAO.execute(siteName = site, seName = self.siteDB.cmsNametoSE(site))
             ses.append(self.siteDB.cmsNametoSE(site))
 

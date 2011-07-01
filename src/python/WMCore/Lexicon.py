@@ -52,7 +52,8 @@ def countrycode(candidate):
     return check("^[A-Z]{2}$", candidate)
 
 def block(candidate):
-    pass
+    """assert if not a valid block name"""
+    return check(r"^(/[a-zA-Z0-9\.\-_]{1,100}){3}#[a-zA-Z0-9\.\-_]{1,100}$", candidate)
 
 def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
@@ -118,6 +119,9 @@ def cmsswversion(candidate):
 
 def couchurl(candidate):
     return check('https?://(([a-zA-Z0-9:@\.\-_]){0,100})(localhost|fnal\.gov|cern\.ch|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+|/couchdb)', candidate)
+
+def requestName(candidate):
+    return check(r'[a-zA-Z0-9\.\-_]{1,100}$', candidate)
 
 def check(regexp, candidate):
     assert re.compile(regexp).match(candidate) != None , \

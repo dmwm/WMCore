@@ -10,7 +10,7 @@ class SiteDBJSON(object):
     """
     API for dealing with retrieving information from SiteDB
     """
-    mapping = {'SiteA' : 'a.example.com', 'SiteB' : 'b.example.com'}
+    mapping = {'T2_XX_SiteA' : 'a.example.com', 'T2_XX_SiteB' : 'b.example.com'}
 
 
     def __init__(self, dict={}):

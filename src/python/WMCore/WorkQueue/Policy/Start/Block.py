@@ -12,6 +12,7 @@ from copy import deepcopy
 from math import ceil
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
+from WMCore import Lexicon
 
 class Block(StartPolicyInterface):
     """Split elements into blocks"""
@@ -72,9 +73,11 @@ class Block(StartPolicyInterface):
 
         for data in self.data:
             if data.find('#') > -1:
+                Lexicon.block(data) # check dataset name
                 datasetPath = str(data.split('#')[0])
                 blocks.extend(dbs.getFileBlocksInfo(datasetPath, blockName = str(data), locations = True))
             else:
+                Lexicon.dataset(data) # check dataset name
                 blocks.extend(dbs.getFileBlocksInfo(datasetPath, locations = True))
 
         for block in blocks:

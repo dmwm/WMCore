@@ -31,7 +31,7 @@ from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 
 from WMCore.Database.CMSCouch import CouchNotFoundError
 
-
+from WMCore import Lexicon
 
 #  //
 # // Convenience constructor functions
@@ -452,8 +452,14 @@ class WorkQueue(WorkQueueBase):
             self.logger.warning('queueWork(): Ignoring duplicate spec "%s"' % wmspec.name())
             return 1
 
-        if request and request != wmspec.name():
-            raise WorkQueueWMSpecError(wmspec, 'Request & workflow name mismatch %s vs %s' % (request, wmspec.name()))
+        if request:
+            try:
+                Lexicon.requestName(request)
+            except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+                error = WorkQueueWMSpecError(wmspec, "Request name validation error: %s" % str(ex))
+                raise error
+            if request != wmspec.name():
+                raise WorkQueueWMSpecError(wmspec, 'Request & workflow name mismatch %s vs %s' % (request, wmspec.name()))
 
         # Do splitting before we save inbound work to verify the wmspec
         # if the spec fails it won't enter the queue

@@ -128,12 +128,12 @@ class PhEDEx(dict):
 
                     datasetSelected = data['phedex']['dataset'][-1]
                 subs = []
-                subs.append({'node': 'SiteA_MSS', 'custodial': 'n', 'suspend_until': None,
+                subs.append({'node': 'T2_XX_SiteA_MSS', 'custodial': 'n', 'suspend_until': None,
                                  'level': 'dataset', 'move': 'n', 'request': '47983',
                                  'time_created': '1232989000', 'priority': 'low',
                                  'time_update': None, 'node_id': '781',
                                  'suspended': 'n', 'group': None})
-#                subs.append({'node': 'SiteB', 'custodial': 'n', 'suspend_until': None,
+#                subs.append({'node': 'T2_XX_SiteB', 'custodial': 'n', 'suspend_until': None,
 #                                 'level': 'dataset', 'move': 'n', 'request': '47983',
 #                                 'time_created': '1232989000', 'priority': 'low',
 #                                 'time_update': None, 'node_id': '781',
@@ -150,7 +150,7 @@ class PhEDEx(dict):
                                "id":"454370", "subscription"
                                                   :[ {'node' : x + '_MSS', "suspended" : "n"} for x in locations]
                                                         #{"priority":"normal", "request":"51253", "time_created":"1245165314",
-                                                        #   "move":"n", "suspend_until":None, "node":"SiteA",
+                                                        #   "move":"n", "suspend_until":None, "node":"T2_XX_SiteA",
                                                         #   "time_update":"1228905272", "group":None, "level":"block",
                                                         #   "node_id":"641", "custodial":"n", "suspended":"n"}]
                                                     })

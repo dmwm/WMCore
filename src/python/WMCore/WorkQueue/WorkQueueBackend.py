@@ -7,6 +7,7 @@ Interface to WorkQueue persistent storage
 
 import random
 import time
+import urllib
 
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement
@@ -222,18 +223,16 @@ class WorkQueueBackend(object):
 
     def updateElements(self, *elementIds, **updatedParams):
         """Update given element's (identified by id) with new parameters"""
-        import urllib
         uri = "/" + self.db.name + "/_design/WorkQueue/_update/in-place/"
         data = {"updates" : json.dumps(updatedParams)}
         for ele in elementIds:
             thisuri = uri + ele + "?" + urllib.urlencode(data)
-            answer = self.db.makeRequest(uri = thisuri, type = 'PUT')
+            self.db.makeRequest(uri = thisuri, type = 'PUT')
         return
 
 
     def updateInboxElements(self, *elementIds, **updatedParams):
         """Update given inbox element's (identified by id) with new parameters"""
-        import urllib
         uri = "/" + self.inbox.name + "/_design/WorkQueue/_update/in-place/"
         data = {"updates" : json.dumps(updatedParams)}
         for ele in elementIds:

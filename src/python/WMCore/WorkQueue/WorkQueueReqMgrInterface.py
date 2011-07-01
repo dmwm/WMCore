@@ -4,6 +4,8 @@
 
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
+from WMCore import Lexicon
+import os
 
 class WorkQueueReqMgrInterface():
     """Helper class for ReqMgr interaction"""
@@ -62,9 +64,16 @@ class WorkQueueReqMgrInterface():
 #                    Ignoring this request: %s""" % (str(ex), reqName))
 #                continue
 
-            self.logger.info("Processing request %s at %s" % (reqName, workLoadUrl))
-
             try:
+                try:
+                    Lexicon.couchurl(workLoadUrl)
+                except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+                    # check its not a local file
+                    if not os.path.exists(workLoadUrl):
+                        error = WorkQueueWMSpecError(None, "Workflow url validation error: %s" % str(ex))
+                        raise error
+
+                self.logger.info("Processing request %s at %s" % (reqName, workLoadUrl))
                 units = queue.queueWork(workLoadUrl, request = reqName, team = team)
             except (WorkQueueWMSpecError, WorkQueueNoWorkError), ex:
                 # fatal error - report back to ReqMgr

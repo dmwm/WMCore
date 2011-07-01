@@ -23,7 +23,7 @@ class UpdateThresholdsInBulk(DBFormatter):
 
         """
         data is the list of dictionary. each dictionary contains following items.
-        [{"sitename": SiteA, "tasktype": Processing, "maxslots": 1000}, ...]
+        [{"sitename": T2_XX_SiteA, "tasktype": Processing, "maxslots": 1000}, ...]
         """
         self.dbi.processData(self.sql, data,
                              conn = conn, transaction = transaction)

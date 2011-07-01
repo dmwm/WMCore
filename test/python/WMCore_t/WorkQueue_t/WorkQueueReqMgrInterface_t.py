@@ -92,7 +92,8 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
                             InboxDbName = self.localQInboxDB,
                             QueueURL = self.localQCouchUrl,
                             Teams = ["The A-Team", "some other bloke"],
-                            ParentQueueCouchUrl = self.globalQCouchUrl)
+                            ParentQueueCouchUrl = self.globalQCouchUrl,
+                            CacheDir = self.testInit.testDir)
         return localQ
 
     def testReqMgrPollerAlgorithm(self):
@@ -112,7 +113,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
 
         # local queue acquires and runs
         globalQ.updateLocationInfo()
-        work = localQ.pullWork({'SiteA' : 10000, 'SiteB' : 10000})
+        work = localQ.pullWork({'T2_XX_SiteA' : 10000, 'T2_XX_SiteB' : 10000})
         self.assertEqual(len(globalQ), 0)
         reqMgrInt(globalQ)
         self.assertEqual(reqMgr.status[reqMgr.names[0]], 'acquired')

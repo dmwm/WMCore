@@ -31,7 +31,7 @@ def createWorkload(name="MultiTaskProduction"):
     prodStageOut = prodCmssw.addStep("stageOut1")
     prodStageOut.setStepType("StageOut")
     production.applyTemplates()
-    production.setSiteWhitelist(["SiteA"])
+    production.setSiteWhitelist(["T2_XX_SiteA"])
     
     #  //
     # // set up the merge task
@@ -95,7 +95,7 @@ def createWorkload(name="MultiTaskProduction"):
     prodStageOut = prodCmssw.addStep("stageOut1")
     prodStageOut.setStepType("StageOut")
     production.applyTemplates()
-    production.setSiteWhitelist(["SiteA"])
+    production.setSiteWhitelist(["T2_XX_SiteA"])
     
     #  //
     # // set up the merge task

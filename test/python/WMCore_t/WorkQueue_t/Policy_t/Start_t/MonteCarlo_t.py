@@ -28,9 +28,9 @@ class MonteCarloTestCase(unittest.TestCase):
         splitArgs = dict(SliceType = 'NumEvents', SliceSize = 100, MaxJobsPerElement = 5)
 
         BasicProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
-        getFirstTask(BasicProductionWorkload).setSiteWhitelist(['SiteA', 'SiteB'])
+        getFirstTask(BasicProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         getFirstTask(BasicProductionWorkload).addProduction(totalevents = 1000)
-        getFirstTask(BasicProductionWorkload).setSiteWhitelist(['SiteA', 'SiteB'])
+        getFirstTask(BasicProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in BasicProductionWorkload.taskIterator():
             units = MonteCarlo(**splitArgs)(BasicProductionWorkload, task)
 
@@ -56,7 +56,7 @@ class MonteCarloTestCase(unittest.TestCase):
 
     def testMultiMergeProductionWorkload(self):
         """Multi merge production workload"""
-        getFirstTask(MultiMergeProductionWorkload).setSiteWhitelist(['SiteA', 'SiteB'])
+        getFirstTask(MultiMergeProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in MultiMergeProductionWorkload.taskIterator():
             units = MonteCarlo(**self.splitArgs)(MultiMergeProductionWorkload, task)
 
@@ -71,7 +71,7 @@ class MonteCarloTestCase(unittest.TestCase):
         """Multi Task Processing Workflow"""
         count = 0
         tasks = []
-        getFirstTask(MultiTaskProductionWorkload).setSiteWhitelist(['SiteA', 'SiteB'])
+        getFirstTask(MultiTaskProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in MultiTaskProductionWorkload.taskIterator():
             count += 1
             units = MonteCarlo(**self.splitArgs)(MultiTaskProductionWorkload, task)

@@ -16,11 +16,17 @@ class WorkQueueWMSpecError(WorkQueueError):
     def __init__(self, wmspec, error):
         WorkQueueError.__init__(self, error)
         self.wmspec = wmspec
-        self.msg = "Invalid WMSpec: '%s'" % self.wmspec.name()
+        if hasattr(self.wmspec, 'name'):
+            self.msg = "Invalid WMSpec: '%s'" % self.wmspec.name()
+        else:
+            self.msg = "Invalid WMSpec:"
 
 class WorkQueueNoWorkError(WorkQueueError):
     """No work for spec"""
     def __init__(self, wmspec, error):
         WorkQueueError.__init__(self, error)
         self.wmspec = wmspec
-        self.msg = "No work in spec: '%s' Check inputs" % self.wmspec.name()
+        if hasattr(self.wmspec, 'name'):
+            self.msg = "No work in spec: '%s' Check inputs" % self.wmspec.name()
+        else:
+            self.msg = "No work in spec: Check inputs"

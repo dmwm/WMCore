@@ -13,6 +13,7 @@ from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 from WMCore.WMException import WMException
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from DBSAPI.dbsApiException import DbsConfigurationError
+from WMCore import Lexicon
 
 class StartPolicyInterface(PolicyInterface):
     """Interface for start policies"""
@@ -38,12 +39,38 @@ class StartPolicyInterface(PolicyInterface):
 
     def validateCommon(self):
         """Common validation stuff"""
-        if self.initialTask.siteWhitelist() and type(self.initialTask.siteWhitelist()) in types.StringTypes:
-            error = WorkQueueWMSpecError(self.wmspec, 'Invalid site whitelist: Must be tuple/list but is %s' % type(self.initialTask.siteWhitelist()))
+        try:
+            Lexicon.requestName(self.wmspec.name())
+        except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+            error = WorkQueueWMSpecError(self.wmspec, "Workflow name validation error: %s" % str(ex))
             raise error
 
-        if self.initialTask.siteBlacklist() and type(self.initialTask.siteBlacklist()) in types.StringTypes:
-            error = WorkQueueWMSpecError(self.wmspec, 'Invalid site blacklist: Must be tuple/list but is %s' % type(self.initialTask.siteBlacklist()))
+        if self.initialTask.siteWhitelist():
+            if type(self.initialTask.siteWhitelist()) in types.StringTypes:
+                error = WorkQueueWMSpecError(self.wmspec, 'Invalid site whitelist: Must be tuple/list but is %s' % type(self.initialTask.siteWhitelist()))
+                raise error
+            try:
+                [Lexicon.cmsname(site) for site in self.initialTask.siteWhitelist()]
+            except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+                error = WorkQueueWMSpecError(self.wmspec, "Site whitelist validation error: %s" % str(ex))
+                raise error
+
+        if self.initialTask.siteBlacklist():
+            if type(self.initialTask.siteBlacklist()) in types.StringTypes:
+                error = WorkQueueWMSpecError(self.wmspec, 'Invalid site blacklist: Must be tuple/list but is %s' % type(self.initialTask.siteBlacklist()))
+                raise error
+            try:
+                [Lexicon.cmsname(site) for site in self.initialTask.siteBlacklist()]
+            except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+                error = WorkQueueWMSpecError(self.wmspec, "Site blacklist validation error: %s" % str(ex))
+                raise error
+
+        # check input dataset is valid
+        try:
+            if self.initialTask.getInputDatasetPath():
+                Lexicon.dataset(self.initialTask.getInputDatasetPath())
+        except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+            error = WorkQueueWMSpecError(self.wmspec, "Dataset validation error: %s" % str(ex))
             raise error
 
     def newQueueElement(self, **args):
@@ -75,7 +102,11 @@ class StartPolicyInterface(PolicyInterface):
             # A dbs configuration error implies the spec is invalid
             error = WorkQueueWMSpecError(self.wmspec, "DBS config error: %s" % str(ex))
             raise error
-        
+        except AssertionError, ex:
+            # Assertion generally means validation of an input field failed
+            error = WorkQueueWMSpecError(self.wmspec, "Assertion error: %s" % str(ex))
+            raise error
+
         if not self.workQueueElements:
             msg = """data: %s, mask: %s.""" % (str(task.inputDataset().pythonise_()), str(mask))
             error = WorkQueueNoWorkError(self.wmspec, msg)

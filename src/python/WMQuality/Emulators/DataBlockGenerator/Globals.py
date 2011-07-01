@@ -1,6 +1,6 @@
 NOT_EXIST_DATASET = 'thisdoesntexist'
 
-SITES = ['SiteA', 'SiteB', 'SiteC']
+SITES = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
 
 global _BLOCK_LOCATIONS
 
@@ -11,13 +11,13 @@ def getSites(block):
         return _BLOCK_LOCATIONS[block]
 
     if block.endswith('#1'):
-        sites  = ['SiteA']
+        sites  = ['T2_XX_SiteA']
         _BLOCK_LOCATIONS[block] = sites
     elif block.endswith('#2'):
-        sites = ['SiteA', 'SiteB']
+        sites = ['T2_XX_SiteA', 'T2_XX_SiteB']
         _BLOCK_LOCATIONS[block] = sites
     else:
-         sites = ['SiteA', 'SiteB','SiteC']
+         sites = ['T2_XX_SiteA', 'T2_XX_SiteB','T2_XX_SiteC']
     return sites
 
 # This can be replace to PhEDEx subscription call

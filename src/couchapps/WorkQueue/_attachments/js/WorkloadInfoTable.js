@@ -36,8 +36,16 @@ WQ.WorkloadInfoTable.workloadTable = function(args) {
                       formatter: progressFormatter, parser: "number"}]
             };
 
-    var dataUrl = "workflowInfo/" + args.workflow
-
+    //workqueue database name is hardcoded, need to change to get from config
+    //This makes this javascript not reusable but solves the path issue on
+    //different deployment (using proxy, rewrite rules.
+    var dataUrl = location.pathname
+    // This only works workflowInfo is called by top level (_rewrite/)and
+    // dataUrl doesn't have more than one "workflowInfo/
+    // Maybe there is a better way to do this.
+    if (!dataUrl.match("workflowInfo/")) {
+        dataUrl = "workflowInfo"
+    };
     var dataSource = WQ.createDataSource(dataUrl, dataSchema);
     var tableConfig = WQ.createDefaultTableConfig();
     tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 5});
@@ -51,11 +59,11 @@ WQ.WorkloadInfoTable.workloadTable = function(args) {
                                  tableConfig, 600000);
 
     // Set up editing flow
-    var highlightEditableCell = function(oArgs) {
-        var target = oArgs.target;
-        var column = this.getColumn(target);
-        if (column.key == 'wmspec') {
-            this.highlightCell(target);
+    // TODO: not sure why this is not working
+    var highlightRequestCell = function(oArgs) {
+        var column = this.getColumn(oArgs.target);
+        if (column.key == 'RequestName') {
+            this.onEventHighlightCell(oArgs.event, oArgs.target);
         };
     };
 
@@ -72,7 +80,7 @@ WQ.WorkloadInfoTable.workloadTable = function(args) {
         };
     };
 
-    dataTable.subscribe("cellMouseoverEvent", highlightEditableCell);
-    //dataTable.subscribe("cellMouseoutEvent", dataTable.onEventUnhighlightCell);
+    dataTable.subscribe("cellMouseoverEvent", dataTable.onEventHighlightCell);
+    dataTable.subscribe("cellMouseoutEvent", dataTable.onEventUnhighlightCell);
     dataTable.subscribe("cellClickEvent", elementTableHandler);
 };

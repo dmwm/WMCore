@@ -9,8 +9,6 @@ from WMCore.Services.WMBS.WMBS import WMBS
 
 def getRequestOverview(serviceURL, serviceLevel):
 
-    print serviceLevel, serviceURL
-
     if serviceLevel == "RequestManager":
         return getRequestInfoFromReqMgr(serviceURL)
     elif serviceLevel == "GlobalQueue":
@@ -27,7 +25,6 @@ def getRequestInfoFromReqMgr(serviceURL):
     service = RequestManager({'endpoint':serviceURL})
     try:
         baseResults = service.getRequestNames()
-        print baseResults
         urls = service.getWorkQueue()
     except Exception, ex:
         logging.error(str(ex))
@@ -46,20 +43,19 @@ def getRequestInfoFromGlobalQueue(serviceURL):
     try:
         jobInfo = service.getTopLevelJobsByRequest()
         qInfo = service.getChildQueuesByRequest()
-        print qInfo
         childQueueURLs = set()
         for item in qInfo:
             childQueueURLs.add(item['local_queue'])
 
     except Exception, ex:
-        logging.error(str(ex))
+        logging.error("%s: %s" (serviceURL, str(ex)))
         return DFormatter.errorFormatter(serviceURL, "GlobalQueue Down")
     else:
         baseResults = combineListOfDict('request_name', jobInfo, qInfo,
                                     local_queue = DFormatter.addToList)
         localResults = []
         for url in childQueueURLs:
-            localResults.append(getRequestOverview(url, "LocalQueue"))
+            localResults.extend(getRequestOverview(url, "LocalQueue"))
 
         localQRules = {'pending': DFormatter.add, 'cooloff': DFormatter.add,
                        'running': DFormatter.add, 'success': DFormatter.add,
@@ -75,12 +71,12 @@ def getRequestInfoFromLocalQueue(serviceURL):
     """ get the request info from local queue """
 
     url, dbName = splitCouchServiceURL(serviceURL)
-    service = WorkQueue(serviceURL, dbName)
+    service = WorkQueue(url, dbName)
     try:
         wmbsUrls = service.getWMBSUrl()
         jobStatusInfo = service.getJobStatusByRequest()
     except Exception, ex:
-        logging.error(str(ex))
+        logging.error("%s: %s" (serviceURL, str(ex)))
         return DFormatter.errorFormatter(serviceURL, "LocalQueue Down")
 
     # assumes one to one relation between localqueue and wmbs
@@ -92,7 +88,7 @@ def getRequestInfoFromWMBS(serviceURL, jobStatusInfo):
     try:
         batchJobs = service.getBatchJobStatus()
     except Exception, ex:
-        logging.error(str(ex))
+        logging.error("%s: %s" (serviceURL, str(ex)))
         return DFormatter.errorFormatter(serviceURL, "WMBS Service Dowtn")
 
     try:
@@ -101,7 +97,7 @@ def getRequestInfoFromWMBS(serviceURL, jobStatusInfo):
     # caught above try except. doesn't try to catch CouchError to
     # reduce the  dependency (not to import CouchError)
     except Exception, ex:
-        logging.error(str(ex))
+        logging.error("%s: %s" (serviceURL, str(ex)))
         couchJobs = DFormatter.errorFormatter(serviceURL, "CouchDB Down")
     else:
         if len(couchJobs)  == 1 and couchJobs[0].has_key("error"):

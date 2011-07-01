@@ -35,7 +35,7 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
             } else {
             for (data in sData) {
                 host = sData[data].split('/')[2];
-                elCell.innerHTML = "<a href='" + sData + "monitor" + postfixLink +
+                elCell.innerHTML = "<a href='" + sData + postfixLink +
                          oRecord.getData("request_name") + "' target='_blank'>" +
                          host + "</a> <br>";
                 };

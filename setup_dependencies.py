@@ -50,6 +50,7 @@ dependencies = {
                         'packages': ['WMCore.WorkQueue+', 'WMCore.Wrappers+',
                                      'WMCore.Services', 'WMCore.Services.DBS+', 'WMCore.Services.PhEDEx+',
                                      'WMCore.Services.RequestManager+', 'WMCore.Services.SiteDB+',
+                                     'WMCore.Services.JSONParser+',
                                      'WMCore.WMSpec', 'WMCore.WMSpec.Steps',
                                      'WMCore.ACDC', 'WMCore.GroupUser'],
                         'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',

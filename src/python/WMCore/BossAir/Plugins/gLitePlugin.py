@@ -9,7 +9,7 @@ gLite Plugin
 import logging
 import subprocess
 import threading
-import multiprocessing
+import multiprocessing, Queue
 import socket
 import tempfile
 import os
@@ -467,7 +467,7 @@ class gLitePlugin(BasePlugin):
             res = None
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
-            except multiprocessing.Queue.Empty:
+            except Queue.Empty:
                 logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
                 continue
             jsout  = res['jsout']
@@ -660,7 +660,7 @@ class gLitePlugin(BasePlugin):
             res = None
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
-            except multiprocessing.Queue.Empty:
+            except Queue.Empty:
                 logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
                 continue
             jsout  = res['jsout']
@@ -709,7 +709,7 @@ class gLitePlugin(BasePlugin):
                         else:
                             ## we do not want jobs without timestamp to abort...
                             ## (probably), so I just set current time and print as an error for the operator
-                            logging.error("Impossible to retrieve timestamp from status: job %s in status %s! Setting current time." %s(jj['gridid'], status))
+                            logging.error("Impossible to retrieve timestamp from status: job %s in status %s! Setting current time." %(jj['gridid'], status))
                             jj['status_time'] = time.time()
 
                         # Get the global state
@@ -811,7 +811,7 @@ class gLitePlugin(BasePlugin):
             res = None
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
-            except multiprocessing.Queue.Empty:
+            except Queue.Empty:
                 logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
                 continue
             jsout  = res['jsout']
@@ -925,7 +925,7 @@ class gLitePlugin(BasePlugin):
             res = None
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
-            except multiprocessing.Queue.Empty:
+            except Queue.Empty:
                 logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
                 continue
             jsout  = res['jsout']
@@ -1020,8 +1020,8 @@ class gLitePlugin(BasePlugin):
                 msg = "Problem retrieving user proxy, or user proxy " + \
                       "expired '%s'" % ownersandbox
                 logging.error( msg )
-                failedJobs.append( jj )
-                self.fakeReport("KillFailure", msg, -1, jj)
+                failedJobs.append( job )
+                self.fakeReport("KillFailure", msg, -1, job)
                 continue
 
             gridID = job['gridid']
@@ -1043,7 +1043,7 @@ class gLitePlugin(BasePlugin):
             res = None
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
-            except multiprocessing.Queue.Empty:
+            except Queue.Empty:
                 logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
                 continue
             jsout  = res['jsout']

@@ -337,8 +337,6 @@ class Configuration(object):
             getattr(self, configSect) + getattr(otherConfig, configSect)
         return self
 
-
-
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
             # skip test for internal settinsg
@@ -351,6 +349,20 @@ class Configuration(object):
         object.__setattr__(self, name, value)
         return
 
+    def __delattr__(self, name):
+        if name.startswith("_internal_"):
+            # skip test for internal setting
+            object.__delattr__(self, name)
+            return
+        else:
+            if name in self._internal_sections:
+                self._internal_sections.remove(name)
+            if name in self._internal_components:
+                self._internal_components.remove(name)
+            if name in self._internal_webapps:
+                self._internal_webapps.remove(name)
+            object.__delattr__(self, name)
+            return
 
     def listComponents_(self):
         """

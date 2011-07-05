@@ -75,13 +75,16 @@ def modifyConfiguration(config, **args):
 
         if component == "JobCreator":
             compCfg.jobCacheDir = "%s/%s/JobCache" % (args['working_dir'], component)
-            
+    
+    localhost = socket.gethostname()
     for webapp in config.listWebapps_():
         compCfg = getattr(config, webapp)
         compCfg.componentDir = "%s/%s" % (args['working_dir'], webapp)
-        
+        # Webtool REST service host location
+        compCfg.Webtools.host = localhost
+    
     # hostname locations
-    config.Agent.hostName = socket.gethostname()
+    config.Agent.hostName = localhost
 
     if hasattr(config,"CRABInterface"):
         config.CRABInterface.Webtools.host = args["cs_hostname"]
@@ -110,6 +113,10 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'LocalQueue':
         if args.get("global_workqueue_url", None):
             config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = args["global_workqueue_url"]
+            config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:%s/%s" % ( 
+                                                               localhost,
+                                                               args["workqueue_port"], 
+                                                               args["workqueue_db_name"])
             # assume we connect to global directly
             try:
                 delattr(config, "CouchProxyManager")
@@ -119,6 +126,12 @@ def modifyConfiguration(config, **args):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
 
+    # custom wmbs service
+    if hasattr(config, "WMBSService"):
+        if args.get('wmbs_service_port'):
+            config.WMBSService.Webtools.port = int(args['wmbs_service_port'])
+        config.WMBSService.views.active.wmagent.couchConfig.couchURL = args["couch_url"]
+    
     return config
 
 
@@ -135,7 +148,8 @@ def main(argv=None):
             opts, args = getopt.getopt(argv[1:], "h", 
             ["help", "input=", "output=", "mysql_socket=", "mysql_url=", "couch_url=",
              "working_dir=", "reqmgr_hostname=", "reqmgr_port=", "global_workqueue_url=",
-             "workqueue_db_name=", "cs_hostname=", "cs_port="])
+             "workqueue_db_name=", "workqueue_port=", "cs_hostname=", "cs_port=", 
+             "wmbs_service_port="])
         except getopt.error, msg:
             raise Usage(msg)
     
@@ -149,7 +163,8 @@ def main(argv=None):
                 inputFile = value
             if option in ('--mysql_socket', '--mysql_url', '--couch_url', '--working_dir',
                           "--reqmgr_hostname", "--reqmgr_port", '--global_workqueue_url',
-                          '--workqueue_db_name', '--cs_hostname', '--cs_port'):
+                          '--workqueue_db_name', '--workqueue_port',
+                          '--cs_hostname', '--cs_port', '--wmbs_service_port'):
                 parameters[option[2:]] = value
     
     

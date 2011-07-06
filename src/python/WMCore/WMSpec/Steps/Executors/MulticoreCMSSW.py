@@ -22,6 +22,7 @@ from WMCore.WMRuntime.Tools.Scram import Scram
 from WMCore.WMRuntime.MergeBucket import MergeBucket
 
 from WMCore.FwkJobReport.Report import Report, addFiles
+import WMCore.FwkJobReport.MulticoreUtils as ReportUtils
 import WMCore.FwkJobReport.XMLParser as ReportReader
 
 
@@ -222,7 +223,7 @@ class MulticoreCMSSW(Executor):
         # open the output files
         stdoutHandle = open( self.step.output.stdout , 'w')
         stderrHandle = open( self.step.output.stderr , 'w')
-
+        applicationStart = time.time()
         args = ['/bin/bash', configPath, scramSetup,
                                          scramArch,
                                          scramCommand,
@@ -275,7 +276,7 @@ class MulticoreCMSSW(Executor):
         self.report = None
         mergeBuckets = {}
         inputFiles = {}
-        
+        aggregator = ReportUtils.Aggregator()
         #  //
         # // loop over the sub reports and combine the inputs for recording and outputs for merges
         #//
@@ -283,6 +284,7 @@ class MulticoreCMSSW(Executor):
             # use one of the reports as the template for the master report
             if self.report == None:
                 self.report = o
+            aggregator.add(o.report.performance)
             # store list of all unique input files into the job, adding them together if they
             # are fragments of the same file
             for inp in o.getAllInputFiles():
@@ -313,12 +315,15 @@ class MulticoreCMSSW(Executor):
         #//
         for f in inputFiles.values():
             self.report.addInputFile(f['module_label'], **f)
-
+        
         #  //
         # // Now roll through the merges, run the merge and edit the master job report with the outcome
         #//
+        mergesStart = time.time()
+        mergeTiming = []
         for b in mergeBuckets.values():
             # write the merge config file
+            thisMergeStarts = time.time()
             b.writeConfig()
             # run the merge as a scram enabled command
             logging.info("    Invoking command: %s" % b.merge_command)
@@ -335,6 +340,13 @@ class MulticoreCMSSW(Executor):
             # // add report from merge to master
             #//  ToDo: try/except here in case report is missing
             b.editReport(self.report)
+            thisMergeTime = time.time() - thisMergeStarts
+            mergeTiming.append(thisMergeTime)
+        mergesComplete = time.time()
+        totalJobTime = mergesComplete - applicationStart
+        self.report.report.performance = aggregator.aggregate()
+        ReportUtils.updateMulticoreReport(self.report, len(mergeBuckets), mergesStart , mergesComplete,
+                                          totalJobTime , *mergeTiming)
         
         return
 
@@ -418,6 +430,6 @@ if __name__ == "__main__":
     import WMCore.WMSpec.WMStep as WMStep
     tmpstep = WMStep.makeWMStep('runstep')
     test = MulticoreCMSSW()
-    test.pre( tmpstep )
+    test.pre()
     test.execute( tmpstep, tmpstep )
-    test.post( tmpstep )
+    test.post( )

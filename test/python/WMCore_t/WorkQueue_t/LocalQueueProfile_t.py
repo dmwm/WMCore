@@ -39,13 +39,15 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         self.localQueue = localQueue(DbName = self.queueDB,
                                      InboxDbName = self.queueInboxDB,
                                      NegotiationTimeout = 0,
-                                     QueueURL = 'global.example.com')
+                                     QueueURL = 'global.example.com',
+                                     CacheDir = self.cacheDir)
         
         
     def tearDown(self):
         """tearDown"""
         WorkQueueTestCase.tearDown(self)
         try:
+            shutil.rmtree(self.cacheDir)
             self.specGenerator.removeSpecs()
         except:
             pass
@@ -82,7 +84,7 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         siteJobs = {}
         for site in Globals.SITES:
             siteJobs[site] = 100000
-        self.localQueue.getWork(siteJobs, team = "A-team")
+        self.localQueue.getWork(siteJobs)
                              
         
 if __name__ == "__main__":

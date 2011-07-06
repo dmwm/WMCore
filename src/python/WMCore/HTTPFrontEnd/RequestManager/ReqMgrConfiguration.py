@@ -29,7 +29,7 @@ def reqMgrConfig(
     reqMgrJavascript = os.path.join(installation, 'javascript')
     globalOverviewTemplates = os.path.join(installation, 'templates/WMCore/WebTools/GlobalMonitor')
     globalOverviewJavascript = reqMgrJavascript
-    globalOverviewHtml = os.path.join(installation, 'html/GlobalOverview')
+    globalOverviewHtml = os.path.join(installation, 'html')
 
     if startup == "Root.py":
         config.component_("Webtools")

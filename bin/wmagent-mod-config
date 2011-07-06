@@ -101,6 +101,8 @@ def modifyConfiguration(config, **args):
         config.reqmgr.views.active.create.requestor = "cmsdataops"
         config.reqmgr.database.connectUrl = args["mysql_url"]
         config.reqmgr.database.socket = args["mysql_socket"]
+        config.reqmgr.views.active.monitorSvc.serviceURL = "http://%s:%s/reqmgr/reqMgr" % (
+                                                           localhost, config.reqmgr.Webtools.port)
 
     # custom global workqueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'GlobalQueue':
@@ -130,6 +132,7 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "WMBSService"):
         if args.get('wmbs_service_port'):
             config.WMBSService.Webtools.port = int(args['wmbs_service_port'])
+        config.WMBSService.views.active.wmbs.couchConfig.couchURL = args["couch_url"]
         config.WMBSService.views.active.wmagent.couchConfig.couchURL = args["couch_url"]
     
     return config

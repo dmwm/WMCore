@@ -37,6 +37,16 @@ class CrappyRequest(Requests):
         # METAL \m/
         raise BadStatusLine(666)
 
+class RegularServer(object):
+    def regular(self):
+        return "This is silly."
+    regular.exposed = True
+
+class BackupServer(object):
+    def regular(self):
+        return "This is nuts."
+    regular.exposed = True
+
 class ServiceTest(unittest.TestCase):
     def setUp(self):
         """
@@ -67,6 +77,10 @@ class ServiceTest(unittest.TestCase):
         test_dict['endpoint'] = 'http://cmssw-test.cvs.cern.ch/cgi-bin/cmssw.cgi'
         self.myService2 = Service(test_dict)
         self.testUrl = 'http://cern.ch'
+
+        self.port = 8081
+        cherrypy.config.update({'server.socket_port': self.port})
+
 
     def tearDown(self):
         testname = self.id().split('.')[-1]
@@ -258,24 +272,34 @@ class ServiceTest(unittest.TestCase):
 
 
     def testTruncatedResponse(self):
+        """
+        _TruncatedResponse_
+
+        """
         cherrypy.tree.mount(CrappyServer())
         cherrypy.engine.start()
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
         logger = logging.getLogger('john')
-        test_dict = {'logger': self.logger,'endpoint':'http://localhost:8080/truncated', 'usestalecache': True}
+        test_dict = {'logger': self.logger,'endpoint':'http://localhost:%i/truncated' % self.port,
+                     'usestalecache': True}
         myService = Service(test_dict)
         self.assertRaises(IncompleteRead, myService.getData, 'foo', '')
         cherrypy.engine.exit()
         cherrypy.engine.stop()
 
     def testSlowResponse(self):
+        """
+        _SlowResponse_
+
+        """
         cherrypy.tree.mount(SlowServer())
         cherrypy.engine.start()
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
         logger = logging.getLogger('john')
-        test_dict = {'logger': self.logger,'endpoint':'http://localhost:8080/slow', 'usestalecache': True}
+        test_dict = {'logger': self.logger,'endpoint':'http://localhost:%i/slow' % self.port,
+                     'usestalecache': True}
         myService = Service(test_dict)
         startTime = int(time.time())
         self.assertRaises(socket.timeout, myService.getData, 'foo', '')
@@ -285,15 +309,79 @@ class ServiceTest(unittest.TestCase):
         cherrypy.engine.stop()
 
     def testBadStatusLine(self):
+        """
+        _BadStatusLine_
+
+        """
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
         logger = logging.getLogger('john')
-        test_dict = {'logger': self.logger,'endpoint':'http://localhost:8080/badstatus', 'usestalecache': True}
+        test_dict = {'logger': self.logger,'endpoint':'http://localhost:%i/badstatus' % self.port,
+                     'usestalecache': True}
         myService = Service(test_dict)
         # Have to fudge the status line in the Request object as cherrypy won't
         # Allow bad statuses to be raised
         myService['requests'] = CrappyRequest('http://bad.com', {})
         self.assertRaises(BadStatusLine, myService.getData, 'foo', '')
+
+
+    def testZ_InterruptedConnection(self):
+        """
+        _InterruptedConnection_
+
+        What happens if we shut down the server while
+        the connection is still active?
+
+        Confirm that the cache works as expected
+        """
+
+        cherrypy.tree.mount(RegularServer(), "/reg1")
+        cherrypy.engine.start()
+        FORMAT = '%(message)s'
+        logging.basicConfig(format=FORMAT)
+        logger = logging.getLogger('john')
+        test_dict = {'logger': self.logger,'endpoint':'http://localhost:%i/reg1/regular' % self.port,
+                     'usestalecache': False, "cacheduration": 0.005}
+        myService = Service(test_dict)
+        self.assertRaises(HTTPException, myService.getData, 'foo', 'THISISABADURL')
+
+        data = myService.refreshCache('foo', '')
+        dataString = data.read()
+        self.assertEqual(dataString, "This is silly.")
+        data.close()
+
+        # Now stop the server and confirm that it is down
+        cherrypy.server.stop()
+        self.assertRaises(socket.error, myService.forceRefresh, 'foo', '')
+
+        # Make sure we can still read from the cache
+        data = myService.refreshCache('foo', '')
+        dataString = data.read()
+        self.assertEqual(dataString, "This is silly.")
+        data.close()
+
+        # Mount a backup server
+        del cherrypy.tree.apps['/reg1']
+        cherrypy.tree.mount(BackupServer(), "/reg1")
+
+        # Expire cache
+        time.sleep(30)
+        self.assertRaises(socket.error, myService.forceRefresh, 'foo', '')
+
+        # Restart server
+        cherrypy.server.start()
+
+        # Confirm new server is in place
+        data = myService.refreshCache('foo', '')
+        dataString = data.read()
+        self.assertEqual(dataString, "This is nuts.")
+        data.close()
+
+        cherrypy.engine.exit()
+        cherrypy.engine.stop()
+
+        return
+
 
 if __name__ == '__main__':
     unittest.main()

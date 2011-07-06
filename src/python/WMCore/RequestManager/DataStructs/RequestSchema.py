@@ -36,6 +36,7 @@ class RequestSchema(dict):
         self.setdefault("AcquisitionEra", None)
         self.setdefault("Group", None)
         self.setdefault("Requestor", None)
+        self.setdefault("ScramArch", "slc5_amd64_gcc434")
         self.basicFields = self.keys()
 
     def validateSchema(self):

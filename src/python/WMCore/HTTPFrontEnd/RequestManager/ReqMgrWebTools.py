@@ -147,7 +147,8 @@ def requestsWhichCouldLeadTo(newStatus):
     """ returns a list of all statuses which can lead to the new status """
     requests = []
     for status, nextStatus in RequestStatus.NextStatus.iteritems():
-        if newStatus in nextStatus:
+        # don't allow same->same transition
+        if status != newStatus and newStatus in nextStatus:
             requests.extend(requestsWithStatus(status))
     return requests
 

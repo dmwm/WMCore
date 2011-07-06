@@ -142,7 +142,7 @@ class WorkQueueReqMgrInterface():
         results = []
         for team in teams:
             reqs = self.reqMgr.getAssignment(team)
-            results.extend([(team, req, spec_url) for req, spec_url in reqs.items()])
+            results.extend([(team, req, spec_url) for req, spec_url in reqs])
         return results
     
     def reportRequestStatus(self, request, status, message = None):

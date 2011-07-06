@@ -212,21 +212,21 @@ class ReqMgrRESTModel(RESTModel):
 
     def getAssignment(self, teamName=None, request=None):
         """ If a team name is passed in, get all assignments for that team.
-        If a request is passed in, return a list of teams the request is assigned to """
-        result = []
-        #self.init.setLogging()
-        #self.init.setDatabaseConnection()
+        If a request is passed in, return a list of teams the request is 
+        assigned to 
+        """
         # better to use ReqMgr/RequestDB/Interface/ProdSystem/ProdMgrRetrieve?
         #requestIDs = ProdMgrRetrieve.findAssignedRequests(teamName)
         # Maybe now assigned to team is same as assigned to ProdMgr
+        result = []
         if teamName != None:
             requestIDs = ListRequests.listRequestsByTeam(teamName, "assigned").values()
-            result = {}
-            for reqID in requestIDs:
-                req = GetRequest.getRequest(reqID)
-                result[req['RequestName']] = req['RequestWorkflow']
-            return result
-        if request != None:
+            requests = [GetRequest.getRequest(reqID) for reqID in requestIDs]
+            # put highest priorities first
+            requests.sort(key=lambda r: r['RequestPriority'], reverse=True)
+            # return list of tuples, since we need sorting
+            result = [(req['RequestName'], req['RequestWorkflow']) for req in requests]
+        elif request != None:
             result = GetRequest.getAssignmentsByName(request)
         return result
 

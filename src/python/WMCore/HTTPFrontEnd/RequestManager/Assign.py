@@ -98,7 +98,7 @@ class Assign(WebAPI):
                                  assignments=assignments, sites=self.sites,
                                  mergedLFNBases = mergedBases,
                                  unmergedLFNBases = unmergedBases,
-                                 acqEra = acqEra, procVer = procVer)
+                                 acqEra = acqEra, procVer = procVer, badRequests=[])
 
     @cherrypy.expose    
     @cherrypy.tools.secmodv2(role=security_roles)

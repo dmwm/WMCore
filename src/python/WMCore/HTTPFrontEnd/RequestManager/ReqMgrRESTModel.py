@@ -225,7 +225,7 @@ class ReqMgrRESTModel(RESTModel):
             # put highest priorities first
             requests.sort(key=lambda r: r['RequestPriority'], reverse=True)
             # return list of tuples, since we need sorting
-            result = [(req['RequestName'], req['RequestWorkflow']) for req in requests]
+            result = [[req['RequestName'], req['RequestWorkflow']] for req in requests]
         elif request != None:
             result = GetRequest.getAssignmentsByName(request)
         return result

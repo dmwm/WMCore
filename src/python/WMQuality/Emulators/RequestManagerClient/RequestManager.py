@@ -43,9 +43,10 @@ class RequestManager(dict):
             #specUrl =self.specGenerator.createProcessingSpec(specName, "file")
         
             self.count += 1
-            return {specName:specUrl}
+            # returns list of list(rquest name, spec url)
+            return [[specName, specUrl],]
         else:
-            return {}
+            return []
     
     def putWorkQueue(self, reqName, prodAgentUrl=None):
         self.status[reqName] = 'acquired'

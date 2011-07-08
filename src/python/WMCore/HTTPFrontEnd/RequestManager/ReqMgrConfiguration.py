@@ -125,4 +125,6 @@ def reqMgrConfig(
     active.monitorSvc.default_expires = 0 # no caching
     active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
 
+    active.section_('yuiserver')
+    active.yuiserver.object = 'WMCore.WebTools.YUIServer'
     return config

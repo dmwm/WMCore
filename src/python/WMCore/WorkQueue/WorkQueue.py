@@ -934,7 +934,7 @@ class WorkQueue(WorkQueueBase):
             dbs_url = topLevelTask.dbsUrl()
 
             if topLevelTask.taskType() not in ("Processing", "Production", \
-                                               "Merge"):
+                                               "Merge", "Analysis"):
                 continue
 
             try:

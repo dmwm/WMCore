@@ -276,3 +276,10 @@ wmagentmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WM
 wmagentmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'javascript/')
 wmagentmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'css/')
 wmagentmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')
+
+wmbsmonitor = config.WMBSService.views.active.section_('wmbsmonitor')
+wmbsmonitor.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSMonitorPage'
+wmbsmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
+wmbsmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'javascript/')
+wmbsmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'css/')
+wmbsmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')

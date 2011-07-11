@@ -63,16 +63,16 @@ def getAgentInfoFromLocalQueue(serviceURL):
         errorInfo['url'] = serviceURL
         errorInfo['status'] = "Local Queue down: %s" % serviceURL
         errorInfo['acdc'] = 'N/A'
-        return [errorInfo]
+        return errorInfo
 
     agents = []
     for url in wmbsUrl:
-        agents.append(getAgentInfoFromLocalQueue(url))
+        agents.append(getAgentInfoFromWMBS(url))
     return agents
 
 def getAgentInfoFromWMBS(serviceURL):
     agentInfo = {}
-    agentURL = serviceURL.replace('/wmbs', '/wmagent')
+    agentURL = serviceURL.replace('wmbsservice/wmbs', 'wmbsservice/wmagent')
     agentService = WMAgent({'endpoint': agentURL})
     try:
         agent = agentService.getAgentStatus(detail = False)

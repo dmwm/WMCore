@@ -19,7 +19,7 @@ WMCore.WMBS.ResourceInfoByTask.resourceInfo = function(divID){
             }]
         };
         
-        var taskUrl = "/workqueueservice/wmbs/listtaskbysite"
+        var taskUrl = "/wmbsservice/wmbs/listtaskbysite"
         
         var taskSource = WMCore.createDataSource(taskUrl, taskSchema)
         
@@ -61,7 +61,7 @@ WMCore.WMBS.ResourceInfoByTask.resourceInfo = function(divID){
             label: "running"
         }]
         
-        var thresholdUrl = "/workqueueservice/wmbs/thresholdbysite"
+        var thresholdUrl = "/wmbsservice/wmbs/thresholdbysite"
         
         var thresholdSource = WMCore.createDataSource(thresholdUrl, thresholdSchema)
         
@@ -96,7 +96,7 @@ WMCore.WMBS.ResourceInfoByTask.resourceInfo = function(divID){
             }]
         };
         
-        var siteUrl = "/workqueueservice/wmbs/listthresholdsforcreate/"
+        var siteUrl = "/wmbsservice/wmbs/listthresholdsforcreate/"
         
         var siteSource = WMCore.createDataSource(siteUrl, siteSchema)
         

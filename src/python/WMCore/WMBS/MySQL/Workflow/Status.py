@@ -30,7 +30,7 @@ class Status(DBFormatter):
                  wmbs_jobgroup.id = wmbs_job.jobgroup
                LEFT OUTER JOIN wmbs_job_state ON
                  wmbs_job.state = wmbs_job_state.id
-               GROUP BY wmbs_user.id, wmbs_workflow.task, wmbs_job_state.name"""
+               GROUP BY wmbs_users.id, wmbs_workflow.task, wmbs_job_state.name"""
     
     def converDecimalToInt(self, results):
         for result in results:

@@ -957,8 +957,12 @@ class WMWorkloadHelper(PersistencyHelper):
                 if stepHelper.stepType() == "CMSSW" or \
                        stepHelper.stepType() == "MulticoreCMSSW":
                     if cmsswVersion != None:
-                        stepHelper.cmsswSetup(cmsswVersion = cmsswVersion,
-                                              scramArch = scramArch)
+                        if scramArch != None:
+                            stepHelper.cmsswSetup(cmsswVersion = cmsswVersion,
+                                                  scramArch = scramArch)
+                        else:
+                            stepHelper.cmsswSetup(cmsswVersion = cmsswVersion)
+                        
                     if globalTag != None:
                         stepHelper.setGlobalTag(globalTag)
 

@@ -1,3 +1,16 @@
+0.7.11 to 0.7.12:
+  - Write couch list function to generate report of analyzed lumis (1790).
+  - Make sure we process analysis workflows (1914).
+  - Only update the scram arch if a new one is actually provided (1902).
+  - Fix runtime problems with gLite (1913).
+  - Don't show approved requests on the request approval page (1903).
+  - Add a default scram arch (1901).
+  - Fix timeout for subprocesses in glite (1897).
+  - Set lumi for MC jobs (1875).
+  - Don't include the output of chained steps that is not kept in the
+    output of the listDatasets() method (1873).
+  - Fix the RequestOverview configuration.
+
 0.7.10 to 0.7.11:
   - Update the merged status of a file when installed into WMBS by the
     WorkQueue (1813).

@@ -98,7 +98,7 @@ def processWorker(input, results):
                        'workid': workid,
                        'jsout' : jsout,
                        'stderr': stderr,
-                       'exit': pipe.returncode 
+                       'exit': pipe.returncode
                      })
         #print '%i TOOK: %s' % (workid, str(time.time() - t1))
 
@@ -142,14 +142,14 @@ class gLitePlugin(BasePlugin):
         self.states = [ 'New',
                         'Timeout',
                         'Submitted',
-                        'Waiting', 
-                        'Ready', 
-                        'Scheduled', 
+                        'Waiting',
+                        'Ready',
+                        'Scheduled',
                         'Running',
                         'Done(failed)',
                         'Done',
-                        'Aborted',           
-                        'Cleared', 
+                        'Aborted',
+                        'Cleared',
                         'Cancelled by user',
                         'Cancelled']
 
@@ -200,12 +200,11 @@ class gLitePlugin(BasePlugin):
         self.pool     = []
 
         self.submitFile   = getattr(self.config.JobSubmitter, 'submitScript', None)
-        self.unpackerFile = getattr(self.config.JobSubmitter, 'unpackerScript', None)
         self.submitDir    = getattr(self.config.JobSubmitter, 'submitDir', '/tmp/')
         self.gliteConfig  = getattr(self.config.BossAir, 'gLiteConf', None)
         self.defaultjdl['service'] = getattr(self.config.BossAir, 'gliteWMS', None)
 
-        self.basetimeout  = getattr(self.config.JobSubmitter, 'getTimeout', 300 ) 
+        self.basetimeout  = getattr(self.config.JobSubmitter, 'getTimeout', 300 )
 
         self.defaultjdl['myproxyhost'] = self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, 'myproxyhost', self.defaultDelegation['myProxySvr'] )
 
@@ -227,6 +226,13 @@ class gLitePlugin(BasePlugin):
         self.defaultDelegation['uisource'] = self.setupScript
 
         self.debugOutput = getattr(self.config.BossAir, 'gLiteCacheOutput', False)
+
+        wmcoreBasedir = WMCore.WMInit.getWMBASE()
+
+        if os.path.exists(os.path.join(wmcoreBasedir, 'src/python/WMCore/WMRuntime/Unpacker.py')):
+            self.unpacker = os.path.join(wmcoreBasedir, 'src/python/WMCore/WMRuntime/Unpacker.py')
+        else:
+            self.unpacker = os.path.join(wmcoreBasedir, 'WMCore/WMRuntime/Unpacker.py')
 
         return
 
@@ -279,7 +285,7 @@ class gLitePlugin(BasePlugin):
             errorReport = Report()
             errorReport.addError(title, code, title, mesg)
             errorReport.save(filename = reportName)
-        return 
+        return
 
 
     def close(self, input, result):
@@ -298,7 +304,7 @@ class gLitePlugin(BasePlugin):
                 msg =  "Hit some exception in deletion\n"
                 msg += str(ex)
                 logging.error(msg)
-                
+
         for proc in self.pool:
             proc.terminate()
 
@@ -311,7 +317,7 @@ class gLitePlugin(BasePlugin):
         """
         _start_
 
-        Start the mulitp. 
+        Start the mulitp.
         """
 
         if len(self.pool) == 0:
@@ -327,7 +333,7 @@ class gLitePlugin(BasePlugin):
     def submit(self, jobs, info = None):
         """
         _submit_
-        
+
         Submits jobs
         """
 
@@ -507,14 +513,14 @@ class gLitePlugin(BasePlugin):
                     for job in jobsub:
                         self.fakeReport("SubmissionFailure", str(jsout), -1, job)
                     continue
-                if jsout.has_key('parent'): 
+                if jsout.has_key('parent'):
                     parent = jsout['parent']
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
                         self.fakeReport("SubmissionFailure", str(jsout), -1, job)
                     continue
-                if jsout.has_key('endpoint'): 
+                if jsout.has_key('endpoint'):
                     endpoint = jsout['endpoint']
                 else:
                     failedJobs.extend(jobsub)
@@ -561,7 +567,7 @@ class gLitePlugin(BasePlugin):
     def track(self, jobs):
         """
         _track_
-        
+
         Tracks jobs
         Returns three lists:
         1) the running jobs
@@ -575,10 +581,6 @@ class gLitePlugin(BasePlugin):
         queryfilename    = 'GLiteStatusQuery.py'
         wmcoreBasedir = WMCore.WMInit.getWMBASE()
 
-        if os.path.exists(os.path.join(wmcoreBasedir, 'src/python/WMCore/WMRuntime/Unpacker.py')):
-            self.unpacker = os.path.join(wmcoreBasedir, 'src/python/WMCore/WMRuntime/Unpacker.py')
-        else:
-            self.unpacker = os.path.join(wmcoreBasedir, 'WMCore/WMRuntime/Unpacker.py')
 
         if wmcoreBasedir  :
             if os.path.exists(os.path.join(wmcoreBasedir, 'src/python/WMCore/BossAir/Plugins/', queryfilename)):
@@ -619,7 +621,7 @@ class gLitePlugin(BasePlugin):
         result = multiprocessing.Queue()
         self.start(input, result)
 
-        #creates chunks of work per multiprocesses 
+        #creates chunks of work per multiprocesses
         # in principle each multiprocess can get one list of job ids associated
         # to a user dn in some cases a thread can get too many or few jobs
         # also splitting the jobs of a user may help (each chunk of work has at
@@ -637,7 +639,7 @@ class gLitePlugin(BasePlugin):
             jobList = dnjobs.get(user, [])
             while len(jobList) > 0:
                 jobIds = []
-                ## TODO: try to avoid iterating over all the jobs 
+                ## TODO: try to avoid iterating over all the jobs
                 for jj in jobList:
                     jobIds.append( jj['gridid'] )
                 formattedJobIds = ','.join(jobIds)
@@ -721,8 +723,8 @@ class gLitePlugin(BasePlugin):
                             jj['status']      = status
                             changeList.append(jj)
 
-                        if status not in ['Done', 'Aborted', 'Cleared', 
-                                          'Cancelled by user', 'Cancelled']: 
+                        if status not in ['Done', 'Aborted', 'Cleared',
+                                          'Cancelled by user', 'Cancelled']:
                             runningList.append(jj)
                         else:
                             completeList.append(jj)
@@ -731,7 +733,7 @@ class gLitePlugin(BasePlugin):
 
         ## Shut down processes
         logging.debug("About to close the subprocesses...")
-        self.close(input, result)        
+        self.close(input, result)
 
         return runningList, changeList, completeList
 
@@ -752,7 +754,7 @@ class gLitePlugin(BasePlugin):
 
         workqueued  = {}
         currentwork = len(workqueued)
-        
+
         completedJobs = []
         failedJobs    = []
         abortedJobs   = []
@@ -764,7 +766,7 @@ class gLitePlugin(BasePlugin):
         result = multiprocessing.Queue()
         self.start(input, result)
 
-        #creates chunks of work per multi-processes 
+        #creates chunks of work per multi-processes
         # TODO: evaluate if passing just one job per work is too much overhead
 
         for jj in jobs:
@@ -835,7 +837,7 @@ class gLitePlugin(BasePlugin):
 
                 ### out example
                 # {
-                # result: success 
+                # result: success
                 # endpoint: https://wms202.cern.ch:7443/glite_wms_wmproxy_server
                 # jobid: https://wms202.cern.ch:9000/MwNUhRUsC2HaSfCFzxETVw {
                 # No output files to be retrieved for the job:
@@ -843,7 +845,7 @@ class gLitePlugin(BasePlugin):
                 #
                 # }
                 #}
-                
+
                 if jsout is not None:
                     jobid    = workqueued[workid]
                     if jsout.find('success') != -1:
@@ -883,7 +885,7 @@ class gLitePlugin(BasePlugin):
         result = multiprocessing.Queue()
         self.start(input, result)
 
-        #creates chunks of work per multi-processes 
+        #creates chunks of work per multi-processes
         # TODO: evaluate if passing just one job per work is too much overhead
 
         for jj in jobs:
@@ -967,7 +969,7 @@ class gLitePlugin(BasePlugin):
 
         # NOTE: This is a blocking function
 
-        
+
         #input = [x['gridid'] for x in jobs]
 
         #results = self.pool.map(outputWorker, input,
@@ -985,10 +987,10 @@ class gLitePlugin(BasePlugin):
     def kill(self, jobs):
         """
         _kill_
-        
+
         Kill any and all jobs
-        """    
-        
+        """
+
         workqueued  = {}
         currentwork = len(workqueued)
 
@@ -1001,7 +1003,7 @@ class gLitePlugin(BasePlugin):
         input  = multiprocessing.Queue()
         result = multiprocessing.Queue()
         self.start(input, result)
-        
+
         for job in jobs:
 
             ownersandbox      = job['userdn']
@@ -1031,7 +1033,7 @@ class gLitePlugin(BasePlugin):
             workqueued[currentwork] = gridID
             completecmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && %s && %s' % (self.setupScript, self.manualenvprefix, exportproxy, command)
             input.put( (currentwork, completecmd, 'output') )
-  
+
             currentwork += 1
 
         # Now we should have sent all jobs to be submitted
@@ -1064,7 +1066,7 @@ class gLitePlugin(BasePlugin):
                 continue
             elif jsout.find('success') != -1:
                 logging.debug('Success killing %s' % str(workqueued[workid]))
-                completedJobs.append(workqueued[workid]) 
+                completedJobs.append(workqueued[workid])
             else:
                 logging.error('Error success != -1')
                 failedJobs.append(workqueued[workid])
@@ -1091,7 +1093,7 @@ class gLitePlugin(BasePlugin):
         command = "glite-wms-job-delegate-proxy -d " + self.delegationid
         if exportcmd is not None:
             command =  exportcmd + ' && ' + command
-     
+
         if wms is not None:
             command1 = command + " -e " + wms
             pipe = subprocess.Popen(command1, stdout = subprocess.PIPE,
@@ -1107,7 +1109,7 @@ class gLitePlugin(BasePlugin):
                 logging.error( msg )
             else:
                 logging.debug("Proxy delegated using %s endpoint" % wms )
- 
+
 
         if self.gliteConfig is not None :
             command2 = command + " -c " + self.gliteConfig
@@ -1123,7 +1125,7 @@ class gLitePlugin(BasePlugin):
                 logging.error( msg )
             else:
                 logging.debug("Proxy delegated using %s " % self.gliteConfig)
- 
+
 
     def makeJdl(self, jobList, dest, info):
         """
@@ -1150,7 +1152,7 @@ class gLitePlugin(BasePlugin):
         if jobList[0].has_key('sandbox') and jobList[0]['sandbox'] is not None:
             isb += '"%s%s",' % ( startdir, jobList[0]['sandbox'] )
             commonFiles += "root.inputsandbox[%i]," % ind
-            ind += 1 
+            ind += 1
         ## this should include the JobPackage.pkl
         #if jobList[0].has_key('packageDir') and \
         #   jobList[0]['packageDir'] is not None:
@@ -1164,8 +1166,8 @@ class gLitePlugin(BasePlugin):
             commonFiles += "root.inputsandbox[%i]," % ind
             ind += 1
         ## this should include the Unpacker.py of the jobs on the WN
-        if self.unpackerFile is not None:
-            isb += '"%s%s",' % ( startdir, self.unpackerFile )
+        if self.unpacker is not None:
+            isb += '"%s%s",' % ( startdir, self.unpacker )
             commonFiles += "root.inputsandbox[%i]," % ind
             ind += 1
 
@@ -1223,7 +1225,7 @@ class gLitePlugin(BasePlugin):
                '&& other.GlueCEStateStatus == "%s" ' \
                 % self.defaultjdl['cestatus'] + \
                '&&  other.GlueCEPolicyMaxCPUTime>=130 %s ;\n' \
-                % self.sewhite(dest) 
+                % self.sewhite(dest)
 
         logging.debug("Got destination %s " % str(dest) )
         logging.debug("Translate destination %s " % str( self.sewhite(dest) ) )
@@ -1390,7 +1392,7 @@ class BossAirJsonDecoder(json.JSONDecoder):
         specialized method to decode JSON output of glite-wms-job-submit
         """
 
-        # pre-processing the string before decoding        
+        # pre-processing the string before decoding
         toParse = jsonString.replace( '\n' , ' ' )
         toParse = self.pattern1.sub(r'"\1"', toParse )
         toParse = self.pattern2.sub(r'":\1', toParse )

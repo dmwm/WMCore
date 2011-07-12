@@ -1,7 +1,7 @@
 WMCore.namespace("GlobalMonitor.Filter")
 
 WMCore.GlobalMonitor.Filter.addLocalFilter = function(filterDiv, data,
-                                                       dataSchema, tableInfo){
+                                             dataSchema, tableInfo, perPageID){
 
     var dataSource = WMCore.createDataSource(data, dataSchema, "Local");
 
@@ -11,10 +11,11 @@ WMCore.GlobalMonitor.Filter.addLocalFilter = function(filterDiv, data,
 
         if (req) {
             reqA = req.split('&');
-            for (i = 0, l = data.length; i < l; ++i) {
+            for (var i = 0, l = data.length; i < l; ++i) {
                 filterFlag0 = true;
                 filterFlag1 = true;
                 filterFlag2 = true;
+                filterFlag3 = true;
                 if (reqA[0]) {
                     if (data[i].request_name.toLowerCase().indexOf(reqA[0].toLowerCase()) != -1) {
                         filterFlag0 = true;
@@ -39,7 +40,16 @@ WMCore.GlobalMonitor.Filter.addLocalFilter = function(filterDiv, data,
                         filterFlag2 = false;
                     }
                 }
-                if (filterFlag0 && filterFlag1 && filterFlag2) {
+                if (reqA[3]) {
+                    if (data[i].local_queue == null) {
+                        filterFlag3 = false;
+                    } else {
+                        filterFlag3 = !data[i].local_queue.every(function(ele) {
+                            return ele.toLowerCase().indexOf(reqA[3].toLowerCase()) == -1
+                        })
+                    }
+                }
+                if (filterFlag0 && filterFlag1 && filterFlag2 && filterFlag3) {
                     filtered.push(data[i]);
                 }
             }
@@ -93,5 +103,9 @@ WMCore.GlobalMonitor.Filter.addLocalFilter = function(filterDiv, data,
     YAHOO.util.Event.on(filterDiv, 'keyup', function(e){
         clearTimeout(filterTimeout);
         setTimeout(updateFilter, 600);
+    });
+    YAHOO.util.Event.on(perPageID, 'change', function(e){
+        tableInfo.conf.paginator.setRowsPerPage(YAHOO.util.Dom.get(perPageID).value, false);
+        // Get filtered data
     });
 };

@@ -3,7 +3,7 @@ WQ.namespace("ElementInfoByWorkflow")
 WQ.ElementInfoByWorkflow.elementTable = function(args) {
 
     var formatUrl = function(elCell, oRecord, oColumn, sData) {
-            var postfixLink = "/_design/WorkQueue/_rewrite/elementsInfo/";
+            var postfixLink = "/_design/WorkQueue/_rewrite/elementsInfo?request=";
 			var host;
             if (!sData) {
                 host = sData;
@@ -78,13 +78,7 @@ WQ.ElementInfoByWorkflow.elementTable = function(args) {
 
     //This makes this javascript not reusable but solves the path issue on
     //different deployment (using proxy, rewrite rules.
-    var dataUrl = location.pathname
-    // This only works workflowInfo is called by top level (_rewrite/)and
-    // dataUrl doesn't have more than one "elementsInfo/
-    // Maybe there is a better way to do this.
-    if (!dataUrl.match("elementsInfo/")) {
-        dataUrl = "elementsInfo" + "/" + args.workflow
-    }
+    var dataUrl = "elementsInfo?request=" + args.workflow
     var dataSource = WQ.createDataSource(dataUrl, dataSchema)
 
     var tableConfig = WQ.createDefaultTableConfig();

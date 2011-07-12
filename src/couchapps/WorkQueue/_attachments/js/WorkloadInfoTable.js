@@ -39,13 +39,7 @@ WQ.WorkloadInfoTable.workloadTable = function(args) {
     //workqueue database name is hardcoded, need to change to get from config
     //This makes this javascript not reusable but solves the path issue on
     //different deployment (using proxy, rewrite rules.
-    var dataUrl = location.pathname
-    // This only works workflowInfo is called by top level (_rewrite/)and
-    // dataUrl doesn't have more than one "workflowInfo/
-    // Maybe there is a better way to do this.
-    if (!dataUrl.match("workflowInfo/")) {
-        dataUrl = "workflowInfo"
-    };
+    var dataUrl = "workflowInfo?request=" + args.workflow
     var dataSource = WQ.createDataSource(dataUrl, dataSchema);
     var tableConfig = WQ.createDefaultTableConfig();
     tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 5});

@@ -7,9 +7,9 @@ WMCore.namespace("GlobalMonitor.RequestMonitor");
  * rest service not from the user input).
  */
 WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
-                                                        filterFunction){
+                                                        filterFunction, perPageID){
 
-    var postfixLink = "/_design/WorkQueue/_rewrite/elementsInfo/";
+    var postfixLink = "/_design/WorkQueue/_rewrite/elementsInfo?request=";
 
     var formatRequest = function(elCell, oRecord, oColumn, sData) {
             elCell.innerHTML = "<a href='../view/details/" + sData  +
@@ -19,25 +19,23 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
     var formatGlobalQ = function(elCell, oRecord, oColumn, sData) {
             var host;
             if (!sData) {
-                elCell.innerHTML = "Not Assigned";
+                elCell.innerHTML = "N/A";
             } else {
-                host = sData.split('/')[2];
-                elCell.innerHTML = "<a href='" + sData + postfixLink +
-                                     oRecord.getData("request_name") + "' target='_blank'>" +
-                                     host + "</a>";
+                elCell.innerHTML = "<a id='gq' href='" + sData + postfixLink +
+                                     oRecord.getData("request_name") + "' target='_blank' title='" + sData +"'> GQ </a>";
+                new YAHOO.widget.Tooltip("globalQ", { context:"gq" });
             };
     };
 
     var formatLocalQ = function(elCell, oRecord, oColumn, sData) {
             var host;
             if (!sData || ! sData.length) {
-                elCell.innerHTML = "Not Assigned";
+                elCell.innerHTML = "N/A";
             } else {
             for (data in sData) {
-                host = sData[data].split('/')[2];
-                elCell.innerHTML = "<a href='" + sData + postfixLink +
-                         oRecord.getData("request_name") + "' target='_blank'>" +
-                         host + "</a> <br>";
+                elCell.innerHTML = "<a id='"+ sData + "' href='" + sData + postfixLink +
+                         oRecord.getData("request_name") + "' target='_blank'  title='" + sData +"'>LQ</a> <br>";
+                new YAHOO.widget.Tooltip("localQ", { context:sData });
                 };
         };
     };
@@ -52,17 +50,17 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
             if (!sData) {
                 localQueueList  = oRecord.getData("local_queue")
                 if (!localQueueList || !localQueueList.length) {
-                 elCell.innerHTML = "Not Assigned";
+                 elCell.innerHTML = "N/A";
                  return;
                 };
                 if (oRecord.getData("couch_error")) {
                     elCell.innerHTML = "<font color='red'> Can't connect Job DB <font>";
                 } else {
-                    elCell.innerHTML = "No jobs in DB";
+                    elCell.innerHTML = "No Jobs";
                 }
             } else {
-                host = "CouchDB Link";
-                elCell.innerHTML = "<a href='" + sData + "' target='_blank'>" + host + "</a>";
+                elCell.innerHTML = "<a id='couchDB' href='" + sData + "' target='_blank' title='"+ sData +"'> summary </a>";
+                new YAHOO.widget.Tooltip("couchDB", { context:"couchDB" });
             };
         };
 
@@ -170,7 +168,8 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                  {key: "inQueue"},
                  {key: "inWMBS"},
                  {key: "total_jobs"},
-                 {key: "couch_doc_base"},
+                 {key: "couch_doc_base"},{key: "global_queue", formatter:formatGlobalQ},
+                 {key: "local_queue", formatter:formatLocalQ},
                  {key: "couch_job_info_base"},
                  {key: "couch_error"},
                  {key: "error"}
@@ -180,8 +179,6 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
    var dataTableCols = [{key: "request_name", label: "request name", formatter:formatRequest},
                  {key: "status"},
                  {key: "type"},
-                 {key: "global_queue", formatter:formatGlobalQ},
-                 {key: "local_queue", formatter:formatLocalQ},
                  {key: "pending", label: "queued", formatter:formatPending},
                  {key: "cooloff", label: "cool off", formatter:formatCoolOff},
                  //{key: "running", label: "submitted", formatter:formatRunning},
@@ -196,7 +193,9 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                  {key: "failure", formatter:formatFailure},
                  {key: "couch_doc_base", label: "summary", formatter:formatCouchDB},
                  {key: "job completion", formatter:progressFormatter},
-                 {key: "queue injection", formatter:queueProgressFormatter}
+                 {key: "queue injection", formatter:queueProgressFormatter},
+                 {key: "global_queue", label:"GQ", formatter:formatGlobalQ},
+                 {key: "local_queue", label: "LQ", formatter:formatLocalQ}
                  ];
 
     var dataUrl = "/reqmgr/monitorSvc/requestmonitor";
@@ -214,7 +213,7 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
     dataSource.doBeforeCallback = function (req,raw,res,cb) {
             // This is the filter function
             var rawData     = res.results || [];
-            filterFunction(filterDiv, rawData, dataSchema, tableInfo);
+            filterFunction(filterDiv, rawData, dataSchema, tableInfo, perPageID);
             return res;
     };
     dataSource.sendRequest();

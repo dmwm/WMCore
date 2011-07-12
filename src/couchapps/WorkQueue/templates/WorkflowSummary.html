@@ -8,7 +8,7 @@
 <!-- WorkQueue library -->
 {{>workqueue-common-lib}}
 
-<script src="../../js/WorkloadInfoTable.js"></script>
+<script src="js/WorkloadInfoTable.js"></script>
 
 </head>
 <body class="yui-skin-sam">
@@ -19,7 +19,6 @@
 var oArgs = {};
 oArgs.divID = "workflow";
 oArgs.workflow = "{{{request}}}";
-oArgs.baseUrl = "{{{baseUrl}}}"
 
 WQ.WorkloadInfoTable.workloadTable(oArgs);
 

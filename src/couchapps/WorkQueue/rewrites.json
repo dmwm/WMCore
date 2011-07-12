@@ -1,5 +1,5 @@
 [
-  {"from": "elementsInfo/:request",
+  {"from": "elementsInfo?request=:request",
    "to": "_list/elementsDetail/elementsDetailByWorkflowAndStatus",
    "method": "GET",
    "query": {"startkey": [":request"],
@@ -12,7 +12,7 @@
    "method": "GET"
   },
 
-  {"from": "workflowInfo/:request",
+  {"from": "workflowInfo?request=:request",
    "to": "_list/workflowSummary/workflowSummary",
    "method": "GET",
    "query": {"key": [":request"],

@@ -103,7 +103,7 @@ class WorkQueue(WorkQueueBase):
 
         self.params['QueueURL'] = self.backend.queueUrl # url this queue is visible on
                                     # backend took previous QueueURL and sanitized it
-        self.params.setdefault('WMBSURL', None) # this will be only set on local Queue
+        self.params.setdefault('WMBSUrl', None) # this will only be set on local Queue
         self.params.setdefault('Teams', [''])
         self.params.setdefault('DrainMode', False)
         if self.params.get('CacheDir'):
@@ -327,12 +327,12 @@ class WorkQueue(WorkQueueBase):
                          % (sub['id'], match['RequestName']))
         return sub
 
-    def _assignToChildQueue(self, queue, wmbsUrl,*elements):
+    def _assignToChildQueue(self, queue, *elements):
         """Assign work to the provided child queue"""
         for ele in elements:
             ele['Status'] = 'Negotiating'
             ele['ChildQueueUrl'] = queue
-            ele['WMBSUrl'] = wmbsUrl
+            ele['WMBSUrl'] = self.params["WMBSUrl"]
         work = self.parent_queue.saveElements(*elements)
         requests = ', '.join(list(set(['"%s"' % x['RequestName'] for x in work])))
         self.logger.info('Acquired work for request(s): %s' % requests)
@@ -589,8 +589,7 @@ class WorkQueue(WorkQueueBase):
         if not work:
             self.logger.info('No available work in parent queue.')
             return 0
-        work = self._assignToChildQueue(self.params['QueueURL'],
-                                        self.params['WMBSURL'], *work)
+        work = self._assignToChildQueue(self.params['QueueURL'], *work)
 
         # do this whether we have work or not - other events i.e. cancel may have happened
         self.backend.pullFromParent()

@@ -119,6 +119,7 @@ class WorkQueueBackend(object):
             if parent:
                 unit['ParentQueueId'] = parent.id
                 unit['TeamName'] = parent['TeamName']
+                unit['WMBSUrl'] = parent['WMBSUrl']
 
             unit.save()
         unit._couch.commit(timestamp = True, all_or_nothing = True)

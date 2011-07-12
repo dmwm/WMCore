@@ -110,7 +110,7 @@ def queueConfigFromConfigObject(config):
 
                 if not queueFlag and hasattr(page, "model") \
                    and page.section_('model').object == WMBS_REST_NAMESPACE:
-                    qConfig['WMBSURL'] = 'http://%s:%s/%s/%s' % (webapp.Webtools.host,
+                    qConfig['WMBSUrl'] = 'http://%s:%s/%s/%s' % (webapp.Webtools.host,
                                                               webapp.Webtools.port,
                                                               webapp._internal_name.lower(),
                                                               page._internal_name)
@@ -127,7 +127,7 @@ def queueConfigFromConfigObject(config):
     except RuntimeError:
         msg = """Unable to determine WMBS monitor URL, Either:
         Configure a WMBSRESTModel webapp_ section or,
-        Add a WorkQueueManager.queueParams.WMBSURL setting."""
+        Add a WorkQueueManager.queueParams.WMBSUrl setting."""
         raise RuntimeError, msg
 
     if not qConfig.has_key('Teams') and hasattr(config.Agent, 'teamName'):

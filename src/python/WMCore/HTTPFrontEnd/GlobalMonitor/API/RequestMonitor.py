@@ -43,6 +43,7 @@ def getRequestInfoFromGlobalQueue(serviceURL):
     try:
         jobInfo = service.getTopLevelJobsByRequest()
         qInfo = service.getChildQueuesByRequest()
+        siteWhitelists = service.getSiteWhitelistByRequest()
         childQueueURLs = set()
         for item in qInfo:
             childQueueURLs.add(item['local_queue'])
@@ -51,8 +52,10 @@ def getRequestInfoFromGlobalQueue(serviceURL):
         logging.error("%s: %s" (serviceURL, str(ex)))
         return DFormatter.errorFormatter(serviceURL, "GlobalQueue Down")
     else:
-        baseResults = combineListOfDict('request_name', jobInfo, qInfo,
+        tempResults = combineListOfDict('request_name', jobInfo, qInfo,
                                     local_queue = DFormatter.addToList)
+        baseResults = combineListOfDict('request_name', tempResults, 
+                                        siteWhitelists)
         localResults = []
         for url in childQueueURLs:
             localResults.extend(getRequestOverview(url, "LocalQueue"))

@@ -67,6 +67,15 @@ class WorkQueue(object):
         return [{'request_name' : x['key'][0], 'status': x['key'][1],
                  'jobs' : x['value']} for x in data.get('rows', [])]
 
+    def getSiteWhitelistByRequest(self):
+        """
+        This service only provided by global queue
+        """
+        data = self.db.loadView('WorkQueue', 'siteWhitelistByRequest',
+                                {'reduce' : True, 'group' : True})
+        return [{'request_name' : x['key'][0], 'site_whitelist': x['key'][1]} 
+                for x in data.get('rows', [])]
+
     def updateElements(self, *elementIds, **updatedParams):
         """Update given element's (identified by id) with new parameters"""
         import urllib

@@ -97,6 +97,8 @@ body {
                   '<input type="text" id="statusFilter" value="">' +
                   '<label for="filter"> type:</label>' +
                   '<input type="text" id="typeFilter" value="">' +
+                  '<label for="filter"> site whitelist:</label>' +
+                  '<input type="text" id="siteFilter" value="">' +
                   '<label for="filter"> local queue:</label>' +
                   '<input type="text" id="queueFilter" value="">' +
                   '<label for="filter"> elements per page:</label>' +
@@ -129,7 +131,7 @@ body {
     YAHOO.log("The tabs are finished loading", "info", "global overview tabs");
     tabView.appendTo('container');
     WMCore.GlobalMonitor.RequestMonitor.overviewTable("overview",
-                                ["requestFilter", "statusFilter", "typeFilter", "queueFilter"],
+                                ["requestFilter", "statusFilter", "typeFilter", "siteFilter", "queueFilter"],
                                 WMCore.GlobalMonitor.Filter.addLocalFilter, 'perPage');
 
     WMCore.GlobalMonitor.AgentMonitor.statusTable("agentInfo");

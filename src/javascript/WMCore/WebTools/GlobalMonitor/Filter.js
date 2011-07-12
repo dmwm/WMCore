@@ -16,6 +16,8 @@ WMCore.GlobalMonitor.Filter.addLocalFilter = function(filterDiv, data,
                 filterFlag1 = true;
                 filterFlag2 = true;
                 filterFlag3 = true;
+                filterFlag4 = true;
+                
                 if (reqA[0]) {
                     if (data[i].request_name.toLowerCase().indexOf(reqA[0].toLowerCase()) != -1) {
                         filterFlag0 = true;
@@ -41,15 +43,24 @@ WMCore.GlobalMonitor.Filter.addLocalFilter = function(filterDiv, data,
                     }
                 }
                 if (reqA[3]) {
-                    if (data[i].local_queue == null) {
+                    if (data[i].site_whitelist == null) {
                         filterFlag3 = false;
                     } else {
-                        filterFlag3 = !data[i].local_queue.every(function(ele) {
+                        filterFlag3 = !data[i].site_whitelist.every(function(ele) {
                             return ele.toLowerCase().indexOf(reqA[3].toLowerCase()) == -1
                         })
                     }
                 }
-                if (filterFlag0 && filterFlag1 && filterFlag2 && filterFlag3) {
+                if (reqA[4]) {
+                    if (data[i].local_queue == null) {
+                        filterFlag4 = false;
+                    } else {
+                        filterFlag4 = !data[i].local_queue.every(function(ele) {
+                            return ele.toLowerCase().indexOf(reqA[4].toLowerCase()) == -1
+                        })
+                    }
+                }
+                if (filterFlag0 && filterFlag1 && filterFlag2 && filterFlag3 && filterFlag4) {
                     filtered.push(data[i]);
                 }
             }

@@ -85,6 +85,3 @@ class CouchWorkQueueElement(WorkQueueElement):
         attrs = ['WMSpec', 'Task']
         for attr in attrs:
             self._document['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'].pop(attr, None)
-
-if __name__ == '__main__':
-    unittest.main()

@@ -346,12 +346,3 @@ exit $EXIT_STATUS
 
 """
 
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    #unittest.main()
-    import WMCore.WMSpec.WMStep as WMStep
-    tmpstep = WMStep.makeWMStep('runstep')
-    test = CMSSW()
-    test.pre( tmpstep )
-    test.execute( tmpstep, tmpstep )
-    test.post( tmpstep )

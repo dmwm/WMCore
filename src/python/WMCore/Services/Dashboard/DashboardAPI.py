@@ -70,22 +70,4 @@ def apmonSend(taskid, jobid, params, logr, apmonServer) :
             pass
     return 1
 
-##
-## MAIN PROGRAM (FOR TEST)
-##
-if __name__ == '__main__' :
-    import logging
-    logger = logging.getLogger("Test ")
-    logger.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    ch.setFormatter(formatter) 
-    logger.addHandler(ch)
 
-    apmonSend( taskid = 'mattia_test_christmas_vacations',
-               jobid  = '1_https://sbgrb1.in2p3.fr:9000/abcdefghijklmno',
-               params = {'SubmissionType':'Direct','application':'CMSSW_1_3_6','taskType':'analysis'},
-               logr   = logger,
-               apmonServer = ["cms-wmagent-job.cern.ch"]
-             )

@@ -1203,9 +1203,3 @@ def addFiles(file1, file2):
     return
 
                 
-if __name__ == "__main__":
-    myReport = Report("cmsRun1")
-    myReport.parse("/home/sfoulkes/WMCORE/test/python/WMCore_t/FwkJobReport_t/CMSSWFailReport.xml")
-
-    print myReport.data
-    print myReport.json()

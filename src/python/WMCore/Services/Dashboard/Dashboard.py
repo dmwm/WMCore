@@ -37,19 +37,3 @@ class Dashboard(Service):
                  return {'status':i, 'cms_name':name}
         return {'status':'UNKNOWN', 'cms_name':name}
     
-if __name__ == '__main__':
-    import logging
-    logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename='/tmp/sam/samstatus.log',
-                    filemode='w')
-    
-    dict = {}
-    dict['endpoint'] = 'http://lxarda16.cern.ch/dashboard/request.py'
-    dict['cachepath'] = '/tmp/dashboard'
-    dict['accept_type'] = 'text/csv'
-    dict['logger'] = logging.getLogger('SAMtest')
-    
-    dashboard = Dashboard(dict = dict)
-    print dashboard.getStatus(name='T1_UK_RAL')    

@@ -319,21 +319,7 @@ class StageInMgr:
 
 
 
-if __name__ == '__main__':
-    import StageOut.Impl
-    
-    overrideParams = {
-            "command" : 'srm',
-            "option" : '-streams_num=1',
-            "se-name" : None,
-            "lfn-prefix" : 'srm://gfe02.hep.ph.ic.ac.uk:8443/srm/managerv1?SFN=/pnfs/hep.ph.ic.ac.uk/data/cms',
-            }
-    
-    #mgr = StageInMgr()
-    mgr = StageInMgr(**overrideParams)
-    lfn = "/store/mc/2008/1/28/JobRobot-QCD_Pt_80_120-1201523639/0034/E8C4470A-C8CD-DC11-BA7C-001617E30D4C.root"
 
-    mgr(LFN = lfn, PFN = None, GUID = None)
     
     
     

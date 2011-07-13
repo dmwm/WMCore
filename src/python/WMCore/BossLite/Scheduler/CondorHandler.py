@@ -46,12 +46,4 @@ class CondorHandler(ContentHandler):
     def getJobInfo(self):
         return self.jobInfo
 
-if __name__ == '__main__':
-    handler = CondorHandler('GlobalJobId', ['JobStatus', 'GridJobId', \
-        'MATCH_GLIDEIN_Gatekeeper', 'GlobalJobId'])
-    parser = make_parser()
-    parser.setContentHandler(handler)
-    parser.setFeature(feature_external_ges, False)
-    parser.parse(open('test.xml', 'r'))
-    print >> sys.stderr, handler.getJobInfo()
 

@@ -130,38 +130,3 @@ class CouchCollection(Collection):
         self['collection_id'] = str(doc[u'_id'])
 
 
-from WMCore.GroupUser.User import makeUser
-
-class CouchCollectionTests(unittest.TestCase):
-    def setUp(self):
-        self.url = "127.0.0.1:5984"
-        self.database = "acdc2"
-        self.owner = makeUser("DMWM", "evansde77", self.url, self.database)
-        self.owner.connect()
-        self.owner.create()
-        
-    def tearDown(self):
-        
-        self.owner.drop()
-        self.owner.group.drop()
-        pass
-
-    def testA(self):
-        """
-        create the collection
-        
-        """
-        
-        collection = CouchCollection(database = self.database, url = self.url, name = "Thunderstruck")
-        collection.setOwner(self.owner)
-        collection.create()
-        
-        collection.getCollectionId()
-        
-        print self.owner.couch.document(collection['collection_id'])
-        
-        collection.drop()
-       
-        
-if __name__ == '__main__':
-    unittest.main()

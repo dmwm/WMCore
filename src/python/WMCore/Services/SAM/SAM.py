@@ -62,19 +62,3 @@ class SAM(Service):
 
         return releases
 
-if __name__ == '__main__':
-    import logging
-    logging.basicConfig(level = logging.DEBUG,
-                    format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt = '%m-%d %H:%M',
-                    filename = '/tmp/samstatus.log',
-                    filemode = 'w')
-
-    dict = {}
-    dict['endpoint'] = 'https://lcg-sam.cern.ch:8443'
-    dict['cachepath'] = '/tmp/'
-    dict['type'] = 'text/json'
-    dict['logger'] = logging.getLogger('SAMtest')
-
-    sam = SAM(dict = dict)
-    print sam.getCMSSWInstalls(ce = 'lcgce01.phy.bris.ac.uk')

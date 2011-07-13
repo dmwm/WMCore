@@ -423,13 +423,3 @@ echo "process id is $PROCID status is $EXIT_STATUS"
 exit $EXIT_STATUS
 
 """
-
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    #unittest.main()
-    import WMCore.WMSpec.WMStep as WMStep
-    tmpstep = WMStep.makeWMStep('runstep')
-    test = MulticoreCMSSW()
-    test.pre()
-    test.execute( tmpstep, tmpstep )
-    test.post( )

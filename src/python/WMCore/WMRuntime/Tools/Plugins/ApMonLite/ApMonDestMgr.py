@@ -89,21 +89,3 @@ class ApMonDestMgr(list):
     
 
 
-if __name__ == '__main__':
-    mgr = ApMonDestMgr("evansdetest", "twoflower.fnal.gov")
-    params = {
-        "MonitorID" : "evansde-dashboard-test",
-        "MonitorJobID" : "1",
-        }
-
-
-    mgr.newDestination("cms-pamon.cern.ch", 8884)
-    mgr.newDestination("cithep90.ultralight.org", 58884)
-
-     
-    mgr.connect()
-    for i in range(1, 100):
-        mgr.send(**params)
-    
-
-    mgr.disconnect()

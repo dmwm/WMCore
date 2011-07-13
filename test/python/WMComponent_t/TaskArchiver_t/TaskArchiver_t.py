@@ -58,7 +58,6 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-
         self.testInit.setSchema(customModules = ["WMCore.WMBS", 'WMCore.WorkQueue.Database'],
 
                                 useDefault = False)

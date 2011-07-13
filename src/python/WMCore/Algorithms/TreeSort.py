@@ -252,20 +252,4 @@ class TreeSort:
         return list(remainders)
 
 
-if __name__ == '__main__':
-    items = [ {'Name' : 'Node1', 'Parents' : []},
-               {'Name' : 'Node2', 'Parents' : ['Node1']} ] 
-    name = lambda x: x['Name']
-    parents = lambda x: x['Parents']
-    results = TreeSort(name, parents, items).sort()
-    assert(results == items)
-    
-    items = [ {'Name' : 'Node1', 'Parents' : []},
-             {'Name' : 'Node3', 'Parents' : ['Node2']},
-               {'Name' : 'Node2', 'Parents' : ['Node1']},
-                ] 
-    answer = [{'Parents': [], 'Name': 'Node1'},
-              {'Parents': ['Node1'], 'Name': 'Node2'},
-              {'Parents': ['Node2'], 'Name': 'Node3'}]
-    results = TreeSort(name, parents, items).sort()
-    assert(results == answer)
+

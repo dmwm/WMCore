@@ -274,6 +274,7 @@ class ErrorHandlerTest(unittest.TestCase):
                 self.assertEqual(f['parents'], [u'/this/is/a/parent'])
                 self.assertTrue(f['runs'][0]['lumis'] in [[12312], [12314, 12315, 12316]],
                                 "Unknown lumi %s" % f['runs'][0]['lumis'])
+                self.assertTrue(f['merged'], 1)
             self.assertEqual(counter, 20)
         return
 

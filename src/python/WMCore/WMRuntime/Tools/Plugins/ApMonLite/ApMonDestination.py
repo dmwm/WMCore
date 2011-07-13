@@ -209,27 +209,6 @@ class ApMonDestination(dict):
         result += "%s>" % self["Port"]
         return result
 
-if __name__ == '__main__':
 
-    destHost = "cms-pamon.cern.ch"
-    destPort =  8884 # ApMon destination port here
-    destPasswd = ''
-    clusterName = "evansdetest"
-    nodeName = "twoflower.fnal.gov"
-    params = {
-        "MonitorID" : "evansde-dashboard-test",
-        "MonitorJobID" : "1",
-        #  "intParam" : 1234,
-        #"floatParam" : 456.78,
-        }
-    
-    
-    apMonDest = ApMonDestination(destHost, destPort, destPasswd,
-                                 clusterName, nodeName)
-    apMonDest['InstanceID'] = 222233333
-    apMonDest.connect()
-    for i in range(1, 100):
-        print apMonDest.send(**params)
-    apMonDest.disconnect()
 
     

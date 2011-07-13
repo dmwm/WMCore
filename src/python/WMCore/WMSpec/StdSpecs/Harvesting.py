@@ -322,6 +322,4 @@ def main():
 #    task.build(os.getcwd())
 #    task.execute(Job("job1"))
 
-if __name__ == '__main__':
-    main()
 

@@ -125,15 +125,15 @@ class WorkQueueBackend(object):
         unit._couch.commit(timestamp = True, all_or_nothing = True)
         return
 
-    def createWork(self, spec, team = None):
+    def createWork(self, spec, **kwargs):
         """Return the Inbox element for this spec.
         
         This does not persist it to the database.
         """
-        params = {'WMSpec' : spec,
-                  'RequestName' : spec.name(), 'TeamName' : team,
-                  'Status' : 'Acquired'}
-        unit = CouchWorkQueueElement(self.inbox, elementParams = params)
+        kwargs.update({'WMSpec' : spec,
+                       'RequestName' : spec.name(),
+                       'Status' : 'Acquired'})
+        unit = CouchWorkQueueElement(self.inbox, elementParams = kwargs)
         unit.id = spec.name()
         return unit
 

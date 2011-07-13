@@ -463,7 +463,7 @@ class WorkQueue(WorkQueueBase):
 
         # Do splitting before we save inbound work to verify the wmspec
         # if the spec fails it won't enter the queue
-        inbound = self.backend.createWork(wmspec, team)
+        inbound = self.backend.createWork(wmspec, TeamName = team, WMBSUrl = self.params["WMBSUrl"])
 
         # either we have already split the work or we do that now
         work = self.backend.getElementsForWorkflow(wmspec.name())

@@ -115,15 +115,13 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'LocalQueue':
         if args.get("global_workqueue_url", None):
             config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = args["global_workqueue_url"]
-            config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:%s/%s" % ( 
-                                                               localhost,
-                                                               args["workqueue_port"], 
-                                                               args["workqueue_db_name"])
-            # assume we connect to global directly
-            try:
-                delattr(config, "CouchProxyManager")
-            except AttributeError:
-                pass
+
+            # talking to cmsweb*.cern.ch requires a couch proxy, a private instance does not
+            if not 'cmsweb' in args['global_workqueue_url']:
+                try:
+                    delattr(config, "CouchProxyManager")
+                except AttributeError:
+                    pass
         if args.get('workqueue_db_name'):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
@@ -151,7 +149,7 @@ def main(argv=None):
             opts, args = getopt.getopt(argv[1:], "h", 
             ["help", "input=", "output=", "mysql_socket=", "mysql_url=", "couch_url=",
              "working_dir=", "reqmgr_hostname=", "reqmgr_port=", "global_workqueue_url=",
-             "workqueue_db_name=", "workqueue_port=", "cs_hostname=", "cs_port=", 
+             "workqueue_db_name=", "cs_hostname=", "cs_port=",
              "wmbs_service_port="])
         except getopt.error, msg:
             raise Usage(msg)
@@ -166,7 +164,7 @@ def main(argv=None):
                 inputFile = value
             if option in ('--mysql_socket', '--mysql_url', '--couch_url', '--working_dir',
                           "--reqmgr_hostname", "--reqmgr_port", '--global_workqueue_url',
-                          '--workqueue_db_name', '--workqueue_port',
+                          '--workqueue_db_name',
                           '--cs_hostname', '--cs_port', '--wmbs_service_port'):
                 parameters[option[2:]] = value
     

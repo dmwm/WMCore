@@ -1,22 +1,9 @@
 [
-  {"from": "elementsInfo?request=:request",
+  {"from": "elementsInfo",
    "to": "_list/elementsDetail/elementsDetailByWorkflowAndStatus",
    "method": "GET",
    "query": {"startkey": [":request"],
              "endkey": [":request", {}]
-            }
-  },
-
-  {"from": "elementsInfo",
-   "to": "_list/elementsDetail/elementsDetailByWorkflowAndStatus",
-   "method": "GET"
-  },
-
-  {"from": "workflowInfo?request=:request",
-   "to": "_list/workflowSummary/workflowSummary",
-   "method": "GET",
-   "query": {"key": [":request"],
-             "group": "true"
             }
   },
 

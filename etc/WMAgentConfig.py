@@ -113,7 +113,6 @@ config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.queueParams = {}
 # see CouchProxyManager component below
 config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "http://localhost:8080/couchdb/workqueue"
-config.WorkQueueManager.queueParams["Teams"] = agentTeams
 
 # needed for authentication from local couch to global workqueue
 config.component_('CouchProxyManager')

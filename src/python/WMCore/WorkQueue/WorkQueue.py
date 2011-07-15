@@ -371,8 +371,6 @@ class WorkQueue(WorkQueueBase):
         """Cancel work - delete in wmbs, delete from workqueue db, set canceled in inbox
            Elements may be directly provided or determined from series of filter arguments
         """
-        if not self.params['LocalQueueFlag']:
-            raise RuntimeError, "Not a local queue - can't cancel work"
         if not elements:
             args = {}
             if SubscriptionId:
@@ -381,11 +379,19 @@ class WorkQueue(WorkQueueBase):
                 args['RequestName'] = WorkflowName
             elements = self.backend.getElements(elementIDs = elementIDs, **args)
 
+        # only cancel in global if work has not been passed to a child queue
+        if not self.params['LocalQueueFlag']:
+            elements = [x for x in elements if not x['ChildQueueUrl']]
+
+        requestNames = set([x['RequestName'] for x in elements])
+
+        if not requestNames:
+            return []
+
         # if we can talk to wmbs kill the jobs
         if self.params['PopulateFilesets']:
             from WMCore.WorkQueue.WMBSHelper import killWorkflow
 
-            requestNames = set([x['RequestName'] for x in elements])
             self.logger.debug("""Canceling work in wmbs, workflows: %s""" % (requestNames))
             for workflow in requestNames:
                 try:
@@ -401,14 +407,14 @@ class WorkQueue(WorkQueueBase):
                                     This might be due to a child subscriptions: %s"""
                                     % elementIDs)
 
-            # update parent elements to canceled
-            for wf in requestNames:
-                inbox_elements = self.backend.getInboxElements(WorkflowName = wf, returnIdOnly = True)
-                if not inbox_elements:
-                    raise RuntimeError, "Cant find parent for %s" % wf
-                self.backend.updateInboxElements(*inbox_elements, Status = 'Canceled')
-            # delete elements - no longer need them
-            self.backend.deleteElements(*elements)
+        # update parent elements to canceled
+        for wf in requestNames:
+            inbox_elements = self.backend.getInboxElements(WorkflowName = wf, returnIdOnly = True)
+            if not inbox_elements:
+                raise RuntimeError, "Cant find parent for %s" % wf
+            self.backend.updateInboxElements(*inbox_elements, Status = 'Canceled')
+        # delete elements - no longer need them
+        self.backend.deleteElements(*elements)
 
         return [x.id for x in elements]
 
@@ -621,10 +627,11 @@ class WorkQueue(WorkQueueBase):
                 results = endPolicy(elements, parents, self.params['EndPolicySettings'])
                 for result in results:
                     # check for cancellation requests (affects entire workflow)
-                    if self.params['LocalQueueFlag'] and result['Status'] == 'CancelRequested':
-                        self.cancelWork(elements = elements)
-                        wf_to_cancel.append(wf)
-                        break
+                    if result['Status'] == 'CancelRequested':
+                        canceled = self.cancelWork(elements = elements)
+                        if canceled: # global wont cancel if work in child queue
+                            wf_to_cancel.append(wf)
+                            break
 
                     parent = result['ParentQueueElement']
                     if parent.modified:

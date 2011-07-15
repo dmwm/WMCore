@@ -768,7 +768,16 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.statusInbox()), 0)
         self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
         self.assertEqual(len(self.globalQueue.status()), 0)
+        self.globalQueue.deleteWorkflows(self.processingSpec.name())
 
+        # cancel work in global before it reaches a local queue
+        self.globalQueue.queueWork(self.spec.specUrl())
+        self.assertEqual(len(self.globalQueue.status(status='Available')), 1)
+        service.cancelWorkflow(self.spec.name())
+        self.globalQueue.performQueueCleanupActions()
+        self.assertEqual(len(self.globalQueue.status()), 0)
+        self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
+        self.globalQueue.deleteWorkflows(self.spec.name())
 
     def testInvalidSpecs(self):
         """Complain on invalid WMSpecs"""

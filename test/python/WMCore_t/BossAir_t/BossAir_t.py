@@ -139,6 +139,11 @@ class BossAirTest(unittest.TestCase):
                                    ceName = 'jade-cms.hip.fi', plugin = "ARCPlugin")
         resourceControl.insertThreshold(siteName = 'jade-cms.hip.fi', taskType = 'Processing', \
                                         maxSlots = 100)
+        # using this for glite submissions
+        resourceControl.insertSite(siteName = 'grid-ce-01.ba.infn.it', seName = 'storm-se-01.ba.infn.it',
+                                   ceName = 'grid-ce-01.ba.infn.it', plugin = 'gLitePlugin')
+        resourceControl.insertThreshold(siteName = 'grid-ce-01.ba.infn.it', taskType = 'Processing', \
+                                        maxSlots = 50)
 
         # Create user
         newuser = self.daoFactory(classname = "Users.New")

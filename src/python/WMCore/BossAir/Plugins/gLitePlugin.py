@@ -269,7 +269,6 @@ class gLitePlugin(BasePlugin):
 
         Prepares a report to be passed to the JobAccountant
         """
-        print "MATTIA\njob: \n'"+ str(job) + "'\n"
         if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
             return
         if not os.path.isdir(job['cache_dir']):
@@ -535,7 +534,7 @@ class gLitePlugin(BasePlugin):
                             job = jj
                             job['bulkid']       = parent
                             job['gridid']       = jsout['children'][jobnamejdl]
-                            job['sched_stattus'] = 'Submitted'
+                            job['sched_status'] = 'Submitted'
                             successfulJobs.append(job)
                         else:
                             failedJobs.append(jj)
@@ -1030,7 +1029,7 @@ class gLitePlugin(BasePlugin):
             command = 'glite-wms-job-cancel --json --noint %s' % (gridID)
             logging.debug("Enqueuing cancel command for gridID %s" % gridID )
 
-            workqueued[currentwork] = gridID
+            workqueued[currentwork] = job['jobid']
             completecmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && %s && %s' % (self.setupScript, self.manualenvprefix, exportproxy, command)
             input.put( (currentwork, completecmd, 'output') )
 

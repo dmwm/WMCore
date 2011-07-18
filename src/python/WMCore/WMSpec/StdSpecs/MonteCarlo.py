@@ -35,6 +35,9 @@ def getTestArguments():
 
     args["CMSSWVersion"] = "CMSSW_3_8_1"
     args["ProdConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
+    args["TimePerEvent"] = 60
+    args["FilterEfficiency"] = 1.0
+    args["TotalTime"] = 9 * 3600
     return args
 
 
@@ -95,11 +98,16 @@ class MonteCarloWorkloadFactory(StdBase):
 
         # Required parameters that must be specified by the Requestor.
         self.inputPrimaryDataset = arguments["PrimaryDataset"]
-        self.frameworkVersion = arguments["CMSSWVersion"]
-        self.globalTag = arguments["GlobalTag"]
-        self.totalEvents = arguments["RequestSizeEvents"]
-        self.seeding = arguments.get("Seeding", "AutomaticSeeding")
-        self.prodConfigCacheID = arguments["ProdConfigCacheID"]
+        self.frameworkVersion    = arguments["CMSSWVersion"]
+        self.globalTag           = arguments["GlobalTag"]
+        self.totalEvents         = arguments["RequestSizeEvents"]
+        self.seeding             = arguments.get("Seeding", "AutomaticSeeding")
+        self.prodConfigCacheID   = arguments["ProdConfigCacheID"]
+
+        # Splitting arguments
+        timePerEvent     = arguments.get("TimePerEvent", 60)
+        filterEfficiency = arguments.get("FilterEfficiency", 1.0)
+        totalTime        = arguments.get("TotalTime", 9 * 3600)
 
         # pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)
@@ -115,9 +123,10 @@ class MonteCarloWorkloadFactory(StdBase):
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
+        eventsPerJob = totalTime/timePerEvent/filterEfficiency
         self.prodJobSplitAlgo  = arguments.get("ProdJobSplitAlgo", "EventBased")
         self.prodJobSplitArgs  = arguments.get("ProdJobSplitArgs",
-                                               {"events_per_job": 1000})
+                                               {"events_per_job": eventsPerJob})
         
         return self.buildWorkload()
 

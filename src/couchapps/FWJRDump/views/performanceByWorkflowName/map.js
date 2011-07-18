@@ -27,6 +27,10 @@ function(doc) {
 	perfInfo['PeakValueVsize'] = mem['PeakValueVsize'];
       }
 
+      //Do start/stop times
+      perfInfo['startTime'] = doc['fwjr']['steps'][stepName]['start'];
+      perfInfo['stopTime'] = doc['fwjr']['steps'][stepName]['stop'];
+
       if (store) {
 	for (var perfName in store) {
 	  if (Number(store[perfName]) != Number.NaN) {

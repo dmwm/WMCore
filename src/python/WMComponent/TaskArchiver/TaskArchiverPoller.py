@@ -276,7 +276,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                     # Remove the sandbox dir
                     if not workflow.countWorkflowsBySpec() == 0:
                         continue
-                        sandbox  = getattr(wmTask.data.input, 'sandbox', None)
+                    sandbox  = getattr(wmTask.data.input, 'sandbox', None)
                     if sandbox:
                         sandboxDir = os.path.dirname(sandbox)
                         if os.path.isdir(sandboxDir):

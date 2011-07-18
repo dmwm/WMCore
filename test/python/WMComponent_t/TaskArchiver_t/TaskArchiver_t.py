@@ -58,8 +58,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", 'WMCore.WorkQueue.Database'],
-
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.databaseName = "taskarchiver_t_0"
         self.testInit.setupCouch(self.databaseName, "WorkloadSummary")
@@ -86,7 +85,7 @@ class TaskArchiverTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
 
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS", 'WMCore.WorkQueue.Database'])
+        self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self.testInit.delWorkDir()
         #self.testInit.tearDownCouch()
         return

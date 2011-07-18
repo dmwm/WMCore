@@ -22,7 +22,7 @@ class FindDASToUpload(DBFormatter):
     sql = """SELECT DISTINCT das.dataset_id AS dataset, ds.Path as Path, das.algo_id as Algo, das.in_dbs as in_dbs,
                das.id AS das_id,
                ds.acquisition_era AS AcquisitionEra,
-               ds.processing_era AS ProcessingEra,
+               ds.processing_ver AS ProcessingEra,
                da.app_name AS ApplicationName, 
                da.app_ver AS ApplicationVersion, 
                da.app_fam AS ApplicationFamily, 

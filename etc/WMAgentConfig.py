@@ -119,7 +119,7 @@ config.component_('CouchProxyManager')
 config.CouchProxyManager.namespace = "WMComponent.CouchProxyManager.CouchProxyManager"
 config.CouchProxyManager.componentDir = config.General.workDir + "/CouchProxyManager"
 config.CouchProxyManager.section_('cmsweb_couch')
-config.CouchProxyManager.cmsweb_couch.remote_host = 'https://cmsweb-testbed.cern.ch'
+config.CouchProxyManager.cmsweb_couch.remote_host = 'https://cmsweb.cern.ch'
 
 config.component_("DBSUpload")
 config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"

@@ -179,7 +179,7 @@ class WMBSHelper(WMConnectionBase):
         # DAOs from WMBS for file commit
         self.setParentage            = self.daofactory(classname = "Files.SetParentage")
         self.setFileRunLumi          = self.daofactory(classname = "Files.AddRunLumi")
-        self.setFileLocation         = self.daofactory(classname = "Files.SetLocationByLFN")
+        self.setFileLocation         = self.daofactory(classname = "Files.SetLocationForWorkQueue")
         self.setFileAddChecksum      = self.daofactory(classname = "Files.AddChecksumByLFN")
         self.addFileAction           = self.daofactory(classname = "Files.Add")
         self.addToFileset            = self.daofactory(classname = "Files.AddDupsToFileset")
@@ -418,10 +418,12 @@ class WMBSHelper(WMConnectionBase):
         fileCreate     = []
         fileLFNs       = []
         lfnsToCreate   = []
+        lfnList        = []
 
         
         for wmbsFile in self.wmbsFilesToCreate:
             lfn           = wmbsFile['lfn']
+            lfnList.append(lfn)
 
             if wmbsFile['inFileset']:
                 if not lfn in fileLFNs:
@@ -433,13 +435,6 @@ class WMBSHelper(WMConnectionBase):
             if len(wmbsFile['runs']) > 0:
                 runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
 
-            if wmbsFile.exists():
-                continue
-
-            if lfn in lfnsToCreate:
-                continue
-            lfnsToCreate.append(lfn)
-
             if len(wmbsFile['newlocations']) < 1:
                 # Then we're in trouble
                 msg = "File created in WMBS without locations!\n"
@@ -449,6 +444,15 @@ class WMBSHelper(WMConnectionBase):
 
             for loc in wmbsFile['newlocations']:
                 fileLocations.append({'lfn': lfn, 'location': loc})
+
+            if wmbsFile.exists():
+                continue
+
+            if lfn in lfnsToCreate:
+                continue
+            lfnsToCreate.append(lfn)
+
+            
 
             if selfChecksums:
                 # If we have checksums we have to create a bind
@@ -472,10 +476,11 @@ class WMBSHelper(WMConnectionBase):
             self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
                                             conn = self.getDBConn(),
                                             transaction = self.existingTransaction())
-            self.setFileLocation.execute(lfn = fileLocations,
+            
+        if len(fileLocations) > 0:
+            self.setFileLocation.execute(lfns = lfnList, locations = fileLocations,
                                          conn = self.getDBConn(),
                                          transaction = self.existingTransaction())
-
         if len(runLumiBinds) > 0:
             self.setFileRunLumi.execute(file = runLumiBinds,
                                         conn = self.getDBConn(),

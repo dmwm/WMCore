@@ -1131,5 +1131,45 @@ class FileTest(unittest.TestCase):
         self.assertEqual(len(testFileset2.files), 0)
         return
 
+    def test_SetLocationsForWorkQueue(self):
+        """
+        _SetLocationsForWorkQueue_
+
+        Test the code that sets locations for the WorkQueue
+        This is more complicated then it seems.
+        """
+
+        action = self.daofactory(classname = "Files.SetLocationForWorkQueue")
+
+        testFile = File(lfn = "myLFN", size = 1024,
+                        events = 10, checksums={'cksum':1111})
+        testFile.create()
+
+        tFile1 = File(lfn = "myLFN")
+        tFile1.loadData()
+        locations = tFile1.getLocations()
+
+        self.assertEqual(locations, [])
+
+        binds = [{'lfn': 'myLFN', 'location': 'se1.cern.ch'}]
+        action.execute(lfns = ['myLFN'], locations = binds)
+
+        tFile1.loadData()
+        locations = tFile1.getLocations()
+        self.assertEqual(locations, ['se1.cern.ch'])
+
+        binds = [{'lfn': 'myLFN', 'location': 'se1.fnal.gov'}]
+        action.execute(lfns = ['myLFN'], locations = binds)
+
+        tFile1.loadData()
+        locations = tFile1.getLocations()
+        self.assertEqual(locations, ['se1.fnal.gov'])
+        
+        return
+
+        
+
+        
+
 if __name__ == "__main__":
     unittest.main() 

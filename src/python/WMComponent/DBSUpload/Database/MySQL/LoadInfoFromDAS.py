@@ -32,6 +32,43 @@ class LoadInfoFromDAS(FindDASToUpload):
              WHERE das.id = :id
              """
 
+    def makeDAS(self, results):
+        ret=[]
+        for r in results:
+            if r == {}:
+                continue
+            entry={}
+            entry['Path']=r['path']
+            entry['DAS_ID'] = long(r['das_id'])
+            if not r['algo'] == None:
+                entry['Algo'] = int(r['algo'])
+            else:
+                entry['Algo'] = None
+            if not r['algo_in_dbs'] == None:
+                entry['AlgoInDBS'] = int(r['algo_in_dbs'])
+            else:
+                entry['AlgoInDBS'] = None
+            if not r['in_dbs'] == None:
+                entry['DASInDBS'] = int(r['in_dbs'])
+            else:
+                entry['DASInDBS'] = None
+            path = r['path']
+            entry['PrimaryDataset']     = path.split('/')[1]
+            entry['ProcessedDataset']   = path.split('/')[2]
+            entry['DataTier']           = path.split('/')[3]
+            entry['ApplicationName']    = r['applicationname']
+            entry['ApplicationVersion'] = r['applicationversion']
+            entry['ApplicationFamily']  = r['applicationfamily']
+            entry['PSetHash']           = r['psethash']
+            entry['PSetContent']        = r['psetcontent']
+            entry['Dataset']            = r['dataset']
+            entry['ValidStatus']        = r['valid_status']
+            entry['GlobalTag']          = r.get('global_tag', '')
+            entry['Parent']             = r.get('parent', '')
+            ret.append(entry)
+
+        return ret
+
 
     def execute(self, ids, conn=None, transaction = False):
         """

@@ -319,7 +319,7 @@ class DBSUploadPoller(BaseWorkerThread):
             fileLFNs    = []
 
             # Get the dataset-algo information
-            algo    = createAlgoFromInfo(info = dasInfo)
+            #algo    = createAlgoFromInfo(info = dasInfo)
             dataset = createDatasetFromInfo(info = dasInfo)
 
             # Get the files for the DAS

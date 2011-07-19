@@ -24,8 +24,8 @@ class Create(DBCreator):
         self.create["01dbsbuffer_dataset"] = \
               """CREATE TABLE dbsbuffer_dataset
 			(
-			   id              BIGINT UNSIGNED not null auto_increment,
-			   path            VARCHAR(500)    unique not null,
+			   id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			   path            VARCHAR(500)    UNIQUE NOT NULL,
                            processing_ver  VARCHAR(255),
                            acquisition_era VARCHAR(255),
                            valid_status    VARCHAR(20),

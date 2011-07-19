@@ -1,11 +1,10 @@
 """
-Implementation of Receiver sub-component.
+Implementation of alert messages receiver.
 
 ReceiverLogic class contains all received messages handling and runs
-on background spawned from Receiver class, which threading.Thread or 
-later perhaps multiprocessing.Process wrapper.
+on background spawned from the Receiver class (currently via threading.Thread).
 
-On Python 2.6.4 and pyzmq-2.1.7 having issues with shutting down the 
+Python 2.6.4, pyzmq-2.1.7 - issues with shutting down the 
 Receiver, it would basically hang on "recvfrom(4, ..." C call and never
 resume.
    
@@ -62,7 +61,6 @@ class ReceiverLogic(object):
     # wait time for a main work method start() to finish after Shutdown
     # control message
     TIMEOUT_THREAD_FINISH = 3  # [s]
-        
     
     def __init__(self, target, handler, control):
         """

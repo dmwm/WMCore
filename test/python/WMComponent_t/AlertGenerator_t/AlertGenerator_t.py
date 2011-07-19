@@ -1,0 +1,288 @@
+import os
+import time
+import unittest
+import logging
+import shutil
+import types
+
+from WMQuality.TestInit import TestInit
+from WMCore.Configuration import Configuration
+from WMComponent.AlertGenerator.AlertGenerator import AlertGenerator
+from WMComponent_t.AlertGenerator_t.Pollers_t import utils 
+# poller final implementations
+from WMComponent.AlertGenerator.Pollers.System import CPUPoller
+from WMComponent.AlertGenerator.Pollers.System import MemoryPoller
+from WMComponent.AlertGenerator.Pollers.System import DiskSpacePoller
+from WMComponent.AlertGenerator.Pollers.Agent import ComponentsCPUPoller
+from WMComponent.AlertGenerator.Pollers.Agent import ComponentsMemoryPoller
+from WMComponent.AlertGenerator.Pollers.MySQL import MySQLCPUPoller
+from WMComponent.AlertGenerator.Pollers.MySQL import MySQLMemoryPoller
+from WMComponent.AlertGenerator.Pollers.MySQL import MySQLDbSizePoller
+from WMComponent.AlertGenerator.Pollers.Couch import CouchDbSizePoller
+from WMComponent.AlertGenerator.Pollers.Couch import CouchCPUPoller
+from WMComponent.AlertGenerator.Pollers.Couch import CouchMemoryPoller
+
+
+"""
+Any new end (final) implementation of new poller(s) should be add
+here to test its basic flow chain.
+
+"""
+finalPollerClasses = [CouchMemoryPoller,
+                      CouchCPUPoller,
+                      CouchDbSizePoller,
+                      MySQLDbSizePoller,
+                      MySQLMemoryPoller,
+                      MySQLCPUPoller,
+                      ComponentsMemoryPoller,
+                      ComponentsCPUPoller,
+                      DiskSpacePoller,
+                      MemoryPoller,
+                      CPUPoller]
+
+        
+def getConfig(testDir):
+    periodAlertGeneratorPollers = 40 # [second]
+    config = Configuration()
+    config.section_("Agent")
+    config.Agent.useMsgService = False
+    config.Agent.useTrigger = False
+    config.Agent.hostName = "localhost"
+    config.Agent.teamName = "team1,team2,cmsdataops"
+    config.Agent.agentName = "WMAgentCommissioning"
+
+    # AlertProcessor values - values for Level all (soft), resp. critical
+    # are also needed by this AlertGenerator test
+    config.component_("AlertProcessor")
+    config.AlertProcessor.componentDir = testDir
+    config.AlertProcessor.section_("critical")
+    config.AlertProcessor.section_("all")
+    config.AlertProcessor.critical.level = 5
+    config.AlertProcessor.all.level = 0
+    
+    config.component_("AlertGenerator")
+    config.AlertGenerator.componentDir = testDir
+    config.AlertGenerator.address = "tcp://127.0.0.1:6557"
+    config.AlertGenerator.controlAddr = "tcp://127.0.0.1:6559"
+    # configuration for overall machine load monitor: cpuPoller (percentage values)
+    config.AlertGenerator.section_("cpuPoller")
+    config.AlertGenerator.cpuPoller.soft = 70 # [percent]
+    config.AlertGenerator.cpuPoller.critical = 90 # [percent]
+    config.AlertGenerator.cpuPoller.pollInterval = 10 # [second]
+    # period during which measurements are collected before evaluating for possible alert triggering 
+    config.AlertGenerator.cpuPoller.period = periodAlertGeneratorPollers # [second]
+    # configuration for overall used physical memory monitor: memPoller (percentage of total physical memory)
+    config.AlertGenerator.section_("memPoller")
+    config.AlertGenerator.memPoller.soft = 70 # [percent]
+    config.AlertGenerator.memPoller.critical = 90 # [percent]
+    config.AlertGenerator.memPoller.pollInterval = 10 # [second]
+    # period during which measurements are collected before evaluating for possible alert triggering
+    config.AlertGenerator.memPoller.period = periodAlertGeneratorPollers # [second]
+    # configuration for available disk space monitor: diskSpacePoller (percentage usage per partition)
+    config.AlertGenerator.section_("diskSpacePoller")
+    config.AlertGenerator.diskSpacePoller.soft = 70 # [percent]
+    config.AlertGenerator.diskSpacePoller.critical = 90 # [percent]
+    config.AlertGenerator.diskSpacePoller.pollInterval = 10 # [second]
+    # configuration for particular components CPU usage: componentCPUPoller (percentage values)
+    config.AlertGenerator.section_("componentsCPUPoller")
+    config.AlertGenerator.componentsCPUPoller.soft = 40 # [percent]
+    config.AlertGenerator.componentsCPUPoller.critical = 60 # [percent]
+    config.AlertGenerator.componentsCPUPoller.pollInterval = 10 # [second]
+    # period during which measurements are collected before evaluating for possible alert triggering
+    config.AlertGenerator.componentsCPUPoller.period = periodAlertGeneratorPollers # [second]
+    # configuration for particular components memory monitor: componentMemPoller (percentage of total physical memory)
+    config.AlertGenerator.section_("componentsMemPoller")
+    config.AlertGenerator.componentsMemPoller.soft = 40 # [percent]
+    config.AlertGenerator.componentsMemPoller.critical = 60 # [percent] 
+    config.AlertGenerator.componentsMemPoller.pollInterval = 10  # [second]
+    # period during which measurements are collected before evaluating for possible alert triggering
+    config.AlertGenerator.componentsMemPoller.period = periodAlertGeneratorPollers # [second]
+    # configuration for MySQL server CPU monitor: mysqlCPUPoller (percentage values)
+    config.AlertGenerator.section_("mysqlCPUPoller")
+    config.AlertGenerator.mysqlCPUPoller.soft = 40 # [percent]
+    config.AlertGenerator.mysqlCPUPoller.critical = 60 # [percent]
+    config.AlertGenerator.mysqlCPUPoller.pollInterval = 10 # [second]
+    # period during which measurements are collected before evaluating for possible alert triggering
+    config.AlertGenerator.mysqlCPUPoller.period = periodAlertGeneratorPollers # [second]
+    # configuration for MySQL memory monitor: mysqlMemPoller (percentage values)
+    config.AlertGenerator.section_("mysqlMemPoller")
+    config.AlertGenerator.mysqlMemPoller.soft = 40 # [percent]
+    config.AlertGenerator.mysqlMemPoller.critical = 60 # [percent]
+    config.AlertGenerator.mysqlMemPoller.pollInterval = 10 # [second]
+    # period during which measurements are collected before evaluating for possible alert triggering
+    config.AlertGenerator.mysqlMemPoller.period = periodAlertGeneratorPollers # [second]
+    # configuration for MySQL database size: mysqlDbSizePoller (gigabytes values)
+    config.AlertGenerator.section_("mysqlDbSizePoller")
+    config.AlertGenerator.mysqlDbSizePoller.soft = 1 # GB
+    config.AlertGenerator.mysqlDbSizePoller.critical = 2 # GB
+    config.AlertGenerator.mysqlDbSizePoller.pollInterval = 10 # [second]
+    # configuration for CouchDB database size monitor: couchDbSizePoller (gigabytes values)
+    config.AlertGenerator.section_("couchDbSizePoller")
+    config.AlertGenerator.couchDbSizePoller.soft = 1 # GB
+    config.AlertGenerator.couchDbSizePoller.critical = 2 # GB
+    config.AlertGenerator.couchDbSizePoller.pollInterval = 10 # [second]
+    # configuration for CouchDB CPU monitor: couchCPUPoller (percentage values)
+    config.AlertGenerator.section_("couchCPUPoller")
+    config.AlertGenerator.couchCPUPoller.soft = 40 # [percent]
+    config.AlertGenerator.couchCPUPoller.critical = 60 # [percent]
+    config.AlertGenerator.couchCPUPoller.pollInterval = 10 # [second]
+    # period during which measurements are collected before evaluating for possible alert triggering
+    config.AlertGenerator.couchCPUPoller.period = periodAlertGeneratorPollers # [second]
+    # configuration for CouchDB memory monitor: couchMemPoller (percentage values)
+    config.AlertGenerator.section_("couchMemPoller")
+    config.AlertGenerator.couchMemPoller.soft = 40 # [percent]
+    config.AlertGenerator.couchMemPoller.critical = 60 # [percent]
+    config.AlertGenerator.couchMemPoller.pollInterval = 10 # [second]
+    # period during which measurements are collected before evaluating for possible alert triggering
+    config.AlertGenerator.couchMemPoller.period = periodAlertGeneratorPollers # [second]
+    # TODO
+    """
+    # configuration for CouchDB HTTP errors poller: couchErrorsPoller (number of error occurrences)
+    # (once certain threshold of the HTTP error counters is exceeded, poller keeps sending alerts)
+    config.AlertGenerator.section_("couchErrorsPoller")
+    config.AlertGenerator.couchErrorsPoller.soft = 100 # [number of error occurrences]
+    config.AlertGenerator.couchErrorsPoller.critical = 200 # [number of error occurrences]
+    config.AlertGenerator.couchErrorsPoller.observables = (404, 500) # HTTP status codes to watch
+    config.AlertGenerator.couchErrorsPoller.pollInterval = 10 # [second]
+    """
+    
+    return config
+    
+    
+
+class AlertGeneratorTest(unittest.TestCase):
+    def setUp(self):
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.clearDatabase()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ["WMCore.WMBS",'WMCore.Agent.Database',
+                                                 "WMCore.ResourceControl"],
+                                useDefault = False)
+        self.testDir = self.testInit.generateWorkDir()
+        # AlertGenerator instance
+        self.generator = None
+        
+        self.config = getConfig(self.testDir)
+         
+        self.config.section_("CoreDatabase")
+        self.config.CoreDatabase.socket = os.environ.get("DBSOCK")
+        self.config.CoreDatabase.connectUrl = os.environ.get("DATABASE")
+        
+        self.testProcesses = []
+        self.testComponentDaemonXml = "/tmp/TestComponent/Daemon.xml" 
+                
+
+    def tearDown(self):
+        self.testInit.clearDatabase()       
+        self.testInit.delWorkDir()
+        self.generator = None
+        utils.terminateProcesses(self.testProcesses)
+        # if the directory and file "/tmp/TestComponent/Daemon.xml" after
+        # ComponentsPoller test exist, then delete it
+        d = os.path.dirname(self.testComponentDaemonXml)
+        if os.path.exists(d):
+            shutil.rmtree(d)
+
+        
+    def _startComponent(self):
+        self.generator = AlertGenerator(self.config)
+        try:
+            # self.proc.startComponent() causes the flow to stop, Harness.py
+            # the method just calls prepareToStart() and waits for ever
+            # self.proc.startDaemon() no good for this either ... puts everything
+            # on background
+            self.generator.prepareToStart()
+        except Exception, ex:
+            print ex
+            self.fail(str(ex))
+        print "AlertGenerator and its sub-components should be running now ..."
+        
+        
+    def _stopComponent(self):
+        print "Going to stop the AlertGenerator ..."
+        # stop via component method
+        try:
+            self.generator.stopProcessor()
+        except Exception, ex:
+            print ex
+            self.fail(str(ex))
+            
+        print "AlertGenerator should be stopped now."
+        
+
+    def testAlertProcessorBasic(self):
+        """
+        Just tests starting and stopping the component machinery.
+        Should start and stop all configured pollers.
+        
+        """
+        self._startComponent()
+        # test that all poller processes are running
+        for poller, proc in zip(self.generator._pollers, self.generator._procs):
+            self.assertTrue(proc.is_alive())
+            #print "poller '%s' running: %s" % (poller.__class__.__name__, proc.is_alive())
+        time.sleep(5)
+        self._stopComponent()
+        
+        
+
+    def testAllFinalClassPollerImplementations(self):
+        """
+        Any new end (final) implementation of new poller(s) should be add
+        here to test its basic flow chain.
+        
+        """
+        config = getConfig("/tmp")
+        # create some non-sence config section. just need a bunch of values defined        
+        config.AlertGenerator.section_("bogusPoller")
+        config.AlertGenerator.bogusPoller.soft = 5 # [percent]
+        config.AlertGenerator.bogusPoller.critical = 50 # [percent] 
+        config.AlertGenerator.bogusPoller.pollInterval = 0.2  # [second]
+        config.AlertGenerator.bogusPoller.period = 0.5
+        
+        # need to create some temp directory, real process and it's
+        # Daemon.xml so that is looks like agents component process 
+        # and check back the information
+        p = utils.getProcess()
+        self.testProcesses.append(p)
+        while not p.is_alive():
+            time.sleep(0.2)                
+        config.component_("TestComponent")
+        d = os.path.dirname(self.testComponentDaemonXml)
+        config.TestComponent.componentDir = d
+        if not os.path.exists(d):
+            os.mkdir(d)
+        f = open(self.testComponentDaemonXml, 'w')
+        f.write(utils.daemonXmlContent % dict(PID_TO_PUT = p.pid))
+        f.close()
+        
+        generator = utils.AlertGeneratorMock(config)
+        pollers = []
+        for pollerClass in finalPollerClasses:
+            p = pollerClass(config.AlertGenerator.bogusPoller, generator)
+            # poller may send something during below check(), satisfy sender method
+            p.sender = lambda alert: 1 + 1
+            pollers.append(p)
+            
+        for poller in pollers:
+            poller.check()
+            if hasattr(poller, "_measurements"):
+                mes = poller._measurements
+                self.assertEqual(len(mes), 1)
+                self.assertTrue(isinstance(mes[0], types.FloatType))
+            if hasattr(poller, "_compMeasurements"):
+                for measurements in poller._compMeasurements:
+                    self.assertEqual(len(measurements), 1)
+                    self.assertTrue(isinstance(measurements[0], types.FloatType))
+                    
+        shutil.rmtree(d)
+            
+        # don't do shutdown() on poller - will take a while and it's not
+        # necessary anyway - BasePoller.poll() which does register is not
+        # called here (shutdown does only unregister)    
+
+        
+
+if __name__ == "__main__":
+    unittest.main()                

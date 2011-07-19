@@ -9,7 +9,6 @@ import logging
 from WMCore.Agent.Harness import Harness
 from WMCore.Alerts.ZMQ.Processor import Processor
 from WMCore.Alerts.ZMQ.Receiver import Receiver
-from WMCore.Alerts.ZMQ.Sender import Sender
     
 
 

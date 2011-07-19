@@ -133,8 +133,8 @@ class ReceiverTest(unittest.TestCase):
             self.assertEqual(alert["Type"], "Alert")
             alertCount += 1
         self.assertEqual(alertCount, numAlertMsgs)
-    
         
-    
+        
+        
 if __name__ == "__main__":
     unittest.main()

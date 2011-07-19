@@ -2,7 +2,7 @@ import time
 import unittest
 import sys
 import logging
-from  multiprocessing import Process, Queue, queues
+from  multiprocessing import Queue, queues
 
 import zmq
 

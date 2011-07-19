@@ -45,7 +45,7 @@ class Sender(object):
         """        
         Send the alert instance to the target that this sender represents.
         
-        """    
+        """ 
         self._workChannel.send_json(alert)
         
         

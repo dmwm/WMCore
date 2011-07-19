@@ -119,7 +119,7 @@ class Assign(WebAPI):
             try:
                 helper = loadWorkload(request)
             except:
-                badRequestNames.append(requestName)
+                badRequestNames.append(request["RequestName"])
             else:
                 # get defaults from the first good one
                 if not goodRequests:
@@ -195,7 +195,11 @@ class Assign(WebAPI):
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
         #FIXME not validated
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
-        helper.setMergeParameters(int(kwargs["MinMergeSize"]), int(kwargs["MaxMergeSize"]), int(kwargs["MaxMergeEvents"]))
+        helper.setMergeParameters(int(kwargs["MinMergeSize"]),
+                                  int(kwargs["MaxMergeSize"]), 
+                                  int(kwargs["MaxMergeEvents"]))
+        helper.setupPerformanceMonitoring(self, int(kwargs["maxRSS"]), 
+                                                int(kwargs["maxVSize"]))
         saveWorkload(helper, request['RequestWorkflow'])
  
 

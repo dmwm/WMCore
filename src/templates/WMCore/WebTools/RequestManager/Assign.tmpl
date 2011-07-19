@@ -81,6 +81,8 @@ Unmerged LFN Base: <select name="UnmergedLFNBase">
 Min Merge Size <input type="text" name="MinMergeSize" value=2147483648 size=10/>
 Max Merge Size <input type="text" name="MaxMergeSize" value=4294967296 size=10/>
 Max Merge Events <input type="text" name="MaxMergeEvents" value=50000 size=10/><br/>
+Memory limits: RSS <input type="text" name="maxRSS" value=4294967296 size=10/>
+VSS <input type="text" name="maxVSize" value=4294967296 size=10/><br/>
 
 Acquisition Era: <input type="text" name="AcquisitionEra" size=20 value="$acqEra" /><br/>
 ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 value="$procVer" /><br/>
@@ -131,7 +133,7 @@ Actions:<select name="action">
 <div id="badrequests">
 #if $badRequests
   <b>Could not find the workload for the following requests</b>:<br/>
-  #for $request in $badReqeusts
+  #for $request in $badRequests
      $request<br/>
   #end for
 #end if

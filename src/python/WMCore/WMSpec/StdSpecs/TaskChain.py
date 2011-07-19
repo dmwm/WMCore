@@ -114,7 +114,7 @@ class TaskChainWorkloadFactory(StdBase):
         self.couchURL = arguments['CouchURL']
         self.couchDBName = arguments['CouchDBName']
         self.frameworkVersion = arguments["CMSSWVersion"]
-        self.globalTag = arguments["GlobalTag"]
+        self.globalTag = arguments.get("GlobalTag", None)
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
         self.blockBlacklist = arguments.get("BlockBlacklist", [])
@@ -188,7 +188,10 @@ class TaskChainWorkloadFactory(StdBase):
         configCacheID = taskConf['ConfigCacheID']
         splitAlgorithm = taskConf['SplittingAlgorithm']
         splitArguments = taskConf['SplittingArguments']
-
+        
+        globalGlobalTag = self.globalTag
+        if taskConf.has_key('GlobalTag'):
+            self.globalTag = taskConf['GlobalTag']
 
         self.inputPrimaryDataset = taskConf['PrimaryDataset']
         outputMods = self.setupProcessingTask(task, "Production", None,
@@ -209,7 +212,7 @@ class TaskChainWorkloadFactory(StdBase):
                                           outputModuleInfo["processedDataset"])
             procMergeTasks[str(outputModuleName)] = mergeTask
         self.mergeMapping[task.name()] = procMergeTasks
-        
+        self.globalTag = globalGlobalTag
         
     def setupTask(self, task, taskConf):
         """
@@ -220,10 +223,12 @@ class TaskChainWorkloadFactory(StdBase):
         """
        
         cmsswStepType = "CMSSW"
-        configCacheID = taskConf['ConfigCacheID']
+        configCacheID = taskConf.get('ConfigCacheID', None)
         splitAlgorithm = taskConf['SplittingAlgorithm']
         splitArguments = taskConf['SplittingArguments']
-
+        globalGlobalTag = self.globalTag
+        if taskConf.has_key('GlobalTag'):
+            self.globalTag = taskConf['GlobalTag']
 
         #  //
         # //  in case the initial task is a processing task, we have an input dataset, otherwise
@@ -245,9 +250,22 @@ class TaskChainWorkloadFactory(StdBase):
             mergeTaskForMod = self.mergeMapping[inputTask][inpMod]
             inpStep = mergeTaskForMod.getStep("cmsRun1")
             
+        scenario = None
+        scenarioFunc = None
+        scenarioArgs = {}
+        couchUrl = self.couchURL
+        couchDB = self.couchDBName
+        if taskConf.get("Scenario", None) != None:
+            scenario = taskConf['Scenario']
+            scenarioFunc = taskConf['ScenarioMethod']
+            scenarioArgs = taskConf['ScenarioArguments']
+            couchUrl = None
+            couchDb = None
+            couchConfig = None            
+            
         outputMods = self.setupProcessingTask(task, "Processing", inputDataset, inputStep = inpStep, inputModule=inpMod,
-                                            scenarioName = None, scenarioFunc = None, scenarioArgs = {},
-                                            couchURL = self.couchURL, couchDBName = self.couchDBName,
+                                            scenarioName = scenario, scenarioFunc = scenarioFunc, scenarioArgs = scenarioArgs,
+                                            couchURL = couchUrl, couchDBName = couchDB,
                                             configDoc = configCacheID, splitAlgo = splitAlgorithm,
                                             splitArgs = splitArguments, stepType = cmsswStepType)
                                         
@@ -263,4 +281,4 @@ class TaskChainWorkloadFactory(StdBase):
                                           outputModuleInfo["processedDataset"])
             procMergeTasks[str(outputModuleName)] = mergeTask
         self.mergeMapping[task.name()] = procMergeTasks
-
+        self.globalTag = globalGlobalTag    

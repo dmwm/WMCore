@@ -96,7 +96,7 @@ class StdBase(object):
             configCache.loadByID(configDoc)
             outputModules = configCache.getOutputModuleInfo()
         else:
-            for dataTier in scenarioArgs["writeTiers"]:
+            for dataTier in scenarioArgs.get("writeTiers",[]):
                 outputModuleName = "output%s%s" % (dataTier, dataTier)
                 outputModules[outputModuleName] = {"dataTier": dataTier,
                                                    "filterName": None}

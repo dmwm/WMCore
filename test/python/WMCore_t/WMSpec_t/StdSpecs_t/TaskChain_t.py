@@ -363,7 +363,7 @@ class TaskChainTests(unittest.TestCase):
             "CMSSWVersion": "CMSSW_3_5_8",
             "ScramArch": "slc5_ia32_gcc434",
             "ProcessingVersion": "v1",
-            "GlobalTag": "GR10_P_v4::All",
+            "GlobalTag": "DefaultGlobalTag",
             "CouchURL": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
@@ -373,7 +373,7 @@ class TaskChainTests(unittest.TestCase):
                 "ConfigCacheID" : processorDocs['DigiHLT'],
                 "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM", 
                 "SplittingAlgorithm"  : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 1},
+                "SplittingArguments" : {"files_per_job" : 1}
             },
             "Task2" : {
                 "TaskName" : "Reco",
@@ -382,6 +382,7 @@ class TaskChainTests(unittest.TestCase):
                 "ConfigCacheID" : processorDocs['Reco'],
                 "SplittingAlgorithm" : "FileBased",
                 "SplittingArguments" : {"files_per_job" : 1 },
+                "GlobalTag" : "GlobalTagForReco",
             },
             "Task3" : {
                 "TaskName" : "ALCAReco",
@@ -390,7 +391,7 @@ class TaskChainTests(unittest.TestCase):
                 "ConfigCacheID" : processorDocs['ALCAReco'],
                 "SplittingAlgorithm" : "FileBased",
                 "SplittingArguments" : {"files_per_job" : 1 },
-            
+                "GlobalTag" : "GlobalTagForALCAReco",   
             },
             "Task4" : {
                 "TaskName" : "Skims",
@@ -398,7 +399,8 @@ class TaskChainTests(unittest.TestCase):
                 "InputFromOutputModule" : "writeRECO",
                 "ConfigCacheID" : processorDocs['Skims'],
                 "SplittingAlgorithm" : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 10 },            
+                "SplittingArguments" : {"files_per_job" : 10 }, 
+                "GlobalTag" : "GlobalTagForSkims"           
             }
         }
     
@@ -422,7 +424,119 @@ class TaskChainTests(unittest.TestCase):
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco"), arguments['Task2'])
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/ALCAReco"), arguments['Task3'])
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/Skims"), arguments['Task4'])
+ 
+        digi = self.workload.getTaskByPath("/YankingTheChain/DigiHLT")
+        digiStep = digi.getStepHelper("cmsRun1")
+        self.assertEqual(digiStep.getGlobalTag(), arguments['GlobalTag'])
+ 
+        reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco")
+        recoStep = reco.getStepHelper("cmsRun1")
+        self.assertEqual(recoStep.getGlobalTag(), arguments['Task2']['GlobalTag'])
+ 
+        alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/ALCAReco")
+        alcaStep = alca.getStepHelper("cmsRun1")
+        self.assertEqual(alcaStep.getGlobalTag(), arguments['Task3']['GlobalTag'])
+
+        skim = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/Skims")
+        skimStep = skim.getStepHelper("cmsRun1")
+        self.assertEqual(skimStep.getGlobalTag(), arguments['Task4']['GlobalTag'])
+        
+ 
+        
+ 
+    def testC(self):
+        """
+        _testC_
+
+        test creating an all processor workload with an input dataset and uses scenarios instead
+        of config cache for a couple of the configs
+
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+        arguments = {
+            "AcquisitionEra": "ReleaseValidation",
+            "Requestor": "sfoulkes@fnal.gov",
+            "CMSSWVersion": "CMSSW_3_5_8",
+            "ScramArch": "slc5_ia32_gcc434",
+            "ProcessingVersion": "v1",
+            "GlobalTag": "GR10_P_v4::All",
+            "CouchURL": self.testInit.couchUrl,
+            "CouchDBName": self.testInit.couchDbName,
+            "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
+            "TaskChain" : 4,
+            "Task1" :{
+                "TaskName" : "DigiHLT",
+                "ConfigCacheID" : processorDocs['DigiHLT'],
+                "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM", 
+                "SplittingAlgorithm"  : "FileBased",
+                "SplittingArguments" : {"files_per_job" : 1},
+            },
+            "Task2" : {
+                "TaskName" : "Reco",
+                "InputTask" : "DigiHLT",
+                "InputFromOutputModule" : "writeRAWDIGI",
+                "Scenario" : "pp",
+                "ScenarioMethod" : "promptReco",
+                "ScenarioArguments" : {"writeTiers" : ['RECO', 'AOD', 'ALCARECO']},
+                "SplittingAlgorithm" : "FileBased",
+                "SplittingArguments" : {"files_per_job" : 1 },
+            },
+            "Task3" : {
+                "TaskName" : "ALCAReco",
+                "InputTask" : "Reco",
+                "InputFromOutputModule" : "outputALCARECOALCARECO",
+                "Scenario" : "pp",
+                "ScenarioMethod" : "alcaReco",
+                "ScenarioArguments" : {"writeTiers" : ['ALCARECO']},
+                "SplittingAlgorithm" : "FileBased",
+                "SplittingArguments" : {"files_per_job" : 1 },
+
+            },
+            "Task4" : {
+                "TaskName" : "Skims",
+                "InputTask" : "Reco",
+                "InputFromOutputModule" : "outputRECORECO",
+                "ConfigCacheID" : processorDocs['Skims'],
+                "SplittingAlgorithm" : "FileBased",
+                "SplittingArguments" : {"files_per_job" : 10 },            
+            }
+        }
+
+        factory = TaskChainWorkloadFactory()
+        try:
+            self.workload = factory("YankingTheChain", arguments)
+        except Exception, ex:
+            msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
+            self.fail(msg)
 
 
+        self.workload.setSpecUrl("somespec")
+        self.workload.setOwnerDetails("evansde@fnal.gov", "DMWM")
+
+
+        testWMBSHelper = WMBSHelper(self.workload, "SomeBlock")
+        testWMBSHelper.createSubscription()
+
+
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'])
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco"), arguments['Task2'])
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/ALCAReco"), arguments['Task3'])
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/Skims"), arguments['Task4'])
+        
+        
+        
+        reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco")
+        recoStep = reco.getStepHelper("cmsRun1")
+        recoAppConf = recoStep.data.application.configuration
+        self.assertEqual(recoAppConf.scenario, arguments['Task2']['Scenario'])
+        self.assertEqual(recoAppConf.function, arguments['Task2']['ScenarioMethod'])
+        
+        alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/ALCAReco")
+        alcaStep = alca.getStepHelper("cmsRun1")
+        alcaAppConf = alcaStep.data.application.configuration
+        self.assertEqual(alcaAppConf.scenario, arguments['Task3']['Scenario'])
+        self.assertEqual(alcaAppConf.function, arguments['Task3']['ScenarioMethod'])
+        
+        
 if __name__ == '__main__':
 	unittest.main()

@@ -116,12 +116,6 @@ def modifyConfiguration(config, **args):
         if args.get("global_workqueue_url", None):
             config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = args["global_workqueue_url"]
 
-            # talking to cmsweb*.cern.ch requires a couch proxy, a private instance does not
-            if not 'cmsweb' in args['global_workqueue_url']:
-                try:
-                    delattr(config, "CouchProxyManager")
-                except AttributeError:
-                    pass
         if args.get('workqueue_db_name'):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'

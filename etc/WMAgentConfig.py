@@ -111,15 +111,7 @@ config.WorkQueueManager.couchurl = couchURL
 config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.queueParams = {}
-# see CouchProxyManager component below
-config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "http://localhost:8080/couchdb/workqueue"
-
-# needed for authentication from local couch to global workqueue
-config.component_('CouchProxyManager')
-config.CouchProxyManager.namespace = "WMComponent.CouchProxyManager.CouchProxyManager"
-config.CouchProxyManager.componentDir = config.General.workDir + "/CouchProxyManager"
-config.CouchProxyManager.section_('cmsweb_couch')
-config.CouchProxyManager.cmsweb_couch.remote_host = 'https://cmsweb.cern.ch'
+config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
 
 config.component_("DBSUpload")
 config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"

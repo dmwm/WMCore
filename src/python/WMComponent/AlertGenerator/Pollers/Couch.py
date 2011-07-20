@@ -9,6 +9,7 @@ import logging
 import types
 import time
 
+from WMCore.Alerts.ZMQ.Sender import Sender
 from WMCore.Database.CMSCouch import CouchServer
 from WMComponent.AlertGenerator.Pollers.Base import PeriodPoller
 from WMComponent.AlertGenerator.Pollers.Base import Measurements
@@ -19,6 +20,11 @@ from WMComponent.AlertGenerator.Pollers.System import DirectorySizePoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessCPUPoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessMemoryPoller
 
+
+# TODO
+# sending initialisation alerts shall be factored out above, likely into
+# BaseSender - with proper comment - such Sender is made and used from the
+# initialisation process unlike the other Sender from polling process
 
 
 class CouchPoller(PeriodPoller):
@@ -87,11 +93,22 @@ class CouchPoller(PeriodPoller):
         create ProcessDetail and Measurements instances.
         
         """ 
-        pid = self._getProcessPID()
         try:
+            pid = self._getProcessPID()
             self._dbProcessDetail = ProcessDetail(pid, "CouchDB")
-        except (psutil.error.NoSuchProcess, psutil.error.AccessDenied), ex:
-            logging.error("%s: polling not possible, reason: %s" % (self.__class__.__name__, ex))
+        except Exception, ex:
+            msg = ("%s: polling not possible, reason: %s" % (self.__class__.__name__, ex))
+            logging.error(msg)
+            # send one-off set up alert, instantiate ad-hoc alert Sender
+            sender = Sender(self.generator.config.AlertGenerator.address,
+                             self.__class__.__name__,
+                             self.generator.config.AlertGenerator.controlAddr)
+            a = Alert(**self.preAlert)
+            a["Source"] = self.__class__.__name__
+            a["Timestamp"] = time.time()
+            a["Details"] = dict(msg = msg)                    
+            a["Level"] = 10
+            sender(a)
             return
         numOfMeasurements = round(self.config.period / self.config.pollInterval, 0)
         self._measurements = Measurements(numOfMeasurements)
@@ -115,6 +132,7 @@ class CouchDbSizePoller(DirectorySizePoller):
     """
     def __init__(self, config, generator):
         DirectorySizePoller.__init__(self, config, generator)
+        self._query = "/_config" # couch query to retrieve configuration info
         # database directory to monitor
         self._dbDirectory = self._getDbDir()
         
@@ -126,15 +144,26 @@ class CouchDbSizePoller(DirectorySizePoller):
         """
         try:
             couch = CouchServer(os.getenv("COUCHURL", None))
-            r = couch.makeRequest("/_config")
+            r = couch.makeRequest(self._query)
             dataDir = r["couchdb"]["database_dir"]
-            return dataDir
         except Exception, ex:
-            logging.error("%s: could not find out database directory, reason: %s" %
-                          (self.__class__.__name__, ex))
-            raise
+            msg = ("%s: could not find out database directory, reason: %s" %
+                   (self.__class__.__name__, ex))
+            logging.error(msg)            
+            # send one-off set up alert, instantiate ad-hoc alert Sender
+            sender = Sender(self.generator.config.AlertGenerator.address,
+                             self.__class__.__name__,
+                             self.generator.config.AlertGenerator.controlAddr)
+            a = Alert(**self.preAlert)
+            a["Source"] = self.__class__.__name__
+            a["Timestamp"] = time.time()
+            a["Details"] = dict(msg = msg)                    
+            a["Level"] = 10
+            sender(a)
+            dataDir = None
+        return dataDir
+        
     
-
     
 class CouchMemoryPoller(CouchPoller):
     """
@@ -190,7 +219,7 @@ class CouchErrorsPoller(BasePoller):
         BasePoller.__init__(self, config, generator)        
         self._myName = self.__class__.__name__
         self.couch = None
-        self.query = "/_stats" # couch query to retrieve statistics
+        self._query = "/_stats" # couch query to retrieve statistics
         self._setUp()
         
     
@@ -206,11 +235,10 @@ class CouchErrorsPoller(BasePoller):
                 raise Exception("COUCHURL not set, can't connect to Couch.")
             self.couch = CouchServer(couchUrl)
             # retrieves result which is not used during this set up
-            r = self.couch.makeRequest(self.query)
+            r = self.couch.makeRequest(self._query)
         except Exception, ex:
             logging.error("%s: could not connect to CouchDB, reason: %s" %
                           (self._myName, ex))
-            raise
         # observables shall be list-like integers
         if not isinstance(self.config.observables, (types.ListType, types.TupleType)):
             self.config.observables = tuple([self.config.observables])
@@ -225,7 +253,7 @@ class CouchErrorsPoller(BasePoller):
         code - string value of the code
         
         """ 
-        response = self.couch.makeRequest(self.query)
+        response = self.couch.makeRequest(self._query)
         statusCodes = response["httpd_status_codes"]
         try:
             statusCode = statusCodes[code]

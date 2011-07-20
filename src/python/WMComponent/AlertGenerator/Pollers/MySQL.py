@@ -6,9 +6,12 @@ Common module for all MySQL related checked metrics.
 
 import threading
 import logging
+import time
 
 import psutil
 
+from WMCore.Alerts.Alert import Alert
+from WMCore.Alerts.ZMQ.Sender import Sender
 from WMComponent.AlertGenerator.Pollers.Base import PeriodPoller
 from WMComponent.AlertGenerator.Pollers.Base import Measurements
 from WMComponent.AlertGenerator.Pollers.Base import ProcessDetail
@@ -16,6 +19,11 @@ from WMComponent.AlertGenerator.Pollers.System import DirectorySizePoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessCPUPoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessMemoryPoller
 
+
+# TODO
+# sending initialisation alerts shall be factored out above, likely into
+# BaseSender - with proper comment - such Sender is made and used from the
+# initialisation process unlike the other Sender from polling process
 
 
 class MySQLPoller(PeriodPoller):
@@ -59,11 +67,22 @@ class MySQLPoller(PeriodPoller):
         create ProcessDetail and Measurements instances.
         
         """ 
-        pid = self._getProcessPID()
         try:
+            pid = self._getProcessPID()
             self._dbProcessDetail = ProcessDetail(pid, "MySQL")
-        except (psutil.error.NoSuchProcess, psutil.error.AccessDenied), ex:
-            logging.error("%s: polling not possible, reason: %s" % (self.__class__.__name__, ex))
+        except Exception, ex:
+            msg = "%s: polling not possible, reason: %s" % (self.__class__.__name__, ex)
+            logging.error(msg)
+            # send one-off set up alert, instantiate ad-hoc alert Sender
+            sender = Sender(self.generator.config.AlertGenerator.address,
+                             self.__class__.__name__,
+                             self.generator.config.AlertGenerator.controlAddr)
+            a = Alert(**self.preAlert)
+            a["Source"] = self.__class__.__name__
+            a["Timestamp"] = time.time()
+            a["Details"] = dict(msg = msg)                    
+            a["Level"] = 10
+            sender(a)
             return
         numOfMeasurements = round(self.config.period / self.config.pollInterval, 0)
         self._measurements = Measurements(numOfMeasurements)
@@ -87,6 +106,7 @@ class MySQLDbSizePoller(DirectorySizePoller):
     """
     def __init__(self, config, generator):
         DirectorySizePoller.__init__(self, config, generator)
+        self._query = "SHOW VARIABLES LIKE 'datadir'"
         # database directory to monitor
         self._dbDirectory = self._getDbDir()
         
@@ -98,16 +118,26 @@ class MySQLDbSizePoller(DirectorySizePoller):
         
         """
         myThread = threading.currentThread()
-        query = "SHOW VARIABLES LIKE 'datadir'"
         try:
             # this call will fail on dbi should not the database be properly set up
-            proxy = myThread.dbi.connection().execute(query)            
+            proxy = myThread.dbi.connection().execute(self._query)            
             result = proxy.fetchone()
             dataDir = result[1]
         except Exception, ex:
-            logging.error("%s: could not find out database directory, reason: %s" %
-                          (self.__class__.__name__, ex))
-            raise
+            msg = ("%s: could not find out database directory, reason: %s" %
+                   (self.__class__.__name__, ex))
+            logging.error(msg)
+            # send one-off set up alert, instantiate ad-hoc alert Sender
+            sender = Sender(self.generator.config.AlertGenerator.address,
+                             self.__class__.__name__,
+                             self.generator.config.AlertGenerator.controlAddr)
+            a = Alert(**self.preAlert)
+            a["Source"] = self.__class__.__name__
+            a["Timestamp"] = time.time()
+            a["Details"] = dict(msg = msg)                    
+            a["Level"] = 10
+            sender(a)
+            dataDir = None
         return dataDir
 
 

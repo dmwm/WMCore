@@ -67,7 +67,7 @@ class MySQLTest(unittest.TestCase):
         poller.check()
         self.assertEqual(poller._measurements, None)
         self.assertEqual(poller._dbProcessDetail, None)
-                                
+        
 
     def testMySQLCPUPollerBasic(self):
         config = getConfig("/tmp")
@@ -189,6 +189,13 @@ class MySQLTest(unittest.TestCase):
         except Exception, ex:
             self.fail("%s: exception: %s" % (self.testName, ex))                                
         poller.check()
+        
+        # test failing during set up
+        poller = MySQLDbSizePoller(config.AlertGenerator.mysqlCPUPoller, generator)
+        poller._query = "nonsense query"
+        poller._dbDirectory = poller._getDbDir()
+        poller.check()
+        self.assertEquals(poller._dbDirectory, None)
         
         
     def testAlertGeneratorMySQLDbSizePollerSoftThreshold(self):

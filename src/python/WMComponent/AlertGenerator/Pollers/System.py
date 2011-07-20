@@ -278,6 +278,8 @@ class DirectorySizePoller(BasePoller):
         If the usage exceeds soft, resp. critical limits, the alert is sent.
         
         """
+        if not self._dbDirectory:
+            return
         usage = self.sample(self._dbDirectory)
         if usage == None:
             # should be logged above

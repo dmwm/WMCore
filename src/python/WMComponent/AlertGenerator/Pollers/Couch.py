@@ -6,6 +6,8 @@ Module for all CouchDb related polling.
 
 import os
 import logging
+import types
+import time
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMComponent.AlertGenerator.Pollers.Base import PeriodPoller
@@ -74,7 +76,7 @@ class CouchPoller(PeriodPoller):
                 pid = int(pidStr)
                 return pid
         except Exception, ex:
-            logging.error("%s: could not get Couch PID, reason: %s" %
+            logging.error("%s: could not get CouchDB PID, reason: %s" %
                           (self.__class__.__name__, ex))
             raise
 
@@ -176,11 +178,86 @@ class CouchCPUPoller(CouchPoller):
     
     
 class CouchErrorsPoller(BasePoller):
-    pass
-    # TODO
     """
-    couchErrorsPoller (watch for 404, 500 http status values)
-    r = couch.makeRequest("/_stats")
+    Polling CouchDb statistics values - number of status error codes
+    (configurable).
+    """
+    def __init__(self, config, generator):
+        """
+        couch - instance of CouchServer class
+        
+        """
+        BasePoller.__init__(self, config, generator)        
+        self._myName = self.__class__.__name__
+        self.couch = None
+        self.query = "/_stats" # couch query to retrieve statistics
+        self._setUp()
+        
     
-    add to finalPollerClasses list once it's testeable
-    """
+    def _setUp(self):
+        """
+        Instantiate CouchServer reference.
+        Test connection with CouchDB (first connect and retrieve attempt).
+        
+        """
+        try:
+            couchUrl = os.getenv("COUCHURL", None)
+            if not couchUrl:
+                raise Exception("COUCHURL not set, can't connect to Couch.")
+            self.couch = CouchServer(couchUrl)
+            # retrieves result which is not used during this set up
+            r = self.couch.makeRequest(self.query)
+        except Exception, ex:
+            logging.error("%s: could not connect to CouchDB, reason: %s" %
+                          (self._myName, ex))
+            raise
+        # observables shall be list-like integers
+        if not isinstance(self.config.observables, (types.ListType, types.TupleType)):
+            self.config.observables = tuple([self.config.observables])
+
+
+    def sample(self, code):
+        """
+        Make a query to CouchDB and retrieve number of occurrences of
+        particular HTTP code as reported by the internal statistics.
+        If such HTTP codes has not occurred since the server start,
+        if may not have an entry in the statistics result.
+        code - string value of the code
+        
+        """ 
+        response = self.couch.makeRequest(self.query)
+        statusCodes = response["httpd_status_codes"]
+        try:
+            statusCode = statusCodes[code]
+            return statusCode["current"] # another possibility to watch "count" 
+        except KeyError:
+            return None
+
+    
+    def check(self):
+        """
+        Method called from the base class.
+        Iterate over all HTTP status listed in observable config value
+        and check number of occurrences of each by querying statistics
+        of CouchDB.
+        
+        """
+        for code in self.config.observables:
+            occurrences = self.sample(str(code))
+            if occurrences is not None:
+                for threshold, level in zip(self.thresholds, self.levels):
+                    if occurrences >= threshold:
+                        details = dict(HTTPCode = code,
+                                       occurrences = occurrences, 
+                                       threshold = threshold)
+                        a = Alert(**self.preAlert)
+                        a["Source"] = self._myName
+                        a["Timestamp"] = time.time()
+                        a["Details"] = details
+                        a["Level"] = level
+                        logging.debug(a)
+                        self.sender(a)
+                        break # send only one alert, critical threshold tested first
+            m = "%s: checked code:%s current occurrences:%s" % (self._myName, code, occurrences)
+            logging.debug(m)
+            #print m

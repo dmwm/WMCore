@@ -21,6 +21,7 @@ from WMComponent.AlertGenerator.Pollers.MySQL import MySQLDbSizePoller
 from WMComponent.AlertGenerator.Pollers.Couch import CouchDbSizePoller
 from WMComponent.AlertGenerator.Pollers.Couch import CouchCPUPoller
 from WMComponent.AlertGenerator.Pollers.Couch import CouchMemoryPoller
+from WMComponent.AlertGenerator.Pollers.Couch import CouchErrorsPoller
 
 
 """
@@ -28,7 +29,8 @@ Any new end (final) implementation of new poller(s) should be add
 here to test its basic flow chain.
 
 """
-finalPollerClasses = [CouchMemoryPoller,
+finalPollerClasses = [CouchErrorsPoller,
+                      CouchMemoryPoller,
                       CouchCPUPoller,
                       CouchDbSizePoller,
                       MySQLDbSizePoller,
@@ -135,16 +137,13 @@ def getConfig(testDir):
     config.AlertGenerator.couchMemPoller.pollInterval = 10 # [second]
     # period during which measurements are collected before evaluating for possible alert triggering
     config.AlertGenerator.couchMemPoller.period = periodAlertGeneratorPollers # [second]
-    # TODO
-    """
     # configuration for CouchDB HTTP errors poller: couchErrorsPoller (number of error occurrences)
     # (once certain threshold of the HTTP error counters is exceeded, poller keeps sending alerts)
     config.AlertGenerator.section_("couchErrorsPoller")
     config.AlertGenerator.couchErrorsPoller.soft = 100 # [number of error occurrences]
     config.AlertGenerator.couchErrorsPoller.critical = 200 # [number of error occurrences]
-    config.AlertGenerator.couchErrorsPoller.observables = (404, 500) # HTTP status codes to watch
+    config.AlertGenerator.couchErrorsPoller.observables = (404, 500) # HTTP status codes to watch over
     config.AlertGenerator.couchErrorsPoller.pollInterval = 10 # [second]
-    """
     
     return config
     
@@ -240,6 +239,8 @@ class AlertGeneratorTest(unittest.TestCase):
         config.AlertGenerator.bogusPoller.critical = 50 # [percent] 
         config.AlertGenerator.bogusPoller.pollInterval = 0.2  # [second]
         config.AlertGenerator.bogusPoller.period = 0.5
+        # currently only CouchErrorsPoller uses this config value
+        config.AlertGenerator.bogusPoller.observables = 4000
         
         # need to create some temp directory, real process and it's
         # Daemon.xml so that is looks like agents component process 

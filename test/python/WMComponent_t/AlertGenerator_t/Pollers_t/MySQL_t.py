@@ -203,7 +203,7 @@ class MySQLTest(unittest.TestCase):
         ti.expected = 1
         ti.thresholdDiff = 1
         ti.testCase = self
-        utils.doDirectorySizePolling(ti)
+        utils.doGenericValueBasedPolling(ti)
         
 
     def testAlertGeneratorMySQLDbSizePollerCriticalThreshold(self):
@@ -218,7 +218,7 @@ class MySQLTest(unittest.TestCase):
         ti.expected = 1
         ti.thresholdDiff = 1
         ti.testCase = self
-        utils.doDirectorySizePolling(ti)
+        utils.doGenericValueBasedPolling(ti)
         
         
     def testAlertGeneratorMySQLDbSizePollerNoAlert(self):
@@ -234,7 +234,7 @@ class MySQLTest(unittest.TestCase):
         ti.expected = 0
         ti.thresholdDiff = 2
         ti.testCase = self
-        utils.doDirectorySizePolling(ti)
+        utils.doGenericValueBasedPolling(ti)
         
 
 

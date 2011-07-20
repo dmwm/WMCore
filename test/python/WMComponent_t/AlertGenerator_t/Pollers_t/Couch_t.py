@@ -19,6 +19,7 @@ from WMComponent.AlertGenerator.Pollers.Couch import CouchPoller
 from WMComponent.AlertGenerator.Pollers.Couch import CouchDbSizePoller
 from WMComponent.AlertGenerator.Pollers.Couch import CouchCPUPoller
 from WMComponent.AlertGenerator.Pollers.Couch import CouchMemoryPoller
+from WMComponent.AlertGenerator.Pollers.Couch import CouchErrorsPoller
 
 
 
@@ -41,7 +42,7 @@ class CouchTest(unittest.TestCase):
         utils.terminateProcesses(self.testProcesses)
 
 
-    def testCouchDbSizePollerBasic(self):
+    def testAlertGeneratorCouchDbSizePollerBasic(self):
         config = getConfig("/tmp")
         try:
             poller = CouchDbSizePoller(config.AlertGenerator.couchDbSizePoller, self.generator)
@@ -64,7 +65,7 @@ class CouchTest(unittest.TestCase):
         ti.expected = 1
         ti.thresholdDiff = 4
         ti.testCase = self
-        utils.doDirectorySizePolling(ti)
+        utils.doGenericValueBasedPolling(ti)
         
 
     def testAlertGeneratorCouchDbSizePollerCriticalThreshold(self):
@@ -79,7 +80,7 @@ class CouchTest(unittest.TestCase):
         ti.expected = 1
         ti.thresholdDiff = 1
         ti.testCase = self
-        utils.doDirectorySizePolling(ti)
+        utils.doGenericValueBasedPolling(ti)
         
 
     def testAlertGeneratorCouchDbSizePollerNoAlert(self):
@@ -93,10 +94,10 @@ class CouchTest(unittest.TestCase):
         ti.expected = 0
         ti.thresholdDiff = 2
         ti.testCase = self
-        utils.doDirectorySizePolling(ti)
+        utils.doGenericValueBasedPolling(ti)
 
         
-    def testCouchPollerBasic(self):
+    def testAlertGeneratorCouchPollerBasic(self):
         self.config.AlertGenerator.section_("bogusCouchPoller")
         self.config.AlertGenerator.bogusCouchPoller.soft = 1000
         self.config.AlertGenerator.bogusCouchPoller.critical = 2000
@@ -115,7 +116,7 @@ class CouchTest(unittest.TestCase):
         self.assertTrue(isinstance(poller._measurements[0], types.FloatType))
         
         
-    def testCouchCPUPollerSoftThreshold(self):
+    def testAlertGeneratorCouchCPUPollerSoftThreshold(self):
         self.config.AlertGenerator.couchCPUPoller.soft = 70
         self.config.AlertGenerator.couchCPUPoller.critical = 80
         self.config.AlertGenerator.couchCPUPoller.pollInterval = 0.2
@@ -131,7 +132,7 @@ class CouchTest(unittest.TestCase):
         utils.doProcessPolling(ppti)
         
 
-    def testCouchCPUPollerCriticalThreshold(self):
+    def testAlertGeneratorCouchCPUPollerCriticalThreshold(self):
         self.config.AlertGenerator.couchCPUPoller.soft = 70
         self.config.AlertGenerator.couchCPUPoller.critical = 80
         self.config.AlertGenerator.couchCPUPoller.pollInterval = 0.2
@@ -147,7 +148,7 @@ class CouchTest(unittest.TestCase):
         utils.doProcessPolling(ppti)        
 
             
-    def testCouchCPUPollerNoAlert(self):
+    def testAlertGeneratorCouchCPUPollerNoAlert(self):
         self.config.AlertGenerator.couchCPUPoller.soft = 70
         self.config.AlertGenerator.couchCPUPoller.critical = 80
         self.config.AlertGenerator.couchCPUPoller.pollInterval = 0.2
@@ -164,7 +165,7 @@ class CouchTest(unittest.TestCase):
         utils.doProcessPolling(ppti)
         
 
-    def testCouchMemoryPollerSoftThreshold(self):
+    def testAlertGeneratorCouchMemoryPollerSoftThreshold(self):
         self.config.AlertGenerator.couchMemPoller.soft = 70
         self.config.AlertGenerator.couchMemPoller.critical = 80
         self.config.AlertGenerator.couchMemPoller.pollInterval = 0.2
@@ -180,7 +181,7 @@ class CouchTest(unittest.TestCase):
         utils.doProcessPolling(ppti)
                                     
 
-    def testCouchMemoryPollerCriticalThreshold(self):
+    def testAlertGeneratorCouchMemoryPollerCriticalThreshold(self):
         self.config.AlertGenerator.couchMemPoller.soft = 70
         self.config.AlertGenerator.couchMemPoller.critical = 80
         self.config.AlertGenerator.couchMemPoller.pollInterval = 0.2
@@ -196,7 +197,7 @@ class CouchTest(unittest.TestCase):
         utils.doProcessPolling(ppti)
         
 
-    def testCouchMemoryPollerNoAlert(self):
+    def testAlertGeneratorCouchMemoryPollerNoAlert(self):
         self.config.AlertGenerator.couchMemPoller.soft = 70
         self.config.AlertGenerator.couchMemPoller.critical = 80
         self.config.AlertGenerator.couchMemPoller.pollInterval = 0.2
@@ -213,6 +214,83 @@ class CouchTest(unittest.TestCase):
         utils.doProcessPolling(ppti)
         
         
+    def testAlertGeneratorCouchErrorsPollerBasic(self):
+        try:
+            poller = CouchErrorsPoller(self.config.AlertGenerator.couchErrorsPoller, self.generator)
+        except Exception, ex:
+            self.fail("Exception, reason: %s" % ex)
+        
+        # even a single values to observe shall be turned into particular iterables
+        obs = self.config.AlertGenerator.couchErrorsPoller.observables
+        self.config.AlertGenerator.couchErrorsPoller.observables = 400    
+        try:
+            poller = CouchErrorsPoller(self.config.AlertGenerator.couchErrorsPoller, self.generator)
+        except Exception, ex:
+            self.fail("Exception, reason: %s" % ex)
+        #self.assertTrue(isinstance(obs, (types.ListType, types.TupleType)))
+        self.assertTrue(isinstance(self.config.AlertGenerator.couchErrorsPoller.observables,
+                                   (types.ListType, types.TupleType)))
+        
+        # test return value on non-sense HTTP status code
+        res = poller.sample("40000")
+        self.assertFalse(res)
+        # test definitely existing value
+        res = poller.sample("200")
+        self.assertTrue(isinstance(res, types.IntType))
+        
+        poller.check()
+        
+        
+    def testAlertGeneratorCouchErrorsPollerSoftThreshold(self):
+        self.config.AlertGenerator.couchErrorsPoller.soft = 100
+        self.config.AlertGenerator.couchErrorsPoller.critical = 200
+        # shall expect corresponding number of generated alerts for each observable value
+        self.config.AlertGenerator.couchErrorsPoller.observables = (5, 6, 7)
+        self.config.AlertGenerator.couchErrorsPoller.pollInterval = 0.2
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = CouchErrorsPoller
+        ti.config = self.config.AlertGenerator.couchErrorsPoller
+        ti.thresholdToTest = self.config.AlertGenerator.couchErrorsPoller.soft
+        ti.level = self.config.AlertProcessor.all.level
+        ti.expected = len(self.config.AlertGenerator.couchErrorsPoller.observables)
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericValueBasedPolling(ti)
+        
 
+    def testAlertGeneratorCouchErrorsPollerCriticalThreshold(self):
+        self.config.AlertGenerator.couchErrorsPoller.soft = 100
+        self.config.AlertGenerator.couchErrorsPoller.critical = 200
+        # shall expect corresponding number of generated alerts for each observable value
+        self.config.AlertGenerator.couchErrorsPoller.observables = (5, 6, 7)        
+        self.config.AlertGenerator.couchErrorsPoller.pollInterval = 0.2        
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = CouchErrorsPoller
+        ti.config = self.config.AlertGenerator.couchErrorsPoller
+        ti.thresholdToTest = self.config.AlertGenerator.couchErrorsPoller.critical
+        ti.level = self.config.AlertProcessor.critical.level
+        ti.expected = len(self.config.AlertGenerator.couchErrorsPoller.observables)
+        ti.thresholdDiff = 50
+        ti.testCase = self
+        utils.doGenericValueBasedPolling(ti)
+        
+
+    def testAlertGeneratorCouchErrorsPollerNoAlert(self):
+        self.config.AlertGenerator.couchErrorsPoller.soft = 100
+        self.config.AlertGenerator.couchErrorsPoller.critical = 200
+        # shall expect corresponding number of generated alerts for each observable value
+        self.config.AlertGenerator.couchErrorsPoller.observables = (5, 6, 7)        
+        self.config.AlertGenerator.couchErrorsPoller.pollInterval = 0.2
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = CouchErrorsPoller
+        ti.config = self.config.AlertGenerator.couchErrorsPoller
+        ti.thresholdToTest = self.config.AlertGenerator.couchErrorsPoller.soft - 30
+        ti.expected = 0
+        ti.thresholdDiff = 20
+        ti.testCase = self
+        utils.doGenericValueBasedPolling(ti)
+    
+
+        
 if __name__ == "__main__":
     unittest.main()

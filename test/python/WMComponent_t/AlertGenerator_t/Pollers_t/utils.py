@@ -161,12 +161,14 @@ def doProcessPolling(ppti):
 
 
 
-def doDirectorySizePolling(ti):
+def doGenericValueBasedPolling(ti):
     """
     ti - Test Input instance (all variables on input to this test)
     The function is easier to reuse from here that from other test class.
+    Used for directory size polling.
+    Generic value based polling (e.g. CouchDB HTTP status codes polling).
     
-    """
+    """    
     try:
         poller = ti.pollerClass(ti.config, ti.testCase.generator)
     except Exception, ex:
@@ -183,7 +185,7 @@ def doDirectorySizePolling(ti):
     # wait to poller to work now ... wait for alert to arrive
     if ti.expected != 0:
         while len(handler.queue) == 0:
-            time.sleep(ti.config.pollInterval / 5)
+            time.sleep(ti.config.pollInterval / 10)
     else:
         time.sleep(ti.config.pollInterval * 2)
         
@@ -202,11 +204,10 @@ def doDirectorySizePolling(ti):
         ti.testCase.assertEqual(a["Component"], ti.testCase.generator.__class__.__name__)
         ti.testCase.assertEqual(a["Source"], poller.__class__.__name__)
         d = a["Details"]
-        ti.testCase.assertEqual(d["databasedir"], poller._dbDirectory)
         ti.testCase.assertEqual(d["threshold"], ti.thresholdToTest)
     else:
         ti.testCase.assertEqual(len(handler.queue), 0)
-
+        
 
         
 class TestInput(object):
@@ -229,7 +230,7 @@ class TestInput(object):
         # feeding random numbers to the poller, what should be the deviation
         self.thresholdDiff = None
         # reference to the calling testcase instance - because of assertions ...
-        self.testCase = None  
+        self.testCase = None 
 
         
 

@@ -7,7 +7,6 @@ Logging facilities used in WMCore.
 
 import logging
 from logging.handlers import HTTPHandler, RotatingFileHandler
-from WMCore.Database.CMSCouch import CouchServer
 
 # a new log level which is lower than debug
 # to prevent a tsunami of log messages in debug
@@ -36,6 +35,7 @@ def setupRotatingHandler(fileName, maxBytes = 200000000, backupCount = 3):
 class CouchHandler(logging.handlers.HTTPHandler):
     def __init__(self, host, database):
         HTTPHandler.__init__(self, host, database, 'POST')
+        from WMCore.Database.CMSCouch import CouchServer
         self.database = CouchServer(dburl=host).connectDatabase(database, size=10)
 
     def emit(self, record):

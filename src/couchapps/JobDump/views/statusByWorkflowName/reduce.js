@@ -11,7 +11,9 @@ function (key, values, rereduce) {
     }
   } else {
     for (var someValue in values) {
-      output[values[someValue]['state']] += 1;
+      if (values[someValue]['state'] != 'transitioning') {
+        output[values[someValue]['state']] += 1;
+      }
     }
   }
 

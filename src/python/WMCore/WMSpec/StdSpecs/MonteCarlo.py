@@ -105,9 +105,9 @@ class MonteCarloWorkloadFactory(StdBase):
         self.prodConfigCacheID   = arguments["ProdConfigCacheID"]
 
         # Splitting arguments
-        timePerEvent     = arguments.get("TimePerEvent", 60)
-        filterEfficiency = arguments.get("FilterEfficiency", 1.0)
-        totalTime        = arguments.get("TotalTime", 9 * 3600)
+        timePerEvent     = int(arguments.get("TimePerEvent", 60))
+        filterEfficiency = float(arguments.get("FilterEfficiency", 1.0))
+        totalTime        = int(arguments.get("TotalTime", 9 * 3600))
 
         # pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)
@@ -123,7 +123,7 @@ class MonteCarloWorkloadFactory(StdBase):
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
-        eventsPerJob = totalTime/timePerEvent/filterEfficiency
+        eventsPerJob = int(totalTime/timePerEvent/filterEfficiency)
         self.prodJobSplitAlgo  = arguments.get("ProdJobSplitAlgo", "EventBased")
         self.prodJobSplitArgs  = arguments.get("ProdJobSplitArgs",
                                                {"events_per_job": eventsPerJob})

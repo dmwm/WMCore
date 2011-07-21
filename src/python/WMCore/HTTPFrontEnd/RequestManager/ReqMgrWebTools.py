@@ -249,6 +249,8 @@ def makeRequest(kwargs, couchUrl, couchDB):
 
     if kwargs.has_key("InputDataset"):
         schema["InputDatasets"] = [kwargs["InputDataset"]]
+    if kwargs.has_key("FilterEfficiency"):
+        kwargs["FilterEfficiency"] = float(kwargs["FilterEfficiency"])
     skimNumber = 1
     # a list of dictionaries
     schema["SkimConfigs"] = []

@@ -59,7 +59,6 @@ class RFCPRALImpl(StageOutImpl):
            print "=> creating the dir : %s" %mkdircmd
            try:
              self.run(mkdircmd)
-             self.setDirectoryAcls(targetdir)
            except Exception, ex:
              msg = "Warning: Exception while invoking command:\n"
              msg += "%s\n" % mkdircmd
@@ -70,15 +69,6 @@ class RFCPRALImpl(StageOutImpl):
         else:
            print "=> dir already exists... do nothing."
 
-    # Set the ACLs for all (sub)-directories of a newly created directory
-    def setDirectoryAcls(self, dirName):
-        castorBase = "/castor/ads.rl.ac.uk/prod/cms/store"
-        pathParts = dirName.replace(castorBase, "")
-        pathParts = pathParts.split("/")[1:]
-        for i in range(len(pathParts)):
-            command = "nssetacl -m group:prodcms:rwx,group:t1prodcms:rwx,m:rwx %s/%s"
-            command = command % (castorBase, "/".join(pathParts[:i + 1]))
-            self.run(command)
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
         """
@@ -96,9 +86,6 @@ class RFCPRALImpl(StageOutImpl):
         if self.stageIn:
             remotePFN, localPFN = sourcePFN, targetPFN
         else:
-            # Add ACL settings for new files if stageout RFCP successful
-            simpleRemotePath = self.parseCastorPath(targetPFN)
-            result += " && nssetacl -m group:prodcms:rwx,group:t1prodcms:rwx,m:rwx %s " % simpleRemotePath
             remotePFN, localPFN = targetPFN, sourcePFN
         
         result += "\nFILE_SIZE=`stat -c %s"

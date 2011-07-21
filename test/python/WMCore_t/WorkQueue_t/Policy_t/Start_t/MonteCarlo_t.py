@@ -25,16 +25,17 @@ class MonteCarloTestCase(unittest.TestCase):
     def testBasicProductionWorkload(self):
         """Basic Production Workload"""
         # change split defaults for this test
+        totalevents = 1000000
         splitArgs = dict(SliceType = 'NumEvents', SliceSize = 100, MaxJobsPerElement = 5)
 
         BasicProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
-        getFirstTask(BasicProductionWorkload).addProduction(totalevents = 1000)
+        getFirstTask(BasicProductionWorkload).addProduction(totalevents = totalevents)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in BasicProductionWorkload.taskIterator():
             units = MonteCarlo(**splitArgs)(BasicProductionWorkload, task)
 
-            self.assertEqual(int(1000 / (splitArgs['SliceSize'] * splitArgs['MaxJobsPerElement'])),
+            self.assertEqual(int(totalevents / (splitArgs['SliceSize'] * splitArgs['MaxJobsPerElement'])),
                              len(units))
             first_event = 1
             first_lumi = 1
@@ -51,7 +52,7 @@ class MonteCarloTestCase(unittest.TestCase):
                 self.assertEqual(unit['Mask']['FirstRun'], first_run)
                 first_event = last_event + 1
                 first_lumi += unit['Jobs'] # one lumi per job
-            self.assertEqual(last_event, 1000)
+            self.assertEqual(last_event, totalevents)
 
 
     def testMultiMergeProductionWorkload(self):

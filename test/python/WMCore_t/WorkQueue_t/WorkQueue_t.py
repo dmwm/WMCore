@@ -295,13 +295,11 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Test priority change functionality
         """
-        totalJobs = 10
         jobSlot = 10
         totalSlices = 1
 
         self.queue.queueWork(self.spec.specUrl())
         self.queue.processInboundWork()
-        self.assertEqual(totalJobs, sum([x['Jobs'] for x in self.queue.status(status = 'Available')]))
 
         # priority change
         self.queue.setPriority(50, self.spec.name())

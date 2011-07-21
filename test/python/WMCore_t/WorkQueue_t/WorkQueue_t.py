@@ -1021,5 +1021,20 @@ class WorkQueueTest(WorkQueueTestCase):
                           "NotExistWorkflow"
                          )
 
+    def testEndPolicyNegotiating(self):
+        """Test end policy processing of request before splitting"""
+        work = self.globalQueue.queueWork(self.processingSpec.specUrl())
+        self.assertEqual(work, 2)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
+        self.localQueue.backend.pullFromParent() # pull work into inbox (Negotiating state)
+        self.localQueue.processInboundWork()
+        self.localQueue.backend.sendToParent()
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
+        # should print message but not raise an error
+        self.localQueue.performQueueCleanupActions(skipWMBS = True)
+        self.assertEqual(self.localQueue.statusInbox()[1]['Status'], 'Negotiating')
+        self.assertEqual(len(self.localQueue), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

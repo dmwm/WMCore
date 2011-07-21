@@ -24,7 +24,10 @@ class EndPolicyInterface(PolicyInterface):
                 if element['ParentQueueId'] == parent.id:
                     elements_for_parent.append(element)
             if not elements_for_parent:
-                raise RuntimeError, "No elements given for %s" % str(parent.id)
+                if parent['Status'] == 'Negotiating':
+                    raise RuntimeError, "Cant determine state yet, still splitting"
+                else:
+                    raise RuntimeError, "No elements for parent %s, unable to continue" % str(parent.id)
             result = WQEResult(ParentQueueId = parent.id,
                                ParentQueueElement = parent,
                                Elements = elements_for_parent)

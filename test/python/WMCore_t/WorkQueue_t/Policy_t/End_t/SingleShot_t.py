@@ -31,28 +31,6 @@ class SingleShotTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testOverallStatus(self):
-        """Overall status correct for given inputs"""
-
-        # check no final state till all elements in end state
-        for items in ((self.available, self.available),
-                      (self.acquired, self.available),
-                      (self.available, self.acquired),
-                      (self.available, self.failed),
-                      (self.available, self.done),
-                      (self.available, self.negotiating),
-                      ):
-            results = self.policy()(items, [self.parent])
-            self.assertEqual(len(results), 1)
-            self.assertEqual(results[0]['Status'], 'Acquired')
-
-
-    def testEndConditions(self):
-        """Correct status when all elements in an end state"""
-        for result in (('Done', self.done, self.done),
-                       ('Failed', self.failed, self.done)):
-            self.assertEqual(result[0], self.strict_policy()(result[1:], [self.parent])[0]['Status'])
-
 
     def testSuccessThreshold(self):
         """Check threshold for success"""

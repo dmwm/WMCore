@@ -328,10 +328,11 @@ class WorkQueue(WorkQueueBase):
         return sub
 
     def _assignToChildQueue(self, queue, *elements):
-        """Assign work to the provided child queue"""
+        """Assign work from parent to queue"""
         for ele in elements:
             ele['Status'] = 'Negotiating'
             ele['ChildQueueUrl'] = queue
+            ele['ParentQueueUrl'] = self.params['ParentQueueCouchUrl']
             ele['WMBSUrl'] = self.params["WMBSUrl"]
         work = self.parent_queue.saveElements(*elements)
         requests = ', '.join(list(set(['"%s"' % x['RequestName'] for x in work])))

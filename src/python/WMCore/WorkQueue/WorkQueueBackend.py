@@ -48,10 +48,11 @@ class WorkQueueBackend(object):
         """Replicate from parent couch - blocking"""
         try:
             if self.parentCouchUrl and self.queueUrl:
-                self.server.replicate(source = self.parentCouchUrl,
+                self.server.replicate(source = self.parentCouchUrlWithAuth,
                                       destination = "%s/%s" % (self.hostWithAuth, self.inbox.name),
-                                      filter = 'WorkQueue/childQueueFilter',
-                                      query_params = {'queueUrl' : self.queueUrl})
+                                      filter = 'WorkQueue/queueFilter',
+                                      query_params = {'childUrl' : self.queueUrl,
+                                                      'parentUrl' : self.parentCouchUrl})
         except Exception, ex:
             self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
@@ -61,8 +62,9 @@ class WorkQueueBackend(object):
             if self.parentCouchUrl and self.queueUrl:
                 self.server.replicate(source = "%s/%s" % (self.db['host'], self.inbox.name),
                                       destination = self.parentCouchUrlWithAuth,
-                                      filter = 'WorkQueue/childQueueFilter',
-                                      query_params = {'queueUrl' : self.queueUrl})
+                                      filter = 'WorkQueue/queueFilter',
+                                      query_params = {'childUrl' : self.queueUrl,
+                                                      'parentUrl' : self.parentCouchUrl})
         except Exception, ex:
                 self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
@@ -74,7 +76,7 @@ class WorkQueueBackend(object):
         for ele in elements:
             if ele['RequestName'] not in specs:
                 wmspec = WMWorkloadHelper()
-                wmspec.load(self.parentCouchUrl + "/%s/spec" % ele['RequestName'])
+                wmspec.load(self.parentCouchUrlWithAuth + "/%s/spec" % ele['RequestName'])
                 specs[ele['RequestName']] = wmspec
             ele['WMSpec'] = specs[ele['RequestName']]
         del specs

@@ -46,6 +46,7 @@ class WorkQueueElement(dict):
         self.setdefault('EndPolicy', {})
         self.setdefault('ACDC', {})
         self.setdefault('ChildQueueUrl', None)
+        self.setdefault('ParentQueueUrl', None)
         self.setdefault('WMBSUrl', None)
         # Number of files added to WMBS including parent files for this element. used only for monitoring purpose
         self.setdefault('NumOfFilesAdded', 0)

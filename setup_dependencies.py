@@ -39,8 +39,13 @@ dependencies = {
                         },
                 'reqmgr':{
                         'packages': ['WMCore.RequestManager+',
-                                     'WMCore.HTTPFrontEnd', 'WMCore.HTTPFrontEnd.RequestManager+', # first one gets init.py
-                                     'WMCore.Services.WorkQueue', 'WMCore.Services.WMBS', 'WMCore.Services.WMAgent'],
+                                     'WMCore.HTTPFrontEnd', 
+                                     'WMCore.HTTPFrontEnd.RequestManager+', 
+                                     'WMCore.HTTPFrontEnd.GlobalMonitor+',
+                                     'WMCore.Services.RequestManager',
+                                     'WMCore.Services.WorkQueue', 
+                                     'WMCore.Services.WMBS', 
+                                     'WMCore.Services.WMAgent'],
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/templates/WMCore/WebTools/RequestManager',
                                     'src/html/RequestManager',

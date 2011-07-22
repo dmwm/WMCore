@@ -19,5 +19,6 @@ TypesList = [
     "Analysis",
     "Resubmission",
     "ReDigi",
-    "MonteCarloFromGEN"
+    "MonteCarloFromGEN",
+    "TaskChain"
     ]

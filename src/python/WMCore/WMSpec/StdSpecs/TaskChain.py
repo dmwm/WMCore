@@ -282,3 +282,14 @@ class TaskChainWorkloadFactory(StdBase):
             procMergeTasks[str(outputModuleName)] = mergeTask
         self.mergeMapping[task.name()] = procMergeTasks
         self.globalTag = globalGlobalTag    
+
+
+def taskChainWorkload(workloadName, arguments):
+    """
+    _taskChainWorkload_
+    
+    Helper to generate a TaskChain workload given the name & arguments provided
+
+    """
+    f = TaskChainWorkloadFactory()
+    return f(workloadName, arguments)

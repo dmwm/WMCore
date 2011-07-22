@@ -52,6 +52,12 @@ class ReqMgrRESTModel(RESTModel):
         self._addMethod('GET', 'message', self.getMessage,
                        args = ['request'], 
                        secured=True, validation = [self.isalnum], expires = 0)
+        self._addMethod('GET', 'inputdataset', self.getInputDataset,
+                       args = ['prim', 'proc', 'tier'],
+                       secured=True)
+        self._addMethod('GET', 'outputdataset', self.getOutputDataset,
+                       args = ['prim', 'proc', 'tier'],
+                       secured=True)
         self._addMethod('GET', 'campaign', self.getCampaign,
                        args = ['campaign'],
                        secured=True, validation = [self.isalnum], expires = 0)
@@ -149,6 +155,18 @@ class ReqMgrRESTModel(RESTModel):
         for v in index.values():
             WMCore.Lexicon.identifier(v)
         return index
+
+    def getDataset(self, prim, proc, tier):
+        """ If only prim exists, assume it's urlquoted.
+            If all three exists, assue it's /prim/proc/tier 
+        """
+        print "G-D", prim, proc, tier
+        if not proc and not tier:
+            dataset = urllib.unquote(prim)
+        elif prim and proc and tier:
+            dataset = "/%s/%s/%s" % (prim, proc, tier)
+        WMCore.Lexicon.dataset(dataset) 
+        return dataset
 
     def intpriority(self, index):
         """ Casts priority to an integer """
@@ -280,6 +298,20 @@ class ReqMgrRESTModel(RESTModel):
     def getMessage(self, request):
         """ Returns a list of messages attached to this request """
         return ChangeState.getMessages(request)
+
+    def getInputDataset(self, prim, proc=None, tier=None):
+        """ returns a list of requests with this input dataset 
+         Input can either be a single urlquoted dataset, or a 
+         /prim/proc/tier"""
+        dataset = self.getDataset(prim, proc, tier)
+        return GetRequest.getRequestsByCriteria("Datasets.GetRequestByInput", dataset)  
+
+    def getOutputDataset(self, prim, proc=None, tier=None):
+        """ returns a list of requests with this output dataset 
+         Input can either be a single urlquoted dataset, or a
+         /prim/proc/tier"""
+        dataset = self.getDataset(prim, proc, tier)
+        return GetRequest.getRequestsByCriteria("Datasets.GetRequestByOutput", dataset)
 
     def getCampaign(self, campaign=None):
         """ returns a list of all campaigns if no argument, and a list of

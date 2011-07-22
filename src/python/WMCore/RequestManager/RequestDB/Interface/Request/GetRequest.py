@@ -180,6 +180,13 @@ def getRequestAssignments(requestId):
     result = getAssign.execute(requestId)
     return result
 
+def getRequestsByCriteria(classname, criterion):
+    factory = DBConnect.getConnection()
+    query = factory(classname)
+    requestIds = query.execute(criterion)
+    reverseTypes, reverseStatus = reverseLookups()
+    return [getRequest(requestId[0], reverseTypes, reverseStatus) for requestId in requestIds]
+
 def getAssignmentsByName(requestName):
     request = getRequestByName(requestName)
     reqID = request['ReqMgrRequestID']

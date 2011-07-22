@@ -17,7 +17,7 @@ def reqMgrConfig(
     proxyBase = None,
     couchurl = os.getenv("COUCHURL"),
     sitedb = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name',
-    yuiroot = 'http://yui.yahooapis.com/2.8.0r4',
+    yuiroot = "/reqmgr/yuiserver/yui",
     configCouchDB = 'reqmgr_config_cache',
     workloadCouchDB = 'reqmgr_workload_cache',
     connectURL = None,
@@ -127,4 +127,5 @@ def reqMgrConfig(
 
     active.section_('yuiserver')
     active.yuiserver.object = 'WMCore.WebTools.YUIServer'
+    active.yuiserver.yuidir = os.getenv("YUI_ROOT")
     return config

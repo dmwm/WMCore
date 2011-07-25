@@ -933,8 +933,11 @@ class WorkQueue(WorkQueueBase):
         for topLevelTask in wmspec.taskIterator():
             dbs_url = topLevelTask.dbsUrl()
 
-            if topLevelTask.taskType() not in ("Processing", "Production", \
-                                               "Merge", "Analysis"):
+            if topLevelTask.taskType() not in ("Processing", "Production",
+                                               "Merge", "Analysis", 
+                                               "MutiProcessing"):
+                self.logger.warning("Not Supported top level task type: %s" % \
+                                    topLevelTask.taskType())
                 continue
 
             try:

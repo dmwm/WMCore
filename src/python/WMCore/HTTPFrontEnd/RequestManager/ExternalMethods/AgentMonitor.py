@@ -21,9 +21,14 @@ def getAgentOverview():
             agentInfo = {}
             agentUrl = childQueue[:-9] + "wmagent"
             agentService = WMAgent({'endpoint': agentUrl})
-            agent = agentService.getAgentStatus(detail = False)
+            try:
+                agent = agentService.getAgentStatus(detail = False)
+            except:
+                agentInfo['status'] = "Down"
+                agentInfo['acdc'] = "N/A"
+            else:
+                agentInfo['status'] = agent['status']
+                agentInfo['acdc'] = agentService.getACDCInfo()['url']
             agentInfo['url'] = agentUrl
-            agentInfo['status'] = agent['status']
-            agentInfo['acdc'] = agentService.getACDCInfo()['url']
             agents.append(agentInfo)
     return agents

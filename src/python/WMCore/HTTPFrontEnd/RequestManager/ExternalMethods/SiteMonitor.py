@@ -1,6 +1,6 @@
+import logging
 from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
       import getGlobalQueues
-
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 
 def getSiteOverview():
@@ -17,10 +17,14 @@ def getSiteOverview():
         childQueues = globalQ.getChildQueues()
         for childQueue in childQueues:
             wqService = WorkQueue({'endpoint': childQueue})
-            batchJobs = wqService.getBatchJobStatusBySite()
-            completeJobs = wqService.getSiteSummaryFromCouchDB()
-            _combineSites(combinedResults, batchJobs)
-            _combineSites(combinedResults, completeJobs)
+            try:
+                batchJobs = wqService.getBatchJobStatusBySite()
+                completeJobs = wqService.getSiteSummaryFromCouchDB()
+            except Exception, ex:
+                logging.error("LocalQueue Down %s: %s" % (childQueue, str(ex)))
+            else:
+                _combineSites(combinedResults, batchJobs)
+                _combineSites(combinedResults, completeJobs)
     return combinedResults
 
 def _combineSites(results, batchJobs):

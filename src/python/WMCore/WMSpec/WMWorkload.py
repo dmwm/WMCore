@@ -726,7 +726,8 @@ class WMWorkloadHelper(PersistencyHelper):
         maxMergeEvents = None
         for childTask in taskHelper.childTaskIterator():
             if childTask.taskType() == "Merge":
-                if splitAlgo == "EventBased" and taskHelper.taskType() != "Production":
+                if (splitAlgo == "EventBased" and taskHelper.taskType() != "Production") or \
+                       taskHelper.getPathName().find("MonteCarloFromGEN") != -1:
                     mergeAlgo = "WMBSMergeBySize"
                 else:
                     mergeAlgo = "ParentlessMergeBySize"

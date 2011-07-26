@@ -94,11 +94,16 @@ class MonteCarloWorkloadFactory(StdBase):
 
         # Required parameters that must be specified by the Requestor.
         self.inputPrimaryDataset = arguments["PrimaryDataset"]
-        self.frameworkVersion = arguments["CMSSWVersion"]
-        self.globalTag = arguments["GlobalTag"]
-        self.totalEvents = arguments["RequestSizeEvents"]
-        self.seeding = arguments.get("Seeding", "AutomaticSeeding")
-        self.prodConfigCacheID = arguments["ProdConfigCacheID"]
+        self.frameworkVersion    = arguments["CMSSWVersion"]
+        self.globalTag           = arguments["GlobalTag"]
+        self.seeding             = arguments.get("Seeding", "AutomaticSeeding")
+        self.prodConfigCacheID   = arguments["ProdConfigCacheID"]
+
+        # Splitting arguments
+        timePerEvent     = int(arguments.get("TimePerEvent", 60))
+        filterEfficiency = float(arguments.get("FilterEfficiency", 1.0))
+        totalTime        = int(arguments.get("TotalTime", 9 * 3600))
+        self.totalEvents = int(int(arguments["RequestSizeEvents"]) / filterEfficiency)
 
         # pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)
@@ -114,9 +119,10 @@ class MonteCarloWorkloadFactory(StdBase):
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
+        eventsPerJob = int(totalTime/timePerEvent/filterEfficiency)
         self.prodJobSplitAlgo  = arguments.get("ProdJobSplitAlgo", "EventBased")
         self.prodJobSplitArgs  = arguments.get("ProdJobSplitArgs",
-                                               {"events_per_job": 1000})
+                                               {"events_per_job": eventsPerJob})
         
         return self.buildWorkload()
 

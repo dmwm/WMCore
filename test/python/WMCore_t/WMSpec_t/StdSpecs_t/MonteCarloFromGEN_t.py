@@ -164,7 +164,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(mergeSubscription["type"], "Merge",
                          "Error: Wrong subscription type.")
-        self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
+        self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
                          "Error: Wrong split algo.")
 
         unmergedAlca = Fileset(name = "/TestWorkload/MonteCarloFromGEN/unmerged-outputALCARECOALCARECO")
@@ -177,7 +177,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(mergeSubscription["type"], "Merge",
                          "Error: Wrong subscription type.")
-        self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
+        self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
                          "Error: Wrong split algo.")
 
         for procOutput in ["outputRECORECO", "outputALCARECOALCARECO"]:

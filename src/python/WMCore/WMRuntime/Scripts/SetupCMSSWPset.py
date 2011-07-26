@@ -126,7 +126,14 @@ def fixupSecondaryFileNames(process):
     if not hasattr(process.source, "secondaryFileNames"):
         process.source.secondaryFileNames = cms.untracked.vstring()
 
-
+def fixupFirstLumi(process):
+    """
+    _fixupFirstLumi
+    
+    Make sure that the process has firstLuminosityBlock parameter.
+    """
+    if not hasattr(process.source, "firstLuminosityBlock"):
+        process.source.firstLuminosityBlock = cms.untracked.uint32(1)
 
 class SetupCMSSWPset(ScriptInterface):
     """
@@ -147,7 +154,8 @@ class SetupCMSSWPset(ScriptInterface):
                  "process.source.skipEvents": fixupSkipEvents,
                  "process.source.firstRun": fixupFirstRun,
                  "process.source.lastRun": fixupLastRun,
-                 "process.source.lumisToProcess": fixupLumisToProcess}
+                 "process.source.lumisToProcess": fixupLumisToProcess,
+                 "process.source.firstLuminosityBlock": fixupFirstLumi}
     
     
     def createProcess(self, scenario, funcName, funcArgs):

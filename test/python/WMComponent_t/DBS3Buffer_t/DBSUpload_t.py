@@ -118,8 +118,8 @@ class DBSUploadTest(unittest.TestCase):
         config.DBSUpload.DBSBlockMaxFiles = 1
         config.DBSUpload.DBSBlockMaxTime  = 2
         config.DBSUpload.DBSBlockMaxSize  = 999999999999
-        config.DBSUpload.dbsUrl           = 'http://cmssrv52.fnal.gov:8787/DBS'
-        config.DBSUpload.namespace        = 'WMComponent.DBSUpload.DBSUpload'
+        config.DBSUpload.dbsUrl           = 'http://cms-xen40.fnal.gov/cms_dbs'
+        config.DBSUpload.namespace        = 'WMComponent.DBS3Buffer.DBSUpload'
         config.DBSUpload.componentDir     = os.path.join(os.getcwd(), 'Components')
         config.DBSUpload.nProcesses       = 4
         config.DBSUpload.dbsWaitTime      = 0.1
@@ -128,7 +128,7 @@ class DBSUploadTest(unittest.TestCase):
         return config
 
 
-    def getFiles(self, name, tier, nFiles = 12, site = "malpaquet"):
+    def getFiles(self, name, tier, nFiles = 12, site = "malpaquet", nLumis = 1):
         """
         Create some quick dummy test files
 
@@ -144,9 +144,13 @@ class DBSUploadTest(unittest.TestCase):
                                   appFam = "RECO", psetHash = "GIBBERISH",
                                   configContent = "MOREGIBBERISH")
             testFile.setDatasetPath("/%s/%s/%s" % (name, name, tier))
-            testFile.addRun(Run( 1, *[f]))
+            lumis = []
+            for i in range(nLumis):
+                lumis.append((f * 1000000) + i)
+            testFile.addRun(Run( 1, *lumis))
             testFile.setAcquisitionEra("DBS3Test")
-            testFile.setProcessingEra("v0")
+            testFile.setProcessingVer("v0")
+            testFile.setGlobalTag("Weird")
             testFile.create()
             testFile.setLocation(site)
             files.append(testFile)
@@ -175,7 +179,7 @@ class DBSUploadTest(unittest.TestCase):
 
         See if I can make the damn thing work.
         """
-
+        return
         myThread = threading.currentThread()
 
         config = self.getConfig()
@@ -251,21 +255,30 @@ class DBSUploadTest(unittest.TestCase):
         for res in result:
             self.assertEqual(res.values()[0], 'InDBS')
 
-        
-            
-
-
         return
 
+    def testB_DONOTUSE(self):
 
+        config = self.getConfig()
+        config.DBSUpload.DBSBlockMaxFiles = 1000
 
+        name = "ThisIsATest_%s" % (makeUUID())
+        tier = "RECO"
+        nFiles = 1001
+        files = self.getFiles(name = name, tier = tier, nFiles = nFiles, nLumis = 1000)
+        datasetPath = '/%s/%s/%s' % (name, name, tier)
 
+        dbsUploader = DBSUploadPoller(config = config)
+        dbsUtil     = DBSBufferUtil()
+        dbsApi      = DbsApi(url = config.DBSUpload.dbsUrl)
 
-
-
-
-
-
+        # This should do nothing
+        # Just making sure we don't crash
+        try:
+            dbsUploader.algorithm()
+        except:
+            dbsUploader.close()
+            raise
 
 
 

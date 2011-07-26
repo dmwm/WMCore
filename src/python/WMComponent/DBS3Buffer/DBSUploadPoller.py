@@ -639,6 +639,10 @@ class DBSUploadPoller(BaseWorkerThread):
             block.setPhysicsGroup(group = "TestDBS3")
             encodedBlock = block.data
             self.input.put({'name': block.getName(), 'block': encodedBlock})
+            import json
+            f = open('/data/mnorman/block.json', 'w')
+            f.write(json.dumps(encodedBlock))
+            f.close()
             self.queuedBlocks.append(block.getName())
 
 

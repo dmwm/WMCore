@@ -135,7 +135,8 @@ class DBSBlock:
         algo = self.addConfiguration(release = dbsFile['appVer'],
                                      psetHash = dbsFile['psetHash'],
                                      appName = dbsFile['appName'],
-                                     outputLabel = dbsFile['appFam'])
+                                     outputLabel = dbsFile['appFam'],
+                                     globalTag = dbsFile['globalTag'])
         
         # Now add the file with the algo
         # Try to avoid messing with pointers here
@@ -275,7 +276,7 @@ class DBSBlock:
 
 
     def addConfiguration(self, release, psetHash,
-                         appName = 'cmsRun', outputLabel = 'Merged'):
+                         appName = 'cmsRun', outputLabel = 'Merged', globalTag = 'None'):
         """
         _addConfiguration_
 
@@ -285,7 +286,8 @@ class DBSBlock:
         algo = {'release_version': release,
                 'pset_hash': psetHash,
                 'app_name': appName,
-                'output_module_label': outputLabel}
+                'output_module_label': outputLabel,
+                'global_tag': globalTag}
 
         if not algo in self.data['dataset_conf_list']:
             self.data['dataset_conf_list'].append(algo)

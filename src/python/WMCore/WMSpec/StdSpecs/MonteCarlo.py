@@ -100,7 +100,6 @@ class MonteCarloWorkloadFactory(StdBase):
         self.inputPrimaryDataset = arguments["PrimaryDataset"]
         self.frameworkVersion    = arguments["CMSSWVersion"]
         self.globalTag           = arguments["GlobalTag"]
-        self.totalEvents         = arguments["RequestSizeEvents"]
         self.seeding             = arguments.get("Seeding", "AutomaticSeeding")
         self.prodConfigCacheID   = arguments["ProdConfigCacheID"]
 
@@ -108,6 +107,7 @@ class MonteCarloWorkloadFactory(StdBase):
         timePerEvent     = int(arguments.get("TimePerEvent", 60))
         filterEfficiency = float(arguments.get("FilterEfficiency", 1.0))
         totalTime        = int(arguments.get("TotalTime", 9 * 3600))
+        self.totalEvents = int(int(arguments["RequestSizeEvents"]) / filterEfficiency)
 
         # pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)

@@ -333,7 +333,8 @@ class StdBase(object):
         mergeTask.applyTemplates()
         mergeTask.setTaskPriority(self.priority + 5)
 
-        if parentTaskSplitting == "EventBased" and parentTask.taskType() != "Production":
+        if (parentTaskSplitting == "EventBased" and parentTask.taskType() != "Production") or \
+               parentTask.getPathName().find("MonteCarloFromGEN") != -1:           
             splitAlgo = "WMBSMergeBySize"
         else:
             splitAlgo = "ParentlessMergeBySize"

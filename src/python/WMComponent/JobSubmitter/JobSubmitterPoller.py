@@ -285,14 +285,15 @@ class JobSubmitterPoller(BaseWorkerThread):
                 locTypeCache = self.cachedJobs[possibleLocation][newJob["type"]]
                 if not locTypeCache.has_key(newJob["workflow"]):
                     locTypeCache[newJob["workflow"]] = set()
-                
+
                 locTypeCache[newJob["workflow"]].add((jobID,
                                                       newJob["retry_count"],
                                                       batchDir,
                                                       loadedJob["sandbox"],
                                                       loadedJob["cache_dir"],
                                                       loadedJob.get("ownerDN", None),
-                                                      loadedJob.get("priority", None)))
+                                                      loadedJob.get("priority", None),
+                                                      frozenset(possibleLocations)))
                 
         if len(badJobs) > 0:
             logging.error("The following jobs have no possible sites to run at: %s" % badJobs)
@@ -476,7 +477,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'packageDir': package,
                                'userdn': cachedJob[5],
                                'priority': cachedJob[6],
-                               'taskType': taskType}
+                               'taskType': taskType,
+                               'possibleSites': cachedJob[7]}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)

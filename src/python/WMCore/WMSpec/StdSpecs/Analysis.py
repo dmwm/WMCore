@@ -52,9 +52,11 @@ class AnalysisWorkloadFactory(StdBase):
         """
         workload = self.createWorkload()
         analysisTask = workload.newTask("Analysis")
+
         (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = self.inputDataset[1:].split("/")
 
         lfnBase = '/store/user/%s' % self.userName
+        logBase = '/store/temp/user/%s/logs/' % self.userName
         lfnPrefix, seName = remoteLFNPrefix(site=self.asyncDest, lfn=lfnBase)
         self.userUnmergedLFN = "%s/%s/%s/%s" % (lfnBase, self.inputPrimaryDataset,
                                                 self.publishName, self.processingVersion)
@@ -65,6 +67,12 @@ class AnalysisWorkloadFactory(StdBase):
                                               splitArgs = self.analysisJobSplitArgs, \
                                               userDN = self.owner_dn, asyncDest = self.asyncDest, publishName = self.publishName,
                                               userSandbox = self.userSandbox, userFiles = self.userFiles)
+
+        # Put temporary log files in /store/temp/user/USERNAME/
+        logArchiveStep = analysisTask.getStep('logArch1')
+        logArchiveStep.addOverride('altLFN',  logBase)
+
+        # Change handling and stageout location of final logfiles
         logCollectTask = self.addLogCollectTask(analysisTask)
         logCollectStep = logCollectTask.getStep('logCollect1')
 

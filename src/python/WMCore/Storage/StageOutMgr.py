@@ -30,11 +30,19 @@ class StageOutMgr:
     """
     def __init__(self, **overrideParams):
         print "StageOutMgr::__init__()"
-        self.override = False
         self.overrideConf = overrideParams
+
+        # Figure out if any of the override parameters apply to stage-out
+        self.override = False
         if overrideParams != {}:
             print "StageOutMgr::__init__(): Override: %s" % overrideParams
-            self.override = True
+            checkParams = ["command", "option", "se-name", "lfn-prefix"]
+            for param in checkParams:
+                if param in self.overrideConf.keys():
+                    self.override = True
+            if not self.override:
+                print "=======StageOut Override: These are not the parameters you are looking for"
+
 
         self.substituteGUID = True
         self.fallbacks = []
@@ -189,10 +197,10 @@ class StageOutMgr:
                 print "===> Local Stage Out Failure for file:"
                 print "======>  %s\n" % fileToStage['LFN']
             except Exception, ex:
-                lastException = StateOutFailure("Error during local stage out",
+                lastException = StageOutFailure("Error during local stage out",
                                                 error = str(ex))
                 print "===> Local Stage Out Failure for file:\n"
-                print "======>  %s\n" % fileToStage['LFN']                
+                print "======>  %s\n" % fileToStage['LFN']
 
         #  //
         # // Still here => failure, start using the fallback stage outs

@@ -13,8 +13,9 @@ from WMCore.Storage.StageOutImpl import StageOutImpl
 
 _CheckExitCodeOption = True
 checkPathsCount=4
-checkPaths = ['/lustre/unmerged/', '/lustre/temp/', '/store/unmerged/', '/store/temp/'] 
+checkPaths = ['/lustre/unmerged/', '/lustre/temp/', '/store/unmerged/', '/store/temp/']
 checkPathsReplace = ['/lustre/unmerged/', '/lustre/temp/', '/lustre/unmerged/', '/lustre/temp/']
+vetoPaths = ['/store/temp/user/']
 
 
 def pnfsPfn2(pfn):
@@ -30,7 +31,12 @@ def pnfsPfn2(pfn):
 
     pfnSplit = pfn.split("WAX/11/store/", 1)[1]
     filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
-    
+
+    # Find vetoed paths first
+    for path in vetoPaths:
+        if pfn.find(path) != -1:
+            return filePath
+
     # handle lustre location
     for i in range(checkPathsCount):
         if pfn.find(checkPaths[i]) != -1:
@@ -75,6 +81,12 @@ class FNALImpl(StageOutImpl):
         for i in range(checkPathsCount):
             if targetPFN.find(checkPaths[i]) != -1:
                 dcapLocation = 1
+
+        # Even if matched above, some paths are not lustre
+        for path in vetoPaths:
+            if targetPFN.find(path) != -1:
+                dcapLocation = 0
+
         if dcapLocation == 0:
             # only create dir on remote storage
             if targetPFN.find('/pnfs/') == -1:
@@ -143,6 +155,12 @@ class FNALImpl(StageOutImpl):
         for i in range(checkPathsCount):
           if pfn.find(checkPaths[i]) != -1:
             dcapLocation = 1
+
+        # Even if matched above, some paths are not lustre
+        for path in vetoPaths:
+            if pfn.find(path) != -1:
+                dcapLocation = 0
+
         if dcapLocation == 0:
             print "Translating PFN: %s\n To use dcache door" % pfn
             dcacheDoor = commands.getoutput(
@@ -176,6 +194,12 @@ class FNALImpl(StageOutImpl):
         for i in range(checkPathsCount):
           if targetPFN.find(checkPaths[i]) != -1:
             dcapLocation = 1
+
+        # Even if matched above, some paths are not lustre
+        for path in vetoPaths:
+            if targetPFN.find(path) != -1:
+                dcapLocation = 0
+
         if dcapLocation == 0:
             optionsStr = ""
             if options != None:
@@ -241,6 +265,12 @@ fi
         for i in range(checkPathsCount):
           if sourcePFN.find(checkPaths[i]) != -1:
             dcapLocation = 1
+
+        # Even if matched above, some paths are not lustre
+        for path in vetoPaths:
+            if sourcePFN.find(path) != -1:
+                dcapLocation = 0
+
         if dcapLocation == 0:
             optionsStr = ""
             if options != None:
@@ -321,6 +351,12 @@ fi
         for i in range(checkPathsCount):
           if pfnToRemove.find(checkPaths[i]) != -1:
             dcapLocation = 1
+
+        # Even if matched above, some paths are not lustre
+        for path in vetoPaths:
+            if pfnToRemove.find(path) != -1:
+                dcapLocation = 0
+
         if dcapLocation == 0:
             pfnSplit = pfnToRemove.split("/11/store/", 1)[1]
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit

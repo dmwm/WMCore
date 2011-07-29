@@ -55,7 +55,12 @@ class MyJSONEncoder:
         the same interface as simplejson ...
         """
 
-        tmp = str(myString)
+        finalstring = {}
+        for schedid in myString:
+            finalstring[ schedid ] = {}
+            for k in myString[schedid]:
+                finalstring[schedid][str(k).replace('"', '').replace("'","")] = str(myString[schedid][k]).replace('"', '').replace("'","")
+        tmp = str(finalstring)
         tmp = tmp.replace('\'','"')
         tmp = tmp.replace('None','null')
 
@@ -422,4 +427,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

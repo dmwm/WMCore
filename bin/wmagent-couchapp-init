@@ -8,6 +8,8 @@ import os
 import tempfile
 import sys
 import urllib
+import optparse
+import shutil
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
@@ -16,29 +18,58 @@ from WMCore.Configuration import loadConfigurationFile
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.WMInit import getWMBASE
 
-def installCouchApp(couchUrl, couchDBName, couchAppName):
-    """
-    _installCouchApp_
 
-    Install the given couch app on the given server in the given database.  If
-    the database already exists it will be deleted.
-    """
-    print "Installing %s into %s" % (couchAppName, urllib.unquote_plus(couchDBName))
-
-    couchServer = CouchServer(couchUrl)
-    couchappConfig = Config()
-
+def couchAppRoot():
+    """Return path to couchapp dir"""
     wmBase = getWMBASE()
     develPath = "%s/src/couchapps" % wmBase
     if not os.path.exists(develPath):
         basePath = "%s/couchapps" % os.environ['WMCORE_ROOT']
     else:
         basePath = develPath
+    return basePath
+
+def installCouchApp(couchUrl, couchDBName, couchAppName, basePath = None):
+    """
+    _installCouchApp_
+
+    Install the given couch app on the given server in the given database.  If
+    the database already exists it will be deleted.
+    """
+    if not basePath:
+        basePath = couchAppRoot()
+    print "Installing %s into %s" % (couchAppName, urllib.unquote_plus(couchDBName))
+
+    couchServer = CouchServer(couchUrl)
+    couchappConfig = Config()
 
     couchapppush(couchappConfig, "%s/%s" % (basePath, couchAppName),
                  "%s/%s" % (couchUrl, couchDBName))
     return
-    
+
+def installWorkQueueCouchApp(couchUrl, couchDBName):
+    """Workqueue has to install yui to couchapp - handle this here"""
+    yui = os.environ.get('YUI_ROOT', '')
+    if not yui or not os.path.exists(yui):
+        raise RuntimeError, "Can't locate YUI, set YUI_ROOT env variable"
+    basePath = couchAppRoot()
+    # make a temporary directory to create the couchapp structure
+    tempDir = os.path.join(tempfile.mkdtemp(), 'WorkQueue')
+    try:
+        # copy over main WorkQueue couchapp
+        shutil.copytree(os.path.join(basePath, 'WorkQueue'), tempDir)
+        # link to required structure from yui
+        for file in files_needed_from_yui:
+            dest = os.path.join(tempDir, 'vendor', 'yui', '_attachments', file)
+            try:
+                os.makedirs(os.path.dirname(dest))
+            except OSError:
+                pass
+            os.symlink(os.path.join(yui, file), dest)
+        installCouchApp(couchUrl, couchDBName, "WorkQueue", basePath = os.path.dirname(tempDir))
+    finally:
+        shutil.rmtree(tempDir, ignore_errors = True)
+
 def setupCron(couchUrl, couchDBName):
     """
     _setupCron_
@@ -90,7 +121,160 @@ def setupCronCompaction(couchUrl, couchDbName):
     os.remove("%s/crontab" % tempDir)
     os.rmdir(tempDir)
 
+
+files_needed_from_yui = [
+'build/animation/animation-min.js',
+'build/assets/skins/sam/ajax-loader.gif',
+'build/assets/skins/sam/asc.gif',
+'build/assets/skins/sam/autocomplete.css',
+'build/assets/skins/sam/back-h.png',
+'build/assets/skins/sam/back-v.png',
+'build/assets/skins/sam/bar-h.png',
+'build/assets/skins/sam/bar-v.png',
+'build/assets/skins/sam/bg-h.gif',
+'build/assets/skins/sam/bg-v.gif',
+'build/assets/skins/sam/blankimage.png',
+'build/assets/skins/sam/button.css',
+'build/assets/skins/sam/calendar.css',
+'build/assets/skins/sam/carousel.css',
+'build/assets/skins/sam/check0.gif',
+'build/assets/skins/sam/check1.gif',
+'build/assets/skins/sam/check2.gif',
+'build/assets/skins/sam/colorpicker.css',
+'build/assets/skins/sam/container.css',
+'build/assets/skins/sam/datatable.css',
+'build/assets/skins/sam/desc.gif',
+'build/assets/skins/sam/dt-arrow-dn.png',
+'build/assets/skins/sam/dt-arrow-up.png',
+'build/assets/skins/sam/editor-knob.gif',
+'build/assets/skins/sam/editor-sprite-active.gif',
+'build/assets/skins/sam/editor-sprite.gif',
+'build/assets/skins/sam/editor.css',
+'build/assets/skins/sam/header_background.png',
+'build/assets/skins/sam/hue_bg.png',
+'build/assets/skins/sam/imagecropper.css',
+'build/assets/skins/sam/layout.css',
+'build/assets/skins/sam/layout_sprite.png',
+'build/assets/skins/sam/loading.gif',
+'build/assets/skins/sam/logger.css',
+'build/assets/skins/sam/menu-button-arrow-disabled.png',
+'build/assets/skins/sam/menu-button-arrow.png',
+'build/assets/skins/sam/menu.css',
+'build/assets/skins/sam/menubaritem_submenuindicator.png',
+'build/assets/skins/sam/menubaritem_submenuindicator_disabled.png',
+'build/assets/skins/sam/menuitem_checkbox.png',
+'build/assets/skins/sam/menuitem_checkbox_disabled.png',
+'build/assets/skins/sam/menuitem_submenuindicator.png',
+'build/assets/skins/sam/menuitem_submenuindicator_disabled.png',
+'build/assets/skins/sam/paginator.css',
+'build/assets/skins/sam/picker_mask.png',
+'build/assets/skins/sam/profilerviewer.css',
+'build/assets/skins/sam/progressbar.css',
+'build/assets/skins/sam/resize.css',
+'build/assets/skins/sam/simpleeditor.css',
+'build/assets/skins/sam/skin.css',
+'build/assets/skins/sam/slider.css',
+'build/assets/skins/sam/split-button-arrow-active.png',
+'build/assets/skins/sam/split-button-arrow-disabled.png',
+'build/assets/skins/sam/split-button-arrow-focus.png',
+'build/assets/skins/sam/split-button-arrow-hover.png',
+'build/assets/skins/sam/split-button-arrow.png',
+'build/assets/skins/sam/sprite.png',
+'build/assets/skins/sam/sprite.psd',
+'build/assets/skins/sam/tabview.css',
+'build/assets/skins/sam/treeview-loading.gif',
+'build/assets/skins/sam/treeview-sprite.gif',
+'build/assets/skins/sam/treeview.css',
+'build/assets/skins/sam/wait.gif',
+'build/assets/skins/sam/yuitest.css',
+'build/connection/connection-min.js',
+'build/connection/connection_core-min.js',
+'build/container/assets/alrt16_1.gif',
+'build/container/assets/blck16_1.gif',
+'build/container/assets/close12_1.gif',
+'build/container/assets/container-core.css',
+'build/container/assets/container.css',
+'build/container/assets/hlp16_1.gif',
+'build/container/assets/info16_1.gif',
+'build/container/assets/skins/sam/container-skin.css',
+'build/container/assets/skins/sam/container.css',
+'build/container/assets/tip16_1.gif',
+'build/container/assets/warn16_1.gif',
+'build/container/container-min.js',
+'build/container/container_core-min.js',
+'build/datasource/datasource-min.js',
+'build/datatable/assets/datatable-core.css',
+'build/datatable/assets/datatable.css',
+'build/datatable/assets/skins/sam/datatable-skin.css',
+'build/datatable/assets/skins/sam/datatable.css',
+'build/datatable/assets/skins/sam/dt-arrow-dn.png',
+'build/datatable/assets/skins/sam/dt-arrow-up.png',
+'build/datatable/datatable-min.js',
+'build/dragdrop/dragdrop-min.js',
+'build/element/element-min.js',
+'build/fonts/fonts-min.css',
+'build/fonts/fonts.css',
+'build/json/json-min.js',
+'build/layout/assets/layout-core.css',
+'build/layout/assets/skins/sam/layout-skin.css',
+'build/layout/assets/skins/sam/layout.css',
+'build/layout/assets/skins/sam/layout_sprite.png',
+'build/layout/layout-min.js',
+'build/menu/assets/menu-core.css',
+'build/menu/assets/menu.css',
+'build/menu/assets/menu_down_arrow.png',
+'build/menu/assets/menu_down_arrow_disabled.png',
+'build/menu/assets/menu_up_arrow.png',
+'build/menu/assets/menu_up_arrow_disabled.png',
+'build/menu/assets/menubaritem_submenuindicator.png',
+'build/menu/assets/menubaritem_submenuindicator_disabled.png',
+'build/menu/assets/menubaritem_submenuindicator_selected.png',
+'build/menu/assets/menuitem_checkbox.png',
+'build/menu/assets/menuitem_checkbox_disabled.png',
+'build/menu/assets/menuitem_checkbox_selected.png',
+'build/menu/assets/menuitem_submenuindicator.png',
+'build/menu/assets/menuitem_submenuindicator_disabled.png',
+'build/menu/assets/menuitem_submenuindicator_selected.png',
+'build/menu/assets/skins/sam/menu-skin.css',
+'build/menu/assets/skins/sam/menu.css',
+'build/menu/assets/skins/sam/menubaritem_submenuindicator.png',
+'build/menu/assets/skins/sam/menubaritem_submenuindicator_disabled.png',
+'build/menu/assets/skins/sam/menuitem_checkbox.png',
+'build/menu/assets/skins/sam/menuitem_checkbox_disabled.png',
+'build/menu/assets/skins/sam/menuitem_submenuindicator.png',
+'build/menu/assets/skins/sam/menuitem_submenuindicator_disabled.png',
+'build/menu/menu-min.js',
+'build/paginator/assets/paginator-core.css',
+'build/paginator/assets/skins/sam/paginator-skin.css',
+'build/paginator/assets/skins/sam/paginator.css',
+'build/paginator/paginator-min.js',
+'build/progressbar/assets/progressbar-core.css',
+'build/progressbar/assets/skins/sam/back-h.png',
+'build/progressbar/assets/skins/sam/back-v.png',
+'build/progressbar/assets/skins/sam/bar-h.png',
+'build/progressbar/assets/skins/sam/bar-v.png',
+'build/progressbar/assets/skins/sam/progressbar-skin.css',
+'build/progressbar/assets/skins/sam/progressbar.css',
+'build/progressbar/progressbar-min.js',
+'build/reset-fonts-grids/reset-fonts-grids.css',
+'build/resize/assets/resize-core.css',
+'build/resize/assets/skins/sam/layout_sprite.png',
+'build/resize/assets/skins/sam/resize-skin.css',
+'build/resize/assets/skins/sam/resize.css',
+'build/resize/resize-min.js',
+'build/utilities/utilities.js',
+'build/yahoo-dom-event/yahoo-dom-event.js',
+]
+
+
+
 if __name__ == "__main__":
+    parser = optparse.OptionParser()
+    parser.add_option("--skip-cron", dest = "cron",
+                     default = True, action = "store_false",
+                     help = "Do not install maintenance cron jobs")
+    (options, args) = parser.parse_args()
+
     if not os.environ.has_key("WMAGENT_CONFIG"):
         print "The WMAGENT_CONFIG environment variable needs to be set before"
         print "this can run."
@@ -103,8 +287,9 @@ if __name__ == "__main__":
         jobDumpName = urllib.quote_plus("%s/jobs" % wmagentConfig.JobStateMachine.couchDBName)
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, fwjrDumpName, "FWJRDump")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, jobDumpName, "JobDump")
-        setupCron(wmagentConfig.JobStateMachine.couchurl,
-                  wmagentConfig.JobStateMachine.couchDBName)
+        if options.cron:
+            setupCron(wmagentConfig.JobStateMachine.couchurl,
+                      wmagentConfig.JobStateMachine.couchDBName)
 
     if hasattr(wmagentConfig, "JobStateMachine") and hasattr(wmagentConfig.JobStateMachine, "configCacheDBName"):
         installCouchApp(wmagentConfig.JobStateMachine.couchurl,
@@ -117,9 +302,10 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")    
 
     if hasattr(wmagentConfig, "WorkQueueManager"):
-        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname, "WorkQueue")
-        installCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase, "WorkQueue")
-        setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
-        setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
+        installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
+        installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
+        if options.cron:
+            setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
+            setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
 
     sys.exit(0)

@@ -10,6 +10,7 @@ import logging
 import traceback
 
 from WMCore.Database.CMSCouch import CouchServer
+from WMCore.Database.CMSCouch import CouchConflictError
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Services.UUID import makeUUID
@@ -281,6 +282,11 @@ class ChangeState(WMObject, WMConnectionBase):
 
             updateUri = updateBase + str(viewResult["value"]["id"])
             updateUri += "?index=%s" % (viewResult["value"]["index"])
-            self.jobsdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
+            try:
+                self.jobsdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
+            except CouchConflictError, ex:
+                # The document has been updated under our feet, ignore the error and we'll
+                # update it on the next polling cycle.
+                pass
             
         return jobsToReport

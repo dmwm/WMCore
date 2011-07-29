@@ -15,6 +15,7 @@ import re
 import hashlib
 import base64
 from httplib import HTTPException
+from datetime import timedelta, datetime
 
 from WMCore.Services.Requests import JSONRequests
 
@@ -247,7 +248,7 @@ class Database(CouchDBRequests):
 
         if timestamp:
             self.timestamp(self._queue, timestamp)
-        # commit in thread to avoid blocking others
+        # TODO: commit in thread to avoid blocking others
         uri  = '/%s/_bulk_docs/' % self.name
 
         data['docs'] = list(self._queue)
@@ -269,6 +270,21 @@ class Database(CouchDBRequests):
         if rev:
             uri += '?' + urllib.urlencode({'rev' : rev})
         return Document(id = id, inputDict = self.get(uri))
+
+    def updateDocument(self, doc_id, design, update_func, fields={}):
+        """
+        Call the update function update_func defined in the design document
+        design for the document doc_id with a query string built from fields.
+
+        http://wiki.apache.org/couchdb/Document_Update_Handlers
+        """
+        # Clean up /'s in the name etc.
+        doc_id = urllib.quote_plus(doc_id)
+
+        updateUri = '/%s/_design/%s/_update/%s/%s?%s' % \
+            (self.name, design, update_func, doc_id, urllib.urlencode(fields))
+
+        return self.put(uri = updateUri, decode=False)
 
     def documentExists(self, id, rev = None):
         """
@@ -384,7 +400,6 @@ class Database(CouchDBRequests):
         else:
             retval = self.get('/%s/_design/%s/_view/%s' % \
                             (self.name, design, view), encodedOptions)
-
         if ('error' in retval):
             raise RuntimeError ,\
                     "Error in CouchDB: viewError '%s' reason '%s'" %\
@@ -484,6 +499,241 @@ class Database(CouchDBRequests):
         if (id == "nonexistantid"):
             print attachment
         return attachment
+
+class RotatingDatabase(Database):
+    """
+    A rotating database is actually multiple databases:
+      - one active database (self)
+      - N inactive databases (waiting to be removed)
+      - one archive database
+      - one configuration/seed database
+
+    The active database is the one which serves current requests. It is active
+    for a certain time window and then archived and marked as inactive.
+
+    Inactive databases no longer recieve queries, although are still available
+    on the server. They are queued up for deletion. This allows you to have a
+    system where active databases are rotated daily and are kept in the server
+    for a week. Inactive databases have a document in them defined as:
+        {
+          '_id': 'inactive',
+          'archived_at': TIMESTAMP,     # added when archived
+          'expires_at': TIMESTAMP+delta # added when archived
+        }
+    which is used to persist state across instatiations of the class.
+
+    The archive database stores the results of views on the active databases
+    once they are rotated out of service.
+
+    The configuration/seed database holds the following information:
+        * names of known inactive databases
+        * name of current active database
+        * name of archive database
+        * design documents needed to seed new databases
+
+    Once rotated the current active database is made inactive, a new active
+    database created, views are copied to the archive database as necessary and
+    the inactive databases queued for removal.
+    """
+    def __init__(self, dbname = 'database', url = 'http://localhost:5984',
+                        size = 1000, archivename=None, seedname=None,
+                        timing=None, views=[]):
+        """
+        dbaname:     base name for databases, active databases will have
+                     timestamp appended
+        url:         url of the CouchDB server
+        size:        how big the data queue can get
+        archivename: database to archive view results to, default is
+                     dbname_archive
+        seedname:    database where seed views and configuration/state are held
+                     default is $dbname_seedcfg
+        timing:      a dict containing two timedeltas 'archive' and 'expire',
+                     if not present assume the database will br rotated by
+                     external code
+        views:       a list of views (design/name) to archive. The assumption
+                     is that these views have been loaded into the seed
+                     database via couchapp or someother process.
+        """
+        # Store the base database name
+        self.basename = dbname
+
+        # Since we're going to be making databases hold onto a server
+        self.server = CouchServer(url)
+
+        # self is the "active" database
+        Database.__init__(self, self._get_new_name(), url, size)
+        # forcibly make sure I exist
+        self.server.connectDatabase(self.name)
+
+        # Set up the databases for the seed
+        if not seedname:
+            seedname = '%s_seedcfg' % (self.basename)
+        self.seed_db =  self.server.connectDatabase(seedname, url, size)
+
+        # TODO: load a rotating DB from the seed db
+
+        # TODO: Maybe call self._rotate() here?
+
+        self.timing = timing
+
+        self.archive_config = {}
+        self.archive_db = None
+        self.views = []
+        if views:
+            # If views isn't set in the constructor theres nothing to archive
+            if not archivename:
+                archivename = '%s_archive' % (self.basename)
+            # TODO: check that the views listed exist in the seed
+            # TODO: support passing in view options
+            self.views = views
+            self.archive_db = self.server.connectDatabase(archivename, url, size)
+            self.archive_config['views'] = self.views
+            self.archive_config['database'] = archivename
+            self.archive_config['type'] = 'archive_config'
+            self.archive_config['timing'] = str(self.timing)
+            # copy views from the seed to the active db
+            self._copy_views()
+        if self.archive_config:
+            # TODO: deal with multiple instances, load from doc?
+            self.seed_db.commitOne(self.archive_config)
+
+    def _get_new_name(self):
+        return '%s_%s' % (self.basename, int(time.time()))
+
+    def _copy_views(self):
+        """
+        Copy design documents from self.seed_db to the new active database.
+        This means that all views in the design doc are copied, regardless of
+        whether they are actually archived.
+        """
+        for design_to_copy in set(['_design/%s' % design.split('/')[0] for design in self.views]):
+            design = self.seed_db.document(design_to_copy)
+            del design['_rev']
+            self.queue(design)
+        self.commit()
+
+    def _rotate(self):
+        """
+        Rotate the active database:
+            1. create the new active database
+            2. set self.name to the new database name
+            3. write the inactive document to the old active database
+            4. write the inactive document to the seed db
+        """
+        retiring_db = self.server.connectDatabase(self.name)
+        # do the switcheroo
+        new_active_db = self.server.connectDatabase(self._get_new_name())
+        self.name = new_active_db.name
+        self._copy_views()
+        # "connect" to the old server, write inactive doc
+        retiring_db.commitOne({'_id': 'inactive'}, timestamp=True)
+
+        # record new inactive db to config
+        # TODO: update function?
+
+        state_doc = {'_id': retiring_db.name, 'rotate_state': 'inactive'}
+        if not self.archive_config:
+            # Not configured to archive anything, so skip inactive state
+            # set the old db as archived instead
+            state_doc['rotate_state'] = 'archived'
+        self.seed_db.commitOne(state_doc, timestamp=True)
+
+
+    def _archive(self):
+        """
+        Archive inactive databases
+        """
+        if self.archive_config:
+            # TODO: This should be a worker thread/pool thingy so it's non-blocking
+            for inactive_db in self.inactive_dbs():
+                archiving_db = Database(inactive_db, self['host'])
+                for view_to_archive in self.views:
+                    # TODO: improve handling views and options here
+                    design, view = view_to_archive.split('/')
+                    for data in archiving_db.loadView(design, view, options={'group':True})['rows']:
+                        self.archive_db.queue(data)
+                self.archive_db.commit()
+                # Now set the inactive view to archived
+                db_state = self.seed_db.document(inactive_db)
+                db_state['rotate_state'] = 'archived'
+                self.seed_db.commit(db_state)
+
+    def _expire(self):
+        """
+        Delete inactive databases that have expired, and remove state docs.
+        """
+        now = datetime.now()
+        then = now - self.timing['expire']
+
+        options = {'startkey':0, 'endkey':time.mktime(then.timetuple())}
+        expired = self._find_dbs_in_state('archived', options)
+        for db in expired:
+            try:
+                self.server.deleteDatabase(db['id'])
+            except CouchNotFoundError:
+                # if it's gone we don't care
+                pass
+            db_state = self.seed_db.document(db['id'])
+            self.seed_db.queueDelete(db_state)
+        self.seed_db.commit()
+        self.seed_db.compact()
+
+    def _find_dbs_in_state(self, state, options = {}):
+        # TODO: couchapp this, how to make sure that the app is deployed?
+        find = {'map':"function(doc) {if(doc.rotate_state == '%s') {emit(doc.timestamp, doc._id);}}" % state}
+        uri = '/%s/_temp_view' % self.seed_db.name
+        if options:
+            uri += '?%s' % urllib.urlencode(options)
+        data = self.seed_db.post(uri, find)
+        return data['rows']
+
+    def inactive_dbs(self):
+        """
+        Return a list on inactive databases
+        """
+        return [doc['value'] for doc in self._find_dbs_in_state('inactive')]
+
+    def archived_dbs(self):
+        """
+        Return a list of archived databases
+        """
+        return [doc['value'] for doc in self._find_dbs_in_state('archived')]
+
+    def non_rotating_commit():
+        # might need this after all....
+        pass
+
+    def makeRequest(self, uri=None, data=None, type='GET', incoming_headers = {},
+                     encode=True, decode=True, contentType=None,
+                     cache=False, rotate=True):
+        """
+        Intercept the request, determine if I need to rotate, then carry out the
+        request as normal.
+        """
+        if self.timing and rotate:
+
+            # check to see whether I should rotate the database before processing the request
+            db_age = datetime.fromtimestamp(float(self.name.split('_')[-1]))
+            db_expires = db_age + self.timing['archive']
+            if datetime.now() > db_expires:
+                # save the current name for later
+                old_db = self.name
+                if len(self._queue) > 0:
+                    # data I've got queued up should go to the old database
+                    # can't call self.commit() due to recursion
+                    uri  = '/%s/_bulk_docs/' % self.name
+                    data['docs'] = list(self._queue)
+                    self.makeRequest(uri, data, 'POST', rotate=False)
+                    self._reset_queue()
+                self._rotate() # make the new database
+                # The uri passed in will be wrong, and the db may no longer exist if it has expired
+                # so replacte the old name with the new
+                uri.replace(old_db, self.name, 1)
+        # write the data to the current database
+        Database.makeRequest(self, uri, data, type, incoming_headers, encode, decode, contentType, cache)
+        # now do some maintenance on the archived/expired databases
+        self._archive()
+        self._expire()
 
 class CouchServer(CouchDBRequests):
     """

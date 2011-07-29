@@ -12,15 +12,16 @@ import unittest
 import os
 import hashlib
 import base64
+import sys
 
 class CMSCouchTest(unittest.TestCase):
     test_counter = 0
     def setUp(self):
         # Make an instance of the server
         self.server = CouchServer(os.getenv("COUCHURL", 'http://admin:password@localhost:5984'))
-        testname = self.id().split('.')[-1]
+        self.testname = self.id().split('.')[-1]
         # Create a database, drop an existing one first
-        dbname = 'cmscouch_unittest_%s' % testname.lower()
+        dbname = 'cmscouch_unittest_%s' % self.testname.lower()
 
         if dbname in self.server.listDatabases():
             self.server.deleteDatabase(dbname)
@@ -29,10 +30,9 @@ class CMSCouchTest(unittest.TestCase):
         self.db = self.server.connectDatabase(dbname)
 
     def tearDown(self):
-        if self._exc_info()[0] == None:
+        if sys.exc_info()[0] == None:
             # This test has passed, clean up after it
-            testname = self.id().split('.')[-1]
-            dbname = 'cmscouch_unittest_%s' % testname.lower()
+            dbname = 'cmscouch_unittest_%s' % self.testname.lower()
             self.server.deleteDatabase(dbname)
 
     def testCommitOne(self):
@@ -284,6 +284,30 @@ class CMSCouchTest(unittest.TestCase):
         self.assertEqual(answer[0]['id'], '2')
         self.assertEqual(answer[1]['id'], '2')
 
+    def testUpdateHandler(self):
+        """
+        Test that update function support works
+        """
+
+        update_ddoc = {
+            '_id':'_design/foo',
+            'language': 'javascript',
+            'updates':{
+                "bump-counter" : 'function(doc, req) {if (!doc.counter) {doc.counter = 0};doc.counter += 1;return [doc,"bumped it!"];}',
+            }
+        }
+        self.db.commit(update_ddoc)
+        doc = {'foo': 123, 'counter': 0}
+        doc_id = self.db.commit(doc)[0]['id']
+        self.assertEquals("bumped it!", self.db.updateDocument(doc_id, 'foo', 'bump-counter'))
+
+        self.assertEquals(1, self.db.document(doc_id)['counter'])
+
 
 if __name__ == "__main__":
-    unittest.main()
+    if len(sys.argv) >1 :
+        suite = unittest.TestSuite()
+        suite.addTest(CMSCouchTest(sys.argv[1]))
+        unittest.TextTestRunner().run(suite)
+    else:
+        unittest.main()

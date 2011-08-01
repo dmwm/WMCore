@@ -77,7 +77,7 @@ def getRequestInfoFromLocalQueue(serviceURL):
     service = WorkQueue(url, dbName)
     try:
         wmbsUrls = service.getWMBSUrl()
-        jobStatusInfo = service.getJobStatusByRequest()
+        jobStatusInfo = service.getJobInjectStatusByRequest()
     except Exception, ex:
         logging.error("%s: %s" (serviceURL, str(ex)))
         return DFormatter.errorFormatter(serviceURL, "LocalQueue Down")

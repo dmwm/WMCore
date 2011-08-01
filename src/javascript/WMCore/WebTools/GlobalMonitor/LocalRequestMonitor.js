@@ -24,11 +24,6 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
             };
 
             if (!sData) {
-                localQueueList  = oRecord.getData("local_queue")
-                if (!localQueueList || !localQueueList.length) {
-                 elCell.innerHTML = "Not Assigned";
-                 return;
-                };
                 if (oRecord.getData("couch_error")) {
                     elCell.innerHTML = "<font color='red'> Can't connect Job DB <font>";
                 } else {

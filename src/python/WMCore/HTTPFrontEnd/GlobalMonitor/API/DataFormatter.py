@@ -7,9 +7,9 @@ def combineListOfDict(matchKey, baseList, applyList, errorKey = None, **kwargs):
     combineListOfDict provide the function to combine two lists of dictionary
 
     matchkey is the dictionary key word in which values will be compared,
-    baseList is the base of the combine results, so length of base list will be
-    the same as result list
+    baseList is the base of the combine results,
     applyList will contain the item which will update the base list.
+    baseList and applyList can be exchangeable without affecting the return result.
     kwargs is key value fair (key being key of baseList and applyList item,
     value being the function reference which takes 2 pararmeters and
     return meaningful result of combining non exclusive items
@@ -22,7 +22,7 @@ def combineListOfDict(matchKey, baseList, applyList, errorKey = None, **kwargs):
 
     combineListOfDict('id', baseList, appliyList, sales=(lambda x, y: x+y))
     will return
-    [{'id': 1, 'sales': 1000}, {'id': 2, 'sales': 3000, 'task' : 'A'}]
+    [{'id': 1, 'sales': 1000}, {'id': 2, 'sales': 3000, 'task' : 'A'}, {'id': 3, 'sales': 3000}]
 
     """
     resultList = []
@@ -60,6 +60,16 @@ def combineListOfDict(matchKey, baseList, applyList, errorKey = None, **kwargs):
                 resultDict.update(temp)
         resultList.append(resultDict)
 
+    for aItem in applyList:
+        insertFlag = True
+        for result in resultList:
+            if result[matchKey] == aItem[matchKey]:
+                insertFlag = False
+                break
+        if insertFlag:
+            resultDict = {}
+            resultDict.update(aItem)
+            resultList.append(resultDict)
     return resultList
 
 def errorFormatter(url, msg):

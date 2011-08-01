@@ -39,7 +39,9 @@ class DummyWorker1(BaseWorkerThread):
         self.dummySetupCallback = myThread.dummySetupCallback
         self.dummyAlgoCallback = myThread.dummyAlgoCallback
         self.dummyTerminateCallback = myThread.dummyTerminateCallback
-    
+        if 'workerThreadManager' in dir(myThread):
+            self.workerThreadManager = myThread.workerThreadManager
+
     def setup(self, parameters):
         """
         Check the worker setup method is called
@@ -64,6 +66,17 @@ class DummyWorker2(BaseWorkerThread):
     """
     def algorithm(self, parameters):
         pass
+
+class ErrorWorker(DummyWorker1):
+    """
+    A worker that throws an error
+    """
+    def algorithm(self, parameters):
+        # workerThreadManager will be added by Harness
+        # that isnt used here so add manually
+        myThread = threading.currentThread()
+        myThread.workerThreadManager = self.workerThreadManager
+        raise RuntimeError, "ErrorWorker throws errors"
 
 class WorkerThreadsTest(unittest.TestCase):
     """    
@@ -171,6 +184,30 @@ class WorkerThreadsTest(unittest.TestCase):
         print('terminate worker')
         manager.terminateWorkers()
         
+    def testWorkerError(self):
+        """If a worker raises an exception terminate the entire component"""
+        compDummy = Dummy()
+
+        print('create manager')
+        manager = WorkerThreadManager(compDummy)
+        # needed for handling errors - harness would generally set this
+        myThread = threading.currentThread()
+        myThread.workerThreadManager = manager
+
+        print('add workers')
+        manager.addWorker(DummyWorker1(), 0.1)
+        manager.addWorker(ErrorWorker(), 0.1)
+
+        print('run workers, one will throw an error')
+        manager.resumeWorkers()
+
+        # should do something smarter here
+        # too short a time and threads havent exited yet
+        time.sleep(6)
+
+        # all threads should have ended after worker raised exception
+        self.assertEqual(manager.activeThreadCount, 0)
+
 
 
 if __name__ == "__main__":

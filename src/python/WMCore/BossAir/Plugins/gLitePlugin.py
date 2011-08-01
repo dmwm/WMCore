@@ -133,6 +133,7 @@ class gLitePlugin(BasePlugin):
 
         self.locationAction = daoFactory(classname = "Locations.GetSiteSE")
         self.locationDict = {}
+        self.pool     = []
 
         self.delegationid = str(type(self).__name__)
 
@@ -162,9 +163,27 @@ class gLitePlugin(BasePlugin):
                                   'min_time_left' : 36000
                                  }
 
+        ## if we switch None to os.environ['X509_USER_PROXY'] this will be automatic
         self.singleproxy  = getattr(self.config.BossAir, 'manualProxyPath', None)
 
         if self.singleproxy is None:
+            hostcertpath = None
+            if 'X509_HOST_CERT' in os.environ:
+                hostcertpath = os.environ['X509_HOST_CERT']
+            elif os.path.isfile(os.path.join(os.environ['HOME'], '.globus/hostcert.pem')):
+                hostcertpath = os.path.join(os.environ['HOME'], '.globus/hostcert.pem')
+            elif os.path.isfile('/etc/grid-security/hostcert.pem'):
+                hostcertpath = '/etc/grid-security/hostcert.pem'
+            if hostcertpath:
+                command = 'grid-cert-info -subject -file %s' % hostcertpath
+                pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
+                                        stderr = subprocess.PIPE, shell = True)
+                stdout, stderr = pipe.communicate()
+                if pipe.returncode is 0:
+                    setattr(self.config.Agent, 'serverDN', stdout)
+                    logging.info('Retrieved agent DN %s ' % stdout)
+                else:
+                    logging.error('Failed to retrieve agent DN from %s due to "%s".' % (hostcertpath, stdout) )
             if getattr ( self.config.Agent, 'serverDN' , None ) is None:
                 msg = "Error: serverDN parameter required and not provided " + \
                       "in the configuration"
@@ -191,23 +210,19 @@ class gLitePlugin(BasePlugin):
         else:
             logging.debug("Using manually provided proxy '%s' " % self.singleproxy)
 
-
         # These are the pool settings.
-        self.nProcess       = getattr(self.config.BossAir, 'gLiteProcesses', 10)
+        self.nProcess       = getattr(self.config.BossAir, 'gLiteProcesses', 4)
         self.collectionsize = getattr(self.config.BossAir, 'gLiteCollectionSize', 200)
         self.trackmaxsize   = getattr(self.config.BossAir, 'gLiteMaxTrackSize', 200)
-
-        self.pool     = []
-
         self.submitFile   = getattr(self.config.JobSubmitter, 'submitScript', None)
+        self.unpacker     = getattr(self.config.JobSubmitter, 'unpackerScript', None)
         self.submitDir    = getattr(self.config.JobSubmitter, 'submitDir', '/tmp/')
         self.gliteConfig  = getattr(self.config.BossAir, 'gLiteConf', None)
         self.defaultjdl['service'] = getattr(self.config.BossAir, 'gliteWMS', None)
-
         self.basetimeout  = getattr(self.config.JobSubmitter, 'getTimeout', 300 )
-
         self.defaultjdl['myproxyhost'] = self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, 'myproxyhost', self.defaultDelegation['myProxySvr'] )
 
+        # This isn't anymore needed, but in the future...
         self.manualenvprefix = getattr(self.config.BossAir, 'gLitePrefixEnv', '')
 
         self.setupScript = getattr(self.config.BossAir, 'UISetupScript', None)
@@ -225,14 +240,12 @@ class gLitePlugin(BasePlugin):
             raise BossAirPluginException( msg )
         self.defaultDelegation['uisource'] = self.setupScript
 
-        self.debugOutput = getattr(self.config.BossAir, 'gLiteCacheOutput', False)
-
-        wmcoreBasedir = WMCore.WMInit.getWMBASE()
-
-        if os.path.exists(os.path.join(wmcoreBasedir, 'src/python/WMCore/WMRuntime/Unpacker.py')):
-            self.unpacker = os.path.join(wmcoreBasedir, 'src/python/WMCore/WMRuntime/Unpacker.py')
-        else:
-            self.unpacker = os.path.join(wmcoreBasedir, 'WMCore/WMRuntime/Unpacker.py')
+        if not self.unpacker:
+            wmcoreBasedir = WMCore.WMInit.getWMBASE()
+            if os.path.exists(os.path.join(wmcoreBasedir, 'src/python/WMCore/WMRuntime/Unpacker.py')):
+                self.unpacker = os.path.join(wmcoreBasedir, 'src/python/WMCore/WMRuntime/Unpacker.py')
+            else:
+                self.unpacker = os.path.join(wmcoreBasedir, 'WMCore/WMRuntime/Unpacker.py')
 
         return
 

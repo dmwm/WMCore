@@ -78,6 +78,9 @@ class LogArchive(Executor):
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
 
+        # Find alternate stageout location
+        self.altLFN = overrides.get('altLFN', None)
+
         logging.info("Beginning Steps.Executors.LogArchive.Execute")
         logging.info("Using the following overrides: %s " % overrides)
         logging.info("Step is: %s" % self.step)
@@ -233,5 +236,9 @@ class LogArchive(Executor):
                self.job.get('retry_count', 0),
                tarName)
 
+        if self.altLFN:
+            LFN = "%s/%s/%s/%i/%s-%i-%s" % (self.altLFN, self.task.getPathName(),
+               lfnGroup(self.job), self.job.get('retry_count', 0), self.job["name"],
+               self.job.get('retry_count', 0), tarName)
 
         return LFN

@@ -75,6 +75,8 @@ class BaseWorkerThread:
         """
         The method that performs the required work. Should be overridden in
         derived classes.
+
+        If this method raises an exception all workers will be terminated
         """
         logging.error("Calling algorithm on BaseWorkerThread: Override me!")
 
@@ -184,6 +186,9 @@ class BaseWorkerThread:
                                 msg += stackFrame
                             
                             logging.error(msg)
+                            # force entire component to terminate
+                            self.component.prepareToStop()
+
 
                             if hasattr(self.component.config, "Agent"):                            
                                 if getattr(self.component.config.Agent, "useHeartbeat", True):

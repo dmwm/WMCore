@@ -63,6 +63,13 @@ def getAverageStdDev(numList):
 
     stdDev = math.sqrt(stdBase/len(numList))
 
+    if math.isnan(average) or math.isinf(average):
+        average = None
+    if math.isnan(stdDev) or math.isnan(average):
+        stdDev = None
+
+    
+
     return average, stdDev
 
 
@@ -129,6 +136,8 @@ def createHistogram(numList, nBins, limit):
                           'nEvents': 0})
 
     for bin in histogram:
+        if bin['type'] != 'standard':
+            continue
         binList = []
         for value in histEvents:
             if value >= bin['lowerEdge'] and value <= bin['upperEdge']:

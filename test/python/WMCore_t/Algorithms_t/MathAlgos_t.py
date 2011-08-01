@@ -92,12 +92,12 @@ class MathAlgoTest(unittest.TestCase):
         # Check that we generate overflow and underflow bins correctly
         result = MathAlgos.createHistogram(numList = numList, nBins = 2, limit = 1)
         self.assertEqual(len(result), 4)
-        self.assertEqual(result[2]['type'], 'underflow')
-        self.assertEqual(result[3]['type'], 'overflow')
-        self.assertEqual(result[2]['nEvents'], 2)
-        self.assertEqual(result[3]['nEvents'], 2)
-        self.assertEqual(result[2]['stdDev'], 0.5)
-        self.assertEqual(result[3]['stdDev'], 0.5)
+        self.assertEqual(result[0]['type'], 'underflow')
+        self.assertEqual(result[1]['type'], 'overflow')
+        self.assertEqual(result[0]['nEvents'], 2)
+        self.assertEqual(result[1]['nEvents'], 2)
+        self.assertEqual(result[0]['stdDev'], 0.5)
+        self.assertEqual(result[1]['stdDev'], 0.5)
 
 if __name__ == "__main__":
     unittest.main() 

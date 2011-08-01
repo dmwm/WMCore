@@ -1,3 +1,14 @@
+0.7.12 to 0.7.13:
+  - Stage initial user log files to /store/temp/user/USERNAME (1938, 2011).
+  - Cause components to shutdown if an exception is thrown (1989).
+  - Fixup gLite configurable parameters (1682).
+  - Fix handling of broken JSON is the gLite BossAir plugin (2019).
+  - Fixes to runtime code and MonteCarlo workflow to get MonteCarlo production
+    working (2010).
+  - Better handle sites being down (1997).
+  - Make sure the WorkQueue injects multicore workflows (1999).
+  - RAL stageout no longer needs to set ACLs as now using default ACLs
+
 0.7.11 to 0.7.12:
   - Write couch list function to generate report of analyzed lumis (1790).
   - Make sure we process analysis workflows (1914).

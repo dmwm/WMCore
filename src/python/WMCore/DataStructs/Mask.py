@@ -182,7 +182,7 @@ class Mask(dict):
 
         runsToRemove = []
         for r in runs:
-            if len(r.lumis) < 1:
+            if len(r.lumis) < 1 and not r in runsToRemove:
                 runsToRemove.append(r)
 
         for r in runsToRemove:

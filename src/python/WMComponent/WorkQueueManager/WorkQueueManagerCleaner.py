@@ -38,6 +38,6 @@ class WorkQueueManagerCleaner(BaseWorkerThread):
         self.queue.logger.info("Start updating & cleaning...")
         try:
             self.queue.performQueueCleanupActions()
-        except StandardError, ex:
+        except Exception, ex:
             self.queue.logger.exception("Error cleaning queue: %s" % str(ex))
         self.queue.logger.info("Finished updating & cleaning.")

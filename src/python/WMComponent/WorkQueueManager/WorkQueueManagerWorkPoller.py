@@ -37,10 +37,16 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         """
         Pull in work
 	    """
-        self.pullWork()
-        # process if we get work or not - we may have to split old work
-        # i.e. if transient errors were seen during splitting
-        self.processWork()
+        try:
+            self.pullWork()
+        except Exception, ex:
+            self.queue.logger.error("Error in work pull loop: %s" % str(ex))
+        try:
+            # process if we get work or not - we may have to split old work
+            # i.e. if transient errors were seen during splitting
+            self.processWork()
+        except Exception, ex:
+            self.queue.logger.error("Error in new work split loop: %s" % str(ex))
         return
 
     def retrieveCondition(self):

@@ -44,8 +44,11 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         """
         # reinitialize site and slot
         if self.checkJobCreation():
-            self.getWorks()
-        
+            try:
+                self.getWorks()
+            except Exception, ex:
+                self.queue.logger.error("Error in wmbs inject loop: %s" % str(ex))
+
     def getWorks(self):
         """
         Inject work into wmbs for idle sites

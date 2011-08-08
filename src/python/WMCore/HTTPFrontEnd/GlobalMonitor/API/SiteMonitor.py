@@ -72,6 +72,8 @@ def getSiteInfoFromWMBSService(serviceURL):
         _combineSites(completeJobs, batchJobs)
         return completeJobs
     except Exception, ex:
+        import logging
+        logging.warning("Error: %s" % str(ex))
         return []
 
     return batchJobs
@@ -88,6 +90,7 @@ def _combineSites(results, batchJobs):
                     item.setdefault(status, 0)
                     batchJob.setdefault(status, 0)
                     item[status] += batchJob[status]
+                item.setdefault('job_slots', 0)
                 item['job_slots'] += batchJob['job_slots']
         if newSite:
             results.append(batchJob)

@@ -22,17 +22,17 @@ WMCore.WMBS.WorkflowSummaryWithTask.taskTable = function(oArgs){
     var dataTable = WMCore.createDataTable(oArgs.divID, dataSource, 
                                WMCore.createDefaultTableDef(dataSchema.fields), 
                                WMCore.createDefaultTableConfig(), 100000, true)
-	var callback = {
-		success: function(){
-			//workflowTable.onDataReturnInitializeTable();
-			//dataTable.onDataReturnInitializeTable();
-		},
-		failure: function(){
-			YAHOO.log("Polling failure", "error");
-		},
-		scope: this
-	};
-	dataSource.sendRequest(null, callback);
+    var callback = {
+        success: function(){
+            //workflowTable.onDataReturnInitializeTable();
+            //dataTable.onDataReturnInitializeTable();
+        },
+        failure: function(){
+            YAHOO.log("Polling failure", "error");
+        },
+        scope: this
+    };
+    dataSource.sendRequest(null, callback);
 };
 
 var workflowTable = function(oArgs){

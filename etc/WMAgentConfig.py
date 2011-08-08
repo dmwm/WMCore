@@ -48,9 +48,9 @@ localDBSUrl = "https://cmst0dbs.cern.ch:8443/cms_dbs_prod_tier0_writer/servlet/D
 localDBSVersion = "DBS_2_0_8"
 globalDBSUrl = "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"
 globalDBSVersion = "DBS_2_0_8"
-dbsMaxBlockSize = 1000000000000
-dbsMaxBlockFiles = 100
-dbsBlockTimeout = 21600
+dbsMaxBlockSize = 5000000000000
+dbsMaxBlockFiles = 500
+dbsBlockTimeout = 86400
 
 # Job retry information.  This includes the number of times a job will tried and
 # how long it will sit in cool off.

@@ -306,7 +306,8 @@ class JobArchiverTest(unittest.TestCase):
         return
     
 
-    def setUpReceiver(self, addr, controlAddr):
+    @staticmethod
+    def setUpReceiver(addr, controlAddr):
         """
         Return set up handler, receiver pair.
         

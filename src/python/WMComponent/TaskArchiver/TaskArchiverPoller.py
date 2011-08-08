@@ -30,6 +30,7 @@ import shutil
 import threading
 import logging
 import traceback
+import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -47,6 +48,9 @@ from WMCore.Lexicon             import sanitizeURL
 
 from WMComponent.JobCreator.CreateWorkArea   import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
+
+from WMCore.Alerts.Alert import Alert
+from WMCore.Alerts.ZMQ.Sender import Sender
 
 
 class TaskArchiverPollerException(WMException):
@@ -118,7 +122,39 @@ class TaskArchiverPoller(BaseWorkerThread):
             self.fwjrdatabase = None
             if getattr(self.config.TaskArchiver, 'requireCouch', False):
                 raise TaskArchiverPollerException(msg)
-        return        
+            
+        # initialize the alert framework (if available)
+        # instance of Alert messages Sender 
+        self.sender = None
+        # pre-defined values for Alert instances generated from this class
+        self.preAlert = None
+        self._setUpAlertsMessaging()
+        return
+    
+
+    def _setUpAlertsMessaging(self):
+        """
+        Set up Alerts Sender instance, etc.
+        Depends on provided configuration (general section 'Alert').
+        Should not break anything if such config is not provided.
+        
+        TODO:
+        This kind of method will be similar if not the same for all
+            other components sending alerts and shall be factored out into
+            an appropriate base class - to discuss.
+        
+        """
+        if hasattr(self.config, "Alert"):
+            # pre-defined values for Alert instances generated from this class
+            self.preAlert = Alert(Type = "WMAgentComponent",
+                                  Workload = "n/a",
+                                  Component = "TaskArchiver",
+                                  Source = self.__class__.__name__)
+            # create sender instance (sending alert messages)
+            self.sender = Sender(self.config.Alert.address,
+                                 self.__class__.__name__,
+                                 self.config.Alert.controlAddr)
+            self.sender.register()
     
 
     def terminate(self, params):
@@ -229,10 +265,31 @@ class TaskArchiverPoller(BaseWorkerThread):
             elements = self.workQueue.doneWork(SubscriptionId = subIDs)
             return list(set([x['SubscriptionId'] for x in elements]))
         except Exception, ex:
-            logging.error("Error talking to workqueue: %s" % str(ex))
-            logging.error("Tried to complete the following: %s" % subIDs)
+            msg =  "Error talking to workqueue: %s\n" % str(ex)
+            msg += "Tried to complete the following: %s\n" % subIDs
+            logging.error(msg)
+            self._sendAlert(1, msg = msg)
 
         return []
+
+    
+    def _sendAlert(self, level, **args):
+        """
+        Common method taking care of sending Alert messages.
+        It is silent should not the Alert framework be set up.
+        Level of the Alert messages is defined by level. 
+        
+        TODO:
+        similarly to _setUpAlertsMessaging, adept for factoring higher.
+        
+        """
+        if self.sender:
+            alert = Alert(**self.preAlert)
+            alert["Timestamp"] = time.time()
+            alert["Level"] = level
+            alert["Details"] = args
+            self.sender(alert)
+            
 
     def killSubscriptions(self, doneList):
         """
@@ -272,7 +329,9 @@ class TaskArchiverPoller(BaseWorkerThread):
                         # Remove the taskDir, because we're done
                         shutil.rmtree(taskDir)
                     else:
-                        logging.error("Attempted to delete work directory but it was already gone: %s" % taskDir)
+                        msg = "Attempted to delete work directory but it was already gone: %s" % taskDir
+                        logging.error(msg)
+                        self._sendAlert(1, msg = msg)
                     # Remove the sandbox dir
                     if not workflow.countWorkflowsBySpec() == 0:
                         continue
@@ -289,6 +348,8 @@ class TaskArchiverPoller(BaseWorkerThread):
                 msg += str(ex)
                 msg += str(traceback.format_exc())
                 logging.error(msg)
+                self._sendAlert(2, msg = msg)
+                # Matt's patch had this following raising commented out too ...
                 #raise TaskArchiverPollerException(msg)
 
         return
@@ -428,12 +489,15 @@ class TaskArchiverPoller(BaseWorkerThread):
         # Now we have the workflowData in the right format
         # Time to send them on
         logging.debug("About to commit workflow summary to couch")
-        self.workdatabase.commitOne(workflowData)
+        try:
+            self.workdatabase.commitOne(workflowData)
+        except Exception, ex:
+            msg = "Error while attempting to commit to couch: %s" % str(ex)
+            self._sendAlert(3, msg = msg)
+            raise
         logging.debug("Finished committing workflow summary to couch")
 
         return
-
-
 
 
     def handleCouchPerformance(self, workflowName):

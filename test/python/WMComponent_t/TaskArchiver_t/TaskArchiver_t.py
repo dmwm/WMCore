@@ -38,6 +38,10 @@ from WMCore.Database.CMSCouch           import CouchServer
 from WMCore_t.WMSpec_t.TestSpec     import testWorkload
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
+from WMCore.Alerts.ZMQ.Receiver import Receiver
+from WMComponent_t.AlertGenerator_t.Pollers_t import utils
+
+
 
 class TaskArchiverTest(unittest.TestCase):
     """
@@ -77,6 +81,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         self.nJobs = 10
         self.campaignName = 'aCampaign'
+        self.alertsReceiver = None
         return
 
     def tearDown(self):
@@ -88,6 +93,9 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self.testInit.delWorkDir()
         #self.testInit.tearDownCouch()
+        if self.alertsReceiver:
+            self.alertsReceiver.shutdown()
+            self.alertsReceiver = None        
         return
 
     def getConfig(self):
@@ -126,7 +134,14 @@ class TaskArchiverTest(unittest.TestCase):
 
         # Make the jobCacheDir
         os.mkdir(config.JobCreator.jobCacheDir)
-
+        
+        # addition for Alerts messaging framework, work (alerts) and control
+        # channel addresses to which the component will be sending alerts
+        # these are destination addresses where AlertProcessor:Receiver listens
+        config.section_("Alert")
+        config.Alert.address = "tcp://127.0.0.1:5557"
+        config.Alert.controlAddr = "tcp://127.0.0.1:5559"
+        
         return config
 
 
@@ -492,7 +507,81 @@ class TaskArchiverTest(unittest.TestCase):
 
 
         logging.info("TaskArchiver took %f seconds" % (stopTime - startTime))
+        
+
+    @staticmethod
+    def setUpReceiver(addr, controlAddr):
+        """
+        Return set up handler, receiver pair.
+        
+        TODO:
+        This method can be removed and replaced once utils.setUpReceiver
+        takes only the necessary address, controlAddr inputs.
+        once #1941 is completed. 
+        
+        """
+        handler = utils.ReceiverHandler()
+        receiver = Receiver(addr, handler, controlAddr)
+        receiver.startReceiver() # non blocking call        
+        return handler, receiver
+        
+                
+    def testTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
+        """
+        Cause exception (alert-worthy situation) in
+        the TaskArchiverPoller notifyWorkQueue method.
+        
+        """
+        myThread = threading.currentThread()
+        config = self.getConfig()
+        testTaskArchiver = TaskArchiverPoller(config = config)
+
+        # shall later be called directly from utils module
+        handler, self.alertsReceiver = \
+            self.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
+        
+        # prepare input such input which will go until where it expectantly
+        # fails and shall send an alert
+        subList = [{'id': 1}, {'id': 2}, {'id': 3}]
+        testTaskArchiver.notifyWorkQueue(subList)
+        
+        self.alertsReceiver.shutdown()
+        self.alertsReceiver = None
+        # now check if the alert was properly sent
+        self.assertEqual(len(handler.queue), 1)
+        alert = handler.queue[0]
+        self.assertEqual(alert["Source"], "TaskArchiverPoller")
+        
+    
+    def testTaskArchiverPollerAlertsSending_killSubscriptions(self):
+        """
+        Cause exception (alert-worthy situation) in
+        the TaskArchiverPoller killSubscriptions method.
+        (only 1 situation out of two tested).
+        
+        """
+        myThread = threading.currentThread()
+        config = self.getConfig()
+        testTaskArchiver = TaskArchiverPoller(config = config)
+
+        # shall later be called directly from utils module
+        handler, self.alertsReceiver = \
+            self.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
+
+        # will fail on calling .load() - regardless, the same except block
+        numAlerts = 3
+        doneList = [{'id': x} for x in range(numAlerts)]
+        # final re-raise is currently commented, so don't expect Exception here
+        testTaskArchiver.killSubscriptions(doneList)
+        
+        self.alertsReceiver.shutdown()
+        self.alertsReceiver = None
+        # now check if the alert was properly sent
+        self.assertEqual(len(handler.queue), numAlerts)
+        alert = handler.queue[0]
+        self.assertEqual(alert["Source"], "TaskArchiverPoller")
+                
+    
 
 if __name__ == '__main__':
     unittest.main()
-

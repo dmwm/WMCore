@@ -235,9 +235,7 @@ def makeRequest(kwargs, couchUrl, couchDB):
         schema['Requestor'], requestString, currentTime)
     else:
         schema['RequestName'] = "%s_%s" % (schema['Requestor'], currentTime)
-    campaign = kwargs.get("Campaign", "")
-    if campaign != "":
-        schema["Campaign"] = campaign
+    schema["Campaign"] = kwargs.get("Campaign", "")
     if 'Scenario' in kwargs and 'ProdConfigCacheID' in kwargs:
         # Use input mode to delete the unused one
         inputMode = kwargs['inputMode']
@@ -282,6 +280,7 @@ def makeRequest(kwargs, couchUrl, couchDB):
     validate(schema)
     request = maker(schema)
     helper = WMWorkloadHelper(request['WorkflowSpec'])
+    helper.setCampaign(schema["Campaign"])
     # can't save Request object directly, because it makes it hard to retrieve the _rev
     metadata = {}
     metadata.update(request)

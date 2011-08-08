@@ -198,8 +198,8 @@ class Assign(WebAPI):
         helper.setMergeParameters(int(kwargs["MinMergeSize"]),
                                   int(kwargs["MaxMergeSize"]), 
                                   int(kwargs["MaxMergeEvents"]))
-        helper.setupPerformanceMonitoring(self, int(kwargs["maxRSS"]), 
-                                                int(kwargs["maxVSize"]))
+        helper.setupPerformanceMonitoring(int(kwargs["maxRSS"]), 
+                                          int(kwargs["maxVSize"]))
         saveWorkload(helper, request['RequestWorkflow'])
  
 

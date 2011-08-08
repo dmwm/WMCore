@@ -65,7 +65,7 @@ def getAverageStdDev(numList):
 
     if math.isnan(average) or math.isinf(average):
         average = 0.0
-    if math.isnan(stdDev) or math.isnan(average):
+    if math.isnan(stdDev) or math.isinf(average):
         stdDev = 0.0
 
     

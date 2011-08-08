@@ -442,18 +442,26 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         The couch performance stuff is convoluted enough I think I want to handle it separately.
         """
-        output = {}
+        output = {'jobTime': []}
         final  = {}
-
+        
         perf = self.fwjrdatabase.loadView("FWJRDump", "performanceByWorkflowName",
                                           options = {"startkey": [workflowName],
                                                      "endkey": [workflowName]})['rows']
 
         for row in perf:
             for key in row['value'].keys():
+                if key in ['startTime', 'stopTime']:
+                    continue
                 if not key in output.keys():
                     output[key] = []
                 output[key].append(float(row['value'][key]))
+            try:
+                jobTime = row['value'].get('stopTime', None) - row['value'].get('startTime', None)
+                output['jobTime'].append(jobTime)
+            except TypeError:
+                # One of those didn't have a real value
+                pass
 
         for key in output.keys():
             final[key] = {}

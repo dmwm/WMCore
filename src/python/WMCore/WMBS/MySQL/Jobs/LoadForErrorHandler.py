@@ -104,9 +104,11 @@ class LoadForErrorHandler(DBFormatter):
             if not x['id'] in fileBinds:
                 fileBinds.append({'fileid': x['id']})
 
-        parentResult = self.dbi.processData(self.parentSQL, fileBinds, conn = conn,
-                                            transaction = transaction)
-        parentList   = self.formatDict(parentResult)
+        parentList = []
+        if len(fileBinds) > 1:
+            parentResult = self.dbi.processData(self.parentSQL, fileBinds, conn = conn,
+                                                transaction = transaction)
+            parentList   = self.formatDict(parentResult)
 
         lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn = conn,
                                           transaction = transaction)

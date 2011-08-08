@@ -36,8 +36,11 @@ from WMCore.DataStructs.Run   import Run
 
 from WMComponent.JobArchiver.JobArchiver       import JobArchiver
 from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPoller
+from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPollerException
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.Alerts.ZMQ.Receiver import Receiver
+from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 
 from nose.plugins.attrib import attr
 
@@ -66,7 +69,6 @@ class JobArchiverTest(unittest.TestCase):
         self.testInit.setupCouch("jobarchiver_t_0/jobs", "JobDump")
         self.testInit.setupCouch("jobarchiver_t_0/fwjrs", "FWJRDump")
 
-
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
@@ -75,6 +77,8 @@ class JobArchiverTest(unittest.TestCase):
         self.testDir = self.testInit.generateWorkDir(deleteOnDestruction = False)
 
         self.nJobs = 10
+        
+        self.alertsReceiver = None
 
         return
 
@@ -86,6 +90,8 @@ class JobArchiverTest(unittest.TestCase):
         self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
+        if self.alertsReceiver:
+            self.alertsReceiver.shutdown()
 
         return
 
@@ -118,6 +124,13 @@ class JobArchiverTest(unittest.TestCase):
         #config.JobArchiver.logDir                = os.path.join(self.testDir, 'logs')
         config.JobArchiver.componentDir          = self.testDir
         config.JobArchiver.numberOfJobsToCluster = 1000
+        
+        # addition for Alerts messaging framework, work (alerts) and control
+        # channel addresses to which the component will be sending alerts
+        # these are destination addresses where AlertProcessor:Receiver listens
+        config.section_("Alert")
+        config.Alert.address = "tcp://127.0.0.1:5557"
+        config.Alert.controlAddr = "tcp://127.0.0.1:5559"
 
         return config        
         
@@ -291,8 +304,72 @@ class JobArchiverTest(unittest.TestCase):
         p.print_stats(.2)
 
         return
+    
 
+    def setUpReceiver(self, addr, controlAddr):
+        """
+        Return set up handler, receiver pair.
+        
+        TODO:
+        This method can be removed and replaced once utils.setUpReceiver
+        takes only the necessary address, controlAddr inputs. 
+        
+        """
+        handler = utils.ReceiverHandler()
+        receiver = Receiver(addr, handler, controlAddr)
+        receiver.startReceiver() # non blocking call        
+        return handler, receiver
+        
+    
+    def testJobArchiverPollerAlertsSending_constructor(self):
+        """
+        Cause exception (alert-worthy situation) in
+        the JobArchiverPoller constructor.
+        
+        """
+        myThread = threading.currentThread()
+        config = self.getConfig()
+        
+        handler, self.alertsReceiver = \
+            self.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
+        
+        config.JobArchiver.logDir = ""
+        config.JobArchiver.componentDir = ""
+        # invoke exception and thus Alert message
+        self.assertRaises(JobArchiverPollerException, JobArchiverPoller, config = config)
+        self.alertsReceiver.shutdown()
+        self.alertsReceiver = None
+        # now check if the alert was properly sent
+        self.assertEqual(len(handler.queue), 1)
+        alert = handler.queue[0]
+        self.assertEqual(alert["Source"], "JobArchiverPoller")
+
+
+    def testJobArchiverPollerAlertsSending_cleanJobCache(self):
+        """
+        Cause exception (alert-worthy situation) in 
+        the cleanJobCache method.
+        
+        """
+        myThread = threading.currentThread()
+        config = self.getConfig()
+        
+        handler, self.alertsReceiver = \
+            self.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
+            
+        testJobArchiver = JobArchiverPoller(config = config)
+        
+        # invoke the problem and thus Alert message
+        job = dict(cache_dir = None)
+        testJobArchiver.cleanJobCache(job)
+        self.alertsReceiver.shutdown()
+        self.alertsReceiver = None
+        # now check if the alert was properly sent
+        self.assertEqual(len(handler.queue), 1)
+        alert = handler.queue[0]
+        self.assertEqual(alert["Source"], "JobArchiverPoller")
+        
+        
 
 if __name__ == '__main__':
     unittest.main()
-

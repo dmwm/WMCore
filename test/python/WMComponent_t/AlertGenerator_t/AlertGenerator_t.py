@@ -64,6 +64,8 @@ def getConfig(testDir):
     
     config.component_("AlertGenerator")
     config.AlertGenerator.componentDir = testDir
+    # these two values shall later be taken from a common Alerts section
+    # as already done at JobArchiver (see the test)
     config.AlertGenerator.address = "tcp://127.0.0.1:6557"
     config.AlertGenerator.controlAddr = "tcp://127.0.0.1:6559"
     # configuration for overall machine load monitor: cpuPoller (percentage values)

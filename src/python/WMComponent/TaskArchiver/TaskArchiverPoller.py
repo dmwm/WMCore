@@ -38,6 +38,7 @@ from WMCore.WMBS.Subscription   import Subscription
 from WMCore.WMBS.Fileset        import Fileset
 from WMCore.DAOFactory          import DAOFactory
 from WMCore.WorkQueue.WorkQueue import localQueue
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 from WMCore.WMException         import WMException
 from WMCore.Database.CMSCouch   import CouchServer
 from WMCore.DataStructs.Run     import Run
@@ -260,18 +261,19 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         for sub in subList:
             subIDs.append(sub['id'])        
-        
-        try:
-            elements = self.workQueue.doneWork(SubscriptionId = subIDs)
-            return list(set([x['SubscriptionId'] for x in elements]))
-        except Exception, ex:
-            msg =  "Error talking to workqueue: %s\n" % str(ex)
-            msg += "Tried to complete the following: %s\n" % subIDs
-            logging.error(msg)
-            self._sendAlert(1, msg = msg)
+            try:
+                self.workQueue.doneWork(SubscriptionId = sub['id'])
+                subIDs.append(sub['id'])
+            except WorkQueueNoMatchingElements:
+                # subscription wasn't known to workqueue, feel free to clean up
+                subIDs.append(sub['id'])
+            except Exception, ex:
+                msg =  "Error talking to workqueue: %s\n" % str(ex)
+                msg += "Tried to complete the following: %s\n" % subIDs
+                logging.error(msg)
+                self._sendAlert(1, msg = msg)
 
         return []
-
     
     def _sendAlert(self, level, **args):
         """

@@ -22,6 +22,7 @@ from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
 from WMCore.WorkQueue.Policy.Start import startPolicy
 from WMCore.WorkQueue.Policy.End import endPolicy
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 from WMCore.WorkQueue.WorkQueueUtils import get_dbs
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
@@ -190,7 +191,7 @@ class WorkQueue(WorkQueueBase):
         except TypeError:
             elementIDs = [elementIDs]
 
-        if status == 'Canceled': # Cancel Needs special actions
+        if status == 'Canceled': # Cancel needs special actions
             return self.cancelWork(elementIDs, SubscriptionId, WorkflowName)
 
         args = {}
@@ -200,13 +201,13 @@ class WorkQueue(WorkQueueBase):
             args['RequestName'] = WorkflowName
 
         affected = self.backend.getElements(elementIDs = elementIDs, **args)
+        if not affected:
+            raise WorkQueueNoMatchingElements, "No matching elements"
 
         for x in affected:
             x['Status'] = status
         elements = self.backend.saveElements(*affected)
-        
-        if not affected:
-            raise RuntimeError, "Status not changed: No matching elements"
+
         return elements
 
     def setPriority(self, newpriority, *workflowNames):
@@ -342,31 +343,9 @@ class WorkQueue(WorkQueueBase):
     def doneWork(self, elementIDs = None, SubscriptionId = None, WorkflowName = None):
         """Mark work as done
         """
-        try:
-            return self.setStatus('Done', elementIDs = elementIDs, SubscriptionId = SubscriptionId, WorkflowName = WorkflowName)
-        except RuntimeError:
-            if SubscriptionId:
-                self.logger.info("""Done Update: Only some subscription is 
-                                    updated Might be the child subscriptions: %s""" 
-                                    % elementIDs)
-                return elementIDs
-            else:
-                raise
-
-    def failWork(self, elementIDs, id_type = 'id'):
-        """Mark work as failed"""
-        try:
-            return self.setStatus('Failed', elementIDs, id_type)
-        except RuntimeError:
-            if id_type == "subscription_id":
-                self.logger.info("""Fail update: Only some subscription is 
-                                    updated Might be the child subscriptions: %s""" 
-                                    % elementIDs)
-                return elementIDs
-            else:
-                raise
-        return elementIDs
-
+        return self.setStatus('Done', elementIDs = elementIDs,
+                              SubscriptionId = SubscriptionId,
+                              WorkflowName = WorkflowName)
 
     def cancelWork(self, elementIDs = None, SubscriptionId = None, WorkflowName = None, elements = None):
         """Cancel work - delete in wmbs, delete from workqueue db, set canceled in inbox

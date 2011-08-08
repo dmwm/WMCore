@@ -30,3 +30,13 @@ class WorkQueueNoWorkError(WorkQueueError):
             self.msg = "No work in spec: '%s' Check inputs" % self.wmspec.name()
         else:
             self.msg = "No work in spec: Check inputs"
+
+class WorkQueueNoMatchingElements(WorkQueueError):
+    """Didn't find any element"""
+    def __init__(self, error):
+        WorkQueueError.__init__(self, error)
+        self.msg = WorkQueueNoMatchingElements.__class__.__name__
+        self.error = error
+
+    def __str__(self):
+        return "%s: %s" % (self.msg, self.error)

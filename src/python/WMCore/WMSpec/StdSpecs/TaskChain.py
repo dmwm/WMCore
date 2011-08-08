@@ -144,7 +144,7 @@ class TaskChainWorkloadFactory(StdBase):
                     self.workload.setDashboardActivity("production")
                     self.workload.setWorkQueueSplitPolicy("MonteCarlo", taskConf['SplittingAlgorithm'], 
                                                           taskConf['SplittingArguments'])
-                    self.workload.setEndPolicy("SingleShot", SuccessThreshold = 0.9)
+                    self.workload.setEndPolicy("SingleShot")
                     self.setupGeneratorTask(task, taskConf)
                 else:
                     # process an existing dataset

@@ -140,6 +140,7 @@ class CreateWMBSBase(DBCreator):
              name         VARCHAR(255) NOT NULL,
              task         VARCHAR(500) NOT NULL,
              owner        INTEGER      NOT NULL,
+             injected     INT(1)       DEFAULT 0,
              UNIQUE(name, task),
              FOREIGN KEY(owner)    REFERENCES wmbs_users(id)
                ON DELETE CASCADE)"""

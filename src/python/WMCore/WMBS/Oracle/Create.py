@@ -212,7 +212,8 @@ class Create(CreateWMBSBase):
                spec  VARCHAR(500) NOT NULL,
                name  VARCHAR(255) NOT NULL,
                task  VARCHAR(500) NOT NULL,
-               owner INTEGER      NOT NULL
+               owner INTEGER      NOT NULL,
+               injected CHAR(1)   DEFAULT '0'
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_workflow"] = \

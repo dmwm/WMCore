@@ -342,5 +342,50 @@ class WorkflowTest(unittest.TestCase):
             wf.delete()
             self.assertEqual(countSpecDAO.execute(spec = spec), 10 - (i + 1))
 
+
+        return
+
+
+    def testWorkflowInjectMarking(self):
+        """
+        _testWorkflowInjectMarking_
+
+        Test whether or not we can mark a workflow as injected or not.
+        """
+
+        spec  = "spec.py"
+        owner = "moron"
+
+
+        workflows = []
+        for i in range(0, 10):
+            testWorkflow = Workflow(spec = spec, owner = owner,
+                                    name = "wf00%i" % i, task = "task%i" % i)
+            testWorkflow.create()
+            workflows.append(testWorkflow)
+
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        getAction = daoFactory(classname = "Workflow.GetInjectedWorkflows")
+        markAction = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
+
+        result = getAction.execute(injected = True)
+        self.assertEqual(len(result), 0)
+        result = getAction.execute(injected = False)
+        self.assertEqual(len(result), 10)
+
+        names = ['wf002', 'wf004', 'wf006', 'wf008']
+        markAction.execute(names = names, injected = True)
+
+        
+        result = getAction.execute(injected = True)
+        self.assertEqual(result, names)
+        result = getAction.execute(injected = False)
+        self.assertEqual(len(result), 6)
+        return
+        
+
+
 if __name__ == "__main__":
     unittest.main()

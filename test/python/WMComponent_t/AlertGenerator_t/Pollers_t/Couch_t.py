@@ -251,8 +251,10 @@ class CouchTest(unittest.TestCase):
         self.assertFalse(res)
         # test definitely existing value
         res = poller.sample("200")
-        self.assertTrue(isinstance(res, types.IntType))
-        
+        # on a freshly started couch, this status code may not exist in the
+        # stats table, so despite correct and meaningful HTTP status code, the
+        # query may still return None, hence don't assume any particular response
+        #self.assertTrue(isinstance(res, types.IntType))
         poller.check()
         
         

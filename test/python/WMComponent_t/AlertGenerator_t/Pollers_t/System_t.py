@@ -145,6 +145,15 @@ class SystemTest(unittest.TestCase):
         self._doPeriodPoller(thresholdToTest, level, self.config.AlertGenerator.cpuPoller,
                              CPUPoller, expected = 0)
         
+    
+    def testMemoryPollerBasic(self):
+        self.config.AlertGenerator.memPoller.soft = 70
+        self.config.AlertGenerator.memPoller.critical = 80
+        self.config.AlertGenerator.memPoller.pollInterval = 0.2
+        self.config.AlertGenerator.memPoller.period = 1
+        poller = MemoryPoller(self.config.AlertGenerator.memPoller, self.generator)
+        poller.check()
+        
                 
     def testMemoryPollerSoftThreshold(self):
         self.config.AlertGenerator.memPoller.soft = 70

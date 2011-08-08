@@ -224,7 +224,6 @@ class AlertGeneratorTest(unittest.TestCase):
         time.sleep(5)
         self._stopComponent()
         
-        
 
     def testAllFinalClassPollerImplementations(self):
         """

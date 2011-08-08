@@ -117,8 +117,9 @@ class MemoryPoller(PeriodPoller):
         None is passed here (see check below).
                 
         """        
-        # used_phymem(): return the amount of physical memory used, in bytes
-        usedPhyMemPercent = psutil.used_phymem() / (psutil.TOTAL_PHYMEM / 100.0)
+        # psutil.phymem_usage(): returns:
+        # usage(total=8367161344, used=3072045056, free=5295116288, percent=26.800000000000001)
+        usedPhyMemPercent = psutil.phymem_usage().percent
         return usedPhyMemPercent
         
         

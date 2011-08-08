@@ -360,7 +360,12 @@ class StdBase(object):
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                         scramArch = self.scramArch)
-        mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
+
+        if dataTier == "DQM":
+            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge", dqm_format = True)
+        else:
+            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
+            
         mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
 

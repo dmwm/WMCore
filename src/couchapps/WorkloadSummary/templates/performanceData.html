@@ -1,0 +1,44 @@
+<html>
+  <head>
+    <title>Workflow Performance Histogram</title>
+    <script src="/_utils/script/json2.js"></script>
+    <script src="/_utils/script/jquery.js"></script>
+     <script src="/_utils/script/jquery.couch.js"></script>
+    <script type="text/javascript" src="vendor/protovis/protovis-r3.2.js"></script>
+    <script type="text/javascript" src="js/protovisHistogram.js"></script>
+    <script type="text/javascript" src="js/dataMap/histogramData.js"></script>
+    <style type="text/css">
+    #center {
+      display: table-cell;
+      vertical-align: middle;
+    }
+    
+    #fig {
+      position: relative;
+      margin: auto;
+      width: 200px;
+      height: 200px;
+    }
+    </style>
+  </head>
+  <body>
+       <div id="center">
+           <div id="fig">
+               <script>
+                   couchDB = $.couch.db("taskarchiver_t_performance");
+                   couchDB.view("WorkloadSummary/performanceDataByCampaign",{
+                            key: {{campaign}},
+                            group_level: 1,
+                            success : function(data){
+                                var histDataArray = convertToHistogramData(data);
+                                for (var i in histDataArray) {
+                                    var config = {width: 200, height:100};
+                                    pHistogram(config, histDataArray[i].histoData)
+                                }
+                            }
+                           });
+               </script>
+           </div>
+       </div>
+  </body>
+</html>

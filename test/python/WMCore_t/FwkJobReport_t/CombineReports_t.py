@@ -185,6 +185,8 @@ class CombineReports_t(unittest.TestCase):
             AggrFunctions['storage.readTotalSecs'](aggr.values['storage.readTotalSecs']))
         self.assertEqual(performance.memory.PeakValueVsize,
             AggrFunctions['memory.PeakValueVsize'](aggr.values['memory.PeakValueVsize']))
+        
+        self.assertEqual(performance.multicore.stepEfficiency, 1)
     
 if __name__ == '__main__':
     unittest.main()

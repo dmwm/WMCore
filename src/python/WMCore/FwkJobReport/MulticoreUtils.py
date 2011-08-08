@@ -124,24 +124,32 @@ class Aggregator(object):
         self.report.multicore.coresUsed = self.numCores
         if self.values.has_key("cpu.TotalJobTime"):
             vals = self.values["cpu.TotalJobTime"]
+            self.report.multicore.summedProcessTime = sum(vals)
             self.report.multicore.averageProcessTime = average(vals)
             self.report.multicore.maxProcessTime = max(vals)
             self.report.multicore.minProcessTime = min(vals)
             self.report.multicore.processWaitingTime = max(vals) - min(vals)
-        
+            
+            stepEffNom = float(sum(vals)) / float((max(vals) * self.numCores))
+            stepEffDenom = float(average(vals))   / float(max(vals))
+            stepEff = stepEffNom/stepEffDenom
+            self.report.multicore.stepEfficiency = stepEff
+            
+            
         # frame in the merge report values
         # need to be set from the MulticoreCMSSW Executor
         self.report.multicore.mergeStartTime = None
         self.report.multicore.mergeEndTime = None
         self.report.multicore.numberOfMerges = None
-        self.report.multicore.totalJobTime = None
+        self.report.multicore.totalStepTime = None
         self.report.multicore.averageMergeTime = None
         self.report.multicore.maxMergeTime = None
         self.report.multicore.minMergeTime = None
         
+
+
         
-        
-def updateMulticoreReport(reportInstance, numMerges, mergeStart, mergeEnd, totalJobTime, *mergeData):
+def updateMulticoreReport(reportInstance, numMerges, mergeStart, mergeEnd, totalStepTime, *mergeData):
     """
     _updateMulticoreReport_
     
@@ -153,7 +161,7 @@ def updateMulticoreReport(reportInstance, numMerges, mergeStart, mergeEnd, total
     sect.mergeStartTime = mergeStart
     sect.mergeEndTime = mergeEnd
     sect.numberOfMerges = numMerges
-    sect.totalJobTime = totalJobTime
+    sect.totalStepTime = totalStepTime
     if len(mergeData) == 0: return
     sect.maxMergeTime = max(mergeData)
     sect.minMergeTime = min(mergeData)

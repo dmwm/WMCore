@@ -56,9 +56,6 @@ class MonteCarlo(StartPolicyInterface):
         if self.initialTask.totalEvents() < 1:
             raise WorkQueueNoWorkError(self.wmspec, 'Invalid total events selection: %s' % str(self.initialTask.totalEvents()))
 
-        if not self.initialTask.siteWhitelist():
-            raise WorkQueueWMSpecError(self.wmspec, "Site whitelist mandatory for MonteCarlo")
-
         if self.mask and self.mask['LastEvent'] < self.mask['FirstEvent']:
             raise WorkQueueWMSpecError(self.wmspec, "Invalid start & end events")
 

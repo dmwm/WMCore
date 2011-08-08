@@ -86,13 +86,7 @@ class MonteCarloTestCase(unittest.TestCase):
 
     def testInvalidSpecs(self):
         """Specs with no work"""
-        # no whitelist
         mcspec = monteCarloWorkload('testProcessingInvalid', mcArgs)
-        getFirstTask(mcspec).setSiteWhitelist(None)
-        for task in mcspec.taskIterator():
-            self.assertRaises(WorkQueueWMSpecError, MonteCarlo(), mcspec, task)
-        getFirstTask(mcspec).setSiteWhitelist([])
-
         # 0 events
         getFirstTask(mcspec).addProduction(totalevents = 0)
         for task in mcspec.taskIterator():

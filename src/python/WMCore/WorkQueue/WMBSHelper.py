@@ -183,6 +183,7 @@ class WMBSHelper(WMConnectionBase):
         self.setFileAddChecksum      = self.daofactory(classname = "Files.AddChecksumByLFN")
         self.addFileAction           = self.daofactory(classname = "Files.Add")
         self.addToFileset            = self.daofactory(classname = "Files.AddDupsToFileset")
+        self.getLocations            = self.daofactory(classname = "Locations.ListSites")
         self.getLocationInfo         = self.daofactory(classname = "Locations.GetSiteInfo")
 
         # DAOs from DBSBuffer for file commit
@@ -313,10 +314,9 @@ class WMBSHelper(WMConnectionBase):
         for key in needed:
             if self.mask and self.mask.get(key) is None:
                 raise RuntimeError, 'Invalid value "%s" for %s' % (self.mask.get(key), key)
-        if not self.wmSpec.getTopLevelTask()[0].siteWhitelist():
-            raise RuntimeError, "Site whitelist mandatory for MonteCarlo"
         locations = set()
-        for site in self.wmSpec.getTopLevelTask()[0].siteWhitelist():
+        for site in self.getLocations.execute(conn = self.getDBConn(),
+                                              transaction = self.existingTransaction()):
             try:
                 siteInfo = self.getLocationInfo.execute(site, conn = self.getDBConn(),
                                        transaction = self.existingTransaction())

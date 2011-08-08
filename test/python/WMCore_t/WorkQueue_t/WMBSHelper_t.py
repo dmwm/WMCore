@@ -753,7 +753,6 @@ class WMBSHelperTest(unittest.TestCase):
         wmspec = monteCarloWorkload(name, mcArgs)
         wmspec.setSpecUrl("/path/to/workload")        
         getFirstTask(wmspec).addProduction(totalevents = 10000)
-        getFirstTask(wmspec).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
         return wmspec
 
     def getDBS(self, wmspec):

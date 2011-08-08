@@ -792,12 +792,6 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, mcspec.specUrl())
         getFirstTask(mcspec).setSiteWhitelist([])
 
-        # no whitelist
-        getFirstTask(mcspec).setSiteWhitelist(None)
-        mcspec.save(mcspec.specUrl())
-        self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, mcspec.specUrl())
-        getFirstTask(mcspec).setSiteWhitelist([])
-
         # 0 events
         getFirstTask(mcspec).addProduction(totalevents = 0)
         mcspec.save(mcspec.specUrl())

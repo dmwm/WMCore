@@ -31,11 +31,12 @@ class GetOutputPoller(BaseWorkerThread):
         self.myThread = threading.currentThread()
         logging.info("Thread: [%s]" %str(self.myThread ))
 
+        """
         self.daoFactory = DAOFactory(package = "BossLite",
                                      logger = self.myThread.logger,
                                      dbinterface = self.myThread.dbi)
         self.getjobs    = self.daoFactory(classname = "Job.LoadForOutput")
-
+        """
         self.processPool = ProcessPool(
                       "GetOutputLite.OutputWorker", 
                       self.config.GetOutputLite.processes, 
@@ -67,7 +68,10 @@ class GetOutputPoller(BaseWorkerThread):
         """
         logging.debug("Thread [%s]"%str(self.myThread))
 
+        logging.error("Component NOT active")
+        return
 
+        """
         ## processing done and aborted jobs..finished jobs!
         for statme in ['SD', 'A']:
             logging.info('Processing "%s" status...'%statme)
@@ -105,4 +109,4 @@ class GetOutputPoller(BaseWorkerThread):
                 logging.info('No jobs to process!')
         
         return
-
+        """

@@ -15,9 +15,6 @@ import threading
 from WMCore.Agent.Harness import Harness
 #from WMCore.WMFactory import WMFactory
 
-from WMComponent.JobStatusLite.JobStatusPoller import JobStatusPoller
-from WMComponent.JobStatusLite.StatusScheduling import StatusScheduling
-
 from WMCore.BossAir.StatusPoller import StatusPoller
 
 
@@ -49,19 +46,6 @@ class JobStatusLite(Harness):
         myThread = threading.currentThread()
         logging.info(str(myThread))
 
-        #logging.info("Setting poll interval to %s seconds" \
-        #              %str(self.config.JobStatusLite.pollInterval) )
-        #myThread.workerThreadManager.addWorker( \
-        #                      JobStatusPoller(self.config), \
-        #                      self.config.JobStatusLite.pollInterval \
-        #                    )
-        
-        #logging.info("Setting query interval to %s seconds" \
-        #              %str(self.config.JobStatusLite.queryInterval) )
-        #myThread.workerThreadManager.addWorker( \
-        #                      StatusScheduling(self.config), \
-        #                      self.config.JobStatusLite.queryInterval \
-        #                    )
 
         logging.info("Setting poll interval to %s seconds" \
                       %str(self.config.JobStatusLite.pollInterval) )

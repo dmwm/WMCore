@@ -15,8 +15,6 @@ from WMCore.Database.DBCreator import DBCreator
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 
-from WMCore.BossLite.MySQL.Create import Create
-
 class Destroy(DBCreator):    
     """
     BossAir.Destroy

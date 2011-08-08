@@ -14,7 +14,7 @@ from WMCore.JobStateMachine.ChangeState import Transitions
 
 class Create(DBCreator):
     """
-    This should create the BossLite schema; since they don't do it.
+    This should create the BossAir schema; since they don't do it.
 
     """
 

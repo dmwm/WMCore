@@ -73,7 +73,8 @@ class SystemTest(unittest.TestCase):
 
     def _doPeriodPoller(self, thresholdToTest, level, config,
                         pollerClass, expected = 0):
-        handler, receiver = utils.setUpReceiver(self.generator.config)    
+        handler, receiver = utils.setUpReceiver(self.generator.config.Alert.address,
+                                                self.generator.config.Alert.controlAddr)    
         numMeasurements = config.period / config.pollInterval
         poller = pollerClass(config, self.generator)
         # inject own input sample data provider, there will be 1 input argument we don't want here
@@ -100,7 +101,7 @@ class SystemTest(unittest.TestCase):
             # change to send a second
             self.assertEqual(len(handler.queue), expected)
             a = handler.queue[0]
-            # soft threshold - alert should have 'all' level
+            # soft threshold - alert should have soft level
             self.assertEqual(a["Level"], level)
             self.assertEqual(a["Component"], self.generator.__class__.__name__)
             self.assertEqual(a["Source"], poller.__class__.__name__)
@@ -114,7 +115,7 @@ class SystemTest(unittest.TestCase):
         self.config.AlertGenerator.cpuPoller.critical = 80
         self.config.AlertGenerator.cpuPoller.pollInterval = 0.2
         self.config.AlertGenerator.cpuPoller.period = 1
-        level = self.config.AlertProcessor.all.level
+        level = self.config.AlertProcessor.soft.level
         thresholdToTest = self.config.AlertGenerator.cpuPoller.soft
         self._doPeriodPoller(thresholdToTest, level, self.config.AlertGenerator.cpuPoller,
                              CPUPoller, expected = 1)
@@ -160,7 +161,7 @@ class SystemTest(unittest.TestCase):
         self.config.AlertGenerator.memPoller.critical = 80
         self.config.AlertGenerator.memPoller.pollInterval = 0.2
         self.config.AlertGenerator.memPoller.period = 1
-        level = self.config.AlertProcessor.all.level
+        level = self.config.AlertProcessor.soft.level
         thresholdToTest = self.config.AlertGenerator.memPoller.soft
         self._doPeriodPoller(thresholdToTest, level, self.config.AlertGenerator.memPoller,
                              MemoryPoller, expected = 1)
@@ -221,7 +222,8 @@ none                   4085528       628   4084900   1% /dev/shm
         # inject own input sample data provider
         poller.sample = partial(self._dfCommandOutputGenerator, thresholdToTest, thresholdToTest + 10)
         
-        handler, receiver = utils.setUpReceiver(self.generator.config)    
+        handler, receiver = utils.setUpReceiver(self.generator.config.Alert.address,
+                                                self.generator.config.Alert.controlAddr)    
         proc = multiprocessing.Process(target = poller.poll, args = ())
         proc.start()
         self.assertTrue(proc.is_alive())
@@ -243,7 +245,7 @@ none                   4085528       628   4084900   1% /dev/shm
             # change to send a second
             self.assertEqual(len(handler.queue), expected)
             a = handler.queue[0]
-            # soft threshold - alert should have 'all' level
+            # soft threshold - alert should have soft level
             self.assertEqual(a["Level"], level)
             self.assertEqual(a["Component"], self.generator.__class__.__name__)
             self.assertEqual(a["Source"], poller.__class__.__name__)
@@ -258,7 +260,7 @@ none                   4085528       628   4084900   1% /dev/shm
         self.config.AlertGenerator.diskSpacePoller.soft = 60
         self.config.AlertGenerator.diskSpacePoller.critical = 90
         self.config.AlertGenerator.diskSpacePoller.pollInterval = 0.2
-        level = self.config.AlertProcessor.all.level
+        level = self.config.AlertProcessor.soft.level
         thresholdToTest = self.config.AlertGenerator.diskSpacePoller.soft
         self._doDiskPoller(thresholdToTest, level, self.config.AlertGenerator.diskSpacePoller,
                            expected = 1)

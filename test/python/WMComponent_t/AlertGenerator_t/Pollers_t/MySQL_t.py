@@ -92,7 +92,7 @@ class MySQLTest(unittest.TestCase):
         ppti.pollerClass = MySQLCPUPoller       
         ppti.config = self.config.AlertGenerator.mysqlCPUPoller
         ppti.thresholdToTest = self.config.AlertGenerator.mysqlCPUPoller.soft
-        ppti.level = self.config.AlertProcessor.all.level
+        ppti.level = self.config.AlertProcessor.soft.level
         ppti.expected = 1
         ppti.thresholdDiff = 10
         ppti.testCase = self
@@ -141,7 +141,7 @@ class MySQLTest(unittest.TestCase):
         ppti.pollerClass = MySQLMemoryPoller
         ppti.config = self.config.AlertGenerator.mysqlMemPoller
         ppti.thresholdToTest = self.config.AlertGenerator.mysqlMemPoller.soft
-        ppti.level = self.config.AlertProcessor.all.level
+        ppti.level = self.config.AlertProcessor.soft.level
         ppti.expected = 1
         ppti.thresholdDiff = 10
         ppti.testCase = self
@@ -206,7 +206,7 @@ class MySQLTest(unittest.TestCase):
         ti.pollerClass = MySQLDbSizePoller
         ti.config = self.config.AlertGenerator.mysqlDbSizePoller
         ti.thresholdToTest = self.config.AlertGenerator.mysqlDbSizePoller.soft
-        ti.level = self.config.AlertProcessor.all.level
+        ti.level = self.config.AlertProcessor.soft.level
         ti.expected = 1
         ti.thresholdDiff = 1
         ti.testCase = self

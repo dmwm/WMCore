@@ -36,7 +36,7 @@ class ForwardSinkTest(unittest.TestCase):
         self.controlAddr2 = "tcp://127.0.0.1:15559"
         
         self.outputfileCritical = "/tmp/ForwardSinkTestCritical.json"
-        self.outputfileAll = "/tmp/ForwardSinkTestAll.json"
+        self.outputfileSoft = "/tmp/ForwardSinkTestSoft.json"
 
         self._cleanUpFiles()
                 
@@ -46,7 +46,7 @@ class ForwardSinkTest(unittest.TestCase):
 
     
     def _cleanUpFiles(self):
-        for f in (self.outputfileCritical, self.outputfileAll):
+        for f in (self.outputfileCritical, self.outputfileSoft):
             if os.path.exists(f):
                 os.remove(f)
         
@@ -72,24 +72,24 @@ class ForwardSinkTest(unittest.TestCase):
         config1 = Configuration()
         config1.component_("AlertProcessor")
         config1.AlertProcessor.section_("critical")
-        config1.AlertProcessor.section_("all")
+        config1.AlertProcessor.section_("soft")
         
         config1.AlertProcessor.critical.level = 5
-        config1.AlertProcessor.all.level = 0
-        config1.AlertProcessor.all.bufferSize = 0
+        config1.AlertProcessor.soft.level = 0
+        config1.AlertProcessor.soft.bufferSize = 0
         
         config1.AlertProcessor.critical.section_("sinks")
-        config1.AlertProcessor.all.section_("sinks")
+        config1.AlertProcessor.soft.section_("sinks")
         
         config1.AlertProcessor.critical.sinks.section_("forward")
-        config1.AlertProcessor.all.sinks.section_("forward")
+        config1.AlertProcessor.soft.sinks.section_("forward")
         # address of the Receiver2
         config1.AlertProcessor.critical.sinks.forward.address = self.address2
         config1.AlertProcessor.critical.sinks.forward.controlAddr = self.controlAddr2
         config1.AlertProcessor.critical.sinks.forward.label = "ForwardSinkTest"
-        config1.AlertProcessor.all.sinks.forward.address = self.address2
-        config1.AlertProcessor.all.sinks.forward.controlAddr = self.controlAddr2
-        config1.AlertProcessor.all.sinks.forward.label = "ForwardSinkTest"
+        config1.AlertProcessor.soft.sinks.forward.address = self.address2
+        config1.AlertProcessor.soft.sinks.forward.controlAddr = self.controlAddr2
+        config1.AlertProcessor.soft.sinks.forward.label = "ForwardSinkTest"
         
         # 1) first item of the chain is source of Alerts: worker()   
         
@@ -103,20 +103,20 @@ class ForwardSinkTest(unittest.TestCase):
         config2 = Configuration()
         config2.component_("AlertProcessor")
         config2.AlertProcessor.section_("critical")
-        config2.AlertProcessor.section_("all")
+        config2.AlertProcessor.section_("soft")
         
         config2.AlertProcessor.critical.level = 5
-        config2.AlertProcessor.all.level = 0
-        config2.AlertProcessor.all.bufferSize = 0
+        config2.AlertProcessor.soft.level = 0
+        config2.AlertProcessor.soft.bufferSize = 0
         
         config2.AlertProcessor.critical.section_("sinks")
-        config2.AlertProcessor.all.section_("sinks")
+        config2.AlertProcessor.soft.section_("sinks")
         
         config2.AlertProcessor.critical.sinks.section_("file")
-        config2.AlertProcessor.all.sinks.section_("file")
+        config2.AlertProcessor.soft.sinks.section_("file")
         # configuration of the final sink
         config2.AlertProcessor.critical.sinks.file.outputfile = self.outputfileCritical
-        config2.AlertProcessor.all.sinks.file.outputfile = self.outputfileAll
+        config2.AlertProcessor.soft.sinks.file.outputfile = self.outputfileSoft
                 
         processor2 = Processor(config2.AlertProcessor)
         # final FileSink will be automatically created by the Processor
@@ -138,13 +138,13 @@ class ForwardSinkTest(unittest.TestCase):
         print "Receiver2 shut."
 
         # check the result in the files
-        # the bufferSize for 'all'-type Alerts was set to 0 so all
-        # Alerts should be present also in the 'all' type file
+        # the bufferSize for soft-level Alerts was set to 0 so all
+        # Alerts should be present also in the soft-level type file
         # initial 10 Alerts (Level 0 .. 9) gets distributed though a cascade
         # of two Receivers, Level 0 gets lots (interested only in higher than 0),
-        # so Receiver1 forwards through its ForwardSink 1 .. 9 Alerts as 'all' and
+        # so Receiver1 forwards through its ForwardSink 1 .. 9 Alerts as soft and
         # 6 .. 9 level Alerts through 'critical'. Receiver2 receives these two
-        # bunches and stores 1 .. 9 + 6 .. 9 into 'all' file and 6 ..9 +
+        # bunches and stores 1 .. 9 + 6 .. 9 into soft file and 6 ..9 +
         # 6 .. 9 into 'critical' file ; order is not guaranteed
         # critical Alerts
         fileConfig = ConfigSection("file")
@@ -157,9 +157,9 @@ class ForwardSinkTest(unittest.TestCase):
         for a in loadAlerts:
             self.assertEqual(a["Details"], d)
             
-        # all Alerts
+        # soft Alerts
         fileConfig = ConfigSection("file")
-        fileConfig.outputfile = self.outputfileAll
+        fileConfig.outputfile = self.outputfileSoft
         sink = FileSink(fileConfig)
         expectedLevels = range(1, 10) + range(6, 10)  # 1 .. 9, 6 .. 9
         loadAlerts = sink.load()

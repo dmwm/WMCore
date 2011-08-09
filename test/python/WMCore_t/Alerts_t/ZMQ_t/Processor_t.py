@@ -66,24 +66,24 @@ class ProcessorTest(unittest.TestCase):
         self.addr = "tcp://127.0.0.1:5557"
         self.ctrl = "tcp://127.0.0.1:5559"
         
-        self.allOutputFile = "/tmp/ProcessorTestAllAlerts.json"
+        self.softOutputFile = "/tmp/ProcessorTestSoftAlerts.json"
         self.criticalOutputFile = "/tmp/ProcessorTestCriticalAlerts.json"
         
         self.config = Configuration()
         self.config.component_("AlertProcessor")
         self.config.AlertProcessor.section_("critical")
-        self.config.AlertProcessor.section_("all")
+        self.config.AlertProcessor.section_("soft")
         
         self.config.AlertProcessor.critical.level = 5
-        self.config.AlertProcessor.all.level = 0
-        self.config.AlertProcessor.all.bufferSize = 3
+        self.config.AlertProcessor.soft.level = 0
+        self.config.AlertProcessor.soft.bufferSize = 3
         
         self.config.AlertProcessor.critical.section_("sinks")
-        self.config.AlertProcessor.all.section_("sinks")
+        self.config.AlertProcessor.soft.section_("sinks")
                         
         
     def tearDown(self):
-        for f in (self.criticalOutputFile, self.allOutputFile):
+        for f in (self.criticalOutputFile, self.softOutputFile):
             if os.path.exists(f):
                 os.remove(f)
         if hasattr(self, "testInit"):
@@ -118,8 +118,8 @@ class ProcessorTest(unittest.TestCase):
         config.critical.sinks.section_("file")
         config.critical.sinks.file.outputfile = self.criticalOutputFile 
         
-        config.all.sinks.section_("file")
-        config.all.sinks.file.outputfile = self.allOutputFile
+        config.soft.sinks.section_("file")
+        config.soft.sinks.file.outputfile = self.softOutputFile
         
         processor = Processor(config)
         rec = Receiver(self.addr, processor, self.ctrl)
@@ -134,17 +134,17 @@ class ProcessorTest(unittest.TestCase):
             time.sleep(0.1)
             
         # now check the FileSink output files for content:
-        # the all Alerts has threshold level set to 0 so Alerts
+        # the soft Alerts has threshold level set to 0 so Alerts
         # with level 1 and higher, resp. for critical the level
         # was above set to 5 so 6 and higher out of worker's 0 .. 9
         # (10 Alerts altogether) shall be present
-        allSink = FileSink(config.all.sinks.file)
+        softSink = FileSink(config.soft.sinks.file)
         criticalSink = FileSink(config.critical.sinks.file)
-        allList = allSink.load()
+        softList = softSink.load()
         criticalList = criticalSink.load()
-        # check 'all' levels
-        self.assertEqual(len(allList), 9) # levels 1 .. 9 went in
-        for a, level in zip(allList, range(1, 9)):
+        # check soft level alerts
+        self.assertEqual(len(softList), 9) # levels 1 .. 9 went in
+        for a, level in zip(softList, range(1, 9)):
             self.assertEqual(a["Level"], level)
         # check 'critical' levels
         self.assertEqual(len(criticalList), 4) # only levels 6 .. 9 went in

@@ -13,11 +13,11 @@ real sending of Alert instances.
     TODO: understand the above problem, the code below fails:
     
     def testSenderReceiver1(self):        
-        self.sender, self.handler, self.receiver = self._setUpReceiver()
+        self.sender, self.handler, self.receiver = setUpReceiver()
         self.receiver.shutdown()
 
     def testSenderReceiver2(self):
-        self.sender, self.handler, self.receiver = self._setUpReceiver()
+        self.sender, self.handler, self.receiver = setUpReceiver()
         self.receiver.shutdown()    
     
      
@@ -89,10 +89,11 @@ class BaseTest(unittest.TestCase):
                     
 
     def testSenderReceiverBasic(self):
-        sender = Sender(self.config.AlertGenerator.address,
+        sender = Sender(self.config.Alert.address,
                         self.__class__.__name__,
-                        self.config.AlertGenerator.controlAddr)
-        handler, receiver = utils.setUpReceiver(self.config)
+                        self.config.Alert.controlAddr)
+        handler, receiver = utils.setUpReceiver(self.config.Alert.address,
+                                                self.config.Alert.controlAddr)
         a = Alert(Component = "testSenderReceiverBasic")
         sender(a)
         time.sleep(0.5)
@@ -177,9 +178,9 @@ class BaseTest(unittest.TestCase):
         config = getConfig("/tmp")
         config.component_("AlertProcessor")
         config.AlertProcessor.section_("critical")
-        config.AlertProcessor.section_("all")
+        config.AlertProcessor.section_("soft")
         config.AlertProcessor.critical.level = 5
-        config.AlertProcessor.all.level = 0        
+        config.AlertProcessor.soft.level = 0        
         config.component_("AlertGenerator")
         config.AlertGenerator.section_("bogusPoller")
         config.AlertGenerator.bogusPoller.soft = 5 # [percent]
@@ -237,9 +238,9 @@ class BaseTest(unittest.TestCase):
         config = getConfig("/tmp")
         config.component_("AlertProcessor")
         config.AlertProcessor.section_("critical")
-        config.AlertProcessor.section_("all")
+        config.AlertProcessor.section_("soft")
         config.AlertProcessor.critical.level = 5
-        config.AlertProcessor.all.level = 0        
+        config.AlertProcessor.soft.level = 0        
         config.component_("AlertGenerator")
         config.AlertGenerator.section_("bogusPoller")
         # put some threshold numbers, just need to check output calculation

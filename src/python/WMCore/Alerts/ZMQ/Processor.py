@@ -51,27 +51,27 @@ def dispatcher(targets, config):
     
     Targets arg should be a dict of coroutines to handle the appropriate
     level of alert message and contain routines for handling
-    "all" and "critical" alerts.
+    "soft" and "critical" alerts.
     
     """
     # these levels shall IMO be always defined in the very input configuration
     # otherwise the altered behaviour is difficult to unmask, i.e.
     # rather than using getattr with default value on next two lines
     criticalThreshold = config.critical.level
-    allThreshold = config.all.level
+    softThreshold = config.soft.level
     while True:
         alert = (yield)
-        if alert.level > allThreshold:
-            targets["all"].send(alert)
+        if alert.level > softThreshold:
+            targets["soft"].send(alert)
         if alert.level > criticalThreshold:
             targets["critical"].send(alert)
             
 
             
 @coroutine
-def handleAll(targets, config):
+def handleSoft(targets, config):
     """
-    Handler for all alerts, essentially acts as an in-memory buffer to 
+    Handler for soft-level alerts, essentially acts as an in-memory buffer to 
     store N alerts and dispatch them to a set of handlers.
     
     """
@@ -107,7 +107,7 @@ class Processor(object):
     
     """
     def __init__(self, config):
-        allFunctions = {}
+        softFunctions = {}
         criticalFunctions = {}
 
         def getFunctions(config):
@@ -119,19 +119,19 @@ class Processor(object):
                     r[sink] = sinksMap[sink](sinkConfig)
             return r
 
-        # set up methods for the all alert handler which will buffer 
+        # set up methods for the soft-level alert handler which will buffer 
         # and flush to the sinks when the buffer is full
-        allSection = config.all
-        allFunctions = getFunctions(allSection)
+        softSection = config.soft
+        softFunctions = getFunctions(softSection)
         
-        # set up handlers for critical alerts
+        # set up handlers for critical-level alerts
         # critical alerts are passed straight through to the handlers
         # as they arrive, no buffering takes place
         criticalSection = config.critical
         criticalFunctions = getFunctions(criticalSection)
          
         pipelineFunctions = {
-            "all": handleAll(allFunctions, allSection),
+            "soft": handleSoft(softFunctions, softSection),
             "critical": handleCritical(criticalFunctions, criticalSection)
         }
         

@@ -68,7 +68,7 @@ class CouchTest(unittest.TestCase):
         ti.pollerClass = CouchDbSizePoller
         ti.config = self.config.AlertGenerator.couchDbSizePoller
         ti.thresholdToTest = self.config.AlertGenerator.couchDbSizePoller.soft
-        ti.level = self.config.AlertProcessor.all.level
+        ti.level = self.config.AlertProcessor.soft.level
         ti.expected = 1
         ti.thresholdDiff = 4
         ti.testCase = self
@@ -140,7 +140,7 @@ class CouchTest(unittest.TestCase):
         ppti.pollerClass = CouchCPUPoller       
         ppti.config = self.config.AlertGenerator.couchCPUPoller
         ppti.thresholdToTest = self.config.AlertGenerator.couchCPUPoller.soft
-        ppti.level = self.config.AlertProcessor.all.level
+        ppti.level = self.config.AlertProcessor.soft.level
         ppti.expected = 1
         ppti.thresholdDiff = 10
         ppti.testCase = self
@@ -189,7 +189,7 @@ class CouchTest(unittest.TestCase):
         ppti.pollerClass = CouchMemoryPoller
         ppti.config = self.config.AlertGenerator.couchMemPoller
         ppti.thresholdToTest = self.config.AlertGenerator.couchMemPoller.soft
-        ppti.level = self.config.AlertProcessor.all.level
+        ppti.level = self.config.AlertProcessor.soft.level
         ppti.expected = 1
         ppti.thresholdDiff = 10
         ppti.testCase = self
@@ -268,7 +268,7 @@ class CouchTest(unittest.TestCase):
         ti.pollerClass = CouchErrorsPoller
         ti.config = self.config.AlertGenerator.couchErrorsPoller
         ti.thresholdToTest = self.config.AlertGenerator.couchErrorsPoller.soft
-        ti.level = self.config.AlertProcessor.all.level
+        ti.level = self.config.AlertProcessor.soft.level
         ti.expected = len(self.config.AlertGenerator.couchErrorsPoller.observables)
         ti.thresholdDiff = 10
         ti.testCase = self

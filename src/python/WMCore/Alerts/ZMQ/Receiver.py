@@ -129,7 +129,7 @@ class ReceiverLogic(object):
                 self._processControlData(controlData)
         self._isReady = False
         logging.info("Receiver background loop finished. Some Alerts of "
-                     "'all' type may be unflushed at the Processor and will now be lost.")
+                     "'soft' level/threshold may be unflushed at the Processor and will now be lost.")
         
                 
     def isReady(self):

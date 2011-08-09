@@ -87,15 +87,14 @@ def getProcess(numChildren = 0):
 
 
 
-def setUpReceiver(entireConfig):
+def setUpReceiver(address, controlAddr):
     """
     Return set up handler, receiver pair.
+    Receiver starts two channels on the address and controlAddr addresses.
     
     """
     handler = ReceiverHandler()
-    receiver = Receiver(entireConfig.AlertGenerator.address,
-                        handler,
-                        entireConfig.AlertGenerator.controlAddr)
+    receiver = Receiver(address, handler, controlAddr)
     receiver.startReceiver() # non blocking call        
     return handler, receiver
 
@@ -112,7 +111,8 @@ def doProcessPolling(ppti):
     except Exception, ex:
         ppti.testCase.fail("%s: exception: %s" % (ppti.testCase.testName, ex))
     
-    handler, receiver = setUpReceiver(ppti.testCase.generator.config)
+    handler, receiver = setUpReceiver(ppti.testCase.generator.config.Alert.address,
+                                      ppti.testCase.generator.config.Alert.controlAddr)
     
     procWorker = multiprocessing.Process(target = worker, args = ())
     procWorker.start()
@@ -152,7 +152,7 @@ def doProcessPolling(ppti):
         # change to send a second
         ppti.testCase.assertEqual(len(handler.queue), ppti.expected)
         a = handler.queue[0]
-        # soft threshold - alert should have 'all' level
+        # soft threshold - alert should have soft level
         ppti.testCase.assertEqual(a["Level"], ppti.level)
         ppti.testCase.assertEqual(a["Component"], ppti.testCase.generator.__class__.__name__)
         ppti.testCase.assertEqual(a["Source"], poller.__class__.__name__)            
@@ -177,7 +177,8 @@ def doGenericValueBasedPolling(ti):
     poller.sample = lambda dir: random.randint(ti.thresholdToTest,
                                                ti.thresholdToTest + ti.thresholdDiff)
     
-    handler, receiver = setUpReceiver(ti.testCase.generator.config)    
+    handler, receiver = setUpReceiver(ti.testCase.generator.config.Alert.address,
+                                      ti.testCase.generator.config.Alert.controlAddr)    
     proc = multiprocessing.Process(target = poller.poll, args = ())
     proc.start()
     ti.testCase.assertTrue(proc.is_alive())
@@ -199,7 +200,7 @@ def doGenericValueBasedPolling(ti):
         # change to send a second
         ti.testCase.assertEqual(len(handler.queue), ti.expected)
         a = handler.queue[0]
-        # soft threshold - alert should have 'all' level
+        # soft threshold - alert should have soft level
         ti.testCase.assertEqual(a["Level"], ti.level)
         ti.testCase.assertEqual(a["Component"], ti.testCase.generator.__class__.__name__)
         ti.testCase.assertEqual(a["Source"], poller.__class__.__name__)

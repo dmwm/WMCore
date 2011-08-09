@@ -508,23 +508,6 @@ class TaskArchiverTest(unittest.TestCase):
 
         logging.info("TaskArchiver took %f seconds" % (stopTime - startTime))
         
-
-    @staticmethod
-    def setUpReceiver(addr, controlAddr):
-        """
-        Return set up handler, receiver pair.
-        
-        TODO:
-        This method can be removed and replaced once utils.setUpReceiver
-        takes only the necessary address, controlAddr inputs.
-        once #1941 is completed. 
-        
-        """
-        handler = utils.ReceiverHandler()
-        receiver = Receiver(addr, handler, controlAddr)
-        receiver.startReceiver() # non blocking call        
-        return handler, receiver
-        
                 
     def testTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
         """
@@ -538,17 +521,21 @@ class TaskArchiverTest(unittest.TestCase):
 
         # shall later be called directly from utils module
         handler, self.alertsReceiver = \
-            self.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
+            utils.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
         
         # prepare input such input which will go until where it expectantly
         # fails and shall send an alert
+        # this will currently fail in the TaskArchiverPoller killSubscriptions
+        # on trying to access .load() method which items of below don't have.
+        # should anything change in the TaskArchiverPoller without modifying this
+        # test accordingly, it may be failing ...
+        print "failures 'AttributeError: 'dict' object has no attribute 'load' expected ..."
         subList = [{'id': 1}, {'id': 2}, {'id': 3}]
         testTaskArchiver.notifyWorkQueue(subList)
-        
         self.alertsReceiver.shutdown()
         self.alertsReceiver = None
-        # now check if the alert was properly sent
-        self.assertEqual(len(handler.queue), 1)
+        # now check if the alert was properly sent (expect this many failures)    
+        self.assertEqual(len(handler.queue), len(subList))
         alert = handler.queue[0]
         self.assertEqual(alert["Source"], "TaskArchiverPoller")
         
@@ -566,7 +553,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         # shall later be called directly from utils module
         handler, self.alertsReceiver = \
-            self.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
+            utils.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
 
         # will fail on calling .load() - regardless, the same except block
         numAlerts = 3

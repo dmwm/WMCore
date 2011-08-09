@@ -100,9 +100,9 @@ class CouchPoller(PeriodPoller):
             msg = ("%s: polling not possible, reason: %s" % (self.__class__.__name__, ex))
             logging.error(msg)
             # send one-off set up alert, instantiate ad-hoc alert Sender
-            sender = Sender(self.generator.config.AlertGenerator.address,
+            sender = Sender(self.generator.config.Alert.address,
                              self.__class__.__name__,
-                             self.generator.config.AlertGenerator.controlAddr)
+                             self.generator.config.Alert.controlAddr)
             a = Alert(**self.preAlert)
             a["Source"] = self.__class__.__name__
             a["Timestamp"] = time.time()
@@ -151,9 +151,9 @@ class CouchDbSizePoller(DirectorySizePoller):
                    (self.__class__.__name__, ex))
             logging.error(msg)            
             # send one-off set up alert, instantiate ad-hoc alert Sender
-            sender = Sender(self.generator.config.AlertGenerator.address,
+            sender = Sender(self.generator.config.Alert.address,
                              self.__class__.__name__,
-                             self.generator.config.AlertGenerator.controlAddr)
+                             self.generator.config.Alert.controlAddr)
             a = Alert(**self.preAlert)
             a["Source"] = self.__class__.__name__
             a["Timestamp"] = time.time()

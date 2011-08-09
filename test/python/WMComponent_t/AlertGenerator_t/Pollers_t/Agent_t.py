@@ -67,9 +67,9 @@ class AgentTest(unittest.TestCase):
         config = getConfig("/tmp")
         config.component_("AlertProcessor")
         config.AlertProcessor.section_("critical")
-        config.AlertProcessor.section_("all")
+        config.AlertProcessor.section_("soft")
         config.AlertProcessor.critical.level = 5
-        config.AlertProcessor.all.level = 0        
+        config.AlertProcessor.soft.level = 0        
         config.component_("AlertGenerator")
         config.AlertGenerator.section_("bogusPoller")
         config.AlertGenerator.bogusPoller.soft = 5 # [percent]
@@ -115,7 +115,8 @@ class AgentTest(unittest.TestCase):
 
     def _doComponentsPoller(self, thresholdToTest, level, config,
                             pollerClass, expected = 0):
-        handler, receiver = utils.setUpReceiver(self.config)
+        handler, receiver = utils.setUpReceiver(self.generator.config.Alert.address,
+                                                self.generator.config.Alert.controlAddr)
         
         procWorker = multiprocessing.Process(target = utils.worker, args = ())
         procWorker.start()
@@ -154,7 +155,7 @@ class AgentTest(unittest.TestCase):
             # change to send a second
             self.assertEqual(len(handler.queue), expected)
             a = handler.queue[0]
-            # soft threshold - alert should have 'all' level
+            # soft threshold - alert should have 'soft' level
             self.assertEqual(a["Level"], level)
             self.assertEqual(a["Component"], self.generator.__class__.__name__)
             self.assertEqual(a["Source"], poller.__class__.__name__)
@@ -165,7 +166,7 @@ class AgentTest(unittest.TestCase):
         self.config.AlertGenerator.componentsCPUPoller.critical = 80
         self.config.AlertGenerator.componentsCPUPoller.pollInterval = 0.2
         self.config.AlertGenerator.componentsCPUPoller.period = 1
-        level = self.config.AlertProcessor.all.level
+        level = self.config.AlertProcessor.soft.level
         thresholdToTest = self.config.AlertGenerator.componentsCPUPoller.soft
         self._doComponentsPoller(thresholdToTest, level,
                                  self.config.AlertGenerator.componentsCPUPoller,
@@ -202,7 +203,7 @@ class AgentTest(unittest.TestCase):
         self.config.AlertGenerator.componentsMemPoller.critical = 80
         self.config.AlertGenerator.componentsMemPoller.pollInterval = 0.2
         self.config.AlertGenerator.componentsMemPoller.period = 1
-        level = self.config.AlertProcessor.all.level
+        level = self.config.AlertProcessor.soft.level
         thresholdToTest = self.config.AlertGenerator.componentsMemPoller.soft
         self._doComponentsPoller(thresholdToTest, level,
                                  self.config.AlertGenerator.componentsMemPoller,
@@ -244,19 +245,20 @@ class AgentTest(unittest.TestCase):
         # check if the live agent configuration was loaded (above this class)    
         if globals().has_key("config"):
             self.config = config
-            # AlertProcessor values - values for Level all (soft), resp. critical
+            # AlertProcessor values - values for Level soft, resp. critical
             # are also needed by this AlertGenerator test
             self.config.component_("AlertProcessor")
             self.config.AlertProcessor.componentDir = "/tmp"
             self.config.AlertProcessor.section_("critical")
-            self.config.AlertProcessor.section_("all")
+            self.config.AlertProcessor.section_("soft")
             self.config.AlertProcessor.critical.level = 5
-            self.config.AlertProcessor.all.level = 0
+            self.config.AlertProcessor.soft.level = 0
             
             self.config.component_("AlertGenerator")
             self.config.AlertGenerator.componentDir = "/tmp"
-            self.config.AlertGenerator.address = "tcp://127.0.0.1:6557"
-            self.config.AlertGenerator.controlAddr = "tcp://127.0.0.1:6559"
+            self.config.section_("Alert")
+            self.config.Alert.address = "tcp://127.0.0.1:6557"
+            self.config.Alert.controlAddr = "tcp://127.0.0.1:6559"
             
             self.config.AlertGenerator.section_("componentsCPUPoller")
         else:
@@ -272,7 +274,8 @@ class AgentTest(unittest.TestCase):
         # mock generator instance to communicate some configuration values
         self.generator = utils.AlertGeneratorMock(self.config)
         
-        handler, receiver = utils.setUpReceiver(self.generator.config)
+        handler, receiver = utils.setUpReceiver(self.generator.config.Alert.address,
+                                                self.generator.config.Alert.controlAddr)
 
         numMeasurements = self.config.AlertGenerator.componentsCPUPoller.period / self.config.AlertGenerator.componentsCPUPoller.pollInterval
         poller = ComponentsCPUPoller(self.config.AlertGenerator.componentsCPUPoller, self.generator)

@@ -305,22 +305,6 @@ class JobArchiverTest(unittest.TestCase):
 
         return
     
-
-    @staticmethod
-    def setUpReceiver(addr, controlAddr):
-        """
-        Return set up handler, receiver pair.
-        
-        TODO:
-        This method can be removed and replaced once utils.setUpReceiver
-        takes only the necessary address, controlAddr inputs. 
-        
-        """
-        handler = utils.ReceiverHandler()
-        receiver = Receiver(addr, handler, controlAddr)
-        receiver.startReceiver() # non blocking call        
-        return handler, receiver
-        
     
     def testJobArchiverPollerAlertsSending_constructor(self):
         """
@@ -332,7 +316,7 @@ class JobArchiverTest(unittest.TestCase):
         config = self.getConfig()
         
         handler, self.alertsReceiver = \
-            self.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
+            utils.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
         
         config.JobArchiver.logDir = ""
         config.JobArchiver.componentDir = ""
@@ -356,7 +340,7 @@ class JobArchiverTest(unittest.TestCase):
         config = self.getConfig()
         
         handler, self.alertsReceiver = \
-            self.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
+            utils.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
             
         testJobArchiver = JobArchiverPoller(config = config)
         

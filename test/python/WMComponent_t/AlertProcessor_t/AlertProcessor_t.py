@@ -35,14 +35,14 @@ class AlertProcessorTest(unittest.TestCase):
         self.config.CoreDatabase.connectUrl = os.environ.get("DATABASE")
         
         self.config.AlertProcessor.section_("critical")
-        self.config.AlertProcessor.section_("all")
+        self.config.AlertProcessor.section_("soft")
 
         self.config.AlertProcessor.critical.level = 5
-        self.config.AlertProcessor.all.level = 0
-        self.config.AlertProcessor.all.buffer_size = 3
+        self.config.AlertProcessor.soft.level = 0
+        self.config.AlertProcessor.soft.buffer_size = 3
 
         self.config.AlertProcessor.critical.section_("sinks")
-        self.config.AlertProcessor.all.section_("sinks")
+        self.config.AlertProcessor.soft.section_("sinks")
 
 
     def tearDown(self):

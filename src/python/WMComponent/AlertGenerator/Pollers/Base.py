@@ -72,20 +72,21 @@ class BasePoller(object):
     
     """
     def __init__(self, config, generator):
+        # it's particular Poller config only
         self.config = config
         # reference to AlertGenerator instance
         self.generator = generator
-        # store levels (critical, all) for critical, all thresholds correspondence
+        # store levels (critical, soft) for critical, soft thresholds correspondence
         # these values are defined in the AlertProcessor config
         # self.levels and self.thresholds has to have the same corresponding order
         # and critical has to be first - if this threshold is caught, no point testing soft one
         self.levels = [self.generator.config.AlertProcessor.critical.level,
-                       self.generator.config.AlertProcessor.all.level]
+                       self.generator.config.AlertProcessor.soft.level]
         # critical, soft threshold values
         self.thresholds = [self.config.critical, self.config.soft]
         # pre-generated alert values, but before sending always new instance is created
         # these values are used to update the newly created instance
-        self.preAlert = Alert(Type = "MachineMonitoringAlert",
+        self.preAlert = Alert(Type = "WMAgent",
                               Workload = "n/a",
                               Component = self.generator.__class__.__name__,
                               Source = "<to_overwrite>") 
@@ -98,9 +99,9 @@ class BasePoller(object):
         here. Each poller instance has its own sender instance.
         
         """
-        self.sender = Sender(self.generator.config.AlertGenerator.address,
+        self.sender = Sender(self.generator.config.Alert.address,
                              self.__class__.__name__,
-                             self.generator.config.AlertGenerator.controlAddr)
+                             self.generator.config.Alert.controlAddr)
         self.sender.register()
         while True:
             # it would feel that check() takes long time but there is
@@ -117,9 +118,9 @@ class BasePoller(object):
         visible to this process.
         
         """
-        sender = Sender(self.generator.config.AlertGenerator.address,
+        sender = Sender(self.generator.config.Alert.address,
                         self.__class__.__name__,
-                        self.generator.config.AlertGenerator.controlAddr)
+                        self.generator.config.Alert.controlAddr)
         sender.unregister()
         
         
@@ -128,7 +129,7 @@ class PeriodPoller(BasePoller):
     """
     Collects samples over a configurable period of time.
     Collected samples are evaluated once in the period and compared
-    with soft (all), resp. critical (critical) thresholds.
+    with soft, resp. critical thresholds.
     
     """
     

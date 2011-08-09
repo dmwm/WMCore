@@ -53,21 +53,24 @@ def getConfig(testDir):
     config.Agent.teamName = "team1,team2,cmsdataops"
     config.Agent.agentName = "WMAgentCommissioning"
 
-    # AlertProcessor values - values for Level all (soft), resp. critical
+    # AlertProcessor values - values for Level soft, resp. critical
     # are also needed by this AlertGenerator test
     config.component_("AlertProcessor")
     config.AlertProcessor.componentDir = testDir
     config.AlertProcessor.section_("critical")
-    config.AlertProcessor.section_("all")
+    config.AlertProcessor.section_("soft")
     config.AlertProcessor.critical.level = 5
-    config.AlertProcessor.all.level = 0
+    config.AlertProcessor.soft.level = 0
+    
+    # common 'Alert' section
+    config.section_("Alert")
+    # destination for the alert messages
+    config.Alert.address = "tcp://127.0.0.1:6557"
+    # control channel (internal alerts system commands)
+    config.Alert.controlAddr = "tcp://127.0.0.1:6559"
     
     config.component_("AlertGenerator")
     config.AlertGenerator.componentDir = testDir
-    # these two values shall later be taken from a common Alerts section
-    # as already done at JobArchiver (see the test)
-    config.AlertGenerator.address = "tcp://127.0.0.1:6557"
-    config.AlertGenerator.controlAddr = "tcp://127.0.0.1:6559"
     # configuration for overall machine load monitor: cpuPoller (percentage values)
     config.AlertGenerator.section_("cpuPoller")
     config.AlertGenerator.cpuPoller.soft = 70 # [percent]

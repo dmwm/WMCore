@@ -3,8 +3,8 @@ Component of WMAgent that runs periodic checks of various runtime
 metrics on the WMAgent host machine. Alerts are send out if soft, resp.
 critical thresholds of particular metrics are exceeded.
 
-"soft" metric's threshold results in sending "all" (i.e. buffered) Alert
-"critical" metric's threshold results in sending "critical" (i.e. non-buffered) Alert
+"soft" metric's threshold - "soft" (buffered) Alert
+"critical" metric's threshold - "critical" (i.e. non-buffered) Alert
 soft, vs critical Alert is distinguished by setting Level attribute of the Alert
 instance and it's up to AlertProcessor configuration which levels are considered below
 soft, resp. below critical. These AlertProcessor conf values are taken here.

@@ -57,8 +57,8 @@ import os
 import time
 from StringIO import StringIO
 
-from lxml import etree
-from lxml import objectify
+#from lxml import etree
+#from lxml import objectify
 
 from WMCore.Alerts.ZMQ.Sinks.FileSink import FileSink
 

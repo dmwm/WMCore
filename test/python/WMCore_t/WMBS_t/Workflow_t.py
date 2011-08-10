@@ -50,7 +50,7 @@ class WorkflowTest(unittest.TestCase):
         called before and after creation and after deletion.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task='Test')
+                                name = "wf001", task='Test', wfType="ReReco")
 
         self.assertEqual(testWorkflow.exists(), False,
                          "ERROR: Workflow exists before it was created")
@@ -144,7 +144,7 @@ class WorkflowTest(unittest.TestCase):
           Workflow.LoadFromSpecOwner
         """
         testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
-                                 name = "wf001", task='Test')
+                                 name = "wf001", task='Test', wfType="ReReco")
         testWorkflowA.create()
 
         testWorkflowB = Workflow(name = "wf001", task='Test')
@@ -154,6 +154,7 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.name == testWorkflowB.name) and
                         (testWorkflowA.spec == testWorkflowB.spec) and
                         (testWorkflowA.task == testWorkflowB.task) and
+                        (testWorkflowA.wfType == testWorkflowB.wfType) and
                         (testWorkflowA.owner == testWorkflowB.owner),
                         "ERROR: Workflow.LoadFromName Failed")
         
@@ -164,6 +165,7 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.name == testWorkflowC.name) and
                         (testWorkflowA.spec == testWorkflowC.spec) and
                         (testWorkflowA.task == testWorkflowC.task) and
+                        (testWorkflowA.wfType == testWorkflowC.wfType) and                        
                         (testWorkflowA.owner == testWorkflowC.owner),
                         "ERROR: Workflow.LoadFromID Failed")
         
@@ -174,6 +176,7 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.name == testWorkflowD.name) and
                         (testWorkflowA.spec == testWorkflowD.spec) and
                         (testWorkflowA.task == testWorkflowD.task) and
+                        (testWorkflowA.wfType == testWorkflowD.wfType) and                        
                         (testWorkflowA.owner == testWorkflowD.owner),
                         "ERROR: Workflow.LoadFromSpecOwner Failed")
 

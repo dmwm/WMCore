@@ -33,11 +33,13 @@ class Workflow(WMBSBase, WMWorkflow):
     
     workflow + fileset = subscription
     """
-    def __init__(self, spec = None, owner = None, dn = None, name = None, task = None, id = -1):
+    def __init__(self, spec = None, owner = None, dn = None, name = None,
+                 task = None, wfType = None, id = -1):
         WMBSBase.__init__(self)
-        WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn, name = name, task = task)
+        WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn,
+                            name = name, task = task, wfType = wfType)
 
-        if not self.dn: self.dn = owner  
+        if not self.dn: self.dn = owner
         self.id = id
         return
         
@@ -104,7 +106,8 @@ class Workflow(WMBSBase, WMWorkflow):
 
         action = self.daofactory(classname = "Workflow.New")
         action.execute(spec = self.spec, owner = userid, name = self.name,
-                       task = self.task, conn = self.getDBConn(),
+                       task = self.task, wfType = self.wfType,
+                       conn = self.getDBConn(),
                        transaction = self.existingTransaction())
         
         self.id = self.exists()
@@ -155,6 +158,7 @@ class Workflow(WMBSBase, WMWorkflow):
         self.name = result["name"]
         self.owner = result["owner"]
         self.task = result["task"]
+        self.wfType = result["type"]
 
         action = self.daofactory(classname = "Workflow.LoadOutput")
         results = action.execute(workflow = self.id, conn = self.getDBConn(),

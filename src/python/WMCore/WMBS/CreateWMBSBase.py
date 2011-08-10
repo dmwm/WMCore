@@ -139,6 +139,7 @@ class CreateWMBSBase(DBCreator):
              spec         VARCHAR(500) NOT NULL,
              name         VARCHAR(255) NOT NULL,
              task         VARCHAR(500) NOT NULL,
+             type         VARCHAR(255),
              owner        INTEGER      NOT NULL,
              injected     INT(1)       DEFAULT 0,
              UNIQUE(name, task),

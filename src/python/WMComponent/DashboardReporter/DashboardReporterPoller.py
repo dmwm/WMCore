@@ -151,7 +151,8 @@ class DashboardReporterPoller(BaseWorkerThread):
             package['retryCount']      = job['retryCount']
             package['MessageTS']       = time.time()
             package['MessageType']     = 'JobMeta'
-            package['JobType']         = job['taskType']
+            package['JobType']         = job['jobType']
+            package['TaskType']        = job['taskType']
             package['StatusValue']     = 'submitted'
             package['scheduler']       = 'BossAir'
             package['StatusEnterTime'] = job.get('timestamp', time.time())
@@ -278,7 +279,6 @@ class DashboardReporterPoller(BaseWorkerThread):
         package['jobId']          = 'taskMeta'
         package['JSTool']         = 'WMAgent'
         package['JSToolVersion']  = '0.7.13'
-        package['TaskType']       = 'reprocessing'
         package['CMSUser']        = user
         package['Workflow']       = name
         package['AgentName']      = self.agentName

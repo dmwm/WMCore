@@ -411,6 +411,7 @@ class WMBSHelperTest(unittest.TestCase):
         can be used by the subscription creation test.
         """
         testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setDashboardActivity("TestReReco")
         testWorkload.setSpecUrl("/path/to/workload")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM", {'dn': 'MyDN'})
 
@@ -511,6 +512,8 @@ class WMBSHelperTest(unittest.TestCase):
 
         self.assertEqual(procWorkflow.owner, "sfoulkes@fnal.gov",
                          "Error: Wrong owner.")
+        self.assertEqual(procWorkflow.wfType, "TestReReco",
+                         "Error: Wrong type.")
         self.assertEqual(procWorkflow.spec, os.path.join(self.workDir, procWorkflow.name,
                                                          "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")

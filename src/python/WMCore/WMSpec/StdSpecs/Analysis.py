@@ -51,6 +51,7 @@ class AnalysisWorkloadFactory(StdBase):
         
         """
         workload = self.createWorkload()
+        workload.setDashboardActivity("analysis")
         analysisTask = workload.newTask("Analysis")
 
         (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = self.inputDataset[1:].split("/")

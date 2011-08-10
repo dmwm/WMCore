@@ -64,6 +64,7 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
          self.inputDataTier) = self.inputDataset[1:].split("/")
 
         workload = self.createWorkload()
+        workload.setDashboardActivity("production")
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         procTask = workload.newTask("MonteCarloFromGEN")
 

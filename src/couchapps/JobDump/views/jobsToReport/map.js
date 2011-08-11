@@ -23,6 +23,7 @@ function(doc) {
                           'name': doc['name'],
                           'requestName': doc['workflow'],
                           'taskType': doc['taskType'],
+                          'jobType': doc['jobType'],
                           'user': doc['user'],
                           'group': doc['group'],
                           'retryCount': retryCount,

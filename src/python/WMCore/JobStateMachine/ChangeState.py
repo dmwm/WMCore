@@ -188,7 +188,8 @@ class ChangeState(WMObject, WMConnectionBase):
                 jobDocument["type"] = "job"
                 jobDocument["user"] = job.get("user", None)
                 jobDocument["group"] = job.get("group", None)
-                jobDocument["taskType"] = job.get("taskType", None)
+                jobDocument["taskType"] = job.get("taskType", "Unknown")
+                jobDocument["jobType"] = job.get("jobType", "Unknown")
 
                 couchRecordsToUpdate.append({"jobid": job["id"],
                                              "couchid": jobDocument["_id"]})                
@@ -259,6 +260,7 @@ class ChangeState(WMObject, WMConnectionBase):
           - user
           - group
           - taskType
+          - jobType
           - performance
         """
         updateBase = "/" + self.jobsdatabase.name + "/_design/JobDump/_update/dashboardReporting/"

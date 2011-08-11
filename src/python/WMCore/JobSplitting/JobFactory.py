@@ -120,6 +120,8 @@ class JobFactory(WMObject):
         self.currentJob = self.jobInstance(name, files)
         self.currentJob["task"] = self.subscription.taskName()
         self.currentJob["workflow"] = self.subscription.workflowName()
+        self.currentJob["jobType"] = self.subscription["type"]
+        self.currentJob["taskType"] = self.subscription.workflowType()
         self.currentJob["owner"] = self.subscription.owner()
         self.currentJob["siteBlacklist"] = self.siteBlacklist
         self.currentJob["siteWhitelist"] = self.siteWhitelist

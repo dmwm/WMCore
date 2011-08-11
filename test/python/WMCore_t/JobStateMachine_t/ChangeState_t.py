@@ -512,7 +512,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site1", seName = "somese.cern.ch")
         
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = "Test", type = "ReDigi")
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -543,11 +543,9 @@ class TestChangeState(unittest.TestCase):
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "sfoulkes"
         testJobA["group"] = "DMWM"
-        testJobA["taskType"] = "Merge"
         testJobB = jobGroup.jobs[1]
         testJobB["user"] = "sfoulkes"
         testJobB["group"] = "DMWM"
-        testJobB["taskType"] = "Processing"
 
         change.propagate([testJobA, testJobB], "new", "none")
         change.propagate([testJobA, testJobB], "created", "new")
@@ -592,15 +590,18 @@ class TestChangeState(unittest.TestCase):
 
         goldenTransitions = [{"name": testJobA["name"], "retryCount": 0, "newState": "jobfailed",
                               "oldState": "complete", "requestName": "wf001", "user": "sfoulkes",
-                              "group": "DMWM", "taskType": "Merge", "performance": {}, "exitCode": 0},
+                              "group": "DMWM", "jobType": "Processing", "taskType": "ReDigi",
+                              "performance": {}, "exitCode": 0},
                              {"name": testJobB["name"], "retryCount": 1, "newState": "executing",
                               "oldState": "created", "requestName": "wf001", "user": "sfoulkes",
-                              "group": "DMWM", "taskType": "Processing", "performance": {}, "exitCode": 0},
+                              "group": "DMWM", "jobType": "Processing", "taskType": "ReDigi",
+                              "performance": {}, "exitCode": 0},
                              {"name": testJobB["name"], "retryCount": 1, "newState": "success",
                               "oldState": "complete", "requestName": "wf001", "user": "sfoulkes",
-                              "group": "DMWM", "taskType": "Processing", "performance": {}, "exitCode": 0}]
+                              "group": "DMWM", "jobType": "Processing", "taskType": "ReDigi",
+                              "performance": {}, "exitCode": 0}]
         self.assertEqual(transitions, goldenTransitions,
-                         "Error: Wrong transitions.")
+                         "Error: Wrong transitions: %s %s" % (transitions, goldenTransitions))
 
         xmlPath = os.path.join(getWMBASE(),
                                "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")

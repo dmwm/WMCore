@@ -425,7 +425,7 @@ class JobCreatorPoller(BaseWorkerThread):
 
             workflow         = Workflow(id = wmbsSubscription["workflow"].id)
             workflow.load()
-            wmbsSubscription['workflow'].name = workflow.name
+            wmbsSubscription['workflow'] = workflow
             wmWorkload       = retrieveWMSpec(workflow = workflow)
 
             if not workflow.task or not wmWorkload:
@@ -527,7 +527,6 @@ class JobCreatorPoller(BaseWorkerThread):
                                              'cacheDir':job['cache_dir']})
                         job["user"] = wmWorkload.getOwner()["name"]
                         job["group"] = wmWorkload.getOwner()["group"]
-                        job["taskType"] = wmTask.taskType()
                 # Set the caches in the database
                 try:
                     if len(nameDictList) > 0:

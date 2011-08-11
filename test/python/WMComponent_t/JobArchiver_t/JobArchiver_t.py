@@ -39,7 +39,6 @@ from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPoller
 from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPollerException
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.Alerts.ZMQ.Receiver import Receiver
 from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 
 from nose.plugins.attrib import attr
@@ -352,7 +351,7 @@ class JobArchiverTest(unittest.TestCase):
         # now check if the alert was properly sent
         self.assertEqual(len(handler.queue), 1)
         alert = handler.queue[0]
-        self.assertEqual(alert["Source"], "JobArchiverPoller")
+        self.assertEqual(alert["Source"], testJobArchiver.__class__.__name__)
         
         
 

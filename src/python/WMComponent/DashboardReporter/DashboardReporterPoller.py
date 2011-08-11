@@ -13,11 +13,9 @@ import socket
 import os.path
 import logging
 
-
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.WMException                     import WMException
 from WMCore.JobStateMachine.ChangeState     import ChangeState
-
 from WMCore.Services.Dashboard.DashboardAPI import apmonSend, apmonFree
 
 
@@ -41,7 +39,6 @@ class DashboardReporterPoller(BaseWorkerThread):
     """
 
 
-
     def __init__(self, config):
         BaseWorkerThread.__init__(self)
         self.config = config
@@ -53,9 +50,6 @@ class DashboardReporterPoller(BaseWorkerThread):
         self.serverreport = [destHost + ':' + str(destPort)]
 
         self.changeState = ChangeState(self.config)
-        #self.dashboard   = DashboardInterface(destHost = destHost,
-        #                                      destPort = destPort,
-        #                                      destPasswd = destPass)
 
         #self.apmonsender = ApmonIf() 
         self.taskCache = []
@@ -63,7 +57,13 @@ class DashboardReporterPoller(BaseWorkerThread):
         if hasattr(config, 'Agent'):
             self.agentName = "%s@%s" % (getattr(config.Agent, 'agentName', 'WMAgent'),
                                         socket.getfqdn(socket.gethostname()))
-        return
+
+        # initialize the alert framework (if available)
+        # sender: instance of Alert messages Sender
+        # preAlert: pre-defined values for Alert instances generated from this class  
+        self.preAlert, self.sender = \
+            BaseWorkerThread.setUpAlertsMessaging(self, compName = "DashboardReporter")
+        self.sendAlert = BaseWorkerThread.getSendAlert(self.sender, self.preAlert)
 
 
     def terminate(self, params):
@@ -91,6 +91,7 @@ class DashboardReporterPoller(BaseWorkerThread):
             msg =  "Unhandled exception in DashboardReporter\n"
             msg += str(ex)
             logging.error(msg)
+            self.sendAlert(6, msg = msg)
             raise DashboardReporterException(msg)
 
         return
@@ -158,12 +159,17 @@ class DashboardReporterPoller(BaseWorkerThread):
             package['StatusEnterTime'] = job.get('timestamp', time.time())
                         
             logging.info("Sending: %s" % str(package))
-            result = apmonSend( taskid = package['taskId'], jobid = package['jobId'], params = package, logr = logging, apmonServer = self.serverreport)
+            result = apmonSend(taskid = package['taskId'],
+                               jobid = package['jobId'],
+                               params = package,
+                               logr = logging,
+                               apmonServer = self.serverreport)
 
             if result != 0:
                 msg =  "Error %i sending info for submitted job %s via UDP\n" % (result, job['name'])
                 msg += "Ignoring"
                 logging.error(msg)
+                self.sendAlert(6, msg = msg)
                 logging.debug("Package sent: %s\n" % package)
                 logging.debug("Host info: host %s, port %s, pass %s" \
                               % (self.config.DashboardReporter.dashboardHost,
@@ -201,6 +207,7 @@ class DashboardReporterPoller(BaseWorkerThread):
                 msg =  "Error %i sending info for completed job %s via UDP\n" % (result, job['name'])
                 msg += "Ignoring"
                 logging.error(msg)
+                self.sendAlert(6, msg = msg)
                 logging.debug("Package sent: %s\n" % package)
                 logging.debug("Host info: host %s, port %s, pass %s" \
                               % (self.config.DashboardReporter.dashboardHost,
@@ -255,6 +262,7 @@ class DashboardReporterPoller(BaseWorkerThread):
                 msg =  "Error %i sending info for completed job %s via UDP\n" % (result, job['name'])
                 msg += "Ignoring"
                 logging.error(msg)
+                self.sendAlert(6, msg = msg)
                 logging.debug("Package sent: %s\n" % package)
                 logging.debug("Host info: host %s, port %s, pass %s" \
                               % (self.config.DashboardReporter.dashboardHost,
@@ -293,6 +301,7 @@ class DashboardReporterPoller(BaseWorkerThread):
             msg =  "Error %i sending info for new task %s via UDP\n" % (result, name)
             msg += "Ignoring"
             logging.error(msg)
+            self.sendAlert(6, msg = msg)
             logging.debug("Package sent: %s\n" % package)
             logging.debug("Host info: host %s, port %s, pass %s" \
                           % (self.config.DashboardReporter.dashboardHost,
@@ -302,5 +311,13 @@ class DashboardReporterPoller(BaseWorkerThread):
             self.taskCache.append(name)
         
         #self.apmonsender.free()
-        apmonFree() 
+        apmonFree()
         
+        
+    def __del__(self):
+        """
+        Unregister itself with Alert Receiver.
+        
+        """
+        if self.sender:
+            self.sender.unregister()

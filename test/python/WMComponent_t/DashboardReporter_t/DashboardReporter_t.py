@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import time
 import os.path
 import unittest
 import logging
@@ -28,7 +29,7 @@ from WMCore.FwkJobReport.Report             import Report
 from WMComponent.DashboardReporter.DashboardReporterPoller import DashboardReporterPoller
 
 from WMCore_t.WMSpec_t.TestSpec         import testWorkload
-
+from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 
 
 
@@ -68,6 +69,7 @@ class DashboardReporterTest(unittest.TestCase):
                                             maxSlots = 10000)
 
         self.testDir = self.testInit.generateWorkDir()
+        self.alertsReceiver = None
         return
 
     def tearDown(self):
@@ -75,12 +77,13 @@ class DashboardReporterTest(unittest.TestCase):
         _tearDown_
         
         Rip things down.
+        
         """
-
         self.testInit.clearDatabase()        
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
-
+        if self.alertsReceiver:
+            self.alertsReceiver.shutdown()        
         return
 
 
@@ -110,6 +113,13 @@ class DashboardReporterTest(unittest.TestCase):
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')
         config.JobStateMachine.default_retries = 1
         config.JobStateMachine.couchDBName     = "dashboardreporter_t"
+        
+        # addition for Alerts messaging framework, work (alerts) and control
+        # channel addresses to which the component will be sending alerts
+        # these are destination addresses where AlertProcessor:Receiver listens
+        config.section_("Alert")
+        config.Alert.address = "tcp://127.0.0.1:5557"
+        config.Alert.controlAddr = "tcp://127.0.0.1:5559"        
 
         return config
 
@@ -239,10 +249,37 @@ class DashboardReporterTest(unittest.TestCase):
         dashboardReporter.algorithm()
 
         return
+    
 
+    def testDashboardReporterPollerAlertSending_algorithm(self):
+        """
+        Cause exception (alert-worthy situation) in the algorithm()
+        method.
+        
+        """
+        myThread = threading.currentThread()
+        config = self.getConfig()
+        
+        handler, self.alertsReceiver = \
+            utils.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
+
+        # emulate exception behaviour
+        def raiseException():
+            raise Exception("My test exception.")
+            
+        dashboardReporter = DashboardReporterPoller(config = config)
+        dashboardReporter.pollCouch = raiseException
+        self.assertRaises(Exception, dashboardReporter.algorithm)
+        time.sleep(0.5)
+        self.alertsReceiver.shutdown()
+        self.alertsReceiver = None
+        # now check if the alert was properly sent
+        self.assertEqual(len(handler.queue), 1)
+        alert = handler.queue[0]
+        self.assertEqual(alert["Source"], dashboardReporter.__class__.__name__)
+        self.assertEqual(alert["Component"], "DashboardReporter")
 
 
 
 if __name__ == '__main__':
     unittest.main()
-

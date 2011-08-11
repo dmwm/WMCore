@@ -282,7 +282,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site black list was updated.")
 
         skimSplitParams = skimTask.jobSplittingParameters()
-        self.assertEqual(len(skimSplitParams.keys()), 4,
+        self.assertEqual(len(skimSplitParams.keys()), 5,
                          "Error: Wrong number of params for skim task.")
         self.assertEqual(skimSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for skim task.")
@@ -596,7 +596,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Errror: Wrong slice size.")
 
         procSplitParams = procTask.jobSplittingParameters()
-        self.assertEqual(len(procSplitParams.keys()), 4,
+        self.assertEqual(len(procSplitParams.keys()), 5,
                          "Error: Wrong number of params for proc task.")
         self.assertEqual(procSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for proc task.")
@@ -721,7 +721,6 @@ class WMWorkloadTest(unittest.TestCase):
                         "Error: Task is missing.")
 
         self.assertEqual(results["/TestWorkload/ProcessingTask"], {"files_per_job": 2,
-                                                                   "include_parents": True,
                                                                    "algorithm": "FileBased",
                                                                    "type": "Processing"},
                          "Error: Wrong splitting parameters: %s")
@@ -756,6 +755,19 @@ class WMWorkloadTest(unittest.TestCase):
                           "/TestWorkload/ProcessingTask/MergeTask": 30},
                          "Error: Timeouts not set correctly.")
         return
+
+    def testDashboardActivity(self):
+        """
+        _testDashboardActivity_
+
+        Verify that the dashboard activity can be read and set.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setDashboardActivity("Activity!")
+        self.assertEqual(testWorkload.getDashboardActivity(), "Activity!",
+                         "Error: Wrong dashboard activity.")
+        return
+        
 
     def testTruncate(self):
         """

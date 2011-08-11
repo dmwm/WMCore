@@ -68,6 +68,7 @@ class DataProcessingWorkloadFactory(StdBase):
          self.inputDataTier) = self.inputDataset[1:].split("/")
 
         workload = self.createWorkload()
+        workload.setDashboardActivity("reprocessing")
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         procTask = workload.newTask("DataProcessing")
 

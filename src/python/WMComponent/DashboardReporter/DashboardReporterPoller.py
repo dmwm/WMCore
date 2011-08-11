@@ -278,7 +278,7 @@ class DashboardReporterPoller(BaseWorkerThread):
         package['taskId']         = 'wmagent_%s' % name
         package['jobId']          = 'taskMeta'
         package['JSTool']         = 'WMAgent'
-        package['JSToolVersion']  = '0.7.13'
+        package['JSToolVersion']  = '0.7.14'
         package['CMSUser']        = user
         package['Workflow']       = name
         package['AgentName']      = self.agentName

@@ -1,3 +1,7 @@
+0.7.13 to 0.7.14:
+  - Fix problems with Dashboard reporting (2045).
+  - Fix a problem with double removals in the run/lumi filtering codes (2004).
+
 0.7.12 to 0.7.13:
   - Stage initial user log files to /store/temp/user/USERNAME (1938, 2011).
   - Cause components to shutdown if an exception is thrown (1989).

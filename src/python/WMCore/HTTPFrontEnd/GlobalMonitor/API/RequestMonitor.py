@@ -52,7 +52,7 @@ def getRequestInfoFromGlobalQueue(serviceURL):
         urls = service.getChildQueues()
         localResults = []
         for url in urls:
-            localResults.append(getRequestOverview(url, "LocalQueue"))
+            localResults.extend(getRequestOverview(url, "LocalQueue"))
 
         localQRules = {'pending': DFormatter.add, 'cooloff': DFormatter.add,
                        'running': DFormatter.add, 'success': DFormatter.add,
@@ -61,6 +61,7 @@ def getRequestInfoFromGlobalQueue(serviceURL):
                        'Complete': DFormatter.add,'Error': DFormatter.add,
                        'inQueue': DFormatter.add, 'inWMBS': DFormatter.add
                        }
+        
         return combineListOfDict('request_name', baseResults, localResults,
                                  'local_queue', **localQRules)
 

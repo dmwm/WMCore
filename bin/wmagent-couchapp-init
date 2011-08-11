@@ -16,7 +16,7 @@ from couchapp.config import Config
 
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.Database.CMSCouch import CouchServer
-from WMCore.WMInit import getWMBASE
+from WMCore.WMBase import getWMBASE
 
 
 def couchAppRoot():

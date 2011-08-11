@@ -515,8 +515,8 @@ class DBSUploadPoller(BaseWorkerThread):
                             logging.debug("Block %s now uploaded to local DBS" % block['Name'])
                             self.uploadToDBS.closeBlockFiles(blockname = block['Name'], status = 'LOCAL')
 
-                        logging.debug("About to do post-upload DBS commit for DAS %i" % dasID)
-                        myThread.transaction.commit()
+                    logging.debug("About to do post-upload DBS commit for DAS %i" % dasID)
+                    myThread.transaction.commit()
 
             except WMException:
                 if getattr(myThread, 'transaction', None) != None: 

@@ -6,6 +6,7 @@ import cherrypy
 import WMCore.Lexicon
 from WMCore.HTTPFrontEnd.RequestManager.BulkOperations import BulkOperations
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
 
 class Announce(BulkOperations):
     """ Page for Data Ops to announce requests """
@@ -13,7 +14,7 @@ class Announce(BulkOperations):
         BulkOperations.__init__(self, config)
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2()
+    @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
     def index(self, all=0):
         """ Page for announcing requests """
         requests = Utilities.requestsWhichCouldLeadTo('announced')
@@ -21,7 +22,7 @@ class Announce(BulkOperations):
                                   actions=None, requests=requests, all=all)
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2()
+    @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
     def handleAnnounce(self, **kwargs):
         """ Handler for announcing requests """
         requests = self.requestNamesFromCheckboxes(kwargs)

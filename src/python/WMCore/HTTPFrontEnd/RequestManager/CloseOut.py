@@ -6,6 +6,7 @@ import cherrypy
 from WMCore.HTTPFrontEnd.RequestManager.BulkOperations import BulkOperations
 import WMCore.Lexicon
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
 
 class CloseOut(BulkOperations):
     """ Page for Data Ops to close out requests """
@@ -13,7 +14,7 @@ class CloseOut(BulkOperations):
         BulkOperations.__init__(self, config)
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2()
+    @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
     def index(self, all=0):
         """ Page for closing requests """
         requests = Utilities.requestsWhichCouldLeadTo('closed-out')
@@ -21,7 +22,7 @@ class CloseOut(BulkOperations):
                                   actions=None, requests=requests, all=all)
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2()
+    @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
     def handleCloseOut(self, **kwargs):
         """ Handler for closing out requests """
         requests = BulkOperations.requestNamesFromCheckboxes(self, kwargs)

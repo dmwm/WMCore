@@ -391,10 +391,9 @@ class gLitePlugin(BasePlugin):
             siteDict = submitDict.get(sandbox, {})
             for site in siteDict.keys():
                 logging.debug("   Handling '%s'" % str(site))
+                ## getting the sandbox jobs and splitting  by collection size
                 jobList = siteDict.get(site, [])
                 while len(jobList) > 0:
-                    ## getting the sandbox jobs and splitting  by collection size
-                    jobList = siteDict.get(site, [])
                     command = "glite-wms-job-submit --json "
                     if self.debugOutput:
                         unused, uniquename = tempfile.mkstemp(suffix = '.log', prefix = 'glite.submit.%s.' % time.strftime("%Y%m%d%H%M%S", time.localtime()),

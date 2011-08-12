@@ -86,7 +86,7 @@ class AnalysisWorkloadFactory(StdBase):
         logCollectStep.addOverride('seName',    seName)
         logCollectStep.addOverride('lfnBase',   lfnBase)
         logCollectStep.addOverride('lfnPrefix', lfnPrefix)
-        workload.setWorkQueueSplitPolicy("DatasetBlock", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
+        workload.setWorkQueueSplitPolicy("Block", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
 
         return workload
 

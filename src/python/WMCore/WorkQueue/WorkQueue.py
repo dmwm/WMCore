@@ -171,6 +171,7 @@ class WorkQueue(WorkQueueBase):
                                                               requireBlocksSubscribed = not self.params['ReleaseIncompleteBlocks'],
                                                               fullRefreshInterval = self.params['FullLocationRefreshInterval'],
                                                               updateIntervalCoarseness = self.params['LocationRefreshInterval'])
+        self.logger.debug("WorkQueue created successfully")
 
     def __len__(self):
         """Returns number of Available elements in queue"""
@@ -214,6 +215,7 @@ class WorkQueue(WorkQueueBase):
         """
         Update priority for a workflow, throw exception if no elements affected
         """
+        self.logger.info("Priority change request to %s for %s" % (newpriority, str(workflowNames)))
         affected = []
         for wf in workflowNames:
             affected.extend(self.backend.getElements(returnIdOnly = True, RequestName = wf))
@@ -233,6 +235,7 @@ class WorkQueue(WorkQueueBase):
          Note: That the same child queue is free to pick the work up again,
           there is no permanent blacklist of queues.
         """
+        self.logger.info("Resetting elements %s" % str(ids))
         try:
             iter(ids)
         except TypeError:
@@ -250,7 +253,7 @@ class WorkQueue(WorkQueueBase):
         """
         results = []
         if not self.backend.isAvailable():
-            self.logger.info('Backend busy or down: skipping fetching of work')
+            self.logger.warning('Backend busy or down: skipping fetching of work')
             return results
         matches, _ = self.backend.availableWork(siteJobs)
 
@@ -270,10 +273,7 @@ class WorkQueue(WorkQueueBase):
                     wmspec = wmspecCache[match['RequestName']]
 
                 if match['Inputs']:
-                    self.logger.info("Adding Processing work")
                     blockName, dbsBlock = self._getDBSBlock(match, wmspec)
-                else:
-                    self.logger.info("Adding Production work")
 
                 match['Subscription'] = self._wmbsPreparation(match,
                                                               wmspec,
@@ -312,20 +312,20 @@ class WorkQueue(WorkQueueBase):
         """Inject data into wmbs and create subscription.
         """
         from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-        self.logger.info("Adding WMBS subscription")
+        self.logger.info("Adding WMBS subscription for %s" % match['RequestName'])
 
         mask = match['Mask']
         wmbsHelper = WMBSHelper(wmspec, blockName, mask, self.params['CacheDir'])
 
         sub, match['NumOfFilesAdded'] = wmbsHelper.createSubscriptionAndAddFiles(block = dbsBlock)
-        self.logger.info("Created top level Subscription %s with %s files" % (sub['id'], match['NumOfFilesAdded']))
+        self.logger.info("Created top level subscription %s for %s with %s files" % (sub['id'],
+                                                                                     match['RequestName'],
+                                                                                     match['NumOfFilesAdded']))
 
         match['SubscriptionId'] = sub['id']
         match['Status'] = 'Running'
         self.backend.saveElements(match)
 
-        self.logger.info('WMBS subscription (%s) created for wf: "%s"' 
-                         % (sub['id'], match['RequestName']))
         return sub
 
     def _assignToChildQueue(self, queue, *elements):
@@ -586,7 +586,7 @@ class WorkQueue(WorkQueueBase):
         Apply end policies to determine work status & cleanup finished work
         """
         if not self.backend.isAvailable():
-            self.logger.info('Backend busy or down: skipping cleanup tasks')
+            self.logger.warning('Backend busy or down: skipping cleanup tasks')
             return
 
         self.backend.pullFromParent() # Check we are upto date with inbound changes
@@ -604,8 +604,11 @@ class WorkQueue(WorkQueueBase):
                 if not parents:
                     raise RuntimeError, "Parent elements not found for %s" % wf
 
+                self.logger.debug("Queue status follows:")
                 results = endPolicy(elements, parents, self.params['EndPolicySettings'])
                 for result in results:
+                    self.logger.debug("Request %s, Status %s, Full info: %s" % (result['RequestName'], result['Status'], result))
+
                     # check for cancellation requests (affects entire workflow)
                     if result['Status'] == 'CancelRequested':
                         canceled = self.cancelWork(elements = elements)
@@ -618,10 +621,14 @@ class WorkQueue(WorkQueueBase):
                         self.backend.updateInboxElements(parent.id, **parent.statusMetrics())
 
                     if result.inEndState():
+                        self.logger.info("Request %s finished (%s)" % (result['RequestName'], parent.statusMetrics()))
                         self.backend.deleteElements(*result['Elements'])
                         finished_elements.extend(result['Elements'])
                         continue
 
+                    updated_elements = [x for x in result['Elements'] if x.modified]
+                    for x in updated_elements:
+                        self.logger.debug("Updating progress %s (%s): %s" % (x['RequsetName'], x.id, x.statusMetrics()))
                     [self.backend.updateElements(x.id, **x.statusMetrics()) for x in result['Elements'] if x.modified]
             except Exception, ex:
                 self.logger.error('Error processing workflow "%s": %s' % (wf, str(ex)))
@@ -657,11 +664,17 @@ class WorkQueue(WorkQueueBase):
             # update policy parameter
             self.params['SplittingMapping'][policyName].update(args = spec.startPolicyParameters())
             policy = startPolicy(policyName, self.params['SplittingMapping'])
-            self.logger.info("Using %s start policy with %s " % (policyName,
-                                            self.params['SplittingMapping']))
+            self.logger.info('Splitting %s with policy %s params = %s' % (spec.name(),
+                                                policyName, self.params['SplittingMapping']))
             units = policy(spec, topLevelTask, data, mask)
-            self.logger.info("Queuing %s unit(s): wf: %s for task: %s" % (
-                             len(units), spec.name(), topLevelTask.name()))
+            for unit in units:
+                msg = 'Queuing element for %s:%s with %d job(s) split with %s' % (spec.name(),
+                                                unit['TaskName'], unit['Jobs'], policyName)
+                if unit['Inputs']:
+                    msg += ' on %s' % unit['Inputs'].keys()[0]
+                if unit['Mask']:
+                    msg += ' on events %d-%d' % (unit['Mask']['FirstEvent'], unit['Mask']['LastEvent'])
+                self.logger.info(msg)
             totalUnits.extend(units)
 
         return totalUnits

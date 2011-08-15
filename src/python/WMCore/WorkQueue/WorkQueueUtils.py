@@ -137,7 +137,8 @@ def queueConfigFromConfigObject(config):
         myThread = threading.currentThread()
         if not hasattr(myThread, 'logger'):
             import logging
-            logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(module)s: %(message)s')
+            logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(module)s: %(message)s',
+                                level = wqManager.logLevel)
             myThread.logger = logging.getLogger()
         qConfig['logger'] = myThread.logger
 

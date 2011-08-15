@@ -346,6 +346,9 @@ class WMBSHelper(WMConnectionBase):
 
         wmbsFile['inFileset'] = True # file is not a parent
 
+        logging.info("WMBS File: %s on Location: %s"
+                     % (wmbsFile['lfn'], wmbsFile['newlocations']))
+
         self.wmbsFilesToCreate.append(wmbsFile)
 
         totalFiles = self._addFilesToWMBSInBulk()
@@ -366,9 +369,16 @@ class WMBSHelper(WMConnectionBase):
         sub = self.createSubscription()
         
         if block != None:
+            logging.info('"%s" Injecting block %s (%d files) into wmbs' % (self.wmSpec.name(),
+                                                                           self.block,
+                                                                           len(block['Files'])))
             addedFiles = self.addFiles(block)
         #For MC case
         else:
+            logging.info('"%s" Injecting production %s:%s:%s - %s:%s:%s (run:lumi:event) into wmbs' % (self.wmSpec.name(),
+                                            self.mask['FirstRun'], self.mask['FirstLumi'], self.mask['FirstEvent'],
+                                            self.mask['LastRun'], self.mask['LastLumi'], self.mask['LastEvent'],
+                                            ))
             addedFiles = self.addMCFakeFile()
         
         self.commitTransaction(existingTransaction = False)

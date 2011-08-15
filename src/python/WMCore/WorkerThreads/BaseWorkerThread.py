@@ -19,10 +19,7 @@ import sys
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 
-from WMCore.Alerts.Alert import Alert
-from WMCore.Alerts.ZMQ.Sender import Sender
-
-
+from WMCore.Alerts import API as alertAPI
 
 class BaseWorkerThread:
     """
@@ -48,6 +45,10 @@ class BaseWorkerThread:
         
         # Termination callback function
         self.terminateCallback = None
+
+        # Init alert system
+        self.sender    = None
+        self.sendAlert = None
 
         # Get the current DBFactory
         myThread = threading.currentThread()
@@ -204,63 +205,34 @@ class BaseWorkerThread:
         # All done
         msg = "Worker thread %s terminated" % str(self)
         logging.info(msg)
-        
 
-    @staticmethod
-    def setUpAlertsMessaging(compInstance, compName = None):
+
+    def initAlerts(self, compName = None):
         """
-        Set up Alerts Sender instance, etc.
-        Depends on provided configuration (general section 'Alert').
-        Should not break anything if such config is not provided.
-        
-        compInstance is instance of the various agents components which
-        set up alerts messaging. Details about the calling components
-        are referenced through this variable (e.g. configuration instance).
-        compName is string containing name of the component.
-        
-        Method is made static since not all components' classes
-        participating in alerts messaging inherit from this class.
-        
+        _initAlerts_
+
+        Setup the alerts for the rest of the system
+
+        sender: instance of the Alert messages Sender
+        sendAlert: the code what sends the actual Alerts
+            (documented in self.getSendAlert)
         """
-        callerClassName = compInstance.__class__.__name__
-        if hasattr(compInstance.config, "Alert"):
-            # pre-defined values for Alert instances
-            comp = compName or callerClassName 
-            preAlert = Alert(Type = "WMAgent",
-                             Workload = "n/a",
-                             Component = comp,
-                             Source = callerClassName)
-            # create sender instance (sending alert messages)
-            sender = Sender(compInstance.config.Alert.address,
-                            callerClassName,
-                            compInstance.config.Alert.controlAddr)
-            sender.register()
-            logging.debug("Alerts messaging set up for '%s'" % callerClassName)
-            return preAlert, sender
-        else:
-            logging.debug("Alerts messaging not enabled for '%s'" % callerClassName)
-            return None, None
-        
-        
-    @staticmethod    
-    def getSendAlert(sender, preAlert):
+        if not compName:
+            compName = self.__class__.__name__
+
+        preAlert, sender = alertAPI.setUpAlertsMessaging(self, compName = compName)
+        sendAlert        = alertAPI.getSendAlert(sender = sender, preAlert = preAlert)
+        self.sender      = sender
+        self.sendAlert   = sendAlert
+        return
+
+
+
+
+    def __del__(self):
         """
-        Common method taking care of sending Alert messages.
-        It is silent should not the Alert framework be set up (sender
-            would be None).
-        preAlert is an Alert instance with predefined information.
-        Level of the Alert messages is defined by level variable,
-        other details are defined by the args dictionary.
-        
-        Method is made static since it is also called from classes
-        which do not inherit from this class.
+        Unregister itself with Alert Receiver.
         
         """
-        def sendAlertFunc(level, **args):
-            if sender:
-                alert = Alert(**preAlert)
-                alert["Timestamp"] = time.time()
-                alert["Level"] = level
-                alert["Details"] = args
-                sender(alert)
-        return sendAlertFunc
+        if self.sender:
+            self.sender.unregister()

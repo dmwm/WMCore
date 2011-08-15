@@ -16,10 +16,18 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMBS.Job          import Job
 from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMFactory         import WMFactory
+from WMCore.WMException       import WMException
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
 from WMCore.BossAir.BossAirAPI          import BossAirAPI
+
+class JobTrackerException(WMException):
+    """
+    _JobTrackerException_
+
+    A job tracker exception-handling class for the JobTracker
+    """
 
 class JobTrackerPoller(BaseWorkerThread):
     """
@@ -48,6 +56,9 @@ class JobTrackerPoller(BaseWorkerThread):
                                         dbinterface = myThread.dbi)
 
         self.jobListAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+
+        # initialize the alert framework (if available)
+        self.initAlerts(compName = "JobTracker")
 
     
     def setup(self, parameters = None):
@@ -81,12 +92,20 @@ class JobTrackerPoller(BaseWorkerThread):
         logging.info("Running Tracker algorithm")
         myThread = threading.currentThread()
         try:
-            myThread.transaction.begin()
             self.trackJobs()
-            myThread.transaction.commit()
-        except:
-            myThread.transaction.rollback()
+        except WMException, ex:
+            if getattr(myThread.transaction, None):
+                myThread.transaction.rollback()
+            self.sendAlert(6, str(ex))
             raise
+        except Exception, ex:
+            msg =  "Unknown exception in JobTracker!\n"
+            msg += str(ex)
+            if getattr(myThread.transaction, None):
+                myThread.transaction.rollback()
+            self.sendAlert(6, msg)
+            logging.error(msg)
+            raise JobTrackerException(msg)
 
         return
 
@@ -110,8 +129,6 @@ class JobTrackerPoller(BaseWorkerThread):
             return
 
         logging.info("Have list of %i executing jobs" % len(jobList))
-        logging.debug(jobList)
-
 
         # Now get all jobs that BossAir thinks are complete
         completeJobs = self.bossAir.getComplete()
@@ -196,8 +213,10 @@ class JobTrackerPoller(BaseWorkerThread):
             jrBinds.append({'jobid': job['id'], 'fwjrpath': jrPath})
 
         myThread = threading.currentThread()
+        myThread.transaction.begin()
         setFWJRAction.execute(binds = jrBinds, conn = myThread.transaction.conn,
                               transaction = True)
+        myThread.transaction.commit()
 
         self.changeState.propagate(passedJobs, 'complete', 'executing')
         logging.debug("Propagating jobs in jobTracker")

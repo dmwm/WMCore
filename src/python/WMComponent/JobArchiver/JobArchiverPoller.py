@@ -58,12 +58,7 @@ class JobArchiverPoller(BaseWorkerThread):
                                              "numberOfJobsToCluster", 1000)
 
         # initialize the alert framework (if available)
-        #    (must be done early since alerts are sent already from constructor)
-        # sender: instance of Alert messages Sender
-        # preAlert: pre-defined values for Alert instances generated from this class  
-        self.preAlert, self.sender = \
-            BaseWorkerThread.setUpAlertsMessaging(self, compName = "JobArchiver")
-        self.sendAlert = BaseWorkerThread.getSendAlert(self.sender, self.preAlert)
+        self.initAlerts(compName = "JobArchiver")
 
         try:
             self.logDir = getattr(config.JobArchiver, 'logDir',

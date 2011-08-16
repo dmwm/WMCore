@@ -59,12 +59,8 @@ class DashboardReporterPoller(BaseWorkerThread):
                                         socket.getfqdn(socket.gethostname()))
 
         # initialize the alert framework (if available)
-        # sender: instance of Alert messages Sender
-        # preAlert: pre-defined values for Alert instances generated from this class  
-        self.preAlert, self.sender = \
-            BaseWorkerThread.setUpAlertsMessaging(self, compName = "DashboardReporter")
-        self.sendAlert = BaseWorkerThread.getSendAlert(self.sender, self.preAlert)
-
+        self.initAlerts(compName = "DashboardReporter")
+        
 
     def terminate(self, params):
         """
@@ -312,12 +308,3 @@ class DashboardReporterPoller(BaseWorkerThread):
         
         #self.apmonsender.free()
         apmonFree()
-        
-        
-    def __del__(self):
-        """
-        Unregister itself with Alert Receiver.
-        
-        """
-        if self.sender:
-            self.sender.unregister()

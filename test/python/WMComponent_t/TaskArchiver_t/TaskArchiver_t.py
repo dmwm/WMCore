@@ -38,7 +38,6 @@ from WMCore.Database.CMSCouch           import CouchServer
 from WMCore_t.WMSpec_t.TestSpec     import testWorkload
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
-from WMCore.Alerts.ZMQ.Receiver import Receiver
 from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 
 

@@ -302,12 +302,3 @@ class JobArchiverPoller(BaseWorkerThread):
             openFileset.markOpen(False)
 
         myThread.transaction.commit()
-        
-        
-    def __del__(self):
-        """
-        Unregister itself with Alert Receiver.
-        
-        """
-        if self.sender:
-            self.sender.unregister()

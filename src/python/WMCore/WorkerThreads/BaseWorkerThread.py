@@ -47,7 +47,7 @@ class BaseWorkerThread:
         self.terminateCallback = None
 
         # Init alert system
-        self.sender    = None
+        self.sender = None
         self.sendAlert = None
 
         # Get the current DBFactory
@@ -211,22 +211,25 @@ class BaseWorkerThread:
         """
         _initAlerts_
 
-        Setup the alerts for the rest of the system
+        Setup the alerts for the rest of the system.
 
         sender: instance of the Alert messages Sender
         sendAlert: the code what sends the actual Alerts
-            (documented in self.getSendAlert)
+            (documented in WMCore/Alerts/APIgetSendAlert)
+            
+        note:
+            Tests are done in the API_t belonging to Alerts fw.
+            This particular method is called from a number of
+                components and some have particular tests on alerts sending.
         """
         if not compName:
             compName = self.__class__.__name__
-
-        preAlert, sender = alertAPI.setUpAlertsMessaging(self, compName = compName)
-        sendAlert        = alertAPI.getSendAlert(sender = sender, preAlert = preAlert)
-        self.sender      = sender
-        self.sendAlert   = sendAlert
-        return
-
-
+        preAlert, sender = alertAPI.setUpAlertsMessaging(self,
+                                                         compName = compName)
+        sendAlert = alertAPI.getSendAlert(sender = sender,
+                                          preAlert = preAlert)
+        self.sender = sender
+        self.sendAlert = sendAlert
 
 
     def __del__(self):

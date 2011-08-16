@@ -44,7 +44,6 @@ from WMCore.Database.CMSCouch   import CouchServer
 from WMCore.DataStructs.Run     import Run
 from WMCore.DataStructs.Mask    import Mask
 from WMCore.Algorithms          import MathAlgos
-from WMCore.Alerts.ZMQ.Sender   import Sender
 from WMCore.Lexicon             import sanitizeURL
 
 from WMComponent.JobCreator.CreateWorkArea   import getMasterName

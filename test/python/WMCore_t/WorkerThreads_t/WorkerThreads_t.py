@@ -16,8 +16,6 @@ import logging
 import os
 
 from WMCore.Configuration import Configuration
-from WMComponent_t.AlertGenerator_t.AlertGenerator_t import getConfig
-from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from Dummy import Dummy
@@ -212,51 +210,6 @@ class WorkerThreadsTest(unittest.TestCase):
         self.assertEqual(manager.activeThreadCount, 0)
         
         
-    def testAlertsMessagingNotSetUp(self):
-        # alerts will not be set up if 'config.Alert' etc is not provided
-        self.config = Configuration()
-        self.assertFalse(hasattr(self.config, "Alert"))
-        preAlert, sender = \
-            BaseWorkerThread.setUpAlertsMessaging(self, compName = "test1")
-        self.assertFalse(preAlert)
-        self.assertFalse(sender)
-        # shall do nothing and not fail
-        sendAlert = BaseWorkerThread.getSendAlert(sender, preAlert)
-        sendAlert("nonsense", msg = "nonsense")
-        
-        
-    def testAlertsSetUpAndSending(self):
-        # this may be a bit redundant testing since the components (clients
-        # of the alerts fw) will be doing the same ...
-        
-        # calls as they are made from child/client classes of BaseWorkerThread
-        self.config = getConfig("/tmp") # will contain 'config.Alert'
-        
-        # initialization
-        # sender: instance of Alert messages Sender
-        # preAlert: pre-defined values for Alert instances generated from this class  
-        preAlert, sender = \
-            BaseWorkerThread.setUpAlertsMessaging(self, compName = "test2")
-        sendAlert = BaseWorkerThread.getSendAlert(sender, preAlert)
-
-        # set up a temporary alert message receiver        
-        handler, receiver = utils.setUpReceiver(self.config.Alert.address,
-                                                self.config.Alert.controlAddr)
-        # test sending alert
-        msg = "this is my message"
-        sendAlert(10, msg = msg)
-        
-        time.sleep(0.5)
-        self.assertEqual(len(handler.queue), 1)
-        alert = handler.queue[0]
-        self.assertEqual(alert["Component"], "test2")
-        self.assertEqual(alert["Level"], 10)
-        self.assertEqual(alert["Source"], self.__class__.__name__)
-        self.assertEqual(alert["Details"]["msg"], msg) 
-        
-        sender.unregister()
-        receiver.shutdown()
-        
-
+    
 if __name__ == "__main__":
     unittest.main()

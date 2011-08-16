@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 API
 
@@ -10,11 +8,14 @@ function.  In the WMComponents, the sendAlert function will handle the sending
 of actual messages.
 
 """
+
+
 import time
 import logging
 
 from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts.ZMQ.Sender import Sender
+
 
 
 def setUpAlertsMessaging(compInstance, compName = None):
@@ -50,6 +51,7 @@ def setUpAlertsMessaging(compInstance, compName = None):
     else:
         logging.debug("Alerts messaging not enabled for '%s'" % callerClassName)
         return None, None
+        
         
         
 def getSendAlert(sender, preAlert):

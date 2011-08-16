@@ -90,7 +90,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.packageSize    = getattr(self.config.JobSubmitter, 'packageSize', 100)
 
         # initialize the alert framework (if available)
-        self.initAlerts(compName = "JobArchiver")
+        self.initAlerts(compName = "JobSubmitter")
 
         try:
             if not getattr(self.config.JobSubmitter, 'submitDir', None):
@@ -103,7 +103,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             msg =  "Error while trying to create packageDir %s\n!"
             msg += str(ex)
             logging.error(msg)
-            self.sendAlert(6, msg)
+            self.sendAlert(6, msg = msg)
             try:
                 logging.debug("PackageDir: %s" % self.packageDir)
                 logging.debug("Config: %s" % config)
@@ -235,7 +235,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 msg =  "Error while loading pickled job object %s\n" % pickledJobPath
                 msg += str(ex)
                 logging.error(msg)
-                self.sendAlert(6, msg)
+                self.sendAlert(6, msg = msg)
                 raise JobSubmitterPollerException(msg)
                 
             
@@ -598,7 +598,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             #msg += str(traceback.format_exc())
             msg += '\n\n'
             logging.error(msg)
-            self.sendAlert(7, msg)
+            self.sendAlert(7, msg = msg)
             if getattr(myThread, 'transaction', None) != None:
                 myThread.transaction.rollback()
             raise JobSubmitterPollerException(msg)

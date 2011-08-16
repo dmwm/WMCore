@@ -36,6 +36,10 @@ class JobAccountantPoller(BaseWorkerThread):
         self.config = config
         self.accountantWorkSize = getattr(self.config.JobAccountant,
                                           'accountantWorkSize', 100)
+        # initialize the alert framework (if available - config.Alert present)
+        #    self.sendAlert will be then be available    
+        self.initAlerts(compName = "JobAccountant")        
+
         return
     
     def setup(self, parameters = None):
@@ -81,6 +85,7 @@ class JobAccountantPoller(BaseWorkerThread):
                 msg =  "Hit general exception in JobAccountantPoller while using worker.\n"
                 msg += str(ex)
                 logging.error(msg)
+                self.sendAlert(6, msg = msg)
                 logging.debug("jobsSlice:")
                 logging.debug(jobsSlice)
                 raise JobAccountantPollerException(msg)
@@ -99,6 +104,7 @@ class JobAccountantPoller(BaseWorkerThread):
             msg =  "Hit general exception in JobAccountantPoller in last worker use.\n"
             msg += str(ex)
             logging.error(msg)
+            self.sendAlert(6, msg = msg)
             logging.debug("jobs left:")
             logging.debug(completeJobs)
             raise JobAccountantPollerException(msg)

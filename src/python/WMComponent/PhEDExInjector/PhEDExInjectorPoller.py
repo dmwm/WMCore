@@ -39,6 +39,11 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         # SE name.
         self.seMap = {}
         self.nodeNames = []
+        
+        # initialize the alert framework (if available - config.Alert present)
+        #    self.sendAlert will be then be available    
+        self.initAlerts(compName = "PhEDExInjector")        
+        
     
     def setup(self, parameters):
         """
@@ -138,8 +143,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                     location = self.seMap["Disk"][siteName]
 
             if location == None:
-                logging.error("Could not map SE %s to PhEDEx node." % \
-                              siteName)
+                msg = "Could not map SE %s to PhEDEx node." % siteName
+                logging.error(msg)
+                self.sendAlert(7, msg = msg)
                 continue
 
             xmlData = self.createInjectionSpec(uninjectedFiles[siteName])
@@ -151,8 +157,10 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                         for file in uninjectedFiles[siteName][datasetName][blockName]["files"]:
                             injectedFiles.append(file["lfn"])
             else:
-                logging.error("Error injecting data %s: %s" % \
-                              (uninjectedFiles[siteName], injectRes["error"]))
+                msg = ("Error injecting data %s: %s" %
+                       (uninjectedFiles[siteName], injectRes["error"]))
+                logging.error(msg)
+                self.sendAlert(6, msg = msg)
 
         if len(injectedFiles) > 0:
             logging.debug("Injecting files: %s" % injectedFiles)
@@ -192,8 +200,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                     location = self.seMap["Disk"][siteName]
 
             if location == None:
-                logging.error("Could not map SE %s to PhEDEx node." % \
-                              siteName)
+                msg = "Could not map SE %s to PhEDEx node." % siteName
+                logging.error(msg)
+                self.sendAlert(6, msg = msg)
                 continue
 
             xmlData = self.createInjectionSpec(migratedBlocks[siteName])
@@ -204,8 +213,10 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                     for blockName in migratedBlocks[siteName][datasetName]:
                         closedBlocks.append(blockName)
             else:
-                logging.error("Error injecting data %s: %s" % \
-                              (migratedBlocks[siteName], injectRes["error"]))
+                msg = ("Error injecting data %s: %s" %
+                       (migratedBlocks[siteName], injectRes["error"]))
+                logging.error(msg)
+                self.sendAlert(6, msg = msg)
 
         for closedBlock in closedBlocks:
             logging.debug("Closing block %s" % closedBlock)

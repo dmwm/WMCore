@@ -40,6 +40,11 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         # SE name.
         self.seMap = {}
         self.nodeNames = []
+        
+        # initialize the alert framework (if available - config.Alert present)
+        #    self.sendAlert will be then be available    
+        self.initAlerts(compName = "PhEDExInjector")        
+        
     
     def setup(self, parameters):
         """
@@ -88,7 +93,9 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
             seName = unsubscribedDataset["se_name"]
 
             if not self.seMap["MSS"].has_key(seName):
-                logging.error("No MSS node for SE: %s" % seName)
+                msg = "No MSS node for SE: %s" % seName
+                logging.error(msg)
+                self.sendAlert(7, msg = msg)
                 continue
 
             if not datasetMap.has_key(self.seMap["MSS"][seName]):

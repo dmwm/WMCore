@@ -72,6 +72,9 @@ class RetryManagerPoller(BaseWorkerThread):
         
         self.changeState = ChangeState(self.config)
         self.getJobs     = self.daoFactory(classname = "Jobs.GetAllJobs")
+        
+        # initialize the alert framework (if available) (self.sendAlert())
+        self.initAlerts(compName = "RetryManager")        
 
         try:
             pluginName  = getattr(self.config.RetryManager, 'pluginName', 'DefaultRetryAlgo')
@@ -81,6 +84,7 @@ class RetryManagerPoller(BaseWorkerThread):
             msg =  "Error loading plugin %s on path %s\n" % (pluginName, pluginPath)
             msg += str(ex)
             logging.error(msg)
+            self.sendAlert(6, msg = msg)
             raise RetryManagerException(msg)
 
         return
@@ -121,6 +125,7 @@ class RetryManagerPoller(BaseWorkerThread):
                    and hasattr(myThread.transaction, 'transaction') \
                    and myThread.transaction.transaction != None:
                 myThread.transaction.rollback()
+            self.sendAlert(6, msg = msg)
             raise Exception(msg)
 
 
@@ -139,6 +144,7 @@ class RetryManagerPoller(BaseWorkerThread):
         oldstate = '%scooloff' % (jobType)
         if not oldstate in transitions.keys():
             logging.error('Unknown job type %s' % (jobType))
+            self.sendAlert(6, msg = msg)
             return
         propList = []
 
@@ -207,6 +213,7 @@ class RetryManagerPoller(BaseWorkerThread):
                 msg =  "Exception while checking for cooloff timeout for job %i\n" % job['id']
                 msg += str(ex)
                 logging.error(msg)
+                self.sendAlert(6, msg = msg)
                 logging.debug("Job: %s\n" % job)
                 logging.debug("jobType: %s\n" % jobType)
                 raise RetryManagerException(msg)

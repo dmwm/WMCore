@@ -136,10 +136,15 @@ class ReqMgrRESTModel(RESTModel):
         self._addMethod('GET', 'requestnames', self.getRequestNames,
                        args = [], secured=True, expires = 0)
         self._addMethod('GET', 'outputDatasetsByRequestName', self.getOutputForRequest,
-                       args = ['requestName'], secured=True, expires = 0)
+                       args = ['requestName'], secured=True,
+                       validation=[self.isalnum], expires = 0)
         self._addMethod('GET', 'outputDatasetsByPrepID', self.getOutputForPrepID,
-                       args = ['prepID'], secured=True, expires = 0)        
-        
+                       args = ['prepID'], secured=True, 
+                       validation=[self.isalnum], expires = 0)        
+        self._addMethod('GET', 'mostRecentOutputDatasetsByPrepID', self.getMostRecentOutputForPrepID,
+                       args = ['prepID'], secured=True, 
+                       validation=[self.isalnum], expires = 0)
+
         cherrypy.engine.subscribe('start_thread', self.initThread)
     
     def initThread(self, thread_index):
@@ -160,7 +165,6 @@ class ReqMgrRESTModel(RESTModel):
         """ If only prim exists, assume it's urlquoted.
             If all three exists, assue it's /prim/proc/tier 
         """
-        print "G-D", prim, proc, tier
         if not proc and not tier:
             dataset = urllib.unquote(prim)
         elif prim and proc and tier:
@@ -220,7 +224,6 @@ class ReqMgrRESTModel(RESTModel):
         """Return the datasets produced by this prep ID. in a dict of requestName:dataset list"""
         requestIDs = GetRequest.getRequestByPrepID(prepID)
         result = {}
-        print requestIDs
         for requestID in requestIDs:
             request = GetRequest.getRequest(requestID)
             requestName = request["RequestName"]
@@ -228,6 +231,15 @@ class ReqMgrRESTModel(RESTModel):
             result[requestName] =  helper.listOutputDatasets()
         return result
 
+    def getMostRecentOutputForPrepID(self, prepID):
+        """Return the datasets produced by the most recently submitted request with this prep ID"""
+        requestIDs = GetRequest.getRequestByPrepID(prepID)
+        # most recent will have the largest ID
+        requestID = max(requestIDs)
+        request = GetRequest.getRequest(requestID)
+        helper = Utilities.loadWorkload(request)
+        return helper.listOutputDatasets()
+ 
     def getAssignment(self, teamName=None, request=None):
         """ If a team name is passed in, get all assignments for that team.
         If a request is passed in, return a list of teams the request is 
@@ -474,6 +486,4 @@ class ReqMgrRESTModel(RESTModel):
 
     def deleteCampaign(self, campaign):
         return Campaign.deleteCampaign(campaign)
-
-    
 

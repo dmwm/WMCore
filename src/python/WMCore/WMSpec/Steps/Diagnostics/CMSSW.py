@@ -103,10 +103,16 @@ class CMSDefaultHandler(DiagnosticHandler):
         # Grab stderr log from CMSSW
         errLog = os.path.join(os.path.dirname(jobRepXml),
                               '%s-stderr.log' % (executor.step._internal_name))
+        outLog = os.path.join(os.path.dirname(jobRepXml),
+                              '%s-stdout.log' % (executor.step._internal_name))
 
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, 10)
             msg += '\n Adding last ten lines of CMSSW stderr:\n'
+            msg += "".join(logTail)
+        if os.path.exists(outLog):
+            logTail = BasicAlgos.tail(errLog, 10)
+            msg += '\n Adding last ten lines of CMSSW stdout:\n'
             msg += "".join(logTail)
 
         # If it exists, grab the SCRAM log
@@ -156,10 +162,16 @@ class CMSRunHandler(DiagnosticHandler):
 
         errLog = os.path.join(os.path.dirname(jobRepXml),
                               '%s-stderr.log' % (executor.step._internal_name))
+        outLog = os.path.join(os.path.dirname(jobRepXml),
+                              '%s-stdout.log' % (executor.step._internal_name))
 
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, 10)
             msg += '\n Adding last ten lines of CMSSW stderr:\n'
+            msg += "".join(logTail)
+        if os.path.exists(outLog):
+            logTail = BasicAlgos.tail(errLog, 10)
+            msg += '\n Adding last ten lines of CMSSW stdout:\n'
             msg += "".join(logTail)
                 
         # make sure the report has the error in it
@@ -183,7 +195,7 @@ class EDMExceptionHandler(DiagnosticHandler):
     EDM error code and report that.
 
     If the job report isnt there, thats a specific failure
-
+    
     """
     def __call__(self, errCode, executor, **args):
         """
@@ -197,6 +209,8 @@ class EDMExceptionHandler(DiagnosticHandler):
 
         errLog = os.path.join(os.path.dirname(jobRepXml),
                               '%s-stderr.log' % (executor.step._internal_name))
+        outLog = os.path.join(os.path.dirname(jobRepXml),
+                              '%s-stdout.log' % (executor.step._internal_name))
 
 
         addOn = '\n'
@@ -207,6 +221,11 @@ class EDMExceptionHandler(DiagnosticHandler):
         else:
             logging.error("No stderr from CMSSW")
             logging.error(os.listdir(os.path.basename(jobRepXml)))
+
+        if os.path.exists(outLog):
+            logTail = BasicAlgos.tail(errLog, 10)
+            msg += '\n Adding last ten lines of CMSSW stdout:\n'
+            msg += "".join(logTail)
 
         if not os.path.exists(jobRepXml):
             # no report => Error

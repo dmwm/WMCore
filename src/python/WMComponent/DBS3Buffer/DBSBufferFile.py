@@ -166,7 +166,7 @@ class DBSBufferFile(WMBSBase, WMFile):
                                  processingVer = self['processingVer'],
                                  acquisitionEra = self['acquisitionEra'],
                                  validStatus = self['validStatus'],
-                                 globalTag   = self['globalTag'],
+                                 globalTag   = self.get('globalTag', None),
                                  parent      = self['datasetParent'],
                                  conn = self.getDBConn(),
                                  transaction = True)

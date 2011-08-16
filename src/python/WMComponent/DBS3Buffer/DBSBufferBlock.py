@@ -44,18 +44,18 @@ class DBSBlock:
         """
         
         
-        self.data      = {'dataset_conf_list':  [],   # List of dataset configurations
-                          'file_conf_list':     [],   # List of files, with the configuration for each
-                          'files':              [],   # List of file objects
-                          'block':              {},   # Dict of block info
-                          'block_parent_list':  [],   # List of block parents
-                          'processing_era':     {},   # Dict of processing era info
-                          'ds_parent_list':     [],   # List of parent datasets
-                          'acquisition_era':    {},   # Dict of acquisition era information
-                          'primds':             {},   # Dict of primary dataset info
-                          'dataset':            {},   # Dict of processed dataset info
-                          'physics_group_name': {},   # Physics Group Name
-                          'file_parent_list':   []}   # List of file parents
+        self.data      = {'dataset_conf_list':    [],   # List of dataset configurations
+                          'file_conf_list':       [],   # List of files, with the configuration for each
+                          'files':                [],   # List of file objects
+                          'block':                {},   # Dict of block info
+                          'block_parent_list':    [],   # List of block parents
+                          'processing_era':       {},   # Dict of processing era info
+                          'ds_parent_list':       [],   # List of parent datasets
+                          'acquisition_era':      {},   # Dict of acquisition era information
+                          'primds':               {},   # Dict of primary dataset info
+                          'dataset':              {},   # Dict of processed dataset info
+                          'physics_group_name':   {},   # Physics Group Name
+                          'file_parent_list':     []}   # List of file parents
                           
         self.files     = [] 
         self.encoder   = JSONRequests()
@@ -156,10 +156,10 @@ class DBSBlock:
             self.setAcquisitionEra(dbsFile['acquisition_era'])
         elif dbsFile.get('acquisitionEra', False):
             self.setAcquisitionEra(dbsFile['acquisitionEra'])
-        if dbsFile.get('processingEra', False):
-            self.setProcessingEra(dbsFile['processingEra'])
-        elif dbsFile.get('processing_era', False):
-            self.setProcessingEra(dbsFile['processing_era'])
+        if dbsFile.get('processingVer', False):
+            self.setProcessingVer(dbsFile['processingVer'])
+        elif dbsFile.get('processing_ver', False):
+            self.setProcessingVer(dbsFile['processing_ver'])
        
         return
 
@@ -195,7 +195,7 @@ class DBSBlock:
         self.data['ds_parent_list'].append({'parent_dataset': parent})
         return
 
-    def setProcessingEra(self, era):
+    def setProcessingVer(self, era):
         """
         _setProcessingEra_
 

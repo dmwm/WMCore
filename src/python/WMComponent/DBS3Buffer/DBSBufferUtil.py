@@ -14,7 +14,7 @@ import os
 import threading
 from WMCore.WMFactory import WMFactory
 from WMCore.DAOFactory import DAOFactory
-from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMCore.DataStructs.Run import Run
 from WMCore.WMConnectionBase import WMConnectionBase
 

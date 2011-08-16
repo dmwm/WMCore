@@ -133,6 +133,7 @@ def uploadWorker(input, results, dbsUrl):
 
         # Do stuff with DBS
         try:
+            print block
             dbsApi.insertBlockBluk(blockDump = block)
             results.put({'name': name, 'success': True})        
         except Exception, ex:
@@ -196,6 +197,7 @@ class DBSUploadPoller(BaseWorkerThread):
         self.result = multiprocessing.Queue()
         self.nProc  = getattr(self.config.DBSUpload, 'nProcesses', 4)
         self.wait   = getattr(self.config.DBSUpload, 'dbsWaitTime', 0.1)
+        self.physicsGroup = getattr(self.config.DBSUpload, 'physicsGroup', 'DBS3Test')
 
         # List of blocks currently in processing
         self.queuedBlocks = []
@@ -294,7 +296,6 @@ class DBSUploadPoller(BaseWorkerThread):
             raise DBSUploadException(msg)
 
 
-
     def loadBlocks(self):
         """
         _loadBlocks_
@@ -329,18 +330,18 @@ class DBSUploadPoller(BaseWorkerThread):
             block = DBSBlock(name = blockInfo['Name'],
                              location = loc, das = das)
             block.FillFromDBSBuffer(blockInfo)
-            name = block.getName()
+            blockname = block.getName()
 
             # Now we have to load files...
             try:
-                files = self.dbsUtil.loadFilesByBlock(blockname = name)
+                files = self.dbsUtil.loadFilesByBlock(blockname = blockname)
             except WMException:
                 raise
             except Exception, ex:
                 msg =  "Unhandled exception while loading files for existing blocks.\n"
                 msg += str(ex)
                 logging.error(msg)
-                logging.debug("Blocks being loaded: %s\n" % name)
+                logging.debug("Blocks being loaded: %s\n" % blockname)
                 raise DBSUploadException(msg)
             for file in files:
                 block.addFile(file)
@@ -425,7 +426,7 @@ class DBSUploadPoller(BaseWorkerThread):
                                             location = location, das = dasID)
                     # Add the era info
                     currentBlock.setAcquisitionEra(era = dasInfo['AcquisitionEra'])
-                    currentBlock.setProcessingEra(era = dasInfo['ProcessingEra'])
+                    currentBlock.setProcessingVer(era = dasInfo['ProcessingVer'])
                     self.addNewBlock(block = currentBlock)
                     dasBlocks.append(currentBlock.getName())
 
@@ -448,7 +449,7 @@ class DBSUploadPoller(BaseWorkerThread):
                                                      location = location,
                                                      das = dasID)
                         currentBlock.setAcquisitionEra(era = dasInfo['AcquisitionEra'])
-                        currentBlock.setProcessingEra(era = dasInfo['ProcessingEra'])
+                        currentBlock.setProcessingVer(era = dasInfo['ProcessingVer'])
 
                     # Now deal with the file
                     currentBlock.addFile(dbsFile = newFile)
@@ -636,7 +637,7 @@ class DBSUploadPoller(BaseWorkerThread):
         for block in blocks:
             #encodedBlock = block.encode()
             #print "Found block %s in blocks" % block.getName()
-            block.setPhysicsGroup(group = "TestDBS3")
+            block.setPhysicsGroup(group = self.physicsGroup)
             encodedBlock = block.data
             self.input.put({'name': block.getName(), 'block': encodedBlock})
             import json

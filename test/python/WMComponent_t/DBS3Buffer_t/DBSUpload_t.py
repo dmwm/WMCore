@@ -56,7 +56,6 @@ class DBSUploadTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMCore.ThreadPool", "WMCore.MsgService"])
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
       
@@ -202,6 +201,7 @@ class DBSUploadTest(unittest.TestCase):
         nFiles = 12
         files = self.getFiles(name = name, tier = tier, nFiles = nFiles)
         datasetPath = '/%s/%s/%s' % (name, name, tier)
+        shortPath   = '/%s/%s' % (name, name)
 
 
         try:
@@ -217,11 +217,12 @@ class DBSUploadTest(unittest.TestCase):
             result = dbsApi.listPrimaryDatasets(dataset = name)
             self.assertEqual(len(result), 1)
             self.assertEqual(result[0]['primary_ds_name'], name)
-            result = dbsApi.listDatasets(dataset = datasetPath, detail = True)
+            result = dbsApi.listDatasets(dataset = datasetPath, detail = True,
+                                         dataset_access_type = 'PROCESSING')
             self.assertEqual(len(result), 1)
             self.assertEqual(result[0]['data_tier_name'], u'RECO')
-            self.assertEqual(result[0]['processing_version'], u'v0')
-            self.assertEqual(result[0]['acquisition_era_name'], u"DBS3Test")
+            self.assertEqual(result[0]['processing_version'], u'V0')
+            self.assertEqual(result[0]['acquisition_era_name'], u"DBS3TEST")
             result = dbsApi.listFiles(dataset=datasetPath)
             self.assertEqual(len(result), 11)
         except:

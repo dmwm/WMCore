@@ -75,7 +75,8 @@ class FindDASToUpload(DBFormatter):
             entry['PSetContent']        = r['psetcontent']
             entry['Dataset']            = r['dataset']
             entry['AcquisitionEra']     = r['acquisitionera']
-            entry['ProcessingEra']      = r['processingera']
+            entry['ProcessingVer']      = r['processingver']
+            entry['GlobalTag']          = r['global_tag']
             ret.append(entry)
 
         return ret

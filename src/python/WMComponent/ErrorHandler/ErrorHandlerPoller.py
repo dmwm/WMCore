@@ -58,7 +58,11 @@ class ErrorHandlerPoller(BaseWorkerThread):
                                                     database = config.ACDC.database)
 
         self.specCache = collections.deque(maxlen = 1000)
-
+        
+        # initialize the alert framework (if available - config.Alert present)
+        #    self.sendAlert will be then be available    
+        self.initAlerts(compName = "ErrorHandler")        
+        
         return
     
     def setup(self, parameters):
@@ -99,7 +103,9 @@ class ErrorHandlerPoller(BaseWorkerThread):
             # Check if Retries >= max retry count
             elif ajob['retry_count'] >= self.maxRetries:
                 exhaustJobs.append(ajob)
-                logging.error("Exhausting job %i" % ajob['id'])
+                msg = "Exhausting job %i" % ajob['id']
+                logging.error(msg)
+                self.sendAlert(6, msg = msg)
                 logging.debug("JobInfo: %s" % ajob)
             else:
                 logging.debug("Job %i had %s retries remaining" \
@@ -278,6 +284,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
             msg += str(traceback.format_exc())
             msg += "\n\n"
             logging.error(msg)
+            self.sendAlert(6, msg = msg)
             if getattr(myThread, 'transaction', None) != None \
                and getattr(myThread.transaction, 'transaction', None) != None:
                 myThread.transaction.rollback()

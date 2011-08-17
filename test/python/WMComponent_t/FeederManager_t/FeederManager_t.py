@@ -36,7 +36,6 @@ class FeederManagerTest(unittest.TestCase):
                          ['WMCore.Agent.Database',
                           'WMComponent.FeederManager.Database',
                           'WMCore.ThreadPool',
-                          'WMCore.MsgService',
                           'WMCore.WMBS'],
                                 useDefault = False)
 

@@ -56,7 +56,7 @@ class AnalysisWorkloadFactory(StdBase):
 
         (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = self.inputDataset[1:].split("/")
 
-        lfnBase = '/store/user/%s' % self.userName
+        lfnBase = '/store/temp/user/%s' % self.userName
         logBase = '/store/temp/user/%s/logs/' % self.userName
         lfnPrefix, seName = remoteLFNPrefix(site=self.asyncDest, lfn=lfnBase)
         self.userUnmergedLFN = "%s/%s/%s/%s" % (lfnBase, self.inputPrimaryDataset,

@@ -103,7 +103,7 @@ class Mask(dict):
         Add a run object
         """
 
-        self.runAndLumis[run.run] = run.lumis
+        self['runAndLumis'][run.run] = run.lumis
         return
 
     def addRunAndLumis(self, run, lumis = []):
@@ -115,7 +115,7 @@ class Mask(dict):
 
         if not type(lumis) == list:
             lumis = list(lumis)
-        
+
         if not run in self['runAndLumis'].keys():
             self['runAndLumis'][run] = []
 

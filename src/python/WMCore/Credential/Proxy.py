@@ -8,12 +8,12 @@ from Credential import Credential
 try:
     from hashlib import sha1
 except:
-    from sha import sha as sha1 
+    from sha import sha as sha1
 
 def execute_command( command, logger, timeout ):
     """
     _execute_command_
-    Funtion to manage commands.  
+    Funtion to manage commands.
     """
     import time
 
@@ -47,8 +47,8 @@ def execute_command( command, logger, timeout ):
 def destroyListCred( credNameList = [], credTimeleftList = { }, logger = None, timeout = 0 ):
     """
     _destroyListCred_
-    Get list of credential name and their timelefts to destroy the one 
-    with timeleft = 0 from myproxy. 
+    Get list of credential name and their timelefts to destroy the one
+    with timeleft = 0 from myproxy.
     """
     cleanCredCmdList = []
     for credIdx in xrange(len(credNameList)):
@@ -71,12 +71,12 @@ Error in cleaning expired credentials. Ignore and go ahead.')
 
 class Proxy(Credential):
     """
-    Basic class to handle user Proxy 
+    Basic class to handle user Proxy
     """
     def __init__( self, args ):
         """
         __init__
-        Build proxy object. 
+        Build proxy object.
         """
         Credential.__init__( self, args )
 
@@ -86,18 +86,18 @@ class Proxy(Credential):
         self.userDN = args.get( "userDN", '')
         self.proxyValidity = args.get( "proxyValidity", '')
         self.myproxyValidity = args.get( "myproxyValidity", 4)
-  
+
         self.logger = args.get( "logger", '')
 
-        ## adding ui script to source 
+        ## adding ui script to source
         self.uisource = args.get("uisource", '')
 
         ## adding credential path
         self.credServerPath = args.get("credServerPath", '/tmp')
 
-        self.group = '' 
-        self.role = '' 
-        self.vo = 'cms' 
+        self.group = ''
+        self.role = ''
+        self.vo = 'cms'
 
         self.args = args
 
@@ -113,7 +113,7 @@ class Proxy(Credential):
 
     def getProxyFilename( self, serverRenewer=False ):
         """
-        Get the proxy file path in UI or in a delegated server. 
+        Get the proxy file path in UI or in a delegated server.
         """
 
         if serverRenewer:
@@ -144,12 +144,12 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
         self.logger.debug(\
 'Getting subject : \n command : %s\n subject : %s retcode : %s' %(\
-    getSubjectCmd, subject, retcode) ) 
+    getSubjectCmd, subject, retcode) )
         return subject.strip()
 
     def getSubjectFromCert(self, certFile = None):
         """
-        Get the subject from cert file. 
+        Get the subject from cert file.
         """
         subject = None
         if certFile == None: certFile = self.getProxyFilename()
@@ -185,13 +185,13 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
     def checkAttribute( self, proxy=None ):
         """
-        Check attributes from a proxy file. 
+        Check attributes from a proxy file.
         """
         valid = True
 
         if proxy == None: proxy = self.getProxyFilename()
 
-        checkAttCmd = 'voms-proxy-info -fqan -file ' + proxy 
+        checkAttCmd = 'voms-proxy-info -fqan -file ' + proxy
 
         claimed = "/%s/" % self.vo
         if self.group:
@@ -231,7 +231,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
         output, error, retcode = execute_command(self.setUI() +  createCmd, self.logger, self.commandTimeout )
 
-        if retcode != 0 : 
+        if retcode != 0 :
             raise Exception(\
 "Unable to create a valid proxy using command \
    %s\n the output %s\n retcode %s\n since %s" \
@@ -243,7 +243,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
         """
         Proxy renew.
         """
-        self.create( )       
+        self.create( )
         return
 
     def destroy(self, credential = None):
@@ -265,7 +265,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
              and output is % s since % s" % ( credential, \
                     destroyCmd, output, error )
             raise Exception( msg )
-                         
+
         return
 
 ############Myproxy stuff. To remove in another class
@@ -274,8 +274,8 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
         """
         Delegate the user proxy to myproxy.
         It is possible also to delegate a server
-        (specifying serverRenewer = True) to 
-        manage your proxy in myproxy server. 
+        (specifying serverRenewer = True) to
+        manage your proxy in myproxy server.
         """
         if credential == None: credential = self.getProxyFilename\
                       ( serverRenewer )
@@ -295,7 +295,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
             self.logger.debug('MyProxy delegation :\n command: %s\n output:\
                      %s\n ret: %s'%( myproxyDelegCmd, output, retcode ) )
-       
+
             if retcode > 0 :
                 raise Exception(\
 "Unable to delegate the proxy to myproxyserver %s !\n since %s"\
@@ -311,8 +311,9 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
         """
         Get myproxy timeleft. Speciying serverRenewer=True means
         that your are delegating your proxy management in myproxy
-        to a server.   
+        to a server.
         """
+        proxyTimeleft = -1
         if self.myproxyServer:
 
             if proxy == None: proxy = self.getProxyFilename( serverRenewer )
@@ -348,7 +349,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                 if not serverRenewer:
 
                     try:
-  
+
                         hours, minutes, seconds = timeleftList[0]
                         proxyTimeleft = int(hours)*3600 + int(\
                           minutes)*60 + int(seconds)
@@ -357,8 +358,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
                         self.logger.error('Error extracting timeleft from proxy')
                         self.logger.debug( str(e) )
-                        proxyTimeleft =  0 
-                 
+
                 elif len(self.serverDN.strip()) > 0:
 
                     serverCredName = sha1(\
@@ -377,7 +377,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 'Your proxy needs retrieval and renewal policies for \
                    the requested server.')
                         proxyTimeleft =  0
-                            
+
                     else:
 
                         try:
@@ -392,26 +392,24 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                             self.logger.error(\
           'Error extracting timeleft from credential name')
                             self.logger.debug( str(e) )
-                            proxyTimeleft =  0
 
                 else:
                     self.logger.error(\
                   'Configuration Error')
 
-
-        else: 
+        else:
 
             raise Exception("myproxy server not set")
 
-        return proxyTimeleft 
+        return proxyTimeleft
 
 
     def checkMyProxy( self , proxy=None, checkRenewer=False):
         """
-        Return True if myproxy validity is bigger than minTime.  
+        Return True if myproxy validity is bigger than minTime.
         """
         if self.myproxyServer:
- 
+
             if proxy == None: proxy = self.getProxyFilename( checkRenewer )
             valid = True
 
@@ -419,7 +417,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
             output, error, retcode = execute_command(self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
             self.logger.debug( 'Checking myproxy...command \
-: %s\n output : %s\n retcode : %s\n' %(checkMyProxyCmd, output, retcode) ) 
+: %s\n output : %s\n retcode : %s\n' %(checkMyProxyCmd, output, retcode) )
 
             if retcode > 0 :
                 msg = "Error while checking myproxy timeleft for \
@@ -443,7 +441,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                 ).findall(output)
                 timeleft, hours, minutes, seconds = 0, 0, 0, 0
 
-                # the first time refers to the flat user proxy, 
+                # the first time refers to the flat user proxy,
                 # the other ones are related to the server credential name
                 if not checkRenewer:
                     try:
@@ -461,7 +459,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
                 # check the timeleft for the required server
                 elif len(self.serverDN.strip()) > 0:
-  
+
                     serverCredName = sha1(self.serverDN).hexdigest()
                     credNameList = re.compile(" name: (?P<CN>.*)").\
                                 findall(output)
@@ -501,18 +499,19 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                 else:
                     self.logger.error(\
                   'Configuration Error')
+                    valid = False
 
 
             return valid
 
-        else: 
+        else:
             self.logger.error(\
 'Error delegating credentials : myproxyserver is not specified.')
             return False
 
     def logonRenewMyProxy( self, proxyFilename = None ):
         """
-        Refresh/retrieve proxyFilename in/from myproxy. 
+        Refresh/retrieve proxyFilename in/from myproxy.
         """
         #if not proxyFilename:
             # compose the VO attriutes
@@ -560,7 +559,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 self.getSubjectFromCert( self.serverCert )\
              ).hexdigest()
 
-        # compose the delegation or renewal commands 
+        # compose the delegation or renewal commands
         # with the regeneration of Voms extensions
         cmdList = []
         cmdList.append('unset X509_USER_CERT X509_USER_KEY')
@@ -592,7 +591,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
 
     def vomsExtensionRenewal(self, proxy, voAttribute = 'cms'):
         """
-        Renew voms extension of the proxy 
+        Renew voms extension of the proxy
         """
         ## get validity time for retrieved flat proxy
         cmd = 'grid-proxy-info -file '\
@@ -658,7 +657,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
     def getTimeLeft(self, proxy = None ):
         """
         Get proxy timeleft. Validate the proxy timeleft
-        with the voms life. 
+        with the voms life.
         """
         if proxy == None: proxy = self.getProxyFilename()
         if not os.path.exists(proxy):
@@ -689,12 +688,12 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
 
     def checkLifeTimes(self, ProxyLife, VomsLife, proxy):
         """
-        Evaluate the proxy validity comparing it with voms 
-        validity. 
+        Evaluate the proxy validity comparing it with voms
+        validity.
         """
         # TODO: get the minimum value between proxyLife and vomsLife
         # configurable
- 
+
         if abs(ProxyLife - VomsLife) > 900 :
 
             hours = int(ProxyLife)/3600
@@ -705,7 +704,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
             vomsLife = "%d:%02d" % (hours, minutes)
             msg =  "proxy lifetime %s is different from \
             voms extension lifetime%s for proxy %s\n" \
-                   % (proxyLife, vomsLife, proxy) 
+                   % (proxyLife, vomsLife, proxy)
             self.logger.debug(msg)
             result = 0
         else:
@@ -714,7 +713,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
 
     def getVomsLife(self, proxy):
         """
-        Get proxy voms life. 
+        Get proxy voms life.
         """
         cmd = 'voms-proxy-info -file '+proxy+' -actimeleft'
 

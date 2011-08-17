@@ -83,8 +83,10 @@ def getRequestInfoFromLocalQueue(serviceURL):
         return DFormatter.errorFormatter(serviceURL, "LocalQueue Down")
 
     # assumes one to one relation between localqueue and wmbs
-    return getRequestInfoFromWMBS(wmbsUrls[0], jobStatusInfo)
-
+    if wmbsUrls:
+        return getRequestInfoFromWMBS(wmbsUrls[0], jobStatusInfo)
+    else:
+        return []
 def getRequestInfoFromWMBS(serviceURL, jobStatusInfo):
 
     service = WMBS({'endpoint':serviceURL})

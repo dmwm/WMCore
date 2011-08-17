@@ -675,7 +675,7 @@ class gLitePlugin(BasePlugin):
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
             except Queue.Empty:
-                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
             error  = res['stderr']

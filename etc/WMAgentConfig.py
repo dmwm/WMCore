@@ -54,7 +54,7 @@ dbsBlockTimeout = 86400
 
 # Job retry information.  This includes the number of times a job will tried and
 # how long it will sit in cool off.
-maxJobRetries = 5
+maxJobRetries = 3
 retryAlgo = "SquaredAlgo"
 retryAlgoParams = {"create": 10, "submit": 60, "job": 5000}
 

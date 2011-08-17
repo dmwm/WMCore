@@ -149,9 +149,9 @@ class MonteCarloFromGENTest(unittest.TestCase):
         procSubscription = Subscription(fileset = topLevelFileset, workflow = procWorkflow)
         procSubscription.loadData()
 
-        self.assertEqual(procSubscription["type"], "Production",
+        self.assertEqual(procSubscription["type"], "Processing",
                          "Error: Wrong subscription type.")
-        self.assertEqual(procSubscription["split_algo"], "EventBased",
+        self.assertEqual(procSubscription["split_algo"], "LumiBased",
                          "Error: Wrong split algo.")
 
         unmergedReco = Fileset(name = "/TestWorkload/MonteCarloFromGEN/unmerged-outputRECORECO")

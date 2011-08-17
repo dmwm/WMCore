@@ -68,7 +68,7 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         procTask = workload.newTask("MonteCarloFromGEN")
 
-        outputMods = self.setupProcessingTask(procTask, "Production", self.inputDataset,
+        outputMods = self.setupProcessingTask(procTask, "Processing", self.inputDataset,
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
                                               splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
@@ -116,10 +116,8 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
-        self.procJobSplitAlgo  = arguments.get("StdJobSplitAlgo", "EventBased")
-        self.procJobSplitArgs  = arguments.get("StdJobSplitArgs",
-                                               {"events_per_job": 750,
-                                                "include_parents": self.includeParents})
+        self.procJobSplitAlgo  = arguments.get("StdJobSplitAlgo", "LumiBased")
+        self.procJobSplitArgs  = arguments.get("StdJobSplitArgs", {"lumis_per_job": 1})
         return self.buildWorkload()
 
 def monteCarloFromGENWorkload(workloadName, arguments):

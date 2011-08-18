@@ -11,6 +11,7 @@ import time
 import pprint
 import tempfile
 import shutil
+import nose
 from httplib import HTTPException
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
@@ -264,6 +265,34 @@ class testJSONRequests(unittest.TestCase):
         req = JSONRequests(url)
         self.assertEquals(req['host'], 'http://localhost:6666')
         self.assertEquals(req.additionalHeaders['Authorization'], 'Basic dXNlcm5hbWU6cEBzc3c6cmQ=')
+
+class TestRequests(unittest.TestCase):
+
+    def testSecureWithProxy(self):
+        """https with proxy"""
+        proxy = os.environ.get('X509_USER_PROXY')
+        if not proxy:
+            raise nose.SkipTest('Only run if an X509 proxy is present')
+        os.environ.pop('X509_HOST_CERT')
+        os.environ.pop('X509_HOST_KEY')
+        os.environ.pop('X509_USER_CERT')
+        os.environ.pop('X509_USER_KEY')
+        req = Requests.Requests('https://cmsweb.cern.ch')
+        out = req.makeRequest('/auth/trouble')
+        self.assertEqual(out[1], 200)
+        self.assertNotEqual(out[0].find('passed basic validation'), -1)
+        self.assertNotEqual(out[0].find('certificate is a proxy'), -1)
+
+
+    def testSecureNoAuth(self):
+        """https with no client authentication"""
+        req = Requests.Requests('https://cmsweb.cern.ch')
+        out = req.makeRequest('')
+        self.assertEqual(out[1], 200)
+        # we should get an html page in response
+        self.assertNotEqual(out[0].find('html'), -1)
+
+
 
 if __name__ == "__main__":
     unittest.main()

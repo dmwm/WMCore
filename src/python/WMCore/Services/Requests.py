@@ -19,6 +19,8 @@ from httplib import HTTPException
 import tempfile
 import shutil
 import stat
+import sys
+
 from WMCore.Algorithms import Permissions
 
 from WMCore.WMException import WMException
@@ -317,8 +319,8 @@ class Requests(dict):
         """
        _getKeyCert_
 
-       Gets the User Proxy if it exists, otherwise throws an exception.
-       This code is borrowed from DBSAPI/dbsHttpService.py
+       Get the user credentials if they exist, otherwise throw an exception.
+       This code was modified from DBSAPI/dbsHttpService.py
         """
         # Zeroth case is if the class has over ridden the key/cert and has it
         # stored in self
@@ -328,7 +330,7 @@ class Requests(dict):
             cert = self['cert']
 
         # Now we're trying to guess what the right cert/key combo is...
-        # First presendence to HOST Certificate, This is how it set in Tier0
+        # First preference to HOST Certificate, This is how it set in Tier0
         elif os.environ.has_key('X509_HOST_CERT'):
             cert = os.environ['X509_HOST_CERT']
             key = os.environ['X509_HOST_KEY']
@@ -349,13 +351,14 @@ class Requests(dict):
             cert = '/tmp/x509up_u'+str(os.getuid())
             key = cert
 
-        # Worst case, hope the user has a cert in ~/.globus
-        else :
-            cert = os.environ['HOME'] + '/.globus/usercert.pem'
-            if os.path.exists(os.environ['HOME'] + '/.globus/userkey.pem'):
-                key = os.environ['HOME'] + '/.globus/userkey.pem'
-            else:
-                key = cert
+        # if interactive we can use an encrypted certificate
+        elif sys.stdin.isatty():
+            if os.path.exists(os.environ['HOME'] + '/.globus/usercert.pem'):
+                cert = os.environ['HOME'] + '/.globus/usercert.pem'
+                if os.path.exists(os.environ['HOME'] + '/.globus/userkey.pem'):
+                    key = os.environ['HOME'] + '/.globus/userkey.pem'
+                else:
+                    key = cert
 
         #Set but not found
         if not os.path.exists(cert) or not os.path.exists(key):

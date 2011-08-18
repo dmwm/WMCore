@@ -102,8 +102,27 @@ class Mask(dict):
 
         Add a run object
         """
+        run.lumis.sort()
+        firstLumi = run.lumis[0]
+        lastLumi  = run.lumis[0]
+        for lumi in run.lumis:
+            if lumi <= lastLumi + 1:
+                lastLumi = lumi
+            else:
+                self.addRunAndLumis(run.run, lumis=[firstLumi, lastLumi])
+                firstLumi = lumi
+                lastLumi  = lumi
+        self.addRunAndLumis(run.run, lumis=[firstLumi, lastLumi])
+        return
 
-        self['runAndLumis'][run.run] = run.lumis
+    def addRunWithLumiRanges(self, run, lumiList):
+        """
+        _addRunWithLumiRanges_
+
+        Add to runAndLumis with call signature
+        addRunWithLumiRanges(run=run, lumiList = [[start1,end1], [start2, end2], ...]
+        """
+        self['runAndLumis'][run] = lumiList
         return
 
     def addRunAndLumis(self, run, lumis = []):
@@ -111,6 +130,9 @@ class Mask(dict):
         _addRunAndLumis_
 
         Add runs and lumis directly
+        TODO: The name of this function is a little misleading. If you pass a list of lumis
+              it ignores the content of the list and adds a range based on the max/min in
+              the list. Missing lumis in the list are ignored.
         """
 
         if not type(lumis) == list:

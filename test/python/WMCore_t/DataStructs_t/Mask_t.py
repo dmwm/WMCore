@@ -14,6 +14,7 @@ Unittest for the WMCore.DataStructs.Mask class
 
 import unittest
 from WMCore.DataStructs.Mask import Mask
+from WMCore.DataStructs.Run import Run
 
 
 class MaskTest(unittest.TestCase):
@@ -121,6 +122,32 @@ class MaskTest(unittest.TestCase):
         self.assertEqual(testMask.getMax('junk'), None)
         self.assertEqual(testMask.getMax('Run'),  1000)
 
+    def testRunsAndLumis(self):
+        """
+        Test several different ways of creating the same list
+        of runs and lumis
+        """
+
+        runMask         = Mask()
+        rangesMask      = Mask()
+        runAndLumisMask = Mask()
+
+        runMask.addRun(Run(100,1,2,3,4,5,6,8,9,10))
+        runMask.addRun(Run(200,6,7,8))
+        runMask.addRun(Run(300,12))
+
+        rangesMask.addRunWithLumiRanges(run=100, lumiList=[[1, 6], [8, 10]])
+        rangesMask.addRunWithLumiRanges(run=200, lumiList=[[6, 8]])
+        rangesMask.addRunWithLumiRanges(run=300, lumiList=[[12, 12]])
+
+        runAndLumisMask.addRunAndLumis(run=100, lumis=[1, 6])
+        runAndLumisMask.addRunAndLumis(run=100, lumis=[8, 10])
+        runAndLumisMask.addRunAndLumis(run=200, lumis=[6, 8])
+        runAndLumisMask.addRunAndLumis(run=300, lumis=[12, 12])
+
+        self.assertEqual(runMask.getRunAndLumis(), rangesMask.getRunAndLumis())
+        # Note, this may break if the TODO in Mask.addRunAndLumis() is addressed
+        self.assertEqual(runMask.getRunAndLumis(), runAndLumisMask.getRunAndLumis())
 
 
 if __name__ == '__main__':

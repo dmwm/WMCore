@@ -395,6 +395,10 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(workloadSummary['performance']['AvgEventTime']['histogram'][0]['average'], 0.0)
         self.assertEqual(workloadSummary['performance']['readMaxMSec']['average'], 1518.0599999999999)
         self.assertEqual(workloadSummary['campaign'], self.campaignName)
+        self.assertEqual(workloadSummary['performance']['readMaxMSec']['worstOffenders'],
+                         [{'logCollect': None, 'log': None, 'value': 1518.0599999999999, 'jobID': 1},
+                          {'logCollect': None, 'log': None, 'value': 1518.0599999999999, 'jobID': 10},
+                          {'logCollect': None, 'log': None, 'value': 1518.0599999999999, 'jobID': 11}])
         return
 
     def atestB_testErrors(self):

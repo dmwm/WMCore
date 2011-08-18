@@ -181,4 +181,36 @@ def floorTruncate(value, precision = 3):
     prec = math.pow(10, precision)
 
     return math.floor(float(value * prec))/float(prec)
+
+
+def sortDictionaryListByKey(dictList, key, reverse = False):
+    """
+    _sortDictionaryListByKey_
+
+    Given a list of dictionaries and a key with a numerical
+    value, sort that dictionary in order of that key's value.
+
+    NOTE: If the key does not exist, this will not raise an exception
+    This is because this is used for sorting of performance histograms
+    And not all histograms have the same value
+    """
+
+    return sorted(dictList, key=lambda k: k.get(key, 0.0), reverse = reverse)
+
+
+def getLargestValues(dictList, key, n = 1):
+    """
+    _getLargestValues_
+
+    Take a list of dictionaries, sort them by the value of a
+    particular key, and return the n largest entries.
+
+    Key must be a numerical key.
+    """
+
+    sortedList = sortDictionaryListByKey(dictList = dictList, key = key,
+                                         reverse = True)
+
+    return sortedList[:n]
+    
     

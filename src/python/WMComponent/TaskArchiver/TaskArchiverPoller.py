@@ -92,7 +92,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         else:
             self.workQueue = None
 
-        self.timeout = getattr(self.config.TaskArchiver, "timeOut", 0)
+        self.timeout    = getattr(self.config.TaskArchiver, "timeOut", 0)
+        self.nOffenders = getattr(self.config.TaskArchiver, 'nOffenders', 3)
 
         # Set up optional histograms
         self.histogramKeys  = getattr(self.config.TaskArchiver, "histogramKeys", [])
@@ -465,7 +466,10 @@ class TaskArchiverPoller(BaseWorkerThread):
                                           options = {"startkey": [workflowName],
                                                      "endkey": [workflowName]})['rows']
 
+        masterList = []
+
         for row in perf:
+            masterList.append(row['value'])
             for key in row['value'].keys():
                 if key in ['startTime', 'stopTime']:
                     continue
@@ -481,6 +485,29 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         for key in output.keys():
             final[key] = {}
+            offenders = MathAlgos.getLargestValues(dictList = masterList, key = key,
+                                                   n = self.nOffenders)
+            for x in offenders:
+                try:
+                    logArchive = self.fwjrdatabase.loadView("FWJRDump", "logArchivesByJobID",
+                                                            options = {"startkey": [x['jobID']],
+                                                                       "endkey": [x['jobID'],
+                                                                                  x['retry_count']]})['rows'][0]['value']['lfn']
+                    logCollectID = self.jobsdatabase.loadView("JobDump", "jobsByInputLFN",
+                                                              options = {"startkey": [logArchive],
+                                                                         "endkey": [logArchive]})['rows'][0]['value']
+                    
+                    logCollect = self.fwjrdatabase.loadView("FWJRDump", "outputByJobID",
+                                                            options = {"startkey": [logCollectID],
+                                                                       "endkey": [logCollectID, {}]})['rows'][0]['value']['lfn']
+                    x['logArchive'] = logArchive.split('/')[-1]
+                    x['logLFN']     = logCollect
+                except IndexError, ex:
+                    logging.error("Unable to find final logArchive tarball")
+                    logging.error(str(ex))
+                except KeyError, ex:
+                    logging.error("Unable to find final logArchive tarball")
+                    logging.error(str(ex))
             if key in self.histogramKeys:
                 histogram = MathAlgos.createHistogram(numList = output[key],
                                                       nBins = self.histogramBins,
@@ -490,7 +517,11 @@ class TaskArchiverPoller(BaseWorkerThread):
                 average, stdDev = MathAlgos.getAverageStdDev(numList = output[key])
                 final[key]['average'] = average
                 final[key]['stdDev']  = stdDev
-            
+
+            final[key]['worstOffenders'] = [{'jobID': x['jobID'], 'value': x.get(key, None),
+                                             'log': x.get('logArchive', None),
+                                             'logCollect': x.get('logCollect', None)} for x in offenders]
+                        
         return final
     
     

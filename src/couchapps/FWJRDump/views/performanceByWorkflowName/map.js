@@ -12,10 +12,16 @@ function(doc) {
       var store = doc['fwjr']['steps'][stepName]['performance']['storage'];
       var perfInfo = Object();
 
+      perfInfo['jobID'] = doc['jobid']
+      perfInfo['retry_count'] = doc['retrycount']
+
       if (CPU && CPU.TotalJobCPU) {
 	for (var perfName in CPU) {
 	  if (Number(CPU[perfName]) != Number.NaN) {
 	    perfInfo[perfName] = CPU[perfName]
+	  }
+	  else {
+	    perfInfo[perfName] = 0.0
 	  }
 	}
 
@@ -35,6 +41,9 @@ function(doc) {
 	for (var perfName in store) {
 	  if (Number(store[perfName]) != Number.NaN) {
 	    perfInfo[perfName] = store[perfName]
+	  }
+	  else {
+	    perfInfo[perfName] = 0.0
 	  }
 	}
       }//END if loop over storage

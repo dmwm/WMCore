@@ -99,5 +99,69 @@ class MathAlgoTest(unittest.TestCase):
         self.assertEqual(result[0]['stdDev'], 0.5)
         self.assertEqual(result[1]['stdDev'], 0.5)
 
+
+    def testSortListByKeys(self):
+        """
+        _testSortListByKeys_
+        
+        Test our ability to sort a list of dictionaries in the order of a single
+        numerical key
+        """
+
+        l = [{'a': 102, 'b': 200, 'name': 'One'},
+             {'a': 101, 'b': 199, 'name': 'Two'},
+             {'a': 100, 'b': 198, 'name': 'Three'},
+             {'a': 103, 'b': 197, 'name': 'Four'}]
+
+        result = MathAlgos.sortDictionaryListByKey(dictList = l, key = 'a')
+        self.assertEqual(result[0]['name'], 'Three')
+        self.assertEqual(result[1]['name'], 'Two')
+        self.assertEqual(result[2]['name'], 'One')
+        self.assertEqual(result[3]['name'], 'Four')
+
+        result = MathAlgos.sortDictionaryListByKey(dictList = l, key = 'b')
+        self.assertEqual(result[0]['name'], 'Four')
+        self.assertEqual(result[1]['name'], 'Three')
+        self.assertEqual(result[2]['name'], 'Two')
+        self.assertEqual(result[3]['name'], 'One')
+
+        result = MathAlgos.sortDictionaryListByKey(dictList = l, key = 'b',
+                                                   reverse = True)
+        self.assertEqual(result[3]['name'], 'Four')
+        self.assertEqual(result[2]['name'], 'Three')
+        self.assertEqual(result[1]['name'], 'Two')
+        self.assertEqual(result[0]['name'], 'One')
+
+
+        # This shouldn't fail, it just should return a flat list
+        result = MathAlgos.sortDictionaryListByKey(dictList = l, key = 'c',
+                                                   reverse = True)
+        
+
+        return
+
+    def testGetLargestValue(self):
+        """
+        _testGetLargestValue_
+        
+        See if we can get the largest value from a list of histograms
+        for a specific key
+        """
+
+        l = [{'a': 102, 'b': 200, 'name': 'One'},
+             {'a': 101, 'b': 199, 'name': 'Two'},
+             {'a': 100, 'b': 198, 'name': 'Three'},
+             {'a': 103, 'b': 197, 'name': 'Four'}]
+
+        result = MathAlgos.getLargestValues(dictList = l, key = 'a', n = 2)
+        self.assertEqual(result, [{'a': 103, 'b': 197, 'name': 'Four'},
+                                  {'a': 102, 'b': 200, 'name': 'One'}])
+        result = MathAlgos.getLargestValues(dictList = l, key = 'b', n = 3)
+        self.assertEqual(result, [{'a': 102, 'b': 200, 'name': 'One'},
+                                  {'a': 101, 'b': 199, 'name': 'Two'},
+                                  {'a': 100, 'b': 198, 'name': 'Three'}])
+        return
+
+
 if __name__ == "__main__":
     unittest.main() 

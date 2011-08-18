@@ -73,9 +73,9 @@ class ProxyTest(unittest.TestCase):
         """
         if not os.path.exists( self.serverKey ):
 
-           self.proxy.destroy( )
-           self.proxyPath = self.proxy.getProxyFilename()
-           assert not os.path.exists(self.proxyPath)
+            self.proxy.destroy( )
+            self.proxyPath = self.proxy.getProxyFilename()
+            assert not os.path.exists(self.proxyPath)
 
     @attr("integration")
     def testCreateProxy( self ):
@@ -151,7 +151,7 @@ class ProxyTest(unittest.TestCase):
 
         self.testCreateProxy()
         user = self.proxy.getUserName( )
-        identity = self.getUserIdentity().split("/")[5][3:]
+        identity = self.getUserIdentity().split("/")[ len(self.getUserIdentity().split("/")) - 1 ][3:]
 
         self.assertEqual(user, identity,
                          "Error: User name is wrong: |%s|\n|%s|" % (user, identity))

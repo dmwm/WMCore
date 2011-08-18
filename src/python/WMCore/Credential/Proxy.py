@@ -69,6 +69,10 @@ Error in cleaning expired credentials. Ignore and go ahead.')
 
     return
 
+from WMCore.WMException import WMException
+class CredentialException(WMException):
+    pass
+
 class Proxy(Credential):
     """
     Basic class to handle user Proxy
@@ -140,7 +144,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
         if retcode != 0 :
             msg = "Error while checking proxy subject for %s since %s"\
                    % (proxy, error)
-            raise Exception(msg)
+            raise CredentialException(msg)
 
         self.logger.debug(\
 'Getting subject : \n command : %s\n subject : %s retcode : %s' %(\
@@ -161,7 +165,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
         if retcode != 0 :
             msg = "Error while checking proxy subject for %s since %s"\
                % (certFile, error)
-            raise Exception(msg)
+            raise CredentialException(msg)
 
         try:
             subject = subjectResult.split('subject=')[1].strip()
@@ -203,7 +207,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
         if retcode != 0 :
             msg = "Error while checking attribute for %s since %s"\
                  % (proxy, error)
-            raise Exception(msg)
+            raise CredentialException(msg)
 
         if not re.compile(r"^"+claimed).search(attribute):
             self.logger.error("Wrong VO group/role.")
@@ -232,7 +236,8 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
         output, error, retcode = execute_command(self.setUI() +  createCmd, self.logger, self.commandTimeout )
 
         if retcode != 0 :
-            raise Exception(\
+
+            raise CredentialException(\
 "Unable to create a valid proxy using command \
    %s\n the output %s\n retcode %s\n since %s" \
         %(createCmd, output, retcode, error))
@@ -254,7 +259,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
         if credential == None:
             msg = "Error no valid proxy to remove "
-            raise Exception(msg)
+            raise CredentialException(msg)
 
         destroyCmd = 'rm -f %s' % credential
 
@@ -264,7 +269,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
             msg = " Error while removing proxy %s using command %s \
              and output is % s since % s" % ( credential, \
                     destroyCmd, output, error )
-            raise Exception( msg )
+            raise CredentialException( msg )
 
         return
 
@@ -297,11 +302,11 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                      %s\n ret: %s'%( myproxyDelegCmd, output, retcode ) )
 
             if retcode > 0 :
-                raise Exception(\
+                raise CredentialException(\
 "Unable to delegate the proxy to myproxyserver %s !\n since %s"\
              % (self.myproxyServer, error) )
 
-        else: raise Exception("myproxy server not set for the proxy %s\
+        else: raise CredentialException("myproxy server not set for the proxy %s\
                           " %credential )
 
         return
@@ -331,7 +336,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                 msg = "Error while checking myproxy timeleft \
                            for %s from %s: %s since %s" \
                    % ( proxy, self.myproxyServer, output, error )
-                raise Exception(msg)
+                raise CredentialException(msg)
 
             if not output:
 
@@ -399,7 +404,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
         else:
 
-            raise Exception("myproxy server not set")
+            raise CredentialException("myproxy server not set")
 
         return proxyTimeleft
 
@@ -423,7 +428,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                 msg = "Error while checking myproxy timeleft for \
             % s from % s: % s since % s" % (proxy, self.myproxyServer, \
                                  output, error)
-                raise Exception(msg)
+                raise CredentialException(msg)
 
             if not output:
 
@@ -530,7 +535,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                             % proxyFilename
             attribute, error, retcode = execute_command(self.setUI() + getVoCmd, self.logger, self.commandTimeout)
             if retcode != 0:
-                raise Exception("Unable to get VO for proxy \
+                raise CredentialException("Unable to get VO for proxy \
                   %s! Exit code:%s"%(proxyFilename, retcode) )
             vo = attribute.replace('\n','')
 
@@ -539,7 +544,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
                         % proxyFilename
             attribute, error, retcode = execute_command(self.setUI() + roleCapCmd, self.logger, self.commandTimeout)
             if retcode != 0:
-                raise Exception(\
+                raise CredentialException(\
   "Unable to get FQAN for proxy %s! Exit code:%s since %s"\
                %(proxyFilename, retcode, error) )
 
@@ -581,7 +586,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
 
         if retcode > 0 :
             self.logger.debug('MyProxy result - retrieval :\n%s'%msg)
-            raise Exception(\
+            raise CredentialException(\
 "Unable to retrieve delegated proxy for user DN %s! Exit code:%s since %s"\
          %(self.userDN, retcode, error) )
 
@@ -599,7 +604,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
 
         timeLeft, error, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
         if retcode != 0 and retcode != 1:
-            raise Exception(\
+            raise CredentialException(\
 "Error while checking retrieved proxy timeleft for %s since %s"\
                  %(proxy, error) )
 
@@ -638,7 +643,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
         if retcode > 0:
             self.logger.debug(\
     'Voms extension result:\n%s'%msg)
-            raise Exception(\
+            raise CredentialException(\
 "Unable to renew proxy voms extension: %s! Exit code:%s" \
              %(proxy, retcode) )
 
@@ -669,7 +674,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
         if retcode != 0 and retcode != 1:
             msg = "Error while checking proxy timeleft for %s since %s"\
                 % (proxy, error)
-            raise Exception(msg)
+            raise CredentialException(msg)
 
         try:
             result = int(timeLeftLocal)
@@ -722,7 +727,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
         if retcode != 0 and retcode != 1:
             msg = "Error while checking proxy actimeleft for %s since %s"\
                      % (proxy, error)
-            raise Exception(msg)
+            raise CredentialException(msg)
 
         try:
 

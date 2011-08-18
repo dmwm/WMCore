@@ -38,6 +38,19 @@ background-color: white;
 font-family: Arial;
 }
 </style>
+<script type="text/javascript">
+function checkAll( el, tick ) {
+  var els = el.form.elements;
+  var x, i = els.length;
+  while ( i-- ) {
+    x = els[i];
+    if ( 'input' == x.nodeName.toLowerCase() &&
+         'checkbox' == x.type ) {
+      x.checked = tick;
+    }
+  }
+}
+</script>
 </head>
 <body>
 <h2>Assign Request</h2>
@@ -90,7 +103,6 @@ ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 value="$
 <br/>
 
 <div id="actions">
-<a href='./?all=1'>Select All</a><br/>
 Actions:<select name="action">
   <option>Assign</option>
   <option>Reject</option>
@@ -100,6 +112,8 @@ Actions:<select name="action">
 <br/>
 
 <div id="requests">
+<input type="button" value="Select All" onclick="checkAll(this, true)"/>
+<input type="button" value="Select None" onclick="checkAll(this, false)"/>
 <table>
 <tr>
 <th>Select</th>

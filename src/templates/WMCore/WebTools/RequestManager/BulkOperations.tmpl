@@ -31,13 +31,26 @@ font-family: Arial;
 }
 </style>
 
+<script type="text/javascript">
+function checkAll( el, tick ) {
+  var els = el.form.elements;
+  var x, i = els.length;
+  while ( i-- ) {
+    x = els[i];
+    if ( 'input' == x.nodeName.toLowerCase() &&
+         'checkbox' == x.type ) {
+      x.checked = tick;
+    }
+  }
+}
+</script>
+
 </head>
 <body>
 <h2>$operation Requests</h2>
 <form action="handle$operation" method="POST">
 
 <div id="actions">
-<a href='./?all=1'>Select All</a><br/>
 #if $actions
 Actions:<select name="action">
   #for $action in $actions
@@ -50,6 +63,8 @@ Actions:<select name="action">
 <br/>
 
 <div id="requests">
+<input type="button" value="Select All" onclick="checkAll(this, true)"/>
+<input type="button" value="Select None" onclick="checkAll(this, false)"/>
 <table>
 <tr>
 <th>Select</th>
@@ -68,7 +83,7 @@ Actions:<select name="action">
 #for $request in $requests
 #set $requestName = $request['RequestName']
 <tr>
-<td align=center><input type="checkbox" $checked name = "checkbox$requestName"/></td> 
+<td align=center><input type="checkbox" $checked name = "checkbox$requestName"/></td>
 <td align=center><a href="/reqmgr/view/details/$requestName">$requestName</a></td>
 <td align=center>$request['RequestType']</td>
 <td align=center>$request['PriorityMenu']</td>

@@ -224,8 +224,8 @@ class DBSUploadPoller(BaseWorkerThread):
     def __init__(self, config, dbsconfig = None):
         """
         Initialise class members
+        
         """
-
         myThread = threading.currentThread()
         
         BaseWorkerThread.__init__(self)
@@ -263,8 +263,13 @@ class DBSUploadPoller(BaseWorkerThread):
 
         if dbsconfig == None:
             self.dbsconfig = config
+            
+        # initialize the alert framework (if available - config.Alert present)
+        #    self.sendAlert will be then be available    
+        self.initAlerts(compName = "DBSUpload")
 
         return
+        
     
     def algorithm(self, parameters = None):
         """
@@ -283,6 +288,7 @@ class DBSUploadPoller(BaseWorkerThread):
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
+            self.sendAlert(6, msg = msg)
             raise DBSUploadPollerException(msg)
         return
 
@@ -362,6 +368,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 msg += str(ex)
                 msg += str(traceback.format_exc())
                 logging.error(msg)
+                self.sendAlert(6, msg = msg)
                 logging.debug("BlockDictionary: %s" % blockDict)
                 logging.debug("FileDictionary: %s" % locationDict)
                 raise DBSUploadPollerException(msg)
@@ -435,6 +442,10 @@ class DBSUploadPoller(BaseWorkerThread):
         # The blocks
         # And the files
         # Time to sort the files into blocks
+        
+        # the counter / watcher of the uploadQueueSize to possibly send alerts
+        uploadQueueSize = getattr(self.config.DBSUpload, "uploadQueueSize", None)
+        uploadQueueSizeCounter = 0
         for block in blocks:
             files = self.uploadToDBS.loadFilesFromBlocks(blockID = block['id'])
             for f in files:
@@ -442,7 +453,15 @@ class DBSUploadPoller(BaseWorkerThread):
                     # Put file in this block
                     logging.debug("Setting file %s to block %s" % (f['lfn'], block['Name']))
                     block['newFiles'].append(f)
-
+                    uploadQueueSizeCounter += 1
+                    
+        # check uploadQueueSize threshold (alert condition)
+        if uploadQueueSize:
+            if uploadQueueSizeCounter >= int(uploadQueueSize):
+                msg = ("DBS upload queue size (%s) exceeded configured "
+                       "threshold (%s)." % (uploadQueueSizeCounter, uploadQueueSize))
+                self.sendAlert(6, msg = msg)
+                
         # Check for block timeout
         for block in blocks:
             if time.time() - block['CreationDate'] > self.maxBlockTime:
@@ -527,6 +546,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 msg += str(ex)
                 msg += str(traceback.format_exc())
                 logging.error(msg)
+                self.sendAlert(6, msg = msg)
                 if getattr(myThread, 'transaction', None) != None: 
                     myThread.transaction.rollback()
                 raise DBSUploadPollerException(msg)
@@ -648,6 +668,7 @@ class DBSUploadPoller(BaseWorkerThread):
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
+            self.sendAlert(6, msg = msg)
             if getattr(myThread, 'transaction', None) != None: 
                 myThread.transaction.rollback()
             raise DBSUploadPollerException(msg)

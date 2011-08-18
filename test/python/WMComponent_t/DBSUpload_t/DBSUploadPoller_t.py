@@ -88,10 +88,13 @@ class DBSUploadTest(unittest.TestCase):
         # Set up a config cache
         configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = self.couchDB)
         configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
-        psetPath = os.path.join("/tmp", "PSet.txt")
+        self.testDir = self.testInit.generateWorkDir()
+
+        psetPath = os.path.join(self.testDir, "PSet.txt")
         f = open(psetPath, 'w')
         f.write(self.configString)
         f.close()
+        
         configCache.addConfig(newConfig = psetPath, psetHash = None)
         configCache.save()
         self.configURL = "%s;;%s;;%s" % (os.environ["COUCHURL"],
@@ -117,8 +120,6 @@ class DBSUploadTest(unittest.TestCase):
         This creates the actual config file used by the component
 
         """
-
-
         config = Configuration()
 
         #First the general stuff
@@ -154,6 +155,16 @@ class DBSUploadTest(unittest.TestCase):
         config.DBSInterface.DBSBlockMaxTime  = 10000
         config.DBSInterface.MaxFilesToCommit = 10
 
+        # addition for Alerts messaging framework, work (alerts) and control
+        # channel addresses to which the component will be sending alerts
+        # these are destination addresses where AlertProcessor:Receiver listens
+        config.section_("Alert")
+        config.Alert.address = "tcp://127.0.0.1:5557"
+        config.Alert.controlAddr = "tcp://127.0.0.1:5559"        
+        # configure threshold of DBS upload queue size alert threshold
+        # reference: trac ticket #1628
+        config.DBSUpload.uploadQueueSize = 2000
+        
         return config
 
 
@@ -344,7 +355,6 @@ class DBSUploadTest(unittest.TestCase):
         See that they both get to global
         """
         #raise nose.SkipTest
-
         myThread = threading.currentThread()
         config = self.createConfig()
         config.DBSInterface.DBSBlockMaxTime = 20
@@ -435,6 +445,9 @@ class DBSUploadTest(unittest.TestCase):
         config = self.createConfig()
         config.DBSUpload.abortStepTwo = True
 
+        originalOut = sys.stdout
+        originalErr = sys.stderr
+
         dbsInterface = DBSInterface(config = config)
         localAPI     = dbsInterface.getAPIRef()
         globeAPI     = dbsInterface.getAPIRef(globalRef = True)
@@ -520,7 +533,10 @@ class DBSUploadTest(unittest.TestCase):
 
         result = listDatasetFiles(apiRef = globeAPI,
                                   datasetPath = '/%s/%s_2/%s' % (name, name, tier))
-        self.assertEqual(len(result), 1)        
+        self.assertEqual(len(result), 1)
+
+        sys.stdout = originalOut
+        sys.stderr = originalErr
 
         return
 
@@ -597,10 +613,45 @@ class DBSUploadTest(unittest.TestCase):
             self.assertEqual(r[0], 'GLOBAL')
 
 
-        return        
+        return
+    
+    
+    def testF_DBSUploadQueueSizeCheckForAlerts(self):
+        """
+        Test will not trigger a real alert being sent unless doing some
+        mocking of the methods used during DBSUploadPoller.algorithm() ->
+        DBSUploadPoller.uploadBlocks() method.
+        As done here, it probably can't be deterministic, yet the feature
+        shall be checked.
+        
+        """
+        sizeLevelToTest = 1
+        myThread = threading.currentThread()
+        config = self.createConfig()
+        # threshold / value to check
+        config.DBSUpload.uploadQueueSize = sizeLevelToTest
+        
+        # without this uploadBlocks method returns immediately
+        name = "ThisIsATest_%s" % (makeUUID())
+        tier = "RECO"
+        nFiles = sizeLevelToTest + 1
+        files = self.getFiles(name = name, tier = tier, nFiles = nFiles)
+        datasetPath = '/%s/%s/%s' % (name, name, tier)
+        
+        # load components that are necessary to check status
+        # (this seems necessary, else some previous tests started failing)
+        factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
+        dbinterface = factory.loadObject("UploadToDBS")
 
-        
-        
+        dbsInterface = DBSInterface(config = config)
+        localAPI = dbsInterface.getAPIRef()
+        globeAPI = dbsInterface.getAPIRef(globalRef = True)        
+        testDBSUpload = DBSUploadPoller(config)
+        # this is finally where the action (alert) should be triggered from
+        testDBSUpload.algorithm()
+
+        return
+                
 
 if __name__ == '__main__':
     unittest.main()

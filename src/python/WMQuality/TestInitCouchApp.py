@@ -56,8 +56,6 @@ class CouchAppTestHarness:
             couchapppush(self.couchappConfig, couchappdir, "%s/%s" % (self.couchUrl, urllib.quote_plus(self.dbName)))
 
 
-
-
 class TestInitCouchApp(TestInit):
     """
     TestInit with baked in Couch goodness
@@ -68,6 +66,15 @@ class TestInitCouchApp(TestInit):
         self.databases = []
         self.couch = None
 
+    def couchAppRoot(self):
+        """Return path to couchapp dir"""
+        wmBase = self.init.getWMBASE()
+        develPath = "%s/src/couchapps" % wmBase
+        if not os.path.exists(develPath):
+            basePath = "%s/couchapps" % os.environ['WMCORE_ROOT']
+        else:
+            basePath = develPath
+        return basePath
         
     def setupCouch(self, dbName,  *couchapps):
         """
@@ -79,8 +86,7 @@ class TestInitCouchApp(TestInit):
         self.databases.append(dbName)
         self.couch = CouchAppTestHarness(dbName)
         self.couch.create()
-        wmBase = self.init.getWMBASE()
-        self.couch.pushCouchapps(*["%s/src/couchapps/%s" % (wmBase, couchapp) for couchapp in couchapps ])
+        self.couch.pushCouchapps(*[os.path.join(self.couchAppRoot(), couchapp) for couchapp in couchapps ])
 
 
     couchUrl = property(lambda x: x.couch.couchUrl)

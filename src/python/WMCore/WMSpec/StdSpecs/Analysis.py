@@ -20,7 +20,7 @@ def getTestArguments():
     args["ScramArch"] =  "slc5_ia32_gcc434"
     args['CMSSWVersion'] = "CMSSW_4_2_0"
     args["userSandbox"] = 'http://home.fnal.gov/~ewv/agent.tgz'
-    
+
     return args
 
 def remoteLFNPrefix(site, lfn=''):
@@ -38,18 +38,19 @@ def remoteLFNPrefix(site, lfn=''):
 class AnalysisWorkloadFactory(StdBase):
     """
     Analysis workload.
-    
     """
+
     def __init__(self):
         StdBase.__init__(self)
+
 
     def buildWorkload(self):
         """
         _buildWorkload_
 
         Build a workflow for Analysis  requests.
-        
         """
+
         workload = self.createWorkload()
         workload.setDashboardActivity("analysis")
         analysisTask = workload.newTask("Analysis")
@@ -78,9 +79,9 @@ class AnalysisWorkloadFactory(StdBase):
         logCollectStep = logCollectTask.getStep('logCollect1')
 
         if not self.saveLogs:
-            logCollectTime = time.time() + 5*24*3600
-            logCollectTask.setSplittingAlgorithm("FixedDelay", trigger_time = logCollectTime)
-            logCollectStep.addOverride('cleanOnly', True)
+            logCollectStep.addOverride('dontStage', True)
+        else:
+            logCollectStep.addOverride('dontStage', False)
 
         logCollectStep.addOverride('userLogs',  True)
         logCollectStep.addOverride('seName',    seName)
@@ -95,8 +96,8 @@ class AnalysisWorkloadFactory(StdBase):
     def __call__(self, workloadName, arguments):
         """
         Create a workload instance for an Analysis request
-        
         """
+
         StdBase.__call__(self, workloadName, arguments)
 
         self.globalTag = arguments.get("GlobalTag", None)
@@ -115,14 +116,14 @@ class AnalysisWorkloadFactory(StdBase):
         self.siteBlacklist = arguments.get("SiteBlacklist", [])
 
         self.couchURL = arguments.get("CouchUrl", "http://derpderp:derpityderp@cmssrv52.derp.gov:5984")
-        self.couchDBName = arguments.get("CouchDBName", "wmagent_config_cache")        
+        self.couchDBName = arguments.get("CouchDBName", "wmagent_config_cache")
         self.analysisConfigCacheID = arguments.get("AnalysisConfigCacheDoc", None)
-        
+
         # for publication
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
 
         self.emulation = arguments.get("Emulation", False)
-        
+
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
         self.analysisJobSplitAlgo  = arguments.get("JobSplitAlgo", "EventBased")
@@ -134,7 +135,6 @@ class AnalysisWorkloadFactory(StdBase):
         self.userFiles   = arguments.get("userFiles", [])
         self.userName    = arguments.get("Username",'jblow')
         self.processingVersion = arguments.get('ProcessingVersion', 'v1')
-        self.saveLogs    = arguments.get("SaveLogs", False)
+        self.saveLogs    = arguments.get("SaveLogs", True)
 
         return self.buildWorkload()
-

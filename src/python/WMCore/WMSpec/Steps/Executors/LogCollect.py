@@ -29,7 +29,7 @@ class LogCollect(Executor):
 
     Execute a LogCollect Step
 
-    """        
+    """
 
     def pre(self, emulator = None):
         """
@@ -41,7 +41,7 @@ class LogCollect(Executor):
         #Are we using an emulator?
         if (emulator != None):
             return emulator.emulatePre( self.step )
-        
+
         print "Steps.Executors.LogCollect.pre called"
         return None
 
@@ -64,7 +64,7 @@ class LogCollect(Executor):
         lfnPrefix = overrides.get('lfnPrefix', "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms")
         lfnBase   = overrides.get('lfnBase',   "/store/user/jsmith")
         userLogs  = overrides.get('userLogs',  False)
-        cleanOnly = overrides.get('cleanOnly', False)
+        dontStage = overrides.get('dontStage', False)
 
         stageOutParams = {"command": "srmv2", "option": "-streams_num=1",
                           "se-name": seName,  "lfn-prefix": lfnPrefix}
@@ -80,7 +80,7 @@ class LogCollect(Executor):
 
 
         # Now we need the logs
-        if not cleanOnly:
+        if not dontStage: # Don't stage or delete files
             logs = []
             for file in self.job["input_files"]:
                 logs.append({"LFN": file["lfn"]})
@@ -146,31 +146,31 @@ class LogCollect(Executor):
                 raise WMExecutionFailure(60408, "LogCollectStageOutError", msg)
             signal.alarm(0)
 
-        # If we're still here we didn't die on stageOut
-        for file in self.job["input_files"]:        
-            signal.signal(signal.SIGALRM, alarmHandler)
-            signal.alarm(waitTime)
-            try:
-                fileToDelete = {"LFN": file["lfn"],
-                                "PFN": None,
-                                "SEName": None,
-                                "StageOutCommand": None}
-                deleteMgr(fileToDelete = fileToDelete)
-            except Alarm:
-                msg = "Indefinite hang during delete of LogCollect"
-                logging.error(msg)
-                raise WMExecutionFailure(60411, "DeleteTimeout", msg)
-            except Exception, ex:
-                msg = "Unable to delete files:\n"
-                msg += str(ex)
-                logging.error(msg)
-                raise WMExecutionFailure(60410, "DeleteError", msg)
-            signal.alarm(0)
+            # If we're still here we didn't die on stageOut
+            for file in self.job["input_files"]:
+                signal.signal(signal.SIGALRM, alarmHandler)
+                signal.alarm(waitTime)
+                try:
+                    fileToDelete = {"LFN": file["lfn"],
+                                    "PFN": None,
+                                    "SEName": None,
+                                    "StageOutCommand": None}
+                    deleteMgr(fileToDelete = fileToDelete)
+                except Alarm:
+                    msg = "Indefinite hang during delete of LogCollect"
+                    logging.error(msg)
+                    raise WMExecutionFailure(60411, "DeleteTimeout", msg)
+                except Exception, ex:
+                    msg = "Unable to delete files:\n"
+                    msg += str(ex)
+                    logging.error(msg)
+                    raise WMExecutionFailure(60410, "DeleteError", msg)
+                signal.alarm(0)
 
 
         # Add to report
         outputRef = getattr(self.report.data, self.stepName)
-        if cleanOnly:
+        if dontStage:
             outputRef.output.pfn = 'NotStaged'
             outputRef.output.location = 'NotStaged'
             outputRef.output.lfn = 'NotStaged'
@@ -178,7 +178,7 @@ class LogCollect(Executor):
             outputRef.output.pfn = tarInfo['PFN']
             outputRef.output.location = tarInfo['SEName']
             outputRef.output.lfn = tarInfo['LFN']
-        return 
+        return
 
     def post(self, emulator = None):
         """
@@ -190,7 +190,7 @@ class LogCollect(Executor):
         #Another emulator check
         if (emulator != None):
             return emulator.emulatePost( self.step )
-        
+
         print "Steps.Executors.LogCollect.post called"
         return None
 

@@ -4,7 +4,7 @@ _ParentlessMergeBySize_
 
 WMBS merging that ignores file parents.
 """
-
+import time
 import threading
 
 from WMCore.WMBS.File import File
@@ -91,8 +91,9 @@ class ParentlessMergeBySize(JobFactory):
         Try to define merge jobs that meet the size requirement.
         """
         mergeJobFileSize = 0
-        mergeJobEvents = 0
-        mergeJobFiles = []
+        mergeJobEvents   = 0
+        mergeJobFiles    = []
+        earliestInsert   = 999999999999999
 
         mergeableFiles.sort(fileCompare)
 
@@ -104,7 +105,8 @@ class ParentlessMergeBySize(JobFactory):
             elif mergeableFile["file_size"] + mergeJobFileSize > self.maxMergeSize or \
                      mergeableFile["file_events"] + mergeJobEvents > self.maxMergeEvents:
                 if mergeJobFileSize > self.minMergeSize or \
-                       self.forceMerge == True:
+                       self.forceMerge == True or \
+                       time.time() - mergeableFile['insert_time'] > self.maxWaitTime:
                     self.createMergeJob(mergeJobFiles)
                     mergeJobFileSize = 0
                     mergeJobEvents = 0
@@ -115,8 +117,11 @@ class ParentlessMergeBySize(JobFactory):
             mergeJobFiles.append(mergeableFile)
             mergeJobFileSize += mergeableFile["file_size"]
             mergeJobEvents += mergeableFile["file_events"]
+            if mergeableFile['insert_time'] < earliestInsert:
+                earliestInsert = mergeableFile['insert_time']
                         
-        if mergeJobFileSize > self.minMergeSize or self.forceMerge == True:
+        if mergeJobFileSize > self.minMergeSize or self.forceMerge == True or \
+               time.time() - earliestInsert > self.maxWaitTime:
             if len(mergeJobFiles) > 0:
                 self.createMergeJob(mergeJobFiles)
                                 
@@ -136,10 +141,11 @@ class ParentlessMergeBySize(JobFactory):
         # This doesn't use a proxy
         self.grabByProxy = False
         
-        self.maxMergeSize = int(kwargs.get("max_merge_size", 1000000000))
-        self.minMergeSize = int(kwargs.get("min_merge_size", 1048576))
-        self.maxMergeEvents = int(kwargs.get("max_merge_events", 50000))
+        self.maxMergeSize    = int(kwargs.get("max_merge_size", 1000000000))
+        self.minMergeSize    = int(kwargs.get("min_merge_size", 1048576))
+        self.maxMergeEvents  = int(kwargs.get("max_merge_events", 50000))
         self.mergeAcrossRuns = kwargs.get("merge_across_runs", True)
+        self.maxWaitTime     = kwargs.get("max_wait_time", 24 * 3600)
 
         self.subscription["fileset"].load()
 

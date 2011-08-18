@@ -41,8 +41,9 @@ class StdBase(object):
         self.siteWhitelist = []
         self.unmergedLFNBase = None
         self.mergedLFNBase = None
-        self.minMergeSize = 500000000
+        self.minMergeSize = 2147483648
         self.maxMergeSize = 4294967296
+        self.maxWaitTime = 24 * 3600
         self.maxMergeEvents = 100000
         self.validStatus = None
         self.includeParents = False
@@ -68,8 +69,9 @@ class StdBase(object):
         self.siteWhitelist = arguments.get("SiteBlacklist", [])
         self.unmergedLFNBase = arguments.get("UnmergedLFNBase", "/store/unmerged")
         self.mergedLFNBase = arguments.get("MergedLFNBase", "/store/data")
-        self.minMergeSize = arguments.get("MinMergeSize", 500000000)
+        self.minMergeSize = arguments.get("MinMergeSize", 2147483648)
         self.maxMergeSize = arguments.get("MaxMergeSize", 4294967296)
+        self.maxWaitTime = arguments.get("MaxWaitTime", 24 * 3600)
         self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
         self.validStatus = arguments.get("ValidStatus", "PRODUCTION")
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
@@ -341,11 +343,13 @@ class StdBase(object):
 
         if dataTier == "DQM":
             # DQM wants everything to be a single file per run, so we'll merge
-            # accordingly.
+            # accordingly.  We'll set the max_wait_time to two weeks as files
+            # tend to be garbage collected after that.
             mergeTask.setSplittingAlgorithm(splitAlgo,
                                             max_merge_size = 21000000000,
                                             min_merge_size = 20000000000,
                                             max_merge_events = 21000000000,
+                                            max_wait_time = 14 * 24 * 3600,
                                             merge_across_runs = False,
                                             siteWhitelist = self.siteWhitelist,
                                             siteBlacklist = self.siteBlacklist)
@@ -354,6 +358,7 @@ class StdBase(object):
                                             max_merge_size = self.maxMergeSize,
                                             min_merge_size = self.minMergeSize,
                                             max_merge_events = self.maxMergeEvents,
+                                            max_wait_time = self.maxWaitTime,
                                             siteWhitelist = self.siteWhitelist,
                                             siteBlacklist = self.siteBlacklist)            
 

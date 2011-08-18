@@ -681,6 +681,35 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
                        "Error: Wrong location."
                        
         return
+
+
+    def testMaxWaitTime(self):
+        """
+        _testMaxWaitTime_
+
+        Set the max wait times to be negative - this should force all files to merge
+        out immediately
+
+        Using the first setup as the first merge test which should normally produce
+        no jobGroups
+        """
+        self.stuffWMBS()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.mergeSubscription)
+
+        result = jobFactory(min_merge_size = 200000, max_merge_size = 2000000000,
+                            max_merge_events = 200000000, max_wait_time = -10)
+
+        # Everything should be in one, small jobGroup
+        self.assertEqual(len(result), 1)
+        self.assertEqual(len(result[0].jobs), 1)
+        job = result[0].jobs[0]
+        # All files should be in one job
+        self.assertEqual(len(job.getFiles()), 11)
+
+        return
     
 if __name__ == '__main__':
     unittest.main()

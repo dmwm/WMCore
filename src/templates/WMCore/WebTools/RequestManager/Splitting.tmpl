@@ -166,6 +166,7 @@ function generateMerge(splitAlgo, splitParams) {
   frmStr += generateInputRow("Min merge size:", "min_merge_size", splitParams);
   frmStr += generateInputRow("Max merge size:", "max_merge_size", splitParams);
   frmStr += generateInputRow("Max merge events:", "max_merge_events", splitParams);
+  frmStr += generateInputRow("Max wait time (seconds):", "max_wait_time", splitParams);
   frmStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   frmStr += "</table>\n";
   return frmStr;

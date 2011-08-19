@@ -748,7 +748,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # cancel in global, and propagate down to local
         #service = WorkQueueService({'endpoint': self.localQueue.backend.parentCouchUrl})
-        service = WorkQueueService(self.globalQueue.backend.db['host'], self.globalQueue.backend.db.name)
+        service = WorkQueueService(self.localQueue.backend.parentCouchUrlWithAuth)
         service.cancelWorkflow(self.processingSpec.name())
         #self.globalQueue.cancelWork(WorkflowName = self.spec.name())
         self.globalQueue.performQueueCleanupActions()

@@ -122,6 +122,7 @@ class MaskTest(unittest.TestCase):
         self.assertEqual(testMask.getMax('junk'), None)
         self.assertEqual(testMask.getMax('Run'),  1000)
 
+
     def testRunsAndLumis(self):
         """
         Test several different ways of creating the same list
@@ -148,6 +149,34 @@ class MaskTest(unittest.TestCase):
         self.assertEqual(runMask.getRunAndLumis(), rangesMask.getRunAndLumis())
         # Note, this may break if the TODO in Mask.addRunAndLumis() is addressed
         self.assertEqual(runMask.getRunAndLumis(), runAndLumisMask.getRunAndLumis())
+
+
+    def testFilter(self):
+        """
+        Test filtering of a set(run) object
+        """
+        mask = Mask()
+        mask.addRunWithLumiRanges(run=1, lumiList=[[1, 9], [12, 12], [31, 31], [38, 39], [49, 49]])
+
+        runs = set()
+        runs.add(Run(1, 148, 166, 185, 195, 203, 212))
+        newRuns = mask.filterRunLumisByMask(runs = runs)
+        self.assertEqual(len(newRuns), 0)
+
+        runs = set()
+        runs.add(Run(1, 2, 148, 166, 185, 195, 203, 212))
+        runs.add(Run(2, 148, 166, 185, 195, 203, 212))
+        newRuns = mask.filterRunLumisByMask(runs = runs)
+        self.assertEqual(len(newRuns), 1)
+
+        runs = set()
+        runs.add(Run(1, 2, 148, 166, 185, 195, 203, 212))
+        newRuns = mask.filterRunLumisByMask(runs = runs)
+        self.assertEqual(len(newRuns), 1)
+
+        run = newRuns.pop()
+        self.assertEqual(run.run, 1)
+        self.assertEqual(run.lumis, [2])
 
 
 if __name__ == '__main__':

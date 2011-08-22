@@ -190,7 +190,6 @@ class Mask(dict):
             # ALWAYS TRUE
             return runs
 
-
         lumisToRemove = {}
         for r in runs:
             lumisToRemove = []
@@ -202,17 +201,12 @@ class Mask(dict):
             for l in lumisToRemove:
                 r.lumis.remove(l)
 
-        runsToRemove = []
+        newRuns = set()
+
         for r in runs:
-            if len(r.lumis) < 1 and not r in runsToRemove:
-                runsToRemove.append(r)
-
-        for r in runsToRemove:
-            runs.remove(r)
-
-        return runs
-
-
+            if len(r.lumis) >0:
+                newRuns.add(r)
+        return newRuns
 
 
 

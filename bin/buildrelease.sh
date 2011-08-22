@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
-##H buildrelease.sh [options] <version as string i.e. 0.8.0pre2>
+##H buildrelease.sh [options] <version as string i.e. 0.8.0.pre2>
+##H
+##H options
+##H --skip-build      Tag but do not build rpm's.
+##H --repo=           Provide the repo file to update, defaults to comp.releases.
 ##H
 ##H Tag & build a wmcore/wmagent release
 

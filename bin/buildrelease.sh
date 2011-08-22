@@ -107,7 +107,7 @@ echo "Note: this may fail if the config files don't have all the necessary info 
  perl -p -i -e "s{### RPM.*}{### RPM cms wmagent $VERSION}g" wmagent.spec; \
  perl -p -i -e "s{### RPM.*}{### RPM cms wmcore $VERSION}g" wmcore.spec; \
  perl -p -i -e "s{\+ HEAD/.*wmcore.spec wmagent.spec.*}{+ HEAD/$VERSION wmcore.spec wmagent.spec}g" ${REPO}; \
- cvs commit -m"wmagent $VERSION"; \
+ cvs commit -m"wmagent $VERSION" wmagent.spec wmcore.spec ${REPO};
 )
 if [ $? -ne 0 ]; then
   echo "RPM Request failed - please request manually"
@@ -118,6 +118,6 @@ fi
 echo "Requested rpm build - should take 30 mins"
 echo "Will then appear at"
 echo "https://twiki.cern.ch/twiki/bin/view/CMS/DMWMBuildsStatusPreReleases"
-echo "or https://twiki.cern.ch/twiki/bin/view/CMS/DMWMBuilds"
+echo "or https://twiki.cern.ch/twiki/bin/viewauth/CMS/DMWMBuildsStatusReleases"
 
 exit 0

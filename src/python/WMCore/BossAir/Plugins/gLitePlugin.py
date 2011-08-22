@@ -152,7 +152,8 @@ class gLitePlugin(BasePlugin):
                         'Aborted',
                         'Cleared',
                         'Cancelled by user',
-                        'Cancelled']
+                        'Cancelled',
+                        'Purged']
 
 
         self.defaultDelegation = {
@@ -270,7 +271,8 @@ class gLitePlugin(BasePlugin):
                      'Aborted': 'Error',
                      'Cleared': 'Complete',
                      'Cancelled by user': 'Complete',
-                     'Cancelled': 'Error'
+                     'Cancelled': 'Error',
+                     'Purged': 'Error'
                     }
 
         return stateDict
@@ -735,7 +737,8 @@ class gLitePlugin(BasePlugin):
                             changeList.append(jj)
 
                         if status not in ['Done', 'Aborted', 'Cleared',
-                                          'Cancelled by user', 'Cancelled']:
+                                          'Cancelled by user', 'Cancelled',
+                                          'Purged']:
                             runningList.append(jj)
                         else:
                             completeList.append(jj)
@@ -804,7 +807,7 @@ class gLitePlugin(BasePlugin):
             logging.info("Processing job %s " %str(jj['status']))
 
             if jj['status'] not in ['Done']:
-                if jj['status'] in ['Aborted']:
+                if jj['status'] in ['Aborted', 'Purged']:
                     abortedJobs.append( jj )
                 continue
 

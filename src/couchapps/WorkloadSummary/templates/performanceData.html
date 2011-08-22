@@ -33,7 +33,7 @@
                                 var histDataArray = convertToHistogramData(data);
                                 for (var i in histDataArray) {
                                     var config = {width: 200, height:100};
-                                    pHistogram(config, histDataArray[i].histoData)
+                                    pHistogram(config, histDataArray[i].histoData, i)
                                 }
                             }
                            });

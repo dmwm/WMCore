@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <title>{{{workflow}}} Performance Histogram</title>
+    <script src="/_utils/script/json2.js"></script>
+    <script src="/_utils/script/jquery.js"></script>
+    <script type="text/javascript" src="../../vendor/protovis/protovis-r3.2.js"></script>
+    <script type="text/javascript" src="../../js/layout/gridLayout.js"></script>
+    <script type="text/javascript" src="../../js/container/histogram.js"></script>
+    <style type="text/css">
+    #center {
+      display: table-cell;
+      vertical-align: middle;
+    }
+    
+    #fig {
+      position: relative;
+      margin: auto;
+    }
+    </style>
+  </head>
+  <body>
+      <h3>{{{workflow}}} Performance Histogram</h3>
+       <div id="center">
+           <div id="fig">
+               <script>
+                   var hData = {{{data}}};
+                   var layoutConfig = {};
+                   layoutConfig.top = 0;
+                   layoutConfig.left = 0;
+                   layoutConfig.width =250;
+                   layoutConfig.height = 200;
+                   layoutConfig.wPadding = 50;
+                   layoutConfig.hPadding = 20; 
+                   layoutConfig.numOfColumns = 5
+                   
+                   gridLayout(layoutConfig, histogramContainer, hData).render()
+                   
+               </script>
+           </div>
+       </div>
+  </body>
+</html>

@@ -5,8 +5,8 @@
     <script src="/_utils/script/jquery.js"></script>
      <script src="/_utils/script/jquery.couch.js"></script>
     <script type="text/javascript" src="vendor/protovis/protovis-r3.2.js"></script>
-    <script type="text/javascript" src="js/protovisHistogram.js"></script>
-    <script type="text/javascript" src="js/dataMap/histogramData.js"></script>
+    <script type="text/javascript" src="js/layout/gridLayout.js"></script>
+    <script type="text/javascript" src="js/container/histogram.js"></script>
     <style type="text/css">
     #center {
       display: table-cell;
@@ -25,15 +25,16 @@
        <div id="center">
            <div id="fig">
                <script>
-                   couchDB = $.couch.db("workloadSummay");
+                   couchDB = $.couch.db("workloadSummary"); // change to correct db name
                    couchDB.view("WorkloadSummary/performanceDataByCampaign",{
                             //key: "test",
                             success : function(data){
                                 var histDataArray = convertToHistogramData(data);
                                 for (var i in histDataArray) {
                                     //TODO: make a multiple historgram displayed
-                                    var config = {width: 300, height:100};
-                                    pHistogram(config, histDataArray[i].histoData)
+                                    // using nested grid
+                                    //var config = {width: 300, height:100};
+                                    //histogramContainer(config, histDataArray[i].histoData, i)
                                     //break;
                                 }
                             }

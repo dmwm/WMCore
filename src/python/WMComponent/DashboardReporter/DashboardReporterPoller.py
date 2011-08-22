@@ -12,7 +12,7 @@ import time
 import socket
 import os.path
 import logging
-
+from WMCore import __version__
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.WMException                     import WMException
 from WMCore.JobStateMachine.ChangeState     import ChangeState
@@ -282,7 +282,7 @@ class DashboardReporterPoller(BaseWorkerThread):
         package['taskId']         = 'wmagent_%s' % name
         package['jobId']          = 'taskMeta'
         package['JSTool']         = 'WMAgent'
-        package['JSToolVersion']  = '0.7.14'
+        package['JSToolVersion']  = __version__
         package['CMSUser']        = user
         package['Workflow']       = name
         package['AgentName']      = self.agentName

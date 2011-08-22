@@ -137,7 +137,7 @@ class DBSUploadTest(unittest.TestCase):
         files = []
 
         for f in range(nFiles):
-            testFile = DBSBufferFile(lfn = '%s-%s-%i' % (name, site, f), size = 1024,
+            testFile = DBSBufferFile(lfn = '/data/store/random/random/RANDOM/test/0/%s-%s-%i.root' % (name, site, f), size = 1024,
                                      events = 20, checksums = {'cksum': 1})
             testFile.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
                                   appFam = "RECO", psetHash = "GIBBERISH",
@@ -155,7 +155,7 @@ class DBSUploadTest(unittest.TestCase):
             files.append(testFile)
 
 
-        testFileChild = DBSBufferFile(lfn = '%s-%s-child' %(name, site), size = 1024,
+        testFileChild = DBSBufferFile(lfn = '/data/store/random/random/RANDOM/test/0/%s-%s-child.root' %(name, site), size = 1024,
                                  events = 10, checksums = {'cksum': 1})
         testFileChild.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
                               appFam = "RECO", psetHash = "GIBBERISH",
@@ -261,12 +261,13 @@ class DBSUploadTest(unittest.TestCase):
     def testB_DONOTUSE(self):
 
         config = self.getConfig()
-        config.DBSUpload.DBSBlockMaxFiles = 1000
+        config.DBSUpload.DBSBlockMaxFiles = 1
+        config.DBSUpload.copyBlock = True
 
         name = "ThisIsATest_%s" % (makeUUID())
         tier = "RECO"
-        nFiles = 1001
-        files = self.getFiles(name = name, tier = tier, nFiles = nFiles, nLumis = 1000)
+        nFiles = 10
+        files = self.getFiles(name = name, tier = tier, nFiles = nFiles, nLumis = 3)
         datasetPath = '/%s/%s/%s' % (name, name, tier)
 
         dbsUploader = DBSUploadPoller(config = config)

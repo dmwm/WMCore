@@ -133,7 +133,6 @@ def uploadWorker(input, results, dbsUrl):
 
         # Do stuff with DBS
         try:
-            print block
             dbsApi.insertBlockBluk(blockDump = block)
             results.put({'name': name, 'success': True})        
         except Exception, ex:
@@ -143,7 +142,6 @@ def uploadWorker(input, results, dbsUrl):
                 # Ignore this for now
                 logging.error("Had duplicate entry for block %s\n" % name)
                 logging.error("Ignoring for now.\n")
-                print exString
                 results.put({'name': name, 'success': True})
             else:
                 msg =  "Error trying to process block %s through DBS.\n" % name
@@ -215,6 +213,10 @@ class DBSUploadPoller(BaseWorkerThread):
         self.dasCache   = {}
 
         self.filesToUpdate = []
+
+        self.produceCopy = getattr(self.config.DBSUpload, 'copyBlock', False)
+        self.copyPath    = getattr(self.config.DBSUpload, 'copyBlockPath',
+                                   '/data/mnorman/block.json')
 
         return
 
@@ -635,15 +637,15 @@ class DBSUploadPoller(BaseWorkerThread):
         # Now that things are in DBSBuffer, we can put them in DBS
 
         for block in blocks:
-            #encodedBlock = block.encode()
-            #print "Found block %s in blocks" % block.getName()
+            logging.debug("Found block %s in blocks" % block.getName())
             block.setPhysicsGroup(group = self.physicsGroup)
             encodedBlock = block.data
             self.input.put({'name': block.getName(), 'block': encodedBlock})
-            import json
-            f = open('/data/mnorman/block.json', 'w')
-            f.write(json.dumps(encodedBlock))
-            f.close()
+            if self.produceCopy:
+                import json
+                f = open(self.copyPath, 'w')
+                f.write(json.dumps(encodedBlock))
+                f.close()
             self.queuedBlocks.append(block.getName())
 
 

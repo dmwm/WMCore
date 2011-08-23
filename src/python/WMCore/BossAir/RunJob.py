@@ -25,7 +25,7 @@ class RunJob(dict):
                  cache_dir = None, status_time = None, packageDir = None,
                  sandbox = None, priority = None, site_cms_name = None,
                  taskType = None, possibleSites = [], sw_version = None,
-                 scram_arch = None ):
+                 scram_arch = None, siteName = None ):
         """
         Just make sure you init the dictionary fields.
 
@@ -53,7 +53,7 @@ class RunJob(dict):
         self.setdefault('possibleSites', possibleSites)
         self.setdefault('swVersion', sw_version)
         self.setdefault('scramArch', scram_arch)
-
+        self.setdefault('siteName', siteName)
 
         return
 
@@ -70,6 +70,7 @@ class RunJob(dict):
         self['jobid']       = job.get('id', None)
         self['retry_count'] = job.get('retry_count', None)
         self['userdn']      = job.get('owner', None)
+        self['siteName']    = job.get('custom', {}).get('location', None)
 
         # Update the job with all other shared keys
         for key in job.keys():

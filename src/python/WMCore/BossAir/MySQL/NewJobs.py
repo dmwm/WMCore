@@ -16,11 +16,12 @@ class NewJobs(DBFormatter):
     """
 
 
-    sql = """INSERT IGNORE INTO bl_runjob (wmbs_id, grid_id, bulk_id, sched_status, retry_count, user_id)
+    sql = """INSERT IGNORE INTO bl_runjob (wmbs_id, grid_id, bulk_id, sched_status, retry_count, user_id, location)
                VALUES (:jobid, :gridid, :bulkid,
                  (SELECT id FROM bl_status WHERE name = :status), 
                  :retry_count,
-                 (SELECT id FROM wmbs_users WHERE cert_dn = :userdn)
+                 (SELECT id FROM wmbs_users WHERE cert_dn = :userdn),
+                 (SELECT id FROM wmbs_location WHERE site_name = :location)
           )"""
 
 
@@ -39,8 +40,9 @@ class NewJobs(DBFormatter):
         binds = []
         for job in jobs:
             binds.append({'jobid': job['jobid'], 'gridid': job.get('gridid', None), 'bulkid': job.get('bulkid', None),
-                          'status': job.get('status', None), 'retry_count': job['retry_count'], 'userdn': job['userdn']})
-
+                          'status': job.get('status', None), 'retry_count': job['retry_count'], 'userdn': job['userdn'],
+                          'location': job.get('siteName')})
+            
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
 

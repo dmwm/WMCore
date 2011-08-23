@@ -507,7 +507,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     if workflow in jobsToPrune.keys():
                         self.cachedJobs[siteName][taskType][workflow] -= jobsToPrune[workflow]
 
-        logging.info("Have %s jobs to submit." % len(jobsToSubmit))
+        logging.info("Have %s packages to submit." % len(jobsToSubmit))
         logging.info("Done assigning site locations.")
         return jobsToSubmit
 

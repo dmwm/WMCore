@@ -127,9 +127,9 @@ class BossAirTest(unittest.TestCase):
         resourceControl = ResourceControl()
         for site in self.sites:
             resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
-                                       ceName = site, plugin = "CondorPlugin")
+                                       ceName = site, plugin = "CondorPlugin", jobSlots = 1000)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
-                                            maxSlots = 10000)
+                                            maxSlots = 1000)
         resourceControl.insertSite(siteName = 'Xanadu', seName = 'se.Xanadu',
                                    ceName = 'Xanadu', plugin = "TestPlugin")
         resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
@@ -353,6 +353,7 @@ class BossAirTest(unittest.TestCase):
             testJob['owner']   = 'mnorman'
             testJob["siteBlacklist"] = bl
             testJob["siteWhitelist"] = wl
+            testJob['ownerDN'] = 'mnorman'
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)
             testJob.create(jobGroup)
@@ -401,6 +402,7 @@ class BossAirTest(unittest.TestCase):
             testJob = Job(name = '%s-%i' % (nameStr, i))
             testJob['location'] = location
             testJob['userdn']   = 'moron'
+            testJob['owner']    = 'moron'
             testJob.create(testJobGroup)
             jobList.append(testJob)
 

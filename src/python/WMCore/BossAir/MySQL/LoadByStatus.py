@@ -36,7 +36,6 @@ class LoadByStatus(DBFormatter):
 
         binds = {'complete': complete, 'status': status}
 
-
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
 

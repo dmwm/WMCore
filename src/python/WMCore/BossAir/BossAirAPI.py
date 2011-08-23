@@ -223,7 +223,6 @@ class BossAirAPI(WMConnectionBase):
                                             complete = complete,
                                             conn = self.getDBConn(),
                                             transaction = self.existingTransaction())
-
         statusJobs = []
         for jDict in loadJobs:
             rj = RunJob()
@@ -403,7 +402,6 @@ class BossAirAPI(WMConnectionBase):
 
         Returns (successes, failures)
         """
-
         self.check()
 
         successJobs  = []

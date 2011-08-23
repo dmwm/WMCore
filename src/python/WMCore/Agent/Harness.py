@@ -176,8 +176,17 @@ class Harness:
             # we only want one DBFactory per database so we will need to 
             # to pass this on in case we are using threads.
             myThread.dbFactory = DBFactory(myThread.logger, dbStr, options)
-            myThread.dbi = myThread.dbFactory.connect()
-            myThread.transaction = Transaction(myThread.dbi)
+
+            myThread.sql_transaction = True
+            if myThread.dbFactory.engine:
+
+                myThread.dbi = myThread.dbFactory.connect()
+                myThread.transaction = Transaction(myThread.dbi)
+
+            else:
+
+                myThread.dbi = myThread.config.CoreDatabase.connectUrl
+                myThread.sql_transaction = False
 
             # Attach a worker manager object to the main thread
             if not hasattr(myThread, 'workerThreadManager'):
@@ -309,10 +318,15 @@ class Harness:
         myThread = threading.currentThread()
         
         self.preInitialization()
-        myThread.transaction.begin()
+
+        if myThread.sql_transaction:
+            myThread.transaction.begin()
+
         self.initialization()
         self.postInitialization()
-        myThread.transaction.commit()
+
+        if myThread.sql_transaction:
+            myThread.transaction.commit()
 
         logging.info('>>>Committing default transaction')
 

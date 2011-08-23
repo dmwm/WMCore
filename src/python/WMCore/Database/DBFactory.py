@@ -80,30 +80,44 @@ class DBFactory(object):
             elif 'sid' in options.keys():
                 self.dburl = '%s/%s' % (self.dburl, options['sid'])
                 del options['sid']
+
+        if self.dburl.split(':')[0].lower() == "http":
+
+            self.engine = None
+            self.dia = None
                 
-        if self.dburl.split(':')[0].lower() == "sqlite":
-            self.engine = create_engine(self.dburl, 
-                                        connect_args = options,
-                                        **self._defaultEngineParams)
         else:
-            self.engine = self._engineMap.setdefault(self.dburl,     
-                                         create_engine(self.dburl, 
-                                                       connect_args = options,
-                                                       **self._defaultEngineParams)
-                                                  )
-        self.dia = self.engine.dialect
+            if self.dburl.split(':')[0].lower() == "sqlite":
+                self.engine = create_engine(self.dburl, 
+                                            connect_args = options,
+                                            **self._defaultEngineParams)
+            else:
+                self.engine = self._engineMap.setdefault(self.dburl,     
+                                             create_engine(self.dburl, 
+                                                           connect_args = options,
+                                                           **self._defaultEngineParams)
+                                                      )
+            self.dia = self.engine.dialect
+
         self.lock = threading.Condition()
 
         
     def connect(self):
         self.lock.acquire()
-        self.logger.debug("Using SQLAlchemy v.%s" % sqlalchemy_version)
+
+        if self.engine:
+
+            self.logger.debug("Using SQLAlchemy v.%s" % sqlalchemy_version)
                 
-        if isinstance(self.dia, MySQLDialect):
-            from WMCore.Database.MySQLCore import MySQLInterface as DBInterface
+            if isinstance(self.dia, MySQLDialect):
+                from WMCore.Database.MySQLCore import MySQLInterface as DBInterface
+            else:
+                from WMCore.Database.DBCore import DBInterface
+            # we instantiate within the lock so we can safely return the local instance.
+            dbInterface =  DBInterface(self.logger, self.engine)
+
         else:
-            from WMCore.Database.DBCore import DBInterface
-        # we instantiate within the lock so we can safely return the local instance.
-        dbInterface =  DBInterface(self.logger, self.engine)
+            dbInterface =  None
+
         self.lock.release()
         return dbInterface

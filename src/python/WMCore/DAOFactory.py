@@ -23,14 +23,19 @@ class DAOFactory(object):
         """
         Somewhat fugly method to load generic SQL classes...
         """
-        dia = self.dbinterface.engine.dialect
-        #TODO: Make good
-        dialect = None
-        for i in self.dialects.keys():
-            if isinstance(dia, self.dialects[i]): 
-                dialect = i
-        if not dialect: 
-            raise TypeError, "unknown connection type: %s" % dia
+        if not isinstance(self.dbinterface, str):
+
+            dia = self.dbinterface.engine.dialect
+            #TODO: Make good
+            dialect = None
+            for i in self.dialects.keys():
+                if isinstance(dia, self.dialects[i]): 
+                    dialect = i
+            if not dialect: 
+                raise TypeError, "unknown connection type: %s" % dia
+        else:
+            dialect = 'CouchDB'
+
         
         module = "%s.%s.%s" % (self.package, dialect, classname)
         #self.logger.debug("importing %s, %s" % (module, classname))

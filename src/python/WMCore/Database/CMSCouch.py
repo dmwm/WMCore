@@ -5,6 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 
 http://wiki.apache.org/couchdb/API_Cheatsheet
+
+NOT A THREAD SAFE CLASS.
 """
 
 

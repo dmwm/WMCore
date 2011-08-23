@@ -13,12 +13,16 @@ import logging
 import threading
 import traceback
 
+from WMCore.WMException                       import WMException
 from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
-
-
 from WMCore.BossAir.BossAirAPI    import BossAirAPI, BossAirException
 
+class StatusPollerException(WMException):
+    """
+    _StatusPollerException_
 
+    Exception class for StatusPoller errors.
+    """
 
 class StatusPoller(BaseWorkerThread):
     """
@@ -27,8 +31,6 @@ class StatusPoller(BaseWorkerThread):
     Prototype for polling for
     JobStatusAir
     """
-
-
 
     def __init__(self, config):
         """
@@ -48,15 +50,41 @@ class StatusPoller(BaseWorkerThread):
         # the states and the values the timeouts.
         self.timeouts = getattr(config.JobStatusLite, 'stateTimeouts', {})
 
+        # init alert system
+        self.initAlerts(compName = "StatusPoller")
         return
-
-
-
+    
     def algorithm(self, parameters = None):
         """
         _algorithm_
 
-        Run the code!
+        Handle any exceptions with the actual code
+        """
+
+        try:
+            self.checkStatus()
+        except WMException, ex:
+            if getattr(myThread.transaction, None):
+                myThread.transaction.rollbackForError()
+            self.sendAlert(6, str(ex))
+            raise
+        except Exception, ex:
+            msg =  "Unhandled error in statusPoller"
+            msg += str(ex)
+            logging.error(msg)
+            self.sendAlert(6, msg)
+            if getattr(myThread.transaction, None):
+                myThread.transaction.rollbackForError()
+            raise StatusPollerException(msg)
+
+        return
+
+    def checkStatus(self):
+        """
+        _checkStatus_
+
+        Run the BossAir track() function (self-contained)
+        and then check for jobs that have timed out.
         """
 
 

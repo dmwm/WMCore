@@ -120,6 +120,22 @@ class Transaction(WMObject):
         self.conn = None
         self.transaction = None
         return
+
+    def rollbackForError(self):
+        """
+        This is called when handling a major exception.  This is because sometimes
+        you can end up in a situation where the transaction appears open, but is not.  In
+        this case, calling a rollback on the transaction will cause an exception, which
+        then destroys all logging and shutdown of the actual code.
+
+        Use only in components.
+        """
+
+        try:
+            self.rollback()
+        except:
+            pass
+        return
         
     def redo(self):
         """

@@ -57,8 +57,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.dataCollection = DataCollectionService(url = config.ACDC.couchurl,
                                                     database = config.ACDC.database)
 
-        self.specCache = collections.deque(maxlen = 1000)
-        
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available    
         self.initAlerts(compName = "ErrorHandler")        
@@ -133,38 +131,10 @@ class ErrorHandlerPoller(BaseWorkerThread):
         Do the ACDC creation and hope it works
         """
         logging.debug("Entering ACDC with %i jobs" % len(jobList))
-        collectionDict = {}
-
         for job in jobList:
-            if not job['spec'] in collectionDict.keys():
-                collectionDict[job['spec']] = []
-            collectionDict[job['spec']].append(job)
             job.getMask()
 
-        for spec in collectionDict.keys():
-            
-            # Load spec if we have to:
-            wmSpec = None
-            for sDict in self.specCache:
-                # First, is the spec in the cache?
-                if sDict['spec'] == spec:
-                    wmSpec = sDict['wmSpec']
-                    break
-            if not wmSpec:
-                # Then we didn't find the spec in the cache
-                wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
-                wmWorkload.load(spec)
-                self.specCache.append({'spec': spec, 'wmSpec': wmWorkload})
-                wmSpec = wmWorkload
-                # Should only need to create a collection once for a given spec
-                self.dataCollection.createCollection(wmSpec = wmSpec)
-
-
-
-            logging.debug("About to begin collection creation in ACDC")
-            failedJobs = collectionDict[spec]
-            self.dataCollection.failedJobs(failedJobs)
-
+        self.dataCollection.failedJobs(jobList)
         return
 
     def splitJobList(self, jobList, jobType):

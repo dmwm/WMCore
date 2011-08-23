@@ -29,8 +29,25 @@ class Service(object):
         return a list of all Owners in the backend
         """
         msg = "%s.listOwners is not implemented" % self.__class__.__name__
-        raise NotImplementedError(msg)
+        raise NotImplementedError(msg)    
+
+    def newOwner(self):
+        """
+        _newOwner_
         
+        Add a new owner.
+        """
+        msg = "%s.newOwner is not implemented" % self.__class__.__name__
+        raise NotImplementedError(msg)
+
+    def removeOwner(self):
+        """
+        _removeOwner_
+        
+        Remove an owner.
+        """
+        msg = "%s.removeOwner is not implemented" % self.__class__.__name__
+        raise NotImplementedError(msg)
 
     def listCollections(self, ownerInstance):
         """
@@ -51,4 +68,3 @@ class Service(object):
         """
         msg = "%s.listFilesets is not implemented" % self.__class__.__name__
         raise NotImplementedError(msg)
-        

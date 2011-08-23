@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# encoding: utf-8
 """
 Fileset.py
 
@@ -9,7 +8,6 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 from WMCore.DataStructs.WMObject import WMObject 
 
-
 class Fileset(dict, WMObject):
     """
     _Fileset_
@@ -18,36 +16,35 @@ class Fileset(dict, WMObject):
     def __init__(self, **options):
         dict.__init__(self)
         WMObject.__init__(self)
-        self.setdefault("collection_id", None)
-        self.setdefault("fileset_id", None)
-        self.setdefault("dataset", None)
+        self.setdefault("name", None)
         self.setdefault("files", {})
         self.update(options)
-        self.owner = None
+        
+        self.owner      = None
         self.collection = None
-    
 
-    
-    def setCollection(self, collectionInstance):
+    def setCollection(self, collection):
         """
         _setCollection_
-        
+
+        Associate this fileset with a collection.
         """
-        self.collection = collectionInstance
-        self['collection_id'] = collectionInstance['collection_id']
-        self.owner = collectionInstance.owner
+        self.collectionName = collection["name"]
+        self.collectionType = collection["type"]
+        self.owner = collection.owner
         return
-    
     
     def create(self):
         """
+        _create_
+        
         create a new fileset within a collection
         """
         pass
     
-    def get(self):
+    def populate(self):
         """
-        _get_
+        _populate_
         
         populate information about this fileset
         """
@@ -61,7 +58,7 @@ class Fileset(dict, WMObject):
         """
         pass
         
-    def add(self, *files):
+    def add(self, files, mask):
         """
         _add_
         
@@ -79,9 +76,9 @@ class Fileset(dict, WMObject):
         """
         pass
         
-    def filecount(self):
+    def fileCount(self):
         """
-        _filecount_
+        _fileCount_
         
         Total number of files in this fileset
         """
@@ -96,9 +93,3 @@ class Fileset(dict, WMObject):
         
         """
         pass
-        
-
-        
-
-
-    

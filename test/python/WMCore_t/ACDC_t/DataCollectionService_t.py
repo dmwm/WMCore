@@ -32,211 +32,12 @@ class DataCollectionService_t(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setupCouch("wmcore-acdc-datacollectionsvc", "GroupUser", "ACDC")
-        self.testInit.setupCouch("datacollectionsvc_t_cc", "ConfigCache")
-
-        couchServer = CouchServer(os.environ["COUCHURL"])
-        self.configDatabase = couchServer.connectDatabase("datacollectionsvc_t_cc")
         return
         
     def tearDown(self):
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         return
-
-    def createTestWorkload(self):
-        """
-        _createTestWorkload_
-
-        Create a bogus test workload with two tasks.
-        """
-        workload = newWorkload("ACDCTest")        
-        reco = workload.newTask("reco")
-        skim1 = reco.addTask("skim1")
-        workload.setOwnerDetails("evansde77", "DMWM")
-
-        # first task uses the input dataset
-        reco.addInputDataset(primary = "PRIMARY", processed = "processed-v1", tier = "TIER1")
-        cmsRunReco = reco.makeStep("cmsRun1")
-        cmsRunReco.setStepType("CMSSW")
-        reco.applyTemplates()
-        cmsRunRecoHelper = cmsRunReco.getTypeHelper()
-        cmsRunRecoHelper.addOutputModule("outputRECO",
-                                        primaryDataset = "PRIMARY",
-                                        processedDataset = "processed-v2",
-                                        dataTier = "TIER2",
-                                        lfnBase = "/store/dunkindonuts",
-                                        mergedLFNBase = "/store/kfc")
-        # second step uses an input reference
-        cmsRunSkim = skim1.makeStep("cmsRun2")
-        cmsRunSkim.setStepType("CMSSW")
-        skim1.applyTemplates()        
-        skim1.setInputReference(cmsRunReco, outputModule = "outputRECO")
-
-        return workload
-
-    def injectReDigiConfigs(self):
-        """
-        _injectReDigiConfigs_
-
-        Create bogus config cache documents for the various steps of the
-        ReDigi workflow.  Return the IDs of the documents.
-        """
-        stepOneConfig = Document()
-        stepOneConfig["info"] = None
-        stepOneConfig["config"] = None
-        stepOneConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
-        stepOneConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
-        stepOneConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-        stepOneConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RAWDEBUGoutput"],
-                                                          "RAWDEBUGoutput": {"dataset": {"filterName": "",
-                                                                                         "dataTier": "RAW-DEBUG-OUTPUT"}}}}
-
-        stepTwoConfig = Document()
-        stepTwoConfig["info"] = None
-        stepTwoConfig["config"] = None
-        stepTwoConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
-        stepTwoConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
-        stepTwoConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-        stepTwoConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RECODEBUGoutput", "DQMoutput"],
-                                                          "RECODEBUGoutput": {"dataset": {"filterName": "",
-                                                                                          "dataTier": "RECO-DEBUG-OUTPUT"}},
-                                                          "DQMoutput": {"dataset": {"filterName": "",
-                                                                                    "dataTier": "DQM"}}}}
-
-        stepThreeConfig = Document()
-        stepThreeConfig["info"] = None
-        stepThreeConfig["config"] = None
-        stepThreeConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
-        stepThreeConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
-        stepThreeConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-        stepThreeConfig["pset_tweak_details"] ={"process": {"outputModules_": ["aodOutputModule"],
-                                                            "aodOutputModule": {"dataset": {"filterName": "",
-                                                                                            "dataTier": "AODSIM"}}}}        
-        stepOne = self.configDatabase.commitOne(stepOneConfig)[0]["id"]
-        stepTwo = self.configDatabase.commitOne(stepTwoConfig)[0]["id"]
-        stepThree = self.configDatabase.commitOne(stepThreeConfig)[0]["id"]        
-        return (stepOne, stepTwo, stepThree)
-
-    def testReDigiInsertion(self):
-        """
-        _testReDigiInsertion_
-
-        Verify that the ReDigi workflow is correctly inserted into ACDC.
-        """
-        defaultArguments = getTestArguments()
-        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
-        defaultArguments["CouchDBName"] = "datacollectionsvc_t_cc"
-        configs = self.injectReDigiConfigs()
-        defaultArguments["StepOneConfigCacheID"] = configs[0]
-        defaultArguments["StepTwoConfigCacheID"] = configs[1]
-        defaultArguments["StepThreeConfigCacheID"] = configs[2]
-
-        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")        
-
-        dcs = DataCollectionService(url = self.testInit.couchUrl, database = "wmcore-acdc-datacollectionsvc")
-        dcs.createCollection(testWorkload)
-
-        dataCollections = dcs.listDataCollections()
-        self.assertEqual(len(dataCollections), 1,
-                         "Error: There should only be one data collection.")
-
-        for taskName in testWorkload.listAllTaskPathNames():
-            if taskName.find("Cleanup") != -1 or taskName.find("LogCollect") != -1:
-                # We don't insert cleanup and logcollect tasks into ACDC.
-                continue
-
-            taskFilesets = [ x for x in dcs.filesetsByTask(dataCollections[0], taskName)]
-            self.assertEqual(len(taskFilesets), 1,
-                             "Error: Fileset is missing.")
-
-        testWorkload.truncate("ACDC_Round_1", "/TestWorkload/ReDigi", os.environ["COUCHURL"],
-                              "wmcore-acdc-datacollectionsvc")
-        dcs.createCollection(testWorkload)
-
-        dataCollections = dcs.listDataCollections()
-        self.assertEqual(len(dataCollections), 2,
-                         "Error: There should only be two data collections.")
-        for dataCollection in dataCollections:
-            if dataCollection["name"] == "ACDC_Round_1":
-                break
-
-        for taskName in testWorkload.listAllTaskPathNames():
-            if taskName.find("Cleanup") != -1 or taskName.find("LogCollect") != -1:
-                # We don't insert cleanup and logcollect tasks into ACDC.
-                continue
-
-            taskFilesets = [ x for x in dcs.filesetsByTask(dataCollection, taskName)]
-            self.assertEqual(len(taskFilesets), 1,
-                             "Error: Fileset is missing.")
-
-        testWorkload.truncate("ACDC_Round_2", "/ACDC_Round_1/ReDigi/ReDigiMergeRAWDEBUGoutput/ReDigiReReco", os.environ["COUCHURL"],
-                              "wmcore-acdc-datacollectionsvc")
-        dcs.createCollection(testWorkload)
-
-        dataCollections = dcs.listDataCollections()
-        self.assertEqual(len(dataCollections), 3,
-                         "Error: There should only be two data collections.")
-        for dataCollection in dataCollections:
-            if dataCollection["name"] == "ACDC_Round_2":
-                break
-
-        for taskName in testWorkload.listAllTaskPathNames():
-            if taskName.find("Cleanup") != -1 or taskName.find("LogCollect") != -1:
-                # We don't insert cleanup and logcollect tasks into ACDC.
-                continue
-
-            taskFilesets = [ x for x in dcs.filesetsByTask(dataCollection, taskName)]
-            self.assertEqual(len(taskFilesets), 1,
-                             "Error: Fileset is missing.")
-        
-        return
-
-    def testA(self):
-        """
-        test creating collections and filesets based off a workload.
-        """
-        workload = self.createTestWorkload()
-        
-        dcs = DataCollectionService(url = self.testInit.couchUrl, database = "wmcore-acdc-datacollectionsvc")
-        dcs.createCollection(workload)
-        
-        colls = [c for c in dcs.listDataCollections()]
-        self.assertEqual(len(colls), 1)
-        coll = colls[0]
-        
-        recofs = [ x for x in dcs.filesetsByTask(coll, "/ACDCTest/reco")]
-        skimfs = [ x for x in dcs.filesetsByTask(coll, "/ACDCTest/reco/skim1")]
-        self.assertEqual(len(recofs), 1)
-        self.assertEqual(len(skimfs), 1)
-        
-        
-        
-        job = Job('eb9b6afc-a175-11df-9ef3-00221959e7c0')
-        job['task'] = workload.getTask("reco").getPathName()
-        job['workflow'] = workload.name()
-        job['location'] = "T1_US_FNAL"
-        job['input_files'] 
-
-        numberOfFiles = 10
-        run = Run(10000000, 1,2,3,4,5,6,7,8,9,10)
-        for i in range(0, numberOfFiles):
-            f = File(lfn = "/store/test/some/dataset/%s.root" % makeUUID(), size = random.randint(100000000,50000000000), 
-                     events = random.randint(1000, 5000))
-            f.setLocation("cmssrm.fnal.gov")
-            f.addRun(run)
-            job.addFile(f)
-        
-        dcs.failedJobs([job])
-        
-        res = dcs.filesetsByTask(coll, "/ACDCTest/reco")
-        nFiles = 0
-        for x in res:
-            for f in x.files():
-                nFiles += 1
-
-        self.assertEqual(nFiles, numberOfFiles)
 
     def testChunking(self):
         """
@@ -247,14 +48,13 @@ class DataCollectionService_t(unittest.TestCase):
         only groups files that have the same set of locations.  Also verify that
         the chunks are pulled out of ACDC correctly.
         """
-        workload = self.createTestWorkload()
-        dcs = DataCollectionService(url = self.testInit.couchUrl, database = "wmcore-acdc-datacollectionsvc")
-        dcs.createCollection(workload)        
+        dcs = DataCollectionService(url = self.testInit.couchUrl,
+                                    database = "wmcore-acdc-datacollectionsvc")
 
-        def getJob(workload):
+        def getJob():
             job = Job()
-            job["task"] = workload.getTask("reco").getPathName()
-            job["workflow"] = workload.name()
+            job["task"] = "/ACDCTest/reco"
+            job["workflow"] = "ACDCTest"
             job["location"] = "cmssrm.fnal.gov"
             return job
 
@@ -267,7 +67,7 @@ class DataCollectionService_t(unittest.TestCase):
         testFileC = File(lfn = makeUUID(), size = 1024, events = 1024)
         testFileC.setLocation(["cmssrm.fnal.gov", "castor.cern.ch"])
         testFileC.addRun(Run(1, 5, 6))
-        testJobA = getJob(workload)
+        testJobA = getJob()
         testJobA.addFile(testFileA)
         testJobA.addFile(testFileB)
         testJobA.addFile(testFileC)
@@ -278,7 +78,7 @@ class DataCollectionService_t(unittest.TestCase):
         testFileE = File(lfn = makeUUID(), size = 1024, events = 1024)
         testFileE.setLocation(["cmssrm.fnal.gov"])
         testFileE.addRun(Run(2, 3, 4))
-        testJobB = getJob(workload)
+        testJobB = getJob()
         testJobB.addFile(testFileD)
         testJobB.addFile(testFileE)
 
@@ -294,7 +94,7 @@ class DataCollectionService_t(unittest.TestCase):
                          parents = set(["/some/parent/H"]))
         testFileH.setLocation(["cmssrm.fnal.gov", "castor.cern.ch", "srm.ral.uk"])
         testFileH.addRun(Run(3, 5, 6))
-        testJobC = getJob(workload)
+        testJobC = getJob()
         testJobC.addFile(testFileF)
         testJobC.addFile(testFileG)
         testJobC.addFile(testFileH)
@@ -308,17 +108,16 @@ class DataCollectionService_t(unittest.TestCase):
         testFileK = File(lfn = makeUUID(), size = 1024, events = 1024, merged = True)
         testFileK.setLocation(["cmssrm.fnal.gov", "castor.cern.ch"])
         testFileK.addRun(Run(4, 5, 6))
-        testJobD = getJob(workload)
+        testJobD = getJob()
         testJobD.addFile(testFileI)
         testJobD.addFile(testFileJ)
         testJobD.addFile(testFileK)
 
         dcs.failedJobs([testJobA, testJobB, testJobC, testJobD])
-        dataCollection = dcs.getDataCollection(workload.name())
-        chunks = dcs.chunkFileset(dataCollection, "/ACDCTest/reco",
+        chunks = dcs.chunkFileset("ACDCTest", "/ACDCTest/reco",
                                   chunkSize = 5)
 
-        self.assertEqual(len(chunks), 4, "Error: There should be four chunks.")
+        self.assertEqual(len(chunks), 4, "Error: There should be four chunks: %s" % len(chunks))
         
         goldenMetaData = {1: {"lumis": 2, "locations": ["castor.cern.ch", "cmssrm.fnal.gov"], "events": 1024},
                           2: {"lumis": 4, "locations": ["cmssrm.fnal.gov"], "events": 2048},
@@ -339,7 +138,7 @@ class DataCollectionService_t(unittest.TestCase):
                        5: testFiles}
 
         for chunk in chunks:
-            chunkMetaData = dcs.getChunkInfo(dataCollection, "/ACDCTest/reco",
+            chunkMetaData = dcs.getChunkInfo("ACDCTest", "/ACDCTest/reco",
                                              chunk["offset"], chunk["files"])
 
             self.assertEqual(chunkMetaData["files"], chunk["files"],
@@ -361,7 +160,7 @@ class DataCollectionService_t(unittest.TestCase):
                              "Error: Events in chunk is wrong.")
             del goldenMetaData[chunk["files"]]
             
-            chunkFiles = dcs.getChunkFiles(dataCollection, "/ACDCTest/reco",
+            chunkFiles = dcs.getChunkFiles("ACDCTest", "/ACDCTest/reco",
                                            chunk["offset"], chunk["files"])
 
             self.assertTrue(chunk["files"] in goldenFiles.keys(),
@@ -418,15 +217,13 @@ class DataCollectionService_t(unittest.TestCase):
            "2": [[5, 7], [10, 12], [15, 15]],
            "3": [[20, 20]]}
         """
-        dcs = DataCollectionService(url = self.testInit.couchUrl, database = "wmcore-acdc-datacollectionsvc")
+        dcs = DataCollectionService(url = self.testInit.couchUrl,
+                                    database = "wmcore-acdc-datacollectionsvc")
 
-        workload = self.createTestWorkload()
-        collection = dcs.createCollection(workload)
-
-        def getJob(workload):
+        def getJob():
             job = Job()
-            job["task"] = workload.getTask("reco").getPathName()
-            job["workflow"] = workload.name()
+            job["task"] = "/ACDCTest/reco"
+            job["workflow"] = "ACDCTest"
             job["location"] = "cmssrm.fnal.gov"
             return job
 
@@ -434,54 +231,53 @@ class DataCollectionService_t(unittest.TestCase):
         testFileA.addRun(Run(1, 1, 2))
         testFileB = File(lfn = makeUUID(), size = 1024, events = 1024)
         testFileB.addRun(Run(1, 3))
-        testJobA = getJob(workload)
+        testJobA = getJob()
         testJobA.addFile(testFileA)
         testJobA.addFile(testFileB)
 
         testFileC = File(lfn = makeUUID(), size = 1024, events = 1024)
         testFileC.addRun(Run(1, 4, 6))
-        testJobB = getJob(workload)
+        testJobB = getJob()
         testJobB.addFile(testFileC)
         
         testFileD = File(lfn = makeUUID(), size = 1024, events = 1024)
         testFileD.addRun(Run(1, 7))
-        testJobC = getJob(workload)
+        testJobC = getJob()
         testJobC.addFile(testFileD)
                          
         testFileE = File(lfn = makeUUID(), size = 1024, events = 1024)
         testFileE.addRun(Run(1, 11, 12))
-        testJobD = getJob(workload)
+        testJobD = getJob()
         testJobD.addFile(testFileE)
 
         testFileF = File(lfn = makeUUID(), size = 1024, events = 1024)
         testFileF.addRun(Run(2, 5, 6, 7))
-        testJobE = getJob(workload)
+        testJobE = getJob()
         testJobE.addFile(testFileF)
 
         testFileG = File(lfn = makeUUID(), size = 1024, events = 1024)
         testFileG.addRun(Run(2, 10, 11, 12))
-        testJobF = getJob(workload)
+        testJobF = getJob()
         testJobF.addFile(testFileG)
 
         testFileH = File(lfn = makeUUID(), size = 1024, events = 1024)
         testFileH.addRun(Run(2, 15))
-        testJobG = getJob(workload)
+        testJobG = getJob()
         testJobG.addFile(testFileH)
 
         testFileI = File(lfn = makeUUID(), size = 1024, events = 1024)
         testFileI.addRun(Run(3, 20))
-        testJobH = getJob(workload)
+        testJobH = getJob()
         testJobH.addFile(testFileI)
 
         testFileJ = File(lfn = makeUUID(), size = 1024, events = 1024)
         testFileJ.addRun(Run(1, 9))
-        testJobI = getJob(workload)
+        testJobI = getJob()
         testJobI.addFile(testFileJ)
         
         dcs.failedJobs([testJobA, testJobB, testJobC, testJobD, testJobE,
                         testJobF, testJobG, testJobH, testJobI])
-        whiteList = dcs.getLumiWhitelist(collection["collection_id"],
-                                         workload.getTask("reco").getPathName())
+        whiteList = dcs.getLumiWhitelist("ACDCTest", "/ACDCTest/reco")
 
         self.assertEqual(len(whiteList.keys()), 3,
                          "Error: There should be 3 runs.")

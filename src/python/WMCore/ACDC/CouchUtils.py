@@ -81,28 +81,29 @@ def requireCollection(func):
         return func(self, *args, **opts)
     return wrapper
     
-def requireFilesetId(func):
+def requireFilesetName(func):
     """
-    _requireFilesetId_
+    _requireFilesetName_
     
-    Decorator to require that a fileset has a fileset_id that is not None
+    Decorator to require that a fileset has a name that is not None
     
     """
     def wrapper(self, *args, **opts):
-        if self['fileset_id'] == None:
-            self.getFilesetId()
+        if not 'name' in self or self['name'] == None:
+            raise RuntimeError, "Filesets must be named"
         return func(self, *args, **opts)
     return wrapper
-    
-def requireOwnerId(func):
+
+def requireCollectionName(func):
     """
-    _requireOwnerId_
-
-    Decorator to require that a fileset has a owner_id that is not None
-
+    _requireCollectionName_
+    
+    Decorator to require that a collection has a name that is not None
+    
     """
     def wrapper(self, *args, **opts):
-        if self['owner_id'] == None:
-            self.getOwnerId()
+        if not 'name' in self or self['name'] == None:
+            raise RuntimeError, "Filesets must be named"
         return func(self, *args, **opts)
     return wrapper
+

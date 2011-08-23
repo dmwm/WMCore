@@ -87,14 +87,6 @@ class CouchUtils_t(unittest.TestCase):
             def call1(self):
                 return True
                 
-            @CouchUtils.requireFilesetId
-            def call2(self):
-                return True
-                
-            @CouchUtils.requireOwnerId
-            def call3(self):
-                return True
-                
             @CouchUtils.requireOwner
             def call4(self):
                 return True
@@ -105,18 +97,8 @@ class CouchUtils_t(unittest.TestCase):
         
         try:
             thingy.call1()
-        except Execption, ex:
+        except Exception, ex:
             msg = "Failure in requireCollection decorator: %s" % str(ex)
-            self.fail(msg)
-        try:
-            thingy.call2()
-        except Execption, ex:
-            msg = "Failure in requireFilesetId decorator: %s" % str(ex)
-            self.fail(msg)
-        try:
-            thingy.call3()
-        except Execption, ex:
-            msg = "Failure in requireOwnerId decorator: %s" % str(ex)
             self.fail(msg)
         try:
             thingy.call4()

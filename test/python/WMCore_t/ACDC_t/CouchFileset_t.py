@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# encoding: utf-8
 """
 CouchFileset_t.py
 
@@ -9,88 +8,169 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import unittest
 import random
-import os
-import nose
+
+from WMCore.ACDC.CouchCollection import CouchCollection
+from WMCore.ACDC.CouchFileset import CouchFileset
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.GroupUser.User import makeUser
-from WMCore.ACDC.CouchService import CouchService
-from WMCore.ACDC.CouchFileset import CouchFileset
+from WMCore.Services.UUID import makeUUID
+
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUID import makeUUID
 from WMCore.DataStructs.Mask import Mask
-
 
 class CouchFileset_t(unittest.TestCase):
     def setUp(self):
-        """Set up couch test environment"""
+        """
+        _setUp_
+
+        Set up couch test environment.
+        """
         self.testInit = TestInitCouchApp(__file__)
-        self.testInit.setupCouch("wmcore-acdc-couchfileset", "GroupUser", "ACDC")
-        
-        #create a test owner for the collections in this test
-        self.owner = makeUser("DMWM", "evansde77", self.testInit.couchUrl, self.testInit.couchDbName)
+        self.testInit.setupCouch("wmcore-acdc-couchfileset", "GroupUser",
+                                 "ACDC")
+        self.owner = makeUser("DMWM", "evansde77", self.testInit.couchUrl,
+                              self.testInit.couchDbName)
         self.owner.connect()
         self.owner.create()
-        
-        
-        # create a collection for the filesets in this test
-        self.collection = CouchCollection(url = self.testInit.couchUrl, database = self.testInit.couchDbName, name = "Thunderstruck")
-        self.collection.setOwner(self.owner)
-        self.collection.create()
-        
+        return
         
     def tearDown(self):
-        """Clean up couch instance"""
+        """
+        _tearDown_
+
+        Clean up couch instance
+        """
         self.testInit.tearDownCouch()
 
+    def testDropCount(self):
+        """
+        _testDropCount_
 
+        Verify that dropping a fileset and counting the files in a fileset works
+        correctly.
+        """
+        testCollectionA = CouchCollection(database = self.testInit.couchDbName,
+                                          url = self.testInit.couchUrl, 
+                                          name = "Thunderstruck")
+        testCollectionB = CouchCollection(database = self.testInit.couchDbName,
+                                          url = self.testInit.couchUrl, 
+                                          name = "StruckThunder")
+        testCollectionA.setOwner(self.owner)
+        testCollectionB.setOwner(self.owner)        
 
-    def testA(self):
+        testFiles = []
+        for i in range(5):
+            testFile = File(lfn = makeUUID(), size = random.randint(1024, 4096),
+                            events = random.randint(1024, 4096))
+            testFiles.append(testFile)
 
-        fs1 = CouchFileset()
+        testFilesetA = CouchFileset(database = self.testInit.couchDbName,
+                                    url = self.testInit.couchUrl,
+                                    name = "TestFilesetA")
+        testFilesetB = CouchFileset(database = self.testInit.couchDbName,
+                                    url = self.testInit.couchUrl,
+                                    name = "TestFilesetB")
+        testFilesetC = CouchFileset(database = self.testInit.couchDbName,
+                                    url = self.testInit.couchUrl,
+                                    name = "TestFilesetC")
+        testCollectionA.addFileset(testFilesetA)
+        testCollectionB.addFileset(testFilesetB)
+        testCollectionB.addFileset(testFilesetC)
+        testFilesetA.add(testFiles)
+        testFilesetB.add(testFiles)
+        testFilesetC.add(testFiles)        
 
-        fs2 = CouchFileset(_id = "sample-fileset-id", database = self.testInit.couchDbName, url = self.testInit.couchUrl)
-        fs2.setCollection(self.collection)
-        self.assertEqual(fs2.exists(), False)
-        fs2.create()
-        self.assertEqual(fs2.exists(), True)
+        testFilesetC.drop()
 
-        fs2.makeFilelist()
-        fs2.makeFilelist()
-        self.assertEqual(len(fs2.filelistDocuments()), 2)
-        fs2.drop()
+        testCollectionC = CouchCollection(database = self.testInit.couchDbName,
+                                          url = self.testInit.couchUrl, 
+                                          name = "StruckThunder")
+        testCollectionC.setOwner(self.owner)
+        testCollectionC.populate()
 
+        self.assertEqual(len(testCollectionC["filesets"]), 1,
+                         "Error: There should be one fileset in this collection.")
+        self.assertEqual(testCollectionC["filesets"][0].fileCount(), 5,
+                         "Error: Wrong number of files in fileset.")
 
-    def testB(self):
-        fs = CouchFileset(database = self.testInit.couchDbName, url = self.testInit.couchUrl)
-        fs.setCollection(self.collection)
-        fs.create()
+        testCollectionD = CouchCollection(database = self.testInit.couchDbName,
+                                          url = self.testInit.couchUrl, 
+                                          name = "Thunderstruck")
+        testCollectionD.setOwner(self.owner)
+        testCollectionD.populate()
 
-        files1 = []
-        files2 = []
-        mask = Mask()
-        numberOfFiles = 10
-        run = Run(10000000, 1,2,3,4,5,6,7,8,9,10)
-        for i in range(0, numberOfFiles):
-            f = File( lfn = "/store/test/some/dataset/%s.root" % makeUUID(), size = random.randint(100000000,50000000000), 
-                      events = random.randint(1000, 5000))
-            f.addRun(run)
-            files1.append(f)
-            f2 = File( lfn = "/store/test/some/dataset/%s.root" % makeUUID(), size = random.randint(100000000,50000000000), 
-                      events = random.randint(1000, 5000))
-            f2.addRun(run)
-            files2.append(f2)
+        self.assertEqual(len(testCollectionD["filesets"]), 1,
+                         "Error: There should be one fileset in this collection.")
+        self.assertEqual(testCollectionD["filesets"][0].fileCount(), 5,
+                         "Error: Wrong number of files in fileset.")        
+        return
 
-        fs.add(files1, mask)
-        fs.add(files2, mask)
-        # Something's wrong here, but I don't know what
-        # Commenting out the print statements
-        # Possibly nullifying the test in the process
-        self.assertEqual(len(fs.filelistDocuments()), 2)
-        #print len(fs.fileset())
-        fs.drop()
+    def testFiles(self):
+        """
+        _testFiles_
+
+        Verify that the files iterator works correctly.
+        """
+        testCollection = CouchCollection(database = self.testInit.couchDbName,
+                                         url = self.testInit.couchUrl, 
+                                         name = "Thunderstruck")
+        testCollection.setOwner(self.owner)
+        testFileset = CouchFileset(database = self.testInit.couchDbName,
+                                   url = self.testInit.couchUrl,
+                                   name = "TestFileset")
+        testCollection.addFileset(testFileset)
+
+        testFiles = {}
+        for i in range(5):
+            lfn = makeUUID()
+            testFile = File(lfn = lfn, size = random.randint(1024, 4096),
+                            events = random.randint(1024, 4096))
+            testFiles[lfn] = testFile
+            testFileset.add([testFile])
+
+        for file in testFileset.files():
+            self.assertTrue(file["lfn"] in testFiles.keys(),
+                            "Error: File missing.")
+            self.assertEqual(file["events"], testFiles[file["lfn"]]["events"],
+                             "Error: Wrong number of events.")
+            self.assertEqual(file["size"], testFiles[file["lfn"]]["size"],
+                             "Error: Wrong file size.")
+        return
+
+    def testFileset(self):
+        """
+        _testFileset_
+
+        Verify that converting an ACDC fileset to a DataStructs fileset works
+        correctly.
+        """
+        testCollection = CouchCollection(database = self.testInit.couchDbName,
+                                         url = self.testInit.couchUrl, 
+                                         name = "Thunderstruck")
+        testCollection.setOwner(self.owner)
+        testFileset = CouchFileset(database = self.testInit.couchDbName,
+                                   url = self.testInit.couchUrl,
+                                   name = "TestFileset")
+        testCollection.addFileset(testFileset)
+
+        testFiles = {}
+        for i in range(5):
+            lfn = makeUUID()
+            testFile = File(lfn = lfn, size = random.randint(1024, 4096),
+                            events = random.randint(1024, 4096))
+            testFiles[lfn] = testFile
+            testFileset.add([testFile])
+
+        for file in testFileset.fileset().files:
+            self.assertTrue(file["lfn"] in testFiles.keys(),
+                            "Error: File missing.")
+            self.assertEqual(file["events"], testFiles[file["lfn"]]["events"],
+                             "Error: Wrong number of events.")
+            self.assertEqual(file["size"], testFiles[file["lfn"]]["size"],
+                             "Error: Wrong file size.")
+        return
 
 if __name__ == '__main__':
     unittest.main()

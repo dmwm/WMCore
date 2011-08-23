@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# encoding: utf-8
 """
 CouchCollection.py
 
@@ -7,126 +6,67 @@ Created by Dave Evans on 2010-03-14.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-import sys
-import os
-import logging
-import unittest
-
-
 from WMCore.ACDC.Collection import Collection
-import WMCore.Database.CMSCouch as CMSCouch
+from WMCore.ACDC.CouchFileset import CouchFileset
 from WMCore.ACDC.CouchUtils import connectToCouch, requireOwner
-
-
 
 class CouchCollection(Collection):
     """
     Collection that can be stored in CouchDB.
     
     Required Args:
-    
-    - database - CouchDB database instance name
-    - url - CouchDB Server URL
-    - name - name of the collection
-    
+      database - CouchDB database instance name
+      url - CouchDB Server URL
+      name - name of the collection
     """
     def __init__(self, **options):
         Collection.__init__(self, **options)
-        self.url = options.get('url', None)
-        self.database = options.get('database', None)
-        self.server = None
-        self.couchdb = None
-
-    @connectToCouch
-    @requireOwner
-    def create(self):
-        """
-        _create_
-
-        create new Collection in the couch backend using the arguments in this object
-
-        """
-        self.getCollectionId()
-        if self['collection_id'] != None:
-            logging.info("collection exists...")
-            return self.get()
-        document    = CMSCouch.Document()
-        document['collection'] = self
-        del document['collection']['database']
-        del document['collection']['url']
-        commitInfo = self.couchdb.commitOne( document )
-        commitInfo = commitInfo[0]
-        self['collection_id'] = str(commitInfo['id'])
-        document['_id'] = commitInfo['id']
-        document['_rev'] = commitInfo['rev']
-        self.owner.ownThis(document)
-        return
-        
-    @connectToCouch
-    @requireOwner
-    def getCollectionId(self):
-        """
-        _getCollectionId_
-        
-        Use owner and collection name to retrieve the ID of the collection
-        """
-        result = self.couchdb.loadView("ACDC", 'collection_name',
-             {'startkey' :[self['name'], self.owner.group['name'], self.owner['name']],
-               'endkey' : [self['name'], self.owner.group['name'], self.owner['name']]}, []
-            )
-        
-        if len(result['rows']) == 0:
-            doc = None
-        else:
-            doc = result['rows'][0]['value']
-            self['collection_id'] = str(doc['_id'])
+        self.url      = options.get("url")
+        self.database = options.get("database")
+        self.name     = options.get("name")
+        self.server   = None
+        self.couchdb  = None
     
-    @connectToCouch
-    @requireOwner
-    def get(self):
-        """
-        _get_
-        
-        
-        """
-        doc = None
-        if self['collection_id'] == None:
-            self.getCollectionId()
-        try:
-            doc = self.couchdb.document(self['collection_id'])
-        except CMSCouch.CouchNotFoundError as ex:
-            doc = None
-        if doc == None:
-            return None
-        self.unpackDoc(doc)
-        return self
-        
     @connectToCouch
     @requireOwner
     def drop(self):
         """
         _drop_
         
-        Drop this collection
-        
-        TODO: Fail if it has filesets existing.
-        
+        Drop this collection and all files and filesets within it.
         """
-        self.getCollectionId()
-        if self['collection_id'] == None:
-            #document doesnt exist, cant delete
-            return 
-        self.couchdb.delete_doc(self['collection_id'])
-        
-        
-    def unpackDoc(self, doc):
+        params = {"startkey": [self.owner.group.name, self.owner.name,
+                               self.name],
+                  "endkey": [self.owner.group.name, self.owner.name, 
+                             self.name, {}],
+                  "reduce": False}
+        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
+                                       params)
+
+        for row in result["rows"]:
+            self.couchdb.delete_doc(row["id"])
+        return
+
+    @connectToCouch
+    @requireOwner
+    def populate(self):
         """
-        _unpackDoc_
+        _populate_
 
-        Util to unpack  
+        The load the collection and all filesets and files out of couch.
         """
-        leaveAlone = ['database', 'url', 'filesets']
-        [self.__setitem__(str(k), str(v)) for k,v in doc[u'collection'].items() if k not in leaveAlone ]
-        self['collection_id'] = str(doc[u'_id'])
+        params = {"startkey": [self.owner.group.name, self.owner.name,
+                               self.name],
+                  "endkey": [self.owner.group.name, self.owner.name, 
+                             self.name, {}],
+                  "reduce": True, "group_level": 4}
+        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
+                                       params)
 
-
+        self["filesets"] = []
+        for row in result["rows"]:
+            fileset = CouchFileset(database = self.database, url = self.url,
+                                   name = row["key"][3])
+            self.addFileset(fileset)
+            fileset.populate()
+        return

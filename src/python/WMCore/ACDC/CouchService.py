@@ -7,16 +7,13 @@ Created by Dave Evans on 2010-04-20.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-import sys
-import os
 from WMCore.ACDC.Service import Service
-from WMCore.GroupUser.User import User, makeUser
 from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.ACDC.CouchFileset import CouchFileset
+
+from WMCore.GroupUser.User import User, makeUser
 import WMCore.ACDC.CouchUtils as CouchUtils
 import WMCore.Database.CMSCouch as CMSCouch
-
-
 
 class CouchService(Service):
     
@@ -27,6 +24,27 @@ class CouchService(Service):
         self.server = None
         self.couchdb = None
 
+    @CouchUtils.connectToCouch
+    def listCollections(self, owner):
+        """
+        _listCollections_
+        
+        List the collections belonging to an owner.
+        """
+        params = {"startkey": [owner.group.name, owner.name],
+                  "endkey": [owner.group.name, owner.name, {}],
+                  "reduce": True, "group_level": 3}
+        
+        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
+                                       params)
+
+        for row in result["rows"]:
+            coll = CouchCollection(name = row["key"][2],
+                                   database = self.database, url = self.url)
+            coll.setOwner(owner)
+            coll.populate()
+            yield coll
+            
     @CouchUtils.connectToCouch
     def listOwners(self):
         """
@@ -54,48 +72,6 @@ class CouchService(Service):
         return userInstance
         
     @CouchUtils.connectToCouch
-    def listCollections(self, owner):
-        """
-        _listCollections_
-        
-        List the collections belonging to an owner
-        
-        """
-        result = self.couchdb.loadView("ACDC", 'owner_listcollections',
-             {'startkey' :[owner.group.name, owner.name],
-               'endkey' : [owner.group.name, owner.name]}, []
-            )
-
-    
-
-        for row in result[u'rows']:
-            coll = CouchCollection(collection_id = row[u'value'][u'collection_id'], 
-                                   database = self.database, url = self.url)
-            coll.setOwner(owner)
-            coll.get()
-            yield coll
-            
-
-            
-    @CouchUtils.connectToCouch
-    def listFilesets(self, collection):
-        """
-        _listFilesets_
-        
-        List the Filesets belonging to the collection provided
-        
-        """
-        result = self.couchdb.loadView("ACDC", 'collection_listfilesets',
-             {'startkey' :[collection['collection_id']],
-               'endkey' : [collection['collection_id']]}, []
-            )
-        for row in result[u'rows']:
-            fset = CouchFileset(fileset_id = row[u'value'][u'_id'], database = self.database, url = self.url)
-            fset.setCollection(collection)
-            fset.get()
-            yield fset
-    
-    @CouchUtils.connectToCouch
     def removeOwner(self, owner):
         """
         _removeOwner_
@@ -108,7 +84,6 @@ class CouchService(Service):
                'endkey' : [owner.group.name, owner.name]}, []
             )
         for row in result[u'rows']:
-            print row[u'value']
             deleteMe = CMSCouch.Document()
             deleteMe[u'_id'] = row[u'value'][u'id']
             deleteMe[u'_rev'] = row[u'value'][u'rev']
@@ -117,20 +92,14 @@ class CouchService(Service):
         self.couchdb.commit()
         owner.drop()
         return
-        
-    @CouchUtils.connectToCouch
-    def dumpEverything(self):
-        result = self.couchdb.loadView("ACDC", 'owner_colls_and_filesets',
-             {}, []
-            )
-        for row in result[r'rows']:
-            deleteMe = CMSCouch.Document()
-            deleteMe[u'_id'] = row[u'value'][u'_id']
-            deleteMe[u'_rev'] = row[u'value'][u'_rev']
-            deleteMe.delete()
-            self.couchdb.queue(deleteMe)
-        self.couchdb.commit()
 
+    def listFilesets(self, collectionInstance):
+        """
+        _listFilesets_
 
+        List filesets for the collection instance provided.
+        """
+        collectionInstance.populate()
 
-    
+        for fileset in collectionInstance["filesets"]:
+            yield fileset

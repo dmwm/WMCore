@@ -122,6 +122,32 @@ def makeProcessingConfigs(couchDatabase):
     return docMap
 
 
+def makePromptSkimConfigs(couchDatabase):
+    """
+    Fake a prompt skim config in ConfigCache for Tier0 test
+    """
+    skimsConfig = Document()
+    skimsConfig["info"] = None
+    skimsConfig["config"] = None
+    skimsConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5cab2755"
+    skimsConfig["pset_hash"] = "7c856ad35f9f544839d8524ca5372888"
+    skimsConfig["owner"] = {"group": "cmsdataops", "user": "gutsche"}
+    skimsConfig["pset_tweak_details"] = {
+       "process": {"outputModules_": ["writeSkim1", "writeSkim2", "writeSkim3", "writeSkim4", "writeSkim5"],
+                   "writeSkim1": {"dataset": {"dataTier":  "RECO-AOD", "filterName": "skim1"}},
+                   "writeSkim2":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim2"}},
+                   "writeSkim3":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim3"}},
+                   "writeSkim4":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim4"}},
+                   "writeSkim5":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim5"}},                   
+                }
+        }
+    couchDatabase.queue(skimsConfig)   
+    result = couchDatabase.commit()
+    docMap = {
+        "Skims" :result[0][u'id'] 
+    }
+    return docMap
+
 def outputModuleList(task):
     """
     _outputModuleList_
@@ -536,6 +562,75 @@ class TaskChainTests(unittest.TestCase):
         alcaAppConf = alcaStep.data.application.configuration
         self.assertEqual(alcaAppConf.scenario, arguments['Task3']['Scenario'])
         self.assertEqual(alcaAppConf.function, arguments['Task3']['ScenarioMethod'])
+        
+    def testD(self):
+        """
+        Tier 0 style workload that incorporates some scenarios & some configs. 
+        
+        To use for real, replace the Skim ConfigCache URL and ID with a real
+        skim config in config cache, Oli suggested this as a source:
+        http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_DoubleElectron.py?revision=1.3&pathrev=SkimsFor426
+        
+        """
+
+        cfgs = makePromptSkimConfigs(self.configDatabase)
+        arguments = {
+            "AcquisitionEra": "ReleaseValidation",
+            "Requestor": "gutsche@fnal.gov",
+            "CMSSWVersion": "CMSSW_3_5_8",
+            "ScramArch": "slc5_ia32_gcc434",
+            "ProcessingVersion": "v1",
+            "GlobalTag": "NOTSET",
+            "CouchURL": self.testInit.couchUrl,
+            "CouchDBName": self.testInit.couchDbName,
+            "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
+            "RunWhitelist" : [171050],
+            "TaskChain" : 3,
+            "Task1" :{
+                "TaskName" : "PromptReco",
+                "InputDataset" : "/DoubleElectron/Run2011A-v1/RAW", 
+                "SplittingAlgorithm"  : "LumiBased",
+                "SplittingArguments" : {"lumis_per_job" : 1},
+                "Scenario" : "pp",
+                "ScenarioMethod" : "promptReco",
+                "ScenarioArguments" : {"writeTiers" : ['RECO', 'AOD', 'ALCARECO', 'DQM']},
+                "GlobalTag" : "NOTSET"    
+            },
+            "Task2" : {
+                "TaskName" : "AlcaSkimming",
+                "InputTask" : "PromptReco",
+                "InputFromOutputModule" : "outputALCARECOALCARECO",
+                "Scenario" : "pp",
+                "ScenarioMethod" : "alcaSkimming",
+                "ScenarioArguments" : {"writeTiers" : ['ALCARECO'], "skims" : ["EcalCalElectron"]},
+                "SplittingAlgorithm" : "FileBased",
+                "SplittingArguments" : {"files_per_job" : 1 },
+                "GlobalTag" : "NOTSET"    
+            },
+            "Task3" : {
+                "TaskName" : "PromptSkim",
+                "InputTask" : "PromptReco",
+                "InputFromOutputModule" : "outputRECORECO",
+                "ConfigCacheID" : cfgs['Skims'],
+                "GlobalTag" : "NOTSET",
+                "SplittingAlgorithm" : "FileBased",
+                "SplittingArguments" : {"files_per_job" : 10 }, 
+            }
+        }
+        factory = TaskChainWorkloadFactory()        
+        try:
+            self.workload = factory("Tier0Test", arguments)
+        except Exception, ex:
+            msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
+            self.fail(msg)
+
+
+        self.workload.setSpecUrl("somespec")
+        self.workload.setOwnerDetails("evansde@fnal.gov", "DMWM")
+
+
+        testWMBSHelper = WMBSHelper(self.workload, "SomeBlock")
+        testWMBSHelper.createSubscription()
         
         
 if __name__ == '__main__':

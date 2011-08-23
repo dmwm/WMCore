@@ -206,12 +206,10 @@ function renderJobTransitions(jobDocument) {
     var transitionTimestamp = new Date(transition["timestamp"] * 1000);
 
     if (transition["location"] == "Agent") {
-      transitionDiv.innerHTML += "  " + transitionTimestamp.toDateString() + " ";
-      transitionDiv.innerHTML += transitionTimestamp.toLocaleTimeString() + " ";
+      transitionDiv.innerHTML += "  " + transitionTimestamp.toUTCString() + " ";
       transitionDiv.innerHTML += transition["oldstate"] + " -> " + transition["newstate"] + "<br>";
     } else {
-      transitionDiv.innerHTML += "  " + transitionTimestamp.toDateString() + " ";
-      transitionDiv.innerHTML += transitionTimestamp.toLocaleTimeString() + " ";
+      transitionDiv.innerHTML += "  " + transitionTimestamp.toUTCString() + " ";
       transitionDiv.innerHTML += transition["oldstate"] + " -> " + transition["newstate"];
       transitionDiv.innerHTML += " (" + transition["location"] + ")<br>";
     }

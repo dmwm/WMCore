@@ -914,6 +914,32 @@ class WMTaskHelper(TreeHelper):
         monitoring.PerformanceMonitor.maxVSize = maxVSize
         return
 
+    def getSwVersion(self):
+        """
+        _getSwVersion_
+
+        Get the CMSSW version for the first CMSSW step of workload.
+        """
+
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStepHelper(stepName)
+            if stepHelper.stepType() == "CMSSW":
+                return stepHelper.getCMSSWVersion()
+        return None
+
+    def getScramArch(self):
+        """
+        _getScramArch_
+
+        Get the scram architecture for the first CMSSW step of workload.
+        """
+
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStepHelper(stepName)
+            if stepHelper.stepType() == "CMSSW":
+                return stepHelper.getScramArch()
+        return None
+
     
 class WMTask(ConfigSectionTree):
     """

@@ -299,7 +299,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                                                       loadedJob["cache_dir"],
                                                       loadedJob.get("ownerDN", None),
                                                       loadedJob.get("priority", None),
-                                                      frozenset(possibleLocations)))
+                                                      frozenset(possibleLocations),
+                                                      loadedJob.get("scramArch", None),
+                                                      loadedJob.get("swVersion", None)) )
                 
         if len(badJobs) > 0:
             logging.error("The following jobs have no possible sites to run at: %s" % badJobs)
@@ -484,7 +486,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'userdn': cachedJob[5],
                                'priority': cachedJob[6],
                                'taskType': taskType,
-                               'possibleSites': cachedJob[7]}
+                               'possibleSites': cachedJob[7],
+                               'scramArch': cachedJob[8],
+                               'swVersion': cachedJob[9]}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)

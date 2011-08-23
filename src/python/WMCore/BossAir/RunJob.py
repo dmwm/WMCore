@@ -24,7 +24,8 @@ class RunJob(dict):
                  location = None, userdn = None, plugin = None,
                  cache_dir = None, status_time = None, packageDir = None,
                  sandbox = None, priority = None, site_cms_name = None,
-                 taskType = None, possibleSites = []):
+                 taskType = None, possibleSites = [], sw_version = None,
+                 scram_arch = None ):
         """
         Just make sure you init the dictionary fields.
 
@@ -50,6 +51,8 @@ class RunJob(dict):
         self.setdefault('priority', priority)
         self.setdefault('taskType', taskType)
         self.setdefault('possibleSites', possibleSites)
+        self.setdefault('swVersion', sw_version)
+        self.setdefault('scramArch', scram_arch)
 
 
         return

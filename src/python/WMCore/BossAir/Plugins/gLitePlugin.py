@@ -116,7 +116,6 @@ class gLitePlugin(BasePlugin):
 
     defaultjdl = {
                   'myproxyhost': 'myproxy.cern.ch',
-                  'nodesarch'  : 'VO-cms-slc5_ia32_gcc434',
                   'vo'         : 'cms',
                   'gridftphost': socket.getfqdn(),
                   'cestatus'   : 'Production',
@@ -1232,10 +1231,13 @@ class gLitePlugin(BasePlugin):
         if len(isb) > 0:
             jdl += 'InputSandbox = {%s};\n' % isb
 
-        #### BUILD REQUIREMENTS ####
-        jdl += 'Requirements = Member("%s", ' % self.defaultjdl['nodesarch'] + \
-               'other.GlueHostApplicationSoftwareRunTimeEnvironment) ' + \
-               '&& (other.GlueHostNetworkAdapterOutboundIP) ' + \
+        jdl += 'Requirements = '
+        if jobList[0].has_key('swVersion') and jobList[0]['swVersion'] is not None:
+             jdl += 'Member("VO-cms-%s", other.GlueHostApplicationSoftwareRunTimeEnvironment) && ' % jobList[0]['swVersion']
+        if jobList[0].has_key('scramArch') and jobList[0]['scramArch'] is not None:
+             jdl += 'Member("VO-cms-%s", other.GlueHostApplicationSoftwareRunTimeEnvironment) && ' % jobList[0]['scramArch']
+
+        jdl += '(other.GlueHostNetworkAdapterOutboundIP) ' + \
                '&& other.GlueCEStateStatus == "%s" ' \
                 % self.defaultjdl['cestatus'] + \
                '&&  other.GlueCEPolicyMaxCPUTime>=130 %s ;\n' \

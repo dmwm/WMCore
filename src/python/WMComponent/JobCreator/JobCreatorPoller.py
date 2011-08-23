@@ -102,7 +102,8 @@ def runSplitter(jobFactory, splitParams):
 
 
 def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
-            wmTaskPrio = None, owner = None, ownerDN = None ):
+            wmTaskPrio = None, owner = None, ownerDN = None,
+            scramArch = None, swVersion = None ):
         """
         _saveJob_
 
@@ -121,7 +122,9 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
         job['cache_dir'] = cacheDir
         job['priority']  = wmTaskPrio
         job['owner']     = owner
-        job['ownerDN']     = ownerDN
+        job['ownerDN']   = ownerDN
+        job['scramArch'] = scramArch
+        job['swVersion'] = swVersion
         output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
         cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
         output.close()
@@ -146,6 +149,8 @@ def creatorProcess(work, jobCacheDir):
         sandbox      = work.get('sandbox')
         owner        = work.get('owner')
         ownerDN      = work.get('ownerDN',None)
+        scramArch    = work.get('scramArch', None)
+        swVersion    = work.get('swVersion', None)
 
         if ownerDN == None:
             ownerDN = owner
@@ -180,7 +185,9 @@ def creatorProcess(work, jobCacheDir):
                     wmTaskPrio = wmTaskPrio,
                     sandbox = sandbox,
                     owner = owner,
-                    ownerDN = ownerDN)
+                    ownerDN = ownerDN,
+                    scramArch = scramArch,
+                    swVersion = swVersion )
 
     except Exception, ex:
         # Register as failure; move on
@@ -525,7 +532,10 @@ class JobCreatorPoller(BaseWorkerThread):
                     wmbsJobGroup.subscription = tempSubscription
                     tempDict = {}
                     tempDict.update(processDict)
-                    tempDict['jobGroup'] = wmbsJobGroup
+                    tempDict['jobGroup']  = wmbsJobGroup
+                    tempDict['swVersion'] = wmTask.getSwVersion(),
+                    tempDict['scramArch'] = wmTask.getScramArch()}
+
                     jobGroup = creatorProcess(work = tempDict,
                                               jobCacheDir = self.jobCacheDir)
                     jobNumber += jobsInGroup

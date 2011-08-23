@@ -1192,13 +1192,81 @@ class JobTest(unittest.TestCase):
         result = loadJob['mask'].filterRunLumisByMask([bigRun, badRun])
 
         self.assertEqual(len(result), 1)
-        alteredRun = result[0]
+        alteredRun = result.pop()
         self.assertEqual(alteredRun.run, 100)
         self.assertEqual(alteredRun.lumis, [101, 102])
 
         run0 = Run(300, *[1001, 1002])
         run1 = Run(300, *[1001, 1002])
         loadJob['mask'].filterRunLumisByMask([run0, run1])
+
+        return
+
+
+    def test_AutoIncrementCheck(self):
+        """
+        _AutoIncrementCheck_
+        
+        Test and see whether we can find and set the auto_increment values
+        """
+        myThread = threading.currentThread()
+        if not myThread.dialect.lower() == 'mysql':
+            return
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task="Test")
+
+        testWorkflow.create()
+
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+
+        testSubscription.create()
+
+        testFileA = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileB = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileA.create()
+        testFileB.create()
+                         
+        testFileset.addFile([testFileA, testFileB])
+        testFileset.commit()
+
+        testSubscription.acquireFiles([testFileA, testFileB])
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+
+        incrementDAO = self.daoFactory(classname = "Jobs.AutoIncrementCheck")
+        incrementDAO.execute()
+
+        testJob = Job()
+        testJob.create(group = testJobGroup)
+        self.assertEqual(testJob.exists(), 1)
+
+        incrementDAO.execute()
+        
+
+        testJob = Job()
+        testJob.create(group = testJobGroup)
+        self.assertEqual(testJob.exists(), 2)
+
+        incrementDAO.execute(input = 10)
+
+        testJob = Job()
+        testJob.create(group = testJobGroup)
+        self.assertEqual(testJob.exists(), 11)
+
+        incrementDAO.execute(input = 5)
+
+        testJob = Job()
+        testJob.create(group = testJobGroup)
+        self.assertEqual(testJob.exists(), 12)
+
+        return
         
         
 

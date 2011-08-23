@@ -35,6 +35,7 @@ from WMCore.JobSplitting.SplitterFactory    import SplitterFactory
 from WMCore.WMBS.Subscription               import Subscription
 from WMCore.WMBS.Workflow                   import Workflow
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
+from WMCore.Database.CMSCouch               import CouchServer
 
 
 def retrieveWMSpec(workflow):
@@ -360,6 +361,23 @@ class JobCreatorPoller(BaseWorkerThread):
 
         
         self.changeState = ChangeState(self.config)
+
+        # Initiate autoIncrement for MySQL
+        # This is because MySQL stores the autoIncrement in memory and it has
+        # to be resynchronized with couch after a server restart
+        if getattr(myThread, 'dialect', 'None').lower() == 'mysql':
+            incrementDAO     = self.daoFactory(classname = "Jobs.AutoIncrementCheck")
+            couchdb          = CouchServer(config.JobStateMachine.couchurl)
+            jobsdatabase     = couchdb.connectDatabase("%s/jobs" % config.JobStateMachine.couchDBName)
+            try:
+                jobID = jobsdatabase.loadView("JobDump",
+                                              "highestJobID")['rows'][0]['value']
+            except IndexError:
+                # In this case, there are no jobs in couch
+                jobID = 0
+
+            # Now increment the MySQL AutoIncrement
+            incrementDAO.execute(input = jobID)
 
         return
 

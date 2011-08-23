@@ -74,7 +74,9 @@ class JobCreatorTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ['WMCore.WMBS', 
                                                  'WMCore.ResourceControl',
                                                  'WMCore.Agent.Database'], useDefault = False)
-        self.testInit.setupCouch("jobcreator_t_0", "JobDump")
+        self.couchdbname = "jobcreator_t"
+        self.testInit.setupCouch("%s/jobs" % self.couchdbname, "JobDump")
+        self.testInit.setupCouch("%s/fwjrs" % self.couchdbname, "FWJRDump")
                                                  
 
         myThread = threading.currentThread()
@@ -261,7 +263,7 @@ class JobCreatorTest(unittest.TestCase):
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')
         config.JobStateMachine.default_retries = 1
-        config.JobStateMachine.couchDBName     = "jobcreator_t_0"
+        config.JobStateMachine.couchDBName     = self.couchdbname
 
         return config
 

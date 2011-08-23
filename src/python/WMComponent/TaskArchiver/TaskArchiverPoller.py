@@ -460,69 +460,79 @@ class TaskArchiverPoller(BaseWorkerThread):
         The couch performance stuff is convoluted enough I think I want to handle it separately.
         """
         output = {'jobTime': []}
-        final  = {}
-        
+
         perf = self.fwjrdatabase.loadView("FWJRDump", "performanceByWorkflowName",
                                           options = {"startkey": [workflowName],
                                                      "endkey": [workflowName]})['rows']
 
+        taskList   = {}
+        finalTask  = {}
         masterList = []
 
         for row in perf:
-            masterList.append(row['value'])
-            for key in row['value'].keys():
-                if key in ['startTime', 'stopTime']:
-                    continue
-                if not key in output.keys():
-                    output[key] = []
-                output[key].append(float(row['value'][key]))
-            try:
-                jobTime = row['value'].get('stopTime', None) - row['value'].get('startTime', None)
-                output['jobTime'].append(jobTime)
-            except TypeError:
-                # One of those didn't have a real value
-                pass
+            taskName = row['value']['taskName']
+            if not taskName in taskList.keys():
+                taskList[taskName] = []
+            value = row['value']
+            taskList[taskName].append(value)
 
-        for key in output.keys():
-            final[key] = {}
-            offenders = MathAlgos.getLargestValues(dictList = masterList, key = key,
-                                                   n = self.nOffenders)
-            for x in offenders:
+        for taskName in taskList.keys():
+            final = {}
+            for row in taskList[taskName]:
+                masterList.append(row)
+                for key in row.keys():
+                    if key in ['startTime', 'stopTime', 'taskName']:
+                        continue
+                    if not key in output.keys():
+                        output[key] = []
+                    output[key].append(float(row[key]))
                 try:
-                    logArchive = self.fwjrdatabase.loadView("FWJRDump", "logArchivesByJobID",
-                                                            options = {"startkey": [x['jobID']],
-                                                                       "endkey": [x['jobID'],
-                                                                                  x['retry_count']]})['rows'][0]['value']['lfn']
-                    logCollectID = self.jobsdatabase.loadView("JobDump", "jobsByInputLFN",
-                                                              options = {"startkey": [logArchive],
-                                                                         "endkey": [logArchive]})['rows'][0]['value']
-                    
-                    logCollect = self.fwjrdatabase.loadView("FWJRDump", "outputByJobID",
-                                                            options = {"startkey": [logCollectID],
-                                                                       "endkey": [logCollectID, {}]})['rows'][0]['value']['lfn']
-                    x['logArchive'] = logArchive.split('/')[-1]
-                    x['logLFN']     = logCollect
-                except IndexError, ex:
-                    logging.error("Unable to find final logArchive tarball")
-                    logging.error(str(ex))
-                except KeyError, ex:
-                    logging.error("Unable to find final logArchive tarball")
-                    logging.error(str(ex))
-            if key in self.histogramKeys:
-                histogram = MathAlgos.createHistogram(numList = output[key],
-                                                      nBins = self.histogramBins,
-                                                      limit = self.histogramLimit)
-                final[key]['histogram'] = histogram
-            else:
-                average, stdDev = MathAlgos.getAverageStdDev(numList = output[key])
-                final[key]['average'] = average
-                final[key]['stdDev']  = stdDev
+                    jobTime = row.get('stopTime', None) - row.get('startTime', None)
+                    output['jobTime'].append(jobTime)
+                except TypeError:
+                    # One of those didn't have a real value
+                    pass
 
-            final[key]['worstOffenders'] = [{'jobID': x['jobID'], 'value': x.get(key, None),
-                                             'log': x.get('logArchive', None),
-                                             'logCollect': x.get('logCollect', None)} for x in offenders]
+            for key in output.keys():
+                final[key] = {}
+                offenders = MathAlgos.getLargestValues(dictList = masterList, key = key,
+                                                       n = self.nOffenders)
+                for x in offenders:
+                    try:
+                        logArchive = self.fwjrdatabase.loadView("FWJRDump", "logArchivesByJobID",
+                                                                options = {"startkey": [x['jobID']],
+                                                                           "endkey": [x['jobID'],
+                                                                                      x['retry_count']]})['rows'][0]['value']['lfn']
+                        logCollectID = self.jobsdatabase.loadView("JobDump", "jobsByInputLFN",
+                                                                  options = {"startkey": [logArchive],
+                                                                             "endkey": [logArchive]})['rows'][0]['value']
                         
-        return final
+                        logCollect = self.fwjrdatabase.loadView("FWJRDump", "outputByJobID",
+                                                                options = {"startkey": [logCollectID],
+                                                                           "endkey": [logCollectID, {}]})['rows'][0]['value']['lfn']
+                        x['logArchive'] = logArchive.split('/')[-1]
+                        x['logLFN']     = logCollect
+                    except IndexError, ex:
+                        logging.error("Unable to find final logArchive tarball")
+                        logging.error(str(ex))
+                    except KeyError, ex:
+                        logging.error("Unable to find final logArchive tarball")
+                        logging.error(str(ex))
+                if key in self.histogramKeys:
+                    histogram = MathAlgos.createHistogram(numList = output[key],
+                                                          nBins = self.histogramBins,
+                                                          limit = self.histogramLimit)
+                    final[key]['histogram'] = histogram
+                else:
+                    average, stdDev = MathAlgos.getAverageStdDev(numList = output[key])
+                    final[key]['average'] = average
+                    final[key]['stdDev']  = stdDev
+
+                    final[key]['worstOffenders'] = [{'jobID': x['jobID'], 'value': x.get(key, None),
+                                                     'log': x.get('logArchive', None),
+                                                     'logCollect': x.get('logCollect', None)} for x in offenders]
+            finalTask[taskName] = final
+        return finalTask
     
     
     

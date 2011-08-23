@@ -389,16 +389,17 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(workloadSummary['ACDCServer'], sanitizeURL(config.ACDC.couchurl)['url'])
         #self.assertEqual(workloadSummary['output'].keys(),
         #                 ['/MinBias_TuneZ2_7TeV-pythia6/Backfill-110414_Type4_Redigi_01_T1_US_FNAL_MinBias_TuneZ2_7TeV-pythia6-v1/GEN-SIM-RAWDEBUG'])
-        self.assertEqual(workloadSummary['performance']['TotalJobCPU']['average'], 16.502500000000001)
-        self.assertTrue(workloadSummary['performance']['TotalJobCPU']['stdDev'] < 0.000001)
-        self.assertEqual(workloadSummary['performance']['AvgEventTime']['histogram'][0]['stdDev'], 0.0)
-        self.assertEqual(workloadSummary['performance']['AvgEventTime']['histogram'][0]['average'], 0.0)
-        self.assertEqual(workloadSummary['performance']['readMaxMSec']['average'], 1518.0599999999999)
-        self.assertEqual(workloadSummary['campaign'], self.campaignName)
-        self.assertEqual(workloadSummary['performance']['readMaxMSec']['worstOffenders'],
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['TotalJobCPU']['average'], 16.5025)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['TotalJobCPU']['average'], 16.5025)
+        self.assertTrue(workloadSummary['performance']['/TestWorkload/ReReco']['TotalJobCPU']['stdDev'] < 0.01)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['AvgEventTime']['histogram'][0]['average'], 0.0)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['AvgEventTime']['histogram'][0]['average'], 0.0)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['readMaxMSec']['worstOffenders'],
                          [{'logCollect': None, 'log': None, 'value': 1518.0599999999999, 'jobID': 1},
                           {'logCollect': None, 'log': None, 'value': 1518.0599999999999, 'jobID': 10},
-                          {'logCollect': None, 'log': None, 'value': 1518.0599999999999, 'jobID': 11}])
+                          {'logCollect': None, 'log': None, 'value': 1518.0599999999999, 'jobID': 2}])
+        
+
         return
 
     def atestB_testErrors(self):

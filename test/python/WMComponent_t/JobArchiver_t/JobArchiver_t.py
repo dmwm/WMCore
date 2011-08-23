@@ -43,6 +43,8 @@ from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 
 from nose.plugins.attrib import attr
 
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
+
 
 class JobArchiverTest(unittest.TestCase):
     """
@@ -78,6 +80,9 @@ class JobArchiverTest(unittest.TestCase):
         self.nJobs = 10
         
         self.alertsReceiver = None
+        
+        EmulatorHelper.setEmulators(phedex = True, dbs = True,
+                                    siteDB = True, requestMgr = False)
 
         return
 
@@ -85,7 +90,7 @@ class JobArchiverTest(unittest.TestCase):
         """
         Database deletion
         """
-
+        EmulatorHelper.resetEmulators()
         self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
@@ -106,6 +111,7 @@ class JobArchiverTest(unittest.TestCase):
         #First the general stuff
         config.section_("General")
         config.General.workDir = os.getenv("TESTDIR", os.getcwd())
+        config.General.WorkDir = os.getenv("TESTDIR", os.getcwd())
 
         #Now the CoreDatabase information
         #This should be the dialect, dburl, etc
@@ -123,6 +129,17 @@ class JobArchiverTest(unittest.TestCase):
         #config.JobArchiver.logDir                = os.path.join(self.testDir, 'logs')
         config.JobArchiver.componentDir          = self.testDir
         config.JobArchiver.numberOfJobsToCluster = 1000
+
+        config.component_('WorkQueueManager')
+	config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
+	config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
+	config.WorkQueueManager.level = 'LocalQueue'
+        config.WorkQueueManager.logLevel = 'DEBUG'
+        config.WorkQueueManager.couchurl = 'https://None'
+        config.WorkQueueManager.dbname = 'whatever'
+        config.WorkQueueManager.inboxDatabase = 'whatever2'
+        config.WorkQueueManager.queueParams = {}
+        config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
         
         # addition for Alerts messaging framework, work (alerts) and control
         # channel addresses to which the component will be sending alerts

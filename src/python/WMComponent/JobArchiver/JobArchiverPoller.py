@@ -53,6 +53,7 @@ class JobArchiverPoller(BaseWorkerThread):
                                      dbinterface = myThread.dbi)
         self.loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
 
+
         # Variables
         self.numberOfJobsToCluster = getattr(self.config.JobArchiver,
                                              "numberOfJobsToCluster", 1000)
@@ -76,13 +77,24 @@ class JobArchiverPoller(BaseWorkerThread):
             except:
                 pass
             raise JobArchiverPollerException(msg)
+
+        try:
+            from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
+            self.workQueue = queueFromConfig(self.config)
+        except Exception, ex:
+            msg =  "Could not load workQueue"
+            msg += str(ex)
+            logging.error(msg)
+            #raise JobArchiverPollerException(msg)
+            
+        return
+        
                 
                 
     def setup(self, parameters):
         """
         Load DB objects required for queries
         """
-
         return
 
 
@@ -106,6 +118,7 @@ class JobArchiverPoller(BaseWorkerThread):
         try:
             self.archiveJobs()
             self.pollForClosable()
+            self.markInjected()
         except WMException:
             myThread = threading.currentThread()
             if getattr(myThread, 'transaction', None) != None\
@@ -120,7 +133,7 @@ class JobArchiverPoller(BaseWorkerThread):
             if getattr(myThread, 'transaction', None) != None\
                    and getattr(myThread.transaction, 'transaction', None) != None:
                 myThread.transaction.rollback()
-            raise JobArchiverException(msg)
+            raise JobArchiverPollerException(msg)
 
 
         return
@@ -282,6 +295,35 @@ class JobArchiverPoller(BaseWorkerThread):
         return
 
 
+    def markInjected(self):
+        """
+        _markInjected_
+
+        Mark any workflows that have been fully injected as injected
+        """
+
+        myThread = threading.currentThread()
+        getAction  = self.daoFactory(classname = "Workflow.GetInjectedWorkflows")
+        markAction = self.daoFactory(classname = "Workflow.MarkInjectedWorkflows")
+        result = getAction.execute()
+
+        # Check each result to see if it is injected:
+        injected = []
+        for name in result:
+            try:
+                if self.workQueue.getWMBSInjectionStatus(workflowName = name):
+                    injected.append(name)
+            except:
+                # Do nothing if it complains
+                pass
+        
+        # Now, mark as injected those that returned True
+        if len(injected) > 0:
+            myThread.transaction.begin()
+            markAction.execute(names = injected, injected = True)
+            myThread.transaction.commit()
+        return
+
     def pollForClosable(self):
         """
         _pollForClosable_
@@ -290,7 +332,7 @@ class JobArchiverPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
         myThread.transaction.begin()
-
+        
         closableFilesetDAO = self.daoFactory(classname = "Fileset.ListClosable")
         closableFilesets = closableFilesetDAO.execute()
 

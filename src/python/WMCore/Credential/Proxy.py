@@ -90,6 +90,8 @@ class Proxy(Credential):
         self.userDN = args.get( "userDN", '')
         self.proxyValidity = args.get( "proxyValidity", '')
         self.myproxyValidity = args.get( "myproxyValidity", 4)
+        self.group = args.get( "group",'')
+        self.role = args.get( "role",'')
 
         self.logger = args.get( "logger", '')
 
@@ -98,9 +100,6 @@ class Proxy(Credential):
 
         ## adding credential path
         self.credServerPath = args.get("credServerPath", '/tmp')
-
-        self.group = ''
-        self.role = ''
         self.vo = 'cms'
 
         self.args = args
@@ -200,7 +199,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
         claimed = "/%s/" % self.vo
         if self.group:
             claimed += self.group
-        if self.role: claimed += "/Role=%s" % self.role
+        if self.role and self.role != 'NULL': claimed += "/Role=%s" % self.role
 
         attribute, error, retcode = execute_command(self.setUI() +  checkAttCmd, self.logger, self.commandTimeout )
 
@@ -225,9 +224,9 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
         if self.group:
             createCmd += ':/'+self.vo+'/'+self.group
-            if self.role: createCmd += '/Role='+self.role
+            if self.role and self.role != 'NULL': createCmd += '/Role='+self.role
         else:
-            if self.role: createCmd += ':/'+self.vo+'/Role='+self.role
+            if self.role and self.role != 'NULL': createCmd += ':/'+self.vo+'/Role='+self.role
 
         createCmd += ' -valid ' + self.proxyValidity
 

@@ -33,8 +33,8 @@ class ProxyTest(unittest.TestCase):
 
         self.logger = logging.getLogger(logger_name)
         dict = {'logger': self.logger,
-                'server_key' : '/home/crab/.globus/hostkey.pem', 'server_cert' : '/home/crab/.globus/hostcert.pem',  
-                'vo': 'cms', 'myProxySvr': 'myproxy.cern.ch',
+                'server_key' : '/home/crab/.globus/hostkey.pem', 'server_cert' : '/home/crab/.globus/hostcert.pem',
+                'vo': 'cms', 'group': 'integration', 'role': 'NULL', 'myProxySvr': 'myproxy.cern.ch',
                 'proxyValidity' : '192:00', 'min_time_left' : 36000}
 
         self.proxyPath = None
@@ -55,7 +55,6 @@ class ProxyTest(unittest.TestCase):
     def getUserIdentity(self):
         """
         _getUserIdentity_
-
         Retrieve the user's subject from the voms-proxy-info call.
         """
         vomsProxyInfoCall = subprocess.Popen(["voms-proxy-info", "-identity"],
@@ -63,7 +62,21 @@ class ProxyTest(unittest.TestCase):
                                              stderr = subprocess.PIPE)
         if vomsProxyInfoCall.wait() != 0:
             return None
-        
+
+        (stdout, stderr) = vomsProxyInfoCall.communicate()
+        return stdout[0:-1]
+
+    def getUserAttributes(self):
+        """
+        _getUserAttributes_
+        Retrieve the user's attributes from the voms-proxy-info call.
+        """
+        vomsProxyInfoCall = subprocess.Popen(["voms-proxy-info", "-fqan"],
+                                             stdout = subprocess.PIPE,
+                                             stderr = subprocess.PIPE)
+        if vomsProxyInfoCall.wait() != 0:
+            return None
+
         (stdout, stderr) = vomsProxyInfoCall.communicate()
         return stdout[0:-1]
 
@@ -125,15 +138,15 @@ class ProxyTest(unittest.TestCase):
     def testGetSubject(self):
         """
         _testGetSubject_
-        
+
         Verify that the getSubject() method works correctly.
         """
         if os.path.exists(self.serverKey):
             return
-        
+
         self.testCreateProxy()
         subject = self.proxy.getSubject( )
-        
+
         self.assertEqual(subject, self.getUserIdentity(),
                          "Error: Wrong subject.")
         return
@@ -164,7 +177,7 @@ class ProxyTest(unittest.TestCase):
         if not os.path.exists( self.serverKey ):
 
            valid = self.proxy.checkAttribute( )
-           assert valid == True 
+           assert valid == True
 
     @attr("integration")
     def testCheckTimeLeft( self ):
@@ -173,7 +186,7 @@ class ProxyTest(unittest.TestCase):
         if not os.path.exists( self.serverKey ):
 
            valid = self.proxy.check( self.proxyPath )
-           assert valid == True 
+           assert valid == True
 
     @attr("integration")
     def testDelegateMyProxy( self ):
@@ -184,7 +197,7 @@ class ProxyTest(unittest.TestCase):
            self.proxy.create()
            self.proxy.delegate( credential = self.proxyPath )
            valid = self.proxy.checkMyProxy( )
-           assert valid == True 
+           assert valid == True
 
     @attr("integration")
     def testDelegateServerAndMyProxy( self ):
@@ -227,7 +240,7 @@ class ProxyTest(unittest.TestCase):
 
            proxyFile = self.proxy.logonRenewMyProxy( )
            assert os.path.exists( proxyFile )
-        
+
     @attr("integration")
     def testRenewMyProxy( self ):
         """
@@ -281,10 +294,29 @@ class ProxyTest(unittest.TestCase):
            vomsTimeLeft = self.proxy.getVomsLife( proxyPath )
            assert ( int(vomsTimeLeft) / 3600 ) == 191
 
+
+    @attr("integration")
+    def testUserGroupInProxy( self ):
+        """
+        """
+        if not os.path.exists( self.serverKey ):
+
+           self.proxy.create()
+           assert self.proxy.group == self.getUserAttributes().split('\n')[0].split('/')[2]
+
+    @attr("integration")
+    def testUserRoleInProxy( self ):
+        """
+        """
+        if not os.path.exists( self.serverKey ):
+
+           self.proxy.create()
+           assert self.proxy.role == self.getUserAttributes().split('\n')[0].split('/')[3].split('=')[1]
+
 #    def testDestroyMyProxy( self ):
 #        """
 #        """
-#         return 
+#         return
 
 if __name__ == '__main__':
     unittest.main()

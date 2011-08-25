@@ -551,8 +551,8 @@ class JobCreatorPoller(BaseWorkerThread):
                     tempDict = {}
                     tempDict.update(processDict)
                     tempDict['jobGroup']  = wmbsJobGroup
-                    tempDict['swVersion'] = wmTask.getSwVersion(),
-                    tempDict['scramArch'] = wmTask.getScramArch()}
+                    tempDict['swVersion'] = wmTask.getSwVersion()
+                    tempDict['scramArch'] = wmTask.getScramArch()
 
                     jobGroup = creatorProcess(work = tempDict,
                                               jobCacheDir = self.jobCacheDir)

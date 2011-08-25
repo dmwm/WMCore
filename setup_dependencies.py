@@ -93,4 +93,17 @@ dependencies = {
                 'wmclient':{
                         'systems': ['wmc-runtime', 'wmc-database']
                         },
+                'globalmonitor':{
+                        'packages': ['WMCore.HTTPFrontEnd', 
+                                     'WMCore.HTTPFrontEnd.GlobalMonitor+',
+                                     'WMCore.Services',
+                                     'WMCore.Services.RequestManager+',
+                                     'WMCore.Services.WorkQueue+', 
+                                     'WMCore.Services.WMBS+', 
+                                     'WMCore.Services.WMAgent+'],
+                        'modules': ['WMCore.Database.CMSCouch'],
+                        'systems':['wmc-web'],
+                        'statics': ['src/html/GlobalMonitor',
+                                    'src/javascript/WMCore/WebTools/GlobalMonitor+']
+                        },
                }

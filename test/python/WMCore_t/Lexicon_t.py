@@ -130,6 +130,8 @@ class LexiconTest(unittest.TestCase):
         lfn(lfnA)
         lfnA = '/store/data/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
         lfn(lfnA)
+        lfnA = '/store/data/Run2010A/Cosmics/RECO/v4/000/143/316/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfn(lfnA)
 
 
         # All these cases should fail

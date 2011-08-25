@@ -38,7 +38,7 @@ class StatusPoller(BaseWorkerThread):
 
         Set up the caching and other objects
         """
-
+        self.config = config
         BaseWorkerThread.__init__(self)
 
         self.cachedJobs = []

@@ -8,6 +8,7 @@ Made by Andrew Melo <andrew.m.melo@vanderbilt.edu>
 Stolen from Dave Evans <evansde@fnal.gov>
 """
 
+import logging
 
 import WMCore.ACDC.CollectionTypes as CollectionTypes
 import WMCore.ACDC.CouchUtils as CouchUtils
@@ -17,8 +18,7 @@ from WMCore.ACDC.CouchFileset import CouchFileset
 from WMCore.ACDC.CouchService import CouchService
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
-
-from DBSAPI.dbsApi import DbsApi
+from WMCore.Services.DBS.DBSReader import DBSReader
 
 
 
@@ -68,17 +68,20 @@ class AnalysisCollectionService(CouchService):
         fileSet.setCollection(collection)
 
         files = []
+        blockLocations = {}
 
-        args = {}
-        args["url"] = dbsURL
-        args["version"] = "DBS_2_0_9"
-        args["mode"] = "GET"
-        dbsApi = DbsApi(args)
-        dbsResults = dbsApi.listFiles(path=dataset, retriveList=["retrive_lumi", "retrive_run"])
+        dbsReader = DBSReader(dbsURL, version="DBS_2_0_9", mode="GET")
+
+        dbsResults = dbsReader.dbs.listFiles(path=dataset, retriveList=["retrive_lumi", "retrive_run"])
+        logging.info('Found %s files from DBS' % len(dbsResults))
 
         for dbsResult in dbsResults:
+            blockName = dbsResult["Block"]["Name"]
+            if not blockName in blockLocations:
+                blockLocations[blockName] = dbsReader.listFileBlockLocation(blockName)
+
             file = File(lfn=dbsResult["LogicalFileName"], size=dbsResult["FileSize"],
-                        events=dbsResult["NumberOfEvents"])
+                        events=dbsResult["NumberOfEvents"], locations=blockLocations[blockName])
             runs = {}
             for lumi in dbsResult["LumiList"]:
                 runNumber = lumi['RunNumber']
@@ -93,5 +96,7 @@ class AnalysisCollectionService(CouchService):
                 file.addRun(run)
             files.append(file)
 
+        logging.info('Uploading %s files in fileset' % len(files))
         fileList = fileSet.add(files, mask)
+
         return fileSet, fileList

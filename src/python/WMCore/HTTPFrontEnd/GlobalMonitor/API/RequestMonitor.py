@@ -58,6 +58,8 @@ def getRequestInfoFromGlobalQueue(serviceURL):
                                         siteWhitelists)
         localResults = []
         for url in childQueueURLs:
+            # TODO: change if each queue has shares the workflow
+            # assume each queue has exclusive request
             localResults.extend(getRequestOverview(url, "LocalQueue"))
 
         localQRules = {'pending': DFormatter.add, 'cooloff': DFormatter.add,
@@ -87,6 +89,7 @@ def getRequestInfoFromLocalQueue(serviceURL):
         return getRequestInfoFromWMBS(wmbsUrls[0], jobStatusInfo)
     else:
         return []
+
 def getRequestInfoFromWMBS(serviceURL, jobStatusInfo):
 
     service = WMBS({'endpoint':serviceURL})

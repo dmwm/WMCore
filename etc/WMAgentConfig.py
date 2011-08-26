@@ -61,6 +61,10 @@ retryAlgoParams = {"create": 10, "submit": 60, "job": 5000}
 # The amount of time to wait after a workflow has completed before archiving it.
 workflowArchiveTimeout = 3600
 
+# Global LogLevel
+# For setting the general log level of the components
+globalLogLevel = 'INFO'
+
 # Nothing beyond this point should need to be changed.
 config = Configuration()
 
@@ -106,7 +110,7 @@ config.component_('WorkQueueManager')
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
 config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
 config.WorkQueueManager.level = 'LocalQueue'
-config.WorkQueueManager.logLevel = 'DEBUG'
+config.WorkQueueManager.logLevel = globalLogLevel
 config.WorkQueueManager.couchurl = couchURL
 config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
@@ -116,7 +120,7 @@ config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cer
 config.component_("DBSUpload")
 config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"
 config.DBSUpload.componentDir = config.General.workDir + "/DBSUpload"
-config.DBSUpload.logLevel = "DEBUG"
+config.DBSUpload.logLevel = globalLogLevel
 config.DBSUpload.workerThreads = 1
 config.DBSUpload.pollInterval = 100
 
@@ -135,7 +139,7 @@ config.DBSInterface.doGlobalMigration = False
 config.component_("PhEDExInjector")
 config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"
 config.PhEDExInjector.componentDir = config.General.workDir + "/PhEDExInjector"
-config.PhEDExInjector.logLevel = "DEBUG"
+config.PhEDExInjector.logLevel = globalLogLevel
 config.PhEDExInjector.maxThreads = 1
 config.PhEDExInjector.subscribeMSS = True
 config.PhEDExInjector.phedexurl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
@@ -145,14 +149,14 @@ config.PhEDExInjector.subscribeInterval = 43200
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
 config.JobAccountant.componentDir = config.General.workDir + "/JobAccountant"
-config.JobAccountant.logLevel = "DEBUG"
+config.JobAccountant.logLevel = globalLogLevel
 config.JobAccountant.workerThreads = 1
 config.JobAccountant.pollInterval = 60
 
 config.component_("JobCreator")
 config.JobCreator.namespace = "WMComponent.JobCreator.JobCreator"
 config.JobCreator.componentDir = config.General.workDir + "/JobCreator"
-config.JobCreator.logLevel = "DEBUG"
+config.JobCreator.logLevel = globalLogLevel
 config.JobCreator.maxThreads = 1
 config.JobCreator.UpdateFromResourceControl = True
 config.JobCreator.pollInterval = 120
@@ -166,7 +170,7 @@ config.JobCreator.workerThreads = 1
 config.component_("JobSubmitter")
 config.JobSubmitter.namespace = "WMComponent.JobSubmitter.JobSubmitter"
 config.JobSubmitter.componentDir = config.General.workDir + "/JobSubmitter"
-config.JobSubmitter.logLevel = "DEBUG"
+config.JobSubmitter.logLevel = globalLogLevel
 config.JobSubmitter.maxThreads = 1
 config.JobSubmitter.pollInterval = 120
 config.JobSubmitter.workerThreads = 1
@@ -176,27 +180,27 @@ config.JobSubmitter.submitScript = os.path.join(os.environ["WMCORE_ROOT"], "etc/
 config.component_("JobTracker")
 config.JobTracker.namespace = "WMComponent.JobTracker.JobTracker"
 config.JobTracker.componentDir  = config.General.workDir + "/JobTracker"
-config.JobTracker.logLevel = "DEBUG"
+config.JobTracker.logLevel = globalLogLevel
 config.JobTracker.pollInterval = 60
 
 config.component_("JobStatusLite")
 config.JobStatusLite.namespace = "WMComponent.JobStatusLite.JobStatusLite"
 config.JobStatusLite.componentDir  = config.General.workDir + "/JobStatusLite"
-config.JobStatusLite.logLevel = "DEBUG"
+config.JobStatusLite.logLevel = globalLogLevel
 config.JobStatusLite.pollInterval = 60
 config.JobStatusLite.stateTimeouts = {"Error": 1800}
 
 config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
 config.ErrorHandler.componentDir  = config.General.workDir + "/ErrorHandler"
-config.ErrorHandler.logLevel = "DEBUG"
+config.ErrorHandler.logLevel = globalLogLevel
 config.ErrorHandler.maxRetries = maxJobRetries
 config.ErrorHandler.pollInterval = 240
 
 config.component_("RetryManager")
 config.RetryManager.namespace = "WMComponent.RetryManager.RetryManager"
 config.RetryManager.componentDir  = config.General.workDir + "/RetryManager"
-config.RetryManager.logLevel = "DEBUG"
+config.RetryManager.logLevel = globalLogLevel
 config.RetryManager.pollInterval = 240
 config.RetryManager.coolOffTime = retryAlgoParams
 config.RetryManager.pluginName = retryAlgo
@@ -205,7 +209,7 @@ config.component_("JobArchiver")
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
 config.JobArchiver.componentDir  = config.General.workDir + "/JobArchiver"
 config.JobArchiver.pollInterval = 240
-config.JobArchiver.logLevel = "DEBUG"
+config.JobArchiver.logLevel = globalLogLevel
 # This is now OPTIONAL, it defaults to the componentDir
 # HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
 # disk as the JobCreator
@@ -215,7 +219,7 @@ config.JobArchiver.numberOfJobsToCluster = 1000
 config.component_("TaskArchiver")
 config.TaskArchiver.namespace = "WMComponent.TaskArchiver.TaskArchiver"
 config.TaskArchiver.componentDir  = config.General.workDir + "/TaskArchiver"
-config.TaskArchiver.logLevel = "DEBUG"
+config.TaskArchiver.logLevel = globalLogLevel
 config.TaskArchiver.pollInterval = 240
 config.TaskArchiver.timeOut      = workflowArchiveTimeout
 config.TaskArchiver.useWorkQueue = True

@@ -259,38 +259,60 @@ class TaskArchiverPoller(BaseWorkerThread):
                 sub.deleteEverything()
                 workflow = sub['workflow']
 
-                if not workflow.exists():
-                    # Then we deleted the workflow
+                if workflow.exists():
+                    # Then there are other subscriptions attached
+                    # to the workflow
+                    continue
+                
+                # If we deleted the workflow, it's time to delete
+                # the work directories
+                    
+                # Now we have to delete the task area.
+                workDir, taskDir = getMasterName(startDir = self.jobCacheDir,
+                                                 workflow = workflow)
+                logging.info("About to delete work directory %s" % taskDir)
+                if os.path.isdir(taskDir):
+                    # Remove the taskDir, because we're done
+                    shutil.rmtree(taskDir)
+                else:
+                    msg = "Attempted to delete work directory but it was already gone: %s" % taskDir
+                    logging.error(msg)
+                    self.sendAlert(1, msg = msg)
 
-                    # First load the WMSpec
-                    logging.debug("Loading spec to delete sandbox dir")
+                # Now check if the workflow is done
+                if not workflow.countWorkflowsBySpec() == 0:
+                    continue
+
+                # If the WMSpec is done, then we have to delete
+                # the sandbox, and send off the couch summary
+
+                # First load the WMSpec
+                try:
+                    logging.debug("Loading spec to delete sandbox dir for task %s" % workflow.task)
                     spec     = retrieveWMSpec(workflow = workflow)
                     wmTask   = spec.getTaskByPath(workflow.task)
-                                        
-                    # Then pull its info from couch and archive it
-                    self.archiveCouchSummary(workflow = workflow, spec = spec)
-                    # Now we have to delete the task area.
-                    workDir, taskDir = getMasterName(startDir = self.jobCacheDir,
-                                                     workflow = workflow)
-                    logging.info("About to delete work directory %s" % taskDir)
-                    if os.path.isdir(taskDir):
-                        # Remove the taskDir, because we're done
-                        shutil.rmtree(taskDir)
+                except Exception, ex:
+                    # If this happens, we're well and truly screwed.
+                    # We've passed the deletion point.  We can't recover
+                    # Abort this.  There will be no couch summary
+                    msg =  "Critical error in opening spec after workflow deletion"
+                    msg += "Task: %s" % workflow.task
+                    msg += str(ex)
+                    msg += "There will be NO workflow summary for this task"
+                    raise TaskArchiverPollerException(msg)
+                
+                # Then pull its info from couch and archive it
+                self.archiveCouchSummary(workflow = workflow, spec = spec)
+                
+                # Now take care of the sandbox
+                sandbox  = getattr(wmTask.data.input, 'sandbox', None)
+                if sandbox:
+                    sandboxDir = os.path.dirname(sandbox)
+                    if os.path.isdir(sandboxDir):
+                        shutil.rmtree(sandboxDir)
+                        logging.debug("Sandbox dir deleted")
                     else:
-                        msg = "Attempted to delete work directory but it was already gone: %s" % taskDir
-                        logging.error(msg)
-                        self.sendAlert(1, msg = msg)
-                    # Remove the sandbox dir
-                    if not workflow.countWorkflowsBySpec() == 0:
-                        continue
-                    sandbox  = getattr(wmTask.data.input, 'sandbox', None)
-                    if sandbox:
-                        sandboxDir = os.path.dirname(sandbox)
-                        if os.path.isdir(sandboxDir):
-                            shutil.rmtree(sandboxDir)
-                            logging.debug("Sandbox dir deleted")
-                        else:
-                            logging.error("Attempted to delete sandbox dir but it was already gone: %s" % sandboxDir)
+                        logging.error("Attempted to delete sandbox dir but it was already gone: %s" % sandboxDir)
             except Exception, ex:
                 msg =  "Critical error while deleting subscription %i\n" % sub['id']
                 msg += str(ex)
@@ -322,9 +344,13 @@ class TaskArchiverPoller(BaseWorkerThread):
         workflowData['campaign'] = spec.getCampaign()
 
         # Get a list of failed job IDs
-        failedCouch = self.jobsdatabase.loadView("JobDump", "failedJobsByWorkflowName",
-                                                 options = {"startkey": [workflowName, workflow.task],
-                                                            "endkey": [workflowName, workflow.task]})['rows']
+        # Make sure you get it for ALL tasks in the spec
+        for taskName in spec.listAllTaskPathNames():
+            failedTmp = self.jobsdatabase.loadView("JobDump", "failedJobsByWorkflowName",
+                                                   options = {"startkey": [workflowName, taskName],
+                                                              "endkey": [workflowName, taskName]})['rows']
+            for entry in failedTmp:
+                failedJobs.append(entry['value'])
 
         output = self.fwjrdatabase.loadView("FWJRDump", "outputByWorkflowName",
                                             options = {"group_level": 2,
@@ -339,9 +365,6 @@ class TaskArchiverPoller(BaseWorkerThread):
             workflowData['performance'][key] = {}
             for attr in perf[key].keys():
                 workflowData['performance'][key][attr] = perf[key][attr]
-
-        for entry in failedCouch:
-            failedJobs.append(entry['value'])
 
 
         workflowData["_id"]          = workflow.task.split('/')[1]

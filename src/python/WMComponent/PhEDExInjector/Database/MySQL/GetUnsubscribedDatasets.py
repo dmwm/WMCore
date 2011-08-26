@@ -20,7 +20,8 @@ class GetUnsubscribedDatasets(DBFormatter):
                  dbsbuffer_file.id = dbsbuffer_file_location.filename
                INNER JOIN dbsbuffer_location ON
                  dbsbuffer_file_location.location = dbsbuffer_location.id
-             WHERE dbsbuffer_dataset.subscribed = 0"""    
+             WHERE dbsbuffer_dataset.subscribed = 0 AND
+                   dbsbuffer_file.status = 'GLOBAL'"""
 
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn,

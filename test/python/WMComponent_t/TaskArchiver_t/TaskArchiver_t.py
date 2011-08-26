@@ -389,15 +389,16 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(workloadSummary['ACDCServer'], sanitizeURL(config.ACDC.couchurl)['url'])
         #self.assertEqual(workloadSummary['output'].keys(),
         #                 ['/MinBias_TuneZ2_7TeV-pythia6/Backfill-110414_Type4_Redigi_01_T1_US_FNAL_MinBias_TuneZ2_7TeV-pythia6-v1/GEN-SIM-RAWDEBUG'])
-        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['TotalJobCPU']['average'], 16.5025)
-        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['TotalJobCPU']['average'], 16.5025)
-        self.assertTrue(workloadSummary['performance']['/TestWorkload/ReReco']['TotalJobCPU']['stdDev'] < 0.01)
-        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['AvgEventTime']['histogram'][0]['average'], 0.0)
-        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['AvgEventTime']['histogram'][0]['average'], 0.0)
-        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['readMaxMSec']['worstOffenders'],
-                         [{'logCollect': None, 'log': None, 'value': 1518.0599999999999, 'jobID': 1},
-                          {'logCollect': None, 'log': None, 'value': 1518.0599999999999, 'jobID': 10},
-                          {'logCollect': None, 'log': None, 'value': 1518.0599999999999, 'jobID': 2}])
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['average'], 16.5025)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1']['TotalJobCPU']['average'], 16.5025)
+        self.assertTrue(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['stdDev'] < 0.01)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0]['average'], 0.0)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1']['AvgEventTime']['histogram'][0]['average'], 0.0)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['readMaxMSec']['worstOffenders'],
+                         [{'value': 1518.0599999999999, 'log': None, 'logCollect': None, 'jobID': 1},
+                          {'value': 1518.0599999999999, 'log': None, 'logCollect': None, 'jobID': 10},
+                          {'value': 1518.0599999999999, 'log': None, 'logCollect': None, 'jobID': 2}])
+
         
 
         return

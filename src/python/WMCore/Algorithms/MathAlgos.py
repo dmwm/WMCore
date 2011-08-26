@@ -8,6 +8,7 @@ be useful.
 """
 
 import math
+import decimal
 import logging
 
 from WMCore.WMException import WMException
@@ -44,7 +45,8 @@ def getAverageStdDev(numList):
             if math.isnan(value) or math.isinf(value):
                 skipped += 1
                 continue
-            total += value
+            else:
+                total += value
         except TypeError:
             msg =  "Attempted to take average of non-numerical values.\n"
             msg += "Expected int or float, got %s: %s" % (value.__class__, value)
@@ -52,20 +54,23 @@ def getAverageStdDev(numList):
             logging.debug("FullList: %s" % numList)
             raise MathAlgoException(msg)
 
-    if len(numList) - skipped == 0:
+    length = len(numList) - skipped
+    if length < 1:
         return average, total
 
-    average = float(total)/len(numList)
+    average = float(total)/length
 
     for value in numList:
         tmpValue = value - average
         stdBase += (tmpValue * tmpValue)
 
-    stdDev = math.sqrt(stdBase/len(numList))
+    stdDev = math.sqrt(stdBase/length)
 
     if math.isnan(average) or math.isinf(average):
         average = 0.0
-    if math.isnan(stdDev) or math.isinf(average):
+    if math.isnan(stdDev) or math.isinf(average) or not decimal.Decimal(str(stdDev)).is_finite():
+        stdDev = 0.0
+    if type(stdDev) != float and type(stdDev) != int:
         stdDev = 0.0
 
     

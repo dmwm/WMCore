@@ -15,6 +15,7 @@ function(doc) {
       perfInfo['jobID'] = doc['jobid']
       perfInfo['retry_count'] = doc['retrycount']
       perfInfo['taskName'] = doc['fwjr'].task
+      perfInfo['stepName'] = stepName
 
       if (CPU && CPU.TotalJobCPU) {
 	for (var perfName in CPU) {

@@ -25,6 +25,7 @@ histogramLimit: Limit in terms of number of standard deviations from the
 """
 __all__ = []
 
+import math
 import os.path
 import shutil
 import threading
@@ -249,17 +250,12 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         Actually dump the subscriptions
         """
-
         for sub in doneList:
             logging.info("Deleting subscription %i" % sub['id'])
             try:
                 sub.load()
                 sub['workflow'].load()
                 wf = sub['workflow']
-                if self.workQueue != None and not \
-                       self.workQueue.getWMBSInjectStatus(wf.name):
-                        # Then there are still files to be put in.
-                        continue
                 sub.deleteEverything()
                 workflow = sub['workflow']
 
@@ -372,11 +368,11 @@ class TaskArchiverPoller(BaseWorkerThread):
 
 
         # Loop over all failed jobs
+        workflowData['errors'] = {}
         for jobid in failedJobs:
             errorCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
                                                     options = {"startkey": [jobid, 0],
                                                                "endkey": [jobid, {}]})['rows']
-            
             job    = self.jobsdatabase.document(id = str(jobid))
             inputs = [x['lfn'] for x in job['inputfiles']]
             runsA  = [x['runs'][0] for x in job['inputfiles']]
@@ -403,12 +399,12 @@ class TaskArchiverPoller(BaseWorkerThread):
                 logs   = err['value']['logs']
                 start  = err['value']['start']
                 stop   = err['value']['stop']
-                if not task in workflowData.keys():
-                    workflowData[task] = {'failureTime': 0}
-                if not step in workflowData[task].keys():
-                    workflowData[task][step] = {}
-                workflowData[task]['failureTime'] += (stop - start)
-                stepFailures = workflowData[task][step]
+                if not task in workflowData['errors'].keys():
+                    workflowData['errors'][task] = {'failureTime': 0}
+                if not step in workflowData['errors'][task].keys():
+                    workflowData['errors'][task][step] = {}
+                workflowData['errors'][task]['failureTime'] += (stop - start)
+                stepFailures = workflowData['errors'][task][step]
                 for error in errors:
                     exitCode = str(error['exitCode'])
                     if not exitCode in stepFailures.keys():
@@ -466,70 +462,82 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         taskList   = {}
         finalTask  = {}
-        masterList = []
 
         for row in perf:
             taskName = row['value']['taskName']
+            stepName = row['value']['stepName']
             if not taskName in taskList.keys():
-                taskList[taskName] = []
+                taskList[taskName] = {}
+            if not stepName in taskList[taskName].keys():
+                taskList[taskName][stepName] = []
             value = row['value']
-            taskList[taskName].append(value)
+            taskList[taskName][stepName].append(value)
 
         for taskName in taskList.keys():
             final = {}
-            for row in taskList[taskName]:
-                masterList.append(row)
-                for key in row.keys():
-                    if key in ['startTime', 'stopTime', 'taskName']:
-                        continue
-                    if not key in output.keys():
-                        output[key] = []
-                    output[key].append(float(row[key]))
-                try:
-                    jobTime = row.get('stopTime', None) - row.get('startTime', None)
-                    output['jobTime'].append(jobTime)
-                except TypeError:
-                    # One of those didn't have a real value
-                    pass
-
-            for key in output.keys():
-                final[key] = {}
-                offenders = MathAlgos.getLargestValues(dictList = masterList, key = key,
-                                                       n = self.nOffenders)
-                for x in offenders:
+            for stepName in taskList[taskName].keys():
+                final[stepName] = {}
+                masterList = []
+                for row in taskList[taskName][stepName]:
+                    masterList.append(row)
+                    for key in row.keys():
+                        if key in ['startTime', 'stopTime', 'taskName', 'stepName']:
+                            continue
+                        if not key in output.keys():
+                            output[key] = []
+                        output[key].append(float(row[key]))
                     try:
-                        logArchive = self.fwjrdatabase.loadView("FWJRDump", "logArchivesByJobID",
-                                                                options = {"startkey": [x['jobID']],
-                                                                           "endkey": [x['jobID'],
-                                                                                      x['retry_count']]})['rows'][0]['value']['lfn']
-                        logCollectID = self.jobsdatabase.loadView("JobDump", "jobsByInputLFN",
-                                                                  options = {"startkey": [logArchive],
-                                                                             "endkey": [logArchive]})['rows'][0]['value']
-                        
-                        logCollect = self.fwjrdatabase.loadView("FWJRDump", "outputByJobID",
-                                                                options = {"startkey": [logCollectID],
-                                                                           "endkey": [logCollectID, {}]})['rows'][0]['value']['lfn']
-                        x['logArchive'] = logArchive.split('/')[-1]
-                        x['logLFN']     = logCollect
-                    except IndexError, ex:
-                        logging.error("Unable to find final logArchive tarball")
-                        logging.error(str(ex))
-                    except KeyError, ex:
-                        logging.error("Unable to find final logArchive tarball")
-                        logging.error(str(ex))
-                if key in self.histogramKeys:
-                    histogram = MathAlgos.createHistogram(numList = output[key],
-                                                          nBins = self.histogramBins,
-                                                          limit = self.histogramLimit)
-                    final[key]['histogram'] = histogram
-                else:
-                    average, stdDev = MathAlgos.getAverageStdDev(numList = output[key])
-                    final[key]['average'] = average
-                    final[key]['stdDev']  = stdDev
+                        jobTime = row.get('stopTime', None) - row.get('startTime', None)
+                        output['jobTime'].append(jobTime)
+                        row['jobTime'] = jobTime
+                    except TypeError:
+                        # One of those didn't have a real value
+                        pass
 
-                    final[key]['worstOffenders'] = [{'jobID': x['jobID'], 'value': x.get(key, None),
-                                                     'log': x.get('logArchive', None),
-                                                     'logCollect': x.get('logCollect', None)} for x in offenders]
+                for key in output.keys():
+                    final[stepName][key] = {}
+                    offenders = MathAlgos.getLargestValues(dictList = masterList, key = key,
+                                                           n = self.nOffenders)
+                    for x in offenders:
+                        try:
+                            logArchive = self.fwjrdatabase.loadView("FWJRDump", "logArchivesByJobID",
+                                                                    options = {"startkey": [x['jobID']],
+                                                                               "endkey": [x['jobID'],
+                                                                                          x['retry_count']]})['rows'][0]['value']['lfn']
+                            logCollectID = self.jobsdatabase.loadView("JobDump", "jobsByInputLFN",
+                                                                      options = {"startkey": [workflowName, logArchive],
+                                                                                 "endkey": [workflowName, logArchive]})['rows'][0]['value']
+                            logCollect = self.fwjrdatabase.loadView("FWJRDump", "outputByJobID",
+                                                                    options = {"startkey": logCollectID,
+                                                                               "endkey": logCollectID})['rows'][0]['value']['lfn']
+                            x['logArchive'] = logArchive.split('/')[-1]
+                            x['logCollect'] = logCollect
+                        except IndexError, ex:
+                            logging.debug("Unable to find final logArchive tarball for %i" % x['jobID'])
+                            logging.debug(str(ex))
+                        except KeyError, ex:
+                            logging.error("Unable to find final logArchive tarball")
+                            logging.error(str(ex))
+                            
+                        if key in self.histogramKeys:
+                            histogram = MathAlgos.createHistogram(numList = output[key],
+                                                                  nBins = self.histogramBins,
+                                                                  limit = self.histogramLimit)
+                            final[stepName][key]['histogram'] = histogram
+                        else:
+                            average, stdDev = MathAlgos.getAverageStdDev(numList = output[key])
+                            final[stepName][key]['average'] = average
+                            final[stepName][key]['stdDev']  = stdDev
+
+                        value = x.get(key, None)
+                        if type(value) == type(0.0):
+                            if math.isnan(value) or math.isinf(value):
+                                value = None
+                        elif type(value) != str and type(value) != int:
+                            value = None
+                        final[stepName][key]['worstOffenders'] = [{'jobID': x['jobID'], 'value': x.get(key, 0.0),
+                                                                   'log': x.get('logArchive', None),
+                                                                   'logCollect': x.get('logCollect', None)} for x in offenders]
             finalTask[taskName] = final
         return finalTask
     

@@ -48,7 +48,6 @@ class ResubmitBlock(StartPolicyInterface):
         
         acdcInfo = task.getInputACDC()
         acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
-        collection = acdc.getDataCollection(acdcInfo['collection'])
         if self.data:
             acdcBlockSplit = ACDCBlock.splitBlockName(self.data)
         else:
@@ -59,9 +58,12 @@ class ResubmitBlock(StartPolicyInterface):
         if acdcBlockSplit:
             dbsBlock = {}
             dbsBlock['Name'] = self.data
-            block = acdc.getChunkInfo(collection, acdcBlockSplit['TaskName'],
+            block = acdc.getChunkInfo(acdcInfo['collection'],
+                                      acdcBlockSplit['TaskName'],
                                       acdcBlockSplit['Offset'],
-                                      acdcBlockSplit['NumOfFiles'])
+                                      acdcBlockSplit['NumOfFiles'],
+                                      user = self.wmspec.getOwner().get("owner"),
+                                      group = self.wmspec.getOwner().get("group"))
             dbsBlock['NumberOfFiles'] = block['files']
             dbsBlock['NumberOfEvents'] = block['events']
             #TODO: needs this for lumi splitting
@@ -69,9 +71,11 @@ class ResubmitBlock(StartPolicyInterface):
             dbsBlock["Sites"] = block["locations"]
             validBlocks.append(dbsBlock)
         else:
-            acdcBlocks = acdc.chunkFileset(collection,
+            acdcBlocks = acdc.chunkFileset(acdcInfo['collection'],
                                            acdcInfo['fileset'],
-                                           chunkSize)
+                                           chunkSize,
+                                           user = self.wmspec.getOwner().get("owner"),
+                                           group = self.wmspec.getOwner().get("group"))
             for block in acdcBlocks:
                 dbsBlock = {}
                 dbsBlock['Name'] = ACDCBlock.name(self.wmspec.name(),

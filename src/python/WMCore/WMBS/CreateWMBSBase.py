@@ -121,6 +121,8 @@ class CreateWMBSBase(DBCreator):
              id        INTEGER      PRIMARY KEY AUTO_INCREMENT,
              cert_dn   VARCHAR(255) NOT NULL,
              name_hn   VARCHAR(255),
+             owner     VARCHAR(255),
+             grp       VARCHAR(255),
              UNIQUE(cert_dn))"""
 
         self.create["07wmbs_file_location"] = \

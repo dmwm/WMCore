@@ -151,7 +151,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        testWorkflow = Workflow(spec = workloadPath, owner = "Simon",
+        testWorkflow = Workflow(spec = workloadPath, owner = "cmsdataops", group = "cmsdataops",
                                 name = "TestWorkload", task="/TestWorkload/ReReco")
         testWorkflow.create()
         
@@ -253,20 +253,12 @@ class ErrorHandlerTest(unittest.TestCase):
         self.assertEqual(len(idList), self.nJobs)
 
         # Check that it showed up in ACDC
-        collList = self.dataCS.listDataCollections()
-
-        self.assertEqual(len(collList), 1)
-
-        collection = collList[0]
-        self.assertEqual(collection['database'], "errorhandler_t")
-        self.assertEqual(collection['url'], self.testInit.couchUrl)
-        self.assertEqual(collection['collection_type'], 'ACDC.CollectionTypes.DataCollection')
-        self.assertEqual(collection['name'], workloadName)
+        collection = self.dataCS.getDataCollection(workloadName)
 
         # Now look at what's inside
-        for fileset in self.dataCS.listFilesets(collection):
+        for fileset in collection["filesets"]:
             counter = 0
-            for f in fileset.files():
+            for f in fileset.listFiles():
                 counter += 1
                 self.assertTrue(f['lfn'] in ["/this/is/a/lfnA", "/this/is/a/lfnB"])
                 self.assertEqual(f['events'], 10)

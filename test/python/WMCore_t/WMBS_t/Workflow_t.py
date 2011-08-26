@@ -289,25 +289,25 @@ class WorkflowTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         loadFromOwnerDAO = daoFactory(classname = "Workflow.LoadFromSpecOwner")
 
-        listFromOwner1 = loadFromOwnerDAO.execute(task  = testWorkflow1.task,
-                                                  owner = testWorkflow1.owner,
-                                                  spec  = testWorkflow1.spec )
+        listFromOwner1 = loadFromOwnerDAO.execute(task = testWorkflow1.task,
+                                                  dn   = testWorkflow1.owner,
+                                                  spec = testWorkflow1.spec )
 
         testWorkflow2 = Workflow(spec = "spec2.xml", owner = owner,
                                  name = "wf002", task = "MultiUser-support")
         testWorkflow2.create()
 
-        listFromOwner2 = loadFromOwnerDAO.execute(task  = testWorkflow2.task,
-                                                  owner = testWorkflow2.owner,
-                                                  spec  = testWorkflow2.spec )
+        listFromOwner2 = loadFromOwnerDAO.execute(task = testWorkflow2.task,
+                                                  dn   = testWorkflow2.owner,
+                                                  spec = testWorkflow2.spec )
 
         testWorkflow3 = Workflow(spec = "spec3.xml", owner = "Ciccio", 
                                  name = "wf003", task = "MultiUser-support")
         testWorkflow3.create()
 
-        listFromOwner3 = loadFromOwnerDAO.execute(task  = testWorkflow3.task,
-                                                  owner = testWorkflow3.owner,
-                                                  spec  = testWorkflow3.spec )
+        listFromOwner3 = loadFromOwnerDAO.execute(task = testWorkflow3.task,
+                                                  dn   = testWorkflow3.owner,
+                                                  spec = testWorkflow3.spec )
 
 
         self.assertEqual(testWorkflow1.owner, owner)

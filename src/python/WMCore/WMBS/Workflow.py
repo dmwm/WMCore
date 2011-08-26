@@ -33,11 +33,12 @@ class Workflow(WMBSBase, WMWorkflow):
     
     workflow + fileset = subscription
     """
-    def __init__(self, spec = None, owner = None, dn = None, name = None,
-                 task = None, wfType = None, id = -1):
+    def __init__(self, spec = None, owner = None, dn = None, group = None,
+                 name = None, task = None, wfType = None, id = -1):
         WMBSBase.__init__(self)
         WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn,
-                            name = name, task = task, wfType = wfType)
+                            group = group, name = name, task = task,
+                            wfType = wfType)
 
         if not self.dn: self.dn = owner
         self.id = id
@@ -59,31 +60,28 @@ class Workflow(WMBSBase, WMWorkflow):
         return result
 
 
-    def insertUser(self, owner):
+    def insertUser(self):
         """
         _insertUser_
 
         Check if the user exists in the wmbs database and return the id to be added
         in the workflow entry. If the user does not exists then it gets created.
         """
-
         existingTransaction = self.beginTransaction()
 
-        ## check if owner exists, if not add it
         userfactory = self.daofactory(classname = "Users.GetUserId")
-        userid      = userfactory.execute( hn = owner,
-                                           conn = self.getDBConn(),
-                                       transaction = self.existingTransaction())
+        userid = userfactory.execute(dn = self.dn,
+                                     conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
         if not userid:
             newuser = self.daofactory(classname = "Users.New")
-            userid  = newuser.execute( dn = self.dn, hn = owner,
-                                       conn = self.getDBConn(),
-                                       transaction = self.existingTransaction())
+            userid  = newuser.execute(dn = self.dn, hn = self.owner,
+                                      owner = self.owner, group = self.group,
+                                      conn = self.getDBConn(),
+                                      transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
-
         return userid
-
 
     def create(self):
         """
@@ -93,7 +91,7 @@ class Workflow(WMBSBase, WMWorkflow):
         the database nothing will happen.
         """
 
-        userid = self.insertUser( self.owner )
+        userid = self.insertUser()
 
         existingTransaction = self.beginTransaction()
 
@@ -149,14 +147,18 @@ class Workflow(WMBSBase, WMWorkflow):
                                     transaction = self.existingTransaction())
         else:
             action = self.daofactory(classname = "Workflow.LoadFromSpecOwner")
-            result = action.execute(spec = self.spec, owner = self.owner,
+            result = action.execute(spec = self.spec, dn = self.dn,
                                     task = self.task, conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
 
         self.id = result["id"]
         self.spec = result["spec"]
         self.name = result["name"]
+
         self.owner = result["owner"]
+        self.dn = result["dn"]
+        self.group = result["grp"]
+        
         self.task = result["task"]
         self.wfType = result["type"]
 

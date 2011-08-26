@@ -107,9 +107,9 @@ class CouchFileset_t(unittest.TestCase):
                          "Error: Wrong number of files in fileset.")        
         return
 
-    def testFiles(self):
+    def testListFiles(self):
         """
-        _testFiles_
+        _testListFiles_
 
         Verify that the files iterator works correctly.
         """
@@ -130,7 +130,7 @@ class CouchFileset_t(unittest.TestCase):
             testFiles[lfn] = testFile
             testFileset.add([testFile])
 
-        for file in testFileset.files():
+        for file in testFileset.listFiles():
             self.assertTrue(file["lfn"] in testFiles.keys(),
                             "Error: File missing.")
             self.assertEqual(file["events"], testFiles[file["lfn"]]["events"],

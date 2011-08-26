@@ -56,6 +56,8 @@ class DataCollectionService_t(unittest.TestCase):
             job["task"] = "/ACDCTest/reco"
             job["workflow"] = "ACDCTest"
             job["location"] = "cmssrm.fnal.gov"
+            job["owner"] = "cmsdataops"
+            job["group"] = "cmsdataops"
             return job
 
         testFileA = File(lfn = makeUUID(), size = 1024, events = 1024)
@@ -225,6 +227,8 @@ class DataCollectionService_t(unittest.TestCase):
             job["task"] = "/ACDCTest/reco"
             job["workflow"] = "ACDCTest"
             job["location"] = "cmssrm.fnal.gov"
+            job["owner"] = "cmsdataops"
+            job["group"] = "cmsdataops"
             return job
 
         testFileA = File(lfn = makeUUID(), size = 1024, events = 1024)

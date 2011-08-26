@@ -263,9 +263,11 @@ class WMBSHelper(WMConnectionBase):
         # create runtime sandbox for workflow
         self.createSandbox()
 
-        workflow = Workflow(self.wmSpec.specUrl(), self.wmSpec.getOwner()["name"],
-                            self.wmSpec.getOwner().get("dn", None), self.wmSpec.name(),
-                            task.getPathName(), self.wmSpec.getDashboardActivity())
+        workflow = Workflow(spec = self.wmSpec.specUrl(), owner = self.wmSpec.getOwner()["name"],
+                            dn = self.wmSpec.getOwner().get("dn", None),
+                            group = self.wmSpec.getOwner().get("group", None),                            
+                            name = self.wmSpec.name(), task = task.getPathName(),
+                            wfType = self.wmSpec.getDashboardActivity())
         workflow.create()
         subscription = Subscription(fileset = fileset, workflow = workflow,
                                     split_algo = task.jobSplittingAlgorithm(),

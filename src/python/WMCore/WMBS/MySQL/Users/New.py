@@ -12,16 +12,17 @@ import time
 from WMCore.Database.DBFormatter import DBFormatter
 
 class New(DBFormatter):
-    sql = """INSERT IGNORE INTO wmbs_users (cert_dn, name_hn)
-                 VALUES ( :dn, :hn )
+    sql = """INSERT IGNORE INTO wmbs_users (cert_dn, name_hn, owner, grp)
+                 VALUES (:dn, :hn, :owner, :grp)
           """
     sql_get_id = """SELECT id FROM wmbs_users
                     WHERE cert_dn = :dn
                  """
 
-    def execute(self, dn, hn = None, conn = None, transaction = False):
+    def execute(self, dn, hn = None, owner = None, group = None,
+                conn = None, transaction = False):
 
-        binds = {"dn": dn, "hn": hn}
+        binds = {"dn": dn, "hn": hn, "owner": owner, "grp": group}
 
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)

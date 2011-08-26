@@ -174,6 +174,8 @@ class Create(CreateWMBSBase):
              id        INTEGER      NOT NULL,
              cert_dn   VARCHAR(255) NOT NULL,
              name_hn   VARCHAR(255),
+             owner     VARCHAR(255),
+             grp     VARCHAR(255),
              UNIQUE(cert_dn))"""
 
         self.indexes["01_pk_wmbs_users"] = \

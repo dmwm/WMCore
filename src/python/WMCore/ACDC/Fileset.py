@@ -68,9 +68,9 @@ class Fileset(dict, WMObject):
         """
         pass
         
-    def files(self):
+    def listFiles(self):
         """
-        _files_
+        _listFiles_
         
         Iterate/yield the files in this fileset
         """

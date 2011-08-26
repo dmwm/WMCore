@@ -413,7 +413,7 @@ class WMBSHelperTest(unittest.TestCase):
         testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
         testWorkload.setDashboardActivity("TestReReco")
         testWorkload.setSpecUrl("/path/to/workload")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM", {'dn': 'MyDN'})
+        testWorkload.setOwnerDetails("sfoulkes", "DMWM", {'dn': 'MyDN'})
 
         procTask = testWorkload.newTask("ProcessingTask")
         procTask.setTaskType("Processing")
@@ -510,8 +510,10 @@ class WMBSHelperTest(unittest.TestCase):
                                 task = "/TestWorkload/ProcessingTask")
         procWorkflow.load()
 
-        self.assertEqual(procWorkflow.owner, "sfoulkes@fnal.gov",
-                         "Error: Wrong owner.")
+        self.assertEqual(procWorkflow.owner, "sfoulkes",
+                         "Error: Wrong owner: %s" % procWorkflow.owner)
+        self.assertEqual(procWorkflow.group, "DMWM",
+                         "Error: Wrong group: %s" % procWorkflow.group)
         self.assertEqual(procWorkflow.wfType, "TestReReco",
                          "Error: Wrong type.")
         self.assertEqual(procWorkflow.spec, os.path.join(self.workDir, procWorkflow.name,
@@ -535,7 +537,7 @@ class WMBSHelperTest(unittest.TestCase):
                                  task = "/TestWorkload/ProcessingTask/MergeTask")
         mergeWorkflow.load()
 
-        self.assertEqual(mergeWorkflow.owner, "sfoulkes@fnal.gov",
+        self.assertEqual(mergeWorkflow.owner, "sfoulkes",
                          "Error: Wrong owner.")
         self.assertEqual(mergeWorkflow.spec, os.path.join(self.workDir, mergeWorkflow.name,
                                                           "WMSandbox", "WMWorkload.pkl"),
@@ -547,7 +549,7 @@ class WMBSHelperTest(unittest.TestCase):
                                  task = "/TestWorkload/ProcessingTask/CleanupTask")
         cleanupWorkflow.load()
 
-        self.assertEqual(cleanupWorkflow.owner, "sfoulkes@fnal.gov",
+        self.assertEqual(cleanupWorkflow.owner, "sfoulkes",
                          "Error: Wrong owner.")
         self.assertEqual(cleanupWorkflow.spec, os.path.join(self.workDir, cleanupWorkflow.name,
                                                             "WMSandbox", "WMWorkload.pkl"),
@@ -565,7 +567,7 @@ class WMBSHelperTest(unittest.TestCase):
                                 task = "/TestWorkload/ProcessingTask/MergeTask/SkimTask")
         skimWorkflow.load()
 
-        self.assertEqual(skimWorkflow.owner, "sfoulkes@fnal.gov",
+        self.assertEqual(skimWorkflow.owner, "sfoulkes",
                          "Error: Wrong owner.")
         self.assertEqual(skimWorkflow.spec, os.path.join(self.workDir, skimWorkflow.name,
                                                         "WMSandbox", "WMWorkload.pkl"),
@@ -657,7 +659,7 @@ class WMBSHelperTest(unittest.TestCase):
                                  task = "/ResubmitTestWorkload/MergeTask")
         mergeWorkflow.load()
 
-        self.assertEqual(mergeWorkflow.owner, "sfoulkes@fnal.gov",
+        self.assertEqual(mergeWorkflow.owner, "sfoulkes",
                          "Error: Wrong owner.")
         self.assertEqual(mergeWorkflow.spec, os.path.join(self.workDir, mergeWorkflow.name,
                                                           "WMSandbox", "WMWorkload.pkl"),
@@ -669,7 +671,7 @@ class WMBSHelperTest(unittest.TestCase):
                                  task = "/ResubmitTestWorkload/CleanupTask")
         cleanupWorkflow.load()
 
-        self.assertEqual(cleanupWorkflow.owner, "sfoulkes@fnal.gov",
+        self.assertEqual(cleanupWorkflow.owner, "sfoulkes",
                          "Error: Wrong owner.")
         self.assertEqual(cleanupWorkflow.spec, os.path.join(self.workDir, cleanupWorkflow.name,
                                                           "WMSandbox", "WMWorkload.pkl"),
@@ -687,7 +689,7 @@ class WMBSHelperTest(unittest.TestCase):
                                 task = "/ResubmitTestWorkload/MergeTask/SkimTask")
         skimWorkflow.load()
 
-        self.assertEqual(skimWorkflow.owner, "sfoulkes@fnal.gov",
+        self.assertEqual(skimWorkflow.owner, "sfoulkes",
                          "Error: Wrong owner.")
         self.assertEqual(skimWorkflow.spec, os.path.join(self.workDir, skimWorkflow.name,
                                                           "WMSandbox", "WMWorkload.pkl"),

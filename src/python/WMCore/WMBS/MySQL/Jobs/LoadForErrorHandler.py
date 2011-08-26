@@ -21,11 +21,13 @@ class LoadForErrorHandler(DBFormatter):
                     wmbs_job_state.name AS state, state_time, retry_count, 
                     couch_record,  cache_dir, wmbs_location.site_name AS location, 
                     outcome AS bool_outcome, fwjr_path AS fwjr_path, ww.name as workflow,
-                    ww.task as task, ww.spec as spec
+                    ww.task as task, ww.spec as spec, wmbs_users.owner as owner,
+                    wmbs_users.grp as grp
              FROM wmbs_job
                INNER JOIN wmbs_jobgroup ON wmbs_jobgroup.id = wmbs_job.jobgroup
                INNER JOIN wmbs_subscription ON wmbs_subscription.id = wmbs_jobgroup.subscription
                INNER JOIN wmbs_workflow ww ON ww.id = wmbs_subscription.workflow
+               INNER JOIN wmbs_users ON ww.owner = wmbs_users.id
                LEFT OUTER JOIN wmbs_location ON
                  wmbs_job.location = wmbs_location.id
                LEFT OUTER JOIN wmbs_job_state ON
@@ -70,6 +72,7 @@ class LoadForErrorHandler(DBFormatter):
 
             del entry["bool_outcome"]
 
+            entry['group'] = entry['grp']
             entry['input_files'] = []
 
         return formattedResult

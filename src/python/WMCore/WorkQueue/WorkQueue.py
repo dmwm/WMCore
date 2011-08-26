@@ -295,10 +295,12 @@ class WorkQueue(WorkQueueBase):
             acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
             collection = acdc.getDataCollection(acdcInfo['collection'])
             splitedBlockName = ACDCBlock.splitBlockName(blockName)
-            fileLists = acdc.getChunkFiles(collection,
+            fileLists = acdc.getChunkFiles(acdcInfo['collection'],
                                            acdcInfo['fileset'],
                                            splitedBlockName['Offset'],
-                                           splitedBlockName['NumOfFiles'])
+                                           splitedBlockName['NumOfFiles'],
+                                           user = self.wmspec.getOwner().get("name"),
+                                           group = self.wmspec.getOwner().get("group"))
             return blockName, fileLists
         else:
             dbs = get_dbs(match['Dbs'])

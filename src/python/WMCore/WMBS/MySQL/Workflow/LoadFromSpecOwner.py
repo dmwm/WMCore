@@ -9,17 +9,18 @@ from WMCore.Database.DBFormatter import DBFormatter
     
 class LoadFromSpecOwner(DBFormatter):
     sql = """SELECT wmbs_workflow.id, wmbs_workflow.spec, wmbs_workflow.name,
-                    wmbs_users.name_hn as owner, wmbs_workflow.task,
+                    wmbs_users.cert_dn as dn, wmbs_users.owner as owner,
+                    wmbs_users.grp as grp, wmbs_workflow.task,
                     wmbs_workflow.type
              FROM wmbs_workflow
              INNER JOIN wmbs_users ON
                wmbs_workflow.owner = wmbs_users.id
              WHERE wmbs_workflow.spec = :spec AND wmbs_workflow.task = :task AND
-               wmbs_users.name_hn = :owner"""
+               wmbs_users.cert_dn = :cert_dn"""
 
-    def execute(self, spec, owner, task, conn = None,
+    def execute(self, spec, dn, task, conn = None,
                 transaction = False):
-        result = self.dbi.processData(self.sql, {"spec": spec, "owner": owner,
+        result = self.dbi.processData(self.sql, {"spec": spec, "cert_dn": dn,
                                                  "task": task},
                                       conn = conn, transaction = transaction)
         return self.formatDict(result)[0]

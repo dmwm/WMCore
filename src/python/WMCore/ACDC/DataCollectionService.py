@@ -34,7 +34,8 @@ class DataCollectionService(CouchService):
         
             
     @CouchUtils.connectToCouch
-    def getDataCollection(self, collName):
+    def getDataCollection(self, collName, user = "cmsdataops",
+                          group = "cmsdataops"):
         """
         _getDataCollection_
         
@@ -43,7 +44,7 @@ class DataCollectionService(CouchService):
         coll = CouchCollection(name = collName, database = self.database,
                                url = self.url)
         
-        coll.owner = self.newOwner("cmsdataops", "cmsdataops")
+        coll.owner = self.newOwner(user, group)
         coll.populate()
         return coll
 
@@ -54,11 +55,9 @@ class DataCollectionService(CouchService):
         
         Given a list of failed jobs, sort them into Filesets and record them
 
-        NOTE: jobs must have a non-standard 'task' and 'workflow' key assigned
-        to them.
+        NOTE: jobs must have a non-standard task, workflow, owner and group
+        attributes assigned to them.
         """
-        owner = self.newOwner("cmsdataops", "cmsdataops")
-
         for job in failedJobs:
             try:
                 taskName = job['task']
@@ -71,6 +70,8 @@ class DataCollectionService(CouchService):
             coll = CouchCollection(database = self.database, url = self.url,
                                    name = workflow,
                                    type = CollectionTypes.DataCollection)
+            owner = self.newOwner(job.get("owner", "cmsdataops"),
+                                  job.get("group", "cmsdataops"))
             coll.setOwner(owner)
             fileset = CouchFileset(database = self.database, url = self.url,
                                     name = taskName)
@@ -80,7 +81,8 @@ class DataCollectionService(CouchService):
         return
 
     @CouchUtils.connectToCouch
-    def chunkFileset(self, collectionName, filesetName, chunkSize = 100):
+    def chunkFileset(self, collectionName, filesetName, chunkSize = 100,
+                     user = "cmsdataops", group = "cmsdataops"):
         """
         _chunkFileset_
 
@@ -91,9 +93,9 @@ class DataCollectionService(CouchService):
         """
         chunks = []
         results = self.couchdb.loadView("ACDC", "owner_coll_fileset_metadata",
-                                        {"startkey": ["cmsdataops", "cmsdataops",
+                                        {"startkey": [group, user,
                                                       collectionName, filesetName],
-                                         "endkey": ["cmsdataops", "cmsdataops",
+                                         "endkey": [group, user,
                                                     collectionName, filesetName, {}]}, [])
 
         totalFiles = 0
@@ -126,16 +128,17 @@ class DataCollectionService(CouchService):
         return chunks
 
     @CouchUtils.connectToCouch
-    def getChunkInfo(self, collectionName, filesetName, chunkOffset, chunkSize):
+    def getChunkInfo(self, collectionName, filesetName, chunkOffset, chunkSize,
+                     user = "cmsdataops", group = "cmsdataops"):
         """
         _getChunkInfo_
 
         Retrieve metadata for a particular chunk.
         """
         results = self.couchdb.loadView("ACDC", "owner_coll_fileset_metadata",
-                                        {"startkey": ["cmsdataops", "cmsdataops",
+                                        {"startkey": [group, user,
                                                       collectionName, filesetName],
-                                         "endkey": ["cmsdataops", "cmsdataops",
+                                         "endkey": [group, user,
                                                     collectionName, filesetName, {}],
                                          "skip": chunkOffset,
                                          "limit": chunkSize}, [])
@@ -159,7 +162,8 @@ class DataCollectionService(CouchService):
                 "locations": currentLocation}
     
     @CouchUtils.connectToCouch
-    def getChunkFiles(self, collectionName, filesetName, chunkOffset, chunkSize = 100):
+    def getChunkFiles(self, collectionName, filesetName, chunkOffset, chunkSize = 100,
+                      user = "cmsdataops", group = "cmsdataops"):
         """
         _getChunkFiles_
 
@@ -167,9 +171,9 @@ class DataCollectionService(CouchService):
         """
         chunkFiles = []
         result = self.couchdb.loadView("ACDC", "owner_coll_fileset_files",
-                                       {"startkey": ["cmsdataops", "cmsdataops",
+                                       {"startkey": [group, user, 
                                                      collectionName, filesetName],
-                                        "endkey": ["cmsdataops", "cmsdataops",
+                                        "endkey": [group, user, 
                                                    collectionName, filesetName, {}],
                                         "limit": chunkSize,
                                         "skip": chunkOffset,
@@ -190,7 +194,8 @@ class DataCollectionService(CouchService):
         return chunkFiles
 
     @CouchUtils.connectToCouch
-    def getLumiWhitelist(self, collectionID, taskName):
+    def getLumiWhitelist(self, collectionID, taskName, user = "cmsdataops",
+                         group = "cmsdataops"):
         """
         _getLumiWhitelist_
 
@@ -203,9 +208,9 @@ class DataCollectionService(CouchService):
         Note that the run numbers are strings.
         """
         results = self.couchdb.loadView("ACDC", "owner_coll_fileset_files",
-                                        {"startkey": ["cmsdataops", "cmsdataops",
+                                        {"startkey": [group, user,
                                                       collectionID, taskName],
-                                         "endkey": ["cmsdataops", "cmsdataops",
+                                         "endkey": [group, user,
                                                     collectionID, taskName, {}]}, [])
 
         allRuns = {}

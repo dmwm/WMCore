@@ -143,9 +143,9 @@ class CouchFileset(Fileset):
         return document
     
     @connectToCouch          
-    def files(self):
+    def listFiles(self):
         """
-        _files_
+        _listFiles_
 
         return an iterator over the files contained in this fileset
         """
@@ -171,7 +171,7 @@ class CouchFileset(Fileset):
         """
         result = DataStructsFileset(self['name'])
         pipeline = filePipeline({'fileset' : result, 'run' : makeRun({}) })
-        for f in self.files():
+        for f in self.listFiles():
             pipeline.send(f)
         return result
 

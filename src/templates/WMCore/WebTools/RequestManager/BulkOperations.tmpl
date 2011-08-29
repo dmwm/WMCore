@@ -48,6 +48,16 @@ function checkAll( el, tick ) {
 </head>
 <body>
 <h2>$operation Requests</h2>
+<div id="search">
+  <form action="search" method="POST">
+Find:  <input type="text" name="value" size=20/> In :  <select name="field">
+#for $field in $searchFields
+  <option> $field </option>
+#end for
+</select>
+<input type=submit>
+  </form>
+</div>
 <form action="handle$operation" method="POST">
 
 <div id="actions">
@@ -76,9 +86,6 @@ Actions:<select name="action">
 </tr>
 
 #set $checked = ''
-#if len($requests) == 1 or $all
-  #set $checked = 'CHECKED'
-#end if
 
 #for $request in $requests
 #set $requestName = $request['RequestName']

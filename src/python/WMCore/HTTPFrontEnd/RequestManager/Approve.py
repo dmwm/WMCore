@@ -14,12 +14,19 @@ class Approve(BulkOperations):
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
-    def index(self, all=0):
+    def index(self):
         """ Page for approving requests """
-        requests = Utilities.requestsWhichCouldLeadTo('assignment-approved')
-        return self.templatepage("BulkOperations", operation="Approve", 
-                                  actions=["Approve", "Reject"], 
-                                  requests=requests, all=all)
+        return self.draw(self.requests())
+
+    def requests(self):
+        """ Base list of the requests """
+        return Utilities.requestsWhichCouldLeadTo('assignment-approved')
+
+    def draw(self, requests):
+        return self.templatepage("BulkOperations", operation="Approve",
+                                  actions=["Approve", "Reject"],
+                                  searchFields = ["RequestName", "RequestType"],
+                                  requests=requests)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()

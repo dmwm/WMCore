@@ -15,11 +15,18 @@ class CloseOut(BulkOperations):
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
-    def index(self, all=0):
+    def index(self):
         """ Page for closing requests """
-        requests = Utilities.requestsWhichCouldLeadTo('closed-out')
-        return self.templatepage("BulkOperations", operation="CloseOut", 
-                                  actions=None, requests=requests, all=all)
+        return self.draw(self.requests())
+
+    def requests(self):
+        """ Base list of the requests """
+        return Utilities.requestsWhichCouldLeadTo('closed-out')
+
+    def draw(self, requests):
+        return self.templatepage("BulkOperations", operation="CloseOut",
+                                  searchFields = ["RequestName", "RequestType"],
+                                  actions=None, requests=requests)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)

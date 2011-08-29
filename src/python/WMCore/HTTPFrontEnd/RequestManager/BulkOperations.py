@@ -4,6 +4,7 @@ import logging
 import threading
 import types
 import cherrypy
+import urllib
 from WMCore.WebTools.WebAPI import WebAPI
 import WMCore.Lexicon
 
@@ -15,6 +16,7 @@ class BulkOperations(WebAPI):
         # Take a guess
         self.templatedir = config.templates
         self.yuiroot = config.yuiroot
+        self.searchFields = ["RequestName", "RequestType"]
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
     def initThread(self, thread_index):
@@ -35,3 +37,17 @@ class BulkOperations(WebAPI):
                 requests.append(key[8:])
         return requests
 
+    def filteredRequests(self, value, field):
+        """ Search for a regular expression in a certain field of all requests """
+        result = []
+        requests = self.requests()
+        for request in requests:
+            if request.get(urllib.unquote(field), '').find(urllib.unquote(value)) != -1:
+                result.append(request)
+        return result
+
+    @cherrypy.expose
+    @cherrypy.tools.secmodv2()
+    def search(self, value, field):
+        """ Doesn't copy security settings of original page """
+        return self.draw(self.filteredRequests(value, field))

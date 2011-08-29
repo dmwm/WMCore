@@ -312,3 +312,12 @@ def serveFile(contentType, prefix, *args):
     if not path.exists(name):
         raise HTTPError(404, "%s not found" % name)
     return serve_file(name, content_type = contentType)
+
+def getOutputForRequest(requestName):
+    """Return the datasets produced by this request."""
+    request = GetRequest.getRequestByName(requestName)
+    if not request:
+        return []
+    helper = loadWorkload(request)
+    return helper.listOutputDatasets()
+

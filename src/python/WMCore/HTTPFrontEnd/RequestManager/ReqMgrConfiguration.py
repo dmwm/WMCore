@@ -17,6 +17,7 @@ def reqMgrConfig(
     proxyBase = None,
     couchurl = os.getenv("COUCHURL"),
     sitedb = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name',
+    dbs3 = 'http://vocms09.cern.ch:8989/dbs',
     yuiroot = "/reqmgr/yuiserver/yui",
     configCouchDB = 'reqmgr_config_cache',
     workloadCouchDB = 'reqmgr_workload_cache',
@@ -65,6 +66,7 @@ def reqMgrConfig(
     config.reqmgr.workloadDBName = workloadCouchDB
     config.reqmgr.security_roles = ['Admin', 'Developer', 'Data Manager', 'developer', 'admin', 'data-manager']
     config.reqmgr.yuiroot = yuiroot
+    config.reqmgr.dbs3=dbs3
 
     views = config.reqmgr.section_('views')
     active = views.section_('active')

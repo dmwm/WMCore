@@ -214,11 +214,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def getOutputForRequest(self, requestName):
         """Return the datasets produced by this request."""
-        request = GetRequest.getRequestByName(requestName)
-        if request == None:
-            return []
-        helper = Utilities.loadWorkload(request)
-        return helper.listOutputDatasets()
+        return Utilities.getOutputForRequest(requestName)
 
     def getOutputForPrepID(self, prepID):
         """Return the datasets produced by this prep ID. in a dict of requestName:dataset list"""

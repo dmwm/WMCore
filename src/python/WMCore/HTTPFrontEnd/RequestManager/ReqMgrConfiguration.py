@@ -81,6 +81,8 @@ def reqMgrConfig(
     active.section_('assign')
     active.assign.object = 'WMCore.HTTPFrontEnd.RequestManager.Assign'
     active.assign.sitedb = sitedb
+    active.assign.hold = False
+    active.assign.clipboardDB = 'ops_clipboard'
     active.section_('closeout')
     active.closeout.object = 'WMCore.HTTPFrontEnd.RequestManager.CloseOut'
     active.section_('announce')

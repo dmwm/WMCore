@@ -355,7 +355,7 @@ class ReqMgrRESTModel(RESTModel):
         # see if status & priority need to be upgraded
         if status != None:
             # forbid assignment here
-            if status == 'assigned':
+            if status == 'assigned' and request['RequestStatus'] != 'ops-hold':
                 raise cherrypy.HTTPError(403, "Cannot change status without a team.  Please use PUT /reqmgr/rest/assignment/<team>/<requestName>")
             try:
                 Utilities.changeStatus(requestName, status)

@@ -22,8 +22,8 @@ def getRequestsInState(rmUrl, state):
     Expect this method to be mostly used for testing
     
     """
-    reqListUrl = "%s/reqmgr/reqMgr/requestnames" % rmUrl
-    reqDetailUrl = "%s/reqmgr/reqMgr/request?requestName=" % rmUrl
+    reqListUrl = "%s/reqmgr/rest/requestnames" % rmUrl
+    reqDetailUrl = "%s/reqmgr/rest/request?requestName=" % rmUrl
     results = []
     h = httplib2.Http(".cache")
     resp, content = h.request(reqListUrl, "GET")
@@ -65,7 +65,7 @@ def makeClipboardDoc(req):
         "description" : { time.time(): "Initial injection by the RequestManager"}
     }
     
-    doc = Document(dict = data)
+    doc = Document(inputDict=data)
     return doc
     
 def inject(clipboardUrl, clipboardDb, *requests):

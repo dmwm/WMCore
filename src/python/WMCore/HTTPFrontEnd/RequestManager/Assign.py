@@ -3,8 +3,9 @@
 import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseSite, saveWorkload, loadWorkload, changePriority, requestsWithStatus, sites, prepareForTable
+import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
+import WMCore.RequestManager.Clipboard.Insert as Clipboard
 import WMCore.Lexicon
 import logging
 import cherrypy
@@ -22,8 +23,12 @@ class Assign(WebAPI):
         # Take a guess
         self.templatedir = config.templates
         self.couchUrl = config.couchUrl
+        self.clipboardDB = config.clipboardDB
+        cleanUrl = Utilities.removePasswordFromUrl(self.couchUrl)
+        self.clipboardUrl = "%s/%s/_design/OpsClipboard/index.html" % (cleanUrl, self.clipboardDB)
+        self.hold = config.hold
         self.configDBName = config.configDBName
-        self.sites = sites(config.sitedb)
+        self.sites = Utilities.sites(config.sitedb)
         self.allMergedLFNBases =  [
             "/store/backfill/1", "/store/backfill/2", 
             "/store/data",  "/store/mc"]
@@ -37,6 +42,7 @@ class Assign(WebAPI):
              "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
              "Resubmission" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"],
              "MonteCarloFromGEN" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}
+
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
@@ -61,7 +67,7 @@ class Assign(WebAPI):
         """ Assign a single request """
         self.validate(requestName)
         request =  GetRequest.getRequestByName(requestName)
-        request = prepareForTable(request)
+        request = Utilities.prepareForTable(request)
         requestType = request["RequestType"]
         # get assignments
         teams = ProdManagement.listTeams()
@@ -72,7 +78,7 @@ class Assign(WebAPI):
 
         procVer = ""
         acqEra = ""
-        helper = loadWorkload(request)
+        helper = Utilities.loadWorkload(request)
         if helper.getAcquisitionEra() != None:
             acqEra = helper.getAcquisitionEra()
             if helper.getProcessingVersion() != None:
@@ -95,7 +101,7 @@ class Assign(WebAPI):
     def index(self, all=0):
         """ Main page """
         # returns dict of  name:id
-        allRequests = requestsWithStatus('assignment-approved')
+        allRequests = Utilities.requestsWithStatus('assignment-approved')
         teams = ProdManagement.listTeams()
 
         procVer = ""
@@ -108,7 +114,7 @@ class Assign(WebAPI):
         for request in allRequests:
             # make sure there's a workload attached
             try:
-                helper = loadWorkload(request)
+                helper = Utilities.loadWorkload(request)
             except:
                 badRequestNames.append(request["RequestName"])
             else:
@@ -137,7 +143,7 @@ class Assign(WebAPI):
         """ handler for the main page """
         # handle the checkboxes
         teams = []
-        requests = []
+        requestNames = []
         for key, value in kwargs.iteritems():
             if isinstance(value, types.StringTypes):
                 kwargs[key] = value.strip()
@@ -146,9 +152,9 @@ class Assign(WebAPI):
             if key.startswith("checkbox"):
                 requestName = key[8:]
                 self.validate(requestName)
-                requests.append(key[8:])
+                requestNames.append(key[8:])
         
-        for requestName in requests:
+        for requestName in requestNames:
             if kwargs['action'] == 'Reject':
                 ChangeState.changeRequestStatus(requestName, 'rejected') 
             else:
@@ -161,17 +167,24 @@ class Assign(WebAPI):
                         ChangeState.assignRequest(requestName, team)
                 priority = kwargs.get(requestName+':priority', '')
                 if priority != '':
-                    changePriority(requestName, priority)
-        return self.templatepage("Acknowledge", participle=kwargs['action']+'ed', requests=requests)
+                    Utilities.changePriority(requestName, priority)
+        participle=kwargs['action']+'ed'
+        if self.hold and kwargs['action'] == 'Assign':
+            participle='put into hold state (see <a href="%s">clipboard</a>)' % self.clipboardUrl
+            requests = [GetRequest.getRequestByName(requestName) for requestName in requestNames]
+            Clipboard.inject(self.couchUrl, self.clipboardDB, *requests)
+            for request in requestNames:
+                ChangeState.changeRequestStatus(requestName, 'ops-hold')
+        return self.templatepage("Acknowledge", participle=participle, requests=requestNames)
 
     def assignWorkload(self, requestName, kwargs):
         """ Make all the necessary changes in the Workload to reflect the new assignment """
         request = GetRequest.getRequestByName(requestName)
-        helper = loadWorkload(request)
+        helper = Utilities.loadWorkload(request)
         for field in ["AcquisitionEra", "ProcessingVersion"]:
             self.validate(kwargs[field], field)
-        helper.setSiteWhitelist(parseSite(kwargs,"SiteWhitelist"))
-        helper.setSiteBlacklist(parseSite(kwargs,"SiteBlacklist"))
+        helper.setSiteWhitelist(Utilities.parseSite(kwargs,"SiteWhitelist"))
+        helper.setSiteBlacklist(Utilities.parseSite(kwargs,"SiteBlacklist"))
         helper.setProcessingVersion(kwargs["ProcessingVersion"])
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
         #FIXME not validated
@@ -182,6 +195,6 @@ class Assign(WebAPI):
         helper.setupPerformanceMonitoring(int(kwargs["maxRSS"]), 
                                           int(kwargs["maxVSize"]))
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
-        saveWorkload(helper, request['RequestWorkflow'])
+        Utilities.saveWorkload(helper, request['RequestWorkflow'])
  
-
+         

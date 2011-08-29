@@ -354,6 +354,9 @@ class ReqMgrRESTModel(RESTModel):
             request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName)
         # see if status & priority need to be upgraded
         if status != None:
+            # forbid assignment here
+            if status == 'assigned':
+                raise cherrypy.HTTPError(403, "Cannot change status without a team.  Please use PUT /reqmgr/rest/assignment/<team>/<requestName>")
             try:
                 Utilities.changeStatus(requestName, status)
             except RuntimeError, e:

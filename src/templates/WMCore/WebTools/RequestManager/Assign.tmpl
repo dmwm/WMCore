@@ -78,15 +78,22 @@ Site Blacklist:
    #end for
 </select>
 <h4>LFN Bases</h4>
-Merged LFN Base: <select name="MergedLFNBase">
-  #for $mergedLFNBase in $mergedLFNBases
-    $mergedLFNBase
+#def optionsMenu($allOptions, $default)
+  #for $option in $allOptions
+    #set $selected = ""
+    #if $option == $default
+      #set $selected = "selected"
+    #end if
+    <option $selected>$option</option>
   #end for
+#end def
+Merged LFN Base: 
+<select name="MergedLFNBase">
+$optionsMenu($mergedLFNBases, $reqMergedBase)
 </select><br/>
-Unmerged LFN Base: <select name="UnmergedLFNBase">
-  #for $unmergedLFNBase in $unmergedLFNBases
-    $unmergedLFNBase
-  #end for
+Unmerged LFN Base: 
+<select name="UnmergedLFNBase">
+$optionsMenu($unmergedLFNBases, $reqUnmergedBase)
 </select>
 
 <div id="otherOptions">
@@ -99,6 +106,11 @@ VSS <input type="text" name="maxVSize" value=4294967296 size=10/><br/>
 
 Acquisition Era: <input type="text" name="AcquisitionEra" size=20 value="$acqEra" /><br/>
 ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 value="$procVer" /><br/>
+Dashboard Activity: 
+<select name="dashboard">
+#set $dashboards = ["reprocessing", "production", "relval", "integration", "test", "analysis"]
+$optionsMenu($dashboards, $dashboardActivity)  
+</select>
 </div>
 <br/>
 

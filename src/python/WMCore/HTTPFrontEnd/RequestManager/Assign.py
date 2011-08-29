@@ -77,27 +77,18 @@ class Assign(WebAPI):
             acqEra = helper.getAcquisitionEra()
             if helper.getProcessingVersion() != None:
                 procVer = helper.getProcessingVersion()
+        dashboardActivity = helper.getDashboardActivity()
 
         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
-        mergedBases = []
-        for mergedBase in self.mergedLFNBases[requestType]:
-            if mergedBase == reqMergedBase:
-                mergedBases.append("<option SELECTED>%s</option>" % mergedBase)
-            else:
-                mergedBases.append("<option>%s</option>" % mergedBase)
-
-        unmergedBases = []
-        for unmergedBase in self.allUnmergedLFNBases:
-            if unmergedBase == reqUnmergedBase:
-                unmergedBases.append("<option SELECTED>%s</option>" % unmergedBase)
-            else:
-                unmergedBases.append("<option>%s</option>" % unmergedBase)
-                
         return self.templatepage("Assign", requests=[request], teams=teams, 
                                  assignments=assignments, sites=self.sites,
-                                 mergedLFNBases = mergedBases,
-                                 unmergedLFNBases = unmergedBases,
-                                 acqEra = acqEra, procVer = procVer, badRequests=[])
+                                 mergedLFNBases=self.mergedLFNBases[requestType],
+                                 reqMergedBase=reqMergedBase,
+                                 unmergedLFNBases=self.allUnmergedLFNBases,
+                                 reqUnmergedBase=reqUnmergedBase,
+                                 acqEra = acqEra, procVer = procVer, 
+                                 dashboardActivity=dashboardActivity,
+                                 badRequests=[])
 
     @cherrypy.expose    
     @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
@@ -109,6 +100,7 @@ class Assign(WebAPI):
 
         procVer = ""
         acqEra = ""
+        dashboardActivity = None
         badRequestNames = []
         goodRequests = []
         reqMergedBase = None
@@ -127,26 +119,16 @@ class Assign(WebAPI):
                     if helper.getProcessingVersion() != None:
                         procVer = helper.getProcessingVersion()
                     (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
+                    dashboardActivity = helper.getDashboardActivity()
                 goodRequests.append(request)
-        mergedBases = []
-        unmergedBases = []
-        for mergedBase in self.allMergedLFNBases:
-            if mergedBase == reqMergedBase:
-                mergedBases.append("<option SELECTED>%s</option>" % mergedBase)
-            else:
-                mergedBases.append("<option>%s</option>" % mergedBase)
-
-        for unmergedBase in self.allUnmergedLFNBases:
-            if unmergedBase == reqUnmergedBase:
-                unmergedBases.append("<option SELECTED>%s</option>" % unmergedBase)
-            else:
-                unmergedBases.append("<option>%s</option>" % unmergedBase)
- 
         return self.templatepage("Assign", all=all, requests=goodRequests, teams=teams,
                                  assignments=[], sites=self.sites,
-                                 mergedLFNBases = mergedBases,
-                                 unmergedLFNBases = unmergedBases,
+                                 mergedLFNBases=self.allMergedLFNBases,
+                                 reqMergedBase=reqMergedBase,
+                                 unmergedLFNBases=self.allUnmergedLFNBases,
+                                 reqUnmergedBase=reqUnmergedBase,
                                  acqEra = acqEra, procVer = procVer, 
+                                 dashboardActivity=dashboardActivity,
                                  badRequests=badRequestNames)
 
     @cherrypy.expose
@@ -199,6 +181,7 @@ class Assign(WebAPI):
                                   int(kwargs["MaxMergeEvents"]))
         helper.setupPerformanceMonitoring(int(kwargs["maxRSS"]), 
                                           int(kwargs["maxVSize"]))
+        helper.setDashboardActivity(kwargs.get("dashboard", ""))
         saveWorkload(helper, request['RequestWorkflow'])
  
 

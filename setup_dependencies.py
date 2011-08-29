@@ -81,7 +81,7 @@ dependencies = {
                 'asyncstageout':{
                         'packages': ['WMCore.Agent+', 'WMCore.Storage+',
                                     'WMCore.Credential', 'WMCore.WorkerThreads',
-                                    'WMCore.Services.PhEDEx+', 'WMCore.ACDC'],
+                                    'WMCore.Services.PhEDEx+', 'WMCore.ACDC', 'WMCore.Alerts+'],
                         'modules': ['WMQuality.TestInitCouchApp'],
                         'systems': ['wmc-database'],
                         'statics': ['src/couchapps/Agent+'],
@@ -94,12 +94,12 @@ dependencies = {
                         'systems': ['wmc-runtime', 'wmc-database']
                         },
                 'globalmonitor':{
-                        'packages': ['WMCore.HTTPFrontEnd', 
+                        'packages': ['WMCore.HTTPFrontEnd',
                                      'WMCore.HTTPFrontEnd.GlobalMonitor+',
                                      'WMCore.Services',
                                      'WMCore.Services.RequestManager+',
-                                     'WMCore.Services.WorkQueue+', 
-                                     'WMCore.Services.WMBS+', 
+                                     'WMCore.Services.WorkQueue+',
+                                     'WMCore.Services.WMBS+',
                                      'WMCore.Services.WMAgent+'],
                         'modules': ['WMCore.Database.CMSCouch'],
                         'systems':['wmc-web'],

@@ -357,7 +357,9 @@ class ReqMgrRESTModel(RESTModel):
             try:
                 Utilities.changeStatus(requestName, status)
             except RuntimeError, e:
-                raise cherrypy.HTTPError(403, "Failed to change status: %s" % str(e))
+                # ignore some of these errors: https://svnweb.cern.ch/trac/CMSDMWM/ticket/2002
+                if status != 'announced' and status != 'closed-out':
+                    raise cherrypy.HTTPError(403, "Failed to change status: %s" % str(e))
         if priority != None:
             Utilities.changePriority(requestName, priority) 
         return request

@@ -62,7 +62,7 @@ class ResubmitBlock(StartPolicyInterface):
                                       acdcBlockSplit['TaskName'],
                                       acdcBlockSplit['Offset'],
                                       acdcBlockSplit['NumOfFiles'],
-                                      user = self.wmspec.getOwner().get("owner"),
+                                      user = self.wmspec.getOwner().get("name"),
                                       group = self.wmspec.getOwner().get("group"))
             dbsBlock['NumberOfFiles'] = block['files']
             dbsBlock['NumberOfEvents'] = block['events']
@@ -74,7 +74,7 @@ class ResubmitBlock(StartPolicyInterface):
             acdcBlocks = acdc.chunkFileset(acdcInfo['collection'],
                                            acdcInfo['fileset'],
                                            chunkSize,
-                                           user = self.wmspec.getOwner().get("owner"),
+                                           user = self.wmspec.getOwner().get("name"),
                                            group = self.wmspec.getOwner().get("group"))
             for block in acdcBlocks:
                 dbsBlock = {}

@@ -34,7 +34,7 @@ def setUpAlertsMessaging(compInstance, compName = None):
     
     """
     callerClassName = compInstance.__class__.__name__
-    if hasattr(compInstance.config, "Alert"):
+    if hasattr(compInstance, "config") and hasattr(compInstance.config, "Alert"):
         # pre-defined values for Alert instances
         comp = compName or callerClassName 
         preAlert = Alert(Type = "WMAgent",

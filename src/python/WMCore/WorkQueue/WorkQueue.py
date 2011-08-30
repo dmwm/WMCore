@@ -14,6 +14,8 @@ from collections import defaultdict
 import os
 import threading
 
+from WMCore.Alerts import API as alertAPI
+
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 
@@ -72,6 +74,9 @@ class WorkQueue(WorkQueueBase):
         self.parent_queue = None
         self.params = params
 
+        # config argument (within params) shall be reference to
+        # Configuration instance (will later be checked for presence of "Alert")
+        self.config = params.get("config", None)
         self.params.setdefault('CouchUrl', os.environ.get('COUCHURL'))
         if not self.params.get('CouchUrl'):
             raise RuntimeError, 'CouchUrl config value mandatory'
@@ -171,12 +176,29 @@ class WorkQueue(WorkQueueBase):
                                                               requireBlocksSubscribed = not self.params['ReleaseIncompleteBlocks'],
                                                               fullRefreshInterval = self.params['FullLocationRefreshInterval'],
                                                               updateIntervalCoarseness = self.params['LocationRefreshInterval'])
+
+        # initialize alerts sending client (self.sendAlert() method)
+        # usage: self.sendAlert(levelNum, msg = msg) ; level - integer 1 .. 10
+        #    1 - 4 - lower levels ; 5 - 10 higher levels
+        preAlert, self.alertSender = \
+            alertAPI.setUpAlertsMessaging(self, compName = "WorkQueueManager")
+        self.sendAlert = alertAPI.getSendAlert(sender = self.alertSender,
+                                               preAlert = preAlert)
+
         self.logger.debug("WorkQueue created successfully")
 
     def __len__(self):
         """Returns number of Available elements in queue"""
         return self.backend.queueLength()
 
+    def __del__(self):
+        """
+        Unregister itself with Alert Receiver.
+        The registration happened in the constructor when initializing.
+
+        """
+        if self.alertSender:
+            self.alertSender.unregister()
 
     def setStatus(self, status, elementIDs = None, SubscriptionId = None, WorkflowName = None):
         """

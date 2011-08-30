@@ -77,9 +77,17 @@ class WorkQueueManagerTest(WorkQueueTestCase):
         config.WorkQueueManager.logLevel = 'INFO'
         config.WorkQueueManager.pollInterval = 10
         config.WorkQueueManager.level = "GlobalQueue"
+
         return config        
         
+    def setupGlobalWorkqueue(self):
+        """Return a workqueue instance"""
 
+        globalQ = globalQueue(CacheDir = self.workDir,
+                              QueueURL = 'global.example.com',
+                              Teams = ["The A-Team", "some other bloke"],
+                              DbName = 'workqueue_t_global')
+        return globalQ
 
     def testComponentBasic(self):
         """
@@ -100,14 +108,7 @@ class WorkQueueManagerTest(WorkQueueTestCase):
 
         return
 
-    def setupGlobalWorkqueue(self):
-        """Return a workqueue instance"""
 
-        globalQ = globalQueue(CacheDir = self.workDir,
-                              QueueURL = 'global.example.com',
-                              Teams = ["The A-Team", "some other bloke"],
-                              DbName = 'workqueue_t_global')
-        return globalQ
 
 if __name__ == '__main__':
     unittest.main()

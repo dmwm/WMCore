@@ -157,12 +157,21 @@ class WorkQueueTest(WorkQueueTestCase):
                                       BossAirConfig = bossAirConfig,
                                       CacheDir = self.workDir)
 
+        # configuration for the Alerts messaging framework, work (alerts) and
+        # control  channel addresses to which alerts
+        # these are destination addresses where AlertProcessor:Receiver listens
+        config = Configuration()
+        config.section_("Alert")
+        config.Alert.address = "tcp://127.0.0.1:5557"
+        config.Alert.controlAddr = "tcp://127.0.0.1:5559"
+
         # standalone queue for unit tests
         self.queue = WorkQueue(JobDumpConfig = jobCouchConfig,
                                BossAirConfig = bossAirConfig,
                                DbName = self.queueDB,
                                InboxDbName = self.queueInboxDB,
-                               CacheDir = self.workDir)
+                               CacheDir = self.workDir,
+                               config = config)
 
         # create relevant sites in wmbs
         rc = ResourceControl()

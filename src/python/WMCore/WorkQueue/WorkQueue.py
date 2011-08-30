@@ -76,7 +76,7 @@ class WorkQueue(WorkQueueBase):
 
         # config argument (within params) shall be reference to
         # Configuration instance (will later be checked for presence of "Alert")
-        self.config = params.get("config", None)
+        self.config = params.get("Config", None)
         self.params.setdefault('CouchUrl', os.environ.get('COUCHURL'))
         if not self.params.get('CouchUrl'):
             raise RuntimeError, 'CouchUrl config value mandatory'

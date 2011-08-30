@@ -161,6 +161,7 @@ class WMBSHelper(WMConnectionBase):
         self.mask = mask
         self.wmSpec = wmSpec
         self.cachepath = cachepath
+        self.isDBS     = True
 
         self.topLevelFileset = None
         self.topLevelSubscription = None
@@ -168,13 +169,9 @@ class WMBSHelper(WMConnectionBase):
         # Initiate the pieces you need to run your own DAOs
         WMConnectionBase.__init__(self, "WMCore.WMBS")
         myThread = threading.currentThread()
-        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                         logger = myThread.logger,
                                         dbinterface = myThread.dbi)
-        self.uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
-                                        logger = myThread.logger,
-                                        dbinterface = myThread.dbi)
-
 
         # DAOs from WMBS for file commit
         self.setParentage            = self.daofactory(classname = "Files.SetParentage")
@@ -396,9 +393,11 @@ class WMBSHelper(WMConnectionBase):
         """
                 
         if self.wmSpec.getTopLevelTask()[0].getInputACDC():
+            self.isDBS = False
             for acdcFile in self.validFiles(block):
                 self._addACDCFileToWMBSFile(acdcFile)
         else:
+            self.isDBS = True
             for dbsFile in self.validFiles(block['Files']):
                 self._addDBSFileToWMBSFile(dbsFile, block['StorageElements'])
 
@@ -492,7 +491,7 @@ class WMBSHelper(WMConnectionBase):
             
         if len(fileLocations) > 0:
             self.setFileLocation.execute(lfns = lfnList, locations = fileLocations,
-                                         conn = self.getDBConn(),
+                                         isDBS = self.isDBS, conn = self.getDBConn(),
                                          transaction = self.existingTransaction())
         if len(runLumiBinds) > 0:
             self.setFileRunLumi.execute(file = runLumiBinds,

@@ -97,6 +97,7 @@ def modifyConfiguration(config, **args):
         config.CRABInterface.SandBoxCache_endpoint = args["sb_hostname"]
         config.CRABInterface.SandBoxCache_port = int(args["sb_port"])
         config.CRABInterface.SandBoxCache_basepath = 'userfilecache/userfilecache'
+        config.CRABInterface.clientMapping = args["client_mapping"]
 
     if hasattr(config,"UserFileCache"):
         config.UserFileCache.Webtools.host = args["ufc_hostname"]  
@@ -159,7 +160,7 @@ def main(argv=None):
              "working_dir=", "reqmgr_hostname=", "reqmgr_port=", "global_workqueue_url=",
              "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",  
              "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=", 
-             "ufc_service_url=", "ufc_cachedir=", "wmbs_service_port="])
+             "ufc_service_url=", "client_mapping=", "wmbs_service_port="])
         except getopt.error, msg:
             raise Usage(msg)
     
@@ -176,7 +177,8 @@ def main(argv=None):
                           '--workqueue_db_name',
                           '--cs_hostname', '--cs_port', '--host_dn', '--couch_url', 
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
-                          '--ufc_port', '--ufc_service_url', '--ufc_cachedir', '--wmbs_service_port'):
+                          '--ufc_port', '--ufc_service_url', '--client_mapping', 
+                          '--wmbs_service_port'):
                 parameters[option[2:]] = value
     
     

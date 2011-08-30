@@ -12,7 +12,7 @@ dependencies = {
                                     'WMCore.WMBase', 'WMCore.WMLogging', 'WMCore.Algorithms.Permissions'],
                         },
                 'wmc-component':{
-                        'packages': ['WMCore.MsgService', 'WMCore.WorkerThreads', 'WMCore.ThreadPool'],
+                        'packages': ['WMCore.MsgService', 'WMCore.WorkerThreads', 'WMCore.Alerts+', 'WMCore.ThreadPool'],
                         'modules': ['WMComponent.__init__'],
                         'systems': ['wmc-base']
                         },

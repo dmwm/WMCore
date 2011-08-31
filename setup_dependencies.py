@@ -58,7 +58,7 @@ dependencies = {
                                      'WMCore.Services.RequestManager+', 'WMCore.Services.SiteDB+',
                                      'WMCore.Services.JSONParser+',
                                      'WMCore.WMSpec', 'WMCore.WMSpec.Steps',
-                                     'WMCore.ACDC', 'WMCore.GroupUser'],
+                                     'WMCore.ACDC', 'WMCore.GroupUser', 'WMCore.Alerts'],
                         'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
                                      'WMCore.Database.__init__', 'WMCore.Database.CMSCouch',
                                      'WMCore.Algorithms.ParseXMLFile'],

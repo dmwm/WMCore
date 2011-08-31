@@ -14,7 +14,6 @@ import time
 import logging
 
 from WMCore.Alerts.Alert import Alert
-from WMCore.Alerts.ZMQ.Sender import Sender
 
 
 
@@ -42,6 +41,7 @@ def setUpAlertsMessaging(compInstance, compName = None):
                          Component = comp,
                          Source = callerClassName)
         # create sender instance (sending alert messages)
+        from WMCore.Alerts.ZMQ.Sender import Sender
         sender = Sender(compInstance.config.Alert.address,
                         callerClassName,
                         compInstance.config.Alert.controlAddr)

@@ -60,8 +60,8 @@ convertToPVHistoData = function(data) {
 };
 
 
-histogramContainer = function(rootPanel, config, category, data){
-    var histData = convertToPVHistoData(data[category]);
+histogramContainer = function(rootPanel, config, data, category){
+    var histData = convertToPVHistoData(data);
     var w = config.width, 
         h = config.height, 
         x = pv.Scale.linear(histData.lowerbound, histData.upperbound).range(0, w), 
@@ -69,35 +69,50 @@ histogramContainer = function(rootPanel, config, category, data){
         return d.y
     })).range(0, h - 20);
     
-    var vis = rootPanel.add(pv.Panel)
-            .width(w)
-            .height(h)
-            .top(config.top)
-            .left(config.left)
-            .margin(20);
+    var vis;
+    if (!rootPanel) {
+        vis = new pv.Panel();
+    }else {
+        vis = rootPanel.add(pv.Panel);
+    };
+
+    vis.width(w)
+       .height(h)
+       .top(config.top + config.hPadding)
+       .left(config.left + config.wPadding);
     
-    vis.add(pv.Label)
-        .left(100 + config.left)
-        .top(10 + config.top)
-        .textAlign("center")
-        .text(category);
-    
+   if (config.label) {
+        var label = vis.add(pv.Label);
+        //set default label position
+        label.top(10).left(100).textAlign("center").text(category);
+        
+        for (prop in config.label) {
+            label[prop](config.label[prop]);
+        }
+    }
+
     vis.add(pv.Bar)
         .data(histData.bins)
-        .bottom(0 - config.top)
-        .left(function(d){return x(d.x) + config.left;})
+        .bottom(0)
+        .left(function(d){return x(d.x)})
         .width(function(d){return x(d.dx);})
         .height(function(d){return y(d.y);})
-        .fillStyle("#abf")
+        .fillStyle("rgb(169, 169, 169)")
         .strokeStyle("rgba(255, 255, 255, .2)")
         .lineWidth(1)
-        .antialias(false);
+        .antialias(false)
+       .anchor('top').add(pv.Label)
+          .text(function(d){return d.y})
+          .textStyle("blue")
+          .font("9px sans-serif")
+          .textBaseline("bottom")
+          .visible(function(d){return (d.y > 5)});
     
     vis.add(pv.Rule)
         .data(y.ticks(5))
-        .bottom(function(d){return y(d) - config.top;})
+        .bottom(y)
         .width(w)
-        .left(config.left)
+        .left(0)
         .strokeStyle("#fff")
         .anchor("left")
         .add(pv.Label)
@@ -105,14 +120,13 @@ histogramContainer = function(rootPanel, config, category, data){
     
     vis.add(pv.Rule)
         .data(x.ticks())
-        .left(function(d){return x(d) + config.left;})
-        .bottom(-5 - config.top)
+        .left(function(d){return x(d)})
+        .bottom(-5)
         .height(5)
       .anchor("bottom").add(pv.Label)
         .text(x.tickFormat);
 
     vis.add(pv.Rule)
-        //.left(config.left)
         .bottom(0);
         
     return vis

@@ -24,11 +24,13 @@ class GlobalMonitorRESTModel(RESTModel):
         #print config
         self.serviceURL = self.config.serviceURL
         self.serviceLevel = self.config.serviceLevel
+        self.workloadSummaryCouchURL = self.config.workloadSummaryCouchURL
 
         self._addMethod("GET", "requestmonitor", self.getRequestMonitor) #expires=16000
         self._addMethod("GET", "agentmonitor", self.getAgentMonitor,
                        args = ['detail'])
         self._addMethod("GET", "sitemonitor", self.getSiteMonitor)
+        self._addMethod("GET", "env", self.getEnvValues)
 
     def getRequestMonitor(self):
         return getRequestOverview(self.serviceURL, self.serviceLevel)
@@ -38,3 +40,6 @@ class GlobalMonitorRESTModel(RESTModel):
 
     def getSiteMonitor(self):
         return getSiteOverview(self.serviceURL, self.serviceLevel)
+    
+    def getEnvValues(self):
+        return {'workload_summary_url': self.workloadSummaryCouchURL}

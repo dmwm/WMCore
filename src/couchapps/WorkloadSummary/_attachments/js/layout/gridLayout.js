@@ -1,50 +1,77 @@
-gridLayout = function(layoutConfig, container, data) {
-    if (!layoutConfig) {
-        //set default layout
-        layoutConfig = {};
-        layoutConfig.top = 0;
-        layoutConfig.left = 0;
-        layoutConfig.width = 250;
-        layoutConfig.height = 200;
-        layoutConfig.wPadding = 50;
-        layoutConfig.hPadding = 20; 
-        layoutConfig.numOfColumns = 5;
-     };
-    
-    // don't set the size of outermost panel yet until know the numbe of containers
-    var vis = new pv.Panel();
+gridLayout = function(parentPanel, layoutConfig, data, metaData) {
 
-    var cIndex = 0;
-    var rIndex = 0;
-    var numOfContainers = 0
-    for (var element in data) {
-       var config = {};
-       config.width = layoutConfig.width; 
-       config.height = layoutConfig.height; 
+    // don't set the size of outermost panel yet until know the number of containers
+    var vis;
+    if (!parentPanel) {
+        vis = new pv.Panel()
+    }else {
+        vis = parentPanel.add(pv.Panel)
+    };
+
+   if (layoutConfig.label) {
+        var label = vis.add(pv.Label);
+        //set default label position
+        label.top(10).left(100).text(metaData);
+        
+        for (prop in layoutConfig.label) {
+            label[prop](layoutConfig.label[prop]);
+        }
+    }
+    
+    var maxWidth = 0;
+    
+    layoutConfig.width = 0;
+    layoutConfig.height = 0;
+    var cIndex = 1;
+    var rIndex = 1;
+    var numOfContainers = 0;
+
+    var childLayoutPanel = vis;
+
+    function moveToNextPosition (config) {
        if (cIndex < layoutConfig.numOfColumns) {
-           config.left = layoutConfig.left + (config.width + layoutConfig.wPadding * 2) * cIndex;
+           config.left = config.left + config.width + config.wPadding * 2;
            cIndex += 1;
-           config.top = layoutConfig.top;
-       } else {
-           cIndex = 0;
-           config.left = layoutConfig.left
-           config.top = layoutConfig.top + (config.height + layoutConfig.hPadding * 2) * rIndex;
-           rIndex += 1;
+           layoutConfig.width += (config.width + config.wPadding * 2);
+           layoutConfig.height = (config.height + config.hPadding * 2);
+           if (maxWidth < layoutConfig.width) {maxWidth = layoutConfig.width};
        }
-       
-       container(vis, config, element, data);
+       else {
+           cIndex = 1;
+           layoutConfig.width = (config.width + config.wPadding * 2);
+           if (maxWidth < layoutConfig.width) {maxWidth = layoutConfig.width};
+           config.left = layoutConfig.wPadding;
+           config.top = config.top + config.height + config.hPadding * 2;
+           rIndex += 1;
+           layoutConfig.height += (config.height + config.hPadding * 2);
+       }
+       return config;
+    }
+    var tempHeight  = 0;
+    var config = layoutConfig.childConfig;
+        config.left = layoutConfig.wPadding; 
+        config.top = layoutConfig.hPadding; 
+
+    for (var element in data) {
+       if (!element) continue;
+       layoutConfig.childConfig.func(vis, config, data[element], element);
+       moveToNextPosition(config);
        numOfContainers += 1;
     };
+
+    layoutConfig.width = maxWidth;
     
-    //calculate the size of the outermost container
-    //If the numOfColums is bigger than numOfContainer just make it big enough
-    //TODO if there is the problem resize it  
-    var panelWidth = (layoutConfig.width + 2*layoutConfig.wPadding) * layoutConfig.numOfColumns,
-        panelHeight = (layoutConfig.height + 2*layoutConfig.hPadding) * (Math.floor(numOfContainers/layoutConfig.numOfColumns) +1);
-    vis.width(panelWidth)
-       .height(panelHeight)
-       .top(layoutConfig.top)
-       .left(layoutConfig.left);
-        
+    if (layoutConfig.wPaddingAddition) {
+        layoutConfig.width += layoutConfig.wPaddingAddition; 
+    };
+    
+    if (layoutConfig.hPaddingAddition) {
+        layoutConfig.height += layoutConfig.hPaddingAddition; 
+    };
+    
+    vis.width(layoutConfig.width)
+       .height(layoutConfig.height)
+       .top(layoutConfig.top + layoutConfig.hPadding)
+       .left(layoutConfig.left + layoutConfig.wPadding);
     return vis;
 }

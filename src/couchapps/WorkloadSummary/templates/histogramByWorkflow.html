@@ -6,6 +6,9 @@
     <script type="text/javascript" src="../../vendor/protovis/protovis-r3.2.js"></script>
     <script type="text/javascript" src="../../js/layout/gridLayout.js"></script>
     <script type="text/javascript" src="../../js/container/histogram.js"></script>
+    <script type="text/javascript" src="../../js/container/tree.js"></script>
+    <script type="text/javascript" src="../../js/dataMap/errorData.js"></script>
+    <script type="text/javascript" src="../../js/htmlFormatter/listFormatter.js"></script>
     <style type="text/css">
     #center {
       display: table-cell;
@@ -16,27 +19,107 @@
       position: relative;
       margin: auto;
     }
+    
+    #output {
+      position: relative;
+      margin: auto;
+    }
+    
+    #error {
+      position: relative;
+      margin: auto;
+    }
     </style>
+    <script>
+       var globalConfig = (function() {
+            var containerConfig = {}
+            containerConfig.func = histogramContainer;
+            containerConfig.width = 200;
+            containerConfig.height = 120;
+            containerConfig.wPadding = 20;
+            containerConfig.hPadding = 20;
+            containerConfig.label = {};
+            containerConfig.label.font = "10px sans-serif";
+            containerConfig.label.textStyle = "#000000";
+            
+            var sLayoutConfig = {}
+            sLayoutConfig.func = gridLayout;
+            sLayoutConfig.wPadding = 5;
+            sLayoutConfig.hPadding = 10; 
+            sLayoutConfig.numOfColumns = 5;
+            sLayoutConfig.childConfig = containerConfig;
+            sLayoutConfig.label = {};
+            sLayoutConfig.label.font = "12px sans-serif";
+            sLayoutConfig.label.textAlign = "left";
+            sLayoutConfig.label.textStyle = "green";
+           
+            var layoutConfig = {}
+            layoutConfig.func = gridLayout;
+            layoutConfig.wPadding = 5;
+            layoutConfig.hPadding = 30; 
+            layoutConfig.numOfColumns = 1;
+            layoutConfig.hPaddingAddition = 100;
+            layoutConfig.childConfig = sLayoutConfig;
+            layoutConfig.label = {};
+            layoutConfig.label.font = "14px sans-serif";
+            layoutConfig.label.textStyle = "rgb(25,25,112)";
+            layoutConfig.label.left = 10;
+            
+            var rootConfig = {};
+            rootConfig.func = gridLayout;
+            rootConfig.top = 10;
+            rootConfig.left = 50;
+            rootConfig.wPadding = 5;
+            rootConfig.hPadding = 10; 
+            rootConfig.numOfColumns = 1;
+            rootConfig.hPaddingAddition = 100;
+            rootConfig.wPaddingAddition = 800;
+            rootConfig.label = {};
+            rootConfig.label.font = "18px sans-serif";
+            rootConfig.label.textStyle = "black";
+            rootConfig.label.left = -20;
+            rootConfig.label.text = "Histogram :";
+            rootConfig.childConfig = layoutConfig;
+            return rootConfig;
+        })()
+    </script>
   </head>
   <body>
-      <h3>{{{workflow}}} Performance Histogram</h3>
+      <h3>{{{workflow}}} Summary</h3>
        <div id="center">
+           <div id="output"><b> No Output </b></div>
            <div id="fig">
                <script>
                    var hData = {{{data}}};
-                   var layoutConfig = {};
-                   layoutConfig.top = 0;
-                   layoutConfig.left = 0;
-                   layoutConfig.width =250;
-                   layoutConfig.height = 200;
-                   layoutConfig.wPadding = 50;
-                   layoutConfig.hPadding = 20; 
-                   layoutConfig.numOfColumns = 5
-                   
-                   gridLayout(layoutConfig, histogramContainer, hData).render()
+                   var workflowName = "{{{workflow}}}";
+                   gridLayout(null, globalConfig, hData, workflowName).render()
                    
                </script>
            </div>
+           <div id="error"><b> No Errors </b></div>
+           <script>
+               var outputData = {{{output}}};
+               var outputHtml = "<b> Output: </b> " + listFormatter(outputData, outputValueMap, outputKeyMap) + "<p/>";
+               document.getElementById("output").innerHTML = outputHtml
+           </script>
+           <script>
+               /*
+               var errorData = {{{errors}}};
+               var treeConfig = {}
+               treeConfig.width = 2000;
+               treeConfig.top = 0;
+               treeConfig.left = 0;
+               treeConfig.wPadding = 5;
+               treeConfig.hPadding = 5;
+               treeContainer(null, treeConfig, errorData, "error").render()
+               */
+               var errorData = errorSummary({{{errors}}});
+               var errorHtml = "<b> Errors: </b> <br>" 
+                              + listFormatter(errorData, errorValueMap, errorKeyMap) 
+                              + "<p/>";
+               document.getElementById("error").innerHTML = errorHtml; 
+           </script>
+           
        </div>
   </body>
 </html>

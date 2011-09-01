@@ -21,6 +21,7 @@ def reqMgrConfig(
     yuiroot = "/reqmgr/yuiserver/yui",
     configCouchDB = 'reqmgr_config_cache',
     workloadCouchDB = 'reqmgr_workload_cache',
+    workloadSummaryCouchDB = "workloadSummary",
     connectURL = None,
     startup = "Root.py"):
 
@@ -122,6 +123,7 @@ def reqMgrConfig(
     active.section_('monitorSvc')
     active.monitorSvc.serviceURL = "%s/reqmgr/reqMgr" % reqMgrHost
     active.monitorSvc.serviceLevel = active.GlobalMonitor.serviceLevel
+    active.monitorSvc.workloadSummaryCouchURL = "%s/%s" % (couchurl, workloadSummaryCouchDB)
     active.monitorSvc.section_('model')
     active.monitorSvc.section_('formatter')
     active.monitorSvc.object = 'WMCore.WebTools.RESTApi'

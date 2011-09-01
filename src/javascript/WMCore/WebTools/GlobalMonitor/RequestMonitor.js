@@ -54,7 +54,16 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                     elCell.innerHTML = "No Jobs";
                 }
             } else {
-                elCell.innerHTML = "<a id='couchDB' href='" + sData + "' target='_blank' title='"+ sData +"'> summary </a>";
+                var workloadSummaryUrl = WMCore.GlobalMonitor.Env['workload_summary_url'] +
+                                         "/_design/WorkloadSummary/_show/histogramByWorkflow/";
+                if (oRecord.getData("status") == "complete") {
+                    elCell.innerHTML = "<a id='couchDB' href='" + workloadSummaryUrl 
+                                         + oRecord.getData("request_name") 
+                                         + "' target='_blank' title='" + workloadSummaryUrl 
+                                         + "'> summary </a>";
+                }else {
+                    elCell.innerHTML = "<a id='couchDB' href='" + sData + "' target='_blank' title='" + sData + "'> summary </a>";
+                }
                 new YAHOO.widget.Tooltip("couchDB", { context:"couchDB" });
             };
         };

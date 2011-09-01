@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """
-JobArchiver test 
+TaskArchiver test
+
+Tests both the archiving of tasks and the creation of the
+workloadSummary
 """
 
 import os
@@ -122,7 +125,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.pollInterval    = 60
         config.TaskArchiver.logLevel        = 'SQLDEBUG'
         config.TaskArchiver.timeOut         = 0
-        config.TaskArchiver.histogramKeys   = ['AvgEventTime']
+        config.TaskArchiver.histogramKeys   = ['AvgEventTime', 'writeTotalMB']
         config.TaskArchiver.histogramBins   = 5
         config.TaskArchiver.histogramLimit  = 5
         config.TaskArchiver.summaryDBName   = self.databaseName
@@ -218,20 +221,30 @@ class TaskArchiverTest(unittest.TestCase):
 
         changer = ChangeState(config)
 
-        report = Report()
+        report1 = Report()
+        report2 = Report()
         if error:
-            path   = os.path.join(WMCore.WMInit.getWMBASE(),
-                                  "test/python/WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
+            path1 = os.path.join(WMCore.WMInit.getWMBASE(),
+                                 "test/python/WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
+            path2 = path1
         else:
-            path = os.path.join(WMCore.WMInit.getWMBASE(),
-                                "test/python/WMComponent_t/JobAccountant_t/fwjrs", "PerformanceReport2.pkl")
-        report.load(filename = path)
+            path1 = os.path.join(WMCore.WMInit.getWMBASE(),
+                                 'test/python/WMComponent_t/TaskArchiver_t/fwjrs',
+                                 'mergeReport1.pkl')
+            path2 = os.path.join(WMCore.WMInit.getWMBASE(),
+                                 'test/python/WMComponent_t/TaskArchiver_t/fwjrs',
+                                 'mergeReport2.pkl')
+        report1.load(filename = path1)
+        report2.load(filename = path2)
 
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
-        for job in testJobGroup.jobs:
-            job['fwjr'] = report
+        for i in range(self.nJobs):
+            if i < self.nJobs/2:
+                testJobGroup.jobs[i]['fwjr'] = report1
+            else:
+                testJobGroup.jobs[i]['fwjr'] = report2
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
         changer.propagate(testJobGroup.jobs, 'exhausted', 'jobfailed')
         changer.propagate(testJobGroup.jobs, 'cleanout', 'exhausted')
@@ -386,20 +399,38 @@ class TaskArchiverTest(unittest.TestCase):
         workdatabase = couchdb.connectDatabase(dbname)
 
         workloadSummary = workdatabase.document(id = "TestWorkload")
+        # Check ACDC
         self.assertEqual(workloadSummary['ACDCServer'], sanitizeURL(config.ACDC.couchurl)['url'])
-        #self.assertEqual(workloadSummary['output'].keys(),
-        #                 ['/MinBias_TuneZ2_7TeV-pythia6/Backfill-110414_Type4_Redigi_01_T1_US_FNAL_MinBias_TuneZ2_7TeV-pythia6-v1/GEN-SIM-RAWDEBUG'])
-        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['average'], 16.5025)
-        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1']['TotalJobCPU']['average'], 16.5025)
-        self.assertTrue(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['stdDev'] < 0.01)
-        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0]['average'], 0.0)
-        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1']['AvgEventTime']['histogram'][0]['average'], 0.0)
-        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['readMaxMSec']['worstOffenders'],
-                         [{'value': 1518.0599999999999, 'log': None, 'logCollect': None, 'jobID': 1},
-                          {'value': 1518.0599999999999, 'log': None, 'logCollect': None, 'jobID': 10},
-                          {'value': 1518.0599999999999, 'log': None, 'logCollect': None, 'jobID': 2}])
 
+        # Check the output
+        self.assertEqual(workloadSummary['output'].keys(), ['/Electron/MorePenguins-v0/RECO',
+                                                            '/Electron/MorePenguins-v0/ALCARECO'])
+
+        # Check performance
+        # Check histograms
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0]['average'],
+                         0.062651899999999996)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0]['nEvents'],
+                         5)
+
+        # Check standard performance
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['average'], 9.4950600000000005)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['stdDev'], 8.2912400000000002)
+
+        # Check worstOffenders
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['worstOffenders'],
+                         [{'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 1},
+                          {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 2},
+                          {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 3}])
         
+        # LogCollect task is made out of identical FWJRs
+        # assert that it is identical
+        for x in workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1'].keys():
+            if x in config.TaskArchiver.histogramKeys:
+                continue
+            for y in ['average', 'stdDev']:
+                self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1'][x][y],
+                                 workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1'][x][y])
 
         return
 
@@ -514,7 +545,7 @@ class TaskArchiverTest(unittest.TestCase):
         logging.info("TaskArchiver took %f seconds" % (stopTime - startTime))
         
                 
-    def testTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
+    def atestTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller notifyWorkQueue method.
@@ -545,7 +576,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(alert["Source"], "TaskArchiverPoller")
         
     
-    def testTaskArchiverPollerAlertsSending_killSubscriptions(self):
+    def atestTaskArchiverPollerAlertsSending_killSubscriptions(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller killSubscriptions method.

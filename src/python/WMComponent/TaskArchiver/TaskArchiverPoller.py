@@ -356,8 +356,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                                             options = {"group_level": 2,
                                                        "startkey": [workflowName],
                                                        "endkey": [workflowName, {}],
-                                                       "group": True,
-                                                       "group_level": 1})['rows']
+                                                       "group": True})['rows']
 
         perf = self.handleCouchPerformance(workflowName = workflowName)
         workflowData['performance'] = {}
@@ -477,8 +476,6 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         The couch performance stuff is convoluted enough I think I want to handle it separately.
         """
-        output = {'jobTime': []}
-
         perf = self.fwjrdatabase.loadView("FWJRDump", "performanceByWorkflowName",
                                           options = {"startkey": [workflowName],
                                                      "endkey": [workflowName]})['rows']
@@ -499,12 +496,16 @@ class TaskArchiverPoller(BaseWorkerThread):
         for taskName in taskList.keys():
             final = {}
             for stepName in taskList[taskName].keys():
+                output = {'jobTime': []}
                 final[stepName] = {}
                 masterList = []
+                
+                # For each step put the data into a dictionary called output
+                # keyed by the name of the value
                 for row in taskList[taskName][stepName]:
                     masterList.append(row)
                     for key in row.keys():
-                        if key in ['startTime', 'stopTime', 'taskName', 'stepName']:
+                        if key in ['startTime', 'stopTime', 'taskName', 'stepName', 'jobID']:
                             continue
                         if not key in output.keys():
                             output[key] = []
@@ -517,8 +518,12 @@ class TaskArchiverPoller(BaseWorkerThread):
                         # One of those didn't have a real value
                         pass
 
+                # Now that we've sorted the data, we process it one key at a time
                 for key in output.keys():
                     final[stepName][key] = {}
+                    # Assemble the 'worstOffenders'
+                    # These are the top [self.nOffenders] in that particular category
+                    # i.e., those with the highest values
                     offenders = MathAlgos.getLargestValues(dictList = masterList, key = key,
                                                            n = self.nOffenders)
                     for x in offenders:
@@ -539,28 +544,25 @@ class TaskArchiverPoller(BaseWorkerThread):
                             logging.debug("Unable to find final logArchive tarball for %i" % x['jobID'])
                             logging.debug(str(ex))
                         except KeyError, ex:
-                            logging.error("Unable to find final logArchive tarball")
-                            logging.error(str(ex))
-                            
-                        if key in self.histogramKeys:
-                            histogram = MathAlgos.createHistogram(numList = output[key],
-                                                                  nBins = self.histogramBins,
-                                                                  limit = self.histogramLimit)
-                            final[stepName][key]['histogram'] = histogram
-                        else:
-                            average, stdDev = MathAlgos.getAverageStdDev(numList = output[key])
-                            final[stepName][key]['average'] = average
-                            final[stepName][key]['stdDev']  = stdDev
+                            logging.debug("Unable to find final logArchive tarball for %i" % x['jobID'])
+                            logging.debug(str(ex))
 
-                        value = x.get(key, None)
-                        if type(value) == type(0.0):
-                            if math.isnan(value) or math.isinf(value):
-                                value = None
-                        elif type(value) != str and type(value) != int:
-                            value = None
-                        final[stepName][key]['worstOffenders'] = [{'jobID': x['jobID'], 'value': x.get(key, 0.0),
-                                                                   'log': x.get('logArchive', None),
-                                                                   'logCollect': x.get('logCollect', None)} for x in offenders]
+
+                    if key in self.histogramKeys:
+                        histogram = MathAlgos.createHistogram(numList = output[key],
+                                                              nBins = self.histogramBins,
+                                                              limit = self.histogramLimit)
+                        final[stepName][key]['histogram'] = histogram
+                    else:
+                        average, stdDev = MathAlgos.getAverageStdDev(numList = output[key])
+                        final[stepName][key]['average'] = average
+                        final[stepName][key]['stdDev']  = stdDev
+
+                    final[stepName][key]['worstOffenders'] = [{'jobID': x['jobID'], 'value': x.get(key, 0.0),
+                                                               'log': x.get('logArchive', None),
+                                                               'logCollect': x.get('logCollect', None)} for x in offenders]
+
+                        
             finalTask[taskName] = final
         return finalTask
     

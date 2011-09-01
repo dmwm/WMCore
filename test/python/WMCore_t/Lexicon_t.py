@@ -96,7 +96,9 @@ class LexiconTest(unittest.TestCase):
                    'http://1.2.3.4:5678',
                    'http://han:solo@1.2.3.4:9876',
                    'http://luke:skywalker@localhost:7654/some_db/some_doc',
-                   'https://cmsreqmgr.cern.ch/couchdb/db1/doc' ]:
+                   'https://cmsreqmgr.cern.ch/couchdb/db1/doc',
+                   'http://1.2.3.4:5184/somedb/some_dir/doc',
+                   'http://iam.anexternal.host:5184/somedb/some_doc/some_doc' ]:
             assert couchurl(ok)
 
     def testBadCouchUrl(self):

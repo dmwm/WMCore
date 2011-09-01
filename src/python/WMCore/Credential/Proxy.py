@@ -379,7 +379,7 @@ self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
 
                         self.logger.error(\
 'Your proxy needs retrieval and renewal policies for \
-                   the requested server.')
+the requested server.')
                         proxyTimeleft =  0
 
                     else:

@@ -214,6 +214,7 @@ class gLitePlugin(BasePlugin):
         self.nProcess       = getattr(self.config.BossAir, 'gLiteProcesses', 4)
         self.collectionsize = getattr(self.config.BossAir, 'gLiteCollectionSize', 200)
         self.trackmaxsize   = getattr(self.config.BossAir, 'gLiteMaxTrackSize', 200)
+        self.debugOutput    = getattr(self.config.BossAir, 'gLiteCacheOutput', False)
         self.submitFile   = getattr(self.config.JobSubmitter, 'submitScript', None)
         self.unpacker     = getattr(self.config.JobSubmitter, 'unpackerScript', None)
         self.submitDir    = getattr(self.config.JobSubmitter, 'submitDir', '/tmp/')

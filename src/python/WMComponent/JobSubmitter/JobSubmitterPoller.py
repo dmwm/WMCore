@@ -522,14 +522,17 @@ class JobSubmitterPoller(BaseWorkerThread):
         agentName = self.config.Agent.agentName
         lenWork   = 0
         jobList   = []
+        idList    = []
 
         for package in jobsToSubmit.keys():
+
             sandbox = self.sandboxPackage[package]
             jobs    = jobsToSubmit.get(package, [])
 
             for job in jobs:
                 job['location'], job['plugin'], job['site_cms_name'] = self.getSiteInfo(job['custom']['location'])
                 job['sandbox'] = sandbox
+                idList.append({'jobid': job['id'], 'location': job['custom']['location']})
 
             #Clean out the package reference
             del self.sandboxPackage[package]
@@ -538,14 +541,20 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
+
         # Run the actual underlying submit code using bossAir
         successList, failList = self.bossAir.submit(jobs = jobList)
-
+        
         # Propagate states in the WMBS database
         self.changeState.propagate(successList, 'executing', 'created')
         self.changeState.propagate(failList, 'submitfailed', 'created')
+        
+        # At the end we mark the locations of the jobs
+        # This applies even to failed jobs, since the location
+        # could be part of the failure reason.
+        self.setLocationAction.execute(bulkList = idList, conn = myThread.transaction.conn,
+                                       transaction = True)
         myThread.transaction.commit()
-
         
         return
 
@@ -577,21 +586,11 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         try:
             myThread = threading.currentThread()
-            myThread.transaction.begin()
             self.refreshCache()
             jobsToSubmit = self.assignJobLocations()
             self.submitJobs(jobsToSubmit = jobsToSubmit)
 
-            # At the end we mark the locations of the jobs
-            # This applies even to failed jobs, since the location
-            # could be part of the failure reason.
-            idList = []
-            for package in jobsToSubmit.keys():
-                for job in jobsToSubmit.get(package, []):
-                    idList.append({'jobid': job['id'], 'location': job['custom']['location']})
-            self.setLocationAction.execute(bulkList = idList, conn = myThread.transaction.conn,
-                                           transaction = True)
-            myThread.transaction.commit()
+            
         except WMException:
             if getattr(myThread, 'transaction', None) != None:
                 myThread.transaction.rollback()

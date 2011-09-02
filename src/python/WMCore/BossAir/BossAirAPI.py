@@ -439,26 +439,27 @@ class BossAirAPI(WMConnectionBase):
                 msg += "Given a plugin %s that we don't have access to.\n" % (plugin)
                 msg += "Ignoring the jobs for this plugin for now"
                 logging.error(msg)
-            else:
-                try:
-                    pluginInst   = self.plugins[plugin]
-                    jobsToSubmit = pluginDict.get(plugin, [])
-                    logging.debug("About to submit %i jobs to plugin %s" % (len(jobsToSubmit), plugin))
-                    localSuccess, localFailure = pluginInst.submit(jobs = jobsToSubmit,
-                                                                   info = info)
-                    for job in localSuccess:
-                        successJobs.append(job.buildWMBSJob())
-                        for job in localFailure:
-                            failureJobs.append(job.buildWMBSJob())
-                except WMException:
-                    raise
-                except Exception, ex:
-                    msg =  "Unhandled exception while submitting jobs to plugin %s\n" % plugin
-                    msg += str(ex)
-                    logging.error(msg)
-                    logging.debug("Jobs being submitted: %s\n" % (jobsToSubmit))
-                    logging.debug("Job info: %s\n" % (info))
-                    raise BossAirException(msg)
+                continue
+            try:
+                pluginInst   = self.plugins[plugin]
+                jobsToSubmit = pluginDict.get(plugin, [])
+                logging.debug("About to submit %i jobs to plugin %s" % (len(jobsToSubmit),
+                                                                        plugin))
+                localSuccess, localFailure = pluginInst.submit(jobs = jobsToSubmit,
+                                                               info = info)
+                for job in localSuccess:
+                    successJobs.append(job.buildWMBSJob())
+                    for job in localFailure:
+                        failureJobs.append(job.buildWMBSJob())
+            except WMException:
+                raise
+            except Exception, ex:
+                msg =  "Unhandled exception while submitting jobs to plugin: %s\n" % plugin
+                msg += str(ex)
+                logging.error(msg)
+                logging.debug("Jobs being submitted: %s\n" % (jobsToSubmit))
+                logging.debug("Job info: %s\n" % (info))
+                raise BossAirException(msg)
 
         # Create successful jobs in BossAir
         try:

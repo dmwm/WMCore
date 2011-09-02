@@ -173,10 +173,15 @@ class PeriodPoller(BasePoller):
                     details["threshold"] = "%s%%" % threshold
                     a["Details"] = details                    
                     a["Level"] = level
-                    logging.debug(a)
+                    # #2238 AlertGenerator test can take 1 hour+ (and fail)
+                    # logging from different process context (multiprocessing.Process)
+                    # causes issues, own new logging.getLogger not helpful
+                    #logging.debug(a)
                     self.sender(a)
                     break # send only one alert, critical threshold tested first
         if avgPerc != None:
             m = ("%s: measurements result: %s%%" % (self.__class__.__name__, avgPerc))
-            logging.debug(m)
-            #print m
+            # #2238 AlertGenerator test can take 1 hour+ (and fail)
+            # logging from different process context (multiprocessing.Process)
+            # causes issues, own new logging.getLogger not helpful
+            #logging.debug(m)

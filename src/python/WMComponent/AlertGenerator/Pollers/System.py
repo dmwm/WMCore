@@ -35,8 +35,11 @@ class ProcessCPUPoller(object):
         try:
             pollProcess = lambda proc: proc.get_cpu_percent(PeriodPoller.PSUTIL_INTERVAL)
         except psutil.error.AccessDenied, ex:
-            logging.error("Can't get CPU usage of %s, reason: %s" %
-                          (processDetail.getDetails(), ex))
+            # #2238 AlertGenerator test can take 1 hour+ (and fail)
+            # logging from different process context (multiprocessing.Process)
+            # causes issues, own new logging.getLogger not helpful
+            #logging.error("Can't get CPU usage of %s, reason: %s" %
+            #              (processDetail.getDetails(), ex))
             return float(-1)
         v = sum([pollProcess(p) for p in processDetail.allProcs])
         return v
@@ -63,8 +66,11 @@ class ProcessMemoryPoller(object):
             # get_memory_info(): returns RSS, VMS tuple (for reference)
             pollProcess = lambda proc: proc.get_memory_percent()
         except psutil.error.AccessDenied, ex:
-            logging.error("Can't get memory usage of %s, reason: %s" %
-                          (processDetail.getDetails(), ex))
+            # #2238 AlertGenerator test can take 1 hour+ (and fail)
+            # logging from different process context (multiprocessing.Process)
+            # causes issues, own new logging.getLogger not helpful
+            #logging.error("Can't get memory usage of %s, reason: %s" %
+            #              (processDetail.getDetails(), ex))
             return float(-1)
         v = sum([pollProcess(p) for p in processDetail.allProcs])
         return v
@@ -161,7 +167,10 @@ class DiskSpacePoller(BasePoller):
         
         if rc != 0:
             m = "%s: could not check free disk space, reason: %s" % (self.__class__.__name__, err)
-            logging.error(m)
+            # #2238 AlertGenerator test can take 1 hour+ (and fail)
+            # logging from different process context (multiprocessing.Process)
+            # causes issues, own new logging.getLogger not helpful
+            #logging.error(m)
             return None
         return out
         
@@ -202,15 +211,26 @@ class DiskSpacePoller(BasePoller):
                         a["Timestamp"] = time.time()
                         a["Details"] = details
                         a["Level"] = level
-                        logging.debug(a)
+                        # #2238 AlertGenerator test can take 1 hour+ (and fail)
+                        # logging from different process context (multiprocessing.Process)
+                        # causes issues, own new logging.getLogger not helpful
+                        #logging.debug(a)
                         self.sender(a)
                         break # send only one alert, critical threshold tested first
                 percs.append(percStr)
         except (ValueError, IndexError), ex:
+            # #2238 AlertGenerator test can take 1 hour+ (and fail)
+            # logging from different process context (multiprocessing.Process)
+            # causes issues, own new logging.getLogger not helpful
+            # this particular error shall be extremely rare and if it happens it would be
+            # serious not to log, leave this logging anyway, it will hopefully appear
+            # somewhere
             logging.error("Could not check available disk space, reason: %s" % ex)
         m = "%s: measurements results: %s" % (self.__class__.__name__, percs)
-        logging.debug(m)
-        #print m
+        # #2238 AlertGenerator test can take 1 hour+ (and fail)
+        # logging from different process context (multiprocessing.Process)
+        # causes issues, own new logging.getLogger not helpful
+        #logging.debug(m)
         
 
 
@@ -252,7 +272,10 @@ class DirectorySizePoller(BasePoller):
             
         if rc != 0:
             m = "%s: could get directory space usage, reason: %s" % (self._myName, err)
-            logging.error(m)
+            # #2238 AlertGenerator test can take 1 hour+ (and fail)
+            # logging from different process context (multiprocessing.Process)
+            # causes issues, own new logging.getLogger not helpful
+            #logging.error(m)
             return None
         
         # du command output format assumption (out variable set now):
@@ -268,7 +291,10 @@ class DirectorySizePoller(BasePoller):
         except Exception, ex:
             m = ("%s: could get directory space usage, reason: %s. du output: '%s"'' %
                  (self._myName, ex, out))
-            logging.error(m)
+            # #2238 AlertGenerator test can take 1 hour+ (and fail)
+            # logging from different process context (multiprocessing.Process)
+            # causes issues, own new logging.getLogger not helpful
+            #logging.error(m)
             return None
         return round(size / self._prefixBytesFactor, 3)
 
@@ -296,10 +322,15 @@ class DirectorySizePoller(BasePoller):
                 a["Timestamp"] = time.time()
                 a["Details"] = details
                 a["Level"] = level
-                logging.debug(a)
+                # #2238 AlertGenerator test can take 1 hour+ (and fail)
+                # logging from different process context (multiprocessing.Process)
+                # causes issues, own new logging.getLogger not helpful
+                #logging.debug(a)
                 self.sender(a)
                 break # send only one alert, critical threshold tested first
                 
         m = "%s: measurements results: %s" % (self._myName, usageStr)
-        logging.debug(m)
-        #print m
+        # #2238 AlertGenerator test can take 1 hour+ (and fail)
+        # logging from different process context (multiprocessing.Process)
+        # causes issues, own new logging.getLogger not helpful
+        #logging.debug(m)

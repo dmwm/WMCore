@@ -11,8 +11,8 @@ import logging
 import types
 import multiprocessing
 import random
+import datetime
 import time
-from functools import partial
 
 from WMCore.Alerts.Alert import Alert
 from WMComponent.AlertGenerator.Pollers.Base import ProcessDetail
@@ -32,8 +32,7 @@ from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 class SystemTest(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
-        # still no effect, .debug, .info not appearing ...
-        self.testInit.setLogging(logLevel = logging.NOTSET)
+        self.testInit.setLogging(logLevel = logging.DEBUG)
         self.testDir = self.testInit.generateWorkDir()
         self.config = getConfig(self.testDir)
         # mock generator instance to communicate some configuration values
@@ -85,8 +84,16 @@ class SystemTest(unittest.TestCase):
 
         if expected != 0:
             # wait to poller to work now ... wait for alert to arrive
+            # #2238 AlertGenerator test can take 1 hour+ (and fail)
+            # fail 2mins anyway if alert is not received
+            timeLimitExceeded = False
+            startTime = datetime.datetime.now()
+            limitTime = 2 * 60 # seconds
             while len(handler.queue) == 0:
                 time.sleep(config.pollInterval)
+                if (datetime.datetime.now() - startTime).seconds > limitTime:
+                    timeLimitExceeded = True
+                    break
         else:
             # no alert shall arrive
             time.sleep(config.period * 2)
@@ -97,6 +104,10 @@ class SystemTest(unittest.TestCase):
         self.assertFalse(proc.is_alive())
         
         if expected != 0:
+            # #2238 AlertGenerator test can take 1 hour+ (and fail)
+            # temporary measure from above loop:
+            if timeLimitExceeded:
+                self.fail("No alert received in %s seconds." % limitTime)
             # there should be just one alert received, poller should have the
             # change to send a second
             self.assertEqual(len(handler.queue), expected)
@@ -220,8 +231,8 @@ none                   4085528       628   4084900   1% /dev/shm
     def _doDiskPoller(self, thresholdToTest, level, config, expected = 0):
         poller = DiskSpacePoller(config, self.generator)
         # inject own input sample data provider
-        poller.sample = partial(self._dfCommandOutputGenerator, thresholdToTest, thresholdToTest + 10)
-        
+        poller.sample = lambda: self._dfCommandOutputGenerator(thresholdToTest,
+                                                               thresholdToTest + 10)
         handler, receiver = utils.setUpReceiver(self.generator.config.Alert.address,
                                                 self.generator.config.Alert.controlAddr)    
         proc = multiprocessing.Process(target = poller.poll, args = ())
@@ -230,8 +241,16 @@ none                   4085528       628   4084900   1% /dev/shm
 
         # wait to poller to work now ... wait for alert to arrive
         if expected != 0:
+            # #2238 AlertGenerator test can take 1 hour+ (and fail)
+            # fail 2mins anyway if alert is not received
+            timeLimitExceeded = False
+            startTime = datetime.datetime.now()
+            limitTime = 2 * 60 # seconds
             while len(handler.queue) == 0:
                 time.sleep(config.pollInterval / 5)
+                if (datetime.datetime.now() - startTime).seconds > limitTime:
+                    timeLimitExceeded = True
+                    break
         else:
             time.sleep(config.pollInterval * 2)
 
@@ -241,6 +260,10 @@ none                   4085528       628   4084900   1% /dev/shm
         self.assertFalse(proc.is_alive())
         
         if expected != 0:
+            # #2238 AlertGenerator test can take 1 hour+ (and fail)
+            # temporary measure from above loop:
+            if timeLimitExceeded:
+                self.fail("No alert received in %s seconds." % limitTime)
             # there should be just one alert received, poller should have the
             # change to send a second
             self.assertEqual(len(handler.queue), expected)

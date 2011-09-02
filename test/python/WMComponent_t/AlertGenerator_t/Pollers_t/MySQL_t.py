@@ -27,8 +27,7 @@ from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 class MySQLTest(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
-        # still no effect, .debug, .info not appearing ...
-        self.testInit.setLogging(logLevel = logging.NOTSET)
+        self.testInit.setLogging(logLevel = logging.DEBUG)
         self.testInit.setDatabaseConnection()
         self.testDir = self.testInit.generateWorkDir()
         self.config = getConfig(self.testDir)

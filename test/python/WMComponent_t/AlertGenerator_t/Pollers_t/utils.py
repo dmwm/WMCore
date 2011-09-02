@@ -7,6 +7,8 @@ Alert framework poller classes.
 import multiprocessing
 import random
 import time
+import logging
+import datetime
 
 import psutil
 
@@ -41,9 +43,12 @@ def terminateProcesses(processList):
     """
     for p in processList:
         proc = psutil.Process(p.pid)
-        for c in proc.get_children():
-            c.kill()
-        proc.kill()
+        try:
+            for c in proc.get_children():
+                c.kill()
+            proc.kill()
+        except psutil.NoSuchProcess, ex:
+            logging.error(ex)
     processList = []
             
     
@@ -136,8 +141,16 @@ def doProcessPolling(ppti):
     if ppti.expected != 0:
         # beware - if the alert is not correctly generated, the test
         # will hang here and will be waiting for it
+        # #2238 AlertGenerator test can take 1 hour+ (and fail)
+        # fail 2mins anyway if alert is not received
+        timeLimitExceeded = False
+        startTime = datetime.datetime.now()
+        limitTime = 2 * 60 # seconds
         while len(handler.queue) == 0:
             time.sleep(ppti.config.pollInterval / 5)
+            if (datetime.datetime.now() - startTime).seconds > limitTime:
+                timeLimitExceeded = True
+                break
     else:
         time.sleep(ppti.config.period * 2)
         
@@ -148,6 +161,10 @@ def doProcessPolling(ppti):
     ppti.testCase.assertFalse(proc.is_alive())
     
     if ppti.expected != 0:
+        # #2238 AlertGenerator test can take 1 hour+ (and fail)
+        # temporary measure from above loop:
+        if timeLimitExceeded:
+            ppti.testCase.fail("No alert received in %s seconds." % limitTime)
         # there should be just one alert received, poller should have the
         # change to send a second
         ppti.testCase.assertEqual(len(handler.queue), ppti.expected)
@@ -185,8 +202,16 @@ def doGenericValueBasedPolling(ti):
 
     # wait to poller to work now ... wait for alert to arrive
     if ti.expected != 0:
+        # #2238 AlertGenerator test can take 1 hour+ (and fail)
+        # fail 2mins anyway if alert is not received
+        timeLimitExceeded = False
+        startTime = datetime.datetime.now()
+        limitTime = 2 * 60 # seconds
         while len(handler.queue) == 0:
             time.sleep(ti.config.pollInterval / 10)
+            if (datetime.datetime.now() - startTime).seconds > limitTime:
+                timeLimitExceeded = True
+                break
     else:
         time.sleep(ti.config.pollInterval * 2)
         
@@ -195,7 +220,11 @@ def doGenericValueBasedPolling(ti):
     receiver.shutdown()
     ti.testCase.assertFalse(proc.is_alive())
 
-    if ti.expected != 0:   
+    if ti.expected != 0:
+        # #2238 AlertGenerator test can take 1 hour+ (and fail)
+        # temporary measure from above loop:
+        if timeLimitExceeded:
+            ti.testCase.fail("No alert received in %s seconds." % limitTime)
         # there should be just one alert received, poller should have the
         # change to send a second
         ti.testCase.assertEqual(len(handler.queue), ti.expected)

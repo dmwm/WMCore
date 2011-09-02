@@ -9,6 +9,7 @@ test of the client's API for Alerts framework.
 import time
 import unittest
 import threading
+import logging
 
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.Configuration import Configuration
@@ -30,7 +31,7 @@ class APITest(unittest.TestCase):
         """
         myThread = threading.currentThread()        
         self.testInit = TestInit(__file__)
-        self.testInit.setLogging()
+        self.testInit.setLogging(logLevel = logging.DEBUG)
         self.testDir = self.testInit.generateWorkDir()
         # needed for instantiating BaseWorkerThread
         self.testInit.setDatabaseConnection()

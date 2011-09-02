@@ -1,6 +1,6 @@
 import os
 import unittest
-import zmq
+import logging
 import time
 
 from WMQuality.TestInit import TestInit
@@ -12,7 +12,7 @@ from WMComponent.AlertProcessor.AlertProcessor import AlertProcessor
 class AlertProcessorTest(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
-        self.testInit.setLogging()
+        self.testInit.setLogging(logLevel = logging.DEBUG)
         self.testInit.clearDatabase()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS",'WMCore.Agent.Database',

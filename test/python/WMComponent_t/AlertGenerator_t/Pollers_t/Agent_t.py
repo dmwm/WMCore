@@ -36,8 +36,7 @@ if configFile:
 class AgentTest(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
-        # still no effect, .debug, .info not appearing ...
-        self.testInit.setLogging(logLevel = logging.NOTSET)
+        self.testInit.setLogging(logLevel = logging.DEBUG)
         self.testDir = self.testInit.generateWorkDir()
         self.config = getConfig(self.testDir)
         # mock generator instance to communicate some configuration values

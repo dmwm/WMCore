@@ -18,8 +18,7 @@ class SenderTest(unittest.TestCase):
         self.control = "tcp://127.0.0.1:5559"
         self.alertsQueue = None
         
-        # want to see all logging stuff coming from Receiver class
-        logging.basicConfig(level = logging.NOTSET)        
+        logging.basicConfig(logLevel = logging.DEBUG)
         
         # real Receiver instance, do test real stuff rather than with
         # mock Receiver

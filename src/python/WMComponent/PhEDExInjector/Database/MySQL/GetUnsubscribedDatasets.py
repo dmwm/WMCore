@@ -4,9 +4,6 @@ _GetUnsubscribedDatasets_
 
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetUnsubscribedDatasets(DBFormatter):
@@ -21,7 +18,8 @@ class GetUnsubscribedDatasets(DBFormatter):
                INNER JOIN dbsbuffer_location ON
                  dbsbuffer_file_location.location = dbsbuffer_location.id
              WHERE dbsbuffer_dataset.subscribed = 0 AND
-                   dbsbuffer_file.status = 'GLOBAL'"""
+                   dbsbuffer_file.status = 'GLOBAL' AND
+                   dbsbuffer_file.in_phedex = 1"""
 
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn,

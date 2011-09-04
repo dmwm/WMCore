@@ -200,7 +200,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.site = "cmssrm.fnal.gov"
         workload = WMWorkloadHelper(WMWorkload("TestWorkload"))
         reco = workload.newTask("reco")
-        workload.setOwnerDetails("evansde77", "DMWM", {'dn': 'MyDN'})
+        workload.setOwnerDetails(name = "evansde77", group = "DMWM")
 
         # first task uses the input dataset
         reco.addInputDataset(primary = "PRIMARY", processed = "processed-v1", tier = "TIER1")
@@ -218,13 +218,14 @@ class WorkQueueTest(WorkQueueTestCase):
                                         mergedLFNBase = "/store/kfc")
         
         dcs = DataCollectionService(url = serverUrl, database = couchDB)
-        dcs.createCollection(workload)        
 
         def getJob(workload):
             job = Job()
             job["task"] = workload.getTask("reco").getPathName()
             job["workflow"] = workload.name()
             job["location"] = self.site
+            job["owner"] = "evansde77"
+            job["group"] = "DMWM"
             return job
 
         testFileA = WMFile(lfn = makeUUID(), size = 1024, events = 1024)
@@ -918,8 +919,12 @@ class WorkQueueTest(WorkQueueTestCase):
                                        acdcCouchDB)
         spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
         spec.save(spec.specUrl())
-        self.localQueue.queueWork(spec.specUrl(), 'Resubmit_TestWorkload')
-        self.localQueue.getWork({self.site: 100})
+        self.localQueue.params['Teams'] = ['cmsdataops']
+        self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team = "cmsdataops")
+        self.localQueue.pullWork({"T1_US_FNAL": 100})
+        syncQueues(self.localQueue)
+        self.localQueue.getWork({"T1_US_FNAL": 100})
+        
 
     def testThrottling(self):
         """Pull work only if all previous work processed in child"""

@@ -7,9 +7,6 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-
-
-
 import operator
 import logging
 import threading
@@ -20,10 +17,6 @@ from WMCore.DataStructs.Run import Run
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File               import File 
 from WMCore.DataStructs.Fileset     import Fileset
-
-from WMCore.ACDC.CouchCollection import CouchCollection
-from WMCore.GroupUser.User import User
-from WMCore.GroupUser.Group import Group
 
 def isGoodLumi(goodRunList, run, lumi):
     """
@@ -90,25 +83,20 @@ class LumiBased(JobFactory):
         goodRunList = {}
         # If we have runLumi info, we need to load it from couch
         if collectionName:
-            # WARNING:  This is a piece of crap
             try:
                 from WMCore.ACDC.DataCollectionService import DataCollectionService
-                couchURL    = kwargs.get('couchURL')
-                couchDB     = kwargs.get('couchDB')
-                filesetName = kwargs.get('filesetName')
+                couchURL       = kwargs.get('couchURL')
+                couchDB        = kwargs.get('couchDB')
+                filesetName    = kwargs.get('filesetName')
+                collectionName = kwargs.get('collectionName') 
 
-                group       = Group(name = kwargs.get('group'))
-                owner       = User(name = kwargs.get('owner'))
-                owner.setGroup(group)
-
-                collection = CouchCollection(name = kwargs.get('collectionName'),
-                                             url = couchURL, database = couchDB)
-                collection.setOwner(owner)
-                collection.getCollectionId()
+                group       = kwargs.get('group')
+                owner       = kwargs.get('owner')
                 
                 DCS         = DataCollectionService(url = couchURL, database = couchDB)
-                goodRunList = DCS.getLumiWhitelist(collectionID = collection['collection_id'],
-                                                   taskName = filesetName)
+                goodRunList = DCS.getLumiWhitelist(collectionID = collectionName, 
+                                                   taskName = filesetName, user = owner,
+                                                   group = group)
             except Exception, ex:
                 msg =  "Exception while trying to load goodRunList\n"
                 msg =  "Ditching goodRunList\n"

@@ -10,7 +10,6 @@ __all__ = []
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from math import ceil
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
-from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 
@@ -50,7 +49,7 @@ class ResubmitBlock(StartPolicyInterface):
         acdcInfo = task.getInputACDC()
         acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
         if self.data:
-            acdcBlockSplit = ACDCBlock.splitBlockName(self.data.keys()[0])
+            acdcBlockSplit = ACDCBlock.splitBlockName(self.data)
         else:
             #if self.data is not passed, assume the the data is input dataset
             # from the spec
@@ -58,7 +57,7 @@ class ResubmitBlock(StartPolicyInterface):
 
         if acdcBlockSplit:
             dbsBlock = {}
-            dbsBlock['Name'] = self.data.keys()[0]
+            dbsBlock['Name'] = self.data
             block = acdc.getChunkInfo(acdcInfo['collection'],
                                       acdcBlockSplit['TaskName'],
                                       acdcBlockSplit['Offset'],
@@ -67,9 +66,9 @@ class ResubmitBlock(StartPolicyInterface):
                                       group = self.wmspec.getOwner().get("group"))
             dbsBlock['NumberOfFiles'] = block['files']
             dbsBlock['NumberOfEvents'] = block['events']
+            #TODO: needs this for lumi splitting
             dbsBlock['NumberOfLumis'] = block['lumis']
-            dbsBlock['ACDC'] = acdcInfo
-            dbsBlock["Sites"] = sitesFromStorageEelements(block["locations"])
+            dbsBlock["Sites"] = block["locations"]
             validBlocks.append(dbsBlock)
         else:
             acdcBlocks = acdc.chunkFileset(acdcInfo['collection'],
@@ -84,8 +83,9 @@ class ResubmitBlock(StartPolicyInterface):
                                                   block['offset'], block['files'])
                 dbsBlock['NumberOfFiles'] = block['files']
                 dbsBlock['NumberOfEvents'] = block['events']
+                #TODO: needs this for lumi splitting
                 dbsBlock['NumberOfLumis'] = block['lumis']
-                dbsBlock["Sites"] = sitesFromStorageEelements(block["locations"])
+                dbsBlock["Sites"] = block["locations"]
                 dbsBlock['ACDC'] = acdcInfo
                 validBlocks.append(dbsBlock)
             

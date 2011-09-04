@@ -394,7 +394,7 @@ class WMBSHelper(WMConnectionBase):
                 
         if self.wmSpec.getTopLevelTask()[0].getInputACDC():
             self.isDBS = False
-            for acdcFile in self.validFiles(block['Files']):
+            for acdcFile in self.validFiles(block):
                 self._addACDCFileToWMBSFile(acdcFile)
         else:
             self.isDBS = True

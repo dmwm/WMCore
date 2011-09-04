@@ -321,11 +321,9 @@ class WorkQueue(WorkQueueBase):
                                            acdcInfo['fileset'],
                                            splitedBlockName['Offset'],
                                            splitedBlockName['NumOfFiles'],
-                                           user = wmspec.getOwner().get("name"),
-                                           group = wmspec.getOwner().get("group"))
-            block = {}
-            block["Files"] = fileLists
-            return blockName, block
+                                           user = self.wmspec.getOwner().get("name"),
+                                           group = self.wmspec.getOwner().get("group"))
+            return blockName, fileLists
         else:
             dbs = get_dbs(match['Dbs'])
             if wmspec.getTask(match['TaskName']).parentProcessingFlag():

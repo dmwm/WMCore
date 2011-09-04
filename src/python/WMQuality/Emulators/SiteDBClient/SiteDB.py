@@ -32,6 +32,4 @@ class SiteDBJSON(object):
         return self.mapping[name]
 
     def seToCMSName(self, name):
-        if name == "cmssrm.fnal.gov":
-            return "T1_US_FNAL"
         return name # for now se == site name

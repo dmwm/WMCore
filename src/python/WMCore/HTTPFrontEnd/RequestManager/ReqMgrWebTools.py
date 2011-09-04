@@ -194,6 +194,7 @@ def unidecode(data):
         return data
 
 def validate(schema):
+    schema.validate()
     for field in ['RequestName', 'Requestor', 'RequestString',
         'Campaign', 'Scenario', 'ProdConfigCacheID', 'inputMode',
         'CouchDBName', 'Group']:

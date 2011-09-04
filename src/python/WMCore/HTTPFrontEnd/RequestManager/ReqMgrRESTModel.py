@@ -351,7 +351,10 @@ class ReqMgrRESTModel(RESTModel):
             schema = Utilities.unidecode(JsonWrapper.loads(body))
             schema.setdefault('CouchURL', Utilities.removePasswordFromUrl(self.couchUrl))
             schema.setdefault('CouchDBName', self.configDBName)
-            request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName)
+            try:
+                request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName)
+            except RuntimeError, ex:
+                raise cherrypy.HTTPError(400, ex)
         # see if status & priority need to be upgraded
         if status != None:
             # forbid assignment here

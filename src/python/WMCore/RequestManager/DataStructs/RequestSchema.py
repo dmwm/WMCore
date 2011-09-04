@@ -62,10 +62,12 @@ class RequestSchema(dict):
         Override to validate the arguments in the schema
 
         """
+        msg = ""
         for field in self.validateFields:
-            if self[field] == None:
-                msg = "Required Field %s not provided for %s" % (field, type(self).__name__)
-                raise RuntimeError, msg
+            if self.get(field, None) == None:
+                msg += "Required Field %s not provided for %s\n" % (field, type(self).__name__)
+        if msg != "":
+            raise RuntimeError(msg)
 
         for identifier in ['ScramArch', 'RequestName', 'Group', 'Requestor']:
             self.lexicon(identifier, WMCore.Lexicon.identifier)

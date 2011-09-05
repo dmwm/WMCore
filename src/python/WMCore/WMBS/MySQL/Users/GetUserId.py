@@ -14,10 +14,12 @@ from WMCore.Database.DBFormatter import DBFormatter
 class GetUserId(DBFormatter):
     sql = """SELECT id FROM wmbs_users
              WHERE cert_dn = :dn
+             AND group_name = :gr
+             AND role_name = :role
           """
 
-    def execute(self, dn = None, conn = None, transaction = False):
-        binds = {"dn": dn}
+    def execute(self, dn = None, group_name = '', role_name = '', conn = None, transaction = False):
+        binds = {"dn": dn, "gr": group_name, "role": role_name}
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
         id = self.format(result)

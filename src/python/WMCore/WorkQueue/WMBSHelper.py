@@ -263,6 +263,8 @@ class WMBSHelper(WMConnectionBase):
         workflow = Workflow(spec = self.wmSpec.specUrl(), owner = self.wmSpec.getOwner()["name"],
                             dn = self.wmSpec.getOwner().get("dn", None),
                             group = self.wmSpec.getOwner().get("group", None),                            
+                            owner_vogroup = self.wmSpec.getOwner().get("vogroup", ''),
+                            owner_vorole = self.wmSpec.getOwner().get("vorole", ''),
                             name = self.wmSpec.name(), task = task.getPathName(),
                             wfType = self.wmSpec.getDashboardActivity())
         workflow.create()

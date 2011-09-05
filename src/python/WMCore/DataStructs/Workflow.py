@@ -9,12 +9,15 @@ from WMCore.DataStructs.Pickleable import Pickleable
 
 class Workflow(Pickleable):
     def __init__(self, spec = None, owner = None, dn = None, group = None,
+                 owner_vogroup = '', owner_vorole = '',
                  name = None, task = None, wfType = None):
         self.spec = spec
         self.name = name
         # person making the request
         self.owner = owner
         self.dn = dn
+        self.vogroup = owner_vogroup
+        self.vorole = owner_vorole
         self.group = group
         # task is the name of the task within the Workload
         self.task = task

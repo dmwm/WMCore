@@ -34,6 +34,8 @@ class StdBase(object):
         self.owner = None
         self.owner_dn = None
         self.group = None
+        self.owner_vogroup = '' 
+        self.owner_vorole = '' 
         self.acquisitionEra = None
         self.scramArch = None
         self.processingVersion = None
@@ -132,7 +134,7 @@ class StdBase(object):
 
         Create a new workload.
         """
-        ownerProps = {'dn': self.owner_dn}
+        ownerProps = {'dn': self.owner_dn, 'vogroup': self.owner_vogroup, 'vorole': self.owner_vorole}
 
         workload = newWorkload(self.workloadName)
         workload.setOwnerDetails(self.owner, self.group, ownerProps)

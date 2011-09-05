@@ -123,7 +123,9 @@ class CreateWMBSBase(DBCreator):
              name_hn   VARCHAR(255),
              owner     VARCHAR(255),
              grp       VARCHAR(255),
-             UNIQUE(cert_dn))"""
+             group_name     VARCHAR(255),
+             role_name      VARCHAR(255),
+             UNIQUE(cert_dn, group_name, role_name))"""
 
         self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (

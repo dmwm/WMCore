@@ -8,7 +8,7 @@ Oracle implementation of NewWorkflow
 from WMCore.WMBS.MySQL.Users.New import New as NewUserMySQL
 
 class New(NewUserMySQL):
-    sql = """insert into wmbs_users (id, cert_dn, name_hn)
-             values (wmbs_users_SEQ.nextval, :dn, :hn)"""
-    
+    sql = """insert into wmbs_users (id, cert_dn, name_hn, owner, grp, group_name, role_name)
+             values (wmbs_users_SEQ.nextval, :dn, :hn, :owner, :grp, :gr, :role)"""
+
 

@@ -5,11 +5,11 @@ _Workflow_
 A simple object representing a Workflow in WMBS.
 
 A workflow has an owner (e.g. PA instance, CRAB server user) and
-a specification. The specification describes how jobs should be 
-created and what the jobs are supposed to do. This description 
-is held external to WMBS, WMBS just stores a pointer (url) to 
-the specification file. A workflow can be used with many 
-filesets and subscriptions (e.g. repeating the same task on a 
+a specification. The specification describes how jobs should be
+created and what the jobs are supposed to do. This description
+is held external to WMBS, WMBS just stores a pointer (url) to
+the specification file. A workflow can be used with many
+filesets and subscriptions (e.g. repeating the same task on a
 bunch of data).
 
 workflow + fileset = subscription
@@ -24,26 +24,28 @@ class Workflow(WMBSBase, WMWorkflow):
     A simple object representing a Workflow in WMBS.
 
     A workflow has an owner (e.g. PA instance, CRAB server user) and
-    a specification. The specification describes how jobs should be 
-    created and what the jobs are supposed to do. This description 
-    is held external to WMBS, WMBS just stores a pointer (url) to 
-    the specification file. A workflow can be used with many 
-    filesets and subscriptions (e.g. repeating the same task on a 
+    a specification. The specification describes how jobs should be
+    created and what the jobs are supposed to do. This description
+    is held external to WMBS, WMBS just stores a pointer (url) to
+    the specification file. A workflow can be used with many
+    filesets and subscriptions (e.g. repeating the same task on a
     bunch of data).
-    
+
     workflow + fileset = subscription
     """
     def __init__(self, spec = None, owner = None, dn = None, group = None,
+                 owner_vogroup = '', owner_vorole = '',
                  name = None, task = None, wfType = None, id = -1):
         WMBSBase.__init__(self)
         WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn,
-                            group = group, name = name, task = task,
-                            wfType = wfType)
+                            group = group, owner_vogroup = owner_vogroup,
+                            owner_vorole = owner_vorole, name = name,
+                            task = task, wfType = wfType)
 
         if not self.dn: self.dn = owner
         self.id = id
         return
-        
+
     def exists(self):
         """
         _exists_
@@ -53,10 +55,10 @@ class Workflow(WMBSBase, WMWorkflow):
         """
         action = self.daofactory(classname = "Workflow.Exists")
         result = action.execute(spec = self.spec, owner = self.dn,
-                                name = self.name, task = self.task, 
+                                name = self.name, task = self.task,
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
-    
+
         return result
 
 
@@ -71,12 +73,16 @@ class Workflow(WMBSBase, WMWorkflow):
 
         userfactory = self.daofactory(classname = "Users.GetUserId")
         userid = userfactory.execute(dn = self.dn,
+                                     group_name = self.vogroup,
+                                     role_name = self.vorole,
                                      conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
         if not userid:
             newuser = self.daofactory(classname = "Users.New")
             userid  = newuser.execute(dn = self.dn, hn = self.owner,
                                       owner = self.owner, group = self.group,
+                                      group_name = self.vogroup,
+                                      role_name = self.vorole,
                                       conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
 
@@ -107,11 +113,11 @@ class Workflow(WMBSBase, WMWorkflow):
                        task = self.task, wfType = self.wfType,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
-        
+
         self.id = self.exists()
         self.commitTransaction(existingTransaction)
         return
-    
+
     def delete(self):
         """
         _delete_
@@ -123,7 +129,7 @@ class Workflow(WMBSBase, WMWorkflow):
                        transaction = self.existingTransaction())
 
         return
-        
+
     def load(self):
         """
         _load_
@@ -158,7 +164,7 @@ class Workflow(WMBSBase, WMWorkflow):
         self.owner = result["owner"]
         self.dn = result["dn"]
         self.group = result["grp"]
-        
+
         self.task = result["task"]
         self.wfType = result["type"]
 
@@ -180,7 +186,7 @@ class Workflow(WMBSBase, WMWorkflow):
 
                 self.outputMap[outputID].append({"output_fileset": outputFileset,
                                                  "merged_output_fileset": mergedOutputFileset})
-            
+
         self.commitTransaction(existingTransaction)
         return
 
@@ -212,14 +218,14 @@ class Workflow(WMBSBase, WMWorkflow):
                        filesetID = outputFileset.id, mergedFilesetID = mergedFilesetID,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
-            
+
         self.commitTransaction(existingTransaction)
         return
 
     def countWorkflowsBySpec(self):
         """
         _countWorkflowsBySpec_
-        
+
         Count workflows that share our spec
         """
 
@@ -240,5 +246,5 @@ class Workflow(WMBSBase, WMWorkflow):
 
         d = {'id': self.id, 'spec': self.spec, 'name': self.name,
              'owner': self.owner, 'task': self.task}
-        
+
         return str(d)

@@ -104,7 +104,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
         try:
-            self.dbname       = getattr(self.config.JobStateMachine, "couchDBName")
+            self.dbname       = getattr(self.config.TaskArchiver, 'workloadSummaryCouchURL',
+                                        self.config.JobStateMachine.couchDBName)
             self.couchdb      = CouchServer(self.config.JobStateMachine.couchurl)
             self.summarydb    = getattr(self.config.TaskArchiver, "summaryDBName", self.dbname)
             self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname)

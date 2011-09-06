@@ -34,7 +34,7 @@ acdcDBName = "wmagent_acdc"
 workqueueDBName = 'workqueue'
 workqueueInboxDbName = 'workqueue_inbox'
 #example of workloadSummary url
-workloadSummayURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984/workloadsummay"
+workloadSummaryURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984/workloadsummay"
 
 # Information for the workqueue, email of the administrator and the team names
 # for this agent.
@@ -225,7 +225,7 @@ config.TaskArchiver.logLevel = globalLogLevel
 config.TaskArchiver.pollInterval = 240
 config.TaskArchiver.timeOut      = workflowArchiveTimeout
 config.TaskArchiver.useWorkQueue = True
-config.TaskArchiver.workloadSummaryCouchDBURL = workloadSummaryUrl
+config.TaskArchiver.workloadSummaryCouchDBURL = workloadSummaryURL
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0

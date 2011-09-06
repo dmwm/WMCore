@@ -258,9 +258,12 @@ class RESTModel(WebAPI):
         for a in self.methods[verb][method]['args']:
             if a in input_kwargs.keys():
                 input_data[a] = input_kwargs[a]
+                input_kwargs.pop(a)
             else:
                 if len(input_args):
                     input_data[a] = input_args.pop(0)
+        if input_kwargs: 
+            raise HTTPError(400, 'Invalid input') 
         self.debug('%s raw data: %s' % (method, {'args': input_args, 'kwargs': input_kwargs}))
         self.debug('%s sanitised input_data: %s' % (method, input_data))
         return self._validate_input(input_data, verb, method)

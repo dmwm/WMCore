@@ -236,6 +236,7 @@ class RESTTest(RESTBaseUnitTest):
         # Wrong type for input args
         self.assertRaises(HTTPError, func, 123, 123)
         self.assertRaises(HTTPError, func, 'abc', 'abc')
+        self.assertRaises(HTTPError, func, input_str = 'abc', input_int = 123, other='dfe')
         self.assertRaises(HTTPError, func, str = 123, int ='abc')
         self.assertRaises(HTTPError, func, str =' abc', int = 'abc')
         self.assertRaises(HTTPError, func, 'abc', 123)

@@ -12,6 +12,117 @@ import unittest
 from WMCore.Lexicon import *
 
 class LexiconTest(unittest.TestCase):
+
+    def testSearchDataset(self):
+        ds1 = '/Higgs/blah-v2/RECO'
+        ds2 = '/Higgs*/blah-v2/RECO'
+        ds3 = '/*/blah-v2/RECO'
+        ds4 = '/Higgs/blah*/RECO'
+        ds5 = '/Higgs/blah-v2/*'
+        ds6 = '/*/*/RECO'
+        ds7 = '/Higgs/*/*'
+        ds8 = '/*/blah-v2/*'
+        ds9 = '/QCD_EMenriched_Pt30to80/Summer08_IDEAL_V11_redigi_v2/GEN-SIM-RAW'
+        ds10 ='/*'
+        ds11 = '/*QCD'
+        ds12 = '/QCD*/Summer*'
+        ds13 = '/QCD_EMenriched_Pt30to80/Summer08_IDEAL_V11_redigi_v2/GEN-SIM-*'
+        ds14 = '/QCD_EMenriched_Pt30to80/Summer08_IDEAL_V11_redigi_v2/*-SIM-*'
+
+        for test_ds in [ds1, ds2, ds3, ds4, ds5, ds6, ds9, ds10, ds11, ds12, ds13, ds14]:
+            assert searchdataset(test_ds), 'valid search not validated'
+
+        ds1 = '*/blah-v2/RECO'
+        ds2 = '*/blah-v2/*'
+        ds3 = '*/*//RECO'
+        ds4 = '/*/*/*/*'
+        ds5 = '*'
+        ds6 = '/Higgs/ /RECO'
+        ds7 = '/Higgs/%/RECO'
+        ds8 = 'Higgs'
+        ds9 = 'RECO'
+        ds10 = 'blah-v2'
+        ds11 = '/MinimumBias/BeamCommissioning09-PromptReco-v2/RECO#bdd066ce-e8fb-488e-beb1-20432d96baaa'
+        for test_ds in [ds1, ds2, ds3, ds4, ds5, ds6, ds7, ds8, ds9, ds10, ds11]:
+            self.assertRaises(AssertionError, searchdataset, test_ds)
+
+    def testSearchBlock(self):
+        ds1 = '/MinimumBias/BeamCommissioning09-PromptReco-v2/GEN-SIM-RAW#bdd066ce-e8fb-488e-beb1-20432d96baaa'
+        ds2 = '/MinimumBias/BeamCommissioning09-PromptReco-v2/RECO#*'
+        ds3 = '/MinimumBias/BeamCommissioning09-PromptReco-v2/*#bdd066ce-e8fb-488e-beb1-20432d96baaa'
+        ds4 = '/MinimumBias/BeamCommissioning09-PromptReco-v2/RECO#bdd066ce-e8fb-488e-beb1-*'
+        ds5 = '/MinimumBias/BeamCommissioning09-PromptReco-v2/RECO#bdd066ce-e8fb-488e-beb1-20432d96baaa'
+        ds6 = '/*Minimum*'
+        ds7 = '/*'
+        ds8 = '/*/BeamCommissioning09*/*#bdd066ce-e8fb-488e-beb1-2043'
+        ds9 = '/*/*/RECO#bdd066ce-e8fb-488e-beb1-20432d96baaa'
+        ds10 = '/*/RECO#bdd066ce-e8fb-488e-beb1-20432d96baaa'
+        ds11 = '/*RECO*/*#bdd066ce-e8fb-488e-beb1-20432d96baaa'
+        ds12 = '/MinimumBias/BeamCommissioning09-PromptReco-v2/RECO*'
+        ds13 = '/MinimumBias/BeamCommissioning09-PromptReco-v2/RECO*#*1234-5677-abcdessssssssss-123444'
+
+        for test_ds in [ds1, ds2, ds3, ds4, ds5, ds6, ds7, ds8, ds9, ds10, ds11, ds12, ds13]:
+            assert searchblock(test_ds), 'valid search not validated'
+
+        ds1 = '/MinimumBias/BeamCommissioning09-PromptReco-v2/RECO#bdd066ce-e8fb-488e/beb1/20432d96baaa'
+        ds2 = '/MinimumBias/BeamCommissioning09-PromptReco-v2/RECObdd066ce-e8fb-488e-beb1-20432d96baaa'
+        ds3 = '/MinimumBias/BeamCommissioning09-PromptReco-v2/RECO/bdd066ce-e8fb-488e-beb1-20432d96baaa'
+        ds4 = '/RECO#bdd066ce-e8fb-488e-beb1-20432d96baaa'
+        ds5 = '/*#bdd066ce-e8fb-488e-beb1-20432d96baaa'
+
+        for test_ds in [ds1, ds2, ds3, ds4, ds5]:
+            self.assertRaises(AssertionError, searchblock, test_ds)
+
+    def testGoodProcdataset(self):
+        # Check that valid procdataset work
+        assert procdataset('CMSSW_4_4_0_pre7_g494p02-START44_V2_special_110808-v1'), 'valid procdataset not validated'
+        assert procdataset('Summer11-PU_S4_START42_V11-v1'), 'valid procdataset not validated'
+        assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X_v1'), 'valid procdataset not validated'
+
+    def testBadProcataset(self):
+        # Check that invalid Procataset raise an exception
+        self.assertRaises(AssertionError, procdataset, 'Drop Table')
+        self.assertRaises(AssertionError, procdataset, 'Alter Table')
+
+    def testGoodPrimdataset(self):
+        # Check that valid Primdataset work
+        assert primdataset('qqH125-2tau'), 'valid primdataset not validated'
+        assert primdataset('RelVal124QCD_pt120_170'), 'valid primdataset not validated'
+        assert primdataset('RelVal160pre14SingleMuMinusPt10'), 'valid primdataset not validated'
+
+    def testBadPrimdataset(self):
+        # Check that invalid Primdataset raise an exception
+        self.assertRaises(AssertionError, primdataset, 'Drop Table')
+        self.assertRaises(AssertionError, primdataset, 'Alter Table')
+
+
+    def testGoodSearchstr(self):
+        # Check that valid searchstr work
+        assert searchstr('/store/mc/Fall08/BBJets250to500-madgraph/*'), 'valid search string not validated'
+        assert searchstr('/QCD_EMenriched_Pt30to80/Summer08_IDEAL_V11_redigi_v2/GEN-SIM-RAW#cfc0a501-e845-4576-af8a-f811165d82d9'), 'valid search string not validated'
+        assert searchstr('STREAMER'), 'valid search string not validated'
+ 
+    def testBadSearchstr(self):
+        # Check that invalid searchstr raise an exception
+        self.assertRaises(AssertionError, searchstr, 'Drop Table')
+        self.assertRaises(AssertionError, searchstr, 'Alter Table')
+
+    def testGoodNamestr(self):
+        # Check that valid namestr work
+        assert namestr('LUMI-VDM'), 'valid name string not validated'
+        assert namestr('PhysVal'), 'valid name string not validated'
+        assert namestr('cosmic'), 'valid name string not validated'
+
+    def testBadNamestr(self):
+        # Check that invalid namestr raise an exception
+        self.assertRaises(AssertionError, namestr, 'insert into Table')
+        self.assertRaises(AssertionError, namestr, 'drop database')
+
+    def testBadSearchstr(self):
+        # Check that invalid searchstr raise an exception
+        self.assertRaises(AssertionError, searchstr, 'Drop Table')
+        self.assertRaises(AssertionError, searchstr, 'Alter Table')
+
     def testGoodSiteTier(self):
         # Check that valid tiers work
         assert sitetier('T0'), 'valid tier not validated'

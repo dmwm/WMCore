@@ -24,6 +24,44 @@ lfnParts = {
     'hnName'    : '([a-zA-Z0-9\.]+)',
 }
 
+def searchblock(candidate):
+    """
+    A block name with a * wildcard one or more times in it.
+    """
+    #regexp = r"^/(\*|[a-zA-Z][a-zA-Z0-9_\*]{0,100})/(\*|[a-zA-Z0-9_\.\-\*]{1,100})/(\*|[A-Z\-]{3,20})#(\*|[a-zA-Z0-9\.\-_\*]{1,100})$"
+    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,100})){0,1}(/(\*|[A-Z\-\*]{1,50})(#(\*|[a-zA-Z0-9\.\-_\*]){0,100}){0,1}){0,1}$"
+    return check(regexp, candidate)
+
+def searchdataset(candidate):
+    """
+    A dataset name with a * wildcard one or more times in it. Only the first '/' is mandatory to use.
+    """
+    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,100})){0,1}(/(\*|[A-Z\-\*]{1,50})){0,1}$"
+    return check(regexp, candidate)
+
+def searchstr(candidate):
+    """
+    Used to check a DBS input that searches for names in dbs. Note block name, dataset name, file name have their own
+    searching string.
+    No white space found in names in DBS production and allowed to elimate input like "Drop table table1".
+    letters, numbers, periods, dashes, underscores 
+    
+    """
+    if candidate =='' :
+        return candidate
+    return check(r'^[a-zA-Z0-9/%*][a-zA-Z0-9/\.\-_%*/#]*$', candidate)
+
+def namestr(candidate):
+    """ 
+    Any input used in DBS and not defined here should pass namestr check.
+    No white space found in names in DBS production and allowed to elimate input like "Drop table table1".
+    letters, numbers, periods, dashes, underscores,#,/ 
+    
+    """
+    if candidate =='' or not candidate :
+        return candidate
+    return check(r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_/#]*$', candidate)
+
 def sitetier(candidate):
     return check("^T[0-3]", candidate)
 
@@ -64,10 +102,22 @@ def dataset(candidate):
     return check(r'(/[a-zA-Z0-9\.\-_]{1,100}){3}$', candidate)
 
 def procdataset(candidate):
-    pass
+    """
+    Check for processed dataset name.
+    letters, numbers, dashes, underscores.
+    """
+    if candidate =='' or not candidate :
+        return candidate
+    return check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate)
 
 def primdataset(candidate):
-    pass
+    """
+    Check for primary dataset name.
+    letters, numbers, dashes, underscores.
+    """
+    if candidate =='' or not candidate :
+        return candidate
+    return check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate)
 
 def lfn(candidate):
     """

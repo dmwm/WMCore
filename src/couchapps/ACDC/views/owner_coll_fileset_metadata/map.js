@@ -5,9 +5,11 @@ function(doc) {
     for (var runIndex in filesetFile["runs"]) {
       totalLumis += filesetFile["runs"][runIndex].lumis.length;
     }
-    filesetFile["locations"].sort();
+    // copy locations list as original is immutable
+    var locations = filesetFile["locations"].slice(0);
+    locations.sort();
     emit([doc.owner.group, doc.owner.user, doc.collection_name, doc.fileset_name, 
-          filesetFile["locations"], filesetFile["lfn"]],
+          locations, filesetFile["lfn"]],
          {"lfn": lfn, "events": filesetFile["events"], "lumis": totalLumis});
   }
 }

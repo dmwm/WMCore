@@ -44,7 +44,7 @@ class DataCollectionService(CouchService):
         coll = CouchCollection(name = collName, database = self.database,
                                url = self.url)
         
-        coll.owner = self.newOwner(user, group)
+        coll.owner = self.newOwner(group, user)
         coll.populate()
         return coll
 
@@ -70,8 +70,8 @@ class DataCollectionService(CouchService):
             coll = CouchCollection(database = self.database, url = self.url,
                                    name = workflow,
                                    type = CollectionTypes.DataCollection)
-            owner = self.newOwner(job.get("owner", "cmsdataops"),
-                                  job.get("group", "cmsdataops"))
+            owner = self.newOwner(job.get("group", "cmsdataops"),
+                                  job.get("owner", "cmsdataops"))
             coll.setOwner(owner)
             fileset = CouchFileset(database = self.database, url = self.url,
                                     name = taskName)

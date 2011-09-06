@@ -18,12 +18,9 @@ import traceback
 from WMCore.DataStructs.Run import Run
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.WMBS.File               import File 
+from WMCore.WMBS.File               import File
 from WMCore.DataStructs.Fileset     import Fileset
 
-from WMCore.ACDC.CouchCollection import CouchCollection
-from WMCore.GroupUser.User import User
-from WMCore.GroupUser.Group import Group
 
 def isGoodLumi(goodRunList, run, lumi):
     """
@@ -34,7 +31,7 @@ def isGoodLumi(goodRunList, run, lumi):
     """
     if goodRunList == None or goodRunList == {}:
         return True
-    
+
     if not isGoodRun(goodRunList = goodRunList, run = run):
         return False
 
@@ -70,7 +67,7 @@ class LumiBased(JobFactory):
 
     locations = []
 
-    
+
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -83,39 +80,40 @@ class LumiBased(JobFactory):
 
         lumisPerJob     = int(kwargs.get('lumis_per_job', 1))
         splitOnFile     = bool(kwargs.get('halt_job_on_file_boundaries', True))
+        ignoreACDC      = bool(kwargs.get('ignore_acdc_except', False))
         collectionName  = kwargs.get('collectionName', None)
         splitOnRun      = kwargs.get('splitOnRun', True)
-        getParents      = kwargs.get('include_parents', False) 
+        getParents      = kwargs.get('include_parents', False)
 
         goodRunList = {}
         # If we have runLumi info, we need to load it from couch
         if collectionName:
-            # WARNING:  This is a piece of crap
             try:
                 from WMCore.ACDC.DataCollectionService import DataCollectionService
-                couchURL    = kwargs.get('couchURL')
-                couchDB     = kwargs.get('couchDB')
-                filesetName = kwargs.get('filesetName')
+                couchURL       = kwargs.get('couchURL')
+                couchDB        = kwargs.get('couchDB')
+                filesetName    = kwargs.get('filesetName')
+                collectionName = kwargs.get('collectionName')
+                owner          = kwargs.get('owner')
+                group          = kwargs.get('group')
 
-                group       = Group(name = kwargs.get('group'))
-                owner       = User(name = kwargs.get('owner'))
-                owner.setGroup(group)
-
-                collection = CouchCollection(name = kwargs.get('collectionName'),
-                                             url = couchURL, database = couchDB)
-                collection.setOwner(owner)
-                collection.getCollectionId()
-                
-                DCS         = DataCollectionService(url = couchURL, database = couchDB)
-                goodRunList = DCS.getLumiWhitelist(collectionID = collection['collection_id'],
-                                                   taskName = filesetName)
+                logging.info('Creating jobs for ACDC fileset %s' % filesetName)
+                dcs = DataCollectionService(couchURL, couchDB)
+                goodRunList = dcs.getLumiWhitelist(collectionName, filesetName, owner, group)
             except Exception, ex:
                 msg =  "Exception while trying to load goodRunList\n"
-                msg =  "Ditching goodRunList\n"
-                msg += str(ex)
-                msg += str(traceback.format_exc())
-                logging.error(msg)
-                goodRunList = {}
+                if ignoreACDC:
+                    msg +=  "Ditching goodRunList\n"
+                    msg += str(ex)
+                    msg += str(traceback.format_exc())
+                    logging.error(msg)
+                    goodRunList = {}
+                else:
+                    msg +=  "Refusing to create any jobs.\n"
+                    msg += str(ex)
+                    msg += str(traceback.format_exc())
+                    logging.error(msg)
+                    return
 
         lDict = self.sortByLocation()
         locationDict = {}
@@ -133,7 +131,7 @@ class LumiBased(JobFactory):
                     lumiDict = fileLumis.get(f['id'], {})
                     for run in lumiDict.keys():
                         f.addRun(run = Run(run, *lumiDict[run]))
-                    
+
             for f in lDict[key]:
                 #if hasattr(f, 'loadData'):
                 #    f.loadData()
@@ -167,10 +165,10 @@ class LumiBased(JobFactory):
             stopJob = True
             for f in locationDict[location]:
 
-                if getParents: 
-                    parentLFNs = self.findParent(lfn = f['lfn']) 
-                    for lfn in parentLFNs: 
-                        parent = File(lfn = lfn) 
+                if getParents:
+                    parentLFNs = self.findParent(lfn = f['lfn'])
+                    for lfn in parentLFNs:
+                        parent = File(lfn = lfn)
                         f['parents'].add(parent)
 
                 if splitOnFile:
@@ -205,7 +203,7 @@ class LumiBased(JobFactory):
                                                                    lumis = [firstLumi, lastLumi])
                             firstLumi = None
                             lastLumi  = None
-                        
+
                         if firstLumi == None:
                             # Set the first lumi in the run
                             firstLumi = lumi
@@ -233,7 +231,7 @@ class LumiBased(JobFactory):
 
                         if self.currentJob and not f in self.currentJob['input_files']:
                             self.currentJob.addFile(f)
-                    
+
                     if firstLumi != None and lastLumi != None:
                         # Add this run to the mask
                         self.currentJob['mask'].addRunAndLumis(run = run.run,
@@ -242,12 +240,12 @@ class LumiBased(JobFactory):
                         lastLumi  = None
 
         return
-                    
 
 
 
 
 
 
-    
+
+
 

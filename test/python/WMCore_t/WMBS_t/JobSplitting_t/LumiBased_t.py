@@ -5,9 +5,6 @@ _LumiBased_t
 Test lumi based splitting.
 """
 
-
-
-
 import os
 import threading
 import logging
@@ -284,7 +281,7 @@ class LumiBasedTest(unittest.TestCase):
         workload = newWorkload("ACDCTest")        
         reco = workload.newTask("reco")
         skim1 = reco.addTask("skim1")
-        workload.setOwnerDetails("evansde77", "DMWM")
+        workload.setOwnerDetails(name = "evansde77", group = "DMWM")
 
         # first task uses the input dataset
         reco.addInputDataset(primary = "PRIMARY", processed = "processed-v1", tier = "TIER1")
@@ -314,16 +311,16 @@ class LumiBasedTest(unittest.TestCase):
         Test whether we can get a goodRunList out of ACDC
         and process it correctly.
         """
-        dcs = DataCollectionService(url = self.testInit.couchUrl, database = self.testInit.couchDbName)        
-
         workload = self.createTestWorkload()
-        collection = dcs.createCollection(workload)
+        dcs = DataCollectionService(url = self.testInit.couchUrl, database = self.testInit.couchDbName)
 
         def getJob(workload):
             job = Job()
             job["task"] = workload.getTask("reco").getPathName()
             job["workflow"] = workload.name()
             job["location"] = "T1_US_FNAL"
+            job["owner"] = "evansde77"
+            job["group"] = "DMWM"
             return job
 
         testFileA = File(lfn = makeUUID(), size = 1024, events = 1024, locations = "somese.cern.ch")
@@ -418,7 +415,7 @@ class LumiBasedTest(unittest.TestCase):
         jobGroups = jobFactory(lumis_per_job = 100,
                                halt_job_on_file_boundaries = False,
                                splitOnRun = True,
-                               collectionName = collection["name"],
+                               collectionName = workload.name(),
                                filesetName = workload.getTask("reco").getPathName(),
                                owner = "evansde77",
                                group = "DMWM",

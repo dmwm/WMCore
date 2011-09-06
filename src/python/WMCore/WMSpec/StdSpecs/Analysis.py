@@ -2,10 +2,9 @@
 # encoding: utf-8
 # pylint: disable-msg=C0301,W0142
 
-
+import logging
 import time
 
-##from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 
@@ -63,7 +62,14 @@ class AnalysisWorkloadFactory(StdBase):
         self.userUnmergedLFN = "%s/%s/%s/%s" % (lfnBase, self.inputPrimaryDataset,
                                                 self.publishName, self.processingVersion)
 
+        # Force ACDC input if present
+        self.inputStep = None
+        if self.ACDCID:
+            analysisTask.addInputACDC(self.ACDCURL, self.ACDCDBName, self.origRequest, self.ACDCID)
+            self.inputDataset = None
+
         outputMods = self.setupProcessingTask(analysisTask, "Analysis", inputDataset=self.inputDataset,
+                                              inputStep=self.inputStep,
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.analysisConfigCacheID, splitAlgo = self.analysisJobSplitAlgo,
                                               splitArgs = self.analysisJobSplitArgs, \
@@ -87,7 +93,10 @@ class AnalysisWorkloadFactory(StdBase):
         logCollectStep.addOverride('seName',    seName)
         logCollectStep.addOverride('lfnBase',   lfnBase)
         logCollectStep.addOverride('lfnPrefix', lfnPrefix)
-        workload.setWorkQueueSplitPolicy("Block", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
+        if self.ACDCID:
+            workload.setWorkQueueSplitPolicy("ResubmitBlock", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
+        else:
+            workload.setWorkQueueSplitPolicy("Block", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
 
         return workload
 
@@ -103,38 +112,55 @@ class AnalysisWorkloadFactory(StdBase):
         self.globalTag = arguments.get("GlobalTag", None)
 
         # Required parameters.
-        self.owner = arguments["Requestor"]
-        self.owner_dn = arguments["RequestorDN"]
         self.frameworkVersion = arguments["CMSSWVersion"]
-        self.scramArch = arguments["ScramArch"]
         self.inputDataset = arguments['InputDataset']
+        self.processingVersion = arguments.get('ProcessingVersion', 'v1')
+        self.origRequest = arguments.get('OriginalRequestName', '')
+        self.emulation = arguments.get("Emulation", False)
+
         self.blockBlacklist = arguments.get("BlockBlacklist", [])
         self.blockWhitelist = arguments.get("BlockWhitelist", [])
         self.runWhitelist = arguments.get("RunWhitelist", [])
         self.runBlacklist = arguments.get("RunBlacklist", [])
-        self.siteWhitelist = arguments.get("SiteWhitelist", [])
-        self.siteBlacklist = arguments.get("SiteBlacklist", [])
 
         self.couchURL = arguments.get("CouchUrl", "http://derpderp:derpityderp@cmssrv52.derp.gov:5984")
-        self.couchDBName = arguments.get("CouchDBName", "wmagent_config_cache")
+        self.couchDBName = arguments.get("CouchDBName", "wmagent_configcache")
         self.analysisConfigCacheID = arguments.get("AnalysisConfigCacheDoc", None)
-
-        # for publication
-        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-
-        self.emulation = arguments.get("Emulation", False)
+        self.ACDCURL = arguments.get("ACDCUrl", "http://derpderp:derpityderp@cmssrv52.derp.gov:5984")
+        self.ACDCDBName = arguments.get("ACDCDBName", "wmagent_acdc")
+        self.ACDCID = arguments.get("ACDCDoc", None)
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
         self.analysisJobSplitAlgo  = arguments.get("JobSplitAlgo", "EventBased")
-        self.analysisJobSplitArgs  = arguments.get("JobSplitArgs",
-                                               {"events_per_job": 1000})
+
+        if self.ACDCID and self.analysisJobSplitAlgo not in ['LumiBased']:
+            raise RuntimeError('Running on selected lumis only supported in split mode(s) %s' %
+                               'LumiBased')
+
+        if self.analysisJobSplitAlgo == 'EventBased':
+            self.analysisJobSplitArgs  = arguments.get('JobSplitArgs', {'events_per_job' : 1000})
+        elif self.analysisJobSplitAlgo == 'LumiBased':
+            self.analysisJobSplitArgs  = arguments.get('JobSplitArgs', {'lumis_per_job' : 15})
+            if self.ACDCID:
+                self.analysisJobSplitArgs.update(
+                            {'filesetName' : self.ACDCID,
+                             'collectionName' : self.origRequest,
+                             'couchURL' : self.ACDCURL,
+                             'couchDB' : self.ACDCDBName,
+                             'owner' : self.owner,
+                             'group' : self.group,
+                            })
+            self.analysisJobSplitArgs.update(
+                           {'halt_job_on_file_boundaries' : False,
+                            'splitOnRun' : False,
+                           })
+
         self.asyncDest = arguments.get("asyncDest", "T1_US_FNAL_Buffer")
         self.publishName = arguments.get("PublishDataName", str(int(time.time())))
         self.userSandbox = arguments.get("userSandbox", None)
         self.userFiles   = arguments.get("userFiles", [])
         self.userName    = arguments.get("Username",'jblow')
-        self.processingVersion = arguments.get('ProcessingVersion', 'v1')
         self.saveLogs    = arguments.get("SaveLogs", True)
 
         return self.buildWorkload()

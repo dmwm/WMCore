@@ -82,7 +82,7 @@ class StdBase(object):
             self.includeParents = True
         else:
             self.includeParents = False
-            
+
         return
 
     def determineOutputModules(self, scenarioName = None, scenarioArgs = None,
@@ -114,7 +114,7 @@ class StdBase(object):
         Add dashboard monitoring for the given task.
         """
         gb = 1024.0 * 1024.0 * 1024.0
-        
+
         monitoring = task.data.section_("watchdog")
         monitoring.interval = 600
         monitoring.monitors = ["DashboardMonitor", "PerformanceMonitor"]
@@ -211,6 +211,8 @@ class StdBase(object):
                                          block_whitelist = self.blockWhitelist,
                                          run_blacklist = self.runBlacklist,
                                          run_whitelist = self.runWhitelist)
+            elif inputStep == None:
+                procTask.setInputStep(inputStep)
             else:
                 procTask.setInputReference(inputStep, outputModule = inputModule)
 
@@ -337,8 +339,7 @@ class StdBase(object):
         mergeTask.applyTemplates()
         mergeTask.setTaskPriority(self.priority + 5)
 
-        if (parentTaskSplitting == "EventBased" and parentTask.taskType() != "Production") or \
-               parentTask.getPathName().find("MonteCarloFromGEN") != -1:           
+        if parentTaskSplitting == "EventBased" and parentTask.taskType() != "Production":
             splitAlgo = "WMBSMergeBySize"
         else:
             splitAlgo = "ParentlessMergeBySize"
@@ -362,7 +363,7 @@ class StdBase(object):
                                             max_merge_events = self.maxMergeEvents,
                                             max_wait_time = self.maxWaitTime,
                                             siteWhitelist = self.siteWhitelist,
-                                            siteBlacklist = self.siteBlacklist)            
+                                            siteBlacklist = self.siteBlacklist)
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
@@ -372,7 +373,7 @@ class StdBase(object):
             mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge", dqm_format = True)
         else:
             mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
-            
+
         mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
 

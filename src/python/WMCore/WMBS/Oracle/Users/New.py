@@ -8,7 +8,31 @@ Oracle implementation of NewWorkflow
 from WMCore.WMBS.MySQL.Users.New import New as NewUserMySQL
 
 class New(NewUserMySQL):
-    sql = """insert into wmbs_users (id, cert_dn, name_hn, owner, grp, group_name, role_name)
-             values (wmbs_users_SEQ.nextval, :dn, :hn, :owner, :grp, :gr, :role)"""
+    sql = """INSERT INTO wmbs_users (id, cert_dn, name_hn, owner, grp, group_name, role_name)
+             SELECT wmbs_users_SEQ.nextval, :dn, :hn, :owner, :grp, :gr, :role FROM dual
+             WHERE NOT EXISTS (SELECT id FROM wmbs_users WHERE cert_dn = :dn
+                                                         AND group_name = :gr
+                                                         AND role_name = :role)"""
 
 
+    def execute(self, dn, hn = None, owner = None, group = None,
+                group_name = None, role_name = 'default',
+                conn = None, transaction = False):
+
+        if role_name == None or role_name == '':
+            role_name = 'default'
+        if group_name == None or group_name == '':
+            group_name = 'default'
+
+        binds = {"dn": dn, "hn": hn, "owner": owner, "grp": group,
+                 "gr": group_name, "role": role_name}
+
+        self.dbi.processData(self.sql, binds, conn = conn,
+                             transaction = transaction)
+
+        result = self.dbi.processData( self.sql_get_id, {'dn': dn,
+                                                         "gr": group_name,
+                                                         "role": role_name},
+                                       conn = conn, transaction = transaction)
+        id = self.format(result)
+        return int(id[0][0])

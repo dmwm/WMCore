@@ -171,16 +171,22 @@ class Create(CreateWMBSBase):
 
         self.create["07wmbs_users"] = \
           """CREATE TABLE wmbs_users (
-             id        INTEGER      NOT NULL,
-             cert_dn   VARCHAR(255) NOT NULL,
-             name_hn   VARCHAR(255),
-             owner     VARCHAR(255),
-             grp     VARCHAR(255),
-             UNIQUE(cert_dn))"""
+             id         INTEGER      NOT NULL,
+             cert_dn    VARCHAR(255) NOT NULL,
+             name_hn    VARCHAR(255),
+             owner      VARCHAR(255),
+             grp        VARCHAR(255),
+             group_name VARCHAR(255),
+             role_name  VARCHAR(255)    
+             ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_users"] = \
           """ALTER TABLE wmbs_users ADD
                (CONSTRAINT wmbs_users_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+        self.indexes["02_pk_wmbs_users"] = \
+          """ALTER TABLE wmbs_users ADD
+              (CONSTRAINT wmbs_users_unique UNIQUE (cert_dn, group_name, role_name) %s)""" % tablespaceIndex
         
         self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (

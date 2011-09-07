@@ -25,14 +25,16 @@ class New(DBFormatter):
                 group_name = '', role_name = '',
                 conn = None, transaction = False):
 
-        binds = {"dn": dn, "hn": hn, "owner": owner, "grp": group, "gr": group_name, "role": role_name}
+        binds = {"dn": dn, "hn": hn, "owner": owner, "grp": group,
+                 "gr": group_name, "role": role_name}
 
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
 
-        result = self.dbi.processData( self.sql_get_id, {'dn': dn, "gr": group_name, "role": role_name},
-                                       conn = conn, transaction = transaction
-                                     )
+        result = self.dbi.processData( self.sql_get_id, {'dn': dn,
+                                                         "gr": group_name,
+                                                         "role": role_name},
+                                       conn = conn, transaction = transaction )
         id = self.format(result)
         return int(id[0][0])
 

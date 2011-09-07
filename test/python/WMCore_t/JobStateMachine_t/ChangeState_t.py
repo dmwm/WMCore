@@ -20,7 +20,6 @@ from WMCore.WMFactory import WMFactory
 from WMCore.Database.CMSCouch import CouchServer
 
 from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
-from WMCore.JobStateMachine import DefaultConfig
 
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.File import File
@@ -34,6 +33,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.FwkJobReport.Report import Report
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.WMInit import getWMBASE
+from WMCore.Configuration import Configuration
 
 class TestChangeState(unittest.TestCase):
     def setUp(self):
@@ -57,6 +57,9 @@ class TestChangeState(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         self.couchServer = CouchServer(dburl = os.getenv("COUCHURL"))
+        self.config = Configuration()
+        self.config.component_("JobStateMachine")
+        self.config.JobStateMachine.couchurl = os.getenv("COUCHURL")
         return
 
     def tearDown(self):
@@ -73,8 +76,7 @@ class TestChangeState(unittest.TestCase):
     	"""
     	This is the test class for function Check from module ChangeState
     	"""
-        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
-        change = ChangeState(DefaultConfig.config, "changestate_t")
+        change = ChangeState(self.config, "changestate_t")
 
         # Run through all good state transitions and assert that they work
         for state in self.transitions.keys():
@@ -95,8 +97,7 @@ class TestChangeState(unittest.TestCase):
         Verify that jobs, state transitions and fwjrs are recorded into seperate
         couch documents correctly.
     	"""
-        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
-        change = ChangeState(DefaultConfig.config, "changestate_t")
+        change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")
@@ -224,8 +225,7 @@ class TestChangeState(unittest.TestCase):
         
         This is the test class for function Propagate from module ChangeState
         """
-        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
-        change = ChangeState(DefaultConfig.config, "changestate_t")
+        change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")
@@ -295,8 +295,7 @@ class TestChangeState(unittest.TestCase):
         Verify that the retry count is incremented when we move out of the
         submitcooloff or jobcooloff state.
         """
-        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
-        change = ChangeState(DefaultConfig.config, "changestate_t")
+        change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")
@@ -369,8 +368,7 @@ class TestChangeState(unittest.TestCase):
 
         Verify that serialization of a job works when adding a FWJR.
         """
-        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
-        change = ChangeState(DefaultConfig.config, "changestate_t")
+        change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")
@@ -442,8 +440,7 @@ class TestChangeState(unittest.TestCase):
         Verify that everything works correctly if a job report is added to the
         database more than once.
         """
-        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
-        change = ChangeState(DefaultConfig.config, "changestate_t")
+        change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")
@@ -505,8 +502,7 @@ class TestChangeState(unittest.TestCase):
 
         Verify that the dashboard transitions code works correctly.
     	"""
-        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
-        change = ChangeState(DefaultConfig.config, "changestate_t")
+        change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")
@@ -661,9 +657,7 @@ class TestChangeState(unittest.TestCase):
 
         Test that we can successfully set jobs to the killed state
         """
-
-        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
-        change = ChangeState(DefaultConfig.config, "changestate_t")
+        change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")

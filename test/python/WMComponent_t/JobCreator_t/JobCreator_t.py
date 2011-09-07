@@ -262,7 +262,6 @@ class JobCreatorTest(unittest.TestCase):
         #JobStateMachine
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')
-        config.JobStateMachine.default_retries = 1
         config.JobStateMachine.couchDBName     = self.couchdbname
 
         return config
@@ -412,7 +411,6 @@ class JobCreatorTest(unittest.TestCase):
         config = self.getConfig()
         
         configDict = {"couchURL": config.JobStateMachine.couchurl,
-                      "defaultRetries": config.JobStateMachine.default_retries,
                       "couchDBName": config.JobStateMachine.couchDBName,
                       'jobCacheDir': config.JobCreator.jobCacheDir,
                       'defaultJobType': config.JobCreator.defaultJobType}

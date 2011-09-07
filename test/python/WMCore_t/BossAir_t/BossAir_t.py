@@ -229,7 +229,6 @@ class BossAirTest(unittest.TestCase):
         # JobStateMachine
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
-        config.JobStateMachine.default_retries = 1
         config.JobStateMachine.couchDBName     = "bossair_t"
 
 

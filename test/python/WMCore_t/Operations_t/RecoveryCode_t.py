@@ -113,7 +113,6 @@ class TestRecoveryCode(unittest.TestCase):
         #JobStateMachine
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'mnorman:theworst@cmssrv48.fnal.gov:5984')
-        config.JobStateMachine.default_retries = 1
         config.JobStateMachine.couchDBName     = "mnorman_test"
 
 

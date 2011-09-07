@@ -102,7 +102,6 @@ class RetryManagerTest(unittest.TestCase):
         # JobStateMachine
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', None)
-        config.JobStateMachine.default_retries = 1
         config.JobStateMachine.couchDBName     = "retry_manager_t"
 
         return config

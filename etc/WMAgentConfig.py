@@ -85,7 +85,6 @@ config.General.workDir = workDirectory
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
 config.JobStateMachine.couchDBName = jobDumpDBName
-config.JobStateMachine.default_retries = 5
 
 config.section_("ACDC")
 config.ACDC.couchurl = couchURL

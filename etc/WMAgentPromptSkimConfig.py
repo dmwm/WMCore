@@ -33,7 +33,6 @@ config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = "http://localhost:5984"
 config.JobStateMachine.couchDBName = "promptskim_commissioning"
 config.JobStateMachine.configCacheDBName = "promptskim_config_cache"
-config.JobStateMachine.default_retries = 5
 
 config.section_('ACDC')
 config.ACDC.couchurl = "http://localhost:5984"

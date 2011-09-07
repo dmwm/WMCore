@@ -27,7 +27,7 @@ dependencies = {
                         'systems':['wmc-base']
                         },
                 'wmc-web':{
-                        'packages': ['WMCore.WebTools', 'WMCore.Agent+', 'WMCore.WorkerThreads'],
+                        'packages': ['WMCore.WebTools', 'WMCore.Agent+', 'WMCore.WorkerThreads', 'WMCore.Alerts+'],
                         'systems':['wmc-database', 'wmc-base'],
                         'statics': ['src/javascript/WMCore/WebTools',
                                 'src/javascript/external/yui',

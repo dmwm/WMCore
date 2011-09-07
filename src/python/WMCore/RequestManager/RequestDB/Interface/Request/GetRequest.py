@@ -204,6 +204,10 @@ def getOverview():
     factory = DBConnect.getConnection()
     getSummary = factory(classname = "Request.GetOverview")
     result = getSummary.execute()
+    for request in result:
+       getCampaign = factory(classname = "Campaign.GetByRequest")
+       campaign = getCampaign.execute(request["request_id"])
+       request["campaign"] = campaign
     return result
 
 def getGlobalQueues():

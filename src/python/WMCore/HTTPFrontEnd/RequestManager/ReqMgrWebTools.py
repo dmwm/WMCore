@@ -199,23 +199,24 @@ def validate(schema):
         'Campaign', 'Scenario', 'ProdConfigCacheID', 'inputMode',
         'CouchDBName', 'Group']:
         value = schema.get(field, '')
-        if value != '':
+        if value and value != '':
             WMCore.Lexicon.identifier(value)
     for field in ['CouchURL']:
         value = schema.get(field, '')
-        if value != '':
+        if value and value != '':
             WMCore.Lexicon.couchurl(schema[field])
             schema[field] = removePasswordFromUrl(value)
     for field in ['InputDatasets', 'OutputDatasets']:
         for dataset in schema.get(field, []):
-            WMCore.Lexicon.dataset(dataset)
+            if dataset and dataset != '':
+                WMCore.Lexicon.dataset(dataset)
     for field in ['InputDataset', 'OutputDataset']:
         value = schema.get(field, '')
-        if value != '':
+        if value and value != '':
             WMCore.Lexicon.dataset(schema[field])
     for field in ['SoftwareVersion']:
         value = schema.get(field, '')
-        if value != '':
+        if value and value != '':
             WMCore.Lexicon.cmsswversion(schema[field])
         
 def makeRequest(kwargs, couchUrl, couchDB):

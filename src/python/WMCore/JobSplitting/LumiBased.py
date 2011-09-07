@@ -84,6 +84,7 @@ class LumiBased(JobFactory):
         collectionName  = kwargs.get('collectionName', None)
         splitOnRun      = kwargs.get('splitOnRun', True)
         getParents      = kwargs.get('include_parents', False)
+        runWhitelist    = kwargs.get('runWhitelist', [])
 
         goodRunList = {}
         # If we have runLumi info, we need to load it from couch
@@ -178,6 +179,9 @@ class LumiBased(JobFactory):
                 for run in f['runs']:
                     if not isGoodRun(goodRunList = goodRunList, run = run.run):
                         # Then skip this one
+                        continue
+                    if len(runWhitelist) > 0 and not run.run in runWhitelist:
+                        # Skip due to run whitelist
                         continue
                     firstLumi = None
 

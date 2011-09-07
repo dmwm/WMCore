@@ -512,6 +512,7 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in taskIterator:
             if task.getInputDatasetPath():
                 task.setInputRunWhitelist(runWhitelist)
+                task.setSplittingParameters(runWhitelist = runWhitelist)
             self.setRunWhitelist(runWhitelist, task)
 
         return

@@ -26,11 +26,25 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.WMSpec.WMWorkload import newWorkload, WMWorkloadHelper
 
+def getJob(workload):
+    """
+    getJob
+
+    Given a workload, get a job from it
+    """
+    job = Job()
+    job["task"] = workload.getTask("reco").getPathName()
+    job["workflow"] = workload.name()
+    job["location"] = "T1_US_FNAL"
+    job["owner"] = "evansde77"
+    job["group"] = "DMWM"
+    return job
+
 class LumiBasedTest(unittest.TestCase):
     """
-    _EventBasedTest_
+    _LumiBasedTest_
 
-    Test event based job splitting.
+    Test job splitting using LumiBased
     """
 
     def setUp(self):
@@ -314,15 +328,6 @@ class LumiBasedTest(unittest.TestCase):
         workload = self.createTestWorkload()
         dcs = DataCollectionService(url = self.testInit.couchUrl, database = self.testInit.couchDbName)
 
-        def getJob(workload):
-            job = Job()
-            job["task"] = workload.getTask("reco").getPathName()
-            job["workflow"] = workload.name()
-            job["location"] = "T1_US_FNAL"
-            job["owner"] = "evansde77"
-            job["group"] = "DMWM"
-            return job
-
         testFileA = File(lfn = makeUUID(), size = 1024, events = 1024, locations = "somese.cern.ch")
         testFileA.addRun(Run(1, 1, 2))
         testFileA.create()
@@ -512,6 +517,36 @@ class LumiBasedTest(unittest.TestCase):
                              list(f['parents'])[0]['lfn'].split('_')[0])
 
         return
+
+
+    def testF_RunWhitelist(self):
+        """
+        _runWhitelist_
+
+        Apparently we're too stupid to do the runlist in
+        the GoodRunlist where it would make sense.
+        """
+
+
+        splitter = SplitterFactory() 
+        
+        oneSetSubscription = self.createSubscription(nFiles = 10, lumisPerFile = 1) 
+        jobFactory = splitter(package = "WMCore.WMBS", 
+                              subscription = oneSetSubscription) 
+        
+        jobGroups = jobFactory(lumis_per_job = 10, 
+                               split_files_between_job = True, 
+                               runWhitelist = [1])
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 1)
+        self.assertEqual(len(jobGroups[0].jobs[0]['input_files']), 1)
+        self.assertEqual(len(jobGroups[0].jobs[0]['input_files'][0]['runs']), 1)
+        self.assertEqual(jobGroups[0].jobs[0]['input_files'][0]['runs'][0].run, 1)
+        return
+
+
+        
                 
                 
 

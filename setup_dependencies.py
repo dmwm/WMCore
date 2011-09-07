@@ -50,7 +50,8 @@ dependencies = {
                         'statics': ['src/templates/WMCore/WebTools/RequestManager',
                                     'src/html/RequestManager',
                                     'src/couchapps/ReqMgr+',
-                                    'src/couchapps/ConfigCache+'],
+                                    'src/couchapps/ConfigCache+',
+                                    'src/couchapps/OpsClipboard+'],
                         },
                 'workqueue':{
                         'packages': ['WMCore.WorkQueue+', 'WMCore.Wrappers+',

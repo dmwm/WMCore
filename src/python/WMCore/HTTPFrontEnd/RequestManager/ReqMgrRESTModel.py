@@ -261,10 +261,13 @@ class ReqMgrRESTModel(RESTModel):
         """ No args returns a list of all users.  Group returns groups this user is in.  Username
             returs a JSON with information about the user """
         if userName != None:
+            if not Registration.isRegistered(userName):
+                raise cherrypy.HTTPError(404, "Cannot find user")
             result = {}
             result['groups'] = GroupInfo.groupsForUser(userName).keys()
             result['requests'] = UserRequests.listRequests(userName).keys()
             result['priority'] = UserManagement.getPriority(userName)
+            result.update(Registration.userInfo(userName))
             return json.dumps(result)
         elif group != None:
             GroupInfo.usersInGroup(group)    

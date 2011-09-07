@@ -67,3 +67,15 @@ def listUsers():
     result = users.execute()
     return result
 
+def userInfo(hnUserName):
+    """
+    _userInfo_
+
+    return a dict of information about the user
+
+    """
+    factory = DBConnect.getConnection()
+    users = factory(classname = "Requestor.GetUserInfo")
+    result = users.execute(hnUserName)
+    return result
+

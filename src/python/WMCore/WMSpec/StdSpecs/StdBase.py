@@ -34,8 +34,8 @@ class StdBase(object):
         self.owner = None
         self.owner_dn = None
         self.group = None
-        self.owner_vogroup = '' 
-        self.owner_vorole = '' 
+        self.owner_vogroup = ''
+        self.owner_vorole = ''
         self.acquisitionEra = None
         self.scramArch = None
         self.processingVersion = None
@@ -64,6 +64,8 @@ class StdBase(object):
         self.owner = arguments.get("Requestor", None)
         self.owner_dn = arguments.get("RequestorDN", None)
         self.group = arguments.get("Group", None)
+        self.owner_vogroup = arguments.get("VoGroup", '')
+        self.owner_vorole = arguments.get("VoRole", '')
         self.acquisitionEra = arguments.get("AcquisitionEra", None)
         self.scramArch = arguments.get("ScramArch", None)
         self.processingVersion = arguments.get("ProcessingVersion", None)
@@ -150,7 +152,8 @@ class StdBase(object):
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "LumiBased",
                             splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
-                            userDN = None, asyncDest = None, publishName =None, stepType = "CMSSW",
+                            userDN = None, asyncDest = None, publishName =None, owner_vogroup = '',
+                            owner_vorole = '', stepType = "CMSSW",
                             userSandbox = None, userFiles = []):
 
         """
@@ -181,6 +184,7 @@ class StdBase(object):
         procTaskStageOut.setUserDN(userDN)
         procTaskStageOut.setAsyncDest(asyncDest)
         procTaskStageOut.setPublishName(publishName)
+        procTaskStageOut.setUserRoleAndGroup(owner_vogroup, owner_vorole)
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
         procTask.applyTemplates()

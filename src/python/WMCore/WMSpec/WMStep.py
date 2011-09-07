@@ -27,7 +27,7 @@ class WMStepHelper(TreeHelper):
 
     def name(self):
         return self.data._internal_name
-    
+
     def setStepType(self, stepType):
         """
         _setStepType_
@@ -68,7 +68,7 @@ class WMStepHelper(TreeHelper):
         node = WMStepHelper(WMStep(stepName))
         self.addTopNode(node)
         return node
-    
+
     def getStep(self, stepName):
         """
         _getStep_
@@ -85,19 +85,29 @@ class WMStepHelper(TreeHelper):
         """
         _setUserDN_
 
-        Set the user DN 
+        Set the user DN
 
         """
-        self.data.userDN = userDN 
+        self.data.userDN = userDN
 
     def setAsyncDest(self, asyncDest):
         """
         _setAsyncDest_
 
-        Set the async. destination 
+        Set the async. destination
 
         """
-        self.data.asyncDest = asyncDest 
+        self.data.asyncDest = asyncDest
+
+    def setUserRoleAndGroup(self, owner_vogroup, owner_vorole):
+        """
+        _setUserRoleAndGroup_
+
+        Set user group and role.
+
+        """
+        self.data.owner_vogroup = owner_vogroup
+        self.data.owner_vorole = owner_vorole
 
     def setPublishName(self, publishName):
         """
@@ -121,7 +131,7 @@ class WMStepHelper(TreeHelper):
     def addOverride(self, override, overrideValue):
         """
         _addOverride_
-        
+
         Add overrides for use in step executors
         """
 
@@ -200,7 +210,7 @@ class WMStepHelper(TreeHelper):
         configId = getattr(self.data.application.configuration, 'configId', None)
 
         return cacheUrl, cacheDb, configId
-        
+
 
 class WMStep(ConfigSectionTree):
     """
@@ -222,7 +232,7 @@ class WMStep(ConfigSectionTree):
         self.input.section_("links")
         self.section_("output")
         self.section_("sandbox")
-        
+
         self.section_("emulator")
         self.section_("override")
 

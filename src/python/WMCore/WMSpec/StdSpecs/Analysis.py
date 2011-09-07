@@ -74,6 +74,7 @@ class AnalysisWorkloadFactory(StdBase):
                                               configDoc = self.analysisConfigCacheID, splitAlgo = self.analysisJobSplitAlgo,
                                               splitArgs = self.analysisJobSplitArgs, \
                                               userDN = self.owner_dn, asyncDest = self.asyncDest, publishName = self.publishName,
+                                              owner_vogroup = self.owner_vogroup, owner_vorole = self.owner_vorole,
                                               userSandbox = self.userSandbox, userFiles = self.userFiles)
 
         # Put temporary log files in /store/temp/user/USERNAME/
@@ -158,6 +159,8 @@ class AnalysisWorkloadFactory(StdBase):
 
         self.asyncDest = arguments.get("asyncDest", "T1_US_FNAL_Buffer")
         self.publishName = arguments.get("PublishDataName", str(int(time.time())))
+        self.owner_vogroup = arguments.get("VoGroup", '')
+        self.owner_vorole = arguments.get("VoRole", '')
         self.userSandbox = arguments.get("userSandbox", None)
         self.userFiles   = arguments.get("userFiles", [])
         self.userName    = arguments.get("Username",'jblow')

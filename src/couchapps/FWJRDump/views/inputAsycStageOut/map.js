@@ -21,10 +21,11 @@ function(doc) {
                  'task' : task,
                  'jobid' : job,
                  '_id': doc['fwjr']['steps'][step]["output"][module][file]["lfn"],
+                 'checksums': doc['fwjr']['steps'][step]["output"][module][file]['checksums'],
                  'size': doc['fwjr']['steps'][step]["output"][module][file]['size'],
                  'source' : doc['fwjr']['steps'][step]["output"][module][file]["location"],
                  'destination': doc['fwjr']['steps'][step]["output"][module][file]['async_dest']}
-          );  
+          );
        }
 
        }

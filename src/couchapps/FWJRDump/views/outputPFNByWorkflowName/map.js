@@ -5,6 +5,7 @@ function(doc) {
     }
 
     var request = doc['fwjr'].task.split('/')[1]
+    var res = ''
 
     for (var stepName in doc['fwjr']['steps']) {
       var stepOutput = doc['fwjr']['steps'][stepName]['output']
@@ -15,10 +16,13 @@ function(doc) {
         for (var outputFileIndex in stepOutput[outputModuleName]) {
           var outputFile = stepOutput[outputModuleName][outputFileIndex];
           if (outputFile['OutputPFN'] != '') {
-            emit([request], {"jobid" : doc['jobid'], "pfn" : outputFile['OutputPFN'], "checksums" : outputFile['checksums']});
+            res = {"jobid" : doc['jobid'], "pfn" : outputFile['OutputPFN'], "checksums" : outputFile['checksums']};
           }
         }
       }
+    }
+   if (res != '') {
+    emit([request], res);
     }
   }
 }

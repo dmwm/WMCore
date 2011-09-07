@@ -357,7 +357,7 @@ class ReqMgrRESTModel(RESTModel):
             try:
                 request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName)
             except RuntimeError, ex:
-                raise cherrypy.HTTPError(400, ex)
+                raise cherrypy.HTTPError(400, ex.message)
         # see if status & priority need to be upgraded
         if status != None:
             # forbid assignment here
@@ -376,10 +376,13 @@ class ReqMgrRESTModel(RESTModel):
     def putAssignment(self, team, requestName):
         """ Assigns this request to this team """
         # see if it's already assigned
-        requestNamesAndIDs = ListRequests.listRequestsByTeam(urllib.unquote(team))
+        team = urllib.unquote(team)
+        if not team in ProdManagement.listTeams():
+            raise cherrypy.HTTPError(404,"Cannot find this team")
+        requestNamesAndIDs = ListRequests.listRequestsByTeam(team)
         if requestName in requestNamesAndIDs.keys():
             raise cherrypy.HTTPError(400,"Already assigned to this team")
-        return ChangeState.assignRequest(requestName, urllib.unquote(team))
+        return ChangeState.assignRequest(requestName, team)
 
     def putUser(self, userName, email, dnName=None):
         """ Needs to be passed an e-mail address, maybe dnName """

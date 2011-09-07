@@ -323,6 +323,7 @@ class Configuration(object):
         self._internal_components = []
         self._internal_webapps = []
         self._internal_sections = []
+        Configuration._instance = self
 
     def __add__(self, otherConfig):
         """
@@ -363,6 +364,10 @@ class Configuration(object):
                 self._internal_webapps.remove(name)
             object.__delattr__(self, name)
             return
+        
+    @staticmethod
+    def getInstance():
+        return getattr(Configuration, "_instance", None)
 
     def listComponents_(self):
         """

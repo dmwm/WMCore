@@ -13,7 +13,24 @@ of actual messages.
 import time
 import logging
 
+from WMCore.Configuration import Configuration
 from WMCore.Alerts.Alert import Alert
+
+
+
+def getPredefinedAlert(**args):
+    preAlert = Alert(**args)
+    config = Configuration.getInstance()
+    # try fill in some values from configuration to identify the source
+    # of alerts down the alerts framework processing chain
+    if config:
+        agentConfig = getattr(config, "Agent", None)
+        if agentConfig:
+            preAlert["HostName"] = getattr(agentConfig, "hostName", None)
+            preAlert["Contact"] = getattr(agentConfig, "contact", None) 
+            preAlert["TeamName"] = getattr(agentConfig, "teamName", None) 
+            preAlert["AgentName"] = getattr(agentConfig, "agentName", None)
+    return preAlert 
 
 
 
@@ -35,12 +52,17 @@ def setUpAlertsMessaging(compInstance, compName = None):
     callerClassName = compInstance.__class__.__name__
     if hasattr(compInstance, "config") and hasattr(compInstance.config, "Alert"):
         # pre-defined values for Alert instances
-        comp = compName or callerClassName 
-        preAlert = Alert(Type = "WMAgent",
+        comp = compName or callerClassName
+        dictAlert = dict(Type = "WMAgent",
                          Workload = "n/a",
                          Component = comp,
-                         Source = callerClassName)
+                         Source = callerClassName) 
+        preAlert = getPredefinedAlert(**dictAlert)        
         # create sender instance (sending alert messages)
+        # (2011-09-xx):
+        # the import has been put here in order to avoid Alerts->ZMQ
+        # dependencies in cases that Alerts are unwanted anyway
+        # the import shall be put back up later once the issue disappears
         from WMCore.Alerts.ZMQ.Sender import Sender
         sender = Sender(compInstance.config.Alert.address,
                         callerClassName,

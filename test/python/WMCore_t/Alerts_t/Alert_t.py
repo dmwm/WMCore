@@ -34,6 +34,7 @@ class AlertTest(unittest.TestCase):
         self.assertEqual(a["Component"], "comp")
         self.assertEqual(a["Details"], details)
         self.assertEqual(a["Timestamp"], "time")
+        a.toMsg()
         
         
     def testRegisterMsg(self):
@@ -52,8 +53,8 @@ class AlertTest(unittest.TestCase):
         msg = ShutdownMsg()
         self.assertEqual(msg.key, "Shutdown")
         self.assertEqual(msg[msg.key], True)
-        
-
+                
+                         
         
 if __name__ == "__main__":
     unittest.main()

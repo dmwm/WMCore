@@ -5,7 +5,6 @@ Representation of management messages within the Alert framework.
 """
 
 
-
 class Alert(dict):
     """
     Alert structure - alert message instance.
@@ -14,8 +13,9 @@ class Alert(dict):
     
     TEMPLATE = (u"Alert: Component: %(Component)s, Source: %(Source)s, "
                 "Type: %(Type)s, Level: %(Level)s, Workload: %(Workload)s, "
-                "Timestamp: %(Timestamp)s, Details: %(Details)s")  
-    
+                "HostName %(HostName)s, AgentName: %(AgentName)s, "
+                "Timestamp: %(Timestamp)s, Details: %(Details)s")
+
     
     def __init__(self, **args):
         dict.__init__(self)
@@ -26,6 +26,12 @@ class Alert(dict):
         self.setdefault("Component", None)
         self.setdefault("Details", {})
         self.setdefault("Timestamp", None)
+        # add a few values which are read from the configuration (Agent section)
+        # (here are the first letters capitalised)
+        self.setdefault("HostName", None)
+        self.setdefault("Contact", None)
+        self.setdefault("TeamName", None)
+        self.setdefault("AgentName", None)        
         self.update(args)
 
 

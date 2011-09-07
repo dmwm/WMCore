@@ -276,7 +276,22 @@ class ConfigurationTest(unittest.TestCase):
 
 
         return
-
+    
+    
+    def testG_testStaticReferenceToConfigurationInstance(self):
+        """
+        test Configuration.getInstance() which returns reference
+        to the Configuration object instance.
+        
+        """
+        config = Configuration()
+        instance = Configuration.getInstance()
+        self.assertFalse(hasattr(instance, "testsection"))
+        config.section_("testsection")
+        self.assertTrue(hasattr(instance, "testsection"))
+        config.testsection.var = 10
+        self.assertEquals(instance.testsection.var, 10)
+        
 
 
 if __name__ == '__main__':

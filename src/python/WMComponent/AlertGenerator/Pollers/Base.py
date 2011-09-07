@@ -9,6 +9,7 @@ import logging
 
 import psutil
 
+from WMCore.Alerts import API as alertAPI
 from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts.ZMQ.Sender import Sender
  
@@ -84,14 +85,16 @@ class BasePoller(object):
                        self.generator.config.AlertProcessor.soft.level]
         # critical, soft threshold values
         self.thresholds = [self.config.critical, self.config.soft]
+        
         # pre-generated alert values, but before sending always new instance is created
         # these values are used to update the newly created instance
-        self.preAlert = Alert(Type = "WMAgent",
-                              Workload = "n/a",
-                              Component = self.generator.__class__.__name__,
-                              Source = "<to_overwrite>") 
+        dictAlert = dict(Type = "WMAgent",
+                         Workload = "n/a",
+                         Component = self.generator.__class__.__name__,
+                         Source = "<to_overwrite>")
+        self.preAlert = alertAPI.getPredefinedAlert(**dictAlert) 
+                               
 
-                
     def poll(self):
         """
         This method is called from the AlertGenerator component instance and is

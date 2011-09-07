@@ -11,8 +11,10 @@ import unittest
 import threading
 import logging
 
+from WMCore.Configuration import Configuration
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.Configuration import Configuration
+from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts import API as alertAPI
 
 from WMQuality.TestInit import TestInit
@@ -122,8 +124,39 @@ class APITest(unittest.TestCase):
         
         thread.sender.unregister()
         receiver.shutdown()
-
-
+        
+        
+    def testAgentConfigurationRetrieving(self):
+        """
+        Test that getting some agent details (config values from config.Agent
+        section) will be correctly propagated into Alert instances.
+        Alert instance is obtained via API.getPredefinedAlert factory.
+        
+        """ 
+        d = dict(Additional = "detail")
+        # instantiate just plain Alert, no configuration to take
+        # into account at this point
+        a = Alert(**d)
+        self.assertEqual(a["HostName"], None)
+        self.assertEqual(a["Contact"], None)
+        self.assertEqual(a["TeamName"], None)
+        self.assertEqual(a["AgentName"], None)
+        self.assertEqual(a["Additional"], "detail")
+        # instantiate via factory which reads configuration instance
+        config = Configuration()
+        config.section_("Agent")
+        config.Agent.hostName = "some1"
+        config.Agent.contact = "some2"
+        config.Agent.teamName = "some3"
+        config.Agent.agentName = "some4"
+        a = alertAPI.getPredefinedAlert(**d)
+        self.assertEqual(a["HostName"], "some1")
+        self.assertEqual(a["Contact"], "some2")
+        self.assertEqual(a["TeamName"], "some3")
+        self.assertEqual(a["AgentName"], "some4")
+        self.assertEqual(a["Additional"], "detail")
+        
+        
         
 if __name__ == "__main__":
     unittest.main()

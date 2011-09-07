@@ -224,7 +224,7 @@ class EDMExceptionHandler(DiagnosticHandler):
 
         if os.path.exists(outLog):
             logTail = BasicAlgos.tail(errLog, 10)
-            msg += '\n Adding last ten lines of CMSSW stdout:\n'
+            msg = '\n Adding last ten lines of CMSSW stdout:\n'
             msg += "".join(logTail)
 
         if not os.path.exists(jobRepXml):

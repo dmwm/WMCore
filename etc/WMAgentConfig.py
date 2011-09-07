@@ -225,7 +225,7 @@ config.TaskArchiver.logLevel = globalLogLevel
 config.TaskArchiver.pollInterval = 240
 config.TaskArchiver.timeOut      = workflowArchiveTimeout
 config.TaskArchiver.useWorkQueue = True
-config.TaskArchiver.workloadSummaryCouchDBURL = workloadSummaryURL
+config.TaskArchiver.workloadSummaryCouchURL = workloadSummaryURL
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0

@@ -21,7 +21,7 @@ def reqMgrConfig(
     yuiroot = "/reqmgr/yuiserver/yui",
     configCouchDB = 'reqmgr_config_cache',
     workloadCouchDB = 'reqmgr_workload_cache',
-    workloadSummaryCouchDB = "workloadSummary",
+    workloadSummaryCouchDB = "workloadsummary",
     connectURL = None,
     startup = "Root.py"):
 

@@ -654,5 +654,76 @@ class TestChangeState(unittest.TestCase):
                          "Error: Wrong exit code.")
         return
 
+
+    def testJobKilling(self):
+        """
+        _testJobKilling_
+
+        Test that we can successfully set jobs to the killed state
+        """
+
+        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
+        change = ChangeState(DefaultConfig.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", seName = "somese.cern.ch")
+        
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        for i in range(4):
+            newFile = File(lfn = "File%s" % i, locations = set(["somese.cern.ch"]))
+            newFile.create()
+            testFileset.addFile(newFile)
+
+        testFileset.commit()
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        split_algo = "FileBased")
+        testSubscription.create()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        assert len(jobGroup.jobs) == 4, \
+               "Error: Splitting should have created four jobs."
+
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Processing"
+        testJobB = jobGroup.jobs[1]
+        testJobB["user"] = "sfoulkes"
+        testJobB["group"] = "DMWM"
+        testJobB["taskType"] = "Processing"        
+        testJobC = jobGroup.jobs[2]
+        testJobC["user"] = "sfoulkes"
+        testJobC["group"] = "DMWM"
+        testJobC["taskType"] = "Processing"        
+        testJobD = jobGroup.jobs[3]
+        testJobD["user"] = "sfoulkes"
+        testJobD["group"] = "DMWM"
+        testJobD["taskType"] = "Processing"
+
+        change.persist([testJobA], "created", "new")
+        change.persist([testJobB], "jobfailed", "executing")
+        change.persist([testJobC, testJobD], "executing", "created")
+
+        change.persist([testJobA], "killed", "created")
+        change.persist([testJobB], "killed", "jobfailed")
+        change.persist([testJobC, testJobD], "killed", "executing")
+
+        for job in [testJobA, testJobB, testJobC, testJobD]:
+            job.load()
+            self.assertEqual(job['retry_count'], 99999)
+            self.assertEqual(job['state'], 'killed')
+
+        return
+
 if __name__ == "__main__":
     unittest.main()

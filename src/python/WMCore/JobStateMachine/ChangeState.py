@@ -226,7 +226,10 @@ class ChangeState(WMObject, WMConnectionBase):
             self.incrementRetryDAO.execute(jobs,
                                            conn = self.getDBConn(),
                                            transaction = self.existingTransaction())
-        
+        if newstate == "killed":
+            self.incrementRetryDAO.execute(jobs, increment = 99999,
+                                           conn = self.getDBConn(),
+                                           transaction = self.existingTransaction())
         for job in jobs:
             job['state'] = newstate
             job['oldstate'] = oldstate

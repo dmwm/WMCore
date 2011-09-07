@@ -49,7 +49,7 @@ class Dataset(StartPolicyInterface):
                 # dbs call doesn't need to be made in NumOfFiles, and NumOfEvents
                 # type. so only for the performance reason lumi splitting was handled
                 # differently
-                if self.args['SliceType'] == self.lumiType:
+                if self.args['SliceType'] == self.lumiType and not block.get(self.lumiType):
                     blockSummary = dbs.getDBSSummaryInfo(block = block['Name'])
                     work += blockSummary[self.args['SliceType']]
                 else:
@@ -107,7 +107,9 @@ class Dataset(StartPolicyInterface):
 
             # check run restrictions
             if runWhiteList or runBlackList:
-                runs = set(dbs.listRuns(block = block['Name']))
+                # listRuns returns a run number per lumi section
+                full_lumi_list = dbs.listRuns(block = block['Name'])
+                runs = set(full_lumi_list)
                 
                 # apply blacklist
                 runs = runs.difference(runBlackList)
@@ -117,6 +119,15 @@ class Dataset(StartPolicyInterface):
                 # any runs left are ones we will run on, if none ignore block
                 if not runs:
                     continue
+
+                # recalculate effective size of block
+                # make a guess for new event/file numbers from ratio
+                # of accepted lumi sections (otherwise have to pull file info)
+                accepted_lumis = [x for x in full_lumi_list if x in runs]
+                ratio_accepted = 1. * len(accepted_lumis) / len(full_lumi_list)
+                block[self.lumiType] = len(accepted_lumis)
+                block['NumberOfFiles'] *= ratio_accepted
+                block['NumberOfEvents'] *= ratio_accepted
 
             validBlocks.append(block)
             locations = locations.intersection(set(sitesFromStorageEelements([x['Name'] for x in block['StorageElementList']])))

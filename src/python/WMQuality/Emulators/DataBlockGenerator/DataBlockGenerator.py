@@ -76,7 +76,9 @@ class DataBlockGenerator(object):
                           'NumberOfEvents': GlobalParams.numOfEventsPerFile(),
                           'FileSize': GlobalParams.sizeOfFile(),
                           'ParentList': [],
-                          'LumiList': [{'RunNumber': run,
+                          # assign run and lumi numbers in appropriate range: note run numbers
+                          #  for successive blocks may overlap if numOfRunsPerFile() > 1
+                          'LumiList': [{'RunNumber': int(round((1. * lumi * (GlobalParams.numOfRunsPerFile() - 1) / GlobalParams.numOfLumisPerBlock()) + run)),     #random.randint(run, run + GlobalParams.numOfRunsPerFile() -1),
                                         'LumiSectionNumber': run*(GlobalParams.numOfLumisPerBlock()) + lumi -1}
                                        for lumi in range(GlobalParams.numOfLumisPerBlock())]
                           }

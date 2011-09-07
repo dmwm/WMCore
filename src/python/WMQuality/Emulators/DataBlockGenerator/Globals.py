@@ -37,6 +37,7 @@ class GlobalParams(object):
 
     _num_of_blocks_per_dataset = 2
     _num_of_files_per_block = 5
+    _num_of_runs_per_file = 1
     _num_of_lumis_per_block = 2
     _num_of_events_per_file = 1000
     _size_of_file = 20000000
@@ -48,6 +49,10 @@ class GlobalParams(object):
     @staticmethod
     def numOfFilesPerBlock():
         return GlobalParams._num_of_files_per_block
+
+    @staticmethod
+    def numOfRunsPerFile():
+        return GlobalParams._num_of_runs_per_file
     
     @staticmethod
     def numOfEventsPerFile():
@@ -68,7 +73,11 @@ class GlobalParams(object):
     @staticmethod
     def setNumOfFilesPerBlock(numOfFilesPerBlock):
         GlobalParams._num_of_files_per_block = numOfFilesPerBlock
-    
+
+    @staticmethod
+    def setNumOfRunsPerFile(numOfRunsPerFile):
+        GlobalParams._num_of_runs_per_file = numOfRunsPerFile
+
     @staticmethod
     def setNumOfEventsPerFile(numOfEventsPerFile):
         GlobalParams._num_of_events_per_filet = numOfEventsPerFile
@@ -93,6 +102,7 @@ class GlobalParams(object):
         """
         GlobalParams._num_of_blocks_per_dataset = 2
         GlobalParams._num_of_files_per_block = 5
+        GlobalParams._num_of_runs_per_file = 1
         GlobalParams._num_of_lumis_per_block = 2
         GlobalParams._num_of_events_per_file = 1000
         GlobalParams._size_of_file = 20000000

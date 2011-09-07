@@ -102,7 +102,7 @@ class DBSReader:
         if dataset:
             runs = []
             for block in self.dataBlocks.getBlocks(dataset):
-                runs.extend(getRunsFromBlock(block))
+                runs.extend(getRunsFromBlock(block['Name']))
             return runs
         return None
 

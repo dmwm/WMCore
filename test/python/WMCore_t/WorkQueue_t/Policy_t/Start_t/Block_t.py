@@ -186,6 +186,35 @@ class BlockTestCase(unittest.TestCase):
             for unit in units:
                 self.assertEqual(2, unit['Jobs'])
 
+    def testRunWhitelist(self):
+        """ReReco lumi split with Run whitelist"""
+        # get files with multiple runs
+        Globals.GlobalParams.setNumOfRunsPerFile(2)
+        # a large number of lumis to ensure we get multiple runs
+        Globals.GlobalParams.setNumOfLumisPerBlock(10)
+        splitArgs = dict(SliceType = 'NumberOfLumis', SliceSize = 1)
+
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload.setRunWhitelist([2, 3])
+        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+        for task in Tier1ReRecoWorkload.taskIterator():
+            units = Block(**splitArgs)(Tier1ReRecoWorkload, task)
+            # Blocks 1 and 2 match run distribution
+            self.assertEqual(2, len(units))
+            # Check number of jobs in element match number for
+            # dataset in run whitelist
+            jobs = 0
+            wq_jobs = 0
+            for unit in units:
+                wq_jobs += unit['Jobs']
+                runs = dbs[inputDataset.dbsurl].listRuns(block = unit['Inputs'].keys()[0])
+                jobs += len([x for x in runs if x in getFirstTask(Tier1ReRecoWorkload).inputRunWhitelist()])
+            self.assertEqual(int(jobs / splitArgs['SliceSize'] ) , int(wq_jobs))
+
     def testInvalidSpecs(self):
         """Specs with no work"""
         # no dataset

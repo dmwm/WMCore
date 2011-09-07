@@ -94,18 +94,31 @@ class Block(StartPolicyInterface):
 
             # check run restrictions
             if runWhiteList or runBlackList:
-                runs = set(dbs.listRuns(block = block['Name']))
+                # listRuns returns a run number per lumi section
+                full_lumi_list = dbs.listRuns(block = block['Name'])
+                runs = set(full_lumi_list)
 
                 # apply blacklist
                 runs = runs.difference(runBlackList)
                 # if whitelist only accept listed runs
                 if runWhiteList:
                     runs = runs.intersection(runWhiteList)
+
                 # any runs left are ones we will run on, if none ignore block
                 if not runs:
                     continue
 
-            if self.args['SliceType'] == self.lumiType:
+                # recalculate effective size of block
+                # make a guess for new event/file numbers from ratio
+                # of accepted lumi sections (otherwise have to pull file info)
+                accepted_lumis = [x for x in full_lumi_list if x in runs]
+                ratio_accepted = 1. * len(accepted_lumis) / len(full_lumi_list)
+                block[self.lumiType] = len(accepted_lumis)
+                block['NumberOfFiles'] *= ratio_accepted
+                block['NumberOfEvents'] *= ratio_accepted
+
+            # get lumi info if needed and not already available
+            if self.args['SliceType'] == self.lumiType and not block.get(self.lumiType):
                 blockSummary = dbs.getDBSSummaryInfo(block = block["Name"])
                 block[self.lumiType] = blockSummary[self.lumiType]
 

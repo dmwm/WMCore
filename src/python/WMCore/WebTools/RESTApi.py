@@ -20,13 +20,14 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 """
 
 import cgi
+import traceback
 
-
+from cherrypy import expose, request, response, HTTPError
+from cherrypy.lib.cptools import accept
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WMFactory import WMFactory
-from cherrypy import expose, request, response, HTTPError
-from cherrypy.lib.cptools import accept
+from WMCore.Lexicon import replaceToSantizeURL
 
 class RESTApi(WebAPI):
     """
@@ -122,7 +123,10 @@ class RESTApi(WebAPI):
             for kwarg in kwargs.keys():
                 if isinstance(kwargs[kwarg], cgi.FieldStorage):
                     kwargs[kwarg] = 'FieldStorage class, not printed.'
-            self.debug('call to %s with args: %s kwargs: %s resulted in %s' % (request.method, args, kwargs, str(e)))
+            debugMsg = replaceToSantizeURL("""call to %s with args: %s kwargs: %s resulted in %s \n
+                                              stack trace: %s""" % (request.method, args,
+                                                     kwargs, str(e), traceback.format_exc()))
+            self.debug(debugMsg)
             return self._formatResponse({'exception': 500,
                                         'type': e.__class__.__name__,
                                         'message': 'Server Error'}, expires=0,

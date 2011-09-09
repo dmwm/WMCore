@@ -101,7 +101,7 @@ class LexiconTest(unittest.TestCase):
         assert searchstr('/store/mc/Fall08/BBJets250to500-madgraph/*'), 'valid search string not validated'
         assert searchstr('/QCD_EMenriched_Pt30to80/Summer08_IDEAL_V11_redigi_v2/GEN-SIM-RAW#cfc0a501-e845-4576-af8a-f811165d82d9'), 'valid search string not validated'
         assert searchstr('STREAMER'), 'valid search string not validated'
- 
+
     def testBadSearchstr(self):
         # Check that invalid searchstr raise an exception
         self.assertRaises(AssertionError, searchstr, 'Drop Table')
@@ -475,6 +475,47 @@ class LexiconTest(unittest.TestCase):
         self.assertEqual(urlDict['url'], noPassURL)
         self.assertEqual(urlDict['username'], None)
         self.assertEqual(urlDict['password'], None)
+
+    def testReplaceToSantizeURL(self):
+        """
+        Checks that a URI containing a username password has that information
+        removed when an error occurs.
+        """
+        dbUrl = "mysql://DBUSER:DBSPASSWORD@localhost:80808/WMAgentDB"
+        errorMsg = "DB failure: %s" % (dbUrl)
+        dbUrl2 = "mysql://localhost:80808/WMAgentDB"
+        sanitizedError = "DB failure: %s" % (dbUrl2)
+        self.assertEqual(replaceToSantizeURL(errorMsg), sanitizedError)
+
+        dbUrl = "MySql://DBUSER:DBSPASSWORD@localhost:80808/WMAgentDB"
+        errorMsg = "DB failure: %s" % (dbUrl)
+        dbUrl2 = "MySql://localhost:80808/WMAgentDB"
+        sanitizedError = "DB failure: %s" % (dbUrl2)
+        self.assertEqual(replaceToSantizeURL(errorMsg), sanitizedError)
+
+        dbUrl = "mysql://localhost:80808/WMAgentDB"
+        errorMsg = "DB failure: %s" % (dbUrl)
+        dbUrl2 = "mysql://localhost:80808/WMAgentDB"
+        sanitizedError = "DB failure: %s" % (dbUrl2)
+        self.assertEqual(replaceToSantizeURL(errorMsg), sanitizedError)
+
+        dbUrl = "http://DBUSER:DBSPASSWORD@localhost:80808/WMAgentDB"
+        errorMsg = "DB failure: %s" % (dbUrl)
+        dbUrl2 = "http://localhost:80808/WMAgentDB"
+        sanitizedError = "DB failure: %s" % (dbUrl2)
+        self.assertEqual(replaceToSantizeURL(errorMsg), sanitizedError)
+
+        dbUrl = "HtTp://DBUSER:DBSPASSWORD@localhost:80808/WMAgentDB"
+        errorMsg = "DB failure: %s" % (dbUrl)
+        dbUrl2 = "HtTp://localhost:80808/WMAgentDB"
+        sanitizedError = "DB failure: %s" % (dbUrl2)
+        self.assertEqual(replaceToSantizeURL(errorMsg), sanitizedError)
+
+        dbUrl = "http://localhost:80808/WMAgentDB"
+        errorMsg = "DB failure: %s" % (dbUrl)
+        dbUrl2 = "http://localhost:80808/WMAgentDB"
+        sanitizedError = "DB failure: %s" % (dbUrl2)
+        self.assertEqual(replaceToSantizeURL(errorMsg), sanitizedError)
 
 if __name__ == "__main__":
     unittest.main()

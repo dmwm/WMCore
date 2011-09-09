@@ -127,17 +127,6 @@ class RESTModel(WebAPI):
         else:
             return data, self.defaultExpires
 
-    def addDAO(self, verb, methodKey, daoStr, args=[], validation=[],
-                version=1, daoFactory = None, expires = None,
-                secured=False, security_params={}):
-        """
-        addDAO will be deprecated in favour of the private _addDAO
-        """
-        msg = 'addDAO will be deprecated in favour of the private _addDAO - please update your code'
-        self.warning(msg)
-        self._addDAO(verb, methodKey, daoStr, args, validation, version, daoFactory, expires, secured, security_params)
-
-
     def _addDAO(self, verb, methodKey, daoStr, args=[], validation=[],
                version=1, daoFactory = None, expires = None,
                secured=False, security_params={}):
@@ -169,16 +158,6 @@ class RESTModel(WebAPI):
             expires = self.defaultExpires
         self._addMethod(verb, methodKey, function, args, validation,
                        version, expires, secured, security_params)
-
-    def addMethod(self, verb, methodKey, function, args=[],
-                 validation=[], version=1, expires = None,
-                 secured=False, security_params={}):
-        """
-        addMethod will be deprecated in favour of the private _addMethod
-        """
-        msg = 'addMethod will be deprecated in favour of the private _addMethod - please update your code'
-        self.warning(msg)
-        self._addMethod(verb, methodKey, function, args, validation, version, expires, secured, security_params)
 
     def _addMethod(self, verb, methodKey, function, args=[],
                   validation=[], version=1, expires = None,

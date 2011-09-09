@@ -44,19 +44,19 @@ def searchstr(candidate):
     Used to check a DBS input that searches for names in dbs. Note block name, dataset name, file name have their own
     searching string.
     No white space found in names in DBS production and allowed to elimate input like "Drop table table1".
-    letters, numbers, periods, dashes, underscores 
-    
+    letters, numbers, periods, dashes, underscores
+
     """
     if candidate =='' :
         return candidate
     return check(r'^[a-zA-Z0-9/%*][a-zA-Z0-9/\.\-_%*/#]*$', candidate)
 
 def namestr(candidate):
-    """ 
+    """
     Any input used in DBS and not defined here should pass namestr check.
     No white space found in names in DBS production and allowed to elimate input like "Drop table table1".
-    letters, numbers, periods, dashes, underscores,#,/ 
-    
+    letters, numbers, periods, dashes, underscores,#,/
+
     """
     if candidate =='' or not candidate :
         return candidate
@@ -326,3 +326,15 @@ def sanitizeURL(url):
 
     return {'url': url , 'username': endpoint_components.username,
             'password': endpoint_components.password}
+
+def replaceToSantizeURL(url_str):
+    """
+    Take arbitrary string and search for urls with user and password and
+    replace it with sanitized url.
+    """
+    def _repUrl(matchObj):
+        return matchObj.group(1) + matchObj.group(4)
+
+    # TODO: won't catch every case (But is it good enough (trade off to performance)?)
+    urlRegExpr = r'\b(((?i)http|https|ftp|mysql|oracle|sqlite)+://)([^:]+:[^@]+@)(\S+)\b'
+    return re.sub(urlRegExpr, _repUrl, url_str)

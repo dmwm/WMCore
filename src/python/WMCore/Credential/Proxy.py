@@ -513,7 +513,7 @@ the requested server.')
 'Error delegating credentials : myproxyserver is not specified.')
             return False
 
-    def logonRenewMyProxy( self, proxyFilename = None ):
+    def logonRenewMyProxy( self, proxyFilename = None, credServerName = None ):
         """
         Refresh/retrieve proxyFilename in/from myproxy.
         """
@@ -532,7 +532,9 @@ the requested server.')
             # get vo, group and role from the current certificate
             getVoCmd = 'env X509_USER_PROXY=%s voms-proxy-info -vo' \
                             % proxyFilename
-            attribute, error, retcode = execute_command(self.setUI() + getVoCmd, self.logger, self.commandTimeout)
+            attribute, error, retcode = execute_command(self.setUI() + getVoCmd,
+                                                        self.logger,
+                                                        self.commandTimeout)
             if retcode != 0:
                 raise CredentialException("Unable to get VO for proxy \
                   %s! Exit code:%s"%(proxyFilename, retcode) )
@@ -541,7 +543,9 @@ the requested server.')
             # at least /cms/Role=NULL/Capability=NULL
             roleCapCmd = 'env X509_USER_PROXY=%s voms-proxy-info -fqan' \
                         % proxyFilename
-            attribute, error, retcode = execute_command(self.setUI() + roleCapCmd, self.logger, self.commandTimeout)
+            attribute, error, retcode = execute_command(self.setUI() + roleCapCmd,
+                                                        self.logger,
+                                                        self.commandTimeout)
             if retcode != 0:
                 raise CredentialException(\
   "Unable to get FQAN for proxy %s! Exit code:%s since %s"\
@@ -559,9 +563,8 @@ the requested server.')
         voAttribute = self.vo
 
         # get the credential name for this retriever
-        credServerName = sha1( \
-self.getSubjectFromCert( self.serverCert )\
-             ).hexdigest()
+        if not credServerName:
+            credServerName = sha1(self.getSubjectFromCert( self.serverCert )).hexdigest()
 
         # compose the delegation or renewal commands
         # with the regeneration of Voms extensions

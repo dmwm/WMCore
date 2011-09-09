@@ -6,8 +6,10 @@ VanillaCondorPlugin
 BossAir plugin for vanilla condor
 """
 import os.path
+import logging
 
 from WMCore.BossAir.Plugins.CondorPlugin import CondorPlugin
+from WMCore.Credential.Proxy             import Proxy
 
 
 class VanillaCondorPlugin(CondorPlugin):
@@ -18,7 +20,40 @@ class VanillaCondorPlugin(CondorPlugin):
     us to submit vanilla jobs.
     """
 
-    def initSubmit(self):
+    def __init__(self, config):
+
+        CondorPlugin.__init__(self, config)
+
+        self.proxy      = None
+        self.serverCert = getattr(config.BossAir, 'delegatedServerCert', None)
+        self.serverKey  = getattr(config.BossAir, 'delegatedServerKey', None)
+        self.myproxySrv = getattr(config.BossAir, 'myproxyServer', None)
+        self.proxyDir   = getattr(config.BossAir, 'proxyDir', '/tmp/')
+        self.serverHash = getattr(config.BossAir, 'delegatedServerHash', None)
+
+        if self.serverCert and self.serverKey and self.myproxySrv:
+            self.proxy = self.setupMyProxy()
+
+        return
+
+    def setupMyProxy(self):
+        """
+        _setupMyProxy_
+
+        Setup a WMCore.Credential.Proxy object with which to retrieve
+        proxies from myproxy using the server Cert
+        """
+
+        args = {}
+        args['server_cert'] = self.serverCert
+        args['server_key']  = self.serverKey
+        args['myProxySvr']  = self.myproxySrv
+        args['credServerPath'] = self.proxyDir
+        args['logger'] = logging
+        return Proxy(args = args)
+        
+
+    def initSubmit(self, jobList = None):
         """
         _makeConfig_
 
@@ -44,7 +79,28 @@ class VanillaCondorPlugin(CondorPlugin):
         # Things that are necessary for the glide-in
 
         jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
-        
+
+        if self.proxy:
+            # Then we have to retrieve a proxy for this user
+            job0   = jobList[0]
+            userDN = job0.get('userdn', None)
+            if not userDN:
+                # Then we can't build ourselves a proxy
+                logging.error("Asked to build myProxy plugin, but no userDN available!")
+                logging.error("Checked job %i" % job0['id'])
+                return jdl
+            # Build the proxy
+            # First set the userDN of the Proxy object
+            self.proxy.userDN = userDN
+            # Second, get the actual proxy
+            if self.serverHash:
+                # If we built our own serverHash, we have to be able to send it in
+                filename = self.proxy.logonRenewMyProxy(credServerName = self.serverHash)
+            else:
+                # Else, build the serverHash from the proxy sha1
+                filename = self.proxy.logonRenewMyProxy()
+            jdl.append("x509userproxy = %s\n" % filename)
+
         return jdl
 
 
@@ -61,7 +117,7 @@ class VanillaCondorPlugin(CondorPlugin):
             logging.error("No jobs passed to plugin")
             return None
 
-        jdl = self.initSubmit()
+        jdl = self.initSubmit(jobList)
 
 
         # For each script we have to do queue a separate directory, etc.

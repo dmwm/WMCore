@@ -228,6 +228,7 @@ class WMBSHelperTest(unittest.TestCase):
             for job in jobList:
                 job['plugin'] = 'TestPlugin'
                 job['userdn'] = 'Steve'
+                job['custom']['location'] = 'site1'
             baAPI.createNewJobs(wmbsJobs = jobList)
 
         # We'll create an unrelated workflow to verify that it isn't affected

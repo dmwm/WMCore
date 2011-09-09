@@ -345,6 +345,7 @@ class BossAirTest(unittest.TestCase):
             testJob = Job(name = '%s-%i' %(name, index))
             testJob.addFile(f)
             testJob["location"]  = f.getLocations()[0]
+            testJob['custom']['location'] = f.getLocations()[0]
             testJob['task']    = task.getPathName()
             testJob['sandbox'] = task.data.input.sandbox
             testJob['spec']    = os.path.join(self.testDir, 'basicWorkload.pcl')
@@ -400,6 +401,7 @@ class BossAirTest(unittest.TestCase):
         for i in range(nJobs):
             testJob = Job(name = '%s-%i' % (nameStr, i))
             testJob['location'] = location
+            testJob['custom']['location'] = location
             testJob['userdn']   = 'moron'
             testJob['owner']    = 'moron'
             testJob.create(testJobGroup)

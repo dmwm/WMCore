@@ -13,7 +13,7 @@ import copy
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Database.Transaction import Transaction
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.AddLocation import AddLocation as \
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.AddLocation import AddLocation as \
      MySQLAddLocation
 
 class AddLocation(MySQLAddLocation):

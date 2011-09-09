@@ -56,6 +56,10 @@ class Create(DBCreator):
 
         self.requiredTables = ["01bl_status", "02bl_runjob"]
 
+        self.sequence_tables = []
+        self.sequence_tables.append("bl_status")
+        self.sequence_tables.append("bl_runjob")
+
 
         self.create['01bl_status'] = \
         """CREATE TABLE bl_status (
@@ -75,7 +79,7 @@ class Create(DBCreator):
            sched_status  INTEGER,
            retry_count   INTEGER,
            status_time   INTEGER,
-           location      VARCHAR(255),
+           location      INTEGER,
            user_id       INTEGER
            ) %s  """ % (tablespaceTable)
 
@@ -102,10 +106,15 @@ class Create(DBCreator):
                REFERENCES bl_status(id) ON DELETE CASCADE)"""
 
 
-        self.constraints["02_fk_bl_runjob"] = \
+        self.constraints["03_fk_bl_runjob"] = \
             """ALTER TABLE bl_runjob ADD
                (CONSTRAINT bl_runjob_fk3 FOREIGN KEY(user_id)
                REFERENCES wmbs_users(id) ON DELETE CASCADE)"""
+
+        self.constraints["04_fk_bl_runjob"] = \
+            """ALTER TABLE bl_runjob ADD
+               (CONSTRAINT bl_runjob_fk4 FOREIGN KEY(location)
+               REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
 
         
 

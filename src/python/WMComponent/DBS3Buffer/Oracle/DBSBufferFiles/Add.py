@@ -8,7 +8,7 @@ Oracle implementation of AddFile
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.Add import Add as MySQLAdd
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.Add import Add as MySQLAdd
 
 class Add(MySQLAdd):
     """

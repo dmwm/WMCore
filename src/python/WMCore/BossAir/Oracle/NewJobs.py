@@ -16,12 +16,13 @@ class NewJobs(MySQLNewJobs):
     """
 
 
-    sql = """INSERT INTO bl_runjob (id, wmbs_id, grid_id, bulk_id, sched_status, retry_count, user_id)
-               SELECT (bl_runjob_SEQ.nextval, :jobid, :gridid, :bulkid,
+    sql = """INSERT INTO bl_runjob (id, wmbs_id, grid_id, bulk_id, sched_status, retry_count, user_id, location)
+               SELECT bl_runjob_SEQ.nextval, :jobid, :gridid, :bulkid,
                  (SELECT id FROM bl_status WHERE name = :status),
                  :retry_count,
-                 (SELECT id FROM wmbs_users WHERE cert_dn = :userdn)
-               ) FROM dual
+                 (SELECT id FROM wmbs_users WHERE cert_dn = :userdn),
+                 (SELECT id FROM wmbs_location WHERE site_name = :location)
+               FROM dual
                WHERE NOT EXISTS (SELECT id FROM bl_runjob WHERE wmbs_id = :jobid
-                                 AND retry_count = :retry_count)"""
+                                   AND retry_count = :retry_count)"""
 

@@ -8,7 +8,7 @@ Oracle implementation of DBSBuffer.SetLocationByLFN
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.SetLocationByLFN import SetLocationByLFN as MySQLSetLocationByLFN
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.SetLocationByLFN import SetLocationByLFN as MySQLSetLocationByLFN
 
 class SetLocationByLFN(MySQLSetLocationByLFN):
     """

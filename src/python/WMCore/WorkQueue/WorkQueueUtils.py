@@ -5,6 +5,7 @@ __all__ = ['get_remote_queue', 'get_dbs', 'sitesFromStorageEelements',
            'queueConfigFromConfigObject', 'queueFromConfig']
 
 import os
+import logging
 
 # Should probably import this but don't want to create the dependency
 WMBS_REST_NAMESPACE = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
@@ -76,7 +77,7 @@ def queueConfigFromConfigObject(config):
     if not hasattr(wqManager, 'namespace'):
         wqManager.namespace = 'WMComponent.WorkQueueManager.WorkQueueManager'
     if not hasattr(wqManager, 'logLevel'):
-        wqManager.logLevel = 'INFO'
+        wqManager.logLevel = logging.INFO
     if not hasattr(wqManager, 'pollInterval'):
         wqManager.pollInterval = 600
 
@@ -140,10 +141,9 @@ def queueConfigFromConfigObject(config):
         import threading
         myThread = threading.currentThread()
         if not hasattr(myThread, 'logger'):
-            import logging
             logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(module)s: %(message)s',
                                 level = wqManager.logLevel)
-            myThread.logger = logging.getLogger()
+            myThread.logger = logging.getLogger('workqueue')
         qConfig['logger'] = myThread.logger
 
     # ReqMgr params

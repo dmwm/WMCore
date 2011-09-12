@@ -158,9 +158,19 @@ class ParentlessMergeBySize(JobFactory):
         daoFactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
-        
-        mergeDAO = daoFactory(classname = "Subscriptions.GetFilesForParentlessMerge")
-        myThread = threading.currentThread()
+
+        if self.forceMerge:
+            # Check and see if we have an injected workflow
+            # If the workflow is not injected, then we can't forceMerge
+            getAction = daoFactory(classname = "Workflow.CheckInjectedWorkflow")
+            injected  = getAction.execute(name = self.subscription["workflow"].name,
+                                          conn = myThread.transaction.conn,
+                                          transaction = True)
+            
+            if not injected:
+                self.forceMerge = False
+
+        mergeDAO       = daoFactory(classname = "Subscriptions.GetFilesForParentlessMerge")
         mergeableFiles = mergeDAO.execute(self.subscription["id"],
                                           conn = myThread.transaction.conn,
                                           transaction = True)
@@ -175,3 +185,5 @@ class ParentlessMergeBySize(JobFactory):
                     self.defineMergeJobs(groupedFiles[seName][runNumber])
 
         return
+
+

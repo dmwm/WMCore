@@ -219,7 +219,15 @@ class WMBSMergeBySize(JobFactory):
                               self.subscription["fileset"].id,
                               conn = myThread.transaction.conn,
                               transaction = True)
-            self.forceMerge = True
+
+            getAction = daoFactory(classname = "Workflow.CheckInjectedWorkflow")
+            injected  = getAction.execute(name = self.subscription["workflow"].name,
+                                          conn = myThread.transaction.conn,
+                                          transaction = True)
+            if injected:
+                self.forceMerge = True
+            else:
+                self.forceMerge = False
         
         mergeDAO = daoFactory(classname = "Subscriptions.GetFilesForMerge")
         mergeableFiles = mergeDAO.execute(self.subscription["id"],

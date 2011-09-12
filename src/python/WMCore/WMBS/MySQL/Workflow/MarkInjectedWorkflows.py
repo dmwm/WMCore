@@ -32,7 +32,7 @@ class MarkInjectedWorkflows(DBFormatter):
         # Get the specs
         binds = []
         for name in names:
-            binds.append({'name': name, 'injected': injected})
+            binds.append({'name': name})
 
         result = self.dbi.processData(self.selectSQL, binds, conn = conn,
                                       transaction = transaction)

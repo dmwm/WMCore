@@ -362,7 +362,7 @@ class WorkflowTest(unittest.TestCase):
 
         workflows = []
         for i in range(0, 10):
-            testWorkflow = Workflow(spec = spec, owner = owner,
+            testWorkflow = Workflow(spec = "sp00%i" % i, owner = owner,
                                     name = "wf00%i" % i, task = "task%i" % i)
             testWorkflow.create()
             workflows.append(testWorkflow)

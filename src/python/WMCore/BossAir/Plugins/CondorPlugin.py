@@ -17,6 +17,7 @@ import multiprocessing
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
+from WMCore.Credential.Proxy           import Proxy
 from WMCore.DAOFactory                 import DAOFactory
 from WMCore.WMInit                     import getWMBASE
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
@@ -60,7 +61,7 @@ def submitWorker(input, results):
 
         if work == 'STOP':
             # Put the brakes on
-            break        
+            break
 
         command = work.get('command', None)
         idList  = work.get('idList', [])
@@ -105,15 +106,15 @@ class CondorPlugin(BasePlugin):
 
     Condor plugin for glide-in submissions
     """
-    
+
     @staticmethod
     def stateMap():
         """
         For a given name, return a global state
-    
-    
+
+
         """
-    
+
         stateDict = {'New': 'Pending',
                      'Idle': 'Pending',
                      'Running': 'Running',
@@ -123,10 +124,10 @@ class CondorPlugin(BasePlugin):
                      'Timeout': 'Error',
                      'Removed': 'Running',
                      'Unknown': 'Error'}
-        
+
         # This call is optional but needs to for testing
         #BasePlugin.verifyState(stateDict)
-        
+
         return stateDict
 
     def __init__(self, config):
@@ -134,10 +135,10 @@ class CondorPlugin(BasePlugin):
         self.config = config
 
         BasePlugin.__init__(self, config)
-        
+
         self.locationDict = {}
 
-        myThread = threading.currentThread()        
+        myThread = threading.currentThread()
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
         self.locationAction = daoFactory(classname = "Locations.GetSiteInfo")
@@ -152,7 +153,7 @@ class CondorPlugin(BasePlugin):
         else:
             self.unpacker = os.path.join(getWMBASE(),
                                          'WMCore/WMRuntime/Unpacker.py')
-            
+
         self.agent      = getattr(config.Agent, 'agentName', 'WMAgent')
         self.sandbox    = None
         self.scriptFile = None
@@ -166,8 +167,17 @@ class CondorPlugin(BasePlugin):
         self.input    = multiprocessing.Queue()
         self.result   = multiprocessing.Queue()
         self.nProcess = getattr(self.config.BossAir, 'nCondorProcesses', 4)
-        
 
+        # Set up my proxy stuff
+        self.proxy      = None
+        self.serverCert = getattr(config.BossAir, 'delegatedServerCert', None)
+        self.serverKey  = getattr(config.BossAir, 'delegatedServerKey', None)
+        self.myproxySrv = getattr(config.BossAir, 'myproxyServer', None)
+        self.proxyDir   = getattr(config.BossAir, 'proxyDir', '/tmp/')
+        self.serverHash = getattr(config.BossAir, 'delegatedServerHash', None)
+
+        if self.serverCert and self.serverKey and self.myproxySrv:
+            self.proxy = self.setupMyProxy()
 
         return
 
@@ -175,10 +185,27 @@ class CondorPlugin(BasePlugin):
     def __del__(self):
         """
         __del__
-        
+
         Trigger a close of connections if necessary
         """
         self.close()
+
+
+    def setupMyProxy(self):
+        """
+        _setupMyProxy_
+
+        Setup a WMCore.Credential.Proxy object with which to retrieve
+        proxies from myproxy using the server Cert
+        """
+
+        args = {}
+        args['server_cert'] = self.serverCert
+        args['server_key']  = self.serverKey
+        args['myProxySvr']  = self.myproxySrv
+        args['credServerPath'] = self.proxyDir
+        args['logger'] = logging
+        return Proxy(args = args)
 
 
     def close(self):
@@ -211,7 +238,7 @@ class CondorPlugin(BasePlugin):
         """
         _submit_
 
-        
+
         Submit jobs for one subscription
         """
 
@@ -276,7 +303,7 @@ class CondorPlugin(BasePlugin):
                 handle.close()
                 jdlFiles.append(jdlFile)
 
-            
+
                 # Now submit them
                 logging.info("About to submit %i jobs" %(len(jobsReady)))
                 command = "condor_submit %s" % jdlFile
@@ -408,7 +435,7 @@ class CondorPlugin(BasePlugin):
 
                 runningList.append(job)
 
-                
+
 
         return runningList, changeList, completeList
 
@@ -471,7 +498,7 @@ class CondorPlugin(BasePlugin):
             proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                     stdout = subprocess.PIPE, shell = True)
             out, err = proc.communicate()
-            
+
         return
 
 
@@ -481,18 +508,18 @@ class CondorPlugin(BasePlugin):
     # Start with submit functions
 
 
-    def initSubmit(self):
+    def initSubmit(self, jobList=None):
         """
         _makeConfig_
 
         Make common JDL header
-        """        
+        """
         jdl = []
 
 
-        # -- scriptFile & Output/Error/Log filenames shortened to 
+        # -- scriptFile & Output/Error/Log filenames shortened to
         #    avoid condorg submission errors from > 256 character pathnames
-        
+
         jdl.append("universe = vanilla\n")
         jdl.append("requirements = (Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_Site, DESIRED_Sites)\n")
         #jdl.append("should_transfer_executable = TRUE\n")
@@ -509,7 +536,30 @@ class CondorPlugin(BasePlugin):
 
         jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
         jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
-        
+
+        if self.proxy:
+            # Then we have to retrieve a proxy for this user
+            job0   = jobList[0]
+            userDN = job0.get('userdn', None)
+            if not userDN:
+                # Then we can't build ourselves a proxy
+                logging.error("Asked to build myProxy plugin, but no userDN available!")
+                logging.error("Checked job %i" % job0['id'])
+                return jdl
+            logging.error("Fetching proxy for %s" % userDN)
+            # Build the proxy
+            # First set the userDN of the Proxy object
+            self.proxy.userDN = userDN
+            # Second, get the actual proxy
+            if self.serverHash:
+                # If we built our own serverHash, we have to be able to send it in
+                filename = self.proxy.logonRenewMyProxy(credServerName = self.serverHash)
+            else:
+                # Else, build the serverHash from the proxy sha1
+                filename = self.proxy.logonRenewMyProxy()
+            logging.error("Proxy stored in %s" % filename)
+            jdl.append("x509userproxy = %s\n" % filename)
+
         return jdl
 
 
@@ -528,7 +578,7 @@ class CondorPlugin(BasePlugin):
             logging.error("No jobs passed to plugin")
             return None
 
-        jdl = self.initSubmit()
+        jdl = self.initSubmit(jobList)
 
 
         # For each script we have to do queue a separate directory, etc.
@@ -575,7 +625,7 @@ class CondorPlugin(BasePlugin):
                     logging.error("Not setting priority")
 
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
-        
+
             jdl.append("Queue 1\n")
 
         return jdl
@@ -603,7 +653,7 @@ class CondorPlugin(BasePlugin):
     def getClassAds(self):
         """
         _getClassAds_
-        
+
         Grab classAds from condor_q using xml parsing
         """
 
@@ -621,13 +671,13 @@ class CondorPlugin(BasePlugin):
         pipe = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)
         stdout, stderr = pipe.communicate()
         classAdsRaw = stdout.split(':::')
-        
+
         if not pipe.returncode == 0:
             # Then things have gotten bad - condor_q is not responding
             logging.error("condor_q returned non-zero value %s" % str(pipe.returncode))
             logging.error("Skipping classAd processing this round")
             return None
-        
+
 
         if classAdsRaw == '':
             # We have no jobs

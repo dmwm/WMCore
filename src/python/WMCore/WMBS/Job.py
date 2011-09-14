@@ -415,6 +415,8 @@ class Job(WMBSBase, WMJob):
         for key in self["mask"].keys():
             job["mask"][key] = self["mask"][key]
 
+        job.baggage = self.baggage
+
         return job
 
 

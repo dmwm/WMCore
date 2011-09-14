@@ -156,6 +156,8 @@ class AnalysisWorkloadFactory(StdBase):
                            {'halt_job_on_file_boundaries' : False,
                             'splitOnRun' : False,
                            })
+        else:
+            self.analysisJobSplitArgs  = arguments.get('JobSplitArgs', {})
 
         self.asyncDest = arguments.get("asyncDest", "T1_US_FNAL_Buffer")
         self.publishName = arguments.get("PublishDataName", str(int(time.time())))

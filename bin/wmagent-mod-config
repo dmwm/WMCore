@@ -97,9 +97,9 @@ def modifyConfiguration(config, **args):
         config.CRABInterface.views.active.crab.jsmCacheCouchURL = args["couch_url"]
         config.CRABInterface.ACDCCouchURL = args["couch_url"]
         config.CRABInterface.configCacheCouchURL = args["couch_url"]
-        config.CRABInterface.SandBoxCache_endpoint = args["sb_hostname"]
-        config.CRABInterface.SandBoxCache_port = int(args["sb_port"])
-        config.CRABInterface.SandBoxCache_basepath = 'userfilecache/userfilecache'
+        config.CRABInterface.SandBoxCacheHost = args["sb_hostname"]
+        config.CRABInterface.SandBoxCachePort = int(args["sb_port"])
+        config.CRABInterface.SandBoxCacheBasepath = 'userfilecache/userfilecache'
         config.CRABInterface.clientMapping = args["client_mapping"]
 
     if hasattr(config,"UserFileCache"):

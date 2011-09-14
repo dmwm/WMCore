@@ -8,7 +8,6 @@ import os
 import unittest
 import logging
 import types
-import multiprocessing
 import random
 import time
 

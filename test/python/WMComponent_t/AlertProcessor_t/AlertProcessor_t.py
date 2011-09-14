@@ -62,8 +62,8 @@ class AlertProcessorTest(unittest.TestCase):
             print ex
             self.fail(str(ex))
             
-        print "AlertProcessor and its sub-components should be running now ..."
-        print "Going to stop the component ..."
+        logging.debug("AlertProcessor and its sub-components should be running now ...")
+        logging.debug("Going to stop the component ...")
                 
         # stop via component method
         try:

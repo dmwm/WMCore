@@ -284,13 +284,8 @@ class CouchErrorsPoller(BasePoller):
                         a["Details"] = details
                         a["Level"] = level
                         # #2238 AlertGenerator test can take 1 hour+ (and fail)
-                        # logging from different process context (multiprocessing.Process)
-                        # causes issues, own new logging.getLogger not helpful
-                        #logging.debug(a)
+                        logging.debug(a)
                         self.sender(a)
                         break # send only one alert, critical threshold tested first
             m = "%s: checked code:%s current occurrences:%s" % (self._myName, code, occurrences)
-            # #2238 AlertGenerator test can take 1 hour+ (and fail)
-            # logging from different process context (multiprocessing.Process)
-            # causes issues, own new logging.getLogger not helpful
-            #logging.debug(m)
+            logging.debug(m)

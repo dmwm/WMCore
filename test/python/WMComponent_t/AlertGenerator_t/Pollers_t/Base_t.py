@@ -30,6 +30,9 @@ real sending of Alert instances.
     In short, each alert sending entity to own its Sender instance, not to be
     passed it into.
     
+    This was true when Pollers were implemented by means of multiprocessing.Process
+    in the chain of tickets referenced from #2258, pollers are now Threads.
+    
 """
 
 
@@ -41,8 +44,6 @@ import time
 import random
 import shutil
 import types
-from multiprocessing import Process, Queue
-from functools import partial
 
 import psutil
 
@@ -165,13 +166,11 @@ class BaseTest(unittest.TestCase):
         poller = BasePoller(config.AlertGenerator.bogusPoller, generator)
         # define dummy check method
         poller.check = lambda: 1+1
-        p = Process(target = poller.poll, args = ())
-        p.start()
+        poller.start()
         # poller now runs
         time.sleep(0.1)
-        p.terminate()
-        poller.shutdown()
-        
+        poller.terminate()
+            
         
     def testPeriodPollerOnRealProcess(self):
         config = getConfig("/tmp")
@@ -279,7 +278,7 @@ class BaseTest(unittest.TestCase):
         # since the whole measurement cycle was done, values should have been nulled
         self.assertEqual(len(mes), 0)
         
-
+        
 
 if __name__ == "__main__":
     unittest.main()        

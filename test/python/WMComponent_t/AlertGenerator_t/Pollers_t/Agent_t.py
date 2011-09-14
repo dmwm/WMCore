@@ -132,10 +132,8 @@ class AgentTest(unittest.TestCase):
         mes = Measurements(numMeasurements)
         poller._components.append(pd)
         poller._compMeasurements.append(mes)
-        
-        proc = multiprocessing.Process(target = poller.poll, args = ())
-        proc.start()
-        self.assertTrue(proc.is_alive())
+        poller.start()
+        self.assertTrue(poller.is_alive())
 
         if expected != 0:
             while len(handler.queue) == 0:
@@ -144,10 +142,9 @@ class AgentTest(unittest.TestCase):
             time.sleep(config.period * 2)
             
         procWorker.terminate()        
-        proc.terminate()
-        poller.shutdown()
+        poller.terminate()
         receiver.shutdown()
-        self.assertFalse(proc.is_alive())
+        self.assertFalse(poller.is_alive())
         
         if expected != 0:
             # there should be just one alert received, poller should have the
@@ -283,17 +280,15 @@ class AgentTest(unittest.TestCase):
         # there is in fact input argument in this case which needs be ignored
         poller.sample = lambda proc_: random.randint(thresholdToTest - 10, thresholdToTest)
         
-        proc = multiprocessing.Process(target = poller.poll, args = ())
-        proc.start()
-        self.assertTrue(proc.is_alive())
+        poller.start()
+        self.assertTrue(poller.is_alive())
 
         # no alert shall arrive
         time.sleep(5 * self.config.AlertGenerator.componentsCPUPoller.period)
         
-        proc.terminate()
-        poller.shutdown()
+        poller.terminate()
         receiver.shutdown()
-        self.assertFalse(proc.is_alive())
+        self.assertFalse(poller.is_alive())
         
 
         

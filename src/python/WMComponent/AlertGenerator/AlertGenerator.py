@@ -19,7 +19,6 @@ Checked metrics:
 import os
 import time
 import logging
-from multiprocessing import Process
 
 from WMCore.Agent.Harness import Harness
 
@@ -53,8 +52,6 @@ configSectionsToPollersMap = {"cpuPoller": CPUPoller,
 
 
 
-# TODO
-#     clarify why .info level does not appear, .error does
 class AlertGenerator(Harness):
     """
     Agent's component to manage running of various configurable pollers.
@@ -66,10 +63,8 @@ class AlertGenerator(Harness):
         Harness.__init__(self, config)
         logging.info("%s initializing ... " % self.__class__.__name__)
         self.config = config                
-        # poller instances, its poll() will run as a background process
+        # poller instances (threads)
         self._pollers = []
-        # polling processes
-        self._procs = []
         self._createPollers()
         logging.info("%s initialized." % self.__class__.__name__)
         
@@ -93,21 +88,16 @@ class AlertGenerator(Harness):
         
         """
         logging.info("%s starting poller processes ..." % self.__class__.__name__)
-        for poller in self._pollers:
-            proc = Process(target = poller.poll, args = ())
-            proc.start()
-            self._procs.append(proc)
+        [poller.start() for poller in self._pollers]
         
         
     def stopProcessor(self):
         """
-        Method to shutdown the Alert Processor.
+        Method to shutdown the Alert Processor - stop all poller threads.
         
         """
-        # stop all poller background processes spawned from here
-        for proc, poller in zip(self._procs, self._pollers):
-            poller.shutdown()
-            proc.terminate()
+        [poller.terminate() for poller in self._pollers]
+            
         
         
     def prepareToStop(self, wait = False, stopPayload = ""):

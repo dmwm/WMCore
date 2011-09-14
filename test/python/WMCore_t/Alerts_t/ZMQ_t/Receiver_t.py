@@ -1,10 +1,12 @@
 import time
 import sys
 import unittest
+import logging
 from multiprocessing import Process, Queue
 
 import zmq
 
+from WMQuality.TestInit import TestInit
 from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts.Alert import RegisterMsg, UnregisterMsg, ShutdownMsg
 from WMCore.Alerts.ZMQ.Receiver import Receiver
@@ -45,6 +47,8 @@ class ReceiverTest(unittest.TestCase):
         Start bg process that sends messages.
         
         """
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging(logLevel = logging.DEBUG)        
         self.addr = "tcp://127.0.0.1:5557"
         self.ctrl = "tcp://127.0.0.1:5559"
         # simple printer Alert messages handler

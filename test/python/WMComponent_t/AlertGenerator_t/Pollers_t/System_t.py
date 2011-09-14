@@ -9,7 +9,6 @@ import os
 import unittest
 import logging
 import types
-import multiprocessing
 import random
 import datetime
 import time
@@ -78,9 +77,8 @@ class SystemTest(unittest.TestCase):
         poller = pollerClass(config, self.generator)
         # inject own input sample data provider, there will be 1 input argument we don't want here
         poller.sample = lambda _: random.randint(thresholdToTest, thresholdToTest + 10)
-        proc = multiprocessing.Process(target = poller.poll, args = ())
-        proc.start()
-        self.assertTrue(proc.is_alive())
+        poller.start()
+        self.assertTrue(poller.is_alive())
 
         if expected != 0:
             # wait to poller to work now ... wait for alert to arrive
@@ -97,11 +95,10 @@ class SystemTest(unittest.TestCase):
         else:
             # no alert shall arrive
             time.sleep(config.period * 2)
-            
-        proc.terminate()
-        poller.shutdown()
+        
+        poller.terminate()
         receiver.shutdown()
-        self.assertFalse(proc.is_alive())
+        self.assertFalse(poller.is_alive())
         
         if expected != 0:
             # #2238 AlertGenerator test can take 1 hour+ (and fail)
@@ -235,9 +232,8 @@ none                   4085528       628   4084900   1% /dev/shm
                                                                thresholdToTest + 10)
         handler, receiver = utils.setUpReceiver(self.generator.config.Alert.address,
                                                 self.generator.config.Alert.controlAddr)    
-        proc = multiprocessing.Process(target = poller.poll, args = ())
-        proc.start()
-        self.assertTrue(proc.is_alive())
+        poller.start()
+        self.assertTrue(poller.is_alive())
 
         # wait to poller to work now ... wait for alert to arrive
         if expected != 0:
@@ -254,10 +250,9 @@ none                   4085528       628   4084900   1% /dev/shm
         else:
             time.sleep(config.pollInterval * 2)
 
-        proc.terminate()
-        poller.shutdown()
+        poller.terminate()
         receiver.shutdown()
-        self.assertFalse(proc.is_alive())
+        self.assertFalse(poller.is_alive())
         
         if expected != 0:
             # #2238 AlertGenerator test can take 1 hour+ (and fail)

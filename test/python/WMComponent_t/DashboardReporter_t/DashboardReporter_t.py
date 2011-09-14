@@ -53,7 +53,7 @@ class DashboardReporterTest(unittest.TestCase):
         self.sites = ['T2_US_Florida', 'T2_US_UCSD', 'T2_TW_Taiwan', 'T1_CH_CERN']
         
         self.testInit = TestInit(__file__)
-        self.testInit.setLogging()
+        self.testInit.setLogging(logLevel = logging.DEBUG)
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ['WMCore.WMBS', 
                                                  'WMCore.ResourceControl',

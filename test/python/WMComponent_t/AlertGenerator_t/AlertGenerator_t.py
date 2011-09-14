@@ -200,19 +200,18 @@ class AlertGeneratorTest(unittest.TestCase):
         except Exception, ex:
             print ex
             self.fail(str(ex))
-        print "AlertGenerator and its sub-components should be running now ..."
+        logging.debug("AlertGenerator and its sub-components should be running now ...")
         
         
     def _stopComponent(self):
-        print "Going to stop the AlertGenerator ..."
+        logging.debug("Going to stop the AlertGenerator ...")
         # stop via component method
         try:
             self.generator.stopProcessor()
         except Exception, ex:
-            print ex
+            logging.error(ex)
             self.fail(str(ex))
-            
-        print "AlertGenerator should be stopped now."
+        logging.debug("AlertGenerator should be stopped now.")
         
 
     def testAlertProcessorBasic(self):
@@ -223,8 +222,8 @@ class AlertGeneratorTest(unittest.TestCase):
         """
         self._startComponent()
         # test that all poller processes are running
-        for poller, proc in zip(self.generator._pollers, self.generator._procs):
-            self.assertTrue(proc.is_alive())
+        for poller in self.generator._pollers:
+            self.assertTrue(poller.is_alive())
             #print "poller '%s' running: %s" % (poller.__class__.__name__, proc.is_alive())
         time.sleep(5)
         self._stopComponent()
@@ -284,7 +283,7 @@ class AlertGeneratorTest(unittest.TestCase):
         shutil.rmtree(d)
             
         # don't do shutdown() on poller - will take a while and it's not
-        # necessary anyway - BasePoller.poll() which does register is not
+        # necessary anyway - BasePoller.start() which does register is not
         # called here (shutdown does only unregister)    
 
         

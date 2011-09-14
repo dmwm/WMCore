@@ -133,10 +133,8 @@ def doProcessPolling(ppti):
     # the process to run upon is fooled as well here
     poller._dbProcessDetail = ProcessDetail(procWorker.pid, "TestProcess")
     poller._measurements = Measurements(numMeasurements)
-    
-    proc = multiprocessing.Process(target = poller.poll, args = ())
-    proc.start()
-    ppti.testCase.assertTrue(proc.is_alive())
+    poller.start()
+    ppti.testCase.assertTrue(poller.is_alive())
 
     if ppti.expected != 0:
         # beware - if the alert is not correctly generated, the test
@@ -155,10 +153,9 @@ def doProcessPolling(ppti):
         time.sleep(ppti.config.period * 2)
         
     procWorker.terminate()        
-    proc.terminate()
-    poller.shutdown()
+    poller.terminate()
     receiver.shutdown()
-    ppti.testCase.assertFalse(proc.is_alive())
+    ppti.testCase.assertFalse(poller.is_alive())
     
     if ppti.expected != 0:
         # #2238 AlertGenerator test can take 1 hour+ (and fail)
@@ -196,9 +193,8 @@ def doGenericValueBasedPolling(ti):
     
     handler, receiver = setUpReceiver(ti.testCase.generator.config.Alert.address,
                                       ti.testCase.generator.config.Alert.controlAddr)    
-    proc = multiprocessing.Process(target = poller.poll, args = ())
-    proc.start()
-    ti.testCase.assertTrue(proc.is_alive())
+    poller.start()
+    ti.testCase.assertTrue(poller.is_alive())
 
     # wait to poller to work now ... wait for alert to arrive
     if ti.expected != 0:
@@ -215,10 +211,9 @@ def doGenericValueBasedPolling(ti):
     else:
         time.sleep(ti.config.pollInterval * 2)
         
-    proc.terminate()
-    poller.shutdown()
+    poller.terminate()
     receiver.shutdown()
-    ti.testCase.assertFalse(proc.is_alive())
+    ti.testCase.assertFalse(poller.is_alive())
 
     if ti.expected != 0:
         # #2238 AlertGenerator test can take 1 hour+ (and fail)

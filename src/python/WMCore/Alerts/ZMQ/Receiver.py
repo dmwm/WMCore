@@ -2,17 +2,8 @@
 Implementation of alert messages receiver.
 
 ReceiverLogic class contains all received messages handling and runs
-on background spawned from the Receiver class (currently via threading.Thread).
-
-Python 2.6.4, pyzmq-2.1.7 - issues with shutting down the 
-Receiver, it would basically hang on "recvfrom(4, ..." C call and never
-resume.
-   
-Possible future multiprocessing.Process implementation would require
-combining ReceiverLogic.start(), ._processControlMsg() together otherwise
-too many class attributes would have to be turned into shared memory objects
-(e.g. multiprocessing.Value). Definitely ReceiverLogic._isReady flag would
-have to be shared object.
+on background spawned from the Receiver class (via threading.Thread).
+Had issues with multiprocessing.Process implementation of the Receiver.
 
 """
 
@@ -72,9 +63,11 @@ class ReceiverLogic(object):
         context = zmq.Context()
         # receiver pulls in alerts to pass to a handler
         self._workChannel = context.socket(zmq.PULL)
+        logging.debug("Receiver - going to bind (target): %s" % target)
         self._workChannel.bind(target)
         # control messages
         self._contChannel = context.socket(zmq.SUB)
+        logging.debug("Receiver - going to bind (control): %s" % control)
         self._contChannel.bind(control)
         self._contChannel.setsockopt(zmq.SUBSCRIBE, "")
         # address of the control channel

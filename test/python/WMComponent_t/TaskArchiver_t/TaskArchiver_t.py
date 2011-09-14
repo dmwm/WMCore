@@ -62,7 +62,7 @@ class TaskArchiverTest(unittest.TestCase):
         myThread = threading.currentThread()
         
         self.testInit = TestInit(__file__)
-        self.testInit.setLogging()
+        self.testInit.setLogging(logLevel = logging.DEBUG)
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)

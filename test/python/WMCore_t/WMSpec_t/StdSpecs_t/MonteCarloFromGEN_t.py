@@ -90,6 +90,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(len(procWorkflow.outputMap.keys()), 3,
                          "Error: Wrong number of WF outputs.")
+        self.assertEqual(procWorkflow.wfType, 'lheproduction')
 
         goldenOutputMods = ["outputRECORECO", "outputALCARECOALCARECO"]
         for goldenOutputMod in goldenOutputMods:
@@ -150,7 +151,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
         procSubscription.loadData()
 
         self.assertEqual(procSubscription["type"], "Processing",
-                         "Error: Wrong subscription type.")
+                         "Error: Wrong subscription type: %s" % procSubscription["type"])
         self.assertEqual(procSubscription["split_algo"], "LumiBased",
                          "Error: Wrong split algo.")
 
@@ -164,8 +165,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(mergeSubscription["type"], "Merge",
                          "Error: Wrong subscription type.")
-        self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
-                         "Error: Wrong split algo.")
+        self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
+                         "Error: Wrong split algo: %s" % mergeSubscription["split_algo"])
 
         unmergedAlca = Fileset(name = "/TestWorkload/MonteCarloFromGEN/unmerged-outputALCARECOALCARECO")
         unmergedAlca.loadData()
@@ -177,8 +178,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(mergeSubscription["type"], "Merge",
                          "Error: Wrong subscription type.")
-        self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
-                         "Error: Wrong split algo.")
+        self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
+                         "Error: Wrong split algo: %s" % mergeSubscription["split_algo"])
 
         for procOutput in ["outputRECORECO", "outputALCARECOALCARECO"]:
             unmerged = Fileset(name = "/TestWorkload/MonteCarloFromGEN/unmerged-%s" % procOutput)

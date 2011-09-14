@@ -115,7 +115,7 @@ class ReDigiTest(unittest.TestCase):
         testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
-        
+
         testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
         testWMBSHelper.createSubscription()
 
@@ -159,6 +159,7 @@ class ReDigiTest(unittest.TestCase):
         stepOneWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
                                    task = "/TestWorkload/StepOneProc")
         stepOneWorkflow.load()
+        self.assertEqual(stepOneWorkflow.wfType, 'redigi')
         self.assertTrue("logArchive" in stepOneWorkflow.outputMap.keys(),
                         "Error: Step one missing output module.")
         self.assertTrue("RAWDEBUGoutput" in stepOneWorkflow.outputMap.keys(),

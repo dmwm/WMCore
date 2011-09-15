@@ -49,7 +49,7 @@ dependencies = {
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/templates/WMCore/WebTools/RequestManager',
                                     'src/html/GlobalMonitor',
-                                    'src/javascript/WMCore/WebTools/GlobalMonitor+'
+                                    'src/javascript/WMCore/WebTools/GlobalMonitor+',
                                     'src/html/RequestManager',
                                     'src/couchapps/ReqMgr+',
                                     'src/couchapps/ConfigCache+',

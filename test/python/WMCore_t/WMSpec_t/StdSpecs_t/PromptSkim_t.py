@@ -42,7 +42,7 @@ class PromptSkimTest(unittest.TestCase):
         self.testInit.clearDatabase()
         return
 
-    def testPromptSkim(self):
+    def DISABLEDtestPromptSkim(self):
         """
         _testPromptSkim_
 

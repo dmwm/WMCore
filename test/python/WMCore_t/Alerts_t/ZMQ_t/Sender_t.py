@@ -40,7 +40,7 @@ class SenderTest(unittest.TestCase):
         self.receiver = None
         
         
-    def testSenderBasic(self):
+    def DISABLEDtestSenderBasic(self):
         """
         Immediate testing register, unregister messages.
         Alert messages tested as saved in the queue.

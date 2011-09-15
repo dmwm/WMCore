@@ -41,7 +41,7 @@ class StoreResultsTest(unittest.TestCase):
         self.testInit.clearDatabase()
         return
 
-    def testStoreResults(self):
+    def DISABLEDtestStoreResults(self):
         """
         _testStoreResults_
 

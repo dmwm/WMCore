@@ -1254,7 +1254,7 @@ class SubscriptionTest(unittest.TestCase):
         testFileC.delete()        
         return
 
-    def testGetSubTypes(self):
+    def DISABLEDtestGetSubTypes(self):
         """
         _testGetSubTypes_
         

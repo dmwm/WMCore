@@ -211,7 +211,7 @@ class PileupFetcherTest(unittest.TestCase):
                 self._queryAndCompareWithDBS(pileupDict, defaultArguments, helper.data.dbsUrl)                
 
     
-    def testPileupFetcherOnRelValMC(self):
+    def DISABLEDtestPileupFetcherOnRelValMC(self):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "pileupfetcher_t"

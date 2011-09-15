@@ -73,7 +73,7 @@ class AnalysisTest(unittest.TestCase):
         return
 
 
-    def testAnalysis(self):
+    def DISABLEDtestAnalysis(self):
         """
         _testAnalysis_
         """   

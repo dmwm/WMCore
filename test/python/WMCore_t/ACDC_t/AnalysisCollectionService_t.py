@@ -34,7 +34,7 @@ class AnalysisCollectionService_t(unittest.TestCase):
         self.testInit.tearDownCouch()
 
 
-    def testCreateFilesetFromDBS(self):
+    def DISABLEDtestCreateFilesetFromDBS(self):
         """Test creating an analysis fileset from DBS"""
 
         rangesMask = Mask()

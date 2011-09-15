@@ -73,7 +73,7 @@ class deleteFileTest(unittest.TestCase):
         step.override.__setattr__('se-name','DUMMYSE')
         
 
-    def testManualDeleteOld(self):
+    def DISABLEDtestManualDeleteOld(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.step.section_('filesToDelete')
         self.step.filesToDelete.file1 = os.path.join(self.testDir, 'testfile')
@@ -82,7 +82,7 @@ class deleteFileTest(unittest.TestCase):
         self.executor.execute()        
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
 
-    def testManualDeleteNew(self):
+    def DISABLEDtestManualDeleteNew(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.step.section_('filesToDelete')
         self.step.filesToDelete.file1 = os.path.join(self.testDir, 'testfile')
@@ -92,7 +92,7 @@ class deleteFileTest(unittest.TestCase):
         self.executor.execute()        
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
 
-    def testJobDeleteOld(self):
+    def DISABLEDtestJobDeleteOld(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.setLocalOverride(self.step)
         self.job['input_files'] = [ {'lfn': os.path.join(self.testDir, 'testfile') } ]
@@ -100,7 +100,7 @@ class deleteFileTest(unittest.TestCase):
         self.executor.execute()        
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
 
-    def testJobDeleteNew(self):
+    def DISABLEDtestJobDeleteNew(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.setLocalOverride(self.step)
         self.step.override.newStageOut = True

@@ -8,7 +8,7 @@ from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 class NestedModelTest(RESTBaseUnitTest):
 
     def initialize(self):
-        self.config = DefaultConfig('DummyNestedModel')
+        self.config = DefaultConfig('WMCore_t.WebTools_t.DummyNestedModel')
         do_debug = False
 
         self.config.Webtools.environment = 'development'

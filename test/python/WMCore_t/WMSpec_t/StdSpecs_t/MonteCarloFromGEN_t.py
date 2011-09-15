@@ -150,7 +150,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
         procSubscription = Subscription(fileset = topLevelFileset, workflow = procWorkflow)
         procSubscription.loadData()
 
-        self.assertEqual(procSubscription["type"], "Processing",
+        self.assertEqual(procSubscription["type"], "Production",
                          "Error: Wrong subscription type: %s" % procSubscription["type"])
         self.assertEqual(procSubscription["split_algo"], "LumiBased",
                          "Error: Wrong split algo.")

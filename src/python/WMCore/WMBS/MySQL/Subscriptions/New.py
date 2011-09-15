@@ -16,6 +16,9 @@ class New(DBFormatter):
     Create a new subscription.  Add any files that exist in the fileset to the
     wmbs_sub_files_available table.
     """
+    typesSQL = """INSERT IGNORE INTO wmbs_sub_types (name)
+                    VALUES (:subtype)"""
+    
     sql = """INSERT INTO wmbs_subscription (fileset, workflow, subtype,
                                             split_algo, last_update) 
                SELECT :fileset, :workflow, id, :split_algo, :timestamp
@@ -34,7 +37,9 @@ class New(DBFormatter):
         binds = {"fileset": fileset, "workflow": workflow, "subtype": type,
                  "split_algo": split_algo, "timestamp": int(time.time())}
         availBinds = {"fileset": fileset, "workflow": workflow}
-        
+
+        self.dbi.processData(self.typesSQL, {'subtype': type}, conn = conn,
+                             transaction = transaction)
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
         self.dbi.processData(self.sqlAvail, availBinds, conn = conn,

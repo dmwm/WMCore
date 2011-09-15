@@ -71,7 +71,8 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         outputMods = self.setupProcessingTask(procTask, "Processing", self.inputDataset,
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
+                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW",
+                                              primarySubType = "Production")
         self.addLogCollectTask(procTask)
 
         procMergeTasks = {}

@@ -154,7 +154,7 @@ class StdBase(object):
                             splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
                             userDN = None, asyncDest = None, publishName =None, owner_vogroup = '',
                             owner_vorole = '', stepType = "CMSSW",
-                            userSandbox = None, userFiles = []):
+                            userSandbox = None, userFiles = [], primarySubType = None):
 
         """
         _setupProcessingTask_
@@ -190,10 +190,11 @@ class StdBase(object):
         procTask.applyTemplates()
         procTask.setTaskPriority(self.priority)
 
+
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         procTask.setSiteWhitelist(self.siteWhitelist)
         procTask.setSiteBlacklist(self.siteBlacklist)
-
+        
         newSplitArgs = {}
         for argName in splitArgs.keys():
             newSplitArgs[str(argName)] = splitArgs[argName]
@@ -217,6 +218,9 @@ class StdBase(object):
                 procTask.setInputStep(inputStep)
             else:
                 procTask.setInputReference(inputStep, outputModule = inputModule)
+
+        if primarySubType:
+            procTask.setPrimarySubType(subType = primarySubType)
 
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskStageHelper = procTaskStageOut.getTypeHelper()

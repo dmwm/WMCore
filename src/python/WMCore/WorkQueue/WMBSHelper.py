@@ -270,7 +270,7 @@ class WMBSHelper(WMConnectionBase):
         workflow.create()
         subscription = Subscription(fileset = fileset, workflow = workflow,
                                     split_algo = task.jobSplittingAlgorithm(),
-                                    type = task.taskType())
+                                    type = task.getPrimarySubType())
         subscription.create()
         for site in task.siteWhitelist():
             subscription.addWhiteBlackList([{"site_name": site, "valid": True}])

@@ -34,7 +34,6 @@ from WMCore.DataStructs.Run   import Run
 from WMCore.Agent.Configuration              import loadConfigurationFile, Configuration
 from WMComponent.JobCreator.JobCreator       import JobCreator
 from WMComponent.JobCreator.JobCreatorPoller import JobCreatorPoller
-from WMComponent.JobCreator.JobCreatorWorker import JobCreatorWorker
 
 from WMCore.Services.UUID import makeUUID
 
@@ -196,6 +195,8 @@ class JobCreatorTest(unittest.TestCase):
         workload = testWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
         rereco.setTaskPriority(priority = 1)
+        seederDict = {"generator.initialSeed": 1001, "evtgenproducer.initialSeed": 1001}
+        rereco.addGenerator("PresetSeeder", **seederDict)
 
         
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
@@ -332,6 +333,9 @@ class JobCreatorTest(unittest.TestCase):
         job = cPickle.load(f)
         f.close()
 
+        self.assertEqual(job.baggage.PresetSeeder.generator.initialSeed, 1001)
+        self.assertEqual(job.baggage.PresetSeeder.evtgenproducer.initialSeed, 1001)
+
 
         self.assertEqual(job['workflow'], name)
         self.assertEqual(len(job['input_files']), 1)
@@ -417,8 +421,8 @@ class JobCreatorTest(unittest.TestCase):
         
         input = [{"subscription": 1}, {"subscription": 2}, {"subscription": 3}, {"subscription": 4}, {"subscription": 5}]
         
-        testJobCreator = JobCreatorWorker(**configDict)
-        cProfile.runctx("testJobCreator(parameters = input)", globals(), locals(), filename = "workStats.stat")
+        testJobCreator = JobCreatorPoller(**configDict)
+        cProfile.runctx("testJobCreator.algorithm(parameters = input)", globals(), locals(), filename = "workStats.stat")
 
 
         p = pstats.Stats('workStats.stat')

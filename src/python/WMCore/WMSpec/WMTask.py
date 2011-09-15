@@ -440,7 +440,6 @@ class WMTaskHelper(TreeHelper):
         
         return
 
-    
     def listGenerators(self):
         """
         _listGenerators_
@@ -451,7 +450,6 @@ class WMTaskHelper(TreeHelper):
             return []
         return generators.listSections_()
 
-    
     def getGeneratorSettings(self, generatorName):
         """
         _getGeneratorSettings_

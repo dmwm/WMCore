@@ -6,9 +6,9 @@ Simple seed generator for preset seeds
 
 """
 
-from WMCore.WMSpec.Seeders.SeederInterface import SeederInterface
+from WMCore.JobSplitting.Generators.GeneratorInterface import GeneratorInterface
 
-class PresetSeeder(SeederInterface):
+class PresetSeeder(GeneratorInterface):
     """
     Seeder that inserts for each initial seed the value
     sent by the dictionary passed through.

@@ -1722,5 +1722,34 @@ class SubscriptionTest(unittest.TestCase):
                 self.assertFalse(result["valid"], "Error: Valid should be False.")                
         return
 
+    def testSubTypesInsertion(self):
+        """
+        _testSubTypesInsertion_
+
+        Test whether or not we can insert new sub types
+        """
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+
+        
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        type = "newType")
+
+        testSubscription.create()
+
+        test2 = Subscription(id = 1)
+        test2.load()
+        self.assertEqual(test2['type'], 'newType')
+
+        return
+
+        
+
 if __name__ == "__main__":
     unittest.main()

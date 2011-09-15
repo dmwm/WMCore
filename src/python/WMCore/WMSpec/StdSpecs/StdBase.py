@@ -200,8 +200,6 @@ class StdBase(object):
 
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
         procTask.setTaskType(taskType)
-        procTask.addGenerator("BasicNaming")
-        procTask.addGenerator("BasicCounter")
 
         if taskType == "Production" and totalEvents != None:
             procTask.addGenerator(seeding)
@@ -308,8 +306,6 @@ class StdBase(object):
         logCollectStep.setStepType("LogCollect")
         logCollectTask.applyTemplates()
         logCollectTask.setSplittingAlgorithm("EndOfRun", files_per_job = filesPerJob)
-        logCollectTask.addGenerator("BasicNaming")
-        logCollectTask.addGenerator("BasicCounter")
         logCollectTask.setTaskType("LogCollect")
 
         parentTaskLogArch = parentTask.getStep("logArch1")
@@ -337,8 +333,6 @@ class StdBase(object):
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModule))
 
-        mergeTask.addGenerator("BasicNaming")
-        mergeTask.addGenerator("BasicCounter")
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
         mergeTask.setTaskPriority(self.priority + 5)

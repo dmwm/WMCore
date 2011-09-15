@@ -47,8 +47,6 @@ class TestWorkloadFactory(object):
         procTask.applyTemplates()
         splitArgs = {"files_per_job": 1}
         procTask.setSplittingAlgorithm("FileBased", **splitArgs)
-        procTask.addGenerator("BasicNaming")
-        procTask.addGenerator("BasicCounter")
         procTask.setTaskType("Processing")
 
         procTask.addInputDataset(primary = "MinimumBias",
@@ -89,8 +87,6 @@ class TestWorkloadFactory(object):
         logCollectStep.setStepType("LogCollect")
         logCollectTask.applyTemplates()
         logCollectTask.setSplittingAlgorithm("EndOfRun", files_per_job = 500)
-        logCollectTask.addGenerator("BasicNaming")
-        logCollectTask.addGenerator("BasicCounter")
         logCollectTask.setTaskType("LogCollect")
     
         parentTaskLogArch = parentTask.getStep("logArch1")

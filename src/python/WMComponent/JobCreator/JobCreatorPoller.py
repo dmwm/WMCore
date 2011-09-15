@@ -23,14 +23,12 @@ import multiprocessing
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.DAOFactory                      import DAOFactory
 from WMCore.WMException                     import WMException
+from WMCore.ProcessPool.ProcessPool         import ProcessPool
 
+from WMCore.JobSplitting.Generators.GeneratorManager import GeneratorManager
 
-from WMCore.ProcessPool.ProcessPool                     import ProcessPool
-
-from WMCore.WMSpec.Seeders.SeederManager                import SeederManager
-from WMCore.JobStateMachine.ChangeState                 import ChangeState
-from WMComponent.JobCreator.CreateWorkArea              import CreateWorkArea
-
+from WMCore.JobStateMachine.ChangeState     import ChangeState
+from WMComponent.JobCreator.CreateWorkArea  import CreateWorkArea
 from WMCore.JobSplitting.SplitterFactory    import SplitterFactory
 from WMCore.WMBS.Subscription               import Subscription
 from WMCore.WMBS.Workflow                   import Workflow
@@ -477,9 +475,9 @@ class JobCreatorPoller(BaseWorkerThread):
 
             # Set task object
             wmTask = wmWorkload.getTaskByPath(workflow.task)
-            if hasattr(wmTask.data, 'seeders'):
-                manager    = SeederManager(wmTask)
-                seederList = manager.getSeederList()
+            if hasattr(wmTask.data, 'generators'):
+                manager    = GeneratorManager(wmTask)
+                seederList = manager.getGeneratorList()
             else:
                 seederList = []
 

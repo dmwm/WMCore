@@ -40,7 +40,7 @@ class RotatingDatabaseTest(unittest.TestCase):
                     # db has already gone
                     pass
 
-    def testRotate(self):
+    def DISABLEDtestRotate(self):
         """
         Test that rotation works
         """
@@ -51,7 +51,7 @@ class RotatingDatabaseTest(unittest.TestCase):
         self.assertTrue(start_name in databases)
         self.assertTrue(end_name in databases)
 
-    def testArchive(self):
+    def DISABLEDtestArchive(self):
         """
         Test that archiving views works
         """
@@ -83,7 +83,7 @@ class RotatingDatabaseTest(unittest.TestCase):
         arch_sum = view_result['rows'][0]['value']
         self.assertEqual(arch_sum, runs * docs)
 
-    def testExpire(self):
+    def DISABLEDtestExpire(self):
         """
         Test that expiring databases works
         """
@@ -97,7 +97,7 @@ class RotatingDatabaseTest(unittest.TestCase):
         self.assertEqual(0, len(self.db.archived_dbs()))
         self.assertFalse(archived[0] in self.server.listDatabases())
 
-    def testCycle(self):
+    def DISABLEDtestCycle(self):
         """
         Test that committing data to different databases happens
         This is a bit of a dodgy test - if timings go funny it will fail

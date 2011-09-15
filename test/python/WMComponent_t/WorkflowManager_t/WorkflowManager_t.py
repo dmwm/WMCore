@@ -70,7 +70,7 @@ class WorkflowManagerTest(unittest.TestCase):
            'src/python/WMComponent/WorkflowManager/DefaultConfig.py'))
 
 
-    def testA(self):
+    def DISABLEDtestA(self):
         """
         _testA_
 

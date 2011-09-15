@@ -41,7 +41,7 @@ class DataProcessingTest(unittest.TestCase):
         self.testInit.clearDatabase()
         return
 
-    def testDataProcessing(self):
+    def DISABLEDtestDataProcessing(self):
         """
         _testDataProcessing_
 

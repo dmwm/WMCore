@@ -113,7 +113,7 @@ class CMSCouchTest(unittest.TestCase):
         self.assertEqual(self.db.document(doc_id), repl_db.document(doc_id))
         self.server.deleteDatabase(repl_db.name)
 
-    def testSlashInDBName(self):
+    def DISABLEDtestSlashInDBName(self):
         """
         Slashes are a valid character in a database name, and are useful as it
         creates a directory strucutre for the couch data files.

@@ -69,7 +69,7 @@ class ReRecoTest(unittest.TestCase):
         result = self.configDatabase.commitOne(newConfig)
         return result[0]["id"]
 
-    def testReReco(self):
+    def DISABLEDtestReReco(self):
         """
         _testReReco_
 

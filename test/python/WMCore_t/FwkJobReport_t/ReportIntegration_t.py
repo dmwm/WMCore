@@ -284,7 +284,7 @@ class ReportIntegrationTest(unittest.TestCase):
 
         return
 
-    def testReportHandling(self):
+    def DISABLEDtestReportHandling(self):
         """
         _testReportHandling_
 

@@ -117,7 +117,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         return
 
 
-    def testA_createDashboardInfo(self):
+    def DISABLEDtestA_createDashboardInfo(self):
         """
         _createDashboardInfo_
 
@@ -181,7 +181,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         return
 
 
-    def testB_TestMonitoring(self):
+    def DISABLEDtestB_TestMonitoring(self):
         """
         _TestMonitoring_
 

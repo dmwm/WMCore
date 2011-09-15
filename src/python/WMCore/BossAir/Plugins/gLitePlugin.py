@@ -22,6 +22,7 @@ from WMCore.Credential.Proxy import Proxy
 from WMCore.FwkJobReport.Report        import Report
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.DAOFactory import DAOFactory
+from WMCore.BossAir.LoggingInfoParser import LoggingInfoParser
 import WMCore.WMInit
 from copy import deepcopy
 
@@ -222,6 +223,7 @@ class gLitePlugin(BasePlugin):
         self.defaultjdl['service'] = getattr(self.config.BossAir, 'gliteWMS', None)
         self.basetimeout  = getattr(self.config.JobSubmitter, 'getTimeout', 300 )
         self.defaultjdl['myproxyhost'] = self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, 'myproxyhost', self.defaultDelegation['myProxySvr'] )
+        self.loggInfoPars = LoggingInfoParser()
 
         # This isn't anymore needed, but in the future...
         self.manualenvprefix = getattr(self.config.BossAir, 'gLitePrefixEnv', '')
@@ -924,8 +926,9 @@ class gLitePlugin(BasePlugin):
                 self.fakeReport("PostMortemFailure", msg, -1, jj)
                 continue
 
-            cmd = '%s %s > %s/loggingInfo.%i.log'\
-                   % (command, jj['gridid'], jj['cache_dir'], jj['retry_count'])
+            logInfoOutfile = '%s/loggingInfo.%i.log' % ( jj['cache_dir'], jj['retry_count'] )
+            cmd = '%s %s > %s'\
+                   % (command, jj['gridid'], logInfoOutfile)
             logging.debug("Enqueuing logging-info command for job %i" \
                            % jj['jobid'] )
             workqueued[currentwork] = jj['jobid']
@@ -961,6 +964,14 @@ class gLitePlugin(BasePlugin):
                         break
                 continue
             else:
+                logInfoOutfile = '%s/loggingInfo.%i.log' % ( jj['cache_dir'], jj['retry_count'] )
+                if os.path.isfile( logInfoOutfile ):
+                    msg = self.loggInfoPars.parseFile( logInfoOutfile )
+                else:
+                    #this should not happen, but, just in case...
+                    msg = "Cannot find %s" % logInfoOutfile
+                    logging.debug( msg )
+                self.fakeReport("PostMortemFailure", msg, -1, jj)
                 completedJobs.append(workqueued[workid])
 
         ## Shut down processes

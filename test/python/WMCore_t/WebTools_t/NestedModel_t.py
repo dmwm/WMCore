@@ -21,7 +21,7 @@ class NestedModelTest(RESTBaseUnitTest):
 
         self.urlbase = self.config.getServerUrl()
 
-    def DISABLEDtestOuterFooPass(self):
+    def testOuterFooPass(self):
         verb ='GET'
         url = self.urlbase + 'foo'
         output={'code':200, 'data':'"foo"'}
@@ -37,7 +37,7 @@ class NestedModelTest(RESTBaseUnitTest):
         output={'code':200, 'data':'"foo test"'}
         methodTest(verb, url, request_input=request_input, output=output, expireTime=expireTime)
 
-    def DISABLEDtestInnerPingPass(self):
+    def testInnerPingPass(self):
         verb ='GET'
         url = self.urlbase + 'foo/ping'
         output={'code':200, 'data':'"ping"'}
@@ -45,13 +45,13 @@ class NestedModelTest(RESTBaseUnitTest):
 
         methodTest(verb, url, output=output, expireTime=expireTime)
 
-    def DISABLEDtestOuterFooError(self):
+    def testOuterFooError(self):
         verb ='GET'
         url = self.urlbase + 'foo/123/567'
         output={'code':400}
         methodTest(verb, url, output=output)
 
-    def DISABLEDtestInnerPingError(self):
+    def testInnerPingError(self):
         verb ='GET'
         url = self.urlbase + 'foo/123/ping'
         output={'code':400}

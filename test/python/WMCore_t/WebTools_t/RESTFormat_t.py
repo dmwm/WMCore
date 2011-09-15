@@ -37,12 +37,12 @@ class RESTFormatTest(RESTBaseUnitTest):
 
         self.urlbase = self.config.getServerUrl()
 
-    def DISABLEDtestUnsupportedFormat(self):
+    def testUnsupportedFormat(self):
         # test not accepted type should return 406 error
         url = self.urlbase +'list1/'
         methodTest('GET', url, accept='text/das', output={'code':406})
 
-    def DISABLEDtestSupportedFormat(self):
+    def testSupportedFormat(self):
         rf = RESTFormatter(config=self.config.Webtools)
         url = self.urlbase +'list1/'
 
@@ -50,7 +50,7 @@ class RESTFormatTest(RESTBaseUnitTest):
             # test accepted type should return 200 error
             methodTest('GET', url, accept=type, output={'code':200})
 
-    def DISABLEDtestEncodedInput(self):
+    def testEncodedInput(self):
         type = 'text/plain'
 
         url = self.urlbase + 'list3?a=a%&b=b'
@@ -64,7 +64,7 @@ class RESTFormatTest(RESTBaseUnitTest):
         methodTest('GET', url, accept=type, request_input=request_input,
                  output={'code':200, 'data':"{'a': '%', 'b': 'b'}"})
 
-    def DISABLEDtestReturnFormat(self):
+    def testReturnFormat(self):
         return_type = 'application/json'
 
         url = self.urlbase +'list3?a=a%&b=b'
@@ -76,7 +76,7 @@ class RESTFormatTest(RESTBaseUnitTest):
         methodTest('GET', url, accept=return_type,
                          output={'code':400, 'data':expected_data})
 
-    def DISABLEDtestNoArgMethods(self):
+    def testNoArgMethods(self):
         """
         list1 takes no arguments, it should raise an error if called with one. Require json output.
         """

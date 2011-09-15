@@ -69,7 +69,7 @@ class RESTTest(unittest.TestCase):
         self.urlbase = None
 
     @cherrypySetup(test_config)
-    def DISABLEDtestGenericException(self):
+    def testGenericException(self):
         """
         Method will raise an AssertionError and return 500
         """
@@ -79,7 +79,7 @@ class RESTTest(unittest.TestCase):
         assert json.loads(response)['type'] == "AssertionError", 'got: %s' % json.loads(response)['type']
 
     @cherrypySetup(test_config)
-    def DISABLEDtestSpecific400Exception(self):
+    def testSpecific400Exception(self):
         """
         Method will raise an HTTPError and return 400
         """
@@ -88,7 +88,7 @@ class RESTTest(unittest.TestCase):
         assert json.loads(response)['message'] == "I threw a 400", 'got: %s' % json.loads(response)['message']
 
     @cherrypySetup(test_config)
-    def DISABLEDtestSpecific404Exception(self):
+    def testSpecific404Exception(self):
         """
         Method will raise an HTTPError and return 404
         """
@@ -97,7 +97,7 @@ class RESTTest(unittest.TestCase):
         assert json.loads(response)['message'] == "I threw a 404", 'got: %s' % json.loads(response)['message']
 
     @cherrypySetup(test_config)
-    def DISABLEDtestSpecific500Exception(self):
+    def testSpecific500Exception(self):
         """
         Method will raise an HTTPError and return 500
         """
@@ -106,7 +106,7 @@ class RESTTest(unittest.TestCase):
         assert json.loads(response)['message'] == "I threw a 500", 'got: %s' % json.loads(response)['message']
 
     @cherrypySetup(test_config)
-    def DISABLEDtestNotSerialisableException(self):
+    def testNotSerialisableException(self):
         """
         Method will raise an EncodeError and return 500
         """

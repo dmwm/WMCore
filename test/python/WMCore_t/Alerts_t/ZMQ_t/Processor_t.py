@@ -95,7 +95,7 @@ class ProcessorTest(unittest.TestCase):
         p = Processor(self.config.AlertProcessor)
 
 
-    def testProcessorWithReceiver(self):
+    def DISABLEDtestProcessorWithReceiver(self):
         """
         Test startup and shutdown of processor in receiver.
         
@@ -112,7 +112,7 @@ class ProcessorTest(unittest.TestCase):
             time.sleep(0.1)
         
             
-    def testProcessorWithReceiverAndFileSink(self):
+    def DISABLEDtestProcessorWithReceiverAndFileSink(self):
         # add corresponding part of the configuration for FileSink(s)
         config = self.config.AlertProcessor
         config.critical.sinks.section_("file")
@@ -152,7 +152,7 @@ class ProcessorTest(unittest.TestCase):
             self.assertEqual(a["Level"], level)
             
             
-    def testProcessorWithReceiverAndCouchSink(self):
+    def DISABLEDtestProcessorWithReceiverAndCouchSink(self):
         # set up couch first
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()

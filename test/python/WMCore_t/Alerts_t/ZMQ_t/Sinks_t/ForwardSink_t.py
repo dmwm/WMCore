@@ -60,7 +60,7 @@ class ForwardSinkTest(unittest.TestCase):
         forwarder = ForwardSink(config)
         
 
-    def testForwardSinkEntireChain(self):
+    def DISABLEDtestForwardSinkEntireChain(self):
         """
         The test chain looks as follows:
         worker -> Receiver1(+its Processor configured to do ForwardSink) -> Receiver2 whose

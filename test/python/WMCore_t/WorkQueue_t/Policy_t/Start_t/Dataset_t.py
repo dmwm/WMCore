@@ -177,7 +177,7 @@ class DatasetTestCase(unittest.TestCase):
             for unit in units:
                 self.assertEqual(2, unit['Jobs'])
 
-    def testRunWhitelist(self):
+    def DISABLEDtestRunWhitelist(self):
         """ReReco lumi split with Run whitelist"""
         # get files with multiple runs
         Globals.GlobalParams.setNumOfRunsPerFile(2)

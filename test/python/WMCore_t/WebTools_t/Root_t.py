@@ -206,7 +206,7 @@ class RootTest(unittest.TestCase):
         self.assertEquals(cpconfig['tools.secmodv2.site'], testSite)
         server.stop()
 
-    def testInstanceInUrl(self):
+    def DISABLEDtestInstanceInUrl(self):
         config = self.getBaseConfiguration()
         config.SecurityModule.dangerously_insecure = True
         server = Root(config)

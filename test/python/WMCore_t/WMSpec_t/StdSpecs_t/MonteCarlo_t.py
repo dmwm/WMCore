@@ -207,7 +207,7 @@ class MonteCarloTest(unittest.TestCase):
                              "Error: Wrong split algo.")
         
 
-    def testMonteCarlo(self):
+    def DISABLEDtestMonteCarlo(self):
         """
         Create a Monte Carlo workflow and verify that it is injected correctly
         into WMBS and invoke its detailed test.        
@@ -228,7 +228,7 @@ class MonteCarloTest(unittest.TestCase):
         self._commonMonteCarloTest()
 
 
-    def testRelValMCWithPileup(self):
+    def DISABLEDtestRelValMCWithPileup(self):
         """
         Create a Monte Carlo workflow and verify that it is injected correctly
         into WMBS and invoke its detailed test.

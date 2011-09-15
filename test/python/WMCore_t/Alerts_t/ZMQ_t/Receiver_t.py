@@ -66,7 +66,7 @@ class ReceiverTest(unittest.TestCase):
         return workChann, contChann        
         
             
-    def testReceiverShutdownByMessage(self):
+    def DISABLEDtestReceiverShutdownByMessage(self):
         # start a Receiver
         rec = Receiver(self.addr, self.printer, self.ctrl)
         rec.startReceiver() # non blocking call
@@ -86,7 +86,7 @@ class ReceiverTest(unittest.TestCase):
             time.sleep(0.1)
                 
         
-    def testReceiverShutdownByCall(self):
+    def DISABLEDtestReceiverShutdownByCall(self):
         # start a Receiver
         rec = Receiver(self.addr, self.printer, self.ctrl)
         rec.startReceiver() # non blocking call
@@ -103,7 +103,7 @@ class ReceiverTest(unittest.TestCase):
         rec.shutdown()
                 
 
-    def testReceiverBuferring(self):
+    def DISABLEDtestReceiverBuferring(self):
         """
         Test sending alerts that are buffered into a queue.
         

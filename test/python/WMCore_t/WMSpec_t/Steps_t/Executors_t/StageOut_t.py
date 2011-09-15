@@ -213,7 +213,7 @@ class otherStageOutTest(unittest.TestCase):
         if hasattr(myThread, "factory"):
             myThread.factory = {}
      
-    def testCPBackendStageOutAgainstReportNew(self):
+    def DISABLEDtestCPBackendStageOutAgainstReportNew(self):
         myReport = Report('cmsRun1')
         myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 0
@@ -241,7 +241,7 @@ class otherStageOutTest(unittest.TestCase):
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
         
-    def testCPBackendStageOutAgainstReportOld(self):
+    def DISABLEDtestCPBackendStageOutAgainstReportOld(self):
         
         myReport = Report('cmsRun1')
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))

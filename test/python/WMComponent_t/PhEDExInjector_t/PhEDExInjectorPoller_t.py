@@ -218,7 +218,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         logging.info("Could not retrieve replica info for block: %s" % blockName)
         return None
 
-    def testPoller(self):
+    def DISABLEDtestPoller(self):
         """
         _testPoller_
 

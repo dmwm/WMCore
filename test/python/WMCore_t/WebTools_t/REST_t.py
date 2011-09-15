@@ -65,12 +65,12 @@ class RESTTest(RESTBaseUnitTest):
 
         self.urlbase = self.config.getServerUrl()
 
-    def testUnsupportedFormat(self):
+    def DISABLEDtestUnsupportedFormat(self):
         # test not accepted type should return 406 error
         url = self.urlbase + 'ping'
         methodTest('GET', url, accept='text/das', output={'code':406})
 
-    def testGoodEcho(self):
+    def DISABLEDtestGoodEcho(self):
         verb ='POST'
         url = self.urlbase + 'echo'
         input_data={'message': 'unit test'}
@@ -79,7 +79,7 @@ class RESTTest(RESTBaseUnitTest):
 
         methodTest(verb, url, input_data, output=output)
 
-    def testBadEchoWithPosArg(self):
+    def DISABLEDtestBadEchoWithPosArg(self):
         "Echo takes one argument (message), with the positional argument it should fail"
         verb ='POST'
         url = self.urlbase + 'echo/stuff'
@@ -87,7 +87,7 @@ class RESTTest(RESTBaseUnitTest):
         output={'code':400, 'type':'text/json'}
         methodTest(verb, url, input_data, output=output)
 
-    def testBadMethodEcho(self):
+    def DISABLEDtestBadMethodEcho(self):
         """
         The echo method isn't supported by GET, so should raise a 405
         """
@@ -98,7 +98,7 @@ class RESTTest(RESTBaseUnitTest):
 
         methodTest(verb, url, input, output=output)
 
-    def testBadVerbEcho(self):
+    def DISABLEDtestBadVerbEcho(self):
         "echo is only available to GET and POST, so should raise a 501"
         url = self.urlbase + 'echo'
         input={'data': 'unit test'}
@@ -107,7 +107,7 @@ class RESTTest(RESTBaseUnitTest):
         for verb in ['DELETE']:
           methodTest(verb, url, input, output=output)
 
-    def testPing(self):
+    def DISABLEDtestPing(self):
         verb ='GET'
         url = self.urlbase + 'ping'
         output={'code':200, 'type':'text/json', 'data':'"ping"'}
@@ -115,7 +115,7 @@ class RESTTest(RESTBaseUnitTest):
 
         methodTest(verb, url, output=output, expireTime=expireTime)
 
-    def testBadPing(self):
+    def DISABLEDtestBadPing(self):
         verb ='GET'
 
         url = self.urlbase + 'wrong'
@@ -131,7 +131,7 @@ class RESTTest(RESTBaseUnitTest):
         output={'code':400}
         methodTest(verb, url, output=output)
 
-    def testException(self):
+    def DISABLEDtestException(self):
         """
         list takes a single integer argument, querying with a string
         """
@@ -151,7 +151,7 @@ class RESTTest(RESTBaseUnitTest):
             self.assertEquals(response_data['message'], expected_data['message'])
             self.assertEquals(urllib_data.getcode(), 400)
 
-    def testList(self):
+    def DISABLEDtestList(self):
         verb ='GET'
         url = self.urlbase + 'list/'
         request_input = {'input_int':123, 'input_str':'abc'}
@@ -161,7 +161,7 @@ class RESTTest(RESTBaseUnitTest):
             self.assertEqual(result[i], request_input[i], '%s does not match response' % i)
 
 
-    def testA(self):
+    def DISABLEDtestA(self):
         for t in ['GET', 'POST', 'PUT', 'DELETE', 'UPDATE']:
             response = makeRequest(url=self.urlbase + '/', values={'value':1234})
             assert response[1] == 200, 'Got a return code != 200 (got %s)' % response[1]
@@ -193,7 +193,7 @@ class RESTTest(RESTBaseUnitTest):
         assert result == {'input_int':123, 'input_str':'abc'},\
                'list with 1 positional, 1 keyword failed: %s' % result
 
-    def testSanitisePassHTTP(self):
+    def DISABLEDtestSanitisePassHTTP(self):
         """
         Same as testSanitisePass but do it over http and check the returned http
         codes.
@@ -252,7 +252,7 @@ class RESTTest(RESTBaseUnitTest):
         # Empty input data, when data is required
         self.assertRaises(HTTPError, func)
 
-    def testSanitiseFailHTTP(self):
+    def DISABLEDtestSanitiseFailHTTP(self):
         """
         Same as testSanitisePass but do it over http and check the returned http
         codes.
@@ -298,7 +298,7 @@ class RESTTest(RESTBaseUnitTest):
         result =  drm.methods['GET']['data3']['call'](num = 456, thing="TEST")
         self.assertEqual( result['num'] == 456 and result['thing'] ,  "TEST" )
 
-    def testDAOBasedHTTP(self):
+    def DISABLEDtestDAOBasedHTTP(self):
         """
         Same as testSanitisePass but do it over http and check the returned http
         codes.
@@ -336,7 +336,7 @@ class RESTTest(RESTBaseUnitTest):
         #Should use encoded and decoded format
         self.assertEqual( response[0] ,  "{'thing': 'abc', 'num': '123'}", "should be {'thing': 'abc', 'num': '123'} but got %s" % response[0] )
 
-    def testListTypeArgs(self):
+    def DISABLEDtestListTypeArgs(self):
         # 2 positional args (e.g. url/arg1/arg2)
         url = self.urlbase + 'listTypeArgs?aList=1'
         response = makeRequest(url=url)
@@ -355,7 +355,7 @@ class RESTTest(RESTBaseUnitTest):
                  '. Returned data: %s' % response[0]
 
     @cherrypySetup(secureConfig)
-    def testAuthentication(self):
+    def DISABLEDtestAuthentication(self):
         verb ='PUT'
         url = self.urlbase + 'list1'
         urllib_data = urllib.urlopen(url)

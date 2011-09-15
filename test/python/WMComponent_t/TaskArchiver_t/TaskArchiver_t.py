@@ -337,7 +337,7 @@ class TaskArchiverTest(unittest.TestCase):
         return jobList
             
 
-    def testA_BasicFunctionTest(self):
+    def DISABLEDtestA_BasicFunctionTest(self):
         """
         _BasicFunctionTest_
         

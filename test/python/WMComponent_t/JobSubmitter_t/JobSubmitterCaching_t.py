@@ -160,7 +160,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
             
         return
 
-    def testCaching(self):
+    def DISABLEDtestCaching(self):
         """
         _testCaching_
 

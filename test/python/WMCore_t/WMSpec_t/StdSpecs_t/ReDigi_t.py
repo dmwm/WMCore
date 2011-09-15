@@ -97,7 +97,7 @@ class ReDigiTest(unittest.TestCase):
         stepThree = self.configDatabase.commitOne(stepThreeConfig)[0]["id"]        
         return (stepOne, stepTwo, stepThree)
     
-    def testDependentReDigi(self):
+    def DISABLEDtestDependentReDigi(self):
         """
         _testDependentReDigi_
 
@@ -611,7 +611,7 @@ class ReDigiTest(unittest.TestCase):
                             "Error: more than one destination for output mod.")
         return    
 
-    def testChainedReDigi(self):
+    def DISABLEDtestChainedReDigi(self):
         """
         _testChaninedReDigi_
 
@@ -639,7 +639,7 @@ class ReDigiTest(unittest.TestCase):
         self.verifyDiscardRAW()
         return
 
-    def testThreeStepChainedReDigi(self):
+    def DISABLEDtestThreeStepChainedReDigi(self):
         """
         _testThreeStepChaninedReDigi_
 
@@ -666,7 +666,7 @@ class ReDigiTest(unittest.TestCase):
         self.verifyKeepAOD()
         return    
 
-    def testCombinedReDigiRecoConfig(self):
+    def DISABLEDtestCombinedReDigiRecoConfig(self):
         """
         _testCombinedReDigiRecoConfig_
 
@@ -692,7 +692,7 @@ class ReDigiTest(unittest.TestCase):
         self.verifyDiscardRAW()
         return    
 
-    def testSingleStepReDigi(self):
+    def DISABLEDtestSingleStepReDigi(self):
         """
         _testSingleStepReDigi_
 

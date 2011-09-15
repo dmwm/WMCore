@@ -31,7 +31,7 @@ class ProcessPoolTest(unittest.TestCase):
         self.testInit.clearDatabase()
         return
 
-    def testA_ProcessPool(self):
+    def DISABLEDtestA_ProcessPool(self):
         """
         _testProcessPool_
 
@@ -61,7 +61,7 @@ class ProcessPoolTest(unittest.TestCase):
                
         return
 
-    def testB_ProcessPoolStress(self):
+    def DISABLEDtestB_ProcessPoolStress(self):
         """
         _testProcessPoolStress_
 

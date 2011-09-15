@@ -128,7 +128,7 @@ class SeederTest(unittest.TestCase):
         return
 
 
-    def testWMTask(self):
+    def DISABLEDtestWMTask(self):
         """
         _testWMTask_
         

@@ -77,7 +77,7 @@ class testWMConfigCache(unittest.TestCase):
 
         return
 
-    def testB_addingConfigsAndTweaks(self):
+    def DISABLEDtestB_addingConfigsAndTweaks(self):
         """
         _addingConfigsAndTweaks_
         
@@ -111,7 +111,7 @@ class testWMConfigCache(unittest.TestCase):
         return
 
 
-    def testC_testViews(self):
+    def DISABLEDtestC_testViews(self):
         """
         _testViews_
 

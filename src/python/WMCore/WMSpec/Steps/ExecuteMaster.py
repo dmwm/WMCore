@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W1201, E1101
+# W1201: Allow string formatting in logging messages
+# E1101: Allow imports from currentThread
 """
 _ExecuteMaster_
 
@@ -7,9 +10,7 @@ for each step
 
 """
 
-
-
-
+import os
 import threading
 import traceback
 import logging
@@ -19,7 +20,6 @@ from WMCore.WMException import WMException
 from WMCore.WMSpec.WMStep import WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
-import inspect, os
 
 class ExecuteMaster:
     """
@@ -164,7 +164,7 @@ class ExecuteMaster:
         self.toTaskDirectory()
 
         # Okay, we're done, set the job to successful
-        if not error:
+        if not error and executor.report.stepSuccessful(stepName = executor.stepName):
             executor.report.setStepStatus(stepName = executor.stepName,
                                           status = 0)
         executor.saveReport()

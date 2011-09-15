@@ -541,6 +541,46 @@ cms::Exception caught in EventProcessor and rethrown
             self.assertEqual(f['first_event'], 0)
 
         return
+
+    def testGetAdlerChecksum(self):
+        """
+        _testGetAdlerChecksum_
+
+        Test the function that sees if all files
+        have an adler checksum.
+
+        For some reason, our default XML report doesn't have checksums
+        Therefore it should fail.
+        """
+
+        myReport = Report("cmsRun1")
+        myReport.parse(self.xmlPath)
+
+        myReport.checkForAdlerChecksum(stepName = "cmsRun1")
+
+        self.assertFalse(myReport.stepSuccessful(stepName = "cmsRun1"))
+        self.assertEqual(myReport.getExitCode(), 60451)
+
+        # Now see what happens if the adler32 is set to None
+        myReport2 = Report("cmsRun1")
+        myReport2.parse(self.xmlPath)
+        fRefs = myReport2.getAllFileRefsFromStep(step = "cmsRun1")
+        for fRef in fRefs:
+            fRef.checksums = {'adler32': None}
+        myReport2.checkForAdlerChecksum(stepName = "cmsRun1")
+        self.assertFalse(myReport2.stepSuccessful(stepName = "cmsRun1"))
+        self.assertEqual(myReport2.getExitCode(), 60451)
+
+        myReport3 = Report("cmsRun1")
+        myReport3.parse(self.xmlPath)
+        fRefs = myReport3.getAllFileRefsFromStep(step = "cmsRun1")
+        for fRef in fRefs:
+            fRef.checksums = {'adler32': 100}
+
+        myReport3.checkForAdlerChecksum(stepName = "cmsRun1")
+        self.assertTrue(myReport3.getExitCode() != 60451)
+
+        return
                          
 
  

@@ -49,7 +49,7 @@ def getRequestInfoFromGlobalQueue(serviceURL):
             childQueueURLs.add(item['local_queue'])
 
     except Exception, ex:
-        logging.error("%s: %s" (serviceURL, str(ex)))
+        logging.error("%s: %s" % (serviceURL, str(ex)))
         return DFormatter.errorFormatter(serviceURL, "GlobalQueue Down")
     else:
         tempResults = combineListOfDict('request_name', jobInfo, qInfo,
@@ -81,7 +81,7 @@ def getRequestInfoFromLocalQueue(serviceURL):
         wmbsUrls = service.getWMBSUrl()
         jobStatusInfo = service.getJobInjectStatusByRequest()
     except Exception, ex:
-        logging.error("%s: %s" (serviceURL, str(ex)))
+        logging.error("%s: %s" % (serviceURL, str(ex)))
         return DFormatter.errorFormatter(serviceURL, "LocalQueue Down")
 
     # assumes one to one relation between localqueue and wmbs
@@ -96,7 +96,7 @@ def getRequestInfoFromWMBS(serviceURL, jobStatusInfo):
     try:
         batchJobs = service.getBatchJobStatus()
     except Exception, ex:
-        logging.error("%s: %s" (serviceURL, str(ex)))
+        logging.error("%s: %s" % (serviceURL, str(ex)))
         return DFormatter.errorFormatter(serviceURL, "WMBS Service Dowtn")
 
     try:
@@ -105,7 +105,7 @@ def getRequestInfoFromWMBS(serviceURL, jobStatusInfo):
     # caught above try except. doesn't try to catch CouchError to
     # reduce the  dependency (not to import CouchError)
     except Exception, ex:
-        logging.error("%s: %s" (serviceURL, str(ex)))
+        logging.error("%s: %s" % (serviceURL, str(ex)))
         couchJobs = DFormatter.errorFormatter(serviceURL, "CouchDB Down")
     else:
         if len(couchJobs)  == 1 and couchJobs[0].has_key("error"):

@@ -48,6 +48,8 @@ dependencies = {
                                      'WMCore.Services.WMAgent'],
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/templates/WMCore/WebTools/RequestManager',
+                                    'src/html/GlobalMonitor',
+                                    'src/javascript/WMCore/WebTools/GlobalMonitor+'
                                     'src/html/RequestManager',
                                     'src/couchapps/ReqMgr+',
                                     'src/couchapps/ConfigCache+',
@@ -75,9 +77,9 @@ dependencies = {
                                     'WMCore.Services+', 'WMCore.WMSpec+'],
                         'systems':['wmc-web', 'wmc-database', 'workqueue', 'wmc-runtime'],
                         'statics': ['src/javascript/WMCore/WebTools/Agent',
-                                'src/javascript/WMCore/WebTools/WMBS',
-                                'src/javascript/external/graphael',
-                                'src/templates/WMCore/WebTools/WMBS',],
+                                    'src/javascript/WMCore/WebTools/WMBS',
+                                    'src/javascript/external/graphael',
+                                    'src/templates/WMCore/WebTools/WMBS'],
                         },
                 'asyncstageout':{
                         'packages': ['WMCore.Agent+', 'WMCore.Storage+',

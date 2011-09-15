@@ -10,7 +10,7 @@ __version__ = "$Revision: 1.2 $"
 
 import os
 
-from WMCore.WMInit import getWMBASE
+from WMCore.WMBase import getWMBASE
 from WMCore.Configuration import Configuration
 
 # The following parameters may need to be changed.

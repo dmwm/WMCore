@@ -357,7 +357,7 @@ class ConfigCache(WMObject):
         return results
 
 
-    def addConfig(self, newConfig, psetHash):
+    def addConfig(self, newConfig, psetHash = None):
         """
         _addConfig_
 

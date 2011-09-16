@@ -13,35 +13,6 @@ import subprocess
 from PSetTweaks.WMTweak import makeTweak
 from WMCore.Cache.WMConfigCache import ConfigCache
 
-def edmConfigHash(inputFile):
-    """
-    _edmConfigHash_
-    
-    Run edmConfigHash binary to generate a PSetHash.  
-    """
-    print "Hashing config...",
-    sys.stdout.flush()
-    fileHandle = open(inputFile, "r")
-    
-    proc = subprocess.Popen(["edmConfigHash"], shell = True, cwd = os.getcwd(),
-                            stdout = subprocess.PIPE,
-                            stderr = subprocess.PIPE,
-                            stdin = fileHandle)
-
-    stdout, stderr = proc.communicate()
-    fileHandle.close()
-    
-    if proc.returncode == 0:
-        hashData = str(stdout).strip()
-        print "done."
-        return hashData
-
-    msg = "Error running edmConfigHash:\n"
-    msg += stdout
-    msg += "\n"
-    msg += stderr
-    raise RuntimeError(msg)
-
 def loadConfig(configPath):
     """
     _loadConfig_
@@ -70,11 +41,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     loadedConfig = loadConfig(sys.argv[5])
-    psetHash = edmConfigHash(sys.argv[5])
 
     configCache = ConfigCache(sys.argv[1], sys.argv[2])
     configCache.createUserGroup(sys.argv[4], sys.argv[3])
-    configCache.addConfig(sys.argv[5], psetHash)
+    configCache.addConfig(sys.argv[5])
     configCache.setPSetTweaks(makeTweak(loadedConfig.process).jsondictionary())
     configCache.setLabel(sys.argv[6])
     configCache.setDescription(sys.argv[7])

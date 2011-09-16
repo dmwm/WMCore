@@ -53,7 +53,8 @@ dependencies = {
                                     'src/html/RequestManager',
                                     'src/couchapps/ReqMgr+',
                                     'src/couchapps/ConfigCache+',
-                                    'src/couchapps/OpsClipboard+'],
+                                    'src/couchapps/OpsClipboard+',
+                                    'src/couchapps/WorkloadSummary+'],
                         },
                 'workqueue':{
                         'packages': ['WMCore.WorkQueue+', 'WMCore.Wrappers+',

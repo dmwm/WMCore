@@ -86,6 +86,11 @@ def modifyConfiguration(config, **args):
     # hostname locations
     config.Agent.hostName = localhost
     
+    if hasattr(config,"WorkloadSummary"):
+        splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
+        config.WorkloadSummary.couchurl = splited[0]
+        config.WorkloadSummary.database = splited[1]
+        
     if hasattr(config,"TaskArchiver"):
         config.TaskArchiver.workloadSummaryCouchURL = args["workload_summary_url"]
 

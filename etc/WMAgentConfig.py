@@ -34,7 +34,8 @@ acdcDBName = "wmagent_acdc"
 workqueueDBName = 'workqueue'
 workqueueInboxDbName = 'workqueue_inbox'
 #example of workloadSummary url
-workloadSummaryURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984/workloadsummay"
+workloadSummaryDB = "workloadsummary"
+workloadSummaryURL = "%s/%s" % (couchURL, workloadSummaryDB)
 
 # Information for the workqueue, email of the administrator and the team names
 # for this agent.
@@ -89,6 +90,10 @@ config.JobStateMachine.couchDBName = jobDumpDBName
 config.section_("ACDC")
 config.ACDC.couchurl = couchURL
 config.ACDC.database = acdcDBName
+
+config.section_("WorkloadSummary")
+config.WorkloadSummary.couchurl = couchURL
+config.WorkloadSummary.database = workloadSummaryDB
 
 config.section_("BossAir")
 config.BossAir.pluginDir = "WMCore.BossAir.Plugins"

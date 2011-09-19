@@ -73,7 +73,9 @@ class ConfigCache(WMObject):
         self.document['description'] = {}
         self.document['description']['config_label'] = None
         self.document['description']['config_desc'] = None
-        
+
+        if id != None:
+            self.document['_id']                = id
         self.document['pset_tweak_details'] = None
         self.document['info']               = None
         self.document['config']             = None

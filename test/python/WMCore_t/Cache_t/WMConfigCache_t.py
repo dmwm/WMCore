@@ -137,6 +137,29 @@ class testWMConfigCache(unittest.TestCase):
         configCache2.delete()
         return
 
+    def testD_LoadConfigCache(self):
+        """
+        _LoadConfigCache_
+
+        Actually load the config cache using plain .load()
+        Tests to make sure that if we pass in an id field it gets used to load configs
+        """
+
+        configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
+        configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+        configCache.setLabel("labelA")
+        configCache.save()
+
+        configCache2 = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test',
+                                   id = configCache.getCouchID(),
+                                   rev = configCache.getCouchRev())
+        configCache2.load()
+        self.assertEqual(configCache2.document['owner'],
+                         {'group': 'testGroup', 'user': 'testOps'})
+        self.assertEqual(configCache2.document['description'],
+                         {'config_desc': None, 'config_label': 'labelA'})
+        return
+
     def testListAllConfigs(self):
         """
         _testListAllConfigs_

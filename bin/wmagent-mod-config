@@ -94,6 +94,13 @@ def modifyConfiguration(config, **args):
     if hasattr(config,"TaskArchiver"):
         config.TaskArchiver.workloadSummaryCouchURL = args["workload_summary_url"]
 
+    if hasattr(config,"AsyncTransfer"):
+        config.CoreDatabase.connectUrl = '%s/asynctransfer_agent' % args["couch_url"]
+        config.AsyncTransfer.couch_instance = args["couch_url"]
+        config.AsyncTransfer.data_source = args["couch_url"]
+        config.AsyncTransfer.serverDN = args["host_dn"]
+        config.AsyncTransfer.couch_statinstance = args["couch_url"]
+
     if hasattr(config,"CRABInterface"):
         config.CRABInterface.Webtools.host = args["cs_hostname"]
         config.CRABInterface.Webtools.port = int(args["cs_port"])

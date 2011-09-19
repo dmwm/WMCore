@@ -5,12 +5,14 @@ import os
 import hashlib
 import base64
 import sys
+
 from datetime import timedelta
 from time import sleep
 
 class RotatingDatabaseTest(unittest.TestCase):
     def setUp(self):
-        self.server = CouchServer(os.getenv("COUCHURL", 'http://admin:password@localhost:5984'))
+        self.couchURL = os.getenv("COUCHURL")
+        self.server = CouchServer(self.couchURL)
         # Kill off any databases left over from previous runs
         for db in [db for db in self.server.listDatabases() if db.startswith('rotdb_unittest_')]:
             try:
@@ -25,8 +27,8 @@ class RotatingDatabaseTest(unittest.TestCase):
         # set a long value for times, tests do operations explicitly
         self.timing = {'archive':timedelta(seconds=1), 'expire':timedelta(seconds=2)}
 
-        self.db = RotatingDatabase(dbname = self.dbname,
-                                archivename = self.arcname, timing = self.timing)
+        self.db = RotatingDatabase(dbname = self.dbname, url = self.couchURL,
+                                   archivename = self.arcname, timing = self.timing)
 
     def tearDown(self):
         testname = self.id().split('.')[-1].lower()
@@ -68,7 +70,7 @@ class RotatingDatabaseTest(unittest.TestCase):
         seed_db.commit(dummy_view)
         # Need to have the timing long enough so the data isn't archived by accident
         self.timing = {'archive':timedelta(seconds=1000), 'expire':timedelta(seconds=2000)}
-        self.db = RotatingDatabase(dbname = self.dbname, views=['foo/bar'],
+        self.db = RotatingDatabase(dbname = self.dbname, url = self.couchURL, views=['foo/bar'],
                                 archivename = self.arcname, timing = self.timing)
         self.db.archive_db.commitOne(archive_view)
         runs = 5
@@ -103,8 +105,8 @@ class RotatingDatabaseTest(unittest.TestCase):
         This is a bit of a dodgy test - if timings go funny it will fail
         """
         self.timing = {'archive':timedelta(seconds=0.5), 'expire':timedelta(seconds=1)}
-        self.db = RotatingDatabase(dbname = self.dbname,
-                                archivename = self.arcname, timing = self.timing)
+        self.db = RotatingDatabase(dbname = self.dbname, url = self.couchURL,
+                                   archivename = self.arcname, timing = self.timing)
         my_name = self.db.name
         self.db.commit({'foo':'bar'})
         sleep(5)

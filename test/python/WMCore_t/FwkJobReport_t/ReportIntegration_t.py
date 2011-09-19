@@ -12,7 +12,7 @@ import xml.dom.minidom
 import tempfile
 import threading
 
-import WMCore.WMInit
+import WMCore.WMBase
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
 
@@ -291,8 +291,8 @@ class ReportIntegrationTest(unittest.TestCase):
         Verify that we're able to parse a CMSSW report, convert it to a Report()
         style report, pickle it and then have the accountant process it.
         """
-        self.procPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                    "test/python/WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
+        self.procPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                    "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         
         myReport = Report("cmsRun1")
         myReport.parse(self.procPath)
@@ -332,8 +332,8 @@ class ReportIntegrationTest(unittest.TestCase):
         self.testMergeJob["state"] = "complete"
         self.stateChangeAction.execute(jobs = [self.testMergeJob])
 
-        self.mergePath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                         "test/python/WMCore_t/FwkJobReport_t/CMSSWMergeReport.xml")
+        self.mergePath = os.path.join(WMCore.WMBase.getTestBase(),
+                                         "WMCore_t/FwkJobReport_t/CMSSWMergeReport.xml")
         
         myReport = Report("mergeReco")
         myReport.parse(self.mergePath)

@@ -32,7 +32,7 @@ from WMCore.DataStructs.Run import Run
 
 from WMCore.FwkJobReport.Report import Report
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
-from WMCore.WMInit import getWMBASE
+from WMCore.WMBase import getTestBase
 from WMCore.Configuration import Configuration
 
 class TestChangeState(unittest.TestCase):
@@ -403,8 +403,8 @@ class TestChangeState(unittest.TestCase):
 
         change.propagate([testJobA], 'created', 'new')
         myReport = Report()
-        reportPath = os.path.join(getWMBASE(),
-                                  "test/python/WMCore_t/JobStateMachine_t/Report.pkl")
+        reportPath = os.path.join(getTestBase(),
+                                  "WMCore_t/JobStateMachine_t/Report.pkl")
         myReport.unpersist(reportPath)
         testJobA["fwjr"] = myReport
 
@@ -475,8 +475,8 @@ class TestChangeState(unittest.TestCase):
 
         change.propagate([testJobA], 'created', 'new')
         myReport = Report()
-        reportPath = os.path.join(getWMBASE(),
-                                  "test/python/WMCore_t/JobStateMachine_t/Report.pkl")
+        reportPath = os.path.join(getTestBase(),
+                                  "WMCore_t/JobStateMachine_t/Report.pkl")
         myReport.unpersist(reportPath)
         testJobA["fwjr"] = myReport
 
@@ -599,8 +599,8 @@ class TestChangeState(unittest.TestCase):
         self.assertEqual(transitions, goldenTransitions,
                          "Error: Wrong transitions: %s %s" % (transitions, goldenTransitions))
 
-        xmlPath = os.path.join(getWMBASE(),
-                               "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
+        xmlPath = os.path.join(getTestBase(),
+                               "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
         
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
@@ -635,8 +635,8 @@ class TestChangeState(unittest.TestCase):
                          "Error: PeakValueVsize is wrong.")
 
         failedReport = Report()
-        failedReport.unpersist(os.path.join(getWMBASE(),
-                                            "test/python/WMCore_t/JobStateMachine_t/FailedReport.pkl"))
+        failedReport.unpersist(os.path.join(getTestBase(),
+                                            "WMCore_t/JobStateMachine_t/FailedReport.pkl"))
         change.propagate([testJobB], "complete", "executing")
         testJobB["fwjr"] = failedReport
         testJobB["retry_count"] += 1

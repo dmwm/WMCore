@@ -14,7 +14,7 @@ import unittest
 import time
 import shutil
 
-import WMCore.WMInit
+import WMCore.WMBase
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 #from WMQuality.TestInit   import TestInit
@@ -224,15 +224,15 @@ class TaskArchiverTest(unittest.TestCase):
         report1 = Report()
         report2 = Report()
         if error:
-            path1 = os.path.join(WMCore.WMInit.getWMBASE(),
-                                 "test/python/WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
+            path1 = os.path.join(WMCore.WMBase.getTestBase(),
+                                 "WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
             path2 = path1
         else:
-            path1 = os.path.join(WMCore.WMInit.getWMBASE(),
-                                 'test/python/WMComponent_t/TaskArchiver_t/fwjrs',
+            path1 = os.path.join(WMCore.WMBase.getTestBase(),
+                                 'WMComponent_t/TaskArchiver_t/fwjrs',
                                  'mergeReport1.pkl')
-            path2 = os.path.join(WMCore.WMInit.getWMBASE(),
-                                 'test/python/WMComponent_t/TaskArchiver_t/fwjrs',
+            path2 = os.path.join(WMCore.WMBase.getTestBase(),
+                                 'WMComponent_t/TaskArchiver_t/fwjrs',
                                  'mergeReport2.pkl')
         report1.load(filename = path1)
         report2.load(filename = path2)

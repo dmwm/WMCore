@@ -12,7 +12,7 @@ import subprocess
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-from WMCore.WMInit import getWMBASE
+from WMCore.WMBase import getTestBase 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 class testWMConfigCache(unittest.TestCase):
@@ -90,7 +90,7 @@ class testWMConfigCache(unittest.TestCase):
         configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
-        psetPath = os.path.join(getWMBASE(), "test/python/WMCore_t/Cache_t/PSet.txt")
+        psetPath = os.path.join(getTestBase(), "WMCore_t/Cache_t/PSet.txt")
         configCache.addConfig(newConfig = psetPath, psetHash = None)
 
         configCache.setLabel("sample-label")
@@ -125,7 +125,7 @@ class testWMConfigCache(unittest.TestCase):
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
         configCache.document['md5_hash'] = "somemd5"
-        psetPath = os.path.join(getWMBASE(), "test/python/WMCore_t/Cache_t/PSet.txt")        
+        psetPath = os.path.join(getTestBase(), "WMCore_t/Cache_t/PSet.txt")        
         configCache.addConfig(newConfig = psetPath, psetHash = None)        
         configCache.save()
         

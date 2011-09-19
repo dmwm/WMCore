@@ -71,6 +71,9 @@ Error in cleaning expired credentials. Ignore and go ahead.')
 
 from WMCore.WMException import WMException
 class CredentialException(WMException):
+    """
+    Credential exceptions should be defined in this class.
+    """
     pass
 
 class Proxy(Credential):
@@ -587,10 +590,11 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
         self.logger.debug('MyProxy logon - retrieval:\n%s'%logonCmd)
 
         if retcode > 0 :
-            self.logger.debug('MyProxy result - retrieval :\n%s'%msg)
-            raise CredentialException(\
+            self.logger.debug('MyProxy result - retrieval :\n%s'%error)
+            self.logger.debug(\
 "Unable to retrieve delegated proxy for user DN %s! Exit code:%s since %s"\
          %(self.userDN, retcode, error) )
+            return proxyFilename
 
         self.vomsExtensionRenewal(proxyFilename, voAttribute)
 
@@ -710,7 +714,7 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
             minutes = (int(VomsLife)-hours*3600)/60
             vomsLife = "%d:%02d" % (hours, minutes)
             msg =  "proxy lifetime %s is different from \
-            voms extension lifetime%s for proxy %s\n" \
+            voms extension lifetime %s for proxy %s \n" \
                    % (proxyLife, vomsLife, proxy)
             self.logger.debug(msg)
             result = 0

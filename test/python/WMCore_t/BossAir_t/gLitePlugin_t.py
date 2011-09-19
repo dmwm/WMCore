@@ -24,7 +24,7 @@ class gLitePluginTest(BossAirTest):
     """
 
 
-    #@attr('integration')
+    @attr('integration')
     def testG_gLiteTest(self):
         """
         _gLiteTest_

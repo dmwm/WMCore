@@ -91,7 +91,8 @@ class SiteDBTest(unittest.TestCase):
         testUserName = "metson"
         userName = self.mySiteDB.dnUserName(dn=testDn)
         self.failUnless(testUserName == userName)
-
+        
+    @attr("integration")
     def testDNWithApostrophe(self):
         """
         Tests a DN with an apostrophy in - will fail till SiteDB2 appears

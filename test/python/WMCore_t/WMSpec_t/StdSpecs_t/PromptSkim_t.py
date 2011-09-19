@@ -14,6 +14,8 @@ from WMCore.WMSpec.StdSpecs.PromptSkim import getTestArguments
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
 
+from nose.plugins.attrib import attr
+
 class PromptSkimTest(unittest.TestCase):
     def setUp(self):
         """
@@ -42,6 +44,7 @@ class PromptSkimTest(unittest.TestCase):
         self.testInit.clearDatabase()
         return
 
+    @attr("integration")
     def testPromptSkim(self):
         """
         _testPromptSkim_

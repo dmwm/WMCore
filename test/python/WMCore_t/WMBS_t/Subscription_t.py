@@ -23,6 +23,8 @@ from WMCore.WMBS.Workflow import Workflow
 
 from WMCore.DataStructs.Run import Run
 
+from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
+
 class SubscriptionTest(unittest.TestCase):
     def setUp(self):
         """
@@ -1260,14 +1262,13 @@ class SubscriptionTest(unittest.TestCase):
         
         Test the getSubTypes function
         """
+        createBase = CreateWMBSBase()
+        subTypes   = createBase.subTypes
+        
         getSubTypes = self.daofactory(classname = "Subscriptions.GetSubTypes")
         result = getSubTypes.execute()
 
-        self.assertEqual(len(result), 8, "Error: Wrong number of types.")
-
-        for subType in ["Processing", "Merge", "Harvesting", "Cleanup",
-                        "LogCollect", "Skim", "Analysis", "Production"]:
-            self.assertTrue(subType in result, "Type %s is missing" % (subType))
+        self.assertEqual(result.sort(), subTypes.sort())
 
         return
 

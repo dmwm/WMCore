@@ -203,8 +203,6 @@ class JobCreatorTest(unittest.TestCase):
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
 
-        workload.save(workloadName)
-
         return workload
 
 

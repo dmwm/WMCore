@@ -381,9 +381,6 @@ class JobSubmitterTest(unittest.TestCase):
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        #arguments = getTestArguments()
-
-        #workload = rerecoWorkload("Tier1ReReco", arguments)
         workload = testWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
 
@@ -391,8 +388,6 @@ class JobSubmitterTest(unittest.TestCase):
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
-
-        workload.save(workloadName)
 
         return workload
 

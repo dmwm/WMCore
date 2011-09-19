@@ -8,7 +8,7 @@ import logging
 import socket
 import threading
 
-import WMCore.WMInit
+import WMCore.WMBase
 
 from WMCore.WMBS.Subscription   import Subscription
 from WMCore.WMBS.Workflow       import Workflow
@@ -227,8 +227,8 @@ class DashboardReporterTest(unittest.TestCase):
         jobGroup = self.createTestJobGroup()
         config   = self.getConfig()
 
-        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                               "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
+        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+                               "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
 
@@ -250,7 +250,7 @@ class DashboardReporterTest(unittest.TestCase):
         return
     
 
-    def testDashboardReporterPollerAlertSending_algorithm(self):
+    def testB_DashboardReporterPollerAlertSending_algorithm(self):
         """
         Cause exception (alert-worthy situation) in the algorithm()
         method.

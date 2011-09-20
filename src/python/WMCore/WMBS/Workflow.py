@@ -55,6 +55,8 @@ class Workflow(WMBSBase, WMWorkflow):
         """
         action = self.daofactory(classname = "Workflow.Exists")
         result = action.execute(spec = self.spec, owner = self.dn,
+                                group_name = self.vogroup,
+                                role_name = self.vorole,
                                 name = self.name, task = self.task,
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
@@ -160,11 +162,9 @@ class Workflow(WMBSBase, WMWorkflow):
         self.id = result["id"]
         self.spec = result["spec"]
         self.name = result["name"]
-
         self.owner = result["owner"]
         self.dn = result["dn"]
         self.group = result["grp"]
-
         self.task = result["task"]
         self.wfType = result["type"]
 

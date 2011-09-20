@@ -309,7 +309,7 @@ class StdBase(object):
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
         logCollectTask.applyTemplates()
-        logCollectTask.setSplittingAlgorithm("EndOfRun", files_per_job = filesPerJob)
+        logCollectTask.setSplittingAlgorithm("MinFileBased", files_per_job = filesPerJob)
         logCollectTask.setTaskType("LogCollect")
 
         parentTaskLogArch = parentTask.getStep("logArch1")

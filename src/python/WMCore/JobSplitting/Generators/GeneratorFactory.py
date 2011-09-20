@@ -51,7 +51,7 @@ class GeneratorFactory(WMFactory):
             raise GeneratorFactoryException(msg)
         return
 
-    def makeGenerators(wmTaskHelper):
+    def makeGenerators(self, wmTaskHelper):
         """
         _makeGenerators_
         

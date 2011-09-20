@@ -198,7 +198,7 @@ class RelValMCTest(unittest.TestCase):
         logCollectSub = Subscription(fileset = genLogCollect, workflow = genLogCollectTask)
         logCollectSub.loadData()
         self.assertEqual(logCollectSub["type"], "LogCollect", "Error: Wrong subscription type.")
-        self.assertEqual(logCollectSub["split_algo"], "EndOfRun", "Error: Wrong split algo.")
+        self.assertEqual(logCollectSub["split_algo"], "MinFileBased", "Error: Wrong split algo.")
 
         for o in goldenOutputMods:
             mergeLogCollect = Fileset(name = "/TestWorkload/Generation/GenerationMerge%s/merged-logArchive" % o)
@@ -209,7 +209,7 @@ class RelValMCTest(unittest.TestCase):
             logCollectSub = Subscription(fileset = mergeLogCollect, workflow = mergeLogCollectTask)
             logCollectSub.loadData()
             self.assertEqual(logCollectSub["type"], "LogCollect", "Error: Wrong subscription type.")
-            self.assertEqual(logCollectSub["split_algo"], "EndOfRun", "Error: Wrong split algo.")
+            self.assertEqual(logCollectSub["split_algo"], "MinFileBased", "Error: Wrong split algo.")
 
     def _stepOneTaskTest(self):
         recoTask = Workflow(name = "TestWorkload",
@@ -302,7 +302,7 @@ class RelValMCTest(unittest.TestCase):
             logCollectSub = Subscription(fileset = recoMergeLogCollect, workflow = recoMergeLogCollectTask)
             logCollectSub.loadData()
             self.assertEqual(logCollectSub["type"], "LogCollect", "Error: Wrong subscription type.")
-            self.assertEqual(logCollectSub["split_algo"], "EndOfRun", "Error: Wrong split algo.")
+            self.assertEqual(logCollectSub["split_algo"], "MinFileBased", "Error: Wrong split algo.")
 
 
     def _stepTwoTaskTest(self):
@@ -399,7 +399,7 @@ class RelValMCTest(unittest.TestCase):
             logCollectSub = Subscription(fileset = alcaRecoMergeLogCollect, workflow = alcaRecoMergeLogCollectTask)
             logCollectSub.loadData()
             self.assertEqual(logCollectSub["type"], "LogCollect", "Error: Wrong subscription type.")
-            self.assertEqual(logCollectSub["split_algo"], "EndOfRun", "Error: Wrong split algo.")
+            self.assertEqual(logCollectSub["split_algo"], "MinFileBased", "Error: Wrong split algo.")
 
     
     def testRelValMC(self):

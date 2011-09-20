@@ -205,7 +205,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(logCollectSub["type"], "LogCollect",
                          "Error: Wrong subscription type.")
-        self.assertEqual(logCollectSub["split_algo"], "EndOfRun",
+        self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algo.")
 
         procLogCollect = Fileset(name = "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputRECORECO/merged-logArchive")
@@ -218,7 +218,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(logCollectSub["type"], "LogCollect",
                          "Error: Wrong subscription type.")
-        self.assertEqual(logCollectSub["split_algo"], "EndOfRun",
+        self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algo.")
 
         procLogCollect = Fileset(name = "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputALCARECOALCARECO/merged-logArchive")
@@ -231,7 +231,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(logCollectSub["type"], "LogCollect",
                          "Error: Wrong subscription type.")
-        self.assertEqual(logCollectSub["split_algo"], "EndOfRun",
+        self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algo.")                
 
         return

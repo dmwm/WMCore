@@ -105,7 +105,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         stepHelper = WMStepHelper(step)
         self.currentStepName  = getStepName(step)
-        self.currentStepSpace = getStepSpace(stepHelper.name())
+        self.currentStepSpace = None
 
         if not stepHelper.stepType() in self.watchStepTypes:
             self.disableStep = True
@@ -151,7 +151,10 @@ class PerformanceMonitor(WMRuntimeMonitor):
         if self.currentStepName == None:
             # We're between steps
             return
-        
+
+        if self.currentStepSpace == None:
+            # Then build the step space
+            self.currentStepSpace = getStepSpace(stepHelper.name())        
 
         stepPID = getStepPID(self.currentStepSpace, self.currentStepName)
 

@@ -212,7 +212,7 @@ class DashboardInfo(dict):
         data['JobExitCode']     = self.jobSuccess
         self.publish(data = data)
         
-        return
+        return data
     
 
     def stepStart(self, step):
@@ -224,7 +224,6 @@ class DashboardInfo(dict):
 
         helper = WMStepHelper(step)
 
-
         data = {}
         data['MessageType']   = 'jobRuntime'
         data['MessageTS']     = time.time()
@@ -235,7 +234,7 @@ class DashboardInfo(dict):
         
         self.publish(data = data)
 
-        return
+        return data
 
 
     def stepEnd(self, step, stepReport):
@@ -261,12 +260,10 @@ class DashboardInfo(dict):
         data['ExeExitCode']              = stepReport.getStepExitCode(stepName = helper.name())
         if helper.name() == 'StageOut':
             data['StageOutExitStatus']       = stepReport.stepSuccessful(stepName = helper.name())
-
         
         self.publish(data = data)
 
-
-        return
+        return data
 
 
     def jobKilled(self):

@@ -596,7 +596,6 @@ class JobCreatorTest(unittest.TestCase):
         procTask = workload.getTask("ReReco")
         procTask.setSplittingAlgorithm("ParentlessMergeBySize", min_merge_size = 1, max_merge_size = 100000,
                             max_merge_events = 200000)
-        workload.save(workloadName)        
         
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
 

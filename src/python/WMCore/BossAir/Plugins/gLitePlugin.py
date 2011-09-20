@@ -951,6 +951,9 @@ class gLitePlugin(BasePlugin):
             error  = res['stderr']
             exit   = res['exit']
             workid = res['workid']
+            for jj in jobs:
+                if jj['jobid'] == workqueued[workid]:
+                    break
             logging.debug ('result : \n %s' % str(res) )
             # Check error
             if exit != 0:
@@ -958,10 +961,7 @@ class gLitePlugin(BasePlugin):
                 msg += '\tstderr: %s\n\tjson: %s' % (error, str(jsout.strip()))
                 logging.error( msg )
                 failedJobs.append(workqueued[workid])
-                for jj in jobs:
-                    if jj['jobid'] == workqueued[workid]:
-                        self.fakeReport("PostMortemFailure", msg, -1, jj)
-                        break
+                self.fakeReport("PostMortemFailure", msg, -1, jj)
                 continue
             else:
                 logInfoOutfile = '%s/loggingInfo.%i.log' % ( jj['cache_dir'], jj['retry_count'] )

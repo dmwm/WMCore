@@ -88,7 +88,7 @@ def modifyConfiguration(config, **args):
     
     if hasattr(config,"WorkloadSummary"):
         splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
-        config.WorkloadSummary.couchurl = splited[0]
+        config.WorkloadSummary.couchurl = args["couch_url"]
         config.WorkloadSummary.database = splited[1]
         
     if hasattr(config,"TaskArchiver"):

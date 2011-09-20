@@ -5,11 +5,18 @@ _ResourceControl_
 Library from manipulating and querying the resource control database.
 """
 
-
-
-
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
+from WMCore.WMException import WMException
+
+class ResourceControlException(WMException):
+    """
+    _ResourceControlException_
+
+    Exception for the ResourceControl mechanisms
+    """
+    pass
+
 
 class ResourceControl(WMConnectionBase):
     def __init__(self):
@@ -125,15 +132,57 @@ class ResourceControl(WMConnectionBase):
         slotsAction.execute(siteName, jobSlots, conn = self.getDBConn(),
                             transaction = self.existingTransaction())
 
-
     def thresholdBySite(self, siteName):
         """
         _thresholdBySite_
         
         List the thresholds of a single site
         """
-
         listActions = self.daofactory(classname = "ThresholdBySite")
         return listActions.execute(site = siteName,
                                    conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
+
+
+    def insertAllSEs(self, siteName, jobSlots = 0, ceName = None, plugin = None,
+                     taskList = []):
+        """
+        _insertAllSEs_
+
+        Insert all SEs into WMBS ResourceControl
+        This uses the Services.SiteDB to insert all SEs under a common
+        CE.  It is meant to be used with WMS submission.
+
+        Sites will be named siteName_SEName
+
+        It expects a taskList of the following form:
+
+        [{'taskType': taskType, 'priority': priority, 'maxSlots': maxSlots}]
+
+        for each entry in the taskList, a threshold is inserted into the database
+        for EVERY SE
+        """
+
+        from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
+        siteDB = SiteDBJSON()
+
+        cmsNames = siteDB.getAllCMSNames()
+        for cmsName in cmsNames:
+            seNames = siteDB.cmsNametoSE(cmsName)
+            for SE in seNames:
+                sName = '%s_%s' % (siteName, SE)
+                self.insertSite(siteName = sName, jobSlots = jobSlots, seName = SE,
+                                ceName = ceName, cmsName = cmsName, plugin = plugin)
+                for task in taskList:
+                    if not task.has_key('maxSlots') or not task.has_key('taskType') \
+                           or not task.has_key('priority'):
+                        msg =  "Incomplete task in taskList for ResourceControl.insertAllSEs\n"
+                        msg += task
+                        raise ResourceControlException(msg)
+                    self.insertThreshold(siteName = sName, taskType = task['taskType'],
+                                         maxSlots = task['maxSlots'], priority = task['priority'])
+
+
+        return
+
+        

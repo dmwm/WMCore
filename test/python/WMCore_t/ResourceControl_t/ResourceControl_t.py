@@ -7,6 +7,7 @@ Unit tests for ResourceControl.
 
 import unittest
 import threading
+import os
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
@@ -19,6 +20,8 @@ from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMQuality.TestInit import TestInit
 from WMCore.Services.UUID import makeUUID
 from WMCore.DAOFactory import DAOFactory
+from WMCore.Agent.Configuration import Configuration
+from WMCore.WMInit import getWMBASE
 
 class ResourceControlTest(unittest.TestCase):
     def setUp(self):
@@ -37,7 +40,8 @@ class ResourceControlTest(unittest.TestCase):
         myThread = threading.currentThread()        
         self.daoFactory = DAOFactory(package="WMCore.WMBS",
                                      logger = myThread.logger,
-                                     dbinterface = myThread.dbi)                
+                                     dbinterface = myThread.dbi)
+        self.tempDir = self.testInit.generateWorkDir()
         return
 
     def tearDown(self):
@@ -468,7 +472,81 @@ class ResourceControlTest(unittest.TestCase):
         
         return
 
-    
+    def createConfig(self):
+        """
+        _createConfig_
 
+        Create a config and save it to the temp dir.  Set the WMAGENT_CONFIG
+        environment variable so the config gets picked up.
+        """
+        config = Configuration()
+        config.section_("General")
+        config.General.workDir = os.getenv("TESTDIR", os.getcwd())
+        config.section_("Agent")
+        config.Agent.componentName = "resource_control_t"
+        config.section_("CoreDatabase")
+        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+        config.CoreDatabase.socket = os.getenv("DBSOCK")
+
+        configHandle = open(os.path.join(self.tempDir, "config.py"), "w")
+        configHandle.write(str(config))
+        configHandle.close()
+
+        os.environ["WMAGENT_CONFIG"] = os.path.join(self.tempDir, "config.py")
+        return
+
+    def testInsertAllSEs(self):
+        """
+        _testInsertAllSEs_
+
+        Test to see if we can insert all SEs and Thresholds at once
+        Depending on the WMCore.Services.SiteDB interface
+        """
+        self.createConfig()
+
+        resControlPath = os.path.join(getWMBASE(), "bin/wmagent-resource-control")
+        os.system("%s --add-all-sites --plugin=CondorPlugin --site-slots=100" % resControlPath)
+
+        myResourceControl = ResourceControl()
+        result = myResourceControl.listThresholdsForSubmit()
+        self.assertTrue('T1_US_FNAL' in result.keys())
+        for x in result.keys():
+            self.assertEqual(len(result[x]), 6)
+            for thresh in result[x]:
+                if thresh['task_type'] == 'Processing':
+                    self.assertEqual(thresh['priority'], 1)
+                    self.assertEqual(thresh['max_slots'], 100)
+                    self.assertEqual(thresh['total_slots'], 100)
+
+    def testInsertAllSEs2(self):
+        """
+        _testInsertAllSEs2_
+        
+        Test to see if we can insert all SEs and Thresholds at once
+        Depending on the WMCore.Services.SiteDB interface
+        """
+        myResourceControl = ResourceControl()
+        taskList = [{'taskType': 'Processing', 'maxSlots': 100, 'priority': 1},
+                    {'taskType': 'Merge', 'maxSlots': 50, 'priority': 2}]
+    
+        myResourceControl.insertAllSEs(siteName = 'test', jobSlots = 200,
+                                       ceName = 'glidein-ce.fnal.gov',
+                                       plugin = 'CondorPlugin', taskList = taskList)
+        result = myResourceControl.listThresholdsForSubmit()
+        self.assertTrue('test_cmssrm.fnal.gov' in result.keys())
+        self.assertEqual(result['test_cmssrm.fnal.gov'][0]['cms_name'], 'T1_US_FNAL')
+        for x in result.keys():
+            self.assertEqual(len(result[x]), 2)
+            for thresh in result[x]:
+                if thresh['task_type'] == 'Processing':
+                    self.assertEqual(thresh['priority'], 1)
+                    self.assertEqual(thresh['max_slots'], 100)
+                    self.assertEqual(thresh['total_slots'], 200)
+                else:
+                    self.assertEqual(thresh['priority'], 2)
+                    self.assertEqual(thresh['max_slots'], 50)
+                    self.assertEqual(thresh['total_slots'], 200)
+        return
+                
 if __name__ == '__main__':
     unittest.main()

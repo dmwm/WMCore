@@ -16,6 +16,7 @@ from collections import defaultdict
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 
 from WMCore.WMBS.File import File
+from WMCore.DataStructs.File import File as DatastructFile
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
@@ -688,14 +689,19 @@ class WMBSHelper(WMConnectionBase):
         """
         """
         wmbsParents = []
+        for parent in acdcFile["parents"]:
+            parent = self._addACDCFileToWMBSFile(DatastructFile(lfn = parent,
+                                                                locations = acdcFile["locations"]),
+                                                 inFileset = False)
+            wmbsParents.append(parent)
+
         #pass empty check sum since it won't be updated to dbs anyway
         checksums = {}
         wmbsFile = File(lfn = str(acdcFile["lfn"]),
                         size = acdcFile["size"],
                         events = acdcFile["events"],
                         checksums = checksums,
-                        #TODO: need to get list of parent lfn
-                        parents = acdcFile["parents"],
+                        parents = wmbsParents,
                         locations = acdcFile["locations"],
                         merged = acdcFile.get('merged', True))
 
@@ -708,7 +714,7 @@ class WMBSHelper(WMConnectionBase):
         self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
             
         logging.info("WMBS File: %s\n on Location: %s" 
-                     % (wmbsFile['lfn'], wmbsFile['locations']))
+                     % (wmbsFile['lfn'], wmbsFile['newlocations']))
 
         if inFileset:
             wmbsFile['inFileset'] = True

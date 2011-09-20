@@ -192,7 +192,7 @@ class WorkQueueTest(WorkQueueTestCase):
         EmulatorHelper.resetEmulators()
         
     
-    def createResubmitSpec(self, serverUrl, couchDB):
+    def createResubmitSpec(self, serverUrl, couchDB, parentage = False):
         """
         _createResubmitSpec_
         Create a bogus resubmit workload.
@@ -205,6 +205,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # first task uses the input dataset
         reco.addInputDataset(primary = "PRIMARY", processed = "processed-v1", tier = "TIER1")
         reco.data.input.splitting.algorithm = "File"
+        reco.data.input.splitting.include_parents = parentage
         reco.setTaskType("Processing")
         cmsRunReco = reco.makeStep("cmsRun1")
         cmsRunReco.setStepType("CMSSW")
@@ -224,14 +225,14 @@ class WorkQueueTest(WorkQueueTestCase):
             job["task"] = workload.getTask("reco").getPathName()
             job["workflow"] = workload.name()
             job["location"] = self.site
-            job["owner"] = "evansde77"
-            job["group"] = "DMWM"
+            job["owner"] = workload.getOwner().get("name")
+            job["group"] = workload.getOwner().get("group")
             return job
 
-        testFileA = WMFile(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileA = WMFile(lfn = makeUUID(), size = 1024, events = 1024, parents = ['parent1'])
         testFileA.setLocation([self.site])
         testFileA.addRun(Run(1, 1, 2))
-        testFileB = WMFile(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileB = WMFile(lfn = makeUUID(), size = 1024, events = 1024, parents = ['parent2'])
         testFileB.setLocation([self.site])
         testFileB.addRun(Run(1, 3, 4))
         testJobA = getJob(workload)
@@ -925,6 +926,20 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         self.localQueue.getWork({"T1_US_FNAL": 100})
 
+    def testResubmissionWithParentsWorkflow(self):
+        """Test workflow resubmission with parentage via ACDC"""
+        acdcCouchDB = "workqueue_t_acdc"
+        self.testInit.setupCouch(acdcCouchDB, "GroupUser", "ACDC")
+
+        spec = self.createResubmitSpec(self.testInit.couchUrl,
+                                       acdcCouchDB, parentage = True)
+        spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
+        spec.save(spec.specUrl())
+        self.localQueue.params['Teams'] = ['cmsdataops']
+        self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team = "cmsdataops")
+        self.localQueue.pullWork({"T1_US_FNAL": 100})
+        syncQueues(self.localQueue)
+        self.localQueue.getWork({"T1_US_FNAL": 100})
 
     def testThrottling(self):
         """Pull work only if all previous work processed in child"""

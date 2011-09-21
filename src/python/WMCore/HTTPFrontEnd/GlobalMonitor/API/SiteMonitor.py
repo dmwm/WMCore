@@ -1,4 +1,10 @@
-from WMCore.Services.RequestManager.RequestManager import RequestManager
+import logging
+### use request manager funtion directly
+### TODO: remove this when GlobalMonitor spins out as a separate application
+from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
+          import getGlobalQueues
+###TODO: add back when GlobalMonitor spins out as a separate application
+###from WMCore.Services.RequestManager.RequestManager import RequestManagerfrom WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.WMBS.WMBS import WMBS
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import splitCouchServiceURL
@@ -17,11 +23,15 @@ def getSiteOverview(serviceURL, serviceLevel):
 def getSiteInfoFromReqMgr(serviceURL):
     """ get agent info from request mgr """
 
-    reqMgr = RequestManager({'endpoint':serviceURL})
+    ###TODO: add back when GlobalMonitor spins out as a separate application
+    ###reqMgr = RequestManager({'endpoint':serviceURL})
     #get information from global queue.
     try:
-        queues = reqMgr.getWorkQueue()
+        queues = getGlobalQueues()
+        ###TODO: add back when GlobalMonitor spins out as a separate application
+        ###queues = reqMgr.getWorkQueue()
     except Exception, ex:
+        logging.warning("Error: %s" % str(ex))
         errorInfo = {}
         errorInfo['site_name'] = serviceURL
         return [errorInfo]
@@ -38,6 +48,7 @@ def getSiteInfoFromGlobalQueue(serviceURL):
     try:
         queues = globalQ.getChildQueues()
     except Exception, ex:
+        logging.warning("Error: %s" % str(ex))
         errorInfo = {}
         errorInfo['site_name'] = serviceURL
         return [errorInfo]
@@ -55,6 +66,7 @@ def getSiteInfoFromLocalQueue(serviceURL):
     try:
         wmbsUrls = wqService.getWMBSUrl()
     except Exception, ex:
+        logging.warning("Error: %s" % str(ex))
         errorInfo = {}
         errorInfo['site_name'] = serviceURL
         return [errorInfo]
@@ -72,7 +84,6 @@ def getSiteInfoFromWMBSService(serviceURL):
         _combineSites(completeJobs, batchJobs)
         return completeJobs
     except Exception, ex:
-        import logging
         logging.warning("Error: %s" % str(ex))
         return []
 

@@ -160,6 +160,7 @@ class CondorPlugin(BasePlugin):
         self.submitDir  = None
         self.removeTime = getattr(config.BossAir, 'removeTime', 60)
         self.multiTasks = getattr(config.BossAir, 'multicoreTaskTypes', [])
+        self.useGSite   = getattr(config.BossAir, 'useGLIDEINSites', True)
 
 
         # Build ourselves a pool
@@ -178,6 +179,11 @@ class CondorPlugin(BasePlugin):
 
         if self.serverCert and self.serverKey and self.myproxySrv:
             self.proxy = self.setupMyProxy()
+
+        # Build a request string
+        self.reqStr = "(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_Site, DESIRED_Sites)"
+        if hasattr(config.BossAir, 'condorRequirementsString'):
+            self.reqStr = config.BossAir.condorRequirementsString
 
         return
 
@@ -521,7 +527,7 @@ class CondorPlugin(BasePlugin):
         #    avoid condorg submission errors from > 256 character pathnames
 
         jdl.append("universe = vanilla\n")
-        jdl.append("requirements = (Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_Site, DESIRED_Sites)\n")
+        jdl.append("requirements = %s\n" % self.reqStr)
         #jdl.append("should_transfer_executable = TRUE\n")
 
         jdl.append("should_transfer_files = YES\n")
@@ -602,6 +608,8 @@ class CondorPlugin(BasePlugin):
                               % (job['location']))
                 continue
             jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
+            if self.useGSite:
+                jdl.append('+useGLIDEINSites = \"%s\"\n' % (jobCE))
 
             # Check for multicore
             if job.get('taskType', None) in self.multiTasks:

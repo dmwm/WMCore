@@ -11,6 +11,7 @@ import logging
 import time
 import random
 import shutil
+import datetime
 import multiprocessing
 
 import psutil
@@ -136,8 +137,15 @@ class AgentTest(unittest.TestCase):
         self.assertTrue(poller.is_alive())
 
         if expected != 0:
+            # watch so that the test can't take for ever, fail in 2mins
+            timeLimitExceeded = False
+            startTime = datetime.datetime.now()
+            limitTime = 2 * 60 # seconds
             while len(handler.queue) == 0:
                 time.sleep(config.pollInterval / 5)
+                if (datetime.datetime.now() - startTime).seconds > limitTime:
+                    timeLimitExceeded = True
+                    break                
         else:
             time.sleep(config.period * 2)
             
@@ -147,6 +155,8 @@ class AgentTest(unittest.TestCase):
         self.assertFalse(poller.is_alive())
         
         if expected != 0:
+            if timeLimitExceeded:
+                self.fail("No alert received in %s seconds." % limitTime)            
             # there should be just one alert received, poller should have the
             # change to send a second
             self.assertEqual(len(handler.queue), expected)

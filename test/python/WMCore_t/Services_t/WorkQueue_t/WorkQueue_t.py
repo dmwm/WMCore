@@ -6,7 +6,7 @@ import shutil
 from WMCore.Wrappers import JsonWrapper
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
-
+from WMCore.Services.WorkQueue.WorkQueue import splitCouchServiceURL
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
@@ -76,6 +76,24 @@ class WorkQueueTest(unittest.TestCase):
         self.assertEqual(wqApi.getChildQueuesByRequest(), [])
         self.assertEqual(wqApi.getWMBSUrl(), [])
         self.assertEqual(wqApi.getWMBSUrlByRequest(), [])
+
+    def testSplitCouchServiceURL(self):
+
+        urlSplit = splitCouchServiceURL("https://cmsweb.cern.ch/workqueue")
+        self.assertEqual("https://cmsweb.cern.ch/couchdb", urlSplit[0])
+        self.assertEqual("workqueue", urlSplit[1])
+
+        urlSplit = splitCouchServiceURL("https://cmsweb-testbed.cern.ch/workqueue")
+        self.assertEqual("https://cmsweb-testbed.cern.ch/couchdb", urlSplit[0])
+        self.assertEqual("workqueue", urlSplit[1])
+
+        urlSplit = splitCouchServiceURL("https://cmsweb-dev.cern.ch/workqueue")
+        self.assertEqual("https://cmsweb-dev.cern.ch/couchdb", urlSplit[0])
+        self.assertEqual("workqueue", urlSplit[1])
+
+        urlSplit = splitCouchServiceURL("https://cmsweb-dev.cern.ch/couchdb/workqueue")
+        self.assertEqual("https://cmsweb-dev.cern.ch/couchdb", urlSplit[0])
+        self.assertEqual("workqueue", urlSplit[1])
 
 if __name__ == '__main__':
 

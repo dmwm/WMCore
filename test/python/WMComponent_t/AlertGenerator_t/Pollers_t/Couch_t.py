@@ -30,14 +30,12 @@ class CouchTest(unittest.TestCase):
         self.config = getConfig(self.testDir)
         # mock generator instance to communicate some configuration values
         self.generator = utils.AlertGeneratorMock(self.config)        
-        self.testProcesses = []
         self.testName = self.id().split('.')[-1]
          
         
     def tearDown(self):       
         self.testInit.delWorkDir()
         self.generator = None
-        utils.terminateProcesses(self.testProcesses)
 
 
     def testAlertGeneratorCouchDbSizePollerBasic(self):
@@ -134,15 +132,15 @@ class CouchTest(unittest.TestCase):
         self.config.AlertGenerator.couchCPUPoller.critical = 80
         self.config.AlertGenerator.couchCPUPoller.pollInterval = 0.2
         self.config.AlertGenerator.couchCPUPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = CouchCPUPoller       
-        ppti.config = self.config.AlertGenerator.couchCPUPoller
-        ppti.thresholdToTest = self.config.AlertGenerator.couchCPUPoller.soft
-        ppti.level = self.config.AlertProcessor.soft.level
-        ppti.expected = 1
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = CouchCPUPoller       
+        ti.config = self.config.AlertGenerator.couchCPUPoller
+        ti.thresholdToTest = self.config.AlertGenerator.couchCPUPoller.soft
+        ti.level = self.config.AlertProcessor.soft.level
+        ti.expected = 1
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)
         
 
     def testAlertGeneratorCouchCPUPollerCriticalThreshold(self):
@@ -150,15 +148,15 @@ class CouchTest(unittest.TestCase):
         self.config.AlertGenerator.couchCPUPoller.critical = 80
         self.config.AlertGenerator.couchCPUPoller.pollInterval = 0.2
         self.config.AlertGenerator.couchCPUPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = CouchCPUPoller       
-        ppti.config = self.config.AlertGenerator.couchCPUPoller
-        ppti.thresholdToTest = self.config.AlertGenerator.couchCPUPoller.critical 
-        ppti.level = self.config.AlertProcessor.critical.level
-        ppti.expected = 1
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)        
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = CouchCPUPoller       
+        ti.config = self.config.AlertGenerator.couchCPUPoller
+        ti.thresholdToTest = self.config.AlertGenerator.couchCPUPoller.critical 
+        ti.level = self.config.AlertProcessor.critical.level
+        ti.expected = 1
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)        
 
             
     def testAlertGeneratorCouchCPUPollerNoAlert(self):
@@ -166,16 +164,16 @@ class CouchTest(unittest.TestCase):
         self.config.AlertGenerator.couchCPUPoller.critical = 80
         self.config.AlertGenerator.couchCPUPoller.pollInterval = 0.2
         self.config.AlertGenerator.couchCPUPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = CouchCPUPoller       
-        ppti.config = self.config.AlertGenerator.couchCPUPoller
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = CouchCPUPoller       
+        ti.config = self.config.AlertGenerator.couchCPUPoller
         # lower the threshold so that the alert is never generated
-        ppti.thresholdToTest = self.config.AlertGenerator.couchCPUPoller.soft - 20
-        ppti.level = 0
-        ppti.expected = 0
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)
+        ti.thresholdToTest = self.config.AlertGenerator.couchCPUPoller.soft - 20
+        ti.level = 0
+        ti.expected = 0
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)
         
 
     def testAlertGeneratorCouchMemoryPollerSoftThreshold(self):
@@ -183,15 +181,15 @@ class CouchTest(unittest.TestCase):
         self.config.AlertGenerator.couchMemPoller.critical = 80
         self.config.AlertGenerator.couchMemPoller.pollInterval = 0.2
         self.config.AlertGenerator.couchMemPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = CouchMemoryPoller
-        ppti.config = self.config.AlertGenerator.couchMemPoller
-        ppti.thresholdToTest = self.config.AlertGenerator.couchMemPoller.soft
-        ppti.level = self.config.AlertProcessor.soft.level
-        ppti.expected = 1
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = CouchMemoryPoller
+        ti.config = self.config.AlertGenerator.couchMemPoller
+        ti.thresholdToTest = self.config.AlertGenerator.couchMemPoller.soft
+        ti.level = self.config.AlertProcessor.soft.level
+        ti.expected = 1
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)
                                     
 
     def testAlertGeneratorCouchMemoryPollerCriticalThreshold(self):
@@ -199,15 +197,15 @@ class CouchTest(unittest.TestCase):
         self.config.AlertGenerator.couchMemPoller.critical = 80
         self.config.AlertGenerator.couchMemPoller.pollInterval = 0.2
         self.config.AlertGenerator.couchMemPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = CouchMemoryPoller
-        ppti.config = self.config.AlertGenerator.couchMemPoller
-        ppti.thresholdToTest = self.config.AlertGenerator.couchMemPoller.critical
-        ppti.level = self.config.AlertProcessor.critical.level
-        ppti.expected = 1
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = CouchMemoryPoller
+        ti.config = self.config.AlertGenerator.couchMemPoller
+        ti.thresholdToTest = self.config.AlertGenerator.couchMemPoller.critical
+        ti.level = self.config.AlertProcessor.critical.level
+        ti.expected = 1
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)
         
 
     def testAlertGeneratorCouchMemoryPollerNoAlert(self):
@@ -215,16 +213,16 @@ class CouchTest(unittest.TestCase):
         self.config.AlertGenerator.couchMemPoller.critical = 80
         self.config.AlertGenerator.couchMemPoller.pollInterval = 0.2
         self.config.AlertGenerator.couchMemPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = CouchMemoryPoller
-        ppti.config = self.config.AlertGenerator.couchMemPoller
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = CouchMemoryPoller
+        ti.config = self.config.AlertGenerator.couchMemPoller
         # lower the threshold so that the alert is never generated
-        ppti.thresholdToTest = self.config.AlertGenerator.couchMemPoller.soft - 20
-        ppti.level = 0
-        ppti.expected = 0
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)
+        ti.thresholdToTest = self.config.AlertGenerator.couchMemPoller.soft - 20
+        ti.level = 0
+        ti.expected = 0
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)
         
         
     def testAlertGeneratorCouchErrorsPollerBasic(self):

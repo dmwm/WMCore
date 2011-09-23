@@ -12,7 +12,7 @@ import time
 import random
 import shutil
 import datetime
-import multiprocessing
+import inspect
 
 import psutil
 
@@ -42,14 +42,12 @@ class AgentTest(unittest.TestCase):
         self.config = getConfig(self.testDir)
         # mock generator instance to communicate some configuration values
         self.generator = utils.AlertGeneratorMock(self.config)        
-        self.testProcesses = []
         self.testComponentDaemonXml = "/tmp/TestComponent/Daemon.xml" 
         
         
     def tearDown(self):       
         self.testInit.delWorkDir()
         self.generator = None
-        utils.terminateProcesses(self.testProcesses)
         
         # if the directory and file "/tmp/TestComponent/Daemon.xml" after
         # ComponentsPoller test exist, then delete it
@@ -81,17 +79,14 @@ class AgentTest(unittest.TestCase):
         # need to create some temp directory, real process and it's
         # Daemon.xml so that is looks like agents component process 
         # and check back the information
-        p = utils.getProcess()
-        self.testProcesses.append(p)
-        while not p.is_alive():
-            time.sleep(0.2)                
+        pid = os.getpid()
         config.component_("TestComponent")
         d = os.path.dirname(self.testComponentDaemonXml)
         config.TestComponent.componentDir = d
         if not os.path.exists(d):
             os.mkdir(d)
         f = open(self.testComponentDaemonXml, 'w')
-        f.write(utils.daemonXmlContent % dict(PID_TO_PUT = p.pid))
+        f.write(utils.daemonXmlContent % dict(PID_TO_PUT = pid))
         f.close()
                 
         generator = utils.AlertGeneratorMock(config)
@@ -102,7 +97,7 @@ class AgentTest(unittest.TestCase):
         # should have been ignored
         self.assertEqual(len(poller._components), 1)
         pd = poller._components[0]
-        self.assertEqual(pd.pid, p.pid)
+        self.assertEqual(pd.pid, pid)
         self.assertEqual(pd.name, "TestComponent")
         self.assertEqual(len(pd.children), 0)
         self.assertEqual(len(poller._compMeasurements), 1)
@@ -115,12 +110,17 @@ class AgentTest(unittest.TestCase):
 
     def _doComponentsPoller(self, thresholdToTest, level, config,
                             pollerClass, expected = 0):
+        """
+        Components pollers have array of Measurements and ProcessDetails
+        which make it more difficult to factory with test methods from the
+        utils module.
+        
+        """
         handler, receiver = utils.setUpReceiver(self.generator.config.Alert.address,
                                                 self.generator.config.Alert.controlAddr)
         
-        procWorker = multiprocessing.Process(target = utils.worker, args = ())
-        procWorker.start()
-        self.testProcesses.append(procWorker)
+        # need some real process to pike, give itself
+        pid = os.getpid()
         
         numMeasurements = config.period / config.pollInterval
         poller = pollerClass(config, self.generator)
@@ -129,7 +129,7 @@ class AgentTest(unittest.TestCase):
         poller.sample = lambda proc_: random.randint(thresholdToTest, thresholdToTest + 10)
         
         # have sample process to run upon but sample date will be fooled by random
-        pd = ProcessDetail(procWorker.pid, "TestProcess")
+        pd = ProcessDetail(pid, "TestProcess")
         mes = Measurements(numMeasurements)
         poller._components.append(pd)
         poller._compMeasurements.append(mes)
@@ -149,7 +149,6 @@ class AgentTest(unittest.TestCase):
         else:
             time.sleep(config.period * 2)
             
-        procWorker.terminate()        
         poller.terminate()
         receiver.shutdown()
         self.assertFalse(poller.is_alive())

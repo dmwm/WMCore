@@ -10,6 +10,7 @@ import time
 import unittest
 import threading
 import logging
+import inspect
 
 from WMCore.Configuration import Configuration
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
@@ -66,7 +67,11 @@ class APITest(unittest.TestCase):
         msg = "this is my message Basic"
         sendAlert(100, msg = msg)
         
-        time.sleep(0.5)
+        # wait for the alert to arrive
+        while len(handler.queue) == 0:
+            time.sleep(0.3)
+            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
+            
         self.assertEqual(len(handler.queue), 1)
         alert = handler.queue[0]
         self.assertEqual(alert["Component"], "testBasic")
@@ -113,8 +118,11 @@ class APITest(unittest.TestCase):
         msg = "this is my message 1"
         thread.sendAlert(10, msg = msg)
 
-        # test
-        time.sleep(0.5)
+        # wait for the alert to arrive
+        while len(handler.queue) == 0:
+            time.sleep(0.3)
+            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
+        
         self.assertEqual(len(handler.queue), 1)
         alert = handler.queue[0]
         self.assertEqual(alert["Component"], "test2")

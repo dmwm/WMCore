@@ -35,87 +35,44 @@ class SystemTest(unittest.TestCase):
         self.testDir = self.testInit.generateWorkDir()
         self.config = getConfig(self.testDir)
         # mock generator instance to communicate some configuration values
-        self.generator = utils.AlertGeneratorMock(self.config)        
-        self.testProcesses = []
+        self.generator = utils.AlertGeneratorMock(self.config)
          
         
     def tearDown(self):       
         self.testInit.delWorkDir()
         self.generator = None
-        utils.terminateProcesses(self.testProcesses)
         
             
     def testProcessCPUPollerBasic(self):
-        p = utils.getProcess()
-        self.testProcesses.append(p)        
+        pid = os.getpid()        
         name = "mytestprocess"
-        pd = ProcessDetail(p.pid, name)        
+        pd = ProcessDetail(pid, name)        
         poller = ProcessCPUPoller()
         v = poller.sample(pd)
         self.assertTrue(isinstance(v, types.FloatType))
         # psutil.error.AccessDenied will result into -1 returned
-        self.assertTrue(v > 0)        
         
             
     def testProcessMemoryPollerBasic(self):
-        p = utils.getProcess()
-        self.testProcesses.append(p)
+        pid = os.getpid()
         name = "mytestprocess"
-        pd = ProcessDetail(p.pid, name)        
+        pd = ProcessDetail(pid, name)        
         poller = ProcessMemoryPoller()
         v = poller.sample(pd)
         self.assertTrue(isinstance(v, types.FloatType))
         # psutil.error.AccessDenied will result into -1 returned
-        self.assertTrue(v > 0)
-        
 
     def _doPeriodPoller(self, thresholdToTest, level, config,
                         pollerClass, expected = 0):
-        handler, receiver = utils.setUpReceiver(self.generator.config.Alert.address,
-                                                self.generator.config.Alert.controlAddr)    
-        numMeasurements = config.period / config.pollInterval
-        poller = pollerClass(config, self.generator)
-        # inject own input sample data provider, there will be 1 input argument we don't want here
-        poller.sample = lambda _: random.randint(thresholdToTest, thresholdToTest + 10)
-        poller.start()
-        self.assertTrue(poller.is_alive())
-
-        if expected != 0:
-            # wait to poller to work now ... wait for alert to arrive
-            # #2238 AlertGenerator test can take 1 hour+ (and fail)
-            # fail 2mins anyway if alert is not received
-            timeLimitExceeded = False
-            startTime = datetime.datetime.now()
-            limitTime = 2 * 60 # seconds
-            while len(handler.queue) == 0:
-                time.sleep(config.pollInterval)
-                if (datetime.datetime.now() - startTime).seconds > limitTime:
-                    timeLimitExceeded = True
-                    break
-        else:
-            # no alert shall arrive
-            time.sleep(config.period * 2)
-        
-        poller.terminate()
-        receiver.shutdown()
-        self.assertFalse(poller.is_alive())
-        
-        if expected != 0:
-            # #2238 AlertGenerator test can take 1 hour+ (and fail)
-            # temporary measure from above loop:
-            if timeLimitExceeded:
-                self.fail("No alert received in %s seconds." % limitTime)
-            # there should be just one alert received, poller should have the
-            # change to send a second
-            self.assertEqual(len(handler.queue), expected)
-            a = handler.queue[0]
-            # soft threshold - alert should have soft level
-            self.assertEqual(a["Level"], level)
-            self.assertEqual(a["Component"], self.generator.__class__.__name__)
-            self.assertEqual(a["Source"], poller.__class__.__name__)
-            self.assertEqual(a["Details"]["numMeasurements"], numMeasurements)
-        else:
-            self.assertEqual(len(handler.queue), expected)
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = pollerClass       
+        ti.config = config
+        ti.thresholdToTest = thresholdToTest
+        ti.level = level
+        ti.expected = expected
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)        
         
     
     def testCPUPollerSoftThreshold(self):

@@ -44,6 +44,7 @@ import time
 import random
 import shutil
 import types
+import inspect
 
 import psutil
 
@@ -72,15 +73,12 @@ class BaseTest(unittest.TestCase):
         self.testInit.setLogging(logLevel = logging.DEBUG)
         self.testDir = self.testInit.generateWorkDir()
         self.config = getConfig(self.testDir)
-        self.testProcesses = []
         self.testComponentDaemonXml = "/tmp/TestComponent/Daemon.xml" 
         
         
     def tearDown(self):       
         self.testInit.delWorkDir()
         self.generator = None
-        utils.terminateProcesses(self.testProcesses)
-        
         # if the directory and file "/tmp/TestComponent/Daemon.xml" after
         # ComponentsPoller test exist, then delete it
         d = os.path.dirname(self.testComponentDaemonXml)
@@ -94,49 +92,31 @@ class BaseTest(unittest.TestCase):
                         self.config.Alert.controlAddr)
         handler, receiver = utils.setUpReceiver(self.config.Alert.address,
                                                 self.config.Alert.controlAddr)
-        a = Alert(Component = "testSenderReceiverBasic")
+        a = Alert(Component = inspect.stack()[0][3])
         sender(a)
-        time.sleep(0.5)
-        self.assertEqual(len(handler.queue), 1)
-        self.assertEqual(handler.queue[0]["Component"], "testSenderReceiverBasic")
+        while len(handler.queue) == 0:
+            time.sleep(0.5)
+            print "%s waiting for alert to arrive" % inspect.stack()[0][3]
         receiver.shutdown()
+        self.assertEqual(len(handler.queue), 1)
+        self.assertEqual(handler.queue[0]["Component"], inspect.stack()[0][3])
         
-            
+        
     def testProcessDetailBasic(self):
-        p = utils.getProcess()
-        self.testProcesses.append(p)
-        name = "mytestprocess"
-        pd = ProcessDetail(p.pid, name)
-        self.assertEqual(pd.pid, p.pid)
+        pid = os.getpid()
+        name = inspect.stack()[0][3] # test name
+        pd = ProcessDetail(pid, name)
+        self.assertEqual(pd.pid, pid)
         self.assertEqual(pd.name, name)
-        self.assertEqual(pd.proc.pid, p.pid)
-        self.assertEqual(len(pd.children), 0)
-        self.assertEqual(len(pd.allProcs), 1)
-        utils.terminateProcesses(self.testProcesses)
+        self.assertEqual(pd.proc.pid, pid)
+        numChildren = len(psutil.Process(pid).get_children())
+        self.assertEqual(len(pd.children), numChildren)
+        self.assertEqual(len(pd.allProcs), 1 + numChildren)
         d = pd.getDetails()
-        self.assertEqual(d["pid"], p.pid)
+        self.assertEqual(d["pid"], pid)
         self.assertEqual(d["component"], name)
-        self.assertEqual(d["numChildrenProcesses"], 0)
-        
-        
-    def testProcessDetailChildren(self):
-        numSubProcesses = 3
-        p = utils.getProcess(numChildren = numSubProcesses)
-        self.testProcesses.append(p)
-        # wait until all desired processes are running
-        while len(psutil.Process(p.pid).get_children()) < numSubProcesses:
-            print "waiting for children processes to start"
-            time.sleep(0.5)        
-        name = "mytestprocess2"
-        pd = ProcessDetail(p.pid, name)
-        self.assertEqual(pd.proc.pid, p.pid)
-        self.assertEqual(len(pd.children), numSubProcesses)
-        self.assertEqual(len(pd.allProcs), numSubProcesses + 1)
-        utils.terminateProcesses(self.testProcesses)
-        d = pd.getDetails()
-        self.assertEqual(d["pid"], p.pid)
-        self.assertEqual(d["numChildrenProcesses"], numSubProcesses)
-        
+        self.assertEqual(d["numChildrenProcesses"], numChildren)
+                
         
     def testMeasurementsBasic(self):
         numMes = 10
@@ -168,8 +148,11 @@ class BaseTest(unittest.TestCase):
         poller.check = lambda: 1+1
         poller.start()
         # poller now runs
-        time.sleep(0.1)
+        time.sleep(config.AlertGenerator.bogusPoller.pollInterval * 2)
         poller.terminate()
+        while poller.is_alive():
+            time.sleep(0.2)
+            print "%s waiting for test poller to terminate" % inspect.stack()[0][3]
             
         
     def testPeriodPollerOnRealProcess(self):
@@ -182,12 +165,10 @@ class BaseTest(unittest.TestCase):
         config.component_("AlertGenerator")
         config.AlertGenerator.section_("bogusPoller")
         config.AlertGenerator.bogusPoller.soft = 5 # [percent]
-        # the way the worker is implemented should take 100% CPU, but it sometimes
-        # take a while, test safer threshold here, testing thresholds
-        # more rigorously happens in Pollers_t
         config.AlertGenerator.bogusPoller.critical = 50 # [percent] 
         config.AlertGenerator.bogusPoller.pollInterval = 0.2  # [second]
-        # period during which measurements are collected before evaluating for possible alert triggering
+        # period during which measurements are collected before evaluating for
+        # possible alert triggering
         config.AlertGenerator.bogusPoller.period = 1
         
         generator = utils.AlertGeneratorMock(config)
@@ -199,12 +180,10 @@ class BaseTest(unittest.TestCase):
         # a method to provide sampling data)
         poller.sample = lambda processDetail: ComponentsCPUPoller.sample(processDetail)
         
-        p = utils.getProcess()
-        self.testProcesses.append(p)
-        while not p.is_alive():
-            time.sleep(0.2)        
-        name = "mytestprocess-testPeriodPollerBasic"
-        pd = ProcessDetail(p.pid, name)
+        # get own pid
+        pid = os.getpid()
+        name = inspect.stack()[0][3] # test name
+        pd = ProcessDetail(pid, name)
         # need to repeat sampling required number of measurements
         numOfMeasurements = int(config.AlertGenerator.bogusPoller.period / 
                                 config.AlertGenerator.bogusPoller.pollInterval)
@@ -212,22 +191,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(len(mes), 0)
         for i in range(mes._numOfMeasurements):
             poller.check(pd, mes)
-            
-        # 1 alert should have arrived, test it
-        #    though there may be a second alert as well if the test managed to
-        #    run second round - don't test number of received alerts
-        #    also the Level and threshold is not deterministic: given it's
-        #    measured on a live process it can't be determined up-front how
-        #    much CPU this simple process will be given: don't test Level
-        #    and threshold
-        a = poller.sender.queue[0]
-        self.assertEqual(a["Component"], generator.__class__.__name__)
-        self.assertEqual(a["Source"], poller.__class__.__name__)
-        d = a["Details"]
-        self.assertEqual(d["numMeasurements"], mes._numOfMeasurements)
-        self.assertEqual(d["component"], name)
-        self.assertEqual(d["period"], config.AlertGenerator.bogusPoller.period)
-        
+                    
         # since the whole measurement cycle was done, values should have been nulled
         self.assertEqual(len(mes), 0)
         
@@ -277,6 +241,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(d["average"], "%s%%" % predefInput)
         # since the whole measurement cycle was done, values should have been nulled
         self.assertEqual(len(mes), 0)
+        # poller wasn't really started so no need to terminate it
         
         
 

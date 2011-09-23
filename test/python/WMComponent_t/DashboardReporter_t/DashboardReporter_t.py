@@ -7,6 +7,7 @@ import unittest
 import logging
 import socket
 import threading
+import inspect
 
 import WMCore.WMBase
 
@@ -269,7 +270,11 @@ class DashboardReporterTest(unittest.TestCase):
         dashboardReporter = DashboardReporterPoller(config = config)
         dashboardReporter.pollCouch = raiseException
         self.assertRaises(Exception, dashboardReporter.algorithm)
-        time.sleep(0.5)
+        # wait for the generated alert to arrive
+        while len(handler.queue) == 0:
+            time.sleep(0.3)
+            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
+            
         self.alertsReceiver.shutdown()
         self.alertsReceiver = None
         # now check if the alert was properly sent

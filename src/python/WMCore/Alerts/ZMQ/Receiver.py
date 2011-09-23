@@ -83,7 +83,40 @@ class ReceiverLogic(object):
         # flag to check when instantiating Receiver to check readiness
         self._isReady = False
         
-    
+        
+    def _processControlData(self, data):
+        """
+        Checks the control message received in the start() method
+        and acts accordingly.
+        
+        """
+        # direct shutdown command, shutdown the receiver -> terminate start()
+        if data.has_key(ShutdownMsg.key):
+            self._doShutdown = True
+        # new sender registers itself
+        if data.has_key(RegisterMsg.key):
+            senderId = data[RegisterMsg.key]
+            if self._registSenders.has_key(senderId):
+                logging.warn("Sender '%s' is already registered, ignored." % senderId) 
+            else:
+                self._registSenders[senderId] = time.time()
+                logging.info("Registered %s@%s" % (senderId, self._registSenders[senderId]))
+        # sender unregisters itself
+        if data.has_key(UnregisterMsg.key):
+            # get the label of the sender
+            senderId = data[UnregisterMsg.key]
+            try:
+                del self._registSenders[senderId]
+                logging.info("Unregistered %s@%s" % (senderId, time.time()))
+            except KeyError:
+                logging.warn("Sender '%s' not registered, ignored." % senderId)
+            # if set, check for shutdown condition when all senders
+            # have unregistered themselves
+            if self.closeWhenEmpty:
+                if len(self._registSenders.keys()) == 0:
+                    self._doShutdown = True
+
+            
     def start(self):
         """
         Method started via Thread.
@@ -127,40 +160,7 @@ class ReceiverLogic(object):
                 
     def isReady(self):
         return self._isReady
-    
-
-    def _processControlData(self, data):
-        """
-        Checks the control message received in the start() method
-        and acts accordingly.
-        
-        """
-        # direct shutdown command, shutdown the receiver -> terminate start()
-        if data.has_key(ShutdownMsg.key):
-            self._doShutdown = True
-        # new sender registers itself
-        if data.has_key(RegisterMsg.key):
-            senderId = data[RegisterMsg.key]
-            if self._registSenders.has_key(senderId):
-                logging.warn("Sender '%s' is already registered, ignored." % senderId) 
-            else:
-                self._registSenders[senderId] = time.time()
-                logging.info("Registered %s@%s" % (senderId, self._registSenders[senderId]))
-        # sender unregisters itself
-        if data.has_key(UnregisterMsg.key):
-            # get the label of the sender
-            senderId = data[UnregisterMsg.key]
-            try:
-                del self._registSenders[senderId]
-                logging.info("Unregistered %s@%s" % (senderId, time.time()))
-            except KeyError:
-                logging.warn("Sender '%s' not registered, ignored." % senderId)
-            # if set, check for shutdown condition when all senders
-            # have unregistered themselves
-            if self.closeWhenEmpty:
-                if len(self._registSenders.keys()) == 0:
-                    self._doShutdown = True
-                    
+                        
                     
     def shutdown(self):
         """

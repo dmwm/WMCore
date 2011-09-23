@@ -254,8 +254,8 @@ class CouchErrorsPoller(BasePoller):
         
         """ 
         response = self.couch.makeRequest(self._query)
-        statusCodes = response["httpd_status_codes"]
         try:
+            statusCodes = response["httpd_status_codes"]
             statusCode = statusCodes[code]
             return statusCode["current"] # another possibility to watch "count" 
         except KeyError:

@@ -13,6 +13,7 @@ import threading
 import unittest
 import time
 import shutil
+import inspect
 
 import WMCore.WMBase
 
@@ -545,7 +546,7 @@ class TaskArchiverTest(unittest.TestCase):
         logging.info("TaskArchiver took %f seconds" % (stopTime - startTime))
         
                 
-    def atestTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
+    def testTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller notifyWorkQueue method.
@@ -568,6 +569,11 @@ class TaskArchiverTest(unittest.TestCase):
         print "failures 'AttributeError: 'dict' object has no attribute 'load' expected ..."
         subList = [{'id': 1}, {'id': 2}, {'id': 3}]
         testTaskArchiver.notifyWorkQueue(subList)
+        # wait for the generated alert to arrive
+        while len(handler.queue) < len(subList):
+            time.sleep(0.3)
+            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
+                
         self.alertsReceiver.shutdown()
         self.alertsReceiver = None
         # now check if the alert was properly sent (expect this many failures)    
@@ -576,7 +582,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(alert["Source"], "TaskArchiverPoller")
         
     
-    def atestTaskArchiverPollerAlertsSending_killSubscriptions(self):
+    def testTaskArchiverPollerAlertsSending_killSubscriptions(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller killSubscriptions method.
@@ -596,6 +602,10 @@ class TaskArchiverTest(unittest.TestCase):
         doneList = [{'id': x} for x in range(numAlerts)]
         # final re-raise is currently commented, so don't expect Exception here
         testTaskArchiver.killSubscriptions(doneList)
+        # wait for the generated alert to arrive
+        while len(handler.queue) < numAlerts:
+            time.sleep(0.3)
+            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]        
         
         self.alertsReceiver.shutdown()
         self.alertsReceiver = None

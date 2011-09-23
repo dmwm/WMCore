@@ -148,6 +148,9 @@ class BasePoller(threading.Thread):
                         self.__class__.__name__,
                         self.generator.config.Alert.controlAddr)
         sender.unregister()
+        # if messages weren't consumed, this should get rid of them
+        del sender
+        del self.sender
         
          
         

@@ -19,7 +19,6 @@ class AlertProcessorTest(unittest.TestCase):
                                                  "WMCore.ResourceControl"],
                                  useDefault = False)
         self.testDir = self.testInit.generateWorkDir()
-        self.proc = None
         
         self.config = Configuration()
         self.config.section_("Agent")
@@ -51,13 +50,13 @@ class AlertProcessorTest(unittest.TestCase):
 
 
     def testAlertProcessorBasic(self):
-        self.proc = AlertProcessor(self.config)
+        alertProcessor = AlertProcessor(self.config)
         try:
-            # self.proc.startComponent() causes the flow to stop, Harness.py
+            # alertProcessor.startComponent() causes the flow to stop, Harness.py
             # the method just calls prepareToStart() and waits for ever
-            # self.proc.startDaemon() no good for this either ... puts everything
+            # alertProcessor.startDaemon() no good for this either ... puts everything
             # on background
-            self.proc.prepareToStart()
+            alertProcessor.prepareToStart()
         except Exception, ex:
             print ex
             self.fail(str(ex))
@@ -67,7 +66,7 @@ class AlertProcessorTest(unittest.TestCase):
                 
         # stop via component method
         try:
-            self.proc.stopProcessor()
+            alertProcessor.stopProcessor()
         except Exception, ex:
             print ex
             self.fail(str(ex))

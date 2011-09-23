@@ -124,7 +124,7 @@ class Proxy(Credential):
 
         if serverRenewer:
             proxyFilename = os.path.join(\
-self.credServerPath, sha1(self.userDN + self.vo).hexdigest() )
+self.credServerPath, sha1( self.userDN + self.vo + self.group + self.role ).hexdigest() )
         elif os.environ.has_key('X509_USER_PROXY'):
             proxyFilename = os.environ['X509_USER_PROXY']
         else:
@@ -520,15 +520,14 @@ the requested server.')
         """
         Refresh/retrieve proxyFilename in/from myproxy.
         """
-        #if not proxyFilename:
-            # compose the VO attriutes
-        #    voAttr = self.vo
-        #    if self.group:
-        #        voAttr += ':/'+self.vo+'/'+self.group
-        #        if self.role: voAttr += '/Role='+self.role
-        #    else:
-        #        if self.role: voAttr += ':/'+self.vo+'/Role='+self.role
-        if not proxyFilename: proxyFilename = self.getProxyFilename( serverRenewer = True )
+        if not proxyFilename:
+            voAttribute = self.vo
+            if self.group:
+                voAttribute += ':/'+self.vo+'/'+self.group
+                if self.role: voAttribute += '/Role='+self.role
+            elif self.role: voAttribute += ':/'+self.vo+'/Role='+self.role
+
+            proxyFilename = self.getProxyFilename( serverRenewer = True )
 
         else:
 
@@ -556,14 +555,8 @@ the requested server.')
 
             # prepare the attributes
             attribute = attribute.split('\n')[0]
-            attribute = attribute.replace('/Role=NULL','')
-            attribute = attribute.replace('/Capability=NULL','')
 
-            #voAttribute = vo + ':' + attribute
-            voAttribute = self.vo
-
-        #FIXME: Build correctly voAttribute
-        voAttribute = self.vo
+            voAttribute = self.vo + ':' + attribute
 
         # get the credential name for this retriever
         if not credServerName:
@@ -579,7 +572,7 @@ the requested server.')
 
         ## get a new delegated proxy
         proxyFilename = os.path.join(\
-self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
+self.credServerPath, sha1( self.userDN + self.vo + self.group + self.role ).hexdigest() )
 
         cmdList.append(\
     'myproxy-logon -d -n -s %s -o %s -l \"%s\" -k %s -t 168:00'%\
@@ -595,6 +588,10 @@ self.credServerPath, sha1(self.userDN + voAttribute).hexdigest() )
 "Unable to retrieve delegated proxy for user DN %s! Exit code:%s since %s"\
          %(self.userDN, retcode, error) )
             return proxyFilename
+
+        # Clean attribute
+        voAttribute = voAttribute.replace('/Role=NULL','')
+        voAttribute = voAttribute.replace('/Capability=NULL','')
 
         self.vomsExtensionRenewal(proxyFilename, voAttribute)
 

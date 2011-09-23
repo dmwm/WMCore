@@ -38,7 +38,7 @@ class AlertProcessorTest(unittest.TestCase):
 
         self.config.AlertProcessor.critical.level = 5
         self.config.AlertProcessor.soft.level = 0
-        self.config.AlertProcessor.soft.buffer_size = 3
+        self.config.AlertProcessor.soft.bufferSize = 3
 
         self.config.AlertProcessor.critical.section_("sinks")
         self.config.AlertProcessor.soft.section_("sinks")

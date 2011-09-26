@@ -29,6 +29,8 @@ class testWMConfigCache(unittest.TestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setupCouch("config_test", "GroupUser", "ConfigCache")
+
+        self.testDir = self.testInit.generateWorkDir()
         return
 
     def tearDown(self):
@@ -37,6 +39,7 @@ class testWMConfigCache(unittest.TestCase):
 
         Clear out the database.
         """
+        self.testInit.delWorkDir()
         self.testInit.tearDownCouch()        
         return
 
@@ -158,6 +161,26 @@ class testWMConfigCache(unittest.TestCase):
                          {'group': 'testGroup', 'user': 'testOps'})
         self.assertEqual(configCache2.document['description'],
                          {'config_desc': None, 'config_label': 'labelA'})
+        return
+
+    def testE_SaveConfigFileToDisk(self):
+        """
+        _SaveConfigFileToDisk_
+
+        Check and see if we can save the config file attachment to disk
+        """
+        targetFile = os.path.join(self.testDir, 'configCache.test')
+
+        configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
+        configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+        configCache.attachments['configFile'] = 'ThisIsAConfigFile'
+        configCache.saveConfigToDisk(targetFile = targetFile)
+
+        f = open(targetFile, 'r')
+        content = f.read()
+        f.close()
+
+        self.assertEqual(content, configCache.getConfig())
         return
 
     def testListAllConfigs(self):

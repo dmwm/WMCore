@@ -278,6 +278,22 @@ class ConfigCache(WMObject):
         self.loadByID(self.document["_id"])
         return
 
+    def saveConfigToDisk(self, targetFile):
+        """
+        _saveConfigToDisk_
+        
+        Make sure we can save our config file to disk
+        """
+        config = self.getConfig()
+        if not config:
+            return
+
+        # Write to a file
+        f = open(targetFile, 'w')
+        f.write(config)
+        f.close()
+        return
+
 
     def load(self):
         """
@@ -458,3 +474,12 @@ class ConfigCache(WMObject):
             configs[result["key"]] = result["value"]
 
         return configs
+
+
+    def __str__(self):
+        """
+        Make something printable
+
+        """
+
+        return self.document.__str__()

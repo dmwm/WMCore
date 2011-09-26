@@ -94,7 +94,7 @@ def addSites(resourceControl, allSites, ceName, plugin, jobSlots):
                             priority = 5)
         updateThresholdInfo(resourceControl, siteName, "Cleanup", jobSlots,
                             priority = 5)
-        updateThresholdInfo(resourceControl, siteName, "LoggCollect", jobSlots,
+        updateThresholdInfo(resourceControl, siteName, "LogCollect", jobSlots,
                             priority = 3)
         updateThresholdInfo(resourceControl, siteName, "Skim", jobSlots,
                             priority = 2)

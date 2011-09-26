@@ -17,7 +17,7 @@ workflow + fileset = subscription
 
 
 
-from WMCore.WMBS.File import File
+from WMCore.WMBS.File import File, addFilesToWMBSInBulk
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Fileset import Fileset as WMFileset
 
@@ -240,3 +240,17 @@ class Fileset(WMBSBase, WMFileset):
               'lastUpdate': self.lastUpdate}
 
         return str(st)
+
+
+    def addFilesToWMBSInBulk(self, files, workflowName, isDBS = True):
+        """
+        _addFilesToWMBSInBulk
+
+        Do a bulk addition of files into WMBS. This is a speedup.
+        """
+        # Can / should we move this to commit???
+        files = addFilesToWMBSInBulk(self.id, workflowName, files,
+                                     isDBS = isDBS,
+                                     conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
+        return files

@@ -511,3 +511,116 @@ class File(WMBSBase, WMFile):
             file.setLocation(se = location)
 
         return file
+
+
+def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
+                         conn = None, transaction = None):
+    """
+    _addFilesToWMBSInBulk
+
+    Do a bulk addition of files into WMBS. This is a speedup.
+
+    Assumes files are full dao objects
+    """
+    if len(files) == 0:
+        # Nothing to do
+        return 0
+
+    daofactory = files[0].daofactory
+    setParentage            = daofactory(classname = "Files.SetParentage")
+    setFileRunLumi          = daofactory(classname = "Files.AddRunLumi")
+    setFileLocation         = daofactory(classname = "Files.SetLocationForWorkQueue")
+    setFileAddChecksum      = daofactory(classname = "Files.AddChecksumByLFN")
+    addFileAction           = daofactory(classname = "Files.Add")
+    addToFileset            = daofactory(classname = "Files.AddDupsToFileset")
+
+    # build up list of binds for all files then run in single transaction
+    parentageBinds = []
+    runLumiBinds   = []
+    fileCksumBinds = []
+    fileLocations  = []
+    fileCreate     = []
+    fileLFNs       = []
+    lfnsToCreate   = []
+    lfnList        = []
+
+    for wmbsFile in files:
+        lfn           = wmbsFile['lfn']
+        lfnList.append(lfn)
+
+        if wmbsFile.get('inFileset', True):
+            if not lfn in fileLFNs:
+                fileLFNs.append(lfn)
+        for parent in wmbsFile['parents']:
+            parentageBinds.append({'child': lfn, 'parent': parent["lfn"]})
+
+        selfChecksums = wmbsFile['checksums']
+        if len(wmbsFile['runs']) > 0:
+            runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
+
+        if len(wmbsFile['newlocations']) < 1:
+            # Then we're in trouble
+            msg = "File created in WMBS without locations!\n"
+            msg += "File lfn: %s\n" % (lfn)
+            logging.error(msg)
+            raise RuntimeError, msg
+
+        for loc in wmbsFile['newlocations']:
+            fileLocations.append({'lfn': lfn, 'location': loc})
+
+        if wmbsFile.exists():
+            # skip creation; locations will be set to current values
+            continue
+
+        if lfn in lfnsToCreate:
+            continue
+        lfnsToCreate.append(lfn)
+
+        if selfChecksums:
+            # If we have checksums we have to create a bind
+            # For each different checksum
+            for entry in selfChecksums.keys():
+                fileCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
+                                       'cktype' : entry})
+
+        fileCreate.append([lfn,
+                           wmbsFile['size'],
+                           wmbsFile['events'],
+                           None,
+                           wmbsFile["first_event"],
+                           wmbsFile["last_event"],
+                           wmbsFile['merged']])
+
+    if len(fileCreate) > 0:
+        addFileAction.execute(files = fileCreate,
+                              conn = conn,
+                              transaction = transaction)
+        setFileAddChecksum.execute(bulkList = fileCksumBinds,
+                                   conn = conn,
+                                   transaction = transaction)
+
+    if len(fileLocations) > 0:
+        setFileLocation.execute(lfns = lfnList, locations = fileLocations,
+                                isDBS = isDBS,
+                                conn = conn,
+                                transaction = transaction)
+    if len(runLumiBinds) > 0:
+        setFileRunLumi.execute(file = runLumiBinds,
+                               conn = conn,
+                               transaction = transaction)
+
+    if len(fileLFNs) > 0:
+        logging.debug("About to add %i files to fileset %i" % (len(fileLFNs),
+                                                               filesetId))
+        addToFileset.execute(file = fileLFNs,
+                             fileset = filesetId,
+                             workflow = workflowName,
+                             conn = conn,
+                             transaction = transaction)
+
+    if len(parentageBinds) > 0:
+        setParentage.execute(binds = parentageBinds,
+                             conn = conn,
+                             transaction = transaction)
+
+    return len(lfnsToCreate)

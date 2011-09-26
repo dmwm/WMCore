@@ -249,6 +249,10 @@ class CMSSW(Executor):
         self.report.setConfigURL(configURL = "%s;;%s;;%s" % (cacheUrl,
                                                              cacheDB,
                                                              configID))
+
+        # Attach info to files
+        self.report.addInfoToOutputFilesForStep(stepName = self.stepName, step = self.step)
+        
         self.report.checkForAdlerChecksum(stepName = self.stepName)
 
         if self.step.output.keep != True:
@@ -268,10 +272,6 @@ class CMSSW(Executor):
 
         if (emulator != None):
             return emulator.emulatePost( self.step )
-
-
-        # Attach info to files
-        self.report.addInfoToOutputFilesForStep(stepName = self.stepName, step = self.step)
 
         if self.report.getStepErrors(self.stepName) != {}:
             # Then we had errors

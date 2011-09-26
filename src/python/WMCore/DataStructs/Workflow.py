@@ -40,3 +40,18 @@ class Workflow(Pickleable):
             self.outputMap[outputIdentifier] = [mappingDict]
 
         return
+
+    def __str__(self):
+        """
+        __str__
+
+        Print out some useful info just because
+        this does not inherit from dict.
+        """
+
+        d = {'id': self.id, 'spec': self.spec, 'name': self.name,
+             'owner': self.owner, 'task': self.task,
+             'vogroup': self.vogroup, 'vorole': self.vorole,
+             'group': self.group, 'wfType': self.wfType}
+
+        return str(d)

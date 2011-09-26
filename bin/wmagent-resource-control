@@ -28,6 +28,8 @@ def createOptionParser():
                            help = "Print out all known thresholds and site information.")
     myOptParser.add_option("--add-T1s", dest = "addT1s", default = False, action = "store_true",
                            help = "Add all of the CMS T1 sites to resource control.")
+    myOptParser.add_option("--add-T2s", dest = "addT2s", default = False, action = "store_true",
+                           help = "Add all of the CMS T2 sites to resource control.")
     myOptParser.add_option("--add-all-sites", dest = "addAllSites", default = False,
                            action = "store_true",
                            help = "Add all of the CMS sites to resource control.")
@@ -83,10 +85,10 @@ def addSites(resourceControl, allSites, ceName, plugin, jobSlots):
     for siteName in allSites.keys():
         if ceName == None:
             updateSiteInfo(resourceControl, siteName, jobSlots,
-                           siteName, allSites[siteName], plugin)
+                           siteName, allSites[siteName], plugin, siteName)
         else:
             updateSiteInfo(resourceControl, siteName, jobSlots,
-                           ceName, allSites[siteName], plugin)
+                           ceName, allSites[siteName], plugin, siteName)
 
         updateThresholdInfo(resourceControl, siteName, "Merge", jobSlots,
                             priority = 5)
@@ -99,6 +101,8 @@ def addSites(resourceControl, allSites, ceName, plugin, jobSlots):
         updateThresholdInfo(resourceControl, siteName, "Production", jobSlots,
                             priority = 1)        
         updateThresholdInfo(resourceControl, siteName, "Processing", jobSlots,
+                            priority = 1)
+        updateThresholdInfo(resourceControl, siteName, "Analysis", jobSlots,
                             priority = 1)
 
     return
@@ -211,6 +215,10 @@ else:
     if options.addT1s == True:
         t1Sites = getCMSSiteInfo("T1*")
         addSites(myResourceControl, t1Sites, options.ceName, options.plugin,
+                 options.jobSlots)
+    elif options.addT2s == True:
+        t2Sites = getCMSSiteInfo("T2*")
+        addSites(myResourceControl, t2Sites, options.ceName, options.plugin,
                  options.jobSlots)
     elif options.addAllSites == True:
         allSites = getCMSSiteInfo("*")

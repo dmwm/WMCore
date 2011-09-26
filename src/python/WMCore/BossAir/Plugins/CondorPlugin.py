@@ -24,8 +24,6 @@ from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.FwkJobReport.Report        import Report
 
 
-
-
 def submitWorker(input, results):
     """
     _outputWorker_
@@ -160,7 +158,7 @@ class CondorPlugin(BasePlugin):
         self.submitDir  = None
         self.removeTime = getattr(config.BossAir, 'removeTime', 60)
         self.multiTasks = getattr(config.BossAir, 'multicoreTaskTypes', [])
-        self.useGSite   = getattr(config.BossAir, 'useGLIDEINSites', True)
+        self.useGSite   = getattr(config.BossAir, 'useGLIDEINSites', False)
 
 
         # Build ourselves a pool
@@ -181,7 +179,7 @@ class CondorPlugin(BasePlugin):
             self.proxy = self.setupMyProxy()
 
         # Build a request string
-        self.reqStr = "(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_Site, DESIRED_Sites)"
+        self.reqStr = "(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_CMSSite, DESIRED_Sites)"
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
 
@@ -308,7 +306,6 @@ class CondorPlugin(BasePlugin):
                 handle.writelines(jdlList)
                 handle.close()
                 jdlFiles.append(jdlFile)
-
 
                 # Now submit them
                 logging.info("About to submit %i jobs" %(len(jobsReady)))
@@ -543,6 +540,12 @@ class CondorPlugin(BasePlugin):
         jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
         jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
 
+        # Check for multicore
+        if jobList[0].get('taskType', None) in self.multiTasks:
+            jdl.append('+DESIRES_HTPC = True\n')
+        else:
+            jdl.append('+DESIRES_HTPC = False\n')
+
         if self.proxy:
             # Then we have to retrieve a proxy for this user
             job0   = jobList[0]
@@ -609,11 +612,9 @@ class CondorPlugin(BasePlugin):
                 continue
             jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
             if self.useGSite:
-                jdl.append('+useGLIDEINSites = \"%s\"\n' % (jobCE))
+                jdl.append('+GLIDEIN_CMSSite = \"%s\"\n' % (jobCE))
 
-            # Check for multicore
-            if job.get('taskType', None) in self.multiTasks:
-                jdl.append('+RequiresWholeMachine?' 'TRUE')
+            
 
             # Transfer the output files
             jdl.append("transfer_output_files = Report.%i.pkl\n" % (job["retry_count"]))

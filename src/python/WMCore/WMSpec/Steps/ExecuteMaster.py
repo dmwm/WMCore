@@ -164,7 +164,7 @@ class ExecuteMaster:
         self.toTaskDirectory()
 
         # Okay, we're done, set the job to successful
-        if not error and executor.report.stepSuccessful(stepName = executor.stepName):
+        if not error and executor.report.getStepErrors(stepName = executor.stepName) == {}:
             executor.report.setStepStatus(stepName = executor.stepName,
                                           status = 0)
         executor.saveReport()

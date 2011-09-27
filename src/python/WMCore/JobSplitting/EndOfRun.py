@@ -2,74 +2,120 @@
 """
 _EndOfRun_
 
-If a subscription's fileset is closed, make a job that will run over any available
-files
 """
 
 
 
 
-import logging
+import time
+import threading
+
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
+from WMCore.DAOFactory import DAOFactory
 
 class EndOfRun(JobFactory):
     """
-    if a subscription's fileset is closed, pull all the available files into a
-    new job
+    _EndOfRun_
+
+    Create jobs to process all files in a fileset. A job will not be created
+    until the previous job (if there is one) has been completed and there
+    are available (new) files in the fileset.
+
+    Under normal circumstances runs only once as no new files should be
+    added to the fileset after it has been closed.
+
+    Note that the period here refers to the amount of time between the end of a
+    job and the creation of a new job.
+
     """
+    def outstandingJobs(self, jobPeriod):
+        """
+        _outstandingJobs_
+
+        Determine whether or not there are outstanding jobs and whether or not
+        enough time has elapsed from the previous job to warrant creating a new
+        job.
+        """
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        stateDAO = daoFactory(classname = "Jobs.NewestStateChangeForSub")
+        results = stateDAO.execute(subscription = self.subscription["id"])
+
+        if len(results) > 0:
+            for result in results:
+                if result["name"] not in ["closeout", "cleanout", "exhausted"]:
+                    myThread.logger.debug("EndOfRun: Outstanding jobs, returning...")
+                    return True
+
+            stateTime = int(results[0]["state_time"])
+            if stateTime + jobPeriod > time.time():
+                myThread.logger.debug("EndOfRun: %d seconds until next job..." % \
+                                      ((stateTime + jobPeriod) - time.time()))
+                return True
+
+        return False
+
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
-        An end-of-run job splitting algorithm, will return a job with all
-        unacquired ('available') files if the fileset is marked as closed
-        returns nothing otherwise.
-
-        Can take files_per_job as an argument
         """
+        myThread = threading.currentThread()
 
         filesPerJob  = int(kwargs.get("files_per_job", 999999))
+        jobPeriod = int(kwargs.get("job_period", 900))
        
-        #  //
-        # // get the fileset
-        #//
         fileset = self.subscription.getFileset()
+        fileset.load()
 
-        try:
-            fileset.load()
-        except AttributeError, ae:
-            pass
-
-        # Return if you have the fileset still open
+        # If fileset is open do nothing.
         if fileset.open:
             return
 
-        # Get a dictionary of sites, files
-        locationDict = self.sortByLocation()
+        # Wait for enough time after last job completion.
+        if self.outstandingJobs(jobPeriod):
+            return
 
-        # Get a new jobGroup
+        # Do we have available (new) files to run on ?
+        availableFiles = self.subscription.availableFiles()
+        if len(availableFiles) == 0:
+            myThread.logger.debug("EndOfRun: No available files...")
+            return
+
+        fileset.loadData()
+        allFiles = fileset.getFiles()
+
+        # sort by location
+        locationDict = {}
+        for fileInfo in allFiles:
+
+            locSet = frozenset(fileInfo['locations'])
+
+            if len(locSet) == 0:
+                msg = "File %s has no locations!" % fileInfo['lfn']
+                myThread.logger.error(msg)
+
+            if locSet in locationDict.keys():
+                locationDict[locSet].append(fileInfo)
+            else:
+                locationDict[locSet] = [fileInfo]
+
+        # create separate jobs for different locations
         self.newGroup()
-
         jobCount = 0
         baseName = makeUUID()
-
-        # Unlike FileBased, all these jobs will be in one group
+        self.newGroup()
         for location in locationDict.keys():
-            # For each location, though, we'll need new jobs.
-            fileList    = locationDict[location]
             filesInJob  = 0
-            if len(fileList) == 0:
-                #No files for this location
-                #This isn't supposed to happen, but better safe then sorry
-                continue
-            for f in fileList:
+            for f in locationDict[location]:
                 if filesInJob == 0 or filesInJob >= filesPerJob:
-                    self.newJob(name = '%s-endofrun-%i' %(baseName, jobCount))
+                    self.newJob(name = "%s-endofrun-%i" % (baseName, jobCount))
                     filesInJob = 0
                     jobCount += 1
                 self.currentJob.addFile(f)
                 filesInJob += 1
 
         return
-

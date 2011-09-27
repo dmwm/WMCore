@@ -97,7 +97,7 @@ dependencies = {
                 'wmclient':{
                         'systems': ['wmc-runtime', 'wmc-database']
                         },
-                'globalmonitor':{
+                'reqmon':{
                         'packages': ['WMCore.HTTPFrontEnd',
                                      'WMCore.HTTPFrontEnd.GlobalMonitor+',
                                      'WMCore.Services',

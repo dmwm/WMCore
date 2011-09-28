@@ -489,7 +489,7 @@ class gLitePlugin(BasePlugin):
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
             except Queue.Empty:
-                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
             error  = res['stderr']
@@ -576,6 +576,8 @@ class gLitePlugin(BasePlugin):
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed
         logging.debug("Returning jobs..")
+        logging.info('Correctly submitted %i jobs.' % len(successfulJobs))
+        logging.info('Failed submitting %i jobs.' % len(failedJobs))
         return successfulJobs, failedJobs
 
 
@@ -830,7 +832,7 @@ class gLitePlugin(BasePlugin):
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
             except Queue.Empty:
-                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
             error  = res['stderr']
@@ -945,7 +947,7 @@ class gLitePlugin(BasePlugin):
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
             except Queue.Empty:
-                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
             error  = res['stderr']
@@ -1071,7 +1073,7 @@ class gLitePlugin(BasePlugin):
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
             except Queue.Empty:
-                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
             error  = res['stderr']
@@ -1270,7 +1272,7 @@ class gLitePlugin(BasePlugin):
         jdl += "\n]\n"
 
         # return values
-        logging.error( str(jdl) )
+        logging.debug( str(jdl) )
         return jdl
 
     def sewhite(self, sesites):

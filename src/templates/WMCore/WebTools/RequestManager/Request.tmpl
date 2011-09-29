@@ -25,9 +25,9 @@
         #set $value = $quote($requestSchema[$key])
         ## make a hyperlink to workflow
         #if $key == 'RequestWorkflow'
-            <tr><td> $key </td><td>  <a href="../showWorkload?url=$value">Workload</a> </td></tr>
             <input type="HIDDEN" name="workload" value=$value>
         #elif $key == 'RequestName'
+            <tr><td> RequestWorkflow </td><td>  <a href="../showWorkload?requestName=$value">Workload</a> </td></tr>
             <tr><td> $key </td><td> $value </td></tr>
             <input type="HIDDEN" name="requestName" value=$value>
         #elif $key == 'RunWhitelist'

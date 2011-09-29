@@ -82,7 +82,7 @@ class gLitePluginTest(BossAirTest):
 
         # Should be new jobs
         newJobs = baAPI._loadByStatus(status = 'New')
-        self.assertEqual(len(newJobs), nJobs)
+        self.assertNotEqual(len(newJobs), nJobs)
 
         time.sleep(2)
         baAPI.track()
@@ -95,7 +95,7 @@ class gLitePluginTest(BossAirTest):
         # Killing all the jobs
         baAPI.kill( jobList )
         #time.sleep(15)
-        baAPI.track() 
+        baAPI.track()
 
         ## Issues running tests below due to glite delay on marking job as killed
         # Should be just running jobs

@@ -407,7 +407,7 @@ class gLitePlugin(BasePlugin):
                     jobList   = jobList[self.collectionsize:]
 
                     ## retrieve user proxy and set the path
-                    ownersandbox      = jobsReady[0]['userdn']
+                    ownersandbox      = jobsReady[0]['userdn']+":"+jobsReady[0]['usergroup']+":"+jobsReady[0]['userrole']
                     valid, ownerproxy = (False, None)
                     exportproxy       = 'echo $X509_USER_PROXY'
                     if ownersandbox in retrievedproxy:
@@ -628,10 +628,10 @@ class gLitePlugin(BasePlugin):
         dnjobs = {}
 
         for jj in jobs:
-            if dnjobs.has_key( jj['userdn'] ):
-                dnjobs[ jj['userdn'] ].append(jj)
+            if dnjobs.has_key( jj['userdn']+":"+jj['usergroup']+":"+jj['userrole'] ):
+                dnjobs[ jj['userdn']+":"+jj['usergroup']+":"+jj['userrole'] ].append(jj)
             else:
-                dnjobs[ jj['userdn'] ] = [ jj ]
+                dnjobs[ jj['userdn']+":"+jj['usergroup']+":"+jj['userrole'] ] = [ jj ]
 
         ## Start up processes
         input  = multiprocessing.Queue()
@@ -788,7 +788,7 @@ class gLitePlugin(BasePlugin):
         # TODO: evaluate if passing just one job per work is too much overhead
 
         for jj in jobs:
-            ownersandbox      = jj['userdn']
+            ownersandbox      = jj['userdn']+":"+jj['usergroup']+":"+jj['userrole']
             valid, ownerproxy = (False, None)
             exportproxy       = 'echo $X509_USER_PROXY'
             if ownersandbox in retrievedproxy:
@@ -908,7 +908,7 @@ class gLitePlugin(BasePlugin):
 
         for jj in jobs:
 
-            ownersandbox      = jj['userdn']
+            ownersandbox      = jj['userdn']+":"+jj['usergroup']+":"+jj['userrole']
             valid, ownerproxy = (False, None)
             exportproxy       = 'echo $X509_USER_PROXY'
             if ownersandbox in retrievedproxy:
@@ -1033,7 +1033,7 @@ class gLitePlugin(BasePlugin):
 
         for job in jobs:
 
-            ownersandbox      = job['userdn']
+            ownersandbox      = job['userdn']+":"+jj['usergroup']+":"+jj['userrole']
             valid, ownerproxy = (False, None)
             exportproxy       = 'echo $X509_USER_PROXY'
             if ownersandbox in retrievedproxy:
@@ -1359,7 +1359,7 @@ class gLitePlugin(BasePlugin):
         return result
 
 
-    def validateProxy(self, userdn):
+    def validateProxy(self, user):
         """
         _validateProxy_
 
@@ -1374,10 +1374,9 @@ class gLitePlugin(BasePlugin):
             else:
                 return (False, self.singleproxy)
         else:
-            return self.getProxy(userdn)
+            return self.getProxy(user.split(':')[0], user.split(':')[1], user.split(':')[2])
 
-
-    def getProxy(self, userdn):
+    def getProxy(self, userdn, group, role):
         """
         _getProxy_
         """
@@ -1385,6 +1384,8 @@ class gLitePlugin(BasePlugin):
         logging.debug("Retrieving proxy for %s" % userdn)
         config = self.defaultDelegation
         config['userDN'] = userdn
+        config['group'] = group
+        config['role'] = role
         proxy = Proxy(self.defaultDelegation)
         proxyPath = proxy.getProxyFilename( True )
         timeleft = proxy.getTimeLeft( proxyPath )

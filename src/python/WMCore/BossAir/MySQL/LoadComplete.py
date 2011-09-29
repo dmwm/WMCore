@@ -27,12 +27,13 @@ class LoadComplete(DBFormatter):
 
     sql = """SELECT bl_runjob.wmbs_id AS jobid,
                     bl_runjob.grid_id AS gridid,
-                    bl_runjob.bulk_id AS bulkid, 
+                    bl_runjob.bulk_id AS bulkid,
                     bl_status.name AS status,
                     bl_runjob.retry_count AS retry_count,
-                    bl_runjob.id AS id, 
+                    bl_runjob.id AS id,
                     bl_runjob.status_time AS status_time,
-                    wmbs_users.cert_dn AS userdn
+                    wmbs_users.cert_dn AS userdn,
+                    wmbs_users.group_name AS usergroup, wmbs_users.role_name AS userrole
              FROM wmbs_job
              INNER JOIN bl_runjob ON
                bl_runjob.wmbs_id = wmbs_job.id AND

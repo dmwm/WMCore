@@ -88,13 +88,13 @@ def getCondorRunningJobs(user):
 
 class BossAirTest(unittest.TestCase):
     """
-    Tests for the BossAir prototype    
+    Tests for the BossAir prototype
 
     """
 
     sites = ['T2_US_Florida', 'T2_US_UCSD', 'T2_TW_Taiwan', 'T1_CH_CERN', 'malpaquet']
 
-    
+
 
     def setUp(self):
         """
@@ -102,7 +102,7 @@ class BossAirTest(unittest.TestCase):
         """
 
         myThread = threading.currentThread()
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -147,7 +147,7 @@ class BossAirTest(unittest.TestCase):
 
         # Create user
         newuser = self.daoFactory(classname = "Users.New")
-        newuser.execute(dn = "moron")
+        newuser.execute(dn = "mnorman", group_name = "phgroup", role_name = "cmsrole")
 
 
         # We actually need the user name
@@ -186,7 +186,7 @@ class BossAirTest(unittest.TestCase):
 
         Build a basic BossAir config
         """
-                       
+
         config = Configuration()
 
         config.section_("Agent")
@@ -253,7 +253,7 @@ class BossAirTest(unittest.TestCase):
         workload = testWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
 
-        
+
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
@@ -273,7 +273,8 @@ class BossAirTest(unittest.TestCase):
         jobGroupList = []
 
         testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
-                                name = makeUUID(), task="basicWorkload/Production")
+                                name = makeUUID(), task="basicWorkload/Production",
+                                owner_vogroup = 'phgroup', owner_vorole = 'cmsrole')
         testWorkflow.create()
 
         # Create subscriptions
@@ -301,7 +302,7 @@ class BossAirTest(unittest.TestCase):
                            fileset = testFileset,
                            sub = testSubscription.exists(),
                            site = site, bl = bl, wl = wl)
-                                         
+
 
 
             testFileset.commit()
@@ -309,7 +310,7 @@ class BossAirTest(unittest.TestCase):
             jobGroupList.append(testJobGroup)
 
         return jobGroupList
-            
+
 
 
     def makeNJobs(self, name, task, nJobs, jobGroup, fileset, sub, site = None, bl = [], wl = []):
@@ -354,6 +355,9 @@ class BossAirTest(unittest.TestCase):
             testJob["siteBlacklist"] = bl
             testJob["siteWhitelist"] = wl
             testJob['ownerDN'] = 'mnorman'
+            testJob['userrole'] = 'cmsrole'
+            testJob['usergroup'] = 'phgroup'
+
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)
             testJob.create(jobGroup)
@@ -371,7 +375,7 @@ class BossAirTest(unittest.TestCase):
     def createDummyJobs(self, nJobs, location = None):
         """
         _createDummyJobs_
-        
+
         Create some dummy jobs
         """
 
@@ -381,7 +385,8 @@ class BossAirTest(unittest.TestCase):
         nameStr = makeUUID()
 
         testWorkflow = Workflow(spec = nameStr, owner = "mnorman",
-                                name = nameStr, task="basicWorkload/Production")
+                                name = nameStr, task="basicWorkload/Production",
+                                owner_vogroup = 'phgroup', owner_vorole = 'cmsrole')
         testWorkflow.create()
 
         testFileset = Fileset(name = nameStr)
@@ -402,8 +407,11 @@ class BossAirTest(unittest.TestCase):
             testJob = Job(name = '%s-%i' % (nameStr, i))
             testJob['location'] = location
             testJob['custom']['location'] = location
-            testJob['userdn']   = 'moron'
-            testJob['owner']    = 'moron'
+            testJob['userdn']   = 'mnorman'
+            testJob['owner']    = 'mnorman'
+            testJob['userrole'] = 'cmsrole'
+            testJob['usergroup'] = 'phgroup'
+
             testJob.create(testJobGroup)
             jobList.append(testJob)
 
@@ -419,7 +427,7 @@ class BossAirTest(unittest.TestCase):
         with anything except loading the code.
         """
         #return
-        
+
         myThread = threading.currentThread()
 
         config = self.getConfig()
@@ -453,7 +461,7 @@ class BossAirTest(unittest.TestCase):
         deadJobs = baAPI._loadByStatus(status = 'Dead')
         self.assertEqual(len(deadJobs), 0)
         raisesException = False
-        
+
         try:
             baAPI._loadByStatus(status = 'FalseStatus')
         except BossAirException:
@@ -487,7 +495,7 @@ class BossAirTest(unittest.TestCase):
 
         # See if we can delete jobs
         baAPI._deleteJobs(jobs = deadJobs)
-        
+
         # Confirm that they're gone
         deadJobs = baAPI._loadByStatus(status = 'Dead')
         self.assertEqual(len(deadJobs), 0)
@@ -495,7 +503,7 @@ class BossAirTest(unittest.TestCase):
 
         self.assertEqual(len(baAPI.jobs), 0)
 
-        
+
 
         return
 
@@ -504,7 +512,7 @@ class BossAirTest(unittest.TestCase):
     def testB_PluginTest(self):
         """
         _PluginTest_
-        
+
 
         Now check that these functions worked if called through plugins
         Instead of directly.
@@ -569,10 +577,9 @@ class BossAirTest(unittest.TestCase):
 
         result = myThread.dbi.processData("SELECT id FROM bl_runjob")[0].fetchall()
         self.assertEqual(len(result), 0)
-        
+
 
         return
-
 
     def testG_monitoringDAO(self):
         """
@@ -617,11 +624,9 @@ class BossAirTest(unittest.TestCase):
 
         return
 
-
-
 if __name__ == '__main__':
     unittest.main()
 
 
 
-                                    
+

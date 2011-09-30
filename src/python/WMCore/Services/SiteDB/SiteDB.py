@@ -93,6 +93,32 @@ class SiteDBJSON(Service):
         seList = self.cmsNametoList(cmsName, 'SE', file=file)
         return seList
 
+    def getAllSENames(self):
+        """
+        _getAllSENames_
+
+        Get all SE names from SiteDB
+        This is so that we can easily add them to ResourceControl
+        """
+        file = 'cmsNametoSE_*.json'
+        seList = self.cmsNametoList('*', 'SE', file=file)
+        return seList
+
+    def getAllCMSNames(self):
+        """
+        _getAllCMSNames_
+
+        Get all the CMSNames from siteDB
+        This will allow us to add them in resourceControl at once
+        """
+        result = []
+        file = 'SitetoCMSName_*.json'
+        theInfo = self.getJSON("SEtoCMSName", file=file, name='%')
+        for key in theInfo.keys():
+            name = theInfo[key]['name']
+            if not name in result:
+                result.append(name)
+        return result
 
     def cmsNametoList(self, cmsName, kind, file):
         """

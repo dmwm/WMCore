@@ -1,4 +1,10 @@
-from WMCore.Services.RequestManager.RequestManager import RequestManager
+import logging
+### use request manager funtion directly
+### TODO: remove this when GlobalMonitor spins out as a separate application
+from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
+          import getGlobalQueues
+###TODO: add back when GlobalMonitor spins out as a separate application
+###from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.WMAgent.WMAgent import WMAgent
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import splitCouchServiceURL
@@ -16,12 +22,17 @@ def getAgentOverview(serviceURL, serviceLevel):
 
 def getAgentInfoFromReqMgr(serviceURL):
     """ get agent info from request mgr """
-
-    reqMgr = RequestManager({'endpoint':serviceURL})
+    
+    ###TODO: add back when GlobalMonitor spins out as a separate application
+    ###reqMgr = RequestManager({'endpoint':serviceURL})
     #get information from global queue.
     try:
-        gQueues = reqMgr.getWorkQueue()
+        ###TODO: add back when GlobalMonitor spins out as a separate application
+        gQueues = getGlobalQueues()
+        ###TODO: add back when GlobalMonitor spins out as a separate application
+        ###gQueues = reqMgr.getWorkQueue()
     except Exception, ex:
+        logging.warning("Error: %s" % str(ex))
         errorInfo = {}
         errorInfo['url'] = serviceURL
         errorInfo['status'] = "Request Manager down: %s" % serviceURL
@@ -40,6 +51,7 @@ def getAgentInfoFromGlobalQueue(serviceURL):
     try:
         childQueues = globalQ.getChildQueues()
     except Exception, ex:
+        logging.warning("Error: %s" % str(ex))
         errorInfo = {}
         errorInfo['url'] = serviceURL
         errorInfo['status'] = "Global Queue down: %s" % serviceURL
@@ -59,6 +71,7 @@ def getAgentInfoFromLocalQueue(serviceURL):
     try:
         wmbsUrl = localQ.getWMBSUrl()
     except Exception, ex:
+        logging.warning("Error: %s" % str(ex))
         errorInfo = {}
         errorInfo['url'] = serviceURL
         errorInfo['status'] = "Local Queue down: %s" % serviceURL
@@ -79,6 +92,7 @@ def getAgentInfoFromWMBS(serviceURL):
         status = agent['status']
         acdcURL = agentService.getACDCInfo()['url']
     except Exception, ex:
+        logging.warning("Error: %s" % str(ex))
         status = "Agent Service down: %s" % agentURL
         acdcURL = 'N/A'
 

@@ -28,7 +28,8 @@ class GetFilesForParentlessMerge(DBFormatter):
                     MIN(wmbs_file_runlumi_map.run) AS file_run,
                     MIN(wmbs_file_runlumi_map.lumi) AS file_lumi,
                     wmbs_location.se_name AS se_name,
-                    wmbs_fileset_files.insert_time AS insert_time
+                    wmbs_fileset_files.insert_time AS insert_time,
+                    wmbs_workflow.injected AS injected
              FROM wmbs_sub_files_available
                INNER JOIN wmbs_file_details ON
                  wmbs_sub_files_available.fileid = wmbs_file_details.id
@@ -40,6 +41,8 @@ class GetFilesForParentlessMerge(DBFormatter):
                  wmbs_file_location.location = wmbs_location.id
                INNER JOIN wmbs_fileset_files ON
                  wmbs_fileset_files.fileid = wmbs_sub_files_available.fileid
+               INNER JOIN wmbs_workflow ON
+                 wmbs_workflow.id = wmbs_sub_files_available.subscription
              WHERE wmbs_sub_files_available.subscription = :p_1
              GROUP BY wmbs_file_details.id, wmbs_file_details.events,
                       wmbs_file_details.filesize, wmbs_file_details.lfn,

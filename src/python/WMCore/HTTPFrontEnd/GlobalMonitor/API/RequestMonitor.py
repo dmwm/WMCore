@@ -1,9 +1,14 @@
 import logging
+### use request manager funtion directly
+### TODO: remove this when GlobalMonitor spins out as a separate application
+from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
+          import getOverview, getGlobalQueues
 
 import WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter as DFormatter
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import combineListOfDict
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import splitCouchServiceURL
-from WMCore.Services.RequestManager.RequestManager import RequestManager
+###TODO: add back when GlobalMonitor spins out as a separate application
+###from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.WMBS.WMBS import WMBS
 
@@ -22,10 +27,16 @@ def getRequestOverview(serviceURL, serviceLevel):
 def getRequestInfoFromReqMgr(serviceURL):
     """ get the request info from requestManager """
 
-    service = RequestManager({'endpoint':serviceURL})
+    ###TODO: add back when GlobalMonitor spins out as a separate application
+    ###service = RequestManager({'endpoint':serviceURL})
     try:
-        baseResults = service.getRequestNames()
-        urls = service.getWorkQueue()
+        ### use request manager funtion directly
+        ### TODO: remove this when GlobalMonitor spins out as a separate application
+        baseResults = getOverview()
+        urls = getGlobalQueues()
+        ###TODO: add back when GlobalMonitor spins out as a separate application
+        ###baseResults = service.getRequestNames()
+        ###urls = service.getWorkQueue()
     except Exception, ex:
         logging.error(str(ex))
         return DFormatter.errorFormatter(serviceURL, "RequestManger Down")
@@ -49,7 +60,7 @@ def getRequestInfoFromGlobalQueue(serviceURL):
             childQueueURLs.add(item['local_queue'])
 
     except Exception, ex:
-        logging.error("%s: %s" (serviceURL, str(ex)))
+        logging.error("%s: %s" % (serviceURL, str(ex)))
         return DFormatter.errorFormatter(serviceURL, "GlobalQueue Down")
     else:
         tempResults = combineListOfDict('request_name', jobInfo, qInfo,
@@ -81,7 +92,7 @@ def getRequestInfoFromLocalQueue(serviceURL):
         wmbsUrls = service.getWMBSUrl()
         jobStatusInfo = service.getJobInjectStatusByRequest()
     except Exception, ex:
-        logging.error("%s: %s" (serviceURL, str(ex)))
+        logging.error("%s: %s" % (serviceURL, str(ex)))
         return DFormatter.errorFormatter(serviceURL, "LocalQueue Down")
 
     # assumes one to one relation between localqueue and wmbs
@@ -96,7 +107,7 @@ def getRequestInfoFromWMBS(serviceURL, jobStatusInfo):
     try:
         batchJobs = service.getBatchJobStatus()
     except Exception, ex:
-        logging.error("%s: %s" (serviceURL, str(ex)))
+        logging.error("%s: %s" % (serviceURL, str(ex)))
         return DFormatter.errorFormatter(serviceURL, "WMBS Service Dowtn")
 
     try:
@@ -105,7 +116,7 @@ def getRequestInfoFromWMBS(serviceURL, jobStatusInfo):
     # caught above try except. doesn't try to catch CouchError to
     # reduce the  dependency (not to import CouchError)
     except Exception, ex:
-        logging.error("%s: %s" (serviceURL, str(ex)))
+        logging.error("%s: %s" % (serviceURL, str(ex)))
         couchJobs = DFormatter.errorFormatter(serviceURL, "CouchDB Down")
     else:
         if len(couchJobs)  == 1 and couchJobs[0].has_key("error"):

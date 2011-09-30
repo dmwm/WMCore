@@ -1,24 +1,21 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W1201
+# W1201: Allow string formatting in logging messages
 """
 _Step.Executor.CMSSW_
 
 Implementation of an Executor for a CMSSW step.
 """
 
-import tempfile
 import subprocess
 import sys
-import os
 import select
-import time
 import logging
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMRuntime.Tools.Scram import Scram
 from WMCore.WMSpec.WMStep import WMStepHelper
-
-from WMCore.FwkJobReport.Report import Report
 
 class CMSSW(Executor):
     """
@@ -156,7 +153,7 @@ class CMSSW(Executor):
         #
         logging.info("RUNNING SCRAM SCRIPTS")
         for script in self.step.runtime.scramPreScripts:
-            "invoke scripts with scram()"
+            #invoke scripts with scram()
             invokeCommand = "%s -m WMCore.WMRuntime.ScriptInvoke %s %s \n" % (
                 sys.executable,
                 stepModule,
@@ -253,6 +250,11 @@ class CMSSW(Executor):
                                                              cacheDB,
                                                              configID))
 
+        # Attach info to files
+        self.report.addInfoToOutputFilesForStep(stepName = self.stepName, step = self.step)
+        
+        self.report.checkForAdlerChecksum(stepName = self.stepName)
+
         if self.step.output.keep != True:
             self.report.killOutput()
             
@@ -270,10 +272,6 @@ class CMSSW(Executor):
 
         if (emulator != None):
             return emulator.emulatePost( self.step )
-
-
-        # Attach info to files
-        self.report.addInfoToOutputFilesForStep(stepName = self.stepName, step = self.step)
 
         if self.report.getStepErrors(self.stepName) != {}:
             # Then we had errors

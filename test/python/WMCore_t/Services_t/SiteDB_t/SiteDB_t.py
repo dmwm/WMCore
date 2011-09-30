@@ -20,7 +20,6 @@ class SiteDBTest(unittest.TestCase):
         """
         self.mySiteDB = SiteDBJSON()
 
-    @attr("integration")
     def testCmsNametoPhEDExNode(self):
         """
         Tests CmsNametoSE
@@ -29,7 +28,6 @@ class SiteDBTest(unittest.TestCase):
         results = self.mySiteDB.cmsNametoPhEDExNode("T1_US_FNAL")
         self.failUnless(sorted(results) == sorted(target))
 
-    @attr("integration")
     def testPhEDExNodetocmsName(self):
         """
         Tests PhEDExNodetocmsName
@@ -44,7 +42,6 @@ class SiteDBTest(unittest.TestCase):
         #self.assertRaises(ValueError, self.mySiteDB.phEDExNodetocmsName,
         #                  'T9_DOESNT_EXIST_Buffer')
 
-    @attr("integration")
     def testCmsNametoSE(self):
         """
         Tests CmsNametoSE
@@ -53,7 +50,6 @@ class SiteDBTest(unittest.TestCase):
         results = self.mySiteDB.cmsNametoSE("T1_UK_RAL")
         self.failUnless(sorted(results) == sorted(target))
 
-    @attr("integration")
     def testSEtoCmsName(self):
         """
         Tests CmsNametoSE
@@ -62,7 +58,6 @@ class SiteDBTest(unittest.TestCase):
         results = self.mySiteDB.seToCMSName("cmssrm.fnal.gov")
         self.failUnless(results == target)
 
-    @attr("integration")
     def testCmsNametoCE(self):
         """
         Tests CmsNametoCE
@@ -71,7 +66,6 @@ class SiteDBTest(unittest.TestCase):
         results = self.mySiteDB.cmsNametoCE("T1_UK_RAL")
         self.failUnless(sorted(results) == target)
 
-    @attr("integration")
     def testJSONParser(self):
         """
         Tests the JSON parser directly
@@ -82,7 +76,6 @@ class SiteDBTest(unittest.TestCase):
                                   name=cmsName)
         self.failUnless(results['0']['name'] == "T2_US_Wisconsin")
 
-    @attr("integration")
     def testDNUserName(self):
         """
         Tests DN to Username lookup
@@ -91,7 +84,8 @@ class SiteDBTest(unittest.TestCase):
         testUserName = "metson"
         userName = self.mySiteDB.dnUserName(dn=testDn)
         self.failUnless(testUserName == userName)
-
+        
+    @attr("integration")
     def testDNWithApostrophe(self):
         """
         Tests a DN with an apostrophy in - will fail till SiteDB2 appears
@@ -100,6 +94,19 @@ class SiteDBTest(unittest.TestCase):
         testUserName = "liviof"
         userName = self.mySiteDB.dnUserName(dn=testDn)
         self.failUnless(testUserName == userName)
+
+    def testSEFinder(self):
+        """
+        _testSEFinder_
+        
+        See if we can retrieve seNames from all sites
+        """
+        
+        ceNames = self.mySiteDB.getAllSENames()
+        self.assertTrue(len(ceNames) > 1)
+        self.assertTrue('cmssrm.fnal.gov' in ceNames)
+        return
+    
         
     @attr("integration")
     def testParsingJsonWithApostrophe(self):

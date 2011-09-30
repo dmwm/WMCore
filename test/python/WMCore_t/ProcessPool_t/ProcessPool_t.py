@@ -36,6 +36,7 @@ class ProcessPoolTest(unittest.TestCase):
         _testProcessPool_
 
         """
+        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         config.Agent.useHeartbeat = False
         self.testInit.generateWorkDir(config)
@@ -66,6 +67,7 @@ class ProcessPoolTest(unittest.TestCase):
         _testProcessPoolStress_
 
         """
+        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         config.Agent.useHeartbeat = False        
         self.testInit.generateWorkDir(config)

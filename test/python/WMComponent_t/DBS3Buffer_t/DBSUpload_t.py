@@ -19,6 +19,7 @@ import time
 import unittest
 import cProfile, pstats
 
+from nose.plugins.attrib import attr
 
 from WMCore.WMFactory       import WMFactory
 from WMQuality.TestInit     import TestInit
@@ -171,14 +172,13 @@ class DBSUploadTest(unittest.TestCase):
         return files
 
 
-
+    @attr('integration')
     def testA_basicFunction(self):
         """
         _basicFunction_
 
         See if I can make the damn thing work.
         """
-        return
         myThread = threading.currentThread()
 
         config = self.getConfig()
@@ -258,6 +258,7 @@ class DBSUploadTest(unittest.TestCase):
 
         return
 
+    @attr('integration')
     def testB_DONOTUSE(self):
 
         config = self.getConfig()

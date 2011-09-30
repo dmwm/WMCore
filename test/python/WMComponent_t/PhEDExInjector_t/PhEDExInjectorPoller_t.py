@@ -26,6 +26,8 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMQuality.TestInit import TestInit
 
+from nose.plugins.attrib import attr
+
 class PhEDExInjectorPollerTest(unittest.TestCase):
     """
     _PhEDExInjectorPollerTest_
@@ -218,6 +220,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         logging.info("Could not retrieve replica info for block: %s" % blockName)
         return None
 
+    @attr("intergration")
     def testPoller(self):
         """
         _testPoller_

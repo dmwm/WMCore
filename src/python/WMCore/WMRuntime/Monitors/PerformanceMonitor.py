@@ -23,9 +23,9 @@ def average(numbers):
     Quick averaging function
 
     """
-    return float(sum(numbers)) / len(numbers) 
+    return float(sum(numbers)) / len(numbers)
 
-    
+
 class PerformanceMonitorException(WMException):
     """
     _PerformanceMonitorException_
@@ -48,7 +48,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
     def __init__(self):
         """
         Actual variable initialization
-        in initMonitor        
+        in initMonitor
         """
 
         self.pid              = None
@@ -71,7 +71,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
         self.watchStepTypes = []
 
         self.disableStep = False
-        
+
         WMRuntimeMonitor.__init__(self)
 
 
@@ -103,13 +103,13 @@ class PerformanceMonitor(WMRuntimeMonitor):
         Assure that the monitor is pointing at the right step
         """
 
-        stepHelper = WMStepHelper(step)
+        self.stepHelper = WMStepHelper(step)
         self.currentStepName  = getStepName(step)
-        self.currentStepSpace = getStepSpace(stepHelper.name())
+        self.currentStepSpace = None
 
-        if not stepHelper.stepType() in self.watchStepTypes:
+        if not self.stepHelper.stepType() in self.watchStepTypes:
             self.disableStep = True
-            logging.debug("PerformanceMonitor ignoring step of type %s" % stepHelper.stepType())
+            logging.debug("PerformanceMonitor ignoring step of type %s" % self.stepHelper.stepType())
             return
         else:
             logging.debug("Beginning PeformanceMonitor step Initialization")
@@ -151,7 +151,10 @@ class PerformanceMonitor(WMRuntimeMonitor):
         if self.currentStepName == None:
             # We're between steps
             return
-        
+
+        if self.currentStepSpace == None:
+            # Then build the step space
+            self.currentStepSpace = getStepSpace(self.stepHelper.name())
 
         stepPID = getStepPID(self.currentStepSpace, self.currentStepName)
 
@@ -192,7 +195,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
             logging.error(msg)
             report  = Report.Report()
             # Find the global report
-            logPath = os.path.join(self.currentStepSpace.location, 
+            logPath = os.path.join(self.currentStepSpace.location,
                                    '../../../',
                                    os.path.basename(self.logPath))
             try:

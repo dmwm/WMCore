@@ -68,7 +68,7 @@ class LCGImpl(StageOutImpl):
 
         """
         result = "#!/bin/sh\n"
-        result += "lcg-cp -b -D srmv2 --vo cms -t 2400 --verbose "
+        result += "lcg-cp -b -D srmv2 --vo cms --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 300 --verbose "
         
         if options != None:
             result += " %s " % options

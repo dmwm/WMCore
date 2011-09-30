@@ -73,7 +73,9 @@ class ConfigCache(WMObject):
         self.document['description'] = {}
         self.document['description']['config_label'] = None
         self.document['description']['config_desc'] = None
-        
+
+        if id != None:
+            self.document['_id']                = id
         self.document['pset_tweak_details'] = None
         self.document['info']               = None
         self.document['config']             = None
@@ -276,6 +278,22 @@ class ConfigCache(WMObject):
         self.loadByID(self.document["_id"])
         return
 
+    def saveConfigToDisk(self, targetFile):
+        """
+        _saveConfigToDisk_
+        
+        Make sure we can save our config file to disk
+        """
+        config = self.getConfig()
+        if not config:
+            return
+
+        # Write to a file
+        f = open(targetFile, 'w')
+        f.write(config)
+        f.close()
+        return
+
 
     def load(self):
         """
@@ -357,7 +375,7 @@ class ConfigCache(WMObject):
         return results
 
 
-    def addConfig(self, newConfig, psetHash):
+    def addConfig(self, newConfig, psetHash = None):
         """
         _addConfig_
 
@@ -456,3 +474,12 @@ class ConfigCache(WMObject):
             configs[result["key"]] = result["value"]
 
         return configs
+
+
+    def __str__(self):
+        """
+        Make something printable
+
+        """
+
+        return self.document.__str__()

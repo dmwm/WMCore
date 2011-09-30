@@ -23,14 +23,12 @@ import multiprocessing
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.DAOFactory                      import DAOFactory
 from WMCore.WMException                     import WMException
+from WMCore.ProcessPool.ProcessPool         import ProcessPool
 
+from WMCore.JobSplitting.Generators.GeneratorManager import GeneratorManager
 
-from WMCore.ProcessPool.ProcessPool                     import ProcessPool
-
-from WMCore.WMSpec.Seeders.SeederManager                import SeederManager
-from WMCore.JobStateMachine.ChangeState                 import ChangeState
-from WMComponent.JobCreator.CreateWorkArea              import CreateWorkArea
-
+from WMCore.JobStateMachine.ChangeState     import ChangeState
+from WMComponent.JobCreator.CreateWorkArea  import CreateWorkArea
 from WMCore.JobSplitting.SplitterFactory    import SplitterFactory
 from WMCore.WMBS.Subscription               import Subscription
 from WMCore.WMBS.Workflow                   import Workflow
@@ -41,26 +39,26 @@ from WMCore.Database.CMSCouch               import CouchServer
 def retrieveWMSpec(workflow):
     """
     _retrieveWMSpec_
-    
+
     Given a subscription, this function loads the WMSpec associated with that workload
     """
     #workflow = subscription['workflow']
     wmWorkloadURL = workflow.spec
-    
+
     if not os.path.isfile(wmWorkloadURL):
         logging.error("WMWorkloadURL %s is empty" % (wmWorkloadURL))
         return None
-    
+
     wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
-    wmWorkload.load(wmWorkloadURL)  
-    
+    wmWorkload.load(wmWorkloadURL)
+
     return wmWorkload
 
 
 def retrieveJobSplitParams(wmWorkload, task):
     """
     _retrieveJobSplitParams_
-    
+
     Retrieve job splitting parameters from the workflow.  The way this is
     setup currently sucks, we have to know all the job splitting parameters
     up front.  The following are currently supported:
@@ -88,10 +86,10 @@ def retrieveJobSplitParams(wmWorkload, task):
 def runSplitter(jobFactory, splitParams):
     """
     _runSplitter_
-    
+
     Run the jobSplitting as a coroutine method, yielding values as required
     """
-    
+
     groups = ['test']
     while groups != []:
         groups = jobFactory(**splitParams)
@@ -104,6 +102,7 @@ def runSplitter(jobFactory, splitParams):
 
 def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
             wmTaskPrio = None, owner = None, ownerDN = None,
+            ownerGroup = '', ownerRole = '',
             scramArch = None, swVersion = None ):
         """
         _saveJob_
@@ -124,6 +123,8 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
         job['priority']  = wmTaskPrio
         job['owner']     = owner
         job['ownerDN']   = ownerDN
+        job['ownerGroup']   = ownerGroup
+        job['ownerRole']   = ownerRole
         job['scramArch'] = scramArch
         job['swVersion'] = swVersion
         output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
@@ -141,7 +142,7 @@ def creatorProcess(work, jobCacheDir):
     Creator work areas and pickle job objects
     """
     createWorkArea  = CreateWorkArea()
-    
+
     try:
         wmbsJobGroup = work.get('jobGroup')
         workflow     = work.get('workflow')
@@ -150,12 +151,14 @@ def creatorProcess(work, jobCacheDir):
         sandbox      = work.get('sandbox')
         owner        = work.get('owner')
         ownerDN      = work.get('ownerDN',None)
+        ownerGroup   = work.get('ownerGroup','')
+        ownerRole    = work.get('ownerRole','')
         scramArch    = work.get('scramArch', None)
         swVersion    = work.get('swVersion', None)
 
         if ownerDN == None:
             ownerDN = owner
-            
+
         jobNumber    = work.get('jobNumber', 0)
         wmTaskPrio   = work.get('wmTaskPrio', None)
     except KeyError, ex:
@@ -187,6 +190,8 @@ def creatorProcess(work, jobCacheDir):
                     sandbox = sandbox,
                     owner = owner,
                     ownerDN = ownerDN,
+                    ownerGroup = ownerGroup,
+                    ownerRole = ownerRole,
                     scramArch = scramArch,
                     swVersion = swVersion )
 
@@ -199,8 +204,8 @@ def creatorProcess(work, jobCacheDir):
         raise JobCreatorException(msg)
 
     return wmbsJobGroup
-        
-        
+
+
 
 # This is the code for the multiprocessing based creator
 # It's kept around so I can remember how I arranged the exception tree
@@ -210,7 +215,7 @@ def creatorProcess(work, jobCacheDir):
 #def creatorProcess(input, result, jobCacheDir):
 #    """
 #    _creatorProcess_
-#    
+#
 #    Run the CreateWorkArea code
 #    """
 #
@@ -289,12 +294,12 @@ def creatorProcess(work, jobCacheDir):
 #
 #    return 0
 
-    
 
 
 
-    
-        
+
+
+
 
 
 class JobCreatorException(WMException):
@@ -304,7 +309,7 @@ class JobCreatorException(WMException):
     Specific JobCreatorPoller exception handling.
     If we ever need it.
     """
-    
+
 
 
 class JobCreatorPoller(BaseWorkerThread):
@@ -334,17 +339,17 @@ class JobCreatorPoller(BaseWorkerThread):
         self.setBulkCache     = self.daoFactory(classname = "Jobs.SetCache")
         self.countJobs        = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
         self.subscriptionList = self.daoFactory(classname = "Subscriptions.ListIncomplete")
-        
+
         #information
         self.config = config
 
         #Variables
         self.defaultJobType     = config.JobCreator.defaultJobType
         self.limit              = getattr(config.JobCreator, 'fileLoadLimit', 500)
-        
+
         # initialize the alert framework (if available - config.Alert present)
-        #    self.sendAlert will be then be available    
-        self.initAlerts(compName = "JobCreator")        
+        #    self.sendAlert will be then be available
+        self.initAlerts(compName = "JobCreator")
 
         try:
             self.jobCacheDir        = getattr(config.JobCreator, 'jobCacheDir',
@@ -359,7 +364,7 @@ class JobCreatorPoller(BaseWorkerThread):
             self.sendAlert(6, msg = msg)
             raise JobCreatorException(msg)
 
-        
+
         self.changeState = ChangeState(self.config)
 
         # Initiate autoIncrement for MySQL
@@ -422,7 +427,7 @@ class JobCreatorPoller(BaseWorkerThread):
     def terminate(self, params):
         """
         _terminate_
-        
+
         Kill the code after one final pass when called by the master thread.
         """
         logging.debug("terminating. doing one more pass before we die")
@@ -477,14 +482,14 @@ class JobCreatorPoller(BaseWorkerThread):
 
             # Set task object
             wmTask = wmWorkload.getTaskByPath(workflow.task)
-            if hasattr(wmTask.data, 'seeders'):
-                manager    = SeederManager(wmTask)
-                seederList = manager.getSeederList()
+            if hasattr(wmTask.data, 'generators'):
+                manager    = GeneratorManager(wmTask)
+                seederList = manager.getGeneratorList()
             else:
                 seederList = []
 
             logging.debug("Going to call wmbsJobFactory for sub %i with limit %i" % (subscriptionID, self.limit))
-            
+
             # My hope is that the job factory is smart enough only to split un-split jobs
             wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS",
                                                   subscription = wmbsSubscription,
@@ -502,7 +507,7 @@ class JobCreatorPoller(BaseWorkerThread):
 
             # Now we get to find out how many jobs there are.
             jobNumber = self.countJobs.execute(workflow = workflow.id,
-                                               conn = myThread.transaction.conn, 
+                                               conn = myThread.transaction.conn,
                                                transaction = True)
             jobNumber += splitParams.get('initial_lfn_counter', 0)
             logging.debug("Have %i jobs for this workflow already" % (jobNumber))
@@ -532,14 +537,17 @@ class JobCreatorPoller(BaseWorkerThread):
                     myThread.transaction.commit()
                     break
 
-                            
+
                 # Assemble a dict of all the info
                 processDict = {'workflow': workflow,
                                'wmWorkload': wmWorkload, 'wmTaskName': wmTask.getPathName(),
                                'jobNumber': jobNumber, 'sandbox': wmTask.data.input.sandbox,
                                'wmTaskPrio': wmTask.getTaskPriority(),
                                'owner': wmWorkload.getOwner().get('name', None),
-                               'ownerDN': wmWorkload.getOwner().get('dn', None)}
+                               'ownerDN': wmWorkload.getOwner().get('dn', None),
+                               'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),
+                               'ownerRole': wmWorkload.getOwner().get('vorole', '')}
+
                 tempSubscription = Subscription(id = wmbsSubscription['id'])
 
                 nameDictList = []
@@ -568,7 +576,7 @@ class JobCreatorPoller(BaseWorkerThread):
                 try:
                     if len(nameDictList) > 0:
                         self.setBulkCache.execute(jobDictList = nameDictList,
-                                                  conn = myThread.transaction.conn, 
+                                                  conn = myThread.transaction.conn,
                                                   transaction = True)
                 except WMException:
                     raise
@@ -593,9 +601,9 @@ class JobCreatorPoller(BaseWorkerThread):
 
             # Close the jobFactory
             wmbsJobFactory.close()
-            
+
         return
-    
+
 
 # This is the code for the multiprocessing based queue retrieval system
 # I'm keeping this here because I hope to go back and re-instate this once
@@ -627,11 +635,11 @@ class JobCreatorPoller(BaseWorkerThread):
 #            for job in wmbsJobGroup.jobs:
 #                nameDictList.append({'jobid':job['id'], 'cacheDir':job['cache_dir']})
 #
-#            
+#
 #            try:
 #                myThread.transaction.begin()
 #                self.setBulkCache.execute(jobDictList = nameDictList,
-#                                          conn = myThread.transaction.conn, 
+#                                          conn = myThread.transaction.conn,
 #                                          transaction = True)
 #                myThread.transaction.commit()
 #            except Exception, ex:
@@ -639,22 +647,22 @@ class JobCreatorPoller(BaseWorkerThread):
 #                msg += str(ex)
 #                logging.error(msg)
 #                raise JobCreatorException(msg)
-#                
+#
 #            self.advanceJobGroup(wmbsJobGroup = wmbsJobGroup)
 #
 #            logging.debug("Finished call for jobGroup %i" \
 #                          % (wmbsJobGroup.id))
 #
 #        #END: While loop over wmbsJob
-#            
+#
 #        return
 
 
     def advanceJobGroup(self, wmbsJobGroup):
         """
         _advanceJobGroup_
-        
-        Mark jobGroup as ready in changeState        
+
+        Mark jobGroup as ready in changeState
         """
         try:
             self.changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')

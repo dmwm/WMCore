@@ -52,74 +52,67 @@ class DBCreator(DBFormatter):
         Before execution the keys assigned to the tables in the self.create
         dictionary are sorted, to offer the possibilitiy of executing 
         table creation in a certain order.
+
         """
-        # get the keys for the table mapping:
-        tableKeys = self.create.keys()
-        tableKeys.sort()
-        
-        for i in tableKeys:
+        # create tables
+        for i in sorted(self.create.keys()):
             try:
                 self.dbi.processData(self.create[i], 
                                      conn = conn, 
                                      transaction = transaction)
             except Exception, e:
-                
                 msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
                                   str(self.create[i]) +'\n\n' +str(e)
                 self.logger.debug( msg )
                 raise WMException(msg,'WMCore-2')
             
-            keys = self.constraints.keys()
-            
         # delete tables
-        tableKeys = self.delete.keys()
-        tableKeys.sort()
-        
-        didFail = False
-        exceptionList = []
-        for i in tableKeys:
+        for i in sorted(self.delete.keys()):
             try:
                 self.dbi.processData(self.delete[i], 
                                      conn = conn, 
                                      transaction = transaction)
             except Exception, e:
-                didFail = True
-                exceptionList.append([i,e])
-            pass
-        
-        if didFail: 
-            msg = WMEXCEPTION['WMCore-2'] + '\n\n'
-            for badquery in exceptionList:
-                msg += str(self.create[badquery[0]]) +'\n\n' +str(badquery[1])
-            self.logger.debug( msg )
-            raise WMException(msg,'WMCore-2')
+                msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
+                                  str(self.delete[i]) +'\n\n' +str(e)
+                self.logger.debug( msg )
+                raise WMException(msg,'WMCore-2')
 
+        # create indexes
         for i in self.indexes.keys():
             try:
                 self.dbi.processData(self.indexes[i], 
                                      conn = conn, 
                                      transaction = transaction)
             except Exception, e:
-                self.logger.debug( e )
-                raise e
+                msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
+                                  str(self.indexes[i]) +'\n\n' +str(e)
+                self.logger.debug( msg )
+                raise WMException(msg,'WMCore-2')
 
+        # set constraints
         for i in self.constraints.keys():
             try:
                 self.dbi.processData(self.constraints[i], 
                                  conn = conn, 
                                  transaction = transaction)
             except Exception, e:
-                self.logger.debug( e )
-                raise e
-                
+                msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
+                                  str(self.constraints[i]) +'\n\n' +str(e)
+                self.logger.debug( msg )
+                raise WMException(msg,'WMCore-2')
+
+        # insert permanent data
         for i in self.inserts.keys():
             try:
                 self.dbi.processData(self.inserts[i], 
                                      conn = conn, 
                                      transaction = transaction)
             except Exception, e:
-                self.logger.debug( e )
-                raise e
+                msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
+                                  str(self.inserts[i]) +'\n\n' +str(e)
+                self.logger.debug( msg )
+                raise WMException(msg,'WMCore-2')
 
         return True
    

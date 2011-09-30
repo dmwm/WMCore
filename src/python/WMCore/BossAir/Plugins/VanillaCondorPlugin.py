@@ -20,51 +20,18 @@ class VanillaCondorPlugin(CondorPlugin):
     us to submit vanilla jobs.
     """
 
-    def __init__(self, config):
-
-        CondorPlugin.__init__(self, config)
-
-        self.proxy      = None
-        self.serverCert = getattr(config.BossAir, 'delegatedServerCert', None)
-        self.serverKey  = getattr(config.BossAir, 'delegatedServerKey', None)
-        self.myproxySrv = getattr(config.BossAir, 'myproxyServer', None)
-        self.proxyDir   = getattr(config.BossAir, 'proxyDir', '/tmp/')
-        self.serverHash = getattr(config.BossAir, 'delegatedServerHash', None)
-
-        if self.serverCert and self.serverKey and self.myproxySrv:
-            self.proxy = self.setupMyProxy()
-
-        return
-
-    def setupMyProxy(self):
-        """
-        _setupMyProxy_
-
-        Setup a WMCore.Credential.Proxy object with which to retrieve
-        proxies from myproxy using the server Cert
-        """
-
-        args = {}
-        args['server_cert'] = self.serverCert
-        args['server_key']  = self.serverKey
-        args['myProxySvr']  = self.myproxySrv
-        args['credServerPath'] = self.proxyDir
-        args['logger'] = logging
-        return Proxy(args = args)
-        
-
     def initSubmit(self, jobList = None):
         """
         _makeConfig_
 
         Make common JDL header: Modified to removed +DESIRED variables
-        """        
+        """
         jdl = []
 
 
-        # -- scriptFile & Output/Error/Log filenames shortened to 
+        # -- scriptFile & Output/Error/Log filenames shortened to
         #    avoid condorg submission errors from > 256 character pathnames
-        
+
         jdl.append("universe = vanilla\n")
         jdl.append("requirements = (Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\")\n ")
 
@@ -156,7 +123,7 @@ class VanillaCondorPlugin(CondorPlugin):
                     logging.error("Not setting priority")
 
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
-        
+
             jdl.append("Queue 1\n")
 
         return jdl

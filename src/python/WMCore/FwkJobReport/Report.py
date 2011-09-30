@@ -1178,6 +1178,31 @@ class Report:
         reportStep.performance.VSizeMemory.average = average
         
         return
+
+    def checkForAdlerChecksum(self, stepName):
+        """
+        _checkForAdlerChecksum_
+
+        Some steps require that all output files have adler checksums
+        This will go through all output files in a step and make sure they
+          have an adler32 checksum.  If they don't it creates an error with
+          code 60451 for the step, failing it.
+        """
+
+        error = None
+        files = self.getAllFilesFromStep(step = stepName)
+        for f in files:
+            if not 'adler32' in f.get('checksums', {}).keys():
+                error = f.get('lfn', None)
+            elif f['checksums']['adler32'] == None:
+                error = f.get('lfn', None)
+
+        if error:
+            msg = "No Adler32 checksum available in file %s" % error
+            self.addError(stepName, 60451, "NoAdler32Checksum", msg)
+            self.setStepStatus(stepName = stepName, status = 60451)
+
+        return
     
     
 def addFiles(file1, file2):

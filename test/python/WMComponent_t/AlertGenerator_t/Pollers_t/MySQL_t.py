@@ -8,7 +8,6 @@ import os
 import unittest
 import logging
 import types
-import multiprocessing
 import random
 import time
 
@@ -33,14 +32,12 @@ class MySQLTest(unittest.TestCase):
         self.config = getConfig(self.testDir)
         # mock generator instance to communicate some configuration values
         self.generator = utils.AlertGeneratorMock(self.config)        
-        self.testProcesses = []
         self.testName = self.id().split('.')[-1]
          
         
     def tearDown(self):       
         self.testInit.delWorkDir()
         self.generator = None
-        utils.terminateProcesses(self.testProcesses)
         
 
     def testMySQLPollerBasic(self):
@@ -87,15 +84,15 @@ class MySQLTest(unittest.TestCase):
         self.config.AlertGenerator.mysqlCPUPoller.critical = 80
         self.config.AlertGenerator.mysqlCPUPoller.pollInterval = 0.2
         self.config.AlertGenerator.mysqlCPUPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = MySQLCPUPoller       
-        ppti.config = self.config.AlertGenerator.mysqlCPUPoller
-        ppti.thresholdToTest = self.config.AlertGenerator.mysqlCPUPoller.soft
-        ppti.level = self.config.AlertProcessor.soft.level
-        ppti.expected = 1
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)        
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = MySQLCPUPoller       
+        ti.config = self.config.AlertGenerator.mysqlCPUPoller
+        ti.thresholdToTest = self.config.AlertGenerator.mysqlCPUPoller.soft
+        ti.level = self.config.AlertProcessor.soft.level
+        ti.expected = 1
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)        
 
 
     def testMySQLCPUPollerCriticalThreshold(self):
@@ -103,15 +100,15 @@ class MySQLTest(unittest.TestCase):
         self.config.AlertGenerator.mysqlCPUPoller.critical = 80
         self.config.AlertGenerator.mysqlCPUPoller.pollInterval = 0.2
         self.config.AlertGenerator.mysqlCPUPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = MySQLCPUPoller       
-        ppti.config = self.config.AlertGenerator.mysqlCPUPoller
-        ppti.thresholdToTest = self.config.AlertGenerator.mysqlCPUPoller.critical 
-        ppti.level = self.config.AlertProcessor.critical.level
-        ppti.expected = 1
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)        
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = MySQLCPUPoller       
+        ti.config = self.config.AlertGenerator.mysqlCPUPoller
+        ti.thresholdToTest = self.config.AlertGenerator.mysqlCPUPoller.critical 
+        ti.level = self.config.AlertProcessor.critical.level
+        ti.expected = 1
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)        
 
             
     def testMySQLCPUPollerNoAlert(self):
@@ -119,16 +116,16 @@ class MySQLTest(unittest.TestCase):
         self.config.AlertGenerator.mysqlCPUPoller.critical = 80
         self.config.AlertGenerator.mysqlCPUPoller.pollInterval = 0.2
         self.config.AlertGenerator.mysqlCPUPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = MySQLCPUPoller       
-        ppti.config = self.config.AlertGenerator.mysqlCPUPoller
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = MySQLCPUPoller       
+        ti.config = self.config.AlertGenerator.mysqlCPUPoller
         # lower the threshold so that the alert is never generated
-        ppti.thresholdToTest = self.config.AlertGenerator.mysqlCPUPoller.soft - 20
-        ppti.level = 0
-        ppti.expected = 0
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)        
+        ti.thresholdToTest = self.config.AlertGenerator.mysqlCPUPoller.soft - 20
+        ti.level = 0
+        ti.expected = 0
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)        
         
 
     def testMySQLMemoryPollerSoftThreshold(self):
@@ -136,15 +133,15 @@ class MySQLTest(unittest.TestCase):
         self.config.AlertGenerator.mysqlMemPoller.critical = 80
         self.config.AlertGenerator.mysqlMemPoller.pollInterval = 0.2
         self.config.AlertGenerator.mysqlMemPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = MySQLMemoryPoller
-        ppti.config = self.config.AlertGenerator.mysqlMemPoller
-        ppti.thresholdToTest = self.config.AlertGenerator.mysqlMemPoller.soft
-        ppti.level = self.config.AlertProcessor.soft.level
-        ppti.expected = 1
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = MySQLMemoryPoller
+        ti.config = self.config.AlertGenerator.mysqlMemPoller
+        ti.thresholdToTest = self.config.AlertGenerator.mysqlMemPoller.soft
+        ti.level = self.config.AlertProcessor.soft.level
+        ti.expected = 1
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)
                                     
 
     def testMySQLMemoryPollerCriticalThreshold(self):
@@ -152,15 +149,15 @@ class MySQLTest(unittest.TestCase):
         self.config.AlertGenerator.mysqlMemPoller.critical = 80
         self.config.AlertGenerator.mysqlMemPoller.pollInterval = 0.2
         self.config.AlertGenerator.mysqlMemPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = MySQLMemoryPoller
-        ppti.config = self.config.AlertGenerator.mysqlMemPoller
-        ppti.thresholdToTest = self.config.AlertGenerator.mysqlMemPoller.critical
-        ppti.level = self.config.AlertProcessor.critical.level
-        ppti.expected = 1
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = MySQLMemoryPoller
+        ti.config = self.config.AlertGenerator.mysqlMemPoller
+        ti.thresholdToTest = self.config.AlertGenerator.mysqlMemPoller.critical
+        ti.level = self.config.AlertProcessor.critical.level
+        ti.expected = 1
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)
         
 
     def testMySQLMemoryPollerNoAlert(self):
@@ -168,16 +165,16 @@ class MySQLTest(unittest.TestCase):
         self.config.AlertGenerator.mysqlMemPoller.critical = 80
         self.config.AlertGenerator.mysqlMemPoller.pollInterval = 0.2
         self.config.AlertGenerator.mysqlMemPoller.period = 1
-        ppti = utils.TestInput() # see attributes comments at the class
-        ppti.pollerClass = MySQLMemoryPoller
-        ppti.config = self.config.AlertGenerator.mysqlMemPoller
+        ti = utils.TestInput() # see attributes comments at the class
+        ti.pollerClass = MySQLMemoryPoller
+        ti.config = self.config.AlertGenerator.mysqlMemPoller
         # lower the threshold so that the alert is never generated
-        ppti.thresholdToTest = self.config.AlertGenerator.mysqlMemPoller.soft - 20
-        ppti.level = 0
-        ppti.expected = 0
-        ppti.thresholdDiff = 10
-        ppti.testCase = self
-        utils.doProcessPolling(ppti)
+        ti.thresholdToTest = self.config.AlertGenerator.mysqlMemPoller.soft - 20
+        ti.level = 0
+        ti.expected = 0
+        ti.thresholdDiff = 10
+        ti.testCase = self
+        utils.doGenericPeriodAndProcessPolling(ti)
         
 
     def testMySQLDbSizePollerBasic(self):

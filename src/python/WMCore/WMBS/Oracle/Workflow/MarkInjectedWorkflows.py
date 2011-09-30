@@ -7,7 +7,7 @@ Oracle implementation of Workflow.MarkInjectedWorkflows
 """
 __all__ = []
 
-from WMCore.WMBS.Workflow.MarkInjectedWorkflows import MarkInjectedWorkflows as MySQLMarkInjectedWorkflows
+from WMCore.WMBS.MySQL.Workflow.MarkInjectedWorkflows import MarkInjectedWorkflows as MySQLMarkInjectedWorkflows
 
 class MarkInjectedWorkflows(MySQLMarkInjectedWorkflows):
     """

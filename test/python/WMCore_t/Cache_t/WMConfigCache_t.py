@@ -12,7 +12,7 @@ import subprocess
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-from WMCore.WMInit import getWMBASE
+from WMCore.WMBase import getTestBase 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 class testWMConfigCache(unittest.TestCase):
@@ -29,6 +29,8 @@ class testWMConfigCache(unittest.TestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setupCouch("config_test", "GroupUser", "ConfigCache")
+
+        self.testDir = self.testInit.generateWorkDir()
         return
 
     def tearDown(self):
@@ -37,6 +39,7 @@ class testWMConfigCache(unittest.TestCase):
 
         Clear out the database.
         """
+        self.testInit.delWorkDir()
         self.testInit.tearDownCouch()        
         return
 
@@ -90,7 +93,7 @@ class testWMConfigCache(unittest.TestCase):
         configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
-        psetPath = os.path.join(getWMBASE(), "test/python/WMCore_t/Cache_t/PSet.txt")
+        psetPath = os.path.join(getTestBase(), "WMCore_t/Cache_t/PSet.txt")
         configCache.addConfig(newConfig = psetPath, psetHash = None)
 
         configCache.setLabel("sample-label")
@@ -125,7 +128,7 @@ class testWMConfigCache(unittest.TestCase):
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
         configCache.document['md5_hash'] = "somemd5"
-        psetPath = os.path.join(getWMBASE(), "test/python/WMCore_t/Cache_t/PSet.txt")        
+        psetPath = os.path.join(getTestBase(), "WMCore_t/Cache_t/PSet.txt")        
         configCache.addConfig(newConfig = psetPath, psetHash = None)        
         configCache.save()
         
@@ -135,6 +138,49 @@ class testWMConfigCache(unittest.TestCase):
         
         self.assertEqual(configCache2.attachments.get('attach1', None), attach)
         configCache2.delete()
+        return
+
+    def testD_LoadConfigCache(self):
+        """
+        _LoadConfigCache_
+
+        Actually load the config cache using plain .load()
+        Tests to make sure that if we pass in an id field it gets used to load configs
+        """
+
+        configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
+        configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+        configCache.setLabel("labelA")
+        configCache.save()
+
+        configCache2 = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test',
+                                   id = configCache.getCouchID(),
+                                   rev = configCache.getCouchRev())
+        configCache2.load()
+        self.assertEqual(configCache2.document['owner'],
+                         {'group': 'testGroup', 'user': 'testOps'})
+        self.assertEqual(configCache2.document['description'],
+                         {'config_desc': None, 'config_label': 'labelA'})
+        return
+
+    def testE_SaveConfigFileToDisk(self):
+        """
+        _SaveConfigFileToDisk_
+
+        Check and see if we can save the config file attachment to disk
+        """
+        targetFile = os.path.join(self.testDir, 'configCache.test')
+
+        configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
+        configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+        configCache.attachments['configFile'] = 'ThisIsAConfigFile'
+        configCache.saveConfigToDisk(targetFile = targetFile)
+
+        f = open(targetFile, 'r')
+        content = f.read()
+        f.close()
+
+        self.assertEqual(content, configCache.getConfig())
         return
 
     def testListAllConfigs(self):

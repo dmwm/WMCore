@@ -19,6 +19,7 @@ import WMCore.WMSpec.Steps.StepFactory as StepFactory
 import os.path
 import sys
 import inspect
+from nose.plugins.attrib import attr
 
 import WMCore_t.WMSpec_t.Steps_t as ModuleLocator
 
@@ -73,6 +74,7 @@ class deleteFileTest(unittest.TestCase):
         step.override.__setattr__('se-name','DUMMYSE')
         
 
+    @attr('integration')
     def testManualDeleteOld(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.step.section_('filesToDelete')
@@ -81,7 +83,9 @@ class deleteFileTest(unittest.TestCase):
         self.executor.initialise(self.step, self.job)
         self.executor.execute()        
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
+        return
 
+    @attr('integration')
     def testManualDeleteNew(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.step.section_('filesToDelete')
@@ -91,7 +95,9 @@ class deleteFileTest(unittest.TestCase):
         self.executor.initialise(self.step, self.job)
         self.executor.execute()        
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
+        return
 
+    @attr('integration')
     def testJobDeleteOld(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.setLocalOverride(self.step)
@@ -99,16 +105,18 @@ class deleteFileTest(unittest.TestCase):
         self.executor.initialise(self.step, self.job)
         self.executor.execute()        
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
+        return
 
+    @attr('integration')
     def testJobDeleteNew(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.setLocalOverride(self.step)
         self.step.override.newStageOut = True
         self.job['input_files'] = [ {'lfn': os.path.join(self.testDir, 'testfile') } ]
-        print sys.path
         self.executor.initialise(self.step, self.job)
         self.executor.execute()        
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
+        return
         
 if __name__ == "__main__":
     unittest.main()

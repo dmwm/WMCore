@@ -14,6 +14,7 @@ import unittest
 import time
 import shutil
 import cProfile, pstats
+import inspect
 
 from subprocess import Popen, PIPE
 
@@ -338,6 +339,11 @@ class JobArchiverTest(unittest.TestCase):
         config.JobArchiver.componentDir = ""
         # invoke exception and thus Alert message
         self.assertRaises(JobArchiverPollerException, JobArchiverPoller, config = config)
+        # wait for the generated alert to arrive
+        while len(handler.queue) == 0:
+            time.sleep(0.3)
+            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
+        
         self.alertsReceiver.shutdown()
         self.alertsReceiver = None
         # now check if the alert was properly sent
@@ -363,6 +369,11 @@ class JobArchiverTest(unittest.TestCase):
         # invoke the problem and thus Alert message
         job = dict(cache_dir = None)
         testJobArchiver.cleanJobCache(job)
+        # wait for the generated alert to arrive
+        while len(handler.queue) == 0:
+            time.sleep(0.3)
+            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
+        
         self.alertsReceiver.shutdown()
         self.alertsReceiver = None
         # now check if the alert was properly sent

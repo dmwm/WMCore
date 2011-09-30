@@ -9,7 +9,7 @@ import os
 import unittest
 
 from WMQuality.TestInit import TestInit
-from WMCore.WMInit import getWMBASE
+from WMCore.WMBase import getTestBase
 
 from WMCore.Storage.SiteLocalConfig import SiteLocalConfig
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
@@ -27,8 +27,8 @@ class SiteLocalConfigTest(unittest.TestCase):
 
         Verify that the FNAL site config file is parsed correctly.
         """
-        fnalConfigFileName = os.path.join(getWMBASE(),
-                                          "test/python/WMCore_t/Storage_t",
+        fnalConfigFileName = os.path.join(getTestBase(),
+                                          "WMCore_t/Storage_t",
                                           "T1_US_FNAL_SiteLocalConfig.xml")
 
         mySiteConfig = SiteLocalConfig(fnalConfigFileName)
@@ -84,8 +84,8 @@ class SiteLocalConfigTest(unittest.TestCase):
 
         Verify that the FNAL site config file is parsed correctly.
         """
-        vandyConfigFileName = os.path.join(getWMBASE(),
-                                           "test/python/WMCore_t/Storage_t",
+        vandyConfigFileName = os.path.join(getTestBase(),
+                                           "WMCore_t/Storage_t",
                                            "T3_US_Vanderbilt_SiteLocalConfig.xml")
 
         mySiteConfig = SiteLocalConfig(vandyConfigFileName)
@@ -146,8 +146,8 @@ class SiteLocalConfigTest(unittest.TestCase):
         env. variable
         
         """        
-        vandyConfigFileName = os.path.join(getWMBASE(),
-                                           "test/python/WMCore_t/Storage_t",
+        vandyConfigFileName = os.path.join(getTestBase(),
+                                           "WMCore_t/Storage_t",
                                            "T3_US_Vanderbilt_SiteLocalConfig.xml")
         os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = vandyConfigFileName
         

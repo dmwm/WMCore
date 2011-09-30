@@ -23,6 +23,8 @@ from WMCore.WMBS.Workflow import Workflow
 
 from WMCore.DataStructs.Run import Run
 
+from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
+
 class SubscriptionTest(unittest.TestCase):
     def setUp(self):
         """
@@ -1260,14 +1262,13 @@ class SubscriptionTest(unittest.TestCase):
         
         Test the getSubTypes function
         """
+        createBase = CreateWMBSBase()
+        subTypes   = createBase.subTypes
+        
         getSubTypes = self.daofactory(classname = "Subscriptions.GetSubTypes")
         result = getSubTypes.execute()
 
-        self.assertEqual(len(result), 8, "Error: Wrong number of types.")
-
-        for subType in ["Processing", "Merge", "Harvesting", "Cleanup",
-                        "LogCollect", "Skim", "Analysis", "Production"]:
-            self.assertTrue(subType in result, "Type %s is missing" % (subType))
+        self.assertEqual(result.sort(), subTypes.sort())
 
         return
 
@@ -1721,6 +1722,35 @@ class SubscriptionTest(unittest.TestCase):
             else:
                 self.assertFalse(result["valid"], "Error: Valid should be False.")                
         return
+
+    def testSubTypesInsertion(self):
+        """
+        _testSubTypesInsertion_
+
+        Test whether or not we can insert new sub types
+        """
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+
+        
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        type = "newType")
+
+        testSubscription.create()
+
+        test2 = Subscription(id = 1)
+        test2.load()
+        self.assertEqual(test2['type'], 'newType')
+
+        return
+
+        
 
 if __name__ == "__main__":
     unittest.main()

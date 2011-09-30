@@ -1,6 +1,6 @@
 """
 Module encapsulates agent-related tests, e.g. CPU, memory utilisation
-of agent's compoments, etc.
+of agent's components, etc.
 
 """
 
@@ -50,7 +50,8 @@ class ComponentsPoller(PeriodPoller):
         myName = self.__class__.__name__
         numOfMeasurements = round(self.config.period / self.config.pollInterval, 0) 
         et = ElementTree()
-        components = self.agentCompleteConfig.listComponents_() + self.agentCompleteConfig.listWebapps_()
+        components = self.agentCompleteConfig.listComponents_() + \
+                     self.agentCompleteConfig.listWebapps_()
         for comp in components:
             compConfig = getattr(self.agentCompleteConfig, comp)
             daemonXml = os.path.join(compConfig.componentDir, "Daemon.xml")

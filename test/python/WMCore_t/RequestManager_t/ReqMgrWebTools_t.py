@@ -1,16 +1,26 @@
+import unittest
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import parseRunList, parseBlockList, removePasswordFromUrl
 
-l0 = ''
-l1 = ' [1,  2,  3 ] '
-l2 = '1,  2, 3   '
-assert(parseRunList(l0) == [])
-assert(parseRunList(l1) == [1,2,3])
-assert(parseRunList(l2) == [1,2,3])
+class ReqMgrWebToolsTest(unittest.TestCase):
+    def testParseRunList(self):
+        l0 = ''
+        l1 = ' [1,  2,  3 ] '
+        l2 = '1,  2, 3   '
+        l3 = u'1,  2, 3   '
+        l4 = [1,2,3]
+        l5 = {1:2, 3:4}
+        self.assertEqual(parseRunList(l0), [])
+        self.assertEqual(parseRunList(l1), [1,2,3])
+        self.assertEqual(parseRunList(l2), [1,2,3])
+        self.assertEqual(parseRunList(l3), [1,2,3])
+        self.assertEqual(parseRunList(l4), [1,2,3])
+  
+    def testParseBlockList(self):
+        l3 = '  ["Barack", "  Sarah  ",George]'
+        self.assertEqual(parseBlockList(l3), ['Barack', 'Sarah', 'George'])
 
-l3 = '  ["Barack", "  Sarah  ",George]'
-assert(parseBlockList(l3) == ['Barack', 'Sarah', 'George'])
-
-url = 'http://sarah:maverick@whitehouse.gov:1600/birthcertificates/trig'
-cleanedUrl = removePasswordFromUrl(url)
-assert(cleanedUrl == 'http://whitehouse.gov:1600/birthcertificates/trig')
+    def testRemovePassword(self):
+        url = 'http://sarah:maverick@whitehouse.gov:1600/birthcertificates/trig'
+        cleanedUrl = removePasswordFromUrl(url)
+        self.assertEqual(cleanedUrl, 'http://whitehouse.gov:1600/birthcertificates/trig')
 

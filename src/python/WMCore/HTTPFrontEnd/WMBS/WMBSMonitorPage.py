@@ -5,8 +5,7 @@ The documentation for the framework
 """
     
 
-
-
+import cherrypy
 from cherrypy import expose
 from WMCore.WebTools.Page import TemplatedPage
 from os import path
@@ -19,7 +18,7 @@ def serveFile(contentType, prefix, *args):
     if path.commonprefix([name, prefix]) != prefix:
         raise HTTPError(403)
     if not path.exists(name):
-        raise HTTPError(404, "%s not found" % name)
+        raise HTTPError(404, "Page not found")
     return serve_file(name, content_type = contentType)
 
 class WMBSMonitorPage(TemplatedPage):
@@ -27,6 +26,7 @@ class WMBSMonitorPage(TemplatedPage):
     The documentation for the framework
     """
     @expose
+    @cherrypy.tools.secmodv2()
     def index(self):
         """
         The index of the documentation
@@ -34,6 +34,7 @@ class WMBSMonitorPage(TemplatedPage):
         return serveFile('text/html', self.config.html, 'WMBS', 'index.html')
 
     @expose
+    @cherrypy.tools.secmodv2()
     def default(self, *args):
         """
         Show the documentation for a page or return the index
@@ -42,10 +43,10 @@ class WMBSMonitorPage(TemplatedPage):
             return serveFile('text/html',
                              path.join(self.config.html, 'WMBS'),*args)
         else:
-
             return self.index()
 
     @expose
+    @cherrypy.tools.secmodv2()
     def javascript(self, *args):
         if args[0] == "external":
             return serveFile('application/javascript',
@@ -55,6 +56,7 @@ class WMBSMonitorPage(TemplatedPage):
                                     'WMCore', 'WebTools'), *args)
 
     @expose
+    @cherrypy.tools.secmodv2()
     def css(self, *args):
         if args[0] == "external":
             return serveFile('text/css',
@@ -64,6 +66,7 @@ class WMBSMonitorPage(TemplatedPage):
                                     'WMCore', 'WebTools'), *args)
 
     @expose
+    @cherrypy.tools.secmodv2()
     def template(self, *args, **kwargs):
         """
         Show the documentation for a page or return the index
@@ -74,6 +77,7 @@ class WMBSMonitorPage(TemplatedPage):
         return self.index()
 
     @expose
+    @cherrypy.tools.secmodv2()
     def wmbsStatus(self, subscriptionType = "All"):
         """
         _wmbsStatus_
@@ -91,7 +95,8 @@ class WMBSMonitorPage(TemplatedPage):
         return self.templatepage("WMBS", subType = subscriptionType,
                                            instance = "WMBS")
     
-    @expose    
+    @expose  
+    @cherrypy.tools.secmodv2()
     def subscriptionStatus(self, subscriptionId):
         """
         _subscriptionStatus_
@@ -105,6 +110,7 @@ class WMBSMonitorPage(TemplatedPage):
                                            subscriptionId = int(subscriptionId))
     
     @expose
+    @cherrypy.tools.secmodv2()
     def jobStatus(self, jobState = "success", interval = 7200):
         """
         _jobStatus_

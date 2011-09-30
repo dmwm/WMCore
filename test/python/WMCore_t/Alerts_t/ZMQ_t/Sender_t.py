@@ -2,7 +2,7 @@ import time
 import unittest
 import sys
 import logging
-from  multiprocessing import Queue, queues
+import inspect
 
 import zmq
 
@@ -16,7 +16,6 @@ class SenderTest(unittest.TestCase):
     def setUp(self):
         self.addr = "tcp://127.0.0.1:5557"
         self.control = "tcp://127.0.0.1:5559"
-        self.alertsQueue = None
         
         logging.basicConfig(logLevel = logging.DEBUG)
         
@@ -47,10 +46,10 @@ class SenderTest(unittest.TestCase):
         
         """
         nAlerts = 10
-        # start Receiver, handler is Queue
+        # start Receiver, handler is list for alerts
         # wait for control messages to arrive and test immediately
-        self.alertsQueue = Queue()
-        handler = lambda x: self.alertsQueue.put(x)
+        alertsQueue = []
+        handler = lambda x: alertsQueue.append(x)
         self.receiver = Receiver(self.addr, handler, self.control)
         self.receiver.startReceiver() # non blocking call
         
@@ -76,17 +75,7 @@ class SenderTest(unittest.TestCase):
         # is received if there is no more messages coming
         self.receiver.shutdown()
             
-        # check received alerts in the Queue
-        qSize = 0
-        while True:
-            try:
-                self.alertsQueue.get(block = False)
-                qSize += 1
-            except queues.Empty:
-                break
-        # .qsize() is not properly implemented in Python 2.7, on e.g. Mac OS
-        #self.assertEqual(nAlerts, self.alertsQueue.qsize())
-        self.assertEqual(nAlerts, qSize)
+        self.assertEqual(nAlerts, len(alertsQueue))
         
         
     def testSenderNonBlockingWhenReceiverNotAvailable(self):
@@ -98,8 +87,9 @@ class SenderTest(unittest.TestCase):
         in the Sender (was hanging indefinitely due to -1 default value).
         
         """
-        for i in range(2):
-            nAlerts = 3        
+        iterations = 2
+        nAlerts = 3
+        for i in range(iterations):
             # instantiate sender and send ...
             s = Sender(self.addr, "Sender_t", self.control)
             s.register()
@@ -110,8 +100,10 @@ class SenderTest(unittest.TestCase):
             s.unregister()
             # call destructor explicitly, the hanging should not occur here
             del s
-        
-        
+        # no need to try receiving these alerts - shall be discarded with
+        # calling the sender's destructor
+
+
     
 if __name__ == "__main__":
     unittest.main()

@@ -143,8 +143,6 @@ class HarvestingWorkloadFactory(StdBase):
             newSplitArgs[str(argName)] = splitArgs[argName]
         
         harvTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
-        harvTask.addGenerator("BasicNaming")
-        harvTask.addGenerator("BasicCounter")
         harvTask.setTaskType(taskType)
         
         (primary, processed, tier) = self.inputDataset[1:].split("/")
@@ -180,8 +178,6 @@ class HarvestingWorkloadFactory(StdBase):
         logCollectStep.setStepType("LogCollect")
         logCollectTask.applyTemplates()
         logCollectTask.setSplittingAlgorithm("EndOfRun", files_per_job = 500)
-        logCollectTask.addGenerator("BasicNaming")
-        logCollectTask.addGenerator("BasicCounter")
         logCollectTask.setTaskType("LogCollect")
     
         parentTaskLogArch = parentTask.getStep("logArch1")

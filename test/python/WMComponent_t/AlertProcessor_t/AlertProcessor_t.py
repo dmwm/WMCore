@@ -19,7 +19,6 @@ class AlertProcessorTest(unittest.TestCase):
                                                  "WMCore.ResourceControl"],
                                  useDefault = False)
         self.testDir = self.testInit.generateWorkDir()
-        self.proc = None
         
         self.config = Configuration()
         self.config.section_("Agent")
@@ -39,7 +38,7 @@ class AlertProcessorTest(unittest.TestCase):
 
         self.config.AlertProcessor.critical.level = 5
         self.config.AlertProcessor.soft.level = 0
-        self.config.AlertProcessor.soft.buffer_size = 3
+        self.config.AlertProcessor.soft.bufferSize = 3
 
         self.config.AlertProcessor.critical.section_("sinks")
         self.config.AlertProcessor.soft.section_("sinks")
@@ -51,23 +50,23 @@ class AlertProcessorTest(unittest.TestCase):
 
 
     def testAlertProcessorBasic(self):
-        self.proc = AlertProcessor(self.config)
+        alertProcessor = AlertProcessor(self.config)
         try:
-            # self.proc.startComponent() causes the flow to stop, Harness.py
+            # alertProcessor.startComponent() causes the flow to stop, Harness.py
             # the method just calls prepareToStart() and waits for ever
-            # self.proc.startDaemon() no good for this either ... puts everything
+            # alertProcessor.startDaemon() no good for this either ... puts everything
             # on background
-            self.proc.prepareToStart()
+            alertProcessor.prepareToStart()
         except Exception, ex:
             print ex
             self.fail(str(ex))
             
-        print "AlertProcessor and its sub-components should be running now ..."
-        print "Going to stop the component ..."
+        logging.debug("AlertProcessor and its sub-components should be running now ...")
+        logging.debug("Going to stop the component ...")
                 
         # stop via component method
         try:
-            self.proc.stopProcessor()
+            alertProcessor.stopProcessor()
         except Exception, ex:
             print ex
             self.fail(str(ex))

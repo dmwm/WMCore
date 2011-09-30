@@ -21,6 +21,7 @@ import cPickle
 from subprocess import Popen, PIPE
 
 
+import WMCore.WMBase
 import WMCore.WMInit
 #from WMQuality.TestInit import TestInit
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
@@ -349,14 +350,14 @@ class JobSubmitterTest(unittest.TestCase):
         config.JobSubmitter.pluginName    = 'CondorGlobusPlugin'
         config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
         config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
-        config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(),
-                                                         'test/python/WMComponent_t/JobSubmitter_t',
+        config.JobSubmitter.submitScript  = os.path.join(WMCore.WMBase.getTestBase(),
+                                                         'WMComponent_t/JobSubmitter_t',
                                                          'submit.sh')
         config.JobSubmitter.componentDir  = os.path.join(self.testDir, 'Components')
         config.JobSubmitter.workerThreads = 2
         config.JobSubmitter.jobsPerWorker = 200
-        config.JobSubmitter.inputFile     = os.path.join(WMCore.WMInit.getWMBASE(),
-                                                         'test/python/WMComponent_t/JobSubmitter_t',
+        config.JobSubmitter.inputFile     = os.path.join(WMCore.WMBase.getTestBase(),
+                                                         'WMComponent_t/JobSubmitter_t',
                                                          'FrameworkJobReport-4540.xml')
         config.JobSubmitter.deleteJDLFiles = False
 
@@ -380,9 +381,6 @@ class JobSubmitterTest(unittest.TestCase):
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        #arguments = getTestArguments()
-
-        #workload = rerecoWorkload("Tier1ReReco", arguments)
         workload = testWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
 
@@ -390,8 +388,6 @@ class JobSubmitterTest(unittest.TestCase):
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
-
-        workload.save(workloadName)
 
         return workload
 

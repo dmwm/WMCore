@@ -15,6 +15,7 @@ import traceback
 
 from WMCore.Configuration import saveConfigurationFile
 from WMCore.Configuration import Configuration
+from WMCore.Lexicon import sanitizeURL
 
 help_message = '''
 The help message goes here.
@@ -155,8 +156,8 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "WMBSService"):
         if args.get('wmbs_service_port'):
             config.WMBSService.Webtools.port = int(args['wmbs_service_port'])
-        config.WMBSService.views.active.wmbs.couchConfig.couchURL = args["couch_url"]
-        config.WMBSService.views.active.wmagent.couchConfig.couchURL = args["couch_url"]
+        config.WMBSService.views.active.wmbs.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
+        config.WMBSService.views.active.wmagent.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
     
     return config
 

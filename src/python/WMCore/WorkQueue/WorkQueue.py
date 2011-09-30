@@ -110,6 +110,8 @@ class WorkQueue(WorkQueueBase):
         self.params['QueueURL'] = self.backend.queueUrl # url this queue is visible on
                                     # backend took previous QueueURL and sanitized it
         self.params.setdefault('WMBSUrl', None) # this will only be set on local Queue
+        if self.params.get('WMBSUrl'):
+            self.params['WMBSUrl'] = Lexicon.sanitizeURL(self.params['WMBSUrl'])['url']
         self.params.setdefault('Teams', [''])
         self.params.setdefault('DrainMode', False)
         if self.params.get('CacheDir'):

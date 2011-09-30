@@ -57,10 +57,22 @@ class FeederManagerTest(unittest.TestCase):
 
         Get defaults FeederManager parameters
         """
-        return self.testInit.getConfiguration(
-                    os.path.join(WMCore.WMInit.getWMBASE(), \
-            'src/python/WMComponent/FeederManager/DefaultConfig.py'))
+        config = self.testInit.getConfiguration()
+		config.component_("FeederManager")
+		config.FeederManager.logLevel = "INFO"
+		config.FeederManager.componentName = "FeederManager"
+		config.FeederManager.componentDir = \
+			os.path.join(os.getenv("TESTDIR"), "FeederManager")
+		config.FeederManager.addDatasetWatchHandler = \
+			'WMComponent.FeederManager.Handler.DefaultAddDatasetWatch'
 
+		# The maximum number of threads to process each message type
+		config.FeederManager.maxThreads = 10
+
+		# The poll interval at which to look for new fileset/feeder association
+		config.FeederManager.pollInterval = 60
+		
+		return config
 
     def testA(self):
         """

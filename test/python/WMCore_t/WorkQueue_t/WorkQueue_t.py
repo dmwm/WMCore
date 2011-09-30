@@ -532,6 +532,8 @@ class WorkQueueTest(WorkQueueTestCase):
         #TODO: needs more rigorous test on each element per task
         # Basic production Spec
         spec = MultiTaskProductionWorkload
+        for task in spec.taskIterator():
+            delattr(task.steps().data.application.configuration, 'configCacheUrl')
         spec.setSpecUrl(os.path.join(self.workDir, 'multiTaskProduction.spec'))
         spec.setOwnerDetails("evansde77", "DMWM", {'dn': 'MyDN'})
         spec.save(spec.specUrl())

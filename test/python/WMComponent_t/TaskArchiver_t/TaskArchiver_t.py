@@ -68,7 +68,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.databaseName = "taskarchiver_t_0"
-        self.testInit.setupCouch(self.databaseName, "WorkloadSummary")
+        self.testInit.setupCouch("%s/workloadsummary" % self.databaseName, "WorkloadSummary")
         self.testInit.setupCouch("%s/jobs" % self.databaseName, "JobDump")
         self.testInit.setupCouch("%s/fwjrs" % self.databaseName, "FWJRDump")
         
@@ -129,7 +129,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.histogramKeys   = ['AvgEventTime', 'writeTotalMB']
         config.TaskArchiver.histogramBins   = 5
         config.TaskArchiver.histogramLimit  = 5
-        config.TaskArchiver.summaryDBName   = self.databaseName
+        config.TaskArchiver.workloadSummaryCouchDBName = "%s/workloadsummary" % self.databaseName
 
         config.section_("ACDC")
         config.ACDC.couchurl                = config.JobStateMachine.couchurl
@@ -395,7 +395,7 @@ class TaskArchiverTest(unittest.TestCase):
         testWMBSFileset = Fileset(id = 1)
         self.assertEqual(testWMBSFileset.exists(), False)
 
-        dbname       = getattr(config.JobStateMachine, "couchDBName")
+        dbname       = config.TaskArchiver.workloadSummaryCouchDBName
         couchdb      = CouchServer(config.JobStateMachine.couchurl)
         workdatabase = couchdb.connectDatabase(dbname)
 

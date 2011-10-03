@@ -59,7 +59,8 @@ class WMBSHelperTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("wmbshelper_t/jobs", "JobDump")
-        self.testInit.setupCouch("wmbshelper_t/fwjrs", "FWJRDump")        
+        self.testInit.setupCouch("wmbshelper_t/fwjrs", "FWJRDump")
+        self.testInit.setupCouch("config_test", "GroupUser", "ConfigCache")
         os.environ["COUCHDB"] = "wmbshelper_t"
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
                                                  "WMComponent.DBSBuffer.Database",
@@ -111,6 +112,10 @@ class WMBSHelperTest(unittest.TestCase):
                                    ceName = 'site1', plugin = "TestPlugin")
         resourceControl.insertThreshold(siteName = 'site1', taskType = 'Processing', \
                                         maxSlots = 10000)
+
+        userDN     = 'someDN'
+        userAction = daoFactory(classname = "Users.New")
+        userAction.execute(dn = userDN, group_name = 'DEFAULT', role_name = 'DEFAULT')
 
         inputFileset = Fileset("input")
         inputFileset.create()
@@ -227,7 +232,9 @@ class WMBSHelperTest(unittest.TestCase):
         if baAPI:
             for job in jobList:
                 job['plugin'] = 'TestPlugin'
-                job['userdn'] = 'Steve'
+                job['userdn'] = userDN
+                job['usergroup'] = 'DEFAULT'
+                job['userrole']  = 'DEFAULT'
                 job['custom']['location'] = 'site1'
             baAPI.createNewJobs(wmbsJobs = jobList)
 

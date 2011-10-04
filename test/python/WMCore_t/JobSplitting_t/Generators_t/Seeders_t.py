@@ -138,7 +138,7 @@ class SeederTest(unittest.TestCase):
 
         task1 = makeWMTask("task1")
 
-        randomDict = {"generator.initialSeed": None, "evtgenproducer.initialSeed": None, "MAXINT": 10000}
+        randomDict = {"generator.initialSeed": None, "evtgenproducer.initialSeed": None, "MAXINT": 1}
         lumiDict   = {"lumi_per_run": 5}
 
         task1.addGenerator("RandomSeeder", **randomDict)
@@ -155,13 +155,13 @@ class SeederTest(unittest.TestCase):
             count = 0
             for job in jobGrp.jobs:
                 conf = job.getBaggage()
-                self.assertEqual(hasattr(conf.RandomSeeder.evtgenproducer, 'initialSeed'), True)
-                self.assertEqual(hasattr(conf.RandomSeeder.generator, 'initialSeed'), True)
+                self.assertTrue(hasattr(conf.RandomSeeder.evtgenproducer, 'initialSeed'))
+                self.assertTrue(hasattr(conf.RandomSeeder.generator, 'initialSeed'))
                 #self.assertEqual(job["mask"]["FirstLumi"], count%6)
                 #self.assertEqual(job["mask"]["FirstRun"],  (count/6) + 1)
                 x = conf.RandomSeeder.generator.initialSeed
                 self.assertTrue( x > 0, "ERROR: producing negative random numbers")
-      	        self.assertTrue( x < 10000, "ERROR: MAXINT tag failed; producing bad random number %i" %(x))
+                self.assertTrue( x <= 1, "ERROR: MAXINT tag failed; producing bad random number %i" %(x))
                 count += 1
 
         return

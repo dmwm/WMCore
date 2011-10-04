@@ -6,26 +6,17 @@ Created on Aug 6, 2009
 import unittest
 import WMCore.Services.Requests as Requests
 import os
-import threading
 import time
-import pprint
 import tempfile
 import shutil
 import nose
 from httplib import HTTPException
-from WMCore.DAOFactory import DAOFactory
-from WMCore.WMFactory import WMFactory
 from WMCore.DataStructs.Run import Run
-from WMCore.WMBS.Job import Job
-from WMCore.DataStructs.JobPackage import JobPackage
-from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
-from WMCore.JobStateMachine import DefaultConfig
 from WMCore.DataStructs.Mask import Mask
 from WMCore.DataStructs.Job import Job
 from WMCore.Services.Requests import JSONRequests
 from WMCore.WMBS.Job import Job as WMBSJob
 from WMQuality.TestInit import TestInit
-import WMCore.Database.CMSCouch as CMSCouch
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
@@ -273,10 +264,10 @@ class TestRequests(unittest.TestCase):
         proxy = os.environ.get('X509_USER_PROXY')
         if not proxy:
             raise nose.SkipTest('Only run if an X509 proxy is present')
-        os.environ.pop('X509_HOST_CERT')
-        os.environ.pop('X509_HOST_KEY')
-        os.environ.pop('X509_USER_CERT')
-        os.environ.pop('X509_USER_KEY')
+        os.environ.pop('X509_HOST_CERT', None)
+        os.environ.pop('X509_HOST_KEY', None)
+        os.environ.pop('X509_USER_CERT', None)
+        os.environ.pop('X509_USER_KEY', None)
         req = Requests.Requests('https://cmsweb.cern.ch')
         out = req.makeRequest('/auth/trouble')
         self.assertEqual(out[1], 200)

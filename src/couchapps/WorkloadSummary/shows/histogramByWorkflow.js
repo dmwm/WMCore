@@ -51,6 +51,7 @@ function(doc, req) {
     requestInfo.output = {};
     if (!isEmpty(doc.output)) {
         requestInfo.output = JSON.stringify(doc.output);
+        dataExist = true;
     };
     
     if (dataExist) {
@@ -60,6 +61,6 @@ function(doc, req) {
                                    requestInfo)
         return {body: html};
     } else {
-        return {body: "No histogram data for " + req.docId}
+        return {body: "No histogram data for " + doc._id}
     }
 }

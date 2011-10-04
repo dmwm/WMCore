@@ -228,7 +228,7 @@ class ReqMgrBrowser(WebAPI):
 
         try:
             request = GetRequest.getRequestByName(requestName)
-        except Exception, RuntimeError ex:
+        except (Exception, RuntimeError) as ex:
             raise cherrypy.HTTPError(400, "Invalid request.")
         
         request = Utilities.prepareForTable(request)

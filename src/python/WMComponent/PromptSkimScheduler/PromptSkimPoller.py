@@ -161,7 +161,7 @@ class PromptSkimPoller(BaseWorkerThread):
                     "MaxMergeEvents": self.maxMergeEvents,
                     "StdJobSplitAlgo": "FileBased",
                     "StdJobSplitArgs": {"files_per_job": 1,
-                                        "include_parents": includeParents}
+                                        "include_parents": includeParents},
                     "ValidStatus": "VALID"}
 
         workload = self.promptSkimFactory(workloadName, wfParams)

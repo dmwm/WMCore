@@ -15,6 +15,7 @@ import traceback
 
 from WMCore.Configuration import saveConfigurationFile
 from WMCore.Configuration import Configuration
+from WMCore.Lexicon import sanitizeURL
 
 help_message = '''
 The help message goes here.
@@ -86,8 +87,20 @@ def modifyConfiguration(config, **args):
     # hostname locations
     config.Agent.hostName = localhost
     
+    if hasattr(config,"WorkloadSummary"):
+        splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
+        config.WorkloadSummary.couchurl = args["couch_url"]
+        config.WorkloadSummary.database = splited[1]
+        
     if hasattr(config,"TaskArchiver"):
         config.TaskArchiver.workloadSummaryCouchURL = args["workload_summary_url"]
+
+    if hasattr(config,"AsyncTransfer"):
+        config.CoreDatabase.connectUrl = '%s/asynctransfer_agent' % args["couch_url"]
+        config.AsyncTransfer.couch_instance = args["couch_url"]
+        config.AsyncTransfer.data_source = args["couch_url"]
+        config.AsyncTransfer.serverDN = args["host_dn"]
+        config.AsyncTransfer.couch_statinstance = args["couch_url"]
 
     if hasattr(config,"CRABInterface"):
         config.CRABInterface.Webtools.host = args["cs_hostname"]
@@ -97,9 +110,9 @@ def modifyConfiguration(config, **args):
         config.CRABInterface.views.active.crab.jsmCacheCouchURL = args["couch_url"]
         config.CRABInterface.ACDCCouchURL = args["couch_url"]
         config.CRABInterface.configCacheCouchURL = args["couch_url"]
-        config.CRABInterface.SandBoxCache_endpoint = args["sb_hostname"]
-        config.CRABInterface.SandBoxCache_port = int(args["sb_port"])
-        config.CRABInterface.SandBoxCache_basepath = 'userfilecache/userfilecache'
+        config.CRABInterface.sandBoxCacheHost = args["sb_hostname"]
+        config.CRABInterface.sandBoxCachePort = int(args["sb_port"])
+        config.CRABInterface.sandBoxCacheBasepath = 'userfilecache/userfilecache'
         config.CRABInterface.clientMapping = args["client_mapping"]
 
     if hasattr(config,"UserFileCache"):
@@ -143,8 +156,8 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "WMBSService"):
         if args.get('wmbs_service_port'):
             config.WMBSService.Webtools.port = int(args['wmbs_service_port'])
-        config.WMBSService.views.active.wmbs.couchConfig.couchURL = args["couch_url"]
-        config.WMBSService.views.active.wmagent.couchConfig.couchURL = args["couch_url"]
+        config.WMBSService.views.active.wmbs.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
+        config.WMBSService.views.active.wmagent.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
     
     return config
 

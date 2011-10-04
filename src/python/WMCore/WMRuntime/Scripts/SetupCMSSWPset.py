@@ -84,6 +84,16 @@ def fixupSkipEvents(process):
     if not hasattr(process.source, "skipEvents"):
         process.source.skipEvents = cms.untracked.uint32(0)
 
+def fixupFirstEvent(process):
+    """
+    _fixupFirstEvent_
+
+    Make sure that the process has a first event parameter.
+    
+    """
+    if not hasattr(process.source, "firstEvent"):
+        process.source.firstEvent = cms.untracked.uint32(0)        
+
 
 def fixupMaxEvents(process):
     """
@@ -152,6 +162,7 @@ class SetupCMSSWPset(ScriptInterface):
                  "process.source.secondaryFileNames": fixupSecondaryFileNames,
                  "process.maxEvents.input": fixupMaxEvents,
                  "process.source.skipEvents": fixupSkipEvents,
+                 "process.source.firstEvent": fixupFirstEvent,
                  "process.source.firstRun": fixupFirstRun,
                  "process.source.lastRun": fixupLastRun,
                  "process.source.lumisToProcess": fixupLumisToProcess,

@@ -12,7 +12,7 @@ import os
 import unittest
 import threading
 
-import WMCore.WMInit
+import WMCore.WMBase
 
 from WMCore.WMBS.File                   import File
 from WMCore.WMBS.Fileset                import Fileset
@@ -144,11 +144,11 @@ class CouchappTest(unittest.TestCase):
 
         report = Report()
         if error:
-            path   = os.path.join(WMCore.WMInit.getWMBASE(),
-                                  "test/python/WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
+            path   = os.path.join(WMCore.WMBase.getTestBase(),
+                                  "WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
         else:
-            path = os.path.join(WMCore.WMInit.getWMBASE(),
-                                "test/python/WMComponent_t/JobAccountant_t/fwjrs", "PerformanceReport2.pkl")
+            path = os.path.join(WMCore.WMBase.getTestBase(),
+                                "WMComponent_t/JobAccountant_t/fwjrs", "PerformanceReport2.pkl")
         report.load(filename = path)
 
         self.changeState.propagate(testJobGroup.jobs, 'created', 'new')

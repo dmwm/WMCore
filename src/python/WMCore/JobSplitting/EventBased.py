@@ -43,12 +43,14 @@ class EventBased(JobFactory):
                 if eventsInFile >= eventsPerJob:
                     while currentEvent < eventsInFile:
                         self.newJob(name = self.getJobName(length=totalJobs))
+                        self.currentJob.addBaggageParameter("eventsPerJob", eventsPerJob)
                         self.currentJob.addFile(f)
                         self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
                         currentEvent += eventsPerJob
                         totalJobs    += 1
                 else:
                     self.newJob(name = self.getJobName(length=totalJobs))
+                    self.currentJob.addBaggageParameter("eventsPerJob", eventsPerJob)                    
                     self.currentJob.addFile(f)
                     self.currentJob["mask"].setMaxAndSkipEvents(f["events"], 0)
                     totalJobs += 1

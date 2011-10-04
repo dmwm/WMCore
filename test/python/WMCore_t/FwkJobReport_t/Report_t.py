@@ -10,7 +10,7 @@ import os
 import xml.dom.minidom
 import time
 
-import WMCore.WMInit
+import WMCore.WMBase
 
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -27,10 +27,10 @@ class ReportTest(unittest.TestCase):
 
         Figure out the location of the XML report produced by CMSSW.
         """
-        self.xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                    "test/python/WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
-        self.badxmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                    "test/python/WMCore_t/FwkJobReport_t/CMSSWFailReport2.xml")
+        self.xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                    "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
+        self.badxmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                    "WMCore_t/FwkJobReport_t/CMSSWFailReport2.xml")
         return
 
     # json/dejson
@@ -232,8 +232,8 @@ an exception occurred during current event processing
 cms::Exception caught in EventProcessor and rethrown
 ---- EventProcessorFailure END"""
 
-        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                               "test/python/WMCore_t/FwkJobReport_t/CMSSWFailReport.xml")
+        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+                               "WMCore_t/FwkJobReport_t/CMSSWFailReport.xml")
 
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
@@ -263,8 +263,8 @@ cms::Exception caught in EventProcessor and rethrown
 
         Verify that parsing XML reports with multiple inputs works correctly.
         """
-        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                               "test/python/WMCore_t/FwkJobReport_t/CMSSWMultipleInput.xml")        
+        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+                               "WMCore_t/FwkJobReport_t/CMSSWMultipleInput.xml")        
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
 
@@ -321,8 +321,8 @@ cms::Exception caught in EventProcessor and rethrown
 
         Verify that turning the FWJR into a JSON object works correctly.
         """
-        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                               "test/python/WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
+        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+                               "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
 
@@ -414,8 +414,8 @@ cms::Exception caught in EventProcessor and rethrown
         out of a Timing/SimpleMemoryCheck jobReport
         """
         
-        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                               "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
+        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+                               "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
         
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
@@ -438,8 +438,8 @@ cms::Exception caught in EventProcessor and rethrown
         Verify that the performance section of the report is correctly converted
         to JSON.
         """
-        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                               "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
+        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+                               "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
         
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
@@ -539,6 +539,46 @@ cms::Exception caught in EventProcessor and rethrown
             self.assertEqual(f['merged'], False)
             self.assertEqual(f['validStatus'], None)
             self.assertEqual(f['first_event'], 0)
+
+        return
+
+    def testGetAdlerChecksum(self):
+        """
+        _testGetAdlerChecksum_
+
+        Test the function that sees if all files
+        have an adler checksum.
+
+        For some reason, our default XML report doesn't have checksums
+        Therefore it should fail.
+        """
+
+        myReport = Report("cmsRun1")
+        myReport.parse(self.xmlPath)
+
+        myReport.checkForAdlerChecksum(stepName = "cmsRun1")
+
+        self.assertFalse(myReport.stepSuccessful(stepName = "cmsRun1"))
+        self.assertEqual(myReport.getExitCode(), 60451)
+
+        # Now see what happens if the adler32 is set to None
+        myReport2 = Report("cmsRun1")
+        myReport2.parse(self.xmlPath)
+        fRefs = myReport2.getAllFileRefsFromStep(step = "cmsRun1")
+        for fRef in fRefs:
+            fRef.checksums = {'adler32': None}
+        myReport2.checkForAdlerChecksum(stepName = "cmsRun1")
+        self.assertFalse(myReport2.stepSuccessful(stepName = "cmsRun1"))
+        self.assertEqual(myReport2.getExitCode(), 60451)
+
+        myReport3 = Report("cmsRun1")
+        myReport3.parse(self.xmlPath)
+        fRefs = myReport3.getAllFileRefsFromStep(step = "cmsRun1")
+        for fRef in fRefs:
+            fRef.checksums = {'adler32': 100}
+
+        myReport3.checkForAdlerChecksum(stepName = "cmsRun1")
+        self.assertTrue(myReport3.getExitCode() != 60451)
 
         return
                          

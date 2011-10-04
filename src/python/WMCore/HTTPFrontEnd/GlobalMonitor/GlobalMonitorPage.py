@@ -3,7 +3,7 @@
 """
 The documentation for the framework
 """
-
+import cherrypy
 from cherrypy import expose
 from os import listdir
 from os import path
@@ -19,7 +19,7 @@ def serveFile(contentType, prefix, *args):
     if path.commonprefix([name, prefix]) != prefix:
         raise HTTPError(403)
     if not path.exists(name):
-        raise HTTPError(404, "%s not found" % name)
+        raise HTTPError(404, "Page not found")
     return serve_file(name, content_type = contentType)
 
 class GlobalMonitorPage(TemplatedPage):
@@ -27,6 +27,7 @@ class GlobalMonitorPage(TemplatedPage):
     The documentation for the framework
     """
     @expose
+    @cherrypy.tools.secmodv2()
     def index(self):
         """
         The index of the documentation
@@ -44,18 +45,19 @@ class GlobalMonitorPage(TemplatedPage):
                     path.join(self.config.html, 'GlobalMonitor', frontPage))
 
     @expose
+    @cherrypy.tools.secmodv2()
     def default(self, *args):
         """
-        Show the documentation for a page or return the index
+        add cherrypy.tools.secmodv2() so only users with cert can see.
         """
         if len(args) > 0:
             return serveFile('text/html',
                              path.join(self.config.html, 'GlobalMonitor'),*args)
         else:
-
             return self.index()
 
     @expose
+    @cherrypy.tools.secmodv2()
     def javascript(self, *args):
         if args[0] == "external":
             return serveFile('application/javascript',
@@ -65,6 +67,7 @@ class GlobalMonitorPage(TemplatedPage):
                                     'WMCore', 'WebTools'), *args)
 
     @expose
+    @cherrypy.tools.secmodv2()
     def css(self, *args):
         if args[0] == "external":
             return serveFile('text/css',

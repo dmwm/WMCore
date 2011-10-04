@@ -69,8 +69,8 @@ class StdBase(object):
         self.acquisitionEra = arguments.get("AcquisitionEra", None)
         self.scramArch = arguments.get("ScramArch", None)
         self.processingVersion = arguments.get("ProcessingVersion", None)
-        self.siteBlacklist = arguments.get("SiteWhitelist", [])
-        self.siteWhitelist = arguments.get("SiteBlacklist", [])
+        self.siteBlacklist = arguments.get("SiteBlacklist", [])
+        self.siteWhitelist = arguments.get("SiteWhitelist", [])
         self.unmergedLFNBase = arguments.get("UnmergedLFNBase", "/store/unmerged")
         self.mergedLFNBase = arguments.get("MergedLFNBase", "/store/data")
         self.minMergeSize = arguments.get("MinMergeSize", 2147483648)
@@ -154,7 +154,7 @@ class StdBase(object):
                             splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
                             userDN = None, asyncDest = None, publishName =None, owner_vogroup = '',
                             owner_vorole = '', stepType = "CMSSW",
-                            userSandbox = None, userFiles = []):
+                            userSandbox = None, userFiles = [], primarySubType = None):
 
         """
         _setupProcessingTask_
@@ -190,18 +190,17 @@ class StdBase(object):
         procTask.applyTemplates()
         procTask.setTaskPriority(self.priority)
 
+
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         procTask.setSiteWhitelist(self.siteWhitelist)
         procTask.setSiteBlacklist(self.siteBlacklist)
-
+        
         newSplitArgs = {}
         for argName in splitArgs.keys():
             newSplitArgs[str(argName)] = splitArgs[argName]
 
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
         procTask.setTaskType(taskType)
-        procTask.addGenerator("BasicNaming")
-        procTask.addGenerator("BasicCounter")
 
         if taskType == "Production" and totalEvents != None:
             procTask.addGenerator(seeding)
@@ -219,6 +218,9 @@ class StdBase(object):
                 procTask.setInputStep(inputStep)
             else:
                 procTask.setInputReference(inputStep, outputModule = inputModule)
+
+        if primarySubType:
+            procTask.setPrimarySubType(subType = primarySubType)
 
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskStageHelper = procTaskStageOut.getTypeHelper()
@@ -307,9 +309,7 @@ class StdBase(object):
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
         logCollectTask.applyTemplates()
-        logCollectTask.setSplittingAlgorithm("EndOfRun", files_per_job = filesPerJob)
-        logCollectTask.addGenerator("BasicNaming")
-        logCollectTask.addGenerator("BasicCounter")
+        logCollectTask.setSplittingAlgorithm("MinFileBased", files_per_job = filesPerJob)
         logCollectTask.setTaskType("LogCollect")
 
         parentTaskLogArch = parentTask.getStep("logArch1")
@@ -337,8 +337,6 @@ class StdBase(object):
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModule))
 
-        mergeTask.addGenerator("BasicNaming")
-        mergeTask.addGenerator("BasicCounter")
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
         mergeTask.setTaskPriority(self.priority + 5)

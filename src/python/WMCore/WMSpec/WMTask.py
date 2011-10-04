@@ -440,7 +440,6 @@ class WMTaskHelper(TreeHelper):
         
         return
 
-    
     def listGenerators(self):
         """
         _listGenerators_
@@ -451,7 +450,6 @@ class WMTaskHelper(TreeHelper):
             return []
         return generators.listSections_()
 
-    
     def getGeneratorSettings(self, generatorName):
         """
         _getGeneratorSettings_
@@ -940,6 +938,28 @@ class WMTaskHelper(TreeHelper):
             if stepHelper.stepType() == "CMSSW":
                 return stepHelper.getScramArch()
         return None
+
+    def setPrimarySubType(self, subType):
+        """
+        _setPrimarySubType_
+
+        Set the subType that should be used by WorkQueue for the
+        primary subscription
+        """
+
+        self.data.parameters.primarySubType = subType
+        return
+
+    def getPrimarySubType(self):
+        """
+        _getPrimarySubType_
+
+        Retrieve the primary subType
+        If not available, use the taskType
+        """
+
+        return getattr(self.data.parameters, 'primarySubType',
+                       self.taskType())
 
     
 class WMTask(ConfigSectionTree):

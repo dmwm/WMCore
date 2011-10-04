@@ -6,11 +6,13 @@ Fetch urls based on the sandbox information in a WMStep
 
 """
 import os
-import urllib
 import re
-from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
+import logging
+
 import WMCore.WMSpec.WMStep as WMStep
 
+from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
+from WMCore.Services                               import Requests
 
 class URLFetcher(FetcherInterface):
     """
@@ -40,7 +42,23 @@ class URLFetcher(FetcherInterface):
                     fileSuffix = "sandboxFile.dat"
 
                 fileTarget = "%s/%s" % (stepPath, fileSuffix)
-                urllib.urlretrieve(fileInfo.src, fileTarget)
+
+                # Now build a Request object, make a request, and write
+                # the output to a file:
+                try:
+                    request = Requests.Requests(fileInfo.src)
+                    content = request.get('')[0]
+                    f = open(fileTarget, 'w')
+                    f.write(content)
+                    f.close()
+                except IOError, ex:
+                    msg =  "Could not write to fileTarget %s\n" % fileTarget
+                    msg += str(ex)
+                    logging.error(msg)
+                    logging.debug("FileInfo: %s" % fileInfo)
+                    raise
                 fileInfo.injob = fileTarget
+
+        return
 
 

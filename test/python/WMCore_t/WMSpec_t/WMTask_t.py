@@ -350,6 +350,29 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS,   100)
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxVSize, 101)
         return
+
+    def testParameters(self):
+        """
+        _testParameters_
+
+        Test any random junk that we throw into parameters
+        """
+
+        testTask = makeWMTask("TestTask")
+
+        # Test the primarySubType first
+
+        # Before we set anything, the subType should be none
+        self.assertEqual(testTask.getPrimarySubType(), None)
+
+        # After we set the task Type, but before the subType, it
+        # should be the taskType
+        testTask.setTaskType("SillyTask")
+        self.assertEqual(testTask.getPrimarySubType(), "SillyTask")
+        
+        testTask.setPrimarySubType(subType = "subType")
+        self.assertEqual(testTask.getPrimarySubType(), "subType")
+        return
         
 
 if __name__ == '__main__':

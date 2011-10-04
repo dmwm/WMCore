@@ -22,6 +22,7 @@ from WMCore.Credential.Proxy import Proxy
 from WMCore.FwkJobReport.Report        import Report
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.DAOFactory import DAOFactory
+from WMCore.BossAir.LoggingInfoParser import LoggingInfoParser
 import WMCore.WMInit
 from copy import deepcopy
 
@@ -222,6 +223,7 @@ class gLitePlugin(BasePlugin):
         self.defaultjdl['service'] = getattr(self.config.BossAir, 'gliteWMS', None)
         self.basetimeout  = getattr(self.config.JobSubmitter, 'getTimeout', 300 )
         self.defaultjdl['myproxyhost'] = self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, 'myproxyhost', self.defaultDelegation['myProxySvr'] )
+        self.loggInfoPars = LoggingInfoParser()
 
         # This isn't anymore needed, but in the future...
         self.manualenvprefix = getattr(self.config.BossAir, 'gLitePrefixEnv', '')
@@ -405,7 +407,7 @@ class gLitePlugin(BasePlugin):
                     jobList   = jobList[self.collectionsize:]
 
                     ## retrieve user proxy and set the path
-                    ownersandbox      = jobsReady[0]['userdn']
+                    ownersandbox      = jobsReady[0]['userdn']+":"+jobsReady[0]['usergroup']+":"+jobsReady[0]['userrole']
                     valid, ownerproxy = (False, None)
                     exportproxy       = 'echo $X509_USER_PROXY'
                     if ownersandbox in retrievedproxy:
@@ -487,7 +489,7 @@ class gLitePlugin(BasePlugin):
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
             except Queue.Empty:
-                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
             error  = res['stderr']
@@ -574,6 +576,8 @@ class gLitePlugin(BasePlugin):
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed
         logging.debug("Returning jobs..")
+        logging.info('Correctly submitted %i jobs.' % len(successfulJobs))
+        logging.info('Failed submitting %i jobs.' % len(failedJobs))
         return successfulJobs, failedJobs
 
 
@@ -624,10 +628,10 @@ class gLitePlugin(BasePlugin):
         dnjobs = {}
 
         for jj in jobs:
-            if dnjobs.has_key( jj['userdn'] ):
-                dnjobs[ jj['userdn'] ].append(jj)
+            if dnjobs.has_key( jj['userdn']+":"+jj['usergroup']+":"+jj['userrole'] ):
+                dnjobs[ jj['userdn']+":"+jj['usergroup']+":"+jj['userrole'] ].append(jj)
             else:
-                dnjobs[ jj['userdn'] ] = [ jj ]
+                dnjobs[ jj['userdn']+":"+jj['usergroup']+":"+jj['userrole'] ] = [ jj ]
 
         ## Start up processes
         input  = multiprocessing.Queue()
@@ -784,7 +788,7 @@ class gLitePlugin(BasePlugin):
         # TODO: evaluate if passing just one job per work is too much overhead
 
         for jj in jobs:
-            ownersandbox      = jj['userdn']
+            ownersandbox      = jj['userdn']+":"+jj['usergroup']+":"+jj['userrole']
             valid, ownerproxy = (False, None)
             exportproxy       = 'echo $X509_USER_PROXY'
             if ownersandbox in retrievedproxy:
@@ -828,7 +832,7 @@ class gLitePlugin(BasePlugin):
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
             except Queue.Empty:
-                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
             error  = res['stderr']
@@ -904,7 +908,7 @@ class gLitePlugin(BasePlugin):
 
         for jj in jobs:
 
-            ownersandbox      = jj['userdn']
+            ownersandbox      = jj['userdn']+":"+jj['usergroup']+":"+jj['userrole']
             valid, ownerproxy = (False, None)
             exportproxy       = 'echo $X509_USER_PROXY'
             if ownersandbox in retrievedproxy:
@@ -924,8 +928,9 @@ class gLitePlugin(BasePlugin):
                 self.fakeReport("PostMortemFailure", msg, -1, jj)
                 continue
 
-            cmd = '%s %s > %s/loggingInfo.%i.log'\
-                   % (command, jj['gridid'], jj['cache_dir'], jj['retry_count'])
+            logInfoOutfile = '%s/loggingInfo.%i.log' % ( jj['cache_dir'], jj['retry_count'] )
+            cmd = '%s %s > %s'\
+                   % (command, jj['gridid'], logInfoOutfile)
             logging.debug("Enqueuing logging-info command for job %i" \
                            % jj['jobid'] )
             workqueued[currentwork] = jj['jobid']
@@ -942,12 +947,15 @@ class gLitePlugin(BasePlugin):
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
             except Queue.Empty:
-                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
             error  = res['stderr']
             exit   = res['exit']
             workid = res['workid']
+            for jj in jobs:
+                if jj['jobid'] == workqueued[workid]:
+                    break
             logging.debug ('result : \n %s' % str(res) )
             # Check error
             if exit != 0:
@@ -955,12 +963,17 @@ class gLitePlugin(BasePlugin):
                 msg += '\tstderr: %s\n\tjson: %s' % (error, str(jsout.strip()))
                 logging.error( msg )
                 failedJobs.append(workqueued[workid])
-                for jj in jobs:
-                    if jj['jobid'] == workqueued[workid]:
-                        self.fakeReport("PostMortemFailure", msg, -1, jj)
-                        break
+                self.fakeReport("PostMortemFailure", msg, -1, jj)
                 continue
             else:
+                logInfoOutfile = '%s/loggingInfo.%i.log' % ( jj['cache_dir'], jj['retry_count'] )
+                if os.path.isfile( logInfoOutfile ):
+                    msg = self.loggInfoPars.parseFile( logInfoOutfile )
+                else:
+                    #this should not happen, but, just in case...
+                    msg = "Cannot find %s" % logInfoOutfile
+                    logging.debug( msg )
+                self.fakeReport("PostMortemFailure", msg, -1, jj)
                 completedJobs.append(workqueued[workid])
 
         ## Shut down processes
@@ -1020,7 +1033,7 @@ class gLitePlugin(BasePlugin):
 
         for job in jobs:
 
-            ownersandbox      = job['userdn']
+            ownersandbox      = job['userdn']+":"+jj['usergroup']+":"+jj['userrole']
             valid, ownerproxy = (False, None)
             exportproxy       = 'echo $X509_USER_PROXY'
             if ownersandbox in retrievedproxy:
@@ -1060,7 +1073,7 @@ class gLitePlugin(BasePlugin):
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
             except Queue.Empty:
-                logging.error("Timeout retrieving result %i out of %i" % (n, xrange(len(workqueued))) )
+                logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
             error  = res['stderr']
@@ -1259,7 +1272,7 @@ class gLitePlugin(BasePlugin):
         jdl += "\n]\n"
 
         # return values
-        logging.error( str(jdl) )
+        logging.debug( str(jdl) )
         return jdl
 
     def sewhite(self, sesites):
@@ -1346,7 +1359,7 @@ class gLitePlugin(BasePlugin):
         return result
 
 
-    def validateProxy(self, userdn):
+    def validateProxy(self, user):
         """
         _validateProxy_
 
@@ -1361,10 +1374,9 @@ class gLitePlugin(BasePlugin):
             else:
                 return (False, self.singleproxy)
         else:
-            return self.getProxy(userdn)
+            return self.getProxy(user.split(':')[0], user.split(':')[1], user.split(':')[2])
 
-
-    def getProxy(self, userdn):
+    def getProxy(self, userdn, group, role):
         """
         _getProxy_
         """
@@ -1372,6 +1384,8 @@ class gLitePlugin(BasePlugin):
         logging.debug("Retrieving proxy for %s" % userdn)
         config = self.defaultDelegation
         config['userDN'] = userdn
+        config['group'] = group
+        config['role'] = role
         proxy = Proxy(self.defaultDelegation)
         proxyPath = proxy.getProxyFilename( True )
         timeleft = proxy.getTimeLeft( proxyPath )

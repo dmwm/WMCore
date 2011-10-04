@@ -8,6 +8,7 @@ import threading
 import logging
 import unittest
 import os
+import os.path
 
 from WMQuality.TestInit import TestInit
 
@@ -138,44 +139,35 @@ class DashboardInterfaceTest(unittest.TestCase):
         # Instantiate DBInfo
         dbInfo   = DashboardInfo(job = job, task = task)
 
-
         # Check some defaults
         self.assertEqual(dbInfo.get('TaskType', None), task.taskType())
         self.assertEqual(dbInfo.get('User', None), 'sfoulkes@fnal.gov')
         self.assertEqual(dbInfo.get('JSTool', None), 'WMAgent')
-        self.assertEqual(dbInfo.get('jobName', None),
-                         'WMAgent_1_0_ThisIsASillyName')
-        self.assertEqual(dbInfo.get('taskName', None),
-                         'ProdAgent_-Tier1ReReco-DataProcessing_WMAgentPrimary')
 
-
-        dbInfo.jobStart()
-
-        self.assertEqual(dbInfo.get('GridJobID', None), name)
-        self.assertEqual(dbInfo.get('SyncCE', None), name)
-
+        # This shouldn't add anything,
+        # but we have to make sure it doesn't fail.
+        dbInfo.jobStart()        
 
         # Do a step
         step = task.getStep(stepName = "cmsRun1")
 
         # Do the step start
-        dbInfo.stepStart(step = step.data)
-        self.assertEqual(dbInfo.get('ExeStart', None), step.name())
-        self.assertEqual(dbInfo.get('ApplicationVersion', None),
-                         'CMSSW_3_5_8')
+        data = dbInfo.stepStart(step = step.data)
+        self.assertEqual(data.get('ExeStart', None), step.name())
+        self.assertEqual(data.get('taskId', None), 'wmagent_Tier1ReReco')
 
 
         # Do the step end
-        dbInfo.stepEnd(step = step.data, stepReport = report)
-        self.assertEqual(dbInfo.get('ExeEnd', None), step.name())
-        self.assertEqual(dbInfo.get('ExeExitStatus', None), False)
+        data = dbInfo.stepEnd(step = step.data, stepReport = report)
+        self.assertEqual(data.get('ExeEnd', None), step.name())
+        self.assertEqual(data.get('ExeExitCode', None), 0)
 
 
 
 
         # End the job!
-        dbInfo.jobEnd()
-        self.assertFalse(dbInfo.get('JobFinished', None) == None,
+        data = dbInfo.jobEnd()
+        self.assertFalse(data.get('MessageTS', None) == None,
                          'Did not assign finish time in jobEnd()')
 
         return
@@ -187,7 +179,6 @@ class DashboardInterfaceTest(unittest.TestCase):
 
         See if you can run the whole monitoring system
         """
-
         # Get the necessary objects
         name     = 'testB'
         job      = self.createTestJob()
@@ -201,7 +192,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         step = task.getStep(stepName = "cmsRun1")
 
 
-        monitor = setupMonitoring()
+        monitor = setupMonitoring(logPath = os.path.join(self.testDir, 'log.log'))
         myThread = threading.currentThread
 
         myThread.watchdogMonitor.setupMonitors(task = task,
@@ -211,9 +202,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         myThread.watchdogMonitor.notifyStepStart(step.data)
         myThread.watchdogMonitor.notifyStepEnd(step = step.data,
                                                stepReport = report)
-
         myThread.watchdogMonitor.notifyJobEnd(task)
-
 
         # Base a test on the idea that there's only one monitor
         mon = myThread.watchdogMonitor._Monitors[0]
@@ -224,19 +213,10 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.assertEqual(dbInfo.get('TaskType', None), task.taskType())
         self.assertEqual(dbInfo.get('User', None), 'sfoulkes@fnal.gov')
         self.assertEqual(dbInfo.get('JSTool', None), 'WMAgent')
-        self.assertEqual(dbInfo.get('jobName', None),
-                         'WMAgent_1_0_ThisIsASillyName')
-        self.assertEqual(dbInfo.get('taskName', None),
-                         'ProdAgent_-Tier1ReReco-DataProcessing_WMAgentPrimary')
+        self.assertEqual(dbInfo.jobName, '%s_%i' % (job['name'], job['retry_count']))
+        self.assertEqual(dbInfo.taskName,
+                         'wmagent_Tier1ReReco')
         
-        self.assertEqual(dbInfo.get('GridJobID', None), name)
-        self.assertEqual(dbInfo.get('SyncCE', None), name)
-        
-        self.assertEqual(dbInfo.get('ExeStart', None), step.name())
-        self.assertEqual(dbInfo.get('ApplicationVersion', None),
-                         'CMSSW_3_5_8')
-
-
         return
 
 

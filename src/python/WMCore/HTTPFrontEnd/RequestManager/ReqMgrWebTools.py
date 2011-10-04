@@ -24,18 +24,28 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 def parseRunList(l):
     """ Changes a string into a list of integers """
-    toks = l.lstrip(' [').rstrip(' ]').split(',')
-    if toks == ['']:
-        return []
-    return [int(tok) for tok in toks]
+    if isinstance(l, list):
+       return l
+    elif isinstance(l, basestring):
+        toks = l.lstrip(' [').rstrip(' ]').split(',')
+        if toks == ['']:
+            return []
+        return [int(tok) for tok in toks]
+    else:
+        raise RuntimeError, "Bad Run list of type " + type(l).__name__
 
 def parseBlockList(l):
     """ Changes a string into a list of strings """
-    toks = l.lstrip(' [').rstrip(' ]').split(',')
-    if toks == ['']:
-        return []
-    # only one set of quotes
-    return [str(tok.strip(' \'"')) for tok in toks]
+    if isinstance(l, list):
+       return l
+    elif isinstance(l, basestring):
+        toks = l.lstrip(' [').rstrip(' ]').split(',')
+        if toks == ['']:
+            return []
+        # only one set of quotes
+        return [str(tok.strip(' \'"')) for tok in toks]
+    else:
+        raise RuntimeError, "Bad Block list of type " + type(l).__name__
 
 def parseSite(kw, name):
     """ puts site whitelist & blacklists into nice format"""
@@ -283,7 +293,8 @@ def makeRequest(kwargs, couchUrl, couchDB):
     request = maker(schema)
     helper = WMWorkloadHelper(request['WorkflowSpec'])
     helper.setCampaign(schema["Campaign"])
-    helper.setRunWhitelist(schema["RunWhitelist"])
+    if "RunWhitelist" in schema:
+        helper.setRunWhitelist(schema["RunWhitelist"])
     # can't save Request object directly, because it makes it hard to retrieve the _rev
     metadata = {}
     metadata.update(request)

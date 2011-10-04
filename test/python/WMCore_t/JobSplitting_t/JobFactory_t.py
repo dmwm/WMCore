@@ -45,19 +45,16 @@ class JobFactoryTest(unittest.TestCase):
 
         myJobFactory = JobFactory(subscription = testSubscription)
         testJobGroups =  myJobFactory(siteWhitelist = ["site1"], siteBlacklist = ["site2"])
+        self.assertTrue(len(testJobGroups) > 0)
 
         for testJobGroup in testJobGroups:
+            self.assertTrue(len(testJobGroup.jobs) > 0)
             for job in testJobGroup.jobs:
-                assert job["task"] == "TestTask", \
-                       "Error: Task is wrong."
-                assert job["workflow"] == "TestWorkflow", \
-                       "Error: Workflow is wrong."
-                assert job["owner"] == "Steve", \
-                       "Error: Owner is wrong."
-                assert job["siteWhitelist"] == ["site1"], \
-                       "Error: Site white list is wrong."
-                assert job["siteBlacklist"] == ["site2"], \
-                       "Error: Site black list is wrong."
+                self.assertEqual(job["task"], "TestTask", "Error: Task is wrong.")
+                self.assertEqual(job["workflow"], "TestWorkflow", "Error: Workflow is wrong.")
+                self.assertEqual(job["owner"], "Steve", "Error: Owner is wrong.")
+                self.assertEqual(job["siteWhitelist"], ["site1"], "Error: Site white list is wrong.")
+                self.assertEqual(job["siteBlacklist"], ["site2"], "Error: Site black list is wrong.")
         return
 
     def testProductionRunNumber(self):
@@ -83,13 +80,13 @@ class JobFactoryTest(unittest.TestCase):
     
         myJobFactory = JobFactory(subscription = testSubscription)
         testJobGroups =  myJobFactory()
-    
+
+        self.assertTrue(len(testJobGroups) > 0)
         for testJobGroup in testJobGroups:
+            self.assertTrue(len(testJobGroup.jobs) > 0)
             for job in testJobGroup.jobs:
-                assert job["mask"]["FirstRun"] == 1, \
-                       "Error: First run is wrong."
-                assert job["mask"]["LastRun"] == 1, \
-                       "Error: Last run is wrong."
+                self.assertEqual(job["mask"]["FirstRun"], 1, "Error: First run is wrong.")
+                self.assertEqual(job["mask"]["LastRun"], 1, "Error: Last run is wrong.")
 
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow,
@@ -101,10 +98,8 @@ class JobFactoryTest(unittest.TestCase):
         
         for testJobGroup in testJobGroups:
             for job in testJobGroup.jobs:
-                assert job["mask"]["FirstRun"] == None, \
-                       "Error: First run is wrong."
-                assert job["mask"]["LastRun"] == None, \
-                       "Error: Last run is wrong."
+                self.assertEqual(job["mask"]["FirstRun"], None, "Error: First run is wrong.")
+                self.assertEqual(job["mask"]["LastRun"], None, "Error: Last run is wrong.")
 
         return
             

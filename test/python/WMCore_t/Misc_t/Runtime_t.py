@@ -21,6 +21,8 @@ import inspect
 import sys
 import socket
 
+from nose.plugins.attrib import attr
+
 # Init junk
 from WMQuality.TestInit import TestInit
 from WMCore.WMInit      import getWMBASE
@@ -32,7 +34,7 @@ from WMCore_t.WMSpec_t.TestSpec     import testWorkload
 from WMCore.DataStructs.JobPackage  import JobPackage
 
 # Factories
-from WMCore.JobSplitting.Generators.GeneratorFactory import makeGenerators
+from WMCore.JobSplitting.Generators.GeneratorFactory import GeneratorFactory
 from WMCore.JobSplitting.SplitterFactory             import SplitterFactory
 
 
@@ -309,9 +311,10 @@ class RuntimeTest(unittest.TestCase):
         """
 
         splitter = SplitterFactory()
+        geneFac  = GeneratorFactory()
         jobfactory = splitter(subscription = subscription,
                               package = "WMCore.DataStructs",
-                              generators = makeGenerators(task))
+                              generators = geneFac.makeGenerators(task))
         params = task.jobSplittingParameters()
         jobGroups = jobfactory(**params)
 
@@ -384,7 +387,7 @@ class RuntimeTest(unittest.TestCase):
 
 
 
-
+    @attr('integration')
     def testA_CreateWorkload(self):
         """
         _CreateWorkload_
@@ -462,7 +465,7 @@ class RuntimeTest(unittest.TestCase):
 
         return
 
-
+    @attr('integration')
     def testB_EmulatorTest(self):
         """
         _EmulatorTest_

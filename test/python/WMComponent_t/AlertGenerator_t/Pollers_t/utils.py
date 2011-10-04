@@ -4,11 +4,13 @@ Alert framework poller classes.
 
 """
 
-import multiprocessing
+import os
+import sys
 import random
 import time
 import logging
 import datetime
+import signal
 
 import psutil
 
@@ -35,62 +37,6 @@ daemonXmlContent = \
 """
 
 
-def terminateProcesses(processList):
-    """
-    Kills the process inc. subprocesses.
-    As side effect, nulls the input processList argument.
-    
-    """
-    for p in processList:
-        proc = psutil.Process(p.pid)
-        try:
-            for c in proc.get_children():
-                c.kill()
-            proc.kill()
-        except psutil.NoSuchProcess, ex:
-            logging.error(ex)
-    processList = []
-            
-    
-    
-def subWorker():
-    """
-    Processes started as a subprocess from worker.
-    Just to take a lot of CPU.
-    
-    """
-    while True:
-        1 + 1        
-        
-        
-
-def worker(numChildren = 0, lazy = False):
-    """
-    Process function started via multiprocessing.Process.
-    Can be lazy, can start n subprocesses.
-    
-    """
-    if numChildren > 0:
-        for i in range(numChildren):
-            p = multiprocessing.Process(target = subWorker, args = ())
-            p.start()
-    while True:
-        if lazy:
-            time.sleep(0.5)
-        1 + 1        
-    
-
-        
-def getProcess(numChildren = 0):
-    """
-    Return Process instance.
-    
-    """
-    p = multiprocessing.Process(target = worker, args = (numChildren, ))
-    p.start()
-    return p
-
-
 
 def setUpReceiver(address, controlAddr):
     """
@@ -105,40 +51,37 @@ def setUpReceiver(address, controlAddr):
 
 
 
-def doProcessPolling(ppti):
+def doGenericPeriodAndProcessPolling(ti):
     """
-    ppti - Process Polling Test Input instance (all variables on input to this test)
+    ti - Test Input instance (all variables on input to this test)
     The function is easier to reuse from here that from other test class.
+    This helper function is also used for generic period polling.
     
     """    
     try:
-        poller = ppti.pollerClass(ppti.config, ppti.testCase.generator)
+        poller = ti.pollerClass(ti.config, ti.testCase.generator)
     except Exception, ex:
-        ppti.testCase.fail("%s: exception: %s" % (ppti.testCase.testName, ex))
+        ti.testCase.fail("%s: exception: %s" % (ti.testCase.testName, ex))
     
-    handler, receiver = setUpReceiver(ppti.testCase.generator.config.Alert.address,
-                                      ppti.testCase.generator.config.Alert.controlAddr)
+    handler, receiver = setUpReceiver(ti.testCase.generator.config.Alert.address,
+                                      ti.testCase.generator.config.Alert.controlAddr)
     
-    procWorker = multiprocessing.Process(target = worker, args = ())
-    procWorker.start()
-    ppti.testCase.testProcesses.append(procWorker)
+    pid = os.getpid()
     
-    numMeasurements = ppti.config.period / ppti.config.pollInterval
+    numMeasurements = ti.config.period / ti.config.pollInterval
         
     # inject own input sample data provider
     # there is in fact input argument in this case which needs be ignored
-    poller.sample = lambda proc_: random.randint(ppti.thresholdToTest,
-                                                 ppti.thresholdToTest + ppti.thresholdDiff)
+    poller.sample = lambda proc_: random.randint(ti.thresholdToTest,
+                                                 ti.thresholdToTest + ti.thresholdDiff)
 
     # the process to run upon is fooled as well here
-    poller._dbProcessDetail = ProcessDetail(procWorker.pid, "TestProcess")
+    poller._dbProcessDetail = ProcessDetail(pid, "TestProcess")
     poller._measurements = Measurements(numMeasurements)
-    
-    proc = multiprocessing.Process(target = poller.poll, args = ())
-    proc.start()
-    ppti.testCase.assertTrue(proc.is_alive())
+    poller.start()
+    ti.testCase.assertTrue(poller.is_alive())
 
-    if ppti.expected != 0:
+    if ti.expected != 0:
         # beware - if the alert is not correctly generated, the test
         # will hang here and will be waiting for it
         # #2238 AlertGenerator test can take 1 hour+ (and fail)
@@ -147,35 +90,32 @@ def doProcessPolling(ppti):
         startTime = datetime.datetime.now()
         limitTime = 2 * 60 # seconds
         while len(handler.queue) == 0:
-            time.sleep(ppti.config.pollInterval / 5)
+            time.sleep(ti.config.pollInterval / 5)
             if (datetime.datetime.now() - startTime).seconds > limitTime:
                 timeLimitExceeded = True
                 break
     else:
-        time.sleep(ppti.config.period * 2)
-        
-    procWorker.terminate()        
-    proc.terminate()
-    poller.shutdown()
+        time.sleep(ti.config.period * 2)
+                
+    poller.terminate()
     receiver.shutdown()
-    ppti.testCase.assertFalse(proc.is_alive())
+    ti.testCase.assertFalse(poller.is_alive())
     
-    if ppti.expected != 0:
+    if ti.expected != 0:
         # #2238 AlertGenerator test can take 1 hour+ (and fail)
         # temporary measure from above loop:
         if timeLimitExceeded:
-            ppti.testCase.fail("No alert received in %s seconds." % limitTime)
+            ti.testCase.fail("No alert received in %s seconds." % limitTime)
         # there should be just one alert received, poller should have the
         # change to send a second
-        ppti.testCase.assertEqual(len(handler.queue), ppti.expected)
+        ti.testCase.assertEqual(len(handler.queue), ti.expected)
         a = handler.queue[0]
         # soft threshold - alert should have soft level
-        ppti.testCase.assertEqual(a["Level"], ppti.level)
-        ppti.testCase.assertEqual(a["Component"], ppti.testCase.generator.__class__.__name__)
-        ppti.testCase.assertEqual(a["Source"], poller.__class__.__name__)            
+        ti.testCase.assertEqual(a["Level"], ti.level)
+        ti.testCase.assertEqual(a["Component"], ti.testCase.generator.__class__.__name__)
+        ti.testCase.assertEqual(a["Source"], poller.__class__.__name__)            
     else:
-        ppti.testCase.assertEqual(len(handler.queue), 0)
-
+        ti.testCase.assertEqual(len(handler.queue), 0)
 
 
 def doGenericValueBasedPolling(ti):
@@ -196,9 +136,8 @@ def doGenericValueBasedPolling(ti):
     
     handler, receiver = setUpReceiver(ti.testCase.generator.config.Alert.address,
                                       ti.testCase.generator.config.Alert.controlAddr)    
-    proc = multiprocessing.Process(target = poller.poll, args = ())
-    proc.start()
-    ti.testCase.assertTrue(proc.is_alive())
+    poller.start()
+    ti.testCase.assertTrue(poller.is_alive())
 
     # wait to poller to work now ... wait for alert to arrive
     if ti.expected != 0:
@@ -215,10 +154,9 @@ def doGenericValueBasedPolling(ti):
     else:
         time.sleep(ti.config.pollInterval * 2)
         
-    proc.terminate()
-    poller.shutdown()
+    poller.terminate()
     receiver.shutdown()
-    ti.testCase.assertFalse(proc.is_alive())
+    ti.testCase.assertFalse(poller.is_alive())
 
     if ti.expected != 0:
         # #2238 AlertGenerator test can take 1 hour+ (and fail)
@@ -295,11 +233,6 @@ class ReceiverHandler(object):
     """
     Handler class for Alert Receiver.
     Incoming alerts are stored into a list.
-    
-    Current implementation of Receiver is that it operates on background
-    as a Thread - thus can use just plain list here.
-    If multiprocessing was involved, the Alerts storage would have to be
-    multiprocessing.Queue.
     
     """
     def __init__(self):

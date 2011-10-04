@@ -1077,6 +1077,8 @@ class JobTest(unittest.TestCase):
         """
         testJob  = self.createTestJob()
         testJob['test'] = 'ThisIsATest'
+        testJob.baggage.section_('TestSection')
+        testJob.baggage.TestSection.test = 100
         finalJob = testJob.getDataStructsJob()
 
         for key in finalJob.keys():
@@ -1092,6 +1094,8 @@ class JobTest(unittest.TestCase):
         for key in testJob["mask"]:
             self.assertEqual(testJob["mask"][key], finalJob["mask"][key],
                              "Error: The masks should be the same")
+
+        self.assertEqual(finalJob.baggage.TestSection.test, 100)
         return
 
 

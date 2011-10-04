@@ -74,7 +74,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         #Libraries
         self.resourceControl = ResourceControl()
 
-        
+
 
         self.changeState = ChangeState(self.config)
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
@@ -111,7 +111,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 pass
             raise JobSubmitterException(msg)
 
-        
+
         # BossAir
         self.bossAir = BossAirAPI(config = self.config)
 
@@ -151,11 +151,11 @@ class JobSubmitterPoller(BaseWorkerThread):
         batchID = self.jobsToPackage[loadedJob["workflow"]]["batchid"]
         sandboxDir = os.path.dirname(jobPackage[jobPackage.keys()[0]]["sandbox"])
         batchDir = os.path.join(sandboxDir, "batch_%s" % batchID)
-        
+
         if len(jobPackage.keys()) == self.packageSize:
             if not os.path.exists(batchDir):
                 os.makedirs(batchDir)
-                
+
             batchPath = os.path.join(batchDir, "JobPackage.pkl")
             jobPackage.save(batchPath)
             del self.jobsToPackage[loadedJob["workflow"]]
@@ -178,7 +178,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             if not os.path.exists(batchDir):
                 os.makedirs(batchDir)
-                
+
             batchPath = os.path.join(batchDir, "JobPackage.pkl")
             jobPackage.save(batchPath)
             del self.jobsToPackage[workflowName]
@@ -237,8 +237,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                 logging.error(msg)
                 self.sendAlert(6, msg = msg)
                 raise JobSubmitterPollerException(msg)
-                
-            
+
+
             loadedJob['retry_count'] = newJob['retry_count']
 
             # Grab the possible locations
@@ -298,11 +298,13 @@ class JobSubmitterPoller(BaseWorkerThread):
                                                       loadedJob["sandbox"],
                                                       loadedJob["cache_dir"],
                                                       loadedJob.get("ownerDN", None),
+                                                      loadedJob.get("ownerGroup", ''),
+                                                      loadedJob.get("ownerRole", ''),
                                                       loadedJob.get("priority", None),
                                                       frozenset(possibleLocations),
                                                       loadedJob.get("scramArch", None),
                                                       loadedJob.get("swVersion", None)) )
-                
+
         if len(badJobs) > 0:
             logging.error("The following jobs have no possible sites to run at: %s" % badJobs)
             for job in badJobs:
@@ -378,15 +380,15 @@ class JobSubmitterPoller(BaseWorkerThread):
         rcThresholds = self.getThresholds()
 
         for siteName in rcThresholds.keys():
-            
+
             totalRunning = None
             if not self.cachedJobs.has_key(siteName):
                 logging.debug("No jobs for site %s" % siteName)
                 continue
             logging.debug("Have site %s" % siteName)
-            
 
-            
+
+
             for threshold in rcThresholds.get(siteName, []):
                 try:
                     # Pull basic info for the threshold
@@ -430,11 +432,11 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     workflows = taskCache.keys()
                     workflows.sort()
-                    
+
                     for workflow in workflows:
                         while len(taskCache[workflow]) > 0:
                             cachedJob = taskCache[workflow].pop()
-                            
+
                             if cachedJob not in jobsToPrune.get(workflow, set()):
                                 cachedJobWorkflow = workflow
                                 break
@@ -466,7 +468,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     if not jobsToPrune.has_key(cachedJobWorkflow):
                         jobsToPrune[cachedJobWorkflow] = set()
-                        
+
                     jobsToPrune[cachedJobWorkflow].add(cachedJob)
 
                     # Sort jobs by jobPackage
@@ -476,7 +478,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     # Add the sandbox to a global list
                     self.sandboxPackage[package] = cachedJob[3]
-                    
+
                     # Create a job dictionary object
                     jobDict = {'id': cachedJob[0],
                                'retry_count': cachedJob[1],
@@ -484,11 +486,13 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'cache_dir': cachedJob[4],
                                'packageDir': package,
                                'userdn': cachedJob[5],
-                               'priority': cachedJob[6],
+                               'usergroup': cachedJob[6],
+                               'userrole': cachedJob[7],
+                               'priority': cachedJob[8],
                                'taskType': taskType,
-                               'possibleSites': cachedJob[7],
-                               'scramArch': cachedJob[8],
-                               'swVersion': cachedJob[9]}
+                               'possibleSites': cachedJob[9],
+                               'scramArch': cachedJob[10],
+                               'swVersion': cachedJob[11]}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)
@@ -511,7 +515,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         logging.info("Done assigning site locations.")
         return jobsToSubmit
 
-                
+
     def submitJobs(self, jobsToSubmit):
         """
         _submitJobs_
@@ -544,18 +548,18 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Run the actual underlying submit code using bossAir
         successList, failList = self.bossAir.submit(jobs = jobList)
-        
+
         # Propagate states in the WMBS database
         self.changeState.propagate(successList, 'executing', 'created')
         self.changeState.propagate(failList, 'submitfailed', 'created')
-        
+
         # At the end we mark the locations of the jobs
         # This applies even to failed jobs, since the location
         # could be part of the failure reason.
         self.setLocationAction.execute(bulkList = idList, conn = myThread.transaction.conn,
                                        transaction = True)
         myThread.transaction.commit()
-        
+
         return
 
 
@@ -590,7 +594,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             jobsToSubmit = self.assignJobLocations()
             self.submitJobs(jobsToSubmit = jobsToSubmit)
 
-            
+
         except WMException:
             if getattr(myThread, 'transaction', None) != None:
                 myThread.transaction.rollback()
@@ -613,7 +617,7 @@ class JobSubmitterPoller(BaseWorkerThread):
     def terminate(self, params):
         """
         _terminate_
-        
+
         Kill the code after one final pass when called by the master thread.
         """
         logging.debug("terminating. doing one more pass before we die")

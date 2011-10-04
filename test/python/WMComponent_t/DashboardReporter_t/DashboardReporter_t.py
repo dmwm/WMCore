@@ -7,8 +7,9 @@ import unittest
 import logging
 import socket
 import threading
+import inspect
 
-import WMCore.WMInit
+import WMCore.WMBase
 
 from WMCore.WMBS.Subscription   import Subscription
 from WMCore.WMBS.Workflow       import Workflow
@@ -53,7 +54,7 @@ class DashboardReporterTest(unittest.TestCase):
         self.sites = ['T2_US_Florida', 'T2_US_UCSD', 'T2_TW_Taiwan', 'T1_CH_CERN']
         
         self.testInit = TestInit(__file__)
-        self.testInit.setLogging()
+        self.testInit.setLogging(logLevel = logging.DEBUG)
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ['WMCore.WMBS', 
                                                  'WMCore.ResourceControl',
@@ -227,8 +228,10 @@ class DashboardReporterTest(unittest.TestCase):
         jobGroup = self.createTestJobGroup()
         config   = self.getConfig()
 
-        xmlPath = os.path.join(WMCore.WMInit.getWMTESTBASE(),
-                               "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
+        #xmlPath = os.path.join(WMCore.WMInit.getWMTESTBASE(),
+        #                       "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
+        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+                               "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
 
@@ -250,7 +253,7 @@ class DashboardReporterTest(unittest.TestCase):
         return
     
 
-    def testDashboardReporterPollerAlertSending_algorithm(self):
+    def testB_DashboardReporterPollerAlertSending_algorithm(self):
         """
         Cause exception (alert-worthy situation) in the algorithm()
         method.
@@ -269,7 +272,11 @@ class DashboardReporterTest(unittest.TestCase):
         dashboardReporter = DashboardReporterPoller(config = config)
         dashboardReporter.pollCouch = raiseException
         self.assertRaises(Exception, dashboardReporter.algorithm)
-        time.sleep(0.5)
+        # wait for the generated alert to arrive
+        while len(handler.queue) == 0:
+            time.sleep(0.3)
+            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
+            
         self.alertsReceiver.shutdown()
         self.alertsReceiver = None
         # now check if the alert was properly sent

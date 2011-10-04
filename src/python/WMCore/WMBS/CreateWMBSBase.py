@@ -446,9 +446,5 @@ class CreateWMBSBase(DBCreator):
                 raise WMException("The table '%s' is not defined." % \
                                   requiredTable, "WMCORE-2")
 
-        try:
-            DBCreator.execute(self, conn, transaction)
-            return True
-        except Exception, e:
-            print "ERROR: %s" % e
-            return False
+        DBCreator.execute(self, conn, transaction)
+        return True

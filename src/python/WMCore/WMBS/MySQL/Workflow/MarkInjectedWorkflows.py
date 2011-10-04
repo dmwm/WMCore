@@ -13,9 +13,9 @@ class MarkInjectedWorkflows(DBFormatter):
     """
     Marks workflows that have been fully injected into WMBS
     """
+    selectSQL = """SELECT spec FROM wmbs_workflow WHERE name = :name"""
+    updateSQL = """UPDATE wmbs_workflow SET injected = :injected WHERE spec = :spec"""
 
-    sql = """UPDATE wmbs_workflow SET injected = :injected WHERE name = :name
-    """
 
     def execute(self, names, injected = True, conn = None,
                 transaction = False):
@@ -29,12 +29,22 @@ class MarkInjectedWorkflows(DBFormatter):
         else:
             injected = 0
 
+        # Get the specs
         binds = []
         for name in names:
-            binds.append({'name': name, 'injected': injected})
+            binds.append({'name': name})
+
+        result = self.dbi.processData(self.selectSQL, binds, conn = conn,
+                                      transaction = transaction)
+
+        # Use specs to update table
+        l = self.formatDict(result)
+        binds = []
+        for entry in l:
+            binds.append({'spec': entry['spec'], 'injected': injected})
 
 
-        self.dbi.processData(self.sql, binds, conn = conn,
+        self.dbi.processData(self.updateSQL, binds, conn = conn,
                              transaction = transaction)
 
         return

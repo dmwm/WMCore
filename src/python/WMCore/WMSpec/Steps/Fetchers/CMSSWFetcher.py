@@ -33,14 +33,14 @@ class CMSSWFetcher(FetcherInterface):
 
             # the CMSSW has a special case with its ConfigCache argument
             if not t.stepType() in ("CMSSW", "MulticoreCMSSW"): continue
-            if (hasattr(t.data.application.configuration,'retrieveConfigUrl')):
+            if getattr(t.data.application.configuration, 'configCacheUrl', None) != None:
                 # main config file
                 fileTarget = "%s/%s" % (
                     stepPath,
                     t.data.application.command.configuration)
-                urllib.urlretrieve(
-                    t.data.application.configuration.retrieveConfigUrl,
-                    fileTarget)
+                #urllib.urlretrieve(
+                #    t.data.application.configuration.retrieveConfigUrl,
+                #    fileTarget)
                 # PSet Tweak
                 cacheUrl = t.data.application.configuration.configCacheUrl
                 cacheDb  = t.data.application.configuration.cacheName
@@ -49,6 +49,7 @@ class CMSSWFetcher(FetcherInterface):
 
                 configCache = ConfigCache(cacheUrl, cacheDb)
                 configCache.loadByID(configId)
+                configCache.saveConfigToDisk(targetFile = fileTarget)
                 tweak = TweakAPI.makeTweakFromJSON(configCache.getPSetTweaks())
                 if tweak:
                     tweakFile = "%s/%s" % (stepPath, tweakTarget)

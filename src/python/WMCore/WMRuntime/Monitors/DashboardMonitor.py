@@ -172,7 +172,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         """
         self.currentStep      = step
         self.currentStepName  = getStepName(step)
-        self.currentStepSpace = getStepSpace(self.currentStepName)
+        self.currentStepSpace = None
         self.startTime        = time.time()
         self.dashboardInfo.stepStart(step = step)
 
@@ -188,6 +188,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         self.currentStepSpace = None
         self.dashboardInfo.stepEnd(step = step,
                                    stepReport = stepReport)
+        return
 
 
     def stepKilled(self, step):
@@ -241,9 +242,13 @@ class DashboardMonitor(WMRuntimeMonitor):
         if time.time() - self.startTime > self.softTimeOut:
             #Then we have to kill the process
 
-            # If our stepSpace is None, we're inbetween steps.  Nothing to kill!
-            if self.currentStepSpace == None:
+            # If our stepName is None, we're inbetween steps.  Nothing to kill!
+            if self.currentStepName == None:
                 return
+
+            # If our stepName is valid, then we may need the stepSpace
+            if self.currentStepSpace == None:
+                self.currentStepSpace = getStepSpace(self.currentStepName)
 
             #First, get the PID
             stepPID = getStepPID(self.currentStepSpace, self.currentStepName)

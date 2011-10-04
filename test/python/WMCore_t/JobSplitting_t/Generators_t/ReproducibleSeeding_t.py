@@ -28,6 +28,7 @@ class ReproducibleSeedingTests(unittest.TestCase):
         
     def tearDown(self):
         self.testInit.tearDownCouch()
+        return
         
         
     def testA(self):
@@ -40,7 +41,7 @@ class ReproducibleSeedingTests(unittest.TestCase):
         document[u'pset_tweak_details'][u'process'][u'RandomNumberGeneratorService'][u'seed1'] = {}
         document[u'pset_tweak_details'][u'process'][u'RandomNumberGeneratorService'][u'seed2'] = {} 
         document[u'pset_tweak_details'][u'process'][u'RandomNumberGeneratorService'][u'seed3'] = {}
-        
+
         document = self.database.commitOne(document)[0]
         seeder = ReproducibleSeeding(CouchUrl = self.testInit.couchUrl,
                                      CouchDBName = self.testInit.couchDbName,

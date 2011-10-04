@@ -74,6 +74,8 @@ class CondorPluginTest(BossAirTest):
             tmpJob['packageDir']  = self.testDir
             tmpJob['sandbox']     = sandbox
             tmpJob['priority']    = None
+            tmpJob['usergroup']   = "phgroup"
+            tmpJob['userrole']    = 'cmsrole'
             jobList.append(tmpJob)
 
 

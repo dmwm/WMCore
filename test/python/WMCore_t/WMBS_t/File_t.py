@@ -15,7 +15,7 @@ import random
 from WMCore.Database.DBCore    import DBInterface
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory         import DAOFactory
-from WMCore.WMBS.File          import File
+from WMCore.WMBS.File          import File, addFilesToWMBSInBulk
 from WMCore.WMBS.Fileset       import Fileset
 from WMCore.WMBS.Workflow      import Workflow
 from WMCore.WMBS.Subscription  import Subscription
@@ -1124,6 +1124,65 @@ class FileTest(unittest.TestCase):
         # with wf001.
         addToFileset.execute(file = [testFileA['lfn'], testFileB['lfn']],
                              fileset = testFilesetB.id, workflow = "wf001")
+
+        testFileset2 = Fileset(name = "inputFilesetB")
+        testFileset2.loadData()
+
+        self.assertEqual(len(testFileset2.files), 0)
+        return
+
+    def testAddDupsToFilesetBulk(self):
+        """
+        _AddToDupsFilesetBulk_
+
+        Same as testAddDupsToFileset() but faster
+        """
+        testWorkflowA = Workflow(spec = 'hello', owner = "mnorman",
+                                 name = "wf001", task="basicWorkload/Production")
+        testWorkflowA.create()
+        testWorkflowB = Workflow(spec = 'hello', owner = "mnorman",
+                                 name = "wf001", task="basicWorkload/Production2")
+        testWorkflowB.create()
+
+        testFilesetA = Fileset(name = "inputFilesetA")
+        testFilesetA.create()
+        testFilesetB = Fileset(name = "inputFilesetB")
+        testFilesetB.create()
+
+        testSubscriptionA = Subscription(workflow = testWorkflowA, fileset = testFilesetA)
+        testSubscriptionA.create()
+        testSubscriptionB = Subscription(workflow = testWorkflowB, fileset = testFilesetB)
+        testSubscriptionB.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10, locations = ['SiteA'])
+        testFileA.addRun(Run( 1, *[45]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10, locations = ['SiteB'])
+        testFileB.addRun(Run( 1, *[45]))
+
+        addFilesToWMBSInBulk(testFilesetA.id, "wf001",
+                                     [testFileA, testFileB],
+                                     conn = testFileA.getDBConn(),
+                                     transaction = testFileA.existingTransaction())
+
+        testFileset2 = Fileset(name = "inputFilesetA")
+        testFileset2.loadData()
+
+        self.assertEqual(len(testFileset2.files), 2)
+        for file in testFileset2.files:
+            self.assertTrue(file in [testFileA, testFileB])
+
+        # Check that adding twice doesn't crash
+        addFilesToWMBSInBulk(testFilesetA.id, "wf001",
+                                     [testFileA, testFileB],
+                                     conn = testFileA.getDBConn(),
+                                     transaction = testFileA.existingTransaction())
+
+        # Files should not get added to fileset B because fileset A is associated
+        # with wf001.
+        addFilesToWMBSInBulk(testFilesetB.id, "wf001",
+                                     [testFileA, testFileB],
+                                     conn = testFileA.getDBConn(),
+                                     transaction = testFileA.existingTransaction())
 
         testFileset2 = Fileset(name = "inputFilesetB")
         testFileset2.loadData()

@@ -28,15 +28,15 @@ class RunJobTest(unittest.TestCase):
     """
     _RunJobTest_
 
-    
+
     Test the RunJob object and accessors
     """
 
 
     def setUp(self):
-        
+
         myThread = threading.currentThread()
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -101,9 +101,9 @@ class RunJobTest(unittest.TestCase):
         testFileset.commit()
         testJobGroup.commit()
 
-        
+
         return testJobGroup
-            
+
 
 
 
@@ -123,7 +123,7 @@ class RunJobTest(unittest.TestCase):
         for job in jobGroup.jobs:
             runJob = RunJob(jobid = job.exists())
             runJob['status'] = 'New'
-            runJob['userdn'] = job['owner'] 
+            runJob['userdn'] = job['owner']
             runJobs.append(runJob)
 
 
@@ -146,7 +146,7 @@ class RunJobTest(unittest.TestCase):
         loadJobsDAO = self.daoFactory(classname = "LoadByStatus")
         loadJobs = loadJobsDAO.execute(status = "New")
         self.assertEqual(len(loadJobs), 10)
-        
+
 
         idList = [x['id'] for x in loadJobs]
 
@@ -166,7 +166,7 @@ class RunJobTest(unittest.TestCase):
         for job in jobGroup.jobs:
             jDict = loadWMBSDAO.execute(jobs = [job])
             self.assertEqual(job['id'], jDict[0]['jobid'])
-        
+
 
         setStatusDAO = self.daoFactory(classname = "SetStatus")
         setStatusDAO.execute(jobs = idList, status = 'Dead')
@@ -193,12 +193,12 @@ class RunJobTest(unittest.TestCase):
 
         result = loadJobsDAO.execute(status = 'Dead')
         self.assertEqual(len(result), 0)
-        
+
 
 
         return
-        
-        
+
+
     def testB_CheckWMBSBuild(self):
         """
         _CheckWMBSBuild_
@@ -221,8 +221,36 @@ class RunJobTest(unittest.TestCase):
 
         return
 
+    def testC_CheckWMBSBuildRoleAndGroup(self):
+        """
+        _CheckWMBSBuild_
 
-        
+        Trivial test that checks whether we can build
+        runJobs from WMBS jobs
+        """
+        jobGroup = []
+
+        # Create jobs
+        for id in range(10):
+            testJob = Job( name = 'Job_%i' % (id) )
+            testJob['owner']    = "mnorman"
+            testJob['usergroup'] = "mygroup_%i" % id
+            testJob['userrole'] = "myrole_%i" % id
+            testJob['location'] = 'Xanadu'
+            jobGroup.append(testJob)
+
+        for job in jobGroup:
+            rj = RunJob()
+            rj.buildFromJob(job = job)
+            self.assertEqual(job['usergroup'], rj['usergroup'])
+            self.assertEqual(job['userrole'], rj['userrole'])
+            job2 = rj.buildWMBSJob()
+            self.assertEqual(job['usergroup'], job2['usergroup'])
+            self.assertEqual(job['userrole'], job2['userrole'])
+        return
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

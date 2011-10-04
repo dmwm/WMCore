@@ -10,7 +10,7 @@ import unittest
 import time
 
 from WMCore.Services.UUID import makeUUID
-from WMCore.Services.DBS import XMLDrop
+import WMCore.Services.PhEDEx.XMLDrop as XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx 
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import SubscriptionList

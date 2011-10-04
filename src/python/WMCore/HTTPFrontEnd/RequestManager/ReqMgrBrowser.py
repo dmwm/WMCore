@@ -222,9 +222,16 @@ class ReqMgrBrowser(WebAPI):
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
-    def showWorkload(self, url):
+    def showWorkload(self, requestName):
         """ Displays the workload """
-        request = {'RequestWorkflow':url}
+        self.validate(requestName)
+
+        try:
+            request = GetRequest.getRequestByName(requestName)
+        except Exception, RuntimeError ex:
+            raise cherrypy.HTTPError(400, "Invalid request.")
+        
+        request = Utilities.prepareForTable(request)
         helper = Utilities.loadWorkload(request)
         workloadText = str(helper.data)
         return cgi.escape(workloadText).replace("\n", "<br/>\n")

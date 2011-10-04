@@ -2,11 +2,6 @@
 """
 _Periodic_
 
-Periodically create jobs to process all files in a fileset.  A job will not be
-created until the previous job has been completed and new data has arrived.
-
-Note that the period here refers to the amount of time between the end of a job
-and the creation of a new job.
 """
 
 
@@ -24,11 +19,12 @@ class Periodic(JobFactory):
     _Periodic_
 
     Periodically create jobs to process all files in a fileset.  A job will not
-    be created until the previous job has been completed and new data has
-    arrived. 
+    be created until the previous job (if there is one) has been completed and
+    there are available (new) files in the fileset.
 
     Note that the period here refers to the amount of time between the end of a
     job and the creation of a new job.
+
     """
     def outstandingJobs(self, jobPeriod):
         """
@@ -53,7 +49,7 @@ class Periodic(JobFactory):
 
             stateTime = int(results[0]["state_time"])
             if stateTime + jobPeriod > time.time():
-                myThread.logger.debug("Periodic: %s seconds remaining." % \
+                myThread.logger.debug("Periodic: %d seconds until next job..." % \
                                       ((stateTime + jobPeriod) - time.time()))
                 return True
 
@@ -63,43 +59,38 @@ class Periodic(JobFactory):
         """
         _algorithm_
 
-        Preform periodic job splitting.  Generate a new job only if conditions
-        are right.
         """
-        jobPeriod = int(kwargs.get("job_period", 60))
-       
+        myThread = threading.currentThread()
+
+        jobPeriod = int(kwargs.get("job_period", 900))
+
         fileset = self.subscription.getFileset()
         fileset.load()
 
-        myThread = threading.currentThread()
+        # If fileset is closed just mark all available (new) files
+        # as complete. They won't be handled here anymore, but by
+        # a chained EndOfRun subscription.
         if not fileset.open:
-            if not self.outstandingJobs(0):
-                fileset.loadData()
-                allFiles = fileset.getFiles()
-                self.subscription.completeFiles(allFiles)
-                return []
-            else:
-                myThread.logger.debug("Periodic: Waiting for jobs to complete.")
+            availableFiles = self.subscription.availableFiles()
+            if len(availableFiles) > 0:
+                self.subscription.completeFiles(availableFiles)
+            return
 
+        # Wait for enough time after last job completion.
         if self.outstandingJobs(jobPeriod):
-            return []
+            return
 
+        # Do we have available (new) files to run on ?
         availableFiles = self.subscription.availableFiles()
         if len(availableFiles) == 0:
             myThread.logger.debug("Periodic: No available files...")
-            return []
+            return
 
         fileset.loadData()
         allFiles = fileset.getFiles()
 
-        loadedFiles = []
-        for file in allFiles:
-            file.loadData(parentage = 0)
-            loadedFiles.append(file)
-
-        if not fileset.open:
-            self.subscription.completeFiles(allFiles)
-
         self.newGroup()
         self.newJob(name = makeUUID())
-        self.currentJob.addFile(loadedFiles)
+        self.currentJob.addFile(allFiles)
+
+        return

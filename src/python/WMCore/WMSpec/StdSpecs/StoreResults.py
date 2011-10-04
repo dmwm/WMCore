@@ -122,8 +122,6 @@ class StoreResultsWorkloadFactory(StdBase):
         mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
         mergeTaskLogArch.setStepType("LogArchive")
         self.addLogCollectTask(mergeTask, taskName = "StoreResultsLogCollect")
-        mergeTask.addGenerator("BasicNaming")
-        mergeTask.addGenerator("BasicCounter")
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
         mergeTask.addInputDataset(primary = self.inputPrimaryDataset, processed = self.inputProcessedDataset,

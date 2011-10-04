@@ -1,9 +1,9 @@
 function(doc, site) {
     var ele = doc["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
     if (ele && ele["Status"] === "Available") {
-        var now = new Date().getTime() / 1000; // epoch seconds
         // TODO: Make priority modifier configurable
-        var priority = ele["Priority"] + (0.0125 * (now - doc.timestamp));
+        // modifier so 1 hour queue time == +1 priority boost
+        var priority = ele["Priority"] - (doc.timestamp * (1. / 60 / 60))
         emit(priority, {"_id" : doc["_id"]});
     }
 }

@@ -64,14 +64,15 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
          self.inputDataTier) = self.inputDataset[1:].split("/")
 
         workload = self.createWorkload()
-        workload.setDashboardActivity("production")
+        workload.setDashboardActivity("lheproduction")
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         procTask = workload.newTask("MonteCarloFromGEN")
 
         outputMods = self.setupProcessingTask(procTask, "Processing", self.inputDataset,
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
+                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW",
+                                              primarySubType = "Production")
         self.addLogCollectTask(procTask)
 
         procMergeTasks = {}

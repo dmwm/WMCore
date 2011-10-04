@@ -11,7 +11,7 @@ import nose
 import tempfile
 
 from xml.dom.minidom import parseString
-from WMCore.WMInit import getWMBASE
+from WMCore.WMBase import getTestBase
 
 from WMQuality.TestInit import TestInit
 
@@ -34,8 +34,8 @@ class TrivialFileCatalogTest(unittest.TestCase):
         Run some simple tests on reading a trivialFileCatalog
 
         """
-        tfcFilename = os.path.join(getWMBASE(),
-                                   "test/python/WMCore_t/Storage_t",
+        tfcFilename = os.path.join(getTestBase(),
+                                   "WMCore_t/Storage_t",
                                    "T1_US_FNAL_TrivialFileCatalog.xml")
 
         if not os.path.exists(tfcFilename):
@@ -64,8 +64,8 @@ class TrivialFileCatalogTest(unittest.TestCase):
         Test PFN, LFN matching upon an existing TFC XML file
         
         """
-        tfc_file = os.path.join(getWMBASE(),
-                                "test/python/WMCore_t/Storage_t",
+        tfc_file = os.path.join(getTestBase(),
+                                "WMCore_t/Storage_t",
                                 "T1_US_FNAL_TrivialFileCatalog.xml")
         tfc = readTFC(tfc_file)
         

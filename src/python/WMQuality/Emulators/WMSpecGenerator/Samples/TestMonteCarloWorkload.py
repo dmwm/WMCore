@@ -18,7 +18,7 @@ class TestMonteCarloFactory(MonteCarloWorkloadFactory):
     def __call__(self, workflowName, args):
         workload = MonteCarloWorkloadFactory.__call__(self, workflowName, args)
         delattr(workload.taskIterator().next().steps().data.application.configuration,
-                'retrieveConfigUrl')
+                'configCacheUrl')
         return workload
 
     def determineOutputModules(self, *args, **kwargs):

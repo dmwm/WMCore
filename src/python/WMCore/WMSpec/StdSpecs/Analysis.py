@@ -124,10 +124,10 @@ class AnalysisWorkloadFactory(StdBase):
         self.runWhitelist = arguments.get("RunWhitelist", [])
         self.runBlacklist = arguments.get("RunBlacklist", [])
 
-        self.couchURL = arguments.get("CouchUrl", "http://derpderp:derpityderp@cmssrv52.derp.gov:5984")
+        self.couchURL = arguments.get("CouchUrl")
         self.couchDBName = arguments.get("CouchDBName", "wmagent_configcache")
         self.analysisConfigCacheID = arguments.get("AnalysisConfigCacheDoc", None)
-        self.ACDCURL = arguments.get("ACDCUrl", "http://derpderp:derpityderp@cmssrv52.derp.gov:5984")
+        self.ACDCURL = arguments.get("ACDCUrl", "")
         self.ACDCDBName = arguments.get("ACDCDBName", "wmagent_acdc")
         self.ACDCID = arguments.get("ACDCDoc", None)
 
@@ -156,6 +156,8 @@ class AnalysisWorkloadFactory(StdBase):
                            {'halt_job_on_file_boundaries' : False,
                             'splitOnRun' : False,
                            })
+        else:
+            self.analysisJobSplitArgs  = arguments.get('JobSplitArgs', {})
 
         self.asyncDest = arguments.get("asyncDest", "T1_US_FNAL_Buffer")
         self.publishName = arguments.get("PublishDataName", str(int(time.time())))

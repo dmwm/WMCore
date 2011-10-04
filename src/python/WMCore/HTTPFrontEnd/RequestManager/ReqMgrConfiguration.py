@@ -130,7 +130,8 @@ def reqMgrConfig(
     active.monitorSvc.model.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorRESTModel'
     active.monitorSvc.default_expires = 0 # no caching
     active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
-
+    active.monitorSvc.template = os.path.join(installation, 'templates/WMCore/WebTools')
+    
     active.section_('yuiserver')
     active.yuiserver.object = 'WMCore.WebTools.YUIServer'
     active.yuiserver.yuidir = os.getenv("YUI_ROOT")

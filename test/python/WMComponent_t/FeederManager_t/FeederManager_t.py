@@ -58,7 +58,7 @@ class FeederManagerTest(unittest.TestCase):
         Get defaults FeederManager parameters
         """
         return self.testInit.getConfiguration(
-                    os.path.join(WMCore.WMInit.getWMBASE(), \
+                    os.path.join(WMCore.WMInit.getWMTESTBASE(), \
             'src/python/WMComponent/FeederManager/DefaultConfig.py'))
 
 

@@ -60,7 +60,7 @@ class WorkQueueManagerTest(WorkQueueTestCase):
 
         General config file
         """
-        #configPath=os.path.join(WMCore.WMInit.getWMBASE(), \
+        #configPath=os.path.join(WMCore.WMInit.getWMTESTBASE(), \
         #                        'src/python/WMComponent/WorkQueueManager/DefaultConfig.py')):
 
 

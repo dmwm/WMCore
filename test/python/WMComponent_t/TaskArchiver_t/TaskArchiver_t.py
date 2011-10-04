@@ -224,14 +224,14 @@ class TaskArchiverTest(unittest.TestCase):
         report1 = Report()
         report2 = Report()
         if error:
-            path1 = os.path.join(WMCore.WMInit.getWMBASE(),
+            path1 = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                  "test/python/WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
             path2 = path1
         else:
-            path1 = os.path.join(WMCore.WMInit.getWMBASE(),
+            path1 = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                  'test/python/WMComponent_t/TaskArchiver_t/fwjrs',
                                  'mergeReport1.pkl')
-            path2 = os.path.join(WMCore.WMInit.getWMBASE(),
+            path2 = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                  'test/python/WMComponent_t/TaskArchiver_t/fwjrs',
                                  'mergeReport2.pkl')
         report1.load(filename = path1)

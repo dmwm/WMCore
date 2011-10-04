@@ -227,7 +227,7 @@ class DashboardReporterTest(unittest.TestCase):
         jobGroup = self.createTestJobGroup()
         config   = self.getConfig()
 
-        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
+        xmlPath = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                "test/python/WMCore_t/FwkJobReport_t/PerformanceReport.xml")
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)

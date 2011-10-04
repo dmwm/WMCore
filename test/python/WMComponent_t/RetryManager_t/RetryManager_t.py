@@ -95,7 +95,7 @@ class RetryManagerTest(unittest.TestCase):
         # Path to plugin directory
         config.RetryManager.pluginPath   = 'WMComponent.RetryManager.PlugIns'
         #config.RetryManager.pluginName   = ''
-        config.RetryManager.WMCoreBase   = WMCore.WMInit.getWMBASE()
+        config.RetryManager.WMCoreBase   = WMCore.WMInit.getWMTESTBASE()
         config.RetryManager.componentDir = os.path.join(os.getcwd(), 'Components')
 
 

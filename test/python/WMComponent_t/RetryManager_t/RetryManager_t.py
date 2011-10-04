@@ -11,6 +11,7 @@ RetryManager test for module and the harness
 
 
 import os
+import os.path
 import threading
 import time
 import unittest
@@ -33,6 +34,7 @@ from WMCore.WMBS.JobGroup     import JobGroup
 from WMCore.DataStructs.Run   import Run
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.Agent.Configuration import Configuration
+from WMCore.FwkJobReport.Report import Report
 
 class RetryManagerTest(unittest.TestCase):
     """
@@ -98,6 +100,10 @@ class RetryManagerTest(unittest.TestCase):
         config.RetryManager.WMCoreBase   = WMCore.WMInit.getWMBASE()
         config.RetryManager.componentDir = os.path.join(os.getcwd(), 'Components')
 
+        # ErrorHandler
+        # Not essential, but useful for ProcessingAlgo
+        config.component_("ErrorHandler")
+        config.ErrorHandler.maxRetries = 5
 
         # JobStateMachine
         config.component_('JobStateMachine')
@@ -141,6 +147,8 @@ class RetryManagerTest(unittest.TestCase):
             testJob.addFile(testFileA)
             testJob.addFile(testFileB)
             testJob['retry_count'] = 1
+            testJob['cache_dir'] = os.path.join(self.testDir, testJob['name'])
+            os.mkdir(testJob['cache_dir'])
             testJobGroup.add(testJob)
         
         testJobGroup.commit()
@@ -420,6 +428,99 @@ class RetryManagerTest(unittest.TestCase):
         idList = self.getJobs.execute(state = 'Created')
         self.assertEqual(len(idList), self.nJobs)
 
+        return
+
+
+    def testG_ProcessingAlgo(self):
+        """
+        _ProcessingAlgo_
+
+        Test for the ProcessingAlgo Prototype
+        """
+
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
+
+        config = self.getConfig()
+        config.RetryManager.pluginName   = 'ProcessingAlgo'
+        config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
+        changer = ChangeState(config)
+        fwjrPath = os.path.abspath("../JobAccountant_t/fwjrs/badBackfillJobReport.pkl")
+        report = Report()
+        report.load(fwjrPath)
+        for job in testJobGroup.jobs:
+            job['fwjr'] = report
+            job['retry_count'] = 0
+            report.save(os.path.join(job['cache_dir'], "Report.%i.pkl" % job['retry_count']))
+        changer.propagate(testJobGroup.jobs, 'created', 'new')
+        changer.propagate(testJobGroup.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
+        changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
+        changer.propagate(testJobGroup.jobs, 'jobcooloff', 'jobfailed')
+
+        testRetryManager = RetryManagerPoller(config)
+        testRetryManager.algorithm()
+
+        idList = self.getJobs.execute(state = 'Created')
+        self.assertEqual(len(idList), self.nJobs) 
+
+        changer.propagate(testJobGroup.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
+        changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
+        changer.propagate(testJobGroup.jobs, 'jobcooloff', 'jobfailed')
+
+        for job in testJobGroup.jobs:
+            j = Job(id = job['id'])
+            j.load()
+            self.assertEqual(j['retry_count'], 1)
+            report.save(os.path.join(j['cache_dir'], "Report.%i.pkl" % j['retry_count']))
+
+        config.RetryManager.ProcessingAlgoOneMoreErrorCodes = [8020]
+        testRetryManager2 = RetryManagerPoller(config)
+        testRetryManager2.algorithm()
+
+        idList = self.getJobs.execute(state = 'Created')
+        self.assertEqual(len(idList), self.nJobs) 
+
+        for job in testJobGroup.jobs:
+            j = Job(id = job['id'])
+            j.load()
+            self.assertEqual(j['retry_count'], 5)
+
+
+        # Now test timeout
+        testJobGroup2 = self.createTestJobGroup(nJobs = self.nJobs)
+
+        # Cycle jobs
+        for job in testJobGroup2.jobs:
+            job['fwjr'] = report
+            job['retry_count'] = 0
+            report.save(os.path.join(job['cache_dir'], "Report.%i.pkl" % job['retry_count']))
+        changer.propagate(testJobGroup2.jobs, 'created', 'new')
+        changer.propagate(testJobGroup2.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup2.jobs, 'complete', 'executing')
+        changer.propagate(testJobGroup2.jobs, 'jobfailed', 'complete')
+        changer.propagate(testJobGroup2.jobs, 'jobcooloff', 'jobfailed')
+
+        for job in testJobGroup2.jobs:
+            j = Job(id = job['id'])
+            j.load()
+            self.assertEqual(j['retry_count'], 0)
+
+        config.RetryManager.ProcessingAlgoOneMoreErrorCodes = []
+        config.RetryManager.ProcessingAlgoMaxRuntime = 1
+        testRetryManager3 = RetryManagerPoller(config)
+        testRetryManager3.algorithm()
+
+        idList = self.getJobs.execute(state = 'Created')
+        self.assertEqual(len(idList), self.nJobs * 2)
+
+        for job in testJobGroup2.jobs:
+            j = Job(id = job['id'])
+            j.load()
+            self.assertEqual(j['retry_count'], 5)
+        
+
+        return
 
 
 

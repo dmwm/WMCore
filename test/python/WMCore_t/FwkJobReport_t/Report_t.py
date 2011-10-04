@@ -363,6 +363,24 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertTrue(repTime["startTime"] - localTime < timeDiff)
         self.assertTrue(repTime["stopTime"] - localTime < timeDiff)
 
+        
+        myReport = Report("cmsRun1")
+        myReport.addStep("cmsRun2")
+        myReport.addStep("cmsRun3")
+
+        step = myReport.retrieveStep("cmsRun1")
+        step.startTime = 1
+        step.stopTime  = 8
+        step = myReport.retrieveStep("cmsRun2")
+        step.startTime = 2
+        step.stopTime  = 9
+        step = myReport.retrieveStep("cmsRun3")
+        step.startTime = 3
+        step.stopTime  = 10
+
+        self.assertEqual(myReport.getFirstStartLastStop()['stopTime'], 10)
+        self.assertEqual(myReport.getFirstStartLastStop()['startTime'], 1)
+
         return
 
 

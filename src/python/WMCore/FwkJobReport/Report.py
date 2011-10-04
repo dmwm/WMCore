@@ -988,6 +988,31 @@ class Report:
 
         return {'startTime': startTime, 'stopTime': stopTime}
 
+    def getFirstStartLastStop(self):
+        """
+        _getFirstStartLastStop_
+
+        Get the first startTime, last stopTime
+        """
+
+        steps = self.listSteps()
+
+        if len(steps) < 1:
+            return None
+
+        firstStep = self.getTimes(stepName = steps[0])
+        startTime = firstStep['startTime']
+        stopTime  = firstStep['stopTime']
+
+        for stepName in steps:
+            timeStamps = self.getTimes(stepName = stepName)
+            if startTime > timeStamps['startTime']:
+                startTime = timeStamps['startTime']
+            if stopTime < timeStamps['stopTime']:
+                stopTime = timeStamps['stopTime']
+
+        return {'startTime': startTime, 'stopTime': stopTime}
+
     def setTaskName(self, taskName):
         """
         _setTaskName_

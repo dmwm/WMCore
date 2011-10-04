@@ -18,3 +18,11 @@ def getWMBASE():
     else:
         return os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))        
 
+def getWMTESTBASE():
+    """ returns the root of WMCore test tree """
+    import WMCore_t
+    if WMCore_t.__file__.find("test/python") != -1:
+        return os.path.normpath(os.path.join(os.path.dirname(WMCore_t.__file__), '..', '..','..'))
+    else:
+        return os.path.normpath(os.path.join(os.path.dirname(WMCore_t.__file__), '..'))        
+

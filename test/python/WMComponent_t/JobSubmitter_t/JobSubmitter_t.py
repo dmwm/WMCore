@@ -25,7 +25,7 @@ import WMCore.WMInit
 #from WMQuality.TestInit import TestInit
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMCore.DAOFactory          import DAOFactory
-from WMCore.WMInit              import getWMBASE
+from WMCore.WMInit              import getWMTESTBASE
 
 from WMCore.WMBS.File         import File
 from WMCore.WMBS.Fileset      import Fileset
@@ -309,7 +309,7 @@ class JobSubmitterTest(unittest.TestCase):
         return testJob, testFile
         
 
-    def getConfig(self, configPath = os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMComponent/JobSubmitter/DefaultConfig.py')):
+    def getConfig(self, configPath = os.path.join(WMCore.WMInit.getWMTESTBASE(), 'src/python/WMComponent/JobSubmitter/DefaultConfig.py')):
         """
         _getConfig_
 
@@ -349,13 +349,13 @@ class JobSubmitterTest(unittest.TestCase):
         config.JobSubmitter.pluginName    = 'CondorGlobusPlugin'
         config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
         config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
-        config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(),
+        config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                                          'test/python/WMComponent_t/JobSubmitter_t',
                                                          'submit.sh')
         config.JobSubmitter.componentDir  = os.path.join(self.testDir, 'Components')
         config.JobSubmitter.workerThreads = 2
         config.JobSubmitter.jobsPerWorker = 200
-        config.JobSubmitter.inputFile     = os.path.join(WMCore.WMInit.getWMBASE(),
+        config.JobSubmitter.inputFile     = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                                          'test/python/WMComponent_t/JobSubmitter_t',
                                                          'FrameworkJobReport-4540.xml')
         config.JobSubmitter.deleteJDLFiles = False
@@ -420,7 +420,7 @@ class JobSubmitterTest(unittest.TestCase):
             
             inputFileString = '%s, %s, %s' % (os.path.join(self.testDir, 'workloadTest/TestWorkload', 'TestWorkload-Sandbox.tar.bz2'),
                                               os.path.join(self.testDir, 'workloadTest/TestWorkload', 'batch_%i-0/JobPackage.pkl' % (batch)),
-                                              os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMCore', 'WMRuntime/Unpacker.py'))
+                                              os.path.join(WMCore.WMInit.getWMTESTBASE(), 'src/python/WMCore', 'WMRuntime/Unpacker.py'))
             if not noIndex:
                 self.assertEqual(job.get('transfer_input_files', None),
                                  inputFileString)

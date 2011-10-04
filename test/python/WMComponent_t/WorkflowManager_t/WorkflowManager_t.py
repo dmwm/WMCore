@@ -66,7 +66,7 @@ class WorkflowManagerTest(unittest.TestCase):
         """
 
         return self.testInit.getConfiguration(
-                    os.path.join(WMCore.WMInit.getWMBASE(), \
+                    os.path.join(WMCore.WMInit.getWMTESTBASE(), \
            'src/python/WMComponent/WorkflowManager/DefaultConfig.py'))
 
 

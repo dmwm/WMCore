@@ -9,7 +9,7 @@ Copyright (c) 2011 Fermilab. All rights reserved.
 
 import unittest
 
-from WMCore.WMBase import getWMBASE
+from WMCore.WMBase import getWMBASE, getWMTESTBASE
 
 class WMBaseTest(unittest.TestCase):
 
@@ -20,6 +20,14 @@ class WMBaseTest(unittest.TestCase):
             getWMBASE()
         except Exception, ex:
             self.fail("Failed to call getWMBASE")
+
+    def testB(self):
+        
+        try:
+            print "test base is %s" % getWMTESTBASE()
+        except Exception, ex:
+            self.fail("Failed to call getWMTESTBASE")
+
 
     
 if __name__ == '__main__':

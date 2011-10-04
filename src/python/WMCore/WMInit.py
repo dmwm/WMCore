@@ -17,7 +17,7 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 from WMCore.Configuration import loadConfigurationFile
-from WMCore.WMBase import getWMBASE
+from WMCore.WMBase import getWMBASE, getWMTESTBASE
 
 import os.path
 import sys

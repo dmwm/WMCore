@@ -134,7 +134,7 @@ def modifyConfiguration(config, **args):
         config.reqmgr.database.socket = args["mysql_socket"]
         config.reqmgr.views.active.monitorSvc.serviceURL = "http://%s:%s/reqmgr/reqMgr" % (
                                                            localhost, config.reqmgr.Webtools.port)
-        config.reqmgr.views.active.monitorSvc.workloadSummaryCouchURL = args["workload_summary_url"]
+        config.reqmgr.views.active.monitorSvc.workloadSummaryCouchURL = sanitizeURL(args["workload_summary_url"])['url']
 
     # custom global workqueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'GlobalQueue':

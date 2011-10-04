@@ -42,7 +42,7 @@ class WorkflowManagerTest(unittest.TestCase):
                      ['WMCore.Agent.Database',
                       'WMComponent.WorkflowManager.Database',
                       'WMCore.ThreadPool',
-                      'WMCore.MsgService',
+                      #'WMCore.MsgService',
                       'WMCore.WMBS'],
                     useDefault = False)
 

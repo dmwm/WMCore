@@ -13,7 +13,7 @@ from WMCore.ACDC.CouchService import CouchService
 from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.ACDC.CouchFileset import CouchFileset
 
-import WMCore.ACDC.CouchUtils as CouchUtils
+import WMCore.Database.CouchUtils  as CouchUtils
 import WMCore.ACDC.CollectionTypes as CollectionTypes
 
 from WMCore.WMException      import WMException

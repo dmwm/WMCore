@@ -8,7 +8,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 from WMCore.ACDC.Collection import Collection
 from WMCore.ACDC.CouchFileset import CouchFileset
-from WMCore.ACDC.CouchUtils import connectToCouch, requireOwner
+from WMCore.Database.CouchUtils import connectToCouch, requireOwner
 
 class CouchCollection(Collection):
     """

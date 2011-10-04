@@ -12,7 +12,7 @@ from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.ACDC.CouchFileset import CouchFileset
 
 from WMCore.GroupUser.User import User, makeUser
-import WMCore.ACDC.CouchUtils as CouchUtils
+import WMCore.Database.CouchUtils as CouchUtils
 import WMCore.Database.CMSCouch as CMSCouch
 
 class CouchService(Service):

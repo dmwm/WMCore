@@ -11,7 +11,7 @@ import unittest
 import os
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-import WMCore.ACDC.CouchUtils as CouchUtils
+import WMCore.Database.CouchUtils as CouchUtils
 
 
 

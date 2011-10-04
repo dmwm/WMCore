@@ -9,7 +9,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 
 from WMCore.ACDC.Fileset import Fileset
-from WMCore.ACDC.CouchUtils import connectToCouch, requireOwner, requireCollection, requireFilesetName
+from WMCore.Database.CouchUtils import connectToCouch, requireOwner, requireCollection, requireFilesetName
 
 import WMCore.Database.CMSCouch as CMSCouch
 

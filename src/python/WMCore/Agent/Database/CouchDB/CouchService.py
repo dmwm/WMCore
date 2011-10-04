@@ -1,4 +1,4 @@
-import WMCore.ACDC.CouchUtils as CouchUtils
+import WMCore.Database.CouchUtils as CouchUtils
 import traceback
 import logging
 

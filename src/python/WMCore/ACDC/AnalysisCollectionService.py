@@ -11,7 +11,7 @@ Stolen from Dave Evans <evansde@fnal.gov>
 import logging
 
 import WMCore.ACDC.CollectionTypes as CollectionTypes
-import WMCore.ACDC.CouchUtils as CouchUtils
+import WMCore.Database.CouchUtils as CouchUtils
 
 from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.ACDC.CouchFileset import CouchFileset

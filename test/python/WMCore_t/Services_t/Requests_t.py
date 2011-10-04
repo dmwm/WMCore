@@ -283,6 +283,19 @@ class TestRequests(unittest.TestCase):
         # we should get an html page in response
         self.assertNotEqual(out[0].find('html'), -1)
 
+    def testSecureOddPort(self):
+        """https with odd port"""
+        proxy = os.environ.get('X509_USER_PROXY')
+        if not proxy:
+            raise nose.SkipTest('Only run if an X509 proxy is present')
+        os.environ.pop('X509_HOST_CERT', None)
+        os.environ.pop('X509_HOST_KEY', None)
+        os.environ.pop('X509_USER_CERT', None)
+        os.environ.pop('X509_USER_KEY', None)
+        req = Requests.Requests('https://cmsweb.cern.ch:443')
+        out = req.makeRequest('/auth/trouble')
+        self.assertEqual(out[1], 200)
+        self.assertNotEqual(out[0].find('passed basic validation'), -1)
 
 
 if __name__ == "__main__":

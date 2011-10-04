@@ -306,7 +306,7 @@ class Requests(dict):
 
         # Domain must be just a hostname and port. self[host] is a URL currently
         if key or cert:
-            http.add_certificate(key=key, cert=cert, domain=self.getDomainName())
+            http.add_certificate(key=key, cert=cert, domain='')
         return http
 
     def addBasicAuth(self, username, password):

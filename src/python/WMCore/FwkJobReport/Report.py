@@ -7,9 +7,7 @@ _Report_
 Framework job report object.
 """
 
-
-
-
+import re
 import cPickle
 import logging
 import sys
@@ -864,7 +862,7 @@ class Report:
         return True
         
 
-    def taskSuccessful(self):
+    def taskSuccessful(self, ignoreString = 'logArch'):
         """
         _taskSuccessful_
 
@@ -879,6 +877,11 @@ class Report:
             return False
 
         for stepName in self.data.steps:
+            # Ignore specified steps
+            # i.e., logArch steps can fail without causing
+            # the task to fail
+            if ignoreString and re.search(ignoreString, stepName):
+                continue
             if not self.stepSuccessful(stepName = stepName):
                 value = False
 

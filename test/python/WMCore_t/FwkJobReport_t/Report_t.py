@@ -599,6 +599,24 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertTrue(myReport3.getExitCode() != 60451)
 
         return
+
+    def testTaskSuccessful(self):
+        """
+        _testTaskSuccessful_
+
+        Test whether or not the report marks the task successful
+        """
+
+        myReport = Report("cmsRun1")
+        myReport.parse(self.xmlPath)
+
+        # First, the report should fail
+        self.assertFalse(myReport.taskSuccessful())
+
+        # Second, if we ignore cmsRun, the task
+        # should succeed
+        self.assertTrue(myReport.taskSuccessful(ignoreString = 'cmsRun'))
+        return
                          
 
  

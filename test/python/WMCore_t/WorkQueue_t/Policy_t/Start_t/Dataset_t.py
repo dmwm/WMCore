@@ -7,8 +7,6 @@ import unittest
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
 from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload, getTestArguments
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
-EmulatorHelper.setEmulators(phedex = True, dbs = True, 
-                            siteDB = True, requestMgr = False)
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload \
     import workload as MultiTaskProcessingWorkload
@@ -23,6 +21,13 @@ parentProcArgs.update(IncludeParents = "True")
 class DatasetTestCase(unittest.TestCase):
 
     splitArgs = dict(SliceType = 'NumberOfFiles', SliceSize = 5)
+    
+    def setUp(self):
+        EmulatorHelper.setEmulators(phedex = True, dbs = True, 
+                            siteDB = True, requestMgr = False)
+
+    def tearDown(self):
+        EmulatorHelper.resetEmulators()
 
     def testTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""

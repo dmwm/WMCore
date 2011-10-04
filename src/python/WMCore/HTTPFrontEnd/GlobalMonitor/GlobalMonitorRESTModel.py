@@ -21,7 +21,7 @@ class GlobalMonitorRESTModel(RESTModel):
     def __init__(self, config = {}):
 
         RESTModel.__init__(self, config)
-        #print config
+        
         self.serviceURL = self.config.serviceURL
         self.serviceLevel = self.config.serviceLevel
         self.workloadSummaryCouchURL = self.config.workloadSummaryCouchURL
@@ -42,4 +42,9 @@ class GlobalMonitorRESTModel(RESTModel):
         return getSiteOverview(self.serviceURL, self.serviceLevel)
     
     def getEnvValues(self):
-        return {'workload_summary_url': self.workloadSummaryCouchURL}
+        if self.config.serviceURL.lower() == 'local':
+            reqURL = ""
+        else:
+            reqURL = "%s/" % self.serviceURL
+        return {'workload_summary_url': self.workloadSummaryCouchURL,
+                'reqmgr_url': reqURL}

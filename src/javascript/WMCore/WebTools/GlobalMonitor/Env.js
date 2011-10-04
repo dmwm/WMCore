@@ -1,6 +1,6 @@
 WMCore.namespace("GlobalMonitor.Env");
 (function(){
-    var callbak = {
+    var callback = {
         success: function (o) {WMCore.GlobalMonitor.Env = YAHOO.lang.JSON.parse(o.responseText);}
     };
     var dataUrl = "/reqmgr/monitorSvc/env";

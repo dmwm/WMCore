@@ -12,7 +12,8 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
     var postfixLink = "/_design/WorkQueue/_rewrite/elementsInfo?request=";
 
     var formatRequest = function(elCell, oRecord, oColumn, sData) {
-            elCell.innerHTML = "<a href='../view/details/" + sData  +
+            var reqmgrUrl = WMCore.GlobalMonitor.Env['reqmgr_url'];
+            elCell.innerHTML = "<a href='" + reqmgrUrl + "../view/details/" + sData  +
                                         "' target='_blank'>" + sData + "</a>";
         };
 

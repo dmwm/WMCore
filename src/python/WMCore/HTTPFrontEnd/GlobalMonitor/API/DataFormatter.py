@@ -156,7 +156,7 @@ def combineListOfDictSlow(matchKey, baseList, applyList, errorKey = None, **kwar
 
 def errorFormatter(url, msg):
     return [{'error_url': url, 'error': "%s - %s" % (
-              url.strip('http://').strip('/workqueue'), msg)}]
+              url.strip('/workqueue'), msg)}]
 
 def add(a, b):
     if a == None:

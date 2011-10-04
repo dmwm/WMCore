@@ -3,8 +3,7 @@ import logging
 ### TODO: remove this when GlobalMonitor spins out as a separate application
 from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
           import getGlobalQueues
-###TODO: add back when GlobalMonitor spins out as a separate application
-###from WMCore.Services.RequestManager.RequestManager import RequestManagerfrom WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.WMBS.WMBS import WMBS
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import splitCouchServiceURL
@@ -23,13 +22,14 @@ def getSiteOverview(serviceURL, serviceLevel):
 def getSiteInfoFromReqMgr(serviceURL):
     """ get agent info from request mgr """
 
-    ###TODO: add back when GlobalMonitor spins out as a separate application
-    ###reqMgr = RequestManager({'endpoint':serviceURL})
+    reqMgr = RequestManager({'endpoint':serviceURL})
     #get information from global queue.
     try:
-        queues = getGlobalQueues()
+        if serviceURL.lower() == "local":
+            queues = getGlobalQueues()
         ###TODO: add back when GlobalMonitor spins out as a separate application
-        ###queues = reqMgr.getWorkQueue()
+        else:
+            queues = reqMgr.getWorkQueue()
     except Exception, ex:
         logging.warning("Error: %s" % str(ex))
         errorInfo = {}

@@ -7,8 +7,7 @@ from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
 import WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter as DFormatter
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import combineListOfDict
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import splitCouchServiceURL
-###TODO: add back when GlobalMonitor spins out as a separate application
-###from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.WMBS.WMBS import WMBS
 
@@ -28,15 +27,16 @@ def getRequestInfoFromReqMgr(serviceURL):
     """ get the request info from requestManager """
 
     ###TODO: add back when GlobalMonitor spins out as a separate application
-    ###service = RequestManager({'endpoint':serviceURL})
+    service = RequestManager({'endpoint':serviceURL})
     try:
         ### use request manager funtion directly
         ### TODO: remove this when GlobalMonitor spins out as a separate application
-        baseResults = getOverview()
-        urls = getGlobalQueues()
-        ###TODO: add back when GlobalMonitor spins out as a separate application
-        ###baseResults = service.getRequestNames()
-        ###urls = service.getWorkQueue()
+        if serviceURL.lower() == "local":
+            baseResults = getOverview()
+            urls = getGlobalQueues()
+        else:
+            baseResults = service.getRequestNames()
+            urls = service.getWorkQueue()
     except Exception, ex:
         logging.error(str(ex))
         return DFormatter.errorFormatter(serviceURL, "RequestManger Down")

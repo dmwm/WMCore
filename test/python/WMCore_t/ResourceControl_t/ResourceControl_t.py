@@ -8,6 +8,8 @@ Unit tests for ResourceControl.
 import unittest
 import threading
 import os
+import sys
+import subprocess
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
@@ -73,29 +75,38 @@ class ResourceControlTest(unittest.TestCase):
 
         createThresholds =  myResourceControl.listThresholdsForCreate()
 
-        assert len(createThresholds.keys()) == 2, \
-               "Error: Wrong number of site in Resource Control DB"
-        assert "testSite1" in createThresholds.keys(), \
-               "Error: Test Site 1 missing from thresholds."
-        assert "testSite2" in createThresholds.keys(), \
-               "Error: Test Site 2 missing from thresholds."        
-        assert createThresholds["testSite1"]["total_slots"] == 10, \
-               "Error: Wrong number of total slots."
-        assert createThresholds["testSite1"]["running_jobs"] == 0, \
-               "Error: Wrong number of running jobs: %s" % createThresholds["testSite1"]["running_jobs"]
-        assert createThresholds["testSite2"]["total_slots"] == 100, \
-               "Error: Wrong number of total slots."
-        assert createThresholds["testSite2"]["running_jobs"] == 0, \
-               "Error: Wrong number of running jobs."        
+        self.assertEqual( len(createThresholds.keys()), 2, 
+                          "Error: Wrong number of site in Resource Control DB")
+        
+        self.assertTrue( "testSite1" in createThresholds.keys(), 
+                       "Error: Test Site 1 missing from thresholds.")
+        
+        self.assertTrue( "testSite2" in createThresholds.keys(), 
+                       "Error: Test Site 2 missing from thresholds." )
+                   
+        self.assertEqual( createThresholds["testSite1"]["total_slots"], 10,
+                          "Error: Wrong number of total slots." )
+        
+        self.assertEqual( createThresholds["testSite1"]["running_jobs"], 0, 
+                          "Error: Wrong number of running jobs: %s" % 
+                              createThresholds["testSite1"]["running_jobs"] )
+        
+        self.assertEqual( createThresholds["testSite2"]["total_slots"], 100,
+                          "Error: Wrong number of total slots." )
+        
+        self.assertEqual( createThresholds["testSite2"]["running_jobs"], 0,
+                          "Error: Wrong number of running jobs." )   
         
         thresholds = myResourceControl.listThresholdsForSubmit()
 
-        assert len(thresholds.keys()) == 2, \
-               "Error: Wrong number of sites in Resource Control DB"
-        assert "testSite1" in thresholds.keys(), \
-               "Error: testSite1 missing from thresholds."
-        assert "testSite2" in thresholds.keys(), \
-               "Error: testSite2 missing from thresholds."
+        self.assertEqual( len(thresholds.keys()), 2,
+                       "Error: Wrong number of sites in Resource Control DB" )
+        
+        self.assertTrue( "testSite1" in thresholds.keys(), 
+                       "Error: testSite1 missing from thresholds." )
+        
+        self.assertTrue( "testSite2" in thresholds.keys(), 
+                       "Error: testSite2 missing from thresholds." )
 
         site1Thresholds = thresholds["testSite1"]
         site2Thresholds = thresholds["testSite2"]
@@ -115,52 +126,64 @@ class ResourceControlTest(unittest.TestCase):
             elif threshold["task_type"] == "Processing":
                 procThreshold2  = threshold
 
-        assert len(site1Thresholds) == 2, \
-               "Error: Wrong number of task types."
-        assert len(site2Thresholds) == 2, \
-               "Error: Wrong number of task types."
-        self.assertTrue(procThreshold1 != None)
-        self.assertTrue(procThreshold2 != None)
-        self.assertTrue(mergeThreshold1 != None)
-        self.assertTrue(mergeThreshold2 != None)
+        self.assertEqual( len(site1Thresholds), 2, 
+                          "Error: Wrong number of task types." )
+        
+        self.assertEqual( len(site2Thresholds), 2,
+                          "Error: Wrong number of task types." )
+        
+        self.assertNotEqual( procThreshold1,  None )
+        self.assertNotEqual( procThreshold2,  None )
+        self.assertNotEqual( mergeThreshold1, None )
+        self.assertNotEqual( mergeThreshold2, None )
+        
+        self.assertEqual( procThreshold1["total_slots"], 10,
+                          "Error: Site thresholds wrong" )
+        
+        self.assertEqual( procThreshold1["total_running_jobs"], 0,
+                          "Error: Site thresholds wrong" )
+        
+        self.assertEqual( procThreshold1["task_running_jobs"], 0,
+                          "Error: Site thresholds wrong" )     
+          
+        self.assertEqual( procThreshold1["max_slots"], 20,
+                          "Error: Site thresholds wrong" )
 
-        assert procThreshold1["total_slots"] == 10, \
-               "Error: Site thresholds wrong"
-        assert procThreshold1["total_running_jobs"] == 0, \
-               "Error: Site thresholds wrong"
-        assert procThreshold1["task_running_jobs"] == 0, \
-               "Error: Site thresholds wrong"        
-        assert procThreshold1["max_slots"] == 20, \
-               "Error: Site thresholds wrong"
+        self.assertEqual( mergeThreshold1["total_slots"], 10,
+                          "Error: Site thresholds wrong" )
+        self.assertEqual( mergeThreshold1["total_running_jobs"], 0,
+                          "Error: Site thresholds wrong" )
+        
+        self.assertEqual( mergeThreshold1["task_running_jobs"], 0,
+                          "Error: Site thresholds wrong" )
+        
+        self.assertEqual( mergeThreshold1["max_slots"], 250,
+                          "Error: Site thresholds wrong" )
 
-        assert mergeThreshold1["total_slots"] == 10, \
-               "Error: Site thresholds wrong"
-        assert mergeThreshold1["total_running_jobs"] == 0, \
-               "Error: Site thresholds wrong"
-        assert mergeThreshold1["task_running_jobs"] == 0, \
-               "Error: Site thresholds wrong"        
-        assert mergeThreshold1["max_slots"] == 250, \
-               "Error: Site thresholds wrong"
+        self.assertEqual( procThreshold2["total_slots"], 100, 
+                          "Error: Site thresholds wrong")
+        
+        self.assertEqual( procThreshold2["total_running_jobs"], 0, 
+                          "Error: Site thresholds wrong")
+        
+        self.assertEqual( procThreshold2["task_running_jobs"], 0, 
+                          "Error: Site thresholds wrong" )  
+             
+        self.assertEqual( procThreshold2["max_slots"], 50, 
+                          "Error: Site thresholds wrong")
 
-        assert procThreshold2["total_slots"] == 100, \
-               "Error: Site thresholds wrong"
-        assert procThreshold2["total_running_jobs"] == 0, \
-               "Error: Site thresholds wrong"
-        assert procThreshold2["task_running_jobs"] == 0, \
-               "Error: Site thresholds wrong"        
-        assert procThreshold2["max_slots"] == 50, \
-               "Error: Site thresholds wrong"
-
-        assert mergeThreshold2["total_slots"] == 100, \
-               "Error: Site thresholds wrong"
-        assert mergeThreshold2["total_running_jobs"] == 0, \
-               "Error: Site thresholds wrong"
-        assert mergeThreshold2["task_running_jobs"] == 0, \
-               "Error: Site thresholds wrong"        
-        assert mergeThreshold2["max_slots"] == 135, \
-               "Error: Site thresholds wrong"
-
-        return
+        self.assertEqual( mergeThreshold2["total_slots"], 100, 
+                          "Error: Site thresholds wrong")
+        
+        self.assertEqual( mergeThreshold2["total_running_jobs"], 0, 
+                          "Error: Site thresholds wrong")
+        
+        self.assertEqual( mergeThreshold2["task_running_jobs"], 0, 
+                          "Error: Site thresholds wrong")  
+             
+        self.assertEqual( mergeThreshold2["max_slots"], 135, 
+                          "Error: Site thresholds wrong")
+        
 
     def testList(self):
         """
@@ -296,21 +319,26 @@ class ResourceControlTest(unittest.TestCase):
         createThresholds = myResourceControl.listThresholdsForCreate()
         submitThresholds = myResourceControl.listThresholdsForSubmit()
 
-        assert len(createThresholds.keys()) == 2, \
-               "Error: Wrong number of sites in create thresholds"
-        assert createThresholds["testSite1"]["total_slots"] == 10, \
-               "Error: Wrong number of slots for site 1"
-        assert createThresholds["testSite2"]["total_slots"] == 20, \
-               "Error: Wrong number of slots for site 2"
+        self.assertEqual( len(createThresholds.keys()), 2,
+               "Error: Wrong number of sites in create thresholds" )
+        
+        self.assertEqual( createThresholds["testSite1"]["total_slots"], 10,
+               "Error: Wrong number of slots for site 1" )
+        
+        self.assertEqual( createThresholds["testSite2"]["total_slots"], 20,
+               "Error: Wrong number of slots for site 2" )
+        
         # We should have two running jobs with locations at site one,
         # two running jobs without locations at site two, and one running
         # job without a location at site one and two.
-        assert createThresholds["testSite1"]["running_jobs"] == 5, \
-               "Error: Wrong number of running jobs for site 1"
+        self.assertEqual( createThresholds["testSite1"]["running_jobs"], 5,
+               "Error: Wrong number of running jobs for site 1" )
+        
         # We should have one running job with a location at site 2 and
         # another running job without a location.
-        assert createThresholds["testSite2"]["running_jobs"] == 2, \
-               "Error: Wrong number of running jobs for site 2"
+        self.assertEqual( createThresholds["testSite2"]["running_jobs"], 2,
+               "Error: Wrong number of running jobs for site 2" )
+        
         # We should also have a phedex_name
         self.assertEqual(createThresholds["testSite1"]["cms_name"], "T1_US_FNAL")
         self.assertEqual(createThresholds["testSite2"]["cms_name"], None)
@@ -364,14 +392,17 @@ class ResourceControlTest(unittest.TestCase):
 
         siteInfo = myResourceControl.listSiteInfo("testSite1")
 
-        assert siteInfo["site_name"] == "testSite1", \
-               "Error: Site name is wrong."
-        assert siteInfo["se_name"] == "testSE1", \
-               "Error: SE name is wrong."
-        assert siteInfo["ce_name"] == "testCE1", \
-               "Error: CE name is wrong."
-        assert siteInfo["job_slots"] == 10, \
-               "Error: Job slots is wrong."
+        self.assertEqual( siteInfo["site_name"], "testSite1",
+                          "Error: Site name is wrong." )
+        
+        self.assertEqual( siteInfo["se_name"], "testSE1",
+                          "Error: SE name is wrong." )
+        
+        self.assertEqual( siteInfo["ce_name"], "testCE1",
+                          "Error: CE name is wrong." )
+        
+        self.assertEqual( siteInfo["job_slots"], 10,
+                          "Error: Job slots is wrong." )
 
         return
 
@@ -505,13 +536,20 @@ class ResourceControlTest(unittest.TestCase):
         self.createConfig()
 
         resControlPath = os.path.join(getWMBASE(), "bin/wmagent-resource-control")
-        os.system("%s --add-all-sites --plugin=CondorPlugin --site-slots=100" % resControlPath)
+        env = os.environ
+        env['PYTHONPATH'] = ":".join(sys.path)
+        cmdline = [resControlPath, "--add-all-sites", "--plugin=CondorPlugin", "--site-slots=100" ]
+        retval = subprocess.Popen( cmdline,
+                                   stdout = subprocess.PIPE,
+                                   stderr = subprocess.STDOUT,
+                                   env = env)
+        ( output, _ ) = retval.communicate()        
 
         myResourceControl = ResourceControl()
         result = myResourceControl.listThresholdsForSubmit()
         self.assertTrue('T1_US_FNAL' in result.keys())
         for x in result.keys():
-            self.assertEqual(len(result[x]), 6)
+            self.assertEqual(len(result[x]), 7)
             for thresh in result[x]:
                 if thresh['task_type'] == 'Processing':
                     self.assertEqual(thresh['priority'], 1)

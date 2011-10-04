@@ -32,16 +32,17 @@ class ProxyTest(unittest.TestCase):
         logger_name = 'ProxyTest'
 
         self.logger = logging.getLogger(logger_name)
-        dict = {'logger': self.logger,
+        self.dict = {'logger': self.logger,
                 'server_key' : '/home/crab/.globus/hostkey.pem', 'server_cert' : '/home/crab/.globus/hostcert.pem',
                 'vo': 'cms', 'group': 'integration', 'role': 'NULL', 'myProxySvr': 'myproxy.cern.ch',
-                'proxyValidity' : '192:00', 'min_time_left' : 36000}
+                'proxyValidity' : '192:00', 'min_time_left' : 36000, 'uisource' : '/afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.sh'}
+                #, 'serverDN' : '/C=IT/O=INFN/OU=Host/L=Perugia/CN=crab.pg.infn.it'}
 
         self.proxyPath = None
-        self.proxy = Proxy( dict )
-        self.serverKey = dict['server_key']
+        self.proxy = Proxy( self.dict )
+        self.serverKey = self.dict['server_key']
         self.serverDN = None
-        if dict.has_key('serverDN'): self.serverDN = dict['serverDN']
+        if self.dict.has_key('serverDN'): self.serverDN = self.dict['serverDN']
 
     def tearDown(self):
         """
@@ -108,6 +109,7 @@ class ProxyTest(unittest.TestCase):
 
            self.proxy.create()
            timeLeft = self.proxy.getTimeLeft()
+           print timeLeft
            assert ( int(timeLeft) / 3600 ) == 192
 
     @attr("integration")
@@ -214,7 +216,7 @@ class ProxyTest(unittest.TestCase):
     def testCheckMyProxy( self ):
         """
         """
-        if not os.path.exists( self.serverKey ):
+        if not os.path.exists( self.serverKey ) and self.serverDN:
 
            self.proxy.create()
            self.proxy.delegate( )
@@ -225,7 +227,7 @@ class ProxyTest(unittest.TestCase):
     def testCheckMyProxyServer( self ):
         """
         """
-        if not os.path.exists( self.serverKey ):
+        if not os.path.exists( self.serverKey ) and self.serverDN:
 
            self.proxy.create()
            self.proxy.delegate( serverRenewer = True )
@@ -290,10 +292,27 @@ class ProxyTest(unittest.TestCase):
 
            time.sleep( 70 )
 
-           self.proxy.vomsExtensionRenewal( proxyPath )
+           attribute = self.proxy.prepareAttForVomsRenewal( self.proxy.getAttributeFromProxy( proxyPath ) )
+           self.proxy.vomsExtensionRenewal( proxyPath, attribute )
            vomsTimeLeft = self.proxy.getVomsLife( proxyPath )
            assert ( int(vomsTimeLeft) / 3600 ) == 191
 
+
+    @attr("integration")
+    def testElevateAttribute( self ):
+        """
+        """
+        if not os.path.exists( self.serverKey ):
+
+           self.proxy.create()
+           proxyPath = self.proxy.getProxyFilename( )
+
+           # getProxyDetails allows to buid the proxy attribute from the parameters given 
+           attribute = self.proxy.prepareAttForVomsRenewal( '/cms/Role=NULL/Capability=NULL' )
+
+           self.proxy.vomsExtensionRenewal( proxyPath, attribute )
+
+           assert self.proxy.getAttributeFromProxy( proxyPath ) == '/cms/Role=NULL/Capability=NULL'
 
     @attr("integration")
     def testUserGroupInProxy( self ):
@@ -312,6 +331,33 @@ class ProxyTest(unittest.TestCase):
 
            self.proxy.create()
            assert self.proxy.role == self.getUserAttributes().split('\n')[0].split('/')[3].split('=')[1]
+
+    @attr("integration")
+    def testGetAttributes( self ):
+        """
+        """
+        if not os.path.exists( self.serverKey ):
+
+           if not self.dict['role']:
+               role = 'NULL'            
+           self.proxy.create()
+           assert self.proxy.getAttributeFromProxy().split('/')[2] == self.dict['group']
+           assert self.proxy.getAttributeFromProxy().split('/')[3].split('=')[1] == role
+            
+    @attr("integration")
+    def testGetAttributes( self ):
+        """
+        """
+        if not os.path.exists( self.serverKey ):
+
+           if not self.dict['role']:
+               role = 'NULL'
+           self.proxy.create()
+           proxyPath = self.proxy.getProxyFilename( )
+           if self.dict['group'] and self.dict['role']: 
+               assert self.proxy.getUserGroupAndRoleFromProxy( proxyPath )[0] == self.dict['group']
+               assert self.proxy.getUserGroupAndRoleFromProxy( proxyPath )[1] == self.dict['role']
+
 
 #    def testDestroyMyProxy( self ):
 #        """

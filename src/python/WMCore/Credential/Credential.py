@@ -19,7 +19,7 @@ class Credential:
 
     def create( self ):
         """
-        Init the user credential 
+        Init the user credential
         """
         raise NotImplementedError
 
@@ -33,7 +33,7 @@ class Credential:
         """
         Get user credential
         """
-        raise NotImplementedError      
+        raise NotImplementedError
 
     def store( self ):
         """
@@ -60,21 +60,21 @@ class Credential:
         raise NotImplementedError
 
     def getUserName( self, credential=None ):
-        """   
-        Get the user name 
-        """   
+        """
+        Get the user name
+        """
         raise NotImplementedError
 
     def getTimeLeft( self, credential=None ):
-        """   
+        """
         Get credential time left
         """
         raise NotImplementedError
 
     def destroy( self, credential = None ):
-        """   
+        """
         Destroy user credential
-        """   
+        """
         raise NotImplementedError
- 
+
 

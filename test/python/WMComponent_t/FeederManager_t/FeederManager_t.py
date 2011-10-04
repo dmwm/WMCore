@@ -53,9 +53,12 @@ class FeederManagerTest(unittest.TestCase):
 
     def getConfig(self):
         """
-        _getConfig_
+        _createConfig_
 
-        Get defaults FeederManager parameters
+        Create a config for the JobAccountant.  This config needs to include
+        information for connecting to the database as the component will create
+        it's own database connections.  These parameters are still pulled from
+        the environment.
         """
         config = self.testInit.getConfiguration()
 		config.component_("FeederManager")
@@ -74,7 +77,7 @@ class FeederManagerTest(unittest.TestCase):
 		
 		return config
 
-    def testA(self):
+	def testA(self):
         """
         _testA_
 

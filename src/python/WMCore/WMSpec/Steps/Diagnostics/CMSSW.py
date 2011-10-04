@@ -81,7 +81,7 @@ class CMSDefaultHandler(DiagnosticHandler):
     
 
     def __call__(self, errCode, executor, **args):
-        print "%s Diagnostic Handler invoked" % self.__class__.__name__
+        logging.critical("%s Diagnostic Handler invoked" % self.__class__.__name__)
         msg = "Error in CMSSW: %s\n" % (errCode)
         jobRepXml = os.path.join(executor.step.builder.workingDir,
                                  executor.step.output.jobReport)
@@ -128,8 +128,7 @@ class CMSDefaultHandler(DiagnosticHandler):
         errSection = getattr(executor.report.report, "errors", None)
         executor.report.addError(executor.step._internal_name,
                                  errCode, description, msg)
-
-
+        
         return
     
         
@@ -226,6 +225,11 @@ class EDMExceptionHandler(DiagnosticHandler):
             logTail = BasicAlgos.tail(errLog, 10)
             msg = '\n Adding last ten lines of CMSSW stdout:\n'
             msg += "".join(logTail)
+
+        # Add the error we were sent
+        ex = args.get('ExceptionInstance', None)
+        executor.report.addError(executor.step._internal_name,
+                                 errCode, "CMSSWStepFailure", msg + str(ex))
 
         if not os.path.exists(jobRepXml):
             # no report => Error

@@ -101,21 +101,21 @@ class CMSSW(Executor):
             msg += str(ex)
             logging.critical("Error running SCRAM")
             logging.critical(msg)
-            raise WMExecutionFailure(60513, "ScramSetupFailure", msg)
+            raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
         
         if projectOutcome > 0:
             msg = scram.diagnostic()
             #self.report.addError(60513, "ScramSetupFailure", msg)
             logging.critical("Error running SCRAM")
             logging.critical(msg)
-            raise WMExecutionFailure(60513, "ScramSetupFailure", msg)
+            raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
         runtimeOutcome = scram.runtime()
         if runtimeOutcome > 0:
             msg = scram.diagnostic()
             #self.report.addError(60513, "ScramSetupFailure", msg)
             logging.critical("Error running SCRAM")
             logging.critical(msg)
-            raise WMExecutionFailure(60513, "ScramSetupFailure", msg)
+            raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
 
 
         #

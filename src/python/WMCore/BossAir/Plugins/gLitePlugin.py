@@ -17,14 +17,14 @@ import re
 import time
 import types
 import stat
+from copy import deepcopy
 
-from WMCore.Credential.Proxy import Proxy
+from WMCore.Credential.Proxy           import Proxy, CredentialException
 from WMCore.FwkJobReport.Report        import Report
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
-from WMCore.DAOFactory import DAOFactory
-from WMCore.BossAir.LoggingInfoParser import LoggingInfoParser
+from WMCore.DAOFactory                 import DAOFactory
+from WMCore.BossAir.LoggingInfoParser  import LoggingInfoParser
 import WMCore.WMInit
-from copy import deepcopy
 
 def processWorker(input, results):
     """
@@ -410,18 +410,20 @@ class gLitePlugin(BasePlugin):
                     ownersandbox      = jobsReady[0]['userdn']+":"+jobsReady[0]['usergroup']+":"+jobsReady[0]['userrole']
                     valid, ownerproxy = (False, None)
                     exportproxy       = 'echo $X509_USER_PROXY'
+                    proxymsg          = ''
                     if ownersandbox in retrievedproxy:
                         valid      = True
                         ownerproxy = retrievedproxy[ownersandbox]
                     else:
-                        valid, ownerproxy = self.validateProxy( ownersandbox )
+                        valid, ownerproxy, proxymsg = self.validateProxy( ownersandbox )
 
                     if valid:
                         retrievedproxy[ownersandbox] = ownerproxy
                         exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
                     else:
                         msg = "Problem retrieving user proxy, or user proxy " + \
-                              "expired '%s'" % ownersandbox
+                              "expired '%s'.\n" % ownersandbox
+                        msg += 'Detailed error: "%s".' % proxymsg
                         logging.error( msg )
                         failedJobs.extend( jobsReady )
                         for job in jobsReady:
@@ -646,9 +648,10 @@ class gLitePlugin(BasePlugin):
 
         for user in dnjobs.keys():
 
-            valid, ownerproxy = self.validateProxy( user )
+            valid, ownerproxy, proxymsg = self.validateProxy( user )
             if not valid:
                 logging.error("Problem getting proxy for user '%s'" % str(user))
+                logging.error("Detailed Error: '%s'" % proxymsg)
                 continue
                 ## TODO evaluate if jobs need to be set as failed
             exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
@@ -791,18 +794,20 @@ class gLitePlugin(BasePlugin):
             ownersandbox      = jj['userdn']+":"+jj['usergroup']+":"+jj['userrole']
             valid, ownerproxy = (False, None)
             exportproxy       = 'echo $X509_USER_PROXY'
+            proxymsg          = ''
             if ownersandbox in retrievedproxy:
                 valid      = True
                 ownerproxy = retrievedproxy[ownersandbox]
             else:
-                valid, ownerproxy = self.validateProxy( ownersandbox )
+                valid, ownerproxy, proxymsg = self.validateProxy( ownersandbox )
 
             if valid:
                 retrievedproxy[ownersandbox] = ownerproxy
                 exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
             else:
                 msg = "Problem retrieving user proxy, or user proxy " + \
-                      "expired '%s'" % ownersandbox
+                      "expired '%s'.\n" % ownersandbox
+                msg += 'Detailed error: "%s".' % proxymsg
                 logging.error( msg )
                 failedJobs.append( jj )
                 self.fakeReport("GetOutputFailure", msg, -1, jj)
@@ -911,18 +916,21 @@ class gLitePlugin(BasePlugin):
             ownersandbox      = jj['userdn']+":"+jj['usergroup']+":"+jj['userrole']
             valid, ownerproxy = (False, None)
             exportproxy       = 'echo $X509_USER_PROXY'
+            proxymsg          = ''
             if ownersandbox in retrievedproxy:
                 valid      = True
                 ownerproxy = retrievedproxy[ownersandbox]
             else:
-                valid, ownerproxy = self.validateProxy( ownersandbox )
+                valid, ownerproxy, proxymsg = self.validateProxy( ownersandbox )
 
             if valid:
                 retrievedproxy[ownersandbox] = ownerproxy
                 exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
             else:
                 msg = "Problem retrieving user proxy, or user proxy " + \
-                      "expired '%s'" % ownersandbox
+                      "expired '%s'.\n" % ownersandbox
+                msg += 'Detailed error: "%s".' % proxymsg
+                logging.error( msg )
                 logging.error( msg )
                 failedJobs.append( jj )
                 self.fakeReport("PostMortemFailure", msg, -1, jj)
@@ -1036,18 +1044,20 @@ class gLitePlugin(BasePlugin):
             ownersandbox      = job['userdn']+":"+jj['usergroup']+":"+jj['userrole']
             valid, ownerproxy = (False, None)
             exportproxy       = 'echo $X509_USER_PROXY'
+            proxymsg          = ''
             if ownersandbox in retrievedproxy:
                 valid      = True
                 ownerproxy = retrievedproxy[ownersandbox]
             else:
-                valid, ownerproxy = self.validateProxy( ownersandbox )
+                valid, ownerproxy, proxymsg = self.validateProxy( ownersandbox )
 
             if valid:
                 retrievedproxy[ownersandbox] = ownerproxy
                 exportproxy = "export X509_USER_PROXY=%s" % ownerproxy
             else:
                 msg = "Problem retrieving user proxy, or user proxy " + \
-                      "expired '%s'" % ownersandbox
+                      "expired '%s'.\n" % ownersandbox
+                msg += 'Detailed error: "%s".' % proxymsg
                 logging.error( msg )
                 failedJobs.append( job )
                 self.fakeReport("KillFailure", msg, -1, job)
@@ -1366,15 +1376,27 @@ class gLitePlugin(BasePlugin):
         Return the proxy path to be used and a boolean to indicates if the proxy is good or not
         """
         if self.singleproxy is not None:
-            proxy = Proxy(self.defaultDelegation)
-            timeleft = proxy.getTimeLeft( self.singleproxy )
+            timeleft = none
+            try:
+                proxy = Proxy(self.defaultDelegation)
+                timeleft = proxy.getTimeLeft( self.singleproxy )
+            except CredentialException, ce:
+                logging.debug(ce)
+                msg = 'Problem getting proxy timeleft for user "%s" due to "%s".' % (user, ce._message)
+                return (False, '', msg)
             if timeleft is not None and timeleft > 60:
                 logging.info("Remaining timeleft for proxy %s is %s" % (self.singleproxy, str(timeleft)))
-                return (True, self.singleproxy)
+                return (True, self.singleproxy, '')
             else:
-                return (False, self.singleproxy)
+                return (False, self.singleproxy, '')
         else:
-            return self.getProxy(user.split(':')[0], user.split(':')[1], user.split(':')[2])
+            try:
+                return self.getProxy(user.split(':')[0], user.split(':')[1], user.split(':')[2])
+            except CredentialException, ce:
+                logging.debug(ce)
+                msg = 'Problem retrieving proxy for user "%s" due to "%s".' % (user, ce._message)
+                return (False, '', msg)
+
 
     def getProxy(self, userdn, group, role):
         """

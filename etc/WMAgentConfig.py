@@ -230,6 +230,7 @@ config.TaskArchiver.pollInterval = 240
 config.TaskArchiver.timeOut      = workflowArchiveTimeout
 config.TaskArchiver.useWorkQueue = True
 config.TaskArchiver.workloadSummaryCouchURL = workloadSummaryURL
+config.TaskArchiver.histogramKeys = ["PeakValueRss", "PeakValueVsize", "TotalJobTime", "AvgEventTime"]
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0

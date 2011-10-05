@@ -375,8 +375,36 @@ class TaskArchiverTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM wmbs_subscription")[0].fetchall()
         self.assertEqual(len(result), 2)
 
+        from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
+        create = CreateWMBSBase()
+        tables = []
+        for x in create.requiredTables:
+            tables.append(x[2:])
+
+        logging.error("About to print pre-algorithm table info")
+        for name in tables:
+            logging.error("Printing information for table %s" % name)
+            result = myThread.dbi.processData("DESCRIBE %s" % name)[0].fetchall()
+            logging.error("DESCRIBE: %s" % result)
+            result = myThread.dbi.processData("SELECT * FROM %s" % name)[0].fetchall()
+            logging.error("SELECT: %s" % result)
+            logging.error("-------------------------------------")
+        logging.error("*******************************************************")
+        logging.error("*******************************************************")
+        logging.error("*******************************************************")
+        
         testTaskArchiver = TaskArchiverPoller(config = config)
         testTaskArchiver.algorithm()
+
+        
+
+        for name in tables:
+            logging.error("Printing information for table %s" % name)
+            result = myThread.dbi.processData("DESCRIBE %s" % name)[0].fetchall()
+            logging.error("DESCRIBE: %s" % result)
+            result = myThread.dbi.processData("SELECT * FROM %s" % name)[0].fetchall()
+            logging.error("SELECT: %s" % result)
+            logging.error("-------------------------------------")
 
         result = myThread.dbi.processData("SELECT * FROM wmbs_job")[0].fetchall()
         self.assertEqual(len(result), 0)
@@ -385,6 +413,7 @@ class TaskArchiverTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM wmbs_jobgroup")[0].fetchall()
         self.assertEqual(len(result), 0)
         result = myThread.dbi.processData("SELECT * FROM wmbs_fileset")[0].fetchall()
+        self.assertEqual(len(result), 0)
         result = myThread.dbi.processData("SELECT * FROM wmbs_file_details")[0].fetchall()
         self.assertEqual(len(result), 0)
 

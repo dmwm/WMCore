@@ -73,7 +73,7 @@ class URLFetcherTest(unittest.TestCase):
 
         URL should not have http:// prefix in it
         """
-        url     = 'www.google.com'
+        url     = 'cmsweb.cern.ch'
         task    = self.createTask(fileURL = 'http://%s' % url)
         fetcher = URLFetcher()
         fetcher.setWorkingDirectory(workingDir = self.testDir)
@@ -83,10 +83,9 @@ class URLFetcherTest(unittest.TestCase):
         content = f.read()
         f.close()
 
-        for x in ['Google', 'video.google.com', 'maps.google.com']:
-            self.assertTrue(re.search(x, content))
+        for x in ['html', 'CMS']:
+            self.assertNotEqual( content.find(x), -1 )
 
-        return
 
 if __name__ == "__main__":
     unittest.main()

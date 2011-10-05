@@ -25,7 +25,7 @@ class Create(DBCreator):
               """CREATE TABLE dbsbuffer_dataset
 			(
 			   id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-			   path            VARCHAR(500)    UNIQUE NOT NULL,
+			   path            VARCHAR(500) COLLATE latin1_general_cs UNIQUE NOT NULL,
                            processing_ver  VARCHAR(255),
                            acquisition_era VARCHAR(255),
                            valid_status    VARCHAR(20),

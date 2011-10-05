@@ -91,6 +91,7 @@ class WorkQueue(WorkQueueBase):
         if self.params.get('ParentQueueCouchUrl'):
             self.parent_queue = WorkQueueBackend(self.params['ParentQueueCouchUrl'].rsplit('/', 1)[0],
                                                  self.params['ParentQueueCouchUrl'].rsplit('/', 1)[1])
+            self.params['ParentQueueCouchUrl'] = self.parent_queue.queueUrl
 
         self.params.setdefault("GlobalDBS",
                                "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")

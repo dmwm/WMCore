@@ -22,7 +22,7 @@ class RootTest(unittest.TestCase):
         config.Webtools.environment = "development"
         config.Webtools.error_log_level = logging.WARNING
         config.Webtools.access_log_level = logging.DEBUG
-        config.Webtools.host = "localhost"
+        config.Webtools.host = "127.0.0.1"
         config.component_('UnitTests')
         config.UnitTests.admin = "Mr Unit Test"
         config.UnitTests.description = "Dummy server for unit tests"
@@ -227,7 +227,7 @@ class RootTest(unittest.TestCase):
 
         #http://localhost:8080/unittests/bar/test/database
         for instance in config.UnitTests.instances:
-            url = 'http://localhost:8080/unittests/%s/test' % instance
+            url = 'http://127.0.0.1:8080/unittests/%s/test' % instance
             html = urllib2.urlopen(url).read()
             self.assertEquals(html, instance)
             url = '%s/database' % url

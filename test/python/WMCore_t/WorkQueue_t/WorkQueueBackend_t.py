@@ -26,14 +26,12 @@ class WorkQueueBackendTest(unittest.TestCase):
         self.testInit.setupCouch('wq_backend_test_inbox', 'WorkQueue')
         self.testInit.setupCouch('wq_backend_test', 'WorkQueue')
         self.couch_db = self.testInit.couch.couchServer.connectDatabase('wq_backend_test')
-        self.backend = WorkQueueBackend(db_url = self.testInit.couch.couchServer['host'],
+        self.backend = WorkQueueBackend(db_url = self.testInit.couchUrl,
                                         db_name = 'wq_backend_test',
                                         inbox_name = 'wq_backend_test_inbox')
 
         self.processingSpec = rerecoWorkload('testProcessing', rerecoArgs)
-        #self.processingSpec.setSpecUrl(os.path.join(self.workDir,
-         #                                           'testProcessing.spec'))
-        #self.processingSpec.save(self.processingSpec.specUrl())
+
 
     def tearDown(self):
         """

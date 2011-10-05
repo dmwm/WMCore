@@ -27,7 +27,7 @@ class CrappyServer(object):
 
 class SlowServer(object):
     def slow(self):
-        time.sleep(300)
+        time.sleep(30)
         return "Hello World!"
     slow.exposed = True
 
@@ -230,12 +230,14 @@ class ServiceTest(unittest.TestCase):
         self.assertEquals(cacheddata, data)
 
         # sleep a while so the file expires in the cache
+        # FIXME: RACY
         time.sleep(2)
         self.logger.info('third call to refreshCache - should return stale cache')
         data = service.refreshCache(cache, '/lies').read()
         self.assertEquals(cacheddata, data)
 
         # sleep a while longer so the cache is dead
+        # FIXME: RACY
         time.sleep(5)
         self.logger.info('fourth call to refreshCache - cache should be dead')
         self.assertRaises(HTTPException, service.refreshCache, cache, '/lies')
@@ -281,7 +283,7 @@ class ServiceTest(unittest.TestCase):
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
         logger = logging.getLogger('john')
-        test_dict = {'logger': self.logger,'endpoint':'http://localhost:%i/truncated' % self.port,
+        test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/truncated' % self.port,
                      'usestalecache': True}
         myService = Service(test_dict)
         self.assertRaises(IncompleteRead, myService.getData, 'foo', '')
@@ -298,7 +300,7 @@ class ServiceTest(unittest.TestCase):
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
         logger = logging.getLogger('john')
-        test_dict = {'logger': self.logger,'endpoint':'http://localhost:%i/slow' % self.port,
+        test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/slow' % self.port,
                      'usestalecache': True}
         myService = Service(test_dict)
         startTime = int(time.time())
@@ -316,7 +318,7 @@ class ServiceTest(unittest.TestCase):
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
         logger = logging.getLogger('john')
-        test_dict = {'logger': self.logger,'endpoint':'http://localhost:%i/badstatus' % self.port,
+        test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/badstatus' % self.port,
                      'usestalecache': True}
         myService = Service(test_dict)
         # Have to fudge the status line in the Request object as cherrypy won't
@@ -340,7 +342,7 @@ class ServiceTest(unittest.TestCase):
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
         logger = logging.getLogger('john')
-        test_dict = {'logger': self.logger,'endpoint':'http://localhost:%i/reg1/regular' % self.port,
+        test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/reg1/regular' % self.port,
                      'usestalecache': False, "cacheduration": 0.005}
         myService = Service(test_dict)
         self.assertRaises(HTTPException, myService.getData, 'foo', 'THISISABADURL')

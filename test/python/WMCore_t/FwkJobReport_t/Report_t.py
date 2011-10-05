@@ -520,6 +520,7 @@ cms::Exception caught in EventProcessor and rethrown
         myReport.setGlobalTag(name)
         myReport.setAcquisitionProcessing(acquisitionEra = 'NULL', processingVer = name)
         myReport.setInputDataset(inputPath = '/lame/path')
+        myReport.setCustodialSite(custodialSite = 'testCustody')
         
         for f in myReport.getAllFilesFromStep("cmsRun1"):
             self.assertEqual(f['globalTag'], name)
@@ -527,6 +528,7 @@ cms::Exception caught in EventProcessor and rethrown
             self.assertEqual(f['processingVer'], name)
             self.assertEqual(f['acquisitionEra'], 'NULL')
             self.assertEqual(f['inputPath'], '/lame/path')
+            self.assertEqual(f['custodialSite'], 'testCustody')
             
         return
     

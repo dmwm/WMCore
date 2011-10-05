@@ -41,6 +41,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.setdefault("validStatus", None)
         self.setdefault("globalTag", None)
         self.setdefault("datasetParent", None)
+        self.setdefault("custodialSite", None)
         
         if locations == None:
             self.setdefault("newlocations", set())
@@ -162,12 +163,13 @@ class DBSBufferFile(WMBSBase, WMFile):
                               conn = self.getDBConn(),
                               transaction = True)
 
-        newDatasetAction.execute(datasetPath = self["datasetPath"],
-                                 processingVer = self['processingVer'],
+        newDatasetAction.execute(datasetPath    = self["datasetPath"],
+                                 processingVer  = self['processingVer'],
                                  acquisitionEra = self['acquisitionEra'],
-                                 validStatus = self['validStatus'],
-                                 globalTag   = self.get('globalTag', None),
-                                 parent      = self['datasetParent'],
+                                 validStatus    = self['validStatus'],
+                                 globalTag      = self.get('globalTag', None),
+                                 parent         = self['datasetParent'],
+                                 custodialSite  = self['custodialSite'],
                                  conn = self.getDBConn(),
                                  transaction = True)
 
@@ -460,6 +462,21 @@ class DBSBufferFile(WMBSBase, WMFile):
         """
 
         return self['datasetParent']
+
+    def setCustodialSite(self, custodialSite):
+        """
+        _setCustodialSite_
+
+        """
+        self['custodialSite'] = custodialSite
+        return
+
+    def getCustodialSite(self):
+        """
+        _getCustodialSite_
+
+        """
+        return self['custodialSite']
     
     def getParentLFNs(self):
         """

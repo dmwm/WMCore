@@ -133,10 +133,12 @@ class WMWorkloadTest(unittest.TestCase):
         workload.setValidStatus(validStatus = name)
         workload.setProcessingVersion(processingVersion = name)
         workload.setAcquisitionEra(acquisitionEra = name)
+        workload.setCustodialSite(siteName = name)
 
         self.assertEqual(workload.getValidStatus(), name)
         self.assertEqual(workload.getProcessingVersion(), name)
         self.assertEqual(workload.getAcquisitionEra(), name)
+        self.assertEqual(workload.getCustodialSite(), name)
 
         return
 

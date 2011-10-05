@@ -89,6 +89,36 @@ class PileupFetcherTest(unittest.TestCase):
                                                  "dataTier": "GEN-SIM-RAW"}}}}
         result = self.configDatabase.commitOne(config)
         return result[0]["id"]
+
+    def injectStepOneConfig(self):
+        """
+        _injectStepOneConfig_
+        
+        Will output RAW data.
+        """
+        config = self._getConfigBase()
+        config["pset_tweak_details"] = \
+            {"process": {"outputModules_": ["OutputB"],
+                         "OutputB": {"dataset": {"filterName": "OutputBFilter",
+                                                 "dataTier": "GEN-SIM-RAW"}}}}
+        result = self.configDatabase.commitOne(config)
+        return result[0]["id"]
+    
+    def injectStepTwoConfig(self):
+        """
+        _injectStepTwoConfig_
+
+        Will output RECO and AOD.
+        """
+        config = self._getConfigBase()
+        config["pset_tweak_details"] = \
+            {"process": {"outputModules_": ["OutputC", "OutputD"],
+                         "OutputC": {"dataset": {"filterName": "OutputCFilter",
+                                                 "dataTier": "GEN-SIM-RECO"}},
+                         "OutputD": {"dataset": {"filterName": "OutputDFilter",
+                                                 "dataTier": "AODSIM"}}}}
+        result = self.configDatabase.commitOne(config)
+        return result[0]["id"]
     
     
     def injectReconstructionConfig(self):
@@ -218,10 +248,13 @@ class PileupFetcherTest(unittest.TestCase):
         # in this test, try not to define generation task datatier (first output module
         # should be automatically picked up)
         #defaultArguments["GenDataTier"] = "GEN-SIM-RAW"
+        defaultArguments["GenOutputModuleName"] = "OutputA"
+        defaultArguments["StepOneOutputModuleName"] = "OutputB"
         defaultArguments["GenConfigCacheID"] = self.injectGenerationConfig()
         defaultArguments["RecoConfigCacheID"] = self.injectReconstructionConfig()
         defaultArguments["AlcaRecoConfigCacheID"] = self.injectAlcaRecoConfig()
-        
+        defaultArguments["StepOneConfigCacheID"] = self.injectStepOneConfig()
+        defaultArguments["StepTwoConfigCacheID"] = self.injectStepTwoConfig() 
         # add pile up information - for the generation task
         defaultArguments["PileupConfig"] = {"cosmics": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"],
                                             "minbias": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"]}

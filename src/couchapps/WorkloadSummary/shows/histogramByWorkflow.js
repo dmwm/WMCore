@@ -53,14 +53,23 @@ function(doc, req) {
         requestInfo.output = JSON.stringify(doc.output);
         dataExist = true;
     };
-    
-    if (dataExist) {
-        //return JSON.stringify(data);
-        requestInfo.data = JSON.stringify(data);
-        var html = Mustache.to_html(mainDoc.templates.histogramByWorkflow, 
-                                   requestInfo)
-        return {body: html};
-    } else {
-        return {body: "No histogram data for " + doc._id}
-    }
+
+    provides("html", function() {
+        if (dataExist) {
+            //return JSON.stringify(data);
+            requestInfo.data = JSON.stringify(data);
+            var html = Mustache.to_html(mainDoc.templates.histogramByWorkflow, 
+                                       requestInfo)
+            return {body: html,
+                    headers: { "Content-Type": "text/html"}};
+        } else {
+            return {body: "No histogram data for " + doc._id,
+                    headers: { "Content-Type": "text/html"}};
+        }
+    });
+
+    provides("json", function() {
+        return {body : JSON.stringify(data),
+            headers: {"Content-Type": "application/json"}};
+    });
 }

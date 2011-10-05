@@ -313,12 +313,18 @@ if __name__ == "__main__":
 
     if hasattr(wmagentConfig, "AsyncTransfer"):
         basePath = "%s/couchapp" % os.environ['ASYNC_ROOT']
+        baseWMCorePath = "%s/lib/couchapps" % os.environ['ASYNC_ROOT']
+        # The format of wmagentConfig.CoreDatabase.connectUrl is http://$COUCH_USER:$COUCH_PASS@$COUCH_HOST_NAME:$COUCH_PORT/asynctransfer_agent
+        agent_database = wmagentConfig.CoreDatabase.connectUrl.split('/')[len(wmagentConfig.CoreDatabase.connectUrl.split('/')) - 1 ]
+        agent_instance = wmagentConfig.CoreDatabase.connectUrl.split(agent_database)[0]
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "AsyncTransfer", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "monitor", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_statinstance, wmagentConfig.AsyncTransfer.statitics_database, "stat", basePath)
+        installCouchApp(agent_instance, agent_database, "Agent", baseWMCorePath)
         if options.cron:
             setupCronCompaction(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database)
             setupCronCompaction(wmagentConfig.AsyncTransfer.couch_statinstance, wmagentConfig.AsyncTransfer.statitics_database)
+            setupCronCompaction(agent_instance, agent_database)
 
     if hasattr(wmagentConfig, "reqmgr"):
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")

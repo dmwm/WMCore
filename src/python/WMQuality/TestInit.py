@@ -139,6 +139,8 @@ class TestInit:
             return 'SQLite'
         elif dialectPart == 'oracle':
             return 'Oracle'
+        elif dialectPart == 'http':
+            return 'CouchDB'
         else:
             raise RuntimeError, "Unrecognized dialect %s" % dialectPart
         

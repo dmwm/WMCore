@@ -104,7 +104,7 @@ class LoadForErrorHandler(DBFormatter):
         fileBinds = []
         for x in fileList:
             # Assemble unique list of binds
-            if not x['id'] in fileBinds:
+            if not {'fileid': x['id']} in fileBinds:
                 fileBinds.append({'fileid': x['id']})
 
         parentList = []
@@ -113,30 +113,30 @@ class LoadForErrorHandler(DBFormatter):
                                                 transaction = transaction)
             parentList   = self.formatDict(parentResult)
 
-        lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn = conn,
-                                          transaction = transaction)
-        lumiList = self.formatDict(lumiResult)
-        lumiDict = {}
-        for l in lumiList:
-            if not l['fileid'] in lumiDict.keys():
-                lumiDict[l['fileid']] = []
-            lumiDict[l['fileid']].append(l)
+            lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn = conn,
+                                              transaction = transaction)
+            lumiList = self.formatDict(lumiResult)
+            lumiDict = {}
+            for l in lumiList:
+                if not l['fileid'] in lumiDict.keys():
+                    lumiDict[l['fileid']] = []
+                lumiDict[l['fileid']].append(l)
             
-        for f in fileList:
-            f['newRuns'] = []
-            fileRuns = {}
-            if f['id'] in lumiDict.keys():
-                for l in lumiDict[f['id']]:
-                    run  = l['run']
-                    lumi = l['lumi']
-                    if not fileRuns.has_key(run):
-                        fileRuns[run] = []
-                    if not lumi in fileRuns[run]:
-                        fileRuns[run].append(lumi)
-            for r in fileRuns.keys():
-                newRun = Run(runNumber = r)
-                newRun.lumis = fileRuns[r]
-                f['newRuns'].append(newRun)
+            for f in fileList:
+                f['newRuns'] = []
+                fileRuns = {}
+                if f['id'] in lumiDict.keys():
+                    for l in lumiDict[f['id']]:
+                        run  = l['run']
+                        lumi = l['lumi']
+                        if not fileRuns.has_key(run):
+                            fileRuns[run] = []
+                        if not lumi in fileRuns[run]:
+                            fileRuns[run].append(lumi)
+                for r in fileRuns.keys():
+                    newRun = Run(runNumber = r)
+                    newRun.lumis = fileRuns[r]
+                    f['newRuns'].append(newRun)
 
         filesForJobs = {}
         for f in fileList:

@@ -326,3 +326,8 @@ class PhEDEx(Service):
 
 
         return result_dict
+    
+    def _testNonExistentInEmulator(self):
+        # This is a dummy function to use in unittests to make sure the right class is
+        # instantiated
+        pass

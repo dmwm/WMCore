@@ -31,6 +31,9 @@ class PhEDEx(dict):
         """
 
         return None
+    
+    def getNodeSE(self, value):
+        return 'dummy.se.from.emulator'
 
     def subscribe(self, subscription, xmlData):
         """

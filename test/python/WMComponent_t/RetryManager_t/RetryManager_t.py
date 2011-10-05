@@ -19,6 +19,7 @@ import unittest
 from WMComponent.RetryManager.RetryManagerPoller import RetryManagerPoller
 
 import WMCore.WMInit
+
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 #from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory

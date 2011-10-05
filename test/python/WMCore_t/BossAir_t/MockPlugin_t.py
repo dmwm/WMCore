@@ -1,5 +1,5 @@
 import unittest
-from MockPlugin import MockPlugin
+from WMCore.BossAir.Plugins.MockPlugin import MockPlugin
 from WMCore.BossAir.Plugins.BasePlugin import BossAirPluginException
 from WMCore.Configuration import Configuration
 from datetime import datetime

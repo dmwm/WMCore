@@ -320,4 +320,9 @@ if __name__ == "__main__":
             setupCronCompaction(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database)
             setupCronCompaction(wmagentConfig.AsyncTransfer.couch_statinstance, wmagentConfig.AsyncTransfer.statitics_database)
 
+    if hasattr(wmagentConfig, "reqmgr"):
+        installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
+        if options.cron:
+            setupCronCompaction(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName)
+
     sys.exit(0)

@@ -118,11 +118,6 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, namestr, 'insert into Table')
         self.assertRaises(AssertionError, namestr, 'drop database')
 
-    def testBadSearchstr(self):
-        # Check that invalid searchstr raise an exception
-        self.assertRaises(AssertionError, searchstr, 'Drop Table')
-        self.assertRaises(AssertionError, searchstr, 'Alter Table')
-
     def testGoodSiteTier(self):
         # Check that valid tiers work
         assert sitetier('T0'), 'valid tier not validated'
@@ -516,6 +511,17 @@ class LexiconTest(unittest.TestCase):
         dbUrl2 = "http://localhost:80808/WMAgentDB"
         sanitizedError = "DB failure: %s" % (dbUrl2)
         self.assertEqual(replaceToSantizeURL(errorMsg), sanitizedError)
+
+
+    def testSplitCouchServiceURL(self):
+
+        urlSplit = splitCouchServiceURL("https://cmsweb-dev.cern.ch:8888/workqueue")
+        self.assertEqual("https://cmsweb-dev.cern.ch:8888", urlSplit[0])
+        self.assertEqual("workqueue", urlSplit[1])
+
+        urlSplit = splitCouchServiceURL("https://cmsweb-dev.cern.ch/couchdb/workqueue")
+        self.assertEqual("https://cmsweb-dev.cern.ch/couchdb", urlSplit[0])
+        self.assertEqual("workqueue", urlSplit[1])
 
 if __name__ == "__main__":
     unittest.main()

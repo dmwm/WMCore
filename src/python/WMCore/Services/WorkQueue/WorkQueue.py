@@ -1,20 +1,6 @@
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
 from WMCore.Wrappers import JsonWrapper as json
-
-def splitCouchServiceURL(serviceURL):
-    """
-    split service URL to couchURL and couchdb name
-    serviceURL should be couchURL/dbname format.
-    """
-
-    splitedURL = serviceURL.rstrip('/').rsplit('/', 1)
-    #TODO: this is a hack needs to be removed.
-    if (serviceURL.find("https://cmsweb.cern.ch/workqueue") != -1 or
-        serviceURL.find("https://cmsweb-testbed.cern.ch/workqueue") != -1 or
-        serviceURL.find("https://cmsweb-dev.cern.ch/workqueue") != -1):
-        return "%s/couchdb" % splitedURL[0], splitedURL[1]
-    else:
-        return splitedURL[0], splitedURL[1]
+from WMCore.Lexicon import splitCouchServiceURL
 
 # TODO: this could be derived from the Service class to use client side caching
 class WorkQueue(object):

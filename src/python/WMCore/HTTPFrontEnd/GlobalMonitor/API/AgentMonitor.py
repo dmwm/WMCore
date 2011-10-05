@@ -6,7 +6,7 @@ from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.WMAgent.WMAgent import WMAgent
-from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import splitCouchServiceURL
+from WMCore.Lexicon import splitCouchServiceURL
 
 def getAgentOverview(serviceURL, serviceLevel):
 

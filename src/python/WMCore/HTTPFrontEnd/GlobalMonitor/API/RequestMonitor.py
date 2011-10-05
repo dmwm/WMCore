@@ -6,7 +6,7 @@ from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
 
 import WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter as DFormatter
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import combineListOfDict
-from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import splitCouchServiceURL
+from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.WMBS.WMBS import WMBS

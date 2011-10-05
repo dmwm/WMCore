@@ -6,7 +6,7 @@ from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.WMBS.WMBS import WMBS
-from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import splitCouchServiceURL
+from WMCore.Lexicon import splitCouchServiceURL
 
 def getSiteOverview(serviceURL, serviceLevel):
 

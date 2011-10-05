@@ -15,6 +15,7 @@ A RequestMaker Implementation should do the following.
 
 """
 import WMCore.Lexicon
+import time
 
 class RequestSchema(dict):
     """
@@ -37,6 +38,7 @@ class RequestSchema(dict):
         self.setdefault("Group", None)
         self.setdefault("Requestor", None)
         self.setdefault("ScramArch", "slc5_amd64_gcc434")
+        self.setdefault("RequestDate", list(time.gmtime()[:6]))
         self.basicFields = self.keys()
 
     def validateSchema(self):

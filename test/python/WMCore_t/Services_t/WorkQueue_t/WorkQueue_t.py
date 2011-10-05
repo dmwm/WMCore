@@ -54,6 +54,7 @@ class WorkQueueTest(unittest.TestCase):
         """
         self.testInit.tearDownCouch()
         #EmulatorSetup.deleteConfig(self.configFile)
+        EmulatorHelper.resetEmulators()
         self.specGenerator.removeSpecs()
         
 

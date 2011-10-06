@@ -9,13 +9,13 @@ import os
 import commands
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-
+from WMCore.Storage.Backends.LCGImpl import LCGImpl
 
 _CheckExitCodeOption = True
 checkPathsCount=4
 checkPaths = ['/lustre/unmerged/', '/lustre/temp/', '/store/unmerged/', '/store/temp/']
 checkPathsReplace = ['/lustre/unmerged/', '/lustre/temp/', '/lustre/unmerged/', '/lustre/temp/']
-vetoPaths = ['/store/temp/user/']
+srmPaths = ['/store/temp/user/', '/store/user/']
 
 
 def pnfsPfn2(pfn):
@@ -33,7 +33,7 @@ def pnfsPfn2(pfn):
     filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
 
     # Find vetoed paths first
-    for path in vetoPaths:
+    for path in srmPaths:
         if pfn.find(path) != -1:
             return filePath
 
@@ -54,6 +54,31 @@ class FNALImpl(StageOutImpl):
 
     """
 
+    def __init__(self, stagein=False):
+
+        StageOutImpl.__init__(self, stagein)
+
+        # Create and hold onto a srm implementation in case we need it
+        self.srmImpl = LCGImpl(stagein)
+
+
+    def storageMethod(self, PFN):
+        """
+        Figure out which paths use DCAP, lustre, or SRM for access
+        """
+
+        method = 'dccp'
+        for path in checkPaths:
+            if PFN.find(path) != -1:
+                method = 'lustre'
+
+        # Over ride a few paths for srm
+        for path in srmPaths:
+            if PFN.find(path) != -1:
+                method = 'srm'
+        print "Using method:", method
+        return method
+
 
     def createOutputDirectory(self, targetPFN):
         """
@@ -72,22 +97,14 @@ class FNALImpl(StageOutImpl):
         /lustre/unmerged
 
         we don't need to convert it, just mkdir.
-        
+
 
         """
+        method =  self.storageMethod(targetPFN)
 
-        # handle dcache or lustre location
-        dcapLocation = 0
-        for i in range(checkPathsCount):
-            if targetPFN.find(checkPaths[i]) != -1:
-                dcapLocation = 1
-
-        # Even if matched above, some paths are not lustre
-        for path in vetoPaths:
-            if targetPFN.find(path) != -1:
-                dcapLocation = 0
-
-        if dcapLocation == 0:
+        if method == 'srm':
+            self.srmImpl.createOutputDirectory(targetPFN)
+        elif method == 'dccp':
             # only create dir on remote storage
             if targetPFN.find('/pnfs/') == -1:
                 return
@@ -101,14 +118,14 @@ class FNALImpl(StageOutImpl):
             command += "  mkdir -p %s\n" % directory
             command += "fi\n"
             self.executeCommand(command)
-        else: 
+        else:
             for i in range(checkPathsCount):
                 if targetPFN.find(checkPaths[i]) != -1:
                     pfnSplit = targetPFN.split(checkPaths[i], 1)[1]
                     filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
                     targetdir= os.path.dirname(filePath)
                     # checkdircmd="/bin/ls %s > /dev/null " % targetdir
-                    # print "Check dir existence : %s" %checkdircmd 
+                    # print "Check dir existence : %s" %checkdircmd
                     # checkdirexitCode = 0
                     # try:
                     #     checkdirexitCode = self.executeCommand(checkdircmd)
@@ -151,17 +168,11 @@ class FNALImpl(StageOutImpl):
         if not pfn.startswith("srm"):
             return pfn
 
-        dcapLocation = 0
-        for i in range(checkPathsCount):
-          if pfn.find(checkPaths[i]) != -1:
-            dcapLocation = 1
+        method =  self.storageMethod(pfn)
 
-        # Even if matched above, some paths are not lustre
-        for path in vetoPaths:
-            if pfn.find(path) != -1:
-                dcapLocation = 0
-
-        if dcapLocation == 0:
+        if method == 'srm':
+            return self.srmImpl.createSourceName(protocol, pfn)
+        elif method == 'dccp':
             print "Translating PFN: %s\n To use dcache door" % pfn
             dcacheDoor = commands.getoutput(
                 "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh")
@@ -169,7 +180,7 @@ class FNALImpl(StageOutImpl):
             pfn = "%s%s" % (dcacheDoor, pfn)
             print "Created Target PFN with dCache Door: ", pfn
         else:
-            print "Translating PFN: %s\n To use lustre" % pfn 
+            print "Translating PFN: %s\n To use lustre" % pfn
     	    for i in range(checkPathsCount):
               if pfn.find(checkPaths[i]) != -1:
                 pfnSplit = pfn.split(checkPaths[i], 1)[1]
@@ -186,21 +197,16 @@ class FNALImpl(StageOutImpl):
 
         """
 
+        method =  self.storageMethod(targetPFN)
+        sourceMethod = self.storageMethod(sourcePFN)
+
+        if method == 'srm' or sourceMethod == 'srm':
+            return self.srmImpl.createStageOutCommand(sourcePFN, targetPFN, options)
+
         if getattr(self, 'stageIn', False):
             return self.buildStageInCommand(sourcePFN, targetPFN, options)
 
-        
-        dcapLocation = 0
-        for i in range(checkPathsCount):
-          if targetPFN.find(checkPaths[i]) != -1:
-            dcapLocation = 1
-
-        # Even if matched above, some paths are not lustre
-        for path in vetoPaths:
-            if targetPFN.find(path) != -1:
-                dcapLocation = 0
-
-        if dcapLocation == 0:
+        if method == 'dccp':
             optionsStr = ""
             if options != None:
                 optionsStr = str(options)
@@ -267,7 +273,7 @@ fi
             dcapLocation = 1
 
         # Even if matched above, some paths are not lustre
-        for path in vetoPaths:
+        for path in srmPaths:
             if sourcePFN.find(path) != -1:
                 dcapLocation = 0
 
@@ -347,22 +353,16 @@ fi
 
         """
 
-        dcapLocation = 0
-        for i in range(checkPathsCount):
-          if pfnToRemove.find(checkPaths[i]) != -1:
-            dcapLocation = 1
+        method =  self.storageMethod(pfnToRemove)
 
-        # Even if matched above, some paths are not lustre
-        for path in vetoPaths:
-            if pfnToRemove.find(path) != -1:
-                dcapLocation = 0
-
-        if dcapLocation == 0:
+        if method == 'srm':
+            return self.srmImpl.removeFile(pfnToRemove)
+        elif method == 'dccp':
             pfnSplit = pfnToRemove.split("/11/store/", 1)[1]
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
             command = "rm -fv %s" %filePath
             self.executeCommand(command)
-        else: 
+        else:
             for i in range(checkPathsCount):
               if pfnToRemove.find(checkPaths[i]) != -1:
                 pfnSplit = pfnToRemove.split(checkPaths[i], 1)[1]

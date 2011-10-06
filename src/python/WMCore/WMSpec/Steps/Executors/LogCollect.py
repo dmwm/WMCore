@@ -66,7 +66,7 @@ class LogCollect(Executor):
         userLogs  = overrides.get('userLogs',  False)
         dontStage = overrides.get('dontStage', False)
 
-        stageOutParams = {"command": "srmv2", "option": "-streams_num=1",
+        stageOutParams = {"command": "srmv2-lcg",
                           "se-name": seName,  "lfn-prefix": lfnPrefix}
 
         try:

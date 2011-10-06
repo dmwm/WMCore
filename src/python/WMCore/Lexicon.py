@@ -83,7 +83,7 @@ def cmsname(candidate):
     """
     #remove any trailing _'s
     candidate = candidate.rstrip('_')
-    return check("^T[0-3%]((_[A-Z]{2}(_[A-Za-z]+)*)?)$", candidate)
+    return check("^T[0-3%]((_[A-Z]{2}(_[A-Za-z0-9]+)*)?)$", candidate)
 
 def countrycode(candidate):
     #TODO: do properly with a look up table

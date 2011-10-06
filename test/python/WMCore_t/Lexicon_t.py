@@ -153,6 +153,7 @@ class LexiconTest(unittest.TestCase):
         # Check that full names work
         assert cmsname('T0_CH_CERN'), 'valid CMS name not validated'
         assert cmsname('T2_UK_SGrid_Bristol'), 'valid CMS name not validated'
+        assert cmsname('T2_FR_CCIN2P3'), 'valid CMS name not validated'
 
     def testPartialCMSName(self):
         # Check that partial names work

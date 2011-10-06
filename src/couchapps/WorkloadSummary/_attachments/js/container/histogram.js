@@ -45,6 +45,14 @@ convertToPVHistoData = function(data) {
                 //upperBound = 110;
                 break;
             case "standard":
+                // minus value shouldn't happen but if there is 
+                // the case mapped to 0 to draw the histogram correctly.
+                if (data[i].lowerEdge < 0){
+                    data[i].lowerEdge = 0;
+                };
+                if (data[i].upperEdge < 0){
+                    data[i].upperEdge = 0;
+                };
                 bin.x = data[i].lowerEdge;
                 bin.dx = data[i].upperEdge - data[i].lowerEdge;
                 upperBound = data[i].upperEdge;

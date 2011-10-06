@@ -260,17 +260,6 @@ class TestInit:
         self.currModules = modules.keys()
         return
 
-    def initializeSchema(self, modules = []):
-        """
-        Sometimes you need to initialize the schema before
-        starting the program. This methods lets you pass
-        modules that have an execute method which contains
-        arbitrary sql statements.
-        """
-        if not self.hasDatabase:
-            return 
-        self.init.initializeSchema(modules)
-        
     def getDBInterface(self):
         "shouldbe called after connection is made"
         if not self.hasDatabase:

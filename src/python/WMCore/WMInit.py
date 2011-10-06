@@ -166,35 +166,6 @@ class WMInit:
                 " could not be created, already exists?")
         myThread.transaction.commit()
 
-    def initializeSchema(self, nameSpace, modules = []):
-        """
-        Sometimes you need to initialize the schema before 
-        starting the program. This methods lets you pass
-        modules that have an execute method which contains
-        arbitrary sql statements.
-        """
-        myThread = threading.currentThread()
-
-        # filter out unique modules
-
-        myThread.transaction.begin()
-
-        factory = WMFactory(nameSpace, nameSpace + "." + myThread.dialect)
-
-        for factoryName in modules:
-            # need to create these tables for testing.
-            # notice the default structure: <dialect>/Create
-            create = factory.loadObject(factoryName)
-            create.logger = logging
-            create.dbi = myThread.dbi
-            createworked = create.execute(conn = myThread.transaction.conn)
-            if createworked:
-                logging.debug("SQL for "+ factoryName + " executed")
-            else:
-                logging.debug("SQL " + factoryName + \
-                " could not be executed, already exists?")
-        myThread.transaction.commit()
-
     def clearDatabase(self, modules = []):
         """
         Enables clearing particular tables in the database

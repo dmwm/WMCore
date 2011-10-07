@@ -95,7 +95,7 @@ class WorkQueue(WorkQueueBase):
 
         self.params.setdefault("GlobalDBS",
                                "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.params.setdefault('QueueDepth', 2) # when less than this locally
+        self.params.setdefault('QueueDepth', 0.5) # when less than this locally
         self.params.setdefault('LocationRefreshInterval', 600)
         self.params.setdefault('FullLocationRefreshInterval', 7200)
         self.params.setdefault('TrackLocationOrSubscription', 'subscription')

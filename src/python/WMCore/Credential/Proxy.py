@@ -101,6 +101,7 @@ class Proxy(Credential):
 
         ## adding ui script to source
         self.uisource = args.get("uisource", '')
+        self.cleanEnvironment = args.get("cleanEnvironment", False)
 
         ## adding credential path
         self.credServerPath = args.get("credServerPath", '/tmp')
@@ -109,10 +110,13 @@ class Proxy(Credential):
         """
         Return the source command to be pre added to each command to be executed.
         """
+        ui = ''
+        if self.cleanEnvironment:
+            ui += 'unset LD_LIBRARY_PATH; '
         if self.uisource is not None and len(self.uisource) > 0:
-            return 'source ' + self.uisource + ' && '
+            ui += 'source ' + self.uisource + ' && '
 
-        return ''
+        return ui
 
     def getProxyDetails(self):
         """
@@ -170,7 +174,7 @@ class Proxy(Credential):
         subjFromCertCmd = 'openssl x509 -in '+certFile+' -subject -noout'
         subjectResult = execute_command(self.setUI() + subjFromCertCmd, self.logger, self.commandTimeout)
 
-        if subject:
+        if subjectResult:
             subject = subjectResult[0].split('subject=')[1].strip()
 
         return subject

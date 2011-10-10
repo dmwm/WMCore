@@ -319,9 +319,9 @@ class JobAccountantTest(unittest.TestCase):
                                        transaction = True)
 
         fwjrBasePath = os.path.join(WMCore.WMBase.getTestBase(),
-                                    "/WMComponent_t/JobAccountant_t/fwjrs/")
+                                    "WMComponent_t/JobAccountant_t/fwjrs/")
         self.setFWJRAction.execute(jobID = self.testJobA["id"],
-                                   fwjrPath = fwjrBasePath + "SplitSuccessA.pkl",
+                                   fwjrPath = os.path.join(fwjrBasePath, "SplitSuccessA.pkl"),
                                    conn = myThread.transaction.conn,
                                    transaction = True)
         self.setFWJRAction.execute(jobID = self.testJobB["id"],
@@ -1506,7 +1506,7 @@ class JobAccountantTest(unittest.TestCase):
 #         print("  Running accountant...")
 
 #         startTime = time.time()
-#         #accountant.algorithm()
+#         accountant.algorithm()
 #         #cProfile.runctx("accountant.algorithm()", globals(), locals(), filename = "testStats.stat")
         
 #         endTime = time.time()

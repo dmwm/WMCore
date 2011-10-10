@@ -327,27 +327,21 @@ class DBSBufferFile(WMBSBase, WMFile):
         existingTransaction = self.beginTransaction()
 
         insertAction = self.daoFactory(classname = "DBSBufferFiles.AddLocation")
-        nameMap = insertAction.execute(siteName = self["newlocations"],
-                                       conn = self.getDBConn(),
-                                       transaction = self.existingTransaction())
+        insertAction.execute(siteName = self["newlocations"],
+                             conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
 
         binds = []
         for location in self["newlocations"]:
-            if not nameMap or not nameMap.has_key(location):
-                nameMap = insertAction.execute(siteName = self["newlocations"],
-                                               conn = self.getDBConn(),
-                                               transaction = self.existingTransaction())
-            binds.append({"fileid": self["id"],
-                          "locationid": nameMap[location]})
+            binds.append({"lfn": self["lfn"],
+                          "sename": location})
 
-        addAction = self.daoFactory(classname = "DBSBufferFiles.SetLocation")
+        addAction = self.daoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
         addAction.execute(binds = binds,
                           conn = self.getDBConn(),
                           transaction = self.existingTransaction())
 
-        for siteName in nameMap.keys():
-            self["locations"].add(siteName)
-            
+        self["locations"].update(self["newlocations"])
         self["newlocations"].clear()
         self.commitTransaction(existingTransaction)
         return

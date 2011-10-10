@@ -46,6 +46,7 @@ import traceback
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.ProcessPool.ProcessPool        import ProcessPool
 from WMCore.Cache.WMConfigCache            import ConfigCache
+from WMCore.Algorithms.MiscAlgos           import sortListByKey
 
 from WMCore.WMFactory     import WMFactory
 from WMCore.DAOFactory    import DAOFactory
@@ -142,25 +143,6 @@ def sortByDAS(incoming):
 
     return output
 
-
-def sortListByKey(input, key):
-    """
-    Return list of dictionaries as a
-    dictionary of lists of dictionaries
-    keyed by one original key
-
-    """
-    final = {}
-
-    for entry in input:
-        value = entry.get(key)
-        if type(value) == set:
-            value = value.pop()
-        if not value in final.keys():
-            final[value] = []
-        final[value].append(entry)
-
-    return final
 
 def createBlock(datasetPath, location):
     """

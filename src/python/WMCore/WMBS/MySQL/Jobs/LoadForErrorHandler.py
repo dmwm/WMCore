@@ -45,7 +45,7 @@ class LoadForErrorHandler(DBFormatter):
                  WHERE wja.job = :jobid"""
 
 
-    parentSQL = """SELECT DISTINCT parent.lfn AS lfn, wfp.child AS id
+    parentSQL = """SELECT parent.lfn AS lfn, wfp.child AS id
                      FROM wmbs_file_parent wfp
                      INNER JOIN wmbs_file_details parent ON parent.id = wfp.parent
                      WHERE wfp.child = :fileid """

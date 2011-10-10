@@ -9,9 +9,11 @@ For glide-in use.
 import os
 import re
 import time
+import Queue
 import os.path
 import logging
 import threading
+import traceback
 import subprocess
 import multiprocessing
 
@@ -59,6 +61,7 @@ def submitWorker(input, results):
 
         if work == 'STOP':
             # Put the brakes on
+            logging.error("Issued STOP command!")
             break
 
         command = work.get('command', None)
@@ -66,10 +69,18 @@ def submitWorker(input, results):
         if not command:
             results.put({'stdout': '', 'stderr': '999100\n Got no command!', 'idList': idList})
             continue
-        pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
-                                stderr = subprocess.PIPE, shell = True)
-        stdout, stderr = pipe.communicate()
-        results.put({'stdout': stdout, 'stderr': stderr, 'idList': idList})
+
+        try:
+            pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
+                                    stderr = subprocess.PIPE, shell = True)
+            stdout, stderr = pipe.communicate()
+            results.put({'stdout': stdout, 'stderr': stderr, 'idList': idList})
+        except Exception, ex:
+            msg =  "Critical error in subprocess while submitting to condor"
+            msg += str(ex)
+            msg += str(traceback.format_exc())
+            logging.error(msg)
+            results.put({'stdout': '', 'stderr': '999101\n %s' % msg, 'idList': idList})
 
     return 0
 
@@ -80,16 +91,18 @@ def parseError(error):
 
     """
 
-    errorCondition = False
-    errorMsg       = ''
+    errorCondition = True
+    errorMsg       = error
 
     if 'ERROR: proxy has expired\n' in error:
         errorCondition = True
-        errorMsg += 'CRITICAL ERROR: Your proxy has expired!\n'
-
-    if '999100\n' in error:
+        errorMsg = 'CRITICAL ERROR: Your proxy has expired!\n'
+    elif '999100\n' in error:
         errorCondition = True
-        errorMsg += "CRITICAL ERROR: Failed to build submit command!\n"
+        errorMsg = "CRITICAL ERROR: Failed to build submit command!\n"
+    elif 'Failed to open command file' in error:
+        errorCondition = True
+        errorMsg = "CONDOR ERROR: jdl file not found by submitted jobs!\n"
 
 
     return errorCondition, errorMsg
@@ -316,7 +329,16 @@ class CondorPlugin(BasePlugin):
         # Now we should have sent all jobs to be submitted
         # Going to do the rest of it now
         for n in range(nSubmits):
-            res = self.result.get(block = True, timeout = timeout)
+            try:
+                res = self.result.get(block = True, timeout = timeout)
+            except Queue.Empty:
+                # If the queue was empty go to the next submit
+                # Those jobs have vanished
+                logging.error("Queue.Empty error received!")
+                logging.error("This could indicate a critical condor error!")
+                logging.error("However, no information of any use was obtained!")
+                continue
+            
             output = res['stdout']
             error  = res['stderr']
             idList = res['idList']
@@ -324,8 +346,9 @@ class CondorPlugin(BasePlugin):
             if not error == '':
                 logging.error("Printing out command stderr")
                 logging.error(error)
-
-            errorCheck, errorMsg = parseError(error = error)
+                errorCheck, errorMsg = parseError(error = error)
+            else:
+                errorCheck = None
 
             if errorCheck:
                 condorErrorReport = Report()
@@ -467,16 +490,27 @@ class CondorPlugin(BasePlugin):
                 # File error, do nothing
                 logging.error("Went to check on error report for job %i.  Found a directory instead.\n" % job['id'])
                 logging.error("Ignoring this, but this is very strange.\n")
-
+            
             # If we're still here, we must not have a real error report
-            logOutput = 'Could not find jobReport'
+            logOutput = 'Could not find jobReport\n'
             logPath = os.path.join(job['cache_dir'], 'condor.log')
             if os.path.isfile(logPath):
                 logTail = BasicAlgos.tail(errLog, 50)
                 logOutput += 'Adding end of condor.log to error message:\n'
                 logOutput += logTail
+            if not os.path.isdir(job['cache_dir']):
+                msg =  "Serious Error in Completing condor job with id %s!\n" % job.get('id', 'unknown')
+                msg += "Could not find jobCache directory - directory deleted under job: %s\n" % job['cache_dir']
+                msg += "Creating artificial cache_dir for failed job report\n"
+                logging.error(msg)
+                os.makedirs(job['cache_dir'])
+                logOutput += msg
+                condorReport = Report()
+                condorReport.addError("NoJobReport", 99304, "NoCacheDir", logOutput)
+                condorReport.save(filename = reportName)
+                continue
             condorReport = Report()
-            condorReport.addError("NoJobReport", 61303, "NoJobReport", logOutput)
+            condorReport.addError("NoJobReport", 99303, "NoJobReport", logOutput)
             condorReport.save(filename = reportName)
             logging.debug("No returning job report for job %i" % job['id'])
 

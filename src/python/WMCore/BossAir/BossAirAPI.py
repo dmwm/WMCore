@@ -449,8 +449,8 @@ class BossAirAPI(WMConnectionBase):
                                                                info = info)
                 for job in localSuccess:
                     successJobs.append(job.buildWMBSJob())
-                    for job in localFailure:
-                        failureJobs.append(job.buildWMBSJob())
+                for job in localFailure:
+                    failureJobs.append(job.buildWMBSJob())
             except WMException:
                 raise
             except Exception, ex:

@@ -12,17 +12,28 @@ that only use part of the libraries
 
 import logging
 import threading
+import traceback
 
+from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.WMBase import getWMBASE
+from WMCore.WMException import WMException
 
 import os.path
 import sys
 
 
+class WMInitException(WMException): 
+    """ 
+    WMInitException 
+
+    You should never, ever see one of these. 
+    I'm not optimistic that this will be the case. 
+    """
+        
 def connectToDB():
     """
     _connectToDB_
@@ -36,7 +47,7 @@ def connectToDB():
     if not os.path.exists(os.environ["WMAGENT_CONFIG"]):
         print "Can't find config: %s" % os.environ["WMAGENT_CONFIG"]
         sys.exit(1)
-        
+
     wmAgentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
     
     if not hasattr(wmAgentConfig, "CoreDatabase"):
@@ -55,8 +66,7 @@ def connectToDB():
 class WMInit:
 
     def __init__(self):
-        # pass for the moment
-        pass
+        return
     
     def getWMBASE(self):
         """ for those that don't want to use the static version"""
@@ -84,7 +94,7 @@ class WMInit:
             myThread.logger = logging.getLogger()
 
 
-    def setDatabaseConnection(self, dbConfig, dialect = None, socketLoc = None):
+    def setDatabaseConnection(self, dbConfig, dialect, socketLoc = None):
         """
         Sets the default connection parameters, without having to worry
         much on what attributes need to be set. This is esepcially 
@@ -96,16 +106,15 @@ class WMInit:
         it by setting the flavor flag.
         """
         myThread = threading.currentThread()
-        if hasattr(myThread, "dialect"):
-            if myThread.dialect != None and myThread.dialect != "SQLite":
-                # Database is already initialized, we'll create a new
-                # transaction and move on.
-                if hasattr(myThread, "transaction"):
-                    if myThread.transaction != None:
-                        myThread.transaction.commit()
+        if getattr(myThread, "dialect", None) != None: 
+            # Database is already initialized, we'll create a new
+            # transaction and move on. 
+            if hasattr(myThread, "transaction"):
+                if myThread.transaction != None:
+                    myThread.transaction.commit()
 
-                myThread.transaction = Transaction(myThread.dbi)
-                return
+            myThread.transaction = Transaction(myThread.dbi)
+            return
 
         options = {}            
         if dialect.lower() == 'mysql':
@@ -114,9 +123,11 @@ class WMInit:
                 options['unix_socket'] = socketLoc            
         elif dialect.lower() == 'oracle':
             dialect = 'Oracle'
-        elif dialect.lower() == 'sqlite':
-            dialect = 'SQLite'
-        
+        else:
+            msg = "Unsupported dialect %s !" % dialect 
+            logging.error(msg) 
+            raise WMInitException(msg)
+
         myThread.dialect = dialect
         myThread.logger = logging
         myThread.dbFactory = DBFactory(logging, dbConfig, options)
@@ -145,16 +156,12 @@ class WMInit:
         if params != None:
             parameters = [None, None, params]
             flag = True
-        
-
-        # filter out unique modules
 
         myThread.transaction.begin()
         for factoryName in modules:
             # need to create these tables for testing.
             # notice the default structure: <dialect>/Create
-            factory = WMFactory(factoryName, factoryName + "." + \
-                myThread.dialect)
+            factory = WMFactory(factoryName, factoryName + "." + myThread.dialect)
 
             create = factory.loadObject("Create", args = parameters, listFlag = flag)
             createworked = create.execute(conn = myThread.transaction.conn,
@@ -162,56 +169,49 @@ class WMInit:
             if createworked:
                 logging.debug("Tables for "+ factoryName + " created")
             else:
-                logging.debug("Tables " + factoryName + \
-                " could not be created, already exists?")
+                logging.debug("Tables " + factoryName + " could not be created.")
         myThread.transaction.commit()
 
     def clearDatabase(self, modules = []):
         """
-        Enables clearing particular tables in the database
-        Associated to modules. Note this only works if there 
-        is the module has a Destroy class. Beware that this 
-        might not work if there are table dependencies.
+        Database deletion. Global, ignore modules.
         """
+        # Setup the DAO
         myThread = threading.currentThread()
-        for module in modules:
-            factory = WMFactory("clear", module)
-            destroy = factory.loadObject(myThread.dialect+".Destroy")
-            myThread.transaction.begin()
-            destroyworked = destroy.execute(conn = myThread.transaction.conn)
-            if not destroyworked:
-                raise Exception(module  +" tables could not be destroyed")
-            myThread.transaction.commit()
-            del factory
- 
+        daoFactory = DAOFactory(package = "WMCore.Database",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        destroyDAO = daoFactory(classname = "Destroy")
 
 
+        # Actually run a transaction and delete the DB
+        try:
+            destroyDAO.execute()
+        except Exception, ex:
+            msg =  "Critical error while attempting to delete entire DB!\n"
+            msg += str(ex)
+            msg += str(traceback.format_exc())
+            logging.error(msg)
+            raise WMInitException(msg)
 
+        return
 
+    def checkDatabaseContents(self): 
+        """ 
+        _checkDatabaseContents_ 
 
+        Check and see if anything is in the database. 
+        This should be called by methods about to build the schema to make sure 
+        that the DB itself is empty. 
+        """ 
 
+        myThread = threading.currentThread() 
+        daoFactory = DAOFactory(package = "WMCore.Database", 
+                                logger  = myThread.logger, 
+                                dbinterface = myThread.dbi) 
 
+        testDAO = daoFactory(classname = "ListUserContent") 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        result = testDAO.execute() 
+        
+        return result

@@ -177,8 +177,10 @@ class BaseWorkerThread:
                             
                             logging.error(msg)
                             # force entire component to terminate
-                            self.component.prepareToStop()
-
+                            try:
+                                self.component.prepareToStop()
+                            except Exception, ex:
+                                logging.error("Failed to halt component after worker crash: %s" % str(ex))
 
                             if hasattr(self.component.config, "Agent"):                            
                                 if getattr(self.component.config.Agent, "useHeartbeat", True):

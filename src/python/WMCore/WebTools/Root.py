@@ -116,7 +116,6 @@ class Root(Harness):
         else:
             Harness.__init__(self, config, compName = webApp)
             self.appconfig = config.section_(webApp)
-            WMCore.WMLogging.setupRotatingHandler(os.path.join(self.appconfig.componentDir, "%s.log" % webApp))
             self.app = webApp
             self.secconfig = getattr(self.appconfig, "security")
             self.serverConfig = config.section_(webApp).section_("Webtools")
@@ -173,7 +172,8 @@ class Root(Harness):
                 'tools.proxy.base': configDict["proxy_base"]
             })
 
-        cherrypy.log = WTLogger()
+        logkwargs = {'logger_root' : self.app}
+        cherrypy.log = WTLogger(**logkwargs)
         cherrypy.config["log.screen"] = bool(configDict.get("log_screen", False))
 
         cherrypy.config.update ({
@@ -360,6 +360,8 @@ class Root(Harness):
         """
         Configure and start the server
         """
+        #This logging instruction cant be done in the constructor
+        WMCore.WMLogging.setupRotatingHandler(os.path.join(self.appconfig.componentDir, "%s.log" % self.app))
         self._validateConfig()
         self._configureCherryPy()
         self._loadPages()

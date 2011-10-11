@@ -149,15 +149,11 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
 
-        while len(jobList) > 0:
-            # Loop over the list and handle it one chunk at a time
-            tmpList = jobList[:self.maxProcessSize]
-            jobList = jobList[self.maxProcessSize:]
-            logging.debug("About to process %i errors" % len(tmpList))
-            myThread.transaction.begin()
-            exhaustList = self.processRetries(tmpList, jobType)
-            self.handleACDC(jobList = exhaustList)
-            myThread.transaction.commit()
+        logging.debug("About to process %i errors" % len(jobList))
+        myThread.transaction.begin()
+        exhaustList = self.processRetries(jobList, jobType)
+        self.handleACDC(jobList = exhaustList)
+        myThread.transaction.commit()
 
         return
             
@@ -178,26 +174,32 @@ class ErrorHandlerPoller(BaseWorkerThread):
         idList = self.getJobs.execute(state = 'CreateFailed')
         logging.info("Found %s failed jobs failed during creation" \
                      % len(idList))
-        if len(idList) > 0:
-            createList = self.loadJobsFromList(idList = idList)
+        while len(idList) > 0:
+            tmpList    = idList[:self.maxProcessSize]
+            idList     = idList[self.maxProcessSize:]
+            createList = self.loadJobsFromList(idList = tmpList)
+            self.splitJobList(jobList = createList, jobType = 'create')
 
         # Run over submitted jobs
         idList = self.getJobs.execute(state = 'SubmitFailed')
         logging.info("Found %s failed jobs failed during submit" \
                      % len(idList))
-        if len(idList) > 0:
-            submitList = self.loadJobsFromList(idList = idList)
+        while len(idList) > 0:
+            tmpList    = idList[:self.maxProcessSize]
+            idList     = idList[self.maxProcessSize:]
+            submitList = self.loadJobsFromList(idList = tmpList)
+            self.splitJobList(jobList = submitList, jobType = 'submit')
+
 
         # Run over executed jobs
         idList = self.getJobs.execute(state = 'JobFailed')
         logging.info("Found %s failed jobs failed during execution" \
                      % len(idList))
-        if len(idList) > 0:
-            jobList = self.loadJobsFromList(idList = idList)
-
-        self.splitJobList(jobList = createList, jobType = 'create')
-        self.splitJobList(jobList = submitList, jobType = 'submit')
-        self.splitJobList(jobList = jobList,    jobType = 'job')
+        while len(idList) > 0:
+            tmpList = idList[:self.maxProcessSize]
+            idList  = idList[self.maxProcessSize:]
+            jobList = self.loadJobsFromList(idList = tmpList)
+            self.splitJobList(jobList = jobList,    jobType = 'job')
 
         return
 

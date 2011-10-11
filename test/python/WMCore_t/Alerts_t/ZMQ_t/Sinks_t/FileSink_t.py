@@ -1,22 +1,26 @@
 import os
 import unittest
 import time
+import logging
 
 from WMCore.Configuration import ConfigSection
 from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts.ZMQ.Sinks.FileSink import FileSink
+from WMQuality.TestInit import TestInit
 
 
 
 class FileSinkTest(unittest.TestCase):
     def setUp(self):
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging(logLevel = logging.DEBUG)
+        self.testDir = self.testInit.generateWorkDir()        
         self.config = ConfigSection("file")
-        self.config.outputfile = "/tmp/FileSinkTestNew.json"
+        self.config.outputfile = os.path.join(self.testDir, "FileSinkTestNew.json")
     
     
     def tearDown(self):
-        if os.path.exists(self.config.outputfile):
-            os.remove(self.config.outputfile)
+        self.testInit.delWorkDir()
     
     
     def testFileSinkBasic(self):

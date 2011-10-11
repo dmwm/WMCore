@@ -161,7 +161,7 @@ class AlertGeneratorTest(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging(logLevel = logging.DEBUG)
-        self.testInit.clearDatabase()
+        #self.testInit.clearDatabase()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS",'WMCore.Agent.Database',
                                                  "WMCore.ResourceControl"],
@@ -169,13 +169,11 @@ class AlertGeneratorTest(unittest.TestCase):
         self.testDir = self.testInit.generateWorkDir()
         # AlertGenerator instance
         self.generator = None
-        
         self.config = getConfig(self.testDir)
         self.config.section_("CoreDatabase")
         self.config.CoreDatabase.socket = os.environ.get("DBSOCK")
         self.config.CoreDatabase.connectUrl = os.environ.get("DATABASE")
-
-        self.testComponentDaemonXml = "/tmp/TestComponent/Daemon.xml" 
+        self.testComponentDaemonXml = os.path.join(self.testDir, "Daemon.xml") 
                 
 
     def tearDown(self):

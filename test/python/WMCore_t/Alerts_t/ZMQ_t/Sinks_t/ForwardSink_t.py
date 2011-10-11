@@ -2,6 +2,7 @@ import os
 import time
 import unittest
 import inspect
+import logging
 
 from WMCore.Configuration import ConfigSection
 from WMCore.Configuration import Configuration
@@ -11,6 +12,7 @@ from WMCore.Alerts.ZMQ.Sender import Sender
 from WMCore.Alerts.ZMQ.Receiver import Receiver
 from WMCore.Alerts.ZMQ.Sinks.ForwardSink import ForwardSink
 from WMCore.Alerts.ZMQ.Sinks.FileSink import FileSink
+from WMQuality.TestInit import TestInit
 
 
 
@@ -30,26 +32,22 @@ def worker(addr, ctrl, nAlerts, workerId = "ForwardSinkTestSource"):
 
 class ForwardSinkTest(unittest.TestCase):
     def setUp(self):
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging(logLevel = logging.DEBUG)
+        self.testDir = self.testInit.generateWorkDir()        
+
         self.address1 = "tcp://127.0.0.1:5557"
         self.controlAddr1 = "tcp://127.0.0.1:5559"
         
         self.address2 = "tcp://127.0.0.1:15557"
         self.controlAddr2 = "tcp://127.0.0.1:15559"
         
-        self.outputfileCritical = "/tmp/ForwardSinkTestCritical.json"
-        self.outputfileSoft = "/tmp/ForwardSinkTestSoft.json"
+        self.outputfileCritical = os.path.join(self.testDir, "ForwardSinkTestCritical.json")
+        self.outputfileSoft = os.path.join(self.testDir, "ForwardSinkTestSoft.json")
 
-        self._cleanUpFiles()
-                
         
     def tearDown(self):
-        self._cleanUpFiles()
-
-    
-    def _cleanUpFiles(self):
-        for f in (self.outputfileCritical, self.outputfileSoft):
-            if os.path.exists(f):
-                os.remove(f)
+        self.testInit.delWorkDir()
         
 
     def testForwardSinkBasic(self):

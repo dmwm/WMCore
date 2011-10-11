@@ -42,18 +42,12 @@ class AgentTest(unittest.TestCase):
         self.config = getConfig(self.testDir)
         # mock generator instance to communicate some configuration values
         self.generator = utils.AlertGeneratorMock(self.config)        
-        self.testComponentDaemonXml = "/tmp/TestComponent/Daemon.xml" 
+        self.testComponentDaemonXml = os.path.join(self.testDir, "Daemon.xml") 
         
         
     def tearDown(self):       
         self.testInit.delWorkDir()
         self.generator = None
-        
-        # if the directory and file "/tmp/TestComponent/Daemon.xml" after
-        # ComponentsPoller test exist, then delete it
-        d = os.path.dirname(self.testComponentDaemonXml)
-        if os.path.exists(d):
-            shutil.rmtree(d)
             
 
     def testComponentsPollerBasic(self):

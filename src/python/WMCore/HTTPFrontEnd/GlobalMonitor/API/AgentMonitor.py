@@ -1,8 +1,11 @@
 import logging
 ### use request manager funtion directly
 ### TODO: remove this when GlobalMonitor spins out as a separate application
-from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
+try:
+    from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
           import getGlobalQueues
+except:
+    logging.warning("Not part of ReqMgr")
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.WMAgent.WMAgent import WMAgent

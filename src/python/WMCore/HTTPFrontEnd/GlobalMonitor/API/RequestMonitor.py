@@ -1,9 +1,11 @@
 import logging
 ### use request manager funtion directly
 ### TODO: remove this when GlobalMonitor spins out as a separate application
-from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
+try:
+    from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest \
           import getOverview, getGlobalQueues
-
+except:
+    logging.warning("Not part of ReqMgr")
 import WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter as DFormatter
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.DataFormatter import combineListOfDict
 from WMCore.Lexicon import splitCouchServiceURL
@@ -32,6 +34,7 @@ def getRequestInfoFromReqMgr(serviceURL):
         ### use request manager funtion directly
         ### TODO: remove this when GlobalMonitor spins out as a separate application
         if serviceURL.lower() == "local":
+            
             baseResults = getOverview()
             urls = getGlobalQueues()
         else:

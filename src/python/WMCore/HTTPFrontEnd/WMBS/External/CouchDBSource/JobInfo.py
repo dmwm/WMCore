@@ -121,8 +121,9 @@ def getJobStateBySite(couchConfig):
         #Need to distinquish between server down and CouchError
         return [{"error": 'Couch connection error'}]
     currentTime = int(time.time())
-    endkey = [currentTime - (currentTime % 3600), {}, {}]
-    options = {"group_level": 3, "endkey":endkey, "stale": "ok"}
+    startkey = [currentTime - (currentTime % 3600)]
+    endkey = [currentTime, {}, {}]
+    options = {"group_level": 3, "startkey": startkey, "endkey":endkey, "stale": "ok"}
 
     result = changeStateDB.loadView("JobDump", "hourlyStatusBySiteName", options)
 

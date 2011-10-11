@@ -1041,7 +1041,7 @@ class gLitePlugin(BasePlugin):
 
         for job in jobs:
 
-            ownersandbox      = job['userdn']+":"+jj['usergroup']+":"+jj['userrole']
+            ownersandbox      = job['userdn']+":"+job['usergroup']+":"+job['userrole']
             valid, ownerproxy = (False, None)
             exportproxy       = 'echo $X509_USER_PROXY'
             proxymsg          = ''

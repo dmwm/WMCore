@@ -20,11 +20,9 @@ import tempfile
 import shutil
 import time
 import nose
-import traceback
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
-from WMCore.WMException         import WMException
 hasDatabase = True
 try:
     from WMCore.Database.DBFormatter import DBFormatter
@@ -35,18 +33,9 @@ except ImportError:
 
 # Sorry for the global, but I think this should go here
 trashDatabases = False  # delete databases after every test?
-
-class TestInitException(WMException): 
-    """ 
-    _TestInitException_ 
-    
-    You should see this only if something is wrong setting up the database connection 
-    Still, just in case... 
-    """ 
-
 def deleteDatabaseAfterEveryTest( areYouSerious ):
-    """
-    this method handles whether or not TestInit will be vicious to databases
+    """ this method handles whether or not TestInit will be vicious
+        to databases
     """
     # python is idiotic for its scoping system
     global trashDatabases
@@ -153,35 +142,84 @@ class TestInit:
         else:
             raise RuntimeError, "Unrecognized dialect %s" % dialectPart
         
-    def setDatabaseConnection(self, connectUrl=None, socket=None, destroyAllDatabase = False):
+    def eraseEverythingInDatabase(self):
+        if not self.hasDatabase:
+            return
+        if trashDatabases:
+            dbi = self.getDBInterface()
+            dialect = self.coreConfig.CoreDatabase.dialect
+            formatter = DBFormatter(logging.getLogger(''), dbi)
+            if (dialect == 'MySQL'):
+                formatter.sql = r"SHOW TABLES"
+                result = formatter.execute()
+                formatter.sql = "SET foreign_key_checks = 0"
+                formatter.execute()
+                allTables = []
+                for oneTable in result:
+                    allTables.append( oneTable[0] )
+                    
+                if len(allTables) == 0:
+                    return
+                
+                query = "DROP TABLE IF EXISTS `%s`" % ("`,`".join(allTables))
+                formatter.sql = query
+                formatter.execute()
+
+                formatter.sql = "SET foreign_key_checks = 1"
+                formatter.execute()
+                
+            elif (dialect == 'SQLite'):
+                formatter.sql = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
+                result = formatter.execute()
+
+                for oneTable in result:
+                    # sqlite stores some magic in the database
+                    if ( oneTable[0].startswith('sqlite_') ):
+                        continue
+                    query = "DROP TABLE IF EXISTS %s" % oneTable[0]
+                    failCount = 0
+                    for x in range(5):
+                        try:
+                            formatter.sql = query
+                            formatter.execute()
+                        except Exception:
+                            # sleep a sec and try again
+                            failCount = failCount + 1
+                            if (failCount == 5):
+                                raise
+                            else:
+                                print "Attempting to wait before clearing SQLite database again"
+                                time.sleep(1)
+                            
+      
+            elif (dialect == 'Oracle'):
+                print "Rookie, fix blowing away oracle in TestInit. thanks"
+                pass
+            else:
+                raise RuntimeError, "This dialect is unsupported by trashDatabases"
+            pass
+        else:
+            pass
+        
+    def setDatabaseConnection(self, connectUrl=None, socket=None):
         """
         Set up the database connection by retrieving the environment
         parameters.
-
-        The destroyAllDatabase option is for testing ONLY.  Never flip that switch
-        on in any other instance where you don't know what you're doing.
         """
         if not self.hasDatabase:
             return        
         config = self.getConfiguration(connectUrl=connectUrl, socket=socket)
         self.coreConfig = config
-        self.init.setDatabaseConnection(config.CoreDatabase.connectUrl,
+        self.init.setDatabaseConnection(
+                                        config.CoreDatabase.connectUrl,
                                         config.CoreDatabase.dialect,
                                         config.CoreDatabase.socket)
-
-        if trashDatabases or destroyAllDatabase:
-            self.clearDatabase()
-
-        # Have to check whether or not database is empty 
-        # If the database is not empty when we go to set the schema, abort! 
-        result = self.init.checkDatabaseContents() 
-        if len(result) > 0: 
-            msg =  "Database not empty, cannot set schema !\n" 
-            msg += str(result) 
-            logging.error(msg) 
-            raise TestInitException(msg) 
-
-        return
+        if trashDatabases:
+            # we are going to own ths database.
+            #  ...but the code isn't ready yet
+            self.eraseEverythingInDatabase()
+            pass
+        
 
     def setSchema(self, customModules = [], useDefault = True, params = None):
         """
@@ -204,11 +242,14 @@ class TestInit:
         modules = {}
         for module in (defaultModules + customModules):
             modules[module] = 'done'
-
+            
         try:
             self.init.setSchema(modules.keys(), params = params)
         except Exception, ex:
-            print traceback.format_exc()
+            try:
+                self.clearDatabase(modules = modules.keys())
+            except:
+                pass
             raise ex
             
         # store the list of modules we've added to the DB
@@ -217,7 +258,6 @@ class TestInit:
             modules[module] = 'done'
 
         self.currModules = modules.keys()
-
         return
 
     def getDBInterface(self):
@@ -225,7 +265,6 @@ class TestInit:
         if not self.hasDatabase:
             return 
         myThread = threading.currentThread()
-
         return myThread.dbi
 
     def getConfiguration(self, configurationFile = None, connectUrl = None, socket=None):
@@ -268,14 +307,18 @@ class TestInit:
 
     def clearDatabase(self, modules = []):
         """
-        Database deletion. Global, ignore modules.
+        Database deletion. If no modules are specified
+        it will clear the tables we added with setschema
         """
         if not self.hasDatabase:
             return 
+        if modules == []:
+            modules = self.currModules
 
-        self.init.clearDatabase()
+        modules.reverse()
+        self.init.clearDatabase(modules)
+        #self.attemptToCloseDBConnections()
 
-        return
 
     def attemptToCloseDBConnections(self):
         return

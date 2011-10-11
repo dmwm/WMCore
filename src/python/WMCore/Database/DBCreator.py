@@ -37,11 +37,12 @@ class DBCreator(DBFormatter):
         """
         DBFormatter.__init__(self, logger, dbinterface)
         self.create = {}
+        self.delete = {}
         self.constraints = {}
         self.inserts = {}
         self.indexes = {}
-
-    def execute(self, conn = None, transaction = False):
+            
+    def execute(self, conn = None, transaction = False):     
         """
         _execute_
         
@@ -65,6 +66,18 @@ class DBCreator(DBFormatter):
                 self.logger.debug( msg )
                 raise WMException(msg,'WMCore-2')
             
+        # delete tables
+        for i in sorted(self.delete.keys()):
+            try:
+                self.dbi.processData(self.delete[i], 
+                                     conn = conn, 
+                                     transaction = transaction)
+            except Exception, e:
+                msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
+                                  str(self.delete[i]) +'\n\n' +str(e)
+                self.logger.debug( msg )
+                raise WMException(msg,'WMCore-2')
+
         # create indexes
         for i in self.indexes.keys():
             try:

@@ -106,6 +106,15 @@ class StartPolicyInterface(PolicyInterface):
             # Assertion generally means validation of an input field failed
             error = WorkQueueWMSpecError(self.wmspec, "Assertion error: %s" % str(ex))
             raise error
+        except Exception, ex:
+            # Hacky way of identifying non-existant data, DbsBadRequest chomped by DBSReader
+            # DbsConnectionError: Database exception,Invalid parameters thrown by Summary api
+            if 'DbsBadRequest' in str(ex) or 'Invalid parameters' in str(ex):
+                msg = """data: %s: %s.""" % (str(task.inputDataset().pythonise_()), str(ex))
+                error = WorkQueueNoWorkError(self.wmspec, msg)
+                raise error
+
+            raise # propagate other error to caller
 
         if not self.workQueueElements:
             msg = """data: %s, mask: %s.""" % (str(task.inputDataset().pythonise_()), str(mask))

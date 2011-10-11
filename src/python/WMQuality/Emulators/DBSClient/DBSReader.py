@@ -4,6 +4,7 @@
 """
 
 from DBSAPI.dbsApi import DbsApi
+from WMCore.Services.DBS.DBSErrors import DBSReaderError
 
 class _MockDBSApi():
     """Mock dbs api"""
@@ -39,6 +40,13 @@ class DBSReader:
         """Fake block info"""
         blocks = [x for x in self.dataBlocks.getBlocks(dataset)
                 if x['Name'] == blockName or blockName == '*']
+        if not blocks:
+            # Weird error handling follows, this is what dbs does:
+            # If block specified, return [], else raise DbsBadRequest error
+            if blockName != '*':
+                return []
+            else:
+                raise DBSReaderError('DbsBadRequest: DBS Server Raised An Error')
         if locations:
             for block in blocks:
                 block['StorageElementList'] = [{'Role' : '', 'Name' : x} for x in \
@@ -140,6 +148,9 @@ class DBSReader:
                 result['NumberOfLumis'] = len(lumis)
                 result['path'] = dataset
 
+        # Weird error handling follows, this is what dbs does
+        if not result:
+            raise DBSReaderError('DbsConnectionError: Database exception,Invalid parameters')
         return result
 
     def listBlockParents(self, block):

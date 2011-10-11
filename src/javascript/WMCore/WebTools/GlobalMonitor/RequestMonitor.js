@@ -54,6 +54,7 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                 elCell.innerHTML = "<a id='couchDB' href='" + workloadSummaryUrl +
                            oRecord.getData("request_name") + "' target='_blank' title='" +
                            workloadSummaryUrl + "'> summary </a>";
+                return;
             }
 
             if (!sData) {

@@ -47,11 +47,6 @@ class Create(CreateWMBSBase):
             if params.has_key("tablespace_index"):
                 tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
 
-        self.create = {}
-        self.constraints = {}
-        self.indexes = {}
-        self.inserts = {}
-
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
                id          INTEGER      NOT NULL,
@@ -461,9 +456,9 @@ class Create(CreateWMBSBase):
           """ALTER TABLE wmbs_jobgroup ADD
                (CONSTRAINT wmbs_jobgroup_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
-        self.indexes["02_pk_wmbs_jobgroup"] = \
-          """ALTER TABLE wmbs_jobgroup ADD
-               (CONSTRAINT wmbs_jobgroup_unique1 UNIQUE (output) %s)""" % tablespaceIndex
+##         self.indexes["02_pk_wmbs_jobgroup"] = \
+##           """ALTER TABLE wmbs_jobgroup ADD
+##                (CONSTRAINT wmbs_jobgroup_unique1 UNIQUE (output) %s)""" % tablespaceIndex
 
         self.indexes["03_pk_wmbs_jobgroup"] = \
           """ALTER TABLE wmbs_jobgroup ADD

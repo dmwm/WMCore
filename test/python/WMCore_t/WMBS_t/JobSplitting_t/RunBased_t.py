@@ -140,23 +140,7 @@ class EventBasedTest(unittest.TestCase):
 
         Tear down WMBS architechture.
         """
-
-        myThread = threading.currentThread()
-
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-            
-        myThread.transaction.begin()
-            
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-            
-        myThread.transaction.commit()
-
+        self.testInit.clearDatabase()
         return
 
     def testExactRuns(self):

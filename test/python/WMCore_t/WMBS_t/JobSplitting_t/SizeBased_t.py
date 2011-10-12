@@ -5,9 +5,6 @@ _SizeBased_t_
 Size based splitting test.
 """
 
-
-
-
 import unittest
 import threading
 import os
@@ -111,21 +108,7 @@ class SizeBasedTest(unittest.TestCase):
 
         Clear out WMBS.
         """
-        myThread = threading.currentThread()
-
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-            
-        myThread.transaction.begin()
-            
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-            
-        myThread.transaction.commit()
+        self.testInit.clearDatabase()
         return    
 
     def testExactEvents(self):

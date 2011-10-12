@@ -302,7 +302,13 @@ class Requests(dict):
                 self['logger'].info('No certificate or key found, authentication may fail')
                 self['logger'].debug(str(ex))
 
-        http = httplib2.Http(self['req_cache_path'], self['timeout'])
+        try:
+            # disable validation as we don't have a single PEM with all ca's
+            http = httplib2.Http(self['req_cache_path'], self['timeout'],
+                                 disable_ssl_certificate_validation = True)
+        except TypeError:
+            # old httplib2 versions disable validation by default
+            http = httplib2.Http(self['req_cache_path'], self['timeout'])
 
         # Domain must be just a hostname and port. self[host] is a URL currently
         if key or cert:

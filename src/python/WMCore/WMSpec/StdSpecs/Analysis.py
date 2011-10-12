@@ -58,7 +58,8 @@ class AnalysisWorkloadFactory(StdBase):
 
         lfnBase = '/store/temp/user/%s' % self.userName
         logBase = '/store/temp/user/%s/logs/' % self.userName
-        lfnPrefix, seName = remoteLFNPrefix(site=self.asyncDest, lfn=lfnBase)
+        logCollBase = '/store/user/%s/' % self.userName
+        lcPrefix, seName = remoteLFNPrefix(site=self.asyncDest, lfn=logCollBase)
         self.userUnmergedLFN = "%s/%s/%s/%s" % (lfnBase, self.inputPrimaryDataset,
                                                 self.publishName, self.processingVersion)
 
@@ -92,8 +93,8 @@ class AnalysisWorkloadFactory(StdBase):
 
         logCollectStep.addOverride('userLogs',  True)
         logCollectStep.addOverride('seName',    seName)
-        logCollectStep.addOverride('lfnBase',   lfnBase)
-        logCollectStep.addOverride('lfnPrefix', lfnPrefix)
+        logCollectStep.addOverride('lfnBase',   logCollBase)
+        logCollectStep.addOverride('lfnPrefix', lcPrefix)
         if self.ACDCID:
             workload.setWorkQueueSplitPolicy("ResubmitBlock", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
         else:

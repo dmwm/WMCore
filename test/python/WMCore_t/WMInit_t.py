@@ -58,11 +58,22 @@ class WMInit_t(unittest.TestCase):
             init.clearDatabase()
             dbName = myThread.dbi.processData("SELECT DATABASE() AS dbname")[0].fetchall()[0][0]
             self.assertEqual(dbName, a)
+
+
+            init.setSchema(modules = ['WMCore.WMBS'])
+            myThread.transaction.begin()
+            myThread.transaction.processData("SELECT * FROM wmbs_job")
+            init.clearDatabase()
+            dbName = myThread.dbi.processData("SELECT DATABASE() AS dbname")[0].fetchall()[0][0]
+            self.assertEqual(dbName, a)
+            myThread.transaction.begin()
+            init.setSchema(modules = ['WMCore.WMBS'])
+            myThread.transaction.commit()
         except:
             init.clearDatabase()
             raise
 
-        
+        init.clearDatabase()        
 
         return        
     

@@ -176,8 +176,13 @@ class WMInit:
         """
         Database deletion. Global, ignore modules.
         """
-        # Setup the DAO
         myThread = threading.currentThread()
+        if hasattr(myThread, 'transaction') and getattr(myThread.transaction, 'transaction', None):
+            # Then we have an open transaction
+            # We should try and close it first
+            myThread.transaction.commit()
+
+        # Setup the DAO
         daoFactory = DAOFactory(package = "WMCore.Database",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)

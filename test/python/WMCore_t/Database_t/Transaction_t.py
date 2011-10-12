@@ -15,11 +15,10 @@ import os
 import threading
 import unittest
 
-from WMCore.Database.DBFactory import DBFactory
+from WMCore.Database.DBFactory   import DBFactory
 from WMCore.Database.Transaction import Transaction
-from WMCore.WMFactory import WMFactory
-
-from WMQuality.TestInit import TestInit
+from WMCore.WMFactory            import WMFactory
+from WMQuality.TestInit          import TestInit
 
 class TransactionTest(unittest.TestCase):
 
@@ -30,76 +29,106 @@ class TransactionTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
     
-        #add in Oracle
-        self.create = {}
-        self.create['MySQL'] = "create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB;"
-        self.create['SQLite'] = "create table test (bind1 varchar(20), bind2 varchar(20))"
-        self.create['Oracle'] = "create table test (bind1 varchar(20), bind2 varchar(20))"
+        self.dialect = os.environ.get('DIALECT', 'MySQL')
 
-        self.destroy = {}
-        self.destroy['MySQL']  = "drop table test"
-        self.destroy['Oracle'] = "drop table test"
-        self.destroy['SQLite'] = "drop table test"
-    
-        self.insert = "insert into test (bind1, bind2) values (:bind1, :bind2)"
-        self.insert_binds = [ {'bind1':'value1a', 'bind2': 'value2a'},
-              {'bind1':'value1b', 'bind2': 'value2b'},
-              {'bind1':'value1c', 'bind2': 'value2d'} ]
-        self.select = "select * from test"
+        if self.dialect.lower() == 'mysql':
+            self.create = "CREATE TABLE test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB;"
+        elif self.dialect.lower() == 'oracle':
+            self.create = 'CREATE TABLE test (bind1 varchar(20), bind2 varchar(20))'
+
+        return
+
             
     def tearDown(self):
         """
         Delete the databases
         """
+        # call the script we use for cleaning: Clean the whole DB
+        self.testInit.clearDatabase()
+        return
+
+    def testA_Insert(self):
+        """
+        _Insert_
+
+        See if we can insert data into a table
+        See if, having inserted data into a table
+        """
+
         myThread = threading.currentThread()
+        trans = myThread.transaction
+        trans.begin()
+        trans.commit()
 
 
 
-    
-        # call the script we use for cleaning:
-        #self.testInit.clearDatabase()
-        myThread.transaction.begin()
-        myThread.transaction.processData(self.destroy[myThread.dialect])
-        myThread.transaction.commit()
-            
+        trans.begin()
+        trans.processData(self.create)
+        trans.commit()
+
+        try:
+            trans.processData("DESCRIBE test", redo = False)
+            flag = True
+        except:
+            flag = False
+        self.assertTrue(flag)
+
+        try:
+            trans.processData("DESCRIBE test2", redo = False)
+            flag = True
+        except:
+            flag = False
+        self.assertFalse(flag)
+
+        # Make sure we can write a table
+        trans.begin()
+        trans.processData("INSERT INTO test (bind1, bind2) VALUES (:bind1, :bind2)",
+                                         [{'bind1': 'one', 'bind2': 'two'},
+                                          {'bind1': 'three', 'bind2': 'four'}], redo = False)
+        result = trans.processData("SELECT * FROM test", redo = False)[0].fetchall()
+        self.assertEqual(result, [('one', 'two'), ('three', 'four')])
+        trans.commit()
+
+        trans.begin()
+        result = trans.processData("SELECT * FROM test", redo = False)[0].fetchall()
+        self.assertEqual(result, [('one', 'two'), ('three', 'four')])
+        trans.commit()
 
 
-    def testGoodTransaction(self):
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-        myThread.transaction.processData(self.create[myThread.dialect])
-        myThread.transaction.processData(self.insert, self.insert_binds)
-        result1 = myThread.transaction.processData(self.select)
-            
-        self.assertEqual( len(result1) ,  1 )
-        self.assertEqual( len(result1[0].fetchall()) ,  3 )
-            
-        myThread.transaction.commit()
-        myThread.transaction.begin()
-        result2 = myThread.transaction.processData(self.select)
-            
-        self.assertEqual( len(result2[0].fetchall()) ,  3, "commit failed" )
-            
-    def testBadTransaction(self):
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-        myThread.transaction.processData(self.create[myThread.dialect])
-        myThread.transaction.processData(self.insert, self.insert_binds)
-        result1 = myThread.transaction.processData(self.select)
-            
-        self.assertEqual( len(result1) ,  1 )
-        self.assertEqual( len(result1[0].fetchall()) ,  3 )
-            
-        myThread.transaction.rollback()
-        myThread.transaction.begin()
+        # Make sure we can drop a table
+        trans.begin()
+        trans.processData("DROP TABLE test", redo = False)
+        trans.commit()
 
-        result2 = myThread.transaction.processData(self.select)
-            
-        self.assertEqual( len(result2) ,  1 )
-        l = len(result2[0].fetchall())
-        self.assertEqual(l,0)
+        try:
+            trans.processData("DESCRIBE test", redo = False)
+            flag = True
+        except:
+            flag = False
+        self.assertFalse(flag)
+
+
+        # Recreate table.  Try rollback
+        trans.begin()
+        trans.processData(self.create)
+        trans.commit()
+
+        trans.begin()
+        trans.processData("INSERT INTO test (bind1, bind2) VALUES (:bind1, :bind2)",
+                                         [{'bind1': 'one', 'bind2': 'two'},
+                                          {'bind1': 'three', 'bind2': 'four'}], redo = False)
+        result = trans.processData("SELECT * FROM test", redo = False)[0].fetchall()
+        self.assertEqual(result, [('one', 'two'), ('three', 'four')])
+        trans.rollback()
+
+        trans.begin()
+        result = trans.processData("SELECT * FROM test", redo = False)[0].fetchall()
+        self.assertEqual(result, [])
+        trans.commit()
 
         return
+
+
 
 #     def testLostConnection(self):
 #         """

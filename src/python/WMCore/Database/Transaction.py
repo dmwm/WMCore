@@ -48,7 +48,7 @@ class Transaction(WMObject):
 
         return
    
-    def processData(self, sql, binds={}):
+    def processData(self, sql, binds={}, redo = True):
         """
         Propagates the request to the proper dbcore backend,
         and performs checks for lost (or closed) connection.
@@ -71,7 +71,10 @@ class Transaction(WMObject):
             except:
                 pass
             logging.warning("Trying to reconnect")
-            result = self.redo()
+            if redo:
+                result = self.redo()
+            else:
+                raise ex
 
         return result
 

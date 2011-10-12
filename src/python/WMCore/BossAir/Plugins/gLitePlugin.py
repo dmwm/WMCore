@@ -1391,7 +1391,8 @@ class gLitePlugin(BasePlugin):
                 return (False, self.singleproxy, '')
         else:
             try:
-                return self.getProxy(user.split(':')[0], user.split(':')[1], user.split(':')[2])
+                valid, ownerproxy = self.getProxy(user.split(':')[0], user.split(':')[1], user.split(':')[2])
+                return (valid, ownerproxy, '')
             except CredentialException, ce:
                 logging.debug(ce)
                 msg = 'Problem retrieving proxy for user "%s" due to "%s".' % (user, ce._message)

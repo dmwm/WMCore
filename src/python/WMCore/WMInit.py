@@ -217,6 +217,7 @@ class WMInit:
 
         testDAO = daoFactory(classname = "ListUserContent") 
 
-        result = testDAO.execute() 
+        result = testDAO.execute()
+        myThread.dbi.engine.dispose()
         
         return result

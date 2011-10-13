@@ -128,7 +128,10 @@ def createAlgorithm(apiRef, appName, appVer, appFam,
         PSetHash = PSetHash.replace("hash=", "")
 
 
-    # Create PSetHash
+    # Create PSetHash. dbsApi tries to base64encode the value of PSetContent
+    # which blows up if it's None
+    if not PSetContent:
+        PSetContent = ""
     psetInstance = DbsQueryableParameterSet(Hash = PSetHash,
                                             Content = PSetContent)
     algorithmInstance = DbsAlgorithm(ExecutableName = appName,

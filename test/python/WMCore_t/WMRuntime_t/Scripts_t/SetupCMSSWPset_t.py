@@ -20,7 +20,6 @@ from WMCore.Storage.TrivialFileCatalog import loadTFC
 from WMCore.WMSpec.WMStep import WMStep
 from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSWStepHelper
 from WMCore.WMSpec.Steps import StepFactory
-from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
 from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
@@ -80,6 +79,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         Verify that all necessary parameters are set in the PSet.
         
         """
+        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset        
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
@@ -116,6 +116,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         and that input files is / are set correctly.
         
         """
+        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset        
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
@@ -179,7 +180,8 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         f = open(siteLocalConfig, 'w')
         f.write(siteLocalConfigContent)
         f.close()
-        
+
+        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset        
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")

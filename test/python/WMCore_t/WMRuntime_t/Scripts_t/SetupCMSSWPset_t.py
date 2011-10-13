@@ -25,22 +25,21 @@ from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
 from WMQuality.TestInit import TestInit
-from WMCore.WMInit import getWMBASE
-
+import WMCore.WMBase
 
 class SetupCMSSWPsetTest(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testDir = self.testInit.generateWorkDir()
-        sys.path.insert(0, os.path.join(getWMBASE(), "test/python/WMCore_t/WMRuntime_t/Scripts_t"))
-
+        sys.path.insert(0, os.path.join(WMCore.WMBase.getTestBase(),
+                                        "test/python/WMCore_t/WMRuntime_t/Scripts_t"))
 
     def tearDown(self):
-        sys.path.remove(os.path.join(getWMBASE(), "test/python/WMCore_t/WMRuntime_t/Scripts_t"))
+        sys.path.remove(os.path.join(WMCore.WMBase.getTestBase(),
+                                     "test/python/WMCore_t/WMRuntime_t/Scripts_t"))
         self.testInit.delWorkDir()
         os.unsetenv("WMAGENT_SITE_CONFIG_OVERRIDE")
-
 
     def createTestStep(self):
         """
@@ -95,8 +94,6 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         self.assertEqual(fixedPSet.GlobalTag.globaltag.value, "SomeGlobalTag",
                          "Error: Wrong global tag.")
 
-        self.assertEqual(fixedPSet.source.cacheSize.value, 100000000,
-                         "Error: Wrong cache size.")
         self.assertEqual(len(fixedPSet.source.fileNames.value), 2,
                          "Error: Wrong number of files.")
         self.assertEqual(len(fixedPSet.source.secondaryFileNames.value), 2,

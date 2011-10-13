@@ -34,10 +34,6 @@ from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller
 from WMComponent.DBS3Buffer.DBSBufferFile   import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferUtil   import DBSBufferUtil
 
-from dbs.apis.dbsClient import DbsApi
-
-
-
 class DBSUploadTest(unittest.TestCase):
     """
     TestCase for DBSUpload module 
@@ -185,6 +181,7 @@ class DBSUploadTest(unittest.TestCase):
 
         dbsUploader = DBSUploadPoller(config = config)
         dbsUtil     = DBSBufferUtil()
+        from dbs.apis.dbsClient import DbsApi
         dbsApi      = DbsApi(url = config.DBSUpload.dbsUrl)
 
         # This should do nothing
@@ -273,6 +270,7 @@ class DBSUploadTest(unittest.TestCase):
 
         dbsUploader = DBSUploadPoller(config = config)
         dbsUtil     = DBSBufferUtil()
+        from dbs.apis.dbsClient import DbsApi
         dbsApi      = DbsApi(url = config.DBSUpload.dbsUrl)
 
         # This should do nothing

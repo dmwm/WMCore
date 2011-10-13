@@ -37,6 +37,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
     def tearDown(self):
         sys.path.remove(os.path.join(WMCore.WMBase.getTestBase(),
                                      "WMCore_t/WMRuntime_t/Scripts_t"))
+        del sys.modules["WMTaskSpace"]
         self.testInit.delWorkDir()
         os.unsetenv("WMAGENT_SITE_CONFIG_OVERRIDE")
 

@@ -19,6 +19,8 @@ class RESTBaseUnitTest(unittest.TestCase):
             self.testInit.setDatabaseConnection(self.config.getDBUrl())
             self.testInit.setSchema(customModules = self.schemaModules,
                                     useDefault = False)
+            
+        print "this is our config %s" % self.config
         
         self.rt = Root(self.config)
         self.rt.start(blocking=False)

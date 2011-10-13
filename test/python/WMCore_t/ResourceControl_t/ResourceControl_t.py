@@ -23,7 +23,7 @@ from WMQuality.TestInit import TestInit
 from WMCore.Services.UUID import makeUUID
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Agent.Configuration import Configuration
-from WMCore.WMInit import getWMBASE
+import WMCore.WMBase
 
 class ResourceControlTest(unittest.TestCase):
     def setUp(self):
@@ -535,7 +535,7 @@ class ResourceControlTest(unittest.TestCase):
         """
         self.createConfig()
 
-        resControlPath = os.path.join(getWMBASE(), "bin/wmagent-resource-control")
+        resControlPath = os.path.join(WMCore.WMBase.getTestBase(), "../../bin/wmagent-resource-control")
         env = os.environ
         env['PYTHONPATH'] = ":".join(sys.path)
         cmdline = [resControlPath, "--add-all-sites", "--plugin=CondorPlugin", "--site-slots=100" ]

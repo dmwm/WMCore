@@ -18,7 +18,7 @@ import unittest
 
 from WMComponent.RetryManager.RetryManagerPoller import RetryManagerPoller
 
-import WMCore.WMInit
+import WMCore.WMBase
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 #from WMQuality.TestInit   import TestInit
@@ -98,7 +98,7 @@ class RetryManagerTest(unittest.TestCase):
         # Path to plugin directory
         config.RetryManager.pluginPath   = 'WMComponent.RetryManager.PlugIns'
         #config.RetryManager.pluginName   = ''
-        config.RetryManager.WMCoreBase   = WMCore.WMInit.getWMBASE()
+        config.RetryManager.WMCoreBase   = WMCore.WMBase.getWMBASE()
         config.RetryManager.componentDir = os.path.join(os.getcwd(), 'Components')
 
         # ErrorHandler
@@ -445,7 +445,9 @@ class RetryManagerTest(unittest.TestCase):
         config.RetryManager.pluginName   = 'ProcessingAlgo'
         config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
         changer = ChangeState(config)
-        fwjrPath = os.path.abspath("../JobAccountant_t/fwjrs/badBackfillJobReport.pkl")
+        fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                "WMComponent_t/JobAccountant_t",
+                                "fwjrs/badBackfillJobReport.pkl")
         report = Report()
         report.load(fwjrPath)
         for job in testJobGroup.jobs:

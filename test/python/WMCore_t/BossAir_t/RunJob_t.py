@@ -54,6 +54,13 @@ class RunJobTest(unittest.TestCase):
         resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
                                         maxSlots = 10000)
 
+        # Create user
+        wmbsFactory = DAOFactory(package = "WMCore.WMBS",
+                                 logger = myThread.logger,
+                                 dbinterface = myThread.dbi)
+        newuser = wmbsFactory(classname = "Users.New")
+        newuser.execute(dn = "mnorman", group_name = "phgroup", role_name = "cmsrole")
+
 
 
     def tearDown(self):
@@ -122,8 +129,10 @@ class RunJobTest(unittest.TestCase):
         runJobs = []
         for job in jobGroup.jobs:
             runJob = RunJob(jobid = job.exists())
-            runJob['status'] = 'New'
-            runJob['userdn'] = job['owner']
+            runJob['status']    = 'New'
+            runJob['userdn']    = job['owner']
+            runJob['usergroup'] = 'phgroup'
+            runJob['userrole']  = 'cmsrole'
             runJobs.append(runJob)
 
 

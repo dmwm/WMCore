@@ -78,7 +78,7 @@ class ServiceTest(unittest.TestCase):
         self.myService2 = Service(test_dict)
         self.testUrl = 'http://cern.ch'
 
-        self.port = 8081
+        self.port = 8888
         cherrypy.config.update({'server.socket_port': self.port})
 
 

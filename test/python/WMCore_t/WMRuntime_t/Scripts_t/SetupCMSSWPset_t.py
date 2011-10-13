@@ -33,11 +33,11 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testDir = self.testInit.generateWorkDir()
         sys.path.insert(0, os.path.join(WMCore.WMBase.getTestBase(),
-                                        "test/python/WMCore_t/WMRuntime_t/Scripts_t"))
+                                        "WMCore_t/WMRuntime_t/Scripts_t"))
 
     def tearDown(self):
         sys.path.remove(os.path.join(WMCore.WMBase.getTestBase(),
-                                     "test/python/WMCore_t/WMRuntime_t/Scripts_t"))
+                                     "WMCore_t/WMRuntime_t/Scripts_t"))
         self.testInit.delWorkDir()
         os.unsetenv("WMAGENT_SITE_CONFIG_OVERRIDE")
 

@@ -30,7 +30,6 @@ from WMCore.DataStructs.Run import Run
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.HeartbeatAPI  import HeartbeatAPI
 
-from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller
 from WMComponent.DBS3Buffer.DBSBufferFile   import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferUtil   import DBSBufferUtil
 
@@ -179,6 +178,7 @@ class DBSUploadTest(unittest.TestCase):
 
         config = self.getConfig()
 
+        from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller
         dbsUploader = DBSUploadPoller(config = config)
         dbsUtil     = DBSBufferUtil()
         from dbs.apis.dbsClient import DbsApi
@@ -268,6 +268,7 @@ class DBSUploadTest(unittest.TestCase):
         files = self.getFiles(name = name, tier = tier, nFiles = nFiles, nLumis = 3)
         datasetPath = '/%s/%s/%s' % (name, name, tier)
 
+        from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller
         dbsUploader = DBSUploadPoller(config = config)
         dbsUtil     = DBSBufferUtil()
         from dbs.apis.dbsClient import DbsApi

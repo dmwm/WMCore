@@ -38,17 +38,18 @@ class JobSubmitterCachingTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir",
                                                  "WMCore.ResourceControl"],
                                 useDefault = False)
-        self.testInit.setupCouch("jobsubmittercaching_t", "JobDump")
+        self.testInit.setupCouch("jobsubmittercaching_t/jobs", "JobDump")
+        self.testInit.setupCouch("jobsubmittercaching_t/fwjrs", "FWJRDump")
         
         resourceControl = ResourceControl()
         for siteName in ["T1_US_FNAL", "T1_UK_RAL"]:
             resourceControl.insertSite(siteName = siteName, seName = "se.%s" % (siteName),
-                                       ceName = siteName, plugin = "CondorPlugin")
+                                       ceName = siteName, plugin = "CondorPlugin", cmsName = siteName)
             resourceControl.insertThreshold(siteName = siteName, taskType = "Processing",
                                             maxSlots = 10000)
 
         self.testDir = self.testInit.generateWorkDir()
-        os.environ["COUCHDB"] = "jobsubmittercaching_t"
+        #os.environ["COUCHDB"] = "jobsubmittercaching_t"
         self.configFile = EmulatorSetup.setupWMAgentConfig()
         return
 
@@ -76,7 +77,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl = os.getenv("COUCHURL")
-        config.JobStateMachine.couchDBName = "jobsubmittercache_t"
+        config.JobStateMachine.couchDBName = "jobsubmittercaching_t"
 
         config.section_("BossAir")
         config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
@@ -166,7 +167,8 @@ class JobSubmitterCachingTest(unittest.TestCase):
 
         Verify that JobSubmitter caching works.
         """
-        mySubmitterPoller = JobSubmitterPoller(self.createConfig())
+        config            = self.createConfig()
+        mySubmitterPoller = JobSubmitterPoller(config)
         mySubmitterPoller.refreshCache()
 
         self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 0,
@@ -177,21 +179,21 @@ class JobSubmitterCachingTest(unittest.TestCase):
         
         # Verify the cache is full
         self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 20,
-                         "Error: The job cache should contain 20 jobs.")        
+                         "Error: The job cache should contain 20 jobs.  Contains: %i" % len(mySubmitterPoller.cachedJobIDs))       
 
-        killWorkflow("wf001")
+        killWorkflow("wf001", jobCouchConfig = config)
         mySubmitterPoller.refreshCache()
         
         # Verify that the workflow is gone from the cache
         self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 10,
-                         "Error: The job cache should contain 10 jobs.")        
+                         "Error: The job cache should contain 10 jobs. Contains: %i" % len(mySubmitterPoller.cachedJobIDs))        
 
-        killWorkflow("wf002")
+        killWorkflow("wf002", jobCouchConfig = config)
         mySubmitterPoller.refreshCache()
         
         # Verify that the workflow is gone from the cache
         self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 0,
-                         "Error: The job cache should be empty.")
+                         "Error: The job cache should be empty.  Contains: %i" % len(mySubmitterPoller.cachedJobIDs))
         return
 
 if __name__ == "__main__":

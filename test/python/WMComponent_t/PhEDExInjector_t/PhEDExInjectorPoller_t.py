@@ -220,7 +220,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         logging.info("Could not retrieve replica info for block: %s" % blockName)
         return None
 
-    @attr("intergration")
+    @attr("integration")
     def testPoller(self):
         """
         _testPoller_

@@ -10,10 +10,20 @@ i.e., stand-ins for Linux command line functions
 
 import os
 import re
+import signal
+import logging
 import subprocess
 
+from WMCore.Algorithms.Alarm import Alarm, alarmHandler
+from WMCore.WMException      import WMException
 
+class SubprocessAlgoException(WMException):
+    """
+    _SubprocessAlgoException_
 
+    Clever exception that does nothing.  Cleverly.
+    """
+    pass
 
 
 def findPIDs(name, user = os.getpid()):
@@ -36,10 +46,6 @@ def findPIDs(name, user = os.getpid()):
 
     return pids
         
-
-
-    
-
 
 def killProcessByName(name, user = os.getpid(), sig = None):
     """
@@ -82,15 +88,36 @@ def tailNLinesFromFile(file, n):
 
 
 
-def runCommand(cmd, shell = True):
+def runCommand(cmd, shell = True, timeout = None):
     """
     Run generic command
     
     This is NOT secure and hence NOT recommended
+    It does however have the timeout functions built into it
+    timeout must be an int
+    Note, setting timeout = 0 does nothing!
     """
 
-    pipe = subprocess.Popen(cmd, stdout = subprocess.PIPE,
-                            stderr = subprocess.PIPE, shell = shell)
+    if timeout:
+        if type(timeout) != int:
+            timeout = None
+            logging.error("SubprocessAlgo.runCommand expected int timeout, got %s" % timeout)
+        else:
+            signal.signal(signal.SIGALRM, alarmHandler)
+            signal.alarm(timeout)
+    try:
+        pipe = subprocess.Popen(cmd, stdout = subprocess.PIPE,
+                                stderr = subprocess.PIPE, shell = shell)
+        stdout, stderr = pipe.communicate()
+        returnCode     = pipe.returncode
+    except Alarm:
+        msg =  "Alarm sounded while running command after %s seconds.\n" % timeout
+        msg += "Command: %s\n" % cmd
+        msg += "Raising exception"
+        logging.error(msg)
+        raise SubprocessAlgoException(msg)
 
-    stdout, stderr = pipe.communicate()
-    return stdout, stderr
+    if timeout:
+        signal.alarm(0)        
+        
+    return stdout, stderr, returnCode

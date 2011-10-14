@@ -24,9 +24,9 @@ from WMCore.DAOFactory                 import DAOFactory
 from WMCore.WMInit                     import getWMBASE
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.FwkJobReport.Report        import Report
+from WMCore.Algorithms                 import SubprocessAlgos
 
-
-def submitWorker(input, results):
+def submitWorker(input, results, timeout = None):
     """
     _outputWorker_
 
@@ -61,7 +61,7 @@ def submitWorker(input, results):
 
         if work == 'STOP':
             # Put the brakes on
-            logging.error("Issued STOP command!")
+            logging.error("submitWorker multiprocess issued STOP command!")
             break
 
         command = work.get('command', None)
@@ -71,10 +71,13 @@ def submitWorker(input, results):
             continue
 
         try:
-            pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
-                                    stderr = subprocess.PIPE, shell = True)
-            stdout, stderr = pipe.communicate()
-            results.put({'stdout': stdout, 'stderr': stderr, 'idList': idList})
+            stdout, stderr, returnCode = SubprocessAlgos.runCommand(cmd = command, shell = True, timeout = timeout)
+            if returnCode == 0:
+                results.put({'stdout': stdout, 'stderr': stderr, 'idList': idList})
+            else:
+                results.put({'stdout': stdout,
+                             'stderr': 'Non-zero exit code: %s\n stderr: %s' % (returnCode, stderr),
+                             'idList': idList})
         except Exception, ex:
             msg =  "Critical error in subprocess while submitting to condor"
             msg += str(ex)
@@ -247,6 +250,8 @@ class CondorPlugin(BasePlugin):
                 proc.terminate()
             else:
                 proc.join()
+        # At the end, clean the pool
+        self.pool = []
         return
 
 
@@ -259,20 +264,19 @@ class CondorPlugin(BasePlugin):
         Submit jobs for one subscription
         """
 
+        # If we're here, then we have submitter components
+        self.scriptFile = self.config.JobSubmitter.submitScript
+        self.submitDir  = self.config.JobSubmitter.submitDir
+        timeout         = getattr(self.config.JobSubmitter, 'getTimeout', 300)
+
         if len(self.pool) == 0:
             # Starting things up
             # This is obviously a submit API
             for x in range(self.nProcess):
                 p = multiprocessing.Process(target = submitWorker,
-                                            args = (self.input, self.result))
+                                            args = (self.input, self.result, timeout))
                 p.start()
                 self.pool.append(p)
-
-
-        # If we're here, then we have submitter components
-        self.scriptFile = self.config.JobSubmitter.submitScript
-        self.submitDir  = self.config.JobSubmitter.submitDir
-        timeout         = getattr(self.config.JobSubmitter, 'getTimeout', 300)
 
         if not os.path.exists(self.submitDir):
             os.makedirs(self.submitDir)
@@ -328,6 +332,7 @@ class CondorPlugin(BasePlugin):
 
         # Now we should have sent all jobs to be submitted
         # Going to do the rest of it now
+        queueError = False
         for n in range(nSubmits):
             try:
                 res = self.result.get(block = True, timeout = timeout)
@@ -336,7 +341,9 @@ class CondorPlugin(BasePlugin):
                 # Those jobs have vanished
                 logging.error("Queue.Empty error received!")
                 logging.error("This could indicate a critical condor error!")
-                logging.error("However, no information of any use was obtained!")
+                logging.error("However, no information of any use was obtained due to process failure.")
+                logging.error("Either process failed, or process timed out after %s seconds." % timeout)
+                queueError = True
                 continue
             
             output = res['stdout']
@@ -370,6 +377,11 @@ class CondorPlugin(BasePlugin):
         if getattr(self.config.JobSubmitter, 'deleteJDLFiles', True):
             for f in jdlFiles:
                 os.remove(f)
+
+        # If the queue failed, clean the processes from the queue
+        # This prevents jobs from building up in memory anywhere
+        if queueError:
+            self.close()
 
 
         # We must return a list of jobs successfully submitted,

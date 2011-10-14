@@ -37,7 +37,6 @@ class CondorPluginTest(BossAirTest):
         This test works on the CondorPlugin, checking all of
         its functions with a single set of jobs
         """
-
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
 

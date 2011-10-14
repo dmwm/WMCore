@@ -355,8 +355,8 @@ class BossAirTest(unittest.TestCase):
             testJob["siteBlacklist"] = bl
             testJob["siteWhitelist"] = wl
             testJob['ownerDN'] = 'mnorman'
-            testJob['userrole'] = 'cmsrole'
-            testJob['usergroup'] = 'phgroup'
+            testJob['ownerRole'] = 'cmsrole'
+            testJob['ownerGroup'] = 'phgroup'
 
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)
@@ -462,14 +462,8 @@ class BossAirTest(unittest.TestCase):
         self.assertEqual(len(deadJobs), 0)
         raisesException = False
 
-        try:
-            baAPI._loadByStatus(status = 'FalseStatus')
-        except BossAirException:
-            # It should raise an error if we try loading a
-            # non-existant status
-            raisesException = True
-        self.assertTrue(raisesException)
-
+        self.assertRaises(BossAirException,
+                          baAPI._loadByStatus, status = 'FalseStatus')
 
         # Change the job status and update it
         for job in newJobs:

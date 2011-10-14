@@ -164,7 +164,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         # Now we run the monitor command and collate the data
         cmd = self.monitorBase % (stepPID, stepPID)
-        stdout, stderr = subprocessAlgos.runCommand(cmd)
+        stdout, stderr, retcode = subprocessAlgos.runCommand(cmd)
 
         output = stdout.split()
         if not len(output) > 7:

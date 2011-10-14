@@ -136,7 +136,7 @@ class gLitePlugin(BasePlugin):
         self.locationDict = {}
         self.pool     = []
 
-        self.delegationid = str(type(self).__name__)
+        self.delegationid = ''
 
         self.config = config
 

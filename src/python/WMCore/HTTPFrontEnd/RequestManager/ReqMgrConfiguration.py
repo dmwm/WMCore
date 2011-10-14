@@ -23,7 +23,8 @@ def reqMgrConfig(
     workloadCouchDB = 'reqmgr_workload_cache',
     workloadSummaryCouchDB = "workloadsummary",
     connectURL = None,
-    startup = "Root.py"):
+    startup = "Root.py",
+    addMonitor = True):
 
     config = Configuration()
     reqMgrHtml = os.path.join(installation, 'html/RequestManager')
@@ -112,25 +113,25 @@ def reqMgrConfig(
     active.create.requestor = user
     active.create.cmsswDefaultVersion = 'CMSSW_3_5_8'
 
-
-    active.section_('GlobalMonitor')
-    active.GlobalMonitor.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorPage'
-    active.GlobalMonitor.templates = globalOverviewTemplates
-    active.GlobalMonitor.javascript = globalOverviewJavascript
-    active.GlobalMonitor.html = globalOverviewHtml
-    active.GlobalMonitor.serviceLevel = 'RequestManager'
-
-    active.section_('monitorSvc')
-    active.monitorSvc.serviceURL = "%s/reqmgr/reqMgr" % reqMgrHost
-    active.monitorSvc.serviceLevel = active.GlobalMonitor.serviceLevel
-    active.monitorSvc.workloadSummaryCouchURL = "%s/%s" % (couchurl, workloadSummaryCouchDB)
-    active.monitorSvc.section_('model')
-    active.monitorSvc.section_('formatter')
-    active.monitorSvc.object = 'WMCore.WebTools.RESTApi'
-    active.monitorSvc.model.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorRESTModel'
-    active.monitorSvc.default_expires = 0 # no caching
-    active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
-    active.monitorSvc.template = os.path.join(installation, 'templates/WMCore/WebTools')
+    if addMonitor:
+        active.section_('GlobalMonitor')
+        active.GlobalMonitor.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorPage'
+        active.GlobalMonitor.templates = globalOverviewTemplates
+        active.GlobalMonitor.javascript = globalOverviewJavascript
+        active.GlobalMonitor.html = globalOverviewHtml
+        active.GlobalMonitor.serviceLevel = 'RequestManager'
+    
+        active.section_('monitorSvc')
+        active.monitorSvc.serviceURL = "%s/reqmgr/reqMgr" % reqMgrHost
+        active.monitorSvc.serviceLevel = active.GlobalMonitor.serviceLevel
+        active.monitorSvc.workloadSummaryCouchURL = "%s/%s" % (couchurl, workloadSummaryCouchDB)
+        active.monitorSvc.section_('model')
+        active.monitorSvc.section_('formatter')
+        active.monitorSvc.object = 'WMCore.WebTools.RESTApi'
+        active.monitorSvc.model.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorRESTModel'
+        active.monitorSvc.default_expires = 0 # no caching
+        active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
+        active.monitorSvc.template = os.path.join(installation, 'templates/WMCore/WebTools')
     
     active.section_('yuiserver')
     active.yuiserver.object = 'WMCore.WebTools.YUIServer'

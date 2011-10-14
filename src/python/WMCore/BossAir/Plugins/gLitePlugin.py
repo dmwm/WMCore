@@ -99,6 +99,7 @@ def processWorker(input, results):
                        'workid': workid,
                        'jsout' : jsout,
                        'stderr': stderr,
+                       'work': command,
                        'exit': pipe.returncode
                      })
         #print '%i TOOK: %s' % (workid, str(time.time() - t1))
@@ -493,19 +494,23 @@ class gLitePlugin(BasePlugin):
             except Queue.Empty:
                 logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
-            jsout  = res['jsout']
-            error  = res['stderr']
-            exit   = res['exit']
-            workid = res['workid']
-            jobsub = workqueued[workid]
+            jsout   = res['jsout']
+            error   = res['stderr']
+            exit    = res['exit']
+            workid  = res['workid']
+            workcmd = res['work']
+            jobsub  = workqueued[workid]
             logging.debug("Retrieving id %i " %workid)
 
-            if not error == '':
-                logging.error("Printing out command stderr")
+            reporterror = ''
+            if not error == '' or not exit == 0:
+                logging.error("Submission command failed: '%s' " % str(workcmd))
+                logging.error("Command stdout")
+                logging.error(str(jsout))
+                logging.error("Command stderr")
                 logging.error(error)
-            if not exit == 0:
                 logging.error("Exit code %s" % str(exit) )
-
+                reporterror = 'Command stdout\n%s\nCommand stderr\n%s\nExit code %s' % (str(jsout), str(error), str(exit))
             # {
             #  result: success
             #  parent: https://XYZ
@@ -523,26 +528,26 @@ class gLitePlugin(BasePlugin):
                     if jsout['result'] != 'success':
                         failedJobs.extend(jobsub)
                         for job in jobsub:
-                            self.fakeReport("SubmissionFailure", str(jsout), -1, job)
+                            self.fakeReport("SubmissionFailure", reporterror, -1, job)
                         continue
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
-                        self.fakeReport("SubmissionFailure", str(jsout), -1, job)
+                        self.fakeReport("SubmissionFailure", reporterror, -1, job)
                     continue
                 if jsout.has_key('parent'):
                     parent = jsout['parent']
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
-                        self.fakeReport("SubmissionFailure", str(jsout), -1, job)
+                        self.fakeReport("SubmissionFailure", reporterror, -1, job)
                     continue
                 if jsout.has_key('endpoint'):
                     endpoint = jsout['endpoint']
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
-                        self.fakeReport("SubmissionFailure", str(jsout), -1, job)
+                        self.fakeReport("SubmissionFailure", reporterror, -1, job)
                     continue
                 if jsout.has_key('children'):
                     jobnames = jsout['children'].keys()
@@ -556,11 +561,11 @@ class gLitePlugin(BasePlugin):
                             successfulJobs.append(job)
                         else:
                             failedJobs.append(jj)
-                            self.fakeReport("SubmissionFailure", str(jsout), -1, jj)
+                            self.fakeReport("SubmissionFailure", reporterror, -1, jj)
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
-                        self.fakeReport("SubmissionFailure", str(jsout), -1, job)
+                        self.fakeReport("SubmissionFailure", reporterror, -1, job)
                     continue
 
         logging.debug("Submission completed and processed at time %s " \

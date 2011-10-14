@@ -123,6 +123,8 @@ class WMInit:
                 options['unix_socket'] = socketLoc            
         elif dialect.lower() == 'oracle':
             dialect = 'Oracle'
+        elif dialect.lower() == 'http':
+            dialect = 'CouchDB'
         else:
             msg = "Unsupported dialect %s !" % dialect 
             logging.error(msg) 

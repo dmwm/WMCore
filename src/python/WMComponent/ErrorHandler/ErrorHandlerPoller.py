@@ -3,11 +3,34 @@
 # W6501: It doesn't like string formatting in logging messages
 """
 The actual error handler algorithm
+
+The current ErrorHandler will either exhaust jobs based on the retry_count, or move jobs
+onward into their necessary cooloff state.  The number of retries a job is allowed is
+based upon:
+
+config.ErrorHandler.maxRetries
+
+However, it can also be used to handle jobs based on properties in the FWJR.
+In order to engage any of this behavior you have to set the config option:
+config.ErrorHandler.readFWJR = True
+
+It will then take three arguments.
+
+config.ErrorHandler.failureExitCodes:  This should be a list of exitCodes on which you want the job to be
+immediately exhausted.  It defaults to [].
+
+config.ErrorHandler.maxFailTime:  This should be a time in seconds after which, if the job took that long to fail,
+it should be exhausted immediately.  It defaults to 24 hours.
+
+config.ErrorHandler.passExitCodes:  This should be a list of exitCodes that you want to cause the job to move
+immediately to the 'created' state, skipping cooloff.  It defaults to [].
+
+Note that failureExitCodes has precedence over passExitCodes.
 """
 __all__ = []
 
 
-
+import os.path
 import threading
 import logging
 import traceback
@@ -22,6 +45,7 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.ACDC.DataCollectionService  import DataCollectionService
 from WMCore.WMSpec.WMWorkload           import WMWorkload, WMWorkloadHelper
 from WMCore.WMException                 import WMException
+from WMCore.FwkJobReport.Report         import Report
 
 class ErrorHandlerException(WMException):
     """
@@ -51,6 +75,10 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         self.maxRetries     = self.config.ErrorHandler.maxRetries
         self.maxProcessSize = getattr(self.config.ErrorHandler, 'maxProcessSize', 250)
+        self.exitCodes      = getattr(self.config.ErrorHandler, 'failureExitCodes', [])
+        self.maxFailTime    = getattr(self.config.ErrorHandler, 'maxFailTime', 24 * 3600)
+        self.readFWJR       = getattr(self.config.ErrorHandler, 'readFWJR', False)
+        self.passCodes      = getattr(self.config.ErrorHandler, 'passExitCodes', [])
 
         self.getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
 
@@ -63,7 +91,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         
         return
     
-    def setup(self, parameters):
+    def setup(self, parameters = None):
         """
         Load DB objects required for queries
         """
@@ -92,22 +120,68 @@ class ErrorHandlerPoller(BaseWorkerThread):
         logging.info("Processing retries for %i failed jobs of type %s." % (len(jobs), jobType))
         exhaustJobs = []
         cooloffJobs = []
+        cooloffPre  = []
+        passJobs    = []
 
 	# Retries < max retry count
         for ajob in jobs:
             # Retries < max retry count
             if ajob['retry_count'] < self.maxRetries:
-                cooloffJobs.append(ajob)
+                cooloffPre.append(ajob)
             # Check if Retries >= max retry count
             elif ajob['retry_count'] >= self.maxRetries:
                 exhaustJobs.append(ajob)
                 msg = "Exhausting job %i" % ajob['id']
                 logging.error(msg)
-                self.sendAlert(6, msg = msg)
+                self.sendAlert(4, msg = msg)
                 logging.debug("JobInfo: %s" % ajob)
             else:
                 logging.debug("Job %i had %s retries remaining" \
                               % (ajob['id'], str(ajob['retry_count'])))
+
+        if self.readFWJR:
+            # Then we have to check each FWJR for exit status
+            for job in cooloffPre:
+                try:
+                    report     = Report()
+                    reportPath = os.path.join(job['cache_dir'], "Report.%i.pkl" % job['retry_count'])
+                    report.load(reportPath)
+
+                    # Retrieve information from report
+                    times = report.getFirstStartLastStop()
+                    startTime = times['startTime']
+                    stopTime  = times['stopTime']
+
+                    if startTime == None or stopTime == None:
+                        # Well, then we have a problem.
+                        # There is something very wrong with this job, nevertheless we don't know what it is.
+                        # Rerun, and hope the times get written the next time around.
+                        logging.error("No start, stop times for steps for job %i" % job['id'])
+                        continue
+                    
+                    elif stopTime - startTime > self.maxFailTime:
+                        msg = "Job %i exhausted after running on node for %i seconds" % (job['id'], stopTime - startTime)
+                        logging.error(msg)
+                        exhaustJobs.append(job)
+                    elif report.getExitCode() in self.exitCodes:
+                        msg = "Job %i exhausted due to exitCode %s" % (job['id'], report.getExitCode())
+                        logging.error(msg)
+                        self.sendAlert(4, msg = msg)
+                        exhaustJobs.append(job)
+                    elif report.getExitCode() in self.passCodes:
+                        msg = "Job %i restarted immediately due to exitCode %i" % (job['id'], report.getExitCode())
+                        passJobs.append(job)
+                    else:
+                        cooloffJobs.append(job)
+                        
+                except Exception, ex:
+                    logging.error("Exception while trying to check jobs for failures!")
+                    logging.error(str(ex))
+                    logging.error("Ignoring and sending job to cooloff")
+                    continue
+        else:
+            cooloffJobs = cooloffPre
+            
 
         #Now to actually do something.
         logging.debug("About to propagate jobs")
@@ -115,6 +189,9 @@ class ErrorHandlerPoller(BaseWorkerThread):
                                    '%sfailed' %(jobType))
         self.changeState.propagate(cooloffJobs, '%scooloff' %(jobType), \
                                    '%sfailed' %(jobType))
+        if len(passJobs) > 0:
+            # Overwrite the transition states and move directly to created
+            self.changeState.propagate(passJobs, 'created', 'new')
 
         # Remove all the files in the exhausted jobs.
         logging.debug("About to fail input files for exhausted jobs")

@@ -11,7 +11,7 @@ import unittest
 
 from WMComponent.ErrorHandler.ErrorHandlerPoller import ErrorHandlerPoller
 
-import WMCore.WMInit
+import WMCore.WMBase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.DAOFactory          import DAOFactory
 from WMCore.Services.UUID       import makeUUID
@@ -30,6 +30,7 @@ from WMCore.Agent.Configuration         import Configuration
 from WMCore.WMSpec.Makers.TaskMaker     import TaskMaker
 from WMCore.ACDC.DataCollectionService  import DataCollectionService
 from WMCore.FwkJobReport.Report         import Report
+
 
 from WMCore_t.WMSpec_t.TestSpec         import testWorkload
 
@@ -142,7 +143,8 @@ class ErrorHandlerTest(unittest.TestCase):
 
     
 
-    def createTestJobGroup(self, nJobs = 10, retry_count = 1, workloadPath = 'test'):
+    def createTestJobGroup(self, nJobs = 10, retry_count = 1,
+                           workloadPath = 'test', fwjrPath = None):
         """
         Creates a group of several jobs
         """
@@ -190,6 +192,7 @@ class ErrorHandlerTest(unittest.TestCase):
             testJob['mask'].addRunAndLumis(run = 10, lumis = [12312])
             testJob['mask'].addRunAndLumis(run = 10, lumis = [12314, 12316])
             testJob['cache_dir'] = os.path.join(self.testDir, testJob['name'])
+            testJob['fwjr_path'] = fwjrPath
             os.mkdir(testJob['cache_dir'])
             testJobGroup.add(testJob)
             testJob.create(group = testJobGroup)
@@ -405,15 +408,13 @@ class ErrorHandlerTest(unittest.TestCase):
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
                                     'WMSandbox', 'WMWorkload.pkl')
 
+        fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                "WMComponent_t/JobAccountant_t",
+                                "fwjrs/badBackfillJobReport.pkl")
+
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
-                                               workloadPath = workloadPath)
-        
-        fwjrPath = os.path.abspath("../JobAccountant_t/fwjrs/badBackfillJobReport.pkl")
-        report = Report()
-        report.load(fwjrPath)
-        for job in testJobGroup.jobs:
-            job['fwjr'] = report
-            report.save(os.path.join(job['cache_dir'], "Report.%i.pkl" % job['retry_count']))
+                                               workloadPath = workloadPath,
+                                               fwjrPath = fwjrPath)
         
         config = self.getConfig()
         config.ErrorHandler.readFWJR         = True

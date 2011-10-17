@@ -80,7 +80,9 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.readFWJR       = getattr(self.config.ErrorHandler, 'readFWJR', False)
         self.passCodes      = getattr(self.config.ErrorHandler, 'passExitCodes', [])
 
-        self.getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
+        self.getJobs    = self.daoFactory(classname = "Jobs.GetAllJobs")
+        self.idLoad     = self.daoFactory(classname = "Jobs.LoadFromID")
+        self.loadAction = self.daoFactory(classname = "Jobs.LoadForErrorHandler")
 
         self.dataCollection = DataCollectionService(url = config.ACDC.couchurl,
                                                     database = config.ACDC.database)
@@ -142,9 +144,12 @@ class ErrorHandlerPoller(BaseWorkerThread):
         if self.readFWJR:
             # Then we have to check each FWJR for exit status
             for job in cooloffPre:
+                report     = Report()
+                reportPath = job['fwjr_path']
+                if not os.path.isfile(reportPath):
+                    logging.error("Failed to find FWJR for job %i in location %s." % (job['id'], reportPath))
+                    continue
                 try:
-                    report     = Report()
-                    reportPath = os.path.join(job['cache_dir'], "Report.%i.pkl" % job['retry_count'])
                     report.load(reportPath)
 
                     # Retrieve information from report
@@ -207,11 +212,13 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         Do the ACDC creation and hope it works
         """
-        logging.debug("Entering ACDC with %i jobs" % len(jobList))
-        for job in jobList:
+        idList = [x['id'] for x in jobList]
+        loadList = self.loadJobsFromListFull(idList = idList)
+        logging.debug("Entering ACDC with %i jobs" % len(loadList))
+        for job in loadList:
             job.getMask()
 
-        self.dataCollection.failedJobs(jobList)
+        self.dataCollection.failedJobs(loadList)
         return
 
     def splitJobList(self, jobList, jobType):
@@ -280,7 +287,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         return
 
-
     def loadJobsFromList(self, idList):
         """
         _loadJobsFromList_
@@ -288,14 +294,40 @@ class ErrorHandlerPoller(BaseWorkerThread):
         Load jobs in bulk
         """
 
-        loadAction = self.daoFactory(classname = "Jobs.LoadForErrorHandler")
+        binds = []
+        for jobID in idList:
+            binds.append({"jobid": jobID})
 
+        results = self.idLoad.execute(jobID = binds)
+
+        # You have to have a list
+        if type(results) == dict:
+            results = [results]
+
+        listOfJobs = []
+        for entry in results:
+            # One job per entry
+            tmpJob = Job(id = entry['id'])
+            tmpJob.update(entry)
+            listOfJobs.append(tmpJob)
+
+
+        return listOfJobs
+
+
+    def loadJobsFromListFull(self, idList):
+        """
+        _loadJobsFromList_
+
+        Load jobs in bulk.
+        Include the full metadata.
+        """
 
         binds = []
         for jobID in idList:
             binds.append({"jobid": jobID})
 
-        results = loadAction.execute(jobID = binds)
+        results = self.loadAction.execute(jobID = binds)
 
         # You have to have a list
         if type(results) == dict:

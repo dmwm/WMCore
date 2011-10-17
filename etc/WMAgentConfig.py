@@ -35,7 +35,7 @@ workqueueDBName = 'workqueue'
 workqueueInboxDbName = 'workqueue_inbox'
 #example of workloadSummary url
 workloadSummaryDB = "workloadsummary"
-workloadSummaryURL = "%s/%s" % (couchURL, workloadSummaryDB)
+workloadSummaryURL = couchURL
 
 # Information for the workqueue, email of the administrator and the team names
 # for this agent.
@@ -230,7 +230,9 @@ config.TaskArchiver.pollInterval = 240
 config.TaskArchiver.timeOut      = workflowArchiveTimeout
 config.TaskArchiver.useWorkQueue = True
 config.TaskArchiver.workloadSummaryCouchURL = workloadSummaryURL
+config.TaskArchiver.workloadSummaryCouchDBName = workloadSummaryDB
 config.TaskArchiver.histogramKeys = ["PeakValueRss", "PeakValueVsize", "TotalJobTime", "AvgEventTime"]
+config.TaskArchiver.requireCouch  = True
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0

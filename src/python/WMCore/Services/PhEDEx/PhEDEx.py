@@ -202,43 +202,48 @@ class PhEDEx(Service):
           o Input is a dataset but only block subscriptions exist
         """
         from collections import defaultdict
+        inputs = defaultdict(set)
         result = defaultdict(set)
 
-        # Disable until problem with PhEDEx DataSvc is resolved:
-        #  https://hypernews.cern.ch/HyperNews/CMS/get/phedex/2224.html
-        #kwargs.setdefault('suspended', 'n') # require active subscription
+        kwargs.setdefault('suspended', 'n') # active subscriptions by default
 
         dataItems = list(set(dataItems)) # force unique items
+        # get dict of dataset : (blocks or dataset)
+        for item in dataItems:
+            inputs[item.split('#')[0]].add(item)
 
         # Hard to query all at once in one GET call, POST not cacheable
-        # hence, query individually - use httplib2 caching to protect service
-        for item in dataItems:
+        # Query each dataset and record relevant dataset or block location
+        for dsname, items in inputs.items():
 
             # First query for a dataset level subscription (most common)
             # this returns block level subscriptions also.
-            # Rely on httplib2 caching to not resend on every block in dataset
-            kwargs['dataset'], kwargs['block'] = [item.split('#')[0]], []
+            kwargs['dataset'], kwargs['block'] = dsname, []
             response = self.subscriptions(**kwargs)['phedex']
 
             # iterate over response as can't jump to specific datasets
             for dset in response['dataset']:
-                if dset['name'] != item.split('#')[0]:
-                        continue
+                if dset['name'] != dsname:
+                    continue
                 if dset.has_key('subscription'):
                     # dataset level subscription
                     nodes = [x['node'] for x in dset['subscription']
-                             if x['suspended'] == 'n']
-                    result[item].update(nodes)
+                             if kwargs['suspended'] == 'either' or \
+                                        x['suspended'] == kwargs['suspended']]
+                    # update locations for all items in this dataset
+                    for item in items:
+                        result[item].update(nodes)
 
                 #if we have a block we must check for block level subscription also
                 # combine with original query when can give both dataset and block
-                if item.find('#') > -1 and dset.has_key('block'):
+                if any([x.find('#') > -1 for x in items]) and dset.has_key('block'):
                     for block in dset['block']:
-                        if block['name'] == item:
+                        if block['name'] in items:
                             nodes = [x['node'] for x in block['subscription']
-                                     if x['suspended'] == 'n']
-                            result[item].update(nodes)
-                            break
+                                     if kwargs['suspended'] == 'either' or \
+                                        x['suspended'] == kwargs['suspended']]
+                            # update locations for this block
+                            result[block['name']].update(nodes)
         return result
 
 

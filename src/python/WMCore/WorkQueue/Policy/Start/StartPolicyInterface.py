@@ -13,6 +13,7 @@ from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 from WMCore.WMException import WMException
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from DBSAPI.dbsApiException import DbsConfigurationError
+from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore import Lexicon
 
 class StartPolicyInterface(PolicyInterface):
@@ -98,6 +99,7 @@ class StartPolicyInterface(PolicyInterface):
         self.validate()
         try:
             self.split()
+        # For known exceptions raise custom error that will fail the workflow.
         except DbsConfigurationError, ex:
             # A dbs configuration error implies the spec is invalid
             error = WorkQueueWMSpecError(self.wmspec, "DBS config error: %s" % str(ex))
@@ -106,16 +108,16 @@ class StartPolicyInterface(PolicyInterface):
             # Assertion generally means validation of an input field failed
             error = WorkQueueWMSpecError(self.wmspec, "Assertion error: %s" % str(ex))
             raise error
-        except Exception, ex:
+        except DBSReaderError, ex:
             # Hacky way of identifying non-existant data, DbsBadRequest chomped by DBSReader
             # DbsConnectionError: Database exception,Invalid parameters thrown by Summary api
             if 'DbsBadRequest' in str(ex) or 'Invalid parameters' in str(ex):
                 msg = """data: %s: %s.""" % (str(task.inputDataset().pythonise_()), str(ex))
                 error = WorkQueueNoWorkError(self.wmspec, msg)
                 raise error
+            raise # propagate other dbs errors
 
-            raise # propagate other error to caller
-
+        # if we have no elements then there was no work in the spec, fail it
         if not self.workQueueElements:
             msg = """data: %s, mask: %s.""" % (str(task.inputDataset().pythonise_()), str(mask))
             error = WorkQueueNoWorkError(self.wmspec, msg)

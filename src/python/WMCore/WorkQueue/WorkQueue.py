@@ -13,6 +13,7 @@ import types
 from collections import defaultdict
 import os
 import threading
+import time
 
 from WMCore.Alerts import API as alertAPI
 
@@ -25,6 +26,7 @@ from WMCore.WorkQueue.Policy.Start import startPolicy
 from WMCore.WorkQueue.Policy.End import endPolicy
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
+from WMCore.WorkQueue.WorkQueueExceptions import TERMINAL_EXCEPTIONS
 from WMCore.WorkQueue.WorkQueueUtils import get_dbs
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
@@ -104,6 +106,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('PhEDExEndpoint', None)
         self.params.setdefault('PopulateFilesets', True)
         self.params.setdefault('LocalQueueFlag', True)
+        self.params.setdefault('QueueRetryTime', 3600)
 
         self.params.setdefault('JobDumpConfig', None)
         self.params.setdefault('BossAirConfig', None)
@@ -458,16 +461,7 @@ class WorkQueue(WorkQueueBase):
         wmspec = WMWorkloadHelper()
         wmspec.load(wmspecUrl)
 
-        # check we haven't already got this work
-        try:
-            self.backend.getInboxElements(elementIDs = [wmspec.name()])
-        except CouchNotFoundError:
-            pass
-        else:
-            self.logger.warning('queueWork(): Ignoring duplicate spec "%s"' % wmspec.name())
-            return 1
-
-        if request:
+        if request: # validate request name
             try:
                 Lexicon.requestName(request)
             except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
@@ -476,19 +470,15 @@ class WorkQueue(WorkQueueBase):
             if request != wmspec.name():
                 raise WorkQueueWMSpecError(wmspec, 'Request & workflow name mismatch %s vs %s' % (request, wmspec.name()))
 
-        # Do splitting before we save inbound work to verify the wmspec
-        # if the spec fails it won't enter the queue
-        inbound = self.backend.createWork(wmspec, TeamName = team, WMBSUrl = self.params["WMBSUrl"])
+        # Either pull the existing inbox element or create a new one.
+        try:
+            inbound = self.backend.getInboxElements(elementIDs = [wmspec.name()], loadSpec = True)
+        except CouchNotFoundError:
+            inbound = [self.backend.createWork(wmspec, Status = 'Negotiating',
+                                              TeamName = team, WMBSUrl = self.params["WMBSUrl"])]
+            self.backend.insertElements(inbound)
 
-        # either we have already split the work or we do that now
-        work = self.backend.getElementsForWorkflow(wmspec.name())
-        if work:
-            self.logger.info('Request "%s" already split - Resuming' % str(wmspec.name()))
-        else:
-            work = self._splitWork(wmspec, None, inbound['Inputs'], inbound['Mask'])
-            self.backend.insertElements(work, parent = inbound) # if this fails, rerunning will pick up here
-
-        self.backend.insertElements([inbound]) # save inbound work to signal we have completed queueing
+        work = self.processInboundWork(inbound, throw = True)
         return len(work)
 
     def status(self, status = None, elementIDs = None,
@@ -708,28 +698,44 @@ class WorkQueue(WorkQueueBase):
 
         return totalUnits
 
-    def processInboundWork(self):
+    def processInboundWork(self, inbound_work = None, throw = False):
         """Retrieve work from inbox, split and store
+        If request passed then only process that request
         """
         self.backend.fixConflicts() # db should be consistent
 
         result = []
-        inbound_work = self.backend.getElementsForSplitting()
+        if not inbound_work:
+            inbound_work = self.backend.getElementsForSplitting()
         for inbound in inbound_work:
             # Check we haven't already split the work
             work = self.backend.getElementsForParent(inbound)
+            try:
+                if work:
+                    self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
+                else:
+                    work = self._splitWork(inbound['WMSpec'], None, inbound['Inputs'], inbound['Mask'])
+                    self.backend.insertElements(work, parent = inbound) # if this fails, rerunning will pick up here
+                    # save inbound work to signal we have completed queueing
+                    self.backend.updateInboxElements(inbound.id, Status = 'Acquired')
+            except TERMINAL_EXCEPTIONS, ex:
+                self.logger.error('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
+                self.backend.updateInboxElements(inbound.id, Status = 'Failed')
+                if throw:
+                    raise
+            except Exception, ex:
+                # if request has been failing for too long permanently fail it.
+                if (float(inbound.timestamp) + self.params['QueueRetryTime']) < time.time():
+                    self.logger.error('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
+                    self.backend.updateInboxElements(inbound.id, Status = 'Failed')
+                else:
+                    self.logger.error('Exception splitting work for wmspec "%s": %s' % (inbound['RequestName'], str(ex)))
+                if throw:
+                    raise
+                continue
+            else:
+                result.extend(work)
 
-            if not work:
-                try: # We haven't split this before, do so now
-                    work = self._splitWork(inbound['WMSpec'], inbound.id, inbound['Inputs'], inbound['Mask'])
-                except Exception, ex:
-                    self.logger.exception('Exception splitting work for wmspec "%s": %s' % (inbound['WMSpec'].name(), str(ex)))
-                    continue
-
-                self.backend.insertElements(work, parent = inbound)
-            inbound['Status'] = 'Acquired'  # update parent
-            self.backend.saveElements(inbound) # if this fails subsequent updates will retry
-            result.extend(work)
         requests = ', '.join(list(set(['"%s"' % x['RequestName'] for x in result])))
         if requests:
             self.logger.info('Split work for request(s): %s' % requests)

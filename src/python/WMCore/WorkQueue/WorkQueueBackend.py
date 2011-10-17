@@ -68,7 +68,8 @@ class WorkQueueBackend(object):
 
 
     def getElementsForSplitting(self):
-        """Returns the elements from the inbox that need to be split"""
+        """Returns the elements from the inbox that need to be split,
+        if WorkflowName specified only return elements to split for that workflow"""
         elements = self.getInboxElements(status = 'Negotiating')
         specs = {} # cache as may have multiple elements for same spec
         for ele in elements:
@@ -132,7 +133,7 @@ class WorkQueueBackend(object):
         """
         kwargs.update({'WMSpec' : spec,
                        'RequestName' : spec.name(),
-                       'Status' : 'Acquired'})
+                      })
         unit = CouchWorkQueueElement(self.inbox, elementParams = kwargs)
         unit.id = spec.name()
         return unit

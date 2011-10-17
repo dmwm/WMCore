@@ -147,8 +147,10 @@ class WorkQueueReqMgrInterface():
     
     def reportRequestStatus(self, request, status, message = None):
         """Change state in RequestManager
-           Optionally, take a message to append to the request"""
-        self.reqMgr.reportRequestStatus(request, self._reqMgrStatus(status))
+           Optionally, take a message to append to the request
+        """
+        if self._reqMgrStatus(status): # only send known states
+            self.reqMgr.reportRequestStatus(request, self._reqMgrStatus(status))
         if message:
             self.sendMessage(request, str(message))
 
@@ -172,7 +174,7 @@ class WorkQueueReqMgrInterface():
         if statusMapping.has_key(status):
             return statusMapping[status]
         else:
-            return status
+            return None
 
     def reportProgress(self, request, **args):
         """report progress for the request"""

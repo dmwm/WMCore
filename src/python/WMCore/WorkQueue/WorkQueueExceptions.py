@@ -40,3 +40,5 @@ class WorkQueueNoMatchingElements(WorkQueueError):
 
     def __str__(self):
         return "%s: %s" % (self.msg, self.error)
+
+TERMINAL_EXCEPTIONS = (WorkQueueWMSpecError, WorkQueueNoWorkError)

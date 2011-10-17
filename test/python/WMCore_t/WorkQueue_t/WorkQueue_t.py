@@ -9,6 +9,7 @@ import unittest
 import os
 import pickle
 import threading
+import time
 
 from WMCore.Configuration import Configuration
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
@@ -171,7 +172,8 @@ class WorkQueueTest(WorkQueueTestCase):
                                DbName = self.queueDB,
                                InboxDbName = self.queueInboxDB,
                                CacheDir = self.workDir,
-                               config = config)
+                               config = config,
+                               QueueRetryTime = 1)
 
         # create relevant sites in wmbs
         rc = ResourceControl()
@@ -804,6 +806,7 @@ class WorkQueueTest(WorkQueueTestCase):
         mcspec.save(mcspec.specUrl())
         self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, mcspec.specUrl())
         getFirstTask(mcspec).setSiteWhitelist([])
+        self.queue.deleteWorkflows(mcspec.name())
 
         # 0 events
         getFirstTask(mcspec).addProduction(totalevents = 0)
@@ -826,6 +829,7 @@ class WorkQueueTest(WorkQueueTestCase):
         getFirstTask(processingSpec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
         processingSpec.save(processingSpec.specUrl())
         self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, processingSpec.specUrl())
+        self.queue.deleteWorkflows(processingSpec.name())
 
         # invalid dataset name
         processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
@@ -834,11 +838,13 @@ class WorkQueueTest(WorkQueueTestCase):
         getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
         processingSpec.save(processingSpec.specUrl())
         self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
+        self.queue.deleteWorkflows(processingSpec.name())
 
         # Cant have a slash in primary ds name - validation should fail
         getFirstTask(processingSpec).data.input.dataset.primary = 'a/b'
         processingSpec.save(processingSpec.specUrl())
         self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, processingSpec.specUrl())
+        self.queue.deleteWorkflows(processingSpec.name())
 
         # dataset splitting with invalid run whitelist
         processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
@@ -848,6 +854,7 @@ class WorkQueueTest(WorkQueueTestCase):
         processingSpec.setRunWhitelist([666]) # not in this dataset
         processingSpec.save(processingSpec.specUrl())
         self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
+        self.queue.deleteWorkflows(processingSpec.name())
 
         # block splitting with invalid run whitelist
         processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
@@ -857,6 +864,7 @@ class WorkQueueTest(WorkQueueTestCase):
         processingSpec.setRunWhitelist([666]) # not in this dataset
         processingSpec.save(processingSpec.specUrl())
         self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
+        self.queue.deleteWorkflows(processingSpec.name())
 
     def testIgnoreDuplicates(self):
         """Ignore duplicate work"""
@@ -1060,6 +1068,17 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(self.localQueue.statusInbox()[1]['Status'], 'Negotiating')
         self.assertEqual(len(self.localQueue), 1)
 
+
+    def testFailRequestAfterTimeout(self):
+        """Fail a request if it errors for too long"""
+        # force queue to fail queueing
+        self.queue.params['SplittingMapping'] = 'thisisswrong'
+
+        self.assertRaises(StandardError, self.queue.queueWork, self.processingSpec.specUrl())
+        self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Negotiating')
+        time.sleep(2)
+        self.assertRaises(StandardError, self.queue.queueWork, self.processingSpec.specUrl())
+        self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Failed')
 
 if __name__ == "__main__":
     unittest.main()

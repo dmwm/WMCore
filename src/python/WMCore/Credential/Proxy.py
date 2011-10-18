@@ -122,9 +122,9 @@ class Proxy(Credential):
         """
         Return the vo details that should be in the user proxy.
         """
-        proxyDetails = "/%s/" % self.vo
+        proxyDetails = "/%s" % self.vo
         if self.group:
-            proxyDetails += self.group
+            proxyDetails += "/%s" % self.group
         if self.role and self.role != 'NULL':
             proxyDetails += "/Role=%s" % self.role
 
@@ -409,11 +409,8 @@ class Proxy(Credential):
             proxyFilename = self.getProxyFilename( serverRenewer = True )
 
         attribute = self.getAttributeFromProxy( proxyFilename )
-
-        # at least /cms/Role=NULL/Capability=NULL
         if not attribute:
-            return proxyFilename
-
+            attribute = self.getProxyDetails( )
         voAttribute = self.prepareAttForVomsRenewal( attribute )
 
         # get the credential name for this retriever

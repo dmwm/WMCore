@@ -357,13 +357,20 @@ class WorkQueueBackend(object):
             queue = []
             for row in conflicts['rows']:
                 previous_value = None
+                updated = set()
                 element_id = row['id']
                 for rev in row['value']: # loop over conflicting revisions
                     ele = CouchWorkQueueElement.fromDocument(db, db.document(element_id, rev))
                     if not previous_value: # 1st will contain merged result and become winner
                         previous_value = ele
                         continue
-    
+
+                    # print differences
+                    from WMCore.Algorithms.MiscAlgos import dict_diff
+                    self.logger.info("Conflict between %s revs %s & %s: %s",
+                                     element_id, previous_value.rev, rev,
+                                     "; ".join("%s=%s" % (x,y) for x,y in dict_diff(previous_value, ele).items())
+                                     )
                     for key in previous_value:
                         if previous_value[key] == ele.get(key):
                             continue
@@ -376,17 +383,19 @@ class WorkQueueBackend(object):
                                 previous_value[key] = ele[key]
                         elif ele[key] > previous_value[key]:
                             previous_value[key] = ele[key]
+                        updated.add(key)
                     # once losing element has been merged - queue for deletion
+                    ele._document.delete()
                     queue.append(ele)
                 # conflict resolved - save element and delete losers
-                msg = 'Resolving conflict for wf "%s", id "%s": Losing rev(s): %s'
+                msg = 'Resolving conflict for wf "%s", id "%s": Remove rev(s): %s: Updates: (%s)'
                 self.logger.info(msg % (str(previous_value['RequestName']),
                                          str(previous_value.id),
-                                         ", ".join([x._document['_rev'] for x in queue])))
+                                         ", ".join([x._document['_rev'] for x in queue]),
+                                         "; ".join("%s=%s" % (x, previous_value[x]) for x in updated)
+                                         ))
                 if self.saveElements(previous_value):
-                    for i in queue:
-                        i.delete() # delete others (if merged value update accepted)
-                    self.saveElements(*queue)
+                    self.saveElements(*queue) # delete others (if merged value update accepted)
 
     def recordTaskActivity(self, taskname, comment = ''):
         """Record a task for monitoring"""

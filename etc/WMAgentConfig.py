@@ -59,7 +59,7 @@ dbsBlockTimeout = 86400
 # how long it will sit in cool off.
 maxJobRetries = 3
 retryAlgo = "SquaredAlgo"
-retryAlgoParams = {"create": 10, "submit": 60, "job": 5000}
+retryAlgoParams = {"create": 5000, "submit": 5000, "job": 5000}
 
 # The amount of time to wait after a workflow has completed before archiving it.
 workflowArchiveTimeout = 3600

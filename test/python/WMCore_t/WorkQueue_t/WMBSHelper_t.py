@@ -757,6 +757,13 @@ class WMBSHelperTest(unittest.TestCase):
         self.dbs = None
         self.siteDB = fakeSiteDB()
 
+        # add sites that would normally be added by operator via resource_control
+        locationDAO = self.daoFactory(classname = "Locations.New")
+        self.ses = []
+        for site in ['T2_XX_SiteA', 'T2_XX_SiteB']:
+            locationDAO.execute(siteName = site, seName = self.siteDB.cmsNametoSE(site))
+            self.ses.append(self.siteDB.cmsNametoSE(site))
+
     def createWMSpec(self, name = 'ReRecoWorkload'):
         wmspec = rerecoWorkload(name, rerecoArgs)
         wmspec.setSpecUrl("/path/to/workload")
@@ -847,7 +854,55 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(numOfFiles, len(dbsFiles))
         
         self.assertNotEqual(firstFileset.id, secondFileset.id)
-    
+
+    def testDuplicateSubscription(self):
+        """Can't duplicate subscriptions"""
+        # using default wmspec
+        block = self.dataset + "#1"
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
+        wmbs.topLevelFileset.loadData()
+        numOfFiles = len(wmbs.topLevelFileset.files)
+        filesetId = wmbs.topLevelFileset.id
+        subId = wmbs.topLevelSubscription['id']
+
+        # check initially inserted files.
+        dbsFiles = self.dbs.getFileBlock(block)[block]['Files']
+        self.assertEqual(numOfFiles, len(dbsFiles))
+        firstFileset = wmbs.topLevelFileset
+        self.assertEqual(numOfFiles, len(dbsFiles))
+
+        # reinsert subscription - shouldn't create anything new
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
+        wmbs.topLevelFileset.loadData()
+        self.assertEqual(numOfFiles, len(wmbs.topLevelFileset.files))
+        self.assertEqual(filesetId, wmbs.topLevelFileset.id)
+        self.assertEqual(subId, wmbs.topLevelSubscription['id'])
+
+        # now do a montecarlo workflow
+        self.setupMCWMSpec()
+        mask = Mask(FirstRun = 12, FirstLumi = 1234, FirstEvent = 12345,
+                    LastEvent = 999995, LastLumi = 12345, LastRun = 12)
+
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
+        wmbs.topLevelFileset.loadData()
+        numOfFiles = len(wmbs.topLevelFileset.files)
+        filesetId = wmbs.topLevelFileset.id
+        subId = wmbs.topLevelSubscription['id']
+
+        # check initially inserted files.
+        numDbsFiles = 1
+        self.assertEqual(numOfFiles, numDbsFiles)
+        firstFileset = wmbs.topLevelFileset
+        self.assertEqual(numOfFiles, numDbsFiles)
+
+        # reinsert subscription - shouldn't create anything new
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
+        wmbs.topLevelFileset.loadData()
+        self.assertEqual(numOfFiles, len(wmbs.topLevelFileset.files))
+        self.assertEqual(filesetId, wmbs.topLevelFileset.id)
+        self.assertEqual(subId, wmbs.topLevelSubscription['id'])
+
+
     def testParentage(self):
         """
         TODO: add the parentage test. 
@@ -869,13 +924,6 @@ class WMBSHelperTest(unittest.TestCase):
         mask = Mask(FirstRun = 12, FirstLumi = 1234, FirstEvent = 12345,
                     LastEvent = 999995, LastLumi = 12345, LastRun = 12)
 
-        # add sites that would normally be added by operator via resource_control
-        locationDAO = self.daoFactory(classname = "Locations.New")
-        ses = []
-        for site in ['T2_XX_SiteA', 'T2_XX_SiteB']:
-            locationDAO.execute(siteName = site, seName = self.siteDB.cmsNametoSE(site))
-            ses.append(self.siteDB.cmsNametoSE(site))
-
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
         subscription = wmbs.topLevelSubscription
         self.assertEqual(1, subscription.exists())
@@ -892,7 +940,7 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(file['merged'], False) # merged files get added to dbs
         self.assertEqual(len(file['parents']), 0)
         #file.loadData()
-        self.assertEqual(sorted(file['locations']), sorted(ses))
+        self.assertEqual(sorted(file['locations']), sorted(self.ses))
         self.assertEqual(len(file.getParentLFNs()), 0)
 
         self.assertEqual(len(file.getRuns()), 1)

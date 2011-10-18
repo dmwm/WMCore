@@ -22,7 +22,6 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Job import Job
 from WMCore.WMException import WMException
-from WMCore.Services.UUID import makeUUID
 from WMCore.DataStructs.Run import Run
 
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
@@ -216,9 +215,10 @@ class WMBSHelper(WMConnectionBase):
                                       self.wmSpec.getTopLevelTask()[0].name()))
             if self.block:
                 filesetName += "-%s" % self.block
-            else:
-                #create empty fileset for production job
-                filesetName += "-%s" % makeUUID()
+            if self.mask:
+                from hashlib import md5
+                mask_string = ",".join(["%s=%s" % (x, self.mask[x]) for x in sorted(self.mask)])
+                filesetName += "-%s" % md5(mask_string).hexdigest()
         else:
             filesetName = topLevelFilesetName
 
@@ -331,7 +331,7 @@ class WMBSHelper(WMConnectionBase):
                 self.logger.error('Error getting storage element for "%s": %s' % (site, str(ex)))
         if not locations:
             raise RuntimeError, "No locations to inject Monte Carlo work to, unable to proceed"
-        mcFakeFileName = "MCFakeFile-%s" % makeUUID()
+        mcFakeFileName = "MCFakeFile-%s" % self.topLevelFileset.name
         wmbsFile = File(lfn = mcFakeFileName,
                         first_event = self.mask['FirstEvent'],
                         last_event = self.mask['LastEvent'],

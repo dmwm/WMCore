@@ -48,6 +48,8 @@ class AnalysisSchema(RequestSchema):
             ]
 
     def validate(self):
+        if self.get("RequestName", None) != None and self.get("RequestName").count(' ') > 0:
+            raise RuntimeError("RequestName cannot contain spaces")
         RequestSchema.validate(self)
 
 registerRequestType("Analysis", AnalysisRequest, AnalysisSchema)

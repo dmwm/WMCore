@@ -12,6 +12,7 @@ import getopt
 import imp
 import socket
 import traceback
+import os
 
 from WMCore.Configuration import saveConfigurationFile
 from WMCore.Configuration import Configuration
@@ -48,6 +49,7 @@ def saveConfiguration(configObject, outputPath):
     
     """
     saveConfigurationFile(configObject, outputPath)
+    os.chmod(outputPath, 0600)
     
 def modifyConfiguration(config, **args):
     """

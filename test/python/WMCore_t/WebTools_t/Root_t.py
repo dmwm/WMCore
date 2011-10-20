@@ -225,9 +225,8 @@ class RootTest(unittest.TestCase):
         baz.connectUrl = 'sqlite:///baz/zoink'
         server.start(blocking=False)
 
-        #http://localhost:8080/unittests/bar/test/database
         for instance in config.UnitTests.instances:
-            url = 'http://127.0.0.1:8080/unittests/%s/test' % instance
+            url = 'http://127.0.0.1:8888/unittests/%s/test' % instance
             html = urllib2.urlopen(url).read()
             self.assertEquals(html, instance)
             url = '%s/database' % url

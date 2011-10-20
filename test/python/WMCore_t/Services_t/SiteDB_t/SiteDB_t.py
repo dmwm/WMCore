@@ -46,7 +46,7 @@ class SiteDBTest(unittest.TestCase):
         """
         Tests CmsNametoSE
         """
-        target = ['srm-cms.gridpp.rl.ac.uk']
+        target = ['srm-cms.gridpp.rl.ac.uk', 'srm-cms-disk.gridpp.rl.ac.uk']
         results = self.mySiteDB.cmsNametoSE("T1_UK_RAL")
         self.failUnless(sorted(results) == sorted(target))
 
@@ -62,9 +62,10 @@ class SiteDBTest(unittest.TestCase):
         """
         Tests CmsNametoCE
         """
-        target = ['lcgce06.gridpp.rl.ac.uk', 'lcgce07.gridpp.rl.ac.uk', 'lcgce09.gridpp.rl.ac.uk']
+        target = ['lcgce09.gridpp.rl.ac.uk', 'lcgce06.gridpp.rl.ac.uk',
+                  'lcgce07.gridpp.rl.ac.uk', 'lcgce07.gridpp.rl.ac.uk']
         results = self.mySiteDB.cmsNametoCE("T1_UK_RAL")
-        self.failUnless(sorted(results) == target)
+        self.failUnless(sorted(results) == sorted(target))
 
     def testJSONParser(self):
         """

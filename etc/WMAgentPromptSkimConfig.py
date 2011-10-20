@@ -88,6 +88,7 @@ config.PhEDExInjector.logLevel = "DEBUG"
 config.PhEDExInjector.maxThreads = 1
 config.PhEDExInjector.phedexurl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
 config.PhEDExInjector.pollInterval = 100
+config.PhEDExInjector.subscribeInterval = 43000
 
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"

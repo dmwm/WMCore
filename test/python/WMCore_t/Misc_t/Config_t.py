@@ -16,7 +16,7 @@ import threading
 from nose.plugins.attrib import attr
 
 import WMCore.WMInit
-from WMQuality.TestInit import TestInit
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
 from WMCore.Agent.Configuration import loadConfigurationFile
 
@@ -50,12 +50,19 @@ class ConfigTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
                                                  "WMComponent.DBSBuffer.Database",
                                                  'WMCore.ResourceControl',
                                                  'WMCore.BossAir'],
                                 useDefault = False)
+        self.dbName = 'config_t'
+        self.testInit.setupCouch("%s/jobs" % self.dbName, "JobDump")
+        self.testInit.setupCouch("%s/fwjrs" % self.dbName, "FWJRDump")
+        self.testInit.setupCouch("%s/acdc" % self.dbName, "GroupUser", "ACDC")
+        self.testInit.setupCouch("%s/workqueue" % self.dbName, 'WorkQueue')
+        self.testInit.setupCouch("%s/workloadsummary" % self.dbName,
+                                 "WorkloadSummary")
 
         self.testDir = self.testInit.generateWorkDir()
         return
@@ -67,6 +74,7 @@ class ConfigTest(unittest.TestCase):
         Tear things down and go home
         """
         self.testInit.clearDatabase()
+        self.testInit.tearDownCouch()
         return
 
 
@@ -105,7 +113,7 @@ class ConfigTest(unittest.TestCase):
                         setattr(component, var, value.replace(oldWorkDir, self.testDir))
                 elif type(value) == list:
                     # Go through it one component at a time
-                    for element in list:
+                    for element in value:
                         if type(element) == str and re.search(oldWorkDir, element):
                             index = value.index(element)
                             value.remove(element)
@@ -121,7 +129,22 @@ class ConfigTest(unittest.TestCase):
         compList = (config.listComponents_() + config.listWebapps_())
         components = []
 
+        config.JobStateMachine.couchurl                = os.environ['COUCHURL']
+        config.JobStateMachine.couchDBName             = self.dbName
+        config.ACDC.couchurl                           = os.environ['COUCHURL']
+        config.ACDC.database                           = '%s/acdc' % self.dbName
+        config.TaskArchiver.workloadSummaryCouchDBName = '%s/workloadsummary' % self.dbName
+        config.TaskArchiver.workloadSummaryCouchURL    = os.environ['COUCHURL']
 
+        if hasattr(config, 'WorkQueueManager'):
+            config.WorkQueueManager.couchurl   = os.environ['COUCHURL']
+            config.WorkQueueManager.dbname     = '%s/workqueue' % self.dbName
+
+        if hasattr(config, 'WorkloadSummary'):
+            config.WorkloadSummary.couchurl    = os.environ['COUCHURL']
+            config.WorkloadSummary.database    = '%s/workloadsummary' % self.dbName
+
+        
         # Get all components
         
 
@@ -152,14 +175,10 @@ class ConfigTest(unittest.TestCase):
         for component in components:
             component.prepareToStop()
 
-
-
-        
-
         return
 
 
-
+    @attr('integration')
     def testA_WMAgentConfig(self):
         """
         _WMAgentConfig_
@@ -198,5 +217,4 @@ class ConfigTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main() 

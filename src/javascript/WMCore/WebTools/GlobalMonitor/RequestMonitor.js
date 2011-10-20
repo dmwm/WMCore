@@ -40,6 +40,19 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                 };
         };
     };
+    
+    var siteFormatter = function(elCell, oRecord, oColumn, sData) {
+            if (!sData) {
+                elCell.innerHTML = "";
+            } else {
+                if (sData.toString().search(',') < 0) {
+                   elCell.innerHTML = sData;
+                } else {
+                   elCell.innerHTML = "<a id='sites' title='"+ sData + "'> Multiple Sites </a>";
+                   new YAHOO.widget.Tooltip("sites", { context:"sites" });
+                }
+            };
+    }
 
     var formatCouchDB = function(elCell, oRecord, oColumn, sData) {
             var host;
@@ -174,8 +187,9 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                  {key: "inWMBS"},
                  {key: "total_jobs"},
                  {key: "site_whitelist"},
-                 {key: "couch_doc_base"},{key: "global_queue", formatter:formatGlobalQ},
-                 {key: "local_queue", formatter:formatLocalQ},
+                 {key: "couch_doc_base"},
+                 {key: "global_queue"},
+                 {key: "local_queue"},
                  {key: "couch_job_info_base"},
                  {key: "couch_error"},
                  {key: "error"}
@@ -200,7 +214,7 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                  {key: "couch_doc_base", label: "summary", formatter:formatCouchDB},
                  {key: "job completion", formatter:progressFormatter},
                  {key: "queue injection", formatter:queueProgressFormatter},
-                 {key: "site_whitelist", label:"SW"},
+                 {key: "site_whitelist", label:"SW", formatter:siteFormatter},
                  {key: "global_queue", label:"GQ", formatter:formatGlobalQ},
                  {key: "local_queue", label: "LQ", formatter:formatLocalQ}
                  ];

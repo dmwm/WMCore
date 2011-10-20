@@ -27,7 +27,7 @@ class CrappyServer(object):
 
 class SlowServer(object):
     def slow(self):
-        time.sleep(30)
+        time.sleep(300)
         return "Hello World!"
     slow.exposed = True
 

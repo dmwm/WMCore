@@ -16,6 +16,7 @@ import inspect
 
 import psutil
 
+from WMCore.Configuration import Configuration
 from WMComponent.AlertGenerator.Pollers.Base import ProcessDetail
 from WMComponent.AlertGenerator.Pollers.Base import Measurements
 from WMComponent.AlertGenerator.Pollers.Agent import ComponentsPoller
@@ -113,20 +114,29 @@ class AgentTest(unittest.TestCase):
         handler, receiver = utils.setUpReceiver(self.generator.config.Alert.address,
                                                 self.generator.config.Alert.controlAddr)
         
-        # need some real process to pike, give itself
+        # need some real process to poll, give itself
         pid = os.getpid()
-        
+        # the input configuration doesn't have component work directories set right, rectify:
+        # the configuration will have, see with what _doComponentsPoller is called
+        # two components: AlertGenerator and AlertProcessor defined
+        configInstance = Configuration.getInstance()
+        for comp in Configuration.getInstance().listComponents_():
+            compDir = getattr(configInstance, comp).componentDir
+            compDir = os.path.join(compDir, comp)
+            setattr(getattr(configInstance, comp), "componentDir", compDir)
+            os.makedirs(compDir)
+            f = open(os.path.join(compDir, "Daemon.xml"), 'w')
+            f.write(utils.daemonXmlContent % dict(PID_TO_PUT = pid))
+            f.close()
+   
         numMeasurements = config.period / config.pollInterval
         poller = pollerClass(config, self.generator)
         # inject own input sample data provider
         # there is in fact input argument in this case which needs be ignored
         poller.sample = lambda proc_: random.randint(thresholdToTest, thresholdToTest + 10)
         
-        # have sample process to run upon but sample date will be fooled by random
-        pd = ProcessDetail(pid, "TestProcess")
-        mes = Measurements(numMeasurements)
-        poller._components.append(pd)
-        poller._compMeasurements.append(mes)
+        # the poller will run upon components (as defined in the configuration)
+        # and poll them. the PID, etc will be run from the compomentsDir
         poller.start()
         self.assertTrue(poller.is_alive())
 
@@ -167,9 +177,11 @@ class AgentTest(unittest.TestCase):
         self.config.AlertGenerator.componentsCPUPoller.period = 1
         level = self.config.AlertProcessor.soft.level
         thresholdToTest = self.config.AlertGenerator.componentsCPUPoller.soft
+        # expected 2: 2 components are defined by the configuration, an alert
+        # will be sent for each of them
         self._doComponentsPoller(thresholdToTest, level,
                                  self.config.AlertGenerator.componentsCPUPoller,
-                                 ComponentsCPUPoller, expected = 1)        
+                                 ComponentsCPUPoller, expected = 2)        
        
 
     def testComponentsCPUPollerCriticalThreshold(self):
@@ -179,9 +191,11 @@ class AgentTest(unittest.TestCase):
         self.config.AlertGenerator.componentsCPUPoller.period = 1
         level = self.config.AlertProcessor.critical.level
         thresholdToTest = self.config.AlertGenerator.componentsCPUPoller.critical
+        # expected 2: 2 components are defined by the configuration, an alert
+        # will be sent for each of them
         self._doComponentsPoller(thresholdToTest, level,
                                  self.config.AlertGenerator.componentsCPUPoller,
-                                 ComponentsCPUPoller, expected = 1)
+                                 ComponentsCPUPoller, expected = 2)
 
 
     def testComponentsCPUPollerNoAlert(self):
@@ -204,9 +218,11 @@ class AgentTest(unittest.TestCase):
         self.config.AlertGenerator.componentsMemPoller.period = 1
         level = self.config.AlertProcessor.soft.level
         thresholdToTest = self.config.AlertGenerator.componentsMemPoller.soft
+        # expected 2: 2 components are defined by the configuration, an alert
+        # will be sent for each of them
         self._doComponentsPoller(thresholdToTest, level,
                                  self.config.AlertGenerator.componentsMemPoller,
-                                 ComponentsMemoryPoller, expected = 1)
+                                 ComponentsMemoryPoller, expected = 2)
 
 
     def testComponentsMemoryPollerCriticalThreshold(self):
@@ -216,9 +232,11 @@ class AgentTest(unittest.TestCase):
         self.config.AlertGenerator.componentsMemPoller.period = 1
         level = self.config.AlertProcessor.critical.level
         thresholdToTest = self.config.AlertGenerator.componentsMemPoller.critical
+        # expected 2: 2 components are defined by the configuration, an alert
+        # will be sent for each of them
         self._doComponentsPoller(thresholdToTest, level,
                                  self.config.AlertGenerator.componentsMemPoller,
-                                 ComponentsMemoryPoller, expected = 1)
+                                 ComponentsMemoryPoller, expected = 2)
 
 
     def testComponentsMemoryPollerNoAlert(self):

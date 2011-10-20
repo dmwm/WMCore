@@ -34,12 +34,14 @@ class ProcessCPUPoller(object):
         """
         try:
             pollProcess = lambda proc: proc.get_cpu_percent(PeriodPoller.PSUTIL_INTERVAL)
+            v = sum([pollProcess(p) for p in processDetail.allProcs])
+            return v
         except psutil.error.AccessDenied, ex:
             logging.error("Can't get CPU usage of %s, reason: %s" %
                           (processDetail.getDetails(), ex))
             return float(-1)
-        v = sum([pollProcess(p) for p in processDetail.allProcs])
-        return v
+        except psutil.error.NoSuchProcess, ex:
+            return float(-1)
 
     
 
@@ -62,14 +64,16 @@ class ProcessMemoryPoller(object):
         try:
             # get_memory_info(): returns RSS, VMS tuple (for reference)
             pollProcess = lambda proc: proc.get_memory_percent()
+            v = sum([pollProcess(p) for p in processDetail.allProcs])
+            return v
         except psutil.error.AccessDenied, ex:
             logging.error("Can't get memory usage of %s, reason: %s" %
                           (processDetail.getDetails(), ex))
             return float(-1)
-        v = sum([pollProcess(p) for p in processDetail.allProcs])
-        return v
+        except psutil.error.NoSuchProcess, ex:
+            return float(-1)
+                
         
-
 
 class CPUPoller(PeriodPoller):
     """
@@ -250,7 +254,7 @@ class DirectorySizePoller(BasePoller):
             err += "exception while running command '%s', reason: %s" % (c, ex)
             
         if rc != 0:
-            m = "%s: could get directory space usage, reason: %s" % (self._myName, err)
+            m = "%s: could not get directory space usage, reason: %s" % (self._myName, err)
             logging.error(m)
             return None
         
@@ -265,7 +269,7 @@ class DirectorySizePoller(BasePoller):
             size = desired.split()[0]
             size = int(size)
         except Exception, ex:
-            m = ("%s: could get directory space usage, reason: %s. du output: '%s"'' %
+            m = ("%s: could not get directory space usage, reason: %s. du output: '%s"'' %
                  (self._myName, ex, out))
             logging.error(m)
             return None

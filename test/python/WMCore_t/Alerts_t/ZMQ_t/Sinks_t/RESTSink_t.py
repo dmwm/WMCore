@@ -12,12 +12,11 @@ class RESTSinkTest(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        dbName = "rest_sink"
+        dbName = "alerts-rest_sink"
         self.testInit.setupCouch(dbName)
         
-        self.config = ConfigSection("couch")
+        self.config = ConfigSection("rest")
         self.config.uri = self.testInit.couchUrl + "/" + dbName
-        self.config.bufferSize = 10
 
 
     def tearDown(self):

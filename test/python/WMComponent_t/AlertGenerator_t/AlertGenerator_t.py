@@ -63,7 +63,7 @@ def getConfig(testDir):
     config.AlertProcessor.section_("critical")
     config.AlertProcessor.section_("soft")
     config.AlertProcessor.critical.level = 5
-    config.AlertProcessor.soft.level = 0
+    config.AlertProcessor.soft.level = 1
     
     # common 'Alert' section
     config.section_("Alert")

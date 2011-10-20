@@ -12,6 +12,10 @@ import types
 import random
 import datetime
 import time
+import subprocess
+import signal
+
+import psutil
 
 from WMCore.Alerts.Alert import Alert
 from WMComponent.AlertGenerator.Pollers.Base import ProcessDetail
@@ -111,6 +115,54 @@ class SystemTest(unittest.TestCase):
         self._doPeriodPoller(thresholdToTest, level, self.config.AlertGenerator.cpuPoller,
                              CPUPoller, expected = 0)
         
+
+    def _getKilledProcessDetail(self):
+        """
+        Create a process to have a valid pid, then kill it. 
+        Prepared in the ProcessDetail instance.
+        
+        """
+        command = "sleep 300"
+        proc = subprocess.Popen(command.split())
+        name = "mytestkilledprocess"
+        pd = ProcessDetail(proc.pid, name)        
+        os.kill(proc.pid, signal.SIGKILL)
+        proc.poll() # necessary, otherwise it'll never end/return
+        while proc.poll() == None:
+            time.sleep(0.2)
+            print "waiting"
+        return pd    
+
+        
+    def testProcessCPUPollerNoSuchProcess(self):
+        """
+        Poller should handle if the watched processed crashed or was
+        terminated, so polling on NoSuchProcess.
+        
+        """
+        pd = self._getKilledProcessDetail()        
+        poller = ProcessCPUPoller()
+        self.assertFalse(pd.proc.is_running())
+        v = poller.sample(pd)
+        self.assertTrue(isinstance(v, types.FloatType))
+        # above situation shall result into handled psutil.error.NoSuchProcess
+        self.assertEquals(v, -1)
+
+
+    def testProcessMemoryPollerNoSuchProcess(self):
+        """
+        Poller should handle if the watched processed crashed or was
+        terminated, so polling on NoSuchProcess.
+        
+        """
+        pd = self._getKilledProcessDetail()        
+        poller = ProcessMemoryPoller()
+        self.assertFalse(pd.proc.is_running())
+        v = poller.sample(pd)
+        self.assertTrue(isinstance(v, types.FloatType))
+        # above situation shall result into handled psutil.error.NoSuchProcess
+        self.assertEquals(v, -1)
+                
     
     def testMemoryPollerBasic(self):
         self.config.AlertGenerator.memPoller.soft = 70
@@ -168,7 +220,7 @@ class SystemTest(unittest.TestCase):
         poller.sender = utils.SenderMock()
         poller.check()
         
-
+        
     @staticmethod
     def _dfCommandOutputGenerator(low, high):
         # percentage signs make it difficult to string interpolate

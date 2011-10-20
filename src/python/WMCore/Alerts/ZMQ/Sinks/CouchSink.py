@@ -1,13 +1,11 @@
-#!/usr/bin/env python
-# encoding: utf-8
-
 """
-Created by Dave Evans on 2011-04-27.
-Copyright (c) 2011 Fermilab. All rights reserved.
+CouchSink - CouchDB alerts store with the AlertProcessor.
 
 """
 
-from WMCore.Database.CMSCouch import Document, Database
+import logging
+
+from WMCore.Database.CMSCouch import Document, Database, CouchServer
 
 
 class CouchSink(object):
@@ -17,7 +15,13 @@ class CouchSink(object):
     """     
     def __init__(self, config):
         self.config = config
+        # test if the configured database does not exist, create it
+        server = CouchServer(self.config.url)
+        databases = server.listDatabases()
+        if self.config.database not in databases:
+            server.createDatabase(self.config.database)
         self.database = Database(self.config.database, self.config.url)
+        logging.debug("%s initialized." % self.__class__.__name__)
         
         
     def send(self, alerts):
@@ -30,4 +34,5 @@ class CouchSink(object):
             doc = Document(None, a)
             retVal = self.database.commitOne(doc)
             retVals.append(retVal)
+        logging.debug("%s stored alerts, retVals: %s" % (self.__class__.__name__, retVals))
         return retVals

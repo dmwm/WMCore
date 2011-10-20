@@ -79,9 +79,15 @@ class BasePoller(threading.Thread):
         # store levels (critical, soft) for critical, soft thresholds correspondence
         # these values are defined in the AlertProcessor config
         # self.levels and self.thresholds has to have the same corresponding order
-        # and critical has to be first - if this threshold is caught, no point testing soft one
+        # and critical has to be first - if this threshold is caught, no point
+        # testing soft one
+        # this belongs to the AlertGenerator and is in fact dependent on AlertProcessor
+        # by referencing these two values - not sure if to tolerate such dependecy or
+        # configure these two values independently in AlertGenerator itself (surely a
+        # possible mismatch would make a bit of chaos)
         self.levels = [self.generator.config.AlertProcessor.critical.level,
                        self.generator.config.AlertProcessor.soft.level]
+        
         # critical, soft threshold values
         self.thresholds = [self.config.critical, self.config.soft]
         
@@ -118,9 +124,9 @@ class BasePoller(threading.Thread):
                 # it would feel that check() takes long time but there is
                 # specified a delay in case of psutil percentage calls                
                 self.check()
-                counter -= self._threadSleepTime
-                if counter <= 0:
-                    counter = self.config.pollInterval
+            counter -= self._threadSleepTime
+            if counter <= 0:
+                counter = self.config.pollInterval
             if self._stopFlag:
                 break
             time.sleep(self._threadSleepTime)

@@ -64,7 +64,7 @@ class CouchSinkTest(unittest.TestCase):
         for id, level in zip(docIds, range(20)):
             doc = sink.database.document(id)
             self.assertEqual(doc["Level"], level)
-
+            
 
 
 if __name__ == "__main__":

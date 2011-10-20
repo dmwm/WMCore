@@ -1,3 +1,10 @@
+"""
+FileSink - store alerts into a file.
+
+"""
+
+
+import logging
 import json
 from contextlib import contextmanager
 
@@ -17,6 +24,7 @@ class FileSink(object):
         self.config = config
         self.encoder = json.encoder.JSONEncoder()
         self.decoder = json.decoder.JSONDecoder()
+        logging.debug("%s initialized." % self.__class__.__name__)
 
 
     @contextmanager
@@ -56,3 +64,4 @@ class FileSink(object):
             for a in alerts:
                 s = self.encoder.encode(a)
                 f.write("%s\n" % s)
+        logging.debug("%s stored alerts." % self.__class__.__name__)

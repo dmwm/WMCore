@@ -67,7 +67,6 @@ class CouchPoller(PeriodPoller):
                 raise Exception("COUCHURL not set, can't connect to Couch.")
             couch = CouchServer(couchUrl)
             r = couch.makeRequest("/_config")
-            # print r
             logFile = r["log"]["file"]
             # derive location of the PID file from full path log file name
             dir = os.path.dirname(logFile)

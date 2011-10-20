@@ -1,3 +1,9 @@
+"""
+EmailSink - send alerts via email.
+
+"""
+
+import logging
 import smtplib
 
 
@@ -21,6 +27,7 @@ class EmailSink(object):
             self.smtp.login(login, passw)
         self.fromAddr = getattr(self.config, "fromAddr", None)
         self.toAddr  = getattr(self.config, "toAddr", None)
+        logging.debug("%s initialized." % self.__class__.__name__)
         
         
     def send(self, alerts):
@@ -32,7 +39,10 @@ class EmailSink(object):
         for a in alerts:
             msg += "\n%s\n" % a.toMsg()
         self.smtp.sendmail(self.fromAddr, self.toAddr, msg)
+        logging.debug("%s sent alerts." % self.__class__.__name__)
+
         
         
     def __del__(self):
-        self.smtp.quit()
+        if hasattr(self, "smtp"):
+            self.smtp.quit()

@@ -435,9 +435,9 @@ class DBSUploadPoller(BaseWorkerThread):
         # And the files
         # Time to sort the files into blocks
         
-        # the counter / watcher of the uploadQueueSize to possibly send alerts
-        uploadQueueSize = getattr(self.config.DBSUpload, "uploadQueueSize", None)
-        uploadQueueSizeCounter = 0
+        # the counter / watcher of the alertUploadQueueSize to possibly send alerts
+        alertUploadQueueSize = getattr(self.config.DBSUpload, "alertUploadQueueSize", None)
+        alertUploadQueueSizeCounter = 0
         for block in blocks:
             files = self.uploadToDBS.loadFilesFromBlocks(blockID = block['id'])
             for f in files:
@@ -445,13 +445,13 @@ class DBSUploadPoller(BaseWorkerThread):
                     # Put file in this block
                     logging.debug("Setting file %s to block %s" % (f['lfn'], block['Name']))
                     block['newFiles'].append(f)
-                    uploadQueueSizeCounter += 1
+                    alertUploadQueueSizeCounter += 1
                     
-        # check uploadQueueSize threshold (alert condition)
-        if uploadQueueSize:
-            if uploadQueueSizeCounter >= int(uploadQueueSize):
+        # check alertUploadQueueSize threshold (alert condition)
+        if alertUploadQueueSize:
+            if alertUploadQueueSizeCounter >= int(alertUploadQueueSize):
                 msg = ("DBS upload queue size (%s) exceeded configured "
-                       "threshold (%s)." % (uploadQueueSizeCounter, uploadQueueSize))
+                       "threshold (%s)." % (alertUploadQueueSizeCounter, alertUploadQueueSize))
                 self.sendAlert(6, msg = msg)
                 
         # Check for block timeout

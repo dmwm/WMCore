@@ -13,8 +13,9 @@ rather than using only CMSCouch class directly.
 
 """
 
+import logging
 
-from WMCore.Database.CMSCouch import Database
+from WMCore.Database.CMSCouch import Database, CouchServer
 
 
 
@@ -29,7 +30,6 @@ class RESTSink(object):
         #     'uri' attribute (URL of the REST server and resource name)
         #         in case of CouchDB, the resource name is the database name
         #         http://servername:port/databaseName
-        #     'bufferSize' - size of the queue until the REST call is performed
         self.config = config
         
         # the class currently relies only on 1 REST server possibility - the
@@ -39,8 +39,18 @@ class RESTSink(object):
         split = self.config.uri.rfind('/')
         dbName = self.config.uri[split + 1:] # get last item of URI - database name
         url = self.config.uri[:split]
-        self._database = Database(dbName, url, size = self.config.bufferSize)
-        
+        # as opposed to CouchSink, here it's assumed the resource (the database name)
+        # does exist, fail here otherwise
+        # this check / rest of the constructed may be revised for
+        #     general REST server
+        server = CouchServer(url)
+        databases = server.listDatabases()
+        if dbName not in databases:
+            raise Exception("%s: REST URI: %s, %s does not exist." %
+                            (self.__class__.__name__, self.config.uri, dbName))
+        self._database = Database(dbName, url)
+        logging.debug("%s initialized." % self.__class__.__name__)
+                
         
     def send(self, alerts):
         """
@@ -55,4 +65,6 @@ class RESTSink(object):
         # the .commit() would be called automatically if size is exceeded
         # 1st option:
         retVal = self._database.commit()
+        m = "%s stored alerts, retVals: %s" % (self.__class__.__name__, retVal)
+        logging.debug(m)
         return retVal

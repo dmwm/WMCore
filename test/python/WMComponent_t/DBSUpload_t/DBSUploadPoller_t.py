@@ -164,7 +164,7 @@ class DBSUploadTest(unittest.TestCase):
         config.Alert.controlAddr = "tcp://127.0.0.1:5559"        
         # configure threshold of DBS upload queue size alert threshold
         # reference: trac ticket #1628
-        config.DBSUpload.uploadQueueSize = 2000
+        config.DBSUpload.alertUploadQueueSize = 2000
         
         return config
 
@@ -627,7 +627,7 @@ class DBSUploadTest(unittest.TestCase):
         myThread = threading.currentThread()
         config = self.createConfig()
         # threshold / value to check
-        config.DBSUpload.uploadQueueSize = sizeLevelToTest
+        config.DBSUpload.alertUploadQueueSize = sizeLevelToTest
         
         # without this uploadBlocks method returns immediately
         name = "ThisIsATest_%s" % (makeUUID())

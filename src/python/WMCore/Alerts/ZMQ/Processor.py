@@ -1,29 +1,28 @@
-#!/usr/bin/env python
-# encoding: utf-8
-
 """
 Alert Processor pipeline.
 Provides a coroutine based handling system for alerts that can be used
 by a Receiver to process Alert streams sent from Agent components.
 
-Created by Dave Evans on 2011-03-02.
-Copyright (c) 2011 Fermilab. All rights reserved.
-
 """
 
+import sys
+import logging
+import traceback
 
 from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts.ZMQ.Sinks.CouchSink import CouchSink
 from WMCore.Alerts.ZMQ.Sinks.EmailSink import EmailSink
 from WMCore.Alerts.ZMQ.Sinks.FileSink import FileSink
 from WMCore.Alerts.ZMQ.Sinks.ForwardSink import ForwardSink
+from WMCore.Alerts.ZMQ.Sinks.RESTSink import RESTSink
 
 
 sinksMap = {
     "file": FileSink,
     "couch": CouchSink,
     "email": EmailSink,
-    "forward": ForwardSink
+    "forward": ForwardSink,
+    "rest": RESTSink
 }
 
 
@@ -58,12 +57,12 @@ def dispatcher(targets, config):
     criticalThreshold = config.critical.level
     softThreshold = config.soft.level
     while True:
-        alert = (yield)
+        alert = (yield)        
         if alert.level > softThreshold:
             targets["soft"].send(alert)
         if alert.level > criticalThreshold:
             targets["critical"].send(alert)
-            
+                    
 
             
 @coroutine
@@ -80,7 +79,17 @@ def handleSoft(targets, config):
         alertBuffer.append(alert)
         if len(alertBuffer) >= bufferSize: 
             for target in targets.values():
-                target.send(alertBuffer)
+                # if sending to a particular sink fails, the entire component
+                # should remain functional
+                # suboptimal to put this exception handling twice, but putting
+                # it into dispatcher or later in __call__ undesirably catches StopIteration
+                try:
+                    target.send(alertBuffer)
+                except Exception, ex:
+                    trace = traceback.format_exception(*sys.exc_info())
+                    traceString = '\n '.join(trace)
+                    m = ("Sending alerts failed (soft), reason: %s\n%s" % (ex, traceString))
+                    logging.error(m)
             alertBuffer = []
 
 
@@ -94,8 +103,18 @@ def handleCritical(targets, config):
     while True:
         alert = (yield)
         for target in targets.values():
-            # sink's send() method expects list of Alert instances
-            target.send([alert])
+            # if sending to a particular sink fails, the entire component
+            # should remain functional
+            # suboptimal to put this exception handling twice, but putting
+            # it into dispatcher or later in __call__ undesirably catches StopIteration
+            try:
+                # sink's send() method expects list of Alert instances
+                target.send([alert])
+            except Exception, ex:
+                trace = traceback.format_exception(*sys.exc_info())
+                traceString = '\n '.join(trace)
+                m = ("Sending alerts failed (critical), reason: %s\n%s" % (ex, traceString))
+                logging.error(m)
 
             
     
@@ -107,6 +126,19 @@ class Processor(object):
     def __init__(self, config):
         softFunctions = {}
         criticalFunctions = {}
+        
+        def getSinkInstance(sinkName, sinkConfig):
+            sinkClass = sinksMap[sinkName]
+            sinkInstance = None
+            try:
+                sinkInstance = sinkClass(sinkConfig)
+            except Exception, ex:
+                trace = traceback.format_exception(*sys.exc_info())
+                traceString = '\n '.join(trace)
+                m = ("Instantiating sink '%s' failed, reason: %s\n"
+                     "%s\nconfig:\n%s" % (sinkClass.__name__, ex, traceString, sinkConfig))
+                logging.error(m)
+            return sinkInstance
 
         def getFunctions(config):
             r = {}
@@ -114,7 +146,9 @@ class Processor(object):
                 if sinksMap.has_key(sink):
                     sinkConfig = getattr(config.sinks, sink)
                     # create and store sink instance
-                    r[sink] = sinksMap[sink](sinkConfig)
+                    sinkInstance = getSinkInstance(sink, sinkConfig)
+                    if sinkInstance:
+                        r[sink] = sinkInstance
             return r
 
         # set up methods for the soft-level alert handler which will buffer 
@@ -132,7 +166,6 @@ class Processor(object):
             "soft": handleSoft(softFunctions, softSection),
             "critical": handleCritical(criticalFunctions, criticalSection)
         }
-        
         self.pipeline = dispatcher(pipelineFunctions, config)
         
         

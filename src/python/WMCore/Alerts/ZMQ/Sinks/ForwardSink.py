@@ -1,3 +1,10 @@
+"""
+ForwardSink - send / forward alerts to another Receiver.
+
+"""
+
+import logging
+
 from WMCore.Alerts.ZMQ.Sender import Sender
 
 
@@ -15,6 +22,7 @@ class ForwardSink(object):
         self.controlAddr = getattr(config, "controlAddr", None)
         self.sender = Sender(self.address, label = self.label,
                              controller = self.controlAddr)
+        logging.debug("%s initialized." % self.__class__.__name__)
         
     
     def send(self, alerts):
@@ -23,3 +31,5 @@ class ForwardSink(object):
         
         """
         [self.sender(a) for a in alerts]
+        m = "%s sent alerts." % self.__class__.__name__
+        logging.debug(m)

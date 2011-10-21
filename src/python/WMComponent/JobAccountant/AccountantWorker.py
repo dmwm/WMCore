@@ -457,9 +457,6 @@ class AccountantWorker(WMConnectionBase):
 
         fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
 
-        if fileList == None:
-            fileList = []
-
         for fwjrFile in fileList:
             wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
                                           jobID = jobID)

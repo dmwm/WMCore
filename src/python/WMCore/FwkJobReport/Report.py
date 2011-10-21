@@ -702,12 +702,15 @@ class Report:
         stepReport = self.retrieveStep(step = step)
 
         if not stepReport:
-            return None
+            logging.error("Asked to retrieve files from non-existant step %s" % step)
+            return []
 
         listOfModules = getattr(stepReport, 'outputModules', None)
 
         if not listOfModules:
-            return None
+            logging.error("Asked to retrieve files from step %s with no outputModules" % step)
+            logging.debug("StepReport: %s" % stepReport)
+            return []
 
         listOfFiles = []
 

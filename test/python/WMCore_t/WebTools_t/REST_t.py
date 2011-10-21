@@ -29,6 +29,8 @@ from WMCore_t.WebTools_t.DummyRESTModel import DUMMY_ROLE
 from WMCore_t.WebTools_t.DummyRESTModel import DUMMY_GROUP
 from WMCore_t.WebTools_t.DummyRESTModel import DUMMY_SITE
 
+from nose.plugins.attrib import attr
+
 secureConfig = DefaultConfig('WMCore_t.WebTools_t.DummyRESTModel')
 secureConfig.SecurityModule.dangerously_insecure = False
 secureConfig.Webtools.environment = 'production'
@@ -355,6 +357,7 @@ class RESTTest(RESTBaseUnitTest):
                  '. Returned data: %s' % response[0]
 
     @cherrypySetup(secureConfig)
+    @attr("integration")    
     def testAuthentication(self):
         verb ='PUT'
         url = self.urlbase + 'list1'

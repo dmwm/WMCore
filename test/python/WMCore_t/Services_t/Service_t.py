@@ -18,6 +18,7 @@ from WMCore.Algorithms import Permissions
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
 import cherrypy
+from nose.plugins.attrib import attr
 
 class CrappyServer(object):
     def truncated(self):
@@ -133,6 +134,7 @@ class ServiceTest(unittest.TestCase):
                          '%s/cmssw.cvs.cern.ch' % dict['cachepath'] )
         shutil.rmtree(cache_path, ignore_errors = True)
 
+    @attr("integration")
     def testCacheLifetime(self):
         """Cache deleted if created by Service - else left alone"""
         dict = {'logger': self.logger,
@@ -273,6 +275,7 @@ class ServiceTest(unittest.TestCase):
             hashes[thishash], hashes[thishash2] = None, None
 
 
+    @attr("integration")
     def testTruncatedResponse(self):
         """
         _TruncatedResponse_

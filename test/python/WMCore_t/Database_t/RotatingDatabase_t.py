@@ -8,6 +8,7 @@ import sys
 
 from datetime import timedelta
 from time import sleep
+from nose.plugins.attrib import attr
 
 class RotatingDatabaseTest(unittest.TestCase):
     def setUp(self):
@@ -99,6 +100,7 @@ class RotatingDatabaseTest(unittest.TestCase):
         self.assertEqual(0, len(self.db.archived_dbs()))
         self.assertFalse(archived[0] in self.server.listDatabases())
 
+    @attr("integration")
     def testCycle(self):
         """
         Test that committing data to different databases happens

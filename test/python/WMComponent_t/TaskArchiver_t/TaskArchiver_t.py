@@ -63,7 +63,7 @@ class TaskArchiverTest(unittest.TestCase):
         myThread = threading.currentThread()
         
         self.testInit = TestInit(__file__)
-        self.testInit.setLogging(logLevel = logging.DEBUG)
+        self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
@@ -124,12 +124,14 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.componentDir    = self.testDir
         config.TaskArchiver.WorkQueueParams = {}
         config.TaskArchiver.pollInterval    = 60
-        config.TaskArchiver.logLevel        = 'SQLDEBUG'
+        config.TaskArchiver.logLevel        = 'INFO'
         config.TaskArchiver.timeOut         = 0
         config.TaskArchiver.histogramKeys   = ['AvgEventTime', 'writeTotalMB']
         config.TaskArchiver.histogramBins   = 5
         config.TaskArchiver.histogramLimit  = 5
         config.TaskArchiver.workloadSummaryCouchDBName = "%s/workloadsummary" % self.databaseName
+        config.TaskArchiver.workloadSummaryCouchURL    = config.JobStateMachine.couchurl
+        config.TaskArchiver.requireCouch               = True
 
         config.section_("ACDC")
         config.ACDC.couchurl                = config.JobStateMachine.couchurl

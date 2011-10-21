@@ -104,17 +104,20 @@ class TaskArchiverPoller(BaseWorkerThread):
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
         try:
-            self.dbname       = getattr(self.config.TaskArchiver, 'workloadSummaryCouchDBName',
+            workDBName       = getattr(self.config.TaskArchiver, 'workloadSummaryCouchDBName',
                                         'workloadsummary')
-            self.dburl        = getattr(self.config.TaskArchiver, 'workloadSummaryCouchURL',
-                                        self.config.JobStateMachine.couchurl)
-            jobDBName         = self.config.JobStateMachine.couchDBName
-            self.couchdb      = CouchServer(self.dburl)
-            self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % jobDBName)
-            self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % jobDBName)
-            self.workdatabase = self.couchdb.connectDatabase(self.dbname)
-            logging.debug("Using url %s" % self.config.JobStateMachine.couchurl)
-            logging.debug("Writing to %s" % self.dbname)
+            workDBurl        = getattr(self.config.TaskArchiver, 'workloadSummaryCouchURL')
+            jobDBurl         = sanitizeURL(self.config.JobStateMachine.couchurl)['url']
+            jobDBName        = self.config.JobStateMachine.couchDBName
+            self.jobCouchdb  = CouchServer(jobDBurl)
+            self.workCouchdb = CouchServer(workDBurl)
+            
+            self.jobsdatabase = self.jobCouchdb.connectDatabase("%s/jobs" % jobDBName)
+            self.fwjrdatabase = self.jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
+            self.workdatabase = self.workCouchdb.connectDatabase(workDBName)
+            
+            logging.debug("Using url %s/%s for job" % (jobDBurl, jobDBName))
+            logging.debug("Writing to  %s/%s for workloadSummary" % (sanitizeURL(workDBurl)['url'], workDBName))
             self.requireCouch = getattr(self.config.TaskArchiver, 'requireCouch', False)
         except Exception, ex:
             msg =  "Error in connecting to couch.\n"

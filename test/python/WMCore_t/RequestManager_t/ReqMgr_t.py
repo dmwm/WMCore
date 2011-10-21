@@ -18,6 +18,7 @@ import urllib
 import tempfile
 import shutil
 import os
+import threading
 from nose.plugins.attrib import attr
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
@@ -49,7 +50,7 @@ class RequestManagerConfig(DefaultConfig):
     
     def _setupCouchUrl(self):
         self.UnitTests.views.active.rest.couchUrl = os.environ.get("COUCHURL",None)
-        
+
     def deleteWorkloadCache(self):
         shutil.rmtree(self.UnitTests.views.active.rest.model.workloadCache)
     
@@ -60,43 +61,62 @@ class RequestManagerConfig(DefaultConfig):
         self._setReqMgrHost()
         self._setWorkloadCache()
         self._setupCouchUrl()
+
+    def setupCouchDatabase(self, dbName):
+        self.UnitTests.views.active.rest.configDBName = dbName
         
 class TestReqMgr(RESTBaseUnitTest):
     """
     _TestReqMgr_
 
-    Basic test for the ReqMgr services
+    Basic test for the ReqMgr services.
+    Setup is done off-screen in RESTBaseUnitTest - this makes
+    things confusing
     """
+
+    def setUp(self):
+        """
+        setUP global values
+        Database setUp is done in base class
+        """
+        RESTBaseUnitTest.setUp(self)
+        self.testInit.setupCouch("%s" % self.couchDBName,
+                                 "GroupUser", "ConfigCache")
+
+        reqMgrHost      = self.config.getServerUrl()
+        self.jsonSender = JSONRequests(reqMgrHost)
+        return
 
     def initialize(self):
         self.config = RequestManagerConfig(
                 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel')
-        dbUrl = os.environ.get("DATABASE", None)
-        if dbUrl == None:
-            raise RuntimeError, """The DATABASE environment is not set.  WARNING: setting this variable will cause the database to be deleted during cleanup! """
-        self.config.setDBUrl(dbUrl)        
+        self.couchDBName = "reqmgr_t_0"
         self.config.setFormatter('WMCore.WebTools.RESTFormatter')
         self.config.setupRequestConfig()
-        # mysql example
-        #self.config.setDBUrl('mysql://username@host.fnal.gov:3306/TestDB')
-        #self.config.setDBSocket('/var/lib/mysql/mysql.sock')
+        self.config.setupCouchDatabase(dbName = self.couchDBName)
+        self.config.setPort(8888)
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
-        # Do this is you don't want to remake and delete the schema
-        #self.schemaModules = []
-        
-    def setUp(self):
-        """
-        setUP global values
-        """
-        RESTBaseUnitTest.setUp(self)
-        reqMgrHost = self.config.getServerUrl()
-        self.requestSchema = getRequestSchema()
-        print reqMgrHost
-        self.jsonSender = JSONRequests(reqMgrHost)
-        #self.requestTypes = ['ReReco', 'StoreResults', 'CmsGen', 'Reco']
-        #self.requestTypes = ['ReReco', 'MonteCarlo']
-        self.requestTypes = ['ReReco']
+        return
 
+    def tearDown(self):
+        """
+        tearDown 
+
+        Tear down everything
+        """
+        RESTBaseUnitTest.tearDown(self)
+        self.testInit.tearDownCouch()
+        return
+
+    @attr("integration")
+    def testA_testBasicSetUp(self):
+        """
+        _testBasicSetUp_
+        
+        Moving the tests that were in the setUp category out of it,
+        mostly because I want to make sure that they don't fail inside
+        the setUp statement.
+        """
         if 'me' in self.jsonSender.get('user')[0]:
             self.jsonSender.delete('user/me')    
         self.assertFalse('me' in self.jsonSender.get('user')[0])
@@ -124,17 +144,26 @@ class TestReqMgr(RESTBaseUnitTest):
         self.assertTrue('White Sox' in self.jsonSender.get('team')[0])
 
         # some foreign key stuff to dealwith
-        #self.assertFalse('CMSSW_X_Y_Z' in self.jsonSender.get('version')[0])
         self.assertTrue(self.jsonSender.put('version/CMSSW_3_5_8')[1] == 200)
         self.assertTrue('CMSSW_3_5_8' in self.jsonSender.get('version')[0])
+        return
+        
 
     @attr("integration")
-    def testReReco(self):
+    def testB_ReReco(self):
+        # Do the basic setup of the group/team space
+        self.jsonSender.put('user/me?email=me@my.com')
+        self.jsonSender.put('group/PeopleLikeMe')
+        self.jsonSender.put('group/PeopleLikeMe/me')
+        self.jsonSender.put(urllib.quote('team/White Sox'))
+        self.jsonSender.put('version/CMSSW_3_5_8')
+                            
         schema = ReReco.getTestArguments()
         schema['RequestName'] = 'TestReReco'
         schema['RequestType'] = 'ReReco'
         schema['CmsPath'] = "/uscmst1/prod/sw/cms"
         self.doRequest(schema)
+        return
 
     def doRequest(self, schema):
         schema['CmsPath'] = "/uscmst1/prod/sw/cms"
@@ -142,7 +171,9 @@ class TestReqMgr(RESTBaseUnitTest):
         schema['Group'] = 'PeopleLikeMe'
         requestName = schema['RequestName']
         self.assertRaises(HTTPException, self.jsonSender.delete, 'request/%s' % requestName)
-        self.assertEqual(self.jsonSender.put('request/%s' % requestName, schema)[1], 200)
+        result = self.jsonSender.put('request/%s' % (requestName), schema)
+        self.assertEqual(result[1], 200)
+        requestName = result[0]['RequestName']
 
         self.assertEqual(self.jsonSender.get('request/%s' % requestName)[0]['RequestName'], requestName)
         self.assertTrue(requestName in self.jsonSender.get('user/me')[0])
@@ -170,10 +201,9 @@ class TestReqMgr(RESTBaseUnitTest):
 
         self.assertTrue(self.jsonSender.put(urllib.quote('assignment/White Sox/%s' % requestName))[1] == 200)
         requestsAndSpecs = self.jsonSender.get(urllib.quote('assignment/White Sox'))[0]
-        self.assertTrue(requestName in requestsAndSpecs.keys())
-        #workloadHelper = WMWorkloadCache.loadFromURL(requestsAndSpecs[requestName])
+        self.assertTrue(requestName in requestsAndSpecs[0])
         workloadHelper = WMWorkloadHelper()
-        workloadHelper.load(requestsAndSpecs[requestName]) 
+        workloadHelper.load(requestsAndSpecs[0][1]) 
         self.assertEqual(workloadHelper.getOwner()['Requestor'], "me")
         self.assertTrue(self.jsonSender.get('assignment?request=%s'% requestName)[0] == ['White Sox'])
 
@@ -207,6 +237,7 @@ class TestReqMgr(RESTBaseUnitTest):
         requestsInCampaign = self.jsonSender.get('campaign/%s' % 'TestCampaign')[0]
         self.assertTrue(requestName in requestsInCampaign.keys())
         self.jsonSender.delete('request/%s' % requestName)
+        return
 
 if __name__=='__main__':
     unittest.main()

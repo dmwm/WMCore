@@ -1,6 +1,7 @@
 import unittest
 import cherrypy
 import logging
+import threading
 
 #decorator import for RESTServer setup
 from WMQuality.TestInitCouchApp import TestInitCouchApp
@@ -16,29 +17,35 @@ class RESTBaseUnitTest(unittest.TestCase):
         if self.schemaModules:
             self.testInit = TestInitCouchApp(__file__)
             self.testInit.setLogging() # logLevel = logging.SQLDEBUG
-            self.testInit.setDatabaseConnection(self.config.getDBUrl())
+            self.testInit.setDatabaseConnection()
             self.testInit.setSchema(customModules = self.schemaModules,
                                     useDefault = False)
+            # Now pull the dbURL from the factory
+            # I prefer this method because the factory has better error handling
+            # Also because then you know everything is the same
+            myThread = threading.currentThread()
+            self.config.setDBUrl(myThread.dbFactory.dburl)
             
-        print "this is our config %s" % self.config
+        logging.info("This is our config: %s" % self.config)
         
         self.rt = Root(self.config)
         self.rt.start(blocking=False)
+        return
         
     def tearDown(self):
         self.rt.stop()
         if self.schemaModules:
             self.testInit.clearDatabase()
         self.config = None
-        
+        return
     
     def initialize(self):
         """
         i.e.
         
         self.config = DefaultConfig('WMCore.WebTools.RESTModel')
-        self.config.setDBUrl("sqlite://")
-        self.schemaModules = ["WMCore.ThreadPool", WMCore.WMBS"]
+        self.config.setDBUrl('sqlite://')
+        self.schemaModules = ['WMCore.ThreadPool', 'WMCore.WMBS']
         """
         
         message = "initialize method has to be implemented, self.restModel, self.schemaModules needs to be set"

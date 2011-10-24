@@ -192,7 +192,7 @@ class Service(dict):
 
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
         self.getData(cachefile, url, inputdata, {'cache-control':'no-cache'},
-                     encoder, decoder, verb, contentType)
+                     encoder, decoder, verb, contentType, force_refresh = True)
         if openfile:
             return open(cachefile, 'r')
         else:
@@ -213,7 +213,7 @@ class Service(dict):
 
     def getData(self, cachefile, url, inputdata = {}, incoming_headers = {},
                 encoder = True, decoder = True,
-                verb = 'GET', contentType = None):
+                verb = 'GET', contentType = None, force_refresh = False):
         """
         Takes the already generated *full* path to cachefile and the url of the
         resource. Don't need to call self.cacheFileName(cachefile, verb, inputdata)
@@ -248,13 +248,13 @@ class Service(dict):
                 f.close()
 
 
-        except (HttpLib2Error, HTTPException), he:
+        except (IOError, HttpLib2Error, HTTPException), he:
             #
             # Overly complicated exception handling. This is due to a request
             # from *Ops that it is very clear that data is is being returned
             # from a cachefile, and that cachefiles can be good/stale/dead.
             #
-            if not os.path.exists(cachefile):
+            if force_refresh or not os.path.exists(cachefile):
                 msg = 'The cachefile %s does not exist and the service at %s'
                 msg = msg % (cachefile, url)
                 if hasattr(he, 'status') and hasattr(he, 'reason'):
@@ -280,7 +280,6 @@ class Service(dict):
                                                                            he.reason))
                     else:
                         self['logger'].info('raised a %s when accessed' % he.__repr__())
-                        raise
                     self['logger'].info('cache file (%s) was created on %s' % (
                                                                         cachefile,
                                                                         cache_age))

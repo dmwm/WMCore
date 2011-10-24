@@ -346,7 +346,7 @@ class ServiceTest(unittest.TestCase):
         logging.basicConfig(format=FORMAT)
         logger = logging.getLogger('john')
         test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/reg1/regular' % self.port,
-                     'usestalecache': False, "cacheduration": 0.005}
+                     'usestalecache': True, "cacheduration": 0.005}
         myService = Service(test_dict)
         self.assertRaises(HTTPException, myService.getData, 'foo', 'THISISABADURL')
 
@@ -372,6 +372,12 @@ class ServiceTest(unittest.TestCase):
         # Expire cache
         time.sleep(30)
         self.assertRaises(socket.error, myService.forceRefresh, 'foo', '')
+
+        # get expired cache results while the server is down
+        data = myService.refreshCache('foo', '')
+        dataString = data.read()
+        self.assertEqual(dataString, "This is silly.")
+        data.close()
 
         # Restart server
         cherrypy.server.start()

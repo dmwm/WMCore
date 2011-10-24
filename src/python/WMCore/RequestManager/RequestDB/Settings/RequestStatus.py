@@ -38,7 +38,7 @@ NextStatus = {
  "assigned" : ["ops-hold", "assigned", "negotiating", "acquired", "aborted", "rejected", "failed"],
  "ops-hold" : ["assigned"],
  "negotiating" : ["acquired", "assigned", "rejected", "aborted", "failed", "negotiating"],
- "acquired" : ["running", "failed", "completed", "acquired"],
+ "acquired" : ["running", "failed", "completed", "acquired", "aborted"],
  "running" : ["running", "completed", "aborted", "failed", "epic-FAILED"], 
  "failed" : ["failed", "testing-approved", "assigned"],
  "epic-FAILED" : ["epic-FAILED"],

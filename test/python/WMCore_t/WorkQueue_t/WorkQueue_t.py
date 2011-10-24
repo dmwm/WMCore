@@ -41,8 +41,8 @@ from WMCore.DataStructs.File import File as WMFile
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Lexicon import sanitizeURL
-# NOTE: All queues point to the same database backend
-# Thus total element counts etc count elements in all queues
+
+
 rerecoArgs = getRerecoArgs()
 mcArgs = getMCArgs()
 parentProcArgs = getRerecoArgs()
@@ -173,7 +173,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                InboxDbName = self.queueInboxDB,
                                CacheDir = self.workDir,
                                config = config,
-                               QueueRetryTime = 1)
+                               QueueRetryTime = 5)
 
         # create relevant sites in wmbs
         rc = ResourceControl()
@@ -1076,7 +1076,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         self.assertRaises(StandardError, self.queue.queueWork, self.processingSpec.specUrl())
         self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Negotiating')
-        time.sleep(2)
+        time.sleep(5)
         self.assertRaises(StandardError, self.queue.queueWork, self.processingSpec.specUrl())
         self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Failed')
 

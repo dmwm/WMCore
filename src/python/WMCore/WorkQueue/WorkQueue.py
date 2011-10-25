@@ -702,7 +702,8 @@ class WorkQueue(WorkQueueBase):
         """Retrieve work from inbox, split and store
         If request passed then only process that request
         """
-        self.backend.fixConflicts() # db should be consistent
+        if self.params['LocalQueueFlag']:
+            self.backend.fixConflicts() # db should be consistent
 
         result = []
         if not inbound_work:

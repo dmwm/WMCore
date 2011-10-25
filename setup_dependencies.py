@@ -65,7 +65,7 @@ dependencies = {
                                      'WMCore.ACDC', 'WMCore.GroupUser', 'WMCore.Alerts'],
                         'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
                                      'WMCore.Database.__init__', 'WMCore.Database.CMSCouch',
-                                     'WMCore.Algorithms.ParseXMLFile'],
+                                     'WMCore.Database.CouchUtils', 'WMCore.Algorithms.ParseXMLFile'],
                         'systems': ['wmc-base'],
                         'statics': ['src/couchapps/WorkQueue+'],
                         },

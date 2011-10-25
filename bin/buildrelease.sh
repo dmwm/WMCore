@@ -8,6 +8,7 @@ set -e
 ##H
 ##H Tag & build a wmcore/wmagent release
 
+TAG=true
 BUILD=true
 REPO=comp.releases
 VERSION=
@@ -19,6 +20,7 @@ EXAMPLE_CMSDIST_TAG="builder_2011-08-02_16-19-02_wmagent"
 while [ $# -ge 1 ]; do
   case $1 in
     --skip-build ) BUILD=false; shift ;;
+    --skip-tag ) TAG=false; shift ;;
     --repo= ) REPO={2#*=}; shift; shift ;;
     -h ) perl -ne '/^##H/ && do { s/^##H ?//; print }' < $0 1>&2; exit 1 ;;
     -* ) echo "$0: unrecognised option $1, use -h for help" 1>&2; exit 1 ;;
@@ -68,21 +70,31 @@ fi
 #echo "git svn rebase ..."
 #git svn rebase
 
-echo "Updating version string ..."
-perl -p -i -e "s{__version__ =.*}{__version__ = '$VERSION'}g" src/python/WMCore/__init__.py
+# Check if tag exists
+(git branch -r | grep -q "tags/$VERSION")
+if [ $? -eq 0 ]; then
+  echo "Tag $VERSION exists, skipping tag command"
+  TAG=false
+fi
 
-#TODO: Update changes etc
+if [ X${TAG} == Xtrue ]; then
 
-echo "committing local changes ..."
-git commit -a -s -m "$VERSION"
+  echo "Updating version string ..."
+  perl -p -i -e "s{__version__ =.*}{__version__ = '$VERSION'}g" src/python/WMCore/__init__.py
 
-echo "pushing local changes to svn ..."
-git svn dcommit
+  #TODO: Update changes etc
 
-echo "tagging release ..."
-git svn tag $VERSION
+  echo "committing local changes ..."
+  git commit -a -s -m "$VERSION"
 
-echo "$VERSION tagged in svn"
+  echo "pushing local changes to svn ..."
+  git svn dcommit
+
+  echo "tagging release ..."
+  git svn tag $VERSION
+
+  echo "$VERSION tagged in svn"
+fi
 
 echo
 echo

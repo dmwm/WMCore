@@ -107,6 +107,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('PopulateFilesets', True)
         self.params.setdefault('LocalQueueFlag', True)
         self.params.setdefault('QueueRetryTime', 3600)
+        self.params.setdefault('stuckElementAlertTime', 86400)
 
         self.params.setdefault('JobDumpConfig', None)
         self.params.setdefault('BossAirConfig', None)
@@ -648,7 +649,9 @@ class WorkQueue(WorkQueueBase):
                     updated_elements = [x for x in result['Elements'] if x.modified]
                     for x in updated_elements:
                         self.logger.debug("Updating progress %s (%s): %s" % (x['RequsetName'], x.id, x.statusMetrics()))
-                    [self.backend.updateElements(x.id, **x.statusMetrics()) for x in result['Elements'] if x.modified]
+                    if not updated_elements and (float(parent.updatetime) + self.params['stuckElementAlertTime']) < time.time():
+                        self.sendAlert(5, msg = 'Element for %s stuck for 24 hours.' % wf)
+                    [self.backend.updateElements(x.id, **x.statusMetrics()) for x in updated_elements]
             except Exception, ex:
                 self.logger.error('Error processing workflow "%s": %s' % (wf, str(ex)))
 

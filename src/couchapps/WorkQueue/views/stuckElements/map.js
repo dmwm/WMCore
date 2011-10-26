@@ -3,10 +3,11 @@ function(doc, site) {
 
 	// !code lib/workqueue_utils.js
 
-	if (ele && ele["Status"] === "Available") {
+	// Show elements without updates for 24 hours
+	if (ele) {
 		var input_sites = workqueue_utils.commonInputDataSites(ele);
 		// check for at least one site hosting input data
-		if (ele.Inputs && !input_sites.length) {
+		if (ele.Inputs && toJSON(ele.Inputs) != '{}' && !input_sites.length) {
 			emit('No site with data');
 			return;
 		}
@@ -37,6 +38,11 @@ function(doc, site) {
 				emit('Hosting site in blacklist');
 				return;
 			}
+		}
+
+		// element is stuck but not sure why?
+		if  ((doc.updatetime + 86400) < new Date().getTime() / 1000) {
+			emit('No progress for 24 hours');
 		}
 	}
 }

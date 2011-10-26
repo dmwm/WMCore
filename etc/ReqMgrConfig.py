@@ -47,6 +47,17 @@ yuiRoot = "http://yui.yahooapis.com/2.8.0r4"
 # URL of the list of sites from SiteDB
 SITEDB = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name'
 
+# set cache directories (moved from manage script)
+root = __file__.rsplit('/', 4)[0]
+cache_dir = os.path.join(root, 'state', 'reqmgr', 'cache')
+os.environ['WMCORE_CACHE_DIR'] = cache_dir
+# manage script was also setting the "REQMGR_CACHE_DIR" variable which
+# should only be needed when for storing separately from other WMCore services
+# leave for reference
+# os.environ["REQMGR_CACHE_DIR"] = cache_dir
+
+
+
 # Nothing after this point should need to be changed.
 config = Configuration()
 

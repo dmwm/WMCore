@@ -50,6 +50,7 @@ def saveConfiguration(configObject, outputPath):
     """
     saveConfigurationFile(configObject, outputPath)
     os.chmod(outputPath, 0600)
+
     
 def modifyConfiguration(config, **args):
     """
@@ -95,7 +96,9 @@ def modifyConfiguration(config, **args):
         config.WorkloadSummary.database = splited[1]
         
     if hasattr(config,"TaskArchiver"):
-        config.TaskArchiver.workloadSummaryCouchURL = args["workload_summary_url"]
+        splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
+        config.TaskArchiver.workloadSummaryCouchURL = splited[0]
+        config.TaskArchiver.workloadSummaryCouchDBName = splited[1]
 
     if hasattr(config,"AsyncTransfer"):
         config.CoreDatabase.connectUrl = '%s/asynctransfer_agent' % args["couch_url"]

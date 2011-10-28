@@ -108,16 +108,17 @@ body {
     <div id="menubar" class="yuimenubar yuimenubarnav">
         <div class="bd">
             <ul class="first-of-type">
-
                 <li class="yuimenubaritem first-of-type">
-                    <a class="yuimenubaritemlabel" href="#options">Options</a>
+                    <a class="yuimenubaritemlabel">Views</a>
                 </li>
                 <li class="yuimenubaritem">
-                    <a class="yuimenubaritemlabel" href="https://twiki.cern.ch/twiki/bin/viewauth/CMS/WMCoreWorkQueue">Docs</a>
+                    <a class="yuimenubaritemlabel">Related Links</a>
+                </li>
+                <li class="yuimenubaritem">
+                    <a class="yuimenubaritemlabel">Help</a>
                 </li>
             </ul>
         </div>
-
     </div>
 </div>
 <div id="bottom1"></div>
@@ -165,35 +166,38 @@ body {
 
         var aSubmenuData = [
 
-            {
-                id: "options",
-                itemdata: [
-                    {text: "requestMgr",
-                     url: "https://twiki.cern.ch/twiki/bin/view/CMS/WorkQueueInstallation" },
-                    {text: "Alerts", url: "" },
-                    {
-                     text: "Some Option",
-                     submenu: {
-                         id: "suboption",
-                         itemdata: [
-                             {text: "local queue",
-                              url: "" },
-                             {text: "wmagent", url: "" }
-                         ]
-                      }
-                    }
-                ]
-            },
+                            {
+                                id: "Views",
+                                itemdata: [
+                                     {text: "Main view",
+                                      url: "index.html" },
+                                     {text: "Workflow view",
+                                      url: "workflowInfo" },
+                                     {text: "Elements View",
+                                      url: "elementsInfo" },
+                                     {text: "Stuck elements",
+                                      url: "stuckElementsInfo" },
+                                     {text: "WorkQueue tasks status",
+                                      url: "_show/status/task_activity" },
+                                ]
+                            },
 
-            {
-                id: "docs",
-                itemdata: [
-                    { text: "twiki", url: "https://twiki.cern.ch/twiki/bin/view/CMS/WorkQueueInstallation" },
-                    { text: "tutorial", url: "https://twiki.cern.ch/twiki/bin/view/CMS/WorkQueueMonitorPlan" }
-                    ]
-            }
+                            {
+                                id: "Related Links",
+                                itemdata: [
+                                    { text: "Request Manager", url: "/reqmgr" }
+                                    ]
+                            },
 
-        ];
+                            {
+                                id: "Help",
+                                itemdata: [
+                                    { text: "WorkQueue twiki", url: "https://twiki.cern.ch/twiki/bin/viewauth/CMS/WMCoreWorkQueue" },
+                                    { text: "Web docs", url: "https://twiki.cern.ch/twiki/bin/view/CMS/WorkQueueMonitorPlan" }
+                                    ]
+                            }
+
+                        ];
 
 
         /*
@@ -207,6 +211,7 @@ body {
 
                 this.getItem(0).cfg.setProperty("submenu", aSubmenuData[0]);
                 this.getItem(1).cfg.setProperty("submenu", aSubmenuData[1]);
+                this.getItem(2).cfg.setProperty("submenu", aSubmenuData[2]);
             }
 
         });

@@ -103,7 +103,7 @@ class StdBase(object):
             outputModules = configCache.getOutputModuleInfo()
         else:
             for dataTier in scenarioArgs.get("writeTiers",[]):
-                outputModuleName = "output%s%s" % (dataTier, dataTier)
+                outputModuleName = "%soutput" % (dataTier)
                 outputModules[outputModuleName] = {"dataTier": dataTier,
                                                    "filterName": None}
 

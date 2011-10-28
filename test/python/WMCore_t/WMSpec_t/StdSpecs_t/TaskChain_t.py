@@ -510,7 +510,7 @@ class TaskChainTests(unittest.TestCase):
             "Task3" : {
                 "TaskName" : "ALCAReco",
                 "InputTask" : "Reco",
-                "InputFromOutputModule" : "outputALCARECOALCARECO",
+                "InputFromOutputModule" : "ALCARECOoutput",
                 "Scenario" : "pp",
                 "ScenarioMethod" : "alcaReco",
                 "ScenarioArguments" : {"writeTiers" : ['ALCARECO']},
@@ -521,7 +521,7 @@ class TaskChainTests(unittest.TestCase):
             "Task4" : {
                 "TaskName" : "Skims",
                 "InputTask" : "Reco",
-                "InputFromOutputModule" : "outputRECORECO",
+                "InputFromOutputModule" : "RECOoutput",
                 "ConfigCacheID" : processorDocs['Skims'],
                 "SplittingAlgorithm" : "FileBased",
                 "SplittingArguments" : {"files_per_job" : 10 },            
@@ -599,7 +599,7 @@ class TaskChainTests(unittest.TestCase):
             "Task2" : {
                 "TaskName" : "AlcaSkimming",
                 "InputTask" : "PromptReco",
-                "InputFromOutputModule" : "outputALCARECOALCARECO",
+                "InputFromOutputModule" : "ALCARECOoutput",
                 "Scenario" : "pp",
                 "ScenarioMethod" : "alcaSkimming",
                 "ScenarioArguments" : {"writeTiers" : ['ALCARECO'], "skims" : ["EcalCalElectron"]},
@@ -610,7 +610,7 @@ class TaskChainTests(unittest.TestCase):
             "Task3" : {
                 "TaskName" : "PromptSkim",
                 "InputTask" : "PromptReco",
-                "InputFromOutputModule" : "outputRECORECO",
+                "InputFromOutputModule" : "RECOoutput",
                 "ConfigCacheID" : cfgs['Skims'],
                 "GlobalTag" : "NOTSET",
                 "SplittingAlgorithm" : "FileBased",

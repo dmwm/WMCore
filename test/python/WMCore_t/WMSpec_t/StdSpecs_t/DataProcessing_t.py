@@ -62,7 +62,7 @@ class DataProcessingTest(unittest.TestCase):
         self.assertEqual(len(procWorkflow.outputMap.keys()), 3,
                          "Error: Wrong number of WF outputs.")
 
-        goldenOutputMods = ["outputRECORECO", "outputALCARECOALCARECO"]
+        goldenOutputMods = ["RECOoutput", "ALCARECOoutput"]
         for goldenOutputMod in goldenOutputMods:
             mergedOutput = procWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
             unmergedOutput = procWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
@@ -125,10 +125,10 @@ class DataProcessingTest(unittest.TestCase):
         self.assertEqual(procSubscription["split_algo"], "LumiBased",
                          "Error: Wrong split algo.")
 
-        unmergedReco = Fileset(name = "/TestWorkload/DataProcessing/unmerged-outputRECORECO")
+        unmergedReco = Fileset(name = "/TestWorkload/DataProcessing/unmerged-RECOoutput")
         unmergedReco.loadData()
         recoMergeWorkflow = Workflow(name = "TestWorkload",
-                                     task = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO")
+                                     task = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput")
         recoMergeWorkflow.load()
         mergeSubscription = Subscription(fileset = unmergedReco, workflow = recoMergeWorkflow)
         mergeSubscription.loadData()
@@ -138,10 +138,10 @@ class DataProcessingTest(unittest.TestCase):
         self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                          "Error: Wrong split algo.")
 
-        unmergedAlca = Fileset(name = "/TestWorkload/DataProcessing/unmerged-outputALCARECOALCARECO")
+        unmergedAlca = Fileset(name = "/TestWorkload/DataProcessing/unmerged-ALCARECOoutput")
         unmergedAlca.loadData()
         alcaMergeWorkflow = Workflow(name = "TestWorkload",
-                                     task = "/TestWorkload/DataProcessing/DataProcessingMergeoutputALCARECOALCARECO")
+                                     task = "/TestWorkload/DataProcessing/DataProcessingMergeALCARECOoutput")
         alcaMergeWorkflow.load()
         mergeSubscription = Subscription(fileset = unmergedAlca, workflow = alcaMergeWorkflow)
         mergeSubscription.loadData()
@@ -151,7 +151,7 @@ class DataProcessingTest(unittest.TestCase):
         self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                          "Error: Wrong split algo.")        
 
-        for procOutput in ["outputRECORECO", "outputALCARECOALCARECO"]:
+        for procOutput in ["RECOoutput", "ALCARECOoutput"]:
             unmerged = Fileset(name = "/TestWorkload/DataProcessing/unmerged-%s" % procOutput)
             unmerged.loadData()
             cleanupWorkflow = Workflow(name = "TestWorkload",
@@ -178,10 +178,10 @@ class DataProcessingTest(unittest.TestCase):
         self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algo.")
 
-        procLogCollect = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/merged-logArchive")
+        procLogCollect = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/merged-logArchive")
         procLogCollect.loadData()
         procLogCollectWorkflow = Workflow(name = "TestWorkload",
-                                          task = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/DataProcessingoutputRECORECOMergeLogCollect")
+                                          task = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/DataProcessingRECOoutputMergeLogCollect")
         procLogCollectWorkflow.load()
         logCollectSub = Subscription(fileset = procLogCollect, workflow = procLogCollectWorkflow)
         logCollectSub.loadData()
@@ -191,10 +191,10 @@ class DataProcessingTest(unittest.TestCase):
         self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algo.")
 
-        procLogCollect = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeoutputALCARECOALCARECO/merged-logArchive")
+        procLogCollect = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeALCARECOoutput/merged-logArchive")
         procLogCollect.loadData()
         procLogCollectWorkflow = Workflow(name = "TestWorkload",
-                                          task = "/TestWorkload/DataProcessing/DataProcessingMergeoutputALCARECOALCARECO/DataProcessingoutputALCARECOALCARECOMergeLogCollect")
+                                          task = "/TestWorkload/DataProcessing/DataProcessingMergeALCARECOoutput/DataProcessingALCARECOoutputMergeLogCollect")
         procLogCollectWorkflow.load()
         logCollectSub = Subscription(fileset = procLogCollect, workflow = procLogCollectWorkflow)
         logCollectSub.loadData()

@@ -80,7 +80,7 @@ class ReRecoTest(unittest.TestCase):
         skimConfig = self.injectSkimConfig()
         dataProcArguments = getTestArguments()
         dataProcArguments["SkimConfigs"] = [{"SkimName": "SomeSkim",
-                                             "SkimInput": "outputRECORECO",
+                                             "SkimInput": "RECOoutput",
                                              "SkimSplitAlgo": "FileBased",
                                              "SkimSplitArgs": {"files_per_job": 1,
                                                                "include_parents": True},
@@ -97,7 +97,7 @@ class ReRecoTest(unittest.TestCase):
         testWMBSHelper.createSubscription()
 
         skimWorkflow = Workflow(name = "TestWorkload",
-                                task = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim")
+                                task = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim")
         skimWorkflow.load()
 
         self.assertEqual(len(skimWorkflow.outputMap.keys()), 3,
@@ -111,9 +111,9 @@ class ReRecoTest(unittest.TestCase):
             mergedOutput.loadData()
             unmergedOutput.loadData()
 
-            self.assertEqual(mergedOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/SomeSkimMerge%s/merged-Merged" % goldenOutputMod,
+            self.assertEqual(mergedOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMerge%s/merged-Merged" % goldenOutputMod,
                              "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
-            self.assertEqual(unmergedOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/unmerged-%s" % goldenOutputMod,
+            self.assertEqual(unmergedOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-%s" % goldenOutputMod,
                              "Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name)
 
         logArchOutput = skimWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -121,14 +121,14 @@ class ReRecoTest(unittest.TestCase):
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
 
-        self.assertEqual(logArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/unmerged-logArchive",
+        self.assertEqual(logArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
-        self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/unmerged-logArchive",
+        self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
         for goldenOutputMod in goldenOutputMods:
             mergeWorkflow = Workflow(name = "TestWorkload",
-                                     task = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/SomeSkimMerge%s" % goldenOutputMod)
+                                     task = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
             self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
@@ -140,9 +140,9 @@ class ReRecoTest(unittest.TestCase):
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
 
-            self.assertEqual(mergedMergeOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/SomeSkimMerge%s/merged-Merged" % goldenOutputMod,
+            self.assertEqual(mergedMergeOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMerge%s/merged-Merged" % goldenOutputMod,
                              "Error: Merged output fileset is wrong.")
-            self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/SomeSkimMerge%s/merged-Merged" % goldenOutputMod,
+            self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMerge%s/merged-Merged" % goldenOutputMod,
                              "Error: Unmerged output fileset is wrong.")
 
             logArchOutput = mergeWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -150,12 +150,12 @@ class ReRecoTest(unittest.TestCase):
             logArchOutput.loadData()
             unmergedLogArchOutput.loadData()
 
-            self.assertEqual(logArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/SomeSkimMerge%s/merged-logArchive" % goldenOutputMod,
+            self.assertEqual(logArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong: %s" % logArchOutput.name)
-            self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/SomeSkimMerge%s/merged-logArchive" % goldenOutputMod,
+            self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong.")            
 
-        topLevelFileset = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/merged-Merged")
+        topLevelFileset = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/merged-Merged")
         topLevelFileset.loadData()
 
         skimSubscription = Subscription(fileset = topLevelFileset, workflow = skimWorkflow)
@@ -167,10 +167,10 @@ class ReRecoTest(unittest.TestCase):
                          "Error: Wrong split algo.")
 
         for skimOutput in ["A", "B"]:
-            unmerged = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/unmerged-Skim%s" % skimOutput)
+            unmerged = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-Skim%s" % skimOutput)
             unmerged.loadData()
             mergeWorkflow = Workflow(name = "TestWorkload",
-                                      task = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/SomeSkimMergeSkim%s" % skimOutput)
+                                      task = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkim%s" % skimOutput)
             mergeWorkflow.load()
             mergeSubscription = Subscription(fileset = unmerged, workflow = mergeWorkflow)
             mergeSubscription.loadData()
@@ -181,10 +181,10 @@ class ReRecoTest(unittest.TestCase):
                              "Error: Wrong split algo.")
 
         for skimOutput in ["A", "B"]:
-            unmerged = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/unmerged-Skim%s" % skimOutput)
+            unmerged = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-Skim%s" % skimOutput)
             unmerged.loadData()
             cleanupWorkflow = Workflow(name = "TestWorkload",
-                                      task = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/SomeSkimCleanupUnmergedSkim%s" % skimOutput)
+                                      task = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimCleanupUnmergedSkim%s" % skimOutput)
             cleanupWorkflow.load()
             cleanupSubscription = Subscription(fileset = unmerged, workflow = cleanupWorkflow)
             cleanupSubscription.loadData()
@@ -195,10 +195,10 @@ class ReRecoTest(unittest.TestCase):
                              "Error: Wrong split algo.")
 
         for skimOutput in ["A", "B"]:
-            skimMergeLogCollect = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/SomeSkimMergeSkim%s/merged-logArchive" % skimOutput)
+            skimMergeLogCollect = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkim%s/merged-logArchive" % skimOutput)
             skimMergeLogCollect.loadData()
             skimMergeLogCollectWorkflow = Workflow(name = "TestWorkload",
-                                                   task = "/TestWorkload/DataProcessing/DataProcessingMergeoutputRECORECO/SomeSkim/SomeSkimMergeSkim%s/SomeSkimSkim%sMergeLogCollect" % (skimOutput, skimOutput))
+                                                   task = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkim%s/SomeSkimSkim%sMergeLogCollect" % (skimOutput, skimOutput))
             skimMergeLogCollectWorkflow.load()
             logCollectSub = Subscription(fileset = skimMergeLogCollect, workflow = skimMergeLogCollectWorkflow)
             logCollectSub.loadData()

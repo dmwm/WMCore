@@ -165,27 +165,61 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
           createProgressBar(elLiner, inWMBS, total, pbq);
     };
 
+    var numParser = function(s) {
+        if (s) {
+            return YAHOO.util.DataSource.parseNumber(s);
+        } else {
+            return 0;
+        };
+    };
+    
+    var STATUS_LIST = {
+    "new": 1, 
+    "testing-approved": 2,
+    "testing": 3,
+    "tested": 4,
+    "test-failed": 5,
+    "assignment-approved": 6,
+    "assigned": 7,
+    "ops-hold": 8,
+    "negotiating": 9,
+    "acquired": 10,
+    "running": 11,
+    "failed": 12,
+    "epic-FAILED": 13,
+    "completed": 14,
+    "closed-out": 15,
+    "announced": 16,
+    "aborted": 17,
+    "rejected": 18
+    };
 
+    var sortStatus =  function(a, b, desc) { 
+        var comp = YAHOO.util.Sort.compare; 
+        var compStatus = comp(STATUS_LIST[a.getData("status")], STATUS_LIST[b.getData("status")], desc); 
+        return compStatus;
+    };
+     
     var dataSchema = {
         fields: [{key: "request_name"},
                  {key: "status"},
                  {key: "type"},
                  {key: "global_queue"},
                  {key: "local_queue"},
-                 {key: "pending"},
-                 {key: "cooloff"},
-                 {key: "running"},
-                 {key: "success"},
-                 {key: "failure"},
+                 {key: "pending", parser: numParser},
+                 {key: "cooloff", parser: numParser},
+                 {key: "running", parser: numParser},
+                 {key: "success", parser: numParser},
+                 {key: "failure", parser: numParser},
                  //batch job status. (capital letters
                  //needs better distinction
-                 {key: "Pending"},
-                 {key: "Running"},
-                 {key: "Complete"},
-                 {key: "Error"},
-                 {key: "inQueue"},
-                 {key: "inWMBS"},
-                 {key: "total_jobs"},
+                 {key: "Pending", parser: numParser},
+                 {key: "Running", parser: numParser},
+                 {key: "Complete", parser: numParser},
+                 {key: "Error", parser: numParser},
+                 {key: "inQueue", parser: numParser},
+                 {key: "inWMBS", parser: numParser},
+                 {key: "total_jobs", parser: numParser},
                  {key: "site_whitelist"},
                  {key: "couch_doc_base"},
                  {key: "global_queue"},
@@ -197,7 +231,7 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
         };
 
    var dataTableCols = [{key: "request_name", label: "request name", formatter:formatRequest},
-                 {key: "status"},
+                 {key: "status", sortOptions: {sortFunction: sortStatus}},
                  {key: "type"},
                  {key: "pending", label: "queued", formatter:formatPending},
                  {key: "cooloff", label: "cool off", formatter:formatCoolOff},

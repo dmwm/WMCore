@@ -1,3 +1,4 @@
+import WMCore_t.RequestManager_t.FakeRequests as FakeRequests
 import WMCore.RequestManager.RequestMaker.Processing.RecoRequest
 import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest
 import WMCore.RequestManager.RequestMaker.Processing.DataProcessingRequest

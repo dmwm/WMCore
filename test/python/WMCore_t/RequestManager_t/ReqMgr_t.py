@@ -7,6 +7,7 @@ RequestManager unittest
 """
 
 from WMCore.Services.Requests import JSONRequests
+import WMCore_t.RequestManager_t.FakeRequests as FakeRequests
 import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest as ReRecoRequest
 import WMCore.WMSpec.StdSpecs.ReReco as ReReco
 import unittest
@@ -64,7 +65,7 @@ class RequestManagerConfig(DefaultConfig):
     def setupCouchDatabase(self, dbName):
         self.UnitTests.views.active.rest.configDBName = dbName
         
-class ReqMgrTest(RESTBaseUnitTest):
+class TestReqMgr(RESTBaseUnitTest):
     """
     _TestReqMgr_
 

@@ -6,7 +6,7 @@ function(doc) {
       }
       var request = doc['fwjr'].task.split('/')[1]
 
-      var step = doc['fwjr']['steps'][stepName];      
+      var step = doc['fwjr']['steps'][stepName];
       for (var stepAttribute in step) {
         if (stepAttribute != 'output') {
           continue;
@@ -20,7 +20,8 @@ function(doc) {
           if (step[stepAttribute][outputModule].length > 0 &&
               'pfn' in step['output']['logArchive'][0]) {
             emit([request], {"jobid" : doc['jobid'],
-                               "pfn" : step["output"]["logArchive"][0]["pfn"],
+                               "lfn" : step["output"]["logArchive"][0]["lfn"],
+                               "location" : step["output"]["logArchive"][0]["location"],
                          "checksums" : step["output"]["logArchive"][0]["checksums"]});
           }
         }

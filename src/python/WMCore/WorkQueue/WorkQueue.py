@@ -354,10 +354,12 @@ class WorkQueue(WorkQueueBase):
         self.logger.info("Created top level subscription %s for %s with %s files" % (sub['id'],
                                                                                      match['RequestName'],
                                                                                      match['NumOfFilesAdded']))
-
+        # update couch with wmbs subscription info
         match['SubscriptionId'] = sub['id']
         match['Status'] = 'Running'
-        self.backend.saveElements(match)
+        # do update rather than save to avoid conflicts from other thread writes
+        self.backend.updateElements(match.id, Status = 'Running', SubscriptionId = sub['id'],
+                                    NumOfFilesAdded = match['NumOfFilesAdded'])
 
         return sub
 

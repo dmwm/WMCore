@@ -48,7 +48,7 @@ class ErrorHandlerTest(unittest.TestCase):
         
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setupCouch("errorhandler_t", "GroupUser", "ACDC")
@@ -144,7 +144,8 @@ class ErrorHandlerTest(unittest.TestCase):
     
 
     def createTestJobGroup(self, nJobs = 10, retry_count = 1,
-                           workloadPath = 'test', fwjrPath = None):
+                           workloadPath = 'test', fwjrPath = None,
+                           workloadName = makeUUID()):
         """
         Creates a group of several jobs
         """
@@ -153,7 +154,7 @@ class ErrorHandlerTest(unittest.TestCase):
         myThread = threading.currentThread()
         myThread.transaction.begin()
         testWorkflow = Workflow(spec = workloadPath, owner = "cmsdataops", group = "cmsdataops",
-                                name = makeUUID(), task="/TestWorkload/ReReco")
+                                name = workloadName, task="/TestWorkload/ReReco")
         testWorkflow.create()
         
         testWMBSFileset = Fileset(name = "TestFileset")
@@ -170,11 +171,13 @@ class ErrorHandlerTest(unittest.TestCase):
         testFile0.addRun(Run(10, *[12312]))
         testFile0.setLocation('malpaquet')
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
+                         first_event = 88, last_event = 99)
         testFileA.addRun(Run(10, *[12312, 12313]))
         testFileA.setLocation('malpaquet')
 
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
+                         first_event = 88, last_event = 99)
         testFileB.addRun(Run(10, *[12314, 12315, 12316]))
         testFileB.setLocation('malpaquet')
 
@@ -191,6 +194,7 @@ class ErrorHandlerTest(unittest.TestCase):
             testJob['retry_max'] = 10
             testJob['mask'].addRunAndLumis(run = 10, lumis = [12312])
             testJob['mask'].addRunAndLumis(run = 10, lumis = [12314, 12316])
+            testJob['mask']['FirstEvent'] = 100
             testJob['cache_dir'] = os.path.join(self.testDir, testJob['name'])
             testJob['fwjr_path'] = fwjrPath
             os.mkdir(testJob['cache_dir'])
@@ -225,7 +229,8 @@ class ErrorHandlerTest(unittest.TestCase):
                                     'WMSandbox', 'WMWorkload.pkl')
         
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
-                                               workloadPath = workloadPath)
+                                               workloadPath = workloadPath,
+                                               workloadName = workloadName)
         
         config = self.getConfig()
         changer = ChangeState(config)
@@ -260,6 +265,7 @@ class ErrorHandlerTest(unittest.TestCase):
         collection = self.dataCS.getDataCollection(workloadName)
 
         # Now look at what's inside
+        self.assertTrue(len(collection['filesets']) > 0)
         for fileset in collection["filesets"]:
             counter = 0
             for f in fileset.listFiles():
@@ -271,6 +277,8 @@ class ErrorHandlerTest(unittest.TestCase):
                 self.assertTrue(f['runs'][0]['lumis'] in [[12312], [12314, 12315, 12316]],
                                 "Unknown lumi %s" % f['runs'][0]['lumis'])
                 self.assertTrue(f['merged'], 1)
+                self.assertTrue(f['first_event'], 88)
+                self.assertTrue(f['last_event'], 99)
             self.assertEqual(counter, 20)
         return
 
@@ -401,7 +409,6 @@ class ErrorHandlerTest(unittest.TestCase):
 
         Test our ability to fail jobs based on the information in the FWJR
         """
-
         workloadName = 'TestWorkload'
         
         workload = self.createWorkload(workloadName = workloadName)

@@ -1,4 +1,5 @@
 from xml.dom.minidom import parseString
+import logging
 from WMCore.Services.Service import Service
 from WMCore.Wrappers import JsonWrapper
 from WMCore.Services.EmulatorSwitch import emulatorHook
@@ -192,6 +193,8 @@ class PhEDEx(Service):
         however: dataItems may be a combination of blocks or datasets and
         kwargs is passed to PhEDEx; output is parsed and returned in the form
         { 'dataItem1' : [Node1, Node2] } where dataItem is a block or dataset
+        If an error is encountered for a dataItem that item will be missing
+        from the returned dictionary.
 
         The following cases are handled:
           o Input is a block and subscription is a dataset
@@ -215,35 +218,37 @@ class PhEDEx(Service):
         # Hard to query all at once in one GET call, POST not cacheable
         # Query each dataset and record relevant dataset or block location
         for dsname, items in inputs.items():
+            try:
+                # First query for a dataset level subscription (most common)
+                # this returns block level subscriptions also.
+                kwargs['dataset'], kwargs['block'] = dsname, []
+                response = self.subscriptions(**kwargs)['phedex']
 
-            # First query for a dataset level subscription (most common)
-            # this returns block level subscriptions also.
-            kwargs['dataset'], kwargs['block'] = dsname, []
-            response = self.subscriptions(**kwargs)['phedex']
+                # iterate over response as can't jump to specific datasets
+                for dset in response['dataset']:
+                    if dset['name'] != dsname:
+                        continue
+                    if dset.has_key('subscription'):
+                        # dataset level subscription
+                        nodes = [x['node'] for x in dset['subscription']
+                                 if kwargs['suspended'] == 'either' or \
+                                            x['suspended'] == kwargs['suspended']]
+                        # update locations for all items in this dataset
+                        for item in items:
+                            result[item].update(nodes)
 
-            # iterate over response as can't jump to specific datasets
-            for dset in response['dataset']:
-                if dset['name'] != dsname:
-                    continue
-                if dset.has_key('subscription'):
-                    # dataset level subscription
-                    nodes = [x['node'] for x in dset['subscription']
-                             if kwargs['suspended'] == 'either' or \
-                                        x['suspended'] == kwargs['suspended']]
-                    # update locations for all items in this dataset
-                    for item in items:
-                        result[item].update(nodes)
-
-                #if we have a block we must check for block level subscription also
-                # combine with original query when can give both dataset and block
-                if any([x.find('#') > -1 for x in items]) and dset.has_key('block'):
-                    for block in dset['block']:
-                        if block['name'] in items:
-                            nodes = [x['node'] for x in block['subscription']
-                                     if kwargs['suspended'] == 'either' or \
-                                        x['suspended'] == kwargs['suspended']]
-                            # update locations for this block
-                            result[block['name']].update(nodes)
+                    #if we have a block we must check for block level subscription also
+                    # combine with original query when can give both dataset and block
+                    if any([x.find('#') > -1 for x in items]) and dset.has_key('block'):
+                        for block in dset['block']:
+                            if block['name'] in items:
+                                nodes = [x['node'] for x in block['subscription']
+                                         if kwargs['suspended'] == 'either' or \
+                                            x['suspended'] == kwargs['suspended']]
+                                # update locations for this block
+                                result[block['name']].update(nodes)
+            except Exception, ex:
+                logging.error('Error looking up phedex subscription for %s: %s' % (dsname, str(ex)))
         return result
 
 

@@ -3,6 +3,7 @@
 
 from collections import defaultdict
 import time
+import logging
 
 from WMCore.WorkQueue.WorkQueueUtils import get_dbs
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
@@ -88,18 +89,20 @@ class DataLocationMapper():
         elif self.params['locationFrom'] == 'location':
             result = defaultdict(set)
             args = {}
-            args['block'] = dataItems
             if not self.params['incompleteBlocks']:
                 args['complete'] = 'y'
             if not self.params['requireBlocksSubscribed']:
                 args['subscribed'] = 'y'
             if not fullResync and self.lastLocationUpdate:
                 args['update_since'] = timeFloor(self.lastLocationUpdate, self.params['updateIntervalCoarseness'])
-            response = self.phedex.getReplicaInfoForBlocks(**args)['phedex']
-
-            for block in response['block']:
-                nodes = [se['node'] for se in block['replica']]
-                result[block['name']].update(nodes)
+            for dataItem in dataItems:
+                try:
+                    response = self.phedex.getReplicaInfoForBlocks(block = [dataItem], **args)['phedex']
+                    for block in response['block']:
+                        nodes = [se['node'] for se in block['replica']]
+                        result[block['name']].update(nodes)
+                except Exception, ex:
+                    logging.error('Error getting block location from phedex for %s: %s' % (dataItem, str(ex)))
         else:
             raise RuntimeError, "shouldn't get here"
 
@@ -118,8 +121,11 @@ class DataLocationMapper():
             # or use generator to allow partial result to be updated.
             # However this is not the normal path and will be deprecated if it is
             # replaced by dbs 3
-            seNames = dbs.listFileBlockLocation(item)
-            result[item].update([self.sitedb.seToCMSName(x) for x in seNames])
+            try:
+                seNames = dbs.listFileBlockLocation(item)
+                result[item].update([self.sitedb.seToCMSName(x) for x in seNames])
+            except Exception, ex:
+                logging.error('Erro getting block location from dbs for %s: %s' % (item, str(ex)))
 
         return result, True # partial dbs updates not supported
 

@@ -193,7 +193,7 @@ class RESTModel(WebAPI):
                 # If the method isn't meant to have arguments the wrapper isn't needed
                 # so we need to raise a 400 error
                 if (len(input_args) + len(input_kwargs)):
-                    raise HTTPError(400, 'Invalid input')
+                    raise HTTPError(400, 'Invalid input: Arguments added where none allowed')
                 return function()
 
         funcRef = wrapper
@@ -231,7 +231,7 @@ class RESTModel(WebAPI):
             input_args = list(input_args)
         if (len(input_args) + len(input_kwargs)) > len(self.methods[verb][method]['args']):
             self.debug('%s to %s expects %s argument(s), got %s' % (verb, method, len(self.methods[verb][method]['args']), (len(input_args) + len(input_kwargs))))
-            raise HTTPError(400, 'Invalid input')
+            raise HTTPError(400, 'Invalid input: Input arguments failed sanitation.')
         input_data = {}
 
         for a in self.methods[verb][method]['args']:
@@ -242,7 +242,7 @@ class RESTModel(WebAPI):
                 if len(input_args):
                     input_data[a] = input_args.pop(0)
         if input_kwargs: 
-            raise HTTPError(400, 'Invalid input') 
+            raise HTTPError(400, 'Invalid input: Input arguments failed sanitation.') 
         self.debug('%s raw data: %s' % (method, {'args': input_args, 'kwargs': input_kwargs}))
         self.debug('%s sanitised input_data: %s' % (method, input_data))
         return self._validate_input(input_data, verb, method)
@@ -270,7 +270,7 @@ class RESTModel(WebAPI):
                 raise he
             except Exception, e:
                 self.debug(e)
-                raise HTTPError(400, 'Invalid input')
+                raise HTTPError(400, 'Invalid input: Input data failed validation.')
             result.update(filteredInput)
         return result
 

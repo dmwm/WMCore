@@ -281,7 +281,10 @@ class ReqMgrRESTModel(RESTModel):
         if group != None:
             result = {}
             result['users'] =  GroupInfo.usersInGroup(group)
-            result['priority'] = GroupManagement.getPriority(group)
+            try:
+                result['priority'] = GroupManagement.getPriority(group)
+            except IndexError:
+                raise cherrypy.HTTPError(404, "Cannot find group/group priority")
             return json.dumps(result)
         elif user != None:   
             return GroupInfo.groupsForUser(user).keys()

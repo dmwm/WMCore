@@ -11,7 +11,7 @@ import unittest
 
 from WMCore.RequestManager.RequestMaker.Processing.TaskChainRequest import TaskChainRequest, TaskChainSchema
 
-class TaskChainRequest_t(unittest.TestCase):
+class TaskChainRequestTest(unittest.TestCase):
     def setUp(self):
         pass
         

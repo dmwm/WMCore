@@ -1,11 +1,19 @@
+#!/usr/bin/env python
+
+"""
+Campaign-related methods for database access
+
+"""
+
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
+from cherrypy import HTTPError
 
 def listRequestsByCampaign(campaignName):
     factory = DBConnect.getConnection()
     campaignFind = factory(classname = "Campaign.ID")
     campaignID = campaignFind.execute(campaignName)
     if campaignID == None or campaignID == []:
-        return False
+        raise HTTPError(404, "Cannot find campaign")
     reqFind = factory(classname = "Request.FindByCampaign")
     result = reqFind.execute(campaignID)
     return result

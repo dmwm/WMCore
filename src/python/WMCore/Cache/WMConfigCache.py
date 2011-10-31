@@ -360,11 +360,24 @@ class ConfigCache(WMObject):
         Retrieve the dataset information for the config in the ConfigCache.
         """
         psetTweaks = self.getPSetTweaks()
-        outputModuleNames = psetTweaks["process"]["outputModules_"]
+        if not 'process' in psetTweaks.keys():
+            raise ConfigCacheException("Could not find process field in PSet while getting output modules!")
+        try:
+            outputModuleNames = psetTweaks["process"]["outputModules_"]
+        except KeyError, ex:
+            msg =  "Could not find outputModules_ in psetTweaks['process'] while getting output modules.\n"
+            msg += str(ex)
+            logging.error(msg)
+            raise ConfigCacheException(msg)
 
         results = {}
         for outputModuleName in outputModuleNames:
-            outModule = psetTweaks["process"][outputModuleName]
+            try:
+                outModule = psetTweaks["process"][outputModuleName]
+            except KeyError:
+                msg = "Could not find outputModule %s in psetTweaks['process']" % outputModuleName
+                logging.error(msg)
+                raise ConfigCacheExcpetion(msg)
             dataset = outModule.get("dataset", None)
             if dataset:
                 results[outputModuleName] = {"dataTier": outModule["dataset"]["dataTier"],

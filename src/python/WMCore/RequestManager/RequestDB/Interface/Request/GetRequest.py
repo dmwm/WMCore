@@ -6,14 +6,12 @@ _GetRequest_
 API to get requests from the DB
 
 """
-
-
-
 import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 from WMCore.RequestManager.DataStructs.Request import Request
+from cherrypy import HTTPError
 
 def reverseLookups():
     """ returns reverse lookups for Types and Status """
@@ -93,7 +91,7 @@ def requestID(requestName):
     f =  factory(classname = "Request.FindByName")
     id = f.execute(requestName)
     if id == None:
-        raise RuntimeError, "Cannot find request %s" % requestName
+        raise HTTPError(404, 'Given requestName not found')
     return id
 
 def getRequestByName(requestName):

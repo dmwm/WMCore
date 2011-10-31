@@ -6,18 +6,15 @@ State Change API methods
 
 
 """
-
-
-
 import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
+from cherrypy import HTTPError
 
-
+# TODO: Merge with getRequest.requestID
 def getRequestID(factory, requestName):
     reqId = factory(classname = "Request.ID").execute(requestName)
     if reqId == None:
-        msg = "Request Named %s not known in database" % requestName
-        raise RuntimeError, msg
+        raise HTTPError(404, 'Given requestName not found')
     return reqId
 
 

@@ -6,11 +6,9 @@ API Methods to list the requests in the database
 
 """
 
-
-
-
 import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
+from cherrypy import HTTPError
 
 
 def listRequests():
@@ -71,8 +69,7 @@ def listRequestsByTeam(teamName, statusName = None):
     factory = DBConnect.getConnection()
     teamId = factory(classname = "Team.ID").execute(teamName)
     if teamId == None:
-        msg = "Team %s not known to reqmgr database" % teamName
-        raise RuntimeError, msg
+        raise HTTPError(404, "Cannot find team")
     reqFind = factory(classname = "Request.FindByTeam")
     result = reqFind.execute(teamId, statusName)
     return result

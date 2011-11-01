@@ -602,6 +602,8 @@ class WMBSHelper(WMConnectionBase):
         wmbsFile = File(lfn = str(acdcFile["lfn"]),
                         size = acdcFile["size"],
                         events = acdcFile["events"],
+                        first_event = acdcFile.get('first_event', 0),
+                        last_event = acdcFile.get('last_event', 0),
                         checksums = checksums,
                         parents = wmbsParents,
                         locations = acdcFile["locations"],

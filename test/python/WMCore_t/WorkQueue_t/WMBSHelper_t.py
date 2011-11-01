@@ -387,30 +387,6 @@ class WMBSHelperTest(unittest.TestCase):
                          "Error: Cleanup job C should be complete.")
         return
 
-    def testKillWorkflow(self):
-        """
-        _testKillWorkflow_
-
-        Verify that workflow killing works correctly.
-        """
-        configFile = EmulatorSetup.setupWMAgentConfig()
-
-        config = loadConfigurationFile(configFile)
-
-        baAPI = BossAirAPI(config = config)
-
-        # Create nine jobs
-        self.setupForKillTest(baAPI = baAPI)
-        self.assertEqual(len(baAPI._listRunJobs()), 9)
-        killWorkflow("Main", config, config)
-
-        self.verifyFileKillStatus()
-        self.verifyJobKillStatus()
-        self.assertEqual(len(baAPI._listRunJobs()), 8)
-
-        EmulatorSetup.deleteConfig(configFile)
-        return
-
     def createTestWMSpec(self):
         """
         _createTestWMSpec_
@@ -497,6 +473,81 @@ class WMBSHelperTest(unittest.TestCase):
                                             mergedLFNBase = "bogusMerged",
                                             filterName = None)
         return testWorkload
+
+    def setupMCWMSpec(self):
+        """Setup MC workflow"""
+        self.wmspec = self.createMCWMSpec()
+        self.topLevelTask = getFirstTask(self.wmspec)
+        self.inputDataset = self.topLevelTask.inputDataset()
+        self.dataset = self.topLevelTask.getInputDatasetPath()
+        self.dbs = None
+        self.siteDB = fakeSiteDB()
+
+        # add sites that would normally be added by operator via resource_control
+        locationDAO = self.daoFactory(classname = "Locations.New")
+        self.ses = []
+        for site in ['T2_XX_SiteA', 'T2_XX_SiteB']:
+            locationDAO.execute(siteName = site, seName = self.siteDB.cmsNametoSE(site))
+            self.ses.append(self.siteDB.cmsNametoSE(site))
+
+    def createWMSpec(self, name = 'ReRecoWorkload'):
+        wmspec = rerecoWorkload(name, rerecoArgs)
+        wmspec.setSpecUrl("/path/to/workload")
+        return wmspec 
+
+    def createMCWMSpec(self, name = 'MonteCarloWorkload'):
+        wmspec = monteCarloWorkload(name, mcArgs)
+        wmspec.setSpecUrl("/path/to/workload")        
+        getFirstTask(wmspec).addProduction(totalevents = 10000)
+        return wmspec
+
+    def getDBS(self, wmspec):
+        topLevelTask = getFirstTask(wmspec)
+        inputDataset = topLevelTask.inputDataset()
+        dbs = MockDBSReader(inputDataset.dbsurl)
+        #dbsDict = {self.inputDataset.dbsurl : self.dbs}
+        return dbs
+        
+    def createWMBSHelperWithTopTask(self, wmspec, block, mask = None, 
+                                    parentFlag = False, detail = False):
+        
+        topLevelTask = getFirstTask(wmspec)
+         
+        wmbs = WMBSHelper(wmspec, block, mask, cachepath = self.workDir)
+        if block:
+            if parentFlag:
+                block = self.dbs.getFileBlockWithParents(block)[block]
+            else:
+                block = self.dbs.getFileBlock(block)[block]
+        sub, files = wmbs.createSubscriptionAndAddFiles(block = block)
+        if detail:
+            return wmbs, sub, files
+        else:  
+            return wmbs
+
+    def testKillWorkflow(self):
+        """
+        _testKillWorkflow_
+
+        Verify that workflow killing works correctly.
+        """
+        configFile = EmulatorSetup.setupWMAgentConfig()
+
+        config = loadConfigurationFile(configFile)
+
+        baAPI = BossAirAPI(config = config)
+
+        # Create nine jobs
+        self.setupForKillTest(baAPI = baAPI)
+        self.assertEqual(len(baAPI._listRunJobs()), 9)
+        killWorkflow("Main", config, config)
+
+        self.verifyFileKillStatus()
+        self.verifyJobKillStatus()
+        self.assertEqual(len(baAPI._listRunJobs()), 8)
+
+        EmulatorSetup.deleteConfig(configFile)
+        return
 
     def testCreateSubscription(self):
         """
@@ -748,50 +799,6 @@ class WMBSHelperTest(unittest.TestCase):
 
         return
 
-    def setupMCWMSpec(self):
-        """Setup MC workflow"""
-        self.wmspec = self.createMCWMSpec()
-        self.topLevelTask = getFirstTask(self.wmspec)
-        self.inputDataset = self.topLevelTask.inputDataset()
-        self.dataset = self.topLevelTask.getInputDatasetPath()
-        self.dbs = None
-        self.siteDB = fakeSiteDB()
-
-        # add sites that would normally be added by operator via resource_control
-        locationDAO = self.daoFactory(classname = "Locations.New")
-        self.ses = []
-        for site in ['T2_XX_SiteA', 'T2_XX_SiteB']:
-            locationDAO.execute(siteName = site, seName = self.siteDB.cmsNametoSE(site))
-            self.ses.append(self.siteDB.cmsNametoSE(site))
-
-    def createWMSpec(self, name = 'ReRecoWorkload'):
-        wmspec = rerecoWorkload(name, rerecoArgs)
-        wmspec.setSpecUrl("/path/to/workload")
-        return wmspec 
-
-    def createMCWMSpec(self, name = 'MonteCarloWorkload'):
-        wmspec = monteCarloWorkload(name, mcArgs)
-        wmspec.setSpecUrl("/path/to/workload")        
-        getFirstTask(wmspec).addProduction(totalevents = 10000)
-        return wmspec
-
-    def getDBS(self, wmspec):
-        topLevelTask = getFirstTask(wmspec)
-        inputDataset = topLevelTask.inputDataset()
-        dbs = MockDBSReader(inputDataset.dbsurl)
-        #dbsDict = {self.inputDataset.dbsurl : self.dbs}
-        return dbs
-        
-    def createWMBSHelperWithTopTask(self, wmspec, block, mask = None):
-        
-        topLevelTask = getFirstTask(wmspec)
-         
-        wmbs = WMBSHelper(wmspec, block, mask, cachepath = self.workDir)
-        if block:
-            block = self.dbs.getFileBlock(block)[block]
-        wmbs.createSubscriptionAndAddFiles(block = block)
-        return wmbs
-
 #    def testProduction(self):
 #        """Production workflow"""
 #        pass
@@ -904,8 +911,7 @@ class WMBSHelperTest(unittest.TestCase):
 
 
     def testParentage(self):
-        """
-        TODO: add the parentage test. 
+        """ 
         1. check whether parent files are created in wmbs.
         2. check parent files are associated to child.
         3. When 2 specs with the same input data (one with parent processing, one without it)
@@ -913,9 +919,26 @@ class WMBSHelperTest(unittest.TestCase):
            parent processing insert, it still needs to create parent files although child files
            are duplicate 
         """
-        pass
+        block = self.dataset + "#1"
+        wmbs, sub, numFiles = self.createWMBSHelperWithTopTask(self.wmspec, block, 
+                                                parentFlag = False, detail = True)
+        # file creation without parents
+        self.assertEqual(GlobalParams.numOfFilesPerBlock(), numFiles)
+        wmbs.topLevelFileset.loadData()
 
+        for child in wmbs.topLevelFileset.files:
+            # no parent per child
+            self.assertEqual(len(child["parents"]), 0)
 
+        wmbs, sub, numFiles = self.createWMBSHelperWithTopTask(self.wmspec, block, 
+                                                parentFlag = True, detail = True)
+        self.assertEqual(GlobalParams.numOfFilesPerBlock(), numFiles)
+
+        wmbs.topLevelFileset.loadData()
+
+        for child in wmbs.topLevelFileset.files:
+            # one parent per child
+            self.assertEqual(len(child["parents"]), 1)
 
     def testMCFakeFileInjection(self):
         """Inject fake Monte Carlo files into WMBS"""

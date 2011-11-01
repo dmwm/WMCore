@@ -126,13 +126,17 @@ if can_nose:
                           "Are we testing WN functionality? (Only runs WN-specific tests)"),
                          ('testCertainPath=',
                           None,
-                          "Only runs tests below a certain path (i.e. test/python searches the whole test tree")]
+                          "Only runs tests below a certain path (i.e. test/python searches the whole test tree"),
+                         ('quickTestMode=',
+                          None,
+                          "Fails on the first error, doesn't compute coverage")]
 
         def initialize_options(self):
             self.reallyDeleteMyDatabaseAfterEveryTest = False
             self.buildBotMode = False
             self.workerNodeTestsOnly = False
             self.testCertainPath = False
+            self.quickTestMode = False
             pass
 
         def finalize_options(self):
@@ -145,6 +149,12 @@ if can_nose:
                 testPath = self.testCertainPath
             else:
 				print "Nose is scanning all tests"
+                
+            if self.quickTestMode:
+                quickTestArg = ['--stop']
+            else:
+                quickTestArg = []
+                
             if self.reallyDeleteMyDatabaseAfterEveryTest:
                 print "#### WE ARE DELETING YOUR DATABASE. 3 SECONDS TO CANCEL ####"
                 print "#### buildbotmode is %s" % self.buildBotMode
@@ -153,10 +163,13 @@ if can_nose:
                 WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
                 time.sleep(4)
             if self.workerNodeTestsOnly:
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v',testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest'],
-                                    addplugins=[DetailedOutputter()])
+                args = [__file__,'--with-xunit', '-v',testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest']
+                args.extend( quickTestArg )
+                retval =  nose.run(argv=args, addplugins=[DetailedOutputter()])
             elif not self.buildBotMode:
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v',testPath, '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest'])
+                args = [__file__,'--with-xunit', '-v',testPath, '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest']
+                args.extend( quickTestArg )
+                retval =  nose.run(argv=args)
             else:
                 print "### We are in buildbot mode ###"
                 srcRoot = os.path.join(os.path.normpath(os.path.dirname(__file__)), 'src', 'python')
@@ -166,11 +179,17 @@ if can_nose:
                 modulesToCover.extend(get_subpackages(os.path.join(srcRoot,'WMQuality'), 'WMQuality'))
                 moduleList = ",".join(modulesToCover)
                 sys.stdout.flush()
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v',testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
-                                         '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
-                                         '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
-                                         '--cover-package=' + moduleList, '--cover-inclusive'],
-                                    addplugins=[DetailedOutputter()])
+                if not quickTestArg:
+                    retval =  nose.run(argv=[__file__,'--with-xunit', '-v',testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
+                                             '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
+                                             '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
+                                             '--cover-package=' + moduleList, '--cover-inclusive'],
+                                        addplugins=[DetailedOutputter()])
+                else:
+                    retval =  nose.run(argv=[__file__,'--with-xunit', '-v',testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
+                         '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
+                         '--stop'],
+                    addplugins=[DetailedOutputter()]) 
 
             if retval:
                 sys.exit( 0 )

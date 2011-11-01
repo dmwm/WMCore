@@ -172,8 +172,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                DbName = self.queueDB,
                                InboxDbName = self.queueInboxDB,
                                CacheDir = self.workDir,
-                               config = config,
-                               QueueRetryTime = 5)
+                               config = config)
 
         # create relevant sites in wmbs
         rc = ResourceControl()
@@ -1076,7 +1075,8 @@ class WorkQueueTest(WorkQueueTestCase):
 
         self.assertRaises(StandardError, self.queue.queueWork, self.processingSpec.specUrl())
         self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Negotiating')
-        time.sleep(5)
+        # simulate time passing by making timeout negative
+        self.queue.params['QueueRetryTime'] = -100
         self.assertRaises(StandardError, self.queue.queueWork, self.processingSpec.specUrl())
         self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Failed')
 

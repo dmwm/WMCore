@@ -4,7 +4,7 @@ WorkQueueElement
 A dictionary based object meant to represent a WorkQueue element
 """
 
-
+from hashlib import md5
 
 
 STATES = ('Available', 'Negotiating', 'Acquired', 'Running',
@@ -20,6 +20,11 @@ class WorkQueueElement(dict):
             raise ValueError, msg
 
         self.update(kwargs)
+
+        self._id = None
+
+        # XXX If adding or modifying any new parameter which affects the
+        # XXX workflow or data run over, the id function must be updated
 
         self.setdefault('Inputs', {})
         #both ParentData and ParentFlag is needed in case there Dataset split,
@@ -71,6 +76,51 @@ class WorkQueueElement(dict):
 #            result['_rev'] = result['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'].pop('_rev')
         #result['Mask'] = thunker._thunk(result['Mask'])
         return result
+
+    @property
+    def id(self):
+        """Generate id for element
+
+        id is deterministic and can be used to identify duplicate elements.
+        Calculation only includes fields which affect the workflow and input data.
+        Result is an md5 hash of a ';' separated list of:
+        workflow name, task name, list of inputs, mask, ACDC info, Dbs instance.
+
+        Parent file info not accounted.
+
+        Example:
+        >>> WorkQueueElement(RequestName = 'a', TaskName = 'b').id
+        '9ef03a6ad8f16d74fb5ba44df92bf1ef'
+
+        Warning: Any change to this function may prevent identical existing and
+        new elements from appearing equivalent, thus in the case of expanding
+        work subscriptions work duplication can occur. Care must be taken
+        if any modification is made.
+        """
+        if self._id:
+            return self._id
+        # Assume md5 is good enough for now
+        hash = md5()
+        spacer = ';' # character not present in any field
+        hash.update(self['RequestName'] + spacer)
+        # Task will be None in global inbox
+        hash.update(repr(self['TaskName']) + spacer)
+        hash.update(",".join(sorted(self['Inputs'].keys())) + spacer)
+        # Check repr is reproducible - should be
+        if self['Mask']:
+            hash.update(",".join(["%s=%s" % (x,y) for x,y in self['Mask'].items()]) + spacer)
+        else:
+            hash.update("None" + spacer)
+        # Check ACDC is deterministic and all params relevant
+        hash.update(",".join(["%s=%s" % (x,y) for x,y in self['ACDC'].items()]) + spacer)
+        hash.update(repr(self['Dbs']) + spacer)
+        self._id = hash.hexdigest()
+        return self._id
+
+    @id.setter
+    def id(self, value):
+        """Set id - use to override built-in id calculation"""
+        self._id = value
 
     def __from_json__(self, jsondata, thunker):
         """"""

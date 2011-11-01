@@ -23,12 +23,11 @@ class CouchWorkQueueElement(WorkQueueElement):
     def __init__(self, couchDB, id = None, elementParams = None):
         elementParams = elementParams or {}
         WorkQueueElement.__init__(self, **elementParams)
+        if id:
+            self._id = id
         self._document = Document(id = id)
         self._couch = couchDB
 
-    id = property(
-        lambda x: str(x._document[u'_id']) if x._document.has_key(u'_id') else x._document.__getitem__('_id'),
-        lambda x, newid: x._document.__setitem__('_id', newid))
     rev = property(
         lambda x: str(x._document[u'_rev']) if x._document.has_key(u'_rev') else x._document.__getitem__('_rev'),
         lambda x, newid: x._document.__setitem__('_rev', newid))
@@ -82,6 +81,8 @@ class CouchWorkQueueElement(WorkQueueElement):
         """Certain attributed shouldn't be stored"""
         self._document.update(self.__to_json__(None))
         self._document['updatetime'] = time.time()
+        if not self._document.get('_id') and self.id:
+            self._document['_id'] = self.id
         attrs = ['WMSpec', 'Task']
         for attr in attrs:
             self._document['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'].pop(attr, None)

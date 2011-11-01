@@ -182,7 +182,13 @@ class WMInit:
         if hasattr(myThread, 'transaction') and getattr(myThread.transaction, 'transaction', None):
             # Then we have an open transaction
             # We should try and close it first
-            myThread.transaction.commit()
+            try:
+                myThread.transaction.commit()
+            except:
+                try:
+                    myThread.transaction.rollback()
+                except:
+                    pass
 
         # Setup the DAO
         daoFactory = DAOFactory(package = "WMCore.Database",

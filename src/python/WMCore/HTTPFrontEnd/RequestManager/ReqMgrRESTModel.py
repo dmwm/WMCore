@@ -1,25 +1,44 @@
-from WMCore.WebTools.RESTModel import RESTModel
-import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
-import WMCore.RequestManager.RequestDB.Interface.User.Requests as UserRequests
-import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
-import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
-import WMCore.RequestManager.RequestDB.Interface.Admin.RequestManagement as RequestAdmin
-import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
-import WMCore.RequestManager.RequestDB.Interface.Admin.GroupManagement as GroupManagement
-import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement as UserManagement
-import WMCore.RequestManager.RequestDB.Interface.ProdSystem.ProdMgrRetrieve as ProdMgrRetrieve
-import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
-import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
-import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
-import WMCore.RequestManager.RequestDB.Interface.Request.Campaign as Campaign
-import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
-from WMCore.Wrappers import JsonWrapper
-import WMCore.Lexicon
+#!/usr/bin/env python
+
+"""
+ReqMgrRESTModel
+
+This holds the methods for the REST model, all methods which
+will be available via HTTP PUT/GET/POST commands from the interface,
+the validation, the security for each, and the function calls for the
+DB interfaces they execute.
+
+https://twiki.cern.ch/twiki/bin/viewauth/CMS/ReqMgrSystemDesign
+"""
+import sys
+import math
 import cherrypy
 import json
 import threading
 import urllib
 import logging
+
+import WMCore.Lexicon
+from WMCore.Wrappers import JsonWrapper
+from WMCore.WebTools.RESTModel import RESTModel
+import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
+
+import WMCore.RequestManager.RequestDB.Interface.User.Registration          as Registration
+import WMCore.RequestManager.RequestDB.Interface.User.Requests              as UserRequests
+import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests       as ListRequests
+import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest         as GetRequest
+import WMCore.RequestManager.RequestDB.Interface.Admin.RequestManagement    as RequestAdmin
+import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement       as ProdManagement
+import WMCore.RequestManager.RequestDB.Interface.Admin.GroupManagement      as GroupManagement
+import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement       as UserManagement
+import WMCore.RequestManager.RequestDB.Interface.ProdSystem.ProdMgrRetrieve as ProdMgrRetrieve
+import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement   as SoftwareAdmin
+import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState        as ChangeState
+import WMCore.RequestManager.RequestDB.Interface.Group.Information          as GroupInfo
+import WMCore.RequestManager.RequestDB.Interface.Request.Campaign           as Campaign
+
+
+
 
 
 class ReqMgrRESTModel(RESTModel):
@@ -31,6 +50,11 @@ class ReqMgrRESTModel(RESTModel):
         self.workloadDBName = config.workloadDBName
         self.configDBName = config.configDBName
         self.security_params = {'roles':config.security_roles}
+
+        # Optional values for individual methods
+        self.reqPriorityMax = getattr(config, 'maxReqPriority', 100)
+
+
         self._addMethod('GET', 'request', self.getRequest, 
                        args = ['requestName'],
                        secured=True, validation=[self.isalnum], expires = 0)
@@ -63,7 +87,7 @@ class ReqMgrRESTModel(RESTModel):
                        secured=True, validation = [self.isalnum], expires = 0)
         self._addMethod('PUT', 'request', self.putRequest,
                        args = ['requestName', 'status', 'priority'],
-                       secured=True, validation = [self.isalnum, self.intpriority])
+                       secured=True, validation = [self.isalnum, self.reqPriority])
         self._addMethod('PUT', 'assignment', self.putAssignment,
                        args = ['team', 'requestName'],
                        secured=True, security_params=self.security_params,
@@ -175,8 +199,30 @@ class ReqMgrRESTModel(RESTModel):
     def intpriority(self, index):
         """ Casts priority to an integer """
         if index.has_key('priority'):
-            index['priority'] = int(index['priority'])
-        return index 
+            value = int(index['priority'])
+            if math.fabs(value) >= sys.maxint:
+                msg = "Invalid priority!  Priority must have abs() less then MAXINT!" 
+                raise cherrypy.HTTPError(400, msg)
+            index['priority'] = value
+        return index
+
+    def reqPriority(self, index):
+        """
+        _reqPriority_
+
+        Sets request priority to an integer.
+        Also makes sure it's within a certain value.
+        """
+        if not index.has_key('priority'):
+            return index
+        
+        index = self.intpriority(index = index)
+        value = index['priority']
+        if math.fabs(value) > self.reqPriorityMax:
+            msg = "Invalid requestPriority!  Request priority must have abs() less then %i!" % self.reqPriorityMax
+            raise cherrypy.HTTPError(400, msg)
+            
+        return index
     
     def validateUser(self, index):
         assert index['userName'].isalnum()

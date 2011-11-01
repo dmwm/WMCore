@@ -102,9 +102,12 @@ def changePriority(requestName, priority):
     """ Changes the priority that's stored in the workload """
     # fill in all details
     request = GetRequest.getRequestByName(requestName)
+    groupPriority = request.get('ReqMgrGroupBasePriority', 0)
+    userPriority  = request.get('ReqMgrRequestorBasePriority', 0)
     ChangeState.changeRequestPriority(requestName, priority)
     helper = loadWorkload(request)
-    helper.data.request.priority = int(priority)
+    totalPriority = int(priority + userPriority + groupPriority)
+    helper.data.request.priority = totalPriority
     saveWorkload(helper, request['RequestWorkflow'])
 
 def abortRequest(request):

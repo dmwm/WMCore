@@ -99,7 +99,8 @@ pluginLookup = { 'test-win' : 'TestWinImpl',
                 "srm-fnal": 'SRMImpl',
                 "srm": 'SRMImpl',
                 "srmv2": 'SRMV2Impl',
-                "xrdcp": 'XRDCPImpl'}
+                "xrdcp": 'XRDCPImpl',
+                "vandy": 'VandyImpl'}
 
 def _retrieveStageOutImpl2(backendName):
     factory = WMCore.WMFactory.WMFactory(name = 'StageOutFactory',

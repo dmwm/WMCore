@@ -414,9 +414,12 @@ class JobSubmitterTest(unittest.TestCase):
             if indexFlag:
                 batch    = index - 1
             
-            inputFileString = '%s, %s, %s' % (os.path.join(self.testDir, 'workloadTest/TestWorkload', 'TestWorkload-Sandbox.tar.bz2'),
-                                              os.path.join(self.testDir, 'workloadTest/TestWorkload', 'batch_%i-0/JobPackage.pkl' % (batch)),
-                                              os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMCore', 'WMRuntime/Unpacker.py'))
+            inputFileString = '%s, %s, %s' % (os.path.join(self.testDir, 'workloadTest/TestWorkload',
+                                                           'TestWorkload-Sandbox.tar.bz2'),
+                                              os.path.join(self.testDir, 'workloadTest/TestWorkload',
+                                                           'PackageCollection_0/batch_%i-0/JobPackage.pkl' % (batch)),
+                                              os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMCore',
+                                                           'WMRuntime/Unpacker.py'))
             if not noIndex:
                 self.assertEqual(job.get('transfer_input_files', None),
                                  inputFileString)

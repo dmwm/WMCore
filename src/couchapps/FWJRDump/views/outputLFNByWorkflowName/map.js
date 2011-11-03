@@ -15,14 +15,14 @@ function(doc) {
                     if (stepName=='asyncStageOut1' && outputFile['lfn']!='') {
                         emit([request], {"jobid" : doc['jobid'], "lfn" : outputFile['lfn'], "location" : outputFile['location'], "checksums" : outputFile['checksums']});
                     }
-                    else if (stepName=='cmsRun1' && outputFile['lfn']!='' && asyncFound==false) {
+                    else if (stepName=='cmsRun1' && outputFile['lfn']!='') {
                         res = {"jobid" : doc['jobid'], "lfn" : outputFile['lfn'], "location" : outputFile['location'], "checksums" : outputFile['checksums']};
                     }
                 }
             }
-            if (res != '') {
-                emit([request], res);
-            }
+        }
+        if (res != '') {
+            emit([request], res);
         }
     }
 }

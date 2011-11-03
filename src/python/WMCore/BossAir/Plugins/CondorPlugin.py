@@ -47,9 +47,10 @@ def submitWorker(input, results, timeout = None):
     while True:
         try:
             work = input.get()
-        except (EOFError, IOError):
+        except (EOFError, IOError), ex:
             crashMessage = "Hit EOF/IO in getting new work\n"
             crashMessage += "Assuming this is a graceful break attempt.\n"
+            crashMessage += str(ex)
             logging.error(crashMessage)
             break
         except Exception, ex:
@@ -247,9 +248,23 @@ class CondorPlugin(BasePlugin):
         self.result.close()
         for proc in self.pool:
             if terminate:
-                proc.terminate()
+                try:
+                    proc.terminate()
+                except Exception, ex:
+                    logging.error("Failure while attempting to terminate process")
+                    logging.error(str(ex))
+                    continue
             else:
-                proc.join()
+                try:
+                    proc.join()
+                except Exception, ex:
+                    try:
+                        proc.terminate()
+                    except Exception, ex2:
+                        logging.error("Failure to join or terminate process")
+                        logging.error(str(ex))
+                        logging.error(str(ex2))
+                        continue
         # At the end, clean the pool
         self.pool = []
         return
@@ -272,6 +287,7 @@ class CondorPlugin(BasePlugin):
         if len(self.pool) == 0:
             # Starting things up
             # This is obviously a submit API
+            logging.info("Starting up CondorPlugin worker pool")
             for x in range(self.nProcess):
                 p = multiprocessing.Process(target = submitWorker,
                                             args = (self.input, self.result, timeout))
@@ -306,9 +322,14 @@ class CondorPlugin(BasePlugin):
 
 
         # Now submit the bastards
+        queueError = False
         for sandbox in submitDict.keys():
             jobList = submitDict.get(sandbox, [])
             idList = [x['jobid'] for x in jobList]
+            if queueError:
+                # If the queue has failed, then we must not process
+                # any more jobs this cycle.
+                continue
             while len(jobList) > 0:
                 jobsReady = jobList[:self.config.JobSubmitter.jobsPerWorker]
                 jobList   = jobList[self.config.JobSubmitter.jobsPerWorker:]
@@ -327,12 +348,21 @@ class CondorPlugin(BasePlugin):
                 # Now submit them
                 logging.info("About to submit %i jobs" %(len(jobsReady)))
                 command = "condor_submit %s" % jdlFile
-                self.input.put({'command': command, 'idList': idList})
+                try:
+                    self.input.put({'command': command, 'idList': idList})
+                except AssertionError, ex:
+                    msg =  "Critical error: input pipeline probably closed.\n"
+                    msg += str(ex)
+                    msg += "Error Procedure: Something critical has happened in the worker process\n"
+                    msg += "We will now proceed to pull all useful data from the queue (if it exists)\n"
+                    msg += "Then refresh the worker pool\n"
+                    logging.error(msg)
+                    queueError = True
+                    break
                 nSubmits += 1
 
         # Now we should have sent all jobs to be submitted
         # Going to do the rest of it now
-        queueError = False
         for n in range(nSubmits):
             try:
                 res = self.result.get(block = True, timeout = timeout)
@@ -343,6 +373,15 @@ class CondorPlugin(BasePlugin):
                 logging.error("This could indicate a critical condor error!")
                 logging.error("However, no information of any use was obtained due to process failure.")
                 logging.error("Either process failed, or process timed out after %s seconds." % timeout)
+                queueError = True
+                continue
+            except AssertionError, ex:
+                msg =  "Found Assertion error while retrieving output from worker process.\n"
+                msg += str(ex)
+                msg += "This indicates something critical happened to a worker process"
+                msg += "We will recover what jobs we know were submitted, and resubmit the rest"
+                msg += "Refreshing worker pool at end of loop"
+                logging.error(msg)
                 queueError = True
                 continue
             
@@ -381,6 +420,7 @@ class CondorPlugin(BasePlugin):
         # If the queue failed, clean the processes from the queue
         # This prevents jobs from building up in memory anywhere
         if queueError:
+            logging.error("Purging worker pool due to previous queueError")
             self.close()
 
 

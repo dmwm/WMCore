@@ -138,8 +138,10 @@ class Harness:
             logFormatter = \
                 logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
             logHandler.setFormatter(logFormatter)
+            logLevelName = getattr(compSect, 'logLevel', 'INFO')
+            logLevel     = getattr(logging, logLevelName)
             logging.getLogger().addHandler(logHandler)
-            logging.getLogger().setLevel(logging.INFO)
+            logging.getLogger().setLevel(logLevel)
             self.logMsg = {'DEBUG' :   logging.DEBUG,
                            'ERROR' :   logging.ERROR,
                            'NOTSET':   logging.NOTSET,

@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import unittest
 import logging
@@ -74,6 +75,7 @@ def getConfig(testDir):
     
     config.component_("AlertGenerator")
     config.AlertGenerator.componentDir = testDir
+    config.AlertGenerator.logLevel     = 'DEBUG'
     # configuration for overall machine load monitor: cpuPoller (percentage values)
     config.AlertGenerator.section_("cpuPoller")
     config.AlertGenerator.cpuPoller.soft = 70 # [percent]
@@ -172,8 +174,8 @@ class AlertGeneratorTest(unittest.TestCase):
         self.config.section_("CoreDatabase")
         self.config.CoreDatabase.socket = os.environ.get("DBSOCK")
         self.config.CoreDatabase.connectUrl = os.environ.get("DATABASE")
-        self.testComponentDaemonXml = os.path.join(self.testDir, "Daemon.xml") 
-                
+        self.testComponentDaemonXml = os.path.join(self.testDir, "Daemon.xml")
+
 
     def tearDown(self):
         self.testInit.clearDatabase()       
@@ -273,7 +275,7 @@ class AlertGeneratorTest(unittest.TestCase):
             
         for poller in pollers:
             poller.check()
-            if hasattr(poller, "_measurements"):
+            if getattr(poller, "_measurements", None) != None:
                 mes = poller._measurements
                 self.assertEqual(len(mes), 1)
                 self.assertTrue(isinstance(mes[0], types.FloatType))

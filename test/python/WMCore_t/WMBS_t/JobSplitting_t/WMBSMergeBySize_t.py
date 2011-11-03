@@ -101,10 +101,16 @@ class WMBSMergeBySize(unittest.TestCase):
                                 self.mergeMergedFileset)
         inputWorkflow.addOutput("output2", self.bogusFileset,
                                 self.bogusMergedFileset)
+        bogusInputWorkflow = Workflow(name = "bogusInputWorkflow", spec = "input",
+                                owner = "Steve", task = "Test")
+        bogusInputWorkflow.create()
         
         inputSubscription = Subscription(fileset = inputFileset,
                                         workflow = inputWorkflow)
         inputSubscription.create()
+        bogusInputSubscription = Subscription(fileset = inputFileset,
+                                              workflow = bogusInputWorkflow)
+        bogusInputSubscription.create()        
 
         parentFile1 = File(lfn = "parentFile1")
         parentFile1.create()
@@ -121,6 +127,8 @@ class WMBSMergeBySize(unittest.TestCase):
         jobGroup1.create()
         jobGroup2 = JobGroup(subscription = inputSubscription)
         jobGroup2.create()
+        jobGroup3 = JobGroup(subscription = bogusInputSubscription)
+        jobGroup3.create()        
         
         testJob1 = Job()
         testJob1.addFile(parentFile1)
@@ -132,6 +140,17 @@ class WMBSMergeBySize(unittest.TestCase):
         testJob1["outcome"] = "success"
         testJob1.save()
         changeStateDAO.execute([testJob1])
+
+        testJob1A = Job()
+        testJob1A.addFile(parentFile1)
+        testJob1A.create(jobGroup3)
+        testJob1A["state"] = "cleanout"
+        testJob1A["oldstate"] = "new"
+        testJob1A["couch_record"] = "somejive"
+        testJob1A["retry_count"] = 0
+        testJob1A["outcome"] = "failure"
+        testJob1A.save()
+        changeStateDAO.execute([testJob1A])        
         
         testJob2 = Job()
         testJob2.addFile(parentFile2)
@@ -1054,15 +1073,14 @@ class WMBSMergeBySize(unittest.TestCase):
         that the fileset closing works.
         """
         self.stuffWMBS()
-        #self.mergeFileset.markOpen(False)
 
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.mergeSubscription)
 
         # Get out all the good merge jobs out of the way.
-        jobFactory(min_merge_size = 1, max_merge_size = 999999999999,
-                   max_merge_events = 999999999)
+        result = jobFactory(min_merge_size = 1, max_merge_size = 999999999999,
+                            max_merge_events = 999999999)
 
         # Verify that the bad files are the only "available" files
         availableAction = self.daoFactory(classname = "Subscriptions.GetAvailableFilesMeta")
@@ -1108,6 +1126,33 @@ class WMBSMergeBySize(unittest.TestCase):
 
         return
 
+    def testFilesetCloseout2(self):
+        """
+        _testFilesetCloseout2_
+
+        Verify that the fail orphan file code does not fail files that have
+        failed for other workflows.
+        """
+        self.stuffWMBS()
+        self.mergeFileset.markOpen(False)
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.mergeSubscription)
+
+        # Get out all the good merge jobs out of the way.
+        result = jobFactory(min_merge_size = 1, max_merge_size = 999999999999,
+                            max_merge_events = 999999999)
+
+        self.assertEqual(len(result), 1, "Error: Wrong number of job groups.")
+        self.assertEqual(len(result[0].jobs), 2, "Error: Wrong number of jobs.")
+
+        failedAction = self.daoFactory(classname = "Subscriptions.GetFailedFiles")
+        failedFiles = failedAction.execute(self.mergeSubscription["id"])
+
+        self.assertEqual(len(failedFiles), 4,
+                         "Error: Wrong number of failed files: %s" % failedFiles)
+        return
 
     def testForcedMerge(self):
         """

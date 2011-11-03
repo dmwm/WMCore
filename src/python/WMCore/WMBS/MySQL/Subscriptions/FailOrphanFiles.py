@@ -23,6 +23,7 @@ class FailOrphanFiles(DBFormatter):
                INNER JOIN wmbs_jobgroup ON
                  wmbs_subscription.id = wmbs_jobgroup.subscription
                INNER JOIN wmbs_job ON
+                 wmbs_job.jobgroup = wmbs_jobgroup.id AND
                  wmbs_job_assoc.job = wmbs_job.id AND
                  wmbs_job.outcome = 0"""
 

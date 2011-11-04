@@ -216,7 +216,16 @@ class TestChangeState(unittest.TestCase):
                "Error: Name is wrong"
         assert len(couchJobDoc["inputfiles"]) == 1, \
                "Error: Wrong number of input files."
-                    
+
+        result = changeStateDB.loadView("JobDump", "jobsByWorkflowName")
+
+        self.assertEqual(len(result["rows"]), 2,
+                         "Error: Wrong number of rows.")
+        for row in result["rows"]:
+            couchJobDoc = changeStateDB.document(row["value"]["id"])
+            self.assertEqual(couchJobDoc["_rev"], row["value"]["rev"],
+                             "Error: Rev is wrong.")
+            
         return
 
     def testPersist(self):
@@ -415,6 +424,14 @@ class TestChangeState(unittest.TestCase):
 
         self.assertEqual(len(allDocs["rows"]), 2,
                          "Error: Wrong number of documents")
+
+        result = changeStateDB.loadView("FWJRDump", "fwjrsByWorkflowName")
+        self.assertEqual(len(result["rows"]), 1,
+                         "Error: Wrong number of rows.")
+        for row in result["rows"]:
+            couchJobDoc = changeStateDB.document(row["value"]["id"])
+            self.assertEqual(couchJobDoc["_rev"], row["value"]["rev"],
+                             "Error: Rev is wrong.")
 
         for resultRow in allDocs["rows"]:
             if resultRow["id"] != "_design/FWJRDump":

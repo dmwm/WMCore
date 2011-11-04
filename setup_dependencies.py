@@ -91,8 +91,10 @@ dependencies = {
                         'statics': ['src/couchapps/Agent+'],
                         },
                 'crabserver':{
-                        'packages': ['WMCore.Services+'],
-                        'systems': ['wmagent', 'reqmgr']
+                        'packages': ['WMCore.WMSpec', 'WMCore.ACDC',
+                                     'WMCore.Storage+', 'WMCore.HTTPFrontEnd.RequestManager+',
+                                     'WMCore.RequestManager+'],
+                        'systems': ['wmc-web']
                         },
                 'wmclient':{
                         'systems': ['wmc-runtime', 'wmc-database']

@@ -172,9 +172,6 @@ class CondorPluginTest(BossAirTest):
 
         Prototype the BossAir workflow
         """
-        
-        #return
-
         myThread = threading.currentThread()
 
         nRunning = getCondorRunningJobs(self.user)
@@ -352,12 +349,61 @@ class CondorPluginTest(BossAirTest):
         result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
         self.assertEqual(len(result), 0)
 
-
         result = getJobsAction.execute(state = 'JobFailed', jobType = "Processing")
         self.assertEqual(len(result), nJobs * nSubs)
+        return
 
-        
+    @attr('integration')
+    def testF_WMSMode(self):
+        """
+        _WMSMode_
 
+        Try running things in WMS Mode.
+        """
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+
+        config = self.getConfig()
+        config.BossAir.pluginName = 'CondorPlugin'
+        config.BossAir.submitWMSMode = True
+
+        baAPI  = BossAirAPI(config = config)
+
+        workload = self.createTestWorkload()
+
+        workloadName = "basicWorkload"
+
+        changeState = ChangeState(config)
+
+        nSubs = 5
+        nJobs = 10
+
+        cacheDir = os.path.join(self.testDir, 'CacheDir')
+
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            site = None)
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+
+        jobSubmitter = JobSubmitterPoller(config = config)
+
+        jobSubmitter.algorithm()
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, nSubs * nJobs)
+
+        # Now kill 'em manually
+        command = ['condor_rm', self.user]
+        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.communicate()
+
+        del jobSubmitter
 
         return
 

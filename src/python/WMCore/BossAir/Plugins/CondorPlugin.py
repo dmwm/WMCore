@@ -169,13 +169,14 @@ class CondorPlugin(BasePlugin):
             self.unpacker = os.path.join(getWMBASE(),
                                          'WMCore/WMRuntime/Unpacker.py')
 
-        self.agent      = getattr(config.Agent, 'agentName', 'WMAgent')
-        self.sandbox    = None
-        self.scriptFile = None
-        self.submitDir  = None
-        self.removeTime = getattr(config.BossAir, 'removeTime', 60)
-        self.multiTasks = getattr(config.BossAir, 'multicoreTaskTypes', [])
-        self.useGSite   = getattr(config.BossAir, 'useGLIDEINSites', False)
+        self.agent         = getattr(config.Agent, 'agentName', 'WMAgent')
+        self.sandbox       = None
+        self.scriptFile    = None
+        self.submitDir     = None
+        self.removeTime    = getattr(config.BossAir, 'removeTime', 60)
+        self.multiTasks    = getattr(config.BossAir, 'multicoreTaskTypes', [])
+        self.useGSite      = getattr(config.BossAir, 'useGLIDEINSites', False)
+        self.submitWMSMode = getattr(config.BossAir, 'submitWMSMode', False)
 
 
         # Build ourselves a pool
@@ -191,6 +192,7 @@ class CondorPlugin(BasePlugin):
         self.myproxySrv = getattr(config.BossAir, 'myproxyServer', None)
         self.proxyDir   = getattr(config.BossAir, 'proxyDir', '/tmp/')
         self.serverHash = getattr(config.BossAir, 'delegatedServerHash', None)
+        
 
         if self.serverCert and self.serverKey and self.myproxySrv:
             self.proxy = self.setupMyProxy()
@@ -696,9 +698,15 @@ class CondorPlugin(BasePlugin):
                 logging.error("Job for non-existant site %s" \
                               % (job['location']))
                 continue
-            jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
+
             if self.useGSite:
                 jdl.append('+GLIDEIN_CMSSite = \"%s\"\n' % (jobCE))
+            if self.submitWMSMode and len(job.get('possibleSites', [])) > 0:
+                strg = list(job.get('possibleSites')).__str__().lstrip('[').rstrip(']')
+                strg = filter(lambda c: c not in "\'", strg)
+                jdl.append('+DESIRED_Sites = \"%s\"\n' % strg)
+            else:
+                jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
 
             
 

@@ -63,10 +63,6 @@ class FeederManagerTest(unittest.TestCase):
         config = self.testInit.getConfiguration()
         self.testInit.generateWorkDir(config)
 
-        config.section_("JobStateMachine")
-        config.JobStateMachine.couchurl = os.getenv("COUCHURL")
-        config.JobStateMachine.couchDBName = "jobaccountant_t"
-
 	config.component_("FeederManager")
 	config.FeederManager.logLevel = "INFO"
 	config.FeederManager.componentName = "FeederManager"
@@ -96,12 +92,12 @@ class FeederManagerTest(unittest.TestCase):
 
         for i in xrange(0, FeederManagerTest._maxMessage):
             for j in xrange(0, 3):
-                feederManagerdict = {'payload':{'FeederType':'NO Feeder', \
-                   'dataset' : 'NO DATASET', 'FileType' : 'NO FILE TYPE', \
-                       'StartRun' : 'NO START RUN' }}
+                feederManagerdict = {'payload':{'FeederType':'NO Feeder',
+	                             'dataset' : 'NO DATASET', 'FileType' : 'NO FILE TYPE',
+                  		     'StartRun' : 'NO START RUN' }}
 
-                testFeederManager.handleMessage( type = 'AddDatasetWatch' \
-                        , payload = feederManagerdict )
+                testFeederManager.handleMessage( type = 'AddDatasetWatch',
+                   			         payload = feederManagerdict )
 
         time.sleep(30)
 

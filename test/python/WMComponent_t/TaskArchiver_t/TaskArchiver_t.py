@@ -37,7 +37,7 @@ from WMComponent.TaskArchiver.TaskArchiverPoller import TaskArchiverPoller
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.FwkJobReport.Report         import Report
-from WMCore.Database.CMSCouch           import CouchServer
+from WMCore.Database.CMSCouch           import CouchServer, CouchNotFoundError
 
 from WMCore_t.WMSpec_t.TestSpec     import testWorkload
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
@@ -95,7 +95,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self.testInit.delWorkDir()
-        #self.testInit.tearDownCouch()
+        self.testInit.tearDownCouch()
         if self.alertsReceiver:
             self.alertsReceiver.shutdown()
             self.alertsReceiver = None        
@@ -377,36 +377,25 @@ class TaskArchiverTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM wmbs_subscription")[0].fetchall()
         self.assertEqual(len(result), 2)
 
+        workflowName = "TestWorkload"
+        dbname       = config.TaskArchiver.workloadSummaryCouchDBName
+        couchdb      = CouchServer(config.JobStateMachine.couchurl)
+        workdatabase = couchdb.connectDatabase(dbname)
+        jobdb        = couchdb.connectDatabase("%s/jobs" % self.databaseName)
+        fwjrdb       = couchdb.connectDatabase("%s/fwjrs" % self.databaseName)
+        jobs = jobdb.loadView("JobDump", "jobsByWorkflowName",
+                              options = {"startkey": [workflowName],
+                                         "endkey": [workflowName, {}]})['rows']
+        self.assertEqual(len(jobs), self.nJobs) 
+        
         from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
         create = CreateWMBSBase()
         tables = []
         for x in create.requiredTables:
             tables.append(x[2:])
 
-        logging.error("About to print pre-algorithm table info")
-        for name in tables:
-            logging.error("Printing information for table %s" % name)
-            result = myThread.dbi.processData("DESCRIBE %s" % name)[0].fetchall()
-            logging.error("DESCRIBE: %s" % result)
-            result = myThread.dbi.processData("SELECT * FROM %s" % name)[0].fetchall()
-            logging.error("SELECT: %s" % result)
-            logging.error("-------------------------------------")
-        logging.error("*******************************************************")
-        logging.error("*******************************************************")
-        logging.error("*******************************************************")
-        
         testTaskArchiver = TaskArchiverPoller(config = config)
         testTaskArchiver.algorithm()
-
-        
-
-        for name in tables:
-            logging.error("Printing information for table %s" % name)
-            result = myThread.dbi.processData("DESCRIBE %s" % name)[0].fetchall()
-            logging.error("DESCRIBE: %s" % result)
-            result = myThread.dbi.processData("SELECT * FROM %s" % name)[0].fetchall()
-            logging.error("SELECT: %s" % result)
-            logging.error("-------------------------------------")
 
         result = myThread.dbi.processData("SELECT * FROM wmbs_job")[0].fetchall()
         self.assertEqual(len(result), 0)
@@ -426,9 +415,7 @@ class TaskArchiverTest(unittest.TestCase):
         testWMBSFileset = Fileset(id = 1)
         self.assertEqual(testWMBSFileset.exists(), False)
 
-        dbname       = config.TaskArchiver.workloadSummaryCouchDBName
-        couchdb      = CouchServer(config.JobStateMachine.couchurl)
-        workdatabase = couchdb.connectDatabase(dbname)
+        
 
         workloadSummary = workdatabase.document(id = "TestWorkload")
         # Check ACDC
@@ -464,6 +451,16 @@ class TaskArchiverTest(unittest.TestCase):
                 self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1'][x][y],
                                  workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1'][x][y])
 
+        # The TestWorkload should have no jobs left
+        workflowName = "TestWorkload"
+        jobs = jobdb.loadView("JobDump", "jobsByWorkflowName",
+                              options = {"startkey": [workflowName],
+                                         "endkey": [workflowName, {}]})['rows']
+        self.assertEqual(len(jobs), 0)
+        jobs = fwjrdb.loadView("FWJRDump", "fwjrsByWorkflowName",
+                               options = {"startkey": [workflowName],
+                                          "endkey": [workflowName, {}]})['rows']
+        self.assertEqual(len(jobs), 0)
         return
 
     def atestB_testErrors(self):
@@ -583,6 +580,7 @@ class TaskArchiverTest(unittest.TestCase):
         the TaskArchiverPoller notifyWorkQueue method.
         
         """
+        return
         myThread = threading.currentThread()
         config = self.getConfig()
         testTaskArchiver = TaskArchiverPoller(config = config)
@@ -620,6 +618,7 @@ class TaskArchiverTest(unittest.TestCase):
         (only 1 situation out of two tested).
         
         """
+        return
         myThread = threading.currentThread()
         config = self.getConfig()
         testTaskArchiver = TaskArchiverPoller(config = config)

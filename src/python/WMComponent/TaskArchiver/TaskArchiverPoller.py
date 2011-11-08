@@ -93,8 +93,9 @@ class TaskArchiverPoller(BaseWorkerThread):
         else:
             self.workQueue = None
 
-        self.timeout    = getattr(self.config.TaskArchiver, "timeOut", 0)
-        self.nOffenders = getattr(self.config.TaskArchiver, 'nOffenders', 3)
+        self.timeout         = getattr(self.config.TaskArchiver, "timeOut", 0)
+        self.nOffenders      = getattr(self.config.TaskArchiver, 'nOffenders', 3)
+        self.deleteCouchData = getattr(self.config.TaskArchiver, 'deleteCouchData', True)
 
         # Set up optional histograms
         self.histogramKeys  = getattr(self.config.TaskArchiver, "histogramKeys", [])
@@ -309,6 +310,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                 
                 # Then pull its info from couch and archive it
                 self.archiveCouchSummary(workflow = workflow, spec = spec)
+                self.deleteWorkflowFromCouch(workflowName = workflow.task.split('/')[1])
                 
                 # Now take care of the sandbox
                 sandbox  = getattr(wmTask.data.input, 'sandbox', None)
@@ -571,6 +573,41 @@ class TaskArchiverPoller(BaseWorkerThread):
                         
             finalTask[taskName] = final
         return finalTask
-    
+
+
+
+    def deleteWorkflowFromCouch(self, workflowName):
+        """
+        _deleteWorkflowFromCouch_
+
+        If we are asked to delete the workflow from couch, delete it
+        to clear up some space.
+
+        Load the document IDs and revisions out of couch by workflowName,
+        then order a delete on them.
+        """
+
+        if not self.deleteCouchData:
+            return
+
+
+        jobs = self.jobsdatabase.loadView("JobDump", "jobsByWorkflowName",
+                                          options = {"startkey": [workflowName],
+                                                     "endkey": [workflowName, {}]})['rows']
+        for j in jobs:
+            id  = j['value']['id']
+            rev = j['value']['rev']
+            self.jobsdatabase.delete_doc(id = id, rev = rev)
+
+        jobs = self.fwjrdatabase.loadView("FWJRDump", "fwjrsByWorkflowName",
+                                          options = {"startkey": [workflowName],
+                                                     "endkey": [workflowName, {}]})['rows']
+        
+        for j in jobs:
+            id  = j['value']['id']
+            rev = j['value']['rev']
+            self.fwjrdatabase.delete_doc(id = id, rev = rev)
+
+        return
     
     

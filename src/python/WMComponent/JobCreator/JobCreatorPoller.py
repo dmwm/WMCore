@@ -376,12 +376,25 @@ class JobCreatorPoller(BaseWorkerThread):
             jobsdatabase     = couchdb.connectDatabase("%s/jobs" % config.JobStateMachine.couchDBName)
             try:
                 jobID = jobsdatabase.loadView("JobDump",
-                                              "highestJobID")['rows'][0]['value']
+                                              "highestJobID",
+                                              options = {'reduce': False,
+                                                         'limit': 1,
+                                                         'descending': True}
+                                              )['rows'][0]['id']
+                jobID = int(jobID)
             except IndexError:
                 # In this case, there are no jobs in couch
                 jobID = 0
+            except ValueError:
+                # This is a weird error - there's a document in the couch server
+                # without a job ID as id
+                jobID = 0
+                logging.error("Encountered a document in the JobDump database with an invalid ID!")
+                logging.error("ID: %s" % jobID)
+                pass
 
             # Now increment the MySQL AutoIncrement
+            logging.info("About to handle MySQL AutoIncrement with jobID %i" % jobID)
             incrementDAO.execute(input = jobID)
 
         return

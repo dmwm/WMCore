@@ -51,7 +51,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         self.config.setFormatter('WMCore.WebTools.RESTFormatter')
         self.config.setupRequestConfig()
         self.config.setupCouchDatabase(dbName = self.couchDBName)
-        self.config.setPort(12888)
+        self.config.setPort(8888)
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
         return
 

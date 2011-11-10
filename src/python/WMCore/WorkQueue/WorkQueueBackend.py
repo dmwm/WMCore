@@ -10,7 +10,7 @@ import time
 import urllib
 
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
-from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement
+from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement, fixElementConflicts
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Lexicon import sanitizeURL
@@ -349,53 +349,17 @@ class WorkQueueBackend(object):
         This will fail if elements are modified during the resolution -
         if this happens rerun.
         """
-        ordered_states = ['Available', 'Negotiating', 'Acquired', 'Running',
-                          'Done', 'Failed', 'CancelRequested', 'Canceled']
-        allowed_keys = ['Status', 'EventsWritten', 'FilesProcessed', 'PercentComplete', 'PercentSuccess']
         for db in [self.inbox, self.db]:
-            conflicts = db.loadView('WorkQueue', 'conflicts')
-            queue = []
-            for row in conflicts['rows']:
-                previous_value = None
-                updated = set()
+            for row in db.loadView('WorkQueue', 'conflicts')['rows']:
                 element_id = row['id']
-                for rev in row['value']: # loop over conflicting revisions
-                    ele = CouchWorkQueueElement.fromDocument(db, db.document(element_id, rev))
-                    if not previous_value: # 1st will contain merged result and become winner
-                        previous_value = ele
-                        continue
-
-                    # print differences
-                    from WMCore.Algorithms.MiscAlgos import dict_diff
-                    self.logger.info("Conflict between %s revs %s & %s: %s",
-                                     element_id, previous_value.rev, rev,
-                                     "; ".join("%s=%s" % (x,y) for x,y in dict_diff(previous_value, ele).items())
-                                     )
-                    for key in previous_value:
-                        if previous_value[key] == ele.get(key):
-                            continue
-                        # we need to merge: Take elements from both that seem most advanced, e.g. status & progress stats
-                        if key not in allowed_keys:
-                            msg = 'Unable to merge conflicting element keys: field "%s" value 1 "%s" value2 "%s"'
-                            raise RuntimeError, msg % (key, previous_value.get(key), ele.get(key))
-                        if key == 'Status':
-                            if ordered_states.index(ele[key]) > ordered_states.index(previous_value[key]):
-                                previous_value[key] = ele[key]
-                        elif ele[key] > previous_value[key]:
-                            previous_value[key] = ele[key]
-                        updated.add(key)
-                    # once losing element has been merged - queue for deletion
-                    ele._document.delete()
-                    queue.append(ele)
-                # conflict resolved - save element and delete losers
-                msg = 'Resolving conflict for wf "%s", id "%s": Remove rev(s): %s: Updates: (%s)'
-                self.logger.info(msg % (str(previous_value['RequestName']),
-                                         str(previous_value.id),
-                                         ", ".join([x._document['_rev'] for x in queue]),
-                                         "; ".join("%s=%s" % (x, previous_value[x]) for x in updated)
-                                         ))
-                if self.saveElements(previous_value):
-                    self.saveElements(*queue) # delete others (if merged value update accepted)
+                try:
+                    conflicting_elements = [CouchWorkQueueElement.fromDocument(db, db.document(element_id, rev)) \
+                                                                                for rev in row['value']]
+                    fixed_elements = fixElementConflicts(*conflicting_elements)
+                    if self.saveElements(fixed_elements[0]):
+                        self.saveElements(*fixed_elements[1:]) # delete others (if merged value update accepted)
+                except Exception, ex:
+                    self.logger.error("Error resolving conflict for %s: %s" % (element_id, str(ex)))
 
     def recordTaskActivity(self, taskname, comment = ''):
         """Record a task for monitoring"""

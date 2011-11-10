@@ -8,6 +8,7 @@ import time
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
 from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
+from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 
 from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload as rerecoWMSpec, \
@@ -68,7 +69,6 @@ class WorkQueueBackendTest(unittest.TestCase):
         work = self.backend.availableWork({'place' : 1000})
         # order should be high to low, with the standard elements in the order
         # they were queueud
-        #import pdb; pdb.set_trace()
         self.assertEqual([x['RequestName'] for x in work[0]],
                          ['backend_test_high', 'backend_test', 'backend_test_2', 'backend_test_low'])
 

@@ -188,14 +188,14 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                 elements = self.backend.getElementsForParentData(data)
                 for element in elements:
                     for pData in element['ParentData']:
-                        if pData['Name'] == data:
-                            if sorted(locations) != sorted(pData['Sites']):
+                        if pData == data:
+                            if sorted(locations) != sorted(element['ParentData'][pData]):
                                 if fullResync:
                                     self.logger.info(data + ': Setting locations to: ' + ', '.join(locations))
-                                    pData['Sites'] = locations
+                                    element['ParentData'][pData] = locations
                                 else:
                                     self.logger.info(data + ': Adding locations: ' + ', '.join(locations))
-                                    pData['Sites'] = list(set(pData['Sites']) | set(locations))
+                                    element['ParentData'][pData] = list(set(pData['Sites']) | set(locations))
                                 modified.append(element)
                                 break
             self.backend.saveElements(*modified)

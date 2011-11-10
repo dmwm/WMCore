@@ -27,16 +27,13 @@ class Block(StartPolicyInterface):
         dbs = self.dbs()
         for block in self.validBlocks(self.initialTask, dbs):
             #set the parent flag for processing only for clarity on the couch doc
-            parentList = []
+            parentList = {}
             parentFlag = False
             #TODO this is slow process needs to change in DBS3
             if self.initialTask.parentProcessingFlag():
                 parentFlag = True
                 for dbsBlock in dbs.listBlockParents(block["Name"]):
-                    parentBlock = {'Name': dbsBlock["Name"],
-                                   'Sites': sitesFromStorageEelements([x['Name'] for x in
-                                            dbsBlock['StorageElementList']])}
-                    parentList.append(parentBlock)
+                    parentList[dbsBlock["Name"]] = sitesFromStorageEelements(dbsBlock['StorageElementList'])
 
             self.newQueueElement(Inputs = {block['Name'] : self.data.get(block['Name'], [])},
                                  ParentFlag = parentFlag,

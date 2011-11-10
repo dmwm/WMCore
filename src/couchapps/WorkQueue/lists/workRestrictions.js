@@ -55,9 +55,9 @@ function(head, req) {
             //skip if parent processing flag is set and parent block is not in the site.
             //all the parent block has to be in the same site
             noParentSite = false;
-            if (ele["ParentFlag"] == "True") {
+            if (ele["ParentFlag"]) {
                 for (block in ele["ParentData"]) {
-                    if (ele["ParentData"].block.indexOf(site) === -1) {
+                    if (ele["ParentData"][block].indexOf(site) === -1) {
                         noParentSite = true;
                         break;
                     }

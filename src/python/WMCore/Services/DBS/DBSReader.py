@@ -475,6 +475,17 @@ class DBSReader:
         return result
 
 
+    def listBlockParents(self, blockName):
+        """Get parent blocks for block"""
+        self.checkBlockName(blockName)
+        blocks = self.dbs.listBlockParents(blockName)
+        # api appears broken as doesn't return locations, as dbs2 lifetime limited
+        # lookup locations here
+        for block in blocks:
+            block['StorageElementList'] = self.listFileBlockLocation(block['Name'])
+        return blocks
+
+
     def blockIsOpen(self, blockName):
         """
         _blockIsOpen_

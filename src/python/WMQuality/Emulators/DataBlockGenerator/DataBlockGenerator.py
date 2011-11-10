@@ -33,7 +33,8 @@ class DataBlockGenerator(object):
         blocks = []
         numOfEvents = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfEventsPerFile()
         for i in range(numberOfParents):
-            blockName = "%s_parent_%s" % (block, i+1)
+            dataset, blockname = block.split('#') # append parent block id to tier
+            blockName = "%s_parent_%s#%s" % (dataset, i+1, blockname)
             size = GlobalParams.numOfFilesPerBlock() * GlobalParams.sizeOfFile()
             
             blocks.append({'Name' : blockName,
@@ -41,8 +42,7 @@ class DataBlockGenerator(object):
                            'NumberOfFiles' : GlobalParams.numOfFilesPerBlock(),
                            'NumberOfLumis' : GlobalParams.numOfLumisPerBlock(),
                            'Size' : size,
-                           'StorageElementList':[{'Role' : '', 'Name' : x} for x in \
-                                               self.getLocation(blockName)],
+                           'StorageElementList' : self.getLocation(blockName),
                            'Parents' : ()}
                            )
         return blocks

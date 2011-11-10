@@ -23,7 +23,8 @@ import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.FileManager
 import WMCore.Storage.DeleteMgr   as DeleteMgr
 
-from WMCore.Lexicon                  import lfn as lfnRegEx
+from WMCore.Lexicon                  import lfn     as lfnRegEx
+from WMCore.Lexicon                  import userLfn as userLfnRegEx
 
 from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 
@@ -186,7 +187,11 @@ class StageOut(Executor):
                 # Undecided whether to move file.pfn to the output PFN
                 file.InputPFN   = file.pfn
                 lfn = getattr(file, 'lfn')
-                lfnRegEx(lfn)
+                fileSource = getattr(file, 'Source', None)
+                if fileSource in ['TFileService', 'UserDefined']:
+                    userLfnRegEx(lfn)
+                else:
+                    lfnRegEx(lfn)
                 fileForTransfer = {'LFN': lfn,
                                    'PFN': getattr(file, 'pfn'),
                                    'SEName' : None,

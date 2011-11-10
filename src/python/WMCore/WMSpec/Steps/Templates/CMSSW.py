@@ -21,8 +21,8 @@ class CMSSWStepHelper(CoreHelper):
     for CMSSW tasks
 
     """
-    
-    
+
+
     def addOutputModule(self, moduleName, **details):
         """
         _addOutputModule_
@@ -41,7 +41,25 @@ class CMSSWStepHelper(CoreHelper):
             setattr(module, key, value)
 
         return
-    
+
+
+    def addAnalysisFile(self, fileLabel, **details):
+        """
+        _addAnalysisFile_
+
+        Add in an additional file produced by the user to be staged out
+        """
+        analysisFiles = self.data.output.analysisFiles
+
+        if getattr(analysisFiles, fileLabel, None) == None:
+            analysisFiles.section_(fileLabel)
+        analysisFile = getattr(analysisFiles, fileLabel)
+
+        for key, value in details.items():
+            setattr(analysisFile, key, value)
+
+        return
+
 
     def listOutputModules(self):
         """
@@ -54,7 +72,7 @@ class CMSSWStepHelper(CoreHelper):
             return self.data.output.modules.dictionary_().keys()
 
         return []
-    
+
     def getOutputModule(self, name):
         """
         _getOutputModule_
@@ -85,7 +103,7 @@ class CMSSWStepHelper(CoreHelper):
         self.data.application.configuration.configUrl = docUrl
         self.data.application.configuration.retrieveConfigUrl = \
                                         "%s/configFile" % docUrl
-        
+
 
 
     def setDataProcessingConfig(self, scenarioName, functionName, **args):
@@ -140,7 +158,7 @@ class CMSSWStepHelper(CoreHelper):
         Retrieve the version of the framework used for this step.
         """
         return self.data.application.setup.cmsswVersion
-    
+
     def setGlobalTag(self, globalTag):
         """
         _setGlobalTag_
@@ -180,16 +198,26 @@ class CMSSWStepHelper(CoreHelper):
             self.data.user.userFiles = userFiles
         return
 
+    def setUserLFNBase(self, lfnBase):
+        """
+        _setUserFiles_
+
+        Sets the list of extra files the user needs
+        """
+        if lfnBase:
+            self.data.user.lfnBase = lfnBase
+        return
+
     def setupChainedProcessing(self, inputStepName, inputOutputModule):
         """
         _setupChainedProcessing_
-        
+
         Set values to support chained CMSSW running.
         """
         self.data.input.chainedProcessing = True
         self.data.input.inputStepName = inputStepName
         self.data.input.inputOutputModule = inputOutputModule
-        
+
     def keepOutput(self, keepOutput):
         """
         _keepOutput_
@@ -199,13 +227,13 @@ class CMSSWStepHelper(CoreHelper):
         """
         self.data.output.keep = keepOutput
         return
-        
+
     def setupPileup(self, pileupConfig, dbsUrl):
         """
         include pileup input configuration into this step configuration.
         pileupConfig is initially specified as input to the workload
         (user input) and here is available as a dict.
-        
+
         """
         # so, e.g. this "cosmics": {"/some/cosmics/dataset", "minbias": "/some/minbias/dataset"}
         # would translate into
@@ -215,8 +243,8 @@ class CMSSWStepHelper(CoreHelper):
         for pileupType, dataset in pileupConfig.items():
             self.data.pileup.section_(pileupType)
             setattr(getattr(self.data.pileup, pileupType), "dataset", dataset)
-        setattr(self.data, "dbsUrl", dbsUrl)    
-        
+        setattr(self.data, "dbsUrl", dbsUrl)
+
 
 
 class CMSSW(Template):

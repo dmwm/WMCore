@@ -85,7 +85,7 @@ def addRunInfoToFile(fileSection, runInfo):
         for singleRun in runInfo:
             setattr(fileSection.runs, str(singleRun.run), singleRun.lumis)
     else:
-        setattr(fileSection.runs, str(runInfo.run), runInfo.lumis)        
+        setattr(fileSection.runs, str(runInfo.run), runInfo.lumis)
     return
 
 def addAttributesToFile(fileSection, **attributes):
@@ -130,10 +130,10 @@ class Report:
 
         Set the status for a step.
         """
-        reportStep = self.retrieveStep(stepName)        
+        reportStep = self.retrieveStep(stepName)
         reportStep.status = status
         return
-    
+
     def parse(self, xmlfile, stepName = "cmsRun1"):
         """
         _parse_
@@ -155,26 +155,31 @@ class Report:
 
             self.addError(stepName, 50115, "BadFWJRXML", msg)
             raise FwkJobReportException(msg)
-            
+
 
     def jsonizeFiles(self, reportModule):
         """
         _jsonizeFiles_
-        
+
         Put individual files in JSON format.
         """
         jsonFiles = []
+        files = getattr(reportModule, "files", None)
+        if not files:
+            return jsonFiles
+
         fileCount = getattr(reportModule.files, "fileCount", 0)
 
         for i in range(fileCount):
             reportFile = getattr(reportModule.files, "file%s" % i)
             jsonFile = reportFile.dictionary_()
 
-            cfgSectionRuns = jsonFile["runs"]
-            jsonFile["runs"] = {}
-            for runNumber in cfgSectionRuns.listSections_():
-                jsonFile["runs"][str(runNumber)] = getattr(cfgSectionRuns,
-                                                               runNumber)
+            if jsonFile.get('runs', None):
+                cfgSectionRuns = jsonFile["runs"]
+                jsonFile["runs"] = {}
+                for runNumber in cfgSectionRuns.listSections_():
+                    jsonFile["runs"][str(runNumber)] = getattr(cfgSectionRuns,
+                                                                runNumber)
             jsonFiles.append(jsonFile)
 
         return jsonFiles
@@ -216,7 +221,7 @@ class Report:
                 stepTimes["startTime"] = int(stepTimes["startTime"])
             if stepTimes["stopTime"] != None:
                 stepTimes["stopTime"] = int(stepTimes["stopTime"])
-                
+
             jsonStep["start"] = stepTimes["startTime"]
             jsonStep["stop"] = stepTimes["stopTime"]
 
@@ -227,10 +232,14 @@ class Report:
                 reportOutputModule = getattr(reportStep.output, outputModule)
                 jsonStep["output"][outputModule] = self.jsonizeFiles(reportOutputModule)
 
+            analysisSection = getattr(reportStep, 'analysis', None)
+            if analysisSection:
+                jsonStep["output"]['analysis'] = self.jsonizeFiles(analysisSection)
+
             jsonStep["input"] = {}
             for inputSource in reportStep.input.listSections_():
                 reportInputSource = getattr(reportStep.input, inputSource)
-                jsonStep["input"][inputSource] = self.jsonizeFiles(reportInputSource)                
+                jsonStep["input"][inputSource] = self.jsonizeFiles(reportInputSource)
 
             jsonStep["errors"] = []
             errorCount = getattr(reportStep.errors, "errorCount", 0)
@@ -239,14 +248,14 @@ class Report:
                 jsonStep["errors"].append({"type": reportError.type,
                                            "details": reportError.details,
                                            "exitCode": reportError.exitCode})
-                
+
             jsonStep["cleanup"] = {}
             jsonStep["parameters"] = {}
             jsonStep["site"] = {}
             jsonStep["analysis"] = {}
             jsonStep["logs"] = {}
             jsonReport["steps"][stepName] = jsonStep
-        
+
         return jsonReport
 
     def getExitCode(self):
@@ -284,7 +293,7 @@ class Report:
     def getStepExitCode(self, stepName):
         """
         _getStepExitCode_
-        
+
         Get the exit code for a particular step
         Return 0 if none
         """
@@ -297,7 +306,7 @@ class Report:
                 returnCode = 99999
             else:
                 return int(reportError.exitCode)
-            
+
         return returnCode
 
     def persist(self, filename):
@@ -337,7 +346,7 @@ class Report:
         outMod.files.fileCount = 0
 
         return outMod
-    
+
     def killOutput(self):
         """
         _killOutput_
@@ -348,7 +357,7 @@ class Report:
         """
         for outputModuleName in self.report.outputModules:
             delattr(self.report.output, outputModuleName)
-            
+
         self.report.outputModules = []
         return
 
@@ -376,7 +385,7 @@ class Report:
         # Now we need to eliminate the optional and non-primitives:
         # runs, parents, branches, locations and datasets
         keyList = file.keys()
-        
+
         fileRef.section_("runs")
         if file.has_key("runs"):
             for run in file["runs"]:
@@ -398,7 +407,7 @@ class Report:
             keyList.remove("LFN")
         if file.has_key("PFN"):
             fileRef.lfn = file["PFN"]
-            keyList.remove("PFN")            
+            keyList.remove("PFN")
 
         # All right, the rest should be JSONalizable python primitives
         for entry in keyList:
@@ -416,7 +425,7 @@ class Report:
         """
         if hasattr(self.report.input, sourceName):
             return getattr(self.report.input, sourceName)
-            
+
         self.report.input.section_(sourceName)
         srcMod = getattr(self.report.input, sourceName)
         srcMod.section_("files")
@@ -440,7 +449,7 @@ class Report:
         srcMod.files.fileCount += 1
 
         keyList = attrs.keys()
-        
+
         fileRef.section_("runs")
         if attrs.has_key("runs"):
             for run in attrs["runs"]:
@@ -464,10 +473,10 @@ class Report:
         """
         _addAnalysisFile_
 
-        Add and Analysis File.
+        Add an Analysis File.
         """
-        analysisFiles = self.report.analysis
-        count = self.report.analysis.fileCount
+        analysisFiles = self.report.analysis.files
+        count = analysisFiles.fileCount
         label = "file%s" % count
 
         analysisFiles.section_(label)
@@ -476,13 +485,13 @@ class Report:
 
         [ setattr(newFile, x, y) for x, y in attrs.items() ]
 
-        self.report.analysis.fileCount += 1
+        analysisFiles.fileCount += 1
         return
 
     def addRemovedCleanupFile(self, **attrs):
         """
         _addRemovedCleanupFile_
-        
+
         Add a file to the cleanup.removed file
         """
         removedFiles = self.report.cleanup.removed
@@ -518,7 +527,7 @@ class Report:
         errDetails.exitCode = exitCode
         errDetails.type = str(errorType)
         errDetails.details = errorDetails
-        
+
         setattr(stepSection.errors, "errorCount", errorCount +1)
         return
 
@@ -553,7 +562,7 @@ class Report:
     def addStep(self, reportname, status = 1):
         """
         _addStep_
-        
+
         This creates a report section into self.report
         """
         if hasattr(self.data, reportname):
@@ -562,14 +571,14 @@ class Report:
             return
 
         self.data.steps.append(reportname)
-        
+
         self.reportname = reportname
         self.data.section_(reportname)
         self.report = getattr(self.data, reportname)
         self.report.id = None
         self.report.status = status
         self.report.outputModules = []
-        
+
         # structure
         self.report.section_("site")
         self.report.section_("output")
@@ -581,12 +590,13 @@ class Report:
         self.report.section_("parameters")
         self.report.section_("logs")
         self.report.section_("cleanup")
+        self.report.analysis.section_("files")
         self.report.cleanup.section_("removed")
         self.report.cleanup.section_("unremoved")
         self.report.skipped.section_("events")
         self.report.skipped.section_("files")
         self.report.skipped.files.fileCount = 0
-        self.report.analysis.fileCount = 0
+        self.report.analysis.files.fileCount = 0
         self.report.cleanup.removed.fileCount = 0
 
         return
@@ -596,7 +606,7 @@ class Report:
         _setStep_
 
         """
-        self.data.steps.append(stepName)        
+        self.data.steps.append(stepName)
         self.data.section_(stepName)
         setattr(self.data, stepName, stepSection)
         return
@@ -604,8 +614,8 @@ class Report:
     def retrieveStep(self, step):
         """
         _retrieveStep_
-        
-        Grabs a report in the raw and returns it.  
+
+        Grabs a report in the raw and returns it.
         """
         reportSection = getattr(self.data, step, None)
         return reportSection
@@ -613,7 +623,7 @@ class Report:
     def load(self, filename):
         """
         _load_
-        
+
         This just maps to unpersist
         """
         self.unpersist(filename)
@@ -622,7 +632,7 @@ class Report:
     def save(self, filename):
         """
         _save_
-        
+
         This just maps to persist
         """
         self.persist(filename)
@@ -631,7 +641,7 @@ class Report:
     def getOutputModule(self, step, outputModule):
         """
         _getOutputModule_
-        
+
         Get the output module from a particular step
         """
         stepReport = self.retrieveStep(step = step)
@@ -688,14 +698,14 @@ class Report:
         newFile['inputPath']      = getattr(fileRef, 'inputPath', None)
         newFile['custodialSite']  = getattr(fileRef, 'custodialSite', None)
         newFile["outputModule"]   = outputModule
-        
+
 
         return newFile
 
     def getAllFilesFromStep(self, step):
         """
         _getAllFilesFromStep_
-        
+
         For a given step, retrieve all the associated files
         """
 
@@ -742,7 +752,7 @@ class Report:
     def getAllInputFiles(self):
         """
         _getAllInputFiles_
-        
+
         Gets all the input files
         """
 
@@ -808,7 +818,7 @@ class Report:
     def getFilesFromOutputModule(self, step, outputModule):
         """
         _getFilesFromOutputModule_
-        
+
         Grab all the files in a particular output module
         """
 
@@ -825,7 +835,7 @@ class Report:
                 msg = "Could not find file%i in module" % (n)
                 logging.error(msg)
                 return None
-            
+
             #Now, append to the list of files
             listOfFiles.append(file)
 
@@ -864,7 +874,7 @@ class Report:
             return False
 
         return True
-        
+
 
     def taskSuccessful(self, ignoreString = 'logArch'):
         """
@@ -903,13 +913,13 @@ class Report:
         if not stepReport:
             return []
 
-        analysisFiles = stepReport.analysis
+        analysisFiles = stepReport.analysis.files
         result = []
         for fileNum in range(analysisFiles.fileCount):
             result.append(getattr(analysisFiles, "file%s" % fileNum))
 
         return result
-        
+
 
     def getAllFileRefsFromStep(self, step):
         """
@@ -930,6 +940,9 @@ class Report:
 
             for i in range(outputModuleRef.files.fileCount):
                 fileRefs.append(getattr(outputModuleRef.files, "file%i" % i))
+
+        analysisFiles = self.getAnalysisFilesFromStep(step)
+        fileRefs.extend(analysisFiles)
 
         return fileRefs
 
@@ -968,7 +981,7 @@ class Report:
 
         Set the startTime for a step.
         """
-        reportStep = self.retrieveStep(stepName)        
+        reportStep = self.retrieveStep(stepName)
         reportStep.startTime = time.time()
         return
 
@@ -978,7 +991,7 @@ class Report:
 
         Set the stopTime for a step.
         """
-        reportStep = self.retrieveStep(stepName)        
+        reportStep = self.retrieveStep(stepName)
         reportStep.stopTime = time.time()
         return
 
@@ -1048,7 +1061,7 @@ class Report:
     def setTaskName(self, taskName):
         """
         _setTaskName_
-        
+
         Set the task name for the report
         """
         self.data.task = taskName
@@ -1088,7 +1101,7 @@ class Report:
 
         Get references for all file in the step
         """
-        
+
         fileRefs = []
         for step in self.data.steps:
             tmpRefs = self.getAllFileRefsFromStep(step = step)
@@ -1100,13 +1113,13 @@ class Report:
     def setAcquisitionProcessing(self, acquisitionEra, processingVer):
         """
         _setAcquisitionProcessing_
-        
+
         Set the acquisition and processing era for every output file
         ONLY run this after all files have been accumulated; it doesn't
         set things for future files.
         """
         fileRefs = self.getAllFileRefs()
-        
+
         # Should now have all the fileRefs
         for f in fileRefs:
             f.acquisitionEra = acquisitionEra
@@ -1121,29 +1134,29 @@ class Report:
         Set the validStatus for all steps and all files.
         ONLY run this after all files have been attached.
         """
-    
+
         fileRefs = self.getAllFileRefs()
-    
+
         # Should now have all the fileRefs
         for f in fileRefs:
             f.validStatus = validStatus
-            
+
         return
 
     def setGlobalTag(self, globalTag):
         """
         _setGlobalTag_
-        
+
         Set the global Tag from the spec on the WN
         ONLY run this after all the files have been attached
         """
 
         fileRefs = self.getAllFileRefs()
-    
+
         # Should now have all the fileRefs
         for f in fileRefs:
             f.globalTag = globalTag
-            
+
         return
 
     def setConfigURL(self, configURL):
@@ -1193,62 +1206,62 @@ class Report:
     def setStepRSS(self, stepName, min, max, average):
         """
         _setStepRSS_
-        
+
         Set the Performance RSS information
         """
-        
+
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('RSSMemory')
         reportStep.performance.RSSMemory.min     = min
         reportStep.performance.RSSMemory.max     = max
         reportStep.performance.RSSMemory.average = average
-        
+
         return
-    
+
     def setStepPMEM(self, stepName, min, max, average):
         """
         _setStepPMEM_
-        
+
         Set the Performance PMEM information
         """
-        
+
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('PhysicalMemory')
         reportStep.performance.PhysicalMemory.min     = min
         reportStep.performance.PhysicalMemory.max     = max
         reportStep.performance.PhysicalMemory.average = average
-        
+
         return
-    
+
     def setStepPCPU(self, stepName, min, max, average):
         """
         _setStepPCPU_
-        
+
         Set the Performance PCPU information
         """
-        
+
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('PercentCPU')
         reportStep.performance.PercentCPU.min     = min
         reportStep.performance.PercentCPU.max     = max
         reportStep.performance.PercentCPU.average = average
-        
+
         return
-    
-    
+
+
     def setStepVSize(self, stepName, min, max, average):
         """
         _setStepVSize_
-        
+
         Set the Performance PCPU information
         """
-        
+
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('VSizeMemory')
         reportStep.performance.VSizeMemory.min     = min
         reportStep.performance.VSizeMemory.max     = max
         reportStep.performance.VSizeMemory.average = average
-        
+
         return
 
     def checkForAdlerChecksum(self, stepName):
@@ -1275,14 +1288,14 @@ class Report:
             self.setStepStatus(stepName = stepName, status = 60451)
 
         return
-    
-    
+
+
 def addFiles(file1, file2):
     """
     _addFiles_
 
     Combine two files. Used for multicore report building
-    
+
     #ToDo: parents & locations.
     """
     file1['events'] += file2['events']
@@ -1292,11 +1305,11 @@ def addFiles(file1, file2):
         if r.run not in f1runs.keys():
             file1['runs'].add(r)
         else:
-            thisRun = f1runs[r.run] 
+            thisRun = f1runs[r.run]
             if r != thisRun:
                 for l in r.lumis:
                     if l not in thisRun.lumis:
                         thisRun.lumis.append(l)
     return
 
-                
+

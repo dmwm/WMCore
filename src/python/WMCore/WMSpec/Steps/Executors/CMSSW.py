@@ -7,15 +7,30 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step.
 """
 
+import os
 import subprocess
 import sys
 import select
 import logging
 
+from WMCore.FwkJobReport.Report import addAttributesToFile
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMRuntime.Tools.Scram import Scram
 from WMCore.WMSpec.WMStep import WMStepHelper
+
+def analysisFileLFN(fileName, lfnBase, job):
+    """
+    Construct an LFN for a user file
+    """
+
+    junk, base = os.path.split(fileName)
+    root, ext = os.path.splitext(base)
+
+    newBase = '{base}_{count:04d}{ext}'.format(base=root, ext=ext, count=job['counter'])
+    lfn = os.path.join(lfnBase, job['workflow'], 'output', newBase)
+
+    return lfn
 
 class CMSSW(Executor):
     """
@@ -92,7 +107,7 @@ class CMSSW(Executor):
             directory = self.step.builder.workingDir,
             architecture = scramArch,
             )
-        
+
         logging.info("Runing SCRAM")
         try:
             projectOutcome = scram.project()
@@ -102,7 +117,7 @@ class CMSSW(Executor):
             logging.critical("Error running SCRAM")
             logging.critical(msg)
             raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
-        
+
         if projectOutcome > 0:
             msg = scram.diagnostic()
             #self.report.addError(60513, "ScramSetupFailure", msg)
@@ -233,14 +248,14 @@ class CMSSW(Executor):
 
         stepHelper = WMStepHelper(self.step)
         typeHelper = stepHelper.getTypeHelper()
-        
+
         acquisitionEra = self.workload.getAcquisitionEra()
         processingVer  = self.workload.getProcessingVersion()
         validStatus    = self.workload.getValidStatus()
         inputPath      = self.task.getInputDatasetPath()
         globalTag      = typeHelper.getGlobalTag()
         cacheUrl, cacheDB, configID = stepHelper.getConfigInfo()
-                
+
         self.report.setValidStatus(validStatus = validStatus)
         self.report.setGlobalTag(globalTag = globalTag)
         self.report.setInputDataset(inputPath = inputPath)
@@ -252,13 +267,26 @@ class CMSSW(Executor):
 
         # Attach info to files
         self.report.addInfoToOutputFilesForStep(stepName = self.stepName, step = self.step)
-        
+
         self.report.checkForAdlerChecksum(stepName = self.stepName)
 
         if self.step.output.keep != True:
             self.report.killOutput()
-            
-        
+
+        # Add stageout LFN to existing TFileService files
+        reportAnalysisFiles = self.report.getAnalysisFilesFromStep(self.stepName)
+        for reportAnalysisFile in reportAnalysisFiles:
+            newLFN = analysisFileLFN(reportAnalysisFile.fileName, self.step.user.lfnBase, self.job)
+            addAttributesToFile(reportAnalysisFile, pfn=reportAnalysisFile.fileName, lfn=newLFN, validate=False)
+
+        # Add analysis file entries for additional files listed in workflow
+        for fileName in stepHelper.listAnalysisFiles():
+            analysisFile = stepHelper.getAnalysisFile(fileName)
+            if os.path.isfile(analysisFile.fileName):
+                newLFN = analysisFileLFN(analysisFile.fileName, analysisFile.lfnBase, self.job)
+                self.report.addAnalysisFile(analysisFile.fileName, lfn=newLFN, Source='UserDefined',
+                                            pfn=os.path.join(os.getcwd(), analysisFile.fileName), validate=False)
+
         return
 
     def post(self, emulator = None):

@@ -22,6 +22,9 @@ lfnParts = {
     'counter'   : '([0-9]+)',
     'root'      : '([a-zA-Z0-9\-_]+).root',
     'hnName'    : '([a-zA-Z0-9\.]+)',
+    'subdir'    : '([a-zA-Z0-9\-_]+)',
+    'file'      : '([a-zA-Z0-9\-\._]+)',
+    'workflow'  : '([a-zA-Z0-9\-_]+)',
 }
 
 def searchblock(candidate):
@@ -169,6 +172,19 @@ def lfnBase(candidate):
     except AssertionError:
         return check(regexp3, candidate)
 
+def userLfn(candidate):
+    """
+    Check LFNs in /store/{temp}/user that are not EDM data
+    """
+    regexp = '/store/(temp/)*(user|group)/%(hnName)s/%(subdir)s/%(workflow)s/%(subdir)s/%(file)s' % lfnParts
+    return check(regexp, candidate)
+
+def userLfnBase(candidate):
+    """
+    As above but for the base part of the file
+    """
+    regexp = '/store/(temp/)*(user|group)/%(hnName)s/%(subdir)s/%(workflow)s/%(subdir)s' % lfnParts
+    return check(regexp, candidate)
 
 def cmsswversion(candidate):
     return check('CMSSW(_\d+){3}(_[a-zA-Z0-9_]+)?$', candidate)

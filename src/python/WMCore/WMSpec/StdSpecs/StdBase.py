@@ -208,7 +208,7 @@ class StdBase(object):
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         procTask.setSiteWhitelist(self.siteWhitelist)
         procTask.setSiteBlacklist(self.siteBlacklist)
-        
+
         newSplitArgs = {}
         for argName in splitArgs.keys():
             newSplitArgs[str(argName)] = splitArgs[argName]
@@ -276,19 +276,26 @@ class StdBase(object):
             #  ( 3  dataTier should be always 'USER'.)
             #  4 then we'll know how to deal with Merge
             dataTier = 'USER'
-            processedDatasetName = None
-            unmergedLFN = self.userUnmergedLFN
-            mergedLFN = None
-        else:
-            if filterName != None and filterName != "":
-                processedDatasetName = "%s-%s-%s" % (self.acquisitionEra, filterName,
-                                                     self.processingVersion)
-                processingString = "%s-%s" % (filterName, self.processingVersion)
-            else:
-                processedDatasetName = "%s-%s" % (self.acquisitionEra,
-                                                  self.processingVersion)
-                processingString = "%s" % (self.processingVersion)
 
+        if filterName != None and filterName != "":
+            processedDatasetName = "%s-%s-%s" % (self.acquisitionEra, filterName,
+                                                    self.processingVersion)
+            processingString = "%s-%s" % (filterName, self.processingVersion)
+        else:
+            processedDatasetName = "%s-%s" % (self.acquisitionEra,
+                                                self.processingVersion)
+            processingString = "%s" % (self.processingVersion)
+
+        if parentTask.name() == 'Analysis':
+            if filterName:
+                unmergedLFN = "%s/%s/%s-%s/%s" % (self.unmergedLFNBase, self.inputPrimaryDataset,
+                                                  self.acquisitionEra, filterName, self.processingVersion)
+            else:
+                unmergedLFN = "%s/%s/%s/%s" % (self.unmergedLFNBase, self.inputPrimaryDataset,
+                                               self.acquisitionEra, self.processingVersion)
+            mergedLFN = None
+            lfnBase(unmergedLFN)
+        else:
             unmergedLFN = "%s/%s/%s/%s/%s" % (self.unmergedLFNBase, self.acquisitionEra,
                                               self.inputPrimaryDataset, dataTier,
                                               processingString)

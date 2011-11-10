@@ -119,7 +119,7 @@ class LogCollect(Executor):
             now = datetime.datetime.now()
             tarPFN = self.createArchive(readyFiles)
             if userLogs:
-                lfn = "%s/CRAB-Logs/%s/%s" % (lfnBase, self.report.data.workload, os.path.basename(tarPFN))
+                lfn = "%s/%s/logs/%s" % (lfnBase, self.report.data.workload, os.path.basename(tarPFN))
             else:
                 lfn = "/store/logs/prod/%i/%.2i/%s/%s/%s" % (now.year, now.month, "WMAgent",
                                                             self.report.data.workload,

@@ -345,6 +345,37 @@ class LexiconTest(unittest.TestCase):
         return
 
 
+    def testUserLFN(self):
+        """
+        _testUserLFN_
+
+        Test the LFN checker for user LFNs that are not part of a dataset (TFiles, logs)
+        """
+
+        lfnA = '/store/temp/user/ewv/CRAB-Out/ewv_crab_EwvAnalysis_46_111109_143552/output/total_0001.json'
+        userLfn(lfnA)
+        lfnA = '/store/user/ewv/CRAB-Out/ewv_crab_EwvAnalysis_46_111109_143552/output/total_0001.json'
+        userLfn(lfnA)
+        lfnA = "/store/temp/user/ewv/CRAB-Out/ewv_crab_EwvAnalysis_45_111109_130928/output/histo_0002.root"
+        userLfn(lfnA)
+
+        return
+
+    def testUserLFNBase(self):
+        """
+        _testLFNBase_
+
+        Test the LFN Base checker for user LFNs that are not part of a dataset (TFiles, logs)
+        """
+
+        lfnA = '/store/temp/user/ewv/CRAB-Out/ewv_crab_EwvAnalysis_46_111109_143552/output'
+        userLfnBase(lfnA)
+        lfnA = '/store/user/ewv/CRAB-Out/ewv_crab_EwvAnalysis_46_111109_143552/output'
+        userLfnBase(lfnA)
+
+        return
+
+
     def testLFNParser(self):
         """
         _testLFNParser_

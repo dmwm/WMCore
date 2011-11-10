@@ -57,11 +57,11 @@ class AnalysisWorkloadFactory(StdBase):
         (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = self.inputDataset[1:].split("/")
 
         lfnBase = '/store/temp/user/%s' % self.userName
+        self.unmergedLFNBase = lfnBase
+        userOutBase = '%s/CRAB-Out' % lfnBase
         logBase = '/store/temp/user/%s/logs/' % self.userName
-        logCollBase = '/store/user/%s/' % self.userName
+        logCollBase = '/store/user/%s/CRAB-Out' % self.userName
         lcPrefix, seName = remoteLFNPrefix(site=self.asyncDest, lfn=logCollBase)
-        self.userUnmergedLFN = "%s/%s/%s/%s" % (lfnBase, self.inputPrimaryDataset,
-                                                self.publishName, self.processingVersion)
 
         # Force ACDC input if present
         self.inputStep = None
@@ -99,6 +99,13 @@ class AnalysisWorkloadFactory(StdBase):
             workload.setWorkQueueSplitPolicy("ResubmitBlock", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
         else:
             workload.setWorkQueueSplitPolicy("Block", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
+
+        cmsswStep = analysisTask.getStep('cmsRun1')
+        cmsswHelper = cmsswStep.getTypeHelper()
+        cmsswHelper.setUserLFNBase(userOutBase)
+
+        for outputFile in self.outputFiles:
+            cmsswHelper.addAnalysisFile(outputFile, fileName = outputFile, lfnBase = userOutBase)
 
         return workload
 
@@ -162,12 +169,14 @@ class AnalysisWorkloadFactory(StdBase):
 
         self.asyncDest = arguments.get("asyncDest", "T1_US_FNAL_Buffer")
         self.publishName = arguments.get("PublishDataName", str(int(time.time())))
+        self.acquisitionEra = self.publishName
         self.owner_vogroup = arguments.get("VoGroup", '')
         self.owner_vorole = arguments.get("VoRole", '')
         self.userSandbox = arguments.get("userSandbox", None)
         self.userFiles   = arguments.get("userFiles", [])
         self.userName    = arguments.get("Username",'jblow')
         self.saveLogs    = arguments.get("SaveLogs", True)
+        self.outputFiles = arguments.get("OutputFiles", [])
 
         return self.buildWorkload()
 

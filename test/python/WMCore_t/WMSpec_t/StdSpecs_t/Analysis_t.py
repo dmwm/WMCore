@@ -76,11 +76,12 @@ class AnalysisTest(unittest.TestCase):
     def testAnalysis(self):
         """
         _testAnalysis_
-        """   
+        """
         defaultArguments = getTestArguments()
         defaultArguments["CouchUrl"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "analysis_t"
         defaultArguments["AnalysisConfigCacheDoc"] = self.injectAnalysisConfig()
+        defaultArguments["ProcessingVersion"] = 'v1'
 
         analysisProcessingFactory = AnalysisWorkloadFactory()
         testWorkload = analysisProcessingFactory("TestWorkload", defaultArguments)

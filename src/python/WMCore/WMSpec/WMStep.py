@@ -212,6 +212,30 @@ class WMStepHelper(TreeHelper):
         return cacheUrl, cacheDb, configId
 
 
+    def listAnalysisFiles(self):
+        """
+        _listAnalysisFiles_
+
+        retrieve list of output module names
+
+        """
+        if hasattr(self.data.output, "analysisFiles"):
+            return self.data.output.analysisFiles.dictionary_().keys()
+
+        return []
+
+
+    def getAnalysisFile(self, name):
+        """
+        _getAnalysisFile_
+
+        retrieve the data structure for an analysis file by name
+        None if not found
+        """
+        return getattr(self.data.output.analysisFiles, name, None)
+
+
+
 class WMStep(ConfigSectionTree):
     """
     _WMStep_

@@ -170,3 +170,19 @@ class AnalysisWorkloadFactory(StdBase):
         self.saveLogs    = arguments.get("SaveLogs", True)
 
         return self.buildWorkload()
+
+    def validateSchema(self, schema):
+        """
+        _validateSchema_
+        
+        Check for required fields, and some skim facts
+        """
+        requiredFields = ["CMSSWVersion", "ScramArch",
+                          "InputDataset", "Requestor",
+                          "RequestorDN"]
+        self.requireValidateFields(fields = requiredFields, schema = schema,
+                                   validate = False)
+        if schema.get("RequestName", None) != None and schema.get("RequestName").count(' ') > 0:
+            msg = "RequestName cannot contain spaces"
+            self.raiseValidationException(msg = msg)
+        return

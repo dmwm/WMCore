@@ -163,6 +163,38 @@ class RelValMCWorkloadFactory(StdBase):
         self.stepOneConfigCacheID = arguments["StepOneConfigCacheID"]
         self.stepTwoConfigCacheID = arguments["StepTwoConfigCacheID"]        
         return self.buildWorkload()
+
+    def validateSchema(self, schema):
+        """
+        _validateSchema_
+        
+        Check for required fields, and some skim facts
+        """
+        requiredFields = ["CMSSWVersion", "Requestor", "ScramArch",
+                          "PrimaryDataset", "GlobalTag", "RequestSizeEvents",
+                          "GenConfigCacheID", "StepOneConfigCacheID", "StepTwoConfigCacheID",
+                          "GenOutputModuleName", "StepOneOutputModuleName", "CouchURL", "CouchDBName"]
+        self.requireValidateFields(fields = requiredFields, schema = schema,
+                                   validate = False)
+        outMod = self.validateConfigCacheExists(configID = schema["GenConfigCacheID"],
+                                                couchURL = schema["CouchURL"],
+                                                couchDBName = schema["CouchDBName"],
+                                                getOutputModules = True)
+        if not schema["GenOutputModuleName"] in outMod.keys():
+            self.raiseValidationException(msg = "GenOutputMod Name not found in configCache")
+        outMod = self.validateConfigCacheExists(configID = schema["StepOneConfigCacheID"],
+                                                couchURL = schema["CouchURL"],
+                                                couchDBName = schema["CouchDBName"],
+                                                getOutputModules = True)
+        if not schema["StepOneOutputModuleName"] in outMod.keys():
+            self.raiseValidationException(msg = "StepOneOutputMod Name not found in configCache")
+        outMod = self.validateConfigCacheExists(configID = schema["StepTwoConfigCacheID"],
+                                                couchURL = schema["CouchURL"],
+                                                couchDBName = schema["CouchDBName"],
+                                                getOutputModules = True)
+        return
+
+            
     
 def relValMCWorkload(workloadName, arguments):
     """

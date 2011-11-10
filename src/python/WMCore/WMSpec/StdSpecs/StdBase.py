@@ -4,13 +4,27 @@ _StdBase_
 
 Base class with helper functions for standard WMSpec files.
 """
+import logging
 
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 
-from WMCore.Cache.WMConfigCache import ConfigCache
-from WMCore.Lexicon import lfnBase
+from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
+from WMCore.Lexicon import lfnBase, identifier
+from WMCore.WMException import WMException
+from WMCore.Database.CMSCouch import CouchNotFoundError
+
+class WMSpecFactoryException(WMException):
+    """
+    _WMSpecFactoryException_
+
+    This exception will be raised by validation functions if
+    the code fails validation.  It will then be changed into
+    a proper HTTPError in the ReqMgr, with the message you enter
+    used as the message for farther up the line.
+    """
+    pass
 
 class StdBase(object):
     """
@@ -424,3 +438,102 @@ class StdBase(object):
         stepName = task.getTopStepName()
         stepHelper = task.getStepHelper(stepName)
         stepHelper.setupPileup(pileupConfig, self.dbsUrl)
+        return
+
+    def validateSchema(self, schema):
+        """
+        _validateSchema_
+        
+        Validate the schema prior to building the workload
+        This function should be overridden by individual specs
+        
+        If something breaks, raise a WMSpecFactoryException.  A message
+        in that excpetion will be transferred to an HTTP Error later on.
+        """
+        return
+    
+    def validateWorkload(self, workload):
+        """
+        _validateWorkload_
+        
+        Just in case you have something that you want to validate
+        after the workload gets created, this is where you should
+        put it.
+        
+        If something breaks, raise a WMSpecFactoryException.  A message
+        in that excpetion will be transferred to an HTTP Error later on.
+        """
+        return
+    
+    def factoryWorkloadConstruction(self, workloadName, arguments):
+        """
+        _factoryWorkloadConstruction_
+        
+        Master build for ReqMgr - builds the entire workload
+        and also performs the proper validation.
+        
+        Named this way so that nobody else will try to use this name.
+        """
+        
+        self.validateSchema(schema = arguments)
+        workload = self.__call__(workloadName = workloadName, arguments = arguments)
+        self.validateWorkload(workload)
+        
+        return workload
+
+    def requireValidateFields(self, fields, schema, validate = False):
+        """
+        _requireValidateFields_
+
+        Standard tool for StdBase derived classes to make sure
+        that a schema has a certain set of valid fields.  Uses WMCore.Lexicon.identifier
+
+        To be used in validateWorkload()
+        """
+
+        for field in fields:
+            if not field in schema.keys():
+                msg = "Missing required field %s in workload validation!" % field
+                self.raiseValidationException(msg = msg)
+            if schema[field] == None:
+                msg = "NULL value for required field %s!" % field
+                self.raiseValidationException(msg = msg)
+            if validate:
+                try:
+                    identifier(candidate = schema[field])
+                except AssertionError, ex:
+                    msg = "Schema value for field %s failed Lexicon validation" % field
+                    self.raiseValidationException(msg = msg)
+        return
+
+    def raiseValidationException(self, msg):
+        """
+        _raiseValidationException_
+
+        Inbuilt method for raising exception so people don't have
+        to import WMSpecFactoryException all over the place.
+        """
+
+        logging.error("About to raise exception %s" % msg)
+        raise WMSpecFactoryException(message = msg)
+
+    def validateConfigCacheExists(self, configID, couchURL, couchDBName,
+                                  getOutputModules = False):
+        """
+        _validateConfigCacheExists_
+
+        If we have a configCache, we should probably try and load it.
+        """
+        from WMCore.Cache.WMConfigCache import ConfigCache
+        configCache = ConfigCache(dbURL = couchURL,
+                                  couchDBName = couchDBName,
+                                  id = configID)
+        try:
+            configCache.loadByID(configID = configID)
+        except ConfigCacheException, ex:
+            self.raiseValidationException(msg = "Failure to load ConfigCache while validating workload")
+            
+        if getOutputModules:
+            return configCache.getOutputModuleInfo()
+        
+        return

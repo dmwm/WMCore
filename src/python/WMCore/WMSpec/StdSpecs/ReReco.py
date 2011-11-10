@@ -8,6 +8,7 @@ Standard ReReco workflow.
 import os
 
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessingWorkloadFactory
+from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 
 def getTestArguments():
     """
@@ -129,6 +130,29 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
 
         return self.addSkims(workload)
 
+    def validateSchema(self, schema):
+        """
+        _validateSchema_
+        
+        Check for required fields, and some skim facts
+        """
+        requiredFields = ["CMSSWVersion", "ScramArch",
+                          "GlobalTag", "InputDataset"]
+        self.requireValidateFields(fields = requiredFields, schema = schema,
+                                   validate = False)
+        if schema.get('InputDataset', '').count('/') != 3:
+            raise WMSpecFactoryException("Invalid dataset in workflow validation")
+        return
+
+    def validateWorkload(self, workload):
+        """
+        _validateWorkload_
+
+        Perform last checks.
+        """
+
+        return
+
 def rerecoWorkload(workloadName, arguments):
     """
     _rerecoWorkload_
@@ -138,3 +162,6 @@ def rerecoWorkload(workloadName, arguments):
     """
     myReRecoFactory = ReRecoWorkloadFactory()
     return myReRecoFactory(workloadName, arguments)
+
+
+

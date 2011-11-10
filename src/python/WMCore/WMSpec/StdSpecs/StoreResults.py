@@ -155,6 +155,20 @@ class StoreResultsWorkloadFactory(StdBase):
 
         return workload
 
+    def validateSchema(self, schema):
+        """
+        _validateSchema_
+        
+        Check for required fields, and some skim facts
+        """
+        arguments = getTestArguments()
+        requiredFields = ['InputDatasets', 'CMSSWVersion',
+                          'ScramArch', 'Group', 'DbsUrl', 'ProcessingVersion',
+                          'AcquisitionEra', 'Scenario']
+        self.requireValidateFields(fields = requiredFields, schema = schema,
+                                   validate = False)
+        return
+
 
 def storeResultsWorkload(workloadName, arguments):
     """

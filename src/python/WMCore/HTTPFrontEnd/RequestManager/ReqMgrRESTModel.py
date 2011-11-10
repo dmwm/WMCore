@@ -405,6 +405,9 @@ class ReqMgrRESTModel(RESTModel):
             schema.setdefault('CouchDBName', self.configDBName)
             try:
                 request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName)
+            except cherrypy.HTTPError:
+                # Assume that this is a valid HTTPError
+                raise
             except Exception, ex:
                 raise cherrypy.HTTPError(400, ex.message)
         # see if status & priority need to be upgraded

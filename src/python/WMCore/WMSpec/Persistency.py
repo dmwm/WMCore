@@ -88,6 +88,7 @@ class PersistencyHelper:
         database = server.connectDatabase(couchDBName)
         uri = '/%s/%s' % (couchDBName, self.name())
         specuri = uri + '/spec'
+        name = self.name()
         if not database.documentExists(self.name()):
             self.setSpecUrl(couchUrl + specuri)
             doc = database.put(uri, data=metadata, contentType='application/json') 
@@ -101,7 +102,7 @@ class PersistencyHelper:
         #specuriwrev = specuri + '?rev=%s' % rev
         workloadString = cPickle.dumps(self.data)
         #result = database.put(specuriwrev, workloadString, contentType='application/text')
-        result = database.addAttachment(self.name(), rev, workloadString, 'spec')
+        result = database.addAttachment(name, rev, workloadString, 'spec')
         url = couchUrl + specuri
         return url
 

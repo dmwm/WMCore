@@ -130,6 +130,24 @@ class MonteCarloWorkloadFactory(StdBase):
         
         return self.buildWorkload()
 
+    def validateSchema(self, schema):
+        """
+        _validateSchema_
+        
+        Check for required fields, and some skim facts
+        """
+        arguments = getTestArguments()
+        requiredFields = ["CMSSWVersion", "ProdConfigCacheID",
+                          "PrimaryDataset", "CouchURL",
+                          "CouchDBName", "RequestSizeEvents"]
+        self.requireValidateFields(fields = requiredFields, schema = schema,
+                                   validate = False)
+        outMod = self.validateConfigCacheExists(configID = schema["ProdConfigCacheID"],
+                                                couchURL = schema["CouchURL"],
+                                                couchDBName = schema["CouchDBName"],
+                                                getOutputModules = True)
+        return
+
 
 
 def monteCarloWorkload(workloadName, arguments):

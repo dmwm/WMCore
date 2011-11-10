@@ -295,6 +295,24 @@ class ReDigiWorkloadFactory(StdBase):
                                                "include_parents": self.includeParents})
         return self.buildWorkload()
 
+    def validateSchema(self, schema):
+        """
+        _validateSchema_
+        
+        Check for required fields, and some skim facts
+        """
+        requiredFields = ["CMSSWVersion", "ScramArch",
+                          "GlobalTag", "InputDataset",
+                          "StepOneConfigCacheID", "CouchURL",
+                          "CouchDBName"]
+        self.requireValidateFields(fields = requiredFields, schema = schema,
+                                   validate = False)
+        outMod = self.validateConfigCacheExists(configID = schema["StepOneConfigCacheID"],
+                                                couchURL = schema["CouchURL"],
+                                                couchDBName = schema["CouchDBName"],
+                                                getOutputModules = True)
+        return
+
 def reDigiWorkload(workloadName, arguments):
     """
     _reDigiWorkload_
@@ -304,3 +322,6 @@ def reDigiWorkload(workloadName, arguments):
     """
     myReDigiFactory = ReDigiWorkloadFactory()
     return myReDigiFactory(workloadName, arguments)
+
+
+

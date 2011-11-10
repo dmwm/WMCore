@@ -83,7 +83,72 @@ Example initial processing task
 
 import sys
 import os
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase, WMSpecFactoryException
+
+# Validate functions
+def validateSubTask(task, firstTask = False):
+    """
+    _validateSubTask_
+    
+    Check required fields for a sub task
+    """
+    reqKeys = ["TaskName", "SplittingAlgorithm", "SplittingArguments"]
+    for rK in reqKeys:
+        if not task.has_key(rK):
+            msg = "Sub Task missing Required Key: %s\n" % rK
+            msg += str(task)
+            raise WMSpecFactoryException(msg)
+    # 
+    # input definition checks
+    #
+    if not firstTask:
+        if not task.has_key("InputTask"):
+            msg = "Task %s has no InputTask setting" % task['TaskName']
+            raise WMSpecFactoryException(msg)
+        if not task.has_key("InputFromOutputModule"):
+            msg = "Task %s has no InputFromOutputModule setting" % task['TaskName']
+            raise WMSpecFactoryException(msg)
+        
+    # configuration checks
+    check = task.has_key("Scenario") or task.has_key("ConfigCacheID")
+    if not check:
+        msg = "Task %s has no Scenario or ConfigCacheID, one of these must be provided" % task['TaskName']
+        raise WMSpecFactoryException(msg)
+    if task.has_key("Scenario"):
+        if not task.has_key("ScenarioMethod"):
+            msg = "Scenario Specified for Task %s but no ScenarioMethod provided" % task['TaskName']
+            raise WMSpecFactoryException(msg)
+        scenArgs = task.get("ScenarioArgs", {})
+        if not scenArgs.has_key("writeTiers"):
+            msg = "task %s ScenarioArgs does not contain writeTiers argument" % task['TaskName']
+            raise WMSpecFactoryException, msg
+        
+            
+
+
+    
+def validateGenFirstTask(task):
+    """
+    _validateGenFirstTask_
+    
+    Validate first task contains all stuff required for generation
+    """
+    if not task.has_key("RequestSizeEvents"):
+        msg = "RequestSizeEvents is required for first Generator task"
+        raise WMSpecFactoryException(msg)
+
+    if not task.has_key("PrimaryDataset"):
+        msg = "PrimaryDataset is required for first Generator task"
+        raise WMSpecFactoryException(msg)
+
+def validateProcFirstTask(task):
+    """
+    _validateProcFirstTask_
+    
+    Validate that Processing First task contains required params
+    """
+    if task['InputDataset'].count('/') != 3:
+        raise WMSpecFactoryException("Need three slashes in InputDataset %s " % task['InputDataset'])
 
 
 #
@@ -281,7 +346,39 @@ class TaskChainWorkloadFactory(StdBase):
                                           outputModuleInfo["processedDataset"])
             procMergeTasks[str(outputModuleName)] = mergeTask
         self.mergeMapping[task.name()] = procMergeTasks
-        self.globalTag = globalGlobalTag    
+        self.globalTag = globalGlobalTag
+        return
+
+    def validateSchema(self, schema):
+        """
+        _validateSchema_
+        
+        Go over each task and make sure it matches validation
+        parameters derived from Dave's requirements.
+        """
+        try:
+            numTasks = int(schema['TaskChain'])
+        except ValueError:
+            msg = "TaskChain parameter is not an Integer"
+            self.raiseValidationException(msg = msg)
+
+        if numTasks == 0:
+            msg = "No tasks present in taskChain!"
+            self.raiseValidationException(msg = msg)
+
+        for i in range(1, numTasks+1):
+            if not schema.has_key("Task%s" % i):
+                msg = "No Task%s entry present in request" % i
+                self.raiseValidationException(msg = msg)
+
+            if i == 1:
+                if schema['Task1'].has_key('InputDataset'):
+                    validateProcFirstTask(schema['Task1'])
+                else:
+                    validateGenFirstTask(schema['Task1'])
+                validateSubTask(schema['Task1'], firstTask = True)
+            else:
+                validateSubTask(schema['Task%s' % i])
 
 
 def taskChainWorkload(workloadName, arguments):
@@ -293,3 +390,5 @@ def taskChainWorkload(workloadName, arguments):
     """
     f = TaskChainWorkloadFactory()
     return f(workloadName, arguments)
+
+

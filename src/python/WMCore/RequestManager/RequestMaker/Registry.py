@@ -8,9 +8,9 @@ classes and instantiate them via a factory method
 Note that a schema is retrieved via its corresponding maker.
 
 """
-
-
-
+import copy
+import time
+from WMCore.RequestManager.DataStructs.Request import Request
 
 class _Registry:
     """
@@ -20,6 +20,7 @@ class _Registry:
 
     _Makers = {}
     _Schemas = {}
+    _Factories = {}
     
     def __init__(self):
         msg = "Do not init ths class"
@@ -61,3 +62,70 @@ def retrieveRequestMaker(typename):
     return maker
 
 
+def buildWorkloadForRequest(typename, schema):
+    """
+    _buildWorkloadForRequest_
+    
+    Prototype master class for ReqMgr request creation
+
+    Should load factory, use the schema to find arguments,
+    validate the arguments, and then return a finished workload.
+    """
+    requestName = schema['RequestName']
+
+    if not typename in _Registry._Factories.keys():
+        factoryName = '%sWorkloadFactory' % typename
+        try:
+            mod = __import__('WMCore.WMSpec.StdSpecs.%s' % typename,
+                             globals(), locals(), [factoryName])
+            factoryInstance = getattr(mod, factoryName)
+        except ImportError:
+            msg =  "Spec type %s not found in WMCore.WMSpec.StdSpecs" % typename
+            raise RuntimeError, msg
+        except AttributeError, ex:
+            msg = "Factory not found in Spec for type %s" % typename
+            raise RuntimeError, msg
+        _Registry._Factories[typename] = factoryInstance
+    else:
+        factoryInstance = _Registry._Factories[typename]
+
+
+
+    # So now we have a factory
+    # Time to run it
+    # Any exception here will be caught at a higher level (ReqMgrWebTools)
+    # This should also handle validation
+    factory  = factoryInstance()
+    workload = factory.factoryWorkloadConstruction(workloadName = requestName,
+                                                   arguments = schema)
+    
+    # Now build a request
+    request = Request()
+    request.update(schema)
+    loadRequestSchema(workload = workload, requestSchema = schema)
+    request['WorkloadSpec'] = workload.data
+    request['SoftwareVersions'].append(schema.get('CMSSWVersion', "CMSSW_3_9_7"))
+    return request
+
+
+def loadRequestSchema(workload, requestSchema):
+    """
+    _loadRequestSchema_
+
+    Does modifications to the workload I don't understand
+    Takes a WMWorkloadHelper, operates on it directly with the schema
+    """
+    schema = workload.data.request.section_('schema')
+    for key, value in requestSchema.iteritems():
+        try:
+            setattr(schema, key, value)
+        except Exception, ex:
+            pass
+    schema.timeStamp = int(time.time())
+    schema = workload.data.request.schema
+    
+    # might belong in another method to apply existing schema
+    workload.data.owner.Group = schema.Group
+    workload.data.owner.Requestor = schema.Requestor
+    if hasattr(schema, 'RequestPriority'):
+        workload.data.request.priority = schema.RequestPriority

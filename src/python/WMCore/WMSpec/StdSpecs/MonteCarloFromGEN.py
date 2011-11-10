@@ -121,6 +121,25 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         self.procJobSplitArgs  = arguments.get("StdJobSplitArgs", {"lumis_per_job": 1})
         return self.buildWorkload()
 
+    def validateSchema(self, schema):
+        """
+        _validateSchema_
+        
+        Check for required fields, and some skim facts
+        """
+        arguments = getTestArguments()
+        requiredFields = ["CMSSWVersion", "ProcConfigCacheID",
+                          "GlobalTag", "InputDataset", "CouchURL",
+                          "CouchDBName"]
+        self.requireValidateFields(fields = requiredFields, schema = schema,
+                                   validate = False)
+        outMod = self.validateConfigCacheExists(configID = schema["ProcConfigCacheID"],
+                                                couchURL = schema["CouchURL"],
+                                                couchDBName = schema["CouchDBName"],
+                                                getOutputModules = True)
+        return
+
+
 def monteCarloFromGENWorkload(workloadName, arguments):
     """
     _monteCarloFromGENWorkload_

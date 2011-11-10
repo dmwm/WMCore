@@ -40,6 +40,7 @@ class RequestSchema(dict):
         self.setdefault("ScramArch", "slc5_amd64_gcc434")
         self.setdefault("RequestDate", list(time.gmtime()[:6]))
         self.basicFields = self.keys()
+        self.validateFields = []
 
     def validateSchema(self):
         """

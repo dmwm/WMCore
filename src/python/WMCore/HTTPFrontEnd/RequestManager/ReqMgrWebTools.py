@@ -17,9 +17,10 @@ import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdMan
 import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
-from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker
+from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker, buildWorkloadForRequest
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-
+from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
+from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
 
 
 def parseRunList(l):
@@ -239,17 +240,21 @@ def makeRequest(kwargs, couchUrl, couchDB):
     for k, v in kwargs.iteritems():
         if isinstance(v, str):
             kwargs[k] = v.strip()
-    maker = retrieveRequestMaker(kwargs["RequestType"])
-    schema = maker.newSchema()
+    #maker = retrieveRequestMaker(kwargs["RequestType"])
+    #schema = maker.newSchema()
+    # Create a new schema
+    schema = RequestSchema()
     schema.update(kwargs)
+    
     currentTime = time.strftime('%y%m%d_%H%M%S',
                              time.localtime(time.time()))
+    secondFraction = int(10000 * (time.time()%1.0))
     requestString = schema.get('RequestString', "")
     if requestString != "":
-        schema['RequestName'] = "%s_%s_%s" % (
-        schema['Requestor'], requestString, currentTime)
+        schema['RequestName'] = "%s_%s_%s_%s" % (
+        schema['Requestor'], requestString, currentTime, secondFraction)
     else:
-        schema['RequestName'] = "%s_%s" % (schema['Requestor'], currentTime)
+        schema['RequestName'] = "%s_%s_%s" % (schema['Requestor'], currentTime, secondFraction)
     schema["Campaign"] = kwargs.get("Campaign", "")
     if 'Scenario' in kwargs and 'ProdConfigCacheID' in kwargs:
         # Use input mode to delete the unused one
@@ -293,8 +298,13 @@ def makeRequest(kwargs, couchUrl, couchDB):
         if blocklist in kwargs:
             schema[blocklist] = parseBlockList(kwargs[blocklist])
     validate(schema)
-    request = maker(schema)
-    helper = WMWorkloadHelper(request['WorkflowSpec'])
+    try:
+        request = buildWorkloadForRequest(typename = kwargs["RequestType"],
+                                          schema = schema)
+    except WMSpecFactoryException, ex:
+        msg = ex._message
+        raise HTTPError(400, "Error in Workload Validation: %s" % msg)
+    helper = WMWorkloadHelper(request['WorkloadSpec'])
     helper.setCampaign(schema["Campaign"])
     if "RunWhitelist" in schema:
         helper.setRunWhitelist(schema["RunWhitelist"])
@@ -302,7 +312,7 @@ def makeRequest(kwargs, couchUrl, couchDB):
     metadata = {}
     metadata.update(request)
     # don't want to JSONify the whole workflow
-    del metadata['WorkflowSpec']
+    del metadata['WorkloadSpec']
     workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     CheckIn.checkIn(request)

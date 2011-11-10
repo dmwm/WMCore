@@ -361,7 +361,6 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         schema['DbsUrl']            = 'http://fake.dbs.url/dbs'
         schema['AcquisitionEra']    = 'era'
         schema['ProcessingVersion'] = 'v1'
-        schema['Scenario']          = 's'
         result = self.jsonSender.put('request/testRequest', schema)
         requestName = result[0]['RequestName']
 

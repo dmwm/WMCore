@@ -89,9 +89,6 @@ class StoreResultsWorkloadFactory(StdBase):
         self.globalTag = arguments["GlobalTag"]
         self.cmsPath = arguments["CmsPath"]
 
-        # Required parameters that can be empty.
-        self.scenario = arguments["Scenario"]
-
         # Optional arguments.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
         self.blockBlackList = arguments.get("BlockBlackList", [])
@@ -164,7 +161,7 @@ class StoreResultsWorkloadFactory(StdBase):
         arguments = getTestArguments()
         requiredFields = ['InputDatasets', 'CMSSWVersion',
                           'ScramArch', 'Group', 'DbsUrl', 'ProcessingVersion',
-                          'AcquisitionEra', 'Scenario']
+                          'AcquisitionEra']
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
         return

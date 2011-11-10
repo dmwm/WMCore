@@ -219,9 +219,9 @@ class PhEDEx(Service):
         # Query each dataset and record relevant dataset or block location
         for dsname, items in inputs.items():
             try:
-                # First query for a dataset level subscription (most common)
-                # this returns block level subscriptions also.
-                kwargs['dataset'], kwargs['block'] = dsname, []
+                # query for all blocks in dataset
+                # returns both dataset and block level subscriptions.
+                kwargs['block'] = dsname + '#%'
                 response = self.subscriptions(**kwargs)['phedex']
 
                 # iterate over response as can't jump to specific datasets

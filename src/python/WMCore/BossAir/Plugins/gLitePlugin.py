@@ -133,6 +133,7 @@ class gLitePlugin(BasePlugin):
                                 dbinterface = myThread.dbi)
 
         self.locationAction = daoFactory(classname = "Locations.GetSiteSE")
+        self.wmsLocationsAction = daoFactory(classname = "Locations.GetSiteInfo")
         self.locationDict = {}
         self.pool     = []
 
@@ -216,6 +217,7 @@ class gLitePlugin(BasePlugin):
         self.nProcess       = getattr(self.config.BossAir, 'gLiteProcesses', 4)
         self.collectionsize = getattr(self.config.BossAir, 'gLiteCollectionSize', 200)
         self.trackmaxsize   = getattr(self.config.BossAir, 'gLiteMaxTrackSize', 200)
+
         self.debugOutput    = getattr(self.config.BossAir, 'gLiteCacheOutput', False)
         self.submitFile   = getattr(self.config.JobSubmitter, 'submitScript', None)
         self.unpacker     = getattr(self.config.JobSubmitter, 'unpackerScript', None)
@@ -225,6 +227,8 @@ class gLitePlugin(BasePlugin):
         self.basetimeout  = getattr(self.config.JobSubmitter, 'getTimeout', 300 )
         self.defaultjdl['myproxyhost'] = self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, 'myproxyhost', self.defaultDelegation['myProxySvr'] )
         self.loggInfoPars = LoggingInfoParser()
+
+        self.wmsMode = getattr(self.config.BossAir, 'submitWMSMode', False)
 
         # This isn't anymore needed, but in the future...
         self.manualenvprefix = getattr(self.config.BossAir, 'gLitePrefixEnv', '')
@@ -375,16 +379,20 @@ class gLitePlugin(BasePlugin):
 
         retrievedproxy = {}
 
+        groupbysite = 'location'
+        if self.wmsMode:
+            groupbysite = 'possibleSites'
+
         for job in jobs:
             sandbox = job['sandbox']
             if not sandbox in submitDict.keys():
                 submitDict[sandbox] = {}
-            if job['location'] not in submitDict[sandbox]:
-                if job['location']:
-                    submitDict[sandbox][job['location']] = []
+            if job[groupbysite] not in submitDict[sandbox]:
+                if job[groupbysite]:
+                    submitDict[sandbox][job[groupbysite]] = []
                 else:
                     submitDict[sandbox][''] = []
-            submitDict[sandbox][job['location']].append(job)
+            submitDict[sandbox][job[groupbysite]].append(job)
 
         tounlink = []
 
@@ -433,9 +441,8 @@ class gLitePlugin(BasePlugin):
 
                     ## getting the job destinations
                     dest      = []
-                    logging.debug("Getting location from %s" % str(jobsReady) )
                     try:
-                        dest = self.getDestinations( [], jobsReady[0]['location'] )
+                        dest = self.getDestinations( [], jobsReady[0][groupbysite] )
                     except Exception, ex:
                         import traceback
                         msg = str(traceback.format_exc())
@@ -445,6 +452,7 @@ class gLitePlugin(BasePlugin):
 
                     if len(dest) == 0:
                         logging.error('No site selected, trying to submit without')
+                    logging.debug("Selected %s sites" % str(dest))
 
                     jdlReady  = self.makeJdl( jobList = jobsReady, dest = dest, info = info )
                     if not jdlReady or len(jdlReady) == 0:
@@ -1316,11 +1324,15 @@ class gLitePlugin(BasePlugin):
            type(location) == types.UnicodeType:
             destlist.append( self.locationAction.execute( \
                                cesite = location)[0].get('se_name', None) )
-        elif type(location) == types.ListType:
+        else:
             for site in location:
-                destlist.append( self.locationAction.execute(site)[0].get('se_name', None) )
+                storages = self.wmsLocationsAction.execute(site)
+                for se in storages:
+                    if se.get('se_name', None) not in destlist:
+                        destlist.append( se.get('se_name', None) )
         return destlist
 
+        ## In case we need CE names
         #if type(location) == types.StringType or \
         #   type(location) == types.UnicodeType:
         #    if location not in destlist:

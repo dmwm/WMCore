@@ -47,8 +47,11 @@ class ReqMgrWebToolsTest(unittest.TestCase):
         self.assertEqual(ReqMgrWebTools.parseRunList(l4), [1,2,3])
   
     def testB_ParseBlockList(self):
-        l3 = '  ["Barack", "  Sarah  ",George]'
-        self.assertEqual(ReqMgrWebTools.parseBlockList(l3), ['Barack', 'Sarah', 'George'])
+        l3 = '  ["/test/test/test#Barack", "  /test/test/test#Sarah  ",/test/test/test#George]'
+        self.assertEqual(ReqMgrWebTools.parseBlockList(l3), ['/test/test/test#Barack',
+                                                             '/test/test/test#Sarah',
+                                                             '/test/test/test#George'])
+        return
 
     def testC_RemovePassword(self):
         url = 'http://sarah:maverick@whitehouse.gov:1600/birthcertificates/trig'

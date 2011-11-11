@@ -25,28 +25,52 @@ from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
 
 def parseRunList(l):
     """ Changes a string into a list of integers """
+    result = None
     if isinstance(l, list):
-       return l
+       result = l
     elif isinstance(l, basestring):
         toks = l.lstrip(' [').rstrip(' ]').split(',')
         if toks == ['']:
             return []
-        return [int(tok) for tok in toks]
+        result = [int(tok) for tok in toks]
     else:
-        raise RuntimeError, "Bad Run list of type " + type(l).__name__
+        raise cherrypy.HTTPError(400, "Bad Run list of type " + type(l).__name__)
+
+    # If we're here, we have a list of runs
+    for r in result:
+        try:
+            tmp = int(r)
+        except ValueError:
+            raise cherrypy.HTTPError(400, "Given runList without integer run numbers")
+        if not tmp == r:
+            raise cherrypy.HTTPError(400, "Given runList without valid integer run numbers")
+
+    return result
+    #raise RuntimeError, "Bad Run list of type " + type(l).__name__
 
 def parseBlockList(l):
     """ Changes a string into a list of strings """
+    result = None
     if isinstance(l, list):
-       return l
+       result = l
     elif isinstance(l, basestring):
         toks = l.lstrip(' [').rstrip(' ]').split(',')
         if toks == ['']:
             return []
         # only one set of quotes
-        return [str(tok.strip(' \'"')) for tok in toks]
+        result = [str(tok.strip(' \'"')) for tok in toks]
     else:
-        raise RuntimeError, "Bad Block list of type " + type(l).__name__
+        raise cherrypy.HTTPError(400, "Bad Run list of type " + type(l).__name__)
+
+    # If we've gotten here we've got a list of blocks
+    # Hopefully they pass validation
+    for block in result:
+        try:
+            WMCore.Lexicon.block(candidate = block)
+        except AssertionError, ex:
+            raise cherrypy.HTTPError(400, "Block in blockList has invalid name")
+
+    return result
 
 def parseSite(kw, name):
     """ puts site whitelist & blacklists into nice format"""

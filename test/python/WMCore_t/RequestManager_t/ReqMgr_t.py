@@ -496,6 +496,81 @@ class ReqMgrTest(RESTBaseUnitTest):
                                       requestName)
         workload.load(url)
         return workload
+
+
+    def testF_TestWhitelistBlacklist(self):
+        """
+        _TestWhitelistBlacklist_
+
+        Test whether or not we can assign the site/run blacklist/whitelist
+        """
+
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        CMSSWVersion = 'CMSSW_3_5_8'
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion)
+
+        schema['RunWhitelist'] = [1, 2, 3]
+        schema['RunBlacklist'] = [4, 5, 6]
+        schema['BlockWhitelist'] = ['/dataset/dataset/dataset#alpha']
+        schema['BlockBlacklist'] = ['/dataset/dataset/dataset#beta']
+
+        result = self.jsonSender.put('request/testRequest', schema)
+        self.assertEqual(result[1], 200)
+        requestName = result[0]['RequestName']
+
+
+        workload = self.loadWorkload(requestName = requestName)
+        print workload.data
+        self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.runs.whitelist, schema['RunWhitelist'])
+        self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.runs.blacklist, schema['RunBlacklist'])
+        self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.blocks.whitelist, schema['BlockWhitelist'])
+        self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.blocks.blacklist, schema['BlockBlacklist'])
+        print workload.data
+
+        schema['BlockBlacklist'] = {'1': '/dataset/dataset/dataset#beta'}
+
+        try:
+            raises = False
+            result = self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("Bad Run list of type " in ex.result)
+            pass
+        self.assertTrue(raises)
+
+        schema['BlockBlacklist'] = ['/dataset/dataset/dataset#beta']
+        schema['RunWhitelist']   = {'1': '/dataset/dataset/dataset#beta'}
+
+        try:
+            raises = False
+            result = self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("Bad Run list of type " in ex.result)
+            pass
+        self.assertTrue(raises)
+
+        schema['RunWhitelist'] = ['hello', 'how', 'are', 'you']
+        try:
+            raises = True
+            result = self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("Given runList without integer run numbers" in ex.result)
+            pass
+        self.assertTrue(raises)
+
+
+
+        return
         
 
 if __name__=='__main__':

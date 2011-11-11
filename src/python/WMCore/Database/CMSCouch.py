@@ -435,12 +435,7 @@ class Database(CouchDBRequests):
                         (self.name, design, list, view), encodedOptions,
                         decode=False)
 
-        if ('error' in retval):
-            raise RuntimeError ,\
-                    "Error in CouchDB: viewError '%s' reason '%s'" %\
-                        (retval['error'], retval['reason'])
-        else:
-            return retval
+        return retval
 
     def allDocs(self):
         """

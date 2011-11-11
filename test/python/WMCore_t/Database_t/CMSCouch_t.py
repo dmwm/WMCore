@@ -304,6 +304,32 @@ class CMSCouchTest(unittest.TestCase):
         self.assertEquals(1, self.db.document(doc_id)['counter'])
 
 
+    def testList(self):
+        """
+        Test list function works ok
+        """
+        update_ddoc = {
+            '_id':'_design/foo',
+            'language': 'javascript',
+            'views' : {
+                       'all' : {
+                                'map' : 'function(doc) {emit(null, null) }'
+                                },
+                       },
+            'lists' : {
+                'errorinoutput' : 'function(doc, req) {send("A string with the word error in")}',
+                'malformed' : 'function(doc, req) {somethingtoraiseanerror}',
+            }
+        }
+        self.db.commit(update_ddoc)
+        # approriate errors raised
+        self.assertRaises(CouchNotFoundError, self.db.loadList, 'foo', 'error', 'view_doesnt_exist')
+        self.assertRaises(CouchInternalServerError, self.db.loadList, 'foo', 'malformed', 'all')
+        # error in list output string shouldn't raise an error
+        self.assertEqual(self.db.loadList('foo', 'errorinoutput', 'all'),
+                         "A string with the word error in")
+
+
 if __name__ == "__main__":
     if len(sys.argv) >1 :
         suite = unittest.TestSuite()

@@ -92,14 +92,14 @@ class RelValMCWorkloadFactory(StdBase):
                                                      splitArgs = self.procJobSplitArgs)
         self.addLogCollectTask(stepOneTask, "ProcLogCollect")
         
-        stepOneMergeTask = None
+        stepOneMergeTask = None        
         for outputModuleName in stepOneOutputMods.keys():
             outputModuleInfo = stepOneOutputMods[outputModuleName]
             task = self.addMergeTask(stepOneTask, self.procJobSplitAlgo,
                                      outputModuleName,
                                      outputModuleInfo["dataTier"],
                                      outputModuleInfo["filterName"],
-                                     outputModuleInfo["processedDataset"])
+                                     outputModuleInfo["processedDataset"])                        
             if outputModuleName == self.stepOneOutputModuleName:
                 stepOneMergeTask = task
                 

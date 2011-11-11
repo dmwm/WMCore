@@ -294,7 +294,7 @@ class gLitePlugin(BasePlugin):
         if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
             return
         if not os.path.isdir(job['cache_dir']):
-            logging.error("Could not write a kill FWJR due to non-existant cache_dir for job %i\n" % job['id'])
+            logging.error("Could not write a fake FWJR due to non-existant cache_dir for job %i\n" % job['id'])
             logging.debug("cache_dir: %s\n" % job['cache_dir'])
             return
         reportName = os.path.join(job['cache_dir'], 'Report.%i.pkl' % job['retry_count'])
@@ -792,6 +792,7 @@ class gLitePlugin(BasePlugin):
         completedJobs = []
         failedJobs    = []
         abortedJobs   = []
+        canceledJob   = []
 
         retrievedproxy = {}
 
@@ -831,6 +832,8 @@ class gLitePlugin(BasePlugin):
             if jj['status'] not in ['Done']:
                 if jj['status'] in ['Aborted', 'Purged']:
                     abortedJobs.append( jj )
+                elif jj['status'] in ['Cancelled by user', 'Cancelled']:
+                    canceledJob.append( jj )
                 continue
 
             cmd = '%s %s %s %s' \
@@ -897,7 +900,7 @@ class gLitePlugin(BasePlugin):
         logging.debug("About to close the subprocesses...")
         self.close(input, result)
 
-        return completedJobs, failedJobs, abortedJobs
+        return completedJobs, failedJobs, abortedJobs, canceledJob
 
 
     def postMortem(self, jobs):
@@ -1024,9 +1027,12 @@ class gLitePlugin(BasePlugin):
         #                        chunksize = self.chunksize)
 
         #return results
-        completed, failed, aborted = self.getoutput(jobs)
+        completed, failed, aborted, canceled = self.getoutput(jobs)
         if len( aborted ) > 0:
             abortcompl, abortfail = self.postMortem( jobs = aborted )
+        if len( canceled ) > 0:
+            for jj in canceled:
+                self.fakeReport("JobKilled", "Job has been canceled", -1, jj)
 
         return
 

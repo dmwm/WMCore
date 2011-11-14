@@ -141,10 +141,13 @@ class WorkQueueReqMgrInterface():
         """Get requests for the given teams"""
         results = []
         for team in teams:
-            reqs = self.reqMgr.getAssignment(team)
-            results.extend([(team, req, spec_url) for req, spec_url in reqs])
+            try:
+                reqs = self.reqMgr.getAssignment(team)
+                results.extend([(team, req, spec_url) for req, spec_url in reqs])
+            except Exception, ex:
+                self.logger.error('Error getting work for team "%s": %s' % (team, str(ex)))
         return results
-    
+
     def reportRequestStatus(self, request, status, message = None):
         """Change state in RequestManager
            Optionally, take a message to append to the request

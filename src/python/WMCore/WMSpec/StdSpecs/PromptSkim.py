@@ -79,7 +79,7 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
         scram.runtime()
 
         wmcoreBase = getWMBASE()
-        scram("python2.6 %s/bin/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (wmcoreBase,
+        scram("python2.6 %s/../../../bin/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (wmcoreBase,
                                                                                                      couchUrl,
                                                                                                      couchDBName,
                                                                                                      configPath,

@@ -68,7 +68,8 @@ class PromptSkimPoller(BaseWorkerThread):
         self.t0astDBConn = None
         self.connectT0AST()
 
-        self.workQueue = WorkQueue()
+        self.workQueue = WorkQueue(CouchUrl = self.config.JobStateMachine.couchurl,
+                                   CacheDir = os.path.join(self.config.General.workDir, "WorkQueueCacheDir"))
         return
 
     def connectT0AST(self):
@@ -123,7 +124,7 @@ class PromptSkimPoller(BaseWorkerThread):
         if self.workloads.has_key(blockInfo["RUN_ID"]):
             if self.workloads[blockInfo["RUN_ID"]].has_key(skimConfig.SkimName):
                 workload = self.workloads[blockInfo["RUN_ID"]][skimConfig.SkimName]
-                workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
+                workload.setBlockWhitelist(skimConfig.SiteName)
                 specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
                 workload.setSpecUrl(specPath)
                 workload.save(specPath)  
@@ -142,7 +143,7 @@ class PromptSkimPoller(BaseWorkerThread):
 
         wfParams = {"AcquisitionEra": runConfig.getAcquisitionEra(),
                     "Requestor": "CMSPromptSkimming",
-                    "CustodialSite": blockLocation,
+                    "CustodialSite": skimConfig.SiteName,
                     "BlockName": blockInfo["BLOCK_NAME"],
                     "InputDataset": datasetPath,
                     "CMSSWVersion": skimConfig.CMSSWVersion,
@@ -220,11 +221,6 @@ class PromptSkimPoller(BaseWorkerThread):
                 if not ListBlock.isParentBlockExported(self.t0astDBConn, skimmableBlock["BLOCK_ID"]):
                     logging.info("Block %s has unexported parents." % skimmableBlock["BLOCK_ID"])
                     continue
-
-            blockLocation = skimmableBlock["STORAGE_NODE"]
-            if skimmableBlock["CUSTODIAL"] != 1:
-                logging.info("Skipping block %s, this isn't it's custodial site." % skimmableBlock["BLOCK_ID"])
-                continue
 
             myThread = threading.currentThread()
             myThread.transaction.begin()

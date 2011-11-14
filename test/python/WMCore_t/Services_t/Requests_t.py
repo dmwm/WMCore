@@ -116,6 +116,7 @@ class testRepeatCalls(RESTBaseUnitTest):
 
     def tearDown(self):
         shutil.rmtree(self.cache_path, ignore_errors = True)
+        self.rt.stop()
 
     def test10Calls(self):
         fail_count = 0

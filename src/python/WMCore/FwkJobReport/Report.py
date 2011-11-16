@@ -244,12 +244,20 @@ class Report:
                 
             jsonStep["cleanup"] = {}
             jsonStep["parameters"] = {}
-            jsonStep["site"] = {}
+            jsonStep["site"] = self.getSiteName()
             jsonStep["analysis"] = {}
             jsonStep["logs"] = {}
             jsonReport["steps"][stepName] = jsonStep
         
         return jsonReport
+
+    def getSiteName(self):
+        """
+        _getSiteName_
+
+        Returns the site name attribute (no step specific)
+        """
+        return getattr(self.data, 'siteName', {})
 
     def getExitCode(self):
         """

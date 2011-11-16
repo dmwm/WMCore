@@ -33,6 +33,7 @@ class ChangeState(WMObject, WMConnectionBase):
             self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
             self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname)
             self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname)
+            self.jsumdatabase = self.couchdb.connectDatabase( getattr(self.config.JobStateMachine, 'jobSummaryDBName') )
         except Exception, ex:
             logging.error("Error connecting to couch: %s" % str(ex))
             self.jobsdatabase = None
@@ -44,7 +45,7 @@ class ChangeState(WMObject, WMConnectionBase):
         self.workflowTaskDAO = self.daofactory("Jobs.GetWorkflowTask")
         return
 
-    def propagate(self, jobs, newstate, oldstate):
+    def propagate(self, jobs, newstate, oldstate, updatesummary = False):
         """
         Move the job from a state to another. Book keep the change to CouchDB.
         Take a list of job objects (dicts) and the desired state change.
@@ -61,7 +62,7 @@ class ChangeState(WMObject, WMConnectionBase):
         self.check(newstate, oldstate)
         # 2. Document the state transition
         try:
-            self.recordInCouch(jobs, newstate, oldstate)
+            self.recordInCouch(jobs, newstate, oldstate, updatesummary)
         except Exception, ex:
             logging.error("Error updating job in couch: %s" % str(ex))
             logging.error(traceback.format_exc())
@@ -83,7 +84,7 @@ class ChangeState(WMObject, WMConnectionBase):
         assert newstate in transitions[oldstate], \
                "Illegal state transition requested: %s -> %s" % (oldstate, newstate)
 
-    def recordInCouch(self, jobs, newstate, oldstate):
+    def recordInCouch(self, jobs, newstate, oldstate, updatesummary = False):
         """
         _recordInCouch_
 
@@ -198,7 +199,17 @@ class ChangeState(WMObject, WMConnectionBase):
                                                                                     timestamp)
                 self.jobsdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
 
+            # updating the status of the summary doc only when it is explicitely requested
+            # doc is already in couch
+            if updatesummary:
+                jobSummaryId = "%s-%s" % (job["name"], job["retry_count"])
+                updateUri = "/" + self.jsumdatabase.name + "/_design/WMStat/_update/jobSummaryState/" + jobSummaryId
+                updateUri += "?newstate=%s&timestamp=%s" % (newstate, timestamp)
+                self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
+                logging.debug("Updated job summary status for job " % jobSummaryId)
+
             if job.get("fwjr", None):
+                # complete fwjr document
                 job["fwjr"].setTaskName(job["task"])
                 fwjrDocument = {"_id": "%s-%s" % (job["id"], job["retry_count"]),
                                 "jobid": job["id"],
@@ -207,13 +218,39 @@ class ChangeState(WMObject, WMConnectionBase):
                                 "type": "fwjr"}
                 self.fwjrdatabase.queue(fwjrDocument, timestamp = True)
 
+                # building a summary of fwjr
+                errmsgs = {}
+                inputs = []
+                for step in fwjrDocument["fwjr"]["steps"]:
+                    if "errors" in fwjrDocument["fwjr"]["steps"][step]:
+                        errmsgs[step] = [error for error in fwjrDocument["fwjr"]["steps"][step]["errors"]]
+                    if "input" in fwjrDocument["fwjr"]["steps"][step] and "source" in fwjrDocument["fwjr"]["steps"][step]["input"]:
+                        inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
+                outputs = [ {'type': singlefile.get('module_lable', None),
+                             'lfn': singlefile.get('lfn', None),
+                             'location': singlefile.get('locations', None),
+                             'checksums': singlefile.get('checksums', {})} for singlefile in job["fwjr"].getAllFiles() if singlefile ]
+                jobSummary = {"_id": "%s-%s" % (job["name"], job["retry_count"]),
+                              "type": "jobsummary",
+                              "retrycount": job["retry_count"],
+                              "workflow": job["workflow"],
+                              "task": job["task"],
+                              "state": newstate,
+                              "site": job["fwjr"].getSiteName(),
+                              "exitcode": job["fwjr"].getExitCode(),
+                              "errors": errmsgs,
+                              "lumis": inputs,
+                              "output": outputs }
+                self.jsumdatabase.queue(jobSummary, timestamp = True)
+
         if len(couchRecordsToUpdate) > 0:
             self.setCouchDAO.execute(bulkList = couchRecordsToUpdate,
                                      conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
             
         self.jobsdatabase.commit()
-        self.fwjrdatabase.commit()        
+        self.fwjrdatabase.commit()
+        self.jsumdatabase.commit()
         return
 
     def persist(self, jobs, newstate, oldstate):

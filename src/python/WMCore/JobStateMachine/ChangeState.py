@@ -38,6 +38,7 @@ class ChangeState(WMObject, WMConnectionBase):
             logging.error("Error connecting to couch: %s" % str(ex))
             self.jobsdatabase = None
             self.fwjrdatabase = None            
+            self.jsumdatabase = None
 
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")

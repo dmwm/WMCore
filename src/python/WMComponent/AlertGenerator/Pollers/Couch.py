@@ -62,10 +62,10 @@ class CouchPoller(PeriodPoller):
         pidFileDefault = os.path.join("/var/run/couchdb", pidFileName)
         
         try:
-            couchUrl = os.getenv("COUCHURL", None)
-            if not couchUrl:
-                raise Exception("COUCHURL not set, can't connect to Couch.")
-            couch = CouchServer(couchUrl)
+            couchURL = getattr(self.config, "couchURL", None)
+            if not couchURL:
+                raise Exception("Configuration value 'couchURL' missing, can't connect to Couch.")
+            couch = CouchServer(couchURL)
             r = couch.makeRequest("/_config")
             logFile = r["log"]["file"]
             # derive location of the PID file from full path log file name
@@ -142,7 +142,8 @@ class CouchDbSizePoller(DirectorySizePoller):
         
         """
         try:
-            couch = CouchServer(os.getenv("COUCHURL", None))
+            couchURL = getattr(self.config, "couchURL", None)
+            couch = CouchServer(couchURL)
             r = couch.makeRequest(self._query)
             dataDir = r["couchdb"]["database_dir"]
         except Exception, ex:
@@ -229,10 +230,10 @@ class CouchErrorsPoller(BasePoller):
         
         """
         try:
-            couchUrl = os.getenv("COUCHURL", None)
-            if not couchUrl:
-                raise Exception("COUCHURL not set, can't connect to Couch.")
-            self.couch = CouchServer(couchUrl)
+            couchURL = getattr(self.config, "couchURL", None)
+            if not couchURL:
+                raise Exception("Configuration value 'couchURL' missing, can't connect to Couch.")            
+            self.couch = CouchServer(couchURL)
             # retrieves result which is not used during this set up
             r = self.couch.makeRequest(self._query)
         except Exception, ex:

@@ -130,11 +130,13 @@ def getConfig(testDir):
     config.AlertGenerator.mysqlDbSizePoller.pollInterval = 10 # [second]
     # configuration for CouchDB database size monitor: couchDbSizePoller (gigabytes values)
     config.AlertGenerator.section_("couchDbSizePoller")
+    config.AlertGenerator.couchDbSizePoller.couchURL = os.getenv("COUCHURL", None)
     config.AlertGenerator.couchDbSizePoller.soft = 1 # GB
     config.AlertGenerator.couchDbSizePoller.critical = 2 # GB
     config.AlertGenerator.couchDbSizePoller.pollInterval = 10 # [second]
     # configuration for CouchDB CPU monitor: couchCPUPoller (percentage values)
     config.AlertGenerator.section_("couchCPUPoller")
+    config.AlertGenerator.couchCPUPoller.couchURL = os.getenv("COUCHURL", None)
     config.AlertGenerator.couchCPUPoller.soft = 40 # [percent]
     config.AlertGenerator.couchCPUPoller.critical = 60 # [percent]
     config.AlertGenerator.couchCPUPoller.pollInterval = 10 # [second]
@@ -142,6 +144,7 @@ def getConfig(testDir):
     config.AlertGenerator.couchCPUPoller.period = periodAlertGeneratorPollers # [second]
     # configuration for CouchDB memory monitor: couchMemPoller (percentage values)
     config.AlertGenerator.section_("couchMemPoller")
+    config.AlertGenerator.couchMemPoller.couchURL = os.getenv("COUCHURL", None)
     config.AlertGenerator.couchMemPoller.soft = 40 # [percent]
     config.AlertGenerator.couchMemPoller.critical = 60 # [percent]
     config.AlertGenerator.couchMemPoller.pollInterval = 10 # [second]
@@ -150,6 +153,7 @@ def getConfig(testDir):
     # configuration for CouchDB HTTP errors poller: couchErrorsPoller (number of error occurrences)
     # (once certain threshold of the HTTP error counters is exceeded, poller keeps sending alerts)
     config.AlertGenerator.section_("couchErrorsPoller")
+    config.AlertGenerator.couchErrorsPoller.couchURL = os.getenv("COUCHURL", None)
     config.AlertGenerator.couchErrorsPoller.soft = 100 # [number of error occurrences]
     config.AlertGenerator.couchErrorsPoller.critical = 200 # [number of error occurrences]
     config.AlertGenerator.couchErrorsPoller.observables = (404, 500) # HTTP status codes to watch over
@@ -245,6 +249,10 @@ class AlertGeneratorTest(unittest.TestCase):
         config = getConfig("/tmp")
         # create some non-sence config section. just need a bunch of values defined        
         config.AlertGenerator.section_("bogusPoller")
+        # only couch-related pollers require couchURL, this way it'll be used at the
+        # other ones as well, should do no harm ; it's just because all pollers are
+        # probed here in a single test ...
+        config.AlertGenerator.bogusPoller.couchURL = os.getenv("COUCHURL", None)
         config.AlertGenerator.bogusPoller.soft = 5 # [percent]
         config.AlertGenerator.bogusPoller.critical = 50 # [percent] 
         config.AlertGenerator.bogusPoller.pollInterval = 0.2  # [second]
@@ -275,7 +283,7 @@ class AlertGeneratorTest(unittest.TestCase):
             
         for poller in pollers:
             poller.check()
-            if getattr(poller, "_measurements", None) != None:
+            if hasattr(poller, "_measurements"):
                 mes = poller._measurements
                 self.assertEqual(len(mes), 1)
                 self.assertTrue(isinstance(mes[0], types.FloatType))

@@ -63,7 +63,9 @@ def modifyConfiguration(config, **args):
     mapping = {
         "mysql_socket" : [("CoreDatabase", "socket") ],
         "mysql_url" : [("CoreDatabase","connectUrl") ],
-        "couch_url" : [("JobStateMachine", "couchurl"), ("ACDC", "couchurl"), ("WorkQueueManager", "couchurl")],
+        "couch_url" : [("JobStateMachine", "couchurl"), ("ACDC", "couchurl"), ("WorkQueueManager", "couchurl"),
+                       
+                       ],
         "working_dir" : [("General", "workDir")],
     }
     
@@ -141,6 +143,28 @@ def modifyConfiguration(config, **args):
                                                            localhost, config.reqmgr.Webtools.port)
         config.reqmgr.views.active.monitorSvc.workloadSummaryCouchURL = sanitizeURL(args["workload_summary_url"])['url']
 
+    # hating having to add this when WMAgentConfig.py has everything set up ... 
+    if  hasattr(config, "AlertProcessor"):
+        if hasattr(config.AlertProcessor.critical.sinks, "couch"):
+            config.AlertProcessor.critical.sinks.couch.url = args["couch_url"]
+        if hasattr(config.AlertProcessor.soft.sinks, "couch"):
+            config.AlertProcessor.soft.sinks.couch.url = args["couch_url"]
+        # the AlertsCollector database has be created beforehand (and couchapp pushed), this
+        # location will change in the future , as described on the ticket 1640
+        if hasattr(config.AlertProcessor.critical.sinks, "rest"):
+            config.AlertProcessor.critical.sinks.rest.uri = args["couch_url"] + "/" + "alertscollector"
+        if hasattr(config.AlertProcessor.soft.sinks, "rest"):
+            config.AlertProcessor.soft.sinks.rest.uri = args["couch_url"] + "/" + "alertscollector"
+    if  hasattr(config, "AlertGenerator"):
+        if hasattr(config.AlertGenerator, "couchDbSizePoller"):
+            config.AlertGenerator.couchDbSizePoller.couchURL = args["couch_url"]
+        if hasattr(config.AlertGenerator, "couchCPUPoller"):
+            config.AlertGenerator.couchCPUPoller.couchURL = args["couch_url"]
+        if hasattr(config.AlertGenerator, "couchMemPoller"):
+            config.AlertGenerator.couchMemPoller.couchURL = args["couch_url"]
+        if hasattr(config.AlertGenerator, "couchErrorsPoller"):
+            config.AlertGenerator.couchErrorsPoller.couchURL = args["couch_url"]
+            
     # custom global workqueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'GlobalQueue':
         if args.get('workqueue_db_name'):

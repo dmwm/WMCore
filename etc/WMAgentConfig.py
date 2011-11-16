@@ -292,7 +292,6 @@ wmbsmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')
 
 
 # Alerts framework configuration
-periodAlertGeneratorPollers = 3 # [second] - will perhaps later be moved up and increased
 
 # common 'Alert' section (Alert "senders" use these values to determine destination)
 config.section_("Alert")
@@ -301,7 +300,6 @@ config.section_("Alert")
 config.Alert.address = "tcp://127.0.0.1:6557"
 # control channel (internal alerts system commands)
 config.Alert.controlAddr = "tcp://127.0.0.1:6559"
-
 
 # AlertProcessor component
 # AlertProcessor values - values for Level soft, resp. critical
@@ -383,14 +381,14 @@ config.AlertGenerator.cpuPoller.soft = 70 # [percent]
 config.AlertGenerator.cpuPoller.critical = 90 # [percent]
 config.AlertGenerator.cpuPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering 
-config.AlertGenerator.cpuPoller.period = periodAlertGeneratorPollers # [second]
+config.AlertGenerator.cpuPoller.period = 30 # [second]
 # configuration for overall used physical memory monitor: memPoller (percentage of total physical memory)
 config.AlertGenerator.section_("memPoller")
 config.AlertGenerator.memPoller.soft = 70 # [percent]
 config.AlertGenerator.memPoller.critical = 90 # [percent]
 config.AlertGenerator.memPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.memPoller.period = periodAlertGeneratorPollers # [second]
+config.AlertGenerator.memPoller.period = 30 # [second]
 # configuration for available disk space monitor: diskSpacePoller (percentage usage per partition)
 config.AlertGenerator.section_("diskSpacePoller")
 config.AlertGenerator.diskSpacePoller.soft = 70 # [percent]
@@ -402,28 +400,28 @@ config.AlertGenerator.componentsCPUPoller.soft = 40 # [percent]
 config.AlertGenerator.componentsCPUPoller.critical = 60 # [percent]
 config.AlertGenerator.componentsCPUPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.componentsCPUPoller.period = periodAlertGeneratorPollers # [second]
+config.AlertGenerator.componentsCPUPoller.period = 30 # [second]
 # configuration for particular components memory monitor: componentMemPoller (percentage of total physical memory)
 config.AlertGenerator.section_("componentsMemPoller")
 config.AlertGenerator.componentsMemPoller.soft = 40 # [percent]
 config.AlertGenerator.componentsMemPoller.critical = 60 # [percent] 
 config.AlertGenerator.componentsMemPoller.pollInterval = 10  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.componentsMemPoller.period = periodAlertGeneratorPollers # [second]
+config.AlertGenerator.componentsMemPoller.period = 30 # [second]
 # configuration for MySQL server CPU monitor: mysqlCPUPoller (percentage values)
 config.AlertGenerator.section_("mysqlCPUPoller")
 config.AlertGenerator.mysqlCPUPoller.soft = 40 # [percent]
 config.AlertGenerator.mysqlCPUPoller.critical = 60 # [percent]
 config.AlertGenerator.mysqlCPUPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.mysqlCPUPoller.period = periodAlertGeneratorPollers # [second]
+config.AlertGenerator.mysqlCPUPoller.period = 30 # [second]
 # configuration for MySQL memory monitor: mysqlMemPoller (percentage values)
 config.AlertGenerator.section_("mysqlMemPoller")
 config.AlertGenerator.mysqlMemPoller.soft = 40 # [percent]
 config.AlertGenerator.mysqlMemPoller.critical = 60 # [percent]
 config.AlertGenerator.mysqlMemPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.mysqlMemPoller.period = periodAlertGeneratorPollers # [second]
+config.AlertGenerator.mysqlMemPoller.period = 30 # [second]
 # configuration for MySQL database size: mysqlDbSizePoller (gigabytes values)
 config.AlertGenerator.section_("mysqlDbSizePoller")
 config.AlertGenerator.mysqlDbSizePoller.soft = 1 # GB
@@ -431,26 +429,30 @@ config.AlertGenerator.mysqlDbSizePoller.critical = 2 # GB
 config.AlertGenerator.mysqlDbSizePoller.pollInterval = 10 # [second]
 # configuration for CouchDB database size monitor: couchDbSizePoller (gigabytes values)
 config.AlertGenerator.section_("couchDbSizePoller")
+config.AlertGenerator.couchDbSizePoller.couchURL = couchURL
 config.AlertGenerator.couchDbSizePoller.soft = 1 # GB
 config.AlertGenerator.couchDbSizePoller.critical = 2 # GB
 config.AlertGenerator.couchDbSizePoller.pollInterval = 10 # [second]
 # configuration for CouchDB CPU monitor: couchCPUPoller (percentage values)
 config.AlertGenerator.section_("couchCPUPoller")
+config.AlertGenerator.couchCPUPoller.couchURL = couchURL
 config.AlertGenerator.couchCPUPoller.soft = 40 # [percent]
 config.AlertGenerator.couchCPUPoller.critical = 60 # [percent]
 config.AlertGenerator.couchCPUPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.couchCPUPoller.period = periodAlertGeneratorPollers # [second]
+config.AlertGenerator.couchCPUPoller.period = 30 # [second]
 # configuration for CouchDB memory monitor: couchMemPoller (percentage values)
 config.AlertGenerator.section_("couchMemPoller")
+config.AlertGenerator.couchMemPoller.couchURL = couchURL
 config.AlertGenerator.couchMemPoller.soft = 40 # [percent]
 config.AlertGenerator.couchMemPoller.critical = 60 # [percent]
 config.AlertGenerator.couchMemPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.couchMemPoller.period = periodAlertGeneratorPollers # [second]
+config.AlertGenerator.couchMemPoller.period = 30 # [second]
 # configuration for CouchDB HTTP errors poller: couchErrorsPoller (number of error occurrences)
 # (once certain threshold of the HTTP error counters is exceeded, poller keeps sending alerts)
 config.AlertGenerator.section_("couchErrorsPoller")
+config.AlertGenerator.couchErrorsPoller.couchURL = couchURL
 config.AlertGenerator.couchErrorsPoller.soft = 100 # [number of error occurrences]
 config.AlertGenerator.couchErrorsPoller.critical = 200 # [number of error occurrences]
 config.AlertGenerator.couchErrorsPoller.observables = (404, 500) # HTTP status codes to watch over

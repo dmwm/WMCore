@@ -57,6 +57,7 @@ class CouchTest(unittest.TestCase):
 
         
     def testAlertGeneratorCouchDbSizePollerSoftThreshold(self):
+        self.config.AlertGenerator.couchDbSizePoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchDbSizePoller.soft = 5
         self.config.AlertGenerator.couchDbSizePoller.critical = 10
         self.config.AlertGenerator.couchDbSizePoller.pollInterval = 0.2
@@ -72,6 +73,7 @@ class CouchTest(unittest.TestCase):
         
 
     def testAlertGeneratorCouchDbSizePollerCriticalThreshold(self):
+        self.config.AlertGenerator.couchDbSizePoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchDbSizePoller.soft = 5
         self.config.AlertGenerator.couchDbSizePoller.critical = 10
         self.config.AlertGenerator.couchDbSizePoller.pollInterval = 0.2        
@@ -87,6 +89,7 @@ class CouchTest(unittest.TestCase):
         
 
     def testAlertGeneratorCouchDbSizePollerNoAlert(self):
+        self.config.AlertGenerator.couchDbSizePoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchDbSizePoller.soft = 5
         self.config.AlertGenerator.couchDbSizePoller.critical = 10
         self.config.AlertGenerator.couchDbSizePoller.pollInterval = 0.2
@@ -102,6 +105,7 @@ class CouchTest(unittest.TestCase):
         
     def testAlertGeneratorCouchPollerBasic(self):
         self.config.AlertGenerator.section_("bogusCouchPoller")
+        self.config.AlertGenerator.bogusCouchPoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.bogusCouchPoller.soft = 1000
         self.config.AlertGenerator.bogusCouchPoller.critical = 2000
         self.config.AlertGenerator.bogusCouchPoller.pollInterval = 0.2
@@ -128,6 +132,7 @@ class CouchTest(unittest.TestCase):
         
         
     def testAlertGeneratorCouchCPUPollerSoftThreshold(self):
+        self.config.AlertGenerator.couchCPUPoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchCPUPoller.soft = 70
         self.config.AlertGenerator.couchCPUPoller.critical = 80
         self.config.AlertGenerator.couchCPUPoller.pollInterval = 0.2
@@ -144,6 +149,7 @@ class CouchTest(unittest.TestCase):
         
 
     def testAlertGeneratorCouchCPUPollerCriticalThreshold(self):
+        self.config.AlertGenerator.couchCPUPoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchCPUPoller.soft = 70
         self.config.AlertGenerator.couchCPUPoller.critical = 80
         self.config.AlertGenerator.couchCPUPoller.pollInterval = 0.2
@@ -160,6 +166,7 @@ class CouchTest(unittest.TestCase):
 
             
     def testAlertGeneratorCouchCPUPollerNoAlert(self):
+        self.config.AlertGenerator.couchCPUPoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchCPUPoller.soft = 70
         self.config.AlertGenerator.couchCPUPoller.critical = 80
         self.config.AlertGenerator.couchCPUPoller.pollInterval = 0.2
@@ -177,6 +184,7 @@ class CouchTest(unittest.TestCase):
         
 
     def testAlertGeneratorCouchMemoryPollerSoftThreshold(self):
+        self.config.AlertGenerator.couchMemPoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchMemPoller.soft = 70
         self.config.AlertGenerator.couchMemPoller.critical = 80
         self.config.AlertGenerator.couchMemPoller.pollInterval = 0.2
@@ -193,6 +201,7 @@ class CouchTest(unittest.TestCase):
                                     
 
     def testAlertGeneratorCouchMemoryPollerCriticalThreshold(self):
+        self.config.AlertGenerator.couchMemPoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchMemPoller.soft = 70
         self.config.AlertGenerator.couchMemPoller.critical = 80
         self.config.AlertGenerator.couchMemPoller.pollInterval = 0.2
@@ -209,6 +218,7 @@ class CouchTest(unittest.TestCase):
         
 
     def testAlertGeneratorCouchMemoryPollerNoAlert(self):
+        self.config.AlertGenerator.couchMemPoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchMemPoller.soft = 70
         self.config.AlertGenerator.couchMemPoller.critical = 80
         self.config.AlertGenerator.couchMemPoller.pollInterval = 0.2
@@ -255,6 +265,7 @@ class CouchTest(unittest.TestCase):
         
         
     def testAlertGeneratorCouchErrorsPollerSoftThreshold(self):
+        self.config.AlertGenerator.couchErrorsPoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchErrorsPoller.soft = 100
         self.config.AlertGenerator.couchErrorsPoller.critical = 200
         # shall expect corresponding number of generated alerts for each observable value
@@ -272,6 +283,7 @@ class CouchTest(unittest.TestCase):
         
 
     def testAlertGeneratorCouchErrorsPollerCriticalThreshold(self):
+        self.config.AlertGenerator.couchErrorsPoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchErrorsPoller.soft = 100
         self.config.AlertGenerator.couchErrorsPoller.critical = 200
         # shall expect corresponding number of generated alerts for each observable value
@@ -289,6 +301,7 @@ class CouchTest(unittest.TestCase):
         
 
     def testAlertGeneratorCouchErrorsPollerNoAlert(self):
+        self.config.AlertGenerator.couchErrorsPoller.couchURL = os.getenv("COUCHURL", None)
         self.config.AlertGenerator.couchErrorsPoller.soft = 100
         self.config.AlertGenerator.couchErrorsPoller.critical = 200
         # shall expect corresponding number of generated alerts for each observable value

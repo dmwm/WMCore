@@ -207,7 +207,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 updateUri = "/" + self.jsumdatabase.name + "/_design/WMStat/_update/jobSummaryState/" + jobSummaryId
                 updateUri += "?newstate=%s&timestamp=%s" % (newstate, timestamp)
                 self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
-                logging.debug("Updated job summary status for job " % jobSummaryId)
+                logging.debug("Updated job summary status for job %s" % jobSummaryId)
 
             if job.get("fwjr", None):
                 # complete fwjr document
@@ -220,6 +220,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 self.fwjrdatabase.queue(fwjrDocument, timestamp = True)
 
                 # building a summary of fwjr
+                logging.debug("Pushing job summary for job %s-%s" % (job["name"], job["retry_count"]) ) 
                 errmsgs = {}
                 inputs = []
                 for step in fwjrDocument["fwjr"]["steps"]:

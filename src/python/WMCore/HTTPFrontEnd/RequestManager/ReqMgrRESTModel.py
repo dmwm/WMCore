@@ -22,6 +22,7 @@ import WMCore.Lexicon
 from WMCore.Wrappers import JsonWrapper
 from WMCore.WebTools.RESTModel import RESTModel
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
+from WMCore.WMException import WMException
 
 import WMCore.RequestManager.RequestDB.Interface.User.Registration          as Registration
 import WMCore.RequestManager.RequestDB.Interface.User.Requests              as UserRequests
@@ -408,6 +409,8 @@ class ReqMgrRESTModel(RESTModel):
             except cherrypy.HTTPError:
                 # Assume that this is a valid HTTPError
                 raise
+            except WMException, ex:
+                raise cherrypy.HTTPError(400, ex._message)
             except Exception, ex:
                 raise cherrypy.HTTPError(400, ex.message)
         # see if status & priority need to be upgraded

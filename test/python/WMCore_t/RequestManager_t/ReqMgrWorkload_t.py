@@ -28,11 +28,12 @@ from nose.plugins.attrib import attr
 from WMCore_t.RequestManager_t.ReqMgr_t import RequestManagerConfig, getRequestSchema
 
 
-class ReqMgrPriorityTest(RESTBaseUnitTest):
+class ReqMgrWorkloadTest(RESTBaseUnitTest):
     """
-    _ReqMgrPriorityTest_
+    _ReqMgrWorkloadTest_
 
-    Basic test for setting the priority in ReqMgr Services
+    Test that sets up and checks the validations of the various main WMSpec.StdSpecs
+    This is mostly a simple set of tests which can be very repetitive.
     """
 
     def setUp(self):
@@ -140,20 +141,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         groupName    = 'Li'
         teamName     = 'Tang'
         CMSSWVersion = 'CMSSW_3_5_8'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion)
-
-        result = self.jsonSender.put('request/testRequest', schema)
-        self.assertEqual(result[1], 200)
-        requestName = result[0]['RequestName']
-
-        result = self.jsonSender.get('request/%s' % requestName)
-        request = result[0]
-        self.assertEqual(request['CMSSWVersion'], CMSSWVersion)
-        self.assertEqual(request['Group'], groupName)
-        self.assertEqual(request['Requestor'], userName)
+        
 
         # Okay, we can make one.  Shouldn't surprise us.  Let's try
         # and make a bad one.
@@ -161,7 +149,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
                                         groupName = groupName,
                                         teamName = teamName,
                                         CMSSWVersion = CMSSWVersion,
-                                        setupDB = False)
+                                        setupDB = True)
         del schema['GlobalTag']
         raises = False
         try:
@@ -187,6 +175,42 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
             self.assertEqual(ex.status, 400)
             self.assertTrue("Bad value for InputDataset" in ex.result)
         self.assertTrue(raises)
+
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion,
+                                        setupDB = False)
+        raises = False
+        del schema['ProcScenario']
+        try:
+            self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("No Scenario or Config in Processing Request!" in ex.result)
+        self.assertTrue(raises)
+
+
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion,
+                                        setupDB = False)
+        try:
+            result = self.jsonSender.put('request/testRequest', schema)
+        except Exception,ex:
+            print ex
+            print ex.result
+            raise
+        self.assertEqual(result[1], 200)
+        requestName = result[0]['RequestName']
+
+        result = self.jsonSender.get('request/%s' % requestName)
+        request = result[0]
+        self.assertEqual(request['CMSSWVersion'], CMSSWVersion)
+        self.assertEqual(request['Group'], groupName)
+        self.assertEqual(request['Requestor'], userName)
         
         return
 
@@ -251,13 +275,14 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
                                         CMSSWVersion = CMSSWVersion,
                                         typename = "DataProcessing")
 
+        del schema['ProcScenario']
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Missing required field ProcConfigCacheID in workload validation" in ex.result)
+            self.assertTrue("No Scenario or Config in Processing Request!" in ex.result)
             pass
         self.assertTrue(raises)
 
@@ -507,7 +532,6 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
         except HTTPException, ex:
-            print ex.result
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("Failure to load ConfigCache while validating workload" in ex.result)

@@ -164,15 +164,18 @@ class DataProcessingWorkloadFactory(StdBase):
         
         Check for required fields, and some skim facts
         """
-        requiredFields = ["CMSSWVersion", "ProcConfigCacheID",
-                          "GlobalTag", "InputDataset", "CouchDBName",
-                          "CouchURL"]
+        requiredFields = ["CMSSWVersion", "GlobalTag",
+                          "InputDataset", "ScramArch"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
-        outMod = self.validateConfigCacheExists(configID = schema['ProcConfigCacheID'],
-                                                couchURL = schema["CouchURL"],
-                                                couchDBName = schema["CouchDBName"],
-                                                getOutputModules = True)
+        if schema.has_key('ProcConfigCacheID') and schema.has_key('CouchURL') and schema.has_key('CouchDBName'):
+            outMod = self.validateConfigCacheExists(configID = schema['ProcConfigCacheID'],
+                                                    couchURL = schema["CouchURL"],
+                                                    couchDBName = schema["CouchDBName"],
+                                                    getOutputModules = True)
+        elif not schema.has_key('ProcScenario'):
+            self.raiseValidationException(msg = "No Scenario or Config in Processing Request!")
+            
         return
 
 def dataProcessingWorkload(workloadName, arguments):

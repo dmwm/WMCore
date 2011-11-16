@@ -130,7 +130,7 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         arguments = getTestArguments()
         requiredFields = ["CMSSWVersion", "ProcConfigCacheID",
                           "GlobalTag", "InputDataset", "CouchURL",
-                          "CouchDBName"]
+                          "CouchDBName", "ScramArch"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
         outMod = self.validateConfigCacheExists(configID = schema["ProcConfigCacheID"],

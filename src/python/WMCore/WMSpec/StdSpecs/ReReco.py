@@ -6,9 +6,10 @@ Standard ReReco workflow.
 """
 
 import os
+import WMCore.Lexicon
 
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessingWorkloadFactory
-from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
+from WMCore.WMSpec.StdSpecs.StdBase        import WMSpecFactoryException
 
 def getTestArguments():
     """
@@ -140,18 +141,22 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
                           "GlobalTag", "InputDataset"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
-        if schema.get('InputDataset', '').count('/') != 3:
-            raise WMSpecFactoryException("Invalid dataset in workflow validation")
+
+        if schema.get('ProcConfigCacheID', None) and schema.get('CouchURL', None) and schema.get('CouchDBName', None):
+            outMod = self.validateConfigCacheExists(configID = schema['ProcConfigCacheID'],
+                                                    couchURL = schema["CouchURL"],
+                                                    couchDBName = schema["CouchDBName"],
+                                                    getOutputModules = True)
+        elif not schema.get('ProcScenario', None):
+            self.raiseValidationException(msg = "No Scenario or Config in Processing Request!")
+
+        try:
+            WMCore.Lexicon.dataset(schema.get('InputDataset', ''))
+        except AssertionError:
+            self.raiseValidationException(msg = "Invalid input dataset!")
+
         return
 
-    def validateWorkload(self, workload):
-        """
-        _validateWorkload_
-
-        Perform last checks.
-        """
-
-        return
 
 def rerecoWorkload(workloadName, arguments):
     """

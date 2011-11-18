@@ -521,8 +521,7 @@ class Proxy(Credential):
         if timeLeft > 0:
             ACTimeLeftLocal = self.getVomsLife(proxy)
             if ACTimeLeftLocal > 0:
-                timeLeft = self.checkLifeTimes(
-           		   timeLeft, ACTimeLeftLocal, proxy)
+                timeLeft = self.checkLifeTimes(timeLeft, ACTimeLeftLocal, proxy)
             else:
                 timeLeft = 0
 
